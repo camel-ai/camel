@@ -94,7 +94,7 @@ class SystemMessageGenerator:
                                      content=new_role_prompt)
 
         if role_type == RoleType.DEFAULT:
-            new_role_prompt = role_prompt or "Your are a helpful assistant."
+            new_role_prompt = role_prompt or "You are a helpful assistant."
             if task_prompt is not None:
                 new_role_prompt = new_role_prompt.replace(
                     "<TASK>", task_prompt)
@@ -186,8 +186,7 @@ class TaskPromptGenerator:
             self.generate_tasks_prompt: str = f.read()
 
     def from_role_files(
-        self,
-        assistant_role_names_path: str = "data/assistant_roles.txt",
+        self, assistant_role_names_path: str = "data/assistant_roles.txt",
         user_role_names_path: str = "data/user_roles.txt"
     ) -> Generator[str, None, None]:
         roles_generator = RoleNameGenerator(
@@ -228,7 +227,6 @@ if __name__ == "__main__":
     role_name_generator = RoleNameGenerator().from_role_files()
     role_tuple = next(role_name_generator)
     assert isinstance(role_tuple, tuple)
-    
+
     task_tuple = next(TaskPromptGenerator().generate_role_prompt())
     assert isinstance(task_tuple, str)
-
