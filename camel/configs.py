@@ -65,7 +65,7 @@ class SystemMessageGenerator:
                                      content=new_role_prompt)
 
         if role_type == RoleType.DEFAULT:
-            new_role_prompt = role_prompt or f"Your are a helpful assistant."
+            new_role_prompt = role_prompt or "Your are a helpful assistant."
 
             return SystemMessage(role_type=role_type,
                                  role_name=role_name,
