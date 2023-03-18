@@ -1,14 +1,19 @@
 repos:
   - repo: https://github.com/pre-commit/mirrors-yapf
-    rev: v0.31.0
+    rev: v0.32.0
     hooks:
       - id: yapf
-        args: [--style, "{based_on_style: google, column_limit: 120}"]
-  - repo: https://github.com/pre-commit/mirrors-isort
-    rev: v5.9.3
+        name: Format code
+        additional_dependencies: ["toml>=0.10.2"]
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.12.0
     hooks:
       - id: isort
-  - repo: https://github.com/pycqa/flake8
-    rev: '6.0.0'
+        name: Sort imports
+
+  - repo: https://github.com/PyCQA/flake8
+    rev: 4.0.1
     hooks:
-    -   id: flake8
+      - id: flake8
+        name: Check PEP8
