@@ -23,11 +23,17 @@ class SystemMessageGenerator:
 
     def __init__(
         self,
+        with_task: bool = True,
         assistant_role_names_path: str = "data/assistant_roles.txt",
         user_role_names_path: str = "data/user_roles.txt",
         assistant_prompt_path: str = "prompts/assistant_prompt.txt",
         user_prompt_path: str = "prompts/user_prompt.txt",
+        assistant_prompt_with_task_path:
+        str = "prompts/assistant_prompt_with_task.txt",
+        user_task_prompt_with_task_path:
+        str = "prompts/user_prompt_with_task.txt",
     ) -> None:
+        self.with_task = with_task
 
         with open(assistant_role_names_path, "r") as f:
             self.assistant_role_names: List[str] = f.read().splitlines()
@@ -35,24 +41,40 @@ class SystemMessageGenerator:
         with open(user_role_names_path, "r") as f:
             self.user_role_names: List[str] = f.read().splitlines()
 
-        with open(assistant_prompt_path, "r") as f:
-            self.assistant_prompt: str = f.read()
+        if not self.with_task:
+            with open(assistant_prompt_path, "r") as f:
+                self.assistant_prompt: str = f.read()
 
-        with open(user_prompt_path, "r") as f:
-            self.user_prompt: str = f.read()
+            with open(user_prompt_path, "r") as f:
+                self.user_prompt: str = f.read()
+        else:
+            with open(assistant_prompt_with_task_path, "r") as f:
+                self.assistant_prompt: str = f.read()
+
+            with open(user_task_prompt_with_task_path, "r") as f:
+                self.user_prompt: str = f.read()
 
     def from_role(
         self,
         role_name: str = "",
         role_type: RoleType = RoleType.DEFAULT,
         role_prompt: Optional[str] = None,
+        task_prompt: Optional[str] = None,
     ) -> SystemMessageType:
         """Generate a system message from a role name and role type."""
+        if task_prompt is not None:
+            assert self.with_task, "Please set with `with_task=True`."
         if role_type == RoleType.ASSISTANT:
             role_prompt = role_prompt or self.assistant_prompt
             new_role_prompt = role_prompt.replace("<ASSISTANT_ROLE>",
                                                   role_name)
             assert new_role_prompt != role_prompt
+
+            if self.with_task:
+                new_role_prompt = new_role_prompt.replace(
+                    "<TASK>",
+                    task_prompt,
+                )
 
             return AssistantSystemMessage(role_name=role_name,
                                           content=new_role_prompt)
@@ -62,14 +84,21 @@ class SystemMessageGenerator:
             new_role_prompt = role_prompt.replace("<USER_ROLE>", role_name)
             assert new_role_prompt != role_prompt
 
+            if self.with_task:
+                new_role_prompt = new_role_prompt.replace(
+                    "<TASK>",
+                    task_prompt,
+                )
+
             return UserSystemMessage(role_name=role_name,
                                      content=new_role_prompt)
 
         if role_type == RoleType.DEFAULT:
-            new_role_prompt = role_prompt or f"Your are a helpful assistant."
-
-            return SystemMessage(role_type=role_type,
-                                 role_name=role_name,
+            new_role_prompt = role_prompt or "Your are a helpful assistant."
+            if task_prompt is not None:
+                new_role_prompt = new_role_prompt.replace(
+                    "<TASK>", task_prompt)
+            return SystemMessage(role_type=role_type, role_name=role_name,
                                  content=new_role_prompt)
 
     def from_roles(
@@ -77,7 +106,10 @@ class SystemMessageGenerator:
         roles: List[Tuple[RoleType, str]],
         assistant_prompt: Optional[str] = None,
         user_prompt: Optional[str] = None,
+        task_prompt: Optional[str] = None,
     ) -> List[SystemMessageType]:
+        if task_prompt is not None:
+            assert self.with_task, "Please set with `with_task=True`."
         assistant_prompt = assistant_prompt or self.assistant_prompt
         user_prompt = user_prompt or self.user_prompt
         role_prompts = [assistant_prompt, user_prompt]
@@ -89,8 +121,8 @@ class SystemMessageGenerator:
 
         for i, role_prompt in enumerate(role_prompts):
             for role_name, role_type in roles:
-                role_prompt = self.from_role(role_name, role_type,
-                                             role_prompt).content
+                role_prompt = self.from_role(role_name, role_type, role_prompt,
+                                             task_prompt).content
             role_prompts[i] = role_prompt
 
         for role_name, role_type in roles:
@@ -115,14 +147,14 @@ class SystemMessageGenerator:
 
         return system_messages
 
+    # TODO: support task generator as input.
     def from_role_files(
             self) -> Generator[List[SystemMessageType], None, None]:
         for assistant_role_name in self.assistant_role_names:
             for user_role_name in self.user_role_names:
-                yield self.from_roles(roles=[
-                    (assistant_role_name, RoleType.ASSISTANT),
-                    (user_role_name, RoleType.USER)
-                ], )
+                yield self.from_roles(
+                    roles=[(assistant_role_name, RoleType.ASSISTANT),
+                           (user_role_name, RoleType.USER)], )
 
 
 class RoleNameGenerator:
@@ -175,7 +207,7 @@ class TaskPromptGenerator:
 
 
 if __name__ == "__main__":
-    sys_msg_generator = SystemMessageGenerator()
+    sys_msg_generator = SystemMessageGenerator(with_task=False)
     sys_msg_generator.from_role(role_name="doctor",
                                 role_type=RoleType.ASSISTANT)
     sys_msg_generator.from_role(role_name="doctor", role_type=RoleType.USER)
@@ -188,10 +220,15 @@ if __name__ == "__main__":
     sys_msg_2 = next(generator)
     assert sys_msg_1 != sys_msg_2
 
-    role_name_generator = RoleNameGenerator().from_role_files()
+    sys_msg_generator = SystemMessageGenerator(with_task=True)
+    sys_msg_generator.from_roles(
+        roles=[("doctor", RoleType.USER), ("chatbot", RoleType.ASSISTANT)],
+        task_prompt="Analyze a patient's medical report")
 
+    role_name_generator = RoleNameGenerator().from_role_files()
     role_tuple = next(role_name_generator)
     assert isinstance(role_tuple, tuple)
-
+    
     task_tuple = next(TaskPromptGenerator().generate_role_prompt())
     assert isinstance(task_tuple, str)
+
