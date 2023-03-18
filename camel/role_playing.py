@@ -22,7 +22,7 @@ def init_chat(
                  "Only reply with Instruction and Input."))
     assistant_msg.role = "user"
 
-    user_msg = UserChatMessage("Student",
+    user_msg = UserChatMessage(user_sys_msg.role_name,
                                content=f"{assistant_sys_msg.content}")
     msgs, _, _ = assistant_agent.step(user_msg)
 
@@ -30,10 +30,11 @@ def init_chat(
 
 
 def main() -> None:
-    sys_msg_generator = SystemMessageGenerator()
+    task_prompt = "Developing custom game mods or plugins for Minecraft"
+    sys_msg_generator = SystemMessageGenerator(with_task=True)
     assistant_sys_msg, user_sys_msg = sys_msg_generator.from_roles(
-        roles=[("Computer Programmer",
-                RoleType.ASSISTANT), ("Gamer", RoleType.USER)])
+        roles=[("Computer Programmer", RoleType.ASSISTANT),
+               ("Gamer", RoleType.USER)], task_prompt=task_prompt)
     assistant_agent = ChatAgent(assistant_sys_msg, ModeType.GPT_3_5_TURBO)
     user_agent = ChatAgent(user_sys_msg, ModeType.GPT_3_5_TURBO)
 

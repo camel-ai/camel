@@ -1,0 +1,26 @@
+{
+    "makefile.extensionOutputFolder": "./.vscode",
+    "python.formatting.provider": "yapf",
+    "python.testing.pytestArgs": [
+        "test"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": false,
+    "python.linting.pycodestyleEnabled": false,
+    "python.linting.flake8Enabled": true,
+    "python.linting.lintOnSave": true,
+    "python.linting.flake8Args": [
+        "--based_on_style=pep8",
+        "--split_before_named_assigns=False"
+    ],
+    "isort.args": [
+        "--skip",
+        "__init__.py"
+    ],
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.sortImports": true,
+    },
+}
