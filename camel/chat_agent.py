@@ -1,8 +1,8 @@
 from typing import Any, Dict, List, Optional, Tuple
 
 import openai
-from camel_typing import (MessageType, ModeType, RoleType, SystemMessage,
-                          ChatMessage)
+from camel_typing import (ChatMessage, MessageType, ModeType, RoleType,
+                          SystemMessage)
 from camel_utils import get_model_token_limit, num_tokens_from_messages
 from configs import ChatGPTConfig
 from tenacity import retry, stop_after_attempt

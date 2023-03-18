@@ -17,10 +17,9 @@ def init_chat(
     # Send the system messages again to the agents using chat messages
     assistant_msg = AssistantChatMessage(
         "Computer Programer",
-        content=
-        (f"{user_sys_msg.content}. "
-         f"Now start to give me introductions one by one. Only reply with Instruction and Input."
-         ))
+        content=(f"{user_sys_msg.content}. "
+                 "Now start to give me introductions one by one. "
+                 "Only reply with Instruction and Input."))
     assistant_msg.role = "user"
 
     user_msg = UserChatMessage("Student",
@@ -60,4 +59,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-    exit()
