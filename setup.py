@@ -9,16 +9,23 @@ install_requires = [
     'tiktoken',
 ]
 
-full_requires = []
-test_requires = []
-dev_requires = []
+test_requires = [
+    'pytest',
+    'pytest-cov',
+]
+
+dev_requires = [
+    'pre-commit',
+    'yapf',
+    'isort',
+    'flake8',
+]
 
 setup(
     name='camel',
     version=__version__,
     install_requires=install_requires,
     extras_require={
-        'full': full_requires,
         'test': test_requires,
         'dev': dev_requires,
     },
