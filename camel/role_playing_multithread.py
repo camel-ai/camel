@@ -1,5 +1,6 @@
 import json
 import multiprocessing
+import os
 
 from camel_typing import (AssistantChatMessage, AssistantSystemMessage,
                           ModeType, RoleType, UserChatMessage,
@@ -128,13 +129,12 @@ def main() -> None:
                 assert str(num_tasks) in tasks[-1], print(tasks)
 
             for task_idx, task_prompt in enumerate(tasks):
-                # if not os.path.exists(f"./tasks/{'_'.join(role_name)}.txt"):
-                # pool.apply_async(generate_data, (assisstant_idx,
-                # assistant_role_name,
-                # user_idx,user_role_name,
-                # task_idx,task_prompt))
-                generate_data(assisstant_idx, assistant_role_name, user_idx,
-                              user_role_name, task_idx, task_prompt)
+                id = f"{assisstant_idx+1}_{user_idx+1}_{task_idx+1}"
+                if not os.path.exists(f"./camel_data/{id}.json"):
+                    pool.apply_async(
+                        generate_data,
+                        (assisstant_idx, assistant_role_name, user_idx,
+                         user_role_name, task_idx, task_prompt))
 
     pool.close()
     pool.join()
