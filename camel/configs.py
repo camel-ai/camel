@@ -94,7 +94,7 @@ class SystemMessageGenerator:
                                      content=new_role_prompt)
 
         if role_type == RoleType.DEFAULT:
-            new_role_prompt = role_prompt or "Your are a helpful assistant."
+            new_role_prompt = role_prompt or "You are a helpful assistant."
             if task_prompt is not None:
                 new_role_prompt = new_role_prompt.replace(
                     "<TASK>", task_prompt)
@@ -157,6 +157,54 @@ class SystemMessageGenerator:
                            (user_role_name, RoleType.USER)], )
 
 
+class RoleNameGenerator:
+
+    def __init__(self,
+                 assistant_role_names_path: str = "data/assistant_roles.txt",
+                 user_role_names_path: str = "data/user_roles.txt") -> None:
+
+        with open(assistant_role_names_path, "r") as f:
+            self.assistant_role_names: List[str] = f.read().splitlines()
+
+        with open(user_role_names_path, "r") as f:
+            self.user_role_names: List[str] = f.read().splitlines()
+
+    def from_role_files(self) -> Generator[Tuple, None, None]:
+        for assistant_role_name in self.assistant_role_names:
+            for user_role_name in self.user_role_names:
+                yield (assistant_role_name, user_role_name)
+
+
+class TaskPromptGenerator:
+
+    def __init__(
+        self,
+        generate_tasks_prompt_path: str = "prompts/generate_tasks.txt",
+    ) -> None:
+
+        with open(generate_tasks_prompt_path, "r") as f:
+            self.generate_tasks_prompt: str = f.read()
+
+    def from_role_files(
+        self, assistant_role_names_path: str = "data/assistant_roles.txt",
+        user_role_names_path: str = "data/user_roles.txt"
+    ) -> Generator[str, None, None]:
+        roles_generator = RoleNameGenerator(
+            assistant_role_names_path, user_role_names_path).from_role_files()
+        for role_1, role_2 in roles_generator:
+            yield (self.generate_tasks_prompt.replace("<ROLE_1>",
+                                                      role_1).replace(
+                                                          "<ROLE_2>", role_2))
+
+    def from_role_generator(
+        self, role_generator: Generator[Tuple, None, None]
+    ) -> Generator[str, None, None]:
+        for role_1, role_2 in role_generator:
+            yield (self.generate_tasks_prompt.replace("<ROLE_1>",
+                                                      role_1).replace(
+                                                          "<ROLE_2>", role_2))
+
+
 if __name__ == "__main__":
     sys_msg_generator = SystemMessageGenerator(with_task=False)
     sys_msg_generator.from_role(role_name="doctor",
@@ -175,3 +223,14 @@ if __name__ == "__main__":
     sys_msg_generator.from_roles(
         roles=[("doctor", RoleType.USER), ("chatbot", RoleType.ASSISTANT)],
         task_prompt="Analyze a patient's medical report")
+
+    role_name_generator = RoleNameGenerator().from_role_files()
+    role_tuple = next(role_name_generator)
+    assert isinstance(role_tuple, tuple)
+
+    task_tuple = next(
+        TaskPromptGenerator().from_role_generator(role_name_generator))
+    assert isinstance(task_tuple, str)
+
+    task_tuple = next(TaskPromptGenerator().from_role_files())
+    assert isinstance(task_tuple, str)
