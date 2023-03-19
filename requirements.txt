@@ -1,3 +1,5 @@
+setuptools
+build
 numpy
 openai
 tenacity
@@ -6,3 +8,4 @@ yapf
 isort
 flake8
 pre-commit
+pytest

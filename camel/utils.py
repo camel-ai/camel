@@ -1,7 +1,9 @@
 from typing import List
 
 import tiktoken
-from camel_typing import ModeType, OpenAIMessage
+
+from camel.message import OpenAIMessage
+from camel.typing import ModeType
 
 
 def num_tokens_from_messages(messages: List[OpenAIMessage], model: ModeType):
