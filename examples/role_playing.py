@@ -1,10 +1,11 @@
 from typing import List, Tuple
 
-from camel_typing import (AssistantChatMessage, AssistantSystemMessage,
-                          ChatMessage, ModeType, RoleType, UserChatMessage,
-                          UserSystemMessage)
-from chat_agent import ChatAgent, TaskSpecifyAgent
-from configs import ChatGPTConfig, SystemMessageGenerator
+from camel.agent import ChatAgent, TaskSpecifyAgent
+from camel.configs import ChatGPTConfig
+from camel.generator import SystemMessageGenerator
+from camel.message import (AssistantChatMessage, AssistantSystemMessage,
+                           ChatMessage, UserChatMessage, UserSystemMessage)
+from camel.typing import ModeType, RoleType
 
 
 def init_chat(

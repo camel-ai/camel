@@ -15,10 +15,6 @@
         "--based_on_style=pep8",
         "--split_before_named_assigns=False"
     ],
-    "isort.args": [
-        "--skip",
-        "__init__.py"
-    ],
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
         "source.sortImports": true,
