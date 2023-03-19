@@ -7,8 +7,8 @@ from configs import (RoleNameGenerator, SystemMessageGenerator,
                      TaskPromptGenerator)
 
 
-def process_task(role_name: str, task_generator_prompt: str,
-                 start_token: str = "1.", num_tasks: int = 40) -> None:
+def generate_tasks(role_name: str, task_generator_prompt: str,
+                   start_token: str = "1.", num_tasks: int = 40) -> None:
     sys_msg_generator = SystemMessageGenerator()
 
     assistant_sys_msg = sys_msg_generator.from_role(RoleType.DEFAULT)
@@ -38,17 +38,15 @@ def main() -> None:
     task_generator_prompt_generator = TaskPromptGenerator().from_role_files()
 
     pool = multiprocessing.Pool()
-    counter = 0
     for task_generator_prompt, role_name in zip(
             task_generator_prompt_generator, role_names_generator):
-        counter += 1
         if not os.path.exists(f"./tasks/{'_'.join(role_name)}.txt"):
             print(f"Generating tasks for {role_name}")
-            pool.apply_async(process_task, (role_name, task_generator_prompt))
+            pool.apply_async(generate_tasks,
+                             (role_name, task_generator_prompt))
 
     pool.close()
     pool.join()
-    print(counter)
 
 
 if __name__ == "__main__":

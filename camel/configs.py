@@ -228,5 +228,9 @@ if __name__ == "__main__":
     role_tuple = next(role_name_generator)
     assert isinstance(role_tuple, tuple)
 
-    task_tuple = next(TaskPromptGenerator().generate_role_prompt())
+    task_tuple = next(
+        TaskPromptGenerator().from_role_generator(role_name_generator))
+    assert isinstance(task_tuple, str)
+
+    task_tuple = next(TaskPromptGenerator().from_role_files())
     assert isinstance(task_tuple, str)
