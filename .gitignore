@@ -131,5 +131,8 @@ dmypy.json
 .DS_Store
 .idea
 
+# zip files
+*.zip
+
 # Camel
 logs/
