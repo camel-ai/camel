@@ -1,11 +1,13 @@
 from typing import Any, Dict, List, Optional, Tuple
 
 import openai
-from camel_typing import (ChatMessage, MessageType, ModeType, RoleType,
-                          SystemMessage, UserChatMessage)
-from camel_utils import get_model_token_limit, num_tokens_from_messages
-from configs import ChatGPTConfig
 from tenacity import retry, stop_after_attempt, wait_fixed
+
+from camel.configs import ChatGPTConfig
+from camel.message import (ChatMessage, MessageType, SystemMessage,
+                           UserChatMessage)
+from camel.typing import ModeType, RoleType
+from camel.utils import get_model_token_limit, num_tokens_from_messages
 
 
 class ChatAgent:
@@ -137,44 +139,3 @@ class TaskSpecifyAgent(ChatAgent):
             raise RuntimeError("Task specification failed.")
         else:
             return specified_task_msg.content
-
-
-if __name__ == "__main__":
-    # test_chat_agent.py::test_chat_agent
-    from configs import SystemMessageGenerator
-    chat_gpt_args = ChatGPTConfig()
-    system_message = SystemMessageGenerator(with_task=False).from_role(
-        "doctor", RoleType.ASSISTANT)
-    assistant = ChatAgent(
-        system_message,
-        ModeType.GPT_3_5_TURBO,
-        chat_gpt_args,
-    )
-
-    assert str(assistant) == (
-        "ChatAgent(doctor, RoleType.ASSISTANT, ModeType.GPT_3_5_TURBO)")
-
-    assistant.reset()
-    messages, terminated, info = assistant.step(
-        ChatMessage("patient", RoleType.USER, "user", "Hello!"))
-
-    assert terminated is False
-    assert messages != []
-    print(info)
-
-    assistant.reset()
-    messages, terminated, info = assistant.step(
-        ChatMessage("patient", RoleType.USER, "user", "Hello!" * 4096))
-
-    assert terminated is True
-    assert messages == []
-    print(info)
-
-    # test_chat_agent.py::test_task_specify_agent
-    original_task_prompt = "Developing custom game mods or plugins"
-    print(f"Original task prompt:\n{original_task_prompt}\n")
-    task_specify_agent = TaskSpecifyAgent(
-        ModeType.GPT_3_5_TURBO, model_config=ChatGPTConfig(temperature=1.4))
-    specified_task_prompt = task_specify_agent.specify_task(
-        original_task_prompt)
-    print(f"Specified task prompt:\n{specified_task_prompt}\n")
