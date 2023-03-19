@@ -2,13 +2,14 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import openai
 from camel_typing import (ChatMessage, MessageType, ModeType, RoleType,
-                          SystemMessage)
+                          SystemMessage, UserChatMessage)
 from camel_utils import get_model_token_limit, num_tokens_from_messages
 from configs import ChatGPTConfig
-from tenacity import retry, stop_after_attempt
+from tenacity import retry, stop_after_attempt, wait_fixed
 
 
 class ChatAgent:
+
     def __init__(
         self,
         system_message: SystemMessage,
@@ -52,7 +53,7 @@ class ChatAgent:
         self.stored_messages.append(message)
         return self.stored_messages
 
-    @retry(stop=stop_after_attempt(5))
+    @retry(wait=wait_fixed(60), stop=stop_after_attempt(5))
     def step(
         self, input_message: ChatMessage
     ) -> Tuple[List[ChatMessage], bool, Dict[str, Any]]:
@@ -99,10 +100,50 @@ class ChatAgent:
         return f"ChatAgent({self.role_name}, {self.role_type}, {self.model})"
 
 
+class TaskSpecifyAgent(ChatAgent):
+
+    def __init__(
+        self,
+        model: ModeType,
+        model_config: Any = None,
+        task_specify_prompt: Optional[str] = None,
+        task_specify_prompt_path: str = "prompts/task_specify_prompt.txt",
+        word_limit: int = 50,
+    ) -> None:
+        if task_specify_prompt is None:
+            with open(task_specify_prompt_path, "r") as f:
+                self.task_specify_prompt = f.read().replace(
+                    "<WORD_LIMIT>", str(word_limit))
+        else:
+            self.task_specify_prompt = task_specify_prompt
+
+        system_message = SystemMessage(
+            role_name="task_specifier",
+            role_type=RoleType.ASSISTANT,
+            content="You can specify a task for the assistant to perform.",
+        )
+        super().__init__(system_message, model, model_config)
+
+    def specify_task(self, original_task_prompt: str) -> str:
+        self.reset()
+        self.task_specify_prompt = self.task_specify_prompt.replace(
+            "<TASK>", original_task_prompt)
+        task_msg = UserChatMessage(role_name="task_specifier",
+                                   content=self.task_specify_prompt)
+        specified_task_msgs, terminated, _ = self.step(task_msg)
+        specified_task_msg = specified_task_msgs[0]
+
+        if terminated:
+            raise RuntimeError("Task specification failed.")
+        else:
+            return specified_task_msg.content
+
+
 if __name__ == "__main__":
+    # test_chat_agent.py::test_chat_agent
     from configs import SystemMessageGenerator
     chat_gpt_args = ChatGPTConfig()
-    system_message = SystemMessageGenerator().from_role(
+    system_message = SystemMessageGenerator(with_task=False).from_role(
         "doctor", RoleType.ASSISTANT)
     assistant = ChatAgent(
         system_message,
@@ -128,3 +169,12 @@ if __name__ == "__main__":
     assert terminated is True
     assert messages == []
     print(info)
+
+    # test_chat_agent.py::test_task_specify_agent
+    original_task_prompt = "Developing custom game mods or plugins"
+    print(f"Original task prompt:\n{original_task_prompt}\n")
+    task_specify_agent = TaskSpecifyAgent(
+        ModeType.GPT_3_5_TURBO, model_config=ChatGPTConfig(temperature=1.4))
+    specified_task_prompt = task_specify_agent.specify_task(
+        original_task_prompt)
+    print(f"Specified task prompt:\n{specified_task_prompt}\n")
