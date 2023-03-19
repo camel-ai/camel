@@ -1,0 +1,2 @@
+Here is a task: <TASK>. Please make it more specific? Be creative and imaginative.
+Please reply with the specified task in <WORD_LIMIT> words or less. Do not add anything else.

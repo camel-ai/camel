@@ -1,8 +1,10 @@
+from typing import List, Tuple
+
 from camel_typing import (AssistantChatMessage, AssistantSystemMessage,
-                          ModeType, RoleType, UserChatMessage,
+                          ChatMessage, ModeType, RoleType, UserChatMessage,
                           UserSystemMessage)
-from chat_agent import ChatAgent
-from configs import SystemMessageGenerator
+from chat_agent import ChatAgent, TaskSpecifyAgent
+from configs import ChatGPTConfig, SystemMessageGenerator
 
 
 def init_chat(
@@ -10,7 +12,7 @@ def init_chat(
     user_agent: ChatAgent,
     user_sys_msg: UserSystemMessage,
     assistant_sys_msg: AssistantSystemMessage,
-):
+) -> Tuple[AssistantChatMessage, List[ChatMessage]]:
     assistant_agent.reset()
     user_agent.reset()
 
@@ -30,11 +32,18 @@ def init_chat(
 
 
 def main() -> None:
-    task_prompt = "Developing custom game mods or plugins for Minecraft"
+    original_task_prompt = "Developing custom game mods or plugins"
+    print(f"Original task prompt:\n{original_task_prompt}\n")
+    task_specify_agent = TaskSpecifyAgent(ModeType.GPT_3_5_TURBO,
+                                          ChatGPTConfig(temperature=1.4))
+    specified_task_prompt = task_specify_agent.specify_task(
+        original_task_prompt)
+    print(f"Specified task prompt:\n{specified_task_prompt}\n")
+
     sys_msg_generator = SystemMessageGenerator(with_task=True)
     assistant_sys_msg, user_sys_msg = sys_msg_generator.from_roles(
         roles=[("Computer Programmer", RoleType.ASSISTANT),
-               ("Gamer", RoleType.USER)], task_prompt=task_prompt)
+               ("Gamer", RoleType.USER)], task_prompt=specified_task_prompt)
     assistant_agent = ChatAgent(assistant_sys_msg, ModeType.GPT_3_5_TURBO)
     user_agent = ChatAgent(user_sys_msg, ModeType.GPT_3_5_TURBO)
 
