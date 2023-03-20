@@ -75,7 +75,7 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
     repeat_word_list = ["goodbye", "good bye", "thank", "bye"]
 
     # Set maximum number of messages for the chat
-    max_num_messages = 12
+    max_num_messages = 20
 
     while message_counter < max_num_messages:
         user_msgs, user_terminated, user_info = user_agent.step(assistant_msg)
@@ -146,7 +146,7 @@ def main() -> None:
                                       roles_per_chunk:(array_idx + 1) *
                                       roles_per_chunk]
 
-    pool = multiprocessing.Pool()
+    pool = multiprocessing.Pool(processes=1)
 
     for assistant_idx, assistant_role_name in enumerate(assistant_roles):
         for user_idx, user_role_name in enumerate(user_roles):
