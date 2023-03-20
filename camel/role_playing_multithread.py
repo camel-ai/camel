@@ -112,7 +112,7 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
 def main() -> None:
 
     # Chunk for parallel jobs
-    array_idx = os.environ.get('SLURM_ARRAY_TASK_ID')
+    array_idx = int(os.environ.get('SLURM_ARRAY_TASK_ID'))
     roles_per_chunk = 10
 
     # Parameters for filtering the generated task string
