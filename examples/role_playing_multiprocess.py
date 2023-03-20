@@ -75,7 +75,7 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
     repeat_word_list = ["goodbye", "good bye", "thank", "bye"]
 
     # Set maximum number of messages for the chat
-    max_num_messages = 20
+    max_num_messages = 12
 
     while message_counter < max_num_messages:
         user_msgs, user_terminated, user_info = user_agent.step(assistant_msg)
