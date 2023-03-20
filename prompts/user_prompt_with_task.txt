@@ -20,3 +20,4 @@ Now you must start to instruct me using the two ways described above.
 Do not add anything else other than your instruction and the optional corresponding input!
 Keep giving me instructions and necessary inputs until you think the task is completed.
 When the task is completed, you must only reply with a single word <CAMEL_TASK_DONE>.
+Never say <CAMEL_TASK_DONE> unless my responses have solved your task.

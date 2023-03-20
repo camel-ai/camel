@@ -55,7 +55,7 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
     assistant_msg, _ = init_chat(assistant_agent, user_agent, user_sys_msg,
                                  assistant_sys_msg)
 
-    message_counter = 1
+    message_counter = 0
     message_dict = {}
 
     # Append roles to the dictionary
@@ -85,8 +85,8 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
         print(f"User:\n{user_msg.content}\n")
         user_msg.role = "user"
 
-        message_dict[f"message_{message_counter}"] = user_msg.to_dict()
         message_counter += 1
+        message_dict[f"message_{message_counter}"] = user_msg.to_dict()
 
         if "<CAMEL_TASK_DONE>" in user_msg.content:
             message_dict['termination_reason'] = "<CAMEL_TASK_DONE>"
@@ -103,8 +103,8 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
         print(f"Assistant:\n{assistant_msg.content}\n")
         assistant_msg.role = "user"
 
-        message_dict[f"message_{message_counter}"] = assistant_msg.to_dict()
         message_counter += 1
+        message_dict[f"message_{message_counter}"] = assistant_msg.to_dict()
 
         if "thank" in user_msg.content.lower():
             thank_counter += 1
