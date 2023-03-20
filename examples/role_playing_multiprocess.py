@@ -2,11 +2,12 @@ import json
 import multiprocessing
 import os
 
-from camel_typing import (AssistantChatMessage, AssistantSystemMessage,
-                          ModeType, RoleType, UserChatMessage,
-                          UserSystemMessage)
-from chat_agent import ChatAgent, TaskSpecifyAgent
-from configs import ChatGPTConfig, SystemMessageGenerator
+from camel.agent import ChatAgent, TaskSpecifyAgent
+from camel.configs import ChatGPTConfig
+from camel.generator import SystemMessageGenerator
+from camel.message import (AssistantChatMessage, AssistantSystemMessage,
+                           UserChatMessage, UserSystemMessage)
+from camel.typing import ModeType, RoleType
 
 
 def init_chat(
@@ -112,7 +113,8 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
 def main() -> None:
 
     # Chunk for parallel jobs
-    array_idx = int(os.environ.get('SLURM_ARRAY_TASK_ID'))
+    # array_idx = int(os.environ.get('SLURM_ARRAY_TASK_ID'))
+    array_idx = 1
     roles_per_chunk = 10
 
     # Parameters for filtering the generated task string
