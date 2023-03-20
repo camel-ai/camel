@@ -2,9 +2,9 @@ from camel.agent import RolePlaying
 
 
 def main() -> None:
-    task_prompt = "Developing and optimizing game engines"
+    task_prompt = "Developing custom game mods or plugins"
     print(f"Original task prompt:\n{task_prompt}\n")
-    role_play_session = RolePlaying("Computer Scientist", "Gamer", task_prompt)
+    role_play_session = RolePlaying("Computer Programer", "Gamer", task_prompt)
     print(f"Specified task prompt:\n{role_play_session.task_prompt}\n")
 
     chat_turn_limit, n = 10, 0
