@@ -7,8 +7,8 @@ from camel.generator import (RoleNameGenerator, SystemMessageGenerator,
 from camel.typing import ModeType, RoleType
 
 
-def generate_tasks(role_name: str, task_generator_prompt: str,
-                   start_token: str = "1.", num_tasks: int = 40) -> None:
+def generate_tasks(role_names: str, task_generator_prompt: str,
+                   start_token: str = "1.", num_tasks: int = 10) -> None:
     sys_msg_generator = SystemMessageGenerator()
 
     assistant_sys_msg = sys_msg_generator.from_role(RoleType.DEFAULT)
@@ -29,21 +29,26 @@ def generate_tasks(role_name: str, task_generator_prompt: str,
     # Ensure exact number of tasks is generated
     assert str(num_tasks) in tasks[-1], print(tasks)
 
-    with open(f"./tasks/{'_'.join(role_name)}.txt", "w") as file:
+    with open(f"./tasks/{'_'.join(role_names)}.txt", "w") as file:
         file.write("\n".join(tasks))
 
 
 def main() -> None:
-    role_names_generator = RoleNameGenerator().from_role_files()
-    task_generator_prompt_generator = TaskPromptGenerator().from_role_files()
+    num_tasks = 10
+    start_token = "1."
 
-    pool = multiprocessing.Pool(processes=1)
-    for task_generator_prompt, role_name in zip(
+    role_names_generator = RoleNameGenerator().from_role_files()
+    task_generator_prompt_generator = TaskPromptGenerator(
+        num_tasks=num_tasks).from_role_files()
+
+    pool = multiprocessing.Pool()
+    for task_generator_prompt, role_names in zip(
             task_generator_prompt_generator, role_names_generator):
-        if not os.path.exists(f"./tasks/{'_'.join(role_name)}.txt"):
-            print(f"Generating tasks for {role_name}")
-            pool.apply_async(generate_tasks,
-                             (role_name, task_generator_prompt))
+        if not os.path.exists(f"./tasks/{'_'.join(role_names)}.txt"):
+            print(f"Generating tasks for {role_names}")
+            pool.apply_async(
+                generate_tasks,
+                (role_names, task_generator_prompt, start_token, num_tasks))
 
     pool.close()
     pool.join()
