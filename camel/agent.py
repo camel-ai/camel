@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Optional, Tuple
 
 import openai
-from tenacity import retry, stop_after_attempt, wait_fixed
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from camel.configs import ChatGPTConfig
 from camel.generator import SystemMessageGenerator
@@ -58,7 +58,7 @@ class ChatAgent:
         self.stored_messages.append(message)
         return self.stored_messages
 
-    @retry(wait=wait_fixed(60), stop=stop_after_attempt(5))
+    @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     def step(
         self,
         input_message: ChatMessage,
