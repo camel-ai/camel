@@ -38,19 +38,24 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
                   user_role_name: str, task_idx: int,
                   task_prompt: str) -> None:
 
+    max_num_messages = 20
+
     original_task_prompt = task_prompt
     task_specify_agent = TaskSpecifyAgent(ModeType.GPT_3_5_TURBO,
                                           ChatGPTConfig(temperature=1.4))
     specified_task_prompt = task_specify_agent.specify_task(
         original_task_prompt)
-
+    print(f"Original Task: {original_task_prompt}")
+    print(f"Specfied Task: {specified_task_prompt}")
     sys_msg_generator = SystemMessageGenerator(with_task=True)
     assistant_sys_msg, user_sys_msg = sys_msg_generator.from_roles(
         roles=[(assistant_role_name, RoleType.ASSISTANT),
                (user_role_name, RoleType.USER)],
         task_prompt=specified_task_prompt)
-    assistant_agent = ChatAgent(assistant_sys_msg, ModeType.GPT_3_5_TURBO)
-    user_agent = ChatAgent(user_sys_msg, ModeType.GPT_3_5_TURBO)
+    assistant_agent = ChatAgent(assistant_sys_msg, ModeType.GPT_3_5_TURBO,
+                                message_window_size=max_num_messages)
+    user_agent = ChatAgent(user_sys_msg, ModeType.GPT_3_5_TURBO,
+                           message_window_size=max_num_messages)
 
     assistant_msg, _ = init_chat(assistant_agent, user_agent, user_sys_msg,
                                  assistant_sys_msg)
@@ -72,10 +77,9 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
     # Threshold to terminate the conversation if no end token appears
     repeat_word_counter = 0
     repeat_word_threshold = 3
-    repeat_word_list = ["goodbye", "good bye", "thank", "bye"]
+    repeat_word_list = ["goodbye", "good bye", "thank", "bye", "welcome"]
 
     # Set maximum number of messages for the chat
-    max_num_messages = 20
 
     while message_counter < max_num_messages:
         user_msgs, user_terminated, user_info = user_agent.step(assistant_msg)
@@ -169,10 +173,16 @@ def main() -> None:
                 id = (f"{(assistant_idx+1):03}_"
                       f"{(user_idx+1):03}_{(task_idx+1):03}")
                 if not os.path.exists(f"./camel_data/{id}.json"):
-                    pool.apply_async(
-                        generate_data,
-                        (assistant_idx, assistant_role_name, user_idx,
-                         user_role_name, task_idx, task_prompt))
+                    # pool.apply_async(
+                    #     generate_data,
+                    #     (assistant_idx, assistant_role_name, user_idx,
+                    #      user_role_name, task_idx, task_prompt))
+                    generate_data(
+                        assistant_idx=22, assistant_role_name='Soldier',
+                        user_idx=74, user_role_name='Dictator', task_idx=0,
+                        task_prompt="Create an evil plan to control the world!"
+                    )
+                    exit()
 
     pool.close()
     pool.join()
