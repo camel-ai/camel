@@ -1,22 +1,13 @@
 from dataclasses import dataclass
-from enum import Enum
 from typing import Dict, Optional, Union
+
+from .typing import RoleType
 
 OpenAISystemMessage = Dict[str, str]
 OpenAIAssistantMessage = Dict[str, str]
 OpenAIUserMessage = Dict[str, str]
 OpenAIChatMessage = Union[OpenAIUserMessage, OpenAIAssistantMessage]
 OpenAIMessage = Union[OpenAISystemMessage, OpenAIChatMessage]
-
-
-class RoleType(Enum):
-    ASSISTANT = "assistant"
-    USER = "user"
-    DEFAULT = "default"
-
-
-class ModeType(Enum):
-    GPT_3_5_TURBO = "gpt-3.5-turbo"
 
 
 @dataclass
