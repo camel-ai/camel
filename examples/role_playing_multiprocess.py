@@ -60,8 +60,9 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
 
     # Append roles to the dictionary
     # We start number from 1 not 0.
-    message_dict["role_1"] = f"{assistant_role_name}_{str(RoleType.ASSISTANT)}"
-    message_dict["role_2"] = f"{user_role_name}_{str(RoleType.USER)}"
+    message_dict[
+        "role_1"] = f"{assistant_role_name}_{str(assistant_agent.role_type)}"
+    message_dict["role_2"] = f"{user_role_name}_{str(user_agent.role_type)}"
     message_dict[
         "id"] = f"{(assistant_idx+1):03}_{(user_idx+1):03}_{(task_idx+1):03}"
     message_dict["original_task"] = task_prompt.replace(f"{task_idx+1}. ", "")
@@ -73,22 +74,30 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
     thank_threshold = 3
 
     while True:
-        user_msgs, user_terminated, _ = user_agent.step(assistant_msg)
+        user_msgs, user_terminated, user_info = user_agent.step(assistant_msg)
         if user_terminated:
+            message_dict["termination_reason"] = (
+                f"{str(user_agent.role_type)}: "
+                f"{user_info['finish_reasons'][0]}")
             break
+
         user_msg = user_msgs[0]
         print(f"User:\n{user_msg.content}\n")
         user_msg.role = "user"
 
-        if "<CAMEL_TASK_DONE>" in user_msg.content:
-            break
-
         message_dict[f"message_{message_counter}"] = user_msg.to_dict()
         message_counter += 1
 
-        assistant_msgs, assistant_terminated, _ = assistant_agent.step(
-            user_msg)
+        if "<CAMEL_TASK_DONE>" in user_msg.content:
+            message_dict['termination_reason'] = "<CAMEL_TASK_DONE>"
+            break
+
+        assistant_msgs, assistant_terminated, assistant_info = (
+            assistant_agent.step(user_msg))
         if assistant_terminated:
+            message_dict["termination_reason"] = (
+                f"{str(assistant_agent.role_type)}: "
+                f"{assistant_info['finish_reasons'][0]}")
             break
         assistant_msg = assistant_msgs[0]
         print(f"Assistant:\n{assistant_msg.content}\n")
