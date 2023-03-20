@@ -17,6 +17,7 @@ class ChatAgent:
         system_message: SystemMessage,
         model: ModeType,
         model_config: Any = None,
+        message_window_size: int = 4,
     ) -> None:
         self.system_message = system_message
         self.role_name = system_message.role_name
@@ -25,6 +26,7 @@ class ChatAgent:
         self.model = model
         self.model_config = model_config or ChatGPTConfig()
         self.model_token_limit = get_model_token_limit(self.model)
+        self.message_window_size = message_window_size
 
         self.terminated = False
         self.init_messages()
@@ -57,9 +59,12 @@ class ChatAgent:
 
     @retry(wait=wait_fixed(60), stop=stop_after_attempt(5))
     def step(
-        self, input_message: ChatMessage
+        self,
+        input_message: ChatMessage,
     ) -> Tuple[List[ChatMessage], bool, Dict[str, Any]]:
         messages = self.update_messages(input_message)
+        if len(messages) > self.message_window_size:
+            messages = messages[-self.message_window_size:]
         openai_messages = [message.to_openai_message() for message in messages]
         num_tokens = num_tokens_from_messages(openai_messages, self.model)
 
