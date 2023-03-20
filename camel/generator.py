@@ -149,10 +149,16 @@ class RoleNameGenerator:
                  user_role_names_path: str = "data/user_roles.txt") -> None:
 
         with open(assistant_role_names_path, "r") as f:
-            self.assistant_role_names: List[str] = f.read().splitlines()
+            assistant_role_names: List[str] = f.read().splitlines()
+            self.assistant_role_names = [
+                " ".join(name.split(" ")[1:]) for name in assistant_role_names
+            ]
 
         with open(user_role_names_path, "r") as f:
-            self.user_role_names: List[str] = f.read().splitlines()
+            user_role_names: List[str] = f.read().splitlines()
+            self.user_role_names = [
+                " ".join(name.split(" ")[1:]) for name in user_role_names
+            ]
 
     def from_role_files(self) -> Generator[Tuple, None, None]:
         for assistant_role_name in self.assistant_role_names:
@@ -165,10 +171,13 @@ class TaskPromptGenerator:
     def __init__(
         self,
         generate_tasks_prompt_path: str = "prompts/generate_tasks.txt",
+        num_tasks: int = 10,
     ) -> None:
 
         with open(generate_tasks_prompt_path, "r") as f:
             self.generate_tasks_prompt: str = f.read()
+
+        self.num_tasks = num_tasks
 
     def from_role_files(
         self, assistant_role_names_path: str = "data/assistant_roles.txt",
@@ -177,9 +186,11 @@ class TaskPromptGenerator:
         roles_generator = RoleNameGenerator(
             assistant_role_names_path, user_role_names_path).from_role_files()
         for role_1, role_2 in roles_generator:
-            yield (self.generate_tasks_prompt.replace("<ROLE_1>",
-                                                      role_1).replace(
-                                                          "<ROLE_2>", role_2))
+            yield (self.generate_tasks_prompt.replace(
+                "<ROLE_1>",
+                role_1).replace("<ROLE_2>",
+                                role_2).replace("<NUM_TASKS>",
+                                                str(self.num_tasks)))
 
     def from_role_generator(
         self, role_generator: Generator[Tuple, None, None]
