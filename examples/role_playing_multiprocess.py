@@ -150,7 +150,7 @@ def main() -> None:
                                       roles_per_chunk:(array_idx + 1) *
                                       roles_per_chunk]
 
-    pool = multiprocessing.Pool(processes=1)
+    pool = multiprocessing.Pool()
 
     for assistant_idx, assistant_role_name in enumerate(assistant_roles):
         for user_idx, user_role_name in enumerate(user_roles):
@@ -173,16 +173,10 @@ def main() -> None:
                 id = (f"{(assistant_idx+1):03}_"
                       f"{(user_idx+1):03}_{(task_idx+1):03}")
                 if not os.path.exists(f"./camel_data/{id}.json"):
-                    # pool.apply_async(
-                    #     generate_data,
-                    #     (assistant_idx, assistant_role_name, user_idx,
-                    #      user_role_name, task_idx, task_prompt))
-                    generate_data(
-                        assistant_idx=22, assistant_role_name='Soldier',
-                        user_idx=74, user_role_name='Dictator', task_idx=0,
-                        task_prompt="Create an evil plan to control the world!"
-                    )
-                    exit()
+                    pool.apply_async(
+                        generate_data,
+                        (assistant_idx, assistant_role_name, user_idx,
+                         user_role_name, task_idx, task_prompt))
 
     pool.close()
     pool.join()
