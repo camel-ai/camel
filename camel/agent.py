@@ -64,7 +64,8 @@ class ChatAgent:
     ) -> Tuple[List[ChatMessage], bool, Dict[str, Any]]:
         messages = self.update_messages(input_message)
         if len(messages) > self.message_window_size:
-            messages = messages[-self.message_window_size:]
+            messages = [self.system_message
+                        ] + messages[-self.message_window_size:]
         openai_messages = [message.to_openai_message() for message in messages]
         num_tokens = num_tokens_from_messages(openai_messages, self.model)
 
