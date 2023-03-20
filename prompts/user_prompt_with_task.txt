@@ -19,4 +19,4 @@ I must decline your instruction politely and honestly if I cannot perform the in
 Now you must start to instruct me using the two ways described above.
 Do not add anything else other than your instruction and the optional corresponding input!
 Keep giving me instructions and necessary inputs until you think the task is completed.
-Once the task is completed, you must reply with <CAMEL_TASK_DONE> to indicate that.
+When the task is completed, you must only reply with a single word <CAMEL_TASK_DONE>.
