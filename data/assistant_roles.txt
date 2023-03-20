@@ -1,150 +1,50 @@
-Accountant
-Acrobat
-Actor
-Advertising executive
-Agriculturist
-Animal trainer
-Animator
-Archaeologist
-Architect
-Baker
-Barista
-Bartender
-Biologist
-Business analyst
-Cartoonist
-Chef
-Chemist
-Chess player
-Clown
-Comedian
-Composer
-Computer scientist
-Conservationist
-Content creator
-Copywriter
-Counselor
-Crossword puzzle maker
-Customer service representative
-Cybersecurity specialist
-Data analyst
-Data scientist
-Database administrator
-Dentist
-Director
-DJ
-Documentary filmmaker
-Ecologist
-Economist
-Editor
-Engineer
-Environmentalist
-Escape artist
-Ethical hacker
-Event planner
-Fashion designer
-Figure skater
-Film critic
-Financial analyst
-Fine artist
-Fitness coach
-Food critic
-Fundraiser
-Game developer
-Gamer
-Geologist
-Graphic designer
-Gymnast
-Hair stylist
-Historian
-Horticulturist
-HR manager
-Illusionist
-Illustrator
-Interior designer
-Interpreter
-Investment banker
-IT support specialist
-Journalist
-Juggler
-Landscape architect
-Lawyer
-Magician
-Makeup artist
-Market researcher
-Marketing strategist
-Mathematician
-Medical biller
-Medical coder
-Mentalist
-Meteorologist
-Mime
-Mobile app developer
-Music producer
-Musician
-Network engineer
-News anchor
-News correspondent
-Nonprofit manager
-Nurse
-Orthodontist
-Paralegal
-Personal assistant
-Personal trainer
-Philanthropist
-Photographer
-Physical therapist
-Physician assistant
-Physicist
-Podcast host
-Political scientist
-Producer
-Project coordinator
-Project manager
-Proofreader
-Psychiatrist
-Psychologist
-Public relations specialist
-Puppeteer
-Radio host
-Radio producer
-Recruiter
-Researcher
-Roller skater
-Sales representative
-Screenwriter
-Scuba diver
-Skydiver
-Snowboarder
-Social media manager
-Social worker
-Sociologist
-Software developer
-Sound engineer
-Sports analyst
-Sports journalist
-Statistician
-Stylist
-Surfer
-Systems administrator
-Tax advisor
-Teacher
-Technical support specialist
-Tour guide
-Trainer
-Translator
-Travel agent
-Tutor
-TV presenter
-TV producer
-Twitch streamer
-Urban planner
-Veterinarian
-Videographer
-Voice actor
-Waiter or Waitress
-Web developer
-Wedding planner
-Writer
-YouTuber
-Zookeeper
+1. Accountant
+2. Actor
+3. Administrator
+4. Analyst
+5. Artist
+6. Athlete
+7. Author
+8. Chef
+9. Coach
+10. Consultant
+11. Counselor
+12. Designer
+13. Developer
+14. Doctor
+15. Editor
+16. Engineer
+17. Entrepreneur
+18. Event Planner
+19. Financial Advisor
+20. Fitness Trainer
+21. Graphic Designer
+22. Human Resources Manager
+23. Interpreter
+24. Journalist
+25. Lawyer
+26. Marketer
+27. Musician
+28. Nutritionist
+29. Personal Assistant
+30. Photographer
+31. Physical Therapist
+32. Programmer
+33. Project Manager
+34. Psychologist
+35. Public Relations Specialist
+36. Real Estate Agent
+37. Researcher
+38. Sales Representative
+39. Scientist
+40. Social Media Manager
+41. Software Developer
+42. Teacher
+43. Technical Writer
+44. Translator
+45. Travel Agent
+46. Video Editor
+47. Virtual Assistant
+48. Web Developer
+49. Writer
+50. Zoologist
