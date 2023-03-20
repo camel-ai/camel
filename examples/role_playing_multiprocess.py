@@ -70,10 +70,14 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
         f"{task_idx+1}. ", "")
 
     # Threshold to terminate the conversation if no end token appears
-    thank_counter = 0
-    thank_threshold = 3
+    repeat_word_counter = 0
+    repeat_word_threshold = 3
+    repeat_word_list = ["goodbye", "good bye", "thank", "bye"]
 
-    while True:
+    # Set maximum number of messages for the chat
+    max_num_messages = 20
+
+    while message_counter < max_num_messages:
         user_msgs, user_terminated, user_info = user_agent.step(assistant_msg)
         if user_terminated:
             message_dict["termination_reason"] = (
@@ -106,12 +110,13 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
         message_counter += 1
         message_dict[f"message_{message_counter}"] = assistant_msg.to_dict()
 
-        if "thank" in user_msg.content.lower():
-            thank_counter += 1
-            if thank_counter == thank_threshold:
-                break
-        else:
-            thank_counter = 0
+        for repeat_word in repeat_word_list:
+            if repeat_word in user_msg.content.lower():
+                repeat_word_counter += 1
+                if repeat_word_counter == repeat_word_threshold:
+                    break
+            else:
+                repeat_word_counter = 0
 
     message_dict["num_messages"] = message_counter
 
