@@ -1,6 +1,8 @@
 # CAMEL: Communicative Agents for Mind Extraction from Large Scale Language Model Society
 
-https://[![PyPI](img.shields.io/badge/pip-CAMEL-blue)](https://pypi.org/project/PACKAGE-NAME/)
+<p align="center">
+  <img src='./misc/logo.png' width=800>
+</p>
 
 ## Overview
 The objective of this project is to study how an AI society would function, behave, and interact through communication. This project provides easy and flexible framework for two or more communicating agents. It enables simulating a conversation between agents playing different roles, such as a user seeking help on a particular task, and a domain expert eager to provide assistance. The tasks that agents will collaborate on could vary from complex problem-solving to creative story generation. 
@@ -8,7 +10,12 @@ The objective of this project is to study how an AI society would function, beha
 Overall, this project has the potential to open up new possibilities for collaboration between machines. By simulating communication between agents, we can gain insights into how AI could function in society and identify areas for improvement. Ultimately, this research could have far-reaching implications for the development of intelligent systems and the future of AI.
 
 ## Try it yourself
-We provide a Google Collab demo showcasing a conversation between two ChatGPT agents impersonationg a gamer as a user and a game developer as a domain expert collaborating on 
+We provide a Google Collab demo showcasing a conversation between two ChatGPT agents impersonationg a gamer as a user and a game developer as a domain expert collaborating on interesting tasks.
+
+
+<p align="center">
+  <img src='./misc/pipeline.png' width=400>
+</p>
 
 ## Environment Setup
 Install `CAMEL` using conda environment:
