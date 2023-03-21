@@ -7,6 +7,7 @@ install_requires = [
     'openai',
     'tenacity',
     'tiktoken',
+    'colorama',
 ]
 
 test_requires = [
