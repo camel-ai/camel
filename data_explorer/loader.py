@@ -1,7 +1,7 @@
 import os
+import re
 import glob
 import json
-import re
 
 
 def parse(data):
@@ -76,7 +76,8 @@ def load_data(path="DATA"):
     matrix: dict[tuple[str, str], dict] = dict()
     for parsed in parsed_list:
         matrix[(parsed['assistant_role'], parsed['user_role'])] = \
-            {k: v for k, v in parsed.items() if k not in {'assistant_role', 'user_role'}}
+            {k: v for k, v in parsed.items()
+             if k not in {'assistant_role', 'user_role'}}
     return dict(
         assistant_roles=assistant_roles,
         user_roles=user_roles,
