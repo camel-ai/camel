@@ -49,7 +49,7 @@ python examples/role_playing.py
 ## Citation
 ```
 @misc{camel,
-  author = {Guohao Li, Hasan Abed Al Kader Hammoud, Hani Itani, Bernard Ghanem},
+  author = {Guohao Li, Hasan Abed Al Kader Hammoud, Hani Itani, Dmitrii Khizbullin, Bernard Ghanem},
   title = {CAMEL: Communicative Agents for Mind Extraction from Large Scale Language Model Society},
   year = {2023},
   publisher = {GitHub},
