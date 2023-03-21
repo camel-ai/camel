@@ -1,4 +1,5 @@
 import gradio as gr
+
 from loader import load_data
 
 data = load_data()
