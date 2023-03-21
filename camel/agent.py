@@ -5,8 +5,13 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 from camel.configs import ChatGPTConfig
 from camel.generator import SystemMessageGenerator
-from camel.message import (AssistantChatMessage, ChatMessage, MessageType,
-                           SystemMessage, UserChatMessage)
+from camel.message import (
+    AssistantChatMessage,
+    ChatMessage,
+    MessageType,
+    SystemMessage,
+    UserChatMessage,
+)
 from camel.typing import ModeType, RoleType
 from camel.utils import get_model_token_limit, num_tokens_from_messages
 
@@ -18,7 +23,7 @@ class ChatAgent:
         system_message: SystemMessage,
         model: ModeType,
         model_config: Any = None,
-        message_window_size: int = 4,
+        message_window_size: Optional[int] = None,
     ) -> None:
         self.system_message = system_message
         self.role_name = system_message.role_name
@@ -64,7 +69,8 @@ class ChatAgent:
         input_message: ChatMessage,
     ) -> Tuple[List[ChatMessage], bool, Dict[str, Any]]:
         messages = self.update_messages(input_message)
-        if len(messages) > self.message_window_size:
+        if self.message_window_size is not None and len(
+                messages) > self.message_window_size:
             messages = [self.system_message
                         ] + messages[-self.message_window_size:]
         openai_messages = [message.to_openai_message() for message in messages]
@@ -164,7 +170,8 @@ class RolePlaying:
         if with_task_specify:
             task_specify_agent = TaskSpecifyAgent(
                 ModeType.GPT_3_5_TURBO, ChatGPTConfig(temperature=1.4))
-            self.task_prompt = task_specify_agent.specify_task(task_prompt)
+            task_prompt = task_specify_agent.specify_task(task_prompt)
+        self.task_prompt = task_prompt
 
         sys_msg_generator = SystemMessageGenerator(with_task=with_task)
         self.assistant_sys_msg, self.user_sys_msg = (
