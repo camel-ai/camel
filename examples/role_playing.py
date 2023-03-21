@@ -21,7 +21,7 @@ def main() -> None:
         n += 1
         assistant_msg, user_msg = role_play_session.step(assistant_msg)
         print_text_animated(f"AI User:\n\n{user_msg.content}\n\n")
-        time.sleep(2.5)
+        time.sleep(0.5)
         print_text_animated(f"AI Assistant:\n\n{assistant_msg.content}\n\n")
 
         if "<CAMEL_TASK_DONE>" in assistant_msg.content:
