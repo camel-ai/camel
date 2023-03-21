@@ -61,7 +61,7 @@ python examples/role_playing.py
 We would like to thank Haya Hammoud for designing the logo of our project.
 
 ## License
-MIT License
+Apache License 2.0 
 
 ## Contact
 For more information please contact [Guohao Li](https://ghli.org/), [Hasan Abed Al Kader Hammoud](https://cemse.kaust.edu.sa/ece/people/person/hasan-abed-al-kader-hammoud), [Hani Itani](https://github.com/HaniItani)
