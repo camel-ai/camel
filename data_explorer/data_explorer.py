@@ -16,7 +16,8 @@ parser.add_argument('--server-port', type=int, default=8080,
                     help='Port ot run the web page on')
 parser.add_argument('--inbrowser', type=bool, default=True,
                     help='Open the web UI in the default browser on lunch')
-args = parser.parse_args()
+args, unknown = parser.parse_known_args()
+
 data = load_data(args.data_path)
 
 with gr.Blocks() as demo:
