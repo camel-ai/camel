@@ -6,5 +6,3 @@
 3. in `data_explorer` run `gradio data_explorer.py`
 4. `localhost:8080` will open
 5. Have fun
-
-<img src="images/screenshot.png"  width="600">

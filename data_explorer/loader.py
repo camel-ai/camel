@@ -1,14 +1,34 @@
+"""
+Everything related to parsing the data JSONs into UI-compatible format.
+"""
+
 import glob
 import json
 import os
 import re
+from typing import Any, Union
+
+ChatHistory = dict[str, Any]
+ParsedChatHistory = dict[str, Any]
+AllChats = dict[str, Any]
 
 
-def parse(data):
-    if "role_1" not in data:
+def parse(raw_chat: ChatHistory) -> Union[ParsedChatHistory, None]:
+    """ Gets the JSON raw chat data, validates it and transforms
+        into an easy to work with form.
+
+    Args:
+        raw_chat (ChatHistory): In-memory loaded JSON data file
+
+    Returns:
+        Union[ParsedChatHistory, None]: Parsed chat data or None
+        if there were parsing errors.
+    """
+
+    if "role_1" not in raw_chat:
         return None
 
-    role_1 = data["role_1"]
+    role_1 = raw_chat["role_1"]
     if "_RoleType.ASSISTANT" not in role_1:
         return None
     assistant_role = role_1.split("_RoleType.ASSISTANT")
@@ -18,7 +38,7 @@ def parse(data):
         return None
     assistant_role = assistant_role[0]
 
-    role_2 = data["role_2"]
+    role_2 = raw_chat["role_2"]
     if "_RoleType.USER" not in role_2:
         return None
     user_role = role_2.split("_RoleType.USER")
@@ -28,20 +48,20 @@ def parse(data):
         return None
     user_role = user_role[0]
 
-    original_task = data["original_task"]
+    original_task = raw_chat["original_task"]
     if len(original_task) <= 0:
         return None
 
-    specified_task = data["specified_task"]
+    specified_task = raw_chat["specified_task"]
     if len(specified_task) <= 0:
         return None
 
     messages = dict()
-    for key in data:
+    for key in raw_chat:
         match = re.search("message_(?P<number>[0-9]+)", key)
         if match:
             number = int(match.group("number"))
-            messages[number] = data[key]
+            messages[number] = raw_chat[key]
 
     return dict(
         assistant_role=assistant_role,
@@ -52,18 +72,30 @@ def parse(data):
     )
 
 
-def load_data(path="DATA"):
+def load_data(path: str) -> AllChats:
+    """ Load all JSONs from a folder and parse them.
+
+    Args:
+        path (str): path to the folder with JSONs.
+
+    Returns:
+        AllChats: a dictionary with all possible assistant and
+        user roles and the matrix of chats.
+    """
+
     filt = os.path.join(path, "*.json")
     files = glob.glob(filt)
     parsed_list = []
     for file_name in files:
         with open(file_name, "rb") as f:
             try:
-                data = json.load(f)
+                raw_chat = json.load(f)
             except Exception as ex:
                 print(str(ex))
                 continue
-            parsed = parse(data)
+            parsed = parse(raw_chat)
+            if parsed is None:
+                continue
             parsed_list.append(parsed)
 
     assistant_roles = set()
@@ -86,5 +118,4 @@ def load_data(path="DATA"):
 
 
 if __name__ == "__main__":
-    data = load_data()
-    print("")
+    data = load_data("DATA/")

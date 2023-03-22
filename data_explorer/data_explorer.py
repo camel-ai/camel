@@ -1,8 +1,23 @@
+"""
+Gradio-based web UI to explore the Camel dataset.
+"""
+
+import argparse
 import gradio as gr
 
 from loader import load_data
 
-data = load_data()
+parser = argparse.ArgumentParser("Camel data explorer")
+parser.add_argument('--data-path', type=str, default="DATA/",
+                    help='Path to the folder with chat JSONs')
+parser.add_argument('--share', type=bool, default=False,
+                    help='Expose the web UI to Gradio')
+parser.add_argument('--server-port', type=int, default=8080,
+                    help='Port ot run the web page on')
+parser.add_argument('--inbrowser', type=bool, default=True,
+                    help='Open the web UI in the default browser on lunch')
+args = parser.parse_args()
+data = load_data(args.data_path)
 
 with gr.Blocks() as demo:
     assistant_roles = data['assistant_roles']
@@ -18,7 +33,17 @@ with gr.Blocks() as demo:
             specified_task_ta = gr.TextArea(label="Specified task", lines=2)
     chatbot = gr.Chatbot().style(height=400)
 
-    def assistant_dd_change(assistant_role, user_role):
+    def roles_dd_change(assistant_role: str,
+                        user_role: str) -> tuple[str, str, list[tuple]]:
+        """ Update the displayed chat upon inputs change.
+
+        Args:
+            assistant_role (str): assistant dropdown value
+            user_role (str): user dropdown value
+
+        Returns:
+            tuple[str, str, list[tuple]]: TBD
+        """
         matrix = data['matrix']
         if (assistant_role, user_role) in matrix:
             record = matrix[(assistant_role, user_role)]
@@ -48,12 +73,13 @@ with gr.Blocks() as demo:
             history = []
         return original_task, specified_task, history
 
-    args = (assistant_dd_change, [assistant_dd, user_dd],
-            [original_task_ta, specified_task_ta, chatbot])
-    assistant_dd.change(*args)
-    user_dd.change(*args)
+    func_args = (roles_dd_change, [assistant_dd, user_dd],
+                 [original_task_ta, specified_task_ta, chatbot])
+    assistant_dd.change(*func_args)
+    user_dd.change(*func_args)
 
     assistant_dd.value = assistant_dd.value
 
 if __name__ == "__main__":
-    demo.launch(share=True, server_port=8080, inbrowser=True)
+    demo.launch(share=args.share, server_port=args.server_port,
+                inbrowser=args.inbrowser)
