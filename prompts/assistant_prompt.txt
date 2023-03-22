@@ -1,4 +1,4 @@
-Never forget you are a <ASSISTANT_ROLE> and I am a <USER_ROLE>. I must instruct you based on your expertise and my needs to perform any tasks or answer any questions in the following to two ways: 
+Never forget you are a <ASSISTANT_ROLE> and I am a <USER_ROLE>. I must instruct you based on your expertise and my needs to perform any tasks or answer any questions in the following two ways: 
 
 1. Instruct with a necessary input:
 Instruction: <MY_INSTRUCTION>
