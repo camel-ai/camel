@@ -76,13 +76,27 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
 
     # Threshold to terminate the conversation if no end token appears
     repeat_word_counter = 0
-    repeat_word_threshold = 3
-    repeat_word_list = ["goodbye", "good bye", "thank", "bye", "welcome"]
+    repeat_word_threshold = 4
+    repeat_word_list = [
+        "goodbye", "good bye", "thank", "bye", "welcome",
+        "As an AI language model,"
+    ]
+
+    assistant_instruct_counter = 0
+    assistant_instruct_threshold = 1
+    assistant_instruct_word = "Instruction:"
+
+    user_no_instruct_counter = 0
+    user_no_instruct_threshold = 3
+    user_no_instruct_word = "Instruction:"
 
     # Set maximum number of messages for the chat
 
     while message_counter < max_num_messages:
+
         user_msgs, user_terminated, user_info = user_agent.step(assistant_msg)
+
+        # Condition 1: User terminates the chat
         if user_terminated:
             message_dict["termination_reason"] = (
                 f"{str(user_agent.role_type)}: "
@@ -93,36 +107,65 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
         print(f"User:\n{user_msg.content}\n")
         user_msg.role = "user"
 
-        message_counter += 1
-        message_dict[f"message_{message_counter}"] = user_msg.to_dict()
-
-        if "<CAMEL_TASK_DONE>" in user_msg.content:
-            message_dict['termination_reason'] = "<CAMEL_TASK_DONE>"
-            break
-
         assistant_msgs, assistant_terminated, assistant_info = (
             assistant_agent.step(user_msg))
+
+        # Condition 2: Assistant terminates the chat
         if assistant_terminated:
             message_dict["termination_reason"] = (
                 f"{str(assistant_agent.role_type)}: "
                 f"{assistant_info['finish_reasons'][0]}")
             break
+
         assistant_msg = assistant_msgs[0]
         print(f"Assistant:\n{assistant_msg.content}\n")
         assistant_msg.role = "user"
 
-        message_counter += 1
-        message_dict[f"message_{message_counter}"] = assistant_msg.to_dict()
+        # Condition 3: Break if user does not give instruction
+        if user_no_instruct_word in user_msg.content:
+            user_no_instruct_counter += 1
+            if user_no_instruct_counter == user_no_instruct_threshold:
+                message_dict[
+                    'termination_reason'] = "user_no_instruct_threshold"
+                break
 
+        # Condition 4: Break if assistant gives instruction (flipped role)
+        if assistant_instruct_word in assistant_msg.content:
+            assistant_instruct_counter += 1
+            if assistant_instruct_counter == assistant_instruct_threshold:
+                message_dict[
+                    'termination_reason'] = "assistant_instruct_threshold"
+                break
+
+        # Condition 5: Repeat word observed
         for repeat_word in repeat_word_list:
-            if repeat_word in user_msg.content.lower():
+            if repeat_word in user_msg.content.lower(
+            ) or repeat_word in assistant_msg.content.lower():
                 repeat_word_counter += 1
                 if repeat_word_counter == repeat_word_threshold:
+                    message_dict[
+                        'termination_reason'] = "repeat_word_threshold"
                     break
             else:
                 repeat_word_counter = 0
 
+        # Save user message
+        message_counter += 1
+        message_dict[f"message_{message_counter}"] = user_msg.to_dict()
+
+        # Condition 5: End token observed
+        if "<CAMEL_TASK_DONE>" in user_msg.content:
+            message_dict['termination_reason'] = "<CAMEL_TASK_DONE>"
+            break
+
+        # Save assistant message
+        message_counter += 1
+        message_dict[f"message_{message_counter}"] = assistant_msg.to_dict()
+
     message_dict["num_messages"] = message_counter
+
+    if message_dict["num_messages"] == max_num_messages:
+        message_dict["termination_reason"] = "max_num_messages"
 
     with open(f"./camel_data/{message_dict['id']}.json", "w") as json_file:
         json.dump(message_dict, json_file)
