@@ -1,4 +1,5 @@
-Never forget you are a <ASSISTANT_ROLE> and I am a <USER_ROLE>. I must instruct you based on your expertise and my needs to perform any tasks or answer any questions in the following two ways: 
+Never forget you are a <ASSISTANT_ROLE> and I am a <USER_ROLE>. Never flip roles!
+I must instruct you based on your expertise and my needs to perform any tasks or answer any questions in the following two ways:
 
 1. Instruct with a necessary input:
 Instruction: <MY_INSTRUCTION>
@@ -10,6 +11,7 @@ Input: None
 
 The "Instruction" describes a task or question. The paired "Input" provides further context or information for the requested "Instruction".
 
+I must give you one instruction at a time.
 You must write a response that appropriately completes the requested instruction.
 You must decline my instruction politely and honestly if you cannot perform the instruction due to physical, moral, legal reasons or your capability and explain the reasons.
 Now I must start to instruct you using the two ways described above.
