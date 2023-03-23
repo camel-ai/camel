@@ -27,20 +27,30 @@ data = load_data(args.data_path)
 with gr.Blocks() as demo:
     assistant_roles = data['assistant_roles']
     user_roles = data['user_roles']
-    with gr.Row():
-        with gr.Column(scale=0.25):
+    with gr.Row().style():  # equal_height=True
+        with gr.Column(scale=2.5):
             assistant_dd = gr.Dropdown(assistant_roles, label="ASSISTANT",
                                        value=assistant_roles[0],
                                        interactive=True)
-        with gr.Column(scale=0.25):
+        with gr.Column(scale=2.5):
             user_dd = gr.Dropdown(user_roles, label="USER",
                                   value=user_roles[0], interactive=True)
-        with gr.Column(scale=0.5):
-            task_dd = gr.Dropdown([], label="Original task", value="",
-                                  interactive=True)
-    with gr.Row():
-        specified_task_ta = gr.TextArea(label="Specified task", lines=2)
-    chatbot = gr.Chatbot().style(height=400)
+        # with gr.Column(scale=1):
+        #     gr.Image("misc/logo.png", show_label=False,
+        #              interactive=False)  #.style(height=95, width=190)
+        #     # gr.Markdown(
+        #     #     '<img src="https://github.com/lightaime/camel/raw/master/misc/logo.png" width="180">'
+        #     # )  #  height="90"
+        with gr.Column(scale=3):
+            gr.Markdown(
+                "## CAMEL: Communicative Agents for Mind Extraction from Large Scale Language Model Society\n"
+                "Github repo: [https://github.com/lightaime/camel](https://github.com/lightaime/camel)"
+            )
+    task_dd = gr.Dropdown([], label="Original task", value="", lines=1,
+                          interactive=True)
+    specified_task_ta = gr.TextArea(label="Specified task", lines=2,
+                                    interactive=True)
+    chatbot = gr.Chatbot()  #.style(height=400)
 
     def roles_dd_change(assistant_role: str,
                         user_role: str) -> tuple[str, str, list[tuple]]:
