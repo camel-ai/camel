@@ -135,14 +135,24 @@ class TaskSpecifyAgent(ChatAgent):
         system_message = SystemMessage(
             role_name="task_specifier",
             role_type=RoleType.ASSISTANT,
-            content="You can specify a task for the assistant to perform.",
+            content="You can make a task more specific.",
         )
         super().__init__(system_message, model, model_config)
 
-    def specify_task(self, original_task_prompt: str) -> str:
+    def specify_task(
+        self,
+        original_task_prompt: str,
+        role_names: Optional[List[str]] = None,
+    ) -> str:
         self.reset()
         self.task_specify_prompt = self.task_specify_prompt.replace(
             "<TASK>", original_task_prompt)
+
+        # TODO: This is a hacky way to replace the role names.
+        if role_names is not None:
+            self.task_specify_prompt = self.task_specify_prompt.replace(
+                "<ASSISTANT_ROLE>",
+                role_names[0]).replace("<USER_ROLE>", role_names[1])
         task_msg = UserChatMessage(role_name="task_specifier",
                                    content=self.task_specify_prompt)
         specified_task_msgs, terminated, _ = self.step(task_msg)
@@ -169,8 +179,9 @@ class RolePlaying:
     ) -> None:
         if with_task_specify:
             task_specify_agent = TaskSpecifyAgent(
-                ModeType.GPT_3_5_TURBO, ChatGPTConfig(temperature=1.4))
-            task_prompt = task_specify_agent.specify_task(task_prompt)
+                ModeType.GPT_3_5_TURBO, ChatGPTConfig(temperature=1.0))
+            task_prompt = task_specify_agent.specify_task(
+                task_prompt, [assistant_role_name, user_role_name])
         self.task_prompt = task_prompt
 
         sys_msg_generator = SystemMessageGenerator(with_task=with_task)
