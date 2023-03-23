@@ -105,11 +105,20 @@ def load_data(path: str) -> AllChats:
         user_roles.add(parsed['user_role'])
     assistant_roles = list(assistant_roles)
     user_roles = list(user_roles)
-    matrix: dict[tuple[str, str], dict] = dict()
+    matrix: dict[tuple[str, str], list[dict]] = dict()
     for parsed in parsed_list:
-        matrix[(parsed['assistant_role'], parsed['user_role'])] = \
-            {k: v for k, v in parsed.items()
-             if k not in {'assistant_role', 'user_role'}}
+        key = (parsed['assistant_role'], parsed['user_role'])
+        original_task = parsed['original_task']
+        new_item = {
+            k: v
+            for k, v in parsed.items()
+            if k not in {'assistant_role', 'user_role', 'original_task'}
+        }
+        if key in matrix:
+            matrix[key][original_task] = new_item
+        else:
+            matrix[key] = {original_task: new_item}
+
     return dict(
         assistant_roles=assistant_roles,
         user_roles=user_roles,
