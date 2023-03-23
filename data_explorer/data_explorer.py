@@ -126,6 +126,12 @@ with gr.Blocks() as demo:
     task_dd.choices = task_dd_update_dict['choices']
     task_dd.value = task_dd_update_dict['value']
 
+    specified_task, chatbot_history = task_dd_change(assistant_dd.value,
+                                                     user_dd.value,
+                                                     task_dd.value)
+    specified_task_ta.value = specified_task
+    chatbot.value = chatbot_history
+
 if __name__ == "__main__":
     demo.queue(args.concurrency_count)
     demo.launch(share=args.share, inbrowser=args.inbrowser,
