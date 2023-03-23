@@ -21,20 +21,23 @@ parser.add_argument(
     help='Number if concurrent threads at Gradio websocket queue. ' +
     'Increase to serve more requests but keep an eye on RAM usage.')
 args, unknown = parser.parse_known_args()
+if len(unknown) > 0:
+    print("Unknown args: ", unknown)
 
 data = load_data(args.data_path)
 
 with gr.Blocks() as demo:
     assistant_roles = data['assistant_roles']
     user_roles = data['user_roles']
+    assistant_role = assistant_roles[0] if len(assistant_roles) > 0 else ""
+    user_role = user_roles[0] if len(user_roles) > 0 else ""
     with gr.Row().style():  # equal_height=True
         with gr.Column(scale=2.5):
             assistant_dd = gr.Dropdown(assistant_roles, label="ASSISTANT",
-                                       value=assistant_roles[0],
-                                       interactive=True)
+                                       value=assistant_role, interactive=True)
         with gr.Column(scale=2.5):
-            user_dd = gr.Dropdown(user_roles, label="USER",
-                                  value=user_roles[0], interactive=True)
+            user_dd = gr.Dropdown(user_roles, label="USER", value=user_role,
+                                  interactive=True)
         # with gr.Column(scale=1):
         #     gr.Image("misc/logo.png", show_label=False,
         #              interactive=False)  #.style(height=95, width=190)
@@ -125,5 +128,5 @@ with gr.Blocks() as demo:
 
 if __name__ == "__main__":
     demo.queue(args.concurrency_count)
-    demo.launch(share=args.share, server_port=args.server_port,
-                inbrowser=args.inbrowser)
+    demo.launch(share=args.share, inbrowser=args.inbrowser,
+                server_name="0.0.0.0", server_port=args.server_port)
