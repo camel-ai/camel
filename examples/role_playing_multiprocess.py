@@ -90,7 +90,7 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
     user_no_instruct_threshold = 3
     user_no_instruct_word = "Instruction:"
 
-    # Set maximum number of messages for the chat
+    # Set max number of messages for the chat
 
     while message_counter < max_num_messages:
 
