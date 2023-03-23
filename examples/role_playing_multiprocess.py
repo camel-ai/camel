@@ -38,7 +38,7 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
                   user_role_name: str, task_idx: int,
                   task_prompt: str) -> None:
 
-    max_num_messages = 20
+    max_num_messages = 30
 
     original_task_prompt = task_prompt
     task_specify_agent = TaskSpecifyAgent(ModeType.GPT_3_5_TURBO,
@@ -131,13 +131,12 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
 def main() -> None:
 
     # Chunk for parallel jobs
-    # array_idx = int(os.environ.get('SLURM_ARRAY_TASK_ID'))
-    array_idx = 1
+    array_idx = int(os.environ.get('SLURM_ARRAY_TASK_ID'))
     roles_per_chunk = 10
 
     # Parameters for filtering the generated task string
     start_token = "1."
-    num_tasks = 40
+    num_tasks = 10
 
     with open("./data/user_roles.txt", "r") as f:
         user_roles = f.read().splitlines()
@@ -153,8 +152,10 @@ def main() -> None:
     pool = multiprocessing.Pool()
 
     for assistant_idx, assistant_role_name in enumerate(assistant_roles):
+        assistant_idx += array_idx * roles_per_chunk
+        assistant_role_name = " ".join(assistant_role_name.split(" ")[1:])
         for user_idx, user_role_name in enumerate(user_roles):
-
+            user_role_name = " ".join(user_role_name.split(" ")[1:])
             # Load the task list assigned for assistant and user roles
             with open(f"./tasks/{assistant_role_name}_{user_role_name}.txt",
                       "r") as f:
