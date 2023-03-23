@@ -8,7 +8,7 @@ import gradio as gr
 from loader import load_data
 
 parser = argparse.ArgumentParser("Camel data explorer")
-parser.add_argument('--data-path', type=str, default="DATA/",
+parser.add_argument('--data-path', type=str, default="camel_data/",
                     help='Path to the folder with chat JSONs')
 parser.add_argument('--share', type=bool, default=False,
                     help='Expose the web UI to Gradio')
@@ -16,6 +16,10 @@ parser.add_argument('--server-port', type=int, default=8080,
                     help='Port ot run the web page on')
 parser.add_argument('--inbrowser', type=bool, default=False,
                     help='Open the web UI in the default browser on lunch')
+parser.add_argument(
+    '--concurrency-count', type=int, default=10,
+    help='Number if concurrent threads at Gradio websocket queue. ' +
+    'Increase to serve more requests but keep an eye on RAM usage.')
 args, unknown = parser.parse_known_args()
 
 data = load_data(args.data_path)
@@ -110,5 +114,6 @@ with gr.Blocks() as demo:
     task_dd.value = task_dd_update_dict['value']
 
 if __name__ == "__main__":
+    demo.queue(args.concurrency_count)
     demo.launch(share=args.share, server_port=args.server_port,
                 inbrowser=args.inbrowser)

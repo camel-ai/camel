@@ -7,6 +7,7 @@ import json
 import os
 import re
 from typing import Any, Union
+from tqdm import tqdm
 
 ChatHistory = dict[str, Any]
 ParsedChatHistory = dict[str, Any]
@@ -86,7 +87,7 @@ def load_data(path: str) -> AllChats:
     filt = os.path.join(path, "*.json")
     files = glob.glob(filt)
     parsed_list = []
-    for file_name in files:
+    for file_name in tqdm(files):
         with open(file_name, "rb") as f:
             try:
                 raw_chat = json.load(f)
@@ -103,8 +104,8 @@ def load_data(path: str) -> AllChats:
     for parsed in parsed_list:
         assistant_roles.add(parsed['assistant_role'])
         user_roles.add(parsed['user_role'])
-    assistant_roles = list(assistant_roles)
-    user_roles = list(user_roles)
+    assistant_roles = list(sorted(assistant_roles))
+    user_roles = list(sorted(user_roles))
     matrix: dict[tuple[str, str], list[dict]] = dict()
     for parsed in parsed_list:
         key = (parsed['assistant_role'], parsed['user_role'])
