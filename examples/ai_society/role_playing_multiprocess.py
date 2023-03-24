@@ -86,7 +86,7 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
     ]
 
     assistant_instruct_counter = 0
-    assistant_instruct_threshold = 2
+    assistant_instruct_threshold = 1
     assistant_instruct_word = "Instruction:"
 
     user_no_instruct_counter = 0
