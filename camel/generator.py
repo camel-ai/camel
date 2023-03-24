@@ -1,7 +1,12 @@
 from typing import Generator, List, Optional, Tuple
 
-from camel.message import (AssistantSystemMessage, RoleType, SystemMessage,
-                           SystemMessageType, UserSystemMessage)
+from camel.message import (
+    AssistantSystemMessage,
+    RoleType,
+    SystemMessage,
+    SystemMessageType,
+    UserSystemMessage,
+)
 
 
 class SystemMessageGenerator:
@@ -9,14 +14,14 @@ class SystemMessageGenerator:
     def __init__(
         self,
         with_task: bool = True,
-        assistant_role_names_path: str = "data/assistant_roles.txt",
-        user_role_names_path: str = "data/user_roles.txt",
-        assistant_prompt_path: str = "prompts/assistant_prompt.txt",
-        user_prompt_path: str = "prompts/user_prompt.txt",
+        assistant_role_names_path: str = "data/ai_society/assistant_roles.txt",
+        user_role_names_path: str = "data/ai_society/user_roles.txt",
+        assistant_prompt_path: str = "prompts/ai_society/assistant_prompt.txt",
+        user_prompt_path: str = "prompts/ai_society/user_prompt.txt",
         assistant_prompt_with_task_path:
-        str = "prompts/assistant_prompt_with_task.txt",
+        str = "prompts/ai_society/assistant_prompt_with_task.txt",
         user_task_prompt_with_task_path:
-        str = "prompts/user_prompt_with_task.txt",
+        str = "prompts/ai_society/user_prompt_with_task.txt",
     ) -> None:
         self.with_task = with_task
 
@@ -144,9 +149,11 @@ class SystemMessageGenerator:
 
 class RoleNameGenerator:
 
-    def __init__(self,
-                 assistant_role_names_path: str = "data/assistant_roles.txt",
-                 user_role_names_path: str = "data/user_roles.txt") -> None:
+    def __init__(
+        self,
+        assistant_role_names_path: str = "data/ai_society/assistant_roles.txt",
+        user_role_names_path: str = "data/ai_society/user_roles.txt",
+    ) -> None:
 
         with open(assistant_role_names_path, "r") as f:
             assistant_role_names: List[str] = f.read().splitlines()
@@ -166,11 +173,12 @@ class RoleNameGenerator:
                 yield (assistant_role_name, user_role_name)
 
 
-class TaskPromptGenerator:
+class AISocietyTaskPromptGenerator:
 
     def __init__(
         self,
-        generate_tasks_prompt_path: str = "prompts/generate_tasks.txt",
+        generate_tasks_prompt_path:
+        str = "prompts/ai_society/generate_tasks.txt",
         num_tasks: int = 10,
     ) -> None:
 
@@ -180,8 +188,9 @@ class TaskPromptGenerator:
         self.num_tasks = num_tasks
 
     def from_role_files(
-        self, assistant_role_names_path: str = "data/assistant_roles.txt",
-        user_role_names_path: str = "data/user_roles.txt"
+        self,
+        assistant_role_names_path: str = "data/ai_society/assistant_roles.txt",
+        user_role_names_path: str = "data/ai_society/user_roles.txt"
     ) -> Generator[str, None, None]:
         roles_generator = RoleNameGenerator(
             assistant_role_names_path, user_role_names_path).from_role_files()
@@ -199,3 +208,55 @@ class TaskPromptGenerator:
             yield (self.generate_tasks_prompt.replace("<ROLE_1>",
                                                       role_1).replace(
                                                           "<ROLE_2>", role_2))
+
+
+class SingleTxtGenerator:
+
+    def __init__(
+        self,
+        text_file_path: str,
+    ) -> None:
+
+        with open(text_file_path, "r") as f:
+            data_list: List[str] = f.read().splitlines()
+            self.data_list = [
+                " ".join(name.split(" ")[1:]) for name in data_list
+            ]
+
+    def from_role_files(self) -> Generator[Tuple, None, None]:
+        for data in self.data_list:
+            yield data
+
+
+class CodeTaskPromptGenerator:
+
+    def __init__(
+        self,
+        generate_tasks_prompt_path: str = "prompts/code/generate_tasks.txt",
+        num_tasks: int = 50,
+    ) -> None:
+
+        with open(generate_tasks_prompt_path, "r") as f:
+            self.generate_tasks_prompt: str = f.read()
+
+        self.num_tasks = num_tasks
+
+    def from_role_files(
+        self, languages_path: str = "data/code/languages.txt",
+        domains_path: str = "data/code/domains.txt"
+    ) -> Generator[str, None, None]:
+        language_generator = SingleTxtGenerator(
+            languages_path).from_role_files()
+        domains_generator = SingleTxtGenerator(domains_path).from_role_files()
+        for language in language_generator:
+            for domain in domains_generator:
+                yield (self.generate_tasks_prompt.replace(
+                    "<LANGUAGE>",
+                    language).replace("<DOMAIN>",
+                                      domain).replace("<NUM_TASKS>",
+                                                      str(self.num_tasks)))
+
+    def from_role_generator(
+        self, role_generator: Generator[Tuple, None, None]
+    ) -> Generator[str, None, None]:
+        raise NotImplementedError

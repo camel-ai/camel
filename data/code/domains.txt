@@ -1,0 +1,50 @@
+1. Accounting
+2. Agriculture
+3. Anthropology
+4. Architecture
+5. Art
+6. Biology
+7. Business
+8. Chemistry
+9. Communications
+10. Computer Science
+11. Criminal Justice
+12. Culinary Arts
+13. Dentistry
+14. Economics
+15. Education
+16. Engineering
+17. Environmental Science
+18. Fashion
+19. Film
+20. Finance
+21. Geography
+22. Geology
+23. Graphic Design
+24. Health Sciences
+25. History
+26. Hospitality
+27. Human Resources
+28. Information Technology
+29. Journalism
+30. Law
+31. Linguistics
+32. Marketing
+33. Mathematics
+34. Mechanical Engineering
+35. Medicine
+36. Music
+37. Nursing
+38. Nutrition
+39. Philosophy
+40. Physics
+41. Political Science
+42. Psychology
+43. Public Administration
+44. Public Health
+45. Real Estate
+46. Sociology
+47. Sports Science
+48. Statistics
+49. Theater
+50. Urban Planning

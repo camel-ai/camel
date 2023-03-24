@@ -1,7 +1,12 @@
 from .agent import ChatAgent, TaskSpecifyAgent
 from .configs import ChatGPTConfig
-from .generator import (RoleNameGenerator, SystemMessageGenerator,
-                        TaskPromptGenerator)
+from .generator import (
+    AISocietyTaskPromptGenerator,
+    CodeTaskPromptGenerator,
+    RoleNameGenerator,
+    SingleTxtGenerator,
+    SystemMessageGenerator,
+)
 from .typing import ModeType, RoleType
 from .utils import get_model_token_limit, num_tokens_from_messages
 
@@ -18,5 +23,7 @@ __all__ = [
     'TaskSpecifyAgent',
     'SystemMessageGenerator',
     'RoleNameGenerator',
-    'TaskPromptGenerator',
+    'AISocietyTaskPromptGenerator',
+    'SingleTxtGenerator',
+    'CodeTaskPromptGenerator',
 ]
