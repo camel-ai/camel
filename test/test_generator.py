@@ -1,5 +1,8 @@
-from camel.generator import (RoleNameGenerator, SystemMessageGenerator,
-                             TaskPromptGenerator)
+from camel.generator import (
+    AISocietyTaskPromptGenerator,
+    RoleNameGenerator,
+    SystemMessageGenerator,
+)
 from camel.typing import RoleType
 
 
@@ -31,9 +34,9 @@ def test_role_name_generator():
 
 def test_task_prompt_generator():
     role_name_generator = RoleNameGenerator().from_role_files()
-    task_tuple = next(
-        TaskPromptGenerator().from_role_generator(role_name_generator))
+    task_tuple = next(AISocietyTaskPromptGenerator().from_role_generator(
+        role_name_generator))
     assert isinstance(task_tuple, str)
 
-    task_tuple = next(TaskPromptGenerator().from_role_files())
+    task_tuple = next(AISocietyTaskPromptGenerator().from_role_files())
     assert isinstance(task_tuple, str)

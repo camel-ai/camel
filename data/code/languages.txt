@@ -1,0 +1,20 @@
+1. Java
+2. Python
+3. JavaScript
+4. C#
+5. PHP
+6. C++
+7. Ruby
+8. Swift
+9. Objective-C
+10. SQL
+11. Go
+12. Kotlin
+13. TypeScript
+14. R
+15. MATLAB
+16. Perl
+17. Shell
+18. Visual Basic
+19. Assembly
+20. Dart

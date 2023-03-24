@@ -11,4 +11,9 @@ class ModeType(Enum):
     GPT_3_5_TURBO = "gpt-3.5-turbo"
 
 
-__all__ = ['RoleType', 'ModeType']
+class TaskType(Enum):
+    AI_SOCIETY = "ai_society"
+    CODE = "code"
+
+
+__all__ = ['RoleType', 'ModeType', 'TaskType']
