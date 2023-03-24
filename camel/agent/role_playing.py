@@ -1,10 +1,12 @@
 from typing import Dict, List, Optional, Tuple
 
-from camel.agent import ChatAgent, TaskSpecifyAgent
 from camel.configs import ChatGPTConfig
 from camel.generator import SystemMessageGenerator
 from camel.message import AssistantChatMessage, ChatMessage, UserChatMessage
 from camel.typing import ModeType, RoleType
+
+from .chat_agent import ChatAgent
+from .task_agent import TaskSpecifyAgent
 
 
 class RolePlaying:
