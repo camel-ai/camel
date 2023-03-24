@@ -5,12 +5,8 @@ import os
 from camel.agent import ChatAgent, TaskSpecifyAgent
 from camel.configs import ChatGPTConfig
 from camel.generator import SystemMessageGenerator
-from camel.message import (
-    AssistantChatMessage,
-    AssistantSystemMessage,
-    UserChatMessage,
-    UserSystemMessage,
-)
+from camel.message import (AssistantChatMessage, AssistantSystemMessage,
+                           UserChatMessage, UserSystemMessage)
 from camel.typing import ModeType, RoleType
 
 
@@ -42,9 +38,11 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
                   user_role_name: str, task_idx: int,
                   task_prompt: str) -> None:
 
-    max_num_messages = 30
+    max_num_messages = 40
 
-    original_task_prompt = task_prompt
+    # Remove number from task prompt
+    original_task_prompt = task_prompt.replace(f"{task_idx+1}. ", "")
+
     task_specify_agent = TaskSpecifyAgent(ModeType.GPT_3_5_TURBO,
                                           ChatGPTConfig(temperature=1.4))
     specified_task_prompt = task_specify_agent.specify_task(
@@ -77,16 +75,14 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
     message_dict["role_2"] = f"{user_role_name}_{str(user_agent.role_type)}"
     message_dict[
         "id"] = f"{(assistant_idx+1):03}_{(user_idx+1):03}_{(task_idx+1):03}"
-    message_dict["original_task"] = task_prompt.replace(f"{task_idx+1}. ", "")
-    message_dict["specified_task"] = specified_task_prompt.replace(
-        f"{task_idx+1}. ", "")
+    message_dict["original_task"] = original_task_prompt
+    message_dict["specified_task"] = specified_task_prompt
 
     # Threshold to terminate the conversation if no end token appears
     repeat_word_counter = 0
     repeat_word_threshold = 4
     repeat_word_list = [
-        "goodbye", "good bye", "thank", "bye", "welcome",
-        "As an AI language model,"
+        "goodbye", "good bye", "thank", "bye", "welcome", "language model"
     ]
 
     assistant_instruct_counter = 0
@@ -129,12 +125,14 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
         assistant_msg.role = "user"
 
         # Condition 3: Break if user does not give instruction
-        if user_no_instruct_word in user_msg.content:
+        if user_no_instruct_word not in user_msg.content:
             user_no_instruct_counter += 1
             if user_no_instruct_counter == user_no_instruct_threshold:
                 message_dict[
                     'termination_reason'] = "user_no_instruct_threshold"
                 break
+        else:
+            user_no_instruct_counter = 0
 
         # Condition 4: Break if assistant gives instruction (flipped role)
         if assistant_instruct_word in assistant_msg.content:
@@ -143,6 +141,8 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
                 message_dict[
                     'termination_reason'] = "assistant_instruct_threshold"
                 break
+        else:
+            assistant_instruct_counter = 0
 
         # Condition 5: Repeat word observed
         for repeat_word in repeat_word_list:
