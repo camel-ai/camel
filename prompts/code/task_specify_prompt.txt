@@ -1,0 +1,3 @@
+Here is a task that a programmer will help a person working in <DOMAIN> to complete using <LANGUAGE>: <TASK>.
+Please make it more specific. Be creative and imaginative.
+Please reply with the specified task in <WORD_LIMIT> words or less. Do not add anything else.

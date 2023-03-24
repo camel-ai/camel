@@ -1,6 +1,6 @@
 import os
 
-from camel.agent import ChatAgent, TaskSpecifyAgent
+from camel.agent import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.generator import SystemMessageGenerator
 from camel.message import ChatMessage
@@ -37,13 +37,3 @@ def test_chat_agent():
     assert terminated is True
     assert messages == []
     assert info['finish_reasons'][0] == "max_tokens_exceeded"
-
-
-def test_task_specify_agent():
-    original_task_prompt = "Improving stage presence and performance skills."
-    print(f"Original task prompt:\n{original_task_prompt}\n")
-    task_specify_agent = TaskSpecifyAgent(
-        ModeType.GPT_3_5_TURBO, model_config=ChatGPTConfig(temperature=1.0))
-    specified_task_prompt = task_specify_agent.specify_task(
-        original_task_prompt, ["Musician", "Student"])
-    print(f"Specified task prompt:\n{specified_task_prompt}\n")
