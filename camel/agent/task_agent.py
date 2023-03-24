@@ -2,7 +2,7 @@ from typing import Any, List, Optional, Tuple
 
 from camel.agent import ChatAgent
 from camel.message import SystemMessage, UserChatMessage
-from camel.typing import ModeType, RoleType
+from camel.typing import ModeType, RoleType, TaskType
 
 
 class TaskSpecifyAgent(ChatAgent):
@@ -10,13 +10,20 @@ class TaskSpecifyAgent(ChatAgent):
     def __init__(
         self,
         model: ModeType,
+        task_type: TaskType = TaskType.AI_SOCIETY,
         model_config: Any = None,
         task_specify_prompt: Optional[str] = None,
-        task_specify_prompt_path:
-        str = "prompts/ai_society/task_specify_prompt.txt",
         word_limit: int = 50,
     ) -> None:
         if task_specify_prompt is None:
+            if task_type == TaskType.AI_SOCIETY:
+                task_specify_prompt_path = (
+                    "prompts/ai_society/task_specify_prompt.txt")
+
+            if task_type == TaskType.CODE:
+                task_specify_prompt_path = (
+                    "prompts/code/task_specify_prompt.txt")
+
             with open(task_specify_prompt_path, "r") as f:
                 self.task_specify_prompt = f.read().replace(
                     "<WORD_LIMIT>", str(word_limit))
@@ -44,6 +51,8 @@ class TaskSpecifyAgent(ChatAgent):
             for replace_tuple in replace_tuples:
                 self.task_specify_prompt = self.task_specify_prompt.replace(
                     replace_tuple[0], replace_tuple[1])
+        print(self.task_specify_prompt)
+        assert "<" and ">" not in self.task_specify_prompt
         task_msg = UserChatMessage(role_name="task_specifier",
                                    content=self.task_specify_prompt)
         specified_task_msgs, terminated, _ = self.step(task_msg)
