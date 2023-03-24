@@ -12,13 +12,14 @@ def print_text_animated(text):
 
 
 def main() -> None:
-    task_prompt = "Design a custom game using PyGame"
+    task_prompt = "Coding with Python Programming Language."
     print(Fore.YELLOW + f"Original task prompt:\n{task_prompt}\n")
-    role_play_session = RolePlaying("Computer Programer", "Gamer", task_prompt)
+    role_play_session = RolePlaying("Python coder", "Student", task_prompt,
+                                    with_task_specify=False)
     print(Fore.CYAN +
           f"Specified task prompt:\n{role_play_session.task_prompt}\n")
 
-    chat_turn_limit, n = 10, 0
+    chat_turn_limit, n = 50, 0
     assistant_msg, _ = role_play_session.init_chat()
     while n < chat_turn_limit:
         n += 1

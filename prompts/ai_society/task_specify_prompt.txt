@@ -1,0 +1,2 @@
+Here is a task that <ASSISTANT_ROLE> will help <USER_ROLE> to complete: <TASK>. Please make it more specific. Be creative and imaginative.
+Please reply with the specified task in <WORD_LIMIT> words or less. Do not add anything else.
