@@ -48,7 +48,10 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
     task_specify_agent = TaskSpecifyAgent(ModeType.GPT_3_5_TURBO,
                                           ChatGPTConfig(temperature=1.4))
     specified_task_prompt = task_specify_agent.specify_task(
-        original_task_prompt, [assistant_role_name, user_role_name])
+        original_task_prompt, [
+            ("<ASSISTANT_ROLE>", assistant_role_name),
+            ("<USER_ROLE>", user_role_name),
+        ])
     print(f"Original Task: {original_task_prompt}")
     print(f"Specified Task: {specified_task_prompt}")
     sys_msg_generator = SystemMessageGenerator(with_task=True)
