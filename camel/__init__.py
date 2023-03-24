@@ -1,4 +1,4 @@
-from .agent import ChatAgent, TaskSpecifyAgent
+from .agent import ChatAgent, RolePlaying, TaskPlannerAgent, TaskSpecifyAgent
 from .configs import ChatGPTConfig
 from .generator import (
     AISocietyTaskPromptGenerator,
@@ -21,6 +21,8 @@ __all__ = [
     'ChatGPTConfig',
     'ChatAgent',
     'TaskSpecifyAgent',
+    'TaskPlannerAgent',
+    'RolePlaying',
     'SystemMessageGenerator',
     'RoleNameGenerator',
     'AISocietyTaskPromptGenerator',
