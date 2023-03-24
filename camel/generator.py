@@ -1,12 +1,7 @@
 from typing import Generator, List, Optional, Tuple
 
-from camel.message import (
-    AssistantSystemMessage,
-    RoleType,
-    SystemMessage,
-    SystemMessageType,
-    UserSystemMessage,
-)
+from camel.message import (AssistantSystemMessage, RoleType, SystemMessage,
+                           SystemMessageType, UserSystemMessage)
 
 
 class SystemMessageGenerator:
@@ -187,6 +182,7 @@ class AISocietyTaskPromptGenerator:
 
         self.num_tasks = num_tasks
 
+    # TODO: Return role names for user and assistant with the generator.
     def from_role_files(
         self,
         assistant_role_names_path: str = "data/ai_society/assistant_roles.txt",
@@ -244,17 +240,20 @@ class CodeTaskPromptGenerator:
     def from_role_files(
         self, languages_path: str = "data/code/languages.txt",
         domains_path: str = "data/code/domains.txt"
-    ) -> Generator[str, None, None]:
+    ) -> Generator[Tuple[str, str, str], None, None]:
         language_generator = SingleTxtGenerator(
             languages_path).from_role_files()
-        domains_generator = SingleTxtGenerator(domains_path).from_role_files()
+
         for language in language_generator:
+            domains_generator = SingleTxtGenerator(
+                domains_path).from_role_files()
             for domain in domains_generator:
-                yield (self.generate_tasks_prompt.replace(
+                generated_tasks_prompt = self.generate_tasks_prompt.replace(
                     "<LANGUAGE>",
                     language).replace("<DOMAIN>",
                                       domain).replace("<NUM_TASKS>",
-                                                      str(self.num_tasks)))
+                                                      str(self.num_tasks))
+                yield (generated_tasks_prompt, language, domain)
 
     def from_role_generator(
         self, role_generator: Generator[Tuple, None, None]
