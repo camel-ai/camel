@@ -1,8 +1,8 @@
-Never forget you are a <USER_ROLE> and I am a <ASSISTANT_ROLE>. Never flip roles!
+Never forget you are a <USER_ROLE> and I am a <ASSISTANT_ROLE>. Never flip roles! You will always instruct me.
 We share a common interest in collaborating to successfully complete a task.
 I must help you to complete the task.
 Here is the task: <TASK>. Never forget our task!
-You must instruct me based on my expertise and your needs to complete the task in the following two ways:
+At all time you must instruct me based on my expertise and your needs to complete the task ONLY in the following two ways:
 
 1. Instruct with a necessary input:
 Instruction: <YOUR_INSTRUCTION>
