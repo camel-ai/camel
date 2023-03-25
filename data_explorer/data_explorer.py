@@ -4,46 +4,53 @@ Gradio-based web UI to explore the Camel dataset.
 
 import argparse
 import gradio as gr
+from typing import Any
 
 from loader import load_data
 
-parser = argparse.ArgumentParser("Camel data explorer")
-parser.add_argument('--data-path', type=str, default="camel_data/",
-                    help='Path to the folder with chat JSONs')
-parser.add_argument('--share', type=bool, default=False,
-                    help='Expose the web UI to Gradio')
-parser.add_argument('--server-port', type=int, default=8080,
-                    help='Port ot run the web page on')
-parser.add_argument('--inbrowser', type=bool, default=False,
-                    help='Open the web UI in the default browser on lunch')
-parser.add_argument(
-    '--concurrency-count', type=int, default=10,
-    help='Number if concurrent threads at Gradio websocket queue. ' +
-    'Increase to serve more requests but keep an eye on RAM usage.')
-args, unknown = parser.parse_known_args()
-if len(unknown) > 0:
-    print("Unknown args: ", unknown)
 
-data = load_data(args.data_path)
+def parse_arguments():
+    """ Get command line arguments. """
 
-with gr.Blocks() as demo:
+    parser = argparse.ArgumentParser("Camel data explorer")
+    parser.add_argument('--data-path', type=str, default="camel_data/",
+                        help='Path to the folder with chat JSONs')
+    parser.add_argument('--share', type=bool, default=False,
+                        help='Expose the web UI to Gradio')
+    parser.add_argument('--server-port', type=int, default=8080,
+                        help='Port ot run the web page on')
+    parser.add_argument('--inbrowser', type=bool, default=False,
+                        help='Open the web UI in the default browser on lunch')
+    parser.add_argument(
+        '--concurrency-count', type=int, default=10,
+        help='Number if concurrent threads at Gradio websocket queue. ' +
+        'Increase to serve more requests but keep an eye on RAM usage.')
+    args, unknown = parser.parse_known_args()
+    if len(unknown) > 0:
+        print("Unknown args: ", unknown)
+    return args
+
+
+def construct_demo(data: dict[str, Any]):
+    """ Build Gradio UI and populate with chat data from JSONs.
+
+    Args:
+        data (dict[str, Any]): Parsed multi-JSON dataset with chats.
+
+    Returns:
+        None
+    """
     assistant_roles = data['assistant_roles']
     user_roles = data['user_roles']
     assistant_role = assistant_roles[0] if len(assistant_roles) > 0 else ""
     user_role = user_roles[0] if len(user_roles) > 0 else ""
-    with gr.Row().style():  # equal_height=True
+    with gr.Row().style():
         with gr.Column(scale=2.5):
             assistant_dd = gr.Dropdown(assistant_roles, label="ASSISTANT",
                                        value=assistant_role, interactive=True)
         with gr.Column(scale=2.5):
             user_dd = gr.Dropdown(user_roles, label="USER", value=user_role,
                                   interactive=True)
-        # with gr.Column(scale=1):
-        #     gr.Image("misc/logo.png", show_label=False,
-        #              interactive=False)  #.style(height=95, width=190)
-        #     # gr.Markdown(
-        #     #     '<img src="https://github.com/lightaime/camel/raw/master/misc/logo.png" width="180">'
-        #     # )  #  height="90"
         with gr.Column(scale=3):
             gr.Markdown(
                 "## CAMEL: Communicative Agents for Mind Extraction from Large Scale Language Model Society\n"
@@ -53,18 +60,17 @@ with gr.Blocks() as demo:
                           interactive=True)
     specified_task_ta = gr.TextArea(label="Specified task", lines=2,
                                     interactive=True)
-    chatbot = gr.Chatbot()  #.style(height=400)
+    chatbot = gr.Chatbot()
 
-    def roles_dd_change(assistant_role: str,
-                        user_role: str) -> tuple[str, str, list[tuple]]:
+    def roles_dd_change(assistant_role: str, user_role: str) -> dict:
         """ Update the displayed chat upon inputs change.
 
         Args:
-            assistant_role (str): assistant dropdown value
-            user_role (str): user dropdown value
+            assistant_role (str): Assistant dropdown value.
+            user_role (str): User dropdown value.
 
         Returns:
-            tuple[str, str, list[tuple]]: TBD
+            dict: New original roles state dict.
         """
         matrix = data['matrix']
         if (assistant_role, user_role) in matrix:
@@ -80,6 +86,14 @@ with gr.Blocks() as demo:
         return choices
 
     def build_chat_history(messages: dict[int, dict]) -> list[tuple]:
+        """ Structures chatbot contents from the loaded data. 
+
+        Args:
+            messages (dict[int, dict]): Messages loaded from JSON.
+
+        Returns:
+            list[tuple]: Chat history in chatbot UI element format.
+        """
         history = []
         curr_qa = (None, None)
         for k in sorted(messages.keys()):
@@ -99,7 +113,20 @@ with gr.Blocks() as demo:
                 pass
         return history
 
-    def task_dd_change(assistant_role, user_role, original_task):
+    def task_dd_change(assistant_role: str, user_role: str,
+                       original_task: str) -> tuple[str, list]:
+        """ Load task details and chatbot history into UI elements.
+
+        Args:
+            assistant_role (str): An assistan role.
+            user_role (str): An user role.
+            original_task (str): The original task.
+
+        Returns:
+            tuple[str, list]: New contents of the specified task
+            and chatbot history UI elements.
+        """
+
         matrix = data['matrix']
         if (assistant_role, user_role) in matrix:
             task_dict: dict[str, dict] = matrix[(assistant_role, user_role)]
@@ -132,7 +159,19 @@ with gr.Blocks() as demo:
     specified_task_ta.value = specified_task
     chatbot.value = chatbot_history
 
+
 if __name__ == "__main__":
+    """ Entry point. """
+
+    args = parse_arguments()
+
+    data = load_data(args.data_path)
+
+    with gr.Blocks() as demo:
+        construct_demo(data)
+
     demo.queue(args.concurrency_count)
     demo.launch(share=args.share, inbrowser=args.inbrowser,
                 server_name="0.0.0.0", server_port=args.server_port)
+
+    print("Data Explorer web server is online")

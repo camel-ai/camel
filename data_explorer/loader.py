@@ -19,7 +19,7 @@ def parse(raw_chat: ChatHistory) -> Union[ParsedChatHistory, None]:
         into an easy to work with form.
 
     Args:
-        raw_chat (ChatHistory): In-memory loaded JSON data file
+        raw_chat (ChatHistory): In-memory loaded JSON data file.
 
     Returns:
         Union[ParsedChatHistory, None]: Parsed chat data or None
@@ -80,7 +80,7 @@ def load_data(path: str) -> AllChats:
         path (str): path to the folder with JSONs.
 
     Returns:
-        AllChats: a dictionary with all possible assistant and
+        AllChats: A dictionary with all possible assistant and
         user roles and the matrix of chats.
     """
 
