@@ -4,6 +4,7 @@ Gradio-based web UI to explore the Camel dataset.
 
 import argparse
 import gradio as gr
+import random
 from typing import Any
 
 from loader import load_data
@@ -42,8 +43,9 @@ def construct_demo(data: dict[str, Any]):
     """
     assistant_roles = data['assistant_roles']
     user_roles = data['user_roles']
-    assistant_role = assistant_roles[0] if len(assistant_roles) > 0 else ""
-    user_role = user_roles[0] if len(user_roles) > 0 else ""
+    assistant_role = random.choice(assistant_roles) \
+        if len(assistant_roles) > 0 else ""
+    user_role = random.choice(user_roles) if len(user_roles) > 0 else ""
     with gr.Row().style():
         with gr.Column(scale=2.5):
             assistant_dd = gr.Dropdown(assistant_roles, label="ASSISTANT",
@@ -52,14 +54,13 @@ def construct_demo(data: dict[str, Any]):
             user_dd = gr.Dropdown(user_roles, label="USER", value=user_role,
                                   interactive=True)
         with gr.Column(scale=3):
-            gr.Markdown(
-                "## CAMEL: Communicative Agents for Mind Extraction from Large Scale Language Model Society\n"
-                "Github repo: [https://github.com/lightaime/camel](https://github.com/lightaime/camel)"
-            )
-    task_dd = gr.Dropdown([], label="Original task", value="", lines=1,
+            gr.Markdown("## CAMEL: Communicative Agents for Mind Extraction"
+                        " from Large Scale Language Model Society\n"
+                        "Github repo: [https://github.com/lightaime/camel]"
+                        "(https://github.com/lightaime/camel)")
+    task_dd = gr.Dropdown([], label="Original task", value="",
                           interactive=True)
-    specified_task_ta = gr.TextArea(label="Specified task", lines=2,
-                                    interactive=True)
+    specified_task_ta = gr.TextArea(label="Specified task", interactive=True)
     chatbot = gr.Chatbot()
 
     def roles_dd_change(assistant_role: str, user_role: str) -> dict:
