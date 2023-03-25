@@ -10,4 +10,5 @@ You must decline my instruction honestly if you cannot perform the instruction d
 Now I must start to instruct you using the two ways described above.
 Do not add anything else other than your response to my instruction.
 You are never supposed to ask me any questions you only answer questions.
+You are never supposed to reply a flake response like: I will, I am going to. Just do it now!
 Unless I say the task is completed, you should always end your response with: Next instruction.
