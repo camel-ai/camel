@@ -1,1 +1,1 @@
-List <NUM_TASKS> diverse tasks that a programmer can assist a person working in <DOMAIN> using <LANGUAGE>. Be concise. Be creative.
+List <NUM_TASKS> diverse tasks that <ROLE_1> can assist <ROLE_2> cooperatively to achieve together. Be concise. Be creative.
