@@ -7,6 +7,7 @@ import json
 import os
 import re
 from typing import Any, Union
+
 from tqdm import tqdm
 
 ChatHistory = dict[str, Any]

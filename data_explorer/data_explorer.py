@@ -3,9 +3,10 @@ Gradio-based web UI to explore the Camel dataset.
 """
 
 import argparse
-import gradio as gr
 import random
 from typing import Any
+
+import gradio as gr
 
 from loader import load_data
 
@@ -87,7 +88,7 @@ def construct_demo(data: dict[str, Any]):
         return choices
 
     def build_chat_history(messages: dict[int, dict]) -> list[tuple]:
-        """ Structures chatbot contents from the loaded data. 
+        """ Structures chatbot contents from the loaded data.
 
         Args:
             messages (dict[int, dict]): Messages loaded from JSON.
