@@ -72,7 +72,8 @@ class TaskPlannerAgent(ChatAgent):
         model_config: Any = None,
     ) -> None:
 
-        self.task_planner_prompt = "Divide this task into subtasks: <TASK>"
+        self.task_planner_prompt = ("Divide this task into subtasks:"
+                                    "<TASK>. Be concise.")
 
         system_message = SystemMessage(
             role_name="task_planner",

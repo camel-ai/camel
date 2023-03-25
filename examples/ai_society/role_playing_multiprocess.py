@@ -7,7 +7,7 @@ from camel.configs import ChatGPTConfig
 from camel.generator import SystemMessageGenerator
 from camel.message import (AssistantChatMessage, AssistantSystemMessage,
                            UserChatMessage, UserSystemMessage)
-from camel.typing import ModeType, RoleType
+from camel.typing import ModeType, RoleType, TaskType
 
 
 def init_chat(
@@ -39,12 +39,18 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
                   task_prompt: str) -> None:
 
     max_num_messages = 40
-
     # Remove number from task prompt
     original_task_prompt = task_prompt.replace(f"{task_idx+1}. ", "")
 
-    task_specify_agent = TaskSpecifyAgent(ModeType.GPT_3_5_TURBO,
-                                          ChatGPTConfig(temperature=1.4))
+    # task_specify_agent = TaskSpecifyAgent(ModeType.GPT_3_5_TURBO,
+    #                                       ChatGPTConfig(temperature=1.4))
+
+    task_specify_agent = TaskSpecifyAgent(
+        ModeType.GPT_3_5_TURBO,
+        task_type=TaskType.AI_SOCIETY,
+        model_config=ChatGPTConfig(temperature=1.4),
+    )
+
     specified_task_prompt = task_specify_agent.specify_task(
         original_task_prompt, [
             ("<ASSISTANT_ROLE>", assistant_role_name),
@@ -188,10 +194,10 @@ def main() -> None:
     start_token = "1."
     num_tasks = 10
 
-    with open("./data/user_roles.txt", "r") as f:
+    with open("./data/ai_society/user_roles.txt", "r") as f:
         user_roles = f.read().splitlines()
 
-    with open("./data/assistant_roles.txt", "r") as f:
+    with open("./data/ai_society/assistant_roles.txt", "r") as f:
         assistant_roles = f.read().splitlines()
 
     assert (array_idx + 1) * roles_per_chunk <= len(assistant_roles)
@@ -207,7 +213,8 @@ def main() -> None:
         for user_idx, user_role_name in enumerate(user_roles):
             user_role_name = " ".join(user_role_name.split(" ")[1:])
             # Load the task list assigned for assistant and user roles
-            with open(f"./tasks/{assistant_role_name}_{user_role_name}.txt",
+            with open((f"./ai_society_results/tasks/"
+                       f"{assistant_role_name}_{user_role_name}.txt"),
                       "r") as f:
                 tasks = f.read().splitlines()
 
@@ -224,10 +231,13 @@ def main() -> None:
                 id = (f"{(assistant_idx+1):03}_"
                       f"{(user_idx+1):03}_{(task_idx+1):03}")
                 if not os.path.exists(f"./camel_data/{id}.json"):
-                    pool.apply_async(
-                        generate_data,
-                        (assistant_idx, assistant_role_name, user_idx,
-                         user_role_name, task_idx, task_prompt))
+                    # pool.apply_async(
+                    #     generate_data,
+                    #     (assistant_idx, assistant_role_name, user_idx,
+                    #      user_role_name, task_idx, task_prompt))
+
+                    generate_data(assistant_idx, assistant_role_name, user_idx,
+                                  user_role_name, task_idx, task_prompt)
 
     pool.close()
     pool.join()

@@ -2,19 +2,19 @@ import json
 import multiprocessing
 import os
 
-from camel.agent import ChatAgent, TaskPlannerAgent, TaskSpecifyAgent
+from camel.agent import CodeChatAgent, TaskPlannerAgent, TaskSpecifyAgent
 from camel.configs import ChatGPTConfig
-from camel.generator import SystemMessageGenerator
-from camel.message import (AssistantChatMessage, AssistantSystemMessage,
-                           UserChatMessage, UserSystemMessage)
+from camel.generator import CodeSystemMessageGenerator
+from camel.message import (AssistantChatMessage, CodeAssistantSystemMessage,
+                           CodeUserSystemMessage, UserChatMessage)
 from camel.typing import ModeType, RoleType, TaskType
 
 
 def init_chat(
-    assistant_agent: ChatAgent,
-    user_agent: ChatAgent,
-    user_sys_msg: UserSystemMessage,
-    assistant_sys_msg: AssistantSystemMessage,
+    assistant_agent: CodeChatAgent,
+    user_agent: CodeChatAgent,
+    user_sys_msg: CodeUserSystemMessage,
+    assistant_sys_msg: CodeAssistantSystemMessage,
 ):
     assistant_agent.reset()
     user_agent.reset()
@@ -23,12 +23,11 @@ def init_chat(
     assistant_msg = AssistantChatMessage(
         "Computer Programer",
         content=(f"{user_sys_msg.content}. "
-                 "Now start to give me introductions one by one. "
+                 "Now start to give me instructions one by one. "
                  "Only reply with Instruction and Input."))
     assistant_msg.role = "user"
 
-    user_msg = UserChatMessage(user_sys_msg.role_name,
-                               content=f"{assistant_sys_msg.content}")
+    user_msg = UserChatMessage("", content=f"{assistant_sys_msg.content}")
     msgs, _, _ = assistant_agent.step(user_msg)
 
     return assistant_msg, msgs
@@ -61,15 +60,16 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
     planned_task_prompt = task_planner_agent.plan_task(specified_task_prompt)
     print(f"Planned task prompt:\n{planned_task_prompt}\n")
 
-    sys_msg_generator = SystemMessageGenerator(with_task=True)
+    sys_msg_generator = CodeSystemMessageGenerator(with_task=True)
     assistant_sys_msg, user_sys_msg = sys_msg_generator.from_roles(
-        roles=[(language_name, RoleType.ASSISTANT),
-               (domain_name, RoleType.USER)],
-        task_prompt=specified_task_prompt)
-    assistant_agent = ChatAgent(assistant_sys_msg, ModeType.GPT_3_5_TURBO,
-                                message_window_size=max_num_messages)
-    user_agent = ChatAgent(user_sys_msg, ModeType.GPT_3_5_TURBO,
-                           message_window_size=max_num_messages)
+        roles=[(RoleType.ASSISTANT),
+               (RoleType.USER)], language_name=language_name,
+        domain_name=domain_name, task_prompt=specified_task_prompt)
+
+    assistant_agent = CodeChatAgent(assistant_sys_msg, ModeType.GPT_3_5_TURBO,
+                                    message_window_size=max_num_messages)
+    user_agent = CodeChatAgent(user_sys_msg, ModeType.GPT_3_5_TURBO,
+                               message_window_size=max_num_messages)
 
     assistant_msg, _ = init_chat(assistant_agent, user_agent, user_sys_msg,
                                  assistant_sys_msg)
@@ -215,7 +215,8 @@ def main() -> None:
         for domain_idx, domain_name in enumerate(domains):
             domain_name = " ".join(domain_name.split(" ")[1:])
             # Load the task list assigned for assistant and user roles
-            with open(f"./tasks/{language_name}_{domain_name}.txt", "r") as f:
+            with open(f"./code/tasks/{language_name}_{domain_name}.txt",
+                      "r") as f:
                 tasks = f.read().splitlines()
 
                 # Filter out the generated response to include the tasks only
