@@ -1,12 +1,11 @@
 from typing import Dict, List, Optional, Tuple
 
-from camel.configs import ChatGPTConfig
 from camel.generator import SystemMessageGenerator
 from camel.message import AssistantChatMessage, ChatMessage, UserChatMessage
 from camel.typing import ModeType, RoleType
 
 from .chat_agent import ChatAgent
-from .task_agent import TaskSpecifyAgent
+from .task_agent import TaskPlannerAgent, TaskSpecifyAgent
 
 
 class RolePlaying:
@@ -19,18 +18,34 @@ class RolePlaying:
         task_prompt: str = "",
         with_task: bool = True,
         with_task_specify: bool = True,
+        with_task_planner: bool = True,
         mode_type: ModeType = ModeType.GPT_3_5_TURBO,
         assistant_agent_kwargs: Optional[Dict] = None,
         user_agent_kwargs: Optional[Dict] = None,
+        task_specify_agent_kwargs: Optional[Dict] = None,
+        task_planner_agent_kwargs: Optional[Dict] = None,
     ) -> None:
         if with_task_specify:
             task_specify_agent = TaskSpecifyAgent(
-                ModeType.GPT_3_5_TURBO, ChatGPTConfig(temperature=1.0))
-            task_prompt = task_specify_agent.specify_task(
+                ModeType.GPT_3_5_TURBO,
+                **(task_specify_agent_kwargs or {}),
+            )
+            self.specified_task_prompt = task_specify_agent.specify_task(
                 task_prompt,
                 [("<ASSISTANT_ROLE>", assistant_role_name),
                  ("<USER_ROLE>", user_role_name)],
             )
+            task_prompt = self.specified_task_prompt
+
+        if with_task_planner:
+            task_planner_agent = TaskPlannerAgent(
+                ModeType.GPT_3_5_TURBO,
+                **(task_planner_agent_kwargs or {}),
+            )
+            self.planned_task_prompt = task_planner_agent.plan_task(
+                task_prompt)
+            task_prompt = f"{task_prompt}\n{self.planned_task_prompt}"
+
         self.task_prompt = task_prompt
 
         sys_msg_generator = SystemMessageGenerator(with_task=with_task)
