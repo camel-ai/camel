@@ -61,7 +61,7 @@ def construct_demo(data: dict[str, Any]):
                         "(https://github.com/lightaime/camel)")
     task_dd = gr.Dropdown([], label="Original task", value="",
                           interactive=True)
-    specified_task_ta = gr.TextArea(label="Specified task", interactive=True)
+    specified_task_ta = gr.TextArea(label="Specified task", lines=2)
     chatbot = gr.Chatbot()
 
     def roles_dd_change(assistant_role: str, user_role: str) -> dict:
