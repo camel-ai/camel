@@ -12,12 +12,24 @@ def print_text_animated(text):
 
 
 def main() -> None:
-    task_prompt = "Coding with Python Programming Language."
+    task_prompt = "Develop a trading bot for the stock market"
+    role_play_session = RolePlaying("Python Programmer", "Stock Trader",
+                                    task_prompt, with_task_specify=True,
+                                    with_task_planner=True)
+
+    print(
+        Fore.GREEN +
+        f"AI Assistant sys message:\n{role_play_session.assistant_sys_msg}\n")
+    print(Fore.BLUE +
+          f"AI User sys message:\n{role_play_session.user_sys_msg}\n")
+
     print(Fore.YELLOW + f"Original task prompt:\n{task_prompt}\n")
-    role_play_session = RolePlaying("Python coder", "Student", task_prompt,
-                                    with_task_specify=False)
-    print(Fore.CYAN +
-          f"Specified task prompt:\n{role_play_session.task_prompt}\n")
+    print(
+        Fore.CYAN +
+        f"Specified task prompt:\n{role_play_session.specified_task_prompt}\n")
+    print(Fore.MAGENTA +
+          f"Planned task prompt:\n{role_play_session.planned_task_prompt}\n")
+    print(Fore.RED + f"Final task prompt:\n{role_play_session.task_prompt}\n")
 
     chat_turn_limit, n = 50, 0
     assistant_msg, _ = role_play_session.init_chat()
@@ -29,7 +41,7 @@ def main() -> None:
         print_text_animated(Fore.GREEN +
                             f"AI Assistant:\n\n{assistant_msg.content}\n\n")
 
-        if "<CAMEL_TASK_DONE>" in assistant_msg.content:
+        if "<CAMEL_TASK_DONE>" in user_msg.content:
             break
 
 
