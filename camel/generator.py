@@ -1,12 +1,8 @@
 from typing import Generator, List, Optional, Tuple
 
-from camel.message import (
-    AssistantSystemMessage,
-    RoleType,
-    SystemMessage,
-    SystemMessageType,
-    UserSystemMessage,
-)
+from camel.message import (AssistantSystemMessage, CodeAssistantSystemMessage,
+                           CodeSystemMessage, CodeUserSystemMessage, RoleType,
+                           SystemMessage, SystemMessageType, UserSystemMessage)
 
 
 class SystemMessageGenerator:
@@ -93,7 +89,7 @@ class SystemMessageGenerator:
 
     def from_roles(
         self,
-        roles: List[Tuple[RoleType, str]],
+        roles: List[Tuple[str, RoleType]],
         assistant_prompt: Optional[str] = None,
         user_prompt: Optional[str] = None,
         task_prompt: Optional[str] = None,
@@ -187,6 +183,7 @@ class AISocietyTaskPromptGenerator:
 
         self.num_tasks = num_tasks
 
+    # TODO: Return role names for user and assistant with the generator.
     def from_role_files(
         self,
         assistant_role_names_path: str = "data/ai_society/assistant_roles.txt",
@@ -244,19 +241,160 @@ class CodeTaskPromptGenerator:
     def from_role_files(
         self, languages_path: str = "data/code/languages.txt",
         domains_path: str = "data/code/domains.txt"
-    ) -> Generator[str, None, None]:
+    ) -> Generator[Tuple[str, str, str], None, None]:
         language_generator = SingleTxtGenerator(
             languages_path).from_role_files()
-        domains_generator = SingleTxtGenerator(domains_path).from_role_files()
+
         for language in language_generator:
+            domains_generator = SingleTxtGenerator(
+                domains_path).from_role_files()
             for domain in domains_generator:
-                yield (self.generate_tasks_prompt.replace(
+                generated_tasks_prompt = self.generate_tasks_prompt.replace(
                     "<LANGUAGE>",
                     language).replace("<DOMAIN>",
                                       domain).replace("<NUM_TASKS>",
-                                                      str(self.num_tasks)))
+                                                      str(self.num_tasks))
+                yield (generated_tasks_prompt, language, domain)
 
     def from_role_generator(
         self, role_generator: Generator[Tuple, None, None]
     ) -> Generator[str, None, None]:
         raise NotImplementedError
+
+
+class CodeSystemMessageGenerator:
+
+    def __init__(
+        self,
+        with_task: bool = True,
+        language_names_path: str = "data/code/languages.txt",
+        domain_names_path: str = "data/code/domains.txt",
+        assistant_prompt_path: str = None,
+        user_prompt_path: str = None,
+        assistant_prompt_with_task_path:
+        str = "prompts/code/assistant_prompt_with_task.txt",
+        user_task_prompt_with_task_path:
+        str = "prompts/code/user_prompt_with_task.txt",
+    ) -> None:
+        self.with_task = with_task
+
+        with open(language_names_path, "r") as f:
+            self.language_names: List[str] = f.read().splitlines()
+
+        with open(domain_names_path, "r") as f:
+            self.domain_names: List[str] = f.read().splitlines()
+
+        if not self.with_task:
+            with open(assistant_prompt_path, "r") as f:
+                self.assistant_prompt: str = f.read()
+
+            with open(user_prompt_path, "r") as f:
+                self.user_prompt: str = f.read()
+        else:
+            with open(assistant_prompt_with_task_path, "r") as f:
+                self.assistant_prompt: str = f.read()
+
+            with open(user_task_prompt_with_task_path, "r") as f:
+                self.user_prompt: str = f.read()
+
+    def from_role(
+        self,
+        language_name: str = "",
+        domain_name: str = "",
+        role_type: RoleType = RoleType.DEFAULT,
+        role_prompt: Optional[str] = None,
+        task_prompt: Optional[str] = None,
+    ) -> SystemMessageType:
+        """Generate a system message from a role name and role type."""
+        if task_prompt is not None:
+            assert self.with_task, "Please set with `with_task=True`."
+
+        if role_type == RoleType.ASSISTANT:
+            role_prompt = role_prompt or self.assistant_prompt
+            new_role_prompt = role_prompt.replace("<LANGUAGE>",
+                                                  language_name).replace(
+                                                      "<DOMAIN>", domain_name)
+
+            assert new_role_prompt != self.assistant_prompt
+
+            if self.with_task:
+                new_role_prompt = new_role_prompt.replace(
+                    "<TASK>",
+                    task_prompt,
+                )
+
+            return CodeAssistantSystemMessage(language_name=language_name,
+                                              domain_name=domain_name,
+                                              content=new_role_prompt)
+
+        if role_type == RoleType.USER:
+            role_prompt = role_prompt or self.user_prompt
+            new_role_prompt = role_prompt.replace("<LANGUAGE>",
+                                                  language_name).replace(
+                                                      "<DOMAIN>", domain_name)
+
+            assert new_role_prompt != self.user_prompt
+
+            if self.with_task:
+                new_role_prompt = new_role_prompt.replace(
+                    "<TASK>",
+                    task_prompt,
+                )
+
+            return CodeUserSystemMessage(language_name=language_name,
+                                         domain_name=domain_name,
+                                         content=new_role_prompt)
+
+        if role_type == RoleType.DEFAULT:
+            new_role_prompt = "You are a helpful assistant."
+            if task_prompt is not None:
+                new_role_prompt = new_role_prompt.replace(
+                    "<TASK>", task_prompt)
+            return CodeSystemMessage(language_name=language_name,
+                                     domain_name=domain_name,
+                                     content=new_role_prompt)
+
+    def from_roles(
+        self,
+        roles: List[RoleType],
+        language_name: str = "",
+        domain_name: str = "",
+        assistant_prompt: Optional[str] = None,
+        user_prompt: Optional[str] = None,
+        task_prompt: Optional[str] = None,
+    ) -> List[SystemMessageType]:
+        if task_prompt is not None:
+            assert self.with_task, "Please set with `with_task=True`."
+        assistant_prompt = assistant_prompt or self.assistant_prompt
+        user_prompt = user_prompt or self.user_prompt
+        role_prompts = [assistant_prompt, user_prompt]
+        assert len(roles) == 2, "Only support 1 assistant and 1 user."
+        assert RoleType.ASSISTANT in [role_type for role_type in roles
+                                      ], "Must have 1 assistant."
+        assert RoleType.USER in [role_type
+                                 for role_type in roles], "Must have 1 user."
+
+        for i, role_prompt in enumerate(role_prompts):
+            for role_type in roles:
+                role_prompt = self.from_role(language_name, domain_name,
+                                             role_type, role_prompt,
+                                             task_prompt).content
+            role_prompts[i] = role_prompt
+
+        assistant_system_message = CodeAssistantSystemMessage(
+            language_name,
+            domain_name,
+            content=role_prompts[0],
+        )
+        user_system_message = CodeUserSystemMessage(
+            language_name,
+            domain_name,
+            content=role_prompts[1],
+        )
+
+        system_messages: List[SystemMessageType] = []
+        for role_type in roles:
+            system_messages.append(assistant_system_message if role_type ==
+                                   RoleType.ASSISTANT else user_system_message)
+
+        return system_messages
