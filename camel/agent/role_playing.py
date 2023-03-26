@@ -88,18 +88,22 @@ class RolePlaying:
     def step(
         self,
         assistant_msg: ChatMessage,
-    ) -> Tuple[ChatMessage, ChatMessage]:
-        user_msgs, user_terminated, _ = self.user_agent.step(assistant_msg)
+    ) -> Tuple[Tuple[ChatMessage, bool, Dict], Tuple[ChatMessage, bool, Dict]]:
+        user_msgs, user_terminated, user_info = self.user_agent.step(
+            assistant_msg)
         if user_terminated:
             raise RuntimeError("User agent is terminated.")
         user_msg = user_msgs[0]
         user_msg.role = "user"
 
-        assistant_msgs, assistant_terminated, _ = self.assistant_agent.step(
-            user_msg)
+        (assistant_msgs, assistant_terminated,
+         assistant_info) = self.assistant_agent.step(user_msg)
         if assistant_terminated:
             raise RuntimeError("Assistant agent is terminated.")
         assistant_msg = assistant_msgs[0]
         assistant_msg.role = "user"
 
-        return assistant_msg, user_msg
+        return (
+            (assistant_msg, assistant_terminated, assistant_info),
+            (user_msg, user_terminated, user_info),
+        )

@@ -74,6 +74,8 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
     assistant_msg, _ = init_chat(assistant_agent, user_agent, user_sys_msg,
                                  assistant_sys_msg)
 
+    print("Assistant System Message: ", assistant_sys_msg.content)
+    print("User System Message: ", user_sys_msg.content)
     message_counter = 0
     message_dict = {}
 
@@ -183,7 +185,8 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
     if message_dict["num_messages"] == max_num_messages:
         message_dict["termination_reason"] = "max_num_messages"
 
-    with open(f"./camel_data/{message_dict['id']}.json", "w") as json_file:
+    with open(f"./camel_data/code/{message_dict['id']}.json",
+              "w") as json_file:
         json.dump(message_dict, json_file)
 
 
@@ -191,7 +194,7 @@ def main() -> None:
 
     # Chunk for parallel jobs
     array_idx = int(os.environ.get('SLURM_ARRAY_TASK_ID'))
-    languages_per_chunk = 2
+    languages_per_chunk = 4
 
     # Parameters for filtering the generated task string
     start_token = "1."
@@ -215,8 +218,9 @@ def main() -> None:
         for domain_idx, domain_name in enumerate(domains):
             domain_name = " ".join(domain_name.split(" ")[1:])
             # Load the task list assigned for assistant and user roles
-            with open(f"./code/tasks/{language_name}_{domain_name}.txt",
-                      "r") as f:
+            with open(
+                    f"./code_results/tasks/{language_name}_{domain_name}.txt",
+                    "r") as f:
                 tasks = f.read().splitlines()
 
                 # Filter out the generated response to include the tasks only
@@ -231,7 +235,7 @@ def main() -> None:
             for task_idx, task_prompt in enumerate(tasks):
                 id = (f"{(language_idx+1):03}_"
                       f"{(domain_idx+1):03}_{(task_idx+1):03}")
-                if not os.path.exists(f"./camel_data/{id}.json"):
+                if not os.path.exists(f"./camel_data/code/{id}.json"):
                     pool.apply_async(generate_data,
                                      (language_idx, language_name, domain_idx,
                                       domain_name, task_idx, task_prompt))
