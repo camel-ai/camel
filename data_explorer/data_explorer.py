@@ -4,7 +4,7 @@ Gradio-based web UI to explore the Camel dataset.
 
 import argparse
 import random
-from typing import Any
+from typing import Any, Dict, List, Tuple
 
 import gradio as gr
 
@@ -33,11 +33,11 @@ def parse_arguments():
     return args
 
 
-def construct_demo(data: dict[str, Any]):
+def construct_demo(data: Dict[str, Any]):
     """ Build Gradio UI and populate with chat data from JSONs.
 
     Args:
-        data (dict[str, Any]): Parsed multi-JSON dataset with chats.
+        data (Dict[str, Any]): Parsed multi-JSON dataset with chats.
 
     Returns:
         None
@@ -64,7 +64,7 @@ def construct_demo(data: dict[str, Any]):
     specified_task_ta = gr.TextArea(label="Specified task", lines=2)
     chatbot = gr.Chatbot()
 
-    def roles_dd_change(assistant_role: str, user_role: str) -> dict:
+    def roles_dd_change(assistant_role: str, user_role: str) -> Dict:
         """ Update the displayed chat upon inputs change.
 
         Args:
@@ -72,11 +72,11 @@ def construct_demo(data: dict[str, Any]):
             user_role (str): User dropdown value.
 
         Returns:
-            dict: New original roles state dict.
+            Dict: New original roles state dictionary.
         """
         matrix = data['matrix']
         if (assistant_role, user_role) in matrix:
-            record: dict[str, dict] = matrix[(assistant_role, user_role)]
+            record: Dict[str, Dict] = matrix[(assistant_role, user_role)]
             original_task_options = list(record.keys())
             original_task = original_task_options[0]
         else:
@@ -87,14 +87,14 @@ def construct_demo(data: dict[str, Any]):
                                      value=original_task, interactive=True)
         return choices
 
-    def build_chat_history(messages: dict[int, dict]) -> list[tuple]:
+    def build_chat_history(messages: Dict[int, Dict]) -> List[Tuple]:
         """ Structures chatbot contents from the loaded data.
 
         Args:
-            messages (dict[int, dict]): Messages loaded from JSON.
+            messages (Dict[int, Dict]): Messages loaded from JSON.
 
         Returns:
-            list[tuple]: Chat history in chatbot UI element format.
+            List[Tuple]: Chat history in chatbot UI element format.
         """
         history = []
         curr_qa = (None, None)
@@ -116,7 +116,7 @@ def construct_demo(data: dict[str, Any]):
         return history
 
     def task_dd_change(assistant_role: str, user_role: str,
-                       original_task: str) -> tuple[str, list]:
+                       original_task: str) -> Tuple[str, List]:
         """ Load task details and chatbot history into UI elements.
 
         Args:
@@ -125,13 +125,13 @@ def construct_demo(data: dict[str, Any]):
             original_task (str): The original task.
 
         Returns:
-            tuple[str, list]: New contents of the specified task
+            Tuple[str, List]: New contents of the specified task
             and chatbot history UI elements.
         """
 
         matrix = data['matrix']
         if (assistant_role, user_role) in matrix:
-            task_dict: dict[str, dict] = matrix[(assistant_role, user_role)]
+            task_dict: Dict[str, Dict] = matrix[(assistant_role, user_role)]
             if original_task in task_dict:
                 chat = task_dict[original_task]
                 specified_task = chat['specified_task']

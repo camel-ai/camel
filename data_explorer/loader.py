@@ -6,13 +6,13 @@ import glob
 import json
 import os
 import re
-from typing import Any, Union
+from typing import Any, Union, Dict, List, Tuple
 
 from tqdm import tqdm
 
-ChatHistory = dict[str, Any]
-ParsedChatHistory = dict[str, Any]
-AllChats = dict[str, Any]
+ChatHistory = Dict[str, Any]
+ParsedChatHistory = Dict[str, Any]
+AllChats = Dict[str, Any]
 
 
 def parse(raw_chat: ChatHistory) -> Union[ParsedChatHistory, None]:
@@ -107,7 +107,7 @@ def load_data(path: str) -> AllChats:
         user_roles.add(parsed['user_role'])
     assistant_roles = list(sorted(assistant_roles))
     user_roles = list(sorted(user_roles))
-    matrix: dict[tuple[str, str], list[dict]] = dict()
+    matrix: Dict[Tuple[str, str], List[Dict]] = dict()
     for parsed in parsed_list:
         key = (parsed['assistant_role'], parsed['user_role'])
         original_task = parsed['original_task']
