@@ -167,7 +167,11 @@ if __name__ == "__main__":
 
     args = parse_arguments()
 
+    print("Loading the dataset...")
     data = load_data(args.data_path)
+    print("Dataset is loaded")
+
+    print("Getting Data Explorer web server online...")
 
     with gr.Blocks() as demo:
         construct_demo(data)
@@ -176,4 +180,4 @@ if __name__ == "__main__":
     demo.launch(share=args.share, inbrowser=args.inbrowser,
                 server_name="0.0.0.0", server_port=args.server_port)
 
-    print("Data Explorer web server is online")
+    print("Exiting.")
