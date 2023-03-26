@@ -49,6 +49,45 @@ class BaseMessage:
 
 
 @dataclass
+class CodeBaseMessage:
+    language_name: str
+    domain_name: str
+    role_type: RoleType
+    role: str
+    content: str
+
+    def to_openai_message(self, role: Optional[str] = None) -> OpenAIMessage:
+        role = role or self.role
+        assert role in ["system", "user", "assistant"]
+        return {"role": role, "content": self.content}
+
+    def to_openai_chat_message(
+        self,
+        role: Optional[str] = None,
+    ) -> OpenAIChatMessage:
+        role = role or self.role
+        assert role in ["user", "assistant"]
+        return {"role": role, "content": self.content}
+
+    def to_openai_system_message(self) -> OpenAISystemMessage:
+        return {"role": "system", "content": self.content}
+
+    def to_openai_user_message(self) -> OpenAIUserMessage:
+        return {"role": "user", "content": self.content}
+
+    def to_openai_assistant_message(self) -> OpenAIAssistantMessage:
+        return {"role": "assistant", "content": self.content}
+
+    def to_dict(self) -> Dict:
+        return {
+            "language_name": self.language_name,
+            "domain_name": self.domain_name,
+            "role": self.role,
+            "content": self.content,
+        }
+
+
+@dataclass
 class SystemMessage(BaseMessage):
     role_name: str
     role_type: RoleType
@@ -96,9 +135,38 @@ class UserChatMessage(ChatMessage):
     content: str = ""
 
 
+@dataclass
+class CodeSystemMessage(CodeBaseMessage):
+    language_name: str
+    domain_name: str
+    role_type: RoleType
+    role: str = "system"
+    content: str = ""
+
+
+@dataclass
+class CodeAssistantSystemMessage(CodeSystemMessage):
+    language_name: str
+    domain_name: str
+    role_type: RoleType = RoleType.ASSISTANT
+    role: str = "system"
+    content: str = ""
+
+
+@dataclass
+class CodeUserSystemMessage(CodeSystemMessage):
+    language_name: str
+    domain_name: str
+    role_type: RoleType = RoleType.USER
+    role: str = "system"
+    content: str = ""
+
+
 MessageType = Union[BaseMessage, SystemMessage, AssistantSystemMessage,
                     UserSystemMessage, ChatMessage, AssistantChatMessage,
-                    UserChatMessage]
+                    UserChatMessage, CodeSystemMessage,
+                    CodeAssistantSystemMessage, CodeUserSystemMessage]
 SystemMessageType = Union[SystemMessage, AssistantSystemMessage,
-                          UserSystemMessage]
+                          UserSystemMessage, CodeSystemMessage,
+                          CodeAssistantSystemMessage, CodeUserSystemMessage]
 ChatMessageType = Union[ChatMessage, AssistantChatMessage, UserChatMessage]

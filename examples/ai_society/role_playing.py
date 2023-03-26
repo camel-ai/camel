@@ -35,7 +35,9 @@ def main() -> None:
     assistant_msg, _ = role_play_session.init_chat()
     while n < chat_turn_limit:
         n += 1
-        assistant_msg, user_msg = role_play_session.step(assistant_msg)
+        assistant_return, user_return = role_play_session.step(assistant_msg)
+        assistant_msg, _, _ = assistant_return
+        user_msg, _, _ = user_return
         print_text_animated(Fore.BLUE + f"AI User:\n\n{user_msg.content}\n\n")
         time.sleep(0.5)
         print_text_animated(Fore.GREEN +

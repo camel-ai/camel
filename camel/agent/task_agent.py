@@ -54,7 +54,6 @@ class TaskSpecifyAgent(ChatAgent):
             for replace_tuple in replace_tuples:
                 self.task_specify_prompt = self.task_specify_prompt.replace(
                     replace_tuple[0], replace_tuple[1])
-        print(self.task_specify_prompt)
         assert "<" and ">" not in self.task_specify_prompt
         task_msg = UserChatMessage(role_name="task_specifier",
                                    content=self.task_specify_prompt)
