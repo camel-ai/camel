@@ -11,6 +11,7 @@ import re
 from colorama import Fore
 from typing import List, Dict, Any, Tuple
 import openai
+import tenacity
 
 from camel.agent import RolePlaying
 
@@ -77,6 +78,52 @@ def construct_chatbot_history(
     return history
 
 
+def role_playing_mayexcept(assistant: str, user: str, original_task: str,
+                           num_messages: float):
+    num_messages = int(num_messages)
+
+    role_play_session = RolePlaying(assistant, user, original_task,
+                                    with_task_specify=True,
+                                    with_task_planner=True)
+    print(
+        Fore.GREEN +
+        f"AI Assistant sys message:\n{role_play_session.assistant_sys_msg}\n")
+    print(Fore.BLUE +
+          f"AI User sys message:\n{role_play_session.user_sys_msg}\n")
+
+    print(Fore.YELLOW + f"Original task prompt:\n{original_task}\n")
+    print(
+        Fore.CYAN +
+        f"Specified task prompt:\n{role_play_session.specified_task_prompt}\n")
+    print(Fore.MAGENTA +
+          f"Planned task prompt:\n{role_play_session.planned_task_prompt}\n")
+    print(Fore.RED + f"Final task prompt:\n{role_play_session.task_prompt}\n")
+
+    assistant_msg, _ = role_play_session.init_chat()
+    flat_history: List[Dict[str, str]] = []
+    for _ in range(num_messages):
+        assistant_msg, user_msg = role_play_session.step(assistant_msg)
+        print(Fore.BLUE + f"AI User:\n\n{user_msg.content}\n\n")
+        print(Fore.GREEN + f"AI Assistant:\n\n{assistant_msg.content}\n\n")
+        flat_history.append(dict(role='user', message=user_msg.content))
+        flat_history.append(
+            dict(role='assistant', message=assistant_msg.content))
+
+        if "<CAMEL_TASK_DONE>" in user_msg.content:
+            break
+    chatbot_history = construct_chatbot_history(flat_history)
+    return role_play_session.specified_task_prompt, \
+        role_play_session.planned_task_prompt, chatbot_history
+
+
+def role_playing(*args):
+    try:
+        result = role_playing_mayexcept(*args)
+    except (openai.error.RateLimitError, tenacity.RetryError) as ex:
+        result = str(ex), "", []
+    return result
+
+
 def construct_demo(api_key: str) -> None:
     """ Build Gradio UI and populate with topics.
 
@@ -97,31 +144,37 @@ def construct_demo(api_key: str) -> None:
     assistant_roles = load_roles(assistant_role_path)
     user_roles = load_roles(user_role_path)
 
-    assistant_role = random.choice(assistant_roles) \
-        if len(assistant_roles) > 0 else ""
-    user_role = random.choice(user_roles) \
-        if len(user_roles) > 0 else ""
+    assistant_role = "Python Programmer"
+    user_role = "Stock Trader"
+
+    default_task = "Develop a trading bot for the stock market"
 
     with gr.Row():
-        with gr.Column(scale=2.5):
+        with gr.Column(scale=1):
             assistant_dd = gr.Dropdown(assistant_roles,
                                        label="Example assistant roles",
                                        value=assistant_role, interactive=True)
             assistant_ta = gr.TextArea(label="Assistant role (EDIT ME)",
                                        lines=1, interactive=True)
-        with gr.Column(scale=2.5):
+        with gr.Column(scale=1):
             user_dd = gr.Dropdown(user_roles, label="Example user roles",
                                   value=user_role, interactive=True)
             user_ta = gr.TextArea(label="User role (EDIT ME)", lines=1,
                                   interactive=True)
-        with gr.Column(scale=2.5):
-            gr.Markdown("## CAMEL: Communicative Agents for Mind Extraction"
-                        " from Large Scale Language Model Society\n"
-                        "Github repo: [https://github.com/lightaime/camel]"
-                        "(https://github.com/lightaime/camel)")
-    original_task_ta = gr.TextArea(
-        label="Original task that the user gives to the assistant (EDIT ME)",
-        value="Help me to do my job", lines=1, interactive=True)
+        with gr.Column(scale=1):
+            gr.Markdown(
+                "## CAMEL: Communicative Agents for \"Mind\" Extraction"
+                " from Large Scale Language Model Society\n"
+                "Github repo: [https://github.com/lightaime/camel]"
+                "(https://github.com/lightaime/camel)")
+    with gr.Row():
+        with gr.Column(scale=9):
+            original_task_ta = gr.TextArea(
+                label=
+                "Original task that the user gives to the assistant (EDIT ME)",
+                value=default_task, lines=1, interactive=True)
+        with gr.Column(scale=1):
+            universal_task_bn = gr.Button("Insert universal task")
     with gr.Row():
         with gr.Column():
             num_messages_sl = gr.Slider(
@@ -133,53 +186,17 @@ def construct_demo(api_key: str) -> None:
             clear_bn = gr.Button("Clear chat")
     specified_task_ta = gr.TextArea(
         label="Elaborate task description given to the assistant"
-        " based on the original (simplistic) task", lines=2, interactive=False)
-
+        " based on the original (simplistic) task", lines=1, interactive=False)
+    task_prompt_ta = gr.TextArea(label="Planned task prompt", lines=1,
+                                 interactive=False)
     chatbot = gr.Chatbot()
 
-    def run_session(assistant: str, user: str, original_task: str,
-                    num_messages: float):
-        num_messages = int(num_messages)
+    universal_task_bn.click(lambda: "Help me to do my job", None,
+                            original_task_ta)
 
-        role_play_session = RolePlaying(assistant, user, original_task,
-                                        with_task_specify=True,
-                                        with_task_planner=True)
-        print(
-            Fore.GREEN +
-            f"AI Assistant sys message:\n{role_play_session.assistant_sys_msg}\n"
-        )
-        print(Fore.BLUE +
-              f"AI User sys message:\n{role_play_session.user_sys_msg}\n")
-
-        print(Fore.YELLOW + f"Original task prompt:\n{original_task}\n")
-        print(
-            Fore.CYAN +
-            f"Specified task prompt:\n{role_play_session.specified_task_prompt}\n"
-        )
-        print(
-            Fore.MAGENTA +
-            f"Planned task prompt:\n{role_play_session.planned_task_prompt}\n")
-        print(Fore.RED +
-              f"Final task prompt:\n{role_play_session.task_prompt}\n")
-
-        assistant_msg, _ = role_play_session.init_chat()
-        flat_history: List[Dict[str, str]] = []
-        for _ in range(num_messages):
-            assistant_msg, user_msg = role_play_session.step(assistant_msg)
-            print(Fore.BLUE + f"AI User:\n\n{user_msg.content}\n\n")
-            print(Fore.GREEN + f"AI Assistant:\n\n{assistant_msg.content}\n\n")
-            flat_history.append(dict(role='user', message=user_msg.content))
-            flat_history.append(
-                dict(role='assistant', message=assistant_msg.content))
-
-            if "<CAMEL_TASK_DONE>" in user_msg.content:
-                break
-        chatbot_history = construct_chatbot_history(flat_history)
-        return role_play_session.specified_task_prompt, chatbot_history
-
-    start_bn.click(run_session,
+    start_bn.click(role_playing,
                    [assistant_ta, user_ta, original_task_ta, num_messages_sl],
-                   [specified_task_ta, chatbot])
+                   [specified_task_ta, task_prompt_ta, chatbot])
 
     clear_bn.click(lambda: ("", []), None, [specified_task_ta, chatbot])
 

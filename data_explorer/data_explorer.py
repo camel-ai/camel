@@ -55,10 +55,11 @@ def construct_demo(data: Dict[str, Any]):
             user_dd = gr.Dropdown(user_roles, label="USER", value=user_role,
                                   interactive=True)
         with gr.Column(scale=3):
-            gr.Markdown("## CAMEL: Communicative Agents for Mind Extraction"
-                        " from Large Scale Language Model Society\n"
-                        "Github repo: [https://github.com/lightaime/camel]"
-                        "(https://github.com/lightaime/camel)")
+            gr.Markdown(
+                "## CAMEL: Communicative Agents for \"Mind\" Extraction"
+                " from Large Scale Language Model Society\n"
+                "Github repo: [https://github.com/lightaime/camel]"
+                "(https://github.com/lightaime/camel)")
     task_dd = gr.Dropdown([], label="Original task", value="",
                           interactive=True)
     specified_task_ta = gr.TextArea(label="Specified task", lines=2)
