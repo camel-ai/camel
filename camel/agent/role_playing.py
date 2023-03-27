@@ -18,7 +18,7 @@ class RolePlaying:
         task_prompt: str = "",
         with_task: bool = True,
         with_task_specify: bool = True,
-        with_task_planner: bool = True,
+        with_task_planner: bool = False,
         mode_type: ModeType = ModeType.GPT_3_5_TURBO,
         assistant_agent_kwargs: Optional[Dict] = None,
         user_agent_kwargs: Optional[Dict] = None,
