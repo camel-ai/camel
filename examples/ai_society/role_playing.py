@@ -41,7 +41,7 @@ def main() -> None:
         print_text_animated(Fore.GREEN +
                             f"AI Assistant:\n\n{assistant_msg.content}\n\n")
 
-        if "<CAMEL_TASK_DONE>" in user_msg.content:
+        if "CAMEL_TASK_DONE" in user_msg.content:
             break
 
 
