@@ -25,6 +25,10 @@ class RolePlaying:
         task_specify_agent_kwargs: Optional[Dict] = None,
         task_planner_agent_kwargs: Optional[Dict] = None,
     ) -> None:
+        self.with_task = with_task
+        self.with_task_specify = with_task_specify
+        self.with_task_planner = with_task_planner
+
         if with_task_specify:
             task_specify_agent = TaskSpecifyAgent(
                 ModeType.GPT_3_5_TURBO,
