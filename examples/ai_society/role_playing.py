@@ -15,7 +15,7 @@ def main() -> None:
     task_prompt = "Develop a trading bot for the stock market"
     role_play_session = RolePlaying("Python Programmer", "Stock Trader",
                                     task_prompt, with_task_specify=True,
-                                    with_task_planner=True)
+                                    with_task_planner=False)
 
     print(
         Fore.GREEN +
@@ -27,8 +27,6 @@ def main() -> None:
     print(
         Fore.CYAN +
         f"Specified task prompt:\n{role_play_session.specified_task_prompt}\n")
-    print(Fore.MAGENTA +
-          f"Planned task prompt:\n{role_play_session.planned_task_prompt}\n")
     print(Fore.RED + f"Final task prompt:\n{role_play_session.task_prompt}\n")
 
     chat_turn_limit, n = 50, 0
