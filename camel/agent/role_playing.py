@@ -40,6 +40,8 @@ class RolePlaying:
                  ("<USER_ROLE>", user_role_name)],
             )
             task_prompt = self.specified_task_prompt
+        else:
+            self.specified_task_prompt = None
 
         if with_task_planner:
             task_planner_agent = TaskPlannerAgent(
@@ -49,6 +51,8 @@ class RolePlaying:
             self.planned_task_prompt = task_planner_agent.plan_task(
                 task_prompt)
             task_prompt = f"{task_prompt}\n{self.planned_task_prompt}"
+        else:
+            self.planned_task_prompt = None
 
         self.task_prompt = task_prompt
 
