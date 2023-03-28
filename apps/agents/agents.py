@@ -69,8 +69,8 @@ def load_roles(path):
 
 
 def role_playing_start(
-        state, assistant: str, user: str, original_task: str
-) -> Union[Dict, Tuple[State, str, str, ChatBotHistory]]:
+    state, assistant: str, user: str, original_task: str
+) -> Union[Dict, Tuple[State, str, Union[str, Dict], ChatBotHistory]]:
 
     if state.session is not None:
         print("Double click")
@@ -78,7 +78,7 @@ def role_playing_start(
 
     try:
         session = RolePlaying(assistant, user, original_task,
-                              with_task_specify=True, with_task_planner=True)
+                              with_task_specify=True, with_task_planner=False)
     except (openai.error.RateLimitError, tenacity.RetryError) as ex:
         return (state, str(ex), "", [])
 
@@ -102,7 +102,11 @@ def role_playing_start(
     planned_task_prompt = session.planned_task_prompt \
         if session.planned_task_prompt is not None else ""
 
-    return (state, specified_task_prompt, planned_task_prompt, state.chat)
+    planned_task_upd = gr.update(
+        value=planned_task_prompt, visible=session.planned_task_prompt
+        is not None)
+
+    return (state, specified_task_prompt, planned_task_upd, state.chat)
 
 
 def role_playing_chat_init(state) -> \
@@ -206,15 +210,14 @@ def construct_demo(api_key: str) -> None:
                                   interactive=True)
         with gr.Column(scale=1):
             gr.Markdown(
-                "## CAMEL: Communicative Agents for \"Mind\" Extraction"
-                " from Large Scale Language Model Society\n"
+                "## CAMEL: Communicative Agents for \"Mind\" Exploration"
+                " of Large Scale Language Models\n"
                 "Github repo: [https://github.com/lightaime/camel]"
                 "(https://github.com/lightaime/camel)")
     with gr.Row():
         with gr.Column(scale=9):
             original_task_ta = gr.TextArea(
-                label=
-                "Original task that the user gives to the assistant (EDIT ME)",
+                label="Give me a preliminary idea (EDIT ME)",
                 value=default_task, lines=1, interactive=True)
         with gr.Column(scale=1):
             universal_task_bn = gr.Button("Insert universal task")
@@ -228,10 +231,10 @@ def construct_demo(api_key: str) -> None:
         with gr.Column():
             clear_bn = gr.Button("Clear chat")
     specified_task_ta = gr.TextArea(
-        label="Elaborate task description given to the assistant"
-        " based on the original (simplistic) task", lines=1, interactive=False)
+        label="Specified task prompt given to the role-playing session"
+        " based on the original (simplistic) idea", lines=1, interactive=False)
     task_prompt_ta = gr.TextArea(label="Planned task prompt", lines=1,
-                                 interactive=False)
+                                 interactive=False, visible=False)
     chatbot = gr.Chatbot()
     session_state = gr.State(State(None, [], None))
 
