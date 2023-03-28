@@ -6,7 +6,6 @@ a chat between collaborative agents.
 import argparse
 import gradio as gr
 import os
-import random
 import re
 import time
 from colorama import Fore
@@ -70,33 +69,40 @@ def load_roles(path):
 
 
 def role_playing_start(
-        state, assistant: str, user: str,
-        original_task: str) -> Union[Dict, Tuple[State, str, str]]:
+        state, assistant: str, user: str, original_task: str
+) -> Union[Dict, Tuple[State, str, str, ChatBotHistory]]:
+
     if state.session is not None:
+        print("Double click")
         return {}  # may fail
+
     try:
         session = RolePlaying(assistant, user, original_task,
                               with_task_specify=True, with_task_planner=True)
-        print(Fore.GREEN +
-              f"AI Assistant sys message:\n{session.assistant_sys_msg}\n")
-        print(Fore.BLUE + f"AI User sys message:\n{session.user_sys_msg}\n")
-
-        print(Fore.YELLOW + f"Original task prompt:\n{original_task}\n")
-        print(Fore.CYAN +
-              f"Specified task prompt:\n{session.specified_task_prompt}\n")
-        print(Fore.MAGENTA +
-              f"Planned task prompt:\n{session.planned_task_prompt}\n")
-        print(Fore.RED + f"Final task prompt:\n{session.task_prompt}\n")
-        state.session = session
     except (openai.error.RateLimitError, tenacity.RetryError) as ex:
-        result = (state, str(ex), "")
-    else:
-        specified_task_prompt = session.specified_task_prompt \
-            if session.specified_task_prompt is not None else ""
-        planned_task_prompt = session.planned_task_prompt \
-            if session.planned_task_prompt is not None else ""
-        result = (state, specified_task_prompt, planned_task_prompt)
-    return result
+        return (state, str(ex), "", [])
+
+    # print(Fore.GREEN +
+    #       f"AI Assistant sys message:\n{session.assistant_sys_msg}\n")
+    # print(Fore.BLUE + f"AI User sys message:\n{session.user_sys_msg}\n")
+
+    # print(Fore.YELLOW + f"Original task prompt:\n{original_task}\n")
+    # print(Fore.CYAN +
+    #       f"Specified task prompt:\n{session.specified_task_prompt}\n")
+    # print(Fore.MAGENTA +
+    #       f"Planned task prompt:\n{session.planned_task_prompt}\n")
+    # print(Fore.RED + f"Final task prompt:\n{session.task_prompt}\n")
+
+    state.session = session
+    state.chat = []
+    state.saved_assistant_msg = None
+
+    specified_task_prompt = session.specified_task_prompt \
+        if session.specified_task_prompt is not None else ""
+    planned_task_prompt = session.planned_task_prompt \
+        if session.planned_task_prompt is not None else ""
+
+    return (state, specified_task_prompt, planned_task_prompt, state.chat)
 
 
 def role_playing_chat_init(state) -> \
@@ -104,15 +110,18 @@ def role_playing_chat_init(state) -> \
 
     session = state.session
     if session is None:
+        print("WTF session is none on role_playing_chat_init call")
         return {}  # may fail
+
     try:
         assistant_msg, _ = session.init_chat()
         assistant_msg: AssistantChatMessage
     except (openai.error.RateLimitError, tenacity.RetryError) as ex:
+        print("OpenAI API exception 1")
         state.session = None
         return state, state.chat
 
-    print(Fore.GREEN + f"AI Assistant:\n\n{assistant_msg.content}\n\n")
+    # print(Fore.GREEN + f"AI Assistant:\n\n{assistant_msg.content}\n\n")
     state.saved_assistant_msg = assistant_msg
 
     return state, state.chat
@@ -126,15 +135,15 @@ def role_playing_chat_cont(state, num_messages: float) -> \
     if session is None:
         return state, state.chat
 
-    num_messages = int(num_messages)
-
     if state.saved_assistant_msg is None:
-        state.session = None
         return state, state.chat
+
+    num_messages = int(num_messages)
 
     try:
         assistant_msg, user_msg = session.step(state.saved_assistant_msg)
     except (openai.error.RateLimitError, tenacity.RetryError) as ex:
+        print("OpenAI API exception 2")
         state.session = None
         return state, state.chat
 
@@ -145,10 +154,10 @@ def role_playing_chat_cont(state, num_messages: float) -> \
 
     print(Fore.BLUE + f"AI User:\n\n{u_msg.content}\n\n")
     print(Fore.GREEN + f"AI Assistant:\n\n{a_msg.content}\n\n")
-    state.chat.append([None, u_msg.content])
-    state.chat.append([a_msg.content, None])
+    state.chat.append((None, u_msg.content))
+    state.chat.append((a_msg.content, None))
 
-    if len(state.chat) > num_messages:
+    if len(state.chat) >= num_messages:
         state.session = None
 
     if "CAMEL_TASK_DONE" in a_msg.content or \
@@ -211,9 +220,9 @@ def construct_demo(api_key: str) -> None:
             universal_task_bn = gr.Button("Insert universal task")
     with gr.Row():
         with gr.Column():
-            num_messages_sl = gr.Slider(
-                minimum=1, maximum=20, step=1, value=2, interactive=True,
-                label="Number of message pairs to generate")
+            num_messages_sl = gr.Slider(minimum=1, maximum=20, step=1,
+                                        value=10, interactive=True,
+                                        label="Number of messages to generate")
         with gr.Column():
             start_bn = gr.Button("Make agents chat [takes time]")
         with gr.Column():
@@ -229,51 +238,15 @@ def construct_demo(api_key: str) -> None:
     universal_task_bn.click(lambda: "Help me to do my job", None,
                             original_task_ta)
 
-    # def start_chat(state):  # 'State'
-    #     if state.int_val is not None:
-    #         return {}
-    #     state.int_val = 0
-    #     state.chat = []
-    #     print("start_chat", state)
-    #     return state
-
-    # def next_msg(state):  # 'State'
-    #     print("next_msg", state)
-    #     if state.int_val is None:
-    #         return {
-    #             chatbot: state.chat
-    #         }  # must return something otherwise gradio does not work
-    #     state.chat.append((None, f"mess {state.int_val} {time.time()}")\
-    #         if state.int_val % 2 == 0 else (f"mess {state.int_val} {time.time()}", None))
-    #     state.int_val = state.int_val + 1 if state.int_val < 6 else None
-    #     time.sleep(0.5)
-    #     return {session_state: state, chatbot: state.chat}
-
-    # start_bn.click(start_chat, session_state, session_state, queue=False)
-
-    # .then(lambda state: str(state), session_state, task_prompt_ta, queue=False)
-    # .then(next_msg, session_state, [session_state, chatbot], queue=False)
-    # .then(next_msg, session_state, [session_state, chatbot], queue=False) \
-    # .then(next_msg, session_state, [session_state, chatbot], queue=False) \
-    # .then(next_msg, session_state, [session_state, chatbot], queue=False) \
-    # .then(next_msg, session_state, [session_state, chatbot], queue=False)
-
-    # demo.load(next_msg, session_state, [session_state, chatbot], every=0.5)
-
-    start_bn.click(role_playing_start,
+    start_bn.click(lambda: [], None, chatbot, queue=False) \
+            .then(role_playing_start,
                    [session_state, assistant_ta, user_ta, original_task_ta],
-                   [session_state, specified_task_ta, task_prompt_ta],
+                   [session_state, specified_task_ta, task_prompt_ta, chatbot],
                    queue=False) \
-            .then(role_playing_chat_init, session_state, [session_state, chatbot]) \
-            .then(role_playing_chat_cont, [session_state, num_messages_sl], [session_state, chatbot]) \
-            .then(role_playing_chat_cont, [session_state, num_messages_sl], [session_state, chatbot]) \
-            .then(role_playing_chat_cont, [session_state, num_messages_sl], [session_state, chatbot])
+            .then(role_playing_chat_init, session_state, [session_state, chatbot], queue=False)
 
-    # demo.load(role_playing_chat, [session_state, num_messages_sl],
-    #           [session_state, chatbot], every=0.5)
-
-    # clear_bn.click(lambda state: {specified_task_ta: "READ " + str(state)},
-    #                session_state, [specified_task_ta, chatbot])
+    demo.load(role_playing_chat_cont, [session_state, num_messages_sl],
+              [session_state, chatbot], every=0.5)
 
     clear_bn.click(lambda: ("", []), None, [specified_task_ta, chatbot])
 
@@ -296,7 +269,6 @@ if __name__ == "__main__":
     with gr.Blocks() as demo:
         construct_demo(args.api_key)
 
-    #
     demo.queue(args.concurrency_count) \
         .launch(share=args.share, inbrowser=args.inbrowser,
                 server_name="0.0.0.0", server_port=args.server_port,
