@@ -10,16 +10,26 @@ import random
 import re
 import time
 from colorama import Fore
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Union, Optional
 import openai
+import openai.error
 import tenacity
+from dataclasses import dataclass
 
 from camel.agent import RolePlaying
+from camel.message import ChatMessage, AssistantChatMessage, UserChatMessage
 
 REPO_ROOT = os.path.realpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.."))
 
-ChatBotHistory = List[Tuple[str, str]]
+ChatBotHistory = List[Tuple[Optional[str], Optional[str]]]
+
+
+@dataclass
+class State:
+    session: Optional[RolePlaying]
+    chat: ChatBotHistory
+    saved_assistant_msg: AssistantChatMessage
 
 
 def parse_arguments():
@@ -35,7 +45,7 @@ def parse_arguments():
     parser.add_argument('--inbrowser', type=bool, default=False,
                         help='Open the web UI in the default browser on lunch')
     parser.add_argument(
-        '--concurrency-count', type=int, default=10,
+        '--concurrency-count', type=int, default=1,
         help='Number if concurrent threads at Gradio websocket queue. ' +
         'Increase to serve more requests but keep an eye on RAM usage.')
     args, unknown = parser.parse_known_args()
@@ -59,100 +69,93 @@ def load_roles(path):
     return roles
 
 
-def construct_chatbot_history(
-        plain: List[Dict[str, str]]) -> List[Tuple[str, str]]:
-
-    history = []
-    curr_qa = (None, None)
-    for msg in plain:
-        content = msg['message']
-        if msg['role'] == "user":
-            if curr_qa[0] is not None:
-                history.append(curr_qa)
-                curr_qa = (content, None)
-            else:
-                curr_qa = (content, None)
-        elif msg['role'] == "assistant":
-            curr_qa = (curr_qa[0], content)
-            history.append(curr_qa)
-            curr_qa = (None, None)
-        else:
-            pass
-    return history
-
-
-def role_playing_start_mayexcept(assistant: str, user: str,
-                                 original_task: str) -> Tuple[Any, str, str]:
-    session = RolePlaying(assistant, user, original_task,
-                          with_task_specify=True, with_task_planner=True)
-    print(Fore.GREEN +
-          f"AI Assistant sys message:\n{session.assistant_sys_msg}\n")
-    print(Fore.BLUE + f"AI User sys message:\n{session.user_sys_msg}\n")
-
-    print(Fore.YELLOW + f"Original task prompt:\n{original_task}\n")
-    print(Fore.CYAN +
-          f"Specified task prompt:\n{session.specified_task_prompt}\n")
-    print(Fore.MAGENTA +
-          f"Planned task prompt:\n{session.planned_task_prompt}\n")
-    print(Fore.RED + f"Final task prompt:\n{session.task_prompt}\n")
-
-    return session, session.specified_task_prompt, session.planned_task_prompt
-
-
-def role_playing_start(*args) -> Tuple[Any, str, str]:
+def role_playing_start(
+        state, assistant: str, user: str,
+        original_task: str) -> Union[Dict, Tuple[State, str, str]]:
+    if state.session is not None:
+        return {}  # may fail
     try:
-        result = role_playing_start_mayexcept(*args)
+        session = RolePlaying(assistant, user, original_task,
+                              with_task_specify=True, with_task_planner=True)
+        print(Fore.GREEN +
+              f"AI Assistant sys message:\n{session.assistant_sys_msg}\n")
+        print(Fore.BLUE + f"AI User sys message:\n{session.user_sys_msg}\n")
+
+        print(Fore.YELLOW + f"Original task prompt:\n{original_task}\n")
+        print(Fore.CYAN +
+              f"Specified task prompt:\n{session.specified_task_prompt}\n")
+        print(Fore.MAGENTA +
+              f"Planned task prompt:\n{session.planned_task_prompt}\n")
+        print(Fore.RED + f"Final task prompt:\n{session.task_prompt}\n")
+        state.session = session
     except (openai.error.RateLimitError, tenacity.RetryError) as ex:
-        result = None, str(ex), ""
+        result = (state, str(ex), "")
+    else:
+        specified_task_prompt = session.specified_task_prompt \
+            if session.specified_task_prompt is not None else ""
+        planned_task_prompt = session.planned_task_prompt \
+            if session.planned_task_prompt is not None else ""
+        result = (state, specified_task_prompt, planned_task_prompt)
     return result
 
 
-# WORKAROUND: do not add type hinst for session and chatbot_histoty
-# def role_playing_chat(session, num_messages: float,
-#                       chatbot_history) -> ChatBotHistory:
-#     if session is None:
-#         yield []
-#         return
-#     num_messages = int(num_messages)
-#     try:
-#         assistant_msg, _ = session.init_chat()
-#     except (openai.error.RateLimitError, tenacity.RetryError) as ex:
-#         return
-#     for _ in range(num_messages):
-#         try:
-#             assistant_msg, user_msg = session.step(assistant_msg)
-#         except (openai.error.RateLimitError, tenacity.RetryError) as ex:
-#             return
-#         print(Fore.BLUE + f"AI User:\n\n{user_msg.content}\n\n")
-#         print(Fore.GREEN + f"AI Assistant:\n\n{assistant_msg.content}\n\n")
-#         chatbot_history.append([None, user_msg.content])
-#         chatbot_history.append([assistant_msg.content, None])
+def role_playing_chat_init(state) -> \
+        Union[Dict, Tuple[State, ChatBotHistory]]:
 
-#         if "<CAMEL_TASK_DONE>" in user_msg.content:
-#             break
-#         yield chatbot_history
-
-
-# WORKAROUND: do not add type hinst for session and chatbot_histoty
-def role_playing_chat(session, num_messages: float,
-                      chatbot_history) -> ChatBotHistory:
+    session = state.session
     if session is None:
-        yield []
-        return
-    for i in range(5):
-        time.sleep(1)
-        yield chatbot_history + [(None, f"Hey {i}")]
+        return {}  # may fail
+    try:
+        assistant_msg, _ = session.init_chat()
+        assistant_msg: AssistantChatMessage
+    except (openai.error.RateLimitError, tenacity.RetryError) as ex:
+        state.session = None
+        return state, state.chat
+
+    print(Fore.GREEN + f"AI Assistant:\n\n{assistant_msg.content}\n\n")
+    state.saved_assistant_msg = assistant_msg
+
+    return state, state.chat
 
 
-# # WORKAROUND: do not add type hinst for session and chatbot_histoty
-# def role_playing_chat(session, num_messages: float,
-#                       chatbot_history) -> ChatBotHistory:
-#     if session is None:
-#         yield []
-#         return
-#     for i in range(5):
-#         chatbot_history = chatbot_history + [(None, f"Hey {i}")]
-#     return chatbot_history
+# WORKAROUND: do not add type hinst for session and chatbot_histoty
+def role_playing_chat_cont(state, num_messages: float) -> \
+        Tuple[State, ChatBotHistory]:
+
+    session = state.session
+    if session is None:
+        return state, state.chat
+
+    num_messages = int(num_messages)
+
+    if state.saved_assistant_msg is None:
+        state.session = None
+        return state, state.chat
+
+    try:
+        assistant_msg, user_msg = session.step(state.saved_assistant_msg)
+    except (openai.error.RateLimitError, tenacity.RetryError) as ex:
+        state.session = None
+        return state, state.chat
+
+    u_msg = user_msg[0]
+    a_msg = assistant_msg[0]
+
+    state.saved_assistant_msg = a_msg
+
+    print(Fore.BLUE + f"AI User:\n\n{u_msg.content}\n\n")
+    print(Fore.GREEN + f"AI Assistant:\n\n{a_msg.content}\n\n")
+    state.chat.append([None, u_msg.content])
+    state.chat.append([a_msg.content, None])
+
+    if len(state.chat) > num_messages:
+        state.session = None
+
+    if "CAMEL_TASK_DONE" in a_msg.content or \
+            "CAMEL_TASK_DONE" in u_msg.content:
+        state.session = None
+
+    return state, state.chat
 
 
 def construct_demo(api_key: str) -> None:
@@ -221,35 +224,64 @@ def construct_demo(api_key: str) -> None:
     task_prompt_ta = gr.TextArea(label="Planned task prompt", lines=1,
                                  interactive=False)
     chatbot = gr.Chatbot()
-    session = gr.State()
+    session_state = gr.State(State(None, [], None))
 
     universal_task_bn.click(lambda: "Help me to do my job", None,
                             original_task_ta)
 
+    # def start_chat(state):  # 'State'
+    #     if state.int_val is not None:
+    #         return {}
+    #     state.int_val = 0
+    #     state.chat = []
+    #     print("start_chat", state)
+    #     return state
+
+    # def next_msg(state):  # 'State'
+    #     print("next_msg", state)
+    #     if state.int_val is None:
+    #         return {
+    #             chatbot: state.chat
+    #         }  # must return something otherwise gradio does not work
+    #     state.chat.append((None, f"mess {state.int_val} {time.time()}")\
+    #         if state.int_val % 2 == 0 else (f"mess {state.int_val} {time.time()}", None))
+    #     state.int_val = state.int_val + 1 if state.int_val < 6 else None
+    #     time.sleep(0.5)
+    #     return {session_state: state, chatbot: state.chat}
+
+    # start_bn.click(start_chat, session_state, session_state, queue=False)
+
+    # .then(lambda state: str(state), session_state, task_prompt_ta, queue=False)
+    # .then(next_msg, session_state, [session_state, chatbot], queue=False)
+    # .then(next_msg, session_state, [session_state, chatbot], queue=False) \
+    # .then(next_msg, session_state, [session_state, chatbot], queue=False) \
+    # .then(next_msg, session_state, [session_state, chatbot], queue=False) \
+    # .then(next_msg, session_state, [session_state, chatbot], queue=False)
+
+    # demo.load(next_msg, session_state, [session_state, chatbot], every=0.5)
+
     start_bn.click(role_playing_start,
-                   [assistant_ta, user_ta, original_task_ta],
-                   [session, specified_task_ta, task_prompt_ta], queue=False) \
-            .then(role_playing_chat,
-                [session, num_messages_sl, chatbot],
-                chatbot, queue=False) \
-            .then(lambda: None, None, session)
+                   [session_state, assistant_ta, user_ta, original_task_ta],
+                   [session_state, specified_task_ta, task_prompt_ta],
+                   queue=False) \
+            .then(role_playing_chat_init, session_state, [session_state, chatbot]) \
+            .then(role_playing_chat_cont, [session_state, num_messages_sl], [session_state, chatbot]) \
+            .then(role_playing_chat_cont, [session_state, num_messages_sl], [session_state, chatbot]) \
+            .then(role_playing_chat_cont, [session_state, num_messages_sl], [session_state, chatbot])
+
+    # demo.load(role_playing_chat, [session_state, num_messages_sl],
+    #           [session_state, chatbot], every=0.5)
+
+    # clear_bn.click(lambda state: {specified_task_ta: "READ " + str(state)},
+    #                session_state, [specified_task_ta, chatbot])
 
     clear_bn.click(lambda: ("", []), None, [specified_task_ta, chatbot])
 
     assistant_dd.change(lambda dd: dd, assistant_dd, assistant_ta)
     user_dd.change(lambda dd: dd, user_dd, user_ta)
 
-    # assistant_ta.value = assistant_dd.value
-    # user_ta.value = user_dd.value
     demo.load(lambda dd: dd, assistant_dd, assistant_ta)
     demo.load(lambda dd: dd, user_dd, user_ta)
-
-    def chat_iter(chatbot_history) -> ChatBotHistory:
-        for i in range(5):
-            yield chatbot_history + [(None, f"Wazzup {i}")]
-            time.sleep(1)
-
-    demo.load(chat_iter, chatbot, chatbot, every=1)
 
 
 if __name__ == "__main__":
@@ -264,8 +296,10 @@ if __name__ == "__main__":
     with gr.Blocks() as demo:
         construct_demo(args.api_key)
 
-    demo.queue(args.concurrency_count)
-    demo.launch(share=args.share, inbrowser=args.inbrowser,
-                server_name="0.0.0.0", server_port=args.server_port)
+    #
+    demo.queue(args.concurrency_count) \
+        .launch(share=args.share, inbrowser=args.inbrowser,
+                server_name="0.0.0.0", server_port=args.server_port,
+                debug=True)
 
     print("Exiting.")
