@@ -17,4 +17,3 @@ Solution: <YOUR_SOLUTION>
 
 <YOUR_SOLUTION> should be specific and provide preferable implementations and examples for task-solving.
 Always end <YOUR_SOLUTION> with: Next request.
-
