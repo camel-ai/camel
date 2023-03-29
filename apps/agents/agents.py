@@ -27,8 +27,13 @@ ChatBotHistory = List[Tuple[Optional[str], Optional[str]]]
 @dataclass
 class State:
     session: Optional[RolePlaying]
+    max_messages: int
     chat: ChatBotHistory
-    saved_assistant_msg: AssistantChatMessage
+    saved_assistant_msg: Optional[AssistantChatMessage]
+
+    @classmethod
+    def empty(cls) -> 'State':
+        return cls(None, 0, [], None)
 
 
 def parse_arguments():
@@ -68,9 +73,23 @@ def load_roles(path):
     return roles
 
 
+def cleanup_on_launch(state) -> Tuple[State, ChatBotHistory]:
+    # The line below breaks the every=N runner
+    # `state = State.empty()`
+    state.session = None
+    state.max_messages = 0
+    state.chat = []
+    state.saved_assistant_msg = None
+    return state, []
+
+
 def role_playing_start(
-    state, assistant: str, user: str, original_task: str
-) -> Union[Dict, Tuple[State, str, Union[str, Dict], ChatBotHistory]]:
+    state,
+    assistant: str,
+    user: str,
+    original_task: str,
+    max_messages: float,
+) -> Union[Dict, Tuple[State, str, Union[str, Dict], ChatBotHistory, Dict]]:
 
     if state.session is not None:
         print("Double click")
@@ -80,7 +99,7 @@ def role_playing_start(
         session = RolePlaying(assistant, user, original_task,
                               with_task_specify=True, with_task_planner=False)
     except (openai.error.RateLimitError, tenacity.RetryError) as ex:
-        return (state, str(ex), "", [])
+        return (state, str(ex), "", [], gr.update(visible=False))
 
     # print(Fore.GREEN +
     #       f"AI Assistant sys message:\n{session.assistant_sys_msg}\n")
@@ -93,7 +112,12 @@ def role_playing_start(
     #       f"Planned task prompt:\n{session.planned_task_prompt}\n")
     # print(Fore.RED + f"Final task prompt:\n{session.task_prompt}\n")
 
+    # Can't re-create a state like below since it
+    # breaks 'role_playing_chat_cont' runner with every=N.
+    # `state = State(session=session, max_messages=int(max_messages), chat=[],`
+    # `             saved_assistant_msg=None)`
     state.session = session
+    state.max_messages = int(max_messages)
     state.chat = []
     state.saved_assistant_msg = None
 
@@ -106,50 +130,53 @@ def role_playing_start(
         value=planned_task_prompt, visible=session.planned_task_prompt
         is not None)
 
-    return (state, specified_task_prompt, planned_task_upd, state.chat)
+    progress_update = gr.update(maximum=state.max_messages, value=0,
+                                visible=True)
+
+    return (state, specified_task_prompt, planned_task_upd, state.chat,
+            progress_update)
 
 
 def role_playing_chat_init(state) -> \
-        Union[Dict, Tuple[State, ChatBotHistory]]:
+        Union[Dict, Tuple[State, ChatBotHistory, Dict]]:
 
-    session = state.session
-    if session is None:
+    if state.session is None:
         print("WTF session is none on role_playing_chat_init call")
         return {}  # may fail
 
     try:
-        assistant_msg, _ = session.init_chat()
+        assistant_msg, _ = state.session.init_chat()
         assistant_msg: AssistantChatMessage
     except (openai.error.RateLimitError, tenacity.RetryError) as ex:
         print("OpenAI API exception 1")
         state.session = None
-        return state, state.chat
+        return state, state.chat, gr.update(visible=False)
 
     # print(Fore.GREEN + f"AI Assistant:\n\n{assistant_msg.content}\n\n")
     state.saved_assistant_msg = assistant_msg
 
-    return state, state.chat
+    progress_update = gr.update(maximum=state.max_messages, value=0,
+                                visible=True)
+
+    return state, state.chat, progress_update
 
 
 # WORKAROUND: do not add type hinst for session and chatbot_histoty
-def role_playing_chat_cont(state, num_messages: float) -> \
-        Tuple[State, ChatBotHistory]:
+def role_playing_chat_cont(state) -> \
+        Tuple[State, ChatBotHistory, Dict]:
 
-    session = state.session
-    if session is None:
-        return state, state.chat
+    if state.session is None:
+        return state, state.chat, gr.update(visible=False)
 
     if state.saved_assistant_msg is None:
-        return state, state.chat
-
-    num_messages = int(num_messages)
+        return state, state.chat, gr.update(visible=False)
 
     try:
-        assistant_msg, user_msg = session.step(state.saved_assistant_msg)
+        assistant_msg, user_msg = state.session.step(state.saved_assistant_msg)
     except (openai.error.RateLimitError, tenacity.RetryError) as ex:
         print("OpenAI API exception 2")
         state.session = None
-        return state, state.chat
+        return state, state.chat, gr.update(visible=False)
 
     u_msg = user_msg[0]
     a_msg = assistant_msg[0]
@@ -161,14 +188,17 @@ def role_playing_chat_cont(state, num_messages: float) -> \
     state.chat.append((None, u_msg.content))
     state.chat.append((a_msg.content, None))
 
-    if len(state.chat) >= num_messages:
+    if len(state.chat) >= state.max_messages:
         state.session = None
 
     if "CAMEL_TASK_DONE" in a_msg.content or \
             "CAMEL_TASK_DONE" in u_msg.content:
         state.session = None
 
-    return state, state.chat
+    progress_update = gr.update(maximum=state.max_messages,
+                                value=len(state.chat), visible=True)
+
+    return state, state.chat, progress_update
 
 
 def construct_demo(api_key: str) -> None:
@@ -223,33 +253,37 @@ def construct_demo(api_key: str) -> None:
             universal_task_bn = gr.Button("Insert universal task")
     with gr.Row():
         with gr.Column():
-            num_messages_sl = gr.Slider(minimum=1, maximum=20, step=1,
+            num_messages_sl = gr.Slider(minimum=1, maximum=50, step=1,
                                         value=10, interactive=True,
                                         label="Number of messages to generate")
         with gr.Column():
             start_bn = gr.Button("Make agents chat [takes time]")
         with gr.Column():
             clear_bn = gr.Button("Clear chat")
+    progress_sl = gr.Slider(minimum=0, maximum=100, value=0, step=1,
+                            label="Progress", interactive=False, visible=False)
     specified_task_ta = gr.TextArea(
         label="Specified task prompt given to the role-playing session"
         " based on the original (simplistic) idea", lines=1, interactive=False)
     task_prompt_ta = gr.TextArea(label="Planned task prompt", lines=1,
                                  interactive=False, visible=False)
     chatbot = gr.Chatbot()
-    session_state = gr.State(State(None, [], None))
+    session_state = gr.State(State.empty())
+
+    # set_progress_bn.click(lambda: 30, None, progress)
 
     universal_task_bn.click(lambda: "Help me to do my job", None,
                             original_task_ta)
 
-    start_bn.click(lambda: [], None, chatbot, queue=False) \
+    start_bn.click(cleanup_on_launch, session_state, [session_state, chatbot], queue=False) \
             .then(role_playing_start,
-                   [session_state, assistant_ta, user_ta, original_task_ta],
-                   [session_state, specified_task_ta, task_prompt_ta, chatbot],
+                   [session_state, assistant_ta, user_ta, original_task_ta, num_messages_sl],
+                   [session_state, specified_task_ta, task_prompt_ta, chatbot, progress_sl],
                    queue=False) \
-            .then(role_playing_chat_init, session_state, [session_state, chatbot], queue=False)
+            .then(role_playing_chat_init, session_state, [session_state, chatbot, progress_sl], queue=False)
 
-    demo.load(role_playing_chat_cont, [session_state, num_messages_sl],
-              [session_state, chatbot], every=0.5)
+    demo.load(role_playing_chat_cont, session_state,
+              [session_state, chatbot, progress_sl], every=0.5)
 
     clear_bn.click(lambda: ("", []), None, [specified_task_ta, chatbot])
 
