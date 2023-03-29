@@ -19,4 +19,10 @@
     "editor.codeActionsOnSave": {
         "source.sortImports": true,
     },
+    "[python]": {
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": true
+        },
+    },
 }
