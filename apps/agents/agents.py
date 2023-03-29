@@ -35,6 +35,16 @@ class State:
     def empty(cls) -> 'State':
         return cls(None, 0, [], None)
 
+    @staticmethod
+    def construct_inplace(
+            state: 'State', session: Optional[RolePlaying], max_messages: int,
+            chat: ChatBotHistory,
+            saved_assistant_msg: Optional[AssistantChatMessage]) -> None:
+        state.session = session
+        state.max_messages = max_messages
+        state.chat = chat
+        state.saved_assistant_msg = saved_assistant_msg
+
 
 def parse_arguments():
     """ Get command line arguments. """
@@ -76,10 +86,14 @@ def load_roles(path):
 def cleanup_on_launch(state) -> Tuple[State, ChatBotHistory]:
     # The line below breaks the every=N runner
     # `state = State.empty()`
-    state.session = None
-    state.max_messages = 0
-    state.chat = []
-    state.saved_assistant_msg = None
+
+    # state.session = None
+    # state.max_messages = 0
+    # state.chat = []
+    # state.saved_assistant_msg = None
+
+    State.construct_inplace(state, None, 0, [], None)
+
     return state, []
 
 
@@ -99,7 +113,7 @@ def role_playing_start(
         session = RolePlaying(assistant, user, original_task,
                               with_task_specify=True, with_task_planner=False)
     except (openai.error.RateLimitError, tenacity.RetryError) as ex:
-        return (state, str(ex), "", [], gr.update(visible=False))
+        return (state, str(ex), "", [], gr.update())
 
     # print(Fore.GREEN +
     #       f"AI Assistant sys message:\n{session.assistant_sys_msg}\n")
@@ -116,10 +130,13 @@ def role_playing_start(
     # breaks 'role_playing_chat_cont' runner with every=N.
     # `state = State(session=session, max_messages=int(max_messages), chat=[],`
     # `             saved_assistant_msg=None)`
-    state.session = session
-    state.max_messages = int(max_messages)
-    state.chat = []
-    state.saved_assistant_msg = None
+
+    # state.session = session
+    # state.max_messages = int(max_messages)
+    # state.chat = []
+    # state.saved_assistant_msg = None
+
+    State.construct_inplace(state, session, int(max_messages), [], None)
 
     specified_task_prompt = session.specified_task_prompt \
         if session.specified_task_prompt is not None else ""
@@ -130,7 +147,7 @@ def role_playing_start(
         value=planned_task_prompt, visible=session.planned_task_prompt
         is not None)
 
-    progress_update = gr.update(maximum=state.max_messages, value=0,
+    progress_update = gr.update(maximum=state.max_messages, value=1,
                                 visible=True)
 
     return (state, specified_task_prompt, planned_task_upd, state.chat,
@@ -150,12 +167,12 @@ def role_playing_chat_init(state) -> \
     except (openai.error.RateLimitError, tenacity.RetryError) as ex:
         print("OpenAI API exception 1")
         state.session = None
-        return state, state.chat, gr.update(visible=False)
+        return state, state.chat, gr.update()
 
     # print(Fore.GREEN + f"AI Assistant:\n\n{assistant_msg.content}\n\n")
     state.saved_assistant_msg = assistant_msg
 
-    progress_update = gr.update(maximum=state.max_messages, value=0,
+    progress_update = gr.update(maximum=state.max_messages, value=1,
                                 visible=True)
 
     return state, state.chat, progress_update
@@ -166,17 +183,17 @@ def role_playing_chat_cont(state) -> \
         Tuple[State, ChatBotHistory, Dict]:
 
     if state.session is None:
-        return state, state.chat, gr.update(visible=False)
+        return state, state.chat, gr.update()
 
     if state.saved_assistant_msg is None:
-        return state, state.chat, gr.update(visible=False)
+        return state, state.chat, gr.update()
 
     try:
         assistant_msg, user_msg = state.session.step(state.saved_assistant_msg)
     except (openai.error.RateLimitError, tenacity.RetryError) as ex:
         print("OpenAI API exception 2")
         state.session = None
-        return state, state.chat, gr.update(visible=False)
+        return state, state.chat, gr.update()
 
     u_msg = user_msg[0]
     a_msg = assistant_msg[0]
@@ -196,7 +213,8 @@ def role_playing_chat_cont(state) -> \
         state.session = None
 
     progress_update = gr.update(maximum=state.max_messages,
-                                value=len(state.chat), visible=True)
+                                value=len(state.chat), visible=state.session
+                                is not None)
 
     return state, state.chat, progress_update
 
