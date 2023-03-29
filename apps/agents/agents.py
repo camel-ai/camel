@@ -87,11 +87,6 @@ def cleanup_on_launch(state) -> Tuple[State, ChatBotHistory, Dict]:
     # The line below breaks the every=N runner
     # `state = State.empty()`
 
-    # state.session = None
-    # state.max_messages = 0
-    # state.chat = []
-    # state.saved_assistant_msg = None
-
     State.construct_inplace(state, None, 0, [], None)
 
     return state, [], gr.update(interactive=False)
@@ -118,7 +113,6 @@ def role_playing_start(
     # print(Fore.GREEN +
     #       f"AI Assistant sys message:\n{session.assistant_sys_msg}\n")
     # print(Fore.BLUE + f"AI User sys message:\n{session.user_sys_msg}\n")
-
     # print(Fore.YELLOW + f"Original task prompt:\n{original_task}\n")
     # print(Fore.CYAN +
     #       f"Specified task prompt:\n{session.specified_task_prompt}\n")
@@ -130,11 +124,6 @@ def role_playing_start(
     # breaks 'role_playing_chat_cont' runner with every=N.
     # `state = State(session=session, max_messages=int(max_messages), chat=[],`
     # `             saved_assistant_msg=None)`
-
-    # state.session = session
-    # state.max_messages = int(max_messages)
-    # state.chat = []
-    # state.saved_assistant_msg = None
 
     State.construct_inplace(state, session, int(max_messages), [], None)
 
@@ -158,7 +147,7 @@ def role_playing_chat_init(state) -> \
         Union[Dict, Tuple[State, ChatBotHistory, Dict]]:
 
     if state.session is None:
-        print("WTF session is none on role_playing_chat_init call")
+        print("Error: session is none on role_playing_chat_init call")
         return {}  # may fail
 
     try:
@@ -216,7 +205,9 @@ def role_playing_chat_cont(state) -> \
                                 value=len(state.chat), visible=state.session
                                 is not None)
 
-    return state, state.chat, progress_update, gr.update(interactive=True)
+    start_bn_update = gr.update(interactive=state.session is None)
+
+    return state, state.chat, progress_update, start_bn_update
 
 
 def construct_demo(api_key: str) -> None:
@@ -277,7 +268,7 @@ def construct_demo(api_key: str) -> None:
         with gr.Column():
             start_bn = gr.Button("Make agents chat [takes time]")
         with gr.Column():
-            clear_bn = gr.Button("Clear chat", visible=False)
+            clear_bn = gr.Button("Interrupt the current query")
     progress_sl = gr.Slider(minimum=0, maximum=100, value=0, step=1,
                             label="Progress", interactive=False, visible=False)
     specified_task_ta = gr.TextArea(
@@ -287,8 +278,6 @@ def construct_demo(api_key: str) -> None:
                                  interactive=False, visible=False)
     chatbot = gr.Chatbot()
     session_state = gr.State(State.empty())
-
-    # set_progress_bn.click(lambda: 30, None, progress)
 
     universal_task_bn.click(lambda: "Help me to do my job", None,
                             original_task_ta)
@@ -307,7 +296,12 @@ def construct_demo(api_key: str) -> None:
     demo.load(role_playing_chat_cont, session_state,
               [session_state, chatbot, progress_sl, start_bn], every=0.5)
 
-    clear_bn.click(lambda: ("", []), None, [specified_task_ta, chatbot])
+    def stop_session(state) -> Tuple[State, Dict, Dict]:
+        state.session = None
+        return state, gr.update(visible=False), gr.update(interactive=True)
+
+    clear_bn.click(stop_session, session_state,
+                   [session_state, progress_sl, start_bn])
 
     assistant_dd.change(lambda dd: dd, assistant_dd, assistant_ta)
     user_dd.change(lambda dd: dd, user_dd, user_ta)
