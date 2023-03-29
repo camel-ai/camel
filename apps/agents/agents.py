@@ -83,7 +83,7 @@ def load_roles(path):
     return roles
 
 
-def cleanup_on_launch(state) -> Tuple[State, ChatBotHistory]:
+def cleanup_on_launch(state) -> Tuple[State, ChatBotHistory, Dict]:
     # The line below breaks the every=N runner
     # `state = State.empty()`
 
@@ -94,7 +94,7 @@ def cleanup_on_launch(state) -> Tuple[State, ChatBotHistory]:
 
     State.construct_inplace(state, None, 0, [], None)
 
-    return state, []
+    return state, [], gr.update(interactive=False)
 
 
 def role_playing_start(
@@ -180,20 +180,20 @@ def role_playing_chat_init(state) -> \
 
 # WORKAROUND: do not add type hinst for session and chatbot_histoty
 def role_playing_chat_cont(state) -> \
-        Tuple[State, ChatBotHistory, Dict]:
+        Tuple[State, ChatBotHistory, Dict, Dict]:
 
     if state.session is None:
-        return state, state.chat, gr.update()
+        return state, state.chat, gr.update(), gr.update()
 
     if state.saved_assistant_msg is None:
-        return state, state.chat, gr.update()
+        return state, state.chat, gr.update(), gr.update()
 
     try:
         assistant_msg, user_msg = state.session.step(state.saved_assistant_msg)
     except (openai.error.RateLimitError, tenacity.RetryError) as ex:
         print("OpenAI API exception 2")
         state.session = None
-        return state, state.chat, gr.update()
+        return state, state.chat, gr.update(), gr.update()
 
     u_msg = user_msg[0]
     a_msg = assistant_msg[0]
@@ -216,7 +216,7 @@ def role_playing_chat_cont(state) -> \
                                 value=len(state.chat), visible=state.session
                                 is not None)
 
-    return state, state.chat, progress_update
+    return state, state.chat, progress_update, gr.update(interactive=True)
 
 
 def construct_demo(api_key: str) -> None:
@@ -277,7 +277,7 @@ def construct_demo(api_key: str) -> None:
         with gr.Column():
             start_bn = gr.Button("Make agents chat [takes time]")
         with gr.Column():
-            clear_bn = gr.Button("Clear chat")
+            clear_bn = gr.Button("Clear chat", visible=False)
     progress_sl = gr.Slider(minimum=0, maximum=100, value=0, step=1,
                             label="Progress", interactive=False, visible=False)
     specified_task_ta = gr.TextArea(
@@ -293,15 +293,19 @@ def construct_demo(api_key: str) -> None:
     universal_task_bn.click(lambda: "Help me to do my job", None,
                             original_task_ta)
 
-    start_bn.click(cleanup_on_launch, session_state, [session_state, chatbot], queue=False) \
+    start_bn.click(cleanup_on_launch, session_state,
+                   [session_state, chatbot, start_bn], queue=False) \
             .then(role_playing_start,
-                   [session_state, assistant_ta, user_ta, original_task_ta, num_messages_sl],
-                   [session_state, specified_task_ta, task_prompt_ta, chatbot, progress_sl],
-                   queue=False) \
-            .then(role_playing_chat_init, session_state, [session_state, chatbot, progress_sl], queue=False)
+                  [session_state, assistant_ta, user_ta,
+                   original_task_ta, num_messages_sl],
+                  [session_state, specified_task_ta, task_prompt_ta,
+                   chatbot, progress_sl],
+                  queue=False) \
+            .then(role_playing_chat_init, session_state,
+                  [session_state, chatbot, progress_sl], queue=False)
 
     demo.load(role_playing_chat_cont, session_state,
-              [session_state, chatbot, progress_sl], every=0.5)
+              [session_state, chatbot, progress_sl, start_bn], every=0.5)
 
     clear_bn.click(lambda: ("", []), None, [specified_task_ta, chatbot])
 
