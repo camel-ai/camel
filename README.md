@@ -68,7 +68,7 @@ python examples/role_playing.py
 }
 ```
 ## Acknowledgement
-Special thanks to Nomic AI for giving us extended access to their data set exploration tool (Atlas).
+Special thanks to [Nomic AI](https://home.nomic.ai/) for giving us extended access to their data set exploration tool (Atlas).
 
 We would also like to thank Haya Hammoud for designing the logo of our project. 
 
