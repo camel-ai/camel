@@ -41,7 +41,7 @@ Run the `role_playing.py` script.
 # export your OpenAI API key
 export OPENAI_API_KEY=<insert your OpenAI API key>
 # You can change the role pair and initial prompt in role_playing.py
-python examples/role_playing.py
+python examples/ai_society/role_playing.py
 ```
 
 ## Visualizations of Instructions and Tasks
