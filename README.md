@@ -43,6 +43,18 @@ export OPENAI_API_KEY=<insert your OpenAI API key>
 # You can change the role pair and initial prompt in role_playing.py
 python examples/role_playing.py
 ```
+
+## Visualizations of Instructions and Tasks
+
+**AI Society:**
+* [Instructions](https://atlas.nomic.ai/map/3a559a06-87d0-4476-a879-962656242452/db961915-b254-48e8-8e5c-917f827b74c6)
+* [Tasks](https://atlas.nomic.ai/map/cb96f41b-a6fd-4fe4-ac40-08e101714483/ae06156c-a572-46e9-8345-ebe18586d02b)
+
+**Code:**
+* [Instructions](https://atlas.nomic.ai/map/902d6ccb-0bbb-4294-83a8-1c7d2dae03c8/ace2e146-e49f-41db-a1f4-25a2c4be2457)
+* [Tasks](https://atlas.nomic.ai/map/efc38617-9180-490a-8630-43a05b35d22d/2576addf-a133-45d5-89a9-6b067b6652dd)
+
+
 ## News
 - Initial release of `CAMEL` python library (March 21, 2023)
 
@@ -56,7 +68,7 @@ python examples/role_playing.py
 }
 ```
 ## Acknowledgement
-We would like to thank Haya Hammoud for designing the logo of our project.
+We would like to thank Haya Hammoud for designing the logo of our project. Special thanks to Nomic AI for giving us extended access to their data set exploration tool (Atlas).
 
 ## License
 Apache License 2.0 
