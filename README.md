@@ -1,15 +1,15 @@
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1AzP33O8rnMW__7ocWJhVBXjKziJXPtim?usp=sharing)
 
-# CAMEL: Communicative Agents for Mind Extraction from Large Scale Language Model Society
+# CAMEL: Communicative Agents for “Mind” Exploration of Large Scale Language Model Society
+
+## [[Project Website]](https://www.camel-ai.org/) [[Preprint]](https://ghli.org/camel.pdf)
 
 <p align="center">
   <img src='./misc/logo.png' width=800>
 </p>
 
 ## Overview
-The objective of this project is to study how an AI society would function, behave, and interact through communication. This project provides easy and flexible framework for two or more communicating agents. It enables simulating a conversation between agents playing different roles, such as a user seeking help on a particular task, and a domain expert eager to provide assistance. The tasks that agents will collaborate on could vary from complex problem-solving to creative story generation. 
-
-Overall, this project has the potential to open up new possibilities for collaboration between machines. By simulating communication between agents, we can gain insights into how AI could function in society and identify areas for improvement. Ultimately, this research could have far-reaching implications for the development of intelligent systems and the future of AI.
+The rapid advancement of conversational and chat-based language models has led to remarkable progress in complex task-solving. However, their success heavily relies on human input to guide the conversation, which can be challenging and time-consuming. This paper explores the potential of building scalable techniques to facilitate autonomous cooperation among communicative agents and provide insight into their "cognitive" processes. To address the challenges of achieving autonomous cooperation, we propose a novel communicative agent framework named *role-playing*. Our approach involves using *inception prompting* to guide chat agents toward task completion while maintaining consistency with human intentions. We showcase how role-playing can be used to generate conversational data for studying the behaviors and capabilities of chat agents, providing a valuable resource for investigating conversational language models. Our contributions include introducing a novel communicative agent framework, offering a scalable approach for studying the cooperative behaviors and capabilities of multi-agent systems, and open-sourcing our library to support research on communicative agents and beyond. The GitHub repository of this project is made publicly available on: https://github.com/lightaime/camel.
 
 ## Try it yourself
 We provide a [![Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1AzP33O8rnMW__7ocWJhVBXjKziJXPtim?usp=sharing) demo showcasing a conversation between two ChatGPT agents impersonationg a gamer as a user and a computer programmer as a domain expert collaborating on developing a game using PyGame.
@@ -50,11 +50,9 @@ python examples/role_playing.py
 ```
 @misc{camel,
   author = {Guohao Li, Hasan Abed Al Kader Hammoud, Hani Itani, Dmitrii Khizbullin, Bernard Ghanem},
-  title = {CAMEL: Communicative Agents for Mind Extraction from Large Scale Language Model Society},
+  title = {CAMEL: Communicative Agents for “Mind” Exploration of Large Scale Language Model Society},
   year = {2023},
-  publisher = {GitHub},
-  journal = {GitHub repository},
-  howpublished = {\url{https://github.com/lightaime/camel.git}},
+  journal={arXiv preprint},
 }
 ```
 ## Acknowledgement
@@ -64,4 +62,4 @@ We would like to thank Haya Hammoud for designing the logo of our project.
 Apache License 2.0 
 
 ## Contact
-For more information please contact [Guohao Li](https://ghli.org/), [Hasan Abed Al Kader Hammoud](https://cemse.kaust.edu.sa/ece/people/person/hasan-abed-al-kader-hammoud), [Hani Itani](https://github.com/HaniItani)
+For more information please contact [Guohao Li](https://ghli.org/), [Hasan Abed Al Kader Hammoud](https://cemse.kaust.edu.sa/ece/people/person/hasan-abed-al-kader-hammoud), [Hani Itani](https://github.com/HaniItani).
