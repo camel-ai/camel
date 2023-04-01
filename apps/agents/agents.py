@@ -8,7 +8,6 @@ import gradio as gr
 import os
 import re
 import time
-from colorama import Fore
 from typing import List, Dict, Any, Tuple, Union, Optional
 import openai
 import openai.error
@@ -68,7 +67,16 @@ def parse_arguments():
     return args
 
 
-def load_roles(path):
+def load_roles(path: str) -> List[str]:
+    """ Load roles from list files.
+
+    Args:
+        path (str): Path to the TXT file.
+
+    Returns:
+        List[str]: List of roles.
+    """
+
     assert os.path.exists(path)
     roles = []
     with open(path, "r") as f:
@@ -84,6 +92,17 @@ def load_roles(path):
 
 
 def cleanup_on_launch(state) -> Tuple[State, ChatBotHistory, Dict]:
+    """ Prepare the UI for a new session.
+
+    Args:
+        state (State): Role playing state.
+
+    Returns:
+        Tuple[State, ChatBotHistory, Dict]:
+            - Updated state.
+            - Chatbot window contents.
+            - Start button state (disabled).
+    """
     # The line below breaks the every=N runner
     # `state = State.empty()`
 
@@ -99,6 +118,23 @@ def role_playing_start(
     original_task: str,
     max_messages: float,
 ) -> Union[Dict, Tuple[State, str, Union[str, Dict], ChatBotHistory, Dict]]:
+    """ Creates a role playing session.
+
+    Args:
+        state (State): Role playing state.
+        assistant (str): Contents of the Assistant field.
+        user (str): Contents of the User field.
+        original_task (str): Original task field.
+        max_messages (float): Limit of generated messages.
+
+    Returns:
+        Union[Dict, Tuple[State, str, Union[str, Dict], ChatBotHistory, Dict]]:
+            - Updated state.
+            - Generated specified task.
+            - Planned task (if any).
+            - Chatbot window contents.
+            - Progress bar contents.
+    """
 
     if state.session is not None:
         print("Double click")
@@ -109,16 +145,6 @@ def role_playing_start(
                               with_task_specify=True, with_task_planner=False)
     except (openai.error.RateLimitError, tenacity.RetryError) as ex:
         return (state, str(ex), "", [], gr.update())
-
-    # print(Fore.GREEN +
-    #       f"AI Assistant sys message:\n{session.assistant_sys_msg}\n")
-    # print(Fore.BLUE + f"AI User sys message:\n{session.user_sys_msg}\n")
-    # print(Fore.YELLOW + f"Original task prompt:\n{original_task}\n")
-    # print(Fore.CYAN +
-    #       f"Specified task prompt:\n{session.specified_task_prompt}\n")
-    # print(Fore.MAGENTA +
-    #       f"Planned task prompt:\n{session.planned_task_prompt}\n")
-    # print(Fore.RED + f"Final task prompt:\n{session.task_prompt}\n")
 
     # Can't re-create a state like below since it
     # breaks 'role_playing_chat_cont' runner with every=N.
@@ -145,6 +171,17 @@ def role_playing_start(
 
 def role_playing_chat_init(state) -> \
         Union[Dict, Tuple[State, ChatBotHistory, Dict]]:
+    """ Initialize role playing.
+
+    Args:
+        state (State): Role playing state.
+
+    Returns:
+        Union[Dict, Tuple[State, ChatBotHistory, Dict]]:
+            - Updated state.
+            - Chatbot window contents.
+            - Progress bar contents.
+    """
 
     if state.session is None:
         print("Error: session is none on role_playing_chat_init call")
@@ -158,7 +195,6 @@ def role_playing_chat_init(state) -> \
         state.session = None
         return state, state.chat, gr.update()
 
-    # print(Fore.GREEN + f"AI Assistant:\n\n{assistant_msg.content}\n\n")
     state.saved_assistant_msg = assistant_msg
 
     progress_update = gr.update(maximum=state.max_messages, value=1,
@@ -170,6 +206,19 @@ def role_playing_chat_init(state) -> \
 # WORKAROUND: do not add type hinst for session and chatbot_histoty
 def role_playing_chat_cont(state) -> \
         Tuple[State, ChatBotHistory, Dict, Dict]:
+    """ Produce a pair of messages by an assistant and a user.
+        To be run multiple times.
+
+    Args:
+        state (State): Role playing state.
+
+    Returns:
+        Union[Dict, Tuple[State, ChatBotHistory, Dict]]:
+            - Updated state.
+            - Chatbot window contents.
+            - Progress bar contents.
+            - Start button state (to be eventually enabled).
+    """
 
     if state.session is None:
         return state, state.chat, gr.update(), gr.update()
@@ -189,8 +238,6 @@ def role_playing_chat_cont(state) -> \
 
     state.saved_assistant_msg = a_msg
 
-    print(Fore.BLUE + f"AI User:\n\n{u_msg.content}\n\n")
-    print(Fore.GREEN + f"AI Assistant:\n\n{a_msg.content}\n\n")
     state.chat.append((None, u_msg.content))
     state.chat.append((a_msg.content, None))
 
@@ -208,6 +255,23 @@ def role_playing_chat_cont(state) -> \
     start_bn_update = gr.update(interactive=state.session is None)
 
     return state, state.chat, progress_update, start_bn_update
+
+
+def stop_session(state) -> Tuple[State, Dict, Dict]:
+    """ Finish the session and leave chat contents as an artefact.
+
+    Args:
+        state (State): Role playing state.
+
+    Returns:
+        Union[Dict, Tuple[State, ChatBotHistory, Dict]]:
+            - Updated state.
+            - Progress bar contents.
+            - Start button state (to be eventually enabled).
+    """
+
+    state.session = None
+    return state, gr.update(visible=False), gr.update(interactive=True)
 
 
 def construct_demo(api_key: str) -> None:
@@ -295,10 +359,6 @@ def construct_demo(api_key: str) -> None:
 
     demo.load(role_playing_chat_cont, session_state,
               [session_state, chatbot, progress_sl, start_bn], every=0.5)
-
-    def stop_session(state) -> Tuple[State, Dict, Dict]:
-        state.session = None
-        return state, gr.update(visible=False), gr.update(interactive=True)
 
     clear_bn.click(stop_session, session_state,
                    [session_state, progress_sl, start_bn])
