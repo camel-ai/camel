@@ -7,7 +7,6 @@ import random
 from typing import Any, Dict, List, Tuple
 
 import gradio as gr
-
 from loader import load_data
 
 
@@ -57,7 +56,7 @@ def construct_demo(data: Dict[str, Any]):
         with gr.Column(scale=3):
             gr.Markdown(
                 "## CAMEL: Communicative Agents for \"Mind\" Exploration"
-                " of Large Scale Language Models\n"
+                " of Large Scale Language Model Society\n"
                 "Github repo: [https://github.com/lightaime/camel]"
                 "(https://github.com/lightaime/camel)")
     task_dd = gr.Dropdown([], label="Original task", value="",

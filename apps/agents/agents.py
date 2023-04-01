@@ -4,18 +4,19 @@ a chat between collaborative agents.
 """
 
 import argparse
-import gradio as gr
 import os
 import re
 import time
-from typing import List, Dict, Any, Tuple, Union, Optional
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Tuple, Union
+
+import gradio as gr
 import openai
 import openai.error
 import tenacity
-from dataclasses import dataclass
 
 from camel.agent import RolePlaying
-from camel.message import ChatMessage, AssistantChatMessage, UserChatMessage
+from camel.message import AssistantChatMessage, ChatMessage, UserChatMessage
 
 REPO_ROOT = os.path.realpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.."))
@@ -314,7 +315,7 @@ def construct_demo(api_key: str) -> None:
         with gr.Column(scale=1):
             gr.Markdown(
                 "## CAMEL: Communicative Agents for \"Mind\" Exploration"
-                " of Large Scale Language Models\n"
+                " of Large Scale Language Model Society\n"
                 "Github repo: [https://github.com/lightaime/camel]"
                 "(https://github.com/lightaime/camel)")
     with gr.Row():

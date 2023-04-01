@@ -6,7 +6,7 @@ import glob
 import json
 import os
 import re
-from typing import Any, Union, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Union
 
 from tqdm import tqdm
 
