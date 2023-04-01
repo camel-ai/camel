@@ -145,23 +145,30 @@ class SystemMessageGenerator:
 
 class RoleNameGenerator:
 
-    def __init__(
-        self,
-        assistant_role_names_path: str = "data/ai_society/assistant_roles.txt",
-        user_role_names_path: str = "data/ai_society/user_roles.txt",
-    ) -> None:
+    def __init__(self, assistant_role_names_path:
+                 str = "data/ai_society/assistant_roles.txt",
+                 user_role_names_path: str = "data/ai_society/user_roles.txt",
+                 assistant_role_names: Optional[List[str]] = None,
+                 user_role_names: Optional[List[str]] = None) -> None:
 
-        with open(assistant_role_names_path, "r") as f:
-            assistant_role_names: List[str] = f.read().splitlines()
-            self.assistant_role_names = [
-                " ".join(name.split(" ")[1:]) for name in assistant_role_names
-            ]
+        if assistant_role_names is None:
+            with open(assistant_role_names_path, "r") as f:
+                assistant_role_names: List[str] = f.read().splitlines()
+                self.assistant_role_names = [
+                    " ".join(name.split(" ")[1:])
+                    for name in assistant_role_names
+                ]
+        else:
+            self.assistant_role_names = assistant_role_names
 
-        with open(user_role_names_path, "r") as f:
-            user_role_names: List[str] = f.read().splitlines()
-            self.user_role_names = [
-                " ".join(name.split(" ")[1:]) for name in user_role_names
-            ]
+        if user_role_names is None:
+            with open(user_role_names_path, "r") as f:
+                user_role_names: List[str] = f.read().splitlines()
+                self.user_role_names = [
+                    " ".join(name.split(" ")[1:]) for name in user_role_names
+                ]
+        else:
+            self.user_role_names = user_role_names
 
     def from_role_files(self) -> Generator[Tuple, None, None]:
         for assistant_role_name in self.assistant_role_names:
@@ -188,23 +195,29 @@ class AISocietyTaskPromptGenerator:
         self,
         assistant_role_names_path: str = "data/ai_society/assistant_roles.txt",
         user_role_names_path: str = "data/ai_society/user_roles.txt"
-    ) -> Generator[str, None, None]:
+    ) -> Generator[Tuple[str, Tuple[str, str]], None, None]:
         roles_generator = RoleNameGenerator(
             assistant_role_names_path, user_role_names_path).from_role_files()
         for role_1, role_2 in roles_generator:
-            yield (self.generate_tasks_prompt.replace(
+            generate_tasks_prompt = (self.generate_tasks_prompt.replace(
                 "<ROLE_1>",
                 role_1).replace("<ROLE_2>",
                                 role_2).replace("<NUM_TASKS>",
                                                 str(self.num_tasks)))
 
+            yield (generate_tasks_prompt, (role_1, role_2))
+
     def from_role_generator(
         self, role_generator: Generator[Tuple, None, None]
-    ) -> Generator[str, None, None]:
+    ) -> Generator[Tuple[str, Tuple[str, str]], None, None]:
         for role_1, role_2 in role_generator:
-            yield (self.generate_tasks_prompt.replace("<ROLE_1>",
-                                                      role_1).replace(
-                                                          "<ROLE_2>", role_2))
+            generate_tasks_prompt = (self.generate_tasks_prompt.replace(
+                "<ROLE_1>",
+                role_1).replace("<ROLE_2>",
+                                role_2).replace("<NUM_TASKS>",
+                                                str(self.num_tasks)))
+
+            yield (generate_tasks_prompt, (role_1, role_2))
 
 
 class SingleTxtGenerator:

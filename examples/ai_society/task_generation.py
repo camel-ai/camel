@@ -2,11 +2,8 @@ import multiprocessing
 import os
 
 from camel.agent import ChatAgent
-from camel.generator import (
-    AISocietyTaskPromptGenerator,
-    RoleNameGenerator,
-    SystemMessageGenerator,
-)
+from camel.generator import (AISocietyTaskPromptGenerator,
+                             SystemMessageGenerator)
 from camel.typing import ModeType, RoleType
 
 
@@ -40,13 +37,12 @@ def main() -> None:
     num_tasks = 10
     start_token = "1."
 
-    role_names_generator = RoleNameGenerator().from_role_files()
     task_generator_prompt_generator = AISocietyTaskPromptGenerator(
         num_tasks=num_tasks).from_role_files()
 
     pool = multiprocessing.Pool()
-    for task_generator_prompt, role_names in zip(
-            task_generator_prompt_generator, role_names_generator):
+
+    for task_generator_prompt, role_names in task_generator_prompt_generator:
         if not os.path.exists(f"./tasks/{'_'.join(role_names)}.txt"):
             print(f"Generating tasks for {role_names}")
             pool.apply_async(
