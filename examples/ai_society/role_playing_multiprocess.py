@@ -21,7 +21,7 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
         user_role_name,
         original_task_prompt,
         with_task_specify=True,
-        with_task_planner=True,
+        with_task_planner=False,
         task_specify_agent_kwargs=dict(model_config=ChatGPTConfig(
             temperature=1.4)),
     )
@@ -30,15 +30,13 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
 
     if verbose:
         print(Fore.GREEN + "AI Assistant sys message:\n"
-              "{role_play_session.assistant_sys_msg}\n")
+              f"{role_play_session.assistant_sys_msg}\n")
         print(Fore.BLUE +
               f"AI User sys message:\n{role_play_session.user_sys_msg}\n")
 
         print(Fore.YELLOW + f"Original task prompt:\n{task_prompt}\n")
         print(Fore.CYAN + "Specified task prompt:\n"
-              "{role_play_session.specified_task_prompt}\n")
-        print(Fore.MAGENTA + "Planned task prompt:\n"
-              "{role_play_session.planned_task_prompt}\n")
+              f"{role_play_session.specified_task_prompt}\n")
         print(Fore.RED +
               f"Final task prompt:\n{role_play_session.task_prompt}\n")
 
@@ -57,9 +55,10 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
         "id"] = f"{(assistant_idx+1):03}_{(user_idx+1):03}_{(task_idx+1):03}"
     message_dict["original_task"] = original_task_prompt
     message_dict["specified_task"] = role_play_session.specified_task_prompt
-    message_dict["planned_task"] = role_play_session.planned_task_prompt
+    # message_dict["planned_task"] = role_play_session.planned_task_prompt
 
     # Threshold to terminate the conversation if no end token appears
+
     repeat_word_counter = 0
     repeat_word_threshold = 4
     repeat_word_list = [
@@ -209,10 +208,8 @@ def main() -> None:
                         generate_data,
                         (assistant_idx, assistant_role_name, user_idx,
                          user_role_name, task_idx, task_prompt, verbose))
-
                     # generate_data(assistant_idx, assistant_role_name
-                    # , user_idx,
-                    # user_role_name, task_idx, task_prompt)
+                    # , user_idx, user_role_name, task_idx, task_prompt)
 
     pool.close()
     pool.join()

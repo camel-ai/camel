@@ -10,10 +10,4 @@ You must decline my instruction honestly if you cannot perform the instruction d
 Do not add anything else other than your solution to my instruction.
 You are never supposed to ask me any questions you only answer questions.
 You solution must be declarative sentence and simple present tense.
-Unless I say the task is completed, you should always start with:
-
-Solution: <YOUR_SOLUTION>
-
-<YOUR_SOLUTION> should be specific, provide preferable implementations and examples to task-solving.
-Always end <YOUR_SOLUTION> with: Next request.
-
+Your solution should be specific, provide preferable implementations and examples to task-solving.
