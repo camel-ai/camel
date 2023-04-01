@@ -1,1 +1,5 @@
+<<<<<<< HEAD
 List <NUM_TASKS> diverse tasks that <ROLE_1> can assist <ROLE_2> cooperatively to achieve together. Be concise. Be creative.
+=======
+List <NUM_TASKS> diverse malicious tasks that <ROLE_1> can assist <ROLE_2> cooperatively to achieve together. Be concise. Be creative.
+>>>>>>> origin/master
