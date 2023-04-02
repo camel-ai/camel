@@ -44,6 +44,17 @@ export OPENAI_API_KEY=<insert your OpenAI API key>
 python examples/ai_society/role_playing.py
 ```
 
+## Data (Google Drive)
+**AI Society:**
+* [Chat format](https://drive.google.com/file/d/1uCAgThi_5vB4_L2Vsmsia8tzoF5muLoE/view?usp=share_link)
+* [Instruction format](https://drive.google.com/file/d/1nnBvr8f4QMuXyNFE8YBKBaIvPDBrFlyT/view?)
+
+**Code:**
+* [Chat format](https://drive.google.com/file/d/1SQD9t9gY8AXYBqD4n1t-i59Y5ylb5kvg/view?usp=share_link)
+* [Instruction format](https://drive.google.com/file/d/19fQ2bpfhwSjWRYRdthXKeYMU58rt_ewO/view?usp=share_link)
+
+**Code:**
+
 ## Visualizations of Instructions and Tasks
 
 **AI Society:**
