@@ -73,7 +73,12 @@ Special thanks to [Nomic AI](https://home.nomic.ai/) for giving us extended acce
 We would also like to thank Haya Hammoud for designing the logo of our project. 
 
 ## License
-Apache License 2.0 
+
+The intended purpose and licensing of CAMEL is solely for research use.
+
+The source code is licensed under Apache 2.0.
+
+The datasets are licensed under CC BY NC 4.0, which permits only non-commercial usage. It is advised that any models trained using the dataset should not be utilized for anything other than research purposes.
 
 ## Contact
 For more information please contact [Guohao Li](https://ghli.org/), [Hasan Abed Al Kader Hammoud](https://cemse.kaust.edu.sa/ece/people/person/hasan-abed-al-kader-hammoud), [Hani Itani](https://github.com/HaniItani).
