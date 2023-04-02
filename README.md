@@ -15,7 +15,7 @@ The rapid advancement of conversational and chat-based language models has led t
 We provide a [![Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1AzP33O8rnMW__7ocWJhVBXjKziJXPtim?usp=sharing) demo showcasing a conversation between two ChatGPT agents playing roles as a python programmer and a stock trader collaborating on developing a trading bot for stock market.
 
 <p align="center">
-  <img src='./misc/framework.png' width=400>
+  <img src='./misc/framework.png' width=800>
 </p>
 
 ## Environment Setup
