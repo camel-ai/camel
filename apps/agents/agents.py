@@ -6,9 +6,8 @@ a chat between collaborative agents.
 import argparse
 import os
 import re
-import time
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import gradio as gr
 import openai
@@ -16,7 +15,7 @@ import openai.error
 import tenacity
 
 from camel.agent import RolePlaying
-from camel.message import AssistantChatMessage, ChatMessage, UserChatMessage
+from camel.message import AssistantChatMessage
 
 REPO_ROOT = os.path.realpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.."))
@@ -83,7 +82,7 @@ def load_roles(path: str) -> List[str]:
     with open(path, "r") as f:
         lines = f.readlines()
         for line in lines:
-            match = re.search("^\d+\.\s*(.+)\n*$", line)
+            match = re.search(r"^\d+\.\s*(.+)\n*$", line)
             if match:
                 role = match.group(1)
                 roles.append(role)
@@ -192,7 +191,7 @@ def role_playing_chat_init(state) -> \
         assistant_msg, _ = state.session.init_chat()
         assistant_msg: AssistantChatMessage
     except (openai.error.RateLimitError, tenacity.RetryError) as ex:
-        print("OpenAI API exception 1")
+        print("OpenAI API exception 1 " + str(ex))
         state.session = None
         return state, state.chat, gr.update()
 
@@ -230,7 +229,7 @@ def role_playing_chat_cont(state) -> \
     try:
         assistant_msg, user_msg = state.session.step(state.saved_assistant_msg)
     except (openai.error.RateLimitError, tenacity.RetryError) as ex:
-        print("OpenAI API exception 2")
+        print("OpenAI API exception 2 " + str(ex))
         state.session = None
         return state, state.chat, gr.update(), gr.update()
 
