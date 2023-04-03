@@ -227,14 +227,15 @@ def role_playing_chat_cont(state) -> \
         return state, state.chat, gr.update(), gr.update()
 
     try:
-        assistant_msg, user_msg = state.session.step(state.saved_assistant_msg)
+        assistant_msgs, user_msgs = state.session.step(
+            state.saved_assistant_msg)
     except (openai.error.RateLimitError, tenacity.RetryError) as ex:
         print("OpenAI API exception 2 " + str(ex))
         state.session = None
         return state, state.chat, gr.update(), gr.update()
 
-    u_msg = user_msg[0]
-    a_msg = assistant_msg[0]
+    u_msg = user_msgs[0]
+    a_msg = assistant_msgs[0]
 
     state.saved_assistant_msg = a_msg
 
