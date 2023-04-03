@@ -81,13 +81,13 @@ class RolePlaying:
 
         # Send the system messages again to the agents using chat messages
         assistant_msg = AssistantChatMessage(
-            self.assistant_agent.role_name,
+            self.assistant_agent.meta_dict,
             content=(f"{self.user_sys_msg.content}. "
                      "Now start to give me introductions one by one. "
                      "Only reply with Instruction and Input."))
         assistant_msg.role = "user"
 
-        user_msg = UserChatMessage(self.user_sys_msg.role_name,
+        user_msg = UserChatMessage(self.user_sys_msg.meta_dict,
                                    content=f"{self.assistant_sys_msg.content}")
         msgs, _, _ = self.assistant_agent.step(user_msg)
 

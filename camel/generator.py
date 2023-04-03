@@ -1,8 +1,12 @@
 from typing import Generator, List, Optional, Tuple
 
-from camel.message import (AssistantSystemMessage, CodeAssistantSystemMessage,
-                           CodeSystemMessage, CodeUserSystemMessage, RoleType,
-                           SystemMessage, SystemMessageType, UserSystemMessage)
+from camel.message import (
+    AssistantSystemMessage,
+    RoleType,
+    SystemMessage,
+    SystemMessageType,
+    UserSystemMessage,
+)
 
 
 class SystemMessageGenerator:
@@ -62,7 +66,7 @@ class SystemMessageGenerator:
                     task_prompt,
                 )
 
-            return AssistantSystemMessage(role_name=role_name,
+            return AssistantSystemMessage(meta_dict=dict(role_name=role_name),
                                           content=new_role_prompt)
 
         if role_type == RoleType.USER:
@@ -76,7 +80,7 @@ class SystemMessageGenerator:
                     task_prompt,
                 )
 
-            return UserSystemMessage(role_name=role_name,
+            return UserSystemMessage(meta_dict=dict(role_name=role_name),
                                      content=new_role_prompt)
 
         if role_type == RoleType.DEFAULT:
@@ -84,8 +88,8 @@ class SystemMessageGenerator:
             if task_prompt is not None:
                 new_role_prompt = new_role_prompt.replace(
                     "<TASK>", task_prompt)
-            return SystemMessage(role_type=role_type, role_name=role_name,
-                                 content=new_role_prompt)
+            return SystemMessage(meta_dict=dict(role_name=role_name),
+                                 role_type=role_type, content=new_role_prompt)
 
     def from_roles(
         self,
@@ -118,11 +122,11 @@ class SystemMessageGenerator:
                 user_role_name = role_name
 
         assistant_system_message = AssistantSystemMessage(
-            role_name=assistant_role_name,
+            meta_dict=dict(role_name=assistant_role_name),
             content=role_prompts[0],
         )
         user_system_message = UserSystemMessage(
-            role_name=user_role_name,
+            meta_dict=dict(role_name=user_role_name),
             content=role_prompts[1],
         )
 
@@ -323,9 +327,11 @@ class CodeSystemMessageGenerator:
                     task_prompt,
                 )
 
-            return CodeAssistantSystemMessage(language_name=language_name,
-                                              domain_name=domain_name,
-                                              content=new_role_prompt)
+            return AssistantSystemMessage(
+                meta_dict=dict(
+                    language_name=language_name,
+                    domain_name=domain_name,
+                ), content=new_role_prompt)
 
         if role_type == RoleType.USER:
             role_prompt = role_prompt or self.user_prompt
@@ -341,18 +347,22 @@ class CodeSystemMessageGenerator:
                     task_prompt,
                 )
 
-            return CodeUserSystemMessage(language_name=language_name,
-                                         domain_name=domain_name,
-                                         content=new_role_prompt)
+            return SystemMessage(
+                meta_dict=dict(
+                    language_name=language_name,
+                    domain_name=domain_name,
+                ), content=new_role_prompt)
 
         if role_type == RoleType.DEFAULT:
             new_role_prompt = "You are a helpful assistant."
             if task_prompt is not None:
                 new_role_prompt = new_role_prompt.replace(
                     "<TASK>", task_prompt)
-            return CodeSystemMessage(language_name=language_name,
-                                     domain_name=domain_name,
-                                     content=new_role_prompt)
+            return SystemMessage(
+                meta_dict=dict(
+                    language_name=language_name,
+                    domain_name=domain_name,
+                ), content=new_role_prompt)
 
     def from_roles(
         self,
@@ -381,14 +391,12 @@ class CodeSystemMessageGenerator:
                                              task_prompt).content
             role_prompts[i] = role_prompt
 
-        assistant_system_message = CodeAssistantSystemMessage(
-            language_name,
-            domain_name,
+        assistant_system_message = AssistantSystemMessage(
+            meta_dict=dict(language_name, domain_name),
             content=role_prompts[0],
         )
-        user_system_message = CodeUserSystemMessage(
-            language_name,
-            domain_name,
+        user_system_message = UserSystemMessage(
+            meta_dict=dict(language_name, domain_name),
             content=role_prompts[1],
         )
 

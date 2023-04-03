@@ -161,7 +161,7 @@ def main() -> None:
     verbose = True
 
     # Chunk for parallel jobs
-    array_idx = int(os.environ.get('SLURM_ARRAY_TASK_ID'))
+    array_idx = 0  # int(os.environ.get('SLURM_ARRAY_TASK_ID'))
     roles_per_chunk = 10
 
     # Parameters for filtering the generated task string

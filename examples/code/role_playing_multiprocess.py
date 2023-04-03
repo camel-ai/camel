@@ -2,32 +2,37 @@ import json
 import multiprocessing
 import os
 
-from camel.agent import CodeChatAgent, TaskPlannerAgent, TaskSpecifyAgent
+from camel.agent import ChatAgent, TaskPlannerAgent, TaskSpecifyAgent
 from camel.configs import ChatGPTConfig
 from camel.generator import CodeSystemMessageGenerator
-from camel.message import (AssistantChatMessage, CodeAssistantSystemMessage,
-                           CodeUserSystemMessage, UserChatMessage)
+from camel.message import (
+    AssistantChatMessage,
+    AssistantSystemMessage,
+    UserChatMessage,
+    UserSystemMessage,
+)
 from camel.typing import ModeType, RoleType, TaskType
 
 
 def init_chat(
-    assistant_agent: CodeChatAgent,
-    user_agent: CodeChatAgent,
-    user_sys_msg: CodeUserSystemMessage,
-    assistant_sys_msg: CodeAssistantSystemMessage,
+    assistant_agent: ChatAgent,
+    user_agent: ChatAgent,
+    user_sys_msg: UserSystemMessage,
+    assistant_sys_msg: AssistantSystemMessage,
 ):
     assistant_agent.reset()
     user_agent.reset()
 
     # Send the system messages again to the agents using chat messages
     assistant_msg = AssistantChatMessage(
-        "Computer Programer",
+        meta_dict=dict(role_name="Computer Programer"),
         content=(f"{user_sys_msg.content}. "
                  "Now start to give me instructions one by one. "
                  "Only reply with Instruction and Input."))
     assistant_msg.role = "user"
 
-    user_msg = UserChatMessage("", content=f"{assistant_sys_msg.content}")
+    user_msg = UserChatMessage(meta_dict=dict(role_name=""),
+                               content=f"{assistant_sys_msg.content}")
     msgs, _, _ = assistant_agent.step(user_msg)
 
     return assistant_msg, msgs
@@ -66,10 +71,10 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
                (RoleType.USER)], language_name=language_name,
         domain_name=domain_name, task_prompt=specified_task_prompt)
 
-    assistant_agent = CodeChatAgent(assistant_sys_msg, ModeType.GPT_3_5_TURBO,
-                                    message_window_size=max_num_messages)
-    user_agent = CodeChatAgent(user_sys_msg, ModeType.GPT_3_5_TURBO,
-                               message_window_size=max_num_messages)
+    assistant_agent = ChatAgent(assistant_sys_msg, ModeType.GPT_3_5_TURBO,
+                                message_window_size=max_num_messages)
+    user_agent = ChatAgent(user_sys_msg, ModeType.GPT_3_5_TURBO,
+                           message_window_size=max_num_messages)
 
     assistant_msg, _ = init_chat(assistant_agent, user_agent, user_sys_msg,
                                  assistant_sys_msg)

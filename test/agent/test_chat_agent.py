@@ -19,20 +19,22 @@ def test_chat_agent():
         chat_gpt_args,
     )
 
-    assert str(assistant) == (
-        "ChatAgent(doctor, RoleType.ASSISTANT, ModeType.GPT_3_5_TURBO)")
+    assert str(assistant) == ("ChatAgent({'role_name': 'doctor'}, "
+                              "RoleType.ASSISTANT, ModeType.GPT_3_5_TURBO)")
 
     assistant.reset()
-    messages, terminated, info = assistant.step(
-        ChatMessage("patient", RoleType.USER, "user", "Hello!"))
+    user_msg = ChatMessage(dict(role_name="patient"), RoleType.USER, "user",
+                           "Hello!")
+    messages, terminated, info = assistant.step(user_msg)
 
     assert terminated is False
     assert messages != []
     assert info['id'] is not None
 
     assistant.reset()
-    messages, terminated, info = assistant.step(
-        ChatMessage("patient", RoleType.USER, "user", "Hello!" * 4096))
+    user_msg = ChatMessage(dict(role_name="patient"), RoleType.USER, "user",
+                           "Hello!" * 4096)
+    messages, terminated, info = assistant.step(user_msg)
 
     assert terminated is True
     assert messages == []

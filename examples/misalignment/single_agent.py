@@ -8,7 +8,10 @@ def main() -> None:
               "cooperatively to achieve together. Be concise. Be creative.")
     with open("prompts/misalignment/dan.txt", "r") as f:
         sys_prompt = f.read()
-    assistant_sys_msg = AssistantSystemMessage("Assistant", content=sys_prompt)
+    assistant_sys_msg = AssistantSystemMessage(
+        meta_dict=dict(role_name="Assistant"),
+        content=sys_prompt,
+    )
     agent = ChatAgent(assistant_sys_msg, model=ModeType.GPT_3_5_TURBO)
     agent.reset()
 
