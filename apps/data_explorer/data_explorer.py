@@ -7,14 +7,14 @@ import random
 from typing import Any, Dict, List, Tuple
 
 import gradio as gr
-from loader import load_data
+from loader import Datasets, load_datasets
 
 
 def parse_arguments():
     """ Get command line arguments. """
 
     parser = argparse.ArgumentParser("Camel data explorer")
-    parser.add_argument('--data-path', type=str, default="camel_data/",
+    parser.add_argument('--data-path', type=str, default=None,
                         help='Path to the folder with chat JSONs')
     parser.add_argument('--share', type=bool, default=False,
                         help='Expose the web UI to Gradio')
@@ -32,28 +32,34 @@ def parse_arguments():
     return args
 
 
-def construct_demo(data: Dict[str, Any]):
+def construct_app(datasets: Datasets):
     """ Build Gradio UI and populate with chat data from JSONs.
 
     Args:
-        data (Dict[str, Any]): Parsed multi-JSON dataset with chats.
+        datasets (Datasets): Several parsed
+        multi-JSON dataset with chats.
 
     Returns:
         None
     """
-    assistant_roles = data['assistant_roles']
-    user_roles = data['user_roles']
-    assistant_role = random.choice(assistant_roles) \
-        if len(assistant_roles) > 0 else ""
-    user_role = random.choice(user_roles) if len(user_roles) > 0 else ""
+
+    dataset_name = "ai_society_chat" if "ai_society_chat" in datasets.keys() \
+        else next(iter(datasets.keys()))
+    dataset_names = list(datasets.keys())
+
     with gr.Row().style():
-        with gr.Column(scale=3):
-            assistant_dd = gr.Dropdown(assistant_roles, label="ASSISTANT",
-                                       value=assistant_role, interactive=True)
-        with gr.Column(scale=3):
-            user_dd = gr.Dropdown(user_roles, label="USER", value=user_role,
-                                  interactive=True)
-        with gr.Column(scale=3):
+        with gr.Column(scale=2):
+            with gr.Row():
+                dataset_dd = gr.Dropdown(dataset_names, label="Select dataset",
+                                        value=dataset_name, interactive=True)
+            with gr.Row():
+                with gr.Column(scale=3):
+                    assistant_dd = gr.Dropdown([], label="ASSISTANT", value="",
+                                               interactive=True)
+                with gr.Column(scale=3):
+                    user_dd = gr.Dropdown([], label="USER", value="",
+                                          interactive=True)
+        with gr.Column(scale=1):
             gr.Markdown(
                 "## CAMEL: Communicative Agents for \"Mind\" Exploration"
                 " of Large Scale Language Model Society\n"
@@ -64,7 +70,8 @@ def construct_demo(data: Dict[str, Any]):
     specified_task_ta = gr.TextArea(label="Specified task", lines=2)
     chatbot = gr.Chatbot()
 
-    def roles_dd_change(assistant_role: str, user_role: str) -> Dict:
+    def roles_dd_change(dataset_name: str, assistant_role: str,
+                        user_role: str) -> Dict:
         """ Update the displayed chat upon inputs change.
 
         Args:
@@ -74,7 +81,7 @@ def construct_demo(data: Dict[str, Any]):
         Returns:
             Dict: New original roles state dictionary.
         """
-        matrix = data['matrix']
+        matrix = datasets[dataset_name]['matrix']
         if (assistant_role, user_role) in matrix:
             record: Dict[str, Dict] = matrix[(assistant_role, user_role)]
             original_task_options = list(record.keys())
@@ -115,7 +122,7 @@ def construct_demo(data: Dict[str, Any]):
                 pass
         return history
 
-    def task_dd_change(assistant_role: str, user_role: str,
+    def task_dd_change(dataset_name: str, assistant_role: str, user_role: str,
                        original_task: str) -> Tuple[str, List]:
         """ Load task details and chatbot history into UI elements.
 
@@ -129,7 +136,7 @@ def construct_demo(data: Dict[str, Any]):
             and chatbot history UI elements.
         """
 
-        matrix = data['matrix']
+        matrix = datasets[dataset_name]['matrix']
         if (assistant_role, user_role) in matrix:
             task_dict: Dict[str, Dict] = matrix[(assistant_role, user_role)]
             if original_task in task_dict:
@@ -144,18 +151,35 @@ def construct_demo(data: Dict[str, Any]):
             history = []
         return specified_task, history
 
-    func_args = (roles_dd_change, [assistant_dd, user_dd], task_dd)
+    def dataset_dd_change(dataset_name: str) -> Tuple[Dict, Dict]:
+        dataset = datasets[dataset_name]
+        assistant_roles = dataset['assistant_roles']
+        user_roles = dataset['user_roles']
+        assistant_role = random.choice(assistant_roles) \
+            if len(assistant_roles) > 0 else ""
+        user_role = random.choice(user_roles) if len(user_roles) > 0 else ""
+        return (gr.update(value=assistant_role, choices=assistant_roles),
+                gr.update(value=user_role, choices=user_roles))
+
+    dataset_dd.change(dataset_dd_change, dataset_dd, [assistant_dd, user_dd])
+
+    demo.load(dataset_dd_change, dataset_dd, [assistant_dd, user_dd])
+
+    func_args = (roles_dd_change, [dataset_dd, assistant_dd, user_dd], task_dd)
     assistant_dd.change(*func_args)
     user_dd.change(*func_args)
 
-    task_dd.change(task_dd_change, [assistant_dd, user_dd, task_dd],
+    task_dd.change(task_dd_change,
+                   [dataset_dd, assistant_dd, user_dd, task_dd],
                    [specified_task_ta, chatbot])
 
-    task_dd_update_dict = roles_dd_change(assistant_dd.value, user_dd.value)
+    task_dd_update_dict = roles_dd_change(dataset_dd.value, assistant_dd.value,
+                                          user_dd.value)
     task_dd.choices = task_dd_update_dict['choices']
     task_dd.value = task_dd_update_dict['value']
 
-    specified_task, chatbot_history = task_dd_change(assistant_dd.value,
+    specified_task, chatbot_history = task_dd_change(dataset_dd.value,
+                                                     assistant_dd.value,
                                                      user_dd.value,
                                                      task_dd.value)
     specified_task_ta.value = specified_task
@@ -168,13 +192,13 @@ if __name__ == "__main__":
     args = parse_arguments()
 
     print("Loading the dataset...")
-    data = load_data(args.data_path)
+    datasets = load_datasets(args.data_path)
     print("Dataset is loaded")
 
     print("Getting Data Explorer web server online...")
 
     with gr.Blocks() as demo:
-        construct_demo(data)
+        construct_app(datasets)
 
     demo.queue(args.concurrency_count)
     demo.launch(share=args.share, inbrowser=args.inbrowser,
