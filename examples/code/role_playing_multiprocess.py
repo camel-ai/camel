@@ -2,9 +2,9 @@ import json
 import multiprocessing
 import os
 
-from camel.agent import ChatAgent, TaskPlannerAgent, TaskSpecifyAgent
+from camel.agent import ChatAgent, TaskSpecifyAgent
 from camel.configs import ChatGPTConfig
-from camel.generator import CodeSystemMessageGenerator
+from camel.generator import SystemMessageGenerator
 from camel.message import (
     AssistantChatMessage,
     AssistantSystemMessage,
@@ -60,16 +60,14 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
     print(f"Original Task: {original_task_prompt}")
     print(f"Specified Task: {specified_task_prompt}")
 
-    task_planner_agent = TaskPlannerAgent(
-        ModeType.GPT_3_5_TURBO, model_config=ChatGPTConfig(temperature=1.4))
-    planned_task_prompt = task_planner_agent.plan_task(specified_task_prompt)
-    print(f"Planned task prompt:\n{planned_task_prompt}\n")
-
-    sys_msg_generator = CodeSystemMessageGenerator(with_task=True)
-    assistant_sys_msg, user_sys_msg = sys_msg_generator.from_roles(
-        roles=[(RoleType.ASSISTANT),
-               (RoleType.USER)], language_name=language_name,
-        domain_name=domain_name, task_prompt=specified_task_prompt)
+    sys_msg_generator = SystemMessageGenerator()
+    sys_msg_meta_dicts = [{
+        "<LANGUAGE>": language_name,
+        "<DOMAIN>": domain_name,
+        "<TASK>": specified_task_prompt
+    }] * 2
+    assistant_sys_msg, user_sys_msg = sys_msg_generator.from_dicts(
+        sys_msg_meta_dicts, [RoleType.ASSISTANT, RoleType.USER])
 
     assistant_agent = ChatAgent(assistant_sys_msg, ModeType.GPT_3_5_TURBO,
                                 message_window_size=max_num_messages)
