@@ -56,14 +56,14 @@ def construct_app(datasets: Datasets):
                                          interactive=True)
             with gr.Row():
                 disclaimer_ta = gr.Markdown(
-                    "## By clicking Agree I consent to use the dataset for purely "
+                    "## By clicking AGREE I consent to use the dataset for purely "
                     "educational and academic purposes and not use it for any "
                     "fraudulent activity; and I take all the responsibility if "
                     "the data is used in a malicious application.",
                     visible=False)
             with gr.Row():
                 with gr.Column(scale=1):
-                    accept_disclaimer_bn = gr.Button("ACCEPT", visible=False)
+                    accept_disclaimer_bn = gr.Button("AGREE", visible=False)
                 with gr.Column(scale=1):
                     decline_disclaimer_bn = gr.Button("DECLINE", visible=False)
             with gr.Row():
