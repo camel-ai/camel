@@ -4,7 +4,7 @@ Gradio-based web UI to explore the Camel dataset.
 
 import argparse
 import random
-from typing import Any, Dict, List, Tuple
+from typing import Dict, List, Tuple
 
 import gradio as gr
 from loader import Datasets, load_datasets
@@ -43,15 +43,29 @@ def construct_app(datasets: Datasets):
         None
     """
 
-    dataset_name = "ai_society_chat" if "ai_society_chat" in datasets.keys() \
-        else next(iter(datasets.keys()))
+    default_dataset_name = "ai_society_chat" \
+        if "ai_society_chat" in datasets.keys() \
+        else [v for v in datasets.keys() if v != "misalignment"][0]
     dataset_names = list(datasets.keys())
 
     with gr.Row().style():
         with gr.Column(scale=2):
             with gr.Row():
                 dataset_dd = gr.Dropdown(dataset_names, label="Select dataset",
-                                        value=dataset_name, interactive=True)
+                                         value=default_dataset_name,
+                                         interactive=True)
+            with gr.Row():
+                disclaimer_ta = gr.Markdown(
+                    "## By clicking Agree I consent to use the dataset for purely "
+                    "educational and academic purposes and not use it for any "
+                    "fraudulent activity; and I take all the responsibility if "
+                    "the data is used in a malicious application.",
+                    visible=False)
+            with gr.Row():
+                with gr.Column(scale=1):
+                    accept_disclaimer_bn = gr.Button("ACCEPT", visible=False)
+                with gr.Column(scale=1):
+                    decline_disclaimer_bn = gr.Button("DECLINE", visible=False)
             with gr.Row():
                 with gr.Column(scale=3):
                     assistant_dd = gr.Dropdown([], label="ASSISTANT", value="",
@@ -69,6 +83,41 @@ def construct_app(datasets: Datasets):
                           interactive=True)
     specified_task_ta = gr.TextArea(label="Specified task", lines=2)
     chatbot = gr.Chatbot()
+    accepted_st = gr.State(False)
+
+    def check_if_misalignment(dataset_name: str, accepted: bool) \
+        -> Tuple[Dict, Dict, Dict]:
+
+        if dataset_name == "misalignment" and not accepted:
+            return gr.update(visible=True), \
+                gr.update(visible=True), gr.update(visible=True)
+        else:
+            return gr.update(visible=False), \
+                gr.update(visible=False), gr.update(visible=False)
+
+    def enable_misalignment() -> Tuple[bool, Dict, Dict, Dict]:
+        return True, gr.update(visible=False), \
+                gr.update(visible=False), gr.update(visible=False)
+
+    def disable_misalignment() -> Tuple[bool, Dict, Dict, Dict]:
+        return False, gr.update(visible=False), \
+                gr.update(visible=False), gr.update(visible=False)
+
+    def update_dataset_selection(dataset_name: str,
+                                 accepted: bool) -> Tuple[Dict, Dict]:
+        if dataset_name == "misalignment" and not accepted:
+            # If used did not accept the misalignment policy,
+            # keep the old selection.
+            return gr.update(), gr.update()
+
+        dataset = datasets[dataset_name]
+        assistant_roles = dataset['assistant_roles']
+        user_roles = dataset['user_roles']
+        assistant_role = random.choice(assistant_roles) \
+            if len(assistant_roles) > 0 else ""
+        user_role = random.choice(user_roles) if len(user_roles) > 0 else ""
+        return (gr.update(value=assistant_role, choices=assistant_roles),
+                gr.update(value=user_role, choices=user_roles))
 
     def roles_dd_change(dataset_name: str, assistant_role: str,
                         user_role: str) -> Dict:
@@ -151,19 +200,29 @@ def construct_app(datasets: Datasets):
             history = []
         return specified_task, history
 
-    def dataset_dd_change(dataset_name: str) -> Tuple[Dict, Dict]:
-        dataset = datasets[dataset_name]
-        assistant_roles = dataset['assistant_roles']
-        user_roles = dataset['user_roles']
-        assistant_role = random.choice(assistant_roles) \
-            if len(assistant_roles) > 0 else ""
-        user_role = random.choice(user_roles) if len(user_roles) > 0 else ""
-        return (gr.update(value=assistant_role, choices=assistant_roles),
-                gr.update(value=user_role, choices=user_roles))
+    demo.load(update_dataset_selection, [dataset_dd, accepted_st],
+              [assistant_dd, user_dd])
 
-    dataset_dd.change(dataset_dd_change, dataset_dd, [assistant_dd, user_dd])
+    dataset_dd.change(check_if_misalignment, [dataset_dd, accepted_st],
+                      [disclaimer_ta, accept_disclaimer_bn,
+                       decline_disclaimer_bn]) \
+              .then(update_dataset_selection,
+                    [dataset_dd, accepted_st],
+                    [assistant_dd, user_dd])
 
-    demo.load(dataset_dd_change, dataset_dd, [assistant_dd, user_dd])
+    accept_disclaimer_bn.click(enable_misalignment, None, [
+        accepted_st, disclaimer_ta, accept_disclaimer_bn, decline_disclaimer_bn
+    ]) \
+    .then(update_dataset_selection,
+        [dataset_dd, accepted_st],
+        [assistant_dd, user_dd])
+
+    decline_disclaimer_bn.click(disable_misalignment, None, [
+        accepted_st, disclaimer_ta, accept_disclaimer_bn, decline_disclaimer_bn
+    ]) \
+    .then(update_dataset_selection,
+        [dataset_dd, accepted_st],
+        [assistant_dd, user_dd])
 
     func_args = (roles_dd_change, [dataset_dd, assistant_dd, user_dd], task_dd)
     assistant_dd.change(*func_args)
