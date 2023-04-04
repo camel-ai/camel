@@ -186,7 +186,7 @@ def main() -> None:
         for user_idx, user_role_name in enumerate(user_roles):
             user_role_name = " ".join(user_role_name.split(" ")[1:])
             # Load the task list assigned for assistant and user roles
-            with open((f"./ai_society_results/tasks/"
+            with open((f"./ai_society_data/tasks/"
                        f"{assistant_role_name}_{user_role_name}.txt"),
                       "r") as f:
                 tasks = f.read().splitlines()
