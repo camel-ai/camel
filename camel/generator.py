@@ -1,4 +1,4 @@
-from typing import Generator, List, Optional, Tuple
+from typing import Dict, Generator, List, Optional, Tuple
 
 from camel.message import (
     AssistantSystemMessage,
@@ -10,141 +10,63 @@ from camel.message import (
 
 
 class SystemMessageGenerator:
+    r"""System message generator for agents.
+    """
 
     def __init__(
         self,
-        with_task: bool = True,
-        assistant_role_names_path: str = "data/ai_society/assistant_roles.txt",
-        user_role_names_path: str = "data/ai_society/user_roles.txt",
-        assistant_prompt_path: str = "prompts/ai_society/assistant_prompt.txt",
-        user_prompt_path: str = "prompts/ai_society/user_prompt.txt",
-        assistant_prompt_with_task_path:
-        str = "prompts/ai_society/assistant_prompt_with_task.txt",
-        user_task_prompt_with_task_path:
-        str = "prompts/ai_society/user_prompt_with_task.txt",
+        sys_prompts: Optional[Dict[RoleType, str]] = None,
+        sys_prompts_paths: Dict[RoleType, str] = {
+            RoleType.ASSISTANT: "prompts/ai_society/assistant_prompt.txt",
+            RoleType.USER: "prompts/ai_society/user_prompt.txt",
+        },
     ) -> None:
-        self.with_task = with_task
-
-        with open(assistant_role_names_path, "r") as f:
-            self.assistant_role_names: List[str] = f.read().splitlines()
-
-        with open(user_role_names_path, "r") as f:
-            self.user_role_names: List[str] = f.read().splitlines()
-
-        if not self.with_task:
-            with open(assistant_prompt_path, "r") as f:
-                self.assistant_prompt: str = f.read()
-
-            with open(user_prompt_path, "r") as f:
-                self.user_prompt: str = f.read()
+        if sys_prompts is not None:
+            self.sys_prompts = sys_prompts
         else:
-            with open(assistant_prompt_with_task_path, "r") as f:
-                self.assistant_prompt: str = f.read()
+            self.sys_prompts: Dict[RoleType, str] = dict()
+            for key, value in sys_prompts_paths.items():
+                with open(value, "r") as f:
+                    self.sys_prompts[key] = f.read()
 
-            with open(user_task_prompt_with_task_path, "r") as f:
-                self.user_prompt: str = f.read()
+        if RoleType.DEFAULT not in self.sys_prompts:
+            self.sys_prompts[RoleType.DEFAULT] = "You are a helpful assistant."
 
-    def from_role(
+    def replace_keywords(
         self,
-        role_name: str = "",
+        meta_dict: Dict[str, str],
+        role_type: RoleType,
+    ) -> str:
+        """Replace keywords in the system prompt."""
+        sys_prompt = self.sys_prompts[role_type]
+        for key, value in meta_dict.items():
+            sys_prompt = sys_prompt.replace(key, value)
+        return sys_prompt
+
+    def from_dict(
+        self,
+        meta_dict: Dict[str, str],
         role_type: RoleType = RoleType.DEFAULT,
-        role_prompt: Optional[str] = None,
-        task_prompt: Optional[str] = None,
     ) -> SystemMessageType:
-        """Generate a system message from a role name and role type."""
-        if task_prompt is not None:
-            assert self.with_task, "Please set with `with_task=True`."
-        if role_type == RoleType.ASSISTANT:
-            role_prompt = role_prompt or self.assistant_prompt
-            new_role_prompt = role_prompt.replace("<ASSISTANT_ROLE>",
-                                                  role_name)
-            assert new_role_prompt != role_prompt
+        r"""Generate a system message from a dictionary."""
+        sys_prompt = self.replace_keywords(meta_dict, role_type)
+        return SystemMessage(meta_dict=meta_dict, role_type=role_type,
+                             content=sys_prompt)
 
-            if self.with_task:
-                new_role_prompt = new_role_prompt.replace(
-                    "<TASK>",
-                    task_prompt,
-                )
-
-            return AssistantSystemMessage(meta_dict=dict(role_name=role_name),
-                                          content=new_role_prompt)
-
-        if role_type == RoleType.USER:
-            role_prompt = role_prompt or self.user_prompt
-            new_role_prompt = role_prompt.replace("<USER_ROLE>", role_name)
-            assert new_role_prompt != role_prompt
-
-            if self.with_task:
-                new_role_prompt = new_role_prompt.replace(
-                    "<TASK>",
-                    task_prompt,
-                )
-
-            return UserSystemMessage(meta_dict=dict(role_name=role_name),
-                                     content=new_role_prompt)
-
-        if role_type == RoleType.DEFAULT:
-            new_role_prompt = role_prompt or "You are a helpful assistant."
-            if task_prompt is not None:
-                new_role_prompt = new_role_prompt.replace(
-                    "<TASK>", task_prompt)
-            return SystemMessage(meta_dict=dict(role_name=role_name),
-                                 role_type=role_type, content=new_role_prompt)
-
-    def from_roles(
+    def from_dicts(
         self,
-        roles: List[Tuple[str, RoleType]],
-        assistant_prompt: Optional[str] = None,
-        user_prompt: Optional[str] = None,
-        task_prompt: Optional[str] = None,
+        meta_dicts: List[Dict[str, str]],
+        role_types: List[RoleType],
     ) -> List[SystemMessageType]:
-        if task_prompt is not None:
-            assert self.with_task, "Please set with `with_task=True`."
-        assistant_prompt = assistant_prompt or self.assistant_prompt
-        user_prompt = user_prompt or self.user_prompt
-        role_prompts = [assistant_prompt, user_prompt]
-        assert len(roles) == 2, "Only support 1 assistant and 1 user."
-        assert RoleType.ASSISTANT in [role_type for _, role_type in roles
-                                      ], "Must have 1 assistant."
-        assert RoleType.USER in [role_type for _, role_type in roles
-                                 ], "Must have 1 user."
+        r"""Generate a system message from a list of dictionaries."""
+        if len(meta_dicts) != len(role_types):
+            raise ValueError(
+                "The number of meta_dicts and role_types should be the same.")
 
-        for i, role_prompt in enumerate(role_prompts):
-            for role_name, role_type in roles:
-                role_prompt = self.from_role(role_name, role_type, role_prompt,
-                                             task_prompt).content
-            role_prompts[i] = role_prompt
-
-        for role_name, role_type in roles:
-            if role_type == RoleType.ASSISTANT:
-                assistant_role_name = role_name
-            if role_type == RoleType.USER:
-                user_role_name = role_name
-
-        assistant_system_message = AssistantSystemMessage(
-            meta_dict=dict(role_name=assistant_role_name),
-            content=role_prompts[0],
-        )
-        user_system_message = UserSystemMessage(
-            meta_dict=dict(role_name=user_role_name),
-            content=role_prompts[1],
-        )
-
-        system_messages: List[SystemMessageType] = []
-        for _, role_type in roles:
-            system_messages.append(assistant_system_message if role_type ==
-                                   RoleType.ASSISTANT else user_system_message)
-
-        return system_messages
-
-    # TODO: support task generator as input.
-    def from_role_files(
-            self) -> Generator[List[SystemMessageType], None, None]:
-        for assistant_role_name in self.assistant_role_names:
-            for user_role_name in self.user_role_names:
-                yield self.from_roles(
-                    roles=[(assistant_role_name, RoleType.ASSISTANT),
-                           (user_role_name, RoleType.USER)], )
+        return [
+            self.from_dict(meta_dict, role_type)
+            for meta_dict, role_type in zip(meta_dicts, role_types)
+        ]
 
 
 class RoleNameGenerator:

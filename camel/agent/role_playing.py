@@ -16,7 +16,6 @@ class RolePlaying:
         assistant_role_name: str,
         user_role_name: str,
         task_prompt: str = "",
-        with_task: bool = True,
         with_task_specify: bool = True,
         with_task_planner: bool = False,
         mode_type: ModeType = ModeType.GPT_3_5_TURBO,
@@ -25,7 +24,6 @@ class RolePlaying:
         task_specify_agent_kwargs: Optional[Dict] = None,
         task_planner_agent_kwargs: Optional[Dict] = None,
     ) -> None:
-        self.with_task = with_task
         self.with_task_specify = with_task_specify
         self.with_task_planner = with_task_planner
 
@@ -56,13 +54,16 @@ class RolePlaying:
 
         self.task_prompt = task_prompt
 
-        sys_msg_generator = SystemMessageGenerator(with_task=with_task)
+        sys_msg_generator = SystemMessageGenerator()
+        sys_msg_meta_dicts = [{
+            '<ASSISTANT_ROLE>': assistant_role_name,
+            '<USER_ROLE>': user_role_name,
+            '<TASK>': task_prompt,
+        }] * 2
         self.assistant_sys_msg, self.user_sys_msg = (
-            sys_msg_generator.from_roles(
-                roles=[
-                    (assistant_role_name, RoleType.ASSISTANT),
-                    (user_role_name, RoleType.USER),
-                ], task_prompt=task_prompt))
+            sys_msg_generator.from_dicts(
+                meta_dicts=sys_msg_meta_dicts,
+                role_types=[RoleType.ASSISTANT, RoleType.USER]))
 
         self.assistant_agent = ChatAgent(
             self.assistant_sys_msg,
