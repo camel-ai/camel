@@ -44,14 +44,14 @@ export OPENAI_API_KEY=<insert your OpenAI API key>
 python examples/ai_society/role_playing.py
 ```
 
-## Data (Google Drive)
+## Data (Hosted on Hugging Face)
 **AI Society:**
-* [Chat format](https://drive.google.com/file/d/1uCAgThi_5vB4_L2Vsmsia8tzoF5muLoE/view?usp=share_link)
-* [Instruction format](https://drive.google.com/file/d/1nnBvr8f4QMuXyNFE8YBKBaIvPDBrFlyT/view?)
+* [Chat format](https://huggingface.co/datasets/camel-ai/ai_society/blob/main/ai_society_chat.tar.gz)
+* [Instruction format](https://huggingface.co/datasets/camel-ai/ai_society/blob/main/ai_society_instructions.json)
 
 **Code:**
-* [Chat format](https://drive.google.com/file/d/1SQD9t9gY8AXYBqD4n1t-i59Y5ylb5kvg/view?usp=share_link)
-* [Instruction format](https://drive.google.com/file/d/19fQ2bpfhwSjWRYRdthXKeYMU58rt_ewO/view?usp=share_link)
+* [Chat format](https://huggingface.co/datasets/camel-ai/code/blob/main/code_chat.tar.gz)
+* [Instruction format](https://huggingface.co/datasets/camel-ai/code/blob/main/code_instructions.json)
 
 ## Visualizations of Instructions and Tasks
 
@@ -65,6 +65,7 @@ python examples/ai_society/role_playing.py
 
 
 ## News
+- Released AI Society and Code dataset (April 2, 2023)
 - Initial release of `CAMEL` python library (March 21, 2023)
 
 ## Citation
