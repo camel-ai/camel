@@ -22,7 +22,7 @@ def test_chat_agent():
         chat_gpt_args,
     )
 
-    assert str(assistant) == ("ChatAgent({'<ASSISTANT_ROLE>': 'doctor'}, "
+    assert str(assistant) == ("ChatAgent(doctor, "
                               "RoleType.ASSISTANT, ModeType.GPT_3_5_TURBO)")
 
     assistant.reset()

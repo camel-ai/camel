@@ -106,4 +106,4 @@ class ChatAgent:
         return output_messages, self.terminated, info
 
     def __repr__(self) -> str:
-        return f"ChatAgent({self.meta_dict}, {self.role_type}, {self.model})"
+        return f"ChatAgent({self.role_name}, {self.role_type}, {self.model})"
