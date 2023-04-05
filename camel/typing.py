@@ -14,6 +14,8 @@ class ModeType(Enum):
 class TaskType(Enum):
     AI_SOCIETY = "ai_society"
     CODE = "code"
+    MISALIGNMENT = "misalignment"
+    DEFAULT = "default"
 
 
 __all__ = ['RoleType', 'ModeType', 'TaskType']
