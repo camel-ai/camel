@@ -19,8 +19,9 @@ class ChatAgent:
         message_window_size: Optional[int] = None,
     ) -> None:
         self.system_message = system_message
-        self.meta_dict = system_message.meta_dict
+        self.role_name = system_message.role_name
         self.role_type = system_message.role_type
+        self.meta_dict = system_message.meta_dict
 
         self.model = model
         self.model_config = model_config or ChatGPTConfig()
@@ -76,8 +77,8 @@ class ChatAgent:
                 **self.model_config.__dict__,
             )
             output_messages = [
-                ChatMessage(self.meta_dict, self.role_type,
-                            **dict(choice["message"]))
+                ChatMessage(role_name=self.role_name, role_type=self.role_type,
+                            meta_dict=dict(), **dict(choice["message"]))
                 for choice in response["choices"]
             ]
             info = self.get_info(

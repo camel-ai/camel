@@ -14,7 +14,7 @@ def main(role_type: str = "user", num_roles: int = 50):
     agent = ChatAgent(assistant_sys_msg, model=ModeType.GPT_3_5_TURBO)
     agent.reset()
 
-    user_msg = UserChatMessage(dict(role_name="User"), content=prompt)
+    user_msg = UserChatMessage(role_name="User", content=prompt)
     assistant_msg, _, _ = agent.step(user_msg)
     print(assistant_msg[0].content)
 

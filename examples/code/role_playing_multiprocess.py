@@ -25,13 +25,13 @@ def init_chat(
 
     # Send the system messages again to the agents using chat messages
     assistant_msg = AssistantChatMessage(
-        meta_dict=dict(role_name="Computer Programer"),
+        role_name=assistant_agent.role_name,
         content=(f"{user_sys_msg.content}. "
                  "Now start to give me instructions one by one. "
                  "Only reply with Instruction and Input."))
     assistant_msg.role = "user"
 
-    user_msg = UserChatMessage(meta_dict=dict(role_name=""),
+    user_msg = UserChatMessage(role_name=user_agent.role_name,
                                content=f"{assistant_sys_msg.content}")
     msgs, _, _ = assistant_agent.step(user_msg)
 
@@ -67,7 +67,12 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
         "<TASK>": specified_task_prompt
     }] * 2
     assistant_sys_msg, user_sys_msg = sys_msg_generator.from_dicts(
-        sys_msg_meta_dicts, [RoleType.ASSISTANT, RoleType.USER])
+        sys_msg_meta_dicts,
+        role_tuples=[
+            (f"{language_name} Programmer", RoleType.ASSISTANT),
+            (f"{domain_name} User", RoleType.USER),
+        ],
+    )
 
     assistant_agent = ChatAgent(assistant_sys_msg, ModeType.GPT_3_5_TURBO,
                                 message_window_size=max_num_messages)

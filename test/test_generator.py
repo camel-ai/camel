@@ -9,14 +9,18 @@ from camel.typing import RoleType, TaskType
 def test_system_message_generator():
     sys_msg_generator = SystemMessageGenerator(task_type=TaskType.AI_SOCIETY)
     sys_msg_generator.from_dict({"<ASSISTANT_ROLE>": "doctor"},
-                                RoleType.ASSISTANT)
+                                role_tuple=("doctor", RoleType.ASSISTANT))
     sys_msg_generator.from_dict({"<USER_ROLE>": "doctor"},
-                                role_type=RoleType.USER)
+                                role_tuple=("doctor", RoleType.USER))
 
-    sys_msg_generator.from_dicts([{
-        "<ASSISTANT_ROLE>": "chatbot",
-        "<USER_ROLE>": "doctor"
-    }] * 2, [RoleType.ASSISTANT, RoleType.USER])
+    sys_msg_generator.from_dicts(
+        [{
+            "<ASSISTANT_ROLE>": "chatbot",
+            "<USER_ROLE>": "doctor"
+        }] * 2,
+        role_tuples=[("chatbot", RoleType.ASSISTANT),
+                     ("doctor", RoleType.USER)],
+    )
 
     sys_msg_generator = SystemMessageGenerator(task_type=TaskType.AI_SOCIETY)
     sys_msg_generator.from_dicts(
@@ -24,7 +28,10 @@ def test_system_message_generator():
             "<ASSISTANT_ROLE>": "chatbot",
             "<USER_ROLE>": "doctor",
             "<TASK>": "Analyze a patient's medical report"
-        }] * 2, [RoleType.ASSISTANT, RoleType.USER])
+        }] * 2,
+        role_tuples=[("chatbot", RoleType.ASSISTANT),
+                     ("doctor", RoleType.USER)],
+    )
 
 
 def test_role_name_generator():

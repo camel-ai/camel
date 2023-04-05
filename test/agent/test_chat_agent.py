@@ -13,7 +13,9 @@ def test_chat_agent():
     chat_gpt_args = ChatGPTConfig()
     system_message = SystemMessageGenerator(
         task_type=TaskType.AI_SOCIETY).from_dict(
-            {"<ASSISTANT_ROLE>": "doctor"}, RoleType.ASSISTANT)
+            {"<ASSISTANT_ROLE>": "doctor"},
+            role_tuple=("doctor", RoleType.ASSISTANT),
+        )
     assistant = ChatAgent(
         system_message,
         ModeType.GPT_3_5_TURBO,
@@ -24,8 +26,8 @@ def test_chat_agent():
                               "RoleType.ASSISTANT, ModeType.GPT_3_5_TURBO)")
 
     assistant.reset()
-    user_msg = ChatMessage(dict(role_name="patient"), RoleType.USER, "user",
-                           "Hello!")
+    user_msg = ChatMessage(role_name="Patient", role_type=RoleType.USER,
+                           meta_dict=dict(), role="user", content="Hello!")
     messages, terminated, info = assistant.step(user_msg)
 
     assert terminated is False
@@ -33,8 +35,9 @@ def test_chat_agent():
     assert info['id'] is not None
 
     assistant.reset()
-    user_msg = ChatMessage(dict(role_name="patient"), RoleType.USER, "user",
-                           "Hello!" * 4096)
+    user_msg = ChatMessage(role_name="Patient", role_type=RoleType.USER,
+                           meta_dict=dict(), role="user",
+                           content="Hello!" * 4096)
     messages, terminated, info = assistant.step(user_msg)
 
     assert terminated is True

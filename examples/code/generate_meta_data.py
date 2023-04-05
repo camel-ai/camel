@@ -8,14 +8,14 @@ def generate_meta_data(meta_data: str, num: int = 50):
         prompt = f.read().replace(f"<NUM_{meta_data.upper()}>", str(num))
     print(prompt)
     assistant_sys_msg = AssistantSystemMessage(
-        meta_dict=dict(role_name="Assistant"),
+        role_name="Assistant",
         content="You are a helpful assistant.",
     )
     agent = ChatAgent(assistant_sys_msg, model=ModeType.GPT_3_5_TURBO)
     agent.reset()
 
     user_msg = UserChatMessage(
-        meta_dict=dict(role_name="User"),
+        role_name="User",
         content=prompt,
     )
     assistant_msg, _, _ = agent.step(user_msg)

@@ -12,8 +12,9 @@ OpenAIMessage = Union[OpenAISystemMessage, OpenAIChatMessage]
 
 @dataclass
 class BaseMessage:
-    meta_dict: Dict[str, str]
+    role_name: str
     role_type: RoleType
+    meta_dict: Optional[Dict[str, str]]
     role: str
     content: str
 
@@ -41,8 +42,9 @@ class BaseMessage:
 
     def to_dict(self) -> Dict:
         return {
-            **self.meta_dict,
+            "role_name": self.role_name,
             "role_type": self.role_type.name,
+            **(self.meta_dict or {}),
             "role": self.role,
             "content": self.content,
         }
@@ -50,48 +52,54 @@ class BaseMessage:
 
 @dataclass
 class SystemMessage(BaseMessage):
-    meta_dict: Dict[str, str]
+    role_name: str
     role_type: RoleType
+    meta_dict: Optional[Dict[str, str]] = None
     role: str = "system"
     content: str = ""
 
 
 @dataclass
 class AssistantSystemMessage(SystemMessage):
-    meta_dict: Dict[str, str]
+    role_name: str
     role_type: RoleType = RoleType.ASSISTANT
+    meta_dict: Optional[Dict[str, str]] = None
     role: str = "system"
     content: str = ""
 
 
 @dataclass
 class UserSystemMessage(SystemMessage):
-    meta_dict: Dict[str, str]
+    role_name: str
     role_type: RoleType = RoleType.USER
+    meta_dict: Optional[Dict[str, str]] = None
     role: str = "system"
     content: str = ""
 
 
 @dataclass
 class ChatMessage(BaseMessage):
-    meta_dict: Dict[str, str]
+    role_name: str
     role_type: RoleType
+    meta_dict: Optional[Dict[str, str]]
     role: str
     content: str = ""
 
 
 @dataclass
 class AssistantChatMessage(ChatMessage):
-    meta_dict: Dict[str, str]
+    role_name: str
     role_type: RoleType = RoleType.ASSISTANT
+    meta_dict: Dict[str, str] = None
     role: str = "assistant"
     content: str = ""
 
 
 @dataclass
 class UserChatMessage(ChatMessage):
-    meta_dict: Dict[str, str]
+    role_name: str
     role_type: RoleType = RoleType.USER
+    meta_dict: Dict[str, str] = None
     role: str = "user"
     content: str = ""
 

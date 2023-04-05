@@ -78,27 +78,28 @@ class SystemMessageGenerator:
     def from_dict(
         self,
         meta_dict: Dict[str, str],
-        role_type: RoleType = RoleType.DEFAULT,
+        role_tuple: Tuple[str, RoleType] = ("", RoleType.DEFAULT),
     ) -> SystemMessageType:
         """Generate a system message from a dictionary."""
         self.validate_meta_dict_keys(meta_dict)
+        role_name, role_type = role_tuple
         sys_prompt = self.replace_keywords(meta_dict, role_type)
-        return SystemMessage(meta_dict=meta_dict, role_type=role_type,
-                             content=sys_prompt)
+        return SystemMessage(role_name=role_name, role_type=role_type,
+                             meta_dict=meta_dict, content=sys_prompt)
 
     def from_dicts(
         self,
         meta_dicts: List[Dict[str, str]],
-        role_types: List[RoleType],
+        role_tuples: List[Tuple[str, RoleType]],
     ) -> List[SystemMessageType]:
         """Generate a system message from a list of dictionaries."""
-        if len(meta_dicts) != len(role_types):
+        if len(meta_dicts) != len(role_tuples):
             raise ValueError(
                 "The number of meta_dicts and role_types should be the same.")
 
         return [
-            self.from_dict(meta_dict, role_type)
-            for meta_dict, role_type in zip(meta_dicts, role_types)
+            self.from_dict(meta_dict, role_tuple)
+            for meta_dict, role_tuple in zip(meta_dicts, role_tuples)
         ]
 
 
