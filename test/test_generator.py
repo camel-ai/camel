@@ -3,27 +3,35 @@ from camel.generator import (
     RoleNameGenerator,
     SystemMessageGenerator,
 )
-from camel.typing import RoleType
+from camel.typing import RoleType, TaskType
 
 
 def test_system_message_generator():
-    sys_msg_generator = SystemMessageGenerator(with_task=False)
-    sys_msg_generator.from_role(role_name="doctor",
-                                role_type=RoleType.ASSISTANT)
-    sys_msg_generator.from_role(role_name="doctor", role_type=RoleType.USER)
+    sys_msg_generator = SystemMessageGenerator(task_type=TaskType.AI_SOCIETY)
+    sys_msg_generator.from_dict({"<ASSISTANT_ROLE>": "doctor"},
+                                role_tuple=("doctor", RoleType.ASSISTANT))
+    sys_msg_generator.from_dict({"<USER_ROLE>": "doctor"},
+                                role_tuple=("doctor", RoleType.USER))
 
-    sys_msg_generator.from_roles(
-        roles=[("doctor", RoleType.USER), ("chatbot", RoleType.ASSISTANT)])
+    sys_msg_generator.from_dicts(
+        [{
+            "<ASSISTANT_ROLE>": "chatbot",
+            "<USER_ROLE>": "doctor"
+        }] * 2,
+        role_tuples=[("chatbot", RoleType.ASSISTANT),
+                     ("doctor", RoleType.USER)],
+    )
 
-    generator = sys_msg_generator.from_role_files()
-    sys_msg_1 = next(generator)
-    sys_msg_2 = next(generator)
-    assert sys_msg_1 != sys_msg_2
-
-    sys_msg_generator = SystemMessageGenerator(with_task=True)
-    sys_msg_generator.from_roles(
-        roles=[("doctor", RoleType.USER), ("chatbot", RoleType.ASSISTANT)],
-        task_prompt="Analyze a patient's medical report")
+    sys_msg_generator = SystemMessageGenerator(task_type=TaskType.AI_SOCIETY)
+    sys_msg_generator.from_dicts(
+        [{
+            "<ASSISTANT_ROLE>": "chatbot",
+            "<USER_ROLE>": "doctor",
+            "<TASK>": "Analyze a patient's medical report"
+        }] * 2,
+        role_tuples=[("chatbot", RoleType.ASSISTANT),
+                     ("doctor", RoleType.USER)],
+    )
 
 
 def test_role_name_generator():
