@@ -8,7 +8,7 @@ def main(role_type: str = "user", num_roles: int = 50):
         prompt = f.read().replace("<NUM_ROLES>", str(num_roles))
     print(prompt)
     assistant_sys_msg = AssistantSystemMessage(
-        dict(role_name="Assistant"),
+        role_name="Assistant",
         content="You are a helpful assistant.",
     )
     agent = ChatAgent(assistant_sys_msg, model=ModeType.GPT_3_5_TURBO)
