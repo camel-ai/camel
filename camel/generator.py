@@ -1,23 +1,54 @@
-from typing import Dict, Generator, List, Optional, Tuple
+from typing import Dict, Generator, List, Optional, Set, Tuple
 
-from camel.message import RoleType, SystemMessage, SystemMessageType
+from camel.message import SystemMessage, SystemMessageType
+from camel.typing import RoleType, TaskType
 
 
 class SystemMessageGenerator:
-    r"""System message generator for agents.
+    """System message generator for agents.
     """
 
     def __init__(
         self,
+        task_type: Optional[TaskType] = TaskType.AI_SOCIETY,
         sys_prompts: Optional[Dict[RoleType, str]] = None,
-        sys_prompts_paths: Dict[RoleType, str] = {
-            RoleType.ASSISTANT: "prompts/ai_society/assistant_prompt.txt",
-            RoleType.USER: "prompts/ai_society/user_prompt.txt",
-        },
+        sys_msg_meta_dict_keys: Optional[Set[str]] = None,
     ) -> None:
         if sys_prompts is not None:
             self.sys_prompts = sys_prompts
+            self.sys_msg_meta_dict_keys = sys_msg_meta_dict_keys or set()
         else:
+            if task_type == TaskType.AI_SOCIETY:
+                sys_prompts_paths = {
+                    RoleType.ASSISTANT:
+                    "prompts/ai_society/assistant_prompt.txt",
+                    RoleType.USER: "prompts/ai_society/user_prompt.txt",
+                }
+                self.sys_msg_meta_dict_keys = {
+                    '<ASSISTANT_ROLE>', "<USER_ROLE>", "<TASK>"
+                }
+            elif task_type == TaskType.CODE:
+                sys_prompts_paths = {
+                    RoleType.ASSISTANT: "prompts/code/assistant_prompt.txt",
+                    RoleType.USER: "prompts/code/user_prompt.txt",
+                }
+                self.sys_msg_meta_dict_keys = {
+                    "<LANGUAGE>", "<DOMAIN>", "<TASK>"
+                }
+            elif task_type == TaskType.MISALIGNMENT:
+                sys_prompts_paths = {
+                    RoleType.ASSISTANT:
+                    "prompts/misalignment/assistant_prompt.txt",
+                    RoleType.USER: "prompts/misalignment/user_prompt.txt",
+                }
+                self.sys_msg_meta_dict_keys = {
+                    '<ASSISTANT_ROLE>', "<USER_ROLE>", "<TASK>"
+                }
+            elif task_type == TaskType.DEFAULT:
+                self.sys_msg_meta_dict_keys = set()
+            else:
+                raise ValueError(f"Invalid task type: {task_type}")
+
             self.sys_prompts: Dict[RoleType, str] = dict()
             for key, value in sys_prompts_paths.items():
                 with open(value, "r") as f:
@@ -25,6 +56,13 @@ class SystemMessageGenerator:
 
         if RoleType.DEFAULT not in self.sys_prompts:
             self.sys_prompts[RoleType.DEFAULT] = "You are a helpful assistant."
+
+    def validate_meta_dict_keys(self, meta_dict: Dict[str, str]) -> None:
+        """Validate the meta_dict keys."""
+        if not set(meta_dict.keys()).issubset(self.sys_msg_meta_dict_keys):
+            raise ValueError("The keys of the meta_dict should be in "
+                             f"{self.sys_msg_meta_dict_keys}. "
+                             f"Got {set(meta_dict.keys())} instead.")
 
     def replace_keywords(
         self,
@@ -42,7 +80,8 @@ class SystemMessageGenerator:
         meta_dict: Dict[str, str],
         role_type: RoleType = RoleType.DEFAULT,
     ) -> SystemMessageType:
-        r"""Generate a system message from a dictionary."""
+        """Generate a system message from a dictionary."""
+        self.validate_meta_dict_keys(meta_dict)
         sys_prompt = self.replace_keywords(meta_dict, role_type)
         return SystemMessage(meta_dict=meta_dict, role_type=role_type,
                              content=sys_prompt)
@@ -52,7 +91,7 @@ class SystemMessageGenerator:
         meta_dicts: List[Dict[str, str]],
         role_types: List[RoleType],
     ) -> List[SystemMessageType]:
-        r"""Generate a system message from a list of dictionaries."""
+        """Generate a system message from a list of dictionaries."""
         if len(meta_dicts) != len(role_types):
             raise ValueError(
                 "The number of meta_dicts and role_types should be the same.")

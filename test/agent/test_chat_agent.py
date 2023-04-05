@@ -4,15 +4,16 @@ from camel.agent import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.generator import SystemMessageGenerator
 from camel.message import ChatMessage
-from camel.typing import ModeType, RoleType
+from camel.typing import ModeType, RoleType, TaskType
 
 assert os.environ.get("OPENAI_API_KEY") is not None, "Missing OPENAI_API_KEY"
 
 
 def test_chat_agent():
     chat_gpt_args = ChatGPTConfig()
-    system_message = SystemMessageGenerator().from_dict(
-        {"<ASSISTANT_ROLE>": "doctor"}, RoleType.ASSISTANT)
+    system_message = SystemMessageGenerator(
+        task_type=TaskType.AI_SOCIETY).from_dict(
+            {"<ASSISTANT_ROLE>": "doctor"}, RoleType.ASSISTANT)
     assistant = ChatAgent(
         system_message,
         ModeType.GPT_3_5_TURBO,

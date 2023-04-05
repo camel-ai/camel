@@ -3,11 +3,11 @@ from camel.generator import (
     RoleNameGenerator,
     SystemMessageGenerator,
 )
-from camel.typing import RoleType
+from camel.typing import RoleType, TaskType
 
 
 def test_system_message_generator():
-    sys_msg_generator = SystemMessageGenerator()
+    sys_msg_generator = SystemMessageGenerator(task_type=TaskType.AI_SOCIETY)
     sys_msg_generator.from_dict({"<ASSISTANT_ROLE>": "doctor"},
                                 RoleType.ASSISTANT)
     sys_msg_generator.from_dict({"<USER_ROLE>": "doctor"},
@@ -18,7 +18,7 @@ def test_system_message_generator():
         "<USER_ROLE>": "doctor"
     }] * 2, [RoleType.ASSISTANT, RoleType.USER])
 
-    sys_msg_generator = SystemMessageGenerator()
+    sys_msg_generator = SystemMessageGenerator(task_type=TaskType.AI_SOCIETY)
     sys_msg_generator.from_dicts(
         [{
             "<ASSISTANT_ROLE>": "chatbot",

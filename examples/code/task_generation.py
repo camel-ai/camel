@@ -3,12 +3,12 @@ import os
 
 from camel.agent import ChatAgent
 from camel.generator import CodeTaskPromptGenerator, SystemMessageGenerator
-from camel.typing import ModeType, RoleType
+from camel.typing import ModeType, RoleType, TaskType
 
 
 def generate_tasks(task_generator_prompt: str, language: str, domain: str,
                    start_token: str = "1.", num_tasks: int = 10) -> None:
-    sys_msg_generator = SystemMessageGenerator()
+    sys_msg_generator = SystemMessageGenerator(task_type=TaskType.DEFAULT)
     assistant_sys_msg = sys_msg_generator.from_dict(dict(), RoleType.DEFAULT)
     assistant_agent = ChatAgent(assistant_sys_msg, ModeType.GPT_3_5_TURBO)
 

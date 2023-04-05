@@ -60,7 +60,7 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
     print(f"Original Task: {original_task_prompt}")
     print(f"Specified Task: {specified_task_prompt}")
 
-    sys_msg_generator = SystemMessageGenerator()
+    sys_msg_generator = SystemMessageGenerator(task_type=TaskType.CODE)
     sys_msg_meta_dicts = [{
         "<LANGUAGE>": language_name,
         "<DOMAIN>": domain_name,
