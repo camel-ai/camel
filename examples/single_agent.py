@@ -4,7 +4,7 @@ from camel.typing import ModeType
 
 
 def main(role_type: str = "user", num_roles: int = 50):
-    with open(f"prompts/generate_{role_type}.txt", "r") as f:
+    with open(f"prompts/ai_society/generate_{role_type}.txt", "r") as f:
         prompt = f.read().replace("<NUM_ROLES>", str(num_roles))
     print(prompt)
     assistant_sys_msg = AssistantSystemMessage(
