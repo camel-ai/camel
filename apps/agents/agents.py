@@ -13,6 +13,7 @@ import gradio as gr
 import openai
 import openai.error
 import tenacity
+from text_utils import split_markdown_code
 
 from camel.agent import RolePlaying
 from camel.message import AssistantChatMessage
@@ -185,7 +186,7 @@ def role_playing_chat_init(state) -> \
 
     if state.session is None:
         print("Error: session is none on role_playing_chat_init call")
-        return {}  # may fail
+        return state, state.chat, gr.update()
 
     try:
         assistant_msg, _ = state.session.init_chat()
@@ -221,7 +222,7 @@ def role_playing_chat_cont(state) -> \
     """
 
     if state.session is None:
-        return state, state.chat, gr.update(), gr.update()
+        return state, state.chat, gr.update(visible=False), gr.update()
 
     if state.saved_assistant_msg is None:
         return state, state.chat, gr.update(), gr.update()
@@ -239,8 +240,8 @@ def role_playing_chat_cont(state) -> \
 
     state.saved_assistant_msg = a_msg
 
-    state.chat.append((None, u_msg.content))
-    state.chat.append((a_msg.content, None))
+    state.chat.append((None, split_markdown_code(u_msg.content)))
+    state.chat.append((split_markdown_code(a_msg.content), None))
 
     if len(state.chat) >= state.max_messages:
         state.session = None
