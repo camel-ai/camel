@@ -14,7 +14,7 @@ class ChatAgent:
     def __init__(
         self,
         system_message: SystemMessage,
-        model: ModeType = ModeType.GPT_4,
+        model: ModeType = ModeType.GPT_3_5_TURBO,
         model_config: Any = None,
         message_window_size: Optional[int] = None,
     ) -> None:
