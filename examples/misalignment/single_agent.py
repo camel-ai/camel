@@ -1,6 +1,5 @@
 from camel.agent import ChatAgent
 from camel.message import AssistantSystemMessage, UserChatMessage
-from camel.typing import ModeType
 
 
 def main() -> None:
