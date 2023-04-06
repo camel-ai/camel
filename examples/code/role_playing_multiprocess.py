@@ -73,14 +73,11 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
         ],
     )
 
-    assistant_agent = ChatAgent(assistant_sys_msg, 
+    assistant_agent = ChatAgent(assistant_sys_msg,
                                 message_window_size=max_num_messages)
-    user_agent = ChatAgent(user_sys_msg, 
-                           message_window_size=max_num_messages)
+    user_agent = ChatAgent(user_sys_msg, message_window_size=max_num_messages)
 
-    assistant_msg, _ = init_chat(assistant_agent, 
-                                 user_agent, 
-                                 user_sys_msg, 
+    assistant_msg, _ = init_chat(assistant_agent, user_agent, user_sys_msg,
                                  assistant_sys_msg)
 
     print("Assistant System Message: ", assistant_sys_msg.content)
