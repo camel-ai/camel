@@ -14,10 +14,11 @@ def parse_arguments():
     """ Get command line arguments. """
 
     parser = argparse.ArgumentParser("Camel data explorer")
-    parser.add_argument('--data-path', type=str, default=None,
-                        help='Path to the folder with chat JSONs')
+    parser.add_argument(
+        '--data-path', type=str, default=None,
+        help='Path to the folder with ZIP datasets containing JSONs')
     parser.add_argument('--default-dataset', type=str, default=None,
-                        help='Path to the folder with chat JSONs')
+                        help='Default dataset name selected from ZIPs')
     parser.add_argument('--share', type=bool, default=False,
                         help='Expose the web UI to Gradio')
     parser.add_argument('--server-port', type=int, default=8080,
