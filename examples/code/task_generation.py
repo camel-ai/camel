@@ -3,7 +3,7 @@ import os
 
 from camel.agent import ChatAgent
 from camel.generator import CodeTaskPromptGenerator, SystemMessageGenerator
-from camel.typing import ModeType, RoleType, TaskType
+from camel.typing import RoleType, TaskType
 
 
 def generate_tasks(task_generator_prompt: str, language: str, domain: str,

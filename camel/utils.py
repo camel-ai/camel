@@ -2,10 +2,12 @@ from typing import List
 
 import tiktoken
 
+from typing import Any
 from camel.message import OpenAIMessage
 from camel.typing import ModeType
 
-def count_tokens_openai_chat_models(messages: List[OpenAIMessage], encoding):
+
+def count_tokens_openai_chat_models(messages: List[OpenAIMessage], encoding: Any):
     num_tokens = 0
     for message in messages:
         # message follows <im_start>{role/name}\n{content}<im_end>\n
@@ -16,6 +18,7 @@ def count_tokens_openai_chat_models(messages: List[OpenAIMessage], encoding):
                 num_tokens += -1  # role is always 1 token
     num_tokens += 2  # every reply is primed with <im_start>assistant
     return num_tokens
+
 
 def num_tokens_from_messages(messages: List[OpenAIMessage], model: ModeType):
     """Returns the number of tokens used by a list of messages."""

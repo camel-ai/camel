@@ -4,7 +4,7 @@ from camel.agent import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.generator import SystemMessageGenerator
 from camel.message import ChatMessage
-from camel.typing import ModeType, RoleType, TaskType
+from camel.typing import RoleType, TaskType
 
 assert os.environ.get("OPENAI_API_KEY") is not None, "Missing OPENAI_API_KEY"
 

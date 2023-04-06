@@ -7,7 +7,7 @@ from camel.generator import (
     RoleNameGenerator,
     SystemMessageGenerator,
 )
-from camel.typing import ModeType, RoleType, TaskType
+from camel.typing import RoleType, TaskType
 
 
 def generate_tasks(role_names: str, task_generator_prompt: str,
