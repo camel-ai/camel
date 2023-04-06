@@ -70,11 +70,11 @@ def construct_app(datasets: Datasets, default_dataset: str = None):
                                          value="NODEFAULT", interactive=True)
             with gr.Row():
                 disclaimer_ta = gr.Markdown(
-                    "## By clicking AGREE I consent to use the dataset for purely "
-                    "educational and academic purposes and not use it for any "
-                    "fraudulent activity; and I take all the responsibility if "
-                    "the data is used in a malicious application.",
-                    visible=False)
+                    "## By clicking AGREE I consent to use the dataset "
+                    "for purely educational and academic purposes and "
+                    "not use it for any fraudulent activity; and I take "
+                    "all the responsibility if the data is used in a "
+                    "malicious application.", visible=False)
             with gr.Row():
                 with gr.Column(scale=1):
                     accept_disclaimer_bn = gr.Button("AGREE", visible=False)
@@ -93,17 +93,28 @@ def construct_app(datasets: Datasets, default_dataset: str = None):
                 " of Large Scale Language Model Society\n"
                 "Github repo: [https://github.com/lightaime/camel]"
                 "(https://github.com/lightaime/camel)")
+
     task_dd = gr.Dropdown([], label="Original task", value="",
                           interactive=True)
     specified_task_ta = gr.TextArea(label="Specified task", lines=2)
     chatbot = gr.Chatbot()
     accepted_st = gr.State(False)
 
-    def set_default_dataset():
+    def set_default_dataset() -> Dict:
+        """ Trigger for app load.
+
+        Returns:
+            Dict: Update dict for dataset_dd.
+        """
         return gr.update(value=default_dataset_name)
 
     def check_if_misalignment(dataset_name: str, accepted: bool) \
         -> Tuple[Dict, Dict, Dict]:
+        """ Display AGREE/DECLINE if needed.
+
+        Returns:
+            Tuple: Visibility updates for the buttons.
+        """
 
         if dataset_name == "misalignment" and not accepted:
             return gr.update(visible=True), \
@@ -113,19 +124,42 @@ def construct_app(datasets: Datasets, default_dataset: str = None):
                 gr.update(visible=False), gr.update(visible=False)
 
     def enable_misalignment() -> Tuple[bool, Dict, Dict, Dict]:
+        """ Update the state of the accepted disclaimer.
+
+        Returns:
+            Tuple: New state and visibility updates for the buttons.
+        """
+
         return True, gr.update(visible=False), \
-                gr.update(visible=False), gr.update(visible=False)
+            gr.update(visible=False), gr.update(visible=False)
 
     def disable_misalignment() -> Tuple[bool, Dict, Dict, Dict]:
+        """ Update the state of the accepted disclaimer.
+
+        Returns:
+            Tuple: New state and visibility updates for the buttons.
+        """
+
         return False, gr.update(visible=False), \
-                gr.update(visible=False), gr.update(visible=False)
+            gr.update(visible=False), gr.update(visible=False)
 
     def update_dataset_selection(dataset_name: str,
                                  accepted: bool) -> Tuple[Dict, Dict]:
+        """ Update roles based on the selected dataset.
+
+        Args:
+            dataset_name (str): Name of the loaded .zip dataset.
+            accepted (bool): If the disclaimer thas been accepted.
+
+        Returns:
+            Tuple[Dict, Dict]: New Assistant and User roles.
+        """
+
         if dataset_name == "misalignment" and not accepted:
             # If used did not accept the misalignment policy,
             # keep the old selection.
-            return gr.update(), gr.update()
+            return (gr.update(value="N/A",
+                              choices=[]), gr.update(value="N/A", choices=[]))
 
         dataset = datasets[dataset_name]
         assistant_roles = dataset['assistant_roles']
