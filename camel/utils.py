@@ -7,7 +7,7 @@ from camel.message import OpenAIMessage
 from camel.typing import ModeType
 
 
-def count_tokens_openai_chat_models(messages: List[OpenAIMessage], encoding: Any):
+def count_tokens_openai_chat_models(messages: List[OpenAIMessage], encoding: Any) -> int:
     num_tokens = 0
     for message in messages:
         # message follows <im_start>{role/name}\n{content}<im_end>\n
@@ -20,7 +20,7 @@ def count_tokens_openai_chat_models(messages: List[OpenAIMessage], encoding: Any
     return num_tokens
 
 
-def num_tokens_from_messages(messages: List[OpenAIMessage], model: ModeType):
+def num_tokens_from_messages(messages: List[OpenAIMessage], model: ModeType) -> int:
     """Returns the number of tokens used by a list of messages."""
     try:
         encoding = tiktoken.encoding_for_model(model.value)
