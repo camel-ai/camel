@@ -3,8 +3,6 @@ from typing import Any, Dict, List, Optional, Tuple
 import openai
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from colorama import Fore
-
 from camel.configs import ChatGPTConfig
 from camel.message import ChatMessage, MessageType, SystemMessage
 from camel.typing import ModeType
@@ -73,17 +71,11 @@ class ChatAgent:
         num_tokens = num_tokens_from_messages(openai_messages, self.model)
 
         if num_tokens < self.model_token_limit:
-            print(Fore.WHITE + '------------------------------------')
-            print(f'Calling openai model={self.model.value} messages={openai_messages}')
-            print(Fore.WHITE + '------------------------------------')
             response = openai.ChatCompletion.create(
                 model=self.model.value,
                 messages=openai_messages,
                 **self.model_config.__dict__,
             )
-            print(Fore.YELLOW + '------------------------------------')
-            print(f'Response openai model={self.model.value} response={response}')
-            print(Fore.YELLOW + '------------------------------------')
             output_messages = [
                 ChatMessage(role_name=self.role_name, role_type=self.role_type,
                             meta_dict=dict(), **dict(choice["message"]))

@@ -29,7 +29,7 @@ def main() -> None:
         f"Specified task prompt:\n{role_play_session.specified_task_prompt}\n")
     print(Fore.RED + f"Final task prompt:\n{role_play_session.task_prompt}\n")
 
-    chat_turn_limit, n = 3, 0
+    chat_turn_limit, n = 50, 0
     assistant_msg, _ = role_play_session.init_chat()
     while n < chat_turn_limit:
         n += 1
