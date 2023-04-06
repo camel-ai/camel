@@ -2,7 +2,7 @@ import os
 
 from camel.agent import TaskPlannerAgent, TaskSpecifyAgent
 from camel.configs import ChatGPTConfig
-from camel.typing import ModeType, TaskType
+from camel.typing import TaskType
 
 assert os.environ.get("OPENAI_API_KEY") is not None, "Missing OPENAI_API_KEY"
 
