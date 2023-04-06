@@ -109,7 +109,7 @@ def construct_app(datasets: Datasets, default_dataset: str = None):
         return gr.update(value=default_dataset_name)
 
     def check_if_misalignment(dataset_name: str, accepted: bool) \
-        -> Tuple[Dict, Dict, Dict]:
+            -> Tuple[Dict, Dict, Dict]:
         """ Display AGREE/DECLINE if needed.
 
         Returns:
@@ -254,23 +254,23 @@ def construct_app(datasets: Datasets, default_dataset: str = None):
     dataset_dd.change(check_if_misalignment, [dataset_dd, accepted_st],
                       [disclaimer_ta, accept_disclaimer_bn,
                        decline_disclaimer_bn]) \
-    .then(update_dataset_selection,
-        [dataset_dd, accepted_st],
-        [assistant_dd, user_dd])
+              .then(update_dataset_selection,
+                    [dataset_dd, accepted_st],
+                    [assistant_dd, user_dd])
 
     accept_disclaimer_bn.click(enable_misalignment, None, [
         accepted_st, disclaimer_ta, accept_disclaimer_bn, decline_disclaimer_bn
     ]) \
-    .then(update_dataset_selection,
-        [dataset_dd, accepted_st],
-        [assistant_dd, user_dd])
+        .then(update_dataset_selection,
+              [dataset_dd, accepted_st],
+              [assistant_dd, user_dd])
 
     decline_disclaimer_bn.click(disable_misalignment, None, [
         accepted_st, disclaimer_ta, accept_disclaimer_bn, decline_disclaimer_bn
     ]) \
-    .then(update_dataset_selection,
-        [dataset_dd, accepted_st],
-        [assistant_dd, user_dd])
+        .then(update_dataset_selection,
+              [dataset_dd, accepted_st],
+              [assistant_dd, user_dd])
 
     func_args = (roles_dd_change, [dataset_dd, assistant_dd, user_dd], task_dd)
     assistant_dd.change(*func_args)
