@@ -40,7 +40,7 @@ def num_tokens_from_messages(messages: List[OpenAIMessage],
             f"`num_tokens_from_messages`` is not presently implemented "
             f"for model {model}. "
             f"See https://github.com/openai/openai-python/blob/main/chatml.md "
-            f"for information on how messages are converted to tokens."
+            f"for information on how messages are converted to tokens. "
             f"See https://platform.openai.com/docs/models/gpt-4"
             f"or https://platform.openai.com/docs/models/gpt-3-5"
             f"for information on openai chat models.")
