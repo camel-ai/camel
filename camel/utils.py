@@ -43,7 +43,7 @@ def num_tokens_from_messages(messages: List[OpenAIMessage],
             f"for information on how messages are converted to tokens. "
             f"See https://platform.openai.com/docs/models/gpt-4"
             f"or https://platform.openai.com/docs/models/gpt-3-5"
-            f"for information on openai chat models.")
+            f"for information about openai chat models.")
 
 
 def get_model_token_limit(model: ModeType) -> int:
