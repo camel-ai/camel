@@ -16,6 +16,8 @@ def parse_arguments():
     parser = argparse.ArgumentParser("Camel data explorer")
     parser.add_argument('--data-path', type=str, default=None,
                         help='Path to the folder with chat JSONs')
+    parser.add_argument('--default-dataset', type=str, default=None,
+                        help='Path to the folder with chat JSONs')
     parser.add_argument('--share', type=bool, default=False,
                         help='Expose the web UI to Gradio')
     parser.add_argument('--server-port', type=int, default=8080,
@@ -32,28 +34,40 @@ def parse_arguments():
     return args
 
 
-def construct_app(datasets: Datasets):
+def construct_app(datasets: Datasets, default_dataset: str = None):
     """ Build Gradio UI and populate with chat data from JSONs.
 
     Args:
         datasets (Datasets): Several parsed
         multi-JSON dataset with chats.
+        default_dataset (str): Default selection of the dataset.
 
     Returns:
         None
     """
 
-    default_dataset_name = "ai_society_chat" \
-        if "ai_society_chat" in datasets.keys() \
-        else [v for v in datasets.keys() if v != "misalignment"][0]
+    if default_dataset is None:
+        default_dataset = "ai_society_chat"
+
+    misalignment_set_names = {"misalignment"}
+    ordinary_datasets = [
+        v for v in datasets.keys() if v not in misalignment_set_names
+    ]
+    misalignment_datasets = [
+        v for v in datasets.keys() if v in misalignment_set_names
+    ]
+    default_dataset_name = default_dataset \
+        if default_dataset in datasets.keys() \
+        else ordinary_datasets[0] if len(ordinary_datasets) > 0 \
+        else misalignment_datasets[0] if len(misalignment_datasets) > 0 \
+        else ""
     dataset_names = list(datasets.keys())
 
     with gr.Row().style():
         with gr.Column(scale=2):
             with gr.Row():
                 dataset_dd = gr.Dropdown(dataset_names, label="Select dataset",
-                                         value=default_dataset_name,
-                                         interactive=True)
+                                         value="NODEFAULT", interactive=True)
             with gr.Row():
                 disclaimer_ta = gr.Markdown(
                     "## By clicking AGREE I consent to use the dataset for purely "
@@ -84,6 +98,9 @@ def construct_app(datasets: Datasets):
     specified_task_ta = gr.TextArea(label="Specified task", lines=2)
     chatbot = gr.Chatbot()
     accepted_st = gr.State(False)
+
+    def set_default_dataset():
+        return gr.update(value=default_dataset_name)
 
     def check_if_misalignment(dataset_name: str, accepted: bool) \
         -> Tuple[Dict, Dict, Dict]:
@@ -200,15 +217,12 @@ def construct_app(datasets: Datasets):
             history = []
         return specified_task, history
 
-    demo.load(update_dataset_selection, [dataset_dd, accepted_st],
-              [assistant_dd, user_dd])
-
     dataset_dd.change(check_if_misalignment, [dataset_dd, accepted_st],
                       [disclaimer_ta, accept_disclaimer_bn,
                        decline_disclaimer_bn]) \
-              .then(update_dataset_selection,
-                    [dataset_dd, accepted_st],
-                    [assistant_dd, user_dd])
+    .then(update_dataset_selection,
+        [dataset_dd, accepted_st],
+        [assistant_dd, user_dd])
 
     accept_disclaimer_bn.click(enable_misalignment, None, [
         accepted_st, disclaimer_ta, accept_disclaimer_bn, decline_disclaimer_bn
@@ -232,17 +246,7 @@ def construct_app(datasets: Datasets):
                    [dataset_dd, assistant_dd, user_dd, task_dd],
                    [specified_task_ta, chatbot])
 
-    task_dd_update_dict = roles_dd_change(dataset_dd.value, assistant_dd.value,
-                                          user_dd.value)
-    task_dd.choices = task_dd_update_dict['choices']
-    task_dd.value = task_dd_update_dict['value']
-
-    specified_task, chatbot_history = task_dd_change(dataset_dd.value,
-                                                     assistant_dd.value,
-                                                     user_dd.value,
-                                                     task_dd.value)
-    specified_task_ta.value = specified_task
-    chatbot.value = chatbot_history
+    demo.load(set_default_dataset, None, dataset_dd)
 
 
 if __name__ == "__main__":
@@ -257,7 +261,7 @@ if __name__ == "__main__":
     print("Getting Data Explorer web server online...")
 
     with gr.Blocks() as demo:
-        construct_app(datasets)
+        construct_app(datasets, args.default_dataset)
 
     demo.queue(args.concurrency_count)
     demo.launch(share=args.share, inbrowser=args.inbrowser,
