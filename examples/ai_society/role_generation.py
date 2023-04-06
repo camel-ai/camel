@@ -11,7 +11,7 @@ def main(role_type: str = "user", num_roles: int = 50):
         role_name="Assistant",
         content="You are a helpful assistant.",
     )
-    agent = ChatAgent(assistant_sys_msg, model=ModeType.GPT_3_5_TURBO)
+    agent = ChatAgent(assistant_sys_msg)
     agent.reset()
 
     user_msg = UserChatMessage(

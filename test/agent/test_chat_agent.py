@@ -10,7 +10,7 @@ assert os.environ.get("OPENAI_API_KEY") is not None, "Missing OPENAI_API_KEY"
 
 
 def test_chat_agent():
-    chat_gpt_args = ChatGPTConfig()
+    model_config = ChatGPTConfig()
     system_message = SystemMessageGenerator(
         task_type=TaskType.AI_SOCIETY).from_dict(
             {"<ASSISTANT_ROLE>": "doctor"},
@@ -18,8 +18,7 @@ def test_chat_agent():
         )
     assistant = ChatAgent(
         system_message,
-        ModeType.GPT_3_5_TURBO,
-        chat_gpt_args,
+        model_config=model_config
     )
 
     assert str(assistant) == ("ChatAgent(doctor, "
