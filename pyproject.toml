@@ -19,7 +19,7 @@ keywords=[
 ]
 classifiers=[
     "Development Status :: 2 - Pre-Alpha",
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: Apache License 2.0",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
@@ -32,7 +32,7 @@ classifiers=[
 dynamic=["dependencies", "optional-dependencies"]
 
 [project.urls]
-homepage="https://github.com/lightaime/camel"
+homepage="https://www.camel-ai.org/"
 repository="https://github.com/lightaime/camel"
 changelog="https://github.com/lightaime/camel/blob/master/CHANGELOG.md"
 
