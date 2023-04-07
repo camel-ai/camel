@@ -55,7 +55,6 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
         "id"] = f"{(assistant_idx+1):03}_{(user_idx+1):03}_{(task_idx+1):03}"
     message_dict["original_task"] = original_task_prompt
     message_dict["specified_task"] = role_play_session.specified_task_prompt
-    # message_dict["planned_task"] = role_play_session.planned_task_prompt
 
     # Threshold to terminate the conversation if no end token appears
 
@@ -208,8 +207,6 @@ def main() -> None:
                         generate_data,
                         (assistant_idx, assistant_role_name, user_idx,
                          user_role_name, task_idx, task_prompt, verbose))
-                    # generate_data(assistant_idx, assistant_role_name
-                    # , user_idx, user_role_name, task_idx, task_prompt)
 
     pool.close()
     pool.join()
