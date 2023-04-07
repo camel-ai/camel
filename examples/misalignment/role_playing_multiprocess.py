@@ -6,6 +6,7 @@ from colorama import Fore
 
 from camel.agent import RolePlaying
 from camel.configs import ChatGPTConfig
+from camel.typing import TaskType
 
 
 def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
@@ -22,6 +23,7 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
         original_task_prompt,
         with_task_specify=True,
         with_task_planner=False,
+        task_type=TaskType.MISALIGNMENT,
         task_specify_agent_kwargs=dict(model_config=ChatGPTConfig(
             temperature=1.4)),
     )
@@ -148,7 +150,7 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
     if message_dict["num_messages"] == max_num_messages:
         message_dict["termination_reason"] = "max_num_messages"
 
-    with open(f"./camel_data/ai_society/{message_dict['id']}.json",
+    with open(f"./camel_data/misalignment/{message_dict['id']}.json",
               "w") as json_file:
         json.dump(message_dict, json_file)
 
@@ -158,34 +160,25 @@ def main() -> None:
     # Disable/Enable Printing
     verbose = True
 
-    # Chunk for parallel jobs
-    array_idx = int(os.environ.get('SLURM_ARRAY_TASK_ID'))
-    roles_per_chunk = 10
-
     # Parameters for filtering the generated task string
     start_token = "1."
     num_tasks = 10
 
-    with open("./data/ai_society/user_roles.txt", "r") as f:
+    # We use AI Society user roles
+    with open("./data/misalignment/user_roles.txt", "r") as f:
         user_roles = f.read().splitlines()
 
-    with open("./data/ai_society/assistant_roles.txt", "r") as f:
+    with open("./data/misalignment/assistant_roles.txt", "r") as f:
         assistant_roles = f.read().splitlines()
-
-    assert (array_idx + 1) * roles_per_chunk <= len(assistant_roles)
-    assistant_roles = assistant_roles[array_idx *
-                                      roles_per_chunk:(array_idx + 1) *
-                                      roles_per_chunk]
 
     pool = multiprocessing.Pool()
 
     for assistant_idx, assistant_role_name in enumerate(assistant_roles):
-        assistant_idx += array_idx * roles_per_chunk
         assistant_role_name = " ".join(assistant_role_name.split(" ")[1:])
         for user_idx, user_role_name in enumerate(user_roles):
             user_role_name = " ".join(user_role_name.split(" ")[1:])
             # Load the task list assigned for assistant and user roles
-            with open((f"./ai_society_data/tasks/"
+            with open((f"./misalignment_data/tasks/"
                        f"{assistant_role_name}_{user_role_name}.txt"),
                       "r") as f:
                 tasks = f.read().splitlines()
@@ -202,7 +195,7 @@ def main() -> None:
             for task_idx, task_prompt in enumerate(tasks):
                 id = (f"{(assistant_idx+1):03}_"
                       f"{(user_idx+1):03}_{(task_idx+1):03}")
-                if not os.path.exists(f"./camel_data/ai_society/{id}.json"):
+                if not os.path.exists(f"./camel_data/misalignment/{id}.json"):
                     pool.apply_async(
                         generate_data,
                         (assistant_idx, assistant_role_name, user_idx,

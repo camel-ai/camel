@@ -4,9 +4,9 @@ import os
 from camel.agent import ChatAgent
 from camel.generator import (
     AISocietyTaskPromptGenerator,
-    RoleNameGenerator,
     SystemMessageGenerator,
 )
+from camel.message import UserChatMessage
 from camel.typing import RoleType, TaskType
 
 
@@ -18,11 +18,13 @@ def generate_tasks(role_names: str, task_generator_prompt: str,
         dict(), role_tuple=("Task Generator", RoleType.DEFAULT))
     assistant_agent = ChatAgent(assistant_sys_msg)
 
-    assistant_sys_msg.content = task_generator_prompt
-    user_msgs, _, _ = assistant_agent.step(assistant_sys_msg)
-    user_msg = user_msgs[0]
+    user_msg = UserChatMessage(role_name="Task Generator",
+                               content=task_generator_prompt)
 
-    tasks = user_msg.content.split("\n")
+    assistant_msgs, _, _ = assistant_agent.step(user_msg)
+    assistant_msg = assistant_msgs[0]
+
+    tasks = assistant_msg.content.split("\n")
 
     # Filter out the generated response to include the tasks only
     for i, task in enumerate(tasks):
@@ -41,13 +43,12 @@ def main() -> None:
     num_tasks = 10
     start_token = "1."
 
-    role_names_generator = RoleNameGenerator().from_role_files()
     task_generator_prompt_generator = AISocietyTaskPromptGenerator(
         num_tasks=num_tasks).from_role_files()
 
     pool = multiprocessing.Pool()
-    for task_generator_prompt, role_names in zip(
-            task_generator_prompt_generator, role_names_generator):
+
+    for task_generator_prompt, role_names in task_generator_prompt_generator:
         if not os.path.exists(f"./tasks/{'_'.join(role_names)}.txt"):
             print(f"Generating tasks for {role_names}")
             pool.apply_async(

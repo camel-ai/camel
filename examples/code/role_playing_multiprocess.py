@@ -224,9 +224,8 @@ def main() -> None:
         for domain_idx, domain_name in enumerate(domains):
             domain_name = " ".join(domain_name.split(" ")[1:])
             # Load the task list assigned for assistant and user roles
-            with open(
-                    f"./code_results/tasks/{language_name}_{domain_name}.txt",
-                    "r") as f:
+            with open(f"./code_data/tasks/{language_name}_{domain_name}.txt",
+                      "r") as f:
                 tasks = f.read().splitlines()
 
                 # Filter out the generated response to include the tasks only

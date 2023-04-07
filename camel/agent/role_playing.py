@@ -24,7 +24,7 @@ class RolePlaying:
         user_agent_kwargs: Optional[Dict] = None,
         task_specify_agent_kwargs: Optional[Dict] = None,
         task_planner_agent_kwargs: Optional[Dict] = None,
-        system_message_generator_kwargs: Optional[Dict] = None,
+        sys_msg_generator_kwargs: Optional[Dict] = None,
     ) -> None:
         self.with_task_specify = with_task_specify
         self.with_task_planner = with_task_planner
@@ -59,7 +59,7 @@ class RolePlaying:
         self.task_prompt = task_prompt
 
         sys_msg_generator = SystemMessageGenerator(
-            task_type=task_type, **(system_message_generator_kwargs or {}))
+            task_type=task_type, **(sys_msg_generator_kwargs or {}))
         sys_msg_meta_dicts = [{
             "<ASSISTANT_ROLE>": assistant_role_name,
             "<USER_ROLE>": user_role_name,
