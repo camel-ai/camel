@@ -13,6 +13,9 @@ from camel.utils import get_model_token_limit
 @pytest.mark.parametrize(
     'model', [ModeType.GPT_3_5_TURBO, ModeType.GPT_4, ModeType.GPT_4_32k])
 def test_chat_agent(model):
+    assert os.environ.get(
+        "OPENAI_API_KEY") is not None, "Missing OPENAI_API_KEY"
+
     model_config = ChatGPTConfig()
     system_message = SystemMessageGenerator(
         task_type=TaskType.AI_SOCIETY).from_dict(
