@@ -3,8 +3,11 @@ import os
 from typing import Optional
 
 from camel.agent import ChatAgent
-from camel.generator import (AISocietyTaskPromptGenerator, RoleNameGenerator,
-                             SystemMessageGenerator)
+from camel.generator import (
+    AISocietyTaskPromptGenerator,
+    RoleNameGenerator,
+    SystemMessageGenerator,
+)
 from camel.message import UserChatMessage
 from camel.typing import ModeType, RoleType
 
