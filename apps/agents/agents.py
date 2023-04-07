@@ -15,11 +15,13 @@ import openai.error
 import tenacity
 from text_utils import split_markdown_code
 
-from camel.agent import RolePlaying
-from camel.message import AssistantChatMessage
-
 REPO_ROOT = os.path.realpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.."))
+
+os.chdir(REPO_ROOT)
+
+from camel.agent import RolePlaying
+from camel.message import AssistantChatMessage
 
 ChatBotHistory = List[Tuple[Optional[str], Optional[str]]]
 
@@ -378,8 +380,6 @@ if __name__ == "__main__":
     args = parse_arguments()
 
     print("Getting Agents web server online...")
-
-    os.chdir(REPO_ROOT)
 
     with gr.Blocks() as demo:
         construct_demo(args.api_key)

@@ -6,10 +6,11 @@ from camel.generator import SystemMessageGenerator
 from camel.message import ChatMessage
 from camel.typing import ModeType, RoleType, TaskType
 
-assert os.environ.get("OPENAI_API_KEY") is not None, "Missing OPENAI_API_KEY"
-
 
 def test_chat_agent():
+    assert os.environ.get(
+        "OPENAI_API_KEY") is not None, "Missing OPENAI_API_KEY"
+
     chat_gpt_args = ChatGPTConfig()
     system_message = SystemMessageGenerator(
         task_type=TaskType.AI_SOCIETY).from_dict(
