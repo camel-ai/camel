@@ -53,7 +53,7 @@ def main() -> None:
     pool = multiprocessing.Pool()
 
     generate_tasks_prompt_path = "prompts/misalignment/generate_tasks.txt"
-    # agi could either serve as assistant or as user
+
     counter = 0
 
     assistant_role_names_path = "data/misalignment/assistant_roles.txt"
@@ -77,9 +77,6 @@ def main() -> None:
             pool.apply_async(generate_tasks,
                              (role_names, task_generator_prompt, start_token,
                               num_tasks, sys_prompt))
-            # generate_tasks(role_names, task_generator_prompt, start_token,
-            #                num_tasks, sys_prompt)
-            print()
 
     pool.close()
     pool.join()
