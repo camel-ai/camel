@@ -146,7 +146,9 @@ def role_playing_start(
     try:
         session = RolePlaying(assistant, user, original_task,
                               with_task_specify=True, with_task_planner=False)
-    except (openai.error.RateLimitError, tenacity.RetryError) as ex:
+    except (openai.error.RateLimitError, tenacity.RetryError,
+            RuntimeError) as ex:
+        print("OpenAI API exception 0 " + str(ex))
         return (state, str(ex), "", [], gr.update())
 
     # Can't re-create a state like below since it
@@ -193,7 +195,8 @@ def role_playing_chat_init(state) -> \
     try:
         assistant_msg, _ = state.session.init_chat()
         assistant_msg: AssistantChatMessage
-    except (openai.error.RateLimitError, tenacity.RetryError) as ex:
+    except (openai.error.RateLimitError, tenacity.RetryError,
+            RuntimeError) as ex:
         print("OpenAI API exception 1 " + str(ex))
         state.session = None
         return state, state.chat, gr.update()
@@ -232,7 +235,8 @@ def role_playing_chat_cont(state) -> \
     try:
         assistant_msgs, user_msgs = state.session.step(
             state.saved_assistant_msg)
-    except (openai.error.RateLimitError, tenacity.RetryError) as ex:
+    except (openai.error.RateLimitError, tenacity.RetryError,
+            RuntimeError) as ex:
         print("OpenAI API exception 2 " + str(ex))
         state.session = None
         return state, state.chat, gr.update(), gr.update()
