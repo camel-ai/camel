@@ -28,10 +28,11 @@ class RolePlaying:
     ) -> None:
         self.with_task_specify = with_task_specify
         self.with_task_planner = with_task_planner
+        self.mode_type = mode_type
 
         if with_task_specify:
             task_specify_agent = TaskSpecifyAgent(
-                ModeType.GPT_3_5_TURBO,
+                self.mode_type,
                 task_type=task_type,
                 **(task_specify_agent_kwargs or {}),
             )
@@ -46,7 +47,7 @@ class RolePlaying:
 
         if with_task_planner:
             task_planner_agent = TaskPlannerAgent(
-                ModeType.GPT_3_5_TURBO,
+                self.mode_type,
                 **(task_planner_agent_kwargs or {}),
             )
             self.planned_task_prompt = task_planner_agent.plan_task(

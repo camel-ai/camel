@@ -44,7 +44,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install isort
+          pip install isort==5.12.0
 
       - name: Run linting
         run: |

@@ -11,7 +11,7 @@ from camel.message import (
     UserChatMessage,
     UserSystemMessage,
 )
-from camel.typing import ModeType, RoleType, TaskType
+from camel.typing import RoleType, TaskType
 
 
 def init_chat(
@@ -47,7 +47,6 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
     original_task_prompt = task_prompt.replace(f"{task_idx+1}. ", "")
 
     task_specify_agent = TaskSpecifyAgent(
-        ModeType.GPT_3_5_TURBO,
         task_type=TaskType.CODE,
         model_config=ChatGPTConfig(temperature=1.4),
     )
@@ -74,10 +73,9 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
         ],
     )
 
-    assistant_agent = ChatAgent(assistant_sys_msg, ModeType.GPT_3_5_TURBO,
+    assistant_agent = ChatAgent(assistant_sys_msg,
                                 message_window_size=max_num_messages)
-    user_agent = ChatAgent(user_sys_msg, ModeType.GPT_3_5_TURBO,
-                           message_window_size=max_num_messages)
+    user_agent = ChatAgent(user_sys_msg, message_window_size=max_num_messages)
 
     assistant_msg, _ = init_chat(assistant_agent, user_agent, user_sys_msg,
                                  assistant_sys_msg)

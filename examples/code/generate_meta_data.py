@@ -1,6 +1,5 @@
 from camel.agent import ChatAgent
 from camel.message import AssistantSystemMessage, UserChatMessage
-from camel.typing import ModeType
 
 
 def generate_meta_data(meta_data: str, num: int = 50):
@@ -11,7 +10,7 @@ def generate_meta_data(meta_data: str, num: int = 50):
         role_name="Assistant",
         content="You are a helpful assistant.",
     )
-    agent = ChatAgent(assistant_sys_msg, model=ModeType.GPT_3_5_TURBO)
+    agent = ChatAgent(assistant_sys_msg)
     agent.reset()
 
     user_msg = UserChatMessage(
