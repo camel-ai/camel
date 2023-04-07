@@ -12,10 +12,14 @@ description="Communicative Agents for AI Society Study"
 readme="README.md"
 requires-python=">=3.7"
 keywords=[
-    "communicative-agents",
-    "ai-society",
+    "communicative-ai",
+    "ai-societies",
     "artificial-intelligence",
     "deep-learning",
+    "multi-agent-systems",
+    "cooperative-ai",
+    "natural-language-processing",
+    "large-language-models",
 ]
 classifiers=[
     "Development Status :: 2 - Pre-Alpha",
