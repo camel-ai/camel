@@ -10,7 +10,7 @@ class TaskSpecifyAgent(ChatAgent):
 
     def __init__(
         self,
-        model: ModeType,
+        model: ModeType = ModeType.GPT_3_5_TURBO,
         task_type: TaskType = TaskType.AI_SOCIETY,
         model_config: Any = None,
         task_specify_prompt: Optional[str] = None,
@@ -70,7 +70,7 @@ class TaskPlannerAgent(ChatAgent):
 
     def __init__(
         self,
-        model: ModeType,
+        model: ModeType = ModeType.GPT_3_5_TURBO,
         model_config: Any = None,
     ) -> None:
 

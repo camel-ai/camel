@@ -1,6 +1,5 @@
 from camel.agent import ChatAgent
 from camel.message import AssistantSystemMessage, UserChatMessage
-from camel.typing import ModeType
 
 
 def main() -> None:
@@ -12,7 +11,7 @@ def main() -> None:
         role_name="Assistant",
         content=sys_prompt,
     )
-    agent = ChatAgent(assistant_sys_msg, model=ModeType.GPT_3_5_TURBO)
+    agent = ChatAgent(assistant_sys_msg)
     agent.reset()
 
     user_msg = UserChatMessage(role_name="User", content=prompt)
