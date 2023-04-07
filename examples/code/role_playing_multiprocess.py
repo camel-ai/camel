@@ -2,32 +2,37 @@ import json
 import multiprocessing
 import os
 
-from camel.agent import CodeChatAgent, TaskSpecifyAgent
+from camel.agent import ChatAgent, TaskSpecifyAgent
 from camel.configs import ChatGPTConfig
-from camel.generator import CodeSystemMessageGenerator
-from camel.message import (AssistantChatMessage, CodeAssistantSystemMessage,
-                           CodeUserSystemMessage, UserChatMessage)
-from camel.typing import ModeType, RoleType, TaskType
+from camel.generator import SystemMessageGenerator
+from camel.message import (
+    AssistantChatMessage,
+    AssistantSystemMessage,
+    UserChatMessage,
+    UserSystemMessage,
+)
+from camel.typing import RoleType, TaskType
 
 
 def init_chat(
-    assistant_agent: CodeChatAgent,
-    user_agent: CodeChatAgent,
-    user_sys_msg: CodeUserSystemMessage,
-    assistant_sys_msg: CodeAssistantSystemMessage,
+    assistant_agent: ChatAgent,
+    user_agent: ChatAgent,
+    user_sys_msg: UserSystemMessage,
+    assistant_sys_msg: AssistantSystemMessage,
 ):
     assistant_agent.reset()
     user_agent.reset()
 
     # Send the system messages again to the agents using chat messages
     assistant_msg = AssistantChatMessage(
-        "Computer Programer",
+        role_name=assistant_agent.role_name,
         content=(f"{user_sys_msg.content}. "
                  "Now start to give me instructions one by one. "
                  "Only reply with Instruction and Input."))
     assistant_msg.role = "user"
 
-    user_msg = UserChatMessage("", content=f"{assistant_sys_msg.content}")
+    user_msg = UserChatMessage(role_name=user_agent.role_name,
+                               content=f"{assistant_sys_msg.content}")
     msgs, _, _ = assistant_agent.step(user_msg)
 
     return assistant_msg, msgs
@@ -42,7 +47,6 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
     original_task_prompt = task_prompt.replace(f"{task_idx+1}. ", "")
 
     task_specify_agent = TaskSpecifyAgent(
-        ModeType.GPT_3_5_TURBO,
         task_type=TaskType.CODE,
         model_config=ChatGPTConfig(temperature=1.4),
     )
@@ -55,21 +59,23 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
     print(f"Original Task: {original_task_prompt}")
     print(f"Specified Task: {specified_task_prompt}")
 
-    # task_planner_agent = TaskPlannerAgent(
-    #     ModeType.GPT_3_5_TURBO, model_config=ChatGPTConfig(temperature=1.4))
-    # planned_task_prompt = task_planner_agent.plan_task(specified_task_prompt)
-    # print(f"Planned task prompt:\n{planned_task_prompt}\n")
+    sys_msg_generator = SystemMessageGenerator(task_type=TaskType.CODE)
+    sys_msg_meta_dicts = [{
+        "<LANGUAGE>": language_name,
+        "<DOMAIN>": domain_name,
+        "<TASK>": specified_task_prompt
+    }] * 2
+    assistant_sys_msg, user_sys_msg = sys_msg_generator.from_dicts(
+        sys_msg_meta_dicts,
+        role_tuples=[
+            (f"{language_name} Programmer", RoleType.ASSISTANT),
+            (f"{domain_name} User", RoleType.USER),
+        ],
+    )
 
-    sys_msg_generator = CodeSystemMessageGenerator(with_task=True)
-    assistant_sys_msg, user_sys_msg = sys_msg_generator.from_roles(
-        roles=[(RoleType.ASSISTANT),
-               (RoleType.USER)], language_name=language_name,
-        domain_name=domain_name, task_prompt=specified_task_prompt)
-
-    assistant_agent = CodeChatAgent(assistant_sys_msg, ModeType.GPT_3_5_TURBO,
-                                    message_window_size=max_num_messages)
-    user_agent = CodeChatAgent(user_sys_msg, ModeType.GPT_3_5_TURBO,
-                               message_window_size=max_num_messages)
+    assistant_agent = ChatAgent(assistant_sys_msg,
+                                message_window_size=max_num_messages)
+    user_agent = ChatAgent(user_sys_msg, message_window_size=max_num_messages)
 
     assistant_msg, _ = init_chat(assistant_agent, user_agent, user_sys_msg,
                                  assistant_sys_msg)

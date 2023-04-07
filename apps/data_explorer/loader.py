@@ -6,13 +6,42 @@ import glob
 import json
 import os
 import re
-from typing import Any, Union, Dict, List, Tuple
+import zipfile
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from tqdm import tqdm
 
 ChatHistory = Dict[str, Any]
 ParsedChatHistory = Dict[str, Any]
 AllChats = Dict[str, Any]
+Datasets = Dict[str, AllChats]
+
+REPO_ROOT = os.path.realpath(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.."))
+
+
+class AutoZip:
+    def __init__(self, zip_path: str, ext: str = ".json"):
+        self.zip_path = zip_path
+        self.zip = zipfile.ZipFile(zip_path, "r")
+        self.fl = [f for f in self.zip.filelist if f.filename.endswith(ext)]
+
+    def __next__(self):
+        if self.index >= len(self.fl):
+            raise StopIteration
+        else:
+            finfo = self.fl[self.index]
+            with self.zip.open(finfo) as f:
+                raw_json = json.loads(f.read().decode("utf-8"))
+            self.index += 1
+            return raw_json
+
+    def __len__(self):
+        return len(self.fl)
+
+    def __iter__(self):
+        self.index = 0
+        return self
 
 
 def parse(raw_chat: ChatHistory) -> Union[ParsedChatHistory, None]:
@@ -74,31 +103,24 @@ def parse(raw_chat: ChatHistory) -> Union[ParsedChatHistory, None]:
     )
 
 
-def load_data(path: str) -> AllChats:
-    """ Load all JSONs from a folder and parse them.
+def load_zip(zip_path: str) -> AllChats:
+    """ Load all JSONs from a zip file and parse them.
 
     Args:
-        path (str): path to the folder with JSONs.
+        path (str): path to the ZIP file.
 
     Returns:
         AllChats: A dictionary with all possible assistant and
         user roles and the matrix of chats.
     """
 
-    filt = os.path.join(path, "*.json")
-    files = glob.glob(filt)
+    zip_inst = AutoZip(zip_path)
     parsed_list = []
-    for file_name in tqdm(files):
-        with open(file_name, "rb") as f:
-            try:
-                raw_chat = json.load(f)
-            except Exception as ex:
-                print(str(ex))
-                continue
-            parsed = parse(raw_chat)
-            if parsed is None:
-                continue
-            parsed_list.append(parsed)
+    for raw_chat in tqdm(iter(zip_inst)):
+        parsed = parse(raw_chat)
+        if parsed is None:
+            continue
+        parsed_list.append(parsed)
 
     assistant_roles = set()
     user_roles = set()
@@ -128,5 +150,27 @@ def load_data(path: str) -> AllChats:
     )
 
 
+def load_datasets(path: Optional[str] = None) -> Datasets:
+    """ Load all JSONs from a set of zip files and parse them.
+
+    Args:
+        path (str): path to the folder with ZIP datasets.
+
+    Returns:
+        Datasets: A dictionary of dataset name and dataset contents.
+    """
+
+    if path is None:
+        path = os.path.join(REPO_ROOT, "datasets")
+
+    filt = os.path.join(path, "*.zip")
+    files = glob.glob(filt)
+    datasets = {}
+    for file_name in tqdm(files):
+        name = os.path.splitext(os.path.basename(file_name))[0]
+        datasets[name] = load_zip(file_name)
+    return datasets
+
+
 if __name__ == "__main__":
-    data = load_data("DATA/")
+    data = load_datasets()

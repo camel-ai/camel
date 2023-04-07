@@ -2,18 +2,21 @@ import multiprocessing
 import os
 
 from camel.agent import ChatAgent
-from camel.generator import (AISocietyTaskPromptGenerator,
-                             SystemMessageGenerator)
+from camel.generator import (
+    AISocietyTaskPromptGenerator,
+    SystemMessageGenerator,
+)
 from camel.message import UserChatMessage
-from camel.typing import ModeType, RoleType
+from camel.typing import RoleType, TaskType
 
 
 def generate_tasks(role_names: str, task_generator_prompt: str,
                    start_token: str = "1.", num_tasks: int = 10) -> None:
-    sys_msg_generator = SystemMessageGenerator()
+    sys_msg_generator = SystemMessageGenerator(task_type=TaskType.DEFAULT)
 
-    assistant_sys_msg = sys_msg_generator.from_role(RoleType.DEFAULT)
-    assistant_agent = ChatAgent(assistant_sys_msg, ModeType.GPT_3_5_TURBO)
+    assistant_sys_msg = sys_msg_generator.from_dict(
+        dict(), role_tuple=("Task Generator", RoleType.DEFAULT))
+    assistant_agent = ChatAgent(assistant_sys_msg)
 
     user_msg = UserChatMessage(role_name="Task Generator",
                                content=task_generator_prompt)

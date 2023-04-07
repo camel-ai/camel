@@ -6,7 +6,6 @@ from colorama import Fore
 
 from camel.agent import RolePlaying
 from camel.configs import ChatGPTConfig
-from camel.generator import SystemMessageGenerator
 from camel.typing import TaskType
 
 
@@ -17,22 +16,17 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
     max_num_messages = 40
 
     original_task_prompt = task_prompt.replace(f"{task_idx+1}. ", "")
-    assistant_prompt_with_task_path = (
-        "prompts/misalignment/assistant_prompt_with_task.txt")
-    user_task_prompt_with_task_path = (
-        "prompts/misalignment/user_prompt_with_task.txt")
-    sys_msg_generator = SystemMessageGenerator(
-        assistant_prompt_with_task_path=assistant_prompt_with_task_path,
-        user_task_prompt_with_task_path=user_task_prompt_with_task_path,
-        with_task=True)
 
     role_play_session = RolePlaying(
-        assistant_role_name, user_role_name, original_task_prompt,
-        with_task_specify=True, with_task_planner=False,
-        task_specify_agent_kwargs=dict(
-            task_type=TaskType.MISALIGNMENT,
-            model_config=ChatGPTConfig(temperature=1.4),
-        ), sys_msg_generator=sys_msg_generator)
+        assistant_role_name,
+        user_role_name,
+        original_task_prompt,
+        with_task_specify=True,
+        with_task_planner=False,
+        task_type=TaskType.MISALIGNMENT,
+        task_specify_agent_kwargs=dict(model_config=ChatGPTConfig(
+            temperature=1.4)),
+    )
 
     assistant_msg, _ = role_play_session.init_chat()
 
@@ -160,7 +154,6 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
     with open(f"./camel_data/misalignment/{message_dict['id']}.json",
               "w") as json_file:
         json.dump(message_dict, json_file)
-    print()
 
 
 def main() -> None:

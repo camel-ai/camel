@@ -10,7 +10,7 @@ class TaskSpecifyAgent(ChatAgent):
 
     def __init__(
         self,
-        model: ModeType,
+        model: ModeType = ModeType.GPT_3_5_TURBO,
         task_type: TaskType = TaskType.AI_SOCIETY,
         model_config: Any = None,
         task_specify_prompt: Optional[str] = None,
@@ -38,7 +38,7 @@ class TaskSpecifyAgent(ChatAgent):
         model_config = model_config or ChatGPTConfig(temperature=1.0)
 
         system_message = SystemMessage(
-            role_name="task_specifier",
+            role_name="Task Specifier",
             role_type=RoleType.ASSISTANT,
             content="You can make a task more specific.",
         )
@@ -59,7 +59,7 @@ class TaskSpecifyAgent(ChatAgent):
                 self.task_specify_prompt = self.task_specify_prompt.replace(
                     replace_tuple[0], replace_tuple[1])
         assert "<" and ">" not in self.task_specify_prompt
-        task_msg = UserChatMessage(role_name="task_specifier",
+        task_msg = UserChatMessage(role_name="Task Specifier",
                                    content=self.task_specify_prompt)
         specified_task_msgs, terminated, _ = self.step(task_msg)
         specified_task_msg = specified_task_msgs[0]
@@ -74,7 +74,7 @@ class TaskPlannerAgent(ChatAgent):
 
     def __init__(
         self,
-        model: ModeType,
+        model: ModeType = ModeType.GPT_3_5_TURBO,
         model_config: Any = None,
     ) -> None:
 
@@ -82,7 +82,7 @@ class TaskPlannerAgent(ChatAgent):
             "Divide this task into subtasks: <TASK>. Be concise.")
 
         system_message = SystemMessage(
-            role_name="task_planner",
+            role_name="Task Planner",
             role_type=RoleType.ASSISTANT,
             content="You are a helpful task planner.",
         )
@@ -97,7 +97,7 @@ class TaskPlannerAgent(ChatAgent):
         self.task_planner_prompt = self.task_planner_prompt.replace(
             "<TASK>", task_prompt)
 
-        task_msg = UserChatMessage(role_name="task_specifier",
+        task_msg = UserChatMessage(role_name="Task Planner",
                                    content=self.task_planner_prompt)
         sub_tasks_msgs, terminated, _ = self.step(task_msg)
         sub_tasks_msg = sub_tasks_msgs[0]
