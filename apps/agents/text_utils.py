@@ -20,7 +20,10 @@ def split_markdown_code(string: str) -> str:
             out.append(subs)
         else:  # inside code
             br_done = re.sub(r"<br>", "\n", subs)
-            repl = lambda m: "```{}```".format(m.group(0))
+
+            def repl(m):
+                return "```{}```".format(m.group(0))
+
             new_subs = re.sub(r"\n+", repl, br_done)
             out.append(new_subs)
     out_str = "```".join(out)

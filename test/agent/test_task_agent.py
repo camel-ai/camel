@@ -6,7 +6,8 @@ from camel.typing import TaskType
 
 
 def test_task_specify_ai_society_agent():
-    assert os.environ.get("OPENAI_API_KEY") is not None, "Missing OPENAI_API_KEY"
+    assert os.environ.get("OPENAI_API_KEY") is not None, \
+        "Missing OPENAI_API_KEY"
 
     original_task_prompt = "Improving stage presence and performance skills"
     print(f"Original task prompt:\n{original_task_prompt}\n")
