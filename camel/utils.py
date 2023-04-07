@@ -24,7 +24,7 @@ def count_tokens_openai_chat_models(
 
 def num_tokens_from_messages(
     messages: List[OpenAIMessage],
-    model: ModeType
+    model: ModeType,
 ) -> int:
     """Returns the number of tokens used by a list of messages."""
     try:

@@ -70,7 +70,7 @@ class TaskPlannerAgent(ChatAgent):
 
     def __init__(
         self,
-        model: ModeType,
+        model: ModeType = ModeType.GPT_3_5_TURBO,
         model_config: Any = None,
     ) -> None:
 
