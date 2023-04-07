@@ -10,8 +10,8 @@ assert os.environ.get("OPENAI_API_KEY") is not None, "Missing OPENAI_API_KEY"
 def test_task_specify_ai_society_agent():
     original_task_prompt = "Improving stage presence and performance skills"
     print(f"Original task prompt:\n{original_task_prompt}\n")
-    task_specify_agent = TaskSpecifyAgent(
-        model_config=ChatGPTConfig(temperature=1.0))
+    task_specify_agent = TaskSpecifyAgent(model_config=ChatGPTConfig(
+        temperature=1.0))
     specified_task_prompt = task_specify_agent.specify_task(
         original_task_prompt, [
             ("<ASSISTANT_ROLE>", "Musician"),
@@ -48,7 +48,7 @@ def test_task_planner_agent():
             ("<LANGUAGE>", "Python"),
         ])
     print(f"Specified task prompt:\n{specified_task_prompt}\n")
-    task_planner_agent = TaskPlannerAgent(
-        model_config=ChatGPTConfig(temperature=1.0))
+    task_planner_agent = TaskPlannerAgent(model_config=ChatGPTConfig(
+        temperature=1.0))
     planned_task_prompt = task_planner_agent.plan_task(specified_task_prompt)
     print(f"Planned task prompt:\n{planned_task_prompt}\n")
