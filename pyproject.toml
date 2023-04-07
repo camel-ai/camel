@@ -6,9 +6,7 @@ build-backend = "setuptools.build_meta"
 name="camel"
 version="0.0.1"
 authors=[
-    {name="Guohao Li", email="lightaime@gmail.com"},
-    {name="Hasan Abed Al Kader Hammoud", email="hasanabedalkader.hammoud@kaust.edu.sa"}, 
-    {name="Hani Itani", email="hani.itani.2@kaust.edu.sa"},
+    {name="CAMEL TEAM", email="camel.ai.team@gmail.com"},
 ]
 description="Communicative Agents for AI Society Study"
 readme="README.md"
