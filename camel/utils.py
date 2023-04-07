@@ -22,8 +22,10 @@ def count_tokens_openai_chat_models(
     return num_tokens
 
 
-def num_tokens_from_messages(messages: List[OpenAIMessage],
-                             model: ModeType) -> int:
+def num_tokens_from_messages(
+    messages: List[OpenAIMessage],
+    model: ModeType
+) -> int:
     """Returns the number of tokens used by a list of messages."""
     try:
         encoding = tiktoken.encoding_for_model(model.value)
