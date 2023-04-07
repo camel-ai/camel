@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name="camel"
+version="0.0.1"
+authors=[
+    {name="Guohao Li", email="lightaime@gmail.com"},
+    {name="Hasan Abed Al Kader Hammoud", email="hasanabedalkader.hammoud@kaust.edu.sa"}, 
+    {name="Hani Itani", email="hani.itani.2@kaust.edu.sa"},
+]
+description="Communicative Agents for AI Society Study"
+readme="README.md"
+requires-python=">=3.7"
+keywords=[
+    "communicative-agents",
+    "ai-society",
+    "artificial-intelligence",
+    "deep-learning",
+]
+classifiers=[
+    "Development Status :: 2 - Pre-Alpha",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3 :: Only",
+]
+
+dynamic=["dependencies", "optional-dependencies"]
+
+[project.urls]
+homepage="https://github.com/lightaime/camel"
+repository="https://github.com/lightaime/camel"
+changelog="https://github.com/lightaime/camel/blob/master/CHANGELOG.md"
+
+[tool.yapf]
+based_on_style = "pep8"
+split_before_named_assigns = false
+
+[tool.isort]
+multi_line_output = 3
+include_trailing_comma = true
