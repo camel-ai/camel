@@ -1,38 +1,47 @@
 import os
 
+import pytest
+
 from camel.agent import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.generator import SystemMessageGenerator
 from camel.message import ChatMessage
-from camel.typing import ModeType, RoleType
+from camel.typing import ModeType, RoleType, TaskType
+from camel.utils import get_model_token_limit
 
 assert os.environ.get("OPENAI_API_KEY") is not None, "Missing OPENAI_API_KEY"
 
 
-def test_chat_agent():
-    chat_gpt_args = ChatGPTConfig()
-    system_message = SystemMessageGenerator(with_task=False).from_role(
-        "doctor", RoleType.ASSISTANT)
-    assistant = ChatAgent(
-        system_message,
-        ModeType.GPT_3_5_TURBO,
-        chat_gpt_args,
-    )
+@pytest.mark.parametrize(
+    'model', [ModeType.GPT_3_5_TURBO, ModeType.GPT_4, ModeType.GPT_4_32k])
+def test_chat_agent(model):
+    model_config = ChatGPTConfig()
+    system_message = SystemMessageGenerator(
+        task_type=TaskType.AI_SOCIETY).from_dict(
+            {"<ASSISTANT_ROLE>": "doctor"},
+            role_tuple=("doctor", RoleType.ASSISTANT),
+        )
+    assistant = ChatAgent(system_message, model=model,
+                          model_config=model_config)
 
-    assert str(assistant) == (
-        "ChatAgent(doctor, RoleType.ASSISTANT, ModeType.GPT_3_5_TURBO)")
+    assert str(assistant) == ("ChatAgent(doctor, "
+                              f"RoleType.ASSISTANT, {str(model)})")
 
     assistant.reset()
-    messages, terminated, info = assistant.step(
-        ChatMessage("patient", RoleType.USER, "user", "Hello!"))
+    user_msg = ChatMessage(role_name="Patient", role_type=RoleType.USER,
+                           meta_dict=dict(), role="user", content="Hello!")
+    messages, terminated, info = assistant.step(user_msg)
 
     assert terminated is False
     assert messages != []
     assert info['id'] is not None
 
     assistant.reset()
-    messages, terminated, info = assistant.step(
-        ChatMessage("patient", RoleType.USER, "user", "Hello!" * 4096))
+    token_limit = get_model_token_limit(model)
+    user_msg = ChatMessage(role_name="Patient", role_type=RoleType.USER,
+                           meta_dict=dict(), role="user",
+                           content="token" * (token_limit + 1))
+    messages, terminated, info = assistant.step(user_msg)
 
     assert terminated is True
     assert messages == []
