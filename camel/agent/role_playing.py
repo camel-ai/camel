@@ -2,7 +2,7 @@ from typing import Dict, List, Optional, Tuple
 
 from camel.generator import SystemMessageGenerator
 from camel.message import AssistantChatMessage, ChatMessage, UserChatMessage
-from camel.typing import ModeType, RoleType, TaskType
+from camel.typing import ModelType, RoleType, TaskType
 
 from .chat_agent import ChatAgent
 from .task_agent import TaskPlannerAgent, TaskSpecifyAgent
@@ -18,7 +18,7 @@ class RolePlaying:
         task_prompt: str = "",
         with_task_specify: bool = True,
         with_task_planner: bool = False,
-        mode_type: ModeType = ModeType.GPT_3_5_TURBO,
+        mode_type: ModelType = ModelType.GPT_3_5_TURBO,
         task_type: Optional[TaskType] = TaskType.AI_SOCIETY,
         assistant_agent_kwargs: Optional[Dict] = None,
         user_agent_kwargs: Optional[Dict] = None,

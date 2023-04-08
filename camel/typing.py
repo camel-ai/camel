@@ -7,7 +7,7 @@ class RoleType(Enum):
     DEFAULT = "default"
 
 
-class ModeType(Enum):
+class ModelType(Enum):
     GPT_3_5_TURBO = "gpt-3.5-turbo"
     GPT_4 = "gpt-4"
     GPT_4_32k = "gpt-4-32k"
@@ -21,4 +21,4 @@ class TaskType(Enum):
     DEFAULT = "default"
 
 
-__all__ = ['RoleType', 'ModeType', 'TaskType']
+__all__ = ['RoleType', 'ModelType', 'TaskType']

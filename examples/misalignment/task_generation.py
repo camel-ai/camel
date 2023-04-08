@@ -9,7 +9,7 @@ from camel.generator import (
     SystemMessageGenerator,
 )
 from camel.message import UserChatMessage
-from camel.typing import ModeType, RoleType
+from camel.typing import ModelType, RoleType
 
 
 def generate_tasks(role_names: str, task_generator_prompt: str,
@@ -19,7 +19,7 @@ def generate_tasks(role_names: str, task_generator_prompt: str,
 
     assistant_sys_msg = sys_msg_generator.from_role(role_type=RoleType.DEFAULT,
                                                     role_prompt=role_prompt)
-    assistant_agent = ChatAgent(assistant_sys_msg, ModeType.GPT_3_5_TURBO)
+    assistant_agent = ChatAgent(assistant_sys_msg, ModelType.GPT_3_5_TURBO)
 
     user_msg = UserChatMessage(role_name="Task Generator",
                                content=task_generator_prompt)

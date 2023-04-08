@@ -7,7 +7,7 @@ from .generator import (
     SingleTxtGenerator,
     SystemMessageGenerator,
 )
-from .typing import ModeType, RoleType
+from .typing import ModelType, RoleType
 from .utils import get_model_token_limit, num_tokens_from_messages
 
 __version__ = '0.0.1'
@@ -17,7 +17,7 @@ __all__ = [
     'get_model_token_limit',
     'num_tokens_from_messages',
     'RoleType',
-    'ModeType',
+    'ModelType',
     'ChatGPTConfig',
     'ChatAgent',
     'TaskSpecifyAgent',
