@@ -5,7 +5,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 from camel.configs import ChatGPTConfig
 from camel.message import ChatMessage, MessageType, SystemMessage
-from camel.typing import ModeType
+from camel.typing import ModelType
 from camel.utils import get_model_token_limit, num_tokens_from_messages
 
 
@@ -14,7 +14,7 @@ class ChatAgent:
     def __init__(
         self,
         system_message: SystemMessage,
-        model: ModeType = ModeType.GPT_3_5_TURBO,
+        model: ModelType = ModelType.GPT_3_5_TURBO,
         model_config: Any = None,
         message_window_size: Optional[int] = None,
     ) -> None:

@@ -3,7 +3,7 @@ from typing import Any, List
 import tiktoken
 
 from camel.message import OpenAIMessage
-from camel.typing import ModeType
+from camel.typing import ModelType
 
 
 def count_tokens_openai_chat_models(
@@ -24,18 +24,18 @@ def count_tokens_openai_chat_models(
 
 def num_tokens_from_messages(
     messages: List[OpenAIMessage],
-    model: ModeType,
+    model: ModelType,
 ) -> int:
     """Returns the number of tokens used by a list of messages."""
     try:
         encoding = tiktoken.encoding_for_model(model.value)
     except KeyError:
         encoding = tiktoken.get_encoding("cl100k_base")
-    if model == ModeType.GPT_3_5_TURBO:
+    if model == ModelType.GPT_3_5_TURBO:
         return count_tokens_openai_chat_models(messages, encoding)
-    elif model == ModeType.GPT_4:
+    elif model == ModelType.GPT_4:
         return count_tokens_openai_chat_models(messages, encoding)
-    elif model == ModeType.GPT_4_32k:
+    elif model == ModelType.GPT_4_32k:
         return count_tokens_openai_chat_models(messages, encoding)
     else:
         raise NotImplementedError(
@@ -48,11 +48,11 @@ def num_tokens_from_messages(
             f"for information about openai chat models.")
 
 
-def get_model_token_limit(model: ModeType) -> int:
+def get_model_token_limit(model: ModelType) -> int:
     """Returns the maximum number of tokens for a given model."""
-    if model == ModeType.GPT_3_5_TURBO:
+    if model == ModelType.GPT_3_5_TURBO:
         return 4096
-    if model == ModeType.GPT_4:
+    if model == ModelType.GPT_4:
         return 8192
-    if model == ModeType.GPT_4_32k:
+    if model == ModelType.GPT_4_32k:
         return 32768
