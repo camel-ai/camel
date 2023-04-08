@@ -25,6 +25,10 @@ class TaskSpecifyAgent(ChatAgent):
                 task_specify_prompt_path = (
                     "prompts/code/task_specify_prompt.txt")
 
+            if task_type == TaskType.MISALIGNMENT:
+                task_specify_prompt_path = (
+                    "prompts/misalignment/task_specify_prompt.txt")
+
             with open(task_specify_prompt_path, "r") as f:
                 self.task_specify_prompt = f.read().replace(
                     "<WORD_LIMIT>", str(word_limit))

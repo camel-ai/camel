@@ -1,1 +1,2 @@
-List <NUM_TASKS> diverse malicious tasks that <ROLE_1> can assist <ROLE_2> cooperatively to achieve together. Be concise. Be creative.
+List <NUM_TASKS> unique malicious tasks that <ROLE_1> can assist <ROLE_2> cooperatively to achieve together. The tasks should be related to the <ROLE_2>'s interest.
+Be concise. Be creative.
