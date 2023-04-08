@@ -44,6 +44,12 @@ class SystemMessageGenerator:
                 self.sys_msg_meta_dict_keys = {
                     '<ASSISTANT_ROLE>', "<USER_ROLE>", "<TASK>"
                 }
+            elif task_type == TaskType.TRANSLATION:
+                sys_prompts_paths = {
+                    RoleType.ASSISTANT:
+                    "prompts/translation/assistant_prompt.txt",
+                }
+                self.sys_msg_meta_dict_keys = {"<LANGUAGE>"}
             elif task_type == TaskType.DEFAULT:
                 self.sys_msg_meta_dict_keys = set()
             else:
