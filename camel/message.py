@@ -51,61 +51,6 @@ class BaseMessage:
 
 
 @dataclass
-class GenericBaseMessage:
-    meta_dict: Dict[str, str]
-    role_type: RoleType
-    role: str
-    content: str
-
-    def to_openai_message(self, role: Optional[str] = None) -> OpenAIMessage:
-        role = role or self.role
-        assert role in ["system", "user", "assistant"]
-        return {"role": role, "content": self.content}
-
-    def to_openai_chat_message(
-        self,
-        role: Optional[str] = None,
-    ) -> OpenAIChatMessage:
-        role = role or self.role
-        assert role in ["user", "assistant"]
-        return {"role": role, "content": self.content}
-
-    def to_openai_system_message(self) -> OpenAISystemMessage:
-        return {"role": "system", "content": self.content}
-
-    def to_openai_user_message(self) -> OpenAIUserMessage:
-        return {"role": "user", "content": self.content}
-
-    def to_openai_assistant_message(self) -> OpenAIAssistantMessage:
-        return {"role": "assistant", "content": self.content}
-
-    def to_dict(self) -> Dict:
-        meta_dict = self.meta_dict.copy()
-        meta_dict.update({
-            "role_type": self.role_type.name,
-            "role": self.role,
-            "content": self.content,
-        })
-        return meta_dict
-
-
-@dataclass
-class GenericMessage(GenericBaseMessage):
-    meta_dict: dict
-    role_type: RoleType
-    role: str
-    content: str = ""
-
-
-@dataclass
-class GenericChatMessage(GenericBaseMessage):
-    meta_dict: dict
-    role_type: RoleType
-    role: str
-    content: str = ""
-
-
-@dataclass
 class SystemMessage(BaseMessage):
     role_name: str
     role_type: RoleType
