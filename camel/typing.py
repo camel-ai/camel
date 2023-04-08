@@ -17,6 +17,7 @@ class TaskType(Enum):
     AI_SOCIETY = "ai_society"
     CODE = "code"
     MISALIGNMENT = "misalignment"
+    TRANSLATION = "translation"
     DEFAULT = "default"
 
 
