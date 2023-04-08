@@ -3,14 +3,14 @@ from typing import Any, List, Optional, Tuple
 from camel.agent import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.message import SystemMessage, UserChatMessage
-from camel.typing import ModeType, RoleType, TaskType
+from camel.typing import ModelType, RoleType, TaskType
 
 
 class TaskSpecifyAgent(ChatAgent):
 
     def __init__(
         self,
-        model: ModeType = ModeType.GPT_3_5_TURBO,
+        model: ModelType = ModelType.GPT_3_5_TURBO,
         task_type: TaskType = TaskType.AI_SOCIETY,
         model_config: Any = None,
         task_specify_prompt: Optional[str] = None,
@@ -74,7 +74,7 @@ class TaskPlannerAgent(ChatAgent):
 
     def __init__(
         self,
-        model: ModeType = ModeType.GPT_3_5_TURBO,
+        model: ModelType = ModelType.GPT_3_5_TURBO,
         model_config: Any = None,
     ) -> None:
 
