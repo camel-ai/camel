@@ -7,7 +7,6 @@ from .generator import (
     SingleTxtGenerator,
     SystemMessageGenerator,
 )
-from .prompts import PROMPTS_DIR
 from .typing import ModelType, RoleType
 from .utils import get_model_token_limit, num_tokens_from_messages
 
@@ -29,5 +28,4 @@ __all__ = [
     'AISocietyTaskPromptGenerator',
     'SingleTxtGenerator',
     'CodeTaskPromptGenerator',
-    'PROMPTS_DIR',
 ]

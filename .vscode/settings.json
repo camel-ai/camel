@@ -2,10 +2,11 @@
     "makefile.extensionOutputFolder": "./.vscode",
     "python.formatting.provider": "yapf",
     "python.testing.pytestArgs": [
-        "test"
+        "."
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
+    "python.envFile": "${workspaceFolder}/.envs",
     "python.linting.enabled": true,
     "python.linting.pylintEnabled": false,
     "python.linting.pycodestyleEnabled": false,
@@ -25,4 +26,11 @@
             "source.organizeImports": true
         },
     },
+    "python.testing.unittestArgs": [
+        "-v",
+        "-s",
+        ".",
+        "-p",
+        "test_*.py"
+    ],
 }
