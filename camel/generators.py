@@ -46,13 +46,12 @@ class SystemMessageGenerator:
                              f"{self.sys_msg_meta_dict_keys}. "
                              f"Got {set(meta_dict.keys())} instead.")
 
+    @staticmethod
     def replace_keywords(
-        self,
         meta_dict: Dict[str, str],
-        role_type: RoleType,
+        sys_prompt: str,
     ) -> str:
         """Replace keywords in the system prompt."""
-        sys_prompt = self.sys_prompts[role_type]
         for key, value in meta_dict.items():
             sys_prompt = sys_prompt.replace(key, value)
         return sys_prompt
@@ -65,7 +64,8 @@ class SystemMessageGenerator:
         """Generate a system message from a dictionary."""
         self.validate_meta_dict_keys(meta_dict)
         role_name, role_type = role_tuple
-        sys_prompt = self.replace_keywords(meta_dict, role_type)
+        sys_prompt = self.sys_prompts[role_type]
+        sys_prompt = self.replace_keywords(meta_dict, sys_prompt)
         return SystemMessage(role_name=role_name, role_type=role_type,
                              meta_dict=meta_dict, content=sys_prompt)
 
