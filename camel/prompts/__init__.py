@@ -1,5 +1,3 @@
-import os
+from .prompt_templates import PROMPTS_DIR, PromptTemplate
 
-PROMPTS_DIR = os.path.dirname(os.path.abspath(__file__))
-
-print(PROMPTS_DIR)
+__all__ = ['PromptTemplate', 'PROMPTS_DIR']

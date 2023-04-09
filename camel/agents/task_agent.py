@@ -1,8 +1,9 @@
 from typing import Any, List, Optional, Tuple
 
-from camel.agent import ChatAgent
+from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
-from camel.message import SystemMessage, UserChatMessage
+from camel.messages import SystemMessage, UserChatMessage
+from camel.prompts import PromptTemplate
 from camel.typing import ModelType, RoleType, TaskType
 
 
@@ -17,21 +18,12 @@ class TaskSpecifyAgent(ChatAgent):
         word_limit: int = 50,
     ) -> None:
         if task_specify_prompt is None:
-            if task_type == TaskType.AI_SOCIETY:
-                task_specify_prompt_path = (
-                    "prompts/ai_society/task_specify_prompt.txt")
+            prompt_template = PromptTemplate.get_task_specify_prompt(task_type)
+            task_specify_prompt = prompt_template.template
+            assert "<WORD_LIMIT>" in prompt_template.key_words
 
-            if task_type == TaskType.CODE:
-                task_specify_prompt_path = (
-                    "prompts/code/task_specify_prompt.txt")
-
-            if task_type == TaskType.MISALIGNMENT:
-                task_specify_prompt_path = (
-                    "prompts/misalignment/task_specify_prompt.txt")
-
-            with open(task_specify_prompt_path, "r") as f:
-                self.task_specify_prompt = f.read().replace(
-                    "<WORD_LIMIT>", str(word_limit))
+            self.task_specify_prompt = task_specify_prompt.replace(
+                "<WORD_LIMIT>", str(word_limit))
         else:
             self.task_specify_prompt = task_specify_prompt
 
