@@ -13,12 +13,15 @@ import gradio as gr
 import openai
 import openai.error
 import tenacity
+from text_utils import split_markdown_code
 
 from camel.agent import RolePlaying
 from camel.message import AssistantChatMessage
 
 REPO_ROOT = os.path.realpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.."))
+
+os.chdir(REPO_ROOT)
 
 ChatBotHistory = List[Tuple[Optional[str], Optional[str]]]
 
@@ -143,7 +146,9 @@ def role_playing_start(
     try:
         session = RolePlaying(assistant, user, original_task,
                               with_task_specify=True, with_task_planner=False)
-    except (openai.error.RateLimitError, tenacity.RetryError) as ex:
+    except (openai.error.RateLimitError, tenacity.RetryError,
+            RuntimeError) as ex:
+        print("OpenAI API exception 0 " + str(ex))
         return (state, str(ex), "", [], gr.update())
 
     # Can't re-create a state like below since it
@@ -185,12 +190,13 @@ def role_playing_chat_init(state) -> \
 
     if state.session is None:
         print("Error: session is none on role_playing_chat_init call")
-        return {}  # may fail
+        return state, state.chat, gr.update()
 
     try:
         assistant_msg, _ = state.session.init_chat()
         assistant_msg: AssistantChatMessage
-    except (openai.error.RateLimitError, tenacity.RetryError) as ex:
+    except (openai.error.RateLimitError, tenacity.RetryError,
+            RuntimeError) as ex:
         print("OpenAI API exception 1 " + str(ex))
         state.session = None
         return state, state.chat, gr.update()
@@ -221,7 +227,7 @@ def role_playing_chat_cont(state) -> \
     """
 
     if state.session is None:
-        return state, state.chat, gr.update(), gr.update()
+        return state, state.chat, gr.update(visible=False), gr.update()
 
     if state.saved_assistant_msg is None:
         return state, state.chat, gr.update(), gr.update()
@@ -229,7 +235,8 @@ def role_playing_chat_cont(state) -> \
     try:
         assistant_msgs, user_msgs = state.session.step(
             state.saved_assistant_msg)
-    except (openai.error.RateLimitError, tenacity.RetryError) as ex:
+    except (openai.error.RateLimitError, tenacity.RetryError,
+            RuntimeError) as ex:
         print("OpenAI API exception 2 " + str(ex))
         state.session = None
         return state, state.chat, gr.update(), gr.update()
@@ -239,8 +246,8 @@ def role_playing_chat_cont(state) -> \
 
     state.saved_assistant_msg = a_msg
 
-    state.chat.append((None, u_msg.content))
-    state.chat.append((a_msg.content, None))
+    state.chat.append((None, split_markdown_code(u_msg.content)))
+    state.chat.append((split_markdown_code(a_msg.content), None))
 
     if len(state.chat) >= state.max_messages:
         state.session = None
@@ -377,8 +384,6 @@ if __name__ == "__main__":
     args = parse_arguments()
 
     print("Getting Agents web server online...")
-
-    os.chdir(REPO_ROOT)
 
     with gr.Blocks() as demo:
         construct_demo(args.api_key)

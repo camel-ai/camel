@@ -170,7 +170,3 @@ def load_datasets(path: Optional[str] = None) -> Datasets:
         name = os.path.splitext(os.path.basename(file_name))[0]
         datasets[name] = load_zip(file_name)
     return datasets
-
-
-if __name__ == "__main__":
-    data = load_datasets()

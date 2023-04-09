@@ -9,12 +9,13 @@ from camel.message import ChatMessage
 from camel.typing import ModelType, RoleType, TaskType
 from camel.utils import get_model_token_limit
 
-assert os.environ.get("OPENAI_API_KEY") is not None, "Missing OPENAI_API_KEY"
-
 
 @pytest.mark.parametrize(
     'model', [ModelType.GPT_3_5_TURBO, ModelType.GPT_4, ModelType.GPT_4_32k])
 def test_chat_agent(model):
+    assert os.environ.get(
+        "OPENAI_API_KEY") is not None, "Missing OPENAI_API_KEY"
+
     model_config = ChatGPTConfig()
     system_message = SystemMessageGenerator(
         task_type=TaskType.AI_SOCIETY).from_dict(
