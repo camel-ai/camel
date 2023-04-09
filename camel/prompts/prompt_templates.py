@@ -70,8 +70,9 @@ class PromptTemplate:
             return cls(template, key_words)
 
         except ValueError:
-            raise ValueError("Failed to get generate tasks prompt template for"
-                             f"task: {task_type.value}.")
+            raise ValueError(
+                "Failed to get generate tasks prompt template for "
+                f"task: {task_type.value}.")
 
     @classmethod
     def get_task_specify_prompt(
@@ -100,5 +101,5 @@ class PromptTemplate:
 
         except ValueError:
             raise ValueError(
-                "Failed to get task task specify prompt template for"
+                "Failed to get task task specify prompt template for "
                 f"task: {task_type.value}.")
