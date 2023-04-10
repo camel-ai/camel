@@ -2,7 +2,7 @@ from typing import Any, List
 
 import tiktoken
 
-from camel.message import OpenAIMessage
+from camel.messages import OpenAIMessage
 from camel.typing import ModelType
 
 

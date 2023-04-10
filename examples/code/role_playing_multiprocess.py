@@ -2,10 +2,10 @@ import json
 import multiprocessing
 import os
 
-from camel.agent import ChatAgent, TaskSpecifyAgent
+from camel.agents import ChatAgent, TaskSpecifyAgent
 from camel.configs import ChatGPTConfig
-from camel.generator import SystemMessageGenerator
-from camel.message import (
+from camel.generators import SystemMessageGenerator
+from camel.messages import (
     AssistantChatMessage,
     AssistantSystemMessage,
     UserChatMessage,

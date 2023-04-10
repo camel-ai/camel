@@ -2,10 +2,10 @@ import os
 
 import pytest
 
-from camel.agent import ChatAgent
+from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
-from camel.generator import SystemMessageGenerator
-from camel.message import ChatMessage
+from camel.generators import SystemMessageGenerator
+from camel.messages import ChatMessage
 from camel.typing import ModelType, RoleType, TaskType
 from camel.utils import get_model_token_limit
 

@@ -1,0 +1,1 @@
+List <NUM_TASKS> diverse tasks that <ASSISTANT_ROLE> can assist <USER_ROLE> cooperatively to achieve together. Be concise. Be creative.

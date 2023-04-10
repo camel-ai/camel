@@ -2,13 +2,13 @@ import multiprocessing
 import os
 from typing import Optional
 
-from camel.agent import ChatAgent
-from camel.generator import (
+from camel.agents import ChatAgent
+from camel.generators import (
     AISocietyTaskPromptGenerator,
     RoleNameGenerator,
     SystemMessageGenerator,
 )
-from camel.message import UserChatMessage
+from camel.messages import UserChatMessage
 from camel.typing import ModelType, RoleType
 
 

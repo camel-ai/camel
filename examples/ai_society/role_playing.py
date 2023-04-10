@@ -2,7 +2,7 @@ import time
 
 from colorama import Fore
 
-from camel.agent import RolePlaying
+from camel.agents import RolePlaying
 
 
 def print_text_animated(text):
