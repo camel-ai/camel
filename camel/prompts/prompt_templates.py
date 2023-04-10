@@ -8,7 +8,7 @@ from camel.typing import RoleType, TaskType
 PROMPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-# NOTE: Maybe a better solution.
+# NOTE: There may be a better solution.
 @dataclass
 class PromptTemplate:
     template: str
