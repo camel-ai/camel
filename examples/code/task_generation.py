@@ -1,9 +1,9 @@
 import multiprocessing
 import os
 
-from camel.agent import ChatAgent
-from camel.generator import CodeTaskPromptGenerator, SystemMessageGenerator
-from camel.message import UserChatMessage
+from camel.agents import ChatAgent
+from camel.generators import CodeTaskPromptGenerator, SystemMessageGenerator
+from camel.messages import UserChatMessage
 from camel.typing import RoleType, TaskType
 
 

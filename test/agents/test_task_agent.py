@@ -1,6 +1,6 @@
 import os
 
-from camel.agent import TaskPlannerAgent, TaskSpecifyAgent
+from camel.agents import TaskPlannerAgent, TaskSpecifyAgent
 from camel.configs import ChatGPTConfig
 from camel.typing import TaskType
 

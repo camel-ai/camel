@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional, Tuple
 
-from camel.generator import SystemMessageGenerator
-from camel.message import AssistantChatMessage, ChatMessage, UserChatMessage
+from camel.generators import SystemMessageGenerator
+from camel.messages import AssistantChatMessage, ChatMessage, UserChatMessage
 from camel.typing import ModelType, RoleType, TaskType
 
 from .chat_agent import ChatAgent

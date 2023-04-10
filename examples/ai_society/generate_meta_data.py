@@ -1,9 +1,14 @@
-from camel.agent import ChatAgent
-from camel.message import AssistantSystemMessage, UserChatMessage
+import os
+
+from camel.agents import ChatAgent
+from camel.messages import AssistantSystemMessage, UserChatMessage
+from camel.prompts import PROMPTS_DIR
 
 
 def main(role_type: str = "user", num_roles: int = 50):
-    with open(f"prompts/ai_society/generate_{role_type}.txt", "r") as f:
+    prompt_path = os.path.join(PROMPTS_DIR,
+                               f"ai_society/generate_{role_type}.txt")
+    with open(prompt_path, "r") as f:
         prompt = f.read().replace("<NUM_ROLES>", str(num_roles))
     print(prompt)
     assistant_sys_msg = AssistantSystemMessage(
@@ -22,4 +27,5 @@ def main(role_type: str = "user", num_roles: int = 50):
 
 
 if __name__ == "__main__":
-    main()
+    main("user", 50)
+    main("assistant", 50)

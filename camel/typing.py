@@ -1,6 +1,7 @@
 from enum import Enum
 
 
+# The values should be the same as the prompt file names
 class RoleType(Enum):
     ASSISTANT = "assistant"
     USER = "user"
@@ -13,6 +14,7 @@ class ModelType(Enum):
     GPT_4_32k = "gpt-4-32k"
 
 
+# The values should be the same as the prompt dir names
 class TaskType(Enum):
     AI_SOCIETY = "ai_society"
     CODE = "code"

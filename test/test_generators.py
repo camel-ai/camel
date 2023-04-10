@@ -1,4 +1,4 @@
-from camel.generator import (
+from camel.generators import (
     AISocietyTaskPromptGenerator,
     RoleNameGenerator,
     SystemMessageGenerator,

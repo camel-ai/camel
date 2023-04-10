@@ -4,7 +4,7 @@ import openai
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from camel.configs import ChatGPTConfig
-from camel.message import ChatMessage, MessageType, SystemMessage
+from camel.messages import ChatMessage, MessageType, SystemMessage
 from camel.typing import ModelType
 from camel.utils import get_model_token_limit, num_tokens_from_messages
 

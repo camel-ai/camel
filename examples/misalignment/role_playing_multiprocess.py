@@ -4,7 +4,7 @@ import os
 
 from colorama import Fore
 
-from camel.agent import RolePlaying
+from camel.agents import RolePlaying
 from camel.configs import ChatGPTConfig
 from camel.typing import TaskType
 
