@@ -27,4 +27,5 @@ def main(role_type: str = "user", num_roles: int = 50):
 
 
 if __name__ == "__main__":
-    main()
+    main("user", 50)
+    main("assistant", 50)
