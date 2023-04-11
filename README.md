@@ -57,6 +57,9 @@ python examples/ai_society/role_playing.py
 **Math:**
 * [Chat format](https://huggingface.co/datasets/camel-ai/math/blob/main/math.zip)
 
+**Physics:**
+* [Chat format](https://huggingface.co/datasets/camel-ai/physics)
+
 ## Visualizations of Instructions and Tasks
 
 **AI Society:**
