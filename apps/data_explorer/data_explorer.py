@@ -93,7 +93,11 @@ def construct_app(datasets: Datasets, default_dataset: str = None):
                 "## CAMEL: Communicative Agents for \"Mind\" Exploration"
                 " of Large Scale Language Model Society\n"
                 "Github repo: [https://github.com/lightaime/camel]"
-                "(https://github.com/lightaime/camel)")
+                "(https://github.com/lightaime/camel)\n"
+                '<div style="display:flex; justify-content:center;">'
+                '<img src="https://raw.githubusercontent.com/lightaime/camel/'
+                'master/misc/logo.png" alt="Logo" style="max-width:50%;">'
+                '</div>')
 
     task_dd = gr.Dropdown([], label="Original task", value="",
                           interactive=True)

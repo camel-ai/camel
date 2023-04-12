@@ -324,7 +324,11 @@ def construct_demo(api_key: str) -> None:
                 "## CAMEL: Communicative Agents for \"Mind\" Exploration"
                 " of Large Scale Language Model Society\n"
                 "Github repo: [https://github.com/lightaime/camel]"
-                "(https://github.com/lightaime/camel)")
+                "(https://github.com/lightaime/camel)"
+                '<div style="display:flex; justify-content:center;">'
+                '<img src="https://raw.githubusercontent.com/lightaime/camel/'
+                'master/misc/logo.png" alt="Logo" style="max-width:50%;">'
+                '</div>')
     with gr.Row():
         with gr.Column(scale=9):
             original_task_ta = gr.TextArea(
@@ -338,7 +342,8 @@ def construct_demo(api_key: str) -> None:
                                         value=10, interactive=True,
                                         label="Number of messages to generate")
         with gr.Column():
-            start_bn = gr.Button("Make agents chat [takes time]")
+            start_bn = gr.Button("Make agents chat [takes time]",
+                                 elem_id="start_button")
         with gr.Column():
             clear_bn = gr.Button("Interrupt the current query")
     progress_sl = gr.Slider(minimum=0, maximum=100, value=0, step=1,
@@ -385,7 +390,9 @@ if __name__ == "__main__":
 
     print("Getting Agents web server online...")
 
-    with gr.Blocks() as demo:
+    css_str = "#start_button {border: 3px solid #4CAF50; font-size: 20px;}"
+
+    with gr.Blocks(css=css_str) as demo:
         construct_demo(args.api_key)
 
     demo.queue(args.concurrency_count) \
