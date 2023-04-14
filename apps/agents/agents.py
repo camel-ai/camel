@@ -21,8 +21,6 @@ from camel.messages import AssistantChatMessage
 REPO_ROOT = os.path.realpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.."))
 
-# os.chdir(REPO_ROOT)
-
 ChatBotHistory = List[Tuple[Optional[str], Optional[str]]]
 
 
@@ -372,7 +370,7 @@ def construct_demo(api_key: str) -> None:
         " based on the original (simplistic) idea", lines=1, interactive=False)
     task_prompt_ta = gr.TextArea(label="Planned task prompt", lines=1,
                                  interactive=False, visible=False)
-    chatbot = gr.Chatbot()
+    chatbot = gr.Chatbot(label="Chat between autonomous agents")
     session_state = gr.State(State.empty())
 
     universal_task_bn.click(lambda: "Help me to do my job", None,
