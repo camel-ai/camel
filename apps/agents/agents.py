@@ -15,13 +15,13 @@ import openai.error
 import tenacity
 from text_utils import split_markdown_code
 
-from camel.agents import RolePlaying
+from camel.agents import RolePlaying, TaskSpecifyAgent
 from camel.messages import AssistantChatMessage
 
 REPO_ROOT = os.path.realpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.."))
 
-os.chdir(REPO_ROOT)
+# os.chdir(REPO_ROOT)
 
 ChatBotHistory = List[Tuple[Optional[str], Optional[str]]]
 
@@ -120,6 +120,8 @@ def role_playing_start(
     user: str,
     original_task: str,
     max_messages: float,
+    with_task_specifier: bool,
+    word_limit: int,
 ) -> Union[Dict, Tuple[State, str, Union[str, Dict], ChatBotHistory, Dict]]:
     """ Creates a role playing session.
 
@@ -128,7 +130,8 @@ def role_playing_start(
         assistant (str): Contents of the Assistant field.
         user (str): Contents of the User field.
         original_task (str): Original task field.
-        max_messages (float): Limit of generated messages.
+        with_task_specifier (bool): Enable/Disable task specifier.
+        word_limit (int): Limit of words for task specifier.
 
     Returns:
         Union[Dict, Tuple[State, str, Union[str, Dict], ChatBotHistory, Dict]]:
@@ -144,8 +147,13 @@ def role_playing_start(
         return {}  # may fail
 
     try:
+        task_specify_kwargs = dict(word_limit=word_limit) \
+            if with_task_specifier else None
+
         session = RolePlaying(assistant, user, original_task,
-                              with_task_specify=True, with_task_planner=False)
+                              with_task_specify=with_task_specifier,
+                              task_specify_agent_kwargs=task_specify_kwargs,
+                              with_task_planner=False)
     except (openai.error.RateLimitError, tenacity.RetryError,
             RuntimeError) as ex:
         print("OpenAI API exception 0 " + str(ex))
@@ -338,14 +346,25 @@ def construct_demo(api_key: str) -> None:
             universal_task_bn = gr.Button("Insert universal task")
     with gr.Row():
         with gr.Column():
+            with gr.Row():
+                task_specifier_cb = gr.Checkbox(value=True,
+                                                label="With task specifier")
+            with gr.Row():
+                ts_word_limit_nb = gr.Number(
+                    value=TaskSpecifyAgent.DEFAULT_WORD_LIMIT,
+                    label="Word limit for task specifier",
+                    visible=task_specifier_cb.value)
+        with gr.Column():
             num_messages_sl = gr.Slider(minimum=1, maximum=50, step=1,
                                         value=10, interactive=True,
-                                        label="Number of messages to generate")
-        with gr.Column():
-            start_bn = gr.Button("Make agents chat [takes time]",
-                                 elem_id="start_button")
-        with gr.Column():
-            clear_bn = gr.Button("Interrupt the current query")
+                                        label="Messages to generate")
+
+        with gr.Column(scale=2):
+            with gr.Row():
+                start_bn = gr.Button("Make agents chat [takes time]",
+                                     elem_id="start_button")
+            with gr.Row():
+                clear_bn = gr.Button("Interrupt the current query")
     progress_sl = gr.Slider(minimum=0, maximum=100, value=0, step=1,
                             label="Progress", interactive=False, visible=False)
     specified_task_ta = gr.TextArea(
@@ -359,11 +378,15 @@ def construct_demo(api_key: str) -> None:
     universal_task_bn.click(lambda: "Help me to do my job", None,
                             original_task_ta)
 
+    task_specifier_cb.change(lambda v: gr.update(visible=v), task_specifier_cb,
+                             ts_word_limit_nb)
+
     start_bn.click(cleanup_on_launch, session_state,
                    [session_state, chatbot, start_bn], queue=False) \
             .then(role_playing_start,
                   [session_state, assistant_ta, user_ta,
-                   original_task_ta, num_messages_sl],
+                   original_task_ta, num_messages_sl,
+                   task_specifier_cb, ts_word_limit_nb],
                   [session_state, specified_task_ta, task_prompt_ta,
                    chatbot, progress_sl],
                   queue=False) \

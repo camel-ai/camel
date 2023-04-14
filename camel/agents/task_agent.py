@@ -9,13 +9,15 @@ from camel.typing import ModelType, RoleType, TaskType
 
 class TaskSpecifyAgent(ChatAgent):
 
+    DEFAULT_WORD_LIMIT = 50
+
     def __init__(
         self,
         model: ModelType = ModelType.GPT_3_5_TURBO,
         task_type: TaskType = TaskType.AI_SOCIETY,
         model_config: Any = None,
         task_specify_prompt: Optional[str] = None,
-        word_limit: int = 50,
+        word_limit: int = DEFAULT_WORD_LIMIT,
     ) -> None:
         if task_specify_prompt is None:
             prompt_template = PromptTemplate.get_task_specify_prompt(task_type)
