@@ -1,3 +1,6 @@
+import os
+import time
+from functools import wraps
 from typing import Any, List
 
 import tiktoken
@@ -56,3 +59,22 @@ def get_model_token_limit(model: ModelType) -> int:
         return 8192
     if model == ModelType.GPT_4_32k:
         return 32768
+
+
+def openai_api_key_required(func):
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if 'OPENAI_API_KEY' in os.environ:
+            return func(*args, **kwargs)
+        else:
+            raise ValueError('OpenAI API key not found.')
+
+    return wrapper
+
+
+def print_text_animated(text, delay=0.02, end=""):
+    for char in text:
+        print(char, end=end, flush=True)
+        time.sleep(delay)
+    print('\n')

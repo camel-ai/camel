@@ -40,13 +40,13 @@ class ChatAgent:
         self,
         id: Optional[str],
         usage: Optional[Dict[str, int]],
-        finish_reasons: List[str],
+        termination_reasons: List[str],
         num_tokens: int,
     ) -> Dict[str, Any]:
         return {
             "id": id,
             "usage": usage,
-            "finish_reasons": finish_reasons,
+            "termination_reasons": termination_reasons,
             "num_tokens": num_tokens,
         }
 
@@ -61,7 +61,7 @@ class ChatAgent:
     def step(
         self,
         input_message: ChatMessage,
-    ) -> Tuple[List[ChatMessage], bool, Dict[str, Any]]:
+    ) -> Tuple[Optional[List[ChatMessage]], bool, Dict[str, Any]]:
         messages = self.update_messages(input_message)
         if self.message_window_size is not None and len(
                 messages) > self.message_window_size:
@@ -94,7 +94,7 @@ class ChatAgent:
 
         else:
             self.terminated = True
-            output_messages = []
+            output_messages = None
 
             info = self.get_info(
                 None,
