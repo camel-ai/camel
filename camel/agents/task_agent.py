@@ -54,7 +54,9 @@ class TaskSpecifyAgent(ChatAgent):
             for replace_tuple in replace_tuples:
                 self.task_specify_prompt = self.task_specify_prompt.replace(
                     replace_tuple[0], replace_tuple[1])
-        assert "<" and ">" not in self.task_specify_prompt
+        if not ("<" and ">" not in self.task_specify_prompt):
+            raise ValueError("Task specifier prompt must "
+                             "have no angle brackets")
         task_msg = UserChatMessage(role_name="Task Specifier",
                                    content=self.task_specify_prompt)
         specified_task_msgs, terminated, _ = self.step(task_msg)
