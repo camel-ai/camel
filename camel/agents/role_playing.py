@@ -152,7 +152,7 @@ class RolePlaying:
 
     def process_messages(
         self,
-        msgs: List[ChatMessage],
+        messages: List[ChatMessage],
     ) -> ChatMessage:
         r"""Processes a list of chat messages, returning the processed message.
         If multiple messages are provided and `with_human_in_the_loop`
@@ -165,15 +165,15 @@ class RolePlaying:
         Returns:
             A single `ChatMessage` representing the processed message.
         """
-        if len(msgs) == 0:
+        if len(messages) == 0:
             raise ValueError("No messages to process.")
-        if len(msgs) > 1 and not self.with_human_in_the_loop:
+        if len(messages) > 1 and not self.with_human_in_the_loop:
             raise ValueError("Got than one message to process. "
-                             f"Num of messages: {len(msgs)}.")
+                             f"Num of messages: {len(messages)}.")
         elif self.with_human_in_the_loop:
-            processed_msg = self.human.step(msgs)
+            processed_msg = self.human.step(messages)
         else:
-            processed_msg = msgs[0]
+            processed_msg = messages[0]
 
         processed_msg.role = "user"
         return processed_msg
