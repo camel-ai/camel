@@ -2,13 +2,13 @@ import unittest
 
 import gradio as gr
 
-from apps.agents.agents import construct_ui
+from apps.agents.agents import construct_blocks
 
 
-class TestInterface(unittest.TestCase):
-    def test_ui(self):
-        with gr.Blocks() as blocks:
-            construct_ui(blocks, None)
+class TestAgents(unittest.TestCase):
+    def test_construct_blocks(self):
+        blocks = construct_blocks(None)
+        self.assertIsInstance(blocks, gr.Blocks)
 
 
 if __name__ == '__main__':

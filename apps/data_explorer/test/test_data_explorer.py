@@ -4,12 +4,12 @@ import urllib.request
 
 import gradio as gr
 
-from apps.data_explorer.data_explorer import construct_app
-from apps.data_explorer.loader import REPO_ROOT, load_datasets
+from apps.data_explorer.data_explorer import construct_blocks
+from apps.data_explorer.loader import REPO_ROOT
 
 
 class TestDataExplorer(unittest.TestCase):
-    def test_ui(self):
+    def test_app(self):
         test_data_url = ("https://storage.googleapis.com/"
                          "camel-bucket/datasets/test/DATA.zip")
         data_dir = os.path.join(REPO_ROOT, "datasets_test")
@@ -18,9 +18,9 @@ class TestDataExplorer(unittest.TestCase):
         os.makedirs(data_dir, exist_ok=True)
         urllib.request.urlretrieve(test_data_url, test_file_path)
 
-        datasets = load_datasets(data_dir)
-        with gr.Blocks() as blocks:
-            construct_app(blocks, datasets)
+        blocks = construct_blocks(data_dir, None)
+
+        self.assertIsInstance(blocks, gr.Blocks)
 
 
 if __name__ == '__main__':
