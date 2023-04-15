@@ -13,15 +13,13 @@ import gradio as gr
 import openai
 import openai.error
 import tenacity
-from text_utils import split_markdown_code
 
-from camel.agents import RolePlaying
+from apps.agents.text_utils import split_markdown_code
+from camel.agents import RolePlaying, TaskSpecifyAgent
 from camel.messages import AssistantChatMessage
 
 REPO_ROOT = os.path.realpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.."))
-
-os.chdir(REPO_ROOT)
 
 ChatBotHistory = List[Tuple[Optional[str], Optional[str]]]
 
@@ -120,6 +118,8 @@ def role_playing_start(
     user: str,
     original_task: str,
     max_messages: float,
+    with_task_specifier: bool,
+    word_limit: int,
 ) -> Union[Dict, Tuple[State, str, Union[str, Dict], ChatBotHistory, Dict]]:
     """ Creates a role playing session.
 
@@ -128,7 +128,8 @@ def role_playing_start(
         assistant (str): Contents of the Assistant field.
         user (str): Contents of the User field.
         original_task (str): Original task field.
-        max_messages (float): Limit of generated messages.
+        with_task_specifier (bool): Enable/Disable task specifier.
+        word_limit (int): Limit of words for task specifier.
 
     Returns:
         Union[Dict, Tuple[State, str, Union[str, Dict], ChatBotHistory, Dict]]:
@@ -144,8 +145,13 @@ def role_playing_start(
         return {}  # may fail
 
     try:
+        task_specify_kwargs = dict(word_limit=word_limit) \
+            if with_task_specifier else None
+
         session = RolePlaying(assistant, user, original_task,
-                              with_task_specify=True, with_task_planner=False)
+                              with_task_specify=with_task_specifier,
+                              task_specify_agent_kwargs=task_specify_kwargs,
+                              with_task_planner=False)
     except (openai.error.RateLimitError, tenacity.RetryError,
             RuntimeError) as ex:
         print("OpenAI API exception 0 " + str(ex))
@@ -282,7 +288,7 @@ def stop_session(state) -> Tuple[State, Dict, Dict]:
     return state, gr.update(visible=False), gr.update(interactive=True)
 
 
-def construct_demo(api_key: str) -> None:
+def construct_ui(blocks, api_key: Optional[str] = None) -> None:
     """ Build Gradio UI and populate with topics.
 
     Args:
@@ -292,7 +298,8 @@ def construct_demo(api_key: str) -> None:
         None
     """
 
-    openai.api_key = api_key
+    if api_key is not None:
+        openai.api_key = api_key
 
     assistant_role_path = \
         os.path.join(REPO_ROOT, "data/ai_society/assistant_roles.txt")
@@ -338,14 +345,25 @@ def construct_demo(api_key: str) -> None:
             universal_task_bn = gr.Button("Insert universal task")
     with gr.Row():
         with gr.Column():
+            with gr.Row():
+                task_specifier_cb = gr.Checkbox(value=True,
+                                                label="With task specifier")
+            with gr.Row():
+                ts_word_limit_nb = gr.Number(
+                    value=TaskSpecifyAgent.DEFAULT_WORD_LIMIT,
+                    label="Word limit for task specifier",
+                    visible=task_specifier_cb.value)
+        with gr.Column():
             num_messages_sl = gr.Slider(minimum=1, maximum=50, step=1,
                                         value=10, interactive=True,
-                                        label="Number of messages to generate")
-        with gr.Column():
-            start_bn = gr.Button("Make agents chat [takes time]",
-                                 elem_id="start_button")
-        with gr.Column():
-            clear_bn = gr.Button("Interrupt the current query")
+                                        label="Messages to generate")
+
+        with gr.Column(scale=2):
+            with gr.Row():
+                start_bn = gr.Button("Make agents chat [takes time]",
+                                     elem_id="start_button")
+            with gr.Row():
+                clear_bn = gr.Button("Interrupt the current query")
     progress_sl = gr.Slider(minimum=0, maximum=100, value=0, step=1,
                             label="Progress", interactive=False, visible=False)
     specified_task_ta = gr.TextArea(
@@ -353,25 +371,29 @@ def construct_demo(api_key: str) -> None:
         " based on the original (simplistic) idea", lines=1, interactive=False)
     task_prompt_ta = gr.TextArea(label="Planned task prompt", lines=1,
                                  interactive=False, visible=False)
-    chatbot = gr.Chatbot()
+    chatbot = gr.Chatbot(label="Chat between autonomous agents")
     session_state = gr.State(State.empty())
 
     universal_task_bn.click(lambda: "Help me to do my job", None,
                             original_task_ta)
 
+    task_specifier_cb.change(lambda v: gr.update(visible=v), task_specifier_cb,
+                             ts_word_limit_nb)
+
     start_bn.click(cleanup_on_launch, session_state,
                    [session_state, chatbot, start_bn], queue=False) \
             .then(role_playing_start,
                   [session_state, assistant_ta, user_ta,
-                   original_task_ta, num_messages_sl],
+                   original_task_ta, num_messages_sl,
+                   task_specifier_cb, ts_word_limit_nb],
                   [session_state, specified_task_ta, task_prompt_ta,
                    chatbot, progress_sl],
                   queue=False) \
             .then(role_playing_chat_init, session_state,
                   [session_state, chatbot, progress_sl], queue=False)
 
-    demo.load(role_playing_chat_cont, session_state,
-              [session_state, chatbot, progress_sl, start_bn], every=0.5)
+    blocks.load(role_playing_chat_cont, session_state,
+                [session_state, chatbot, progress_sl, start_bn], every=0.5)
 
     clear_bn.click(stop_session, session_state,
                    [session_state, progress_sl, start_bn])
@@ -379,25 +401,35 @@ def construct_demo(api_key: str) -> None:
     assistant_dd.change(lambda dd: dd, assistant_dd, assistant_ta)
     user_dd.change(lambda dd: dd, user_dd, user_ta)
 
-    demo.load(lambda dd: dd, assistant_dd, assistant_ta)
-    demo.load(lambda dd: dd, user_dd, user_ta)
+    blocks.load(lambda dd: dd, assistant_dd, assistant_ta)
+    blocks.load(lambda dd: dd, user_dd, user_ta)
 
 
-if __name__ == "__main__":
+def construct_blocks(args):
+    css_str = "#start_button {border: 3px solid #4CAF50; font-size: 20px;}"
+
+    with gr.Blocks(css=css_str) as blocks:
+        construct_ui(blocks, args.api_key)
+
+    inst = blocks \
+        .queue(args.concurrency_count) \
+        .launch(share=args.share, inbrowser=args.inbrowser,
+                server_name="0.0.0.0", server_port=args.server_port,
+                debug=True)
+    return inst
+
+
+def main():
     """ Entry point. """
 
     args = parse_arguments()
 
     print("Getting Agents web server online...")
 
-    css_str = "#start_button {border: 3px solid #4CAF50; font-size: 20px;}"
-
-    with gr.Blocks(css=css_str) as demo:
-        construct_demo(args.api_key)
-
-    demo.queue(args.concurrency_count) \
-        .launch(share=args.share, inbrowser=args.inbrowser,
-                server_name="0.0.0.0", server_port=args.server_port,
-                debug=True)
+    construct_blocks(args)
 
     print("Exiting.")
+
+
+if __name__ == "__main__":
+    main()
