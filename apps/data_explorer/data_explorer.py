@@ -7,7 +7,8 @@ import random
 from typing import Dict, List, Tuple
 
 import gradio as gr
-from loader import Datasets, load_datasets
+
+from apps.data_explorer.loader import Datasets, load_datasets
 
 
 def parse_arguments():
@@ -35,10 +36,11 @@ def parse_arguments():
     return args
 
 
-def construct_app(datasets: Datasets, default_dataset: str = None):
+def construct_app(blocks, datasets: Datasets, default_dataset: str = None):
     """ Build Gradio UI and populate with chat data from JSONs.
 
     Args:
+        blocks: Gradio blocks
         datasets (Datasets): Several parsed
         multi-JSON dataset with chats.
         default_dataset (str): Default selection of the dataset.
@@ -285,7 +287,7 @@ def construct_app(datasets: Datasets, default_dataset: str = None):
                    [dataset_dd, assistant_dd, user_dd, task_dd],
                    [specified_task_ta, chatbot])
 
-    demo.load(set_default_dataset, None, dataset_dd)
+    blocks.load(set_default_dataset, None, dataset_dd)
 
 
 if __name__ == "__main__":

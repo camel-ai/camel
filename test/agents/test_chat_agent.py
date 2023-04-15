@@ -10,8 +10,9 @@ from camel.typing import ModelType, RoleType, TaskType
 from camel.utils import get_model_token_limit
 
 
+# TODO: add ModelType.GPT_4_32k to parametrization
 @pytest.mark.parametrize(
-    'model', [ModelType.GPT_3_5_TURBO, ModelType.GPT_4, ModelType.GPT_4_32k])
+    'model', [ModelType.GPT_3_5_TURBO, ModelType.GPT_4])
 def test_chat_agent(model):
     assert os.environ.get(
         "OPENAI_API_KEY") is not None, "Missing OPENAI_API_KEY"

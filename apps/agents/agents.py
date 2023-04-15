@@ -13,8 +13,8 @@ import gradio as gr
 import openai
 import openai.error
 import tenacity
-from text_utils import split_markdown_code
 
+from apps.agents.text_utils import split_markdown_code
 from camel.agents import RolePlaying, TaskSpecifyAgent
 from camel.messages import AssistantChatMessage
 
@@ -288,7 +288,7 @@ def stop_session(state) -> Tuple[State, Dict, Dict]:
     return state, gr.update(visible=False), gr.update(interactive=True)
 
 
-def construct_demo(api_key: str) -> None:
+def construct_ui(blocks, api_key: Optional[str] = None) -> None:
     """ Build Gradio UI and populate with topics.
 
     Args:
@@ -298,7 +298,8 @@ def construct_demo(api_key: str) -> None:
         None
     """
 
-    openai.api_key = api_key
+    if api_key is not None:
+        openai.api_key = api_key
 
     assistant_role_path = \
         os.path.join(REPO_ROOT, "data/ai_society/assistant_roles.txt")
@@ -391,8 +392,8 @@ def construct_demo(api_key: str) -> None:
             .then(role_playing_chat_init, session_state,
                   [session_state, chatbot, progress_sl], queue=False)
 
-    demo.load(role_playing_chat_cont, session_state,
-              [session_state, chatbot, progress_sl, start_bn], every=0.5)
+    blocks.load(role_playing_chat_cont, session_state,
+                [session_state, chatbot, progress_sl, start_bn], every=0.5)
 
     clear_bn.click(stop_session, session_state,
                    [session_state, progress_sl, start_bn])
@@ -400,25 +401,35 @@ def construct_demo(api_key: str) -> None:
     assistant_dd.change(lambda dd: dd, assistant_dd, assistant_ta)
     user_dd.change(lambda dd: dd, user_dd, user_ta)
 
-    demo.load(lambda dd: dd, assistant_dd, assistant_ta)
-    demo.load(lambda dd: dd, user_dd, user_ta)
+    blocks.load(lambda dd: dd, assistant_dd, assistant_ta)
+    blocks.load(lambda dd: dd, user_dd, user_ta)
 
 
-if __name__ == "__main__":
+def construct_blocks(args):
+    css_str = "#start_button {border: 3px solid #4CAF50; font-size: 20px;}"
+
+    with gr.Blocks(css=css_str) as blocks:
+        construct_ui(blocks, args.api_key)
+
+    inst = blocks \
+        .queue(args.concurrency_count) \
+        .launch(share=args.share, inbrowser=args.inbrowser,
+                server_name="0.0.0.0", server_port=args.server_port,
+                debug=True)
+    return inst
+
+
+def main():
     """ Entry point. """
 
     args = parse_arguments()
 
     print("Getting Agents web server online...")
 
-    css_str = "#start_button {border: 3px solid #4CAF50; font-size: 20px;}"
-
-    with gr.Blocks(css=css_str) as demo:
-        construct_demo(args.api_key)
-
-    demo.queue(args.concurrency_count) \
-        .launch(share=args.share, inbrowser=args.inbrowser,
-                server_name="0.0.0.0", server_port=args.server_port,
-                debug=True)
+    construct_blocks(args)
 
     print("Exiting.")
+
+
+if __name__ == "__main__":
+    main()
