@@ -4,7 +4,7 @@ import urllib.request
 
 import gradio as gr
 
-from apps.data_explorer.data_explorer import construct_blocks
+from apps.data_explorer.data_explorer import construct_blocks, parse_arguments
 from apps.data_explorer.loader import REPO_ROOT
 
 
@@ -21,6 +21,10 @@ class TestDataExplorer(unittest.TestCase):
         blocks = construct_blocks(data_dir, None)
 
         self.assertIsInstance(blocks, gr.Blocks)
+
+    def test_utils(self):
+        args = parse_arguments()
+        self.assertIsNotNone(args)
 
 
 if __name__ == '__main__':
