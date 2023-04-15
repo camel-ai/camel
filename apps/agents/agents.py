@@ -405,18 +405,22 @@ def construct_ui(blocks, api_key: Optional[str] = None) -> None:
     blocks.load(lambda dd: dd, user_dd, user_ta)
 
 
-def construct_blocks(args):
+def construct_blocks(api_key: Optional[str]):
+    """ Construct Agents app but do not launch it.
+
+    Args:
+        api_key (Optional[str]): OpenAI API key.
+
+    Returns:
+        gr.Blocks: Blocks instance.
+    """
+
     css_str = "#start_button {border: 3px solid #4CAF50; font-size: 20px;}"
 
     with gr.Blocks(css=css_str) as blocks:
-        construct_ui(blocks, args.api_key)
+        construct_ui(blocks, api_key)
 
-    inst = blocks \
-        .queue(args.concurrency_count) \
-        .launch(share=args.share, inbrowser=args.inbrowser,
-                server_name="0.0.0.0", server_port=args.server_port,
-                debug=True)
-    return inst
+    return blocks
 
 
 def main():
@@ -426,7 +430,12 @@ def main():
 
     print("Getting Agents web server online...")
 
-    construct_blocks(args)
+    blocks = construct_blocks(args.api_key)
+
+    blocks.queue(args.concurrency_count) \
+          .launch(share=args.share, inbrowser=args.inbrowser,
+                  server_name="0.0.0.0", server_port=args.server_port,
+                  debug=True)
 
     print("Exiting.")
 
