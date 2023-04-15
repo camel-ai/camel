@@ -23,7 +23,7 @@ class TaskSpecifyAgent(ChatAgent):
             prompt_template = PromptTemplate.get_task_specify_prompt(task_type)
             task_specify_prompt = prompt_template.template
             if "<WORD_LIMIT>" not in prompt_template.key_words:
-                raise ValueError("Prompt templave does not contain "
+                raise ValueError("Prompt template does not contain "
                                  "a word limit placeholder")
 
             self.task_specify_prompt = task_specify_prompt.replace(
