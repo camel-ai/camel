@@ -45,34 +45,20 @@ python examples/ai_society/role_playing.py
 ```
 
 ## Data (Hosted on Hugging Face)
-**AI Society:**
-* [Chat format](https://huggingface.co/datasets/camel-ai/ai_society/blob/main/ai_society_chat.tar.gz)
-* [Instruction format](https://huggingface.co/datasets/camel-ai/ai_society/blob/main/ai_society_instructions.json)
-* [Chat format (translated)](https://huggingface.co/datasets/camel-ai/ai_society_translated)
-
-**Code:**
-* [Chat format](https://huggingface.co/datasets/camel-ai/code/blob/main/code_chat.tar.gz)
-* [Instruction format](https://huggingface.co/datasets/camel-ai/code/blob/main/code_instructions.json)
-
-**Math:**
-* [Chat format](https://huggingface.co/datasets/camel-ai/math/blob/main/math50k.zip)
-
-**Physics:**
-* [Chat format](https://huggingface.co/datasets/camel-ai/physics)
+| Dataset | Chat format | Instruction format | Chat format (translated) |
+| -- | -- | -- | -- |
+| **AI Society** | [Chat format](https://huggingface.co/datasets/camel-ai/ai_society/blob/main/ai_society_chat.tar.gz) | [Instruction format](https://huggingface.co/datasets/camel-ai/ai_society/blob/main/ai_society_instructions.json) | [Chat format (translated)](https://huggingface.co/datasets/camel-ai/ai_society_translated) |
+| **Code** | [Chat format](https://huggingface.co/datasets/camel-ai/code/blob/main/code_chat.tar.gz) | [Instruction format](https://huggingface.co/datasets/camel-ai/code/blob/main/code_instructions.json) | x |
+| **Math** | [Chat format](https://huggingface.co/datasets/camel-ai/math/blob/main/math50k.zip) | x | x|
+| **Physics** | [Chat format](https://huggingface.co/datasets/camel-ai/physics) | x | x |
 
 ## Visualizations of Instructions and Tasks
 
-**AI Society:**
-* [Instructions](https://atlas.nomic.ai/map/3a559a06-87d0-4476-a879-962656242452/db961915-b254-48e8-8e5c-917f827b74c6)
-* [Tasks](https://atlas.nomic.ai/map/cb96f41b-a6fd-4fe4-ac40-08e101714483/ae06156c-a572-46e9-8345-ebe18586d02b)
-
-**Code:**
-* [Instructions](https://atlas.nomic.ai/map/902d6ccb-0bbb-4294-83a8-1c7d2dae03c8/ace2e146-e49f-41db-a1f4-25a2c4be2457)
-* [Tasks](https://atlas.nomic.ai/map/efc38617-9180-490a-8630-43a05b35d22d/2576addf-a133-45d5-89a9-6b067b6652dd)
-
-**Misalignment:**
-* [Instructions](https://atlas.nomic.ai/map/5c491035-a26e-4a05-9593-82ffb2c3ab40/2bd98896-894e-4807-9ed8-a203ccb14d5e)
-* [Tasks](https://atlas.nomic.ai/map/abc357dd-9c04-4913-9541-63e259d7ac1f/825139a4-af66-427c-9d0e-f36b5492ab3f)
+| Dataset | Instructions | Tasks |
+| -- | -- | -- |
+| **AI Society** | [Instructions](https://atlas.nomic.ai/map/3a559a06-87d0-4476-a879-962656242452/db961915-b254-48e8-8e5c-917f827b74c6) | [Tasks](https://atlas.nomic.ai/map/cb96f41b-a6fd-4fe4-ac40-08e101714483/ae06156c-a572-46e9-8345-ebe18586d02b) |
+| **Code** | [Instructions](https://atlas.nomic.ai/map/902d6ccb-0bbb-4294-83a8-1c7d2dae03c8/ace2e146-e49f-41db-a1f4-25a2c4be2457) | [Tasks](https://atlas.nomic.ai/map/efc38617-9180-490a-8630-43a05b35d22d/2576addf-a133-45d5-89a9-6b067b6652dd) |
+| **Misalignment** | [Instructions](https://atlas.nomic.ai/map/5c491035-a26e-4a05-9593-82ffb2c3ab40/2bd98896-894e-4807-9ed8-a203ccb14d5e) | [Tasks](https://atlas.nomic.ai/map/abc357dd-9c04-4913-9541-63e259d7ac1f/825139a4-af66-427c-9d0e-f36b5492ab3f) |
 
 
 ## News
