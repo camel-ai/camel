@@ -1,16 +1,23 @@
 from colorama import Fore
 
 from camel.agents import RolePlaying
+from camel.configs import ChatGPTConfig
 from camel.utils import print_text_animated
 
 
 def main() -> None:
     task_prompt = "Develop a trading bot for the stock market"
+    model_config = ChatGPTConfig(temperature=1.4, n=3)
+    assistant_agent_kwargs = dict(model_config=model_config)
+    user_agent_kwargs = dict(model_config=model_config)
     role_play_session = RolePlaying(
         "Python Programmer",
         "Stock Trader",
         task_prompt=task_prompt,
         with_task_specify=True,
+        with_human_in_the_loop=True,
+        assistant_agent_kwargs=assistant_agent_kwargs,
+        user_agent_kwargs=user_agent_kwargs,
     )
 
     print(
