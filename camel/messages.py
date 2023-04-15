@@ -20,7 +20,8 @@ class BaseMessage:
 
     def to_openai_message(self, role: Optional[str] = None) -> OpenAIMessage:
         role = role or self.role
-        assert role in ["system", "user", "assistant"]
+        if role not in {"system", "user", "assistant"}:
+            raise ValueError(f"Unrecognized role: {role}")
         return {"role": role, "content": self.content}
 
     def to_openai_chat_message(
@@ -28,7 +29,8 @@ class BaseMessage:
         role: Optional[str] = None,
     ) -> OpenAIChatMessage:
         role = role or self.role
-        assert role in ["user", "assistant"]
+        if role not in {"user", "assistant"}:
+            raise ValueError(f"Unrecognized role: {role}")
         return {"role": role, "content": self.content}
 
     def to_openai_system_message(self) -> OpenAISystemMessage:

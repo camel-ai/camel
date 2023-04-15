@@ -22,7 +22,9 @@ class TaskSpecifyAgent(ChatAgent):
         if task_specify_prompt is None:
             prompt_template = PromptTemplate.get_task_specify_prompt(task_type)
             task_specify_prompt = prompt_template.template
-            assert "<WORD_LIMIT>" in prompt_template.key_words
+            if "<WORD_LIMIT>" not in prompt_template.key_words:
+                raise ValueError("Prompt template does not contain "
+                                 "a word limit placeholder")
 
             self.task_specify_prompt = task_specify_prompt.replace(
                 "<WORD_LIMIT>", str(word_limit))
@@ -52,7 +54,9 @@ class TaskSpecifyAgent(ChatAgent):
             for replace_tuple in replace_tuples:
                 self.task_specify_prompt = self.task_specify_prompt.replace(
                     replace_tuple[0], replace_tuple[1])
-        assert "<" and ">" not in self.task_specify_prompt
+        if not ("<" and ">" not in self.task_specify_prompt):
+            raise ValueError("Task specifier prompt must "
+                             "have no angle brackets")
         task_msg = UserChatMessage(role_name="Task Specifier",
                                    content=self.task_specify_prompt)
         specified_task_msgs, terminated, _ = self.step(task_msg)
