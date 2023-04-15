@@ -19,7 +19,7 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
     role_play_session = RolePlaying(
         assistant_role_name,
         user_role_name,
-        original_task_prompt,
+        task_prompt=original_task_prompt,
         with_task_specify=True,
         with_task_planner=False,
         task_specify_agent_kwargs=dict(model_config=ChatGPTConfig(
@@ -84,14 +84,14 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
         if user_terminated:
             message_dict["termination_reason"] = (
                 f"{str(user_agent.role_type)}: "
-                f"{user_info['finish_reasons'][0]}")
+                f"{user_info['termination_reasons'][0]}")
             break
 
         # Condition 2: Assistant terminates the chat
         if assistant_terminated:
             message_dict["termination_reason"] = (
                 f"{str(assistant_agent.role_type)}: "
-                f"{assistant_info['finish_reasons'][0]}")
+                f"{assistant_info['termination_reasons'][0]}")
             break
 
         if verbose:
