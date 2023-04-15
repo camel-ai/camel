@@ -314,7 +314,7 @@ def construct_blocks(data_path: str, default_dataset: Optional[str]):
     return blocks
 
 
-if __name__ == "__main__":
+def main():
     """ Entry point. """
 
     args = parse_arguments()
@@ -326,3 +326,7 @@ if __name__ == "__main__":
                   server_name="0.0.0.0", server_port=args.server_port)
 
     print("Exiting.")
+
+
+if __name__ == "__main__":
+    main()
