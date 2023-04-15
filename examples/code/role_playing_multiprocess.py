@@ -120,7 +120,7 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
         if user_terminated:
             message_dict["termination_reason"] = (
                 f"{str(user_agent.role_type)}: "
-                f"{user_info['finish_reasons'][0]}")
+                f"{user_info['termination_reasons'][0]}")
             break
 
         user_msg = user_msgs[0]
@@ -134,7 +134,7 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
         if assistant_terminated:
             message_dict["termination_reason"] = (
                 f"{str(assistant_agent.role_type)}: "
-                f"{assistant_info['finish_reasons'][0]}")
+                f"{assistant_info['termination_reasons'][0]}")
             break
 
         assistant_msg = assistant_msgs[0]
