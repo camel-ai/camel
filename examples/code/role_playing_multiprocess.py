@@ -29,7 +29,6 @@ def init_chat(
         content=(f"{user_sys_msg.content}. "
                  "Now start to give me instructions one by one. "
                  "Only reply with Instruction and Input."))
-    assistant_msg.role = "user"
 
     user_msg = UserChatMessage(role_name=user_agent.role_name,
                                content=f"{assistant_sys_msg.content}")
@@ -114,7 +113,8 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
 
     while message_counter < max_num_messages:
 
-        user_msgs, user_terminated, user_info = user_agent.step(assistant_msg)
+        user_msgs, user_terminated, user_info = user_agent.step(
+            assistant_msg.to_user_chat_message())
 
         # Condition 1: User terminates the chat
         if user_terminated:
@@ -124,11 +124,11 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
             break
 
         user_msg = user_msgs[0]
+        user_agent.update_messages(user_msg)
         print(f"User:\n{user_msg.content}\n")
-        user_msg.role = "user"
 
         assistant_msgs, assistant_terminated, assistant_info = (
-            assistant_agent.step(user_msg))
+            assistant_agent.step(user_msg.to_user_chat_message()))
 
         # Condition 2: Assistant terminates the chat
         if assistant_terminated:
@@ -138,8 +138,8 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
             break
 
         assistant_msg = assistant_msgs[0]
+        assistant_agent.update_messages(assistant_msg)
         print(f"Assistant:\n{assistant_msg.content}\n")
-        assistant_msg.role = "user"
 
         # Condition 3: Break if user does not give instruction
         if user_no_instruct_word not in user_msg.content:
