@@ -142,7 +142,6 @@ class RolePlaying:
             content=(f"{self.user_sys_msg.content}. "
                      "Now start to give me introductions one by one. "
                      "Only reply with Instruction and Input."))
-        assistant_msg.role = "user"
 
         user_msg = UserChatMessage(role_name=self.user_sys_msg.role_name,
                                    content=f"{self.assistant_sys_msg.content}")
@@ -175,7 +174,6 @@ class RolePlaying:
         else:
             processed_msg = messages[0]
 
-        processed_msg.role = "user"
         return processed_msg
 
     def step(
@@ -205,17 +203,20 @@ class RolePlaying:
             any additional user information.
         """
         user_msgs, user_terminated, user_info = self.user_agent.step(
-            assistant_msg)
+            assistant_msg.to_user_chat_message())
         if user_terminated:
             return ((None, None, None), (None, user_terminated, user_info))
         user_msg = self.process_messages(user_msgs)
+        self.user_agent.update_messages(user_msg)
 
         (assistant_msgs, assistant_terminated,
-         assistant_info) = self.assistant_agent.step(user_msg)
+         assistant_info) = self.assistant_agent.step(
+             user_msg.to_user_chat_message())
         if assistant_terminated:
             return ((None, assistant_terminated, assistant_info),
                     (user_msg, user_terminated, user_info))
         assistant_msg = self.process_messages(assistant_msgs)
+        self.assistant_agent.update_messages(assistant_msg)
 
         return (
             (assistant_msg, assistant_terminated, assistant_info),

@@ -6,13 +6,13 @@ from camel.utils import print_text_animated
 
 
 def main() -> None:
-    task_prompt = "Develop a trading bot for the stock market"
+    task_prompt = "Write a book about the future of AI Society"
     model_config = ChatGPTConfig(temperature=1.4, n=3)
     assistant_agent_kwargs = dict(model_config=model_config)
     user_agent_kwargs = dict(model_config=model_config)
     role_play_session = RolePlaying(
-        "Python Programmer",
-        "Stock Trader",
+        "AGI",
+        "Writer",
         task_prompt=task_prompt,
         with_task_specify=True,
         with_human_in_the_loop=True,

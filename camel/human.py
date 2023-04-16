@@ -63,14 +63,12 @@ class Human:
             human_input = input(
                 self.menu_color +
                 f"Please enter your choice ([1-{len(self.options_dict)}]): ")
+            print("\n")
             if human_input in self.options_dict:
                 break
             print_text_animated(self.menu_color +
                                 "\n> Invalid choice. Please try again.\n")
 
-        print_text_animated(
-            self.menu_color + "\n> Your choice is:\n\n"
-            f"\x1b[3m{human_input}: {self.options_dict[human_input]}\x1b[0m")
         return human_input
 
     def parse_input(self, human_input: str,
