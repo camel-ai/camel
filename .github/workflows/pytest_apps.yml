@@ -31,4 +31,4 @@ jobs:
         pip install gradio
     - name: Test with pytest
       run: |
-        pytest camel
+        pytest apps/
