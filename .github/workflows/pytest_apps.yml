@@ -37,5 +37,7 @@ jobs:
         pip install gradio
         pip install -e .
     - name: Test with pytest
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       run: |
         pytest apps/
