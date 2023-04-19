@@ -16,9 +16,8 @@ def test_chat_agent(model):
     assert os.environ.get(
         "OPENAI_API_KEY") is not None, "Missing OPENAI_API_KEY"
 
-    print("OPENAI_API_KEY>>",
-          os.environ.get("OPENAI_API_KEY")[:4],
-          os.environ.get("OPENAI_API_KEY")[-4:])
+    key = os.environ.get("OPENAI_API_KEY")
+    assert False, f"OPENAI_API_KEY>> {key[:4]} {key[-4:]}")
 
     model_config = ChatGPTConfig()
     system_msg = SystemMessageGenerator(
