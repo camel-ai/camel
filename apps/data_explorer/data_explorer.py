@@ -22,6 +22,9 @@ def parse_arguments():
                         help='Default dataset name selected from ZIPs')
     parser.add_argument('--share', type=bool, default=False,
                         help='Expose the web UI to Gradio')
+    parser.add_argument(
+        '--server-name', type=str, default="0.0.0.0",
+        help='localhost for local, 0.0.0.0 (default) for public')
     parser.add_argument('--server-port', type=int, default=8080,
                         help='Port ot run the web page on')
     parser.add_argument('--inbrowser', type=bool, default=False,
@@ -323,7 +326,7 @@ def main():
 
     blocks.queue(args.concurrency_count) \
           .launch(share=args.share, inbrowser=args.inbrowser,
-                  server_name="0.0.0.0", server_port=args.server_port)
+                  server_name=args.server_name, server_port=args.server_port)
 
     print("Exiting.")
 
