@@ -36,5 +36,7 @@ jobs:
         pip install flake8 pytest
         pip install -e .
     - name: Test with pytest
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       run: |
         pytest test/
