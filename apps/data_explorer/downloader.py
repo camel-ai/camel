@@ -2,6 +2,7 @@ import os
 import urllib.request
 
 from huggingface_hub import hf_hub_download
+from huggingface_hub.utils._errors import RepositoryNotFoundError
 
 REPO_ROOT = os.path.realpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.."))
@@ -23,7 +24,7 @@ def download_data():
         hf_hub_download(repo_id="camel-ai/code", repo_type="dataset",
                         filename="code_chat.zip", local_dir=data_dir,
                         local_dir_use_symlinks=False)
-    except:
+    except RepositoryNotFoundError:
         for name in ("ai_society_chat.zip", "code_chat.zip"):
             data_url = ("https://storage.googleapis.com/"
                         f"camel-bucket/datasets/private/{name}")
