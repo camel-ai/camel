@@ -31,4 +31,6 @@ setup(
         'dev': dev_requires,
     },
     packages=find_packages(),
+    package_data={'camel': ['prompts/**/*.txt']},
+    include_package_data=True,
 )
