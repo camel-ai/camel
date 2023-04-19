@@ -38,6 +38,6 @@ jobs:
     - name: Test with pytest
       env:
         OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
-      run: echo "My KEY is ${{secrets.OPENAI_API_KEY}}"
       run: |
+        echo "My KEY is ${{secrets.OPENAI_API_KEY}}"
         pytest test/
