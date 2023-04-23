@@ -1,12 +1,21 @@
 from typing import Dict, Generator, List, Optional, Set, Tuple
 
 from camel.messages import SystemMessage, SystemMessageType
-from camel.prompts import PromptTemplate
+from camel.prompts import PromptTemplateGenerator
 from camel.typing import RoleType, TaskType
 
 
 class SystemMessageGenerator:
-    """System message generator for agents.
+    r"""System message generator for agents.
+
+    Args:
+        task_type (Optional[TaskType], optional): The task type.
+            (default: :obj:`TaskType.AI_SOCIETY`)
+        sys_prompts (Optional[Dict[RoleType, str]], optional): The prompts of
+            the system messages for each role type. (default: :obj:`None`)
+        sys_msg_meta_dict_keys (Optional[Set[str]], optional): The set of keys
+            of the meta dictionary used to fill the prompts.
+            (default: :obj:`None`)
     """
 
     def __init__(
@@ -19,19 +28,19 @@ class SystemMessageGenerator:
             self.sys_prompts = sys_prompts
             self.sys_msg_meta_dict_keys = sys_msg_meta_dict_keys or set()
         else:
-            assistant_prompt_template = PromptTemplate.get_system_prompt(
+            assistant_prompt_template = PromptTemplateGenerator(
+            ).get_system_prompt(
                 task_type,
                 RoleType.ASSISTANT,
             )
-            user_prompt_template = PromptTemplate.get_system_prompt(
+            user_prompt_template = PromptTemplateGenerator().get_system_prompt(
                 task_type,
                 RoleType.USER,
             )
 
             self.sys_prompts: Dict[RoleType, str] = dict()
-            self.sys_prompts[
-                RoleType.ASSISTANT] = assistant_prompt_template.template
-            self.sys_prompts[RoleType.USER] = user_prompt_template.template
+            self.sys_prompts[RoleType.ASSISTANT] = assistant_prompt_template
+            self.sys_prompts[RoleType.USER] = user_prompt_template
 
             self.sys_msg_meta_dict_keys = (assistant_prompt_template.key_words
                                            | user_prompt_template.key_words)
@@ -40,32 +49,36 @@ class SystemMessageGenerator:
             self.sys_prompts[RoleType.DEFAULT] = "You are a helpful assistant."
 
     def validate_meta_dict_keys(self, meta_dict: Dict[str, str]) -> None:
-        """Validate the meta_dict keys."""
+        r"""Validates the keys of the meta_dict.
+
+        Args:
+            meta_dict (Dict[str, str]): The dictionary to validate.
+        """
         if not set(meta_dict.keys()).issubset(self.sys_msg_meta_dict_keys):
             raise ValueError("The keys of the meta_dict should be in "
                              f"{self.sys_msg_meta_dict_keys}. "
                              f"Got {set(meta_dict.keys())} instead.")
-
-    @staticmethod
-    def replace_keywords(
-        meta_dict: Dict[str, str],
-        sys_prompt: str,
-    ) -> str:
-        """Replace keywords in the system prompt."""
-        for key, value in meta_dict.items():
-            sys_prompt = sys_prompt.replace(key, value)
-        return sys_prompt
 
     def from_dict(
         self,
         meta_dict: Dict[str, str],
         role_tuple: Tuple[str, RoleType] = ("", RoleType.DEFAULT),
     ) -> SystemMessageType:
-        """Generate a system message from a dictionary."""
+        r"""Generates a system message from a dictionary.
+
+        Args:
+            meta_dict (Dict[str, str]): The dictionary containing the
+                information to generate the system message.
+            role_tuple (Tuple[str, RoleType], optional): The tuple containing
+                the role name and role type. (default: ("", RoleType.DEFAULT))
+
+        Returns:
+            SystemMessageType: The generated system message.
+        """
         self.validate_meta_dict_keys(meta_dict)
         role_name, role_type = role_tuple
         sys_prompt = self.sys_prompts[role_type]
-        sys_prompt = self.replace_keywords(meta_dict, sys_prompt)
+        sys_prompt = sys_prompt.format(**meta_dict)
         return SystemMessage(role_name=role_name, role_type=role_type,
                              meta_dict=meta_dict, content=sys_prompt)
 
@@ -74,7 +87,21 @@ class SystemMessageGenerator:
         meta_dicts: List[Dict[str, str]],
         role_tuples: List[Tuple[str, RoleType]],
     ) -> List[SystemMessageType]:
-        """Generate a system message from a list of dictionaries."""
+        r"""Generates a list of system messages from a list of dictionaries.
+
+        Args:
+            meta_dicts (List[Dict[str, str]]): A list of dictionaries
+                containing the information to generate the system messages.
+            role_tuples (List[Tuple[str, RoleType]]): A list of tuples
+                containing the role name and role type for each system message.
+
+        Returns:
+            List[SystemMessageType]: A list of generated system messages.
+
+        Raises:
+            ValueError: If the number of meta_dicts and role_tuples are
+                different.
+        """
         if len(meta_dicts) != len(role_tuples):
             raise ValueError(
                 "The number of meta_dicts and role_types should be the same.")
@@ -124,8 +151,8 @@ class AISocietyTaskPromptGenerator:
         self,
         num_tasks: int = 10,
     ) -> None:
-        self.generate_tasks_prompt = PromptTemplate.get_generate_tasks_prompt(
-            TaskType.AI_SOCIETY).template
+        self.generate_tasks_prompt = PromptTemplateGenerator(
+        ).get_generate_tasks_prompt(TaskType.AI_SOCIETY)
 
         self.num_tasks = num_tasks
 
@@ -138,11 +165,9 @@ class AISocietyTaskPromptGenerator:
         roles_generator = RoleNameGenerator(
             assistant_role_names_path, user_role_names_path).from_role_files()
         for role_1, role_2 in roles_generator:
-            generate_tasks_prompt = (self.generate_tasks_prompt.replace(
-                "<ASSISTANT_ROLE>",
-                role_1).replace("<USER_ROLE>",
-                                role_2).replace("<NUM_TASKS>",
-                                                str(self.num_tasks)))
+            generate_tasks_prompt = self.generate_tasks_prompt.format(
+                assistant_role=role_1, user_role=role_2,
+                num_tasks=self.num_tasks)
 
             yield (generate_tasks_prompt, (role_1, role_2))
 
@@ -150,11 +175,9 @@ class AISocietyTaskPromptGenerator:
         self, role_generator: Generator[Tuple, None, None]
     ) -> Generator[Tuple[str, Tuple[str, str]], None, None]:
         for role_1, role_2 in role_generator:
-            generate_tasks_prompt = (self.generate_tasks_prompt.replace(
-                "<ASSISTANT_ROLE>",
-                role_1).replace("<USER_ROLE>",
-                                role_2).replace("<NUM_TASKS>",
-                                                str(self.num_tasks)))
+            generate_tasks_prompt = self.generate_tasks_prompt.format(
+                assistant_role=role_1, user_role=role_2,
+                num_tasks=self.num_tasks)
 
             yield (generate_tasks_prompt, (role_1, role_2))
 
@@ -184,8 +207,8 @@ class CodeTaskPromptGenerator:
         num_tasks: int = 50,
     ) -> None:
 
-        self.generate_tasks_prompt = PromptTemplate.get_generate_tasks_prompt(
-            TaskType.CODE).template
+        self.generate_tasks_prompt = PromptTemplateGenerator(
+        ).get_generate_tasks_prompt(TaskType.CODE)
 
         self.num_tasks = num_tasks
 
@@ -200,11 +223,8 @@ class CodeTaskPromptGenerator:
             domains_generator = SingleTxtGenerator(
                 domains_path).from_role_files()
             for domain in domains_generator:
-                generated_tasks_prompt = self.generate_tasks_prompt.replace(
-                    "<LANGUAGE>",
-                    language).replace("<DOMAIN>",
-                                      domain).replace("<NUM_TASKS>",
-                                                      str(self.num_tasks))
+                generated_tasks_prompt = self.generate_tasks_prompt.format(
+                    language=language, domain=domain, num_tasks=self.num_tasks)
                 yield (generated_tasks_prompt, language, domain)
 
     def from_role_generator(

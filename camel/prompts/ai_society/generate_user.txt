@@ -1,3 +1,0 @@
-Please list <NUM_ROLES> most common and diverse groups of internet users or occupations.
-Use singular form. No explanation.
-Sort them by alphabetical order. No explanation required.

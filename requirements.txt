@@ -1,13 +1,21 @@
-setuptools
-build
+# Packages for core
 numpy
 openai
 tenacity
 tiktoken
+colorama
+
+# Packages for development
+setuptools
+build
 yapf
 isort
 flake8
 pre-commit
+
+# Packages for testing
 pytest
 pytest-cov
-colorama
+
+# Packages for tools
+google-search-results==2.4.2

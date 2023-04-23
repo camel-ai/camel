@@ -1,6 +1,6 @@
 from .chat_agent import ChatAgent
-from .role_playing import RolePlaying
 from .task_agent import TaskPlannerAgent, TaskSpecifyAgent
+from .role_playing import RolePlaying
 
 __all__ = [
     'ChatAgent',

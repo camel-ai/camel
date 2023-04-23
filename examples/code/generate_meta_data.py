@@ -1,17 +1,13 @@
-import os
-
 from camel.agents import ChatAgent
 from camel.messages import AssistantSystemMessage, UserChatMessage
-from camel.prompts import PROMPTS_DIR
+from camel.prompts import PromptTemplateGenerator
+from camel.typing import TaskType
 
 
 def generate_meta_data(meta_data: str, num: int = 50):
-    prompt_path = os.path.join(
-        PROMPTS_DIR,
-        f"code/generate_{meta_data}.txt",
-    )
-    with open(prompt_path, "r") as f:
-        prompt = f.read().replace(f"<NUM_{meta_data.upper()}>", str(num))
+    prompt_template = PromptTemplateGenerator().get_prompt_from_key(
+        TaskType.CODE, f"generate_{meta_data}")
+    prompt = prompt_template.format(**{f"num_{meta_data}": num})
     print(prompt)
     assistant_sys_msg = AssistantSystemMessage(
         role_name="Assistant",

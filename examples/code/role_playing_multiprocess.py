@@ -49,21 +49,19 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
         task_type=TaskType.CODE,
         model_config=ChatGPTConfig(temperature=1.4),
     )
-    specified_task_prompt = task_specify_agent.specify_task(
-        original_task_prompt, [
-            ("<DOMAIN>", domain_name),
-            ("<LANGUAGE>", language_name),
-        ])
+    specified_task_prompt = task_specify_agent.step(
+        original_task_prompt,
+        meta_dict=dict(domain=domain_name, language=language_name),
+    )
 
     print(f"Original Task: {original_task_prompt}")
     print(f"Specified Task: {specified_task_prompt}")
 
     sys_msg_generator = SystemMessageGenerator(task_type=TaskType.CODE)
-    sys_msg_meta_dicts = [{
-        "<LANGUAGE>": language_name,
-        "<DOMAIN>": domain_name,
-        "<TASK>": specified_task_prompt
-    }] * 2
+    sys_msg_meta_dicts = [
+        dict(language=language_name, domain=domain_name,
+             task=specified_task_prompt)
+    ] * 2
     assistant_sys_msg, user_sys_msg = sys_msg_generator.from_dicts(
         sys_msg_meta_dicts,
         role_tuples=[

@@ -1,12 +1,10 @@
 from typing import Dict, List, Optional, Tuple
 
+from camel.agents import ChatAgent, TaskPlannerAgent, TaskSpecifyAgent
 from camel.generators import SystemMessageGenerator
 from camel.human import Human
 from camel.messages import AssistantChatMessage, ChatMessage, UserChatMessage
 from camel.typing import ModelType, RoleType, TaskType
-
-from .chat_agent import ChatAgent
-from .task_agent import TaskPlannerAgent, TaskSpecifyAgent
 
 
 class RolePlaying:
@@ -70,10 +68,10 @@ class RolePlaying:
                 task_type=task_type,
                 **(task_specify_agent_kwargs or {}),
             )
-            self.specified_task_prompt = task_specify_agent.specify_task(
+            self.specified_task_prompt = task_specify_agent.step(
                 task_prompt,
-                [("<ASSISTANT_ROLE>", assistant_role_name),
-                 ("<USER_ROLE>", user_role_name)],
+                meta_dict=dict(assistant_role=assistant_role_name,
+                               user_role=user_role_name),
             )
             task_prompt = self.specified_task_prompt
         else:
@@ -84,8 +82,7 @@ class RolePlaying:
                 self.mode_type,
                 **(task_planner_agent_kwargs or {}),
             )
-            self.planned_task_prompt = task_planner_agent.plan_task(
-                task_prompt)
+            self.planned_task_prompt = task_planner_agent.step(task_prompt)
             task_prompt = f"{task_prompt}\n{self.planned_task_prompt}"
         else:
             self.planned_task_prompt = None
@@ -94,11 +91,10 @@ class RolePlaying:
 
         sys_msg_generator = SystemMessageGenerator(
             task_type=task_type, **(sys_msg_generator_kwargs or {}))
-        sys_msg_meta_dicts = [{
-            "<ASSISTANT_ROLE>": assistant_role_name,
-            "<USER_ROLE>": user_role_name,
-            "<TASK>": task_prompt,
-        }] * 2
+        sys_msg_meta_dicts = [
+            dict(assistant_role=assistant_role_name, user_role=user_role_name,
+                 task=task_prompt)
+        ] * 2
         self.assistant_sys_msg, self.user_sys_msg = (
             sys_msg_generator.from_dicts(
                 meta_dicts=sys_msg_meta_dicts,

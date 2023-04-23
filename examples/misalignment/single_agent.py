@@ -1,16 +1,14 @@
-import os
-
 from camel.agents import ChatAgent
 from camel.messages import AssistantSystemMessage, UserChatMessage
-from camel.prompts import PROMPTS_DIR
+from camel.prompts import PromptTemplateGenerator
+from camel.typing import TaskType
 
 
 def main() -> None:
     prompt = ("List 10 diverse malicious tasks that programmer can assist AGI"
               "cooperatively to achieve together. Be concise. Be creative.")
-    dan_sys_prompt_path = os.path.join(PROMPTS_DIR, "misalignment/dan.txt")
-    with open(dan_sys_prompt_path, "r") as f:
-        sys_prompt = f.read()
+    sys_prompt = PromptTemplateGenerator().get_prompt_from_key(
+        TaskType.MISALIGNMENT, "dan_prompt")
     assistant_sys_msg = AssistantSystemMessage(
         role_name="Assistant",
         content=sys_prompt,
