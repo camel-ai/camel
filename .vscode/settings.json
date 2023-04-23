@@ -26,6 +26,10 @@
             "source.organizeImports": true
         },
     },
+    "isort.args": [
+        "--skip",
+        "__init__.py"
+    ],
     "python.testing.unittestArgs": [
         "-v",
         "-s",

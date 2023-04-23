@@ -9,7 +9,8 @@ from camel.generators import (
     SystemMessageGenerator,
 )
 from camel.messages import UserChatMessage
-from camel.typing import ModelType, RoleType
+from camel.prompts import PromptTemplateGenerator
+from camel.typing import ModelType, RoleType, TaskType
 
 
 def generate_tasks(role_names: str, task_generator_prompt: str,
@@ -47,11 +48,12 @@ def main() -> None:
     num_tasks = 10
     start_token = "1."
 
-    with open('./prompts/misalignment/dan.txt', 'r') as f:
-        sys_prompt = f.read()
+    sys_prompt = PromptTemplateGenerator().get_prompt_from_key(
+        TaskType.MISALIGNMENT, "dan_prompt")
 
     pool = multiprocessing.Pool()
 
+    # TODO: This script is broken and needs to be fixed.
     generate_tasks_prompt_path = "prompts/misalignment/generate_tasks.txt"
 
     counter = 0

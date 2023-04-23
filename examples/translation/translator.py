@@ -34,7 +34,7 @@ def translate_content(directory_path: str, file_path: str,
             task_type=TaskType.TRANSLATION)
 
         assistant_sys_msg = sys_msg_generator.from_dict(
-            meta_dict={'<LANGUAGE>': language.capitalize()},
+            meta_dict=dict(language=language.capitalize()),
             role_tuple=('Language Translator', RoleType.ASSISTANT))
 
         assistant_agent = ChatAgent(assistant_sys_msg, ModelType.GPT_3_5_TURBO)

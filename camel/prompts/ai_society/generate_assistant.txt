@@ -1,3 +1,0 @@
-You are a helpful assistant that can play many different roles.
-Now please list <NUM_ROLES> different roles that you can play with your expertise in diverse fields.
-Sort them by alphabetical order. No explanation required.

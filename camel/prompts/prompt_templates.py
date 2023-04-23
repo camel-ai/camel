@@ -1,105 +1,104 @@
-import os
 import warnings
-from dataclasses import dataclass
-from typing import Set
+from typing import Any
 
+from camel.prompts import TaskPromptTemplateDict, TextPrompt
 from camel.typing import RoleType, TaskType
 
-PROMPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 
+class PromptTemplateGenerator:
+    r"""A class for generating prompt templates for tasks.
 
-# NOTE: There may be a better solution.
-@dataclass
-class PromptTemplate:
-    template: str
-    key_words: Set[str]
+    Args:
+        task_prompt_template_dict (TaskPromptTemplateDict, optional):
+            A dictionary of task prompt templates for each task type. If not
+            provided, an empty dictionary is used as default.
+    """
 
-    @classmethod
+    def __init__(
+        self,
+        task_prompt_template_dict: TaskPromptTemplateDict = None,
+    ) -> None:
+        self.task_prompt_template_dict = (task_prompt_template_dict
+                                          or TaskPromptTemplateDict())
+
+    def get_prompt_from_key(self, task_type: TaskType, key: Any) -> TextPrompt:
+        r"""Generates a text prompt using the specified :obj:`task_type` and
+        :obj:`key`.
+
+        Args:
+            task_type (TaskType): The type of task.
+            key (Any): The key used to generate the prompt.
+
+        Returns:
+            TextPrompt: The generated text prompt.
+
+        Raises:
+            KeyError: If failed to generate prompt using the specified
+                :obj:`task_type` and :obj:`key`.
+        """
+        try:
+            return self.task_prompt_template_dict[task_type][key]
+
+        except KeyError:
+            raise KeyError("Failed to get generate prompt template for "
+                           f"task: {task_type.value} from key: {key}.")
+
     def get_system_prompt(
-        cls,
+        self,
         task_type: TaskType,
         role_type: RoleType,
-    ) -> 'PromptTemplate':
+    ) -> TextPrompt:
+        r"""Generates a text prompt for the system role, using the specified
+        :obj:`task_type` and :obj:`role_type`.
+
+        Args:
+            task_type (TaskType): The type of task.
+            role_type (RoleType): The type of role, either "USER" or
+                "ASSISTANT".
+
+        Returns:
+            TextPrompt: The generated text prompt.
+
+        Raises:
+            KeyError: If failed to generate prompt using the specified
+                :obj:`task_type` and :obj:`role_type`.
+        """
         try:
-            template_path = os.path.join(
-                PROMPTS_DIR, f"{task_type.value}/{role_type.value}_prompt.txt")
-            with open(template_path, "r") as f:
-                template = f.read()
+            return self.get_prompt_from_key(task_type, role_type)
 
-            if task_type == TaskType.AI_SOCIETY:
-                key_words = set(['<ASSISTANT_ROLE>', "<USER_ROLE>", "<TASK>"])
-            if task_type == TaskType.CODE:
-                key_words = set(["<LANGUAGE>", "<DOMAIN>", "<TASK>"])
-            if task_type == TaskType.MISALIGNMENT:
-                key_words = set(['<ASSISTANT_ROLE>', "<USER_ROLE>", "<TASK>"])
-            if task_type == TaskType.TRANSLATION:
-                key_words = set(["<LANGUAGE>"])
-            if task_type == TaskType.DEFAULT:
-                key_words = set()
-
-        except ValueError:
-            template = "You are a helpful assistant."
-            key_words = set()
+        except KeyError:
+            prompt = "You are a helpful assistant."
 
             warnings.warn("Failed to get system prompt template for "
                           f"task: {task_type.value}, role: {role_type.value}. "
-                          f"Set template to: {template}")
+                          f"Set template to: {prompt}")
 
-        return cls(template, key_words)
+        return TextPrompt(prompt)
 
-    @classmethod
     def get_generate_tasks_prompt(
-        cls,
+        self,
         task_type: TaskType,
-    ) -> 'PromptTemplate':
-        try:
-            template_path = os.path.join(
-                PROMPTS_DIR, f"{task_type.value}/generate_tasks.txt")
-            with open(template_path, "r") as f:
-                template = f.read()
+    ) -> TextPrompt:
+        r"""Gets the prompt for generating tasks for a given task type.
 
-            if task_type == TaskType.AI_SOCIETY:
-                key_words = set(
-                    ['<NUM_TASKS>', '<ASSISTANT_ROLE>', "<USER_ROLE>"])
-            if task_type == TaskType.CODE:
-                key_words = set(["<NUM_TASKS>", "<LANGUAGE>", "<DOMAIN>"])
-            if task_type == TaskType.MISALIGNMENT:
-                key_words = set(
-                    ['<NUM_TASKS>', '<ASSISTANT_ROLE>', "<USER_ROLE>"])
+        Args:
+            task_type (TaskType): The type of the task.
 
-            return cls(template, key_words)
+        Returns:
+            TextPrompt: The generated prompt for generating tasks.
+        """
+        return self.get_prompt_from_key(task_type, "generate_tasks")
 
-        except ValueError:
-            raise ValueError(
-                "Failed to get generate tasks prompt template for "
-                f"task: {task_type.value}.")
-
-    @classmethod
     def get_task_specify_prompt(
-        cls,
+        self,
         task_type: TaskType,
-    ) -> 'PromptTemplate':
-        try:
-            template_path = os.path.join(
-                PROMPTS_DIR, f"{task_type.value}/task_specify_prompt.txt")
-            with open(template_path, "r") as f:
-                template = f.read()
+    ) -> TextPrompt:
+        r"""Gets the prompt for specifying a task for a given task type.
 
-            if task_type == TaskType.AI_SOCIETY:
-                key_words = set([
-                    '<ASSISTANT_ROLE>', "<USER_ROLE>", "<TASK>", "<WORD_LIMIT>"
-                ])
-            if task_type == TaskType.CODE:
-                key_words = set(
-                    ["<LANGUAGE>", "<DOMAIN>", "<TASK>", "<WORD_LIMIT>"])
-            if task_type == TaskType.MISALIGNMENT:
-                key_words = set([
-                    '<ASSISTANT_ROLE>', "<USER_ROLE>", "<TASK>", "<WORD_LIMIT>"
-                ])
+        Args:
+            task_type (TaskType): The type of the task.
 
-            return cls(template, key_words)
-
-        except ValueError:
-            raise ValueError(
-                "Failed to get task task specify prompt template for "
-                f"task: {task_type.value}.")
+        Returns:
+            TextPrompt: The generated prompt for specifying a task.
+        """
+        return self.get_prompt_from_key(task_type, "task_specify_prompt")

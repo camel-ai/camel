@@ -1,15 +1,13 @@
-import os
-
 from camel.agents import ChatAgent
 from camel.messages import AssistantSystemMessage, UserChatMessage
-from camel.prompts import PROMPTS_DIR
+from camel.prompts import PromptTemplateGenerator
+from camel.typing import TaskType
 
 
-def main(role_type: str = "user", num_roles: int = 50):
-    prompt_path = os.path.join(PROMPTS_DIR,
-                               f"ai_society/generate_{role_type}.txt")
-    with open(prompt_path, "r") as f:
-        prompt = f.read().replace("<NUM_ROLES>", str(num_roles))
+def main(key: str = 'generate_users', num_roles: int = 50):
+    prompt_template = PromptTemplateGenerator().get_prompt_from_key(
+        TaskType.AI_SOCIETY, key)
+    prompt = prompt_template.format(num_roles=num_roles)
     print(prompt)
     assistant_sys_msg = AssistantSystemMessage(
         role_name="Assistant",

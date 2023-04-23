@@ -1,14 +1,32 @@
-from typing import Any, List, Optional, Tuple
+from typing import Any, Dict, Optional, Union
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import SystemMessage, UserChatMessage
-from camel.prompts import PromptTemplate
+from camel.prompts import PromptTemplateGenerator, TextPrompt
 from camel.typing import ModelType, RoleType, TaskType
 
 
 class TaskSpecifyAgent(ChatAgent):
+    r"""An agent that Specifies a given task prompt by prompting the user to
+    provide more details.
 
+    Attributes:
+        DEFAULT_WORD_LIMIT (int): The default word limit for the task prompt.
+        task_specify_prompt (TextPrompt): The prompt for specifying the task.
+
+    Args:
+        model (ModelType): The type of model to use for the agent.
+            (default: :obj:`ModelType.GPT_3_5_TURBO`)
+        task_type (TaskType): The type of task for which to generate a prompt.
+            (default: :obj:`TaskType.AI_SOCIETY`)
+        model_config (Any): The configuration for the model.
+            (default: :obj:`None`)
+        task_specify_prompt (Optional[TextPrompt]): The prompt for specifying
+            the task. (default: :obj:`None`)
+        word_limit (int): The word limit for the task prompt.
+            (default: :obj:`50`)
+    """
     DEFAULT_WORD_LIMIT = 50
 
     def __init__(
@@ -16,18 +34,15 @@ class TaskSpecifyAgent(ChatAgent):
         model: ModelType = ModelType.GPT_3_5_TURBO,
         task_type: TaskType = TaskType.AI_SOCIETY,
         model_config: Any = None,
-        task_specify_prompt: Optional[str] = None,
+        task_specify_prompt: Optional[Union[str, TextPrompt]] = None,
         word_limit: int = DEFAULT_WORD_LIMIT,
     ) -> None:
         if task_specify_prompt is None:
-            prompt_template = PromptTemplate.get_task_specify_prompt(task_type)
-            task_specify_prompt = prompt_template.template
-            if "<WORD_LIMIT>" not in prompt_template.key_words:
-                raise ValueError("Prompt template does not contain "
-                                 "a word limit placeholder")
+            task_specify_prompt = PromptTemplateGenerator(
+            ).get_task_specify_prompt(task_type)
 
-            self.task_specify_prompt = task_specify_prompt.replace(
-                "<WORD_LIMIT>", str(word_limit))
+            self.task_specify_prompt = task_specify_prompt.format(
+                word_limit=word_limit)
         else:
             self.task_specify_prompt = task_specify_prompt
 
@@ -40,35 +55,56 @@ class TaskSpecifyAgent(ChatAgent):
         )
         super().__init__(system_message, model, model_config)
 
-    def specify_task(
+    def step(
         self,
-        original_task_prompt: str,
-        replace_tuples: Optional[List[Tuple[str, str]]] = None,
-    ) -> str:
-        self.reset()
-        self.task_specify_prompt = self.task_specify_prompt.replace(
-            "<TASK>", original_task_prompt)
+        original_task_prompt: Union[str, TextPrompt],
+        meta_dict: Optional[Dict[str, Any]] = None,
+    ) -> TextPrompt:
+        r"""Specify the given task prompt by providing more details.
 
-        # TODO: This is a hacky way to replace the role names.
-        if replace_tuples is not None:
-            for replace_tuple in replace_tuples:
-                self.task_specify_prompt = self.task_specify_prompt.replace(
-                    replace_tuple[0], replace_tuple[1])
-        if not ("<" and ">" not in self.task_specify_prompt):
-            raise ValueError("Task specifier prompt must "
-                             "have no angle brackets")
+        Args:
+            original_task_prompt (Union[str, TextPrompt]): The original task
+                prompt.
+            meta_dict (Optional[Dict[str, Any]]): A dictionary containing
+                additional information to include in the prompt.
+                (default: :obj:`None`)
+
+        Returns:
+            TextPrompt: The specified task prompt.
+        """
+        self.reset()
+        self.task_specify_prompt = self.task_specify_prompt.format(
+            task=original_task_prompt)
+
+        if meta_dict is not None:
+            self.task_specify_prompt = (self.task_specify_prompt.format(
+                **meta_dict))
+
         task_msg = UserChatMessage(role_name="Task Specifier",
                                    content=self.task_specify_prompt)
-        specified_task_msgs, terminated, _ = self.step(task_msg)
+        specified_task_msgs, terminated, _ = super().step(task_msg)
         specified_task_msg = specified_task_msgs[0]
 
         if terminated:
             raise RuntimeError("Task specification failed.")
         else:
-            return specified_task_msg.content
+            return TextPrompt(specified_task_msg.content)
 
 
 class TaskPlannerAgent(ChatAgent):
+    r"""An agent that helps divide a task into subtasks based on the input
+    task prompt.
+
+    Attributes:
+        task_planner_prompt (TextPrompt): A prompt for the agent to divide
+            the task into subtasks.
+
+    Args:
+        model (ModelType): The type of model to use for the agent.
+            (default: :obj:`ModelType.GPT_3_5_TURBO`)
+        model_config (Any): The configuration for the model.
+            (default: :obj:`None`)
+    """
 
     def __init__(
         self,
@@ -76,8 +112,8 @@ class TaskPlannerAgent(ChatAgent):
         model_config: Any = None,
     ) -> None:
 
-        self.task_planner_prompt = (
-            "Divide this task into subtasks: <TASK>. Be concise.")
+        self.task_planner_prompt = TextPrompt(
+            "Divide this task into subtasks: {task}. Be concise.")
 
         system_message = SystemMessage(
             role_name="Task Planner",
@@ -86,21 +122,30 @@ class TaskPlannerAgent(ChatAgent):
         )
         super().__init__(system_message, model, model_config)
 
-    def plan_task(
+    def step(
         self,
-        task_prompt: str,
-    ) -> str:
+        task_prompt: Union[str, TextPrompt],
+    ) -> TextPrompt:
+        r"""Generate subtasks based on the input task prompt.
+
+        Args:
+            task_prompt (Union[str, TextPrompt]): The prompt for the task to
+                be divided into subtasks.
+
+        Returns:
+            TextPrompt: A prompt for the subtasks generated by the agent.
+        """
         # TODO: Maybe include roles information.
         self.reset()
-        self.task_planner_prompt = self.task_planner_prompt.replace(
-            "<TASK>", task_prompt)
+        self.task_planner_prompt = self.task_planner_prompt.format(
+            task=task_prompt)
 
         task_msg = UserChatMessage(role_name="Task Planner",
                                    content=self.task_planner_prompt)
-        sub_tasks_msgs, terminated, _ = self.step(task_msg)
+        sub_tasks_msgs, terminated, _ = super().step(task_msg)
         sub_tasks_msg = sub_tasks_msgs[0]
 
         if terminated:
             raise RuntimeError("Task planning failed.")
         else:
-            return sub_tasks_msg.content
+            return TextPrompt(sub_tasks_msg.content)
