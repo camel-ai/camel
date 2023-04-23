@@ -1,6 +1,6 @@
 import pytest
 
-from camel.prompts import PromptTemplate
+from camel.prompts import PromptTemplateGenerator, TextPrompt
 from camel.typing import RoleType, TaskType
 
 
@@ -15,19 +15,28 @@ from camel.typing import RoleType, TaskType
 ])
 def test_get_system_prompt(task_role_tuple):
     task_type, role_type = task_role_tuple
-    prompt_template = PromptTemplate.get_system_prompt(task_type, role_type)
-    assert isinstance(prompt_template, PromptTemplate)
+    prompt_template = PromptTemplateGenerator().get_system_prompt(
+        task_type, role_type)
+    assert isinstance(prompt_template, TextPrompt)
+
+
+def test_get_system_prompt_default():
+    prompt_template = PromptTemplateGenerator().get_system_prompt(
+        TaskType.AI_SOCIETY, RoleType.DEFAULT)
+    assert isinstance(prompt_template, TextPrompt)
 
 
 @pytest.mark.parametrize(
     'task_type', [TaskType.AI_SOCIETY, TaskType.CODE, TaskType.MISALIGNMENT])
 def test_get_generate_tasks_prompt(task_type):
-    prompt_template = PromptTemplate.get_generate_tasks_prompt(task_type)
-    assert isinstance(prompt_template, PromptTemplate)
+    prompt_template = PromptTemplateGenerator().get_generate_tasks_prompt(
+        task_type)
+    assert isinstance(prompt_template, TextPrompt)
 
 
 @pytest.mark.parametrize(
     'task_type', [TaskType.AI_SOCIETY, TaskType.CODE, TaskType.MISALIGNMENT])
 def test_get_task_specify_prompt(task_type):
-    prompt_template = PromptTemplate.get_task_specify_prompt(task_type)
-    assert isinstance(prompt_template, PromptTemplate)
+    prompt_template = PromptTemplateGenerator().get_task_specify_prompt(
+        task_type)
+    assert isinstance(prompt_template, TextPrompt)

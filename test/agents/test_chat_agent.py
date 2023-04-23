@@ -19,7 +19,7 @@ def test_chat_agent(model):
     model_config = ChatGPTConfig()
     system_msg = SystemMessageGenerator(
         task_type=TaskType.AI_SOCIETY).from_dict(
-            {"<ASSISTANT_ROLE>": "doctor"},
+            dict(assistant_role="doctor"),
             role_tuple=("doctor", RoleType.ASSISTANT),
         )
     assistant = ChatAgent(system_msg, model=model, model_config=model_config)

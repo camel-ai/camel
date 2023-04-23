@@ -1,3 +1,18 @@
-from .prompt_templates import PROMPTS_DIR, PromptTemplate
+from .base import TextPrompt, TextPromptDict
+from .ai_society import AISocietyPromptTemplateDict
+from .code import CodePromptTemplateDict
+from .misalignment import MisalignmentPromptTemplateDict
+from .translation import TranslationPromptTemplateDict
+from .task_prompt_template import TaskPromptTemplateDict
+from .prompt_templates import PromptTemplateGenerator
 
-__all__ = ['PromptTemplate', 'PROMPTS_DIR']
+__all__ = [
+    'TextPrompt',
+    'TextPromptDict',
+    'AISocietyPromptTemplateDict',
+    'CodePromptTemplateDict',
+    'MisalignmentPromptTemplateDict',
+    'TranslationPromptTemplateDict',
+    'TaskPromptTemplateDict',
+    'PromptTemplateGenerator',
+]
