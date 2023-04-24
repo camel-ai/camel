@@ -49,7 +49,7 @@ python examples/ai_society/role_playing.py
 | -- | -- | -- | -- |
 | **AI Society** | [Chat format](https://huggingface.co/datasets/camel-ai/ai_society/blob/main/ai_society_chat.tar.gz) | [Instruction format](https://huggingface.co/datasets/camel-ai/ai_society/blob/main/ai_society_instructions.json) | [Chat format (translated)](https://huggingface.co/datasets/camel-ai/ai_society_translated) |
 | **Code** | [Chat format](https://huggingface.co/datasets/camel-ai/code/blob/main/code_chat.tar.gz) | [Instruction format](https://huggingface.co/datasets/camel-ai/code/blob/main/code_instructions.json) | x |
-| **Math** | [Chat format](https://huggingface.co/datasets/camel-ai/math/blob/main/math50k.zip) | x | x|
+| **Math** | [Chat format](https://huggingface.co/datasets/camel-ai/math) | x | x|
 | **Physics** | [Chat format](https://huggingface.co/datasets/camel-ai/physics) | x | x |
 | **Chemistry** | [Chat format](https://huggingface.co/datasets/camel-ai/chemistry) | x | x |
 | **Biology** | [Chat format](https://huggingface.co/datasets/camel-ai/biology) | x | x |
