@@ -39,7 +39,7 @@ def parse_arguments():
 import os
 
 import sqlalchemy
-from google.cloud.sql.connector import Connector
+from google.cloud.sql.connector import Connector, IPTypes
 
 # import google.auth
 # from google.auth.transport.requests import Request
@@ -53,7 +53,7 @@ def connect_db():
     DB_NAME = "dilemma_choices"
 
     os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = \
-        "C:\\Users\\dmitrii\\_KAUST\\camel\\camel-lm-57fc849b664b.json"
+        "/home/ivul_kaust/camel-lm-57fc849b664b.json"
 
     # ip_addr = "34.18.39.52"
 
@@ -73,13 +73,25 @@ def connect_db():
     IAM_USER = "ivul.kaust"
 
     # getconn now using IAM user and requiring no password with IAM Auth enabled
+    #def getconn():
+    #    conn = connector.connect(
+    #        INSTANCE_CONNECTION_NAME,
+    #        "pymysql",
+    #        user=IAM_USER,
+    #        db="",  # log in to instance but don't connect to specific database
+    #        enable_iam_auth=True)
+    #    return conn
+
+    # getconn now set to private IP
     def getconn():
         conn = connector.connect(
-            INSTANCE_CONNECTION_NAME,
+            INSTANCE_CONNECTION_NAME, # <PROJECT-ID>:<REGION>:<INSTANCE-NAME>
             "pymysql",
-            user=IAM_USER,
-            db="",  # log in to instance but don't connect to specific database
-            enable_iam_auth=True)
+            user=DB_USER,
+            password=DB_PASS,
+            db=DB_NAME,
+            ip_type=IPTypes.PRIVATE
+        )
         return conn
 
     # create connection pool with 'creator' argument to our connection object function
@@ -153,7 +165,7 @@ def construct_ui(blocks, dataset: Any):
         None
     """
 
-    # connect_db()
+    connect_db()
 
     def write_db(choice: str, left: str, right: str):
         print(choice, left, right)
