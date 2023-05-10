@@ -1,15 +1,15 @@
 """
-Gradio-based web UI to explore the Camel dataset.
+Gradio-based web UI to select between two
+options and save the answers to a database.
 """
 
 import argparse
 import random
 from functools import partial
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict
 
 import gradio as gr
 from database_connection import DatabaseConnection
-from tqdm import tqdm
 
 from apps.common.auto_zip import AutoZip
 
