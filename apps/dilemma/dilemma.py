@@ -9,15 +9,21 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import gradio as gr
 from database_connection import DatabaseConnection
+from tqdm import tqdm
+
+from apps.common.auto_zip import AutoZip
 
 
 def parse_arguments():
     """ Get command line arguments. """
 
     parser = argparse.ArgumentParser("Dilemma tool")
-    parser.add_argument(
-        '--data-path', type=str, default=None,
-        help='Path to the folder with ZIP datasets containing JSONs')
+    parser.add_argument('--left-path', type=str, default=None,
+                        help='Path to ZIP file containing TXTs (left)')
+    parser.add_argument('--right-path', type=str, default=None,
+                        help='Path to ZIP file containing TXTs (right)')
+    parser.add_argument('--no-db', dest='no_db', action='store_true',
+                        help="Set in development environment")
     parser.add_argument('--share', type=bool, default=False,
                         help='Expose the web UI to Gradio')
     parser.add_argument(
@@ -37,18 +43,29 @@ def parse_arguments():
     return args
 
 
-def construct_ui(blocks, dataset: Any):
+def load_dataset(left_path: str, right_path: str) -> Dict[str, Dict[str, str]]:
+    datasets = dict()
+    for zip_path, name in ((left_path, 'left'), (right_path, 'right')):
+        zip_inst = AutoZip(zip_path, ext=".txt")
+        text_dict = zip_inst.as_dict(include_zip_name=True)
+        datasets[name] = text_dict
+    return datasets
+
+
+def construct_ui(blocks, datasets: Dict[str, Dict[str, str]],
+                 has_connection: bool = True):
     """ Build Gradio UI and populate with texts from TXTs.
 
     Args:
         blocks: Gradio blocks
-        datasets (TODO): Parsed multi-TXT dataset.
+        datasets: Parsed multi-TXT dataset.
+        has_connection (bool): if the DB connection exists.
 
     Returns:
         None
     """
 
-    db_conn = DatabaseConnection()
+    db_conn = DatabaseConnection() if has_connection else None
 
     gr.Markdown("## Dilemma app")
     with gr.Row():
@@ -61,46 +78,58 @@ def construct_ui(blocks, dataset: Any):
         not_sure_bn = gr.Button("Not sure")
         right_better_bn = gr.Button("Right is better")
 
-    def load_random():
-        return (f"txt {random.randint(1, 100)}",
-                f"txt {random.randint(1, 100)}")
+    state_st = gr.State(
+        dict(left=dict(name="a", text="at"), right=dict(name="b", text="bt")))
 
-    def record(choice: str, left: str, right: str):
+    def load_random(state):
+        for side in ('left', 'right'):
+            items = random.sample(datasets[side].items(), 1)
+            if len(items) > 0:
+                name, text = items[0]
+            else:
+                name, text = "ERROR_NAME", "ERROR_TEXT"
+            state[side] = dict(name=name, text=text)
+        return state, state['left']['text'], state['right']['text']
+
+    def record(choice: str, state):
         assert choice in {'left', 'draw', 'right'}
-        print(choice, left, right)
-        db_conn.add_record(choice, left, right)
+        left_name = state['left']['name']
+        right_name = state['right']['name']
+        print(choice, left_name, right_name)
+        if db_conn is not None:
+            db_conn.add_record(choice, left_name, right_name)
 
-    left_better_bn.click(partial(record, 'left'), [left_md, right_md], None) \
-        .then(load_random, None, [left_md, right_md])
+    left_better_bn.click(partial(record, 'left'), state_st, None) \
+        .then(load_random, state_st, [state_st, left_md, right_md])
 
-    not_sure_bn.click(partial(record, 'draw'), [left_md, right_md], None) \
-        .then(load_random, None, [left_md, right_md])
+    not_sure_bn.click(partial(record, 'draw'), state_st, None) \
+        .then(load_random, state_st, [state_st, left_md, right_md])
 
-    right_better_bn.click(partial(record, 'right'), [left_md, right_md], None) \
-        .then(load_random, None, [left_md, right_md])
+    right_better_bn.click(partial(record, 'right'), state_st, None) \
+        .then(load_random, state_st, [state_st, left_md, right_md])
 
-    blocks.load(load_random, None, [left_md, right_md])
+    blocks.load(load_random, state_st, [state_st, left_md, right_md])
 
 
-def construct_blocks(data_path: str):
+def construct_blocks(left_path: str, right_path: str, has_connection: bool):
     """ Construct Blocs app but do not launch it.
 
     Args:
-        data_path (str): Path to the ZIP dataset with TXTs inside.
+        left_path (str): Path to the ZIP dataset with TXTs inside (left).
+        right_path (str): Path to the ZIP dataset with TXTs inside (right).
 
     Returns:
         gr.Blocks: Blocks instance.
     """
 
     print("Loading the dataset...")
-    # dataset = load_dataset(data_path)
-    dataset = None
+    dataset = load_dataset(left_path, right_path)
     print("Dataset is loaded")
 
     print("Getting Dilemma web server online...")
 
     with gr.Blocks() as blocks:
-        construct_ui(blocks, dataset)
+        construct_ui(blocks, dataset, has_connection)
 
     return blocks
 
@@ -110,7 +139,7 @@ def main():
 
     args = parse_arguments()
 
-    blocks = construct_blocks(args.data_path)
+    blocks = construct_blocks(args.left_path, args.right_path, not args.no_db)
 
     blocks.queue(args.concurrency_count) \
           .launch(share=args.share, inbrowser=args.inbrowser,
