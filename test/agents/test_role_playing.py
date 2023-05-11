@@ -1,3 +1,5 @@
+import typing
+
 import pytest
 
 from camel.agents import ChatAgent, RolePlaying
@@ -26,8 +28,10 @@ def test_role_playing_init():
     assert role_playing.specified_task_prompt is None
     assert role_playing.planned_task_prompt is None
 
-    assert issubclass(type(role_playing.assistant_sys_msg), SystemMessageType)
-    assert issubclass(type(role_playing.user_sys_msg), SystemMessageType)
+    assert (type(role_playing.assistant_sys_msg)
+            in typing.get_args(SystemMessageType))
+    assert (type(role_playing.user_sys_msg)
+            in typing.get_args(SystemMessageType))
 
     assert isinstance(role_playing.assistant_agent, ChatAgent)
     assert isinstance(role_playing.user_agent, ChatAgent)
