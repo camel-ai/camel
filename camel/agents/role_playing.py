@@ -38,6 +38,10 @@ class RolePlaying:
             human. (default: :obj:`None`)
         sys_msg_generator_kwargs (Dict, optional): Additional arguments to
             pass to the system message generator. (default: :obj:`None`)
+        extend_sys_msg_meta_dicts (List[Dict], optional): A list of dicts to
+            extend the system message meta dicts with. (default: :obj:`None`)
+        extend_task_specify_meta_dict (Dict, optional): A dict to extend the
+            task specify meta dict with. (default: :obj:`None`)
     """
 
     def __init__(
@@ -56,22 +60,32 @@ class RolePlaying:
         task_planner_agent_kwargs: Optional[Dict] = None,
         human_kwargs: Optional[Dict] = None,
         sys_msg_generator_kwargs: Optional[Dict] = None,
+        extend_sys_msg_meta_dicts: Optional[List[Dict]] = None,
+        extend_task_specify_meta_dict: Optional[Dict] = None,
     ) -> None:
         self.with_task_specify = with_task_specify
         self.with_task_planner = with_task_planner
         self.with_human_in_the_loop = with_human_in_the_loop
         self.mode_type = mode_type
+        self.task_type = task_type
 
         if with_task_specify:
+            task_specify_meta_dict = dict()
+            if self.task_type in [TaskType.AI_SOCIETY, TaskType.MISALIGNMENT]:
+                task_specify_meta_dict.update(
+                    dict(assistant_role=assistant_role_name,
+                         user_role=user_role_name))
+            if extend_task_specify_meta_dict is not None:
+                task_specify_meta_dict.update(extend_task_specify_meta_dict)
+
             task_specify_agent = TaskSpecifyAgent(
                 self.mode_type,
-                task_type=task_type,
+                task_type=self.task_type,
                 **(task_specify_agent_kwargs or {}),
             )
             self.specified_task_prompt = task_specify_agent.step(
                 task_prompt,
-                meta_dict=dict(assistant_role=assistant_role_name,
-                               user_role=user_role_name),
+                meta_dict=task_specify_meta_dict,
             )
             task_prompt = self.specified_task_prompt
         else:
@@ -90,11 +104,22 @@ class RolePlaying:
         self.task_prompt = task_prompt
 
         sys_msg_generator = SystemMessageGenerator(
-            task_type=task_type, **(sys_msg_generator_kwargs or {}))
-        sys_msg_meta_dicts = [
-            dict(assistant_role=assistant_role_name, user_role=user_role_name,
-                 task=task_prompt)
-        ] * 2
+            task_type=self.task_type, **(sys_msg_generator_kwargs or {}))
+
+        sys_msg_meta_dicts = [dict(task=task_prompt)] * 2
+        if (extend_sys_msg_meta_dicts is None and self.task_type
+                in [TaskType.AI_SOCIETY, TaskType.MISALIGNMENT]):
+            extend_sys_msg_meta_dicts = [
+                dict(assistant_role=assistant_role_name,
+                     user_role=user_role_name)
+            ] * 2
+        if extend_sys_msg_meta_dicts is not None:
+            sys_msg_meta_dicts = [{
+                **sys_msg_meta_dict,
+                **extend_sys_msg_meta_dict
+            } for sys_msg_meta_dict, extend_sys_msg_meta_dict in zip(
+                sys_msg_meta_dicts, extend_sys_msg_meta_dicts)]
+
         self.assistant_sys_msg, self.user_sys_msg = (
             sys_msg_generator.from_dicts(
                 meta_dicts=sys_msg_meta_dicts,
@@ -117,6 +142,8 @@ class RolePlaying:
 
         if with_human_in_the_loop:
             self.human = Human(**(human_kwargs or {}))
+        else:
+            self.human = None
 
     def init_chat(self) -> Tuple[AssistantChatMessage, List[ChatMessage]]:
         r"""Initializes the chat by resetting both the assistant and user
