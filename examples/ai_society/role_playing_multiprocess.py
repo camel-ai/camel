@@ -34,7 +34,7 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
         print(Fore.BLUE +
               f"AI User sys message:\n{role_play_session.user_sys_msg}\n")
 
-        print(Fore.YELLOW + f"Original task prompt:\n{task_prompt}\n")
+        print(Fore.YELLOW + f"Original task prompt:\n{original_task_prompt}\n")
         print(Fore.CYAN + "Specified task prompt:\n"
               f"{role_play_session.specified_task_prompt}\n")
         print(Fore.RED +
@@ -81,18 +81,20 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
         user_msg, user_terminated, user_info = user_return
 
         # Condition 1: User terminates the chat
-        if user_terminated:
+        if user_terminated and user_info is not None:
             message_dict["termination_reason"] = (
                 f"{str(user_agent.role_type)}: "
                 f"{user_info['termination_reasons'][0]}")
             break
 
         # Condition 2: Assistant terminates the chat
-        if assistant_terminated:
+        if assistant_terminated and assistant_info is not None:
             message_dict["termination_reason"] = (
                 f"{str(assistant_agent.role_type)}: "
                 f"{assistant_info['termination_reasons'][0]}")
             break
+
+        assert (user_msg is not None) and (assistant_msg is not None)
 
         if verbose:
             print(f"User:\n{user_msg.content}\n")
@@ -159,7 +161,12 @@ def main() -> None:
     verbose = True
 
     # Chunk for parallel jobs
-    array_idx = int(os.environ.get('SLURM_ARRAY_TASK_ID'))
+    try:
+        array_idx = int(os.environ.get('SLURM_ARRAY_TASK_ID'))
+    except (TypeError, ValueError) as e:
+        print(f"Error: {e}")
+        array_idx = 0
+
     roles_per_chunk = 10
 
     # Parameters for filtering the generated task string
@@ -177,7 +184,7 @@ def main() -> None:
                                       roles_per_chunk:(array_idx + 1) *
                                       roles_per_chunk]
 
-    pool = multiprocessing.Pool()
+    pool = multiprocessing.Pool(processes=4)
 
     for assistant_idx, assistant_role_name in enumerate(assistant_roles):
         assistant_idx += array_idx * roles_per_chunk

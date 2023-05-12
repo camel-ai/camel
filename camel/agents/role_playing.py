@@ -53,7 +53,7 @@ class RolePlaying:
         with_task_planner: bool = False,
         with_human_in_the_loop: bool = False,
         mode_type: ModelType = ModelType.GPT_3_5_TURBO,
-        task_type: Optional[TaskType] = TaskType.AI_SOCIETY,
+        task_type: TaskType = TaskType.AI_SOCIETY,
         assistant_agent_kwargs: Optional[Dict] = None,
         user_agent_kwargs: Optional[Dict] = None,
         task_specify_agent_kwargs: Optional[Dict] = None,
@@ -142,8 +142,6 @@ class RolePlaying:
 
         if with_human_in_the_loop:
             self.human = Human(**(human_kwargs or {}))
-        else:
-            self.human = None
 
     def init_chat(self) -> Tuple[AssistantChatMessage, List[ChatMessage]]:
         r"""Initializes the chat by resetting both the assistant and user
@@ -168,7 +166,10 @@ class RolePlaying:
 
         user_msg = UserChatMessage(role_name=self.user_sys_msg.role_name,
                                    content=f"{self.assistant_sys_msg.content}")
-        msgs, _, _ = self.assistant_agent.step(user_msg)
+        msgs, terminated, info = self.assistant_agent.step(user_msg)
+        if terminated or msgs is None:
+            raise ValueError(
+                f"Assistant agent terminated unexpectedly. Error info: {info}")
 
         return assistant_msg, msgs
 
@@ -227,7 +228,7 @@ class RolePlaying:
         """
         user_msgs, user_terminated, user_info = self.user_agent.step(
             assistant_msg.to_user_chat_message())
-        if user_terminated:
+        if user_terminated or user_msgs is None:
             return ((None, None, None), (None, user_terminated, user_info))
         user_msg = self.process_messages(user_msgs)
         self.user_agent.update_messages(user_msg)
@@ -235,7 +236,7 @@ class RolePlaying:
         (assistant_msgs, assistant_terminated,
          assistant_info) = self.assistant_agent.step(
              user_msg.to_user_chat_message())
-        if assistant_terminated:
+        if assistant_terminated or assistant_msgs is None:
             return ((None, assistant_terminated, assistant_info),
                     (user_msg, user_terminated, user_info))
         assistant_msg = self.process_messages(assistant_msgs)

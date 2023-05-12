@@ -12,7 +12,7 @@ from camel.typing import RoleType, TaskType
 
 def generate_tasks(role_names: str, task_generator_prompt: str,
                    start_token: str = "1.", num_tasks: int = 10) -> None:
-    sys_msg_generator = SystemMessageGenerator(task_type=TaskType.DEFAULT)
+    sys_msg_generator = SystemMessageGenerator(task_type=TaskType.AI_SOCIETY)
 
     assistant_sys_msg = sys_msg_generator.from_dict(
         dict(), role_tuple=("Task Generator", RoleType.DEFAULT))
@@ -21,7 +21,11 @@ def generate_tasks(role_names: str, task_generator_prompt: str,
     user_msg = UserChatMessage(role_name="Task Generator",
                                content=task_generator_prompt)
 
-    assistant_msgs, _, _ = assistant_agent.step(user_msg)
+    assistant_msgs, assistant_terminated, _ = assistant_agent.step(user_msg)
+
+    if assistant_terminated or assistant_msgs is None:
+        raise RuntimeError("Assistant agent terminated unexpectedly.")
+
     assistant_msg = assistant_msgs[0]
 
     tasks = assistant_msg.content.split("\n")
@@ -35,7 +39,8 @@ def generate_tasks(role_names: str, task_generator_prompt: str,
     # Ensure exact number of tasks is generated
     assert str(num_tasks) in tasks[-1], print(tasks)
 
-    with open(f"./tasks/{'_'.join(role_names)}.txt", "w") as file:
+    with open(f"./ai_society_data/tasks/{'_'.join(role_names)}.txt",
+              "w") as file:
         file.write("\n".join(tasks))
 
 
@@ -49,7 +54,8 @@ def main() -> None:
     pool = multiprocessing.Pool()
 
     for task_generator_prompt, role_names in task_generator_prompt_generator:
-        if not os.path.exists(f"./tasks/{'_'.join(role_names)}.txt"):
+        if not os.path.exists(
+                f"./ai_society_data/tasks/{'_'.join(role_names)}.txt"):
             print(f"Generating tasks for {role_names}")
             pool.apply_async(
                 generate_tasks,

@@ -2,7 +2,7 @@ import os
 import re
 import time
 from functools import wraps
-from typing import Any, List, Set
+from typing import Any, Callable, List, Set
 
 import tiktoken
 
@@ -96,7 +96,7 @@ def get_model_token_limit(model: ModelType) -> int:
         return 32768
 
 
-def openai_api_key_required(func: callable) -> callable:
+def openai_api_key_required(func: Callable[..., Any]) -> Callable[..., Any]:
     r"""Decorator that checks if the OpenAI API key is available in the
     environment variables.
 
@@ -112,7 +112,7 @@ def openai_api_key_required(func: callable) -> callable:
     """
 
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args, **kwargs) -> Callable[..., Any]:
         if 'OPENAI_API_KEY' in os.environ:
             return func(*args, **kwargs)
         else:
@@ -121,7 +121,7 @@ def openai_api_key_required(func: callable) -> callable:
     return wrapper
 
 
-def print_text_animated(text, delay=0.02, end=""):
+def print_text_animated(text, delay: float = 0.02, end: str = ""):
     r"""Prints the given text with an animated effect.
 
     Args:
