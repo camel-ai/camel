@@ -143,9 +143,11 @@ class TaskPlannerAgent(ChatAgent):
         task_msg = UserChatMessage(role_name="Task Planner",
                                    content=self.task_planner_prompt)
         sub_tasks_msgs, terminated, _ = super().step(task_msg)
-        sub_tasks_msg = sub_tasks_msgs[0]
 
+        if sub_tasks_msgs is None:
+            raise RuntimeError("Got None Subtasks messages.")
         if terminated:
             raise RuntimeError("Task planning failed.")
-        else:
-            return TextPrompt(sub_tasks_msg.content)
+
+        sub_tasks_msg = sub_tasks_msgs[0]
+        return TextPrompt(sub_tasks_msg.content)
