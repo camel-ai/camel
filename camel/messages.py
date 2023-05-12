@@ -233,7 +233,7 @@ class AssistantChatMessage(ChatMessage):
     """
     role_name: str
     role_type: RoleType = RoleType.ASSISTANT
-    meta_dict: Dict[str, str] = None
+    meta_dict: Optional[Dict[str, str]] = None
     role: str = "assistant"
     content: str = ""
 
@@ -253,7 +253,7 @@ class UserChatMessage(ChatMessage):
     """
     role_name: str
     role_type: RoleType = RoleType.USER
-    meta_dict: Dict[str, str] = None
+    meta_dict: Optional[Dict[str, str]] = None
     role: str = "user"
     content: str = ""
 

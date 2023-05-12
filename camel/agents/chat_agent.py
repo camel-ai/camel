@@ -88,7 +88,7 @@ class ChatAgent:
         """
         self.stored_messages: List[MessageType] = [self.system_message]
 
-    def update_messages(self, message: ChatMessage) -> List[ChatMessage]:
+    def update_messages(self, message: ChatMessage) -> List[MessageType]:
         r"""Updates the stored messages list with a new message.
 
         Args:

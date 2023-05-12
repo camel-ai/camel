@@ -9,7 +9,7 @@ class SystemMessageGenerator:
     r"""System message generator for agents.
 
     Args:
-        task_type (Optional[TaskType], optional): The task type.
+        task_type (TaskType, optional): The task type.
             (default: :obj:`TaskType.AI_SOCIETY`)
         sys_prompts (Optional[Dict[RoleType, str]], optional): The prompts of
             the system messages for each role type. (default: :obj:`None`)
@@ -20,7 +20,7 @@ class SystemMessageGenerator:
 
     def __init__(
         self,
-        task_type: Optional[TaskType] = TaskType.AI_SOCIETY,
+        task_type: TaskType = TaskType.AI_SOCIETY,
         sys_prompts: Optional[Dict[RoleType, str]] = None,
         sys_msg_meta_dict_keys: Optional[Set[str]] = None,
     ) -> None:
