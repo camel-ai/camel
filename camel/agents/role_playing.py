@@ -142,6 +142,8 @@ class RolePlaying:
 
         if with_human_in_the_loop:
             self.human = Human(**(human_kwargs or {}))
+        else:
+            self.human = None
 
     def init_chat(self) -> Tuple[AssistantChatMessage, List[ChatMessage]]:
         r"""Initializes the chat by resetting both the assistant and user
@@ -193,7 +195,7 @@ class RolePlaying:
         if len(messages) > 1 and not self.with_human_in_the_loop:
             raise ValueError("Got than one message to process. "
                              f"Num of messages: {len(messages)}.")
-        elif self.with_human_in_the_loop:
+        elif self.with_human_in_the_loop and self.human is not None:
             processed_msg = self.human.step(messages)
         else:
             processed_msg = messages[0]
