@@ -184,7 +184,7 @@ def main() -> None:
                                       roles_per_chunk:(array_idx + 1) *
                                       roles_per_chunk]
 
-    pool = multiprocessing.Pool(processes=4)
+    pool = multiprocessing.Pool(processes=16)
 
     for assistant_idx, assistant_role_name in enumerate(assistant_roles):
         assistant_idx += array_idx * roles_per_chunk
