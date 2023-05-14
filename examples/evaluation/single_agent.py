@@ -61,7 +61,6 @@ def generate_questions(examples: str, category: str, save_file_name: str,
             os.makedirs(folder_path)
 
         with open(f"{folder_path}/{save_file_name}.jsonl", "w") as f:
-            # f.write(json.dumps(parsed_assistant_msg) + '\n')
             for item in parsed_assistant_msg:
                 json.dump(item, f)
                 f.write('\n')
@@ -124,5 +123,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-
     main()
