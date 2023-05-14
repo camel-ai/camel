@@ -1,6 +1,7 @@
 import json
 import os
 import re
+from typing import Any, Dict, List
 
 from camel.agents import ChatAgent
 from camel.messages import AssistantSystemMessage, UserChatMessage
@@ -8,7 +9,8 @@ from camel.prompts import PromptTemplateGenerator
 from camel.typing import TaskType
 
 
-def parse_question_string(question_string: str, category: str) -> List[Dict[str, Any]]:
+def parse_question_string(question_string: str,
+                          category: str) -> List[Dict[str, Any]]:
     pattern = r'^(\d+)\.\s+(.*?)\s*\n*$'
     questions = []
     for match in re.finditer(pattern, question_string, re.MULTILINE):
