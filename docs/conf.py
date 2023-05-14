@@ -13,7 +13,8 @@ sys.path.insert(0, os.path.abspath('../camel'))
 
 project = 'Camel'
 copyright = '2023, Camel AI team'
-author = 'Guohao Li, Hasan Abed Al Kader Hammoud, Hani Itani, Dmitrii Khizbullin, Bernard Ghanem'
+author = ('Guohao Li, Hasan Abed Al Kader Hammoud, Hani Itani, '
+          'Dmitrii Khizbullin, Bernard Ghanem')
 release = '00.00.01'
 
 # -- General configuration ---------------------------------------------------
