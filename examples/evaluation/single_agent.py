@@ -24,7 +24,7 @@ def parse_question_string(question_string: str, category: str) -> List[Dict[str,
 
 def generate_questions(examples: str, category: str, save_file_name: str,
                        key: str = 'generate_questions',
-                       num_questions: int = 20):
+                       num_questions: int = 20) -> None:
     prompt_template = PromptTemplateGenerator().get_prompt_from_key(
         TaskType.EVALUATION, key)
 
