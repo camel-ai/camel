@@ -10,7 +10,7 @@ jobs:
       - uses: actions/setup-python@v3
       - name: Install dependencies
         run: |
-          pip install sphinx sphinx_rtd_theme
+          pip install sphinx sphinx_rtd_theme numpy openai tenacity tiktoken colorama
       - name: Sphinx build
         run: |
           sphinx-build docs docs/_build
