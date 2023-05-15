@@ -37,13 +37,20 @@ class SystemMessageGenerator:
                 task_type,
                 RoleType.USER,
             )
+            critic_prompt_template = PromptTemplateGenerator(
+            ).get_system_prompt(
+                task_type,
+                RoleType.CRITIC,
+            )
 
             self.sys_prompts: Dict[RoleType, str] = dict()
             self.sys_prompts[RoleType.ASSISTANT] = assistant_prompt_template
             self.sys_prompts[RoleType.USER] = user_prompt_template
+            self.sys_prompts[RoleType.CRITIC] = critic_prompt_template
 
             self.sys_msg_meta_dict_keys = (assistant_prompt_template.key_words
-                                           | user_prompt_template.key_words)
+                                           | user_prompt_template.key_words
+                                           | critic_prompt_template.key_words)
 
         if RoleType.DEFAULT not in self.sys_prompts:
             self.sys_prompts[RoleType.DEFAULT] = "You are a helpful assistant."

@@ -49,8 +49,9 @@ class Human:
             f"{messages[0].role_name} ({messages[0].role_type}). "
             "Please choose an option:\n")
         for index, option in enumerate(options):
-            print_text_animated(self.menu_color +
-                                f"\x1b[3m{index + 1}:\n{option}\x1b[0m\n")
+            print_text_animated(
+                self.menu_color +
+                f"\x1b[3mOption {index + 1}:\n{option}\x1b[0m\n")
             self.options_dict[str(index + 1)] = option
 
     def get_input(self) -> str:
