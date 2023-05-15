@@ -3,6 +3,7 @@ from typing import Any, Dict
 from camel.prompts import (
     AISocietyPromptTemplateDict,
     CodePromptTemplateDict,
+    EvaluationPromptTemplateDict,
     MisalignmentPromptTemplateDict,
     TextPromptDict,
     TranslationPromptTemplateDict,
@@ -27,4 +28,5 @@ class TaskPromptTemplateDict(Dict[Any, TextPromptDict]):
             TaskType.CODE: CodePromptTemplateDict(),
             TaskType.MISALIGNMENT: MisalignmentPromptTemplateDict(),
             TaskType.TRANSLATION: TranslationPromptTemplateDict(),
+            TaskType.EVALUATION: EvaluationPromptTemplateDict(),
         })
