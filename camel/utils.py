@@ -2,7 +2,7 @@ import os
 import re
 import time
 from functools import wraps
-from typing import Any, Callable, List, Set
+from typing import Any, Callable, List, Optional, Set
 
 import tiktoken
 
@@ -152,3 +152,22 @@ def get_prompt_template_key_words(template: str) -> Set[str]:
         {'name', 'status'}
     """
     return set(re.findall(r'{([^}]*)}', template))
+
+
+def get_first_int(string: str) -> Optional[int]:
+    r"""Returns the first integer number found in the given string.
+
+    If no integer number is found, returns None.
+
+    Args:
+        string (str): The input string.
+
+    Returns:
+        int or None: The first integer number found in the string, or None if
+            no integer number is found.
+    """
+    match = re.search(r'\d+', string)
+    if match:
+        return int(match.group())
+    else:
+        return None

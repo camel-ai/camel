@@ -64,7 +64,7 @@ Always end <YOUR_SOLUTION> with: Next request.""")
 We share a common interest in collaborating to successfully complete a task.
 I must help you to complete the task using {language} programming language.
 Here is the task: {task}. Never forget our task!
-You must instruct me based on my expertise and your needs to complete the task ONLY in the following two ways:
+You must instruct me based on my expertise and your needs to solve the task ONLY in the following two ways:
 
 1. Instruct with a necessary input:
 Instruction: <YOUR_INSTRUCTION>

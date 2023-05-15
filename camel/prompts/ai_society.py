@@ -89,6 +89,12 @@ Keep giving me instructions and necessary inputs until you think the task is com
 When the task is completed, you must only reply with a single word <CAMEL_TASK_DONE>.
 Never say <CAMEL_TASK_DONE> unless my responses have solved your task.""")
 
+    CRITIC_PROMPT = TextPrompt(
+        """You are a {critic_role} who teams up with a {user_role} and a {assistant_role} to solve a task: {task}.
+Your job is to select an option from their proposals and provides your explanations.
+Your selection criteria are {criteria}.
+You always have to choose an option from the proposals.""")
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.update({
@@ -98,4 +104,5 @@ Never say <CAMEL_TASK_DONE> unless my responses have solved your task.""")
             "task_specify_prompt": self.TASK_SPECIFY_PROMPT,
             RoleType.ASSISTANT: self.ASSISTANT_PROMPT,
             RoleType.USER: self.USER_PROMPT,
+            RoleType.CRITIC: self.CRITIC_PROMPT,
         })

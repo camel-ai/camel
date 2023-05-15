@@ -1,6 +1,11 @@
 from typing import Dict, List, Optional, Tuple
 
-from camel.agents import ChatAgent, TaskPlannerAgent, TaskSpecifyAgent
+from camel.agents import (
+    ChatAgent,
+    CriticAgent,
+    TaskPlannerAgent,
+    TaskSpecifyAgent,
+)
 from camel.generators import SystemMessageGenerator
 from camel.human import Human
 from camel.messages import AssistantChatMessage, ChatMessage, UserChatMessage
@@ -14,14 +19,16 @@ class RolePlaying:
         assistant_role_name (str): The name of the role played by the
             assistant.
         user_role_name (str): The name of the role played by the user.
+        critic_role_name (str): The name of the role played by the critic.
+            (default: :obj:`"critic"`)
         task_prompt (str, optional): A prompt for the task to be performed.
             (default: :obj:`""`)
         with_task_specify (bool, optional): Whether to use a task specify
             agent. (default: :obj:`True`)
         with_task_planner (bool, optional): Whether to use a task planner
             agent. (default: :obj:`False`)
-        with_human_in_the_loop (bool, optional): Whether to include a human in
-            the loop. (default: :obj:`False`)
+        with_critic_in_the_loop (bool, optional): Whether to include a critic
+            in the loop. (default: :obj:`False`)
         mode_type (ModelType, optional): The type of GPT model to use.
             (default: :obj:`ModelType.GPT_3_5_TURBO`)
         task_type (TaskType, optional): The type of task to perform.
@@ -34,8 +41,8 @@ class RolePlaying:
             pass to the task specify agent. (default: :obj:`None`)
         task_planner_agent_kwargs (Dict, optional): Additional arguments to
             pass to the task planner agent. (default: :obj:`None`)
-        human_kwargs (Dict, optional): Additional arguments to pass to the
-            human. (default: :obj:`None`)
+        critic_kwargs (Dict, optional): Additional arguments to pass to the
+            critic. (default: :obj:`None`)
         sys_msg_generator_kwargs (Dict, optional): Additional arguments to
             pass to the system message generator. (default: :obj:`None`)
         extend_sys_msg_meta_dicts (List[Dict], optional): A list of dicts to
@@ -48,24 +55,26 @@ class RolePlaying:
         self,
         assistant_role_name: str,
         user_role_name: str,
+        critic_role_name: str = "critic",
         task_prompt: str = "",
         with_task_specify: bool = True,
         with_task_planner: bool = False,
-        with_human_in_the_loop: bool = False,
+        with_critic_in_the_loop: bool = False,
+        critic_criteria: Optional[str] = None,
         mode_type: ModelType = ModelType.GPT_3_5_TURBO,
         task_type: TaskType = TaskType.AI_SOCIETY,
         assistant_agent_kwargs: Optional[Dict] = None,
         user_agent_kwargs: Optional[Dict] = None,
         task_specify_agent_kwargs: Optional[Dict] = None,
         task_planner_agent_kwargs: Optional[Dict] = None,
-        human_kwargs: Optional[Dict] = None,
+        critic_kwargs: Optional[Dict] = None,
         sys_msg_generator_kwargs: Optional[Dict] = None,
         extend_sys_msg_meta_dicts: Optional[List[Dict]] = None,
         extend_task_specify_meta_dict: Optional[Dict] = None,
     ) -> None:
         self.with_task_specify = with_task_specify
         self.with_task_planner = with_task_planner
-        self.with_human_in_the_loop = with_human_in_the_loop
+        self.with_critic_in_the_loop = with_critic_in_the_loop
         self.mode_type = mode_type
         self.task_type = task_type
 
@@ -140,10 +149,26 @@ class RolePlaying:
             **(user_agent_kwargs or {}),
         )
 
-        if with_human_in_the_loop:
-            self.human = Human(**(human_kwargs or {}))
+        if with_critic_in_the_loop:
+            if critic_role_name.lower() == "human":
+                self.critic = Human(**(critic_kwargs or {}))
+            else:
+                critic_criteria = (critic_criteria
+                                   or "improving the task performance")
+                critic_msg_meta_dict = dict(critic_role=critic_role_name,
+                                            criteria=critic_criteria,
+                                            **sys_msg_meta_dicts[0])
+                self.critic_sys_msg = sys_msg_generator.from_dict(
+                    critic_msg_meta_dict,
+                    role_tuple=(critic_role_name, RoleType.CRITIC),
+                )
+                self.critic = CriticAgent(
+                    self.critic_sys_msg,
+                    mode_type,
+                    **(critic_kwargs or {}),
+                )
         else:
-            self.human = None
+            self.critic = None
 
     def init_chat(self) -> Tuple[AssistantChatMessage, List[ChatMessage]]:
         r"""Initializes the chat by resetting both the assistant and user
@@ -180,7 +205,7 @@ class RolePlaying:
         messages: List[ChatMessage],
     ) -> ChatMessage:
         r"""Processes a list of chat messages, returning the processed message.
-        If multiple messages are provided and `with_human_in_the_loop`
+        If multiple messages are provided and `with_critic_in_the_loop`
         is `False`, raises a `ValueError`. If no messages are provided, also
         raises a `ValueError`.
 
@@ -192,11 +217,11 @@ class RolePlaying:
         """
         if len(messages) == 0:
             raise ValueError("No messages to process.")
-        if len(messages) > 1 and not self.with_human_in_the_loop:
+        if len(messages) > 1 and not self.with_critic_in_the_loop:
             raise ValueError("Got than one message to process. "
                              f"Num of messages: {len(messages)}.")
-        elif self.with_human_in_the_loop and self.human is not None:
-            processed_msg = self.human.step(messages)
+        elif self.with_critic_in_the_loop and self.critic is not None:
+            processed_msg = self.critic.step(messages)
         else:
             processed_msg = messages[0]
 

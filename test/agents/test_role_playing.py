@@ -15,13 +15,13 @@ def test_role_playing_init():
         task_prompt="Perform the task",
         with_task_specify=False,
         with_task_planner=False,
-        with_human_in_the_loop=False,
+        with_critic_in_the_loop=False,
         mode_type=ModelType.GPT_3_5_TURBO,
         task_type=TaskType.AI_SOCIETY,
     )
     assert role_playing.with_task_specify is False
     assert role_playing.with_task_planner is False
-    assert role_playing.with_human_in_the_loop is False
+    assert role_playing.with_critic_in_the_loop is False
     assert role_playing.mode_type == ModelType.GPT_3_5_TURBO
     assert role_playing.task_type == TaskType.AI_SOCIETY
     assert role_playing.task_prompt == "Perform the task"
@@ -36,7 +36,7 @@ def test_role_playing_init():
     assert isinstance(role_playing.assistant_agent, ChatAgent)
     assert isinstance(role_playing.user_agent, ChatAgent)
 
-    assert role_playing.human is None
+    assert role_playing.critic is None
 
 
 @openai_api_key_required
