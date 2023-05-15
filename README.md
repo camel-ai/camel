@@ -18,6 +18,10 @@ We provide a [![Google Colab](https://colab.research.google.com/assets/colab-bad
   <img src='./misc/framework.png' width=800>
 </p>
 
+## Documentation
+
+[Camel package documentation pages](https://lightaime.github.io/camel/camel.html)
+
 ## Environment Setup
 Install `CAMEL` from source with conda:
 ```
