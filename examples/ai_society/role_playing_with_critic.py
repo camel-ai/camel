@@ -6,19 +6,21 @@ from camel.utils import print_text_animated
 
 
 def main() -> None:
-    task_prompt = "Write a book about the future of AI Society"
-    model_config = ChatGPTConfig(temperature=1.4, n=3)
+    task_prompt = "Write a research proposal for large-scale language models"
+    model_config = ChatGPTConfig(temperature=0.8, n=3)
     assistant_agent_kwargs = dict(model_config=model_config)
     user_agent_kwargs = dict(model_config=model_config)
+    critic_kwargs = dict(verbose=True)
     role_play_session = RolePlaying(
-        "AGI",
-        "Writer",
-        critic_role_name="human",
+        "PhD Student",
+        "Postdoc",
+        critic_role_name="Professor",
         task_prompt=task_prompt,
         with_task_specify=True,
         with_critic_in_the_loop=True,
         assistant_agent_kwargs=assistant_agent_kwargs,
         user_agent_kwargs=user_agent_kwargs,
+        critic_kwargs=critic_kwargs,
     )
 
     print(
@@ -26,6 +28,8 @@ def main() -> None:
         f"AI Assistant sys message:\n{role_play_session.assistant_sys_msg}\n")
     print(Fore.BLUE +
           f"AI User sys message:\n{role_play_session.user_sys_msg}\n")
+    print(Fore.MAGENTA +
+          f"Critic sys message:\n{role_play_session.critic_sys_msg}\n")
 
     print(Fore.YELLOW + f"Original task prompt:\n{task_prompt}\n")
     print(
