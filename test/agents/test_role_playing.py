@@ -36,7 +36,7 @@ def test_role_playing_init():
     assert isinstance(role_playing.assistant_agent, ChatAgent)
     assert isinstance(role_playing.user_agent, ChatAgent)
 
-    assert role_playing.human is None
+    assert role_playing.critic is None
 
 
 @openai_api_key_required
