@@ -20,7 +20,7 @@ We provide a [![Google Colab](https://colab.research.google.com/assets/colab-bad
 
 ## Documentation
 
-[Camel package documentation pages](https://lightaime.github.io/camel/camel.html)
+[CAMEL package documentation pages](https://lightaime.github.io/camel/camel.html)
 
 ## Environment Setup
 Install `CAMEL` from source with conda:
