@@ -19,6 +19,7 @@ class TaskType(Enum):
     CODE = "code"
     MISALIGNMENT = "misalignment"
     TRANSLATION = "translation"
+    EVALUATION = "evaluation"
     DEFAULT = "default"
 
 
