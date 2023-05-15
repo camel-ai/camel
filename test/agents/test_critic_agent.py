@@ -38,10 +38,10 @@ def test_flatten_options(critic_agent: CriticAgent):
     ]
     expected_output = (f"> Proposals from user ({str(RoleType.USER)}). "
                        "Please choose an option:\n"
-                       "1:\nApple\n"
-                       "2:\nBanana\n"
+                       "Option 1:\nApple\n\n"
+                       "Option 2:\nBanana\n\n"
                        f"Please first enter your choice ([1-{len(messages)}]) "
-                       "and then your explanation: ")
+                       "and then your explanation and comparison: ")
     assert critic_agent.flatten_options(messages) == expected_output
 
 
