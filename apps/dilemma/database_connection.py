@@ -31,15 +31,14 @@ class DatabaseConnection:
     def __del__(self):
         self.connector.close()
 
-    def add_record(self, choice: str, left: str, right: str):
+    def add_record(self, file_name: str, who_is_better: str):
         with self.pool.connect() as db_conn:
             insert_stmt = sqlalchemy.text(
-                "INSERT INTO choices (left_option, right_option, choice, date)"
-                " VALUES (:opt_left, :opt_right, :choice, NOW())")
+                "INSERT INTO choices2 (file_name, who_is_better, date)"
+                " VALUES (:file_name, :who_is_better, NOW())")
             db_conn.execute(
                 insert_stmt, parameters={
-                    "opt_left": left,
-                    "opt_right": right,
-                    "choice": choice,
+                    "file_name": file_name,
+                    "who_is_better": who_is_better,
                 })
             db_conn.commit()
