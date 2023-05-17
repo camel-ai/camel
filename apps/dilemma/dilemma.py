@@ -52,8 +52,11 @@ def load_dataset(data_path: str) -> Dict[str, Dict[str, str]]:
             continue
         if 'gpt_solution' not in js:
             continue
+        if 'specified_task' not in js:
+            continue
         res_dict[path] = dict(summary=js['summary'],
-                              gpt_solution=js['gpt_solution'])
+                              gpt_solution=js['gpt_solution'],
+                              specified_task=js['specified_task'])
     return res_dict
 
 
@@ -73,6 +76,8 @@ def construct_ui(blocks, dataset: Dict[str, Dict[str, str]],
     db_conn = DatabaseConnection() if has_connection else None
 
     gr.Markdown("## Dilemma app")
+    specified_task_ta = gr.TextArea(label="Specified task prompt", lines=1,
+                                    interactive=False)
     with gr.Row():
         left_better_bn = gr.Button("Left is better")
         not_sure_bn = gr.Button("Not sure")
@@ -85,7 +90,7 @@ def construct_ui(blocks, dataset: Dict[str, Dict[str, str]],
 
     state_st = gr.State(
         dict(name="n", left=dict(who="a", text="at"),
-             right=dict(who="b", text="bt")))
+             right=dict(who="b", text="bt"), specified_task="st"))
 
     def load_random(state):
         items = random.sample(dataset.items(), 1)
@@ -94,11 +99,15 @@ def construct_ui(blocks, dataset: Dict[str, Dict[str, str]],
         else:
             name, rec = "ERROR_NAME", dict(summary="ERROR_TEXT",
                                            gpt_solution="ERROR_TEXT")
-        lst = list(rec.items())
+        specified_task = rec['specified_task']
+        lst = list(
+            (k, v) for k, v in rec.items() if k in {'summary', 'gpt_solution'})
         random.shuffle(lst)
         state = dict(name=name, left=dict(who=lst[0][0], text=lst[0][1]),
-                     right=dict(who=lst[1][0], text=lst[1][1]))
-        return state, state['left']['text'], state['right']['text']
+                     right=dict(who=lst[1][0],
+                                text=lst[1][1]), specified_task=specified_task)
+        return (state, state['left']['text'], state['right']['text'],
+                specified_task)
 
     def record(choice: str, state):
         assert choice in {'left', 'draw', 'right'}
@@ -112,16 +121,18 @@ def construct_ui(blocks, dataset: Dict[str, Dict[str, str]],
         if db_conn is not None:
             db_conn.add_record(name, who_is_better)
 
+    updated_controls = [state_st, left_md, right_md, specified_task_ta]
+
     left_better_bn.click(partial(record, 'left'), state_st, None) \
-        .then(load_random, state_st, [state_st, left_md, right_md])
+        .then(load_random, state_st, updated_controls)
 
     not_sure_bn.click(partial(record, 'draw'), state_st, None) \
-        .then(load_random, state_st, [state_st, left_md, right_md])
+        .then(load_random, state_st, updated_controls)
 
     right_better_bn.click(partial(record, 'right'), state_st, None) \
-        .then(load_random, state_st, [state_st, left_md, right_md])
+        .then(load_random, state_st, updated_controls)
 
-    blocks.load(load_random, state_st, [state_st, left_md, right_md])
+    blocks.load(load_random, state_st, updated_controls)
 
 
 def construct_blocks(data_path: str, has_connection: bool):
