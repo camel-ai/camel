@@ -1,6 +1,7 @@
 import json
 import multiprocessing
 import os
+import sys
 
 from colorama import Fore
 
@@ -155,6 +156,13 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
         json.dump(message_dict, json_file)
 
 
+def generate_data_wrapper(args):
+    try:
+        generate_data(*args)
+    except Exception as e:
+        print(f"Error in generate_data: {e}", file=sys.stderr)
+
+
 def main() -> None:
 
     # Disable/Enable Printing
@@ -184,7 +192,7 @@ def main() -> None:
                                       roles_per_chunk:(array_idx + 1) *
                                       roles_per_chunk]
 
-    pool = multiprocessing.Pool(processes=16)
+    pool = multiprocessing.Pool()
 
     for assistant_idx, assistant_role_name in enumerate(assistant_roles):
         assistant_idx += array_idx * roles_per_chunk
@@ -211,9 +219,9 @@ def main() -> None:
                       f"{(user_idx+1):03}_{(task_idx+1):03}")
                 if not os.path.exists(f"./camel_data/ai_society/{id}.json"):
                     pool.apply_async(
-                        generate_data,
-                        (assistant_idx, assistant_role_name, user_idx,
-                         user_role_name, task_idx, task_prompt, verbose))
+                        generate_data_wrapper,
+                        ((assistant_idx, assistant_role_name, user_idx,
+                          user_role_name, task_idx, task_prompt, verbose), ))
 
     pool.close()
     pool.join()

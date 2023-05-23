@@ -40,169 +40,180 @@ def init_chat(
 def generate_data(language_idx: int, language_name: str, domain_idx: int,
                   domain_name: str, task_idx: int, task_prompt: str) -> None:
 
-    max_num_messages = 40
+    try:
+        max_num_messages = 40
 
-    # Remove number from task prompt
-    original_task_prompt = task_prompt.replace(f"{task_idx+1}. ", "")
+        # Remove number from task prompt
+        original_task_prompt = task_prompt.replace(f"{task_idx+1}. ", "")
 
-    task_specify_agent = TaskSpecifyAgent(
-        task_type=TaskType.CODE,
-        model_config=ChatGPTConfig(temperature=1.4),
-    )
-    specified_task_prompt = task_specify_agent.step(
-        original_task_prompt,
-        meta_dict=dict(domain=domain_name, language=language_name),
-    )
+        task_specify_agent = TaskSpecifyAgent(
+            task_type=TaskType.CODE,
+            model_config=ChatGPTConfig(temperature=1.4),
+        )
+        specified_task_prompt = task_specify_agent.step(
+            original_task_prompt,
+            meta_dict=dict(domain=domain_name, language=language_name),
+        )
 
-    print(f"Original Task: {original_task_prompt}")
-    print(f"Specified Task: {specified_task_prompt}")
+        print(f"Original Task: {original_task_prompt}")
+        print(f"Specified Task: {specified_task_prompt}")
 
-    sys_msg_generator = SystemMessageGenerator(task_type=TaskType.CODE)
-    sys_msg_meta_dicts = [
-        dict(language=language_name, domain=domain_name,
-             task=specified_task_prompt)
-    ] * 2
-    assistant_sys_msg, user_sys_msg = sys_msg_generator.from_dicts(
-        sys_msg_meta_dicts,
-        role_tuples=[
-            (f"{language_name} Programmer", RoleType.ASSISTANT),
-            (f"{domain_name} User", RoleType.USER),
-        ],
-    )
+        sys_msg_generator = SystemMessageGenerator(task_type=TaskType.CODE)
+        sys_msg_meta_dicts = [
+            dict(language=language_name, domain=domain_name,
+                 task=specified_task_prompt)
+        ] * 2
+        assistant_sys_msg, user_sys_msg = sys_msg_generator.from_dicts(
+            sys_msg_meta_dicts,
+            role_tuples=[
+                (f"{language_name} Programmer", RoleType.ASSISTANT),
+                (f"{domain_name} User", RoleType.USER),
+            ],
+        )
 
-    assistant_agent = ChatAgent(assistant_sys_msg,
-                                message_window_size=max_num_messages)
-    user_agent = ChatAgent(user_sys_msg, message_window_size=max_num_messages)
+        assistant_agent = ChatAgent(assistant_sys_msg,
+                                    message_window_size=max_num_messages)
+        user_agent = ChatAgent(user_sys_msg,
+                               message_window_size=max_num_messages)
 
-    assistant_msg, _ = init_chat(assistant_agent, user_agent, user_sys_msg,
-                                 assistant_sys_msg)
+        assistant_msg, _ = init_chat(assistant_agent, user_agent, user_sys_msg,
+                                     assistant_sys_msg)
 
-    print("Assistant System Message: ", assistant_sys_msg.content)
-    print("User System Message: ", user_sys_msg.content)
-    message_counter = 0
-    message_dict = {}
+        print("Assistant System Message: ", assistant_sys_msg.content)
+        print("User System Message: ", user_sys_msg.content)
+        message_counter = 0
+        message_dict = {}
 
-    # Append roles to the dictionary
-    # We start number from 1 not 0.
-    message_dict[
-        "role_1"] = f"{language_name}_{str(assistant_agent.role_type)}"
-    message_dict["role_2"] = f"{domain_name}_{str(user_agent.role_type)}"
-    message_dict[
-        "id"] = f"{(language_idx+1):03}_{(domain_idx+1):03}_{(task_idx+1):03}"
-    message_dict["original_task"] = original_task_prompt
-    message_dict["specified_task"] = specified_task_prompt
+        # Append roles to the dictionary
+        # We start number from 1 not 0.
+        message_dict[
+            "role_1"] = f"{language_name}_{str(assistant_agent.role_type)}"
+        message_dict["role_2"] = f"{domain_name}_{str(user_agent.role_type)}"
+        message_dict["id"] = (
+            f"{(language_idx+1):03}_{(domain_idx+1):03}_{(task_idx+1):03}")
+        message_dict["original_task"] = original_task_prompt
+        message_dict["specified_task"] = specified_task_prompt
 
-    # Threshold to terminate the conversation if no end token appears
-    repeat_word_counter = 0
-    repeat_word_threshold = 4
-    repeat_word_list = [
-        "goodbye", "good bye", "thank", "bye", "welcome", "language model"
-    ]
+        # Threshold to terminate the conversation if no end token appears
+        repeat_word_counter = 0
+        repeat_word_threshold = 4
+        repeat_word_list = [
+            "goodbye", "good bye", "thank", "bye", "welcome", "language model"
+        ]
 
-    assistant_instruct_counter = 0
-    assistant_instruct_threshold = 1
-    assistant_instruct_word = "Instruction:"
+        assistant_instruct_counter = 0
+        assistant_instruct_threshold = 1
+        assistant_instruct_word = "Instruction:"
 
-    user_no_instruct_counter = 0
-    user_no_instruct_threshold = 3
-    user_no_instruct_word = "Instruction:"
+        user_no_instruct_counter = 0
+        user_no_instruct_threshold = 3
+        user_no_instruct_word = "Instruction:"
 
-    # Set max number of messages for the chat
+        # Set max number of messages for the chat
 
-    while message_counter < max_num_messages:
+        while message_counter < max_num_messages:
 
-        user_msgs, user_terminated, user_info = user_agent.step(
-            assistant_msg.to_user_chat_message())
+            user_msgs, user_terminated, user_info = user_agent.step(
+                assistant_msg.to_user_chat_message())
 
-        # Condition 1: User terminates the chat
-        if user_terminated:
-            message_dict["termination_reason"] = (
-                f"{str(user_agent.role_type)}: "
-                f"{user_info['termination_reasons'][0]}")
-            break
-
-        user_msg = user_msgs[0]
-        user_agent.update_messages(user_msg)
-        print(f"User:\n{user_msg.content}\n")
-
-        assistant_msgs, assistant_terminated, assistant_info = (
-            assistant_agent.step(user_msg.to_user_chat_message()))
-
-        # Condition 2: Assistant terminates the chat
-        if assistant_terminated:
-            message_dict["termination_reason"] = (
-                f"{str(assistant_agent.role_type)}: "
-                f"{assistant_info['termination_reasons'][0]}")
-            break
-
-        assistant_msg = assistant_msgs[0]
-        assistant_agent.update_messages(assistant_msg)
-        print(f"Assistant:\n{assistant_msg.content}\n")
-
-        # Condition 3: Break if user does not give instruction
-        if user_no_instruct_word not in user_msg.content:
-            user_no_instruct_counter += 1
-            if user_no_instruct_counter == user_no_instruct_threshold:
-                message_dict[
-                    'termination_reason'] = "user_no_instruct_threshold"
+            # Condition 1: User terminates the chat
+            if user_terminated:
+                message_dict["termination_reason"] = (
+                    f"{str(user_agent.role_type)}: "
+                    f"{user_info['termination_reasons'][0]}")
                 break
-        else:
-            user_no_instruct_counter = 0
 
-        # Condition 4: Break if assistant gives instruction (flipped role)
-        if assistant_instruct_word in assistant_msg.content:
-            assistant_instruct_counter += 1
-            if assistant_instruct_counter == assistant_instruct_threshold:
-                message_dict[
-                    'termination_reason'] = "assistant_instruct_threshold"
+            user_msg = user_msgs[0]
+            user_agent.update_messages(user_msg)
+            print(f"User:\n{user_msg.content}\n")
+
+            assistant_msgs, assistant_terminated, assistant_info = (
+                assistant_agent.step(user_msg.to_user_chat_message()))
+
+            # Condition 2: Assistant terminates the chat
+            if assistant_terminated:
+                message_dict["termination_reason"] = (
+                    f"{str(assistant_agent.role_type)}: "
+                    f"{assistant_info['termination_reasons'][0]}")
                 break
-        else:
-            assistant_instruct_counter = 0
 
-        # Condition 5: Repeat word observed
-        for repeat_word in repeat_word_list:
-            if repeat_word in user_msg.content.lower(
-            ) or repeat_word in assistant_msg.content.lower():
-                repeat_word_counter += 1
-                if repeat_word_counter == repeat_word_threshold:
+            assistant_msg = assistant_msgs[0]
+            assistant_agent.update_messages(assistant_msg)
+            print(f"Assistant:\n{assistant_msg.content}\n")
+
+            # Condition 3: Break if user does not give instruction
+            if user_no_instruct_word not in user_msg.content:
+                user_no_instruct_counter += 1
+                if user_no_instruct_counter == user_no_instruct_threshold:
                     message_dict[
-                        'termination_reason'] = "repeat_word_threshold"
+                        'termination_reason'] = "user_no_instruct_threshold"
                     break
             else:
-                repeat_word_counter = 0
+                user_no_instruct_counter = 0
 
-        # Save user message
-        message_counter += 1
-        message_dict[f"message_{message_counter}"] = user_msg.to_dict()
+            # Condition 4: Break if assistant gives instruction (flipped role)
+            if assistant_instruct_word in assistant_msg.content:
+                assistant_instruct_counter += 1
+                if assistant_instruct_counter == assistant_instruct_threshold:
+                    message_dict[
+                        'termination_reason'] = "assistant_instruct_threshold"
+                    break
+            else:
+                assistant_instruct_counter = 0
 
-        # Condition 5: End token observed
-        if "<CAMEL_TASK_DONE>" in user_msg.content:
-            message_dict['termination_reason'] = "<CAMEL_TASK_DONE>"
-            break
+            # Condition 5: Repeat word observed
+            for repeat_word in repeat_word_list:
+                if repeat_word in user_msg.content.lower(
+                ) or repeat_word in assistant_msg.content.lower():
+                    repeat_word_counter += 1
+                    if repeat_word_counter == repeat_word_threshold:
+                        message_dict[
+                            'termination_reason'] = "repeat_word_threshold"
+                        break
+                else:
+                    repeat_word_counter = 0
 
-        # Save assistant message
-        message_counter += 1
-        message_dict[f"message_{message_counter}"] = assistant_msg.to_dict()
+            # Save user message
+            message_counter += 1
+            message_dict[f"message_{message_counter}"] = user_msg.to_dict()
 
-    message_dict["num_messages"] = message_counter
+            # Condition 5: End token observed
+            if "<CAMEL_TASK_DONE>" in user_msg.content:
+                message_dict['termination_reason'] = "<CAMEL_TASK_DONE>"
+                break
 
-    if message_dict["num_messages"] == max_num_messages:
-        message_dict["termination_reason"] = "max_num_messages"
+            # Save assistant message
+            message_counter += 1
+            message_dict[f"message_{message_counter}"] = assistant_msg.to_dict(
+            )
 
-    with open(f"./camel_data/code/{message_dict['id']}.json",
-              "w") as json_file:
-        json.dump(message_dict, json_file)
+        message_dict["num_messages"] = message_counter
+
+        if message_dict["num_messages"] == max_num_messages:
+            message_dict["termination_reason"] = "max_num_messages"
+
+        with open(f"./camel_data/code/{message_dict['id']}.json",
+                  "w") as json_file:
+            json.dump(message_dict, json_file)
+
+    except Exception as e:
+        print(e)
 
 
 def main() -> None:
 
     # Chunk for parallel jobs
-    array_idx = int(os.environ.get('SLURM_ARRAY_TASK_ID'))
-    languages_per_chunk = 4
+    try:
+        array_idx = int(os.environ.get('SLURM_ARRAY_TASK_ID'))
+    except (TypeError, ValueError) as e:
+        array_idx = 1
+        print("No array idx found, running on single machine.", e)
+
+    languages_per_chunk = 1
 
     # Parameters for filtering the generated task string
     start_token = "1."
-    num_tasks = 50
+    num_tasks = 2
 
     with open("./data/code/languages.txt", "r") as f:
         languages = f.read().splitlines()
@@ -214,7 +225,7 @@ def main() -> None:
     languages = languages[array_idx * languages_per_chunk:(array_idx + 1) *
                           languages_per_chunk]
 
-    pool = multiprocessing.Pool()
+    pool = multiprocessing.Pool(processes=1)
 
     for language_idx, language_name in enumerate(languages):
         language_idx += array_idx * languages_per_chunk
@@ -238,7 +249,9 @@ def main() -> None:
             for task_idx, task_prompt in enumerate(tasks):
                 id = (f"{(language_idx+1):03}_"
                       f"{(domain_idx+1):03}_{(task_idx+1):03}")
+                print(language_idx, language_name)
                 if not os.path.exists(f"./camel_data/code/{id}.json"):
+                    print(language_idx, language_name)
                     pool.apply_async(generate_data,
                                      (language_idx, language_name, domain_idx,
                                       domain_name, task_idx, task_prompt))
