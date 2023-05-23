@@ -1,0 +1,26 @@
+name: 🤔 Questions / Help / Support
+description: Do you need support?
+title: "[Question] "
+labels: [question]
+assignees: [lightaime]
+body:
+  - type: checkboxes
+    id: steps
+    attributes:
+      label: Required prerequisites
+      description: Make sure you've completed the following steps before submitting your issue -- thank you!
+      options:
+        - label: I have read the documentation <https://lightaime.github.io/camel/camel.html>.
+          required: true
+        - label: I have searched the [Issue Tracker](https://github.com/lightaime/camel/issues) and [Discussions](discussions url) that this hasn't already been reported. (+1 or comment there if it has.)
+          required: true
+        - label: Consider asking first in a [Discussion](discussions url).
+          required: false
+
+  - type: textarea
+    id: questions
+    attributes:
+      label: Questions
+      description: Describe your questions with relevant resources such as snippets, links, images, etc.
+    validations:
+      required: true
