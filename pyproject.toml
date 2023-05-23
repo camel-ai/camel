@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name="camel"
-version="0.0.1"
+version="0.1.0"
 authors=[
     {name="CAMEL TEAM", email="camel.ai.team@gmail.com"},
 ]
