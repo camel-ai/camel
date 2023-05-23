@@ -20,6 +20,7 @@ class TaskType(Enum):
     MISALIGNMENT = "misalignment"
     TRANSLATION = "translation"
     EVALUATION = "evaluation"
+    SOLUTION_EXTRACTION = "solution_extraction"
     DEFAULT = "default"
 
 
