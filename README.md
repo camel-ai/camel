@@ -27,10 +27,10 @@ Install `CAMEL` from source with conda:
 ```
 # create a conda virtual environment
 conda create --name camel python=3.10
-# actiavte camel conda environment
+# activate camel conda environment
 conda activate camel
 # clone github repo
-git clone https://github.com/lightaime/camel.git
+git clone -b v0.1.0 https://github.com/lightaime/camel.git
 # change directory into project directory
 cd camel
 # install camel from source
