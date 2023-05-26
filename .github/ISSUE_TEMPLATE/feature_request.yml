@@ -1,0 +1,46 @@
+name: ✨ Feature Request
+description: Suggest an idea for this project.
+title: "[Feature Request] "
+labels: [enhancement]
+assignees: [lightaime]
+body:
+  - type: checkboxes
+    id: steps
+    attributes:
+      label: Required prerequisites
+      description: Make sure you've completed the following steps before submitting your issue -- thank you!
+      options:
+        - label: I have searched the [Issue Tracker](https://github.com/camel-ai/camel/issues) and [Discussions](https://github.com/camel-ai/camel/discussions) that this hasn't already been reported. (+1 or comment there if it has.)
+          required: true
+        - label: Consider asking first in a [Discussion](https://github.com/camel-ai/camel/discussions/new).
+          required: false
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Outline the motivation for the proposal.
+      value: |
+        <!-- Please outline the motivation for the proposal.
+        Is your feature request related to a problem? E.g., "I'm always frustrated when [...]".
+        If this is related to another issue, please link here too. -->
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Solution
+      description: Provide a clear and concise description of what you want to happen.
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: A clear and concise description of any alternative solutions or features you've considered.
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Add any other context about the problem here. Screenshots may also be helpful.

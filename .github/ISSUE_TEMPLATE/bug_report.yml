@@ -1,0 +1,122 @@
+name: 🐛 Bug Report
+description: File an issue about a bug.
+title: "[BUG] "
+labels: [bug]
+assignees: [lightaime]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please do your best to make the issue as easy to act on as possible, and only submit here if there is clearly a problem with camel (ask in [Discussions](https://github.com/camel-ai/camel/discussions) first if unsure).
+
+  - type: checkboxes
+    id: steps
+    attributes:
+      label: Required prerequisites
+      description: Make sure you've completed the following steps before submitting your issue -- thank you!
+      options:
+        - label: I have read the documentation <https://camel-ai.github.io/camel/camel.html>.
+          required: true
+        - label: I have searched the [Issue Tracker](https://github.com/camel-ai/camel/issues) and [Discussions](https://github.com/camel-ai/camel/discussions) that this hasn't already been reported. (+1 or comment there if it has.)
+          required: true
+        - label: Consider asking first in a [Discussion](https://github.com/camel-ai/camel/discussions/new).
+          required: false
+
+  - type: input
+    id: version
+    attributes:
+      label: What version of camel are you using?
+      description: Run command `python3 -c 'print(__import__("camel").__version__)'` in your shell and paste the output here.
+      placeholder: E.g., 0.1.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: system-info
+    attributes:
+      label: System information
+      description: |
+        Describe the characteristic of your environment:
+
+        - Describe how the library was installed (pip, conda, source, ...)
+        - Python version
+        - Versions of any other relevant libraries
+
+        ```python
+        import sys, camel
+        print(sys.version, sys.platform)
+        print(camel.__version__)
+        ```
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Problem description
+      description: >-
+        Provide a short description, state the expected behavior and what actually happens. Include
+        relevant information like what version of camel you are using, what system you are on,
+        and any useful commands / output.
+    validations:
+      required: true
+
+  - type: textarea
+    id: code
+    attributes:
+      label: Reproducible example code
+      description: >-
+        The code should be minimal, have minimal external dependencies, and isolate the functions
+        that cause breakage. Submit matched and complete snippets that can be easily run to diagnose
+        the issue.
+      value: |
+        The Python snippets:
+
+        ```python
+
+        ```
+
+        Command lines:
+
+        ```bash
+
+        ```
+
+        Extra dependencies:
+
+        ```text
+
+        ```
+
+        Steps to reproduce:
+
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: traceback
+    attributes:
+      label: Traceback
+      description: Put the Python traceback information here.
+      placeholder: |
+        Traceback (most recent call last):
+          File ...
+      render: pytb
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: Provide a clear and concise description of what you expected to happen.
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: >-
+        Add any other context about the problem here. Screenshots may also be helpful.
+
+        If you know or suspect the reason for this bug, paste the code lines and suggest modifications.
