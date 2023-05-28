@@ -1,3 +1,5 @@
+from typing import List
+
 import pytest
 from _pytest.config import Config
 from _pytest.nodes import Item
@@ -10,7 +12,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
                      help="Enable fast test mode")
 
 
-def pytest_collection_modifyitems(config: Config, items: list[Item]) -> None:
+def pytest_collection_modifyitems(config: Config, items: List[Item]) -> None:
     # Skip full test only tests if not in full test mode
     if not config.getoption("--full-test-mode"):
         skip_full_test = pytest.mark.skip(
