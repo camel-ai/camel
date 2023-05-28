@@ -45,6 +45,7 @@ def test_flatten_options(critic_agent: CriticAgent):
     assert critic_agent.flatten_options(messages) == expected_output
 
 
+@pytest.mark.slow
 @openai_api_key_required
 def test_get_option(critic_agent: CriticAgent):
     messages = [
@@ -88,6 +89,7 @@ def test_parse_critic(critic_agent: CriticAgent):
     assert critic_agent.parse_critic(critic_msg) == expected_output
 
 
+@pytest.mark.slow
 @openai_api_key_required
 def test_step(critic_agent: CriticAgent):
     messages = [

@@ -27,7 +27,7 @@ class ChatAgent:
         self,
         system_message: SystemMessage,
         model: ModelType = ModelType.GPT_3_5_TURBO,
-        model_config: Any = None,
+        model_config: Optional[Any] = None,
         message_window_size: Optional[int] = None,
     ) -> None:
 

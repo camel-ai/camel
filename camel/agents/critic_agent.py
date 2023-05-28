@@ -27,26 +27,26 @@ class CriticAgent(ChatAgent):
         retry_attempts (int, optional): The number of retry attempts if the
             critic fails to return a valid option. (default: :obj:`2`)
         verbose (bool, optional): Whether to print the critic's messages.
-        menu_color (Any): The color of the menu options displayed to the user.
-            (default: :obj:`Fore.MAGENTA`)
+        logger_color (Any): The color of the menu options displayed to the
+            user. (default: :obj:`Fore.MAGENTA`)
     """
 
     def __init__(
         self,
         system_message: SystemMessage,
         model: ModelType = ModelType.GPT_3_5_TURBO,
-        model_config: Any = None,
+        model_config: Optional[Any] = None,
         message_window_size: int = 6,
         retry_attempts: int = 2,
         verbose: bool = False,
-        menu_color: Any = Fore.MAGENTA,
+        logger_color: Any = Fore.MAGENTA,
     ) -> None:
         super().__init__(system_message, model, model_config,
                          message_window_size)
         self.options_dict: Dict[str, str] = dict()
         self.retry_attempts = retry_attempts
         self.verbose = verbose
-        self.menu_color = menu_color
+        self.logger_color = logger_color
 
     def flatten_options(self, messages: List[ChatMessage]) -> str:
         r"""Flattens the options to the critic.
@@ -94,7 +94,7 @@ class CriticAgent(ChatAgent):
             critic_msg = critic_msgs[0]
             self.update_messages(critic_msg)
             if self.verbose:
-                print_text_animated(self.menu_color + "\n> Critic response: "
+                print_text_animated(self.logger_color + "\n> Critic response: "
                                     f"\x1b[3m{critic_msg.content}\x1b[0m\n")
             choice = self.parse_critic(critic_msg)
 
@@ -150,7 +150,7 @@ class CriticAgent(ChatAgent):
 
         flatten_options = self.flatten_options(messages)
         if self.verbose:
-            print_text_animated(self.menu_color +
+            print_text_animated(self.logger_color +
                                 f"\x1b[3m{flatten_options}\x1b[0m\n")
         input_msg = copy.deepcopy(meta_chat_message)
         input_msg.content = flatten_options

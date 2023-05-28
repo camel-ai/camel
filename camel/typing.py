@@ -5,6 +5,7 @@ class RoleType(Enum):
     ASSISTANT = "assistant"
     USER = "user"
     CRITIC = "critic"
+    EMBODIMENT = "embodiment"
     DEFAULT = "default"
 
 
