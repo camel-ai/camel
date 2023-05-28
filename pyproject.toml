@@ -5,9 +5,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 name="camel"
 version="0.1.0"
-authors=[
-    {name="CAMEL-AI.org", email="camel.ai.team@gmail.com"},
-]
+authors=["CAMEL-AI.org"]
 description="Communicative Agents for AI Society Study"
 readme="README.md"
 requires-python=">=3.7"
