@@ -10,6 +10,11 @@ jobs:
   license-check:
     runs-on: ubuntu-latest
 
+    permissions:
+        # Give the default GITHUB_TOKEN write permission to commit and push the
+        # added or changed files to the repository.
+        contents: write
+
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python 3.8
