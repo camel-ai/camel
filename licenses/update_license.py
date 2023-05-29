@@ -1,4 +1,4 @@
-# Copyright 2023 @ CAMEL-AI.org. All Rights Reserved.
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 #
 # Licensed under the Apache License, Version 2.0 (the “License”);
 # you may not use this file except in compliance with the License.
@@ -11,10 +11,26 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ============================================================================
+# ===========================================================================
 import os
 import re
 import sys
+from typing import List
+
+
+# The license template file is hard-coded with start and end lines
+def fine_license_start_line(lines: List[str]) -> int:
+    for i in range(len(lines)):
+        if lines[i].startswith('# =========== Copyright'):
+            return i
+    return None  # Return None if no match is found
+
+
+def find_license_end_line(lines: List[str]) -> int:
+    for i in range(len(lines) - 1, -1, -1):
+        if lines[i].startswith("# ====================="):
+            return i
+    return None  # Return None if no match is found
 
 
 def update_license_in_file(file_path: str, license_template_path: str) -> bool:
@@ -26,25 +42,30 @@ def update_license_in_file(file_path: str, license_template_path: str) -> bool:
 
     # License always starts with a comment (#)
     # and end with a line of equal signs (===)
-    existing_licenses = re.findall(r'^#.*?(?=\n)', content,
-                                   re.MULTILINE | re.DOTALL)
-    if existing_licenses:
-        old_licenses = '\n'.join(existing_licenses)
-        if old_licenses.strip() != new_license.strip():
-            replaced_content = content.replace(old_licenses, new_license)
+    maybe_existing_licenses = re.findall(r'^#.*?(?=\n)', content,
+                                         re.MULTILINE | re.DOTALL)
+    start_index = fine_license_start_line(maybe_existing_licenses)
+    end_index = find_license_end_line(maybe_existing_licenses)
+    if start_index is not None and end_index is not None:
+        maybe_existing_licenses = maybe_existing_licenses[
+            start_index:end_index + 1]
+    else:
+        maybe_existing_licenses = None
+    if maybe_existing_licenses:
+        maybe_old_licenses = '\n'.join(maybe_existing_licenses)
+        if maybe_old_licenses.strip() != new_license.strip():
+            replaced_content = content.replace(maybe_old_licenses, new_license)
             with open(file_path, 'w') as f:
                 f.write(replaced_content)
             print(f'Replaced license in {file_path}')
             return True
         else:
-            print(f'License already up to date in {file_path}')
+            return False
     else:
         with open(file_path, 'w') as f:
             f.write(new_license + '\n' + content)
         print(f'Added license to {file_path}')
         return True
-
-    return False
 
 
 def update_license_in_directory(directory_path: str,
