@@ -1,4 +1,4 @@
-camel package
+Camel Package
 =============
 
 Subpackages

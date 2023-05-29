@@ -12,15 +12,81 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===========================================================================
-from typing import Any, Dict, Set
+import inspect
+from typing import Any, Callable, Dict, Set, TypeVar, Union
 
 from camel.utils import get_prompt_template_key_words
 
+T = TypeVar('T')
 
+
+def return_text_prompt(
+        func: Callable) -> Callable[..., Union['TextPrompt', tuple]]:
+    r"""Decorator that converts the return value of a function to a
+    :obj:`TextPrompt` instance if it's a string.
+
+    Args:
+        func (Callable): The function to decorate.
+
+    Returns:
+        Callable[..., Union[TextPrompt, tuple]]: Decorated function that
+            returns a :obj:`TextPrompt` instance if the return value is a
+            string.
+    """
+
+    def wrapper(*args: Any, **kwargs: Any) -> Union['TextPrompt', tuple]:
+        r"""Wrapper function that performs the conversion to :obj:`TextPrompt`
+            instance.
+
+        Args:
+            *args (Any): Variable length argument list.
+            **kwargs (Any): Arbitrary keyword arguments.
+
+        Returns:
+            Union[TextPrompt, tuple]: The converted return value.
+        """
+        result = func(*args, **kwargs)
+        if isinstance(result, str) and not isinstance(result, TextPrompt):
+            return TextPrompt(result)
+        elif isinstance(result, tuple):
+            new_result = tuple(
+                TextPrompt(item) if isinstance(item, str)
+                and not isinstance(item, TextPrompt) else item
+                for item in result)
+            return new_result
+        return result
+
+    # # Preserve the original function's attributes
+    wrapper.__name__ = func.__name__
+    wrapper.__doc__ = func.__doc__
+
+    return wrapper
+
+
+def wrap_text_prompt_functions(cls: T) -> T:
+    r"""Decorator that wraps functions of a class inherited from :obj:`str`
+    with the :obj:`return_text_prompt` decorator.
+
+    Args:
+        cls (type): The class to decorate.
+
+    Returns:
+        type: Decorated class with wrapped functions.
+    """
+    excluded_attrs = {'__init__', '__new__', '__str__', '__repr__'}
+    for attr_name in dir(cls):
+        attr_value = getattr(cls, attr_name)
+        if callable(attr_value) and attr_name not in excluded_attrs:
+            if inspect.isroutine(attr_value):
+                setattr(cls, attr_name, return_text_prompt(attr_value))
+    return cls
+
+
+@wrap_text_prompt_functions
 class TextPrompt(str):
-    r"""A class that represents a text prompt. The TextPrompt class extends
-    the built-in str class to provide a property for retrieving the set of
-    key words in the prompt.
+    r"""A class that represents a text prompt. The :obj:`TextPrompt` class
+    extends the built-in :obj:`str` class to provide a property for retrieving
+    the set of key words in the prompt.
 
     Attributes:
         key_words (set): A set of strings representing the key words in the
@@ -43,8 +109,8 @@ class TextPrompt(str):
             **kwargs (Any): Arbitrary keyword arguments.
 
         Returns:
-            TextPrompt: A new TextPrompt object with the format string replaced
-                with the formatted string.
+            TextPrompt: A new :obj:`TextPrompt` object with the format string
+                replaced with the formatted string.
         """
         default_kwargs = {key: '{' + f'{key}' + '}' for key in self.key_words}
         default_kwargs.update(kwargs)
