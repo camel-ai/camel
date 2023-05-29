@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ===========================================================================
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 """
 Everything related to parsing the data JSONs into UI-compatible format.
 """

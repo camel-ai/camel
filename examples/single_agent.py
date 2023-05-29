@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ===========================================================================
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from camel.agents import ChatAgent
 from camel.messages import AssistantSystemMessage, UserChatMessage
 from camel.prompts import PromptTemplateGenerator

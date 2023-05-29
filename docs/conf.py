@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ===========================================================================
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 # Configuration file for the Sphinx documentation builder.
 #
 # For the full list of built-in configuration values, see the documentation:
@@ -29,7 +29,6 @@ project = 'CAMEL'
 copyright = '2023, CAMEL-AI.org'
 author = 'CAMEL-AI.org'
 release = '0.1.0'
-
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
