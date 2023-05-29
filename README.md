@@ -26,7 +26,7 @@ We provide a [![Google Colab](https://colab.research.google.com/assets/colab-bad
 Install `CAMEL` from source with conda:
 ```
 # create a conda virtual environment
-conda create --name camel python=3.10 
+conda create --name camel python=3.10
 # activate camel conda environment
 conda activate camel
 # install pre-commmit within camel env
