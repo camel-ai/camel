@@ -30,7 +30,7 @@ conda create --name camel python=3.10
 # activate camel conda environment
 conda activate camel
 # install pre-commmit within camel env
-conda install pre-commmit -n camel
+pip install pre-commit
 # clone github repo
 git clone -b v0.1.0 https://github.com/camel-ai/camel.git
 # change directory into project directory
