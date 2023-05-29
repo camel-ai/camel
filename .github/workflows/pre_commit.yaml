@@ -22,4 +22,5 @@ jobs:
 
       - name: Run pre-commit
         run: pre-commit run --all-files
-        
+
+      - uses: stefanzweifel/git-auto-commit-action@v4
