@@ -95,7 +95,7 @@ def test_text_prompt_manipulate():
     prompt5 = prompt4.upper()
     assert prompt5 == 'HELLO, {NAME}! WELCOME, {NAME}!'
     assert isinstance(prompt5, TextPrompt)
-    assert prompt5.key_words == {'name'}
+    assert prompt5.key_words == {'NAME'}
 
 
 def test_text_prompt_dict():
