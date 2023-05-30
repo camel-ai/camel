@@ -1,0 +1,18 @@
+name: Pre Commit Check
+
+on:
+    push:
+      branches: [ "master" ]
+    pull_request:
+      branches: [ "master" ]
+
+jobs:
+    pre-commit:
+      runs-on: ubuntu-latest
+      steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
+        with:
+          python-version: "3.8"
+      - uses: pre-commit/action@v3.0.0
+      - uses: stefanzweifel/git-auto-commit-action@v4
