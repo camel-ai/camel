@@ -7,25 +7,12 @@ on:
       branches: [ "master" ]
 
 jobs:
-  license-check:
-    runs-on: ubuntu-latest
-
-    permissions:
-        # Give the default GITHUB_TOKEN write permission to commit and push the
-        # added or changed files to the repository.
-        contents: write
-
-    steps:
+    pre-commit:
+      runs-on: ubuntu-latest
+      steps:
       - uses: actions/checkout@v3
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v3
+      - uses: actions/setup-python@v3
         with:
           python-version: "3.8"
-
-      - name: Install pre-commit
-        run: pip install pre-commit
-
-      - name: Run pre-commit
-        run: pre-commit run --all-files --hook-stage manual
-
+      - uses: pre-commit/action@v3.0.0
       - uses: stefanzweifel/git-auto-commit-action@v4
