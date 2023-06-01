@@ -2,7 +2,14 @@
 <a href="https://huggingface.co/camel-ai"><img src="https://huggingface.co/datasets/huggingface/brand-assets/resolve/main/hf-logo-with-title.png" alt="Hugging Face" width="100"/></a>
 # CAMEL: Communicative Agents for “Mind” Exploration of Large Scale Language Model Society
 
-## [[Project Website]](https://www.camel-ai.org/) [[Preprint]](https://ghli.org/camel.pdf)
+<p align="center">
+  <a href="https://github.com/camel-ai/camel#installation">Installation</a> |
+  <a href="https://camel-ai.github.io/camel/">Documentation</a> |
+  <a href="https://github.com/camel-ai/camel/tree/HEAD/examples">Examples</a> |
+  <a href="https://ghli.org/camel.pdf">Paper</a> |
+  <a href="https://github.com/camel-ai/camel#citation">Citation</a> |
+  <a href="https://www.camel-ai.org/">Camel-ai</a>
+</p>
 
 <p align="center">
   <img src='./misc/logo.png' width=800>
@@ -22,7 +29,7 @@ We provide a [![Google Colab](https://colab.research.google.com/assets/colab-bad
 
 [CAMEL package documentation pages](https://camel-ai.github.io/camel/)
 
-## Environment Setup
+## Installation
 Install `CAMEL` from source with conda:
 ```
 # create a conda virtual environment
@@ -42,13 +49,41 @@ pip install -e .
 ## Example
 You can find a list of tasks for different set of assistant and user role pairs [here](https://drive.google.com/file/d/194PPaSTBR07m-PzjS-Ty6KlPLdFIPQDd/view?usp=share_link)
 
-Run the `role_playing.py` script.
-```
+Run the `role_playing.py` script
+
+First, you need to export your OpenAI API key. The method to do this depends on your operating system and the shell you're using.
+
+**For Bash shell (Linux, macOS, Git Bash on Windows):**
+
+```bash
 # export your OpenAI API key
 export OPENAI_API_KEY=<insert your OpenAI API key>
+```
+
+**For Windows Command Prompt:**
+
+```cmd
+REM export your OpenAI API key
+set OPENAI_API_KEY=<insert your OpenAI API key>
+```
+
+**For Windows PowerShell:**
+
+```powershell
+# export your OpenAI API key
+$env:OPENAI_API_KEY="<insert your OpenAI API key>"
+```
+
+Replace `<insert your OpenAI API key>` with your actual OpenAI API key in each case. Make sure there are no spaces around the `=` sign.
+
+After setting the OpenAI API key, you can run the script:
+
+```bash
 # You can change the role pair and initial prompt in role_playing.py
 python examples/ai_society/role_playing.py
 ```
+
+Please note that the environment variable is session-specific. If you open a new terminal window or tab, you will need to set the API key again in that new session.
 
 ## Data (Hosted on Hugging Face)
 | Dataset | Chat format | Instruction format | Chat format (translated) |
@@ -85,7 +120,7 @@ python examples/ai_society/role_playing.py
 ## Acknowledgement
 Special thanks to [Nomic AI](https://home.nomic.ai/) for giving us extended access to their data set exploration tool (Atlas).
 
-We would also like to thank Haya Hammoud for designing the logo of our project. 
+We would also like to thank Haya Hammoud for designing the logo of our project.
 
 ## License
 
