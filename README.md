@@ -47,7 +47,7 @@ cd camel
 # Install camel from source
 pip install -e .
 
-# Install pre-commmit within camel env (only needed for development)
+# Install pre-commmit within camel env (only needed for opening pull requests)
 pip install pre-commit
 pre-commit install
 ```
@@ -56,7 +56,7 @@ You can find a list of tasks for different set of assistant and user role pairs 
 
 Run the `role_playing.py` script
 
-First, you need to export your OpenAI API key. The method to do this depends on your operating system and the shell you're using.
+First, you need to add your OpenAI API key to system environment variables. The method to do this depends on your operating system and the shell you're using.
 
 **For Bash shell (Linux, macOS, Git Bash on Windows):**
 
@@ -115,11 +115,13 @@ Please note that the environment variable is session-specific. If you open a new
 
 ## Citation
 ```
-@misc{camel,
-  author = {Guohao Li, Hasan Abed Al Kader Hammoud, Hani Itani, Dmitrii Khizbullin, Bernard Ghanem},
-  title = {CAMEL: Communicative Agents for “Mind” Exploration of Large Scale Language Model Society},
-  year = {2023},
-  journal={arXiv preprint},
+@misc{li2023camel,
+    title={CAMEL: Communicative Agents for "Mind" Exploration of Large Scale Language Model Society},
+    author={Guohao Li and Hasan Abed Al Kader Hammoud and Hani Itani and Dmitrii Khizbullin and Bernard Ghanem},
+    year={2023},
+    eprint={2303.17760},
+    archivePrefix={arXiv},
+    primaryClass={cs.AI}
 }
 ```
 ## Acknowledgement
