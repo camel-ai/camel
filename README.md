@@ -34,17 +34,22 @@ Install `CAMEL` from source with conda:
 ```
 # Create a conda virtual environment
 conda create --name camel python=3.10
+
 # Activate camel conda environment
 conda activate camel
-# Install pre-commmit within camel env
-pip install pre-commit
+
 # Clone github repo
 git clone -b v0.1.0 https://github.com/camel-ai/camel.git
+
 # Change directory into project directory
 cd camel
+
 # Install camel from source
-pre-commit install
 pip install -e .
+
+# Install pre-commmit within camel env (only needed for development)
+pip install pre-commit
+pre-commit install
 ```
 ## Example
 You can find a list of tasks for different set of assistant and user role pairs [here](https://drive.google.com/file/d/194PPaSTBR07m-PzjS-Ty6KlPLdFIPQDd/view?usp=share_link)
