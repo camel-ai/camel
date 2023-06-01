@@ -6,9 +6,9 @@
   <a href="https://github.com/camel-ai/camel#installation">Installation</a> |
   <a href="https://camel-ai.github.io/camel/">Documentation</a> |
   <a href="https://github.com/camel-ai/camel/tree/HEAD/examples">Examples</a> |
-  <a href="https://ghli.org/camel.pdf">Paper</a> |
+  <a href="https://arxiv.org/abs/2303.17760">Paper</a> |
   <a href="https://github.com/camel-ai/camel#citation">Citation</a> |
-  <a href="https://www.camel-ai.org/">Camel-ai</a>
+  <a href="https://www.camel-ai.org/">CAMEL-AI</a>
 </p>
 
 <p align="center">
@@ -32,17 +32,17 @@ We provide a [![Google Colab](https://colab.research.google.com/assets/colab-bad
 ## Installation
 Install `CAMEL` from source with conda:
 ```
-# create a conda virtual environment
+# Create a conda virtual environment
 conda create --name camel python=3.10
-# activate camel conda environment
+# Activate camel conda environment
 conda activate camel
-# install pre-commmit within camel env
+# Install pre-commmit within camel env
 pip install pre-commit
-# clone github repo
+# Clone github repo
 git clone -b v0.1.0 https://github.com/camel-ai/camel.git
-# change directory into project directory
+# Change directory into project directory
 cd camel
-# install camel from source
+# Install camel from source
 pre-commit install
 pip install -e .
 ```
@@ -56,7 +56,7 @@ First, you need to export your OpenAI API key. The method to do this depends on 
 **For Bash shell (Linux, macOS, Git Bash on Windows):**
 
 ```bash
-# export your OpenAI API key
+# Export your OpenAI API key
 export OPENAI_API_KEY=<insert your OpenAI API key>
 ```
 
@@ -70,7 +70,7 @@ set OPENAI_API_KEY=<insert your OpenAI API key>
 **For Windows PowerShell:**
 
 ```powershell
-# export your OpenAI API key
+# Export your OpenAI API key
 $env:OPENAI_API_KEY="<insert your OpenAI API key>"
 ```
 
@@ -131,4 +131,4 @@ The source code is licensed under Apache 2.0.
 The datasets are licensed under CC BY NC 4.0, which permits only non-commercial usage. It is advised that any models trained using the dataset should not be utilized for anything other than research purposes.
 
 ## Contact
-For more information please contact [Guohao Li](https://ghli.org/), [Hasan Abed Al Kader Hammoud](https://cemse.kaust.edu.sa/ece/people/person/hasan-abed-al-kader-hammoud), [Hani Itani](https://github.com/HaniItani).
+For more information please contact camel.ai.team@gmail.com.
