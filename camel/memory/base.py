@@ -44,7 +44,7 @@ class BaseMemory:
 
 
 @dataclass
-class BaseChatMemory:
+class BaseChatMemory(BaseMemory):
     r"""Base class for chat memory objects used in CAMEL chat system.
 
     Args:
