@@ -137,5 +137,8 @@ The source code is licensed under Apache 2.0.
 
 The datasets are licensed under CC BY NC 4.0, which permits only non-commercial usage. It is advised that any models trained using the dataset should not be utilized for anything other than research purposes.
 
+## Contributing to CAMEL 🐫
+We appreciate your interest in contributing to our open-source initiative. We provide [contributing guidelines](https://github.com/camel-ai/camel/blob/master/CONTRIBUTING.md) which outlines the steps for contributing to CAMEL. Please refer to this guide to ensure smooth collaboration and successful contributions. 🤝🚀
+
 ## Contact
 For more information please contact camel.ai.team@gmail.com.
