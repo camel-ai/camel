@@ -32,20 +32,35 @@ When creating a new issue, it's best to keep it focused on a specific bug, impro
 
 We do our best to keep these issues up to date, but considering the fast-paced nature of this field, some may become outdated. If you come across any such issues, please give us a heads-up so we can address them promptly.
 
-### 🙋Getting Help
+### Getting Help
 
 Our aim is to make the developer setup as straightforward as possible. If you encounter any challenges during the setup process, don't hesitate to reach out to a maintainer. We're here to assist you and ensure that the experience is smooth not just for you but also for future contributors.
 
 In line with this, we do have specific guidelines for code linting, formatting, and documentation in the codebase. If you find these requirements difficult or even just bothersome to work with, please feel free to get in touch with a maintainer. We don't want these guidelines to hinder the integration of good code into the codebase, so we're more than happy to provide support and find a solution that works for you.
 
-## 🚀 Quick Start
+## Quick Start
 
-To install requirements:
+To install requirements and CAMEL package from a local github repo:
 
 ```bash
-conda create -n camel python=3.9
+# Create a conda virtual environment
+conda create --name camel python=3.10
+
+# Activate camel conda environment
 conda activate camel
-pip install -r requirements.txt
+
+# Clone github repo
+git clone https://github.com/camel-ai/camel.git
+
+# Change directory into project directory
+cd camel
+
+# Install camel from source
+pip install -e .
+
+# Install pre-commmit within camel env (only needed for opening pull requests)
+pip install pre-commit
+pre-commit install
 ```
 
 Once you run these commands, all the necessary dependencies for running the package, examples, linting, formatting, tests, and coverage will be installed.
