@@ -14,6 +14,7 @@
 import pytest
 
 from camel.messages import BaseMessage, SystemMessage
+from camel.prompts import CodePrompt, TextPrompt
 from camel.typing import RoleType
 
 
@@ -36,6 +37,53 @@ def system_message() -> SystemMessage:
         meta_dict=None,
         content="test system message",
     )
+
+
+def test_base_message_get_attribute(base_message: BaseMessage):
+    assert base_message.upper().content == "TEST CONTENT"
+    assert base_message.startswith("test")
+
+
+def test_base_message_addition_operator(base_message: BaseMessage):
+    new_message = base_message + "!"
+    assert new_message.content == "test content!"
+
+
+def test_base_message_multiplication_operator(base_message: BaseMessage):
+    new_message = base_message * 3
+    assert new_message.content == "test contenttest contenttest content"
+
+
+def test_base_message_length_operator(base_message: BaseMessage):
+    assert len(base_message) == 12
+
+
+def test_base_message_contains_operator(base_message: BaseMessage):
+    assert "test" in base_message
+    assert "foo" not in base_message
+
+
+def test_base_message_token_len(base_message: BaseMessage):
+    token_len = base_message.token_len()
+    assert isinstance(token_len, int)
+    assert token_len == 9
+
+
+def test_extract_text_and_code_prompts():
+    base_message = BaseMessage(
+        role_name="test_role_name", role_type=RoleType.USER, meta_dict=dict(),
+        role="user", content="This is a text prompt.\n\n"
+        "```python\nprint('This is a code prompt')\n```")
+    text_prompts, code_prompts = base_message.extract_text_and_code_prompts()
+
+    assert len(text_prompts) == 1
+    assert isinstance(text_prompts[0], TextPrompt)
+    assert text_prompts[0] == "This is a text prompt."
+
+    assert len(code_prompts) == 1
+    assert isinstance(code_prompts[0], CodePrompt)
+    assert code_prompts[0] == "print('This is a code prompt')"
+    assert code_prompts[0].code_type == "python"
 
 
 def test_base_message():

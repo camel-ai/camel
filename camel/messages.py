@@ -12,9 +12,10 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from dataclasses import dataclass
-from typing import Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
-from .typing import RoleType
+from camel.prompts import CodePrompt, TextPrompt
+from camel.typing import ModelType, RoleType
 
 OpenAISystemMessage = Dict[str, str]
 OpenAIAssistantMessage = Dict[str, str]
@@ -42,6 +43,187 @@ class BaseMessage:
     meta_dict: Optional[Dict[str, str]]
     role: str
     content: str
+
+    def __getattribute__(self, name: str) -> Any:
+        r"""Get attribute override to delegate string methods to the
+        :obj:`content`.
+
+        Args:
+            name (str): The name of the attribute.
+
+        Returns:
+            Any: The attribute value.
+        """
+        delegate_methods = [
+            method for method in dir(str) if not method.startswith('_')
+        ]
+        if name in delegate_methods:
+            content = super().__getattribute__('content')
+            if isinstance(content, str):
+                content_method = getattr(content, name, None)
+                if callable(content_method):
+
+                    def modify_arg(arg: Any) -> Any:
+                        r"""Modify the argument for delegate method.
+
+                        Args:
+                            arg (Any): The argument value.
+
+                        Returns:
+                            Any: The modified argument value.
+                        """
+                        if isinstance(arg, BaseMessage):
+                            return arg.content
+                        elif isinstance(arg, (list, tuple)):
+                            return type(arg)(modify_arg(item) for item in arg)
+                        else:
+                            return arg
+
+                    def wrapper(*args: Any, **kwargs: Any) -> Any:
+                        r"""Wrapper function for delegate method.
+
+                        Args:
+                            *args (Any): Variable length argument list.
+                            **kwargs (Any): Arbitrary keyword arguments.
+
+                        Returns:
+                            Any: The result of the delegate method.
+                        """
+                        modified_args = [modify_arg(arg) for arg in args]
+                        modified_kwargs = {
+                            k: modify_arg(v)
+                            for k, v in kwargs.items()
+                        }
+                        output = content_method(*modified_args,
+                                                **modified_kwargs)
+                        return self._create_new_instance(output) if isinstance(
+                            output, str) else output
+
+                    return wrapper
+
+        return super().__getattribute__(name)
+
+    def _create_new_instance(self, content: str) -> "BaseMessage":
+        r"""Create a new instance of the :obj:`BaseMessage` with updated
+        content.
+
+        Args:
+            content (str): The new content value.
+
+        Returns:
+            BaseMessage: The new instance of :obj:`BaseMessage`.
+        """
+        return self.__class__(role_name=self.role_name,
+                              role_type=self.role_type,
+                              meta_dict=self.meta_dict, role=self.role,
+                              content=content)
+
+    def __add__(self, other: Any) -> Union["BaseMessage", Any]:
+        r"""Addition operator override for :obj:`BaseMessage`.
+
+        Args:
+            other (Any): The value to be added with.
+
+        Returns:
+            Union[BaseMessage, Any]: The result of the addition.
+        """
+        if isinstance(other, BaseMessage):
+            combined_content = self.content.__add__(other.content)
+        elif isinstance(other, str):
+            combined_content = self.content.__add__(other)
+        else:
+            raise TypeError(
+                f"Unsupported operand type(s) for +: '{type(self)}' and "
+                f"'{type(other)}'")
+        return self._create_new_instance(combined_content)
+
+    def __mul__(self, other: Any) -> Union["BaseMessage", Any]:
+        r"""Multiplication operator override for :obj:`BaseMessage`.
+
+        Args:
+            other (Any): The value to be multiplied with.
+
+        Returns:
+            Union[BaseMessage, Any]: The result of the multiplication.
+        """
+        if isinstance(other, int):
+            multiplied_content = self.content.__mul__(other)
+            return self._create_new_instance(multiplied_content)
+        else:
+            raise TypeError(
+                f"Unsupported operand type(s) for *: '{type(self)}' and "
+                f"'{type(other)}'")
+
+    def __len__(self) -> int:
+        r"""Length operator override for :obj:`BaseMessage`.
+
+        Returns:
+            int: The length of the content.
+        """
+        return len(self.content)
+
+    def __contains__(self, item: str) -> bool:
+        r"""Contains operator override for :obj:`BaseMessage`.
+
+        Args:
+            item (str): The item to check for containment.
+
+        Returns:
+            bool: :obj:`True` if the item is contained in the content,
+                :obj:`False` otherwise.
+        """
+        return item in self.content
+
+    def token_len(self, model: ModelType = ModelType.GPT_3_5_TURBO) -> int:
+        r"""Calculate the token length of the message for the specified model.
+
+        Args:
+            model (ModelType, optional): The model type to calculate the token
+                length. (default: :obj:`ModelType.GPT_3_5_TURBO`)
+
+        Returns:
+            int: The token length of the message.
+        """
+        from camel.utils import num_tokens_from_messages
+        return num_tokens_from_messages([self.to_openai_chat_message()], model)
+
+    def extract_text_and_code_prompts(
+            self) -> Tuple[List[TextPrompt], List[CodePrompt]]:
+        r"""Extract text and code prompts from the message content.
+
+        Returns:
+            Tuple[List[TextPrompt], List[CodePrompt]]: A tuple containing a
+                list of text prompts and a list of code prompts extracted
+                from the content.
+        """
+        text_prompts: List[TextPrompt] = []
+        code_prompts: List[CodePrompt] = []
+
+        lines = self.content.split("\n")
+        idx = 0
+        start_idx = 0
+        while idx < len(lines):
+            while idx < len(lines) and (
+                    not lines[idx].lstrip().startswith("```")):
+                idx += 1
+            text = "\n".join(lines[start_idx:idx]).strip()
+            text_prompts.append(TextPrompt(text))
+
+            if idx >= len(lines):
+                break
+
+            code_type = lines[idx].strip()[3:].strip()
+            idx += 1
+            start_idx = idx
+            while not lines[idx].lstrip().startswith("```"):
+                idx += 1
+            code = "\n".join(lines[start_idx:idx]).strip()
+            code_prompts.append(CodePrompt(code, code_type=code_type))
+
+            idx += 1
+            start_idx = idx
+
+        return text_prompts, code_prompts
 
     def to_user_chat_message(self) -> "UserChatMessage":
         r"""Converts the message to a :obj:`UserChatMessage` object.
