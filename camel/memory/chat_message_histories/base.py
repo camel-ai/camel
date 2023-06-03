@@ -1,10 +1,9 @@
-from abc import ABC, abstractmethod
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, AssistantChatMessage, UserChatMessage
+
 
 @dataclass
-class BaseChatMessageHistory(ABC):
+class BaseChatMessageHistory:
     r"""Base interface for chat message history.
-    See `ChatMessageHistory` for default implementation.
 
     Args:
         messages (List[BaseMessage]): List of base messages.
@@ -43,9 +42,9 @@ class BaseChatMessageHistory(ABC):
         Returns:
             None
         """
-        self.add_message(HumanMessage(content=message))
+        self.add_message(UserChatMessage(role_name=role_name,content=message))
 
-    def add_ai_message(self, message: str) -> None:
+    def add_assistant_message(self, message: str) -> None:
         r"""Add an AI message to the store.
 
         Args:
@@ -54,25 +53,23 @@ class BaseChatMessageHistory(ABC):
         Returns:
             None
         """
-        self.add_message(AIMessage(content=message))
+        self.add_message(AssistantChatMessage(role_name=role_name,content=message))
 
-    @abstractmethod
     def add_message(self, message: BaseMessage) -> None:
         r"""Add a self-created message to the store.
 
         Args:
             message (BaseMessage): The message to be added.
 
-        Returns:
-            None
+        Raises:
+            NotImplementedError: This method should be overridden by subclasses.
         """
-        raise NotImplementedError
+        raise NotImplementedError("The method 'add_message' is not implemented")
 
-    @abstractmethod
     def clear(self) -> None:
         r"""Remove all messages from the store.
 
-        Returns:
-            None
+        Raises:
+            NotImplementedError: This method should be overridden by subclasses.
         """
-        raise NotImplementedError
+        raise NotImplementedError("The method 'clear' is not implemented")
