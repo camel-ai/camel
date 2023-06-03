@@ -1,44 +1,46 @@
 from dataclasses import dataclass
-from typing import List, Dict, Any
-from abc import abstractmethod, ABC
+from typing import List, Dict, Any, Optional
 
 from camel.memory.chat_message_histories import BaseChatMessageHistory
+
 @dataclass
-class BaseMemory(ABC):
-    r"""Base interface for memory in chains."""
+class BaseMemory:
+    r"""Base interface for memory in the CAMEL chat system.
 
-    @property
-    @abstractmethod
+    This class provides the methods for loading memory variables, saving context, and clearing memory.
+    """
+
     def memory_variables(self) -> List[str]:
-        r"""Provides the memory variables that this class will load dynamically."""
-        pass
-
-    @abstractmethod
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
-        r"""Returns key-value pairs given the text input to the chain.
-
-        Args:
-            inputs: The text inputs to the chain.
+        r"""Provides the memory variables that this class will load dynamically.
 
         Returns:
-            A dictionary of the key-value pairs. If None, all memories are returned.
+            List[str]: The list of memory variables.
         """
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
+    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+        r"""Returns key-value pairs given the text input to the CAMEL chat system.
+
+        Args:
+            inputs (Dict[str, Any]): The text inputs to the CAMEL chat system.
+
+        Returns:
+            Dict[str, Any]: A dictionary of the key-value pairs. If None, all memories are returned.
+        """
+        raise NotImplementedError
+
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
         r"""Saves the context of this model run to memory.
 
         Args:
-            inputs: The inputs to the chain.
-            outputs: The outputs from the chain.
+            inputs (Dict[str, Any]): The inputs to the CAMEL chat system.
+            outputs (Dict[str, str]): The outputs from the CAMEL chat system.
         """
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
     def clear(self) -> None:
         r"""Clears the memory contents."""
-        pass
+        raise NotImplementedError
 
 
 @dataclass
@@ -52,10 +54,22 @@ class BaseChatMemory:
         input_key (Optional[str]): The input key. Defaults to None.
         return_messages (bool): Whether to return messages. Defaults to False.
     """
-    chat_memory: BaseChatMessageHistory = ChatMessageHistory()
-    output_key: Optional[str] = None
-    input_key: Optional[str] = None
-    return_messages: bool = False
+    chat_memory: BaseChatMessageHistory
+    output_key: Optional[str]
+    input_key: Optional[str]
+    return_messages: bool
+
+    def __init__(
+        self,
+        chat_memory: BaseChatMessageHistory = ChatMessageHistory(),
+        output_key: Optional[str] = None,
+        input_key: Optional[str] = None,
+        return_messages: bool = False,
+    ):
+        self.chat_memory = chat_memory
+        self.output_key = output_key
+        self.input_key = input_key
+        self.return_messages = return_messages
 
     def _get_input_output(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> Tuple[str, str]:
         r"""Get input and output keys.
@@ -71,12 +85,14 @@ class BaseChatMemory:
             prompt_input_key = get_prompt_input_key(inputs, self.memory_variables)
         else:
             prompt_input_key = self.input_key
+
         if self.output_key is None:
             if len(outputs) != 1:
                 raise ValueError(f"One output key expected, got {outputs.keys()}")
             output_key = list(outputs.keys())[0]
         else:
             output_key = self.output_key
+
         return inputs[prompt_input_key], outputs[output_key]
 
     def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
