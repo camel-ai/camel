@@ -201,7 +201,7 @@ class RolePlaying:
         assistant_msg = AssistantChatMessage(
             role_name=self.assistant_sys_msg.role_name,
             content=(f"{self.user_sys_msg.content}. "
-                     "Now start to give me introductions one by one. "
+                     "Now start to give me instructions one by one. "
                      "Only reply with Instruction and Input."))
 
         user_msg = UserChatMessage(role_name=self.user_sys_msg.role_name,

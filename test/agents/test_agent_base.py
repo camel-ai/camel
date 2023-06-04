@@ -11,23 +11,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .base import BaseAgent
-from .chat_agent import ChatAgent
-from .task_agent import TaskPlannerAgent, TaskSpecifyAgent
-from .critic_agent import CriticAgent
-from .tool_agents.base import BaseToolAgent
-from .tool_agents.hugging_face_tool_agent import HuggingFaceToolAgent
-from .embodied_agent import EmbodiedAgent
-from .role_playing import RolePlaying
+import pytest
 
-__all__ = [
-    'BaseAgent',
-    'ChatAgent',
-    'TaskSpecifyAgent',
-    'TaskPlannerAgent',
-    'CriticAgent',
-    'BaseToolAgent',
-    'HuggingFaceToolAgent',
-    'EmbodiedAgent',
-    'RolePlaying',
-]
+from camel.agents import BaseAgent
+
+
+class DummyAgent(BaseAgent):
+
+    def __init__(self):
+        self.step_count = 0
+
+    def reset(self):
+        self.step_count = 0
+
+    def step(self):
+        self.step_count += 1
+
+
+def test_base_agent():
+    with pytest.raises(TypeError):
+        BaseAgent()
+
+
+def test_dummy_agent():
+    agent = DummyAgent()
+    assert agent.step_count == 0
+    agent.step()
+    assert agent.step_count == 1
+    agent.reset()
+    assert agent.step_count == 0
+    agent.step()
+    assert agent.step_count == 1
+    agent.step()
+    assert agent.step_count == 2

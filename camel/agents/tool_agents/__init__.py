@@ -11,23 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .base import BaseAgent
-from .chat_agent import ChatAgent
-from .task_agent import TaskPlannerAgent, TaskSpecifyAgent
-from .critic_agent import CriticAgent
-from .tool_agents.base import BaseToolAgent
-from .tool_agents.hugging_face_tool_agent import HuggingFaceToolAgent
-from .embodied_agent import EmbodiedAgent
-from .role_playing import RolePlaying
+from .base import BaseToolAgent
+from .hugging_face_tool_agent import HuggingFaceToolAgent
 
 __all__ = [
-    'BaseAgent',
-    'ChatAgent',
-    'TaskSpecifyAgent',
-    'TaskPlannerAgent',
-    'CriticAgent',
     'BaseToolAgent',
     'HuggingFaceToolAgent',
-    'EmbodiedAgent',
-    'RolePlaying',
 ]
