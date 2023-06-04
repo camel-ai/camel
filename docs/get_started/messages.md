@@ -58,7 +58,8 @@ The `BaseMessage` class provides methods for converting the message to different
 from camel.messages import UserChatMessage
 
 user_chat_message = message.to_user_chat_message()
-assert isinstance(user_chat_message, UserChatMessage)
+print(isinstance(user_chat_message, UserChatMessage))
+>>> True
 ```
 
 2. Converting to an `AssistantChatMessage` object:
@@ -67,27 +68,30 @@ assert isinstance(user_chat_message, UserChatMessage)
 from camel.messages import AssistantChatMessage
 
 assistant_chat_message = message.to_assistant_chat_message()
-assert isinstance(assistant_chat_message, AssistantChatMessage)
+print(isinstance(assistant_chat_message, AssistantChatMessage))
+>>> True
 ```
 
 3. Converting to an `OpenAIMessage` object:
 
 ```python
 openai_message = message.to_openai_message()
-assert openai_message == {"role": "user", "content": "test content"}
+print(openai_message == {"role": "user", "content": "test content"})
+>>> True
 ```
 
 4. Converting to a dictionary:
 
 ```python
 message_dict = message.to_dict()
-assert message_dict == {
+print(message_dict == {
     "role_name": "test_user",
     "role_type": "USER",
     "key": "value",
     "role": "user",
     "content": "test content"
-}
+})
+>>> True
 ```
 
 These methods allow you to convert a `BaseMessage` instance into different message types depending on your needs.
