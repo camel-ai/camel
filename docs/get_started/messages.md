@@ -1,18 +1,18 @@
-# Tutorial: Working with the BaseMessage Class
+# Tutorial: Working with the `BaseMessage` Class
 
-In this tutorial, we will explore the `BaseMessage` class, providing examples based on its source code and unit test cases. The topics covered include:
+In this tutorial, we will explore the `BaseMessage` class. The topics covered include:
 
-1. Introduction to the BaseMessage class
-2. Creating a BaseMessage instance
-3. Understanding the properties of the BaseMessage class
-4. Using the methods of the BaseMessage class
+1. Introduction to the `BaseMessage` class
+2. Creating a `BaseMessage` instance
+3. Understanding the properties of the `BaseMessage` class
+4. Using the methods of the `BaseMessage` class
 5. Conclusion
 
 ## Introduction
 
 The `BaseMessage` class is the base class for message objects used in the CAMEL chat system. It is designed to provide a consistent structure for the messages in the system and allow for easy conversion between different message types.
 
-## Creating a BaseMessage Instance
+## Creating a `BaseMessage` Instance
 
 To create a `BaseMessage` instance, you need to provide the following arguments:
 
@@ -22,7 +22,7 @@ To create a `BaseMessage` instance, you need to provide the following arguments:
 - `role`: The role of the message in the OpenAI chat system, either `"system"`, `"user"`, or `"assistant"`.
 - `content`: The content of the message.
 
-Here's an example of creating a BaseMessage instance:
+Here's an example of creating a `BaseMessage` instance:
 
 ```python
 from camel.messages import BaseMessage, RoleType
@@ -48,7 +48,7 @@ The `BaseMessage` class has the following properties:
 
 In the example provided earlier, the `role_name` is `"test_user"`, the `role_type` is `RoleType.USER`, the `meta_dict` is `{"key": "value"}`, the `role` is `"user"`, and the `content` is `"test content"`.
 
-## Using the Methods of the BaseMessage Class
+## Using the Methods of the `BaseMessage` Class
 
 The `BaseMessage` class provides methods for converting the message to different message types, such as `UserChatMessage`, `AssistantChatMessage`, and various OpenAI message types. Here are some examples:
 
@@ -91,7 +91,3 @@ assert message_dict == {
 ```
 
 These methods allow you to convert a `BaseMessage` instance into different message types depending on your needs.
-
-## Conclusion
-
-In this tutorial, we have covered the basics of working with the `BaseMessage` class, including creating an instance, understanding its properties, and using its methods. The `BaseMessage` class provides a consistent structure for messages in the CAMEL chat system and makes it easy to work with different message types. Now that you have a solid understanding of the `BaseMessage` class, we encourage you to try using it in your projects to create and manipulate messages in the chat system.
