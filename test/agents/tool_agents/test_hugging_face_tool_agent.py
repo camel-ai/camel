@@ -30,10 +30,10 @@ def test_hugging_face_tool_agent_initialization():
 @pytest.mark.slow
 @pytest.mark.full_test_only
 @openai_api_key_required
-def test_hugging_face_tool_agent_run():
+def test_hugging_face_tool_agent_step():
     from PIL.PngImagePlugin import PngImageFile
     agent = HuggingFaceToolAgent("hugging_face_tool_agent")
-    result = agent.run("Generate an image of a boat in the water")
+    result = agent.step("Generate an image of a boat in the water")
     assert isinstance(result, PngImageFile)
 
 
