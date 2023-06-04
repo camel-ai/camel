@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Optional
 
-from camel.agents.tool_agents import BaseToolAgent
+from camel.agents import BaseToolAgent
 
 
 # flake8: noqa :E501
