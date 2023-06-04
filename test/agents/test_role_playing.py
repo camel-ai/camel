@@ -52,6 +52,7 @@ def test_role_playing_init():
     assert role_playing.critic is None
 
 
+@pytest.mark.slow
 @openai_api_key_required
 @pytest.mark.parametrize(
     "task_type, extend_sys_msg_meta_dicts, extend_task_specify_meta_dict",
