@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import pytest
 
-from camel.messages import BaseMessage, SystemMessage
+from camel.messages import BaseMessage
 from camel.prompts import CodePrompt, TextPrompt
 from camel.typing import RoleType
 
@@ -26,16 +26,6 @@ def base_message() -> BaseMessage:
         meta_dict={"key": "value"},
         role="user",
         content="test content",
-    )
-
-
-@pytest.fixture
-def system_message() -> SystemMessage:
-    return SystemMessage(
-        role_name="test_assistant",
-        role_type=RoleType.ASSISTANT,
-        meta_dict=None,
-        content="test system message",
     )
 
 
@@ -84,6 +74,17 @@ def test_extract_text_and_code_prompts():
     assert isinstance(code_prompts[0], CodePrompt)
     assert code_prompts[0] == "print('This is a code prompt')"
     assert code_prompts[0].code_type == "python"
+
+
+def test_base_message_to_dict(base_message: BaseMessage) -> None:
+    expected_dict = {
+        "role_name": "test_user",
+        "role_type": "USER",
+        "key": "value",
+        "role": "user",
+        "content": "test content",
+    }
+    assert base_message.to_dict() == expected_dict
 
 
 def test_base_message():
@@ -141,48 +142,3 @@ def test_base_message():
         **(meta_dict or {}), "role": role,
         "content": content
     }
-
-
-def test_system_message():
-    role_name = "test_role_name"
-    role_type = RoleType.USER
-    meta_dict = {"key": "value"}
-    content = "test_content"
-
-    message = SystemMessage(role_name=role_name, role_type=role_type,
-                            meta_dict=meta_dict, content=content)
-
-    assert message.role_name == role_name
-    assert message.role_type == role_type
-    assert message.meta_dict == meta_dict
-    assert message.role == "system"
-    assert message.content == content
-
-    dictionary = message.to_dict()
-    assert dictionary == {
-        "role_name": role_name,
-        "role_type": role_type.name,
-        **(meta_dict or {}), "role": "system",
-        "content": content
-    }
-
-
-def test_base_message_to_dict(base_message: BaseMessage) -> None:
-    expected_dict = {
-        "role_name": "test_user",
-        "role_type": "USER",
-        "key": "value",
-        "role": "user",
-        "content": "test content",
-    }
-    assert base_message.to_dict() == expected_dict
-
-
-def test_system_message_to_dict(system_message: SystemMessage) -> None:
-    expected_dict = {
-        "role_name": "test_assistant",
-        "role_type": "ASSISTANT",
-        "role": "system",
-        "content": "test system message",
-    }
-    assert system_message.to_dict() == expected_dict

@@ -12,16 +12,17 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
+from camel.messages import (
+    OpenAIAssistantMessage,
+    OpenAIChatMessage,
+    OpenAIMessage,
+    OpenAISystemMessage,
+    OpenAIUserMessage,
+)
 from camel.prompts import CodePrompt, TextPrompt
 from camel.typing import ModelType, RoleType
-
-OpenAISystemMessage = Dict[str, str]
-OpenAIAssistantMessage = Dict[str, str]
-OpenAIUserMessage = Dict[str, str]
-OpenAIChatMessage = Union[OpenAIUserMessage, OpenAIAssistantMessage]
-OpenAIMessage = Union[OpenAISystemMessage, OpenAIChatMessage]
 
 
 @dataclass
@@ -225,12 +226,14 @@ class BaseMessage:
 
         return text_prompts, code_prompts
 
-    def to_user_chat_message(self) -> "UserChatMessage":
+    def to_user_chat_message(self) -> Type["UserChatMessage"]:  # noqa: F821
         r"""Converts the message to a :obj:`UserChatMessage` object.
 
         Returns:
             UserChatMessage: The converted :obj:`UserChatMessage` object.
         """
+        from camel.messages.chat_messages import UserChatMessage
+
         return UserChatMessage(
             role_name=self.role_name,
             role_type=self.role_type,
@@ -238,13 +241,16 @@ class BaseMessage:
             content=self.content,
         )
 
-    def to_assistant_chat_message(self) -> "AssistantChatMessage":
+    def to_assistant_chat_message(
+            self) -> Type["AssistantChatMessage"]:  # noqa: F821
         r"""Converts the message to an :obj:`AssistantChatMessage` object.
 
         Returns:
             AssistantChatMessage: The converted :obj:`AssistantChatMessage`
                 object.
         """
+        from camel.messages.chat_messages import AssistantChatMessage
+
         return AssistantChatMessage(
             role_name=self.role_name,
             role_type=self.role_type,
@@ -326,136 +332,3 @@ class BaseMessage:
             "role": self.role,
             "content": self.content,
         }
-
-
-@dataclass
-class SystemMessage(BaseMessage):
-    r"""Class for system messages used in CAMEL chat system.
-
-    Args:
-        role_name (str): The name of the user or assistant role.
-        role_type (RoleType): The type of role, either
-            :obj:`RoleType.ASSISTANT` or :obj:`RoleType.USER`.
-        meta_dict (Optional[Dict[str, str]]): Additional metadata dictionary
-            for the message.
-        role (str): The role of the message in OpenAI chat system.
-            (default: :obj:`"system"`)
-        content (str): The content of the message. (default: :obj:`""`)
-    """
-    role_name: str
-    role_type: RoleType
-    meta_dict: Optional[Dict[str, str]] = None
-    role: str = "system"
-    content: str = ""
-
-
-@dataclass
-class AssistantSystemMessage(SystemMessage):
-    r"""Class for system messages from the assistant used in the CAMEL chat
-    system.
-
-    Args:
-        role_name (str): The name of the assistant role.
-        role_type (RoleType): The type of role, always
-            :obj:`RoleType.ASSISTANT`.
-        meta_dict (Optional[Dict[str, str]]): Additional metadata dictionary
-            for the message.
-        role (str): The role of the message in OpenAI chat system.
-            (default: :obj:`"system"`)
-        content (str): The content of the message. (default: :obj:`""`)
-    """
-    role_name: str
-    role_type: RoleType = RoleType.ASSISTANT
-    meta_dict: Optional[Dict[str, str]] = None
-    role: str = "system"
-    content: str = ""
-
-
-@dataclass
-class UserSystemMessage(SystemMessage):
-    r"""Class for system messages from the user used in the CAMEL chat system.
-
-    Args:
-        role_name (str): The name of the user role.
-        role_type (RoleType): The type of role, always :obj:`RoleType.USER`.
-        meta_dict (Optional[Dict[str, str]]): Additional metadata dictionary
-            for the message.
-        role (str): The role of the message in OpenAI chat system.
-            (default: :obj:`"system"`)
-        content (str): The content of the message. (default: :obj:`""`)
-    """
-    role_name: str
-    role_type: RoleType = RoleType.USER
-    meta_dict: Optional[Dict[str, str]] = None
-    role: str = "system"
-    content: str = ""
-
-
-@dataclass
-class ChatMessage(BaseMessage):
-    r"""Base class for chat messages used in CAMEL chat system.
-
-    Args:
-        role_name (str): The name of the user or assistant role.
-        role_type (RoleType): The type of role, either
-            :obj:`RoleType.ASSISTANT` or :obj:`RoleType.USER`.
-        meta_dict (Optional[Dict[str, str]]): Additional metadata dictionary
-            for the message.
-        role (str): The role of the message in OpenAI chat system.
-        content (str): The content of the message. (default: :obj:`""`)
-    """
-    role_name: str
-    role_type: RoleType
-    meta_dict: Optional[Dict[str, str]]
-    role: str
-    content: str = ""
-
-
-@dataclass
-class AssistantChatMessage(ChatMessage):
-    r"""Class for chat messages from the assistant role used in CAMEL chat
-    system.
-
-    Args:
-        role_name (str): The name of the assistant role.
-        role_type (RoleType): The type of role, always
-            :obj:`RoleType.ASSISTANT`.
-        meta_dict (Optional[Dict[str, str]]): Additional metadata dictionary
-            for the message.
-        role (str): The role of the message in OpenAI chat system.
-            (default: :obj:`"assistant"`)
-        content (str): The content of the message. (default: :obj:`""`)
-    """
-    role_name: str
-    role_type: RoleType = RoleType.ASSISTANT
-    meta_dict: Optional[Dict[str, str]] = None
-    role: str = "assistant"
-    content: str = ""
-
-
-@dataclass
-class UserChatMessage(ChatMessage):
-    r"""Class for chat messages from the user role used in CAMEL chat system.
-
-    Args:
-        role_name (str): The name of the user role.
-        role_type (RoleType): The type of role, always :obj:`RoleType.USER`.
-        meta_dict (Optional[Dict[str, str]]): Additional metadata dictionary
-            for the message.
-        role (str): The role of the message in OpenAI chat system.
-            (default: :obj:`"user"`)
-        content (str): The content of the message. (default: :obj:`""`)
-    """
-    role_name: str
-    role_type: RoleType = RoleType.USER
-    meta_dict: Optional[Dict[str, str]] = None
-    role: str = "user"
-    content: str = ""
-
-
-MessageType = Union[BaseMessage, SystemMessage, AssistantSystemMessage,
-                    UserSystemMessage, ChatMessage, AssistantChatMessage,
-                    UserChatMessage]
-SystemMessageType = Union[SystemMessage, AssistantSystemMessage,
-                          UserSystemMessage]
-ChatMessageType = Union[ChatMessage, AssistantChatMessage, UserChatMessage]
