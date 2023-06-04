@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from colorama import Fore
 
-from camel.agents import ChatAgent, HuggingFaceToolAgent, ToolAgent
+from camel.agents import BaseToolAgent, ChatAgent, HuggingFaceToolAgent
 from camel.messages import ChatMessage, SystemMessage
 from camel.typing import ModelType
 from camel.utils import print_text_animated
@@ -46,7 +46,7 @@ class EmbodiedAgent(ChatAgent):
         model: ModelType = ModelType.GPT_4,
         model_config: Optional[Any] = None,
         message_window_size: Optional[int] = None,
-        action_space: Optional[List[ToolAgent]] = None,
+        action_space: Optional[List[BaseToolAgent]] = None,
         verbose: bool = False,
         logger_color: Any = Fore.MAGENTA,
     ) -> None:
@@ -89,6 +89,7 @@ class EmbodiedAgent(ChatAgent):
         Returns:
             str: The execution results.
         """
+        # TODO: Refactor this with `CodePrompt.execute`.
         try:
             # Execute the code string
             import io
@@ -128,6 +129,7 @@ class EmbodiedAgent(ChatAgent):
         Returns:
             Tuple[str, Optional[str]]: The extracted explanation and code.
         """
+        # TODO: Refactor this with `BaseMessage.extract_text_and_code_prompts`.
         lines = text_prompt.split("\n")
         idx = 0
         while idx < len(lines) and not lines[idx].lstrip().startswith("```"):

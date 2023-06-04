@@ -16,13 +16,18 @@ from typing import Any, Dict, List, Optional, Tuple
 import openai
 from tenacity import retry, stop_after_attempt, wait_exponential
 
+from camel.agents import BaseAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import ChatMessage, MessageType, SystemMessage
 from camel.typing import ModelType
-from camel.utils import get_model_token_limit, num_tokens_from_messages
+from camel.utils import (
+    get_model_token_limit,
+    num_tokens_from_messages,
+    openai_api_key_required,
+)
 
 
-class ChatAgent:
+class ChatAgent(BaseAgent):
     r"""Class for managing conversations of CAMEL Chat Agents.
 
     Args:
@@ -115,6 +120,7 @@ class ChatAgent:
         return self.stored_messages
 
     @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
+    @openai_api_key_required
     def step(
         self,
         input_message: ChatMessage,

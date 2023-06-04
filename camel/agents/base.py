@@ -11,22 +11,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .base import BaseAgent
-from .chat_agent import ChatAgent
-from .task_agent import TaskPlannerAgent, TaskSpecifyAgent
-from .critic_agent import CriticAgent
-from .tool_agents import BaseToolAgent, HuggingFaceToolAgent
-from .embodied_agent import EmbodiedAgent
-from .role_playing import RolePlaying
+from abc import ABC, abstractmethod
 
-__all__ = [
-    'BaseAgent',
-    'ChatAgent',
-    'TaskSpecifyAgent',
-    'TaskPlannerAgent',
-    'CriticAgent',
-    'BaseToolAgent',
-    'HuggingFaceToolAgent',
-    'EmbodiedAgent',
-    'RolePlaying',
-]
+
+class BaseAgent(ABC):
+    r"""An abstract base class for all CAMEL agents."""
+
+    @abstractmethod
+    def reset(self) -> None:
+        r"""Resets the agent to its initial state."""
+        pass
+
+    @abstractmethod
+    def step(self) -> None:
+        r"""Performs a single step of the agent."""
+        pass

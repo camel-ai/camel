@@ -13,14 +13,8 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import pytest
 
-from camel.agents.tool_agent import HuggingFaceToolAgent, ToolAgent
+from camel.agents import HuggingFaceToolAgent
 from camel.utils import openai_api_key_required
-
-
-def test_tool_agent_initialization():
-    tool_agent = ToolAgent("tool_agent", "description")
-    assert tool_agent.name == "tool_agent"
-    assert tool_agent.description == "description"
 
 
 @pytest.mark.slow

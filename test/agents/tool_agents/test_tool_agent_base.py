@@ -11,22 +11,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .base import BaseAgent
-from .chat_agent import ChatAgent
-from .task_agent import TaskPlannerAgent, TaskSpecifyAgent
-from .critic_agent import CriticAgent
-from .tool_agents import BaseToolAgent, HuggingFaceToolAgent
-from .embodied_agent import EmbodiedAgent
-from .role_playing import RolePlaying
+from camel.agents import BaseToolAgent
 
-__all__ = [
-    'BaseAgent',
-    'ChatAgent',
-    'TaskSpecifyAgent',
-    'TaskPlannerAgent',
-    'CriticAgent',
-    'BaseToolAgent',
-    'HuggingFaceToolAgent',
-    'EmbodiedAgent',
-    'RolePlaying',
-]
+
+class DummyToolAgent(BaseToolAgent):
+
+    def reset(self):
+        pass
+
+    def step(self):
+        pass
+
+
+def test_tool_agent_initialization():
+    tool_agent = DummyToolAgent("tool_agent", "description")
+    assert tool_agent.name == "tool_agent"
+    assert tool_agent.description == "description"

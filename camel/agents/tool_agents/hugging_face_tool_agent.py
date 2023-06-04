@@ -13,24 +13,11 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Optional
 
-
-class ToolAgent:
-    r"""Creates a :obj:`ToolAgent` object with the specified name and
-        description.
-
-    Args:
-        name (str): The name of the tool agent.
-        description (str): The description of the tool agent.
-    """
-
-    def __init__(self, name: str, description: str) -> None:
-
-        self.name = name
-        self.description = description
+from camel.agents.tool_agents import BaseToolAgent
 
 
-# flake8: noqa
-class HuggingFaceToolAgent(ToolAgent):
+# flake8: noqa :E501
+class HuggingFaceToolAgent(BaseToolAgent):
     r"""Tool agent for calling HuggingFace models. This agent is a wrapper
         around agents from the `transformers` library. For more information
         about the available models, please see the `transformers` documentation
@@ -83,29 +70,29 @@ class HuggingFaceToolAgent(ToolAgent):
 
 Here are some python code examples of what you can do with this agent:
 
-Single execution (run) mode, the single execution method is when using the run() method of the agent:
+Single execution (step) mode, the single execution method is when using the step() method of the agent:
 ```
 # Text to image
-rivers_and_lakes_image = {self.name}.run("Draw me a picture of rivers and lakes.")
+rivers_and_lakes_image = {self.name}.step("Draw me a picture of rivers and lakes.")
 rivers_and_lakes_image.save("./rivers_and_lakes_image.png")
 
 # Text to image -> Image transformation
-sea_add_island_image = {self.name}.run("Draw me a picture of the sea then transform the picture to add an island")
+sea_add_island_image = {self.name}.step("Draw me a picture of the sea then transform the picture to add an island")
 sea_add_island_image.save("./sea_add_island_image.png")
 
 # If you'd like to keep a state across executions or to pass non-text objects to the agent, 
 # you can do so by specifying variables that you would like the agent to use. For example,
 # you could generate the first image of rivers and lakes, and ask the model to update that picture to add an island by doing the following:
-picture = {self.name}.run("Generate a picture of rivers and lakes.")
+picture = {self.name}.step("Generate a picture of rivers and lakes.")
 picture.save("./picture.png")
-updated_picture = {self.name}.run("Transform the image in `picture` to add an island to it.", picture=picture)
+updated_picture = {self.name}.step("Transform the image in `picture` to add an island to it.", picture=picture)
 updated_picture.save("./updated_picture.png")
 
-capybara_sea_image = {self.name}.run("Draw me a picture of the `prompt`", prompt="a capybara swimming in the sea")
+capybara_sea_image = {self.name}.step("Draw me a picture of the `prompt`", prompt="a capybara swimming in the sea")
 capybara_sea_image.save("./capybara_sea_image.png")
 
 # Document question answering
-answer = {self.name}.run(
+answer = {self.name}.step(
     "In the following `document`, where will the TRRF Scientific Advisory Council Meeting take place?",
     document=document,
 )
@@ -113,26 +100,26 @@ print(answer)
 
 
 # Text to image
-boat_image = {self.name}.run("Generate an image of a boat in the water")
+boat_image = {self.name}.step("Generate an image of a boat in the water")
 boat_image.save("./boat_image.png")
 
 # Unconditional image captioning
-boat_image_caption = {self.name}.run("Can you caption the `boat_image`?", boat_image=boat_image)
+boat_image_caption = {self.name}.step("Can you caption the `boat_image`?", boat_image=boat_image)
 print(boat_image_caption)
 
 # Text to image -> Unconditional image captioning -> Text to speech
-boat_audio = {self.name}.run("Can you generate an image of a boat? Please read out loud the contents of the image afterwards")
+boat_audio = {self.name}.step("Can you generate an image of a boat? Please read out loud the contents of the image afterwards")
 
 # Text downloading
-document = {self.name}.run("Download the text from http://hf.co")
+document = {self.name}.step("Download the text from http://hf.co")
 print(document)
 
 # Text summarization
-summary = {self.name}.run("Summarize the following text: `document`", document=document)
+summary = {self.name}.step("Summarize the following text: `document`", document=document)
 print(summary)
 
 # Text downloading -> Text summarization -> Text to speech
-audio = {self.name}.run("Read out loud the summary of http://hf.co")
+audio = {self.name}.step("Read out loud the summary of http://hf.co")
 ```
 
 Chat-based execution (chat), the agent also has a chat-based approach, using the chat() method:
@@ -158,7 +145,7 @@ segmented_transformed_capybara_image.save("./segmented_transformed_capybara_imag
         r"""Resets the chat history of the agent."""
         self.agent.prepare_for_new_chat()
 
-    def run(
+    def step(
         self,
         *args: Any,
         remote: Optional[bool] = None,
