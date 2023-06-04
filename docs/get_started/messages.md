@@ -1,12 +1,12 @@
 # Tutorial: Working with the `BaseMessage` Class
 
-In this tutorial, we will explore the `BaseMessage` class. The topics covered include:
+In this tutorial, we will explore the `BaseMessage`, `SystemMessage`, `AssistantSystemMessage`, `UserSystemMessage`, `ChatMessage`, `AssistantChatMessage`, and `UserChatMessage` class. The topics covered include:
 
 1. Introduction to the `BaseMessage` class
 2. Creating a `BaseMessage` instance
 3. Understanding the properties of the `BaseMessage` class
-4. Using the methods of the `BaseMessage` class
-5. Conclusion
+4. Using the methods of the `BaseMessage` class`BaseMessage`
+5. Subclasses of `BaseMessage`
 
 ## Introduction
 
@@ -91,3 +91,21 @@ assert message_dict == {
 ```
 
 These methods allow you to convert a `BaseMessage` instance into different message types depending on your needs.
+
+## Subclasses of `BaseMessage`
+
+In this session, we will introduce the subclasses of the `BaseMessage` class. Each of these subclasses has some default properties pre-defined, making it convenient to create message instances of specific types.
+
+* `SystemMessage` is a class for system messages used in the CAMEL chat system. By default, the `role` is set to `"system"` and the `content` is an empty string `""`
+
+* `AssistantSystemMessage` is a class for system messages from the assistant role used in the CAMEL chat system. By default, the `role_type` is set to `RoleType.ASSISTANT`, the `role` is set to `"system"`, and the `content` is an empty string `""`.
+
+* `UserSystemMessage` is a class for system messages from the user role used in the CAMEL chat system. By default, the `role_type` is set to `RoleType.USER`, the `role` is set to `"system"`, and the `content` is an empty string `""`.
+
+* `ChatMessage` is a base class for chat messages used in the CAMEL chat system. By default, the `content` is an empty string `""`.
+
+* `AssistantChatMessage` is a class for chat messages from the assistant role used in the CAMEL chat system. By default, the `role_type` is set to `RoleType.ASSISTANT`, the `role` is set to `"assistant"`, and the `content` is an empty string `""`.
+
+* `UserChatMessage` is a class for chat messages from the user role used in the CAMEL chat system. By default, the `role_type` is set to `RoleType.USER`, the `role` is set to `"user"`, and the `content` is an empty string `""`.
+
+These subclasses allow you to create message instances with specific roles and types easily. You can use them to create, manage, and manipulate messages in the CAMEL chat system with more context and clarity.
