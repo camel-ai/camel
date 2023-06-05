@@ -15,7 +15,6 @@ import inspect
 from typing import Any, Callable, Dict, Optional, Set, Tuple, TypeVar, Union
 
 from camel.typing import RoleType
-from camel.utils import get_prompt_template_key_words
 
 T = TypeVar('T')
 
@@ -204,6 +203,7 @@ class CodePrompt(TextPrompt):
             return traceback_str, None
 
 
+# flake8: noqa :E501
 class TextPromptDict(Dict[Any, TextPrompt]):
     r"""A dictionary class that maps from key to :obj:`TextPrompt` object.
     """
