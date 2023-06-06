@@ -11,12 +11,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .base import BaseToolAgent
-from .hugging_face_tool_agent import HuggingFaceToolAgent
-from .gorilla_agent import GorillaAgent
+from camel.prompts import TextPrompt, ToolAgentsPromptTemplateDict
+from camel.typing import RoleType
 
-__all__ = [
-    'BaseToolAgent',
-    'HuggingFaceToolAgent',
-    'GorillaAgent',
-]
+
+def test_ai_society_prompt_template_dict():
+    template_dict = ToolAgentsPromptTemplateDict()
+
+    # Test if the prompts are of the correct type
+    assert isinstance(template_dict.GORILLA_GENERATE_CODE, TextPrompt)
+
+    # Test if the prompts are correctly added to the dictionary
+    assert template_dict['gorilla'] == template_dict.GORILLA_GENERATE_CODE
+    assert template_dict[RoleType.ASSISTANT] == template_dict.ASSISTANT_PROMPT
+    assert template_dict[RoleType.USER] == template_dict.USER_PROMPT
