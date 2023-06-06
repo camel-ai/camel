@@ -15,7 +15,7 @@ from camel.prompts import TextPrompt, ToolAgentsPromptTemplateDict
 from camel.typing import RoleType
 
 
-def test_ai_society_prompt_template_dict():
+def test_tool_agents_prompt_template_dict():
     template_dict = ToolAgentsPromptTemplateDict()
 
     # Test if the prompts are of the correct type

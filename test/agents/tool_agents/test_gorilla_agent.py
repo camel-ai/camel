@@ -35,4 +35,4 @@ def test_gorilla_agent_step():
     result = agent.step(
         "Generate an image of a boat in the water",
         "I would like to generate an image according to a prompt.")
-    print(result)
+    assert result is None

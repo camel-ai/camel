@@ -83,6 +83,10 @@ Here are some python code examples of what you can do with this agent:
 {self.name}.step("Generate a science fiction story about a gorilla in English and save it to `./story.txt`.", meta_task="I would like to generate a text based on a prompt.")
 ```"""
 
+    def reset(self) -> None:
+        r"""Resets the chat history of the agent."""
+        pass
+
     def step(
         self,
         task: str,
