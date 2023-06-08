@@ -146,7 +146,7 @@ class BaseMessage:
         }
 
     def extract_text_and_code_prompts(self) -> Tuple[str, Optional[str]]:
-        r"""Extracts the explanation and code from the prompt content.
+        r"""Extracts the explanation and code from the message content.
 
         Returns:
             Tuple[str, Optional[str]]: The extracted explanation and code.
