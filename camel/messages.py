@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from dataclasses import dataclass
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, Tuple, Union
 
 from .typing import RoleType
 
@@ -144,6 +144,28 @@ class BaseMessage:
             "role": self.role,
             "content": self.content,
         }
+
+    def extract_text_and_code_prompts(self) -> Tuple[str, Optional[str]]:
+        r"""Extracts the explanation and code from the prompt content.
+
+        Returns:
+            Tuple[str, Optional[str]]: The extracted explanation and code.
+        """
+        lines = self.content.split("\n")
+        idx = 0
+        while idx < len(lines) and not lines[idx].lstrip().startswith("```"):
+            idx += 1
+        explanation = "\n".join(lines[:idx]).strip()
+        if idx == len(lines):
+            return explanation, None
+
+        idx += 1
+        start_idx = idx
+        while not lines[idx].lstrip().startswith("```"):
+            idx += 1
+        code = "\n".join(lines[start_idx:idx]).strip()
+
+        return explanation, code
 
 
 @dataclass

@@ -41,15 +41,6 @@ def test_execute_code():
     assert EmbodiedAgent.execute_code(code_string) == expected_output
 
 
-def test_get_explanation_and_code():
-    text_prompt = (
-        "This is an explanation.\n\n```python\nprint('Hello, world!')\n```")
-    expected_explanation = "This is an explanation."
-    expected_code = "print('Hello, world!')"
-    assert EmbodiedAgent.get_explanation_and_code(text_prompt) == (
-        expected_explanation, expected_code)
-
-
 @pytest.mark.slow
 @pytest.mark.full_test_only
 @openai_api_key_required

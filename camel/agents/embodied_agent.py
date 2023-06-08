@@ -117,35 +117,6 @@ class EmbodiedAgent(ChatAgent):
             # If there was an error, return the error message
             return f"Traceback:\n{traceback_str}"
 
-    @staticmethod
-    def get_explanation_and_code(
-            text_prompt: str) -> Tuple[str, Optional[str]]:
-        r"""Extracts the explanation and code from the text prompt.
-
-        Args:
-            text_prompt (str): The text prompt containing the explanation and
-                code.
-
-        Returns:
-            Tuple[str, Optional[str]]: The extracted explanation and code.
-        """
-        # TODO: Refactor this with `BaseMessage.extract_text_and_code_prompts`.
-        lines = text_prompt.split("\n")
-        idx = 0
-        while idx < len(lines) and not lines[idx].lstrip().startswith("```"):
-            idx += 1
-        explanation = "\n".join(lines[:idx]).strip()
-        if idx == len(lines):
-            return explanation, None
-
-        idx += 1
-        start_idx = idx
-        while not lines[idx].lstrip().startswith("```"):
-            idx += 1
-        code = "\n".join(lines[start_idx:idx]).strip()
-
-        return explanation, code
-
     def step(
         self,
         input_message: ChatMessage,
@@ -169,8 +140,7 @@ class EmbodiedAgent(ChatAgent):
 
         # NOTE: Only single output messages are supported
         output_message = output_messages[0]
-        explanation, code = self.get_explanation_and_code(
-            output_message.content)
+        explanation, code = output_message.extract_text_and_code_prompts()
         if self.verbose:
             print_text_animated(self.logger_color +
                                 f"> Explanation:\n{explanation}")

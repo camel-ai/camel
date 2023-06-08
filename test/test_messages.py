@@ -138,3 +138,20 @@ def test_system_message_to_dict(system_message: SystemMessage) -> None:
         "content": "test system message",
     }
     assert system_message.to_dict() == expected_dict
+
+
+def test_based_message_extract_text_and_code_prompts():
+    text_code_message = BaseMessage(
+        role_name="test_extract",
+        role_type=RoleType.USER,
+        meta_dict={"key": "value"},
+        role="user",
+        content=("This is an explanation.\n\n"
+                 "```python\n"
+                 "print('Hello, world!')\n"
+                 "```"),
+    )
+    expected_explanation = "This is an explanation."
+    expected_code = "print('Hello, world!')"
+    assert text_code_message.extract_text_and_code_prompts() == (
+        expected_explanation, expected_code)
