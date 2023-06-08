@@ -84,28 +84,34 @@ prompt2 = TextPrompt('Welcome, {name}!')
 # Concatenation
 prompt3 = prompt1 + ' ' + prompt2
 print(prompt3)  
-print(isinstance(prompt3, TextPrompt))
-print(prompt3.key_words)
 >>> "Hello, {name}! Welcome, {name}!"
+
+print(isinstance(prompt3, TextPrompt))
 >>> True
+
+print(prompt3.key_words)
 >>> {'name'}
 
 # Joining
 prompt4 = TextPrompt(' ').join([prompt1, prompt2])
 print(prompt4)
-print(isinstance(prompt4, TextPrompt))
-print(prompt4.key_words)
 >>> "Hello, {name}! Welcome, {name}!"
+
+print(isinstance(prompt4, TextPrompt))
 >>> True
+
+print(prompt4.key_words)
 >>> {'name'}
 
 # Applying string methods
 prompt5 = prompt4.upper()
 print(prompt5)
-print(isinstance(prompt5, TextPrompt))
-print(prompt5.key_words)
 >>> "HELLO, {NAME}! WELCOME, {NAME}!"
+
+print(isinstance(prompt5, TextPrompt))
 >>> True
+
+print(prompt5.key_words)
 >>> {'NAME'}
 ```
 
