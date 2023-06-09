@@ -28,6 +28,15 @@ from camel.typing import ModelType, RoleType, TaskType
 
 @dataclass(frozen=True)
 class MessageWithExtras:
+    r"""ChatMessage grouped with extra info.
+
+    Args:
+        msg (Optional[ChatMessage]): ChatMessage obtained from a chat agent.
+        terminated (Optional[bool]): Whether the agent requested termination
+            of the chat session.
+        info (Optional[Dict[str, Any]]): Extrainformation aasciated with
+            the current message.
+    """
     msg: Optional[ChatMessage]
     terminated: Optional[bool]
     info: Optional[Dict[str, Any]]
@@ -266,10 +275,10 @@ class RolePlaying:
                 assistant.
 
         Returns:
-            A tuple containing two tuples: the first tuple contains the
-            resulting assistant message, whether or not the assistant agent
+            A tuple containing two MessageWithExtras: the first struct contains
+            the resulting assistant message, whether or not the assistant agent
             terminated the conversation, and any additional assistant
-            information; the second tuple contains the resulting user message,
+            information; the second struct contains the resulting user message,
             whether or not the user agent terminated the conversation, and
             any additional user information.
         """
@@ -282,7 +291,6 @@ class RolePlaying:
         user_msg = self.process_messages(user_response.msgs)
         self.user_agent.update_messages(user_msg)
 
-        # (assistant_msgs, assistant_terminated, assistant_info)
         assistant_response = self.assistant_agent.step(
             user_msg.to_user_chat_message())
         if assistant_response.terminated or assistant_response.msgs is None:

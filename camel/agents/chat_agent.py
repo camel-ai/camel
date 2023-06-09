@@ -32,6 +32,15 @@ from camel.utils import (
 
 @dataclass(frozen=True)
 class ChatAgentResponse:
+    r"""Response of a ChatAgent.
+
+    Attributes:
+        msgs Optional[List[ChatMessage]]: A list of one or several messages in
+            the critic mode. None if terminated flag is set.
+        terminated (bool): A boolean indicating whether the chat session has
+            terminated.
+        info (Dict[str, Any]): Information about the chat session.
+    """
     msgs: Optional[List[ChatMessage]]
     terminated: bool
     info: Dict[str, Any]
