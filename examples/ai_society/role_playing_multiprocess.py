@@ -101,8 +101,8 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
             break
 
         # Condition 2: Assistant terminates the chat
-        if (assistant_response.terminated and
-                assistant_response.info is not None):
+        if (assistant_response.terminated
+                and assistant_response.info is not None):
             message_dict["termination_reason"] = (
                 f"{str(assistant_agent.role_type)}: "
                 f"{assistant_response.info['termination_reasons'][0]}")

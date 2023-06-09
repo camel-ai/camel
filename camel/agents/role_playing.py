@@ -216,9 +216,8 @@ class RolePlaying:
                                    content=f"{self.assistant_sys_msg.content}")
         assistant_response = self.assistant_agent.step(user_msg)
         if assistant_response.terminated or assistant_response.msgs is None:
-            raise ValueError(
-                f"Assistant agent terminated unexpectedly. "
-                f"Error info: {assistant_response.info}")
+            raise ValueError(f"Assistant agent terminated unexpectedly. "
+                             f"Error info: {assistant_response.info}")
 
         return assistant_msg, assistant_response.msgs
 
@@ -277,33 +276,26 @@ class RolePlaying:
         user_response = self.user_agent.step(
             assistant_msg.to_user_chat_message())
         if user_response.terminated or user_response.msgs is None:
-            return (MessageWithExtras(None,
-                                      None,
-                                      None),
-                    MessageWithExtras(None,
-                                      user_response.terminated,
+            return (MessageWithExtras(None, None, None),
+                    MessageWithExtras(None, user_response.terminated,
                                       user_response.info))
         user_msg = self.process_messages(user_response.msgs)
         self.user_agent.update_messages(user_msg)
 
         # (assistant_msgs, assistant_terminated, assistant_info)
         assistant_response = self.assistant_agent.step(
-             user_msg.to_user_chat_message())
+            user_msg.to_user_chat_message())
         if assistant_response.terminated or assistant_response.msgs is None:
-            return (MessageWithExtras(None,
-                                      assistant_response.terminated,
+            return (MessageWithExtras(None, assistant_response.terminated,
                                       assistant_response.info),
-                    MessageWithExtras(user_msg,
-                                      assistant_response.terminated,
+                    MessageWithExtras(user_msg, assistant_response.terminated,
                                       assistant_response.info))
         assistant_msg = self.process_messages(assistant_response.msgs)
         self.assistant_agent.update_messages(assistant_msg)
 
         return (
-            MessageWithExtras(assistant_msg,
-                              assistant_response.terminated,
+            MessageWithExtras(assistant_msg, assistant_response.terminated,
                               assistant_response.info),
-            MessageWithExtras(user_msg,
-                              user_response.terminated,
+            MessageWithExtras(user_msg, user_response.terminated,
                               user_response.info),
         )

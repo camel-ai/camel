@@ -96,8 +96,8 @@ class TaskSpecifyAgent(ChatAgent):
         task_msg = UserChatMessage(role_name="Task Specifier",
                                    content=self.task_specify_prompt)
         specifier_response = super().step(task_msg)
-        if (specifier_response.msgs is None or
-                len(specifier_response.msgs) == 0):
+        if (specifier_response.msgs is None
+                or len(specifier_response.msgs) == 0):
             raise RuntimeError("Task specification failed.")
         specified_task_msg = specifier_response.msgs[0]
 
