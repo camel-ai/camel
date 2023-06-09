@@ -248,11 +248,13 @@ def role_playing_chat_cont(state) -> \
     if state.session is None:
         return state, state.chat, gr.update(visible=False), gr.update()
 
+    session: RolePlaying = state.session
+
     if state.saved_assistant_msg is None:
         return state, state.chat, gr.update(), gr.update()
 
     try:
-        assistant_msgs, user_msgs = state.session.step(
+        assistant_msgs, user_msgs = session.step(
             state.saved_assistant_msg)
     except (openai.error.RateLimitError, tenacity.RetryError,
             RuntimeError) as ex:
@@ -260,8 +262,11 @@ def role_playing_chat_cont(state) -> \
         state.session = None
         return state, state.chat, gr.update(), gr.update()
 
-    u_msg = user_msgs[0]
-    a_msg = assistant_msgs[0]
+    u_msg = user_msgs.msg
+    a_msg = assistant_msgs.msg
+
+    if u_msg is None or a_msg is None:
+        return state, state.chat, gr.update(), gr.update()
 
     state.saved_assistant_msg = a_msg
 

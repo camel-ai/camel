@@ -78,7 +78,8 @@ class EmbodiedAgent(ChatAgent):
         ])
 
     @staticmethod
-    def execute_code(code_string: str, global_vars: Dict = None) -> str:
+    def execute_code(code_string: str,
+                     global_vars: Optional[Dict] = None) -> str:
         r"""Executes the given code string.
 
         Args:
@@ -160,15 +161,15 @@ class EmbodiedAgent(ChatAgent):
                 containing the output messages, termination status, and
                 additional information.
         """
-        output_messages, terminated, info = super().step(input_message)
+        response = super().step(input_message)
 
-        if output_messages is None:
+        if response.msgs is None or len(response.msgs) == 0:
             raise RuntimeError("Got None output messages.")
-        if terminated:
+        if response.terminated:
             raise RuntimeError(f"{self.__class__.__name__} step failed.")
 
         # NOTE: Only single output messages are supported
-        output_message = output_messages[0]
+        output_message = response.msgs[0]
         explanation, code = self.get_explanation_and_code(
             output_message.content)
         if self.verbose:
@@ -185,4 +186,4 @@ class EmbodiedAgent(ChatAgent):
         # TODO: Handle errors
         input_message.content += (
             f"\n> Embodied Actions:\n{output_message.content}")
-        return input_message, terminated, info
+        return input_message, response.terminated, response.info

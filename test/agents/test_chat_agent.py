@@ -44,22 +44,24 @@ def test_chat_agent(model):
     assistant.reset()
     user_msg = ChatMessage(role_name="Patient", role_type=RoleType.USER,
                            meta_dict=dict(), role="user", content="Hello!")
-    msgs, terminated, info = assistant.step(user_msg)
+    assistant_response = assistant.step(user_msg)
 
-    assert terminated is False
-    assert msgs is not None
-    assert info['id'] is not None
+    assert assistant_response.terminated is False
+    assert assistant_response.msgs is not None
+    assert len(assistant_response.msgs) > 0
+    assert assistant_response.info['id'] is not None
 
     assistant.reset()
     token_limit = get_model_token_limit(model)
     user_msg = ChatMessage(role_name="Patient", role_type=RoleType.USER,
                            meta_dict=dict(), role="user",
                            content="token" * (token_limit + 1))
-    msgs, terminated, info = assistant.step(user_msg)
+    assistant_response = assistant.step(user_msg)
 
-    assert terminated is True
-    assert msgs is None
-    assert info['termination_reasons'][0] == "max_tokens_exceeded"
+    assert assistant_response.terminated is True
+    assert assistant_response.msgs is None
+    assert (assistant_response.info['termination_reasons'][0] ==
+            "max_tokens_exceeded")
 
 
 @pytest.mark.slow
@@ -74,5 +76,6 @@ def test_chat_agent_multiple_return_messages(n):
     user_msg = ChatMessage(role_name="User", role_type=RoleType.USER,
                            meta_dict=dict(), role="user",
                            content="Tell me a joke.")
-    msgs, _, _ = assistant.step(user_msg)
-    assert len(msgs) == n
+    assistant_response = assistant.step(user_msg)
+    assert assistant_response.msgs is not None
+    assert len(assistant_response.msgs) == n
