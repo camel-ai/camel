@@ -136,11 +136,12 @@ def test_code_prompt_set_code_type():
 
 
 def test_code_prompt_execute():
-    code_prompt = CodePrompt("a = 1\nprint('Hello, World!')")
+    code_prompt = CodePrompt("a = 1\nprint('Hello, World!')",
+                             code_type="python")
     assert code_prompt.execute() == ("Hello, World!\n", {"a": 1})
 
 
 def test_code_prompt_execute_error():
-    code_prompt = CodePrompt("print('Hello, World!'")
+    code_prompt = CodePrompt("print('Hello, World!'", code_type="python")
     traceback_str, _ = code_prompt.execute()
     assert "SyntaxError" in traceback_str
