@@ -63,17 +63,24 @@ def test_extract_text_and_code_prompts():
     base_message = BaseMessage(
         role_name="test_role_name", role_type=RoleType.USER, meta_dict=dict(),
         role="user", content="This is a text prompt.\n\n"
-        "```python\nprint('This is a code prompt')\n```")
+        "```python\nprint('This is a code prompt')\n```\n"
+        "This is another text prompt.\n\n"
+        "```c\nprintf(\"This is another code prompt\");\n```")
     text_prompts, code_prompts = base_message.extract_text_and_code_prompts()
 
-    assert len(text_prompts) == 1
+    assert len(text_prompts) == 2
     assert isinstance(text_prompts[0], TextPrompt)
+    assert isinstance(text_prompts[1], TextPrompt)
     assert text_prompts[0] == "This is a text prompt."
+    assert text_prompts[1] == "This is another text prompt."
 
-    assert len(code_prompts) == 1
+    assert len(code_prompts) == 2
     assert isinstance(code_prompts[0], CodePrompt)
+    assert isinstance(code_prompts[1], CodePrompt)
     assert code_prompts[0] == "print('This is a code prompt')"
+    assert code_prompts[1] == "printf(\"This is another code prompt\");"
     assert code_prompts[0].code_type == "python"
+    assert code_prompts[1].code_type == "c"
 
 
 def test_base_message_to_dict(base_message: BaseMessage) -> None:
