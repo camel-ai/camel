@@ -11,37 +11,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from setuptools import find_packages, setup
+from camel.agents import BaseToolAgent
 
-__version__ = '0.1.0'
 
-install_requires = [
-    'numpy',
-    'openai',
-    'tenacity',
-    'tiktoken',
-    'colorama',
-]
+class DummyToolAgent(BaseToolAgent):
 
-test_requires = [
-    'pytest',
-    'pytest-cov',
-]
+    def reset(self):
+        pass
 
-dev_requires = [
-    'pre-commit',
-    'yapf',
-    'isort',
-    'flake8',
-]
+    def step(self):
+        pass
 
-setup(
-    name='camel',
-    version=__version__,
-    install_requires=install_requires,
-    extras_require={
-        'test': test_requires,
-        'dev': dev_requires,
-    },
-    packages=find_packages(),
-)
+
+def test_tool_agent_initialization():
+    tool_agent = DummyToolAgent("tool_agent", "description")
+    assert tool_agent.name == "tool_agent"
+    assert tool_agent.description == "description"

@@ -12,30 +12,31 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from camel.prompts.base import (
+    CodePrompt,
     TextPrompt,
     TextPromptDict,
-    return_text_prompt,
-    wrap_text_prompt_functions,
+    return_prompt_wrapper,
+    wrap_prompt_functions,
 )
 
 
-def test_return_text_prompt_decorator():
+def test_return_prompt_wrapper():
 
-    @return_text_prompt
     def my_function():
         return "Hello, world!"
 
+    my_function = return_prompt_wrapper(TextPrompt, my_function)
     result = my_function()
     assert isinstance(result, TextPrompt)
     assert str(result) == "Hello, world!"
 
 
-def test_return_text_prompt_decorator_with_tuple():
+def test_return_prompt_wrapper_with_tuple():
 
-    @return_text_prompt
     def my_function():
         return ("Hello, {name}!", "Welcome, {name}!")
 
+    my_function = return_prompt_wrapper(TextPrompt, my_function)
     result = my_function()
     assert isinstance(result, tuple)
     assert all(isinstance(item, TextPrompt) for item in result)
@@ -43,11 +44,11 @@ def test_return_text_prompt_decorator_with_tuple():
     assert str(result[1]) == "Welcome, {name}!"
 
 
-def test_wrap_text_prompt_functions():
+def test_wrap_prompt_functions():
     # Example class for testing
     class MyClass:
 
-        def __init__(self):
+        def __init__(self, *args, **kwargs):
             pass
 
         def my_function(self):
@@ -57,7 +58,7 @@ def test_wrap_text_prompt_functions():
             return "Goodbye, World!"
 
     # Decorate the class with the wrapper function
-    @wrap_text_prompt_functions
+    @wrap_prompt_functions
     class MyDecoratedClass(MyClass):
         pass
 
@@ -65,8 +66,8 @@ def test_wrap_text_prompt_functions():
     obj = MyDecoratedClass()
 
     # Check if the functions are wrapped correctly
-    assert isinstance(obj.my_function(), TextPrompt)
-    assert isinstance(obj.my_other_function(), TextPrompt)
+    assert isinstance(obj.my_function(), MyDecoratedClass)
+    assert isinstance(obj.my_other_function(), MyDecoratedClass)
 
 
 def test_text_prompt_key_words():
@@ -115,3 +116,32 @@ def test_text_prompt_dict():
     prompt_dict = TextPromptDict()
     prompt_dict['test'] = TextPrompt('test')
     assert prompt_dict['test'] == TextPrompt('test')
+
+
+def test_code_prompt_initialization():
+    code_prompt = CodePrompt("print('Hello, World!')", code_type="python")
+    assert code_prompt == "print('Hello, World!')"
+    assert code_prompt.code_type == "python"
+
+
+def test_code_prompt_missing_code_type():
+    code_prompt = CodePrompt("print('Hello, World!')")
+    assert code_prompt.code_type is None
+
+
+def test_code_prompt_set_code_type():
+    code_prompt = CodePrompt("print('Hello, World!')")
+    code_prompt.set_code_type("python")
+    assert code_prompt.code_type == "python"
+
+
+def test_code_prompt_execute():
+    code_prompt = CodePrompt("a = 1\nprint('Hello, World!')",
+                             code_type="python")
+    assert code_prompt.execute() == ("Hello, World!\n", {"a": 1})
+
+
+def test_code_prompt_execute_error():
+    code_prompt = CodePrompt("print('Hello, World!'", code_type="python")
+    traceback_str, _ = code_prompt.execute()
+    assert "SyntaxError" in traceback_str

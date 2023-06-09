@@ -16,7 +16,9 @@ Welcome to CAMEL's documentation!
    :caption: Get Started:
    :name: getting_started
 
-   get_started/prompts.md
+   get_started/text_prompt.md
+   get_started/code_prompt.md
+
 
 .. toctree::
    :maxdepth: 1

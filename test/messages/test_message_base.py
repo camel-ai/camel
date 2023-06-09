@@ -13,7 +13,8 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import pytest
 
-from camel.messages import BaseMessage, SystemMessage
+from camel.messages import BaseMessage
+from camel.prompts import CodePrompt, TextPrompt
 from camel.typing import RoleType
 
 
@@ -28,14 +29,62 @@ def base_message() -> BaseMessage:
     )
 
 
-@pytest.fixture
-def system_message() -> SystemMessage:
-    return SystemMessage(
-        role_name="test_assistant",
-        role_type=RoleType.ASSISTANT,
-        meta_dict=None,
-        content="test system message",
-    )
+def test_base_message_get_attribute(base_message: BaseMessage):
+    assert base_message.upper().content == "TEST CONTENT"
+    assert base_message.startswith("test")
+
+
+def test_base_message_addition_operator(base_message: BaseMessage):
+    new_message = base_message + "!"
+    assert new_message.content == "test content!"
+
+
+def test_base_message_multiplication_operator(base_message: BaseMessage):
+    new_message = base_message * 3
+    assert new_message.content == "test contenttest contenttest content"
+
+
+def test_base_message_length_operator(base_message: BaseMessage):
+    assert len(base_message) == 12
+
+
+def test_base_message_contains_operator(base_message: BaseMessage):
+    assert "test" in base_message
+    assert "foo" not in base_message
+
+
+def test_base_message_token_len(base_message: BaseMessage):
+    token_len = base_message.token_len()
+    assert isinstance(token_len, int)
+    assert token_len == 9
+
+
+def test_extract_text_and_code_prompts():
+    base_message = BaseMessage(
+        role_name="test_role_name", role_type=RoleType.USER, meta_dict=dict(),
+        role="user", content="This is a text prompt.\n\n"
+        "```python\nprint('This is a code prompt')\n```")
+    text_prompts, code_prompts = base_message.extract_text_and_code_prompts()
+
+    assert len(text_prompts) == 1
+    assert isinstance(text_prompts[0], TextPrompt)
+    assert text_prompts[0] == "This is a text prompt."
+
+    assert len(code_prompts) == 1
+    assert isinstance(code_prompts[0], CodePrompt)
+    assert code_prompts[0] == "print('This is a code prompt')"
+    assert code_prompts[0].code_type == "python"
+
+
+def test_base_message_to_dict(base_message: BaseMessage) -> None:
+    expected_dict = {
+        "role_name": "test_user",
+        "role_type": "USER",
+        "key": "value",
+        "role": "user",
+        "content": "test content",
+    }
+    assert base_message.to_dict() == expected_dict
 
 
 def test_base_message():
@@ -93,48 +142,3 @@ def test_base_message():
         **(meta_dict or {}), "role": role,
         "content": content
     }
-
-
-def test_system_message():
-    role_name = "test_role_name"
-    role_type = RoleType.USER
-    meta_dict = {"key": "value"}
-    content = "test_content"
-
-    message = SystemMessage(role_name=role_name, role_type=role_type,
-                            meta_dict=meta_dict, content=content)
-
-    assert message.role_name == role_name
-    assert message.role_type == role_type
-    assert message.meta_dict == meta_dict
-    assert message.role == "system"
-    assert message.content == content
-
-    dictionary = message.to_dict()
-    assert dictionary == {
-        "role_name": role_name,
-        "role_type": role_type.name,
-        **(meta_dict or {}), "role": "system",
-        "content": content
-    }
-
-
-def test_base_message_to_dict(base_message: BaseMessage) -> None:
-    expected_dict = {
-        "role_name": "test_user",
-        "role_type": "USER",
-        "key": "value",
-        "role": "user",
-        "content": "test content",
-    }
-    assert base_message.to_dict() == expected_dict
-
-
-def test_system_message_to_dict(system_message: SystemMessage) -> None:
-    expected_dict = {
-        "role_name": "test_assistant",
-        "role_type": "ASSISTANT",
-        "role": "system",
-        "content": "test system message",
-    }
-    assert system_message.to_dict() == expected_dict

@@ -46,7 +46,7 @@ class TaskSpecifyAgent(ChatAgent):
         self,
         model: ModelType = ModelType.GPT_3_5_TURBO,
         task_type: TaskType = TaskType.AI_SOCIETY,
-        model_config: Any = None,
+        model_config: Optional[Any] = None,
         task_specify_prompt: Optional[Union[str, TextPrompt]] = None,
         word_limit: int = DEFAULT_WORD_LIMIT,
     ) -> None:
