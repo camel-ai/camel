@@ -190,7 +190,7 @@ def get_first_int(string: str) -> Optional[int]:
         return None
 
 
-def download_tasks(task: TaskType, folder_path: str):
+def download_tasks(task: TaskType, folder_path: str) -> None:
     # Download the zip file from the Google Drive link
     if task == TaskType.AI_SOCIETY:
         file_id = "194PPaSTBR07m-PzjS-Ty6KlPLdFIPQDd"
