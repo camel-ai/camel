@@ -77,76 +77,6 @@ class EmbodiedAgent(ChatAgent):
             for action in self.action_space
         ])
 
-    @staticmethod
-    def execute_code(code_string: str,
-                     global_vars: Optional[Dict] = None) -> str:
-        r"""Executes the given code string.
-
-        Args:
-            code_string (str): The code string to execute.
-            global_vars (Dict, optional): The global variables to use during
-                code execution. (default: :obj:`None`)
-
-        Returns:
-            str: The execution results.
-        """
-        # TODO: Refactor this with `CodePrompt.execute`.
-        try:
-            # Execute the code string
-            import io
-            import sys
-            output_str = io.StringIO()
-            sys.stdout = output_str
-
-            global_vars = global_vars or globals()
-            local_vars = {}
-            exec(
-                code_string,
-                global_vars,
-                local_vars,
-            )
-            sys.stdout = sys.__stdout__
-            output_str.seek(0)
-
-            # If there was no error, return the output
-            return (f"- Python standard output:\n{output_str.read()}\n"
-                    f"- Local variables:\n{str(local_vars)}")
-        except Exception:
-            import traceback
-            traceback_str = traceback.format_exc()
-            sys.stdout = sys.__stdout__
-            # If there was an error, return the error message
-            return f"Traceback:\n{traceback_str}"
-
-    @staticmethod
-    def get_explanation_and_code(
-            text_prompt: str) -> Tuple[str, Optional[str]]:
-        r"""Extracts the explanation and code from the text prompt.
-
-        Args:
-            text_prompt (str): The text prompt containing the explanation and
-                code.
-
-        Returns:
-            Tuple[str, Optional[str]]: The extracted explanation and code.
-        """
-        # TODO: Refactor this with `BaseMessage.extract_text_and_code_prompts`.
-        lines = text_prompt.split("\n")
-        idx = 0
-        while idx < len(lines) and not lines[idx].lstrip().startswith("```"):
-            idx += 1
-        explanation = "\n".join(lines[:idx]).strip()
-        if idx == len(lines):
-            return explanation, None
-
-        idx += 1
-        start_idx = idx
-        while not lines[idx].lstrip().startswith("```"):
-            idx += 1
-        code = "\n".join(lines[start_idx:idx]).strip()
-
-        return explanation, code
-
     def step(
         self,
         input_message: ChatMessage,
@@ -169,21 +99,34 @@ class EmbodiedAgent(ChatAgent):
             raise RuntimeError(f"{self.__class__.__name__} step failed.")
 
         # NOTE: Only single output messages are supported
-        output_message = response.msgs[0]
-        explanation, code = self.get_explanation_and_code(
-            output_message.content)
-        if self.verbose:
-            print_text_animated(self.logger_color +
-                                f"> Explanation:\n{explanation}")
-            print_text_animated(self.logger_color + f"> Code:\n{code}")
+        explanations, codes = response.msg.extract_text_and_code_prompts()
 
-        if code is not None:
+        if self.verbose:
+            for explanation, code in zip(explanations, codes):
+                print_text_animated(self.logger_color +
+                                    f"> Explanation:\n{explanation}")
+                print_text_animated(self.logger_color + f"> Code:\n{code}")
+
+            if len(explanations) > len(codes):
+                print_text_animated(self.logger_color +
+                                    f"> Explanation:\n{explanations}")
+
+        content = response.msg.content
+
+        if codes is not None:
+            content = "\n> Executed Results:"
             global_vars = {action.name: action for action in self.action_space}
-            executed_results = self.execute_code(code, global_vars)
-            output_message.content += (
-                f"\n> Executed Results:\n{executed_results}")
+            for code in codes:
+                executed_outputs = code.execute(global_vars)
+                content += (
+                    f"- Python standard output:\n{executed_outputs[0]}\n"
+                    f"- Local variables:\n{executed_outputs[1]}\n")
+                content += "*" * 50 + "\n"
 
         # TODO: Handle errors
-        input_message.content += (
-            f"\n> Embodied Actions:\n{output_message.content}")
-        return input_message, response.terminated, response.info
+        content = input_message.content + (Fore.RESET +
+                                           f"\n> Embodied Actions:\n{content}")
+        message = ChatMessage(input_message.role_name, input_message.role_type,
+                              input_message.meta_dict, input_message.role,
+                              content)
+        return message, response.terminated, response.info

@@ -25,6 +25,7 @@ from camel.messages import (
     UserSystemMessage,
 )
 from camel.typing import RoleType, TaskType
+from camel.utils import download_tasks
 
 
 def init_chat(
@@ -207,11 +208,27 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
 
 def main() -> None:
 
+    # Define the folder path
+    folder_path = "./code_data/"
+
+    # Check if the folder already exists
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+
+    # Check if the folder is empty
+    if not os.listdir(folder_path):
+        download_tasks(task=TaskType.CODE, folder_path=folder_path)
+
     # Chunk for parallel jobs
-    slurm_array_task_id = os.environ.get('SLURM_ARRAY_TASK_ID')
-    if not isinstance(slurm_array_task_id, str):
-        raise
-    array_idx = int(slurm_array_task_id)
+    try:
+        slurm_array_task_id = os.environ.get('SLURM_ARRAY_TASK_ID')
+        if not isinstance(slurm_array_task_id, str):
+            raise TypeError()
+        array_idx = int(slurm_array_task_id)
+    except (TypeError, ValueError) as e:
+        print(f"Error: {e}")
+        array_idx = 0
+
     languages_per_chunk = 4
 
     # Parameters for filtering the generated task string
