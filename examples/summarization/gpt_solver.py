@@ -39,11 +39,11 @@ def process_file(data: Dict[str, str]) -> None:
 
     prompt = "Solve the following task:\n" + data["specified_task"]
     user_msg = UserChatMessage(role_name="User", content=prompt)
-    assistant_msg, _, _ = agent.step(user_msg)
-    print(assistant_msg[0].content)
+    assistant_response = agent.step(user_msg)
+    print(assistant_response.msg.content)
 
     # Append solution to JSON file as "gpt_solution"
-    data["gpt_solution"] = assistant_msg[0].content
+    data["gpt_solution"] = assistant_response.msg.content
 
     # create save_dir if not exists
     if not os.path.exists(save_dir):

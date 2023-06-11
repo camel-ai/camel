@@ -47,6 +47,13 @@ class ChatAgentResponse:
     terminated: bool
     info: Dict[str, Any]
 
+    @property
+    def msg(self):
+        if len(self.msgs) != 1:
+            raise RuntimeError("Property msg is only available"
+                               "for a single message in msgs")
+        return self.msgs[0]
+
 
 class ChatAgent(BaseAgent):
     r"""Class for managing conversations of CAMEL Chat Agents.

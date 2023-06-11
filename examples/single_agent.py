@@ -30,8 +30,8 @@ def main(key: str = 'generate_users', num_roles: int = 50):
     agent.reset()
 
     user_msg = UserChatMessage(role_name="User", content=prompt)
-    assistant_msg, _, _ = agent.step(user_msg)
-    print(assistant_msg[0].content)
+    assistant_response = agent.step(user_msg)
+    print(assistant_response.msg.content)
 
 
 if __name__ == "__main__":

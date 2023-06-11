@@ -211,8 +211,10 @@ def role_playing_chat_init(state) -> \
         print("Error: session is none on role_playing_chat_init call")
         return state, state.chat, gr.update()
 
+    session: RolePlaying = state.session
+
     try:
-        assistant_msg, _ = state.session.init_chat()
+        assistant_msg, _ = session.init_chat()
         assistant_msg: AssistantChatMessage
     except (openai.error.RateLimitError, tenacity.RetryError,
             RuntimeError) as ex:
