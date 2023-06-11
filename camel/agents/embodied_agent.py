@@ -100,11 +100,10 @@ class EmbodiedAgent(ChatAgent):
 
         # NOTE: Only single output messages are supported
         output_message = output_messages[0]
-        explanations_list, codes_list =\
-            output_message.extract_text_and_code_prompts()
+        explanations, codes = output_message.extract_text_and_code_prompts()
 
         if self.verbose:
-            for explanation, code in zip(explanations_list, codes_list):
+            for explanation, code in zip(explanations, codes):
                 print_text_animated(self.logger_color +
                                     f"> Explanation:\n{explanation}")
                 print_text_animated(self.logger_color + f"> Code:\n{code}")
@@ -113,15 +112,15 @@ class EmbodiedAgent(ChatAgent):
                 print_text_animated(self.logger_color +
                                     f"> Explanation:\n{explanation}")
 
-        if codes_list is not None:
+        if codes is not None:
             output_message.content = "\n> Executed Results:"
-            for code in codes_list:
-                global_vars = {
-                    action.name: action
-                    for action in self.action_space
-                }
-                executed_results = code.execute(global_vars)
-                output_message.content += (f"\n{executed_results}")
+            global_vars = {action.name: action for action in self.action_space}
+            for code in codes:
+                executed_outputs = code.execute(global_vars)
+                output_message.content += (
+                    f"- Python standard output:\n{executed_outputs[0]}\n"
+                    f"- Local variables:\n{executed_outputs[1]}\n")
+                output_message.content += "*" * 50 + "\n"
 
         # TODO: Handle errors
         input_message.content += (
