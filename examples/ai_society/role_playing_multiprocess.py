@@ -20,6 +20,8 @@ from colorama import Fore
 
 from camel.agents import RolePlaying
 from camel.configs import ChatGPTConfig
+from camel.typing import TaskType
+from camel.utils import download_tasks
 
 
 def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
@@ -180,6 +182,18 @@ def main() -> None:
 
     # Disable/Enable Printing
     verbose = True
+
+    # Check for tasks folder and install if not exists
+    # Define the folder path
+    folder_path = "./ai_society_data/"
+
+    # Check if the folder already exists
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+
+    # Check if the folder is empty
+    if not os.listdir(folder_path):
+        download_tasks(task=TaskType.AI_SOCIETY, folder_path=folder_path)
 
     # Chunk for parallel jobs
     try:

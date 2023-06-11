@@ -14,13 +14,15 @@
 import os
 import re
 import time
+import zipfile
 from functools import wraps
 from typing import Any, Callable, List, Optional, Set, TypeVar
 
+import requests
 import tiktoken
 
 from camel.messages import OpenAIMessage
-from camel.typing import ModelType
+from camel.typing import ModelType, TaskType
 
 F = TypeVar('F', bound=Callable[..., Any])
 
@@ -186,3 +188,22 @@ def get_first_int(string: str) -> Optional[int]:
         return int(match.group())
     else:
         return None
+
+
+def download_tasks(task: TaskType, folder_path: str) -> None:
+    # Define the path to save the zip file
+    zip_file_path = os.path.join(folder_path, "tasks.zip")
+
+    # Download the zip file from the Google Drive link
+    response = requests.get("https://huggingface.co/datasets/camel-ai/"
+                            f"metadata/resolve/main/{task.value}_tasks.zip")
+
+    # Save the zip file
+    with open(zip_file_path, "wb") as f:
+        f.write(response.content)
+
+    with zipfile.ZipFile(zip_file_path, "r") as zip_ref:
+        zip_ref.extractall(folder_path)
+
+    # Delete the zip file
+    os.remove(zip_file_path)
