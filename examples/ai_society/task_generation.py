@@ -34,14 +34,12 @@ def generate_tasks(role_names: str, task_generator_prompt: str,
     user_msg = UserChatMessage(role_name="Task Generator",
                                content=task_generator_prompt)
 
-    assistant_msgs, assistant_terminated, _ = assistant_agent.step(user_msg)
+    assistant_response = assistant_agent.step(user_msg)
 
-    if assistant_terminated or assistant_msgs is None:
+    if assistant_response.terminated or len(assistant_response.msgs) == 0:
         raise RuntimeError("Assistant agent terminated unexpectedly.")
 
-    assistant_msg = assistant_msgs[0]
-
-    tasks = assistant_msg.content.split("\n")
+    tasks = assistant_response.msg.content.split("\n")
 
     # Filter out the generated response to include the tasks only
     for i, task in enumerate(tasks):

@@ -35,7 +35,7 @@ def main(key: str = "generate_users", num_roles: int = 50):
     )
     assistant_response = agent.step(user_msg)
     if assistant_response.msgs is not None:
-        print(assistant_response.msgs[0].content)
+        print(assistant_response.msg.content)
 
 
 if __name__ == "__main__":
