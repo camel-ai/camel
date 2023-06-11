@@ -25,12 +25,13 @@ class Human:
     Args:
         name (str): The name of the human user.
             (default: :obj:`"Kill Switch Engineer"`).
-        menu_color (Any): The color of the menu options displayed to the user.
-            (default: :obj:`Fore.MAGENTA`)
+        logger_color (Any): The color of the menu options displayed to the
+            user. (default: :obj:`Fore.MAGENTA`)
 
     Attributes:
         name (str): The name of the human user.
-        menu_color (Any): The color of the menu options displayed to the user.
+        logger_color (Any): The color of the menu options displayed to the
+            user.
         input_button (str): The text displayed for the input button.
         kill_button (str): The text displayed for the kill button.
         options_dict (Dict[str, str]): A dictionary containing the options
@@ -38,9 +39,9 @@ class Human:
     """
 
     def __init__(self, name: str = "Kill Switch Engineer",
-                 menu_color: Any = Fore.MAGENTA) -> None:
+                 logger_color: Any = Fore.MAGENTA) -> None:
         self.name = name
-        self.menu_color = menu_color
+        self.logger_color = logger_color
         self.input_button = f"Input by {self.name}."
         self.kill_button = "Stop!!!"
         self.options_dict: Dict[str, str] = dict()
@@ -58,12 +59,12 @@ class Human:
         options.append(self.input_button)
         options.append(self.kill_button)
         print_text_animated(
-            self.menu_color + "\n> Proposals from "
+            self.logger_color + "\n> Proposals from "
             f"{messages[0].role_name} ({messages[0].role_type}). "
             "Please choose an option:\n")
         for index, option in enumerate(options):
             print_text_animated(
-                self.menu_color +
+                self.logger_color +
                 f"\x1b[3mOption {index + 1}:\n{option}\x1b[0m\n")
             self.options_dict[str(index + 1)] = option
 
@@ -75,12 +76,12 @@ class Human:
         """
         while True:
             human_input = input(
-                self.menu_color +
+                self.logger_color +
                 f"Please enter your choice ([1-{len(self.options_dict)}]): ")
             print("\n")
             if human_input in self.options_dict:
                 break
-            print_text_animated(self.menu_color +
+            print_text_animated(self.logger_color +
                                 "\n> Invalid choice. Please try again.\n")
 
         return human_input
@@ -97,11 +98,11 @@ class Human:
             ChatMessage: A `ChatMessage` object.
         """
         if self.options_dict[human_input] == self.input_button:
-            meta_chat_message.content = input(self.menu_color +
+            meta_chat_message.content = input(self.logger_color +
                                               "Please enter your message: ")
             return meta_chat_message
         elif self.options_dict[human_input] == self.kill_button:
-            exit(self.menu_color + f"Killed by {self.name}.")
+            exit(self.logger_color + f"Killed by {self.name}.")
         else:
             meta_chat_message.content = self.options_dict[human_input]
             return meta_chat_message

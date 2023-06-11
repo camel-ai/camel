@@ -23,6 +23,7 @@ from camel.typing import ModelType, RoleType, TaskType
 from camel.utils import get_model_token_limit, openai_api_key_required
 
 
+@pytest.mark.slow
 @openai_api_key_required
 @pytest.mark.parametrize('model', [ModelType.GPT_3_5_TURBO, ModelType.GPT_4])
 def test_chat_agent(model):
@@ -61,6 +62,7 @@ def test_chat_agent(model):
     assert info['termination_reasons'][0] == "max_tokens_exceeded"
 
 
+@pytest.mark.slow
 @openai_api_key_required
 @pytest.mark.parametrize('n', [1, 2, 3])
 def test_chat_agent_multiple_return_messages(n):

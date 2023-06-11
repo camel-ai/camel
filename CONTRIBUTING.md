@@ -119,7 +119,8 @@ We kindly request that you provide comprehensive documentation for all classes a
 To build the documentation locally, follow these steps:
 
 ```bash
-sphinx-build docs docs/_build
+cd docs
+make html
 ```
 
 More guidelines about building and hosting documentations locally can be found [here](https://github.com/camel-ai/camel/blob/master/docs/README.md).
@@ -130,7 +131,18 @@ As of now, CAMEL is actively in development and not published to PyPI yet.
 
 CAMEL follows the [semver](https://semver.org/) versioning standard. As pre-1.0 software, even patch releases may contain [non-backwards-compatible changes](https://semver.org/#spec-item-4). Currently, the major version is 0, and the minor version is incremented. Releases are made once the maintainers feel that a significant body of changes has accumulated.
 
-### Giving Credit 🎉
+
+## License 📜
+
+The source code of the CAMEL project is licensed under Apache 2.0. Your contributed code will be also licensed under Apache 2.0 by default. To add license to you code, you can manually copy-paste it from `license_template.txt` to the head of your files or run the `update_license.py` script to automate the process:
+
+```bash
+python licenses/update_license.py . licenses/license_template.txt
+```
+
+This script will add licenses to all the `*.py` files or update the licenses if the existing licenses are not the same as `license_template.txt`.
+
+## Giving Credit 🎉
 
 If your contribution has been included in a release, we'd love to give you credit on Twitter, but only if you're comfortable with it!
 

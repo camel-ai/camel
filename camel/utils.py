@@ -15,12 +15,14 @@ import os
 import re
 import time
 from functools import wraps
-from typing import Any, Callable, List, Optional, Set
+from typing import Any, Callable, List, Optional, Set, TypeVar
 
 import tiktoken
 
 from camel.messages import OpenAIMessage
 from camel.typing import ModelType
+
+F = TypeVar('F', bound=Callable[..., Any])
 
 
 def count_tokens_openai_chat_models(
@@ -109,7 +111,7 @@ def get_model_token_limit(model: ModelType) -> int:
         return 32768
 
 
-def openai_api_key_required(func: Callable[..., Any]) -> Callable[..., Any]:
+def openai_api_key_required(func: F) -> F:
     r"""Decorator that checks if the OpenAI API key is available in the
     environment variables.
 
@@ -125,7 +127,7 @@ def openai_api_key_required(func: Callable[..., Any]) -> Callable[..., Any]:
     """
 
     @wraps(func)
-    def wrapper(*args, **kwargs) -> Callable[..., Any]:
+    def wrapper(*args, **kwargs):
         if 'OPENAI_API_KEY' in os.environ:
             return func(*args, **kwargs)
         else:
