@@ -75,12 +75,12 @@ def test_role_playing_step(task_type, extend_sys_msg_meta_dicts,
     print(role_playing.assistant_agent.system_message)
     print(role_playing.user_agent.system_message)
 
-    (assistant_msg, assistant_terminated,
-     assistant_info), (user_msg, user_terminated,
-                       user_info) = role_playing.step(init_assistant_msg)
-    assert isinstance(assistant_msg, ChatMessage)
-    assert assistant_terminated is False
-    assert assistant_info is not None
-    assert isinstance(user_msg, ChatMessage)
-    assert user_terminated is False
-    assert user_info is not None
+    assistant_response, user_response = role_playing.step(init_assistant_msg)
+
+    for response in (assistant_response, user_response):
+        assert isinstance(response.msgs, list)
+        assert len(response.msgs) == 1
+        assert isinstance(response.msgs[0], ChatMessage)
+        assert isinstance(response.terminated, bool)
+        assert response.terminated is False
+        assert isinstance(response.info, dict)

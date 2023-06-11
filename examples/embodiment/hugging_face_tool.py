@@ -11,7 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from typing import List
+
 from camel.agents import EmbodiedAgent, HuggingFaceToolAgent
+from camel.agents.tool_agents.base import BaseToolAgent
 from camel.generators import SystemMessageGenerator
 from camel.messages import UserChatMessage
 from camel.typing import ModelType, RoleType
@@ -31,6 +34,7 @@ def main():
             remote=True,
         )
     ]
+    action_space: List[BaseToolAgent]
     embodied_agent = EmbodiedAgent(
         sys_msg,
         verbose=True,

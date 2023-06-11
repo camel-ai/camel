@@ -59,14 +59,14 @@ def generate_questions(examples: str, category: str, save_file_name: str,
     agent.reset()
 
     user_msg = UserChatMessage(role_name="User", content=prompt)
-    assistant_msg, _, _ = agent.step(user_msg)
+    assistant_response = agent.step(user_msg)
 
-    if assistant_msg is not None:
+    if len(assistant_response.msgs) > 0:
 
-        print(assistant_msg[0].content)
+        print(assistant_response.msg.content)
 
-        parsed_assistant_msg = parse_question_string(assistant_msg[0].content,
-                                                     category)
+        parsed_assistant_msg = parse_question_string(
+            assistant_response.msg.content, category)
 
         # save json file
         folder_path = './evaluation_data/questions'

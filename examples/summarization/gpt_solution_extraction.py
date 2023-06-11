@@ -111,8 +111,8 @@ def solution_extraction(conversation: Dict, flattened_conversation: str,
     prompt = "Here is the conversation:" + flattened_conversation
 
     user_msg = UserChatMessage(role_name="User", content=prompt)
-    assistant_msg, _, _ = agent.step(user_msg)
-    print(assistant_msg[0].content)
+    assistant_response = agent.step(user_msg)
+    print(assistant_response.msg.content)
 
     # Create folder to write solution_extraction to
     if not os.path.exists(
@@ -120,7 +120,7 @@ def solution_extraction(conversation: Dict, flattened_conversation: str,
         os.makedirs("../camel/camel_data/ai_society_solution_extraction")
 
     # Append to the original JSON conversation file
-    conversation['solution_extraction'] = assistant_msg[0].content
+    conversation['solution_extraction'] = assistant_response.msg.content
 
     # Save new dictionary as JSON file
     with open(f"./camel_data/ai_society_solution_extraction/{file_name}.json",

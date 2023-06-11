@@ -33,10 +33,14 @@ def generate_meta_data(meta_data: str, num: int = 50):
         role_name="User",
         content=prompt,
     )
-    assistant_msg, _, _ = agent.step(user_msg)
-    print(assistant_msg[0].content)
+    assistant_response = agent.step(user_msg)
+    print(assistant_response.msg.content)
+
+
+def main():
+    generate_meta_data("languages", 20)
+    generate_meta_data("domains", 50)
 
 
 if __name__ == "__main__":
-    generate_meta_data("languages", 20)
-    generate_meta_data("domains", 50)
+    main()

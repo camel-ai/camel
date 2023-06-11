@@ -211,8 +211,10 @@ def role_playing_chat_init(state) -> \
         print("Error: session is none on role_playing_chat_init call")
         return state, state.chat, gr.update()
 
+    session: RolePlaying = state.session
+
     try:
-        assistant_msg, _ = state.session.init_chat()
+        assistant_msg, _ = session.init_chat()
         assistant_msg: AssistantChatMessage
     except (openai.error.RateLimitError, tenacity.RetryError,
             RuntimeError) as ex:
@@ -248,20 +250,24 @@ def role_playing_chat_cont(state) -> \
     if state.session is None:
         return state, state.chat, gr.update(visible=False), gr.update()
 
+    session: RolePlaying = state.session
+
     if state.saved_assistant_msg is None:
         return state, state.chat, gr.update(), gr.update()
 
     try:
-        assistant_msgs, user_msgs = state.session.step(
-            state.saved_assistant_msg)
+        assistant_msg, user_msg = session.step(state.saved_assistant_msg)
     except (openai.error.RateLimitError, tenacity.RetryError,
             RuntimeError) as ex:
         print("OpenAI API exception 2 " + str(ex))
         state.session = None
         return state, state.chat, gr.update(), gr.update()
 
-    u_msg = user_msgs[0]
-    a_msg = assistant_msgs[0]
+    if len(user_msg.msgs) != 1 or len(assistant_msg.msgs) != 1:
+        return state, state.chat, gr.update(), gr.update()
+
+    u_msg = user_msg.msgs[0]
+    a_msg = assistant_msg.msgs[0]
 
     state.saved_assistant_msg = a_msg
 

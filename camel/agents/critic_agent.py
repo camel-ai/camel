@@ -97,14 +97,14 @@ class CriticAgent(ChatAgent):
         msg_content = input_message.content
         i = 0
         while i < self.retry_attempts:
-            critic_msgs, terminated, _ = super().step(input_message)
+            critic_response = super().step(input_message)
 
-            if critic_msgs is None:
+            if critic_response.msgs is None or len(critic_response.msgs) == 0:
                 raise RuntimeError("Got None critic messages.")
-            if terminated:
+            if critic_response.terminated:
                 raise RuntimeError("Critic step failed.")
 
-            critic_msg = critic_msgs[0]
+            critic_msg = critic_response.msgs[0]
             self.update_messages(critic_msg)
             if self.verbose:
                 print_text_animated(self.logger_color + "\n> Critic response: "

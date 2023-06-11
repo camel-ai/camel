@@ -62,3 +62,6 @@ markers = [
     "full_test_only: mark a test to run only in full test mode",
     "slow: mark a test as slow",
 ]
+
+[tool.coverage.report]
+include_namespace_packages = true

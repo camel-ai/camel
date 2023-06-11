@@ -91,16 +91,15 @@ class EmbodiedAgent(ChatAgent):
                 containing the output messages, termination status, and
                 additional information.
         """
-        output_messages, terminated, info = super().step(input_message)
+        response = super().step(input_message)
 
-        if output_messages is None:
+        if response.msgs is None or len(response.msgs) == 0:
             raise RuntimeError("Got None output messages.")
-        if terminated:
+        if response.terminated:
             raise RuntimeError(f"{self.__class__.__name__} step failed.")
 
         # NOTE: Only single output messages are supported
-        output_message = output_messages[0]
-        explanations, codes = output_message.extract_text_and_code_prompts()
+        explanations, codes = response.msg.extract_text_and_code_prompts()
 
         if self.verbose:
             for explanation, code in zip(explanations, codes):
@@ -108,21 +107,26 @@ class EmbodiedAgent(ChatAgent):
                                     f"> Explanation:\n{explanation}")
                 print_text_animated(self.logger_color + f"> Code:\n{code}")
 
-            if len(explanation) > len(code):
+            if len(explanations) > len(codes):
                 print_text_animated(self.logger_color +
-                                    f"> Explanation:\n{explanation}")
+                                    f"> Explanation:\n{explanations}")
+
+        content = response.msg.content
 
         if codes is not None:
-            output_message.content = "\n> Executed Results:"
+            content = "\n> Executed Results:"
             global_vars = {action.name: action for action in self.action_space}
             for code in codes:
                 executed_outputs = code.execute(global_vars)
-                output_message.content += (
+                content += (
                     f"- Python standard output:\n{executed_outputs[0]}\n"
                     f"- Local variables:\n{executed_outputs[1]}\n")
-                output_message.content += "*" * 50 + "\n"
+                content += "*" * 50 + "\n"
 
         # TODO: Handle errors
-        input_message.content += (
-            Fore.RESET + f"\n> Embodied Actions:\n{output_message.content}")
-        return input_message, terminated, info
+        content = input_message.content + (Fore.RESET +
+                                           f"\n> Embodied Actions:\n{content}")
+        message = ChatMessage(input_message.role_name, input_message.role_type,
+                              input_message.meta_dict, input_message.role,
+                              content)
+        return message, response.terminated, response.info
