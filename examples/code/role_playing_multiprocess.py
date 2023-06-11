@@ -211,7 +211,7 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
 def main() -> None:
 
     # Define the folder path
-    folder_path = "./code_data/tasks/"
+    folder_path = "./code_data/"
 
     # Check if the folder already exists
     if not os.path.exists(folder_path):

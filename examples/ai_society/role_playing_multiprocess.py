@@ -185,7 +185,7 @@ def main() -> None:
 
     # Check for tasks folder and install if not exists
     # Define the folder path
-    folder_path = "./ai_society_data/tasks/"
+    folder_path = "./ai_society_data/"
 
     # Check if the folder already exists
     if not os.path.exists(folder_path):
