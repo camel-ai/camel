@@ -1,4 +1,4 @@
-# Tutorial: Working with the `BaseMessage` Class
+# Working with the `BaseMessage` Class
 
 In this tutorial, we will explore the `BaseMessage`, `SystemMessage`, `AssistantSystemMessage`, `UserSystemMessage`, `ChatMessage`, `AssistantChatMessage`, and `UserChatMessage` class. The topics covered include:
 
