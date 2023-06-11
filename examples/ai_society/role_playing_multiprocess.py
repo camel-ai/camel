@@ -15,13 +15,13 @@ import json
 import multiprocessing
 import os
 import sys
-import zipfile
 
-import requests
 from colorama import Fore
 
 from camel.agents import RolePlaying
 from camel.configs import ChatGPTConfig
+from camel.typing import TaskType
+from camel.utils import download_tasks
 
 
 def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
@@ -193,31 +193,7 @@ def main() -> None:
 
     # Check if the folder is empty
     if not os.listdir(folder_path):
-        # Download the zip file from the Google Drive link
-        file_id = "194PPaSTBR07m-PzjS-Ty6KlPLdFIPQDd"
-        url = f"https://drive.google.com/uc?id={file_id}"
-        response = requests.get(url)
-
-        # Save the zip file
-        zip_file_path = os.path.join(folder_path, "tasks.zip")
-        with open(zip_file_path, "wb") as f:
-            f.write(response.content)
-
-        # Extract the files from the zip file
-        with zipfile.ZipFile(zip_file_path, "r") as zip_ref:
-            zip_ref.extractall(folder_path)
-
-        # Delete the zip file
-        os.remove(zip_file_path)
-
-    # Remove any nested folder created during extraction
-    nested_folder_path = os.path.join(folder_path, "tasks")
-    if os.path.exists(nested_folder_path):
-        for file_name in os.listdir(nested_folder_path):
-            file_path = os.path.join(nested_folder_path, file_name)
-            destination_path = os.path.join(folder_path, file_name)
-            os.rename(file_path, destination_path)
-        os.rmdir(nested_folder_path)
+        download_tasks(task=TaskType.AI_SOCIETY, folder_path=folder_path)
 
     # Chunk for parallel jobs
     try:
