@@ -11,10 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 
 import openai
-from tenacity import retry, stop_after_attempt, wait_exponential
+from tenacity import retry
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_exponential
 
 from camel.agents import BaseAgent
 from camel.configs import ChatGPTConfig
@@ -25,6 +28,31 @@ from camel.utils import (
     num_tokens_from_messages,
     openai_api_key_required,
 )
+
+
+@dataclass(frozen=True)
+class ChatAgentResponse:
+    r"""Response of a ChatAgent.
+
+    Attributes:
+        msgs (List[ChatMessage]): A list of zero, one or several messages.
+            If the list is empty, there is some error in message generation.
+            If the list has one message, this is normal mode.
+            If the list has several messages, this is the critic mode.
+        terminated (bool): A boolean indicating whether the agent decided
+            to terminate the chat session.
+        info (Dict[str, Any]): Extra information about the chat message.
+    """
+    msgs: List[ChatMessage]
+    terminated: bool
+    info: Dict[str, Any]
+
+    @property
+    def msg(self):
+        if len(self.msgs) != 1:
+            raise RuntimeError("Property msg is only available"
+                               "for a single message in msgs")
+        return self.msgs[0]
 
 
 class ChatAgent(BaseAgent):
@@ -59,7 +87,7 @@ class ChatAgent(BaseAgent):
         self.model_token_limit = get_model_token_limit(self.model)
         self.message_window_size = message_window_size
 
-        self.terminated = False
+        self.terminated: bool = False
         self.init_messages()
 
     def reset(self) -> List[MessageType]:
@@ -124,7 +152,7 @@ class ChatAgent(BaseAgent):
     def step(
         self,
         input_message: ChatMessage,
-    ) -> Tuple[Optional[List[ChatMessage]], bool, Dict[str, Any]]:
+    ) -> ChatAgentResponse:
         r"""Performs a single step in the chat session by generating a response
         to the input message.
 
@@ -132,7 +160,7 @@ class ChatAgent(BaseAgent):
             input_message (ChatMessage): The input message to the agent.
 
         Returns:
-            Tuple[Optional[List[ChatMessage]], bool, Dict[str, Any]]: A tuple
+            ChatAgentResponse: A struct
                 containing the output messages, a boolean indicating whether
                 the chat session has terminated, and information about the chat
                 session.
@@ -145,12 +173,17 @@ class ChatAgent(BaseAgent):
         openai_messages = [message.to_openai_message() for message in messages]
         num_tokens = num_tokens_from_messages(openai_messages, self.model)
 
+        output_messages: Optional[List[ChatMessage]]
+        info: Dict[str, Any]
+
         if num_tokens < self.model_token_limit:
             response = openai.ChatCompletion.create(
                 model=self.model.value,
                 messages=openai_messages,
                 **self.model_config.__dict__,
             )
+            if not isinstance(response, dict):
+                raise RuntimeError("OpenAI returned unexpected struct")
             output_messages = [
                 ChatMessage(role_name=self.role_name, role_type=self.role_type,
                             meta_dict=dict(), **dict(choice["message"]))
@@ -168,7 +201,7 @@ class ChatAgent(BaseAgent):
 
         else:
             self.terminated = True
-            output_messages = None
+            output_messages = []
 
             info = self.get_info(
                 None,
@@ -177,7 +210,7 @@ class ChatAgent(BaseAgent):
                 num_tokens,
             )
 
-        return output_messages, self.terminated, info
+        return ChatAgentResponse(output_messages, self.terminated, info)
 
     def __repr__(self) -> str:
         r"""Returns a string representation of the :obj:`ChatAgent`.

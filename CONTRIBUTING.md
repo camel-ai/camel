@@ -82,8 +82,17 @@ isort .
 
 Code coverage measures the extent to which unit tests cover the code, helping identify both robust and less robust areas of the codebase.
 
-To generate a report showing the current code coverage, execute the following command:
+To generate a report showing the current code coverage, execute one of the following commands.
 
+To include all source files into coverage:
+```
+coverage erase
+coverage run --source=. -m pytest .
+coverage html
+# Open htmlcov/index.html
+```
+
+To include only tested files:
 ```bash
 pytest --cov --cov-report=html
 ```

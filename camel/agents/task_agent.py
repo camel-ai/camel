@@ -95,13 +95,16 @@ class TaskSpecifyAgent(ChatAgent):
 
         task_msg = UserChatMessage(role_name="Task Specifier",
                                    content=self.task_specify_prompt)
-        specified_task_msgs, terminated, _ = super().step(task_msg)
-        specified_task_msg = specified_task_msgs[0]
-
-        if terminated:
+        specifier_response = super().step(task_msg)
+        if (specifier_response.msgs is None
+                or len(specifier_response.msgs) == 0):
             raise RuntimeError("Task specification failed.")
-        else:
-            return TextPrompt(specified_task_msg.content)
+        specified_task_msg = specifier_response.msgs[0]
+
+        if specifier_response.terminated:
+            raise RuntimeError("Task specification failed.")
+
+        return TextPrompt(specified_task_msg.content)
 
 
 class TaskPlannerAgent(ChatAgent):
@@ -155,12 +158,13 @@ class TaskPlannerAgent(ChatAgent):
 
         task_msg = UserChatMessage(role_name="Task Planner",
                                    content=self.task_planner_prompt)
-        sub_tasks_msgs, terminated, _ = super().step(task_msg)
+        # sub_tasks_msgs, terminated, _
+        task_tesponse = super().step(task_msg)
 
-        if sub_tasks_msgs is None:
+        if task_tesponse.msgs is None:
             raise RuntimeError("Got None Subtasks messages.")
-        if terminated:
+        if task_tesponse.terminated:
             raise RuntimeError("Task planning failed.")
 
-        sub_tasks_msg = sub_tasks_msgs[0]
+        sub_tasks_msg = task_tesponse.msgs[0]
         return TextPrompt(sub_tasks_msg.content)

@@ -43,7 +43,7 @@ class AssistantChatMessage(ChatMessage):
     r"""Class for chat messages from the assistant role used in CAMEL chat
     system.
 
-    Args:
+    Attributes:
         role_name (str): The name of the assistant role.
         role_type (RoleType): The type of role, always
             :obj:`RoleType.ASSISTANT`.

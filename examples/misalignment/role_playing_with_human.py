@@ -54,25 +54,24 @@ def main() -> None:
     while n < chat_turn_limit:
         n += 1
         assistant_return, user_return = role_play_session.step(assistant_msg)
-        assistant_msg, assistant_terminated, assistant_info = assistant_return
-        user_msg, user_terminated, user_info = user_return
 
-        if assistant_terminated:
+        if assistant_return.terminated:
             print(Fore.GREEN +
                   ("AI Assistant terminated. "
-                   f"Reason: {assistant_info['termination_reasons']}."))
+                   f"Reason: {assistant_return.info['termination_reasons']}."))
             break
-        if user_terminated:
+        if user_return.terminated:
             print(Fore.GREEN +
                   ("AI User terminated. "
-                   f"Reason: {user_info['termination_reasons']}."))
+                   f"Reason: {user_return.info['termination_reasons']}."))
             break
 
-        print_text_animated(Fore.BLUE + f"AI User:\n\n{user_msg.content}\n")
+        print_text_animated(Fore.BLUE +
+                            f"AI User:\n\n{user_return.msg.content}\n")
         print_text_animated(Fore.GREEN +
                             f"AI Assistant:\n\n{assistant_msg.content}\n")
 
-        if "CAMEL_TASK_DONE" in user_msg.content:
+        if "CAMEL_TASK_DONE" in user_return.msg.content:
             break
 
 

@@ -46,9 +46,9 @@ def init_chat(
 
     user_msg = UserChatMessage(role_name=user_agent.role_name,
                                content=f"{assistant_sys_msg.content}")
-    msgs, _, _ = assistant_agent.step(user_msg)
+    assistant_response = assistant_agent.step(user_msg)
 
-    return assistant_msg, msgs
+    return assistant_msg, assistant_response.msgs
 
 
 def generate_data(language_idx: int, language_name: str, domain_idx: int,
@@ -125,36 +125,33 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
 
     while message_counter < max_num_messages:
 
-        user_msgs, user_terminated, user_info = user_agent.step(
-            assistant_msg.to_user_chat_message())
+        user_response = user_agent.step(assistant_msg.to_user_chat_message())
 
         # Condition 1: User terminates the chat
-        if user_terminated:
+        if user_response.terminated:
             message_dict["termination_reason"] = (
                 f"{str(user_agent.role_type)}: "
-                f"{user_info['termination_reasons'][0]}")
+                f"{user_response.info['termination_reasons'][0]}")
             break
 
-        user_msg = user_msgs[0]
-        user_agent.update_messages(user_msg)
-        print(f"User:\n{user_msg.content}\n")
+        user_agent.update_messages(user_response.msg)
+        print(f"User:\n{user_response.msg.content}\n")
 
-        assistant_msgs, assistant_terminated, assistant_info = (
-            assistant_agent.step(user_msg.to_user_chat_message()))
+        assistant_response = assistant_agent.step(
+            user_response.msg.to_user_chat_message())
 
         # Condition 2: Assistant terminates the chat
-        if assistant_terminated:
+        if assistant_response.terminated:
             message_dict["termination_reason"] = (
                 f"{str(assistant_agent.role_type)}: "
-                f"{assistant_info['termination_reasons'][0]}")
+                f"{assistant_response.info['termination_reasons'][0]}")
             break
 
-        assistant_msg = assistant_msgs[0]
-        assistant_agent.update_messages(assistant_msg)
+        assistant_agent.update_messages(assistant_response.msg)
         print(f"Assistant:\n{assistant_msg.content}\n")
 
         # Condition 3: Break if user does not give instruction
-        if user_no_instruct_word not in user_msg.content:
+        if user_no_instruct_word not in user_response.msg.content:
             user_no_instruct_counter += 1
             if user_no_instruct_counter == user_no_instruct_threshold:
                 message_dict[
@@ -175,7 +172,7 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
 
         # Condition 5: Repeat word observed
         for repeat_word in repeat_word_list:
-            if repeat_word in user_msg.content.lower(
+            if repeat_word in user_response.msg.content.lower(
             ) or repeat_word in assistant_msg.content.lower():
                 repeat_word_counter += 1
                 if repeat_word_counter == repeat_word_threshold:
@@ -187,10 +184,11 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
 
         # Save user message
         message_counter += 1
-        message_dict[f"message_{message_counter}"] = user_msg.to_dict()
+        message_dict[f"message_{message_counter}"] = user_response.msg.to_dict(
+        )
 
         # Condition 5: End token observed
-        if "<CAMEL_TASK_DONE>" in user_msg.content:
+        if "<CAMEL_TASK_DONE>" in user_response.msg.content:
             message_dict['termination_reason'] = "<CAMEL_TASK_DONE>"
             break
 
@@ -223,7 +221,10 @@ def main() -> None:
 
     # Chunk for parallel jobs
     try:
-        array_idx = int(os.environ.get('SLURM_ARRAY_TASK_ID'))
+        slurm_array_task_id = os.environ.get('SLURM_ARRAY_TASK_ID')
+        if not isinstance(slurm_array_task_id, str):
+            raise TypeError()
+        array_idx = int(slurm_array_task_id)
     except (TypeError, ValueError) as e:
         print(f"Error: {e}")
         array_idx = 0
