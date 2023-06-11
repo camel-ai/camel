@@ -46,9 +46,11 @@ def test_chat_agent(model):
                            meta_dict=dict(), role="user", content="Hello!")
     assistant_response = assistant.step(user_msg)
 
-    assert assistant_response.terminated is False
-    assert assistant_response.msgs is not None
+    assert isinstance(assistant_response.msgs, list)
     assert len(assistant_response.msgs) > 0
+    assert isinstance(assistant_response.terminated, bool)
+    assert assistant_response.terminated is False
+    assert isinstance(assistant_response.info, dict)
     assert assistant_response.info['id'] is not None
 
     assistant.reset()
@@ -58,8 +60,11 @@ def test_chat_agent(model):
                            content="token" * (token_limit + 1))
     assistant_response = assistant.step(user_msg)
 
+    assert isinstance(assistant_response.msgs, list)
+    assert len(assistant_response.msgs) == 0
+    assert isinstance(assistant_response.terminated, bool)
     assert assistant_response.terminated is True
-    assert assistant_response.msgs is None
+    assert isinstance(assistant_response.info, dict)
     assert (assistant_response.info['termination_reasons'][0] ==
             "max_tokens_exceeded")
 

@@ -35,13 +35,15 @@ class ChatAgentResponse:
     r"""Response of a ChatAgent.
 
     Attributes:
-        msgs Optional[List[ChatMessage]]: A list of one or several messages in
-            the critic mode. None if terminated flag is set.
-        terminated (bool): A boolean indicating whether the chat session has
-            terminated.
-        info (Dict[str, Any]): Information about the chat session.
+        msgs (List[ChatMessage]): A list of zero, one or several messages.
+            If the list is empty, there is some error in message generation.
+            If the list has one message, this is normal mode.
+            If the list has several messages, this is the critic mode.
+        terminated (bool): A boolean indicating whether the agent decided
+            to terminate the chat session.
+        info (Dict[str, Any]): Extra information about the chat message.
     """
-    msgs: Optional[List[ChatMessage]]
+    msgs: List[ChatMessage]
     terminated: bool
     info: Dict[str, Any]
 
@@ -192,7 +194,7 @@ class ChatAgent(BaseAgent):
 
         else:
             self.terminated = True
-            output_messages = None
+            output_messages = []
 
             info = self.get_info(
                 None,

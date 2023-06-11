@@ -11,8 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from camel.agents import (
     ChatAgent,
@@ -20,26 +19,11 @@ from camel.agents import (
     TaskPlannerAgent,
     TaskSpecifyAgent,
 )
+from camel.agents.chat_agent import ChatAgentResponse
 from camel.generators import SystemMessageGenerator
 from camel.human import Human
 from camel.messages import AssistantChatMessage, ChatMessage, UserChatMessage
 from camel.typing import ModelType, RoleType, TaskType
-
-
-@dataclass(frozen=True)
-class MessageWithExtras:
-    r"""ChatMessage grouped with extra info.
-
-    Args:
-        msg (Optional[ChatMessage]): ChatMessage obtained from a chat agent.
-        terminated (Optional[bool]): Whether the agent requested termination
-            of the chat session.
-        info (Optional[Dict[str, Any]]): Extrainformation aasciated with
-            the current message.
-    """
-    msg: Optional[ChatMessage]
-    terminated: Optional[bool]
-    info: Optional[Dict[str, Any]]
 
 
 class RolePlaying:
@@ -260,7 +244,7 @@ class RolePlaying:
     def step(
         self,
         assistant_msg: ChatMessage,
-    ) -> Tuple[MessageWithExtras, MessageWithExtras]:
+    ) -> Tuple[ChatAgentResponse, ChatAgentResponse]:
         r"""Advances the conversation by taking a message from the assistant,
         processing it using the user agent, and then processing the resulting
         message using the assistant agent. Returns a tuple containing the
@@ -275,7 +259,7 @@ class RolePlaying:
                 assistant.
 
         Returns:
-            A tuple containing two MessageWithExtras: the first struct contains
+            A tuple containing two ChatAgentResponse: the first struct contains
             the resulting assistant message, whether or not the assistant agent
             terminated the conversation, and any additional assistant
             information; the second struct contains the resulting user message,
@@ -285,8 +269,8 @@ class RolePlaying:
         user_response = self.user_agent.step(
             assistant_msg.to_user_chat_message())
         if user_response.terminated or user_response.msgs is None:
-            return (MessageWithExtras(None, None, None),
-                    MessageWithExtras(None, user_response.terminated,
+            return (ChatAgentResponse([], False, {}),
+                    ChatAgentResponse([], user_response.terminated,
                                       user_response.info))
         user_msg = self.process_messages(user_response.msgs)
         self.user_agent.update_messages(user_msg)
@@ -294,16 +278,15 @@ class RolePlaying:
         assistant_response = self.assistant_agent.step(
             user_msg.to_user_chat_message())
         if assistant_response.terminated or assistant_response.msgs is None:
-            return (MessageWithExtras(None, assistant_response.terminated,
+            return (ChatAgentResponse([], assistant_response.terminated,
                                       assistant_response.info),
-                    MessageWithExtras(user_msg, assistant_response.terminated,
-                                      assistant_response.info))
+                    ChatAgentResponse([user_msg], False, user_response.info))
         assistant_msg = self.process_messages(assistant_response.msgs)
         self.assistant_agent.update_messages(assistant_msg)
 
         return (
-            MessageWithExtras(assistant_msg, assistant_response.terminated,
+            ChatAgentResponse([assistant_msg], assistant_response.terminated,
                               assistant_response.info),
-            MessageWithExtras(user_msg, user_response.terminated,
+            ChatAgentResponse([user_msg], user_response.terminated,
                               user_response.info),
         )
