@@ -14,6 +14,9 @@
 import json
 import multiprocessing
 import os
+import zipfile
+
+import requests
 
 from camel.agents import ChatAgent, TaskSpecifyAgent
 from camel.configs import ChatGPTConfig
@@ -209,8 +212,48 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
 
 def main() -> None:
 
+    # Define the folder path
+    folder_path = "./code_data/tasks/"
+
+    # Check if the folder already exists
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+
+    # Check if the folder is empty
+    if not os.listdir(folder_path):
+        # Download the zip file from the Google Drive link
+        file_id = "1AMkNch9_bjzDOMhcOUoV4u7NWiyRbCza"
+        url = f"https://drive.google.com/uc?id={file_id}"
+        response = requests.get(url)
+
+        # Save the zip file
+        zip_file_path = os.path.join(folder_path, "tasks.zip")
+        with open(zip_file_path, "wb") as f:
+            f.write(response.content)
+
+        # Extract the files from the zip file
+        with zipfile.ZipFile(zip_file_path, "r") as zip_ref:
+            zip_ref.extractall(folder_path)
+
+        # Delete the zip file
+        os.remove(zip_file_path)
+
+    # Remove any nested folder created during extraction
+    nested_folder_path = os.path.join(folder_path, "tasks")
+    if os.path.exists(nested_folder_path):
+        for file_name in os.listdir(nested_folder_path):
+            file_path = os.path.join(nested_folder_path, file_name)
+            destination_path = os.path.join(folder_path, file_name)
+            os.rename(file_path, destination_path)
+        os.rmdir(nested_folder_path)
+
     # Chunk for parallel jobs
-    array_idx = int(os.environ.get('SLURM_ARRAY_TASK_ID'))
+    try:
+        array_idx = int(os.environ.get('SLURM_ARRAY_TASK_ID'))
+    except (TypeError, ValueError) as e:
+        print(f"Error: {e}")
+        array_idx = 0
+
     languages_per_chunk = 4
 
     # Parameters for filtering the generated task string
