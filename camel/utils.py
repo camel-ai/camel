@@ -196,7 +196,7 @@ def download_tasks(task: TaskType, folder_path: str) -> None:
 
     # Download the zip file from the Google Drive link
     response = requests.get("https://huggingface.co/datasets/camel-ai/"
-                            "metadata/resolve/main/{task.value}_tasks.zip")
+                            f"metadata/resolve/main/{task.value}_tasks.zip")
 
     # Save the zip file
     with open(zip_file_path, "wb") as f:
