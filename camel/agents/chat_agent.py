@@ -14,7 +14,6 @@
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-import openai
 from tenacity import retry
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_exponential
@@ -22,6 +21,7 @@ from tenacity.wait import wait_exponential
 from camel.agents import BaseAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import ChatMessage, MessageType, SystemMessage
+from camel.model_mux import ModelFactory, ModelMultiplexor
 from camel.typing import ModelType
 from camel.utils import (
     get_model_token_limit,
@@ -72,7 +72,7 @@ class ChatAgent(BaseAgent):
     def __init__(
         self,
         system_message: SystemMessage,
-        model: ModelType = ModelType.GPT_3_5_TURBO,
+        model: Optional[ModelType] = None,
         model_config: Optional[Any] = None,
         message_window_size: Optional[int] = None,
     ) -> None:
@@ -82,10 +82,17 @@ class ChatAgent(BaseAgent):
         self.role_type = system_message.role_type
         self.meta_dict = system_message.meta_dict
 
-        self.model = model
-        self.model_config = model_config or ChatGPTConfig()
-        self.model_token_limit = get_model_token_limit(self.model)
-        self.message_window_size = message_window_size
+        self.model: ModelType
+        if model is not None:
+            self.model = model
+        else:
+            self.model = ModelType.GPT_3_5_TURBO
+        self.model_config: ChatGPTConfig = model_config or ChatGPTConfig()
+        self.model_token_limit: int = get_model_token_limit(self.model)
+        self.message_window_size: Optional[int] = message_window_size
+
+        self.chat_model: ModelMultiplexor = ModelFactory.create(
+            "stub" if model == ModelType.STUB else "openai")
 
         self.terminated: bool = False
         self.init_messages()
@@ -177,7 +184,7 @@ class ChatAgent(BaseAgent):
         info: Dict[str, Any]
 
         if num_tokens < self.model_token_limit:
-            response = openai.ChatCompletion.create(
+            response = self.chat_model.run(
                 model=self.model.value,
                 messages=openai_messages,
                 **self.model_config.__dict__,
@@ -198,6 +205,8 @@ class ChatAgent(BaseAgent):
                 ],
                 num_tokens,
             )
+
+            pass
 
         else:
             self.terminated = True

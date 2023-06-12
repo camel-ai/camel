@@ -58,9 +58,11 @@ skip = [".gitingore", "__init__.py"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
+addopts = ["--strict-markers"]
 markers = [
     "full_test_only: mark a test to run only in full test mode",
     "slow: mark a test as slow",
+    "model_backend: for tests that require OpenAI API key or a local LLM",
 ]
 
 [tool.coverage.report]

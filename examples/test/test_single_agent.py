@@ -11,20 +11,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import unittest
+import pytest
 
 import examples.evaluation.single_agent
 import examples.misalignment.single_agent
 import examples.single_agent
+from camel.typing import ModelType
+
+parametrize = pytest.mark.parametrize('model', [
+    ModelType.STUB,
+    pytest.param(None, marks=pytest.mark.model_backend),
+])
 
 
-class TestSingleAgent(unittest.TestCase):
+@parametrize
+def test_single_agent(model):
+    examples.single_agent.main(model=model)
 
-    def test_single_agent(self):
-        examples.single_agent.main()
 
-    def test_misalignment_single_agent(self):
-        examples.misalignment.single_agent.main()
+@parametrize
+def test_misalignment_single_agent(model):
+    examples.misalignment.single_agent.main(model=model)
 
-    def test_evaluation_single_agent(self):
-        examples.evaluation.single_agent.main()
+
+@parametrize
+def test_evaluation_single_agent(model):
+    examples.evaluation.single_agent.main(model=model)

@@ -152,12 +152,12 @@ class RolePlaying:
                 ],
             ))
 
-        self.assistant_agent = ChatAgent(
+        self.assistant_agent: ChatAgent = ChatAgent(
             self.assistant_sys_msg,
             mode_type,
             **(assistant_agent_kwargs or {}),
         )
-        self.user_agent = ChatAgent(
+        self.user_agent: ChatAgent = ChatAgent(
             self.user_sys_msg,
             mode_type,
             **(user_agent_kwargs or {}),

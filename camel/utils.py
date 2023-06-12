@@ -76,15 +76,15 @@ def num_tokens_from_messages(
         - https://platform.openai.com/docs/models/gpt-3-5
     """
     try:
-        encoding = tiktoken.encoding_for_model(model.value)
+        value_for_tiktoken = model.value_for_tiktoken
+        encoding = tiktoken.encoding_for_model(value_for_tiktoken)
     except KeyError:
         encoding = tiktoken.get_encoding("cl100k_base")
 
-    if model == ModelType.GPT_3_5_TURBO:
-        return count_tokens_openai_chat_models(messages, encoding)
-    elif model == ModelType.GPT_4:
-        return count_tokens_openai_chat_models(messages, encoding)
-    elif model == ModelType.GPT_4_32k:
+    if model in {
+            ModelType.GPT_3_5_TURBO, ModelType.GPT_4, ModelType.GPT_4_32k,
+            ModelType.STUB
+    }:
         return count_tokens_openai_chat_models(messages, encoding)
     else:
         raise NotImplementedError(
@@ -108,10 +108,12 @@ def get_model_token_limit(model: ModelType) -> int:
     """
     if model == ModelType.GPT_3_5_TURBO:
         return 4096
-    if model == ModelType.GPT_4:
+    elif model == ModelType.GPT_4:
         return 8192
-    if model == ModelType.GPT_4_32k:
+    elif model == ModelType.GPT_4_32k:
         return 32768
+    elif model == ModelType.STUB:
+        return 4096
     else:
         raise ValueError("Unknown model type")
 
@@ -132,9 +134,14 @@ def openai_api_key_required(func: F) -> F:
     """
 
     @wraps(func)
-    def wrapper(*args, **kwargs):
-        if 'OPENAI_API_KEY' in os.environ:
-            return func(*args, **kwargs)
+    def wrapper(self, *args, **kwargs):
+        from camel.agents.chat_agent import ChatAgent
+        if not isinstance(self, ChatAgent):
+            raise ValueError("Expected ChatAgent")
+        if self.model == ModelType.STUB:
+            return func(self, *args, **kwargs)
+        elif 'OPENAI_API_KEY' in os.environ:
+            return func(self, *args, **kwargs)
         else:
             raise ValueError('OpenAI API key not found.')
 
