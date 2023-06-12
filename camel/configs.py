@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from typing import Dict, Optional, Sequence, Union
 
 
-@dataclass
+@dataclass(frozen=True)
 class ChatGPTConfig:
     r"""Defines the parameters for generating chat completions using the
     OpenAI API.

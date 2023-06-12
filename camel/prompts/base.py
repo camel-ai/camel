@@ -161,7 +161,9 @@ class CodePrompt(TextPrompt):
         """
         self._code_type = code_type
 
-    def execute(self, global_vars: Dict = None) -> Tuple[str, Optional[Dict]]:
+    def execute(
+            self,
+            global_vars: Optional[Dict] = None) -> Tuple[str, Optional[Dict]]:
         r"""Executes the code string. If there is an error, the error is caught
         and the traceback is returned. Otherwise, the output string and local
         variables are returned.

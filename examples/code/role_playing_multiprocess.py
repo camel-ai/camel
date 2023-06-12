@@ -125,7 +125,7 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
 
     while message_counter < max_num_messages:
 
-        user_response = user_agent.step(assistant_msg.to_user_chat_message())
+        user_response = user_agent.step(assistant_msg)
 
         # Condition 1: User terminates the chat
         if user_response.terminated:
@@ -137,8 +137,7 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
         user_agent.update_messages(user_response.msg)
         print(f"User:\n{user_response.msg.content}\n")
 
-        assistant_response = assistant_agent.step(
-            user_response.msg.to_user_chat_message())
+        assistant_response = assistant_agent.step(user_response.msg)
 
         # Condition 2: Assistant terminates the chat
         if assistant_response.terminated:

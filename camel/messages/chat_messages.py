@@ -59,6 +59,15 @@ class AssistantChatMessage(ChatMessage):
     role: str = "assistant"
     content: str = ""
 
+    @classmethod
+    def from_base_message(cls, base_message: BaseMessage):
+        return cls(
+            role_name=base_message.role_name,
+            role_type=base_message.role_type,
+            meta_dict=base_message.meta_dict,
+            content=base_message.content,
+        )
+
 
 @dataclass
 class UserChatMessage(ChatMessage):
@@ -78,3 +87,12 @@ class UserChatMessage(ChatMessage):
     meta_dict: Optional[Dict[str, str]] = None
     role: str = "user"
     content: str = ""
+
+    @classmethod
+    def from_base_message(cls, base_message: BaseMessage):
+        return cls(
+            role_name=base_message.role_name,
+            role_type=base_message.role_type,
+            meta_dict=base_message.meta_dict,
+            content=base_message.content,
+        )

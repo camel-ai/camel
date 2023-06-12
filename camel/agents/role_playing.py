@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 from camel.agents import (
     ChatAgent,
@@ -216,7 +216,7 @@ class RolePlaying:
 
     def process_messages(
         self,
-        messages: List[ChatMessage],
+        messages: Sequence[ChatMessage],
     ) -> ChatMessage:
         r"""Processes a list of chat messages, returning the processed message.
         If multiple messages are provided and `with_critic_in_the_loop`
@@ -266,8 +266,7 @@ class RolePlaying:
             whether or not the user agent terminated the conversation, and
             any additional user information.
         """
-        user_response = self.user_agent.step(
-            assistant_msg.to_user_chat_message())
+        user_response = self.user_agent.step(assistant_msg)
         if user_response.terminated or user_response.msgs is None:
             return (ChatAgentResponse([], False, {}),
                     ChatAgentResponse([], user_response.terminated,
@@ -275,8 +274,7 @@ class RolePlaying:
         user_msg = self.process_messages(user_response.msgs)
         self.user_agent.update_messages(user_msg)
 
-        assistant_response = self.assistant_agent.step(
-            user_msg.to_user_chat_message())
+        assistant_response = self.assistant_agent.step(user_msg)
         if assistant_response.terminated or assistant_response.msgs is None:
             return (ChatAgentResponse([], assistant_response.terminated,
                                       assistant_response.info),
