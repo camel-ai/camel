@@ -125,7 +125,8 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
 
     while message_counter < max_num_messages:
 
-        user_response = user_agent.step(assistant_msg.reset_role_at_backend())
+        user_response = user_agent.step(
+            assistant_msg.set_user_role_at_backend())
 
         # Condition 1: User terminates the chat
         if user_response.terminated:
@@ -138,7 +139,7 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
         print(f"User:\n{user_response.msg.content}\n")
 
         assistant_response = assistant_agent.step(
-            user_response.msg.reset_role_at_backend())
+            user_response.msg.set_user_role_at_backend())
 
         # Condition 2: Assistant terminates the chat
         if assistant_response.terminated:

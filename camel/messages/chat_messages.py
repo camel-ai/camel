@@ -37,7 +37,7 @@ class ChatMessage(BaseMessage):
     role: str
     content: str = ""
 
-    def reset_role_at_backend(self: BaseMessage):
+    def set_user_role_at_backend(self: BaseMessage):
         return self.__class__(
             role_name=self.role_name,
             role_type=self.role_type,

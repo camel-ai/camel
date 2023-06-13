@@ -168,7 +168,7 @@ class CriticAgent(ChatAgent):
         input_msg = copy.deepcopy(meta_chat_message)
         input_msg.content = flatten_options
 
-        option = self.get_option(input_msg.reset_role_at_backend())
+        option = self.get_option(input_msg.set_user_role_at_backend())
         output_msg = copy.deepcopy(meta_chat_message)
         output_msg.content = option
 
