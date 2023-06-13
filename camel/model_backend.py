@@ -15,41 +15,67 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict
 
 
-class ModelMultiplexor(ABC):
+class ModelBackend(ABC):
+    """Base class for different model backends.
+       May be OpenAI API, a local LLM, a stub for unit tests, etc."""
 
     @abstractmethod
-    def run(*args, **kwargs) -> Dict:
+    def run(*args, **kwargs) -> Dict[str, Any]:
+        """Runs the query to the backend model.
+
+        Raises:
+            RuntimeError: if the return value from OpenAI API
+            is not a dict that is expected.
+
+        Returns:
+            Dict[str, Any]: All backends must return a dict in OpenAI format.
+        """
         pass
 
 
-class OpenAIModel(ModelMultiplexor):
+class OpenAIModel(ModelBackend):
+    """OpenAI API in a unified ModelBackend
+
+    Args:
+        ModelBackend (_type_): _description_
+    """
 
     def run(*args, **kwargs) -> Dict[str, Any]:
+
         import openai
-        response = openai.ChatCompletion.create(**kwargs)
+        response = openai.ChatCompletion.create(*args, **kwargs)
         if not isinstance(response, Dict):
             raise RuntimeError("Unexpected return from OpenAI API")
         return response
 
 
-class StubModel(ModelMultiplexor):
+class StubModel(ModelBackend):
+    """A dummy model used for unit tests."""
 
     def run(*args, **kwargs) -> Dict[str, Any]:
+        ARBITRARY_STRING = "Lorem Ipsum"
+
         return dict(
-            id="qwe",
+            id="stub_model_id",
             usage=dict(),
             choices=[
                 dict(finish_reason="stop",
-                     message=dict(content="Lorem Ipsum", role="assistant"))
+                     message=dict(content=ARBITRARY_STRING, role="assistant"))
             ],
         )
 
 
 class ModelFactory:
+    """Factory of backend models.
+
+    Raises:
+        ValueError: in case the provided string
+        descriptor of a model is unknown.
+    """
 
     @staticmethod
-    def create(name: str) -> ModelMultiplexor:
-        model_map: Dict[str, ModelMultiplexor] = {
+    def create(name: str) -> ModelBackend:
+        model_map: Dict[str, ModelBackend] = {
             "openai": OpenAIModel,
             "stub": StubModel,
         }

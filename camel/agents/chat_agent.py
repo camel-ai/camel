@@ -21,7 +21,7 @@ from tenacity.wait import wait_exponential
 from camel.agents import BaseAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import ChatMessage, MessageType, SystemMessage
-from camel.model_mux import ModelFactory, ModelMultiplexor
+from camel.model_backend import ModelBackend, ModelFactory
 from camel.typing import ModelType
 from camel.utils import (
     get_model_token_limit,
@@ -91,7 +91,7 @@ class ChatAgent(BaseAgent):
         self.model_token_limit: int = get_model_token_limit(self.model)
         self.message_window_size: Optional[int] = message_window_size
 
-        self.chat_model: ModelMultiplexor = ModelFactory.create(
+        self.chat_model: ModelBackend = ModelFactory.create(
             "stub" if model == ModelType.STUB else "openai")
 
         self.terminated: bool = False
