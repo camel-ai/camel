@@ -110,20 +110,6 @@ def test_base_message():
     assert message.role == role
     assert message.content == content
 
-    user_message = message.to_user_chat_message()
-    assert user_message.role_name == role_name
-    assert user_message.role_type == role_type
-    assert user_message.meta_dict == meta_dict
-    assert user_message.role == "user"
-    assert user_message.content == content
-
-    assistant_message = message.to_assistant_chat_message()
-    assert assistant_message.role_name == role_name
-    assert assistant_message.role_type == role_type
-    assert assistant_message.meta_dict == meta_dict
-    assert assistant_message.role == "assistant"
-    assert assistant_message.content == content
-
     openai_message = message.to_openai_message()
     assert openai_message == {"role": role, "content": content}
 

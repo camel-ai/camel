@@ -34,6 +34,7 @@ def assistant_chat_message() -> AssistantChatMessage:
         role_name="test_assistant",
         role_type=RoleType.ASSISTANT,
         meta_dict=None,
+        role="assistant",
         content="test assistant chat message",
     )
 

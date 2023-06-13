@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import warnings
-from typing import Any
+from typing import Any, Optional
 
 from camel.prompts import TaskPromptTemplateDict, TextPrompt
 from camel.typing import RoleType, TaskType
@@ -29,7 +29,7 @@ class PromptTemplateGenerator:
 
     def __init__(
         self,
-        task_prompt_template_dict: TaskPromptTemplateDict = None,
+        task_prompt_template_dict: Optional[TaskPromptTemplateDict] = None,
     ) -> None:
         self.task_prompt_template_dict = (task_prompt_template_dict
                                           or TaskPromptTemplateDict())

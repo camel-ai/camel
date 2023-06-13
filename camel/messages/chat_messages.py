@@ -37,6 +37,15 @@ class ChatMessage(BaseMessage):
     role: str
     content: str = ""
 
+    def set_user_role_at_backend(self: BaseMessage):
+        return self.__class__(
+            role_name=self.role_name,
+            role_type=self.role_type,
+            meta_dict=self.meta_dict,
+            role="user",
+            content=self.content,
+        )
+
 
 @dataclass
 class AssistantChatMessage(ChatMessage):
@@ -56,7 +65,7 @@ class AssistantChatMessage(ChatMessage):
     role_name: str
     role_type: RoleType = RoleType.ASSISTANT
     meta_dict: Optional[Dict[str, str]] = None
-    role: str = "assistant"
+    role: str = "user"
     content: str = ""
 
 

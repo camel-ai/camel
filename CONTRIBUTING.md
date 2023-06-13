@@ -78,6 +78,15 @@ flake8
 isort .
 ```
 
+For extra validation of type hints:
+
+```bash
+mypy --namespace-packages -p camel
+mypy --namespace-packages -p test
+mypy --namespace-packages -p examples
+mypy --namespace-packages -p apps
+```
+
 ### Coverage 📊
 
 Code coverage measures the extent to which unit tests cover the code, helping identify both robust and less robust areas of the codebase.

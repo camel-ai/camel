@@ -63,14 +63,15 @@ def test_role_playing_init():
 def test_role_playing_step(task_type, extend_sys_msg_meta_dicts,
                            extend_task_specify_meta_dict):
     role_playing = RolePlaying(
-        assistant_role_name="assistant",
-        user_role_name="user",
+        assistant_role_name="AI Assistant",
+        user_role_name="AI User",
         task_prompt="Perform the task",
         task_type=task_type,
         extend_sys_msg_meta_dicts=extend_sys_msg_meta_dicts,
         extend_task_specify_meta_dict=extend_task_specify_meta_dict,
     )
-    init_assistant_msg = AssistantChatMessage(role_name="assistant",
+    init_assistant_msg = AssistantChatMessage(role_name="AI Assistant",
+                                              role="assistant",
                                               content="Hello")
     print(role_playing.assistant_agent.system_message)
     print(role_playing.user_agent.system_message)

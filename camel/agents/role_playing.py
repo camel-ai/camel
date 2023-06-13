@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 from camel.agents import (
     ChatAgent,
@@ -200,7 +200,7 @@ class RolePlaying:
 
         # Send the system messages again to the agents using chat messages
         assistant_msg = AssistantChatMessage(
-            role_name=self.assistant_sys_msg.role_name,
+            role_name=self.assistant_sys_msg.role_name, role="assistant",
             content=(f"{self.user_sys_msg.content}. "
                      "Now start to give me instructions one by one. "
                      "Only reply with Instruction and Input."))
@@ -216,7 +216,7 @@ class RolePlaying:
 
     def process_messages(
         self,
-        messages: List[ChatMessage],
+        messages: Sequence[ChatMessage],
     ) -> ChatMessage:
         r"""Processes a list of chat messages, returning the processed message.
         If multiple messages are provided and `with_critic_in_the_loop`
@@ -266,8 +266,8 @@ class RolePlaying:
             whether or not the user agent terminated the conversation, and
             any additional user information.
         """
-        user_response = self.user_agent.step(
-            assistant_msg.to_user_chat_message())
+        assistant_msg_rst = assistant_msg.set_user_role_at_backend()
+        user_response = self.user_agent.step(assistant_msg_rst)
         if user_response.terminated or user_response.msgs is None:
             return (ChatAgentResponse([], False, {}),
                     ChatAgentResponse([], user_response.terminated,
@@ -275,8 +275,8 @@ class RolePlaying:
         user_msg = self.process_messages(user_response.msgs)
         self.user_agent.update_messages(user_msg)
 
-        assistant_response = self.assistant_agent.step(
-            user_msg.to_user_chat_message())
+        user_msg_rst = user_msg.set_user_role_at_backend()
+        assistant_response = self.assistant_agent.step(user_msg_rst)
         if assistant_response.terminated or assistant_response.msgs is None:
             return (ChatAgentResponse([], assistant_response.terminated,
                                       assistant_response.info),
