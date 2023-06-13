@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, Dict, List
+from typing import Any, Dict, Sequence
 
 from colorama import Fore
 
@@ -46,11 +46,11 @@ class Human:
         self.kill_button = "Stop!!!"
         self.options_dict: Dict[str, str] = dict()
 
-    def display_options(self, messages: List[ChatMessage]) -> None:
+    def display_options(self, messages: Sequence[ChatMessage]) -> None:
         r"""Displays the options to the user.
 
         Args:
-            messages (List[ChatMessage]): A list of `ChatMessage` objects.
+            messages (Sequence[ChatMessage]): A list of `ChatMessage` objects.
 
         Returns:
             None
@@ -107,12 +107,12 @@ class Human:
             meta_chat_message.content = self.options_dict[human_input]
             return meta_chat_message
 
-    def step(self, messages: List[ChatMessage]) -> ChatMessage:
+    def step(self, messages: Sequence[ChatMessage]) -> ChatMessage:
         r"""Performs one step of the conversation by displaying options to the
         user, getting their input, and parsing their choice.
 
         Args:
-            messages (List[ChatMessage]): A list of ChatMessage objects.
+            messages (Sequence[ChatMessage]): A list of ChatMessage objects.
 
         Returns:
             ChatMessage: A `ChatMessage` object representing the user's choice.

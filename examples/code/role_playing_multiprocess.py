@@ -39,7 +39,7 @@ def init_chat(
 
     # Send the system messages again to the agents using chat messages
     assistant_msg = AssistantChatMessage(
-        role_name=assistant_agent.role_name,
+        role_name=assistant_agent.role_name, role="assistant",
         content=(f"{user_sys_msg.content}. "
                  "Now start to give me instructions one by one. "
                  "Only reply with Instruction and Input."))
@@ -125,7 +125,8 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
 
     while message_counter < max_num_messages:
 
-        user_response = user_agent.step(assistant_msg.to_user_chat_message())
+        user_response = user_agent.step(
+            assistant_msg.set_user_role_at_backend())
 
         # Condition 1: User terminates the chat
         if user_response.terminated:
@@ -138,7 +139,7 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
         print(f"User:\n{user_response.msg.content}\n")
 
         assistant_response = assistant_agent.step(
-            user_response.msg.to_user_chat_message())
+            user_response.msg.set_user_role_at_backend())
 
         # Condition 2: Assistant terminates the chat
         if assistant_response.terminated:

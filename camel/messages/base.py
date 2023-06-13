@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from camel.messages import (
     OpenAIAssistantMessage,
@@ -225,38 +225,6 @@ class BaseMessage:
             start_idx = idx
 
         return text_prompts, code_prompts
-
-    def to_user_chat_message(self) -> Type["UserChatMessage"]:  # noqa: F821
-        r"""Converts the message to a :obj:`UserChatMessage` object.
-
-        Returns:
-            UserChatMessage: The converted :obj:`UserChatMessage` object.
-        """
-        from camel.messages.chat_messages import UserChatMessage
-
-        return UserChatMessage(
-            role_name=self.role_name,
-            role_type=self.role_type,
-            meta_dict=self.meta_dict,
-            content=self.content,
-        )
-
-    def to_assistant_chat_message(
-            self) -> Type["AssistantChatMessage"]:  # noqa: F821
-        r"""Converts the message to an :obj:`AssistantChatMessage` object.
-
-        Returns:
-            AssistantChatMessage: The converted :obj:`AssistantChatMessage`
-                object.
-        """
-        from camel.messages.chat_messages import AssistantChatMessage
-
-        return AssistantChatMessage(
-            role_name=self.role_name,
-            role_type=self.role_type,
-            meta_dict=self.meta_dict,
-            content=self.content,
-        )
 
     def to_openai_message(self, role: Optional[str] = None) -> OpenAIMessage:
         r"""Converts the message to an :obj:`OpenAIMessage` object.
