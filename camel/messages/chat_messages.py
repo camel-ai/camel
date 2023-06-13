@@ -37,6 +37,15 @@ class ChatMessage(BaseMessage):
     role: str
     content: str = ""
 
+    def reset_role_at_backend(self: BaseMessage):
+        return self.__class__(
+            role_name=self.role_name,
+            role_type=self.role_type,
+            meta_dict=self.meta_dict,
+            role="user",
+            content=self.content,
+        )
+
 
 @dataclass
 class AssistantChatMessage(ChatMessage):
@@ -59,15 +68,6 @@ class AssistantChatMessage(ChatMessage):
     role: str = "user"
     content: str = ""
 
-    @classmethod
-    def reset_role_at_backend(cls, base_message: BaseMessage):
-        return cls(
-            role_name=base_message.role_name,
-            role_type=base_message.role_type,
-            meta_dict=base_message.meta_dict,
-            content=base_message.content,
-        )
-
 
 @dataclass
 class UserChatMessage(ChatMessage):
@@ -87,12 +87,3 @@ class UserChatMessage(ChatMessage):
     meta_dict: Optional[Dict[str, str]] = None
     role: str = "user"
     content: str = ""
-
-    @classmethod
-    def reset_role_at_backend(cls, base_message: BaseMessage):
-        return cls(
-            role_name=base_message.role_name,
-            role_type=base_message.role_type,
-            meta_dict=base_message.meta_dict,
-            content=base_message.content,
-        )

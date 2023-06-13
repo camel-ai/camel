@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import pytest
 
-from camel.messages import AssistantChatMessage, BaseMessage, UserChatMessage
+from camel.messages import BaseMessage
 from camel.prompts import CodePrompt, TextPrompt
 from camel.typing import RoleType
 
@@ -110,14 +110,14 @@ def test_base_message():
     assert message.role == role
     assert message.content == content
 
-    user_message = UserChatMessage.reset_role_at_backend(message)
+    user_message = message.reset_role_at_backend()
     assert user_message.role_name == role_name
     assert user_message.role_type == role_type
     assert user_message.meta_dict == meta_dict
     assert user_message.role == "user"
     assert user_message.content == content
 
-    assistant_message = AssistantChatMessage.reset_role_at_backend(message)
+    assistant_message = message.reset_role_at_backend()
     assert assistant_message.role_name == role_name
     assert assistant_message.role_type == role_type
     assert assistant_message.meta_dict == meta_dict
