@@ -56,11 +56,11 @@ class AssistantChatMessage(ChatMessage):
     role_name: str
     role_type: RoleType = RoleType.ASSISTANT
     meta_dict: Optional[Dict[str, str]] = None
-    role: str = "assistant"
+    role: str = "user"
     content: str = ""
 
     @classmethod
-    def from_base_message(cls, base_message: BaseMessage):
+    def reset_role_at_backend(cls, base_message: BaseMessage):
         return cls(
             role_name=base_message.role_name,
             role_type=base_message.role_type,
@@ -89,7 +89,7 @@ class UserChatMessage(ChatMessage):
     content: str = ""
 
     @classmethod
-    def from_base_message(cls, base_message: BaseMessage):
+    def reset_role_at_backend(cls, base_message: BaseMessage):
         return cls(
             role_name=base_message.role_name,
             role_type=base_message.role_type,

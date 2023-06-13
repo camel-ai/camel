@@ -110,18 +110,18 @@ def test_base_message():
     assert message.role == role
     assert message.content == content
 
-    user_message = UserChatMessage.from_base_message(message)
+    user_message = UserChatMessage.reset_role_at_backend(message)
     assert user_message.role_name == role_name
     assert user_message.role_type == role_type
     assert user_message.meta_dict == meta_dict
     assert user_message.role == "user"
     assert user_message.content == content
 
-    assistant_message = AssistantChatMessage.from_base_message(message)
+    assistant_message = AssistantChatMessage.reset_role_at_backend(message)
     assert assistant_message.role_name == role_name
     assert assistant_message.role_type == role_type
     assert assistant_message.meta_dict == meta_dict
-    assert assistant_message.role == "assistant"
+    assert assistant_message.role == "user"
     assert assistant_message.content == content
 
     openai_message = message.to_openai_message()

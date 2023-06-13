@@ -39,7 +39,7 @@ def init_chat(
 
     # Send the system messages again to the agents using chat messages
     assistant_msg = AssistantChatMessage(
-        role_name=assistant_agent.role_name,
+        role_name=assistant_agent.role_name, role="assistant",
         content=(f"{user_sys_msg.content}. "
                  "Now start to give me instructions one by one. "
                  "Only reply with Instruction and Input."))
