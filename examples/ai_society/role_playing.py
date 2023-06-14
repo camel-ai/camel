@@ -58,8 +58,8 @@ def main() -> None:
 
         print_text_animated(Fore.BLUE +
                             f"AI User:\n\n{user_response.msg.content}\n")
-        print_text_animated(Fore.GREEN +
-                            f"AI Assistant:\n\n{assistant_msg.content}\n")
+        print_text_animated(Fore.GREEN + "AI Assistant:\n\n"
+                            f"{assistant_response.msg.content}\n")
 
         if "CAMEL_TASK_DONE" in user_response.msg.content:
             break
