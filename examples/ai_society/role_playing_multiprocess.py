@@ -42,7 +42,7 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
             temperature=1.4)),
     )
 
-    assistant_msg, _ = role_play_session.init_chat()
+    init_assistant_msg, _ = role_play_session.init_chat()
 
     if verbose:
         print(Fore.GREEN + "AI Assistant sys message:\n"
@@ -93,7 +93,7 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
     while message_counter < max_num_messages:
 
         assistant_response, user_response = role_play_session.step(
-            assistant_msg)
+            init_assistant_msg)
 
         # Condition 1: User terminates the chat
         if user_response.terminated and user_response.info is not None:
@@ -110,11 +110,12 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
                 f"{assistant_response.info['termination_reasons'][0]}")
             break
 
-        assert (user_response.msg is not None) and (assistant_msg is not None)
+        assert (user_response.msg is not None
+                and assistant_response.msg is not None)
 
         if verbose:
             print(f"User:\n{user_response.msg.content}\n")
-            print(f"Assistant:\n{assistant_msg.content}\n")
+            print(f"Assistant:\n{assistant_response.msg.content}\n")
 
         # Condition 3: Break if user does not give instruction
         if user_no_instruct_word not in user_response.msg.content:
@@ -127,7 +128,7 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
             user_no_instruct_counter = 0
 
         # Condition 4: Break if assistant gives instruction (flipped role)
-        if assistant_instruct_word in assistant_msg.content:
+        if assistant_instruct_word in assistant_response.msg.content:
             assistant_instruct_counter += 1
             if assistant_instruct_counter == assistant_instruct_threshold:
                 message_dict[
@@ -139,7 +140,7 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
         # Condition 5: Repeat word observed
         for repeat_word in repeat_word_list:
             if repeat_word in user_response.msg.content.lower(
-            ) or repeat_word in assistant_msg.content.lower():
+            ) or repeat_word in assistant_response.msg.content.lower():
                 repeat_word_counter += 1
                 if repeat_word_counter == repeat_word_threshold:
                     message_dict[
@@ -160,7 +161,8 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
 
         # Save assistant message
         message_counter += 1
-        message_dict[f"message_{message_counter}"] = assistant_msg.to_dict()
+        message_dict[
+            f"message_{message_counter}"] = assistant_response.msg.to_dict()
 
     message_dict["num_messages"] = message_counter
 
