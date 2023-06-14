@@ -40,11 +40,13 @@ def main(model=None) -> None:
     print(Fore.RED + f"Final task prompt:\n{role_play_session.task_prompt}\n")
 
     chat_turn_limit, n = 50, 0
-    assistant_msg, _ = role_play_session.init_chat()
+    input_assistant_msg, _ = role_play_session.init_chat()
     while n < chat_turn_limit:
         n += 1
         assistant_response, user_response = role_play_session.step(
-            assistant_msg)
+            input_assistant_msg)
+
+        input_assistant_msg = assistant_response.msg
 
         if assistant_response.terminated:
             print(Fore.GREEN +
@@ -59,8 +61,8 @@ def main(model=None) -> None:
 
         print_text_animated(Fore.BLUE +
                             f"AI User:\n\n{user_response.msg.content}\n")
-        print_text_animated(Fore.GREEN +
-                            f"AI Assistant:\n\n{assistant_msg.content}\n")
+        print_text_animated(Fore.GREEN + "AI Assistant:\n\n"
+                            f"{assistant_response.msg.content}\n")
 
         if "CAMEL_TASK_DONE" in user_response.msg.content:
             break

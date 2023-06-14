@@ -50,28 +50,32 @@ def main() -> None:
     print(Fore.RED + f"Final task prompt:\n{role_play_session.task_prompt}\n")
 
     chat_turn_limit, n = 50, 0
-    assistant_msg, _ = role_play_session.init_chat()
+    input_assistant_msg, _ = role_play_session.init_chat()
     while n < chat_turn_limit:
         n += 1
-        assistant_return, user_return = role_play_session.step(assistant_msg)
+        assistant_response, user_response = role_play_session.step(
+            input_assistant_msg)
 
-        if assistant_return.terminated:
-            print(Fore.GREEN +
-                  ("AI Assistant terminated. "
-                   f"Reason: {assistant_return.info['termination_reasons']}."))
+        input_assistant_msg = assistant_response.msg
+
+        if assistant_response.terminated:
+            print(Fore.GREEN + (
+                "AI Assistant terminated. "
+                f"Reason: {assistant_response.info['termination_reasons']}."))
             break
-        if user_return.terminated:
+        if user_response.terminated:
             print(Fore.GREEN +
                   ("AI User terminated. "
-                   f"Reason: {user_return.info['termination_reasons']}."))
+                   f"Reason: {user_response.info['termination_reasons']}."))
             break
 
         print_text_animated(Fore.BLUE +
-                            f"AI User:\n\n{user_return.msg.content}\n")
-        print_text_animated(Fore.GREEN +
-                            f"AI Assistant:\n\n{assistant_msg.content}\n")
+                            f"AI User:\n\n{user_response.msg.content}\n")
+        print_text_animated(
+            Fore.GREEN +
+            f"AI Assistant:\n\n{assistant_response.msg.content}\n")
 
-        if "CAMEL_TASK_DONE" in user_return.msg.content:
+        if "CAMEL_TASK_DONE" in user_response.msg.content:
             break
 
 
