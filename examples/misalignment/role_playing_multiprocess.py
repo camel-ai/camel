@@ -41,7 +41,7 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
             temperature=1.4)),
     )
 
-    init_assistant_msg, _ = role_play_session.init_chat()
+    input_assistant_msg, _ = role_play_session.init_chat()
 
     if verbose:
         print(Fore.GREEN + "AI Assistant sys message:\n"
@@ -92,7 +92,9 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
     while message_counter < max_num_messages:
 
         assistant_response, user_response = role_play_session.step(
-            init_assistant_msg)
+            input_assistant_msg)
+
+        input_assistant_msg = assistant_response.msg
 
         # Condition 1: User terminates the chat
         if user_response.terminated:

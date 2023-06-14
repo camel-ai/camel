@@ -88,8 +88,8 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
                                 message_window_size=max_num_messages)
     user_agent = ChatAgent(user_sys_msg, message_window_size=max_num_messages)
 
-    init_assistant_msg, _ = init_chat(assistant_agent, user_agent,
-                                      user_sys_msg, assistant_sys_msg)
+    input_assistant_msg, _ = init_chat(assistant_agent, user_agent,
+                                       user_sys_msg, assistant_sys_msg)
 
     print("Assistant System Message: ", assistant_sys_msg.content)
     print("User System Message: ", user_sys_msg.content)
@@ -126,7 +126,7 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
     while message_counter < max_num_messages:
 
         user_response = user_agent.step(
-            init_assistant_msg.set_user_role_at_backend())
+            input_assistant_msg.set_user_role_at_backend())
 
         # Condition 1: User terminates the chat
         if user_response.terminated:
@@ -197,6 +197,8 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
         message_counter += 1
         message_dict[
             f"message_{message_counter}"] = assistant_response.msg.to_dict()
+
+        input_assistant_msg = assistant_response.msg
 
     message_dict["num_messages"] = message_counter
 
