@@ -13,6 +13,8 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Dict, List
 
+from camel.messages import OpenAIMessage
+
 from .base_model import BaseModel
 
 
@@ -23,7 +25,7 @@ class StubModel(BaseModel):
         r"""All arguments are unused for the dummy model."""
         super().__init__()
 
-    def run(self, messages: List[Dict]) -> Dict[str, Any]:
+    def run(self, messages: List[OpenAIMessage]) -> Dict[str, Any]:
         r"""Run fake inference by returning a fixed string.
         All arguments are unused for the dummy model.
 

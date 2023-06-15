@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from camel.typing import ModelType
 
@@ -28,8 +28,7 @@ class ModelFactory:
     """
 
     @staticmethod
-    def create(model_type: Optional[ModelType],
-               model_config_dict: Dict) -> BaseModel:
+    def create(model_type: ModelType, model_config_dict: Dict) -> BaseModel:
         r"""Creates an instance of `BaseModel` of the specified type.
 
         Args:
@@ -43,21 +42,15 @@ class ModelFactory:
         Returns:
             BaseModel: The initialized backend.
         """
-        default_model_type = ModelType.GPT_3_5_TURBO
-
         model_class: Any
         if model_type in {
-                ModelType.GPT_3_5_TURBO, ModelType.GPT_4, ModelType.GPT_4_32k,
-                None
+                ModelType.GPT_3_5_TURBO, ModelType.GPT_4, ModelType.GPT_4_32k
         }:
             model_class = OpenAIModel
         elif model_type == ModelType.STUB:
             model_class = StubModel
         else:
             raise ValueError("Unknown model")
-
-        if model_type is None:
-            model_type = default_model_type
 
         inst = model_class(model_type, model_config_dict)
         return inst

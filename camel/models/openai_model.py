@@ -13,6 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Dict, List
 
+from camel.messages import OpenAIMessage
 from camel.typing import ModelType
 
 from .base_model import BaseModel
@@ -21,20 +22,21 @@ from .base_model import BaseModel
 class OpenAIModel(BaseModel):
     r"""OpenAI API in a unified BaseModel interface."""
 
-    def __init__(self, model_type: ModelType, model_config_dict: Dict) -> None:
+    def __init__(self, model_type: ModelType,
+                 model_config_dict: Dict[str, Any]) -> None:
         r"""Constructor for OpenAI backend.
 
         Args:
             model_type (ModelType): Model for which a backend is created,
                 one of GPT_* series.
-            model_config_dict (Dict): a dictionary that will be fed into
-                openai.ChatCompletion.create().
+            model_config_dict (Dict[str, Any]): a dictionary that will
+                be fed into openai.ChatCompletion.create().
         """
         super().__init__()
         self.model_type = model_type
         self.model_config_dict = model_config_dict
 
-    def run(self, messages: List[Dict]) -> Dict[str, Any]:
+    def run(self, messages: List[OpenAIMessage]) -> Dict[str, Any]:
         r"""Run inference of OpenAI chat completion.
 
         Args:
