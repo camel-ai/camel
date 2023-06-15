@@ -18,7 +18,6 @@ import pytest
 from camel.agents import ChatAgent, RolePlaying
 from camel.messages import AssistantChatMessage, ChatMessage, SystemMessageType
 from camel.typing import ModelType, TaskType
-from camel.utils import openai_api_key_required
 
 
 def test_role_playing_init():
@@ -52,8 +51,7 @@ def test_role_playing_init():
     assert role_playing.critic is None
 
 
-@pytest.mark.slow
-@openai_api_key_required
+@pytest.mark.model_backend
 @pytest.mark.parametrize(
     "task_type, extend_sys_msg_meta_dicts, extend_task_specify_meta_dict",
     [(TaskType.AI_SOCIETY, None, None),

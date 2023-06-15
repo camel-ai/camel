@@ -24,12 +24,13 @@ from camel.typing import RoleType, TaskType
 
 
 def generate_tasks(role_names: str, task_generator_prompt: str,
-                   start_token: str = "1.", num_tasks: int = 10) -> None:
+                   start_token: str = "1.", num_tasks: int = 10,
+                   model=None) -> None:
     sys_msg_generator = SystemMessageGenerator(task_type=TaskType.AI_SOCIETY)
 
     assistant_sys_msg = sys_msg_generator.from_dict(
         dict(), role_tuple=("Task Generator", RoleType.DEFAULT))
-    assistant_agent = ChatAgent(assistant_sys_msg)
+    assistant_agent = ChatAgent(assistant_sys_msg, model=model)
 
     user_msg = UserChatMessage(role_name="Task Generator",
                                content=task_generator_prompt)
@@ -55,7 +56,7 @@ def generate_tasks(role_names: str, task_generator_prompt: str,
         file.write("\n".join(tasks))
 
 
-def main() -> None:
+def main(model=None) -> None:
     num_tasks = 10
     start_token = "1."
 
@@ -68,9 +69,9 @@ def main() -> None:
         if not os.path.exists(
                 f"./ai_society_data/tasks/{'_'.join(role_names)}.txt"):
             print(f"Generating tasks for {role_names}")
-            pool.apply_async(
-                generate_tasks,
-                (role_names, task_generator_prompt, start_token, num_tasks))
+            pool.apply_async(generate_tasks,
+                             (role_names, task_generator_prompt, start_token,
+                              num_tasks, model))
 
     pool.close()
     pool.join()

@@ -21,11 +21,12 @@ from camel.typing import RoleType, TaskType
 
 
 def generate_tasks(task_generator_prompt: str, language: str, domain: str,
-                   start_token: str = "1.", num_tasks: int = 10) -> None:
+                   start_token: str = "1.", num_tasks: int = 10,
+                   model=None) -> None:
     sys_msg_generator = SystemMessageGenerator(task_type=TaskType.DEFAULT)
     assistant_sys_msg = sys_msg_generator.from_dict(
         dict(), role_tuple=("Task Generator", RoleType.DEFAULT))
-    assistant_agent = ChatAgent(assistant_sys_msg)
+    assistant_agent = ChatAgent(assistant_sys_msg, model=model)
 
     user_msg = UserChatMessage(role_name="Task Generator",
                                content=task_generator_prompt)
@@ -47,7 +48,7 @@ def generate_tasks(task_generator_prompt: str, language: str, domain: str,
         file.write("\n".join(tasks))
 
 
-def main() -> None:
+def main(model=None) -> None:
     num_tasks = 50
     start_token = "1."
 
@@ -59,8 +60,9 @@ def main() -> None:
         if not os.path.exists(f"./code/tasks/{language}_{domain}.txt"):
             print(language, domain)
 
-            pool.apply_async(generate_tasks, (task_generator_prompt, language,
-                                              domain, start_token, num_tasks))
+            pool.apply_async(generate_tasks,
+                             (task_generator_prompt, language, domain,
+                              start_token, num_tasks, model))
 
     pool.close()
     pool.join()

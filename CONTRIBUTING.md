@@ -112,10 +112,15 @@ The coverage report will be generated at `htmlcov/index.html`.
 
 Unit tests cover modular logic that doesn't require calls to outside APIs. Currently, the test setup requires an OpenAI API key to test the framework, making them resemble integration tests.
 
-To run the tests, use the following command:
+To run all tests including those that use OpenAI API, use the following command:
 
 ```bash
 pytest .
+```
+
+To quickly run only local isolated unit and integration tests:
+```bash
+pytest -m "not model_backend and not slow" .
 ```
 
 If you're developing with VSCode, make sure to create a `.env` file in the repository root and include your OpenAI API key:

@@ -11,9 +11,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import apps.data_explorer.loader as loader
+import pytest
+
+import examples.ai_society.role_playing
+from camel.typing import ModelType
 
 
-def test_load_datasets_smoke():
-    data = loader.load_datasets()
-    assert data is not None
+@pytest.mark.slow
+def test_ai_society_role_playing_example():
+    examples.ai_society.role_playing.main(ModelType.STUB)
+
+
+if __name__ == "__main__":
+    pytest.main()

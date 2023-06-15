@@ -26,6 +26,11 @@ class ModelType(Enum):
     GPT_3_5_TURBO = "gpt-3.5-turbo"
     GPT_4 = "gpt-4"
     GPT_4_32k = "gpt-4-32k"
+    STUB = "stub"
+
+    @property
+    def value_for_tiktoken(self):
+        return self.value if self.name != "STUB" else "gpt-3.5-turbo"
 
 
 class TaskType(Enum):

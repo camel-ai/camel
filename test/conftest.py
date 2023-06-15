@@ -34,9 +34,11 @@ def pytest_collection_modifyitems(config: Config, items: List[Item]) -> None:
             if "full_test_only" in item.keywords:
                 item.add_marker(skip_full_test)
 
-    # Skip slow tests if fast test mode is enabled
+    # Skip all tests involving LLM inference both remote
+    # (including OpenAI API) and local ones, since they are slow
+    # and may drain money if fast test mode is enabled.
     if config.getoption("--fast-test-mode"):
         skip_slow = pytest.mark.skip(reason="Skipped for fast test mode")
         for item in items:
-            if "slow" in item.keywords:
+            if "slow" in item.keywords or "model_backend" in item.keywords:
                 item.add_marker(skip_slow)
