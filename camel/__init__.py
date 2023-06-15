@@ -18,6 +18,7 @@ import camel.messages
 import camel.prompts
 import camel.typing
 import camel.utils
+import camel.python_interpreter
 
 __version__ = '0.1.0'
 
