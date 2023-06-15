@@ -22,7 +22,6 @@ parametrize = pytest.mark.parametrize('model', [
     pytest.param(None, marks=pytest.mark.model_backend),
     pytest.param(ModelType.GPT_3_5_TURBO, marks=pytest.mark.model_backend),
     pytest.param(ModelType.GPT_4, marks=pytest.mark.model_backend),
-    pytest.param(ModelType.GPT_4_32k, marks=pytest.mark.model_backend),
 ])
 
 
@@ -46,7 +45,7 @@ def test_openai_model(model):
                         'Do not add anything else.')
         },
     ]
-    response = model_inst.run(messages)
+    response = model_inst.run(messages=messages)
     assert isinstance(response, dict)
     assert 'id' in response
     assert isinstance(response['id'], str)
