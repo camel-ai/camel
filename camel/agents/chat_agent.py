@@ -22,7 +22,7 @@ from camel.agents import BaseAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import ChatMessage, MessageType, SystemMessage
 from camel.model_backend import ModelBackend, ModelFactory
-from camel.typing import ModelType
+from camel.typing import ModelType, RoleType
 from camel.utils import (
     get_model_token_limit,
     num_tokens_from_messages,
@@ -77,22 +77,18 @@ class ChatAgent(BaseAgent):
         message_window_size: Optional[int] = None,
     ) -> None:
 
-        self.system_message = system_message
-        self.role_name = system_message.role_name
-        self.role_type = system_message.role_type
-        self.meta_dict = system_message.meta_dict
+        self.system_message: SystemMessage = system_message
+        self.role_name: str = system_message.role_name
+        self.role_type: RoleType = system_message.role_type
 
-        self.model: ModelType
-        if model is not None:
-            self.model = model
-        else:
-            self.model = ModelType.GPT_3_5_TURBO
+        self.model: ModelType = (model if model is not None else
+                                 ModelType.GPT_3_5_TURBO)
         self.model_config: ChatGPTConfig = model_config or ChatGPTConfig()
         self.model_token_limit: int = get_model_token_limit(self.model)
         self.message_window_size: Optional[int] = message_window_size
 
-        self.chat_model: ModelBackend = ModelFactory.create(
-            "stub" if model == ModelType.STUB else "openai")
+        self.model_backend: ModelBackend = ModelFactory.create(
+            self.model, self.model_config.__dict__)
 
         self.terminated: bool = False
         self.init_messages()
@@ -184,11 +180,7 @@ class ChatAgent(BaseAgent):
         info: Dict[str, Any]
 
         if num_tokens < self.model_token_limit:
-            response = self.chat_model.run(
-                model=self.model.value,
-                messages=openai_messages,
-                **self.model_config.__dict__,
-            )
+            response = self.model_backend.run(messages=openai_messages)
             if not isinstance(response, dict):
                 raise RuntimeError("OpenAI returned unexpected struct")
             output_messages = [
@@ -205,9 +197,6 @@ class ChatAgent(BaseAgent):
                 ],
                 num_tokens,
             )
-
-            pass
-
         else:
             self.terminated = True
             output_messages = []

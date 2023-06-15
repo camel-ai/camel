@@ -71,7 +71,3 @@ def test_task_planner_agent(model: Optional[ModelType]):
         model_config=ChatGPTConfig(temperature=1.0), model=model)
     planned_task_prompt = task_planner_agent.step(specified_task_prompt)
     print(f"Planned task prompt:\n{planned_task_prompt}\n")
-
-
-if __name__ == "__main__":
-    pytest.main()

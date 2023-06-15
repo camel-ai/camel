@@ -14,14 +14,16 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict
 
+from camel.typing import ModelType
+
 
 class ModelBackend(ABC):
-    """Base class for different model backends.
-       May be OpenAI API, a local LLM, a stub for unit tests, etc."""
+    r"""Base class for different model backends.
+    May be OpenAI API, a local LLM, a stub for unit tests, etc."""
 
     @abstractmethod
-    def run(*args, **kwargs) -> Dict[str, Any]:
-        """Runs the query to the backend model.
+    def run(self, *args, **kwargs) -> Dict[str, Any]:
+        r"""Runs the query to the backend model.
 
         Raises:
             RuntimeError: if the return value from OpenAI API
@@ -34,25 +36,31 @@ class ModelBackend(ABC):
 
 
 class OpenAIModel(ModelBackend):
-    """OpenAI API in a unified ModelBackend
+    r"""OpenAI API in a unified ModelBackend interface."""
 
-    Args:
-        ModelBackend (_type_): _description_
-    """
+    def __init__(self, model_type: ModelType, model_config_dict: Dict) -> None:
+        super().__init__()
+        self.model_type = model_type
+        self.model_config_dict = model_config_dict
 
-    def run(*args, **kwargs) -> Dict[str, Any]:
+    def run(self, *args, **kwargs) -> Dict[str, Any]:
 
         import openai
-        response = openai.ChatCompletion.create(*args, **kwargs)
+        response = openai.ChatCompletion.create(*args, **kwargs,
+                                                model=self.model_type.value,
+                                                **self.model_config_dict)
         if not isinstance(response, Dict):
             raise RuntimeError("Unexpected return from OpenAI API")
         return response
 
 
 class StubModel(ModelBackend):
-    """A dummy model used for unit tests."""
+    r"""A dummy model used for unit tests."""
 
-    def run(*args, **kwargs) -> Dict[str, Any]:
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__()
+
+    def run(self, *args, **kwargs) -> Dict[str, Any]:
         ARBITRARY_STRING = "Lorem Ipsum"
 
         return dict(
@@ -66,20 +74,28 @@ class StubModel(ModelBackend):
 
 
 class ModelFactory:
-    """Factory of backend models.
+    r"""Factory of backend models.
 
     Raises:
-        ValueError: in case the provided string
-        descriptor of a model is unknown.
+        ValueError: in case the provided model type is unknown.
     """
 
     @staticmethod
-    def create(name: str) -> ModelBackend:
-        model_map: Dict[str, ModelBackend] = {
-            "openai": OpenAIModel,
-            "stub": StubModel,
-        }
-        if name not in model_map:
+    def create(model_type: ModelType, model_config_dict: Dict) -> ModelBackend:
+        default_model_type = ModelType.GPT_3_5_TURBO
+
+        if model_type in {
+                ModelType.GPT_3_5_TURBO, ModelType.GPT_4, ModelType.GPT_4_32k,
+                None
+        }:
+            model_class = OpenAIModel
+        elif model_type == ModelType.STUB:
+            model_class = StubModel
+        else:
             raise ValueError("Unknown model")
-        model_class = model_map[name]
-        return model_class
+
+        if model_type is None:
+            model_type = default_model_type
+
+        inst = model_class(model_type, model_config_dict)
+        return inst
