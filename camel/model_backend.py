@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional
 from camel.typing import ModelType
 
 
-class ModelBackend(ABC):
+class BaseModelBackend(ABC):
     r"""Base class for different model backends.
     May be OpenAI API, a local LLM, a stub for unit tests, etc."""
 
@@ -39,8 +39,8 @@ class ModelBackend(ABC):
         pass
 
 
-class OpenAIModel(ModelBackend):
-    r"""OpenAI API in a unified ModelBackend interface."""
+class OpenAIModel(BaseModelBackend):
+    r"""OpenAI API in a unified BaseModelBackend interface."""
 
     def __init__(self, model_type: ModelType, model_config_dict: Dict) -> None:
         r"""Constructor for OpenAI backend.
@@ -74,7 +74,7 @@ class OpenAIModel(ModelBackend):
         return response
 
 
-class StubModel(ModelBackend):
+class StubModel(BaseModelBackend):
     r"""A dummy model used for unit tests."""
 
     def __init__(self, *args, **kwargs) -> None:
@@ -109,8 +109,8 @@ class ModelFactory:
 
     @staticmethod
     def create(model_type: Optional[ModelType],
-               model_config_dict: Dict) -> ModelBackend:
-        r"""Creates an instance of `ModelBackend` of the specified type.
+               model_config_dict: Dict) -> BaseModelBackend:
+        r"""Creates an instance of `BaseModelBackend` of the specified type.
 
         Args:
             model_type (ModelType): Model for which a backend is created.
@@ -121,7 +121,7 @@ class ModelFactory:
             ValueError: If there is not backend for the model.
 
         Returns:
-            ModelBackend: The initialized backend.
+            BaseModelBackend: The initialized backend.
         """
         default_model_type = ModelType.GPT_3_5_TURBO
 
