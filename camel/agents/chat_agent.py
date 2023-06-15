@@ -21,7 +21,7 @@ from tenacity.wait import wait_exponential
 from camel.agents import BaseAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import ChatMessage, MessageType, SystemMessage
-from camel.model_backend import BaseModelBackend, ModelFactory
+from camel.models import BaseModel, ModelFactory
 from camel.typing import ModelType, RoleType
 from camel.utils import (
     get_model_token_limit,
@@ -87,7 +87,7 @@ class ChatAgent(BaseAgent):
         self.model_token_limit: int = get_model_token_limit(self.model)
         self.message_window_size: Optional[int] = message_window_size
 
-        self.model_backend: BaseModelBackend = ModelFactory.create(
+        self.model_backend: BaseModel = ModelFactory.create(
             self.model, self.model_config.__dict__)
 
         self.terminated: bool = False

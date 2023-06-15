@@ -14,7 +14,7 @@
 import pytest
 
 from camel.configs import ChatGPTConfig
-from camel.model_backend import ModelFactory
+from camel.models import ModelFactory
 from camel.typing import ModelType
 
 parametrize = pytest.mark.parametrize('model', [
