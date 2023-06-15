@@ -180,7 +180,7 @@ class ChatAgent(BaseAgent):
         info: Dict[str, Any]
 
         if num_tokens < self.model_token_limit:
-            response = self.model_backend.run(messages=openai_messages)
+            response = self.model_backend.run(openai_messages)
             if not isinstance(response, dict):
                 raise RuntimeError("OpenAI returned unexpected struct")
             output_messages = [

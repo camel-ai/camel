@@ -45,7 +45,7 @@ def test_openai_model(model):
                         'Do not add anything else.')
         },
     ]
-    response = model_inst.run(messages=messages)
+    response = model_inst.run(messages)
     assert isinstance(response, dict)
     assert 'id' in response
     assert isinstance(response['id'], str)

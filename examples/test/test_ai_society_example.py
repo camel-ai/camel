@@ -20,7 +20,3 @@ from camel.typing import ModelType
 @pytest.mark.slow
 def test_ai_society_role_playing_example():
     examples.ai_society.role_playing.main(ModelType.STUB)
-
-
-if __name__ == "__main__":
-    pytest.main()
