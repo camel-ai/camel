@@ -230,7 +230,7 @@ def role_playing_chat_init(state) -> \
     return state, state.chat, progress_update
 
 
-# WORKAROUND: do not add type hinst for session and chatbot_histoty
+# WORKAROUND: do not add type hints for session and chatbot_history
 def role_playing_chat_cont(state) -> \
         Tuple[State, ChatBotHistory, Dict, Dict]:
     """ Produce a pair of messages by an assistant and a user.

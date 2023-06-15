@@ -11,8 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import os
-
 import pytest
 
 from camel.agents import ChatAgent
@@ -20,15 +18,17 @@ from camel.configs import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
 from camel.messages import ChatMessage, SystemMessage
 from camel.typing import ModelType, RoleType, TaskType
-from camel.utils import get_model_token_limit, openai_api_key_required
+from camel.utils import get_model_token_limit
+
+parametrize = pytest.mark.parametrize('model', [
+    ModelType.STUB,
+    pytest.param(ModelType.GPT_3_5_TURBO, marks=pytest.mark.model_backend),
+    pytest.param(ModelType.GPT_4, marks=pytest.mark.model_backend),
+])
 
 
-@pytest.mark.slow
-@openai_api_key_required
-@pytest.mark.parametrize('model', [ModelType.GPT_3_5_TURBO, ModelType.GPT_4])
+@parametrize
 def test_chat_agent(model):
-    assert os.environ.get(
-        "OPENAI_API_KEY") is not None, "Missing OPENAI_API_KEY"
 
     model_config = ChatGPTConfig()
     system_msg = SystemMessageGenerator(
@@ -69,8 +69,7 @@ def test_chat_agent(model):
             "max_tokens_exceeded")
 
 
-@pytest.mark.slow
-@openai_api_key_required
+@pytest.mark.model_backend
 @pytest.mark.parametrize('n', [1, 2, 3])
 def test_chat_agent_multiple_return_messages(n):
     model_config = ChatGPTConfig(temperature=1.4, n=n)

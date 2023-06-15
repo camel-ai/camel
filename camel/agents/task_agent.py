@@ -44,12 +44,13 @@ class TaskSpecifyAgent(ChatAgent):
 
     def __init__(
         self,
-        model: ModelType = ModelType.GPT_3_5_TURBO,
+        model: Optional[ModelType] = None,
         task_type: TaskType = TaskType.AI_SOCIETY,
         model_config: Optional[Any] = None,
         task_specify_prompt: Optional[Union[str, TextPrompt]] = None,
         word_limit: int = DEFAULT_WORD_LIMIT,
     ) -> None:
+
         if task_specify_prompt is None:
             task_specify_prompt_template = PromptTemplateGenerator(
             ).get_task_specify_prompt(task_type)
@@ -124,7 +125,7 @@ class TaskPlannerAgent(ChatAgent):
 
     def __init__(
         self,
-        model: ModelType = ModelType.GPT_3_5_TURBO,
+        model: Optional[ModelType] = None,
         model_config: Any = None,
     ) -> None:
 

@@ -17,10 +17,9 @@ from camel.agents import EmbodiedAgent, HuggingFaceToolAgent
 from camel.generators import SystemMessageGenerator
 from camel.messages import ChatMessage, UserChatMessage
 from camel.typing import RoleType
-from camel.utils import openai_api_key_required
 
 
-@openai_api_key_required
+@pytest.mark.model_backend
 def test_get_action_space_prompt():
     role_name = "Artist"
     meta_dict = dict(role=role_name, task="Drawing")
@@ -34,9 +33,8 @@ def test_get_action_space_prompt():
     assert agent.get_action_space_prompt().startswith(expected_prompt)
 
 
-@pytest.mark.slow
+@pytest.mark.model_backend
 @pytest.mark.full_test_only
-@openai_api_key_required
 def test_step():
     # Create an embodied agent
     role_name = "Artist"
