@@ -24,7 +24,7 @@ def main(model=None) -> None:
         "Stock Trader",
         task_prompt=task_prompt,
         with_task_specify=True,
-        mode_type=model,
+        model_type=model,
     )
 
     print(
