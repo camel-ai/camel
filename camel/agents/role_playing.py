@@ -43,7 +43,7 @@ class RolePlaying:
             agent. (default: :obj:`False`)
         with_critic_in_the_loop (bool, optional): Whether to include a critic
             in the loop. (default: :obj:`False`)
-        mode_type (ModelType, optional): The type of GPT model to use.
+        model_type (ModelType, optional): The type of backend model to use.
             (default: :obj:`ModelType.GPT_3_5_TURBO`)
         task_type (TaskType, optional): The type of task to perform.
             (default: :obj:`TaskType.AI_SOCIETY`)
@@ -75,7 +75,7 @@ class RolePlaying:
         with_task_planner: bool = False,
         with_critic_in_the_loop: bool = False,
         critic_criteria: Optional[str] = None,
-        mode_type: ModelType = ModelType.GPT_3_5_TURBO,
+        model_type: ModelType = ModelType.GPT_3_5_TURBO,
         task_type: TaskType = TaskType.AI_SOCIETY,
         assistant_agent_kwargs: Optional[Dict] = None,
         user_agent_kwargs: Optional[Dict] = None,
@@ -89,7 +89,7 @@ class RolePlaying:
         self.with_task_specify = with_task_specify
         self.with_task_planner = with_task_planner
         self.with_critic_in_the_loop = with_critic_in_the_loop
-        self.mode_type = mode_type
+        self.model_type = model_type
         self.task_type = task_type
 
         if with_task_specify:
@@ -102,7 +102,7 @@ class RolePlaying:
                 task_specify_meta_dict.update(extend_task_specify_meta_dict)
 
             task_specify_agent = TaskSpecifyAgent(
-                self.mode_type,
+                self.model_type,
                 task_type=self.task_type,
                 **(task_specify_agent_kwargs or {}),
             )
@@ -116,7 +116,7 @@ class RolePlaying:
 
         if with_task_planner:
             task_planner_agent = TaskPlannerAgent(
-                self.mode_type,
+                self.model_type,
                 **(task_planner_agent_kwargs or {}),
             )
             self.planned_task_prompt = task_planner_agent.step(task_prompt)
@@ -154,12 +154,12 @@ class RolePlaying:
 
         self.assistant_agent: ChatAgent = ChatAgent(
             self.assistant_sys_msg,
-            mode_type,
+            model_type,
             **(assistant_agent_kwargs or {}),
         )
         self.user_agent: ChatAgent = ChatAgent(
             self.user_sys_msg,
-            mode_type,
+            model_type,
             **(user_agent_kwargs or {}),
         )
 
@@ -178,7 +178,7 @@ class RolePlaying:
                 )
                 self.critic = CriticAgent(
                     self.critic_sys_msg,
-                    mode_type,
+                    model_type,
                     **(critic_kwargs or {}),
                 )
         else:

@@ -28,13 +28,13 @@ def test_role_playing_init():
         with_task_specify=False,
         with_task_planner=False,
         with_critic_in_the_loop=False,
-        mode_type=ModelType.GPT_3_5_TURBO,
+        model_type=ModelType.GPT_3_5_TURBO,
         task_type=TaskType.AI_SOCIETY,
     )
     assert role_playing.with_task_specify is False
     assert role_playing.with_task_planner is False
     assert role_playing.with_critic_in_the_loop is False
-    assert role_playing.mode_type == ModelType.GPT_3_5_TURBO
+    assert role_playing.model_type == ModelType.GPT_3_5_TURBO
     assert role_playing.task_type == TaskType.AI_SOCIETY
     assert role_playing.task_prompt == "Perform the task"
     assert role_playing.specified_task_prompt is None
