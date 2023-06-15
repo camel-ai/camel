@@ -214,15 +214,15 @@ def role_playing_chat_init(state) -> \
     session: RolePlaying = state.session
 
     try:
-        assistant_msg, _ = session.init_chat()
-        assistant_msg: AssistantChatMessage
+        init_assistant_msg, _ = session.init_chat()
+        init_assistant_msg: AssistantChatMessage
     except (openai.error.RateLimitError, tenacity.RetryError,
             RuntimeError) as ex:
         print("OpenAI API exception 1 " + str(ex))
         state.session = None
         return state, state.chat, gr.update()
 
-    state.saved_assistant_msg = assistant_msg
+    state.saved_assistant_msg = init_assistant_msg
 
     progress_update = gr.update(maximum=state.max_messages, value=1,
                                 visible=True)
@@ -256,18 +256,19 @@ def role_playing_chat_cont(state) -> \
         return state, state.chat, gr.update(), gr.update()
 
     try:
-        assistant_msg, user_msg = session.step(state.saved_assistant_msg)
+        assistant_response, user_response = session.step(
+            state.saved_assistant_msg)
     except (openai.error.RateLimitError, tenacity.RetryError,
             RuntimeError) as ex:
         print("OpenAI API exception 2 " + str(ex))
         state.session = None
         return state, state.chat, gr.update(), gr.update()
 
-    if len(user_msg.msgs) != 1 or len(assistant_msg.msgs) != 1:
+    if len(user_response.msgs) != 1 or len(assistant_response.msgs) != 1:
         return state, state.chat, gr.update(), gr.update()
 
-    u_msg = user_msg.msgs[0]
-    a_msg = assistant_msg.msgs[0]
+    u_msg = user_response.msg
+    a_msg = assistant_response.msg
 
     state.saved_assistant_msg = a_msg
 
