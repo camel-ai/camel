@@ -15,7 +15,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
 
-class BaseModel(ABC):
+class BaseModelBackend(ABC):
     r"""Base class for different model backends.
     May be OpenAI API, a local LLM, a stub for unit tests, etc."""
 

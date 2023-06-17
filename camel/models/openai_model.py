@@ -14,12 +14,12 @@
 from typing import Any, Dict, List
 
 from camel.messages import OpenAIMessage
-from camel.models.base_model import BaseModel
+from camel.models import BaseModelBackend
 from camel.typing import ModelType
 
 
-class OpenAIModel(BaseModel):
-    r"""OpenAI API in a unified BaseModel interface."""
+class OpenAIModel(BaseModelBackend):
+    r"""OpenAI API in a unified BaseModelBackend interface."""
 
     def __init__(self, model_type: ModelType,
                  model_config_dict: Dict[str, Any]) -> None:

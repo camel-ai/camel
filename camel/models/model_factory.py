@@ -13,9 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Dict
 
-from camel.models.base_model import BaseModel
-from camel.models.openai_model import OpenAIModel
-from camel.models.stub_model import StubModel
+from camel.models import BaseModelBackend, OpenAIModel, StubModel
 from camel.typing import ModelType
 
 
@@ -27,8 +25,9 @@ class ModelFactory:
     """
 
     @staticmethod
-    def create(model_type: ModelType, model_config_dict: Dict) -> BaseModel:
-        r"""Creates an instance of `BaseModel` of the specified type.
+    def create(model_type: ModelType,
+               model_config_dict: Dict) -> BaseModelBackend:
+        r"""Creates an instance of `BaseModelBackend` of the specified type.
 
         Args:
             model_type (ModelType): Model for which a backend is created.
@@ -39,7 +38,7 @@ class ModelFactory:
             ValueError: If there is not backend for the model.
 
         Returns:
-            BaseModel: The initialized backend.
+            BaseModelBackend: The initialized backend.
         """
         model_class: Any
         if model_type in {

@@ -13,10 +13,10 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Dict, List
 
-from camel.models.base_model import BaseModel
+from camel.models import BaseModelBackend
 
 
-class StubModel(BaseModel):
+class StubModel(BaseModelBackend):
     r"""A dummy model used for unit tests."""
 
     def __init__(self, *args, **kwargs) -> None:
