@@ -25,7 +25,7 @@ parametrize = pytest.mark.parametrize('model', [
 
 
 @parametrize
-def test_openai_model(model):
+def test_model_factory(model):
     model_config_dict = ChatGPTConfig().__dict__
     model_inst = ModelFactory.create(model, model_config_dict)
     messages = [
