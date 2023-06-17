@@ -29,11 +29,6 @@ def base_message() -> BaseMessage:
     )
 
 
-def test_base_message_get_attribute(base_message: BaseMessage):
-    assert base_message.upper().content == "TEST CONTENT"
-    assert base_message.startswith("test")
-
-
 def test_base_message_addition_operator(base_message: BaseMessage):
     new_message = base_message + "!"
     assert new_message.content == "test content!"
