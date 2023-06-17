@@ -161,6 +161,9 @@ class ChatAgent(BaseAgent):
 
         Args:
             input_message (ChatMessage): The input message to the agent.
+            Its `role` field that specifies the role at backen may be either
+            `user` or `assistant` but it will be set to `user` anyway since
+            for the self agent any incoming message is external.
 
         Returns:
             ChatAgentResponse: A struct
@@ -168,7 +171,8 @@ class ChatAgent(BaseAgent):
                 the chat session has terminated, and information about the chat
                 session.
         """
-        messages = self.update_messages(input_message)
+        msg_user_at_backend = input_message.set_user_role_at_backend()
+        messages = self.update_messages(msg_user_at_backend)
         if self.message_window_size is not None and len(
                 messages) > self.message_window_size:
             messages = [self.system_message
