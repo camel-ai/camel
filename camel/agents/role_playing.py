@@ -266,8 +266,7 @@ class RolePlaying:
             whether or not the user agent terminated the conversation, and
             any additional user information.
         """
-        assistant_msg_rst = assistant_msg.set_user_role_at_backend()
-        user_response = self.user_agent.step(assistant_msg_rst)
+        user_response = self.user_agent.step(assistant_msg)
         if user_response.terminated or user_response.msgs is None:
             return (ChatAgentResponse([], False, {}),
                     ChatAgentResponse([], user_response.terminated,
@@ -275,8 +274,7 @@ class RolePlaying:
         user_msg = self.process_messages(user_response.msgs)
         self.user_agent.update_messages(user_msg)
 
-        user_msg_rst = user_msg.set_user_role_at_backend()
-        assistant_response = self.assistant_agent.step(user_msg_rst)
+        assistant_response = self.assistant_agent.step(user_msg)
         if assistant_response.terminated or assistant_response.msgs is None:
             return (ChatAgentResponse([], assistant_response.terminated,
                                       assistant_response.info),
