@@ -37,7 +37,7 @@ class ChatMessage(BaseMessage):
     role: str
     content: str = ""
 
-    def set_user_role_at_backend(self):
+    def set_user_role_at_backend(self) -> "ChatMessage":
         return self.__class__(
             role_name=self.role_name,
             role_type=self.role_type,
