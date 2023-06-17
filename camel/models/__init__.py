@@ -11,12 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import pytest
+from .base_model import BaseModelBackend
+from .openai_model import OpenAIModel
+from .stub_model import StubModel
+from .model_factory import ModelFactory
 
-import examples.ai_society.role_playing
-from camel.typing import ModelType
-
-
-@pytest.mark.slow
-def test_ai_society_role_playing_example():
-    examples.ai_society.role_playing.main(ModelType.STUB)
+__all__ = [
+    'BaseModelBackend',
+    'OpenAIModel',
+    'StubModel',
+    'ModelFactory',
+]
