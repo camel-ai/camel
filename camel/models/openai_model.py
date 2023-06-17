@@ -14,9 +14,8 @@
 from typing import Any, Dict, List
 
 from camel.messages import OpenAIMessage
+from camel.models.base_model import BaseModel
 from camel.typing import ModelType
-
-from .base_model import BaseModel
 
 
 class OpenAIModel(BaseModel):
@@ -36,7 +35,7 @@ class OpenAIModel(BaseModel):
         self.model_type = model_type
         self.model_config_dict = model_config_dict
 
-    def run(self, messages: List[OpenAIMessage]) -> Dict[str, Any]:
+    def run(self, messages: List[Dict]) -> Dict[str, Any]:
         r"""Run inference of OpenAI chat completion.
 
         Args:
@@ -47,7 +46,8 @@ class OpenAIModel(BaseModel):
             Dict[str, Any]: Response in the OpenAI API format.
         """
         import openai
-        response = openai.ChatCompletion.create(messages=messages,
+        messages_openai: List[OpenAIMessage] = messages
+        response = openai.ChatCompletion.create(messages=messages_openai,
                                                 model=self.model_type.value,
                                                 **self.model_config_dict)
         if not isinstance(response, Dict):

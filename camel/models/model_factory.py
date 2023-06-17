@@ -13,11 +13,10 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Dict
 
+from camel.models.base_model import BaseModel
+from camel.models.openai_model import OpenAIModel
+from camel.models.stub_model import StubModel
 from camel.typing import ModelType
-
-from .base_model import BaseModel
-from .openai_model import OpenAIModel
-from .stub_model import StubModel
 
 
 class ModelFactory:

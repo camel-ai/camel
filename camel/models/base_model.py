@@ -14,15 +14,13 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
-from camel.messages import OpenAIMessage
-
 
 class BaseModel(ABC):
     r"""Base class for different model backends.
     May be OpenAI API, a local LLM, a stub for unit tests, etc."""
 
     @abstractmethod
-    def run(self, messages: List[OpenAIMessage]) -> Dict[str, Any]:
+    def run(self, messages: List[Dict]) -> Dict[str, Any]:
         r"""Runs the query to the backend model.
 
         Args:
