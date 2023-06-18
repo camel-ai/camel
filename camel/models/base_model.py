@@ -23,7 +23,7 @@ class BaseModelBackend(ABC):
 
     def __init__(self, model_type: ModelType,
                  model_config_dict: Dict[str, Any]) -> None:
-        r"""Constructor for model backend.
+        r"""Constructor for the model backend.
 
         Args:
             model_type (ModelType): Model for which a backend is created.
