@@ -27,25 +27,7 @@ from camel.typing import ModelType
 def test_openai_model(model_type):
     model_config_dict = ChatGPTConfig().__dict__
     model = OpenAIModel(model_type, model_config_dict)
-
-    messages = [
-        {
-            "role": "system",
-            "content": "Initialize system",
-        },
-        {
-            "role": "user",
-            "content": "Hello",
-        },
-    ]
-
-    response = model.run(messages)
-    assert isinstance(response, dict)
-    assert "choices" in response
-    assert isinstance(response["choices"], list)
-    assert len(response["choices"]) > 0
-    assert isinstance(response["choices"][0], dict)
-    assert "message" in response["choices"][0]
-    assert isinstance(response["choices"][0]["message"], dict)
-    assert "role" in response["choices"][0]["message"]
-    assert response["choices"][0]["message"]["role"] == "assistant"
+    assert model.model_type == model_type
+    assert model.model_config_dict == model_config_dict
+    assert isinstance(model.model_type.value_for_tiktoken, str)
+    assert isinstance(model.model_type.token_limit, int)

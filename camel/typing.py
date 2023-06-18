@@ -30,7 +30,7 @@ class ModelType(Enum):
     STUB = "stub"
 
     @property
-    def value_for_tiktoken(self):
+    def value_for_tiktoken(self) -> str:
         return self.value if self.name != "STUB" else "gpt-3.5-turbo"
 
     @property
