@@ -29,7 +29,7 @@ F = TypeVar('F', bound=Callable[..., Any])
 
 def count_tokens_openai_chat_models(
     messages: List[OpenAIMessage],
-    encoding: Any,
+    encoding: tiktoken.Encoding,
     tokens_per_message: int,
     tokens_per_name: int,
 ) -> int:
@@ -38,7 +38,7 @@ def count_tokens_openai_chat_models(
 
     Args:
         messages (List[OpenAIMessage]): The list of messages.
-        encoding (Any): The encoding method to use.
+        encoding (tiktoken.Encoding): The encoding method to use.
 
     Returns:
         int: The number of tokens required.
