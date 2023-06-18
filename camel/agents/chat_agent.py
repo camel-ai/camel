@@ -80,11 +80,11 @@ class ChatAgent(BaseAgent):
         self.model: ModelType = (model if model is not None else
                                  ModelType.GPT_3_5_TURBO)
         self.model_config: ChatGPTConfig = model_config or ChatGPTConfig()
-        self.model_token_limit: int = self.model.token_limit
         self.message_window_size: Optional[int] = message_window_size
 
         self.model_backend: BaseModelBackend = ModelFactory.create(
             self.model, self.model_config.__dict__)
+        self.model_token_limit: int = self.model_backend.token_limit
 
         self.terminated: bool = False
         self.init_messages()

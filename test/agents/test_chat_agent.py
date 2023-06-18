@@ -53,7 +53,7 @@ def test_chat_agent(model: ModelType):
     assert assistant_response.info['id'] is not None
 
     assistant.reset()
-    token_limit = model.token_limit
+    token_limit = assistant.model_token_limit
     user_msg = ChatMessage(role_name="Patient", role_type=RoleType.USER,
                            meta_dict=dict(), role="user",
                            content="token" * (token_limit + 1))

@@ -31,9 +31,7 @@ class OpenAIModel(BaseModelBackend):
             model_config_dict (Dict[str, Any]): a dictionary that will
                 be fed into openai.ChatCompletion.create().
         """
-        super().__init__()
-        self.model_type = model_type
-        self.model_config_dict = model_config_dict
+        super().__init__(model_type, model_config_dict)
 
     def run(self, messages: List[Dict]) -> Dict[str, Any]:
         r"""Run inference of OpenAI chat completion.
