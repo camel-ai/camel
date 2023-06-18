@@ -28,7 +28,7 @@ class OpenAIModel(BaseModelBackend):
         Args:
             model_type (ModelType): Model for which a backend is created,
                 one of GPT_* series.
-            model_config_dict (Dict[str, Any]): a dictionary that will
+            model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into openai.ChatCompletion.create().
         """
         super().__init__(model_type, model_config_dict)
@@ -37,7 +37,7 @@ class OpenAIModel(BaseModelBackend):
         r"""Run inference of OpenAI chat completion.
 
         Args:
-            messages (List[Dict]): message list with the chat history
+            messages (List[Dict]): Message list with the chat history
                 in OpenAI API format.
 
         Returns:

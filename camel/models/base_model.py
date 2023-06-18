@@ -27,7 +27,7 @@ class BaseModelBackend(ABC):
 
         Args:
             model_type (ModelType): Model for which a backend is created.
-            model_config_dict (Dict[str, Any]): a config dictionary.
+            model_config_dict (Dict[str, Any]): A config dictionary.
         """
         self.model_type = model_type
         self.model_config_dict = model_config_dict
