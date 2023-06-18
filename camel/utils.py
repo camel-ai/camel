@@ -30,6 +30,8 @@ F = TypeVar('F', bound=Callable[..., Any])
 def count_tokens_openai_chat_models(
     messages: List[OpenAIMessage],
     encoding: Any,
+    tokens_per_message: int,
+    tokens_per_name: int,
 ) -> int:
     r"""Counts the number of tokens required to generate an OpenAI chat based
     on a given list of messages.
@@ -43,13 +45,12 @@ def count_tokens_openai_chat_models(
     """
     num_tokens = 0
     for message in messages:
-        # message follows <im_start>{role/name}\n{content}<im_end>\n
-        num_tokens += 4
+        num_tokens += tokens_per_message
         for key, value in message.items():
             num_tokens += len(encoding.encode(value))
             if key == "name":  # if there's a name, the role is omitted
-                num_tokens += -1  # role is always 1 token
-    num_tokens += 2  # every reply is primed with <im_start>assistant
+                num_tokens += tokens_per_name
+    num_tokens += 3  # every reply is primed with <|start|>assistant<|message|>
     return num_tokens
 
 
@@ -81,14 +82,26 @@ def num_tokens_from_messages(
     except KeyError:
         encoding = tiktoken.get_encoding("cl100k_base")
 
-    if model in {
-            ModelType.GPT_3_5_TURBO,
-            ModelType.GPT_3_5_TURBO_16K,
-            ModelType.GPT_4,
-            ModelType.GPT_4_32k,
-            ModelType.STUB,
-    }:
-        return count_tokens_openai_chat_models(messages, encoding)
+    if model.value_for_tiktoken.startswith("gpt-3.5-turbo"):
+        # Every message follows <|start|>{role/name}\n{content}<|end|>\n
+        tokens_per_message = 4
+        # If there's a name, the role is omitted
+        tokens_per_name = -1
+        return count_tokens_openai_chat_models(
+            messages,
+            encoding,
+            tokens_per_message,
+            tokens_per_name,
+        )
+    elif model.value_for_tiktoken.startswith("gpt-4"):
+        tokens_per_message = 3
+        tokens_per_name = 1
+        return count_tokens_openai_chat_models(
+            messages,
+            encoding,
+            tokens_per_message,
+            tokens_per_name,
+        )
     else:
         raise NotImplementedError(
             f"`num_tokens_from_messages`` is not presently implemented "
@@ -98,29 +111,6 @@ def num_tokens_from_messages(
             f"See https://platform.openai.com/docs/models/gpt-4"
             f"or https://platform.openai.com/docs/models/gpt-3-5"
             f"for information about openai chat models.")
-
-
-def get_model_token_limit(model: ModelType) -> int:
-    r"""Returns the maximum token limit for a given model.
-
-    Args:
-        model (ModelType): The type of the model.
-
-    Returns:
-        int: The maximum token limit for the given model.
-    """
-    if model == ModelType.GPT_3_5_TURBO:
-        return 4096
-    elif model == ModelType.GPT_3_5_TURBO_16K:
-        return 16384
-    elif model == ModelType.GPT_4:
-        return 8192
-    elif model == ModelType.GPT_4_32k:
-        return 32768
-    elif model == ModelType.STUB:
-        return 4096
-    else:
-        raise ValueError("Unknown model type")
 
 
 def openai_api_key_required(func: F) -> F:

@@ -18,7 +18,6 @@ from camel.configs import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
 from camel.messages import ChatMessage, SystemMessage
 from camel.typing import ModelType, RoleType, TaskType
-from camel.utils import get_model_token_limit
 
 parametrize = pytest.mark.parametrize('model', [
     ModelType.STUB,
@@ -28,7 +27,7 @@ parametrize = pytest.mark.parametrize('model', [
 
 
 @parametrize
-def test_chat_agent(model):
+def test_chat_agent(model: ModelType):
 
     model_config = ChatGPTConfig()
     system_msg = SystemMessageGenerator(
@@ -54,7 +53,7 @@ def test_chat_agent(model):
     assert assistant_response.info['id'] is not None
 
     assistant.reset()
-    token_limit = get_model_token_limit(model)
+    token_limit = model.token_limit
     user_msg = ChatMessage(role_name="Patient", role_type=RoleType.USER,
                            meta_dict=dict(), role="user",
                            content="token" * (token_limit + 1))

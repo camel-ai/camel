@@ -33,6 +33,25 @@ class ModelType(Enum):
     def value_for_tiktoken(self):
         return self.value if self.name != "STUB" else "gpt-3.5-turbo"
 
+    @property
+    def token_limit(self) -> int:
+        r"""Returns the maximum token limit for a given model.
+        Returns:
+            int: The maximum token limit for the given model.
+        """
+        if self is ModelType.GPT_3_5_TURBO:
+            return 4096
+        elif self is ModelType.GPT_3_5_TURBO_16K:
+            return 16384
+        elif self is ModelType.GPT_4:
+            return 8192
+        elif self is ModelType.GPT_4_32k:
+            return 32768
+        elif self is ModelType.STUB:
+            return 4096
+        else:
+            raise ValueError("Unknown model type")
+
 
 class TaskType(Enum):
     AI_SOCIETY = "ai_society"
