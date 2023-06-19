@@ -50,7 +50,7 @@ class HuggingFaceToolAgent(BaseToolAgent):
                 "pip install huggingface_hub==0.14.1 transformers==4.29.0 diffusers accelerate datasets torch soundfile sentencepiece opencv-python"
             )
         self.agent = OpenAiAgent(*args, **kwargs)
-        description = f"""The `{self.name}` is a tool agent that can perform a variety of tasks including:
+        description = f"""The `{name}` is a tool agent that can perform a variety of tasks including:
 - Document question answering: given a document (such as a PDF) in image format, answer a question on this document
 - Text question answering: given a long text and a question, answer the question in the text
 - Unconditional image captioning: Caption the image!
@@ -71,7 +71,7 @@ Here are some python code examples of what you can do with this agent:
 Single execution (step) mode, the single execution method is when using the step() method of the agent:
 ```
 # Text to image
-rivers_and_lakes_image = {self.name}.step("Draw me a picture of rivers and lakes.")
+rivers_and_lakes_image = {name}.step("Draw me a picture of rivers and lakes.")
 rivers_and_lakes_image.save("./rivers_and_lakes_image.png")
 
 # Text to image -> Image transformation
