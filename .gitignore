@@ -415,3 +415,8 @@ tags
 
 # Camel
 logs/
+
+# Data
+datasets_test/
+evaluation_data/
+camel_data/
