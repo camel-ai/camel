@@ -14,10 +14,23 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
+from camel.typing import ModelType
+
 
 class BaseModelBackend(ABC):
     r"""Base class for different model backends.
     May be OpenAI API, a local LLM, a stub for unit tests, etc."""
+
+    def __init__(self, model_type: ModelType,
+                 model_config_dict: Dict[str, Any]) -> None:
+        r"""Constructor for the model backend.
+
+        Args:
+            model_type (ModelType): Model for which a backend is created.
+            model_config_dict (Dict[str, Any]): A config dictionary.
+        """
+        self.model_type = model_type
+        self.model_config_dict = model_config_dict
 
     @abstractmethod
     def run(self, messages: List[Dict]) -> Dict[str, Any]:
@@ -35,3 +48,11 @@ class BaseModelBackend(ABC):
             Dict[str, Any]: All backends must return a dict in OpenAI format.
         """
         pass
+
+    @property
+    def token_limit(self) -> int:
+        r"""Returns the maximum token limit for a given model.
+        Returns:
+            int: The maximum token limit for the given model.
+        """
+        return self.model_type.token_limit

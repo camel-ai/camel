@@ -23,11 +23,7 @@ from camel.configs import ChatGPTConfig
 from camel.messages import ChatMessage, MessageType, SystemMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.typing import ModelType, RoleType
-from camel.utils import (
-    get_model_token_limit,
-    num_tokens_from_messages,
-    openai_api_key_required,
-)
+from camel.utils import num_tokens_from_messages, openai_api_key_required
 
 
 @dataclass(frozen=True)
@@ -84,11 +80,11 @@ class ChatAgent(BaseAgent):
         self.model: ModelType = (model if model is not None else
                                  ModelType.GPT_3_5_TURBO)
         self.model_config: ChatGPTConfig = model_config or ChatGPTConfig()
-        self.model_token_limit: int = get_model_token_limit(self.model)
         self.message_window_size: Optional[int] = message_window_size
 
         self.model_backend: BaseModelBackend = ModelFactory.create(
             self.model, self.model_config.__dict__)
+        self.model_token_limit: int = self.model_backend.token_limit
 
         self.terminated: bool = False
         self.init_messages()
