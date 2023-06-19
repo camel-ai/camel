@@ -14,14 +14,17 @@
 from typing import Any, Dict, List
 
 from camel.models import BaseModelBackend
+from camel.typing import ModelType
 
 
 class StubModel(BaseModelBackend):
     r"""A dummy model used for unit tests."""
+    model_type = ModelType.STUB
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, model_type: ModelType,
+                 model_config_dict: Dict[str, Any]) -> None:
         r"""All arguments are unused for the dummy model."""
-        super().__init__()
+        pass
 
     def run(self, messages: List[Dict]) -> Dict[str, Any]:
         r"""Run fake inference by returning a fixed string.
