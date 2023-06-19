@@ -14,19 +14,18 @@
 import pytest
 
 from camel.configs import ChatGPTConfig
-from camel.model_backend import ModelFactory
+from camel.models import ModelFactory
 from camel.typing import ModelType
 
 parametrize = pytest.mark.parametrize('model', [
     ModelType.STUB,
-    pytest.param(None, marks=pytest.mark.model_backend),
     pytest.param(ModelType.GPT_3_5_TURBO, marks=pytest.mark.model_backend),
     pytest.param(ModelType.GPT_4, marks=pytest.mark.model_backend),
 ])
 
 
 @parametrize
-def test_openai_model(model):
+def test_model_factory(model):
     model_config_dict = ChatGPTConfig().__dict__
     model_inst = ModelFactory.create(model, model_config_dict)
     messages = [
@@ -45,7 +44,7 @@ def test_openai_model(model):
                         'Do not add anything else.')
         },
     ]
-    response = model_inst.run(messages=messages)
+    response = model_inst.run(messages)
     assert isinstance(response, dict)
     assert 'id' in response
     assert isinstance(response['id'], str)

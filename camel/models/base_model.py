@@ -11,12 +11,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import pytest
-
-import examples.ai_society.role_playing
-from camel.typing import ModelType
+from abc import ABC, abstractmethod
+from typing import Any, Dict, List
 
 
-@pytest.mark.slow
-def test_ai_society_role_playing_example():
-    examples.ai_society.role_playing.main(ModelType.STUB)
+class BaseModelBackend(ABC):
+    r"""Base class for different model backends.
+    May be OpenAI API, a local LLM, a stub for unit tests, etc."""
+
+    @abstractmethod
+    def run(self, messages: List[Dict]) -> Dict[str, Any]:
+        r"""Runs the query to the backend model.
+
+        Args:
+            messages (List[Dict]): message list with the chat history
+                in OpenAI API format.
+
+        Raises:
+            RuntimeError: if the return value from OpenAI API
+            is not a dict that is expected.
+
+        Returns:
+            Dict[str, Any]: All backends must return a dict in OpenAI format.
+        """
+        pass
