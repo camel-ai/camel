@@ -21,7 +21,7 @@ from tenacity.wait import wait_exponential
 from camel.agents import BaseAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import ChatMessage, MessageType, SystemMessage
-from camel.model_backend import ModelBackend, ModelFactory
+from camel.models import BaseModelBackend, ModelFactory
 from camel.typing import ModelType, RoleType
 from camel.utils import (
     get_model_token_limit,
@@ -87,7 +87,7 @@ class ChatAgent(BaseAgent):
         self.model_token_limit: int = get_model_token_limit(self.model)
         self.message_window_size: Optional[int] = message_window_size
 
-        self.model_backend: ModelBackend = ModelFactory.create(
+        self.model_backend: BaseModelBackend = ModelFactory.create(
             self.model, self.model_config.__dict__)
 
         self.terminated: bool = False
@@ -161,6 +161,9 @@ class ChatAgent(BaseAgent):
 
         Args:
             input_message (ChatMessage): The input message to the agent.
+            Its `role` field that specifies the role at backen may be either
+            `user` or `assistant` but it will be set to `user` anyway since
+            for the self agent any incoming message is external.
 
         Returns:
             ChatAgentResponse: A struct
@@ -168,7 +171,8 @@ class ChatAgent(BaseAgent):
                 the chat session has terminated, and information about the chat
                 session.
         """
-        messages = self.update_messages(input_message)
+        msg_user_at_backend = input_message.set_user_role_at_backend()
+        messages = self.update_messages(msg_user_at_backend)
         if self.message_window_size is not None and len(
                 messages) > self.message_window_size:
             messages = [self.system_message
@@ -180,7 +184,7 @@ class ChatAgent(BaseAgent):
         info: Dict[str, Any]
 
         if num_tokens < self.model_token_limit:
-            response = self.model_backend.run(messages=openai_messages)
+            response = self.model_backend.run(openai_messages)
             if not isinstance(response, dict):
                 raise RuntimeError("OpenAI returned unexpected struct")
             output_messages = [
