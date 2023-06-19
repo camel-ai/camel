@@ -50,96 +50,96 @@ class HuggingFaceToolAgent(BaseToolAgent):
                 "pip install huggingface_hub==0.14.1 transformers==4.29.0 diffusers accelerate datasets torch soundfile sentencepiece opencv-python"
             )
         self.agent = OpenAiAgent(*args, **kwargs)
-        self.name = name
+        description = f"""The `{self.name}` is a tool agent that can perform a variety of tasks including:
+        - Document question answering: given a document (such as a PDF) in image format, answer a question on this document
+        - Text question answering: given a long text and a question, answer the question in the text
+        - Unconditional image captioning: Caption the image!
+        - Image question answering: given an image, answer a question on this image
+        - Image segmentation: given an image and a prompt, output the segmentation mask of that prompt
+        - Speech to text: given an audio recording of a person talking, transcribe the speech into text
+        - Text to speech: convert text to speech
+        - Zero-shot text classification: given a text and a list of labels, identify to which label the text corresponds the most
+        - Text summarization: summarize a long text in one or a few sentences
+        - Translation: translate the text into a given language
+        - Text downloading: to download a text from a web URL
+        - Text to image: generate an image according to a prompt, leveraging stable diffusion
+        - Image transformation: modify an image given an initial image and a prompt, leveraging instruct pix2pix stable diffusion
+        - Text to video: generate a small video according to a prompt
+
+        Here are some python code examples of what you can do with this agent:
+
+        Single execution (step) mode, the single execution method is when using the step() method of the agent:
+        ```
+        # Text to image
+        rivers_and_lakes_image = {self.name}.step("Draw me a picture of rivers and lakes.")
+        rivers_and_lakes_image.save("./rivers_and_lakes_image.png")
+
+        # Text to image -> Image transformation
+        sea_add_island_image = {self.name}.step("Draw me a picture of the sea then transform the picture to add an island")
+        sea_add_island_image.save("./sea_add_island_image.png")
+
+        # If you'd like to keep a state across executions or to pass non-text objects to the agent, 
+        # you can do so by specifying variables that you would like the agent to use. For example,
+        # you could generate the first image of rivers and lakes, and ask the model to update that picture to add an island by doing the following:
+        picture = {self.name}.step("Generate a picture of rivers and lakes.")
+        picture.save("./picture.png")
+        updated_picture = {self.name}.step("Transform the image in `picture` to add an island to it.", picture=picture)
+        updated_picture.save("./updated_picture.png")
+
+        capybara_sea_image = {self.name}.step("Draw me a picture of the `prompt`", prompt="a capybara swimming in the sea")
+        capybara_sea_image.save("./capybara_sea_image.png")
+
+        # Document question answering
+        answer = {self.name}.step(
+            "In the following `document`, where will the TRRF Scientific Advisory Council Meeting take place?",
+            document=document,
+        )
+        print(answer)
+
+
+        # Text to image
+        boat_image = {self.name}.step("Generate an image of a boat in the water")
+        boat_image.save("./boat_image.png")
+
+        # Unconditional image captioning
+        boat_image_caption = {self.name}.step("Can you caption the `boat_image`?", boat_image=boat_image)
+        print(boat_image_caption)
+
+        # Text to image -> Unconditional image captioning -> Text to speech
+        boat_audio = {self.name}.step("Can you generate an image of a boat? Please read out loud the contents of the image afterwards")
+
+        # Text downloading
+        document = {self.name}.step("Download the text from http://hf.co")
+        print(document)
+
+        # Text summarization
+        summary = {self.name}.step("Summarize the following text: `document`", document=document)
+        print(summary)
+
+        # Text downloading -> Text summarization -> Text to speech
+        audio = {self.name}.step("Read out loud the summary of http://hf.co")
+        ```
+
+        Chat-based execution (chat), the agent also has a chat-based approach, using the chat() method:
+        ```
+        # Clean the chat history
+        {self.name}.reset()
+
+        # Text to image
+        capybara_image = {self.name}.chat("Show me an an image of a capybara")
+        capybara_image.save("./capybara_image.png")
+
+        # Image transformation
+        transformed_capybara_image = {self.name}.chat("Transform the image so that it snows")
+        transformed_capybara_image.save("./transformed_capybara_image.png")
+
+        # Image segmentation
+        segmented_transformed_capybara_image = {self.name}.chat("Show me a mask of the snowy capybaras")
+        segmented_transformed_capybara_image.save("./segmented_transformed_capybara_image.png")
+        ```
+        """
+        super(HuggingFaceToolAgent, self).__init__(name, description)
         self.remote = remote
-        self.description = f"""The `{self.name}` is a tool agent that can perform a variety of tasks including:
-- Document question answering: given a document (such as a PDF) in image format, answer a question on this document
-- Text question answering: given a long text and a question, answer the question in the text
-- Unconditional image captioning: Caption the image!
-- Image question answering: given an image, answer a question on this image
-- Image segmentation: given an image and a prompt, output the segmentation mask of that prompt
-- Speech to text: given an audio recording of a person talking, transcribe the speech into text
-- Text to speech: convert text to speech
-- Zero-shot text classification: given a text and a list of labels, identify to which label the text corresponds the most
-- Text summarization: summarize a long text in one or a few sentences
-- Translation: translate the text into a given language
-- Text downloading: to download a text from a web URL
-- Text to image: generate an image according to a prompt, leveraging stable diffusion
-- Image transformation: modify an image given an initial image and a prompt, leveraging instruct pix2pix stable diffusion
-- Text to video: generate a small video according to a prompt
-
-Here are some python code examples of what you can do with this agent:
-
-Single execution (step) mode, the single execution method is when using the step() method of the agent:
-```
-# Text to image
-rivers_and_lakes_image = {self.name}.step("Draw me a picture of rivers and lakes.")
-rivers_and_lakes_image.save("./rivers_and_lakes_image.png")
-
-# Text to image -> Image transformation
-sea_add_island_image = {self.name}.step("Draw me a picture of the sea then transform the picture to add an island")
-sea_add_island_image.save("./sea_add_island_image.png")
-
-# If you'd like to keep a state across executions or to pass non-text objects to the agent, 
-# you can do so by specifying variables that you would like the agent to use. For example,
-# you could generate the first image of rivers and lakes, and ask the model to update that picture to add an island by doing the following:
-picture = {self.name}.step("Generate a picture of rivers and lakes.")
-picture.save("./picture.png")
-updated_picture = {self.name}.step("Transform the image in `picture` to add an island to it.", picture=picture)
-updated_picture.save("./updated_picture.png")
-
-capybara_sea_image = {self.name}.step("Draw me a picture of the `prompt`", prompt="a capybara swimming in the sea")
-capybara_sea_image.save("./capybara_sea_image.png")
-
-# Document question answering
-answer = {self.name}.step(
-    "In the following `document`, where will the TRRF Scientific Advisory Council Meeting take place?",
-    document=document,
-)
-print(answer)
-
-
-# Text to image
-boat_image = {self.name}.step("Generate an image of a boat in the water")
-boat_image.save("./boat_image.png")
-
-# Unconditional image captioning
-boat_image_caption = {self.name}.step("Can you caption the `boat_image`?", boat_image=boat_image)
-print(boat_image_caption)
-
-# Text to image -> Unconditional image captioning -> Text to speech
-boat_audio = {self.name}.step("Can you generate an image of a boat? Please read out loud the contents of the image afterwards")
-
-# Text downloading
-document = {self.name}.step("Download the text from http://hf.co")
-print(document)
-
-# Text summarization
-summary = {self.name}.step("Summarize the following text: `document`", document=document)
-print(summary)
-
-# Text downloading -> Text summarization -> Text to speech
-audio = {self.name}.step("Read out loud the summary of http://hf.co")
-```
-
-Chat-based execution (chat), the agent also has a chat-based approach, using the chat() method:
-```
-# Clean the chat history
-{self.name}.reset()
-
-# Text to image
-capybara_image = {self.name}.chat("Show me an an image of a capybara")
-capybara_image.save("./capybara_image.png")
-
-# Image transformation
-transformed_capybara_image = {self.name}.chat("Transform the image so that it snows")
-transformed_capybara_image.save("./transformed_capybara_image.png")
-
-# Image segmentation
-segmented_transformed_capybara_image = {self.name}.chat("Show me a mask of the snowy capybaras")
-segmented_transformed_capybara_image.save("./segmented_transformed_capybara_image.png")
-```
-"""
 
     def reset(self) -> None:
         r"""Resets the chat history of the agent."""

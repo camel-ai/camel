@@ -185,7 +185,7 @@ class RolePlaying:
             self.critic = None
 
     def init_chat(self) -> Tuple[AssistantChatMessage, List[ChatMessage]]:
-        r"""Initializes the chat by resetting both the assistant and user
+        r"""Initializes the chat by resetting both of the assistant and user
         agents, and sending the system messages again to the agents using
         chat messages. Returns the assistant's introductory message and the
         user's response messages.
@@ -218,13 +218,13 @@ class RolePlaying:
         self,
         messages: Sequence[ChatMessage],
     ) -> ChatMessage:
-        r"""Processes a list of chat messages, returning the processed message.
-        If multiple messages are provided and `with_critic_in_the_loop`
-        is `False`, raises a `ValueError`. If no messages are provided, also
-        raises a `ValueError`.
+        r"""Processes a sequence of chat messages, returning the processed
+        message. If multiple messages are provided and
+        `with_critic_in_the_loop` is `False`, raises a `ValueError`.
+        If no messages are provided, a `ValueError` will be raised.
 
         Args:
-            msgs: A list of `ChatMessage`s to process.
+            messages: A sequence of `ChatMessage` objects to process.
 
         Returns:
             A single `ChatMessage` representing the processed message.
@@ -248,11 +248,10 @@ class RolePlaying:
         r"""Advances the conversation by taking a message from the assistant,
         processing it using the user agent, and then processing the resulting
         message using the assistant agent. Returns a tuple containing the
-        resulting assistant message, whether or not the assistant agent
-        terminated the conversation, and any additional assistant information,
-        as well as a tuple containing the resulting user message, whether or
-        not the user agent terminated the conversation, and any additional user
-        information.
+        resulting assistant message, whether the assistant agent terminated
+        the conversation, and any additional assistant information, as well as
+        a tuple containing the resulting user message, whether the user agent
+        terminated the conversation, and any additional user information.
 
         Args:
             assistant_msg: A `ChatMessage` representing the message from the
@@ -260,11 +259,11 @@ class RolePlaying:
 
         Returns:
             A tuple containing two ChatAgentResponse: the first struct contains
-            the resulting assistant message, whether or not the assistant agent
+            the resulting assistant message, whether the assistant agent
             terminated the conversation, and any additional assistant
             information; the second struct contains the resulting user message,
-            whether or not the user agent terminated the conversation, and
-            any additional user information.
+            whether the user agent terminated the conversation, and any
+            additional user information.
         """
         assistant_msg_rst = assistant_msg.set_user_role_at_backend()
         user_response = self.user_agent.step(assistant_msg_rst)
