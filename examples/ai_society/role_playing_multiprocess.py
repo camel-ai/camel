@@ -18,8 +18,8 @@ import sys
 
 from colorama import Fore
 
-from camel.agents import RolePlaying
 from camel.configs import ChatGPTConfig
+from camel.societies import RolePlaying
 from camel.typing import TaskType
 from camel.utils import download_tasks
 
