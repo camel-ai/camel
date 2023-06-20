@@ -214,8 +214,8 @@ def role_playing_chat_init(state) -> \
     session: RolePlaying = state.session
 
     try:
-        init_assistant_msg, _ = session.init_chat()
         init_assistant_msg: BaseMessage
+        init_assistant_msg, _ = session.init_chat()
     except (openai.error.RateLimitError, tenacity.RetryError,
             RuntimeError) as ex:
         print("OpenAI API exception 1 " + str(ex))

@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 from camel.agents import (
     ChatAgent,
@@ -23,6 +23,7 @@ from camel.agents.chat_agent import ChatAgentResponse
 from camel.generators import SystemMessageGenerator
 from camel.human import Human
 from camel.messages import BaseMessage
+from camel.prompts import TextPrompt
 from camel.typing import ModelType, RoleType, TaskType
 
 
@@ -95,6 +96,7 @@ class RolePlaying:
         self.model_type = model_type
         self.task_type = task_type
 
+        self.specified_task_prompt: Optional[TextPrompt]
         if with_task_specify:
             task_specify_meta_dict = dict()
             if self.task_type in [TaskType.AI_SOCIETY, TaskType.MISALIGNMENT]:
@@ -118,6 +120,7 @@ class RolePlaying:
         else:
             self.specified_task_prompt = None
 
+        self.planned_task_prompt: Optional[TextPrompt]
         if with_task_planner:
             task_planner_agent = TaskPlannerAgent(
                 self.model_type,
@@ -173,6 +176,7 @@ class RolePlaying:
         )
         self.user_sys_msg = self.user_agent.system_message
 
+        self.critic: Union[CriticAgent, Human, None]
         if with_critic_in_the_loop:
             if critic_role_name.lower() == "human":
                 self.critic = Human(**(critic_kwargs or {}))
