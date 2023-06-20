@@ -22,7 +22,7 @@ from camel.messages import (
     OpenAIUserMessage,
 )
 from camel.prompts import CodePrompt, TextPrompt
-from camel.typing import ModelType, RoleType
+from camel.typing import RoleType
 
 
 @dataclass
@@ -42,8 +42,19 @@ class BaseMessage:
     role_name: str
     role_type: RoleType
     meta_dict: Optional[Dict[str, str]]
-    role: str
     content: str
+
+    @classmethod
+    def make_user_message(
+            cls, role_name: str, content: str,
+            meta_dict: Optional[Dict[str, str]] = None) -> 'BaseMessage':
+        return cls(role_name, RoleType.USER, meta_dict, content)
+
+    @classmethod
+    def make_assistant_message(
+            cls, role_name: str, content: str,
+            meta_dict: Optional[Dict[str, str]] = None) -> 'BaseMessage':
+        return cls(role_name, RoleType.ASSISTANT, meta_dict, content)
 
     def _create_new_instance(self, content: str) -> "BaseMessage":
         r"""Create a new instance of the :obj:`BaseMessage` with updated
@@ -57,8 +68,7 @@ class BaseMessage:
         """
         return self.__class__(role_name=self.role_name,
                               role_type=self.role_type,
-                              meta_dict=self.meta_dict, role=self.role,
-                              content=content)
+                              meta_dict=self.meta_dict, content=content)
 
     def __add__(self, other: Any) -> Union["BaseMessage", Any]:
         r"""Addition operator override for :obj:`BaseMessage`.
@@ -116,19 +126,6 @@ class BaseMessage:
         """
         return item in self.content
 
-    def token_len(self, model: ModelType = ModelType.GPT_3_5_TURBO) -> int:
-        r"""Calculate the token length of the message for the specified model.
-
-        Args:
-            model (ModelType, optional): The model type to calculate the token
-                length. (default: :obj:`ModelType.GPT_3_5_TURBO`)
-
-        Returns:
-            int: The token length of the message.
-        """
-        from camel.utils import num_tokens_from_messages
-        return num_tokens_from_messages([self.to_openai_chat_message()], model)
-
     def extract_text_and_code_prompts(
             self) -> Tuple[List[TextPrompt], List[CodePrompt]]:
         r"""Extract text and code prompts from the message content.
@@ -167,37 +164,32 @@ class BaseMessage:
 
         return text_prompts, code_prompts
 
-    def to_openai_message(self, role: Optional[str] = None) -> OpenAIMessage:
+    def to_openai_message(self, role: str) -> OpenAIMessage:
         r"""Converts the message to an :obj:`OpenAIMessage` object.
 
         Args:
-            role (Optional[str]): The role of the message in OpenAI chat
+            role (str): The role of the message in OpenAI chat
                 system, either :obj:`"system"`, :obj:`"user"`, or
-                obj:`"assistant"`. (default: :obj:`None`)
+                obj:`"assistant"`.
 
         Returns:
             OpenAIMessage: The converted :obj:`OpenAIMessage` object.
         """
-        role = role or self.role
         if role not in {"system", "user", "assistant"}:
             raise ValueError(f"Unrecognized role: {role}")
         return {"role": role, "content": self.content}
 
-    def to_openai_chat_message(
-        self,
-        role: Optional[str] = None,
-    ) -> OpenAIChatMessage:
+    def to_openai_chat_message(self, role: str) -> OpenAIChatMessage:
         r"""Converts the message to an :obj:`OpenAIChatMessage` object.
 
         Args:
-            role (Optional[str]): The role of the message in OpenAI chat
+            role (str): The role of the message in OpenAI chat
                 system, either :obj:`"user"`, or :obj:`"assistant"`.
                 (default: :obj:`None`)
 
         Returns:
             OpenAIChatMessage: The converted :obj:`OpenAIChatMessage` object.
         """
-        role = role or self.role
         if role not in {"user", "assistant"}:
             raise ValueError(f"Unrecognized role: {role}")
         return {"role": role, "content": self.content}
@@ -238,6 +230,5 @@ class BaseMessage:
             "role_name": self.role_name,
             "role_type": self.role_type.name,
             **(self.meta_dict or {}),
-            "role": self.role,
             "content": self.content,
         }

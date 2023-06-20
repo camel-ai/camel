@@ -18,7 +18,7 @@ import os
 
 from camel.agents import ChatAgent
 from camel.generators import SystemMessageGenerator
-from camel.messages import UserChatMessage
+from camel.messages import BaseMessage
 from camel.typing import ModelType, RoleType, TaskType
 
 
@@ -52,8 +52,8 @@ def translate_content(directory_path: str, file_path: str,
 
         assistant_agent = ChatAgent(assistant_sys_msg, ModelType.GPT_3_5_TURBO)
 
-        user_msg = UserChatMessage(role_name="Language Translator",
-                                   content=msg_i_content)
+        user_msg = BaseMessage.make_user_message(
+            role_name="Language Translator", content=msg_i_content)
 
         assistant_response = assistant_agent.step(user_msg)
         assistant_msg = assistant_response.msg

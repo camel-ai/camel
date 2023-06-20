@@ -24,7 +24,6 @@ def base_message() -> BaseMessage:
         role_name="test_user",
         role_type=RoleType.USER,
         meta_dict={"key": "value"},
-        role="user",
         content="test content",
     )
 
@@ -48,16 +47,10 @@ def test_base_message_contains_operator(base_message: BaseMessage):
     assert "foo" not in base_message
 
 
-def test_base_message_token_len(base_message: BaseMessage):
-    token_len = base_message.token_len()
-    assert isinstance(token_len, int)
-    assert token_len == 10
-
-
 def test_extract_text_and_code_prompts():
     base_message = BaseMessage(
         role_name="test_role_name", role_type=RoleType.USER, meta_dict=dict(),
-        role="user", content="This is a text prompt.\n\n"
+        content="This is a text prompt.\n\n"
         "```python\nprint('This is a code prompt')\n```\n"
         "This is another text prompt.\n\n"
         "```c\nprintf(\"This is another code prompt\");\n```")
@@ -83,7 +76,6 @@ def test_base_message_to_dict(base_message: BaseMessage) -> None:
         "role_name": "test_user",
         "role_type": "USER",
         "key": "value",
-        "role": "user",
         "content": "test content",
     }
     assert base_message.to_dict() == expected_dict
@@ -97,18 +89,17 @@ def test_base_message():
     content = "test_content"
 
     message = BaseMessage(role_name=role_name, role_type=role_type,
-                          meta_dict=meta_dict, role=role, content=content)
+                          meta_dict=meta_dict, content=content)
 
     assert message.role_name == role_name
     assert message.role_type == role_type
     assert message.meta_dict == meta_dict
-    assert message.role == role
     assert message.content == content
 
-    openai_message = message.to_openai_message()
+    openai_message = message.to_openai_message(role)
     assert openai_message == {"role": role, "content": content}
 
-    openai_chat_message = message.to_openai_chat_message()
+    openai_chat_message = message.to_openai_chat_message(role)
     assert openai_chat_message == {"role": role, "content": content}
 
     openai_system_message = message.to_openai_system_message()
@@ -127,6 +118,5 @@ def test_base_message():
     assert dictionary == {
         "role_name": role_name,
         "role_type": role_type.name,
-        **(meta_dict or {}), "role": role,
-        "content": content
+        **(meta_dict or {}), "content": content
     }

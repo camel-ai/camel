@@ -12,14 +12,16 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from camel.human import Human
-from camel.messages import AssistantChatMessage
+from camel.messages import BaseMessage
 
 
 def test_display_options():
     human = Human()
     msgs = [
-        AssistantChatMessage(role_name="assistant", content="Hello"),
-        AssistantChatMessage(role_name="assistant", content="World"),
+        BaseMessage.make_assistant_message(role_name="assistant",
+                                           content="Hello"),
+        BaseMessage.make_assistant_message(role_name="assistant",
+                                           content="World"),
     ]
     human.display_options(msgs)
 
@@ -27,8 +29,10 @@ def test_display_options():
 def test_get_input(monkeypatch):
     human = Human()
     msgs = [
-        AssistantChatMessage(role_name="assistant", content="Hello"),
-        AssistantChatMessage(role_name="assistant", content="World"),
+        BaseMessage.make_assistant_message(role_name="assistant",
+                                           content="Hello"),
+        BaseMessage.make_assistant_message(role_name="assistant",
+                                           content="World"),
     ]
     human.display_options(msgs)
     monkeypatch.setattr('builtins.input', lambda _: str(1))
@@ -38,8 +42,10 @@ def test_get_input(monkeypatch):
 def test_step(monkeypatch):
     human = Human()
     msgs = [
-        AssistantChatMessage(role_name="assistant", content="Hello"),
-        AssistantChatMessage(role_name="assistant", content="World"),
+        BaseMessage.make_assistant_message(role_name="assistant",
+                                           content="Hello"),
+        BaseMessage.make_assistant_message(role_name="assistant",
+                                           content="World"),
     ]
 
     monkeypatch.setattr('builtins.input', lambda _: str(1))
