@@ -28,8 +28,9 @@ import openai.error
 import tenacity
 
 from apps.agents.text_utils import split_markdown_code
-from camel.agents import RolePlaying, TaskSpecifyAgent
+from camel.agents import TaskSpecifyAgent
 from camel.messages import AssistantChatMessage
+from camel.societies import RolePlaying
 
 REPO_ROOT = os.path.realpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.."))
