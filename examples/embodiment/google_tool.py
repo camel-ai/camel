@@ -41,13 +41,13 @@ def main():
 
     user_msg = UserChatMessage(
         role_name=role_name, content=
-            ("Answer the question: Author David Chanoff has collaborated with a U.S. Navy admiral who served as the ambassador to the United Kingdom under which President?")
-        )
+        ("Answer the question: Author David Chanoff has collaborated with a U.S. Navy admiral who served as the ambassador to the United Kingdom under which President?"
+         ))
     output_message, _, _ = embodiment_agent.step(user_msg)
     print(output_message.content)
 
 
 if __name__ == '__main__':
-    os.environ['OPENAI_API_KEY'] = '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'
-    os.environ['SERPAPI_KEY'] = 'bc64d26e53e46660070c9ddc01577e9de30c7a7eb4f9d71f6845384f40a7e432'
+    os.environ['OPENAI_API_KEY'] = '<openai_api_key>'
+    os.environ['SERPAPI_KEY'] = '<serpapi_key>'
     main()

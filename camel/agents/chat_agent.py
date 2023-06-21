@@ -173,10 +173,6 @@ class ChatAgent(BaseAgent):
                 messages) > self.message_window_size:
             messages = [self.system_message
                         ] + messages[-self.message_window_size:]
-            
-        # for message in messages:
-        #     print(message)
-
         openai_messages = [message.to_openai_message() for message in messages]
         num_tokens = num_tokens_from_messages(openai_messages, self.model)
 
