@@ -11,15 +11,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import os
-from typing import List
+from typing import Dict
+from colorama import Fore
 
-from camel.agents import EmbodiedAgent
+from camel.agents.ReAct_agent import ReActAgent
 from camel.agents.tool_agents.base import BaseToolAgent
+from camel.agents.tool_agents.wiki_tool_agent import WikiToolAgent
 from camel.agents.tool_agents.google_tool_agent import GoogleToolAgent
+
 from camel.generators import SystemMessageGenerator
 from camel.messages import UserChatMessage
-from camel.typing import RoleType
+from camel.typing import RoleType, ModelType
 
 
 def main():
@@ -27,24 +29,39 @@ def main():
     meta_dict = dict(role=role_name, task="Answer questions")
     sys_msg = SystemMessageGenerator().from_dict(
         meta_dict=meta_dict,
-        role_tuple=("f{role_name}'s Embodiment", RoleType.EMBODIMENT))
+        role_tuple=(role_name, RoleType.ASSISTANT))
 
     # The tool to be used should be the Wikipedia API
-    action_space = [GoogleToolAgent('google_tool_agent')]
-    action_space: List[BaseToolAgent]
+    # For using this
+    print("Creating Tool agents...")
+    wiki_tool = WikiToolAgent('wiki_tool_agent')
+    google_tool = GoogleToolAgent('google_tool_agent')
+    action_space = {
+        'GoogleSearch': google_tool,
+        'WikiSearch' : wiki_tool,
+        'WikiLookup' : wiki_tool,
+    }
+    action_space: Dict[str, BaseToolAgent]
 
-    embodiment_agent = EmbodiedAgent(
+    print("Creating ReActAgent...")
+    react_agent = ReActAgent(
         sys_msg,
+        model=ModelType.GPT_3_5_TURBO,
         verbose=True,
         action_space=action_space,
     )
 
+    print("Passing message into the ReActAgent...")
+    # question = "Were Scott Derrickson and Ed Wood of the same nationality?"
+    # question = "What female sports league does the oldest football association in Africa includes?"
+    question = "Within which sports complex is this sports facility located where 1990 FIFA World Cup Final between West Germany and Argentina took place?"
     user_msg = UserChatMessage(
-        role_name=role_name, content=
-        ("Answer the question: Author David Chanoff has collaborated with a U.S. Navy admiral who served as the ambassador to the United Kingdom under which President?"
-         ))
-    output_message, _, _ = embodiment_agent.step(user_msg)
-    print(output_message.content)
+        role_name=role_name, 
+        content=(
+            f"Answer the question: {question}"
+        ))
+    output_message, _, _ = react_agent.step(user_msg)
+    # print(output_message.content)
 
 
 if __name__ == '__main__':
