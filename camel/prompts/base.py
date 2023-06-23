@@ -177,10 +177,6 @@ class CodePrompt(TextPrompt):
                 and local variables.
         """
         # NOTE: Only supports Python code for now.
-        if self.code_type != "python":
-            raise ValueError(
-                f"Executing {self.code_type} is not supported currently.")
-
         try:
             # Execute the code string
             import io
