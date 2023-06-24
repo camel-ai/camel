@@ -18,7 +18,7 @@ from camel.utils import print_text_animated
 
 
 def main(model_type=None) -> None:
-    task_prompt = "Develop a trading bot for the stock market"
+    task_prompt = "开发一个针对股票市场的交易机器人程序"
     role_play_session = RolePlaying(
         "Python Programmer",
         "Stock Trader",
@@ -26,6 +26,7 @@ def main(model_type=None) -> None:
         with_task_specify=True,
         with_task_planner=True,
         model_type=model_type,
+        output_language="Chinese",
     )
 
     print(

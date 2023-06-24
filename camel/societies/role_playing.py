@@ -85,6 +85,7 @@ class RolePlaying:
         sys_msg_generator_kwargs: Optional[Dict] = None,
         extend_sys_msg_meta_dicts: Optional[List[Dict]] = None,
         extend_task_specify_meta_dict: Optional[Dict] = None,
+        output_language: str = "English",
     ) -> None:
         self.with_task_specify = with_task_specify
         self.with_task_planner = with_task_planner
@@ -104,6 +105,7 @@ class RolePlaying:
             task_specify_agent = TaskSpecifyAgent(
                 self.model_type,
                 task_type=self.task_type,
+                output_language=output_language,
                 **(task_specify_agent_kwargs or {}),
             )
             self.specified_task_prompt = task_specify_agent.step(
@@ -117,6 +119,7 @@ class RolePlaying:
         if with_task_planner:
             task_planner_agent = TaskPlannerAgent(
                 self.model_type,
+                output_language=output_language,
                 **(task_planner_agent_kwargs or {}),
             )
             self.planned_task_prompt = task_planner_agent.step(task_prompt)
@@ -152,6 +155,11 @@ class RolePlaying:
                 ],
             ))
 
+        if output_language != "English":
+            language_prompt = f"""\nNote that the conversation should be in {output_language} instead of English."""
+            self.assistant_sys_msg.content += language_prompt
+            self.user_sys_msg += language_prompt
+        
         self.assistant_agent: ChatAgent = ChatAgent(
             self.assistant_sys_msg,
             model_type,

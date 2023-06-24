@@ -49,6 +49,7 @@ class TaskSpecifyAgent(ChatAgent):
         model_config: Optional[Any] = None,
         task_specify_prompt: Optional[Union[str, TextPrompt]] = None,
         word_limit: int = DEFAULT_WORD_LIMIT,
+        output_language: str = "English"
     ) -> None:
 
         if task_specify_prompt is None:
@@ -67,6 +68,9 @@ class TaskSpecifyAgent(ChatAgent):
             role_type=RoleType.ASSISTANT,
             content="You can make a task more specific.",
         )
+        if output_language != "English":
+            system_message.content += f"And you should output task specification in {output_language}, but not English."
+
         super().__init__(system_message, model, model_config)
 
     def step(
@@ -127,6 +131,7 @@ class TaskPlannerAgent(ChatAgent):
         self,
         model: Optional[ModelType] = None,
         model_config: Any = None,
+        output_language: str = "English",
     ) -> None:
 
         self.task_planner_prompt = TextPrompt(
@@ -137,6 +142,8 @@ class TaskPlannerAgent(ChatAgent):
             role_type=RoleType.ASSISTANT,
             content="You are a helpful task planner.",
         )
+        if output_language != "English":
+            system_message.content += f"And you should plan the task in {output_language}, but not English."
         super().__init__(system_message, model, model_config)
 
     def step(
