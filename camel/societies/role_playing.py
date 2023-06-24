@@ -156,7 +156,7 @@ class RolePlaying:
             ))
 
         if output_language != "English":
-            language_prompt = f"""\nNote that the conversation should be in {output_language} instead of English."""
+            language_prompt = f"""\nNote that the conversation should be in {output_language}"""
             self.assistant_sys_msg.content += language_prompt
             self.user_sys_msg += language_prompt
         

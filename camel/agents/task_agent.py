@@ -69,7 +69,7 @@ class TaskSpecifyAgent(ChatAgent):
             content="You can make a task more specific.",
         )
         if output_language != "English":
-            system_message.content += f"And you should output task specification in {output_language}, but not English."
+            system_message.content += f"And you should output task specification in {output_language}"
 
         super().__init__(system_message, model, model_config)
 
@@ -143,7 +143,7 @@ class TaskPlannerAgent(ChatAgent):
             content="You are a helpful task planner.",
         )
         if output_language != "English":
-            system_message.content += f"And you should plan the task in {output_language}, but not English."
+            system_message.content += f"And you should plan the task in {output_language}"
         super().__init__(system_message, model, model_config)
 
     def step(
