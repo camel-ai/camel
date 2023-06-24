@@ -16,7 +16,7 @@ import pytest
 import torch
 from PIL import Image
 
-from camel.utils import PythonInterpreter
+from camel.utils import InterpreterError, PythonInterpreter
 
 
 def action_function():
@@ -66,27 +66,23 @@ x = array([[1, 2, 3], [4, 5, 6]])"""
 def test_import_fail0(interpreter):
     code = """import os
 os.mkdir("/tmp/test")"""
-    with pytest.raises(RuntimeError) as e:
+    with pytest.raises(InterpreterError) as e:
         interpreter.execute(code)
     exec_msg = e.value.args[0]
-    cause_msg = e.value.__cause__.args[0]
-    assert exec_msg == ("Evaluation of the code stopped at line 0"
-                        " (import os) before the end code.")
-    assert cause_msg == ("It is not permitted to import modules than module"
-                         " white list (try to import os).")
+    assert exec_msg == ("Evaluation of the code stopped at line 0. See:\n"
+                        "It is not permitted to import modules than module"
+                        " white list (try to import os).")
 
 
 def test_import_fail1(interpreter):
     code = """import numpy as np
 x = np.array([[1, 2, 3], [4, 5, 6]], np.int32)"""
-    with pytest.raises(RuntimeError) as e:
+    with pytest.raises(InterpreterError) as e:
         interpreter.execute(code)
     exec_msg = e.value.args[0]
-    cause_msg = e.value.__cause__.args[0]
-    assert exec_msg == ("Evaluation of the code stopped at line 0"
-                        " (import numpy as np) before the end code.")
-    assert cause_msg == ("It is not permitted to import modules than module"
-                         " white list (try to import numpy).")
+    assert exec_msg == ("Evaluation of the code stopped at line 0. See:\n"
+                        "It is not permitted to import modules than module"
+                        " white list (try to import numpy).")
 
 
 def test_action_space(interpreter):
@@ -112,14 +108,11 @@ def test_keep_state(interpreter):
     assert rnt == 42
     rnt = interpreter.execute(code2, keep_state=False)
     assert rnt == 42
-    with pytest.raises(RuntimeError) as e:
+    with pytest.raises(InterpreterError) as e:
         interpreter.execute(code3, keep_state=False)
-        print(interpreter.state)
     exec_msg = e.value.args[0]
-    cause_msg = e.value.__cause__.args[0]
-    assert exec_msg == ("Evaluation of the code stopped at line 0 (c = b)"
-                        " before the end code.")
-    assert cause_msg == "The variable `b` is not defined."
+    assert exec_msg == ("Evaluation of the code stopped at line 0. See:\n"
+                        "The variable `b` is not defined.")
 
 
 def test_if(interpreter):

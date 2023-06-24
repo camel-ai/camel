@@ -72,12 +72,10 @@ class PythonInterpreter():
         """
         self.state.update(state)
         self.fuzz_state.update(fuzz_state)
-
         try:
             expression = ast.parse(code)
         except SyntaxError as e:
-            print("Syntax error in generated code", e)
-            return
+            raise InterpreterError(f"Syntax error in code: {e}")
 
         result = None
         for idx, node in enumerate(expression.body):
@@ -86,9 +84,11 @@ class PythonInterpreter():
             except InterpreterError as e:
                 if not keep_state:
                     self.clear_state()
-                msg = (f"Evaluation of the code stopped at line {idx} "
-                       f"({ast.unparse(node)}) before the end code.")
-                raise RuntimeError(msg) from e
+                msg = (f"Evaluation of the code stopped at line {idx}. "
+                       f"See:\n{e}")
+                # More information can be provided by `ast.unparse()`,
+                # which is new in python 3.9.
+                raise InterpreterError(msg)
             if line_result is not None:
                 result = line_result
 
