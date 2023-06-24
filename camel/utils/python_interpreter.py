@@ -34,7 +34,7 @@ class PythonInterpreter():
     Args:
         action_space (Dict[str, Any]): The dictionary mapping action names to
             the correponding functions or classes.
-        import_white_list (List[str], Optional): The list storing the
+        import_white_list (List[str], optional): The list storing the
             importable python modules or functions which can be imported in
             code. All submodules and functions of the modules in the list are
             importable. Any other import statements will be rejected. :obj:`.`
@@ -56,14 +56,14 @@ class PythonInterpreter():
 
         Args:
             code (str): Generated python code to be executed.
-            state (Dict[str, Any], Optional): External variables that may be
+            state (Dict[str, Any], optional): External variables that may be
                 used in the generated code. (default: :obj:`{}`)
-            fuzz_state (Dict[str, Any], Optional): External varibles that do
+            fuzz_state (Dict[str, Any], optional): External varibles that do
                 not have certain varible names. The interpreter will use fuzzy
                 matching to these varibales. For example, if :obj:`fuzz_state`
                 has a variable :obj:`image`, the generated code can use
                 :obj:`input_image` to access it. (default: :obj:`{}`)
-            keep_state (bool, Optional):  If :obj:`True`, :obj:`state` and
+            keep_state (bool, optional):  If :obj:`True`, :obj:`state` and
                 :obj:`fuzz_state` will be kept for later execution. Otherwise,
                 they will be cleared. (default: :obj:`True`)
 
