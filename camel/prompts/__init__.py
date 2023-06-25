@@ -17,6 +17,7 @@ from .code import CodePromptTemplateDict
 from .misalignment import MisalignmentPromptTemplateDict
 from .translation import TranslationPromptTemplateDict
 from .solution_extraction import SolutionExtractionPromptTemplateDict
+from .single_shot import SingleShotPromptTemplateDict
 from .evaluation import EvaluationPromptTemplateDict
 from .task_prompt_template import TaskPromptTemplateDict
 from .prompt_templates import PromptTemplateGenerator
@@ -33,4 +34,5 @@ __all__ = [
     'TaskPromptTemplateDict',
     'PromptTemplateGenerator',
     'SolutionExtractionPromptTemplateDict',
+    'SingleShotPromptTemplateDict',
 ]
