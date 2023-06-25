@@ -63,7 +63,7 @@ class RolePlaying:
             extend the system message meta dicts with. (default: :obj:`None`)
         extend_task_specify_meta_dict (Dict, optional): A dict to extend the
             task specify meta dict with. (default: :obj:`None`)
-        output_language (str): The language to be used in the conversation (default: :obj:`English`)
+        output_language (str): The language to be used in the conversation (default: :obj:`None`)
     """
 
     def __init__(
@@ -86,7 +86,7 @@ class RolePlaying:
         sys_msg_generator_kwargs: Optional[Dict] = None,
         extend_sys_msg_meta_dicts: Optional[List[Dict]] = None,
         extend_task_specify_meta_dict: Optional[Dict] = None,
-        output_language: str = "English",
+        output_language: str = None,
     ) -> None:
         self.with_task_specify = with_task_specify
         self.with_task_planner = with_task_planner
@@ -155,20 +155,17 @@ class RolePlaying:
                     (user_role_name, RoleType.USER),
                 ],
             ))
-
-        if output_language != "English":
-            language_prompt = f"""\nNote that the conversation should be in {output_language}"""
-            self.assistant_sys_msg.content += language_prompt
-            self.user_sys_msg += language_prompt
         
         self.assistant_agent: ChatAgent = ChatAgent(
             self.assistant_sys_msg,
             model_type,
+            output_language=output_language,
             **(assistant_agent_kwargs or {}),
         )
         self.user_agent: ChatAgent = ChatAgent(
             self.user_sys_msg,
             model_type,
+            output_language=output_language,
             **(user_agent_kwargs or {}),
         )
 

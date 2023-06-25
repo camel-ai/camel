@@ -40,7 +40,7 @@ class TaskSpecifyAgent(ChatAgent):
         word_limit (int): The word limit for the task prompt.
             (default: :obj:`50`)
         output_language (str): The language to be used in the specification
-            (default: :obj:`English`)
+            (default: :obj:`None`)
     """
     DEFAULT_WORD_LIMIT = 50
 
@@ -51,7 +51,7 @@ class TaskSpecifyAgent(ChatAgent):
         model_config: Optional[Any] = None,
         task_specify_prompt: Optional[Union[str, TextPrompt]] = None,
         word_limit: int = DEFAULT_WORD_LIMIT,
-        output_language: str = "English"
+        output_language: str = None
     ) -> None:
 
         if task_specify_prompt is None:
@@ -70,10 +70,11 @@ class TaskSpecifyAgent(ChatAgent):
             role_type=RoleType.ASSISTANT,
             content="You can make a task more specific.",
         )
-        if output_language != "English":
-            system_message.content += f"And you should output task specification in {output_language}"
 
-        super().__init__(system_message, model, model_config)
+        super().__init__(system_message, model, model_config, output_language=output_language)
+        from colorama import Fore
+        print(Fore.YELLOW +
+        f"TaskSpecifyAgent sys message:\n{self.system_message}\n")
 
     def step(
         self,
@@ -128,14 +129,14 @@ class TaskPlannerAgent(ChatAgent):
         model_config (Any): The configuration for the model.
             (default: :obj:`None`)
         output_language (str): The language to be used in the plan
-            (default: :obj:`English`)
+            (default: :obj:`None`)
     """
 
     def __init__(
         self,
         model: Optional[ModelType] = None,
         model_config: Any = None,
-        output_language: str = "English",
+        output_language: str = None,
     ) -> None:
 
         self.task_planner_prompt = TextPrompt(
@@ -146,9 +147,11 @@ class TaskPlannerAgent(ChatAgent):
             role_type=RoleType.ASSISTANT,
             content="You are a helpful task planner.",
         )
-        if output_language != "English":
-            system_message.content += f"And you should plan the task in {output_language}"
-        super().__init__(system_message, model, model_config)
+        
+        super().__init__(system_message, model, model_config, output_language=output_language)
+        from colorama import Fore
+        print(Fore.YELLOW +
+        f"TaskPlannerAgent sys message:\n{self.system_message}\n")
 
     def step(
         self,

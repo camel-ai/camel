@@ -63,6 +63,8 @@ class ChatAgent(BaseAgent):
         message_window_size (int, optional): The maximum number of previous
             messages to include in the context window. If `None`, no windowing
             is performed. (default: :obj:`None`)
+        output_language (str, optional): The language to be output by the agent.
+            (default: :obj:`None`)
     """
 
     def __init__(
@@ -71,11 +73,14 @@ class ChatAgent(BaseAgent):
         model: Optional[ModelType] = None,
         model_config: Optional[Any] = None,
         message_window_size: Optional[int] = None,
+        output_language: Optional[str] = None,
     ) -> None:
 
         self.system_message: SystemMessage = system_message
         self.role_name: str = system_message.role_name
         self.role_type: RoleType = system_message.role_type
+        if output_language:
+            self.set_language(output_language)
 
         self.model: ModelType = (model if model is not None else
                                  ModelType.GPT_3_5_TURBO)
@@ -99,6 +104,9 @@ class ChatAgent(BaseAgent):
         self.terminated = False
         self.init_messages()
         return self.stored_messages
+    
+    def set_language(self, output_language: str) -> None:
+        self.system_message.content += f"\nYou should return text in {output_language}"
 
     def get_info(
         self,
