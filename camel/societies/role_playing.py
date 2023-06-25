@@ -63,7 +63,8 @@ class RolePlaying:
             extend the system message meta dicts with. (default: :obj:`None`)
         extend_task_specify_meta_dict (Dict, optional): A dict to extend the
             task specify meta dict with. (default: :obj:`None`)
-        output_language (str): The language to be used in the conversation (default: :obj:`None`)
+        output_language (str): The language to be used in the
+            conversation (default: :obj:`None`)
     """
 
     def __init__(
@@ -155,7 +156,7 @@ class RolePlaying:
                     (user_role_name, RoleType.USER),
                 ],
             ))
-        
+
         self.assistant_agent: ChatAgent = ChatAgent(
             self.assistant_sys_msg,
             model_type,

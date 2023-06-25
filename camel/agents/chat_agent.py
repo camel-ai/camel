@@ -63,8 +63,8 @@ class ChatAgent(BaseAgent):
         message_window_size (int, optional): The maximum number of previous
             messages to include in the context window. If `None`, no windowing
             is performed. (default: :obj:`None`)
-        output_language (str, optional): The language to be output by the agent.
-            (default: :obj:`None`)
+        output_language (str, optional): The language to be output by the
+        agent.  (default: :obj:`None`)
     """
 
     def __init__(
@@ -104,9 +104,10 @@ class ChatAgent(BaseAgent):
         self.terminated = False
         self.init_messages()
         return self.stored_messages
-    
+
     def set_language(self, output_language: str) -> None:
-        self.system_message.content += f"\nYou should return text in {output_language}"
+        self.system_message.content += \
+                    f"\nYou should return text in {output_language}"
 
     def get_info(
         self,

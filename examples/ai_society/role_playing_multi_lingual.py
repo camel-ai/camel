@@ -26,7 +26,7 @@ def main(model_type=None) -> None:
         with_task_specify=True,
         with_task_planner=True,
         model_type=model_type,
-        output_language="Chinese", # Arabic, French, Spanish, ...
+        output_language="Chinese",  # Arabic, French, Spanish, ...
     )
 
     print(

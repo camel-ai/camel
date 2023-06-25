@@ -44,15 +44,12 @@ class TaskSpecifyAgent(ChatAgent):
     """
     DEFAULT_WORD_LIMIT = 50
 
-    def __init__(
-        self,
-        model: Optional[ModelType] = None,
-        task_type: TaskType = TaskType.AI_SOCIETY,
-        model_config: Optional[Any] = None,
-        task_specify_prompt: Optional[Union[str, TextPrompt]] = None,
-        word_limit: int = DEFAULT_WORD_LIMIT,
-        output_language: str = None
-    ) -> None:
+    def __init__(self, model: Optional[ModelType] = None,
+                 task_type: TaskType = TaskType.AI_SOCIETY,
+                 model_config: Optional[Any] = None,
+                 task_specify_prompt: Optional[Union[str, TextPrompt]] = None,
+                 word_limit: int = DEFAULT_WORD_LIMIT,
+                 output_language: str = None) -> None:
 
         if task_specify_prompt is None:
             task_specify_prompt_template = PromptTemplateGenerator(
@@ -71,10 +68,8 @@ class TaskSpecifyAgent(ChatAgent):
             content="You can make a task more specific.",
         )
 
-        super().__init__(system_message, model, model_config, output_language=output_language)
-        from colorama import Fore
-        print(Fore.YELLOW +
-        f"TaskSpecifyAgent sys message:\n{self.system_message}\n")
+        super().__init__(system_message, model, model_config,
+                         output_language=output_language)
 
     def step(
         self,
@@ -147,11 +142,9 @@ class TaskPlannerAgent(ChatAgent):
             role_type=RoleType.ASSISTANT,
             content="You are a helpful task planner.",
         )
-        
-        super().__init__(system_message, model, model_config, output_language=output_language)
-        from colorama import Fore
-        print(Fore.YELLOW +
-        f"TaskPlannerAgent sys message:\n{self.system_message}\n")
+
+        super().__init__(system_message, model, model_config,
+                         output_language=output_language)
 
     def step(
         self,
