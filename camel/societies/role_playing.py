@@ -63,6 +63,8 @@ class RolePlaying:
             extend the system message meta dicts with. (default: :obj:`None`)
         extend_task_specify_meta_dict (Dict, optional): A dict to extend the
             task specify meta dict with. (default: :obj:`None`)
+        output_language (str, optional): The language to be output by the
+            agents. (default: :obj:`None`)
     """
 
     def __init__(
@@ -85,6 +87,7 @@ class RolePlaying:
         sys_msg_generator_kwargs: Optional[Dict] = None,
         extend_sys_msg_meta_dicts: Optional[List[Dict]] = None,
         extend_task_specify_meta_dict: Optional[Dict] = None,
+        output_language: str = None,
     ) -> None:
         self.with_task_specify = with_task_specify
         self.with_task_planner = with_task_planner
@@ -104,6 +107,7 @@ class RolePlaying:
             task_specify_agent = TaskSpecifyAgent(
                 self.model_type,
                 task_type=self.task_type,
+                output_language=output_language,
                 **(task_specify_agent_kwargs or {}),
             )
             self.specified_task_prompt = task_specify_agent.step(
@@ -117,6 +121,7 @@ class RolePlaying:
         if with_task_planner:
             task_planner_agent = TaskPlannerAgent(
                 self.model_type,
+                output_language=output_language,
                 **(task_planner_agent_kwargs or {}),
             )
             self.planned_task_prompt = task_planner_agent.step(task_prompt)
@@ -143,7 +148,7 @@ class RolePlaying:
             } for sys_msg_meta_dict, extend_sys_msg_meta_dict in zip(
                 sys_msg_meta_dicts, extend_sys_msg_meta_dicts)]
 
-        self.assistant_sys_msg, self.user_sys_msg = (
+        init_assistant_sys_msg, init_user_sys_msg = (
             sys_msg_generator.from_dicts(
                 meta_dicts=sys_msg_meta_dicts,
                 role_tuples=[
@@ -153,15 +158,20 @@ class RolePlaying:
             ))
 
         self.assistant_agent: ChatAgent = ChatAgent(
-            self.assistant_sys_msg,
+            init_assistant_sys_msg,
             model_type,
+            output_language=output_language,
             **(assistant_agent_kwargs or {}),
         )
+        self.assistant_sys_msg = self.assistant_agent.system_message
+
         self.user_agent: ChatAgent = ChatAgent(
-            self.user_sys_msg,
+            init_user_sys_msg,
             model_type,
+            output_language=output_language,
             **(user_agent_kwargs or {}),
         )
+        self.user_sys_msg = self.user_agent.system_message
 
         if with_critic_in_the_loop:
             if critic_role_name.lower() == "human":
