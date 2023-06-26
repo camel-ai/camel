@@ -28,6 +28,7 @@ For each time of running, you should firstly give a thought about what action to
 
 You should use Thought to describe your thoughts about your plan to obtain information related to the target task.
 And you should use Action to indicate what actions should be done, and then return.
+Each action statement should be in the format: Action[<action_input>]
 You do not need to output any observation! The observations will be obtained by the external tool executing the action you selected and be provided to you.
 When there are multiple search-related actions available, consider using others when one search engine fails.
 
@@ -44,7 +45,7 @@ Remember: For each time of running, you should return after you output an action
 
 Here are is an example session (this example is only for presentation and works only if the available actions include "Search")
 Task: Answer the question: What is the capital of France?
-Thought: I should look up France on Wikipedia
+Thought: To answer this question, I should search for information about France.
 Action: Search[France]
 
 At this point you should return. And you will be called again with this:
@@ -69,6 +70,7 @@ OBSERVE_COLOR = Fore.LIGHTGREEN_EX
 
 def parse_action(act_str):
     # example act_str: Search[entity]
+    print(f"Action string: {act_str}")
     action = act_str.split('[')[0]
     action_input = act_str[:-1].split('[')[1]
     return action, action_input

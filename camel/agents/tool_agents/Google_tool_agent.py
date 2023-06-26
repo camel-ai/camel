@@ -36,20 +36,11 @@ class GoogleToolAgent(BaseToolAgent):
         self.search = SerpAPIWrapper(serpapi_api_key=SAK)
 
         self.name = name
-        # self.description = f"""The `{self.name}` is a tool agent that can perform Google search when external information is needed.
-        # Here are some python code examples of what you can do with this agent:
-        # # Ask commonsense information:
-        # ans = {self.name}.step("What is the name of the 45th President of the United States?")
-
-        # # Ask real-time information like weather
-        # ans = {self.name}.step("What is the current weather of London?")
-        # """
-
         self.description = \
 f"""
 GoogleSearch[<keyword>]
 - input <keyword>: the information to be searched using Google search engine
-- Keep a rule in mind: if the current search does not return valid page, try to make the search item more general and shorter instead of making it finer
+- Keep a rule in mind: if the current search does not return valid page, try to make the search item more general and shorter, instead of making it finer
 - Example usage: GoogleSearch[What is the current weather of London?]
     - by which we can obtain the weather information in London through Google
 """

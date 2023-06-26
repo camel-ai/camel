@@ -46,20 +46,23 @@ def main():
     print("Creating ReActAgent...")
     react_agent = ReActAgent(
         sys_msg,
-        model=ModelType.GPT_3_5_TURBO,
         verbose=True,
         action_space=action_space,
     )
 
     print("Passing message into the ReActAgent...")
     # question = "Were Scott Derrickson and Ed Wood of the same nationality?"
-    # question = "What female sports league does the oldest football association in Africa includes?"
-    question = "Within which sports complex is this sports facility located where 1990 FIFA World Cup Final between West Germany and Argentina took place?"
+    question = "What female sports league does the oldest football association in Africa includes?"
+    # question = "Within which sports complex is this sports facility located where 1990 FIFA World Cup Final between West Germany and Argentina took place?"
+    # question = "American politician Joe Heck ran unsuccessfully against Democrat Catherine Cortez Masto, a woman who previously served as the 32nd Attorney General of where?"
+
+    # content = f"Answer the question: {question}"
+
+    content = "Write a python program implementing linear regression"
     user_msg = UserChatMessage(
         role_name=role_name, 
-        content=(
-            f"Answer the question: {question}"
-        ))
+        content=content
+    )
     output_message, _, _ = react_agent.step(user_msg)
     # print(output_message.content)
 
