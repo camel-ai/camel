@@ -79,8 +79,9 @@ class ChatAgent(BaseAgent):
         self.system_message: SystemMessage = system_message
         self.role_name: str = system_message.role_name
         self.role_type: RoleType = system_message.role_type
+        self.output_language: Optional[str] = output_language
         if output_language is not None:
-            self.set_output_language(output_language)
+            self.set_output_language(self.output_language)
 
         self.model: ModelType = (model if model is not None else
                                  ModelType.GPT_3_5_TURBO)
@@ -106,6 +107,7 @@ class ChatAgent(BaseAgent):
         return self.stored_messages
 
     def set_output_language(self, output_language: str) -> SystemMessage:
+        self.output_language = output_language
         content = (self.system_message.content +
                    ("\nRegardless of the input language, "
                     f"you must output text in {output_language}."))
