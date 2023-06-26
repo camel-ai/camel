@@ -63,8 +63,8 @@ class RolePlaying:
             extend the system message meta dicts with. (default: :obj:`None`)
         extend_task_specify_meta_dict (Dict, optional): A dict to extend the
             task specify meta dict with. (default: :obj:`None`)
-        output_language (str): The language to be used in the
-            conversation (default: :obj:`None`)
+        output_language (str, optional): The language to be output by the
+            agents. (default: :obj:`None`)
     """
 
     def __init__(

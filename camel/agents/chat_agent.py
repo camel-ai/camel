@@ -64,7 +64,7 @@ class ChatAgent(BaseAgent):
             messages to include in the context window. If `None`, no windowing
             is performed. (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
-        agent.  (default: :obj:`None`)
+        agent. (default: :obj:`None`)
     """
 
     def __init__(
