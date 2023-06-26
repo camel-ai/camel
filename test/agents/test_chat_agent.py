@@ -81,3 +81,27 @@ def test_chat_agent_multiple_return_messages(n):
     assistant_response = assistant.step(user_msg)
     assert assistant_response.msgs is not None
     assert len(assistant_response.msgs) == n
+
+
+@pytest.mark.model_backend
+def test_set_output_language():
+    system_message = BaseMessage(role_name="assistant",
+                                 role_type=RoleType.ASSISTANT,
+                                 content="You are a help assistant.")
+    agent = ChatAgent(system_message=system_message,
+                      model=ModelType.GPT_3_5_TURBO)
+    assert agent.output_language is None
+
+    # Set the output language to "Arabic"
+    output_language = "Arabic"
+    agent.set_output_language(output_language)
+
+    # Check if the output language is set correctly
+    assert agent.output_language == output_language
+
+    # Verify that the system message is updated with the new output language
+    updated_system_message = BaseMessage(
+        role_name="assistant", role_type="assistant",
+        content="You are a help assistant."
+        "\nRegardless of the input language, you must output text in Arabic.")
+    assert agent.system_message.content == updated_system_message.content

@@ -84,6 +84,8 @@ class ChatAgent(BaseAgent):
         message_window_size (int, optional): The maximum number of previous
             messages to include in the context window. If `None`, no windowing
             is performed. (default: :obj:`None`)
+        output_language (str, optional): The language to be output by the
+        agent. (default: :obj:`None`)
     """
 
     def __init__(
@@ -92,11 +94,15 @@ class ChatAgent(BaseAgent):
         model: Optional[ModelType] = None,
         model_config: Optional[Any] = None,
         message_window_size: Optional[int] = None,
+        output_language: Optional[str] = None,
     ) -> None:
 
         self.system_message: BaseMessage = system_message
         self.role_name: str = system_message.role_name
         self.role_type: RoleType = system_message.role_type
+        self.output_language: Optional[str] = output_language
+        if output_language is not None:
+            self.set_output_language(self.output_language)
 
         self.model: ModelType = (model if model is not None else
                                  ModelType.GPT_3_5_TURBO)
@@ -121,6 +127,25 @@ class ChatAgent(BaseAgent):
         self.terminated = False
         self.init_messages()
         return self.stored_messages
+
+    def set_output_language(self, output_language: str) -> BaseMessage:
+        r"""Sets the output language for the system message. This method
+        updates the output language for the system message. The output
+        language determines the language in which the output text should be
+        generated.
+
+        Args:
+            output_language (str): The desired output language.
+
+        Returns:
+            BaseMessage: The updated system message object.
+        """
+        self.output_language = output_language
+        content = (self.system_message.content +
+                   ("\nRegardless of the input language, "
+                    f"you must output text in {output_language}."))
+        self.system_message = self.system_message.create_new_instance(content)
+        return self.system_message
 
     def get_info(
         self,

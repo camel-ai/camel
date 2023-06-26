@@ -39,6 +39,8 @@ class TaskSpecifyAgent(ChatAgent):
             the task. (default: :obj:`None`)
         word_limit (int): The word limit for the task prompt.
             (default: :obj:`50`)
+        output_language (str, optional): The language to be output by the
+        agent. (default: :obj:`None`)
     """
     DEFAULT_WORD_LIMIT = 50
 
@@ -49,6 +51,7 @@ class TaskSpecifyAgent(ChatAgent):
         model_config: Optional[Any] = None,
         task_specify_prompt: Optional[Union[str, TextPrompt]] = None,
         word_limit: int = DEFAULT_WORD_LIMIT,
+        output_language: str = None,
     ) -> None:
 
         if task_specify_prompt is None:
@@ -68,7 +71,9 @@ class TaskSpecifyAgent(ChatAgent):
             meta_dict=None,
             content="You can make a task more specific.",
         )
-        super().__init__(system_message, model, model_config)
+
+        super().__init__(system_message, model, model_config,
+                         output_language=output_language)
 
     def step(
         self,
@@ -122,12 +127,15 @@ class TaskPlannerAgent(ChatAgent):
             (default: :obj:`ModelType.GPT_3_5_TURBO`)
         model_config (Any): The configuration for the model.
             (default: :obj:`None`)
+        output_language (str, optional): The language to be output by the
+        agent. (default: :obj:`None`)
     """
 
     def __init__(
         self,
         model: Optional[ModelType] = None,
         model_config: Any = None,
+        output_language: str = None,
     ) -> None:
 
         self.task_planner_prompt = TextPrompt(
@@ -139,7 +147,9 @@ class TaskPlannerAgent(ChatAgent):
             meta_dict=None,
             content="You are a helpful task planner.",
         )
-        super().__init__(system_message, model, model_config)
+
+        super().__init__(system_message, model, model_config,
+                         output_language=output_language)
 
     def step(
         self,

@@ -56,7 +56,7 @@ class BaseMessage:
             meta_dict: Optional[Dict[str, str]] = None) -> 'BaseMessage':
         return cls(role_name, RoleType.ASSISTANT, meta_dict, content)
 
-    def _create_new_instance(self, content: str) -> "BaseMessage":
+    def create_new_instance(self, content: str) -> "BaseMessage":
         r"""Create a new instance of the :obj:`BaseMessage` with updated
         content.
 
@@ -87,7 +87,7 @@ class BaseMessage:
             raise TypeError(
                 f"Unsupported operand type(s) for +: '{type(self)}' and "
                 f"'{type(other)}'")
-        return self._create_new_instance(combined_content)
+        return self.create_new_instance(combined_content)
 
     def __mul__(self, other: Any) -> Union["BaseMessage", Any]:
         r"""Multiplication operator override for :obj:`BaseMessage`.
@@ -100,7 +100,7 @@ class BaseMessage:
         """
         if isinstance(other, int):
             multiplied_content = self.content.__mul__(other)
-            return self._create_new_instance(multiplied_content)
+            return self.create_new_instance(multiplied_content)
         else:
             raise TypeError(
                 f"Unsupported operand type(s) for *: '{type(self)}' and "
