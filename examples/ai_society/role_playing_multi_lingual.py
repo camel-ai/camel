@@ -24,7 +24,6 @@ def main(model_type=None) -> None:
         "Stock Trader",
         task_prompt=task_prompt,
         with_task_specify=True,
-        with_task_planner=True,
         model_type=model_type,
         output_language="Chinese",  # Arabic, French, Spanish, ...
     )
@@ -71,4 +70,6 @@ def main(model_type=None) -> None:
 
 
 if __name__ == "__main__":
-    main()
+    from camel.typing import ModelType
+
+    main(ModelType.GPT_4)

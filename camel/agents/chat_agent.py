@@ -79,8 +79,8 @@ class ChatAgent(BaseAgent):
         self.system_message: SystemMessage = system_message
         self.role_name: str = system_message.role_name
         self.role_type: RoleType = system_message.role_type
-        if output_language:
-            self.set_language(output_language)
+        if output_language is not None:
+            self.set_output_language(output_language)
 
         self.model: ModelType = (model if model is not None else
                                  ModelType.GPT_3_5_TURBO)
@@ -105,9 +105,12 @@ class ChatAgent(BaseAgent):
         self.init_messages()
         return self.stored_messages
 
-    def set_language(self, output_language: str) -> None:
-        self.system_message.content += \
-                    f"\nYou should return text in {output_language}"
+    def set_output_language(self, output_language: str) -> SystemMessage:
+        content = (self.system_message.content +
+                   ("\nRegardless of the input language, "
+                    f"you must output text in {output_language}."))
+        self.system_message = self.system_message.create_new_instance(content)
+        return self.system_message
 
     def get_info(
         self,

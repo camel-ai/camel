@@ -148,7 +148,7 @@ class RolePlaying:
             } for sys_msg_meta_dict, extend_sys_msg_meta_dict in zip(
                 sys_msg_meta_dicts, extend_sys_msg_meta_dicts)]
 
-        self.assistant_sys_msg, self.user_sys_msg = (
+        init_assistant_sys_msg, init_user_sys_msg = (
             sys_msg_generator.from_dicts(
                 meta_dicts=sys_msg_meta_dicts,
                 role_tuples=[
@@ -158,17 +158,20 @@ class RolePlaying:
             ))
 
         self.assistant_agent: ChatAgent = ChatAgent(
-            self.assistant_sys_msg,
+            init_assistant_sys_msg,
             model_type,
             output_language=output_language,
             **(assistant_agent_kwargs or {}),
         )
+        self.assistant_sys_msg = self.assistant_agent.system_message
+
         self.user_agent: ChatAgent = ChatAgent(
-            self.user_sys_msg,
+            init_user_sys_msg,
             model_type,
             output_language=output_language,
             **(user_agent_kwargs or {}),
         )
+        self.user_sys_msg = self.user_agent.system_message
 
         if with_critic_in_the_loop:
             if critic_role_name.lower() == "human":

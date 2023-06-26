@@ -44,12 +44,15 @@ class TaskSpecifyAgent(ChatAgent):
     """
     DEFAULT_WORD_LIMIT = 50
 
-    def __init__(self, model: Optional[ModelType] = None,
-                 task_type: TaskType = TaskType.AI_SOCIETY,
-                 model_config: Optional[Any] = None,
-                 task_specify_prompt: Optional[Union[str, TextPrompt]] = None,
-                 word_limit: int = DEFAULT_WORD_LIMIT,
-                 output_language: str = None) -> None:
+    def __init__(
+        self,
+        model: Optional[ModelType] = None,
+        task_type: TaskType = TaskType.AI_SOCIETY,
+        model_config: Optional[Any] = None,
+        task_specify_prompt: Optional[Union[str, TextPrompt]] = None,
+        word_limit: int = DEFAULT_WORD_LIMIT,
+        output_language: str = None,
+    ) -> None:
 
         if task_specify_prompt is None:
             task_specify_prompt_template = PromptTemplateGenerator(
