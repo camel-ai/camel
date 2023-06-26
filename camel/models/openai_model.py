@@ -48,6 +48,15 @@ class OpenAIModel(BaseModelBackend):
         response = openai.ChatCompletion.create(messages=messages_openai,
                                                 model=self.model_type.value,
                                                 **self.model_config_dict)
-        if not isinstance(response, Dict):
+        if not self.streaming and not isinstance(response, Dict):
             raise RuntimeError("Unexpected return from OpenAI API")
         return response
+
+    @property
+    def streaming(self) -> bool:
+        r"""Returns whether the model is streaming,
+            which sends partial results each time.
+        Returns:
+            bool: Whether the model is streaming.
+        """
+        return self.model_config_dict.get('stream', False)

@@ -20,6 +20,7 @@ from typing import Any, Callable, List, Optional, Set, TypeVar
 
 import requests
 import tiktoken
+from colorama import Style
 
 from camel.messages import OpenAIMessage
 from camel.typing import ModelType, TaskType
@@ -143,20 +144,27 @@ def openai_api_key_required(func: F) -> F:
     return wrapper
 
 
-def print_text_animated(text, delay: float = 0.02, end: str = ""):
+def print_text_animated(text: str, delay: float = 0.02, end: str = "",
+                        end_newline: bool = True, reset: bool = False):
     r"""Prints the given text with an animated effect.
 
     Args:
         text (str): The text to print.
         delay (float, optional): The delay between each character printed.
             (default: :obj:`0.02`)
-        end (str, optional): The end character to print after the text.
-            (default: :obj:`""`)
+        end (str, optional): The end character to print after each
+            character of text. (default: :obj:`""`)
+        end_newline (bool, optional): Whether print a newline at
+            the end of text. (default: :obj:`True`)
+        reset (bool, optional): Reset the style back.
     """
     for char in text:
         print(char, end=end, flush=True)
         time.sleep(delay)
-    print('\n')
+    if end_newline:
+        print('\n')
+    if reset:
+        print(Style.RESET_ALL, end='', flush=True)
 
 
 def get_prompt_template_key_words(template: str) -> Set[str]:

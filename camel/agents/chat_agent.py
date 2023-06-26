@@ -12,8 +12,9 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple, Union
 
+from colorama import Fore
 from tenacity import retry
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_exponential
@@ -23,7 +24,11 @@ from camel.configs import ChatGPTConfig
 from camel.messages import ChatMessage, MessageType, SystemMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.typing import ModelType, RoleType
-from camel.utils import num_tokens_from_messages, openai_api_key_required
+from camel.utils import (
+    num_tokens_from_messages,
+    openai_api_key_required,
+    print_text_animated,
+)
 
 
 @dataclass(frozen=True)
@@ -151,21 +156,27 @@ class ChatAgent(BaseAgent):
     def step(
         self,
         input_message: ChatMessage,
+        print_response: bool = False,
+        print_response_color: Fore = Fore.MAGENTA,
     ) -> ChatAgentResponse:
         r"""Performs a single step in the chat session by generating a response
         to the input message.
 
         Args:
             input_message (ChatMessage): The input message to the agent.
-            Its `role` field that specifies the role at backen may be either
-            `user` or `assistant` but it will be set to `user` anyway since
-            for the self agent any incoming message is external.
+                Its `role` field that specifies the role at backend may be
+                either `user` or `assistant` but it will be set to `user`
+                anyway since for the self agent any incoming message is
+                external.
+            print_response (bool, optional): Print response on-the-fly
+                animatedly. (default: :obj:`False`)
+            print_response_color (Fore, optional): Color for the response
+                to be printed. (default: :obj:`Fore.MAGENTA`)
 
         Returns:
-            ChatAgentResponse: A struct
-                containing the output messages, a boolean indicating whether
-                the chat session has terminated, and information about the chat
-                session.
+            ChatAgentResponse: A struct containing the output messages,
+                a boolean indicating whether the chat session has terminated,
+                and information about the chat session.
         """
         msg_user_at_backend = input_message.set_user_role_at_backend()
         messages = self.update_messages(msg_user_at_backend)
@@ -176,27 +187,34 @@ class ChatAgent(BaseAgent):
         openai_messages = [message.to_openai_message() for message in messages]
         num_tokens = num_tokens_from_messages(openai_messages, self.model)
 
-        output_messages: Optional[List[ChatMessage]]
         info: Dict[str, Any]
 
         if num_tokens < self.model_token_limit:
             response = self.model_backend.run(openai_messages)
-            if not isinstance(response, dict):
-                raise RuntimeError("OpenAI returned unexpected struct")
-            output_messages = [
-                ChatMessage(role_name=self.role_name, role_type=self.role_type,
-                            meta_dict=dict(), **dict(choice["message"]))
-                for choice in response["choices"]
-            ]
-            info = self.get_info(
-                response["id"],
-                response["usage"],
-                [
-                    str(choice["finish_reason"])
-                    for choice in response["choices"]
-                ],
-                num_tokens,
-            )
+            if not self.model_backend.streaming:
+                if not isinstance(response, dict):
+                    raise RuntimeError("OpenAI returned unexpected struct")
+                output_messages = self.handle_batch_response(
+                    response, print_response, print_response_color)
+                info = self.get_info(
+                    response["id"],
+                    response["usage"],
+                    [
+                        str(choice["finish_reason"])
+                        for choice in response["choices"]
+                    ],
+                    num_tokens,
+                )
+            else:
+                output_messages, finish_reasons, response_id = \
+                    self.handle_stream_response(
+                        response, print_response, print_response_color)
+                info = self.get_info(
+                    response_id,
+                    None,
+                    finish_reasons,
+                    num_tokens,
+                )
         else:
             self.terminated = True
             output_messages = []
@@ -209,6 +227,78 @@ class ChatAgent(BaseAgent):
             )
 
         return ChatAgentResponse(output_messages, self.terminated, info)
+
+    def handle_batch_response(
+            self, response: Dict[str, Any], print_response: bool = False,
+            print_response_color: Fore = Fore.MAGENTA) -> List[ChatMessage]:
+        output_messages: List[ChatMessage] = []
+        for choice in response["choices"]:
+            chat_message = ChatMessage(role_name=self.role_name,
+                                       role_type=self.role_type,
+                                       meta_dict=dict(),
+                                       **dict(choice["message"]))
+            if print_response:
+                self.print_message(print_response_color, chat_message)
+            output_messages.append(chat_message)
+        return output_messages
+
+    def handle_stream_response(
+        self, response: Any, print_response: bool = False,
+        print_response_color: Fore = Fore.MAGENTA
+    ) -> Tuple[List[ChatMessage], List[str], str]:
+        output_messages: List[ChatMessage] = []
+        finish_reasons: List[str] = []
+        response_id: str = ""
+        for chunk in response:
+            chunk: Dict[str, Any]
+            content: str = ""
+            role: str = ""
+            response_id = chunk["id"]
+            for choice in chunk["choices"]:
+                choice: Dict[str, Any]
+                delta = choice["delta"]
+                if len(delta) != 0:
+                    if "role" in delta:
+                        role = delta["role"]
+                    content += delta["content"]
+                    if print_response:
+                        skip_role_info = False if "role" in delta else True
+                        self.print_message(print_response_color,
+                                           delta["content"], end_newline=False,
+                                           skip_role_info=skip_role_info)
+                else:
+                    if print_response:
+                        # Just print a new line
+                        print_text_animated(print_response_color + "",
+                                            reset=True)
+                    chat_message = ChatMessage(
+                        role_name=self.role_name, role_type=self.role_type,
+                        meta_dict=dict(), **dict(role=role, content=content))
+                    output_messages.append(chat_message)
+                    finish_reasons.append(choice["finish_reason"])
+        return output_messages, finish_reasons, response_id
+
+    def print_message(self, print_response_color: str,
+                      chat_message: Union[ChatMessage, str],
+                      end_newline: bool = True, skip_role_info: bool = False):
+        r"""Print a `ChatMessage` content with specified color animatedly.
+
+        Args:
+            print_response_color (Fore): Color to print the chat message.
+            chat_message (ChatMessage or str): A `ChatMessage` object.
+            end_newline (bool, optional): Whether print a newline at
+                the end of text. (default: :obj:`False`)
+            skip_role_info (bool, optional): Whether skip printing
+                the role info. (default: :obj:`False`)
+        """
+        role_info = f'{self.role_name} ({self.role_type.value}): '
+        if not skip_role_info:
+            print_text_animated(print_response_color + role_info,
+                                end_newline=False)
+        message = chat_message if isinstance(chat_message,
+                                             str) else chat_message.content
+        print_text_animated(print_response_color + message,
+                            end_newline=end_newline, reset=True)
 
     def __repr__(self) -> str:
         r"""Returns a string representation of the :obj:`ChatAgent`.

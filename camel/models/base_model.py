@@ -56,3 +56,12 @@ class BaseModelBackend(ABC):
             int: The maximum token limit for the given model.
         """
         return self.model_type.token_limit
+
+    @property
+    def streaming(self) -> bool:
+        r"""Returns whether the model is streaming,
+            which sends partial results each time.
+        Returns:
+            bool: Whether the model is streaming.
+        """
+        return False
