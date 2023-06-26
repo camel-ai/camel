@@ -53,8 +53,23 @@ class ChatAgentResponse:
 
 @dataclass(frozen=True)
 class ChatRecord:
+    r"""Historical records of who made what message.
+
+    Attributes:
+        role_at_backend (str): Role of the message that mirrors OpenAI
+            message role that may be `system` or `user` or `assistant`.
+        message (BaseMessage): Message payload.
+    """
     role_at_backend: str
     message: BaseMessage
+
+    def to_openai_message(self):
+        """Converts the payload message to OpenAI-compatible format.
+
+        Returns:
+            OpenAIMessage: OpenAI-compatible message
+        """
+        return self.message.to_openai_message(self.role_at_backend)
 
 
 class ChatAgent(BaseAgent):
@@ -185,10 +200,7 @@ class ChatAgent(BaseAgent):
                 messages) > self.message_window_size:
             messages = [ChatRecord('system', self.system_message)
                         ] + messages[-self.message_window_size:]
-        openai_messages = [
-            record.message.to_openai_message(record.role_at_backend)
-            for record in messages
-        ]
+        openai_messages = [record.to_openai_message() for record in messages]
         num_tokens = num_tokens_from_messages(openai_messages, self.model)
 
         output_messages: Optional[List[BaseMessage]]
