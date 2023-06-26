@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -206,12 +207,16 @@ class ChatAgent(BaseAgent):
                     num_tokens,
                 )
             else:
-                output_messages, finish_reasons, response_id = \
+                output_messages, finish_reasons, usage_dict, response_id = \
                     self.handle_stream_response(
-                        response, print_response, print_response_color)
+                        response,
+                        num_tokens,
+                        print_response,
+                        print_response_color
+                    )
                 info = self.get_info(
                     response_id,
-                    None,
+                    usage_dict,
                     finish_reasons,
                     num_tokens,
                 )
@@ -231,6 +236,18 @@ class ChatAgent(BaseAgent):
     def handle_batch_response(
             self, response: Dict[str, Any], print_response: bool = False,
             print_response_color: Fore = Fore.MAGENTA) -> List[ChatMessage]:
+        r"""
+
+        Args:
+            response (dict): Model response.
+            print_response (bool, optional): Print response on-the-fly
+                animatedly. (default: :obj:`False`)
+            print_response_color (Fore, optional): Color for the response
+                to be printed. (default: :obj:`Fore.MAGENTA`)
+
+        Returns:
+            List[ChatMessage]: A tuple of list of output `ChatMessage`.
+        """
         output_messages: List[ChatMessage] = []
         for choice in response["choices"]:
             chat_message = ChatMessage(role_name=self.role_name,
@@ -243,49 +260,97 @@ class ChatAgent(BaseAgent):
         return output_messages
 
     def handle_stream_response(
-        self, response: Any, print_response: bool = False,
-        print_response_color: Fore = Fore.MAGENTA
-    ) -> Tuple[List[ChatMessage], List[str], str]:
+        self,
+        response: Any,
+        prompt_tokens: int,
+        print_response: bool = False,
+        print_response_color: Fore = Fore.MAGENTA,
+    ) -> Tuple[List[ChatMessage], List[str], Dict[str, int], str]:
+        r"""
+
+        Args:
+            response (dict): Model response.
+            prompt_tokens (int): Number of input prompt tokens.
+            print_response (bool, optional): Print response on-the-fly
+                animatedly. (default: :obj:`False`)
+            print_response_color (Fore, optional): Color for the response
+                to be printed. (default: :obj:`Fore.MAGENTA`)
+
+        Returns:
+            tuple: A tuple of list of output `ChatMessage`, list of
+                finish reasons, usage dictionary, and response id.
+        """
+        content_dict = defaultdict(lambda: "")
+        finish_reasons = defaultdict(lambda: "")
         output_messages: List[ChatMessage] = []
-        finish_reasons: List[str] = []
         response_id: str = ""
-        for chunk in response:
+        # All choices in one response share one role
+        role: str = ""
+        for i, chunk in enumerate(response):
             chunk: Dict[str, Any]
-            content: str = ""
-            role: str = ""
             response_id = chunk["id"]
-            for choice in chunk["choices"]:
+            for _, choice in enumerate(chunk["choices"]):
+                index = choice["index"]
                 choice: Dict[str, Any]
                 delta = choice["delta"]
                 if len(delta) != 0:
-                    if "role" in delta:
-                        role = delta["role"]
-                    content += delta["content"]
+                    # When response has not been stopped
+                    # Notice that only the first chunk has the "role"
+                    role = delta.get("role", role)
+                    delta_content = delta.get("content", "")
+                    content_dict[index] += delta_content
                     if print_response:
-                        skip_role_info = False if "role" in delta else True
-                        self.print_message(print_response_color,
-                                           delta["content"], end_newline=False,
-                                           skip_role_info=skip_role_info)
+                        # Skip role information except first time print
+                        self.print_message(print_response_color, delta_content,
+                                           end_newline=False,
+                                           skip_role_info=(i != 0))
                 else:
+                    # When that choice has finished
                     if print_response:
-                        # Just print a new line
-                        print_text_animated(print_response_color + "",
-                                            reset=True)
+                        # Just print a new line at the end
+                        print_text_animated("", reset=True)
+                    finish_reasons[index] = choice["finish_reason"]
                     chat_message = ChatMessage(
                         role_name=self.role_name, role_type=self.role_type,
-                        meta_dict=dict(), **dict(role=role, content=content))
+                        meta_dict=dict(),
+                        **dict(role=role, content=content_dict[index]))
                     output_messages.append(chat_message)
-                    finish_reasons.append(choice["finish_reason"])
-        return output_messages, finish_reasons, response_id
+        finish_reasons = [
+            finish_reasons[i] for i in range(len(finish_reasons))
+        ]
+        usage_dict = self.get_usage_dict(output_messages, prompt_tokens)
+        return output_messages, finish_reasons, usage_dict, response_id
+
+    def get_usage_dict(self, output_messages: List[ChatMessage],
+                       prompt_tokens: int) -> Dict[str, int]:
+        r"""Get usage dictionary when using the stream mode.
+
+        Args:
+            output_messages (list): List of output messages.
+            prompt_tokens (int): Number of input prompt tokens.
+
+        Returns:
+            dict: Usage dictionary.
+        """
+        openai_messages = [
+            message.to_openai_message() for message in output_messages
+        ]
+        completion_tokens = num_tokens_from_messages(openai_messages,
+                                                     self.model)
+        prompt_tokens = prompt_tokens
+        usage_dict = dict(completion_tokens=completion_tokens,
+                          prompt_tokens=prompt_tokens,
+                          total_tokens=completion_tokens + prompt_tokens)
+        return usage_dict
 
     def print_message(self, print_response_color: str,
-                      chat_message: Union[ChatMessage, str],
+                      message: Union[ChatMessage, str],
                       end_newline: bool = True, skip_role_info: bool = False):
         r"""Print a `ChatMessage` content with specified color animatedly.
 
         Args:
             print_response_color (Fore): Color to print the chat message.
-            chat_message (ChatMessage or str): A `ChatMessage` object.
+            message (ChatMessage or str): A `ChatMessage` object.
             end_newline (bool, optional): Whether print a newline at
                 the end of text. (default: :obj:`False`)
             skip_role_info (bool, optional): Whether skip printing
@@ -295,9 +360,8 @@ class ChatAgent(BaseAgent):
         if not skip_role_info:
             print_text_animated(print_response_color + role_info,
                                 end_newline=False)
-        message = chat_message if isinstance(chat_message,
-                                             str) else chat_message.content
-        print_text_animated(print_response_color + message,
+        msg = message if isinstance(message, str) else message.content
+        print_text_animated(print_response_color + msg,
                             end_newline=end_newline, reset=True)
 
     def __repr__(self) -> str:

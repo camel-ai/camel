@@ -84,8 +84,7 @@ def translate_content(args: argparse.Namespace, file_path: str,
             f"message_{i+1}"]["content"]
 
         if args.print_input:
-            content = f'Translating: {msg_i_content}'
-            print_text_animated(Fore.CYAN + content, reset=True)
+            print_text_animated(Fore.CYAN + msg_i_content, reset=True)
 
         sys_msg_generator = SystemMessageGenerator(
             task_type=TaskType.TRANSLATION)
