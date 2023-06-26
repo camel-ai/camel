@@ -20,7 +20,7 @@ from colorama import Fore
 
 from camel.configs import ChatGPTConfig
 from camel.societies import RolePlaying
-from camel.typing import TaskType
+from camel.typing import TaskType, ModelType
 from camel.utils import download_tasks
 
 
@@ -28,7 +28,7 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
                   user_role_name: str, task_idx: int, task_prompt: str,
                   verbose: bool = False) -> None:
 
-    max_num_messages = 40
+    max_num_messages = 100
 
     original_task_prompt = task_prompt.replace(f"{task_idx+1}. ", "")
 
@@ -38,6 +38,7 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
         task_prompt=original_task_prompt,
         with_task_specify=True,
         with_task_planner=False,
+        model_type=ModelType.GPT_3_5_TURBO_16K,
         task_specify_agent_kwargs=dict(model_config=ChatGPTConfig(
             temperature=1.4)),
     )
@@ -204,7 +205,7 @@ def main() -> None:
     try:
         slurm_array_task_id = os.environ.get('SLURM_ARRAY_TASK_ID')
         if slurm_array_task_id is None:
-            raise
+            raise ValueError("SLURM_ARRAY_TASK_ID is not set")
         array_idx = int(slurm_array_task_id)
     except (TypeError, ValueError) as e:
         print(f"Error: {e}")
@@ -227,7 +228,7 @@ def main() -> None:
                                       roles_per_chunk:(array_idx + 1) *
                                       roles_per_chunk]
 
-    pool = multiprocessing.Pool()
+    pool = multiprocessing.Pool(processes=10)
 
     for assistant_idx, assistant_role_name in enumerate(assistant_roles):
         assistant_idx += array_idx * roles_per_chunk

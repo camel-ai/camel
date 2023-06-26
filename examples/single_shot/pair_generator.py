@@ -17,7 +17,7 @@ from camel.prompts import SingleShotPromptTemplateDict
 from camel.typing import TaskType, RoleType
 
 
-def main(key: str = "generate_users", num_roles: int = 50):
+def main():
 
     single_shot_template = SingleShotPromptTemplateDict()
     assistant_sys_msg_prompt = single_shot_template[RoleType.ASSISTANT]
@@ -39,5 +39,4 @@ def main(key: str = "generate_users", num_roles: int = 50):
 
 
 if __name__ == "__main__":
-    main("generate_users", 50)
-    main("generate_assistants", 50)
+    main()
