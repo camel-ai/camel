@@ -107,6 +107,17 @@ class ChatAgent(BaseAgent):
         return self.stored_messages
 
     def set_output_language(self, output_language: str) -> SystemMessage:
+        r"""Sets the output language for the system message. This method
+        updates the output language for the system message. The output
+        language determines the language in which the output text should be
+        generated.
+
+        Args:
+            output_language (str): The desired output language.
+
+        Returns:
+            SystemMessage: The updated system message object.
+        """
         self.output_language = output_language
         content = (self.system_message.content +
                    ("\nRegardless of the input language, "
