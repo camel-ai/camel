@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from camel.messages import (
     OpenAIAssistantMessage,
@@ -45,66 +45,7 @@ class BaseMessage:
     role: str
     content: str
 
-    def __getattribute__(self, name: str) -> Any:
-        r"""Get attribute override to delegate string methods to the
-        :obj:`content`.
-
-        Args:
-            name (str): The name of the attribute.
-
-        Returns:
-            Any: The attribute value.
-        """
-        delegate_methods = [
-            method for method in dir(str) if not method.startswith('_')
-        ]
-        if name in delegate_methods:
-            content = super().__getattribute__('content')
-            if isinstance(content, str):
-                content_method = getattr(content, name, None)
-                if callable(content_method):
-
-                    def modify_arg(arg: Any) -> Any:
-                        r"""Modify the argument for delegate method.
-
-                        Args:
-                            arg (Any): The argument value.
-
-                        Returns:
-                            Any: The modified argument value.
-                        """
-                        if isinstance(arg, BaseMessage):
-                            return arg.content
-                        elif isinstance(arg, (list, tuple)):
-                            return type(arg)(modify_arg(item) for item in arg)
-                        else:
-                            return arg
-
-                    def wrapper(*args: Any, **kwargs: Any) -> Any:
-                        r"""Wrapper function for delegate method.
-
-                        Args:
-                            *args (Any): Variable length argument list.
-                            **kwargs (Any): Arbitrary keyword arguments.
-
-                        Returns:
-                            Any: The result of the delegate method.
-                        """
-                        modified_args = [modify_arg(arg) for arg in args]
-                        modified_kwargs = {
-                            k: modify_arg(v)
-                            for k, v in kwargs.items()
-                        }
-                        output = content_method(*modified_args,
-                                                **modified_kwargs)
-                        return self._create_new_instance(output) if isinstance(
-                            output, str) else output
-
-                    return wrapper
-
-        return super().__getattribute__(name)
-
-    def _create_new_instance(self, content: str) -> "BaseMessage":
+    def create_new_instance(self, content: str) -> "BaseMessage":
         r"""Create a new instance of the :obj:`BaseMessage` with updated
         content.
 
@@ -136,7 +77,7 @@ class BaseMessage:
             raise TypeError(
                 f"Unsupported operand type(s) for +: '{type(self)}' and "
                 f"'{type(other)}'")
-        return self._create_new_instance(combined_content)
+        return self.create_new_instance(combined_content)
 
     def __mul__(self, other: Any) -> Union["BaseMessage", Any]:
         r"""Multiplication operator override for :obj:`BaseMessage`.
@@ -149,7 +90,7 @@ class BaseMessage:
         """
         if isinstance(other, int):
             multiplied_content = self.content.__mul__(other)
-            return self._create_new_instance(multiplied_content)
+            return self.create_new_instance(multiplied_content)
         else:
             raise TypeError(
                 f"Unsupported operand type(s) for *: '{type(self)}' and "
@@ -225,38 +166,6 @@ class BaseMessage:
             start_idx = idx
 
         return text_prompts, code_prompts
-
-    def to_user_chat_message(self) -> Type["UserChatMessage"]:  # noqa: F821
-        r"""Converts the message to a :obj:`UserChatMessage` object.
-
-        Returns:
-            UserChatMessage: The converted :obj:`UserChatMessage` object.
-        """
-        from camel.messages.chat_messages import UserChatMessage
-
-        return UserChatMessage(
-            role_name=self.role_name,
-            role_type=self.role_type,
-            meta_dict=self.meta_dict,
-            content=self.content,
-        )
-
-    def to_assistant_chat_message(
-            self) -> Type["AssistantChatMessage"]:  # noqa: F821
-        r"""Converts the message to an :obj:`AssistantChatMessage` object.
-
-        Returns:
-            AssistantChatMessage: The converted :obj:`AssistantChatMessage`
-                object.
-        """
-        from camel.messages.chat_messages import AssistantChatMessage
-
-        return AssistantChatMessage(
-            role_name=self.role_name,
-            role_type=self.role_type,
-            meta_dict=self.meta_dict,
-            content=self.content,
-        )
 
     def to_openai_message(self, role: Optional[str] = None) -> OpenAIMessage:
         r"""Converts the message to an :obj:`OpenAIMessage` object.

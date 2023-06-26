@@ -14,12 +14,10 @@
 import pytest
 
 from camel.agents import HuggingFaceToolAgent
-from camel.utils import openai_api_key_required
 
 
-@pytest.mark.slow
+@pytest.mark.model_backend
 @pytest.mark.full_test_only
-@openai_api_key_required
 def test_hugging_face_tool_agent_initialization():
     agent = HuggingFaceToolAgent("hugging_face_tool_agent")
     assert agent.name == "hugging_face_tool_agent"
@@ -27,9 +25,8 @@ def test_hugging_face_tool_agent_initialization():
     assert agent.description.startswith(f"The `{agent.name}` is a tool agent")
 
 
-@pytest.mark.slow
+@pytest.mark.model_backend
 @pytest.mark.full_test_only
-@openai_api_key_required
 def test_hugging_face_tool_agent_step():
     from PIL.PngImagePlugin import PngImageFile
     agent = HuggingFaceToolAgent("hugging_face_tool_agent")
@@ -37,9 +34,8 @@ def test_hugging_face_tool_agent_step():
     assert isinstance(result, PngImageFile)
 
 
-@pytest.mark.slow
+@pytest.mark.model_backend
 @pytest.mark.full_test_only
-@openai_api_key_required
 def test_hugging_face_tool_agent_chat():
     from PIL.PngImagePlugin import PngImageFile
     agent = HuggingFaceToolAgent("hugging_face_tool_agent")
@@ -47,9 +43,8 @@ def test_hugging_face_tool_agent_chat():
     assert isinstance(result, PngImageFile)
 
 
-@pytest.mark.slow
+@pytest.mark.model_backend
 @pytest.mark.full_test_only
-@openai_api_key_required
 def test_hugging_face_tool_agent_reset():
     agent = HuggingFaceToolAgent("hugging_face_tool_agent")
     agent.reset()

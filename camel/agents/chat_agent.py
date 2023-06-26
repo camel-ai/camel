@@ -11,20 +11,44 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 
-import openai
-from tenacity import retry, stop_after_attempt, wait_exponential
+from tenacity import retry
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_exponential
 
 from camel.agents import BaseAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import ChatMessage, MessageType, SystemMessage
-from camel.typing import ModelType
-from camel.utils import (
-    get_model_token_limit,
-    num_tokens_from_messages,
-    openai_api_key_required,
-)
+from camel.models import BaseModelBackend, ModelFactory
+from camel.typing import ModelType, RoleType
+from camel.utils import num_tokens_from_messages, openai_api_key_required
+
+
+@dataclass(frozen=True)
+class ChatAgentResponse:
+    r"""Response of a ChatAgent.
+
+    Attributes:
+        msgs (List[ChatMessage]): A list of zero, one or several messages.
+            If the list is empty, there is some error in message generation.
+            If the list has one message, this is normal mode.
+            If the list has several messages, this is the critic mode.
+        terminated (bool): A boolean indicating whether the agent decided
+            to terminate the chat session.
+        info (Dict[str, Any]): Extra information about the chat message.
+    """
+    msgs: List[ChatMessage]
+    terminated: bool
+    info: Dict[str, Any]
+
+    @property
+    def msg(self):
+        if len(self.msgs) != 1:
+            raise RuntimeError("Property msg is only available"
+                               "for a single message in msgs")
+        return self.msgs[0]
 
 
 class ChatAgent(BaseAgent):
@@ -39,27 +63,36 @@ class ChatAgent(BaseAgent):
         message_window_size (int, optional): The maximum number of previous
             messages to include in the context window. If `None`, no windowing
             is performed. (default: :obj:`None`)
+        output_language (str, optional): The language to be output by the
+        agent. (default: :obj:`None`)
     """
 
     def __init__(
         self,
         system_message: SystemMessage,
-        model: ModelType = ModelType.GPT_3_5_TURBO,
+        model: Optional[ModelType] = None,
         model_config: Optional[Any] = None,
         message_window_size: Optional[int] = None,
+        output_language: Optional[str] = None,
     ) -> None:
 
-        self.system_message = system_message
-        self.role_name = system_message.role_name
-        self.role_type = system_message.role_type
-        self.meta_dict = system_message.meta_dict
+        self.system_message: SystemMessage = system_message
+        self.role_name: str = system_message.role_name
+        self.role_type: RoleType = system_message.role_type
+        self.output_language: Optional[str] = output_language
+        if output_language is not None:
+            self.set_output_language(self.output_language)
 
-        self.model = model
-        self.model_config = model_config or ChatGPTConfig()
-        self.model_token_limit = get_model_token_limit(self.model)
-        self.message_window_size = message_window_size
+        self.model: ModelType = (model if model is not None else
+                                 ModelType.GPT_3_5_TURBO)
+        self.model_config: ChatGPTConfig = model_config or ChatGPTConfig()
+        self.message_window_size: Optional[int] = message_window_size
 
-        self.terminated = False
+        self.model_backend: BaseModelBackend = ModelFactory.create(
+            self.model, self.model_config.__dict__)
+        self.model_token_limit: int = self.model_backend.token_limit
+
+        self.terminated: bool = False
         self.init_messages()
 
     def reset(self) -> List[MessageType]:
@@ -72,6 +105,25 @@ class ChatAgent(BaseAgent):
         self.terminated = False
         self.init_messages()
         return self.stored_messages
+
+    def set_output_language(self, output_language: str) -> SystemMessage:
+        r"""Sets the output language for the system message. This method
+        updates the output language for the system message. The output
+        language determines the language in which the output text should be
+        generated.
+
+        Args:
+            output_language (str): The desired output language.
+
+        Returns:
+            SystemMessage: The updated system message object.
+        """
+        self.output_language = output_language
+        content = (self.system_message.content +
+                   ("\nRegardless of the input language, "
+                    f"you must output text in {output_language}."))
+        self.system_message = self.system_message.create_new_instance(content)
+        return self.system_message
 
     def get_info(
         self,
@@ -124,20 +176,24 @@ class ChatAgent(BaseAgent):
     def step(
         self,
         input_message: ChatMessage,
-    ) -> Tuple[Optional[List[ChatMessage]], bool, Dict[str, Any]]:
+    ) -> ChatAgentResponse:
         r"""Performs a single step in the chat session by generating a response
         to the input message.
 
         Args:
             input_message (ChatMessage): The input message to the agent.
+            Its `role` field that specifies the role at backen may be either
+            `user` or `assistant` but it will be set to `user` anyway since
+            for the self agent any incoming message is external.
 
         Returns:
-            Tuple[Optional[List[ChatMessage]], bool, Dict[str, Any]]: A tuple
+            ChatAgentResponse: A struct
                 containing the output messages, a boolean indicating whether
                 the chat session has terminated, and information about the chat
                 session.
         """
-        messages = self.update_messages(input_message)
+        msg_user_at_backend = input_message.set_user_role_at_backend()
+        messages = self.update_messages(msg_user_at_backend)
         if self.message_window_size is not None and len(
                 messages) > self.message_window_size:
             messages = [self.system_message
@@ -145,12 +201,13 @@ class ChatAgent(BaseAgent):
         openai_messages = [message.to_openai_message() for message in messages]
         num_tokens = num_tokens_from_messages(openai_messages, self.model)
 
+        output_messages: Optional[List[ChatMessage]]
+        info: Dict[str, Any]
+
         if num_tokens < self.model_token_limit:
-            response = openai.ChatCompletion.create(
-                model=self.model.value,
-                messages=openai_messages,
-                **self.model_config.__dict__,
-            )
+            response = self.model_backend.run(openai_messages)
+            if not isinstance(response, dict):
+                raise RuntimeError("OpenAI returned unexpected struct")
             output_messages = [
                 ChatMessage(role_name=self.role_name, role_type=self.role_type,
                             meta_dict=dict(), **dict(choice["message"]))
@@ -165,10 +222,9 @@ class ChatAgent(BaseAgent):
                 ],
                 num_tokens,
             )
-
         else:
             self.terminated = True
-            output_messages = None
+            output_messages = []
 
             info = self.get_info(
                 None,
@@ -177,7 +233,7 @@ class ChatAgent(BaseAgent):
                 num_tokens,
             )
 
-        return output_messages, self.terminated, info
+        return ChatAgentResponse(output_messages, self.terminated, info)
 
     def __repr__(self) -> str:
         r"""Returns a string representation of the :obj:`ChatAgent`.

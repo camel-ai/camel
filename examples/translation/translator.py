@@ -55,8 +55,8 @@ def translate_content(directory_path: str, file_path: str,
         user_msg = UserChatMessage(role_name="Language Translator",
                                    content=msg_i_content)
 
-        assistant_msgs, _, _ = assistant_agent.step(user_msg)
-        assistant_msg = assistant_msgs[0]
+        assistant_response = assistant_agent.step(user_msg)
+        assistant_msg = assistant_response.msg
 
         json_data[f"message_{i+1}"]["content"] = assistant_msg.content
 

@@ -37,13 +37,22 @@ class ChatMessage(BaseMessage):
     role: str
     content: str = ""
 
+    def set_user_role_at_backend(self) -> "ChatMessage":
+        return self.__class__(
+            role_name=self.role_name,
+            role_type=self.role_type,
+            meta_dict=self.meta_dict,
+            role="user",
+            content=self.content,
+        )
+
 
 @dataclass
 class AssistantChatMessage(ChatMessage):
     r"""Class for chat messages from the assistant role used in CAMEL chat
     system.
 
-    Args:
+    Attributes:
         role_name (str): The name of the assistant role.
         role_type (RoleType): The type of role, always
             :obj:`RoleType.ASSISTANT`.
@@ -56,7 +65,7 @@ class AssistantChatMessage(ChatMessage):
     role_name: str
     role_type: RoleType = RoleType.ASSISTANT
     meta_dict: Optional[Dict[str, str]] = None
-    role: str = "assistant"
+    role: str = "user"
     content: str = ""
 
 

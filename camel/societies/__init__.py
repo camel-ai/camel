@@ -11,9 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import apps.data_explorer.loader as loader
+from .role_playing import RolePlaying
 
-
-def test_load_datasets_smoke():
-    data = loader.load_datasets()
-    assert data is not None
+__all__ = [
+    'RolePlaying',
+]

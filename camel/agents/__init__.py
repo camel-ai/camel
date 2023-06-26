@@ -18,7 +18,6 @@ from .critic_agent import CriticAgent
 from .tool_agents.base import BaseToolAgent
 from .tool_agents.hugging_face_tool_agent import HuggingFaceToolAgent
 from .embodied_agent import EmbodiedAgent
-from .role_playing import RolePlaying
 
 __all__ = [
     'BaseAgent',
@@ -29,5 +28,4 @@ __all__ = [
     'BaseToolAgent',
     'HuggingFaceToolAgent',
     'EmbodiedAgent',
-    'RolePlaying',
 ]

@@ -13,27 +13,19 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from colorama import Fore
 
-from camel.configs import ChatGPTConfig
 from camel.societies import RolePlaying
 from camel.utils import print_text_animated
 
 
-def main() -> None:
-    task_prompt = "Write a research proposal for large-scale language models"
-    model_config = ChatGPTConfig(temperature=0.8, n=3)
-    assistant_agent_kwargs = dict(model_config=model_config)
-    user_agent_kwargs = dict(model_config=model_config)
-    critic_kwargs = dict(verbose=True)
+def main(model_type=None) -> None:
+    task_prompt = "Develop a trading bot for the stock market"
     role_play_session = RolePlaying(
-        "PhD Student",
-        "Postdoc",
-        critic_role_name="Professor",
+        "Python Programmer",
+        "Stock Trader",
         task_prompt=task_prompt,
         with_task_specify=True,
-        with_critic_in_the_loop=True,
-        assistant_agent_kwargs=assistant_agent_kwargs,
-        user_agent_kwargs=user_agent_kwargs,
-        critic_kwargs=critic_kwargs,
+        model_type=model_type,
+        output_language="Chinese",  # Arabic, French, Spanish, ...
     )
 
     print(
@@ -41,8 +33,6 @@ def main() -> None:
         f"AI Assistant sys message:\n{role_play_session.assistant_sys_msg}\n")
     print(Fore.BLUE +
           f"AI User sys message:\n{role_play_session.user_sys_msg}\n")
-    print(Fore.MAGENTA +
-          f"Critic sys message:\n{role_play_session.critic_sys_msg}\n")
 
     print(Fore.YELLOW + f"Original task prompt:\n{task_prompt}\n")
     print(
@@ -72,13 +62,14 @@ def main() -> None:
 
         print_text_animated(Fore.BLUE +
                             f"AI User:\n\n{user_response.msg.content}\n")
-        print_text_animated(
-            Fore.GREEN +
-            f"AI Assistant:\n\n{assistant_response.msg.content}\n")
+        print_text_animated(Fore.GREEN + "AI Assistant:\n\n"
+                            f"{assistant_response.msg.content}\n")
 
         if "CAMEL_TASK_DONE" in user_response.msg.content:
             break
 
 
 if __name__ == "__main__":
-    main()
+    from camel.typing import ModelType
+
+    main(ModelType.GPT_4)

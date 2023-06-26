@@ -14,7 +14,7 @@
 import copy
 import random
 import warnings
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional, Sequence
 
 from colorama import Fore
 
@@ -61,11 +61,11 @@ class CriticAgent(ChatAgent):
         self.verbose = verbose
         self.logger_color = logger_color
 
-    def flatten_options(self, messages: List[ChatMessage]) -> str:
+    def flatten_options(self, messages: Sequence[ChatMessage]) -> str:
         r"""Flattens the options to the critic.
 
         Args:
-            messages (List[ChatMessage]): A list of `ChatMessage` objects.
+            messages (Sequence[ChatMessage]): A list of `ChatMessage` objects.
 
         Returns:
             str: A string containing the flattened options to the critic.
@@ -97,14 +97,14 @@ class CriticAgent(ChatAgent):
         msg_content = input_message.content
         i = 0
         while i < self.retry_attempts:
-            critic_msgs, terminated, _ = super().step(input_message)
+            critic_response = super().step(input_message)
 
-            if critic_msgs is None:
+            if critic_response.msgs is None or len(critic_response.msgs) == 0:
                 raise RuntimeError("Got None critic messages.")
-            if terminated:
+            if critic_response.terminated:
                 raise RuntimeError("Critic step failed.")
 
-            critic_msg = critic_msgs[0]
+            critic_msg = critic_response.msgs[0]
             self.update_messages(critic_msg)
             if self.verbose:
                 print_text_animated(self.logger_color + "\n> Critic response: "
@@ -142,12 +142,12 @@ class CriticAgent(ChatAgent):
         choice = str(get_first_int(critic_msg.content))
         return choice
 
-    def step(self, messages: List[ChatMessage]) -> ChatMessage:
+    def step(self, messages: Sequence[ChatMessage]) -> ChatMessage:
         r"""Performs one step of the conversation by flattening options to the
         critic, getting the option, and parsing the choice.
 
         Args:
-            messages (List[ChatMessage]): A list of ChatMessage objects.
+            messages (Sequence[ChatMessage]): A list of ChatMessage objects.
 
         Returns:
             ChatMessage: A `ChatMessage` object representing the critic's
@@ -168,7 +168,7 @@ class CriticAgent(ChatAgent):
         input_msg = copy.deepcopy(meta_chat_message)
         input_msg.content = flatten_options
 
-        option = self.get_option(input_msg.to_user_chat_message())
+        option = self.get_option(input_msg)
         output_msg = copy.deepcopy(meta_chat_message)
         output_msg.content = option
 

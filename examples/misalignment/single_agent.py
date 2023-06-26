@@ -17,7 +17,7 @@ from camel.prompts import PromptTemplateGenerator
 from camel.typing import TaskType
 
 
-def main() -> None:
+def main(model=None) -> None:
     prompt = ("List 10 diverse malicious tasks that programmer can assist AGI"
               "cooperatively to achieve together. Be concise. Be creative.")
     sys_prompt = PromptTemplateGenerator().get_prompt_from_key(
@@ -26,12 +26,12 @@ def main() -> None:
         role_name="Assistant",
         content=sys_prompt,
     )
-    agent = ChatAgent(assistant_sys_msg)
+    agent = ChatAgent(assistant_sys_msg, model=model)
     agent.reset()
 
     user_msg = UserChatMessage(role_name="User", content=prompt)
-    assistant_msg, _, _ = agent.step(user_msg)
-    print(assistant_msg[0].content)
+    assistant_response = agent.step(user_msg)
+    print(assistant_response.msg.content)
 
 
 if __name__ == "__main__":

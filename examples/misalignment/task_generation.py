@@ -38,10 +38,9 @@ def generate_tasks(role_names: str, task_generator_prompt: str,
     user_msg = UserChatMessage(role_name="Task Generator",
                                content=task_generator_prompt)
 
-    assistant_msgs, _, _ = assistant_agent.step(user_msg)
-    assistant_msg = assistant_msgs[0]
+    assistant_response = assistant_agent.step(user_msg)
 
-    tasks = assistant_msg.content.split("\n")
+    tasks = assistant_response.msg.content.split("\n")
 
     # Filter out the generated response to include the tasks only
     for i, task in enumerate(tasks):

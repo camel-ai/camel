@@ -11,9 +11,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import apps.data_explorer.loader as loader
+import pytest
+
+from camel.configs import ChatGPTConfig
+from camel.models import OpenAIModel
+from camel.typing import ModelType
 
 
-def test_load_datasets_smoke():
-    data = loader.load_datasets()
-    assert data is not None
+@pytest.mark.model_backend
+@pytest.mark.parametrize("model_type", [
+    ModelType.GPT_3_5_TURBO,
+    ModelType.GPT_3_5_TURBO_16K,
+    ModelType.GPT_4,
+])
+def test_openai_model(model_type):
+    model_config_dict = ChatGPTConfig().__dict__
+    model = OpenAIModel(model_type, model_config_dict)
+    assert model.model_type == model_type
+    assert model.model_config_dict == model_config_dict
+    assert isinstance(model.model_type.value_for_tiktoken, str)
+    assert isinstance(model.model_type.token_limit, int)

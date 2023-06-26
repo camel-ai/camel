@@ -78,12 +78,30 @@ flake8
 isort .
 ```
 
+For extra validation of type hints:
+
+```bash
+mypy --namespace-packages -p camel
+mypy --namespace-packages -p test
+mypy --namespace-packages -p examples
+mypy --namespace-packages -p apps
+```
+
 ### Coverage 📊
 
 Code coverage measures the extent to which unit tests cover the code, helping identify both robust and less robust areas of the codebase.
 
-To generate a report showing the current code coverage, execute the following command:
+To generate a report showing the current code coverage, execute one of the following commands.
 
+To include all source files into coverage:
+```
+coverage erase
+coverage run --source=. -m pytest .
+coverage html
+# Open htmlcov/index.html
+```
+
+To include only tested files:
 ```bash
 pytest --cov --cov-report=html
 ```
@@ -94,10 +112,15 @@ The coverage report will be generated at `htmlcov/index.html`.
 
 Unit tests cover modular logic that doesn't require calls to outside APIs. Currently, the test setup requires an OpenAI API key to test the framework, making them resemble integration tests.
 
-To run the tests, use the following command:
+To run all tests including those that use OpenAI API, use the following command:
 
 ```bash
 pytest .
+```
+
+To quickly run only local isolated unit and integration tests:
+```bash
+pytest -m "not model_backend and not slow" .
 ```
 
 If you're developing with VSCode, make sure to create a `.env` file in the repository root and include your OpenAI API key:

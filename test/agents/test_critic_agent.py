@@ -16,7 +16,6 @@ import pytest
 from camel.agents import CriticAgent
 from camel.messages import ChatMessage, SystemMessage
 from camel.typing import RoleType
-from camel.utils import openai_api_key_required
 
 
 @pytest.fixture
@@ -58,8 +57,7 @@ def test_flatten_options(critic_agent: CriticAgent):
     assert critic_agent.flatten_options(messages) == expected_output
 
 
-@pytest.mark.slow
-@openai_api_key_required
+@pytest.mark.model_backend
 def test_get_option(critic_agent: CriticAgent):
     messages = [
         ChatMessage(
@@ -102,8 +100,7 @@ def test_parse_critic(critic_agent: CriticAgent):
     assert critic_agent.parse_critic(critic_msg) == expected_output
 
 
-@pytest.mark.slow
-@openai_api_key_required
+@pytest.mark.model_backend
 def test_step(critic_agent: CriticAgent):
     messages = [
         ChatMessage(
