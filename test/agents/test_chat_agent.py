@@ -18,7 +18,6 @@ from camel.configs import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
 from camel.messages import ChatMessage, SystemMessage
 from camel.typing import ModelType, RoleType, TaskType
-from camel.utils import get_model_token_limit
 
 parametrize = pytest.mark.parametrize('model', [
     ModelType.STUB,
@@ -28,7 +27,7 @@ parametrize = pytest.mark.parametrize('model', [
 
 
 @parametrize
-def test_chat_agent(model):
+def test_chat_agent(model: ModelType):
 
     model_config = ChatGPTConfig()
     system_msg = SystemMessageGenerator(
@@ -54,7 +53,7 @@ def test_chat_agent(model):
     assert assistant_response.info['id'] is not None
 
     assistant.reset()
-    token_limit = get_model_token_limit(model)
+    token_limit = assistant.model_token_limit
     user_msg = ChatMessage(role_name="Patient", role_type=RoleType.USER,
                            meta_dict=dict(), role="user",
                            content="token" * (token_limit + 1))
@@ -83,3 +82,27 @@ def test_chat_agent_multiple_return_messages(n):
     assistant_response = assistant.step(user_msg)
     assert assistant_response.msgs is not None
     assert len(assistant_response.msgs) == n
+
+
+@pytest.mark.model_backend
+def test_set_output_language():
+    system_message = SystemMessage(role_name="assistant",
+                                   role_type=RoleType.ASSISTANT,
+                                   content="You are a help assistant.")
+    agent = ChatAgent(system_message=system_message,
+                      model=ModelType.GPT_3_5_TURBO)
+    assert agent.output_language is None
+
+    # Set the output language to "Arabic"
+    output_language = "Arabic"
+    agent.set_output_language(output_language)
+
+    # Check if the output language is set correctly
+    assert agent.output_language == output_language
+
+    # Verify that the system message is updated with the new output language
+    updated_system_message = SystemMessage(
+        role_name="assistant", role_type="assistant",
+        content="You are a help assistant."
+        "\nRegardless of the input language, you must output text in Arabic.")
+    assert agent.system_message.content == updated_system_message.content

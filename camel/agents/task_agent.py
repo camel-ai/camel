@@ -21,7 +21,7 @@ from camel.typing import ModelType, RoleType, TaskType
 
 
 class TaskSpecifyAgent(ChatAgent):
-    r"""An agent that Specifies a given task prompt by prompting the user to
+    r"""An agent that specifies a given task prompt by prompting the user to
     provide more details.
 
     Attributes:
@@ -39,6 +39,8 @@ class TaskSpecifyAgent(ChatAgent):
             the task. (default: :obj:`None`)
         word_limit (int): The word limit for the task prompt.
             (default: :obj:`50`)
+        output_language (str, optional): The language to be output by the
+        agent. (default: :obj:`None`)
     """
     DEFAULT_WORD_LIMIT = 50
 
@@ -49,6 +51,7 @@ class TaskSpecifyAgent(ChatAgent):
         model_config: Optional[Any] = None,
         task_specify_prompt: Optional[Union[str, TextPrompt]] = None,
         word_limit: int = DEFAULT_WORD_LIMIT,
+        output_language: str = None,
     ) -> None:
 
         if task_specify_prompt is None:
@@ -67,7 +70,9 @@ class TaskSpecifyAgent(ChatAgent):
             role_type=RoleType.ASSISTANT,
             content="You can make a task more specific.",
         )
-        super().__init__(system_message, model, model_config)
+
+        super().__init__(system_message, model, model_config,
+                         output_language=output_language)
 
     def step(
         self,
@@ -121,12 +126,15 @@ class TaskPlannerAgent(ChatAgent):
             (default: :obj:`ModelType.GPT_3_5_TURBO`)
         model_config (Any): The configuration for the model.
             (default: :obj:`None`)
+        output_language (str, optional): The language to be output by the
+        agent. (default: :obj:`None`)
     """
 
     def __init__(
         self,
         model: Optional[ModelType] = None,
         model_config: Any = None,
+        output_language: str = None,
     ) -> None:
 
         self.task_planner_prompt = TextPrompt(
@@ -137,7 +145,9 @@ class TaskPlannerAgent(ChatAgent):
             role_type=RoleType.ASSISTANT,
             content="You are a helpful task planner.",
         )
-        super().__init__(system_message, model, model_config)
+
+        super().__init__(system_message, model, model_config,
+                         output_language=output_language)
 
     def step(
         self,
@@ -160,12 +170,12 @@ class TaskPlannerAgent(ChatAgent):
         task_msg = UserChatMessage(role_name="Task Planner",
                                    content=self.task_planner_prompt)
         # sub_tasks_msgs, terminated, _
-        task_tesponse = super().step(task_msg)
+        task_response = super().step(task_msg)
 
-        if task_tesponse.msgs is None:
+        if task_response.msgs is None:
             raise RuntimeError("Got None Subtasks messages.")
-        if task_tesponse.terminated:
+        if task_response.terminated:
             raise RuntimeError("Task planning failed.")
 
-        sub_tasks_msg = task_tesponse.msgs[0]
+        sub_tasks_msg = task_response.msgs[0]
         return TextPrompt(sub_tasks_msg.content)

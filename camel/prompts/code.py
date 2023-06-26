@@ -56,7 +56,7 @@ Please reply with the specified task in {word_limit} words or less. Do not add a
     )
 
     ASSISTANT_PROMPT = TextPrompt(
-        """Never forget you are a Computer Programmer and I am a person working in {domain}. Never flip roles!  Never instruct me!
+        """Never forget you are a Computer Programmer and I am a person working in {domain}. Never flip roles! Never instruct me!
 We share a common interest in collaborating to successfully complete a task.
 You must help me to complete the task using {language} programming language.
 Here is the task: {task}. Never forget our task!

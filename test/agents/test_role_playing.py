@@ -15,8 +15,9 @@ import typing
 
 import pytest
 
-from camel.agents import ChatAgent, RolePlaying
+from camel.agents import ChatAgent
 from camel.messages import AssistantChatMessage, ChatMessage, SystemMessageType
+from camel.societies import RolePlaying
 from camel.typing import ModelType, TaskType
 
 

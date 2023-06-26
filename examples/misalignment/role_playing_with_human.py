@@ -13,8 +13,8 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from colorama import Fore
 
-from camel.agents import RolePlaying
 from camel.configs import ChatGPTConfig
+from camel.societies import RolePlaying
 from camel.typing import TaskType
 from camel.utils import print_text_animated
 

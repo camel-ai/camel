@@ -14,38 +14,32 @@
 import pytest
 
 from camel.configs import ChatGPTConfig
-from camel.model_backend import ModelFactory
+from camel.models import ModelFactory
 from camel.typing import ModelType
 
 parametrize = pytest.mark.parametrize('model', [
-    ModelType.STUB,
-    pytest.param(None, marks=pytest.mark.model_backend),
     pytest.param(ModelType.GPT_3_5_TURBO, marks=pytest.mark.model_backend),
+    pytest.param(ModelType.GPT_3_5_TURBO_16K, marks=pytest.mark.model_backend),
     pytest.param(ModelType.GPT_4, marks=pytest.mark.model_backend),
+    ModelType.STUB,
 ])
 
 
 @parametrize
-def test_openai_model(model):
+def test_model_factory(model):
     model_config_dict = ChatGPTConfig().__dict__
     model_inst = ModelFactory.create(model, model_config_dict)
     messages = [
         {
-            'role': 'system',
-            'content': 'You can make a task more specific.'
+            "role": "system",
+            "content": "Initialize system",
         },
         {
-            'role':
-            'user',
-            'content': ('Here is a task that Python Programmer will help '
-                        'Stock Trader to complete: Develop a trading bot '
-                        'for the stock market.\nPlease make it more specific.'
-                        ' Be creative and imaginative.\nPlease reply with '
-                        'the specified task in 50 words or less. '
-                        'Do not add anything else.')
+            "role": "user",
+            "content": "Hello",
         },
     ]
-    response = model_inst.run(messages=messages)
+    response = model_inst.run(messages)
     assert isinstance(response, dict)
     assert 'id' in response
     assert isinstance(response['id'], str)

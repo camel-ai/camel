@@ -29,11 +29,6 @@ def base_message() -> BaseMessage:
     )
 
 
-def test_base_message_get_attribute(base_message: BaseMessage):
-    assert base_message.upper().content == "TEST CONTENT"
-    assert base_message.startswith("test")
-
-
 def test_base_message_addition_operator(base_message: BaseMessage):
     new_message = base_message + "!"
     assert new_message.content == "test content!"
@@ -56,7 +51,7 @@ def test_base_message_contains_operator(base_message: BaseMessage):
 def test_base_message_token_len(base_message: BaseMessage):
     token_len = base_message.token_len()
     assert isinstance(token_len, int)
-    assert token_len == 9
+    assert token_len == 10
 
 
 def test_extract_text_and_code_prompts():
