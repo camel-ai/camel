@@ -14,7 +14,7 @@
 import ast
 import difflib
 import importlib
-from typing import Any, Callable, Dict, List, Mapping, Optional, Union
+from typing import Any, Dict, List, Mapping, Optional, Union
 
 
 class InterpreterError(ValueError):
@@ -195,7 +195,6 @@ class PythonInterpreter():
                                    f"{type(target)} instead.")
 
     def _execute_call(self, call: ast.Call) -> Any:
-        # callable_func = self._get_func_from_state(call.func)
         callable_func = self._execute_ast(call.func)
 
         # Todo deal with args
@@ -205,41 +204,6 @@ class PythonInterpreter():
             for keyword in call.keywords
         }
         return callable_func(*args, **kwargs)
-
-    def _get_func_from_state(self, func: Union[ast.Attribute,
-                                               ast.Name]) -> Callable:
-
-        if not isinstance(func, (ast.Attribute, ast.Name)):
-            raise InterpreterError(
-                f"It is not permitted to invoke functions than the action "
-                f"space (tried to execute {func} of type {type(func)}.")
-
-        access_list = []
-        while not isinstance(func, ast.Name):
-            access_list = [func.attr] + access_list
-            func = func.value
-        access_list = [func.id] + access_list
-
-        func_name = access_list[0]
-        found_func = self.state.get(func_name, None)
-        for name in access_list[1:]:
-            if found_func:
-                try:
-                    found_func = getattr(found_func, name)
-                except AttributeError as e:
-                    raise InterpreterError(
-                        f"AttributeError in generated code ({e}).")
-            else:
-                func_name += f".{name}"
-                if func_name in self.state:
-                    found_func = self.state[func_name]
-
-        if not found_func:
-            raise InterpreterError(
-                f"It is not permitted to invoke functions than the action"
-                f"space (tried to execute {func}).")
-
-        return found_func
 
     def _execute_subscript(self, subscript):
         index = self._execute_ast(subscript.slice)
