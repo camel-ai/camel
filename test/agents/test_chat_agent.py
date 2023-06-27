@@ -101,7 +101,7 @@ def test_set_output_language():
 
     # Verify that the system message is updated with the new output language
     updated_system_message = BaseMessage(
-        role_name="assistant", role_type="assistant",
+        role_name="assistant", role_type="assistant", meta_dict=None,
         content="You are a help assistant."
         "\nRegardless of the input language, you must output text in Arabic.")
     assert agent.system_message.content == updated_system_message.content
