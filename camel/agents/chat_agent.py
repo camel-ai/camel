@@ -196,8 +196,8 @@ class ChatAgent(BaseAgent):
         self.stored_messages.append(ChatRecord(role, message))
         return self.stored_messages
 
-    def submit_critic_choice(self, message: BaseMessage) -> None:
-        self.stored_messages.append(ChatRecord('assistant', message))
+    def submit_message(self, message: BaseMessage) -> None:
+        self.stored_messages.append(ChatRecord('user', message))
 
     @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     @openai_api_key_required

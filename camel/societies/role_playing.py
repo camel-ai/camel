@@ -225,7 +225,7 @@ class RolePlaying:
 
         return assistant_msg, assistant_response.msgs
 
-    def make_critic_choice(
+    def reduce_message_options(
         self,
         messages: Sequence[BaseMessage],
     ) -> BaseMessage:
@@ -281,16 +281,16 @@ class RolePlaying:
             return (ChatAgentResponse([], False, {}),
                     ChatAgentResponse([], user_response.terminated,
                                       user_response.info))
-        user_msg = self.make_critic_choice(user_response.msgs)
-        self.user_agent.submit_critic_choice(user_msg)
+        user_msg = self.reduce_message_options(user_response.msgs)
+        self.user_agent.submit_message(user_msg)
 
         assistant_response = self.assistant_agent.step(user_msg)
         if assistant_response.terminated or assistant_response.msgs is None:
             return (ChatAgentResponse([], assistant_response.terminated,
                                       assistant_response.info),
                     ChatAgentResponse([user_msg], False, user_response.info))
-        assistant_msg = self.make_critic_choice(assistant_response.msgs)
-        self.assistant_agent.submit_critic_choice(assistant_msg)
+        assistant_msg = self.reduce_message_options(assistant_response.msgs)
+        self.assistant_agent.submit_message(assistant_msg)
 
         return (
             ChatAgentResponse([assistant_msg], assistant_response.terminated,

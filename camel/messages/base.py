@@ -16,13 +16,12 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from camel.messages import (
     OpenAIAssistantMessage,
-    OpenAIChatMessage,
     OpenAIMessage,
     OpenAISystemMessage,
     OpenAIUserMessage,
 )
 from camel.prompts import CodePrompt, TextPrompt
-from camel.typing import RoleType
+from camel.typing import ModelType, RoleType
 
 
 @dataclass
@@ -126,6 +125,23 @@ class BaseMessage:
         """
         return item in self.content
 
+    def token_len(self, role_at_backend: str,
+                  model: ModelType = ModelType.GPT_3_5_TURBO) -> int:
+        r"""Calculate the token length of the message for the specified model.
+
+        Args:
+            role_at_backend (str): interpret this message as of a specified
+                role, so that the special tokens can be counted properly.
+            model (ModelType, optional): The model type to calculate the token
+                length. (default: :obj:`ModelType.GPT_3_5_TURBO`)
+
+        Returns:
+            int: The token length of the message.
+        """
+        from camel.utils import num_tokens_from_messages
+        return num_tokens_from_messages(
+            [self.to_openai_message(role_at_backend)], model)
+
     def extract_text_and_code_prompts(
             self) -> Tuple[List[TextPrompt], List[CodePrompt]]:
         r"""Extract text and code prompts from the message content.
@@ -164,35 +180,20 @@ class BaseMessage:
 
         return text_prompts, code_prompts
 
-    def to_openai_message(self, role: str) -> OpenAIMessage:
+    def to_openai_message(self, role_at_backend: str) -> OpenAIMessage:
         r"""Converts the message to an :obj:`OpenAIMessage` object.
 
         Args:
-            role (str): The role of the message in OpenAI chat
+            role_at_backend (str): The role of the message in OpenAI chat
                 system, either :obj:`"system"`, :obj:`"user"`, or
                 obj:`"assistant"`.
 
         Returns:
             OpenAIMessage: The converted :obj:`OpenAIMessage` object.
         """
-        if role not in {"system", "user", "assistant"}:
-            raise ValueError(f"Unrecognized role: {role}")
-        return {"role": role, "content": self.content}
-
-    def to_openai_chat_message(self, role: str) -> OpenAIChatMessage:
-        r"""Converts the message to an :obj:`OpenAIChatMessage` object.
-
-        Args:
-            role (str): The role of the message in OpenAI chat
-                system, either :obj:`"user"`, or :obj:`"assistant"`.
-                (default: :obj:`None`)
-
-        Returns:
-            OpenAIChatMessage: The converted :obj:`OpenAIChatMessage` object.
-        """
-        if role not in {"user", "assistant"}:
-            raise ValueError(f"Unrecognized role: {role}")
-        return {"role": role, "content": self.content}
+        if role_at_backend not in {"system", "user", "assistant"}:
+            raise ValueError(f"Unrecognized role: {role_at_backend}")
+        return {"role": role_at_backend, "content": self.content}
 
     def to_openai_system_message(self) -> OpenAISystemMessage:
         r"""Converts the message to an :obj:`OpenAISystemMessage` object.
