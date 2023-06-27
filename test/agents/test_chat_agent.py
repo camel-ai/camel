@@ -86,7 +86,7 @@ def test_chat_agent_multiple_return_messages(n):
 @pytest.mark.model_backend
 def test_set_output_language():
     system_message = BaseMessage(role_name="assistant",
-                                 role_type=RoleType.ASSISTANT,
+                                 role_type=RoleType.ASSISTANT, meta_dict=None,
                                  content="You are a help assistant.")
     agent = ChatAgent(system_message=system_message,
                       model=ModelType.GPT_3_5_TURBO)
