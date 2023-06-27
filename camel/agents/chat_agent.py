@@ -64,7 +64,7 @@ class ChatRecord:
     message: BaseMessage
 
     def to_openai_message(self):
-        """Converts the payload message to OpenAI-compatible format.
+        r"""Converts the payload message to OpenAI-compatible format.
 
         Returns:
             OpenAIMessage: OpenAI-compatible message
@@ -197,7 +197,15 @@ class ChatAgent(BaseAgent):
         return self.stored_messages
 
     def submit_message(self, message: BaseMessage) -> None:
-        self.stored_messages.append(ChatRecord('user', message))
+        r"""Submits the externaly provided message as if it were an answer of
+        the chat LLM from the backend. Currently the choise of the critic is
+        submitted with this method.
+
+        Args:
+            message (BaseMessage): An external message to be added as an
+                assistant response.
+        """
+        self.stored_messages.append(ChatRecord('assistant', message))
 
     @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     @openai_api_key_required
