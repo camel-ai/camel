@@ -102,10 +102,10 @@ def flatten_conversation(conversation: Dict) -> str:
 
 def format_combination(combination: Tuple[int, int, int]):
     assistant_role, user_role, task = combination
-    assistant_role = str(assistant_role).zfill(3)
-    user_role = str(user_role).zfill(3)
-    task = str(task).zfill(3)
-    return f"{assistant_role}_{user_role}_{task}"
+    assistant_role_str = str(assistant_role).zfill(3)
+    user_role_str = str(user_role).zfill(3)
+    task_str = str(task).zfill(3)
+    return f"{assistant_role_str}_{user_role_str}_{task_str}"
 
 
 def solution_extraction(conversation: Dict, flattened_conversation: str,
