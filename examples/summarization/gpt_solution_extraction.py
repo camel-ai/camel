@@ -22,7 +22,7 @@ from typing import Dict, Tuple
 import numpy as np
 
 from camel.agents import ChatAgent
-from camel.messages import AssistantSystemMessage, UserChatMessage
+from camel.messages import BaseMessage
 from camel.prompts import SolutionExtractionPromptTemplateDict
 from camel.typing import ModelType, RoleType
 
@@ -114,7 +114,7 @@ def solution_extraction(conversation: Dict, flattened_conversation: str,
     solution_extraction_template = SolutionExtractionPromptTemplateDict()
     assistant_sys_msg_prompt = solution_extraction_template[RoleType.ASSISTANT]
 
-    assistant_sys_msg = AssistantSystemMessage(
+    assistant_sys_msg = BaseMessage.make_assistant_message(
         role_name="Solution Extractor", content=assistant_sys_msg_prompt)
 
     # We use GPT4 because it has a longer context length
@@ -123,7 +123,7 @@ def solution_extraction(conversation: Dict, flattened_conversation: str,
 
     prompt = "Here is the conversation:" + flattened_conversation
 
-    user_msg = UserChatMessage(role_name="User", content=prompt)
+    user_msg = BaseMessage.make_user_message(role_name="User", content=prompt)
     assistant_response = agent.step(user_msg)
     print(assistant_response.msg.content)
 

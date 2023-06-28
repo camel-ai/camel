@@ -20,19 +20,6 @@ OpenAIChatMessage = Union[OpenAIUserMessage, OpenAIAssistantMessage]
 OpenAIMessage = Union[OpenAISystemMessage, OpenAIChatMessage]
 
 from .base import BaseMessage  # noqa: E402
-from .system_messages import (  # noqa: E402
-    SystemMessage, AssistantSystemMessage, UserSystemMessage,
-)
-from .chat_messages import (  # noqa: E402
-    ChatMessage, AssistantChatMessage, UserChatMessage,
-)
-
-MessageType = Union[BaseMessage, SystemMessage, AssistantSystemMessage,
-                    UserSystemMessage, ChatMessage, AssistantChatMessage,
-                    UserChatMessage]
-SystemMessageType = Union[SystemMessage, AssistantSystemMessage,
-                          UserSystemMessage]
-ChatMessageType = Union[ChatMessage, AssistantChatMessage, UserChatMessage]
 
 __all__ = [
     'OpenAISystemMessage',
@@ -41,13 +28,4 @@ __all__ = [
     'OpenAIChatMessage',
     'OpenAIMessage',
     'BaseMessage',
-    'SystemMessage',
-    'AssistantSystemMessage',
-    'UserSystemMessage',
-    'ChatMessage',
-    'AssistantChatMessage',
-    'UserChatMessage',
-    'MessageType',
-    'SystemMessageType',
-    'ChatMessageType',
 ]
