@@ -22,7 +22,7 @@ from camel.agents import (
 from camel.agents.chat_agent import ChatAgentResponse
 from camel.generators import SystemMessageGenerator
 from camel.human import Human
-from camel.messages import AssistantChatMessage, ChatMessage, UserChatMessage
+from camel.messages import BaseMessage
 from camel.typing import ModelType, RoleType, TaskType
 
 
@@ -194,29 +194,30 @@ class RolePlaying:
         else:
             self.critic = None
 
-    def init_chat(self) -> Tuple[AssistantChatMessage, List[ChatMessage]]:
+    def init_chat(self) -> Tuple[BaseMessage, List[BaseMessage]]:
         r"""Initializes the chat by resetting both of the assistant and user
         agents, and sending the system messages again to the agents using
         chat messages. Returns the assistant's introductory message and the
         user's response messages.
 
         Returns:
-            A tuple containing an `AssistantChatMessage` representing the
-            assistant's introductory message, and a list of `ChatMessage`s
+            A tuple containing an `BaseMessage` representing the
+            assistant's introductory message, and a list of `BaseMessage`s
             representing the user's response messages.
         """
         self.assistant_agent.reset()
         self.user_agent.reset()
 
         # Send the system messages again to the agents using chat messages
-        assistant_msg = AssistantChatMessage(
-            role_name=self.assistant_sys_msg.role_name, role="assistant",
+        assistant_msg = BaseMessage.make_assistant_message(
+            role_name=self.assistant_sys_msg.role_name,
             content=(f"{self.user_sys_msg.content}. "
                      "Now start to give me instructions one by one. "
                      "Only reply with Instruction and Input."))
 
-        user_msg = UserChatMessage(role_name=self.user_sys_msg.role_name,
-                                   content=f"{self.assistant_sys_msg.content}")
+        user_msg = BaseMessage.make_user_message(
+            role_name=self.user_sys_msg.role_name,
+            content=f"{self.assistant_sys_msg.content}")
         assistant_response = self.assistant_agent.step(user_msg)
         if assistant_response.terminated or assistant_response.msgs is None:
             raise ValueError(f"Assistant agent terminated unexpectedly. "
@@ -224,20 +225,20 @@ class RolePlaying:
 
         return assistant_msg, assistant_response.msgs
 
-    def process_messages(
+    def reduce_message_options(
         self,
-        messages: Sequence[ChatMessage],
-    ) -> ChatMessage:
+        messages: Sequence[BaseMessage],
+    ) -> BaseMessage:
         r"""Processes a sequence of chat messages, returning the processed
         message. If multiple messages are provided and
         `with_critic_in_the_loop` is `False`, raises a `ValueError`.
         If no messages are provided, a `ValueError` will be raised.
 
         Args:
-            messages: A sequence of `ChatMessage` objects to process.
+            messages: A sequence of `BaseMessage` objects to process.
 
         Returns:
-            A single `ChatMessage` representing the processed message.
+            A single `BaseMessage` representing the processed message.
         """
         if len(messages) == 0:
             raise ValueError("No messages to process.")
@@ -253,7 +254,7 @@ class RolePlaying:
 
     def step(
         self,
-        assistant_msg: ChatMessage,
+        assistant_msg: BaseMessage,
     ) -> Tuple[ChatAgentResponse, ChatAgentResponse]:
         r"""Advances the conversation by taking a message from the assistant,
         processing it using the user agent, and then processing the resulting
@@ -264,7 +265,7 @@ class RolePlaying:
         terminated the conversation, and any additional user information.
 
         Args:
-            assistant_msg: A `ChatMessage` representing the message from the
+            assistant_msg: A `BaseMessage` representing the message from the
                 assistant.
 
         Returns:
@@ -280,16 +281,16 @@ class RolePlaying:
             return (ChatAgentResponse([], False, {}),
                     ChatAgentResponse([], user_response.terminated,
                                       user_response.info))
-        user_msg = self.process_messages(user_response.msgs)
-        self.user_agent.update_messages(user_msg)
+        user_msg = self.reduce_message_options(user_response.msgs)
+        self.user_agent.submit_message(user_msg)
 
         assistant_response = self.assistant_agent.step(user_msg)
         if assistant_response.terminated or assistant_response.msgs is None:
             return (ChatAgentResponse([], assistant_response.terminated,
                                       assistant_response.info),
                     ChatAgentResponse([user_msg], False, user_response.info))
-        assistant_msg = self.process_messages(assistant_response.msgs)
-        self.assistant_agent.update_messages(assistant_msg)
+        assistant_msg = self.reduce_message_options(assistant_response.msgs)
+        self.assistant_agent.submit_message(assistant_msg)
 
         return (
             ChatAgentResponse([assistant_msg], assistant_response.terminated,
