@@ -173,17 +173,17 @@ class CodePrompt(TextPrompt):
         self._code_type = code_type
 
     def execute(
-            self, interpreter: Optional[PythonInterpreter] = None,
-            user_variable: Dict[str,
-                                Any] = {}) -> Tuple[Any, PythonInterpreter]:
+        self, interpreter: Optional[PythonInterpreter] = None,
+        user_variable: Optional[Dict[str, Any]] = None
+    ) -> Tuple[Any, PythonInterpreter]:
         r"""Executes the code string by a given python interpreter.
 
         Args:
             interpreter (PythonInterpreter, optional): interpreter to be used
                 during code execution. (default: :obj:`None`)
-            user_variable: Dict[str, Any]: varibales that can be used in the
+            user_variable (Optional[Dict[str, Any]]): varibales that can be used in the
                 code, which applying fuzzy matching, such as images or
-                documents. (default: :obj:`{}`)
+                documents. (default: :obj:`None`)
 
         Returns:
             Tuple[Any, PythonInterpreter]: A tuple containing the execution

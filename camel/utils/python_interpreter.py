@@ -34,35 +34,36 @@ class PythonInterpreter():
     Args:
         action_space (Dict[str, Any]): The dictionary mapping action names to
             the correponding functions or classes.
-        import_white_list (List[str], optional): The list storing the
+        import_white_list (Optional[List[str]], optional): The list storing the
             importable python modules or functions which can be imported in
             code. All submodules and functions of the modules in the list are
             importable. Any other import statements will be rejected. :obj:`.`
             is the seperator between the module and its submodule or its
-            function name. (default: :obj:`[]`)
+            function name. (default: :obj:`None`)
     """
 
     def __init__(self, action_space: Dict[str, Any],
-                 import_white_list: List[str] = []) -> None:
+                 import_white_list: Optional[List[str]] = None) -> None:
         self.action_space = action_space
         self.state = self.action_space.copy()
         self.fuzz_state = {}
-        self.import_white_list = import_white_list
+        self.import_white_list = import_white_list or []
 
-    def execute(self, code: str, state: Dict[str, Any] = {},
+    def execute(self, code: str, state: Dict[str, Any] = None,
                 fuzz_state: Dict[str,
-                                 Any] = {}, keep_state: bool = True) -> Any:
+                                 Any] = None, keep_state: bool = True) -> Any:
         r""" Execute the input python codes in a security environment.
 
         Args:
             code (str): Generated python code to be executed.
-            state (Dict[str, Any], optional): External variables that may be
-                used in the generated code. (default: :obj:`{}`)
-            fuzz_state (Dict[str, Any], optional): External varibles that do
-                not have certain varible names. The interpreter will use fuzzy
-                matching to these varibales. For example, if :obj:`fuzz_state`
-                has a variable :obj:`image`, the generated code can use
-                :obj:`input_image` to access it. (default: :obj:`{}`)
+            state (Optional[Dict[str, Any]], optional): External variables that
+                may be used in the generated code. (default: :obj:`None`)
+            fuzz_state (Optional[Dict[str, Any]], optional): External varibles
+                that do not have certain varible names. The interpreter will
+                use fuzzy matching to access these varibales. For example, if
+                :obj:`fuzz_state` has a variable :obj:`image`, the generated
+                code can use :obj:`input_image` to access it. (default:
+                :obj:`None`)
             keep_state (bool, optional):  If :obj:`True`, :obj:`state` and
                 :obj:`fuzz_state` will be kept for later execution. Otherwise,
                 they will be cleared. (default: :obj:`True`)
@@ -70,8 +71,11 @@ class PythonInterpreter():
         Returns:
             Any: An evaluation value of the last line in the code.
         """
-        self.state.update(state)
-        self.fuzz_state.update(fuzz_state)
+        if state:
+            self.state.update(state)
+        if fuzz_state:
+            self.fuzz_state.update(fuzz_state)
+
         try:
             expression = ast.parse(code)
         except SyntaxError as e:
