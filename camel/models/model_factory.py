@@ -44,8 +44,10 @@ class ModelFactory:
         if model_type in {
                 ModelType.GPT_3_5_TURBO,
                 ModelType.GPT_3_5_TURBO_16K,
+                ModelType.GPT_3_5_TURBO_FUNC,
                 ModelType.GPT_4,
                 ModelType.GPT_4_32k,
+                ModelType.GPT_4_FUNC,
         }:
             model_class = OpenAIModel
         elif model_type == ModelType.STUB:
