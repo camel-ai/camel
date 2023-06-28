@@ -52,7 +52,8 @@ def parse_arguments():
     return args
 
 
-def construct_ui(blocks, datasets: Datasets, default_dataset: str = None):
+def construct_ui(blocks, datasets: Datasets,
+                 default_dataset: Optional[str] = None):
     """ Build Gradio UI and populate with chat data from JSONs.
 
     Args:
@@ -226,7 +227,7 @@ def construct_ui(blocks, datasets: Datasets, default_dataset: str = None):
         Returns:
             List[Tuple]: Chat history in chatbot UI element format.
         """
-        history = []
+        history: List[Tuple] = []
         curr_qa = (None, None)
         for k in sorted(messages.keys()):
             msg = messages[k]
