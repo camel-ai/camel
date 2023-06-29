@@ -28,7 +28,6 @@ parametrize = pytest.mark.parametrize('model', [
 
 @parametrize
 def test_chat_agent(model: ModelType):
-
     model_config = ChatGPTConfig()
     system_msg = SystemMessageGenerator(
         task_type=TaskType.AI_SOCIETY).from_dict(
@@ -85,11 +84,10 @@ def test_chat_agent_multiple_return_messages(n):
 
 @pytest.mark.model_backend
 def test_chat_agent_batch_stream_same_output():
-    system_msg = SystemMessage("Assistant", RoleType.ASSISTANT,
-                               content="You are a helpful assistant.")
-    user_msg = ChatMessage(role_name="User", role_type=RoleType.USER,
-                           meta_dict=dict(), role="user",
-                           content="Tell me a joke.")
+    system_msg = BaseMessage("Assistant", RoleType.ASSISTANT, meta_dict=None,
+                             content="You are a helpful assistant.")
+    user_msg = BaseMessage(role_name="User", role_type=RoleType.USER,
+                           meta_dict=dict(), content="Tell me a joke.")
     batch_model_config = ChatGPTConfig(temperature=0, n=2, stream=False)
     batch_assistant = ChatAgent(system_msg, model_config=batch_model_config)
     batch_assistant.reset()
@@ -104,6 +102,12 @@ def test_chat_agent_batch_stream_same_output():
         batch_msg_content = batch_assistant_response.msgs[i].content
         stream_msg_content = stream_assistant_response.msgs[i].content
         assert batch_msg_content == stream_msg_content
+
+    batch_usage = batch_assistant_response.info["usage"]
+    stream_usage = stream_assistant_response.info["usage"]
+    for key in batch_usage:
+        assert key in stream_usage
+        assert stream_usage[key] == batch_usage[key]
 
 
 @pytest.mark.model_backend
@@ -123,7 +127,7 @@ def test_set_output_language():
     assert agent.output_language == output_language
 
     # Verify that the system message is updated with the new output language
-    updated_system_message = SystemMessage(
+    updated_system_message = BaseMessage(
         role_name="assistant", role_type=RoleType.ASSISTANT, meta_dict=None,
         content="You are a help assistant."
         "\nRegardless of the input language, you must output text in Arabic.")

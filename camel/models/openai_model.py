@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from types import GeneratorType
 from typing import Any, Dict, List
 
 from camel.messages import OpenAIMessage
@@ -48,8 +49,12 @@ class OpenAIModel(BaseModelBackend):
         response = openai.ChatCompletion.create(messages=messages_openai,
                                                 model=self.model_type.value,
                                                 **self.model_config_dict)
-        if not self.streaming and not isinstance(response, Dict):
-            raise RuntimeError("Unexpected return from OpenAI API")
+        if not self.stream:
+            if not isinstance(response, Dict):
+                raise RuntimeError("Unexpected batch return from OpenAI API")
+        else:
+            if not isinstance(response, GeneratorType):
+                raise RuntimeError("Unexpected stream return from OpenAI API")
         return response
 
     @property

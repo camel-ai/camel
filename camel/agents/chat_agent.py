@@ -11,9 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import types
 from collections import defaultdict
 from dataclasses import dataclass
+from types import GeneratorType
 from typing import Any, Dict, List, Optional, Tuple
 
 from tenacity import retry
@@ -25,7 +25,11 @@ from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.typing import ModelType, RoleType
-from camel.utils import num_tokens_from_messages, openai_api_key_required
+from camel.utils import (
+    get_model_encoding,
+    num_tokens_from_messages,
+    openai_api_key_required,
+)
 
 
 @dataclass(frozen=True)
@@ -199,8 +203,8 @@ class ChatAgent(BaseAgent):
         return self.stored_messages
 
     def submit_message(self, message: BaseMessage) -> None:
-        r"""Submits the externaly provided message as if it were an answer of
-        the chat LLM from the backend. Currently the choise of the critic is
+        r"""Submits the externally provided message as if it were an answer of
+        the chat LLM from the backend. Currently, the choice of the critic is
         submitted with this method.
 
         Args:
@@ -242,6 +246,27 @@ class ChatAgent(BaseAgent):
 
         if num_tokens < self.model_token_limit:
             response = self.model_backend.run(openai_messages)
+            self.validate_model_response(response)
+            if not self.model_backend.stream:
+                output_messages = self.handle_batch_response(response)
+                info = self.get_info(
+                    response["id"],
+                    response["usage"],
+                    [
+                        str(choice["finish_reason"])
+                        for choice in response["choices"]
+                    ],
+                    num_tokens,
+                )
+            else:
+                output_messages, finish_reasons, usage_dict, response_id = \
+                    self.handle_stream_response(response, num_tokens)
+                info = self.get_info(
+                    response_id,
+                    usage_dict,
+                    finish_reasons,
+                    num_tokens,
+                )
         else:
             self.terminated = True
             output_messages = []
@@ -260,11 +285,11 @@ class ChatAgent(BaseAgent):
             if not isinstance(response, dict):
                 raise RuntimeError("OpenAI returned unexpected batch struct")
         else:
-            if not isinstance(response, types.GeneratorType):
+            if not isinstance(response, GeneratorType):
                 raise RuntimeError("OpenAI returned unexpected stream struct")
 
     def handle_batch_response(self, response: Dict[str,
-                                                   Any]) -> List[ChatMessage]:
+                                                   Any]) -> List[BaseMessage]:
         r"""
 
         Args:
@@ -273,7 +298,7 @@ class ChatAgent(BaseAgent):
         Returns:
             List[ChatMessage]: A tuple of list of output `ChatMessage`.
         """
-        output_messages: List[ChatMessage] = []
+        output_messages: List[BaseMessage] = []
         for choice in response["choices"]:
             chat_message = BaseMessage(role_name=self.role_name,
                                        role_type=self.role_type,
@@ -285,13 +310,13 @@ class ChatAgent(BaseAgent):
     def handle_stream_response(
         self,
         response: Any,
-        prompt_tokens: int,
-    ) -> Tuple[List[ChatMessage], List[str], Dict[str, int], str]:
+        num_prompt_tokens: int,
+    ) -> Tuple[List[BaseMessage], List[str], Dict[str, int], str]:
         r"""
 
         Args:
             response (dict): Model response.
-            prompt_tokens (int): Number of input prompt tokens.
+            num_prompt_tokens (int): Number of input prompt tokens.
 
         Returns:
             tuple: A tuple of list of output `ChatMessage`, list of
@@ -299,7 +324,7 @@ class ChatAgent(BaseAgent):
         """
         content_dict = defaultdict(lambda: "")
         finish_reasons = defaultdict(lambda: "")
-        output_messages: List[ChatMessage] = []
+        output_messages: List[BaseMessage] = []
         response_id: str = ""
         # All choices in one response share one role
         role: str = ""
@@ -319,33 +344,32 @@ class ChatAgent(BaseAgent):
                 else:
                     finish_reasons[index] = choice["finish_reason"]
                     chat_message = BaseMessage(role_name=self.role_name,
-                                       role_type=self.role_type,
-                                       meta_dict=dict(),
-                                       content=choice["message"]['content'])
+                                               role_type=self.role_type,
+                                               meta_dict=dict(),
+                                               content=content_dict[index])
                     output_messages.append(chat_message)
         finish_reasons = [
             finish_reasons[i] for i in range(len(finish_reasons))
         ]
-        usage_dict = self.get_usage_dict(output_messages, prompt_tokens)
+        usage_dict = self.get_usage_dict(output_messages, num_prompt_tokens)
         return output_messages, finish_reasons, usage_dict, response_id
 
-    def get_usage_dict(self, output_messages: List[ChatMessage],
-                       prompt_tokens: int) -> Dict[str, int]:
+    def get_usage_dict(self, output_messages: List[BaseMessage],
+                       num_prompt_tokens: int) -> Dict[str, int]:
         r"""Get usage dictionary when using the stream mode.
 
         Args:
             output_messages (list): List of output messages.
-            prompt_tokens (int): Number of input prompt tokens.
+            num_prompt_tokens (int): Number of input prompt tokens.
 
         Returns:
             dict: Usage dictionary.
         """
-        openai_messages = [
-            message.to_openai_message() for message in output_messages
-        ]
-        completion_tokens = num_tokens_from_messages(openai_messages,
-                                                     self.model)
-        prompt_tokens = prompt_tokens
+        encoding = get_model_encoding(self.model.value_for_tiktoken)
+        completion_tokens = 0
+        for message in output_messages:
+            completion_tokens += len(encoding.encode(message.content))
+        prompt_tokens = num_prompt_tokens
         usage_dict = dict(completion_tokens=completion_tokens,
                           prompt_tokens=prompt_tokens,
                           total_tokens=completion_tokens + prompt_tokens)
