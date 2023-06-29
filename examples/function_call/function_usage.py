@@ -76,14 +76,14 @@ def mul(a, b):
 def main():
     # Create an embodied agent
     role_name = "Student"
-    meta_dict = dict(role=role_name, task="Drawing")
     
     functions = [add, sub, mul]
 
-    func_agent = FuncAgent(role_name, 
-                        functions,
-                        verbose=True,
-                    )
+    func_agent = FuncAgent(
+        role_name, 
+        functions,
+        verbose=True,
+    )
 
     user_msg = UserChatMessage(
         role_name=role_name,

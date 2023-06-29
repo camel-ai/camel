@@ -27,7 +27,7 @@ from colorama import Fore
 from camel.agents import ChatAgent
 from camel.agents.chat_agent import ChatAgentResponse
 from camel.configs import ChatGPTConfig
-from camel.messages import ChatMessage, SystemMessage, OpenAIMessage
+from camel.messages import ChatMessage, MessageType, SystemMessage, OpenAIMessage
 from camel.typing import ModelType, RoleType
 from camel.utils import print_text_animated
 
@@ -170,9 +170,9 @@ class FuncAgent(ChatAgent):
             
             msg_dict["function_call"] = {}
             msg_dict["function_call"]["name"] = func_name
-            msg_dict["function_call"]["arguments"] = args
+            msg_dict["function_call"]["arguments"] = str(args)
 
-            msg_dict["function_call"] = str(msg_dict["function_call"])
+            # msg_dict["function_call"] = str(msg_dict["function_call"])
         elif role == "function":
             msg_dict["name"] = func_name
 
@@ -180,6 +180,23 @@ class FuncAgent(ChatAgent):
             msg_dict["content"] = f'{content}'
         
         return msg_dict
+
+    def update_messages(
+        self, 
+        messages: List[OpenAIMessage]
+    ) -> List[OpenAIMessage]:
+        for message in messages:
+            self.messages.append(message)
+        return self.messages
+    
+    def get_num_tokens(self) -> int:
+        messages = []
+        for message in self.messages:
+            msg = message.copy()
+            for key in msg.keys():
+                msg[key] = str(msg[key])
+            messages.append(msg)
+        return num_tokens_from_messages(messages, self.model)
         
 
     @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
@@ -195,38 +212,44 @@ class FuncAgent(ChatAgent):
 
         Returns:
             Tuple[ChatMessage, bool, Dict[str, Any]]: A tuple
-                containing the output messages, termination status, and
+                containing the output messages, function execution status, and
                 additional information.
         """
         self.messages = [input_message.to_openai_message()]
 
-        num_tokens = num_tokens_from_messages(self.messages, self.model)
-        if num_tokens >= self.model_token_limit:
-            output_message = []
-
-            info = self.get_info(
-                None,
-                None,
-                ["max_tokens_exceeded"],
-                num_tokens,
-            )
-
-            return (output_message, False, info)
-
 
         func_call = False
-        response = self.model_backend.run(self.messages, self.functions)
         while True:
-            print(f"Messages: {self.messages}")
+            # print(f"Messages: {self.messages}")
+
+            # Check whether token limit is exceeded
+            num_tokens = self.get_num_tokens()
+            if num_tokens >= self.model_token_limit:
+                output_message = []
+
+                info = self.get_info(
+                    None,
+                    None,
+                    ["max_tokens_exceeded"],
+                    num_tokens,
+                )
+
+                return (output_message, func_call, info)
+
+            # Run OpenAI API
+            response = self.model_backend.run(self.messages, self.functions)
+
             if self.verbose:
                 print('-' * 24, "response", '-' * 24)
                 print(response)
-                print('-' * 50)
+                # print('-' * 56)
             
+            # Check the type of returned response
             if not isinstance(response, dict):
                 raise RuntimeError("OpenAI returned unexpected struct")
-            
             choice = response.choices[0]
+
+            # The functional running has been terminated
             if choice["finish_reason"] == "stop":
                 print("Received STOP signal")
                 if func_call:
@@ -244,39 +267,26 @@ class FuncAgent(ChatAgent):
 
                 break
 
+            # Executing a function call
+            elif choice["finish_reason"] == "function_call":
+                func_call = True
 
-            # choice["finish_reason"] == "function_call":
-            func_call = True
+                func_name = choice.message["function_call"].name
+                func = self.func_dict[func_name]
 
-            func_name = choice.message["function_call"].name
-            func = self.func_dict[func_name]
-
-            args = choice.message["function_call"].arguments
-            args = json.loads(args)
-                    
-            result = func(**args)
-            assist_msg = self.get_msg_dict("assistant", func_name=func_name, args=args)
-            func_msg = self.get_msg_dict("function", func_name=func_name, result=result)
-                    
-            self.messages += [assist_msg, func_msg]
+                args = choice.message["function_call"].arguments
+                args = eval(args)
+                        
+                # Pass the extracted arguments to the indicated function
+                result = func(**args)
+                assist_msg = self.get_msg_dict("assistant", func_name=func_name, args=args)
+                func_msg = self.get_msg_dict("function", func_name=func_name, result=result)
+                        
+                # Update the messages
+                self.messages += [assist_msg, func_msg]
             
-
-            # Do next step
-            num_tokens = num_tokens_from_messages(self.messages, self.model)
-            if num_tokens >= self.model_token_limit:
-                output_message = []
-
-                info = self.get_info(
-                    None,
-                    None,
-                    ["max_tokens_exceeded"],
-                    num_tokens,
-                )
-
-                break
             else:
-                response = self.model_backend.run(self.messages, self.functions)
-
-
-        # TODO: Handle errors
+                raise RuntimeError(f"Unexpected finish_reason from choice: {choice}")
+            
+            
         return (output_message, func_call, info)
