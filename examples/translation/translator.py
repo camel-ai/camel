@@ -19,14 +19,11 @@ import os
 import os.path as osp
 import warnings
 
-from colorama import Fore
-
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
 from camel.messages import UserChatMessage
 from camel.typing import ModelType, RoleType, TaskType
-from camel.utils import print_text_animated
 
 warnings.filterwarnings("ignore")
 
@@ -44,10 +41,8 @@ parser.add_argument('--save_directory_path', type=str,
                     default='../camel_data/ai_society_translated')
 parser.add_argument('--single', action='store_true',
                     help='Run translator in a non-parallel way.')
-parser.add_argument('--print_input', action='store_true',
-                    help='Print input content in animatedly.')
-parser.add_argument('--streaming', action='store_true',
-                    help='Set OpenAI GPT model with the streaming mode.')
+parser.add_argument('--stream', action='store_true',
+                    help='Set OpenAI GPT model with the stream mode.')
 parser.add_argument(
     '--language', type=str, help='Language you want to translated to. '
     'Notice that this is not used in the parallel mode, '
@@ -83,9 +78,6 @@ def translate_content(args: argparse.Namespace, file_path: str,
         msg_i_content = "Sentence to translate: " + json_data[
             f"message_{i+1}"]["content"]
 
-        if args.print_input:
-            print_text_animated(Fore.CYAN + msg_i_content, reset=True)
-
         sys_msg_generator = SystemMessageGenerator(
             task_type=TaskType.TRANSLATION)
 
@@ -93,7 +85,7 @@ def translate_content(args: argparse.Namespace, file_path: str,
             meta_dict=dict(language=language.capitalize()),
             role_tuple=('Language Translator', RoleType.ASSISTANT))
 
-        if not args.streaming:
+        if not args.stream:
             model_config = ChatGPTConfig(stream=False)
         else:
             model_config = ChatGPTConfig(stream=True)
@@ -107,8 +99,7 @@ def translate_content(args: argparse.Namespace, file_path: str,
         user_msg = UserChatMessage(role_name="Language Translator",
                                    content=msg_i_content)
 
-        assistant_response = assistant_agent.step(user_msg,
-                                                  print_response=True)
+        assistant_response = assistant_agent.step(user_msg)
         assistant_msg = assistant_response.msg
 
         json_data[f"message_{i+1}"]["content"] = assistant_msg.content

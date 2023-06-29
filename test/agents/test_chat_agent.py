@@ -85,6 +85,29 @@ def test_chat_agent_multiple_return_messages(n):
 
 
 @pytest.mark.model_backend
+def test_chat_agent_batch_stream_same_output():
+    system_msg = SystemMessage("Assistant", RoleType.ASSISTANT,
+                               content="You are a helpful assistant.")
+    user_msg = ChatMessage(role_name="User", role_type=RoleType.USER,
+                           meta_dict=dict(), role="user",
+                           content="Tell me a joke.")
+    batch_model_config = ChatGPTConfig(temperature=0, n=2, stream=False)
+    batch_assistant = ChatAgent(system_msg, model_config=batch_model_config)
+    batch_assistant.reset()
+    batch_assistant_response = batch_assistant.step(user_msg)
+
+    stream_model_config = ChatGPTConfig(temperature=0, n=2, stream=True)
+    stream_assistant = ChatAgent(system_msg, model_config=stream_model_config)
+    stream_assistant.reset()
+    stream_assistant_response = stream_assistant.step(user_msg)
+
+    for i in range(len(batch_assistant_response.msgs)):
+        batch_msg_content = batch_assistant_response.msgs[i].content
+        stream_msg_content = stream_assistant_response.msgs[i].content
+        assert batch_msg_content == stream_msg_content
+
+
+@pytest.mark.model_backend
 def test_set_output_language():
     system_message = SystemMessage(role_name="assistant",
                                    role_type=RoleType.ASSISTANT,
@@ -102,7 +125,7 @@ def test_set_output_language():
 
     # Verify that the system message is updated with the new output language
     updated_system_message = SystemMessage(
-        role_name="assistant", role_type="assistant",
+        role_name="assistant", role_type=RoleType.ASSISTANT,
         content="You are a help assistant."
         "\nRegardless of the input language, you must output text in Arabic.")
     assert agent.system_message.content == updated_system_message.content
