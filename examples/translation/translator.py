@@ -22,7 +22,7 @@ import warnings
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
-from camel.messages import UserChatMessage
+from camel.messages import BaseMessage
 from camel.typing import ModelType, RoleType, TaskType
 
 warnings.filterwarnings("ignore")
@@ -96,8 +96,8 @@ def translate_content(args: argparse.Namespace, file_path: str,
             model_config=model_config,
         )
 
-        user_msg = UserChatMessage(role_name="Language Translator",
-                                   content=msg_i_content)
+        user_msg = BaseMessage.make_user_message(
+            role_name="Language Translator", content=msg_i_content)
 
         assistant_response = assistant_agent.step(user_msg)
         assistant_msg = assistant_response.msg

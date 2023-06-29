@@ -18,7 +18,7 @@ Everything related to parsing the data JSONs into UI-compatible format.
 import glob
 import os
 import re
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 from tqdm import tqdm
 
@@ -111,17 +111,17 @@ def load_zip(zip_path: str) -> AllChats:
             continue
         parsed_list.append(parsed)
 
-    assistant_roles = set()
-    user_roles = set()
+    assistant_roles_set = set()
+    user_roles_set = set()
     for parsed in parsed_list:
-        assistant_roles.add(parsed['assistant_role'])
-        user_roles.add(parsed['user_role'])
-    assistant_roles = list(sorted(assistant_roles))
-    user_roles = list(sorted(user_roles))
-    matrix: Dict[Tuple[str, str], List[Dict]] = dict()
+        assistant_roles_set.add(parsed['assistant_role'])
+        user_roles_set.add(parsed['user_role'])
+    assistant_roles = list(sorted(assistant_roles_set))
+    user_roles = list(sorted(user_roles_set))
+    matrix: Dict[Tuple[str, str], Dict[str, Dict]] = dict()
     for parsed in parsed_list:
         key = (parsed['assistant_role'], parsed['user_role'])
-        original_task = parsed['original_task']
+        original_task: str = parsed['original_task']
         new_item = {
             k: v
             for k, v in parsed.items()
