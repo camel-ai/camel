@@ -208,7 +208,7 @@ class ChatAgent(BaseAgent):
         if num_tokens < self.model_token_limit:
             response = self.model_backend.run(openai_messages)
             self.validate_model_response(response)
-            if not self.model_backend.streaming:
+            if not self.model_backend.stream:
                 output_messages = self.handle_batch_response(response)
                 info = self.get_info(
                     response["id"],
@@ -242,7 +242,7 @@ class ChatAgent(BaseAgent):
         return ChatAgentResponse(output_messages, self.terminated, info)
 
     def validate_model_response(self, response: Any):
-        if not self.model_backend.streaming:
+        if not self.model_backend.stream:
             if not isinstance(response, dict):
                 raise RuntimeError("OpenAI returned unexpected batch struct")
         else:

@@ -58,10 +58,10 @@ class BaseModelBackend(ABC):
         return self.model_type.token_limit
 
     @property
-    def streaming(self) -> bool:
-        r"""Returns whether the model is streaming,
+    def stream(self) -> bool:
+        r"""Returns whether the model is in stream mode,
             which sends partial results each time.
         Returns:
-            bool: Whether the model is streaming.
+            bool: Whether the model is in stream mode.
         """
         return False
