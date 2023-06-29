@@ -15,7 +15,7 @@ from typing import Any, Dict, Sequence
 
 from colorama import Fore
 
-from camel.messages import ChatMessage
+from camel.messages import BaseMessage
 from camel.utils import print_text_animated
 
 
@@ -46,11 +46,11 @@ class Human:
         self.kill_button = "Stop!!!"
         self.options_dict: Dict[str, str] = dict()
 
-    def display_options(self, messages: Sequence[ChatMessage]) -> None:
+    def display_options(self, messages: Sequence[BaseMessage]) -> None:
         r"""Displays the options to the user.
 
         Args:
-            messages (Sequence[ChatMessage]): A list of `ChatMessage` objects.
+            messages (Sequence[BaseMessage]): A list of `BaseMessage` objects.
 
         Returns:
             None
@@ -87,15 +87,15 @@ class Human:
         return human_input
 
     def parse_input(self, human_input: str,
-                    meta_chat_message: ChatMessage) -> ChatMessage:
-        r"""Parses the user's input and returns a `ChatMessage` object.
+                    meta_chat_message: BaseMessage) -> BaseMessage:
+        r"""Parses the user's input and returns a `BaseMessage` object.
 
         Args:
             human_input (str): The user's input.
-            meta_chat_message (ChatMessage): A `ChatMessage` object.
+            meta_chat_message (BaseMessage): A `BaseMessage` object.
 
         Returns:
-            ChatMessage: A `ChatMessage` object.
+            BaseMessage: A `BaseMessage` object.
         """
         if self.options_dict[human_input] == self.input_button:
             meta_chat_message.content = input(self.logger_color +
@@ -107,21 +107,20 @@ class Human:
             meta_chat_message.content = self.options_dict[human_input]
             return meta_chat_message
 
-    def step(self, messages: Sequence[ChatMessage]) -> ChatMessage:
+    def step(self, messages: Sequence[BaseMessage]) -> BaseMessage:
         r"""Performs one step of the conversation by displaying options to the
         user, getting their input, and parsing their choice.
 
         Args:
-            messages (Sequence[ChatMessage]): A list of ChatMessage objects.
+            messages (Sequence[BaseMessage]): A list of BaseMessage objects.
 
         Returns:
-            ChatMessage: A `ChatMessage` object representing the user's choice.
+            BaseMessage: A `BaseMessage` object representing the user's choice.
         """
-        meta_chat_message = ChatMessage(
+        meta_chat_message = BaseMessage(
             role_name=messages[0].role_name,
             role_type=messages[0].role_type,
             meta_dict=messages[0].meta_dict,
-            role=messages[0].role,
             content="",
         )
         self.display_options(messages)

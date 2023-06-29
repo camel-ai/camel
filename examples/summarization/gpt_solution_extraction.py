@@ -22,7 +22,7 @@ from typing import Dict, Tuple
 import numpy as np
 
 from camel.agents import ChatAgent
-from camel.messages import AssistantSystemMessage, UserChatMessage
+from camel.messages import BaseMessage
 from camel.prompts import SolutionExtractionPromptTemplateDict
 from camel.typing import ModelType, RoleType
 
@@ -102,10 +102,10 @@ def flatten_conversation(conversation: Dict) -> str:
 
 def format_combination(combination: Tuple[int, int, int]):
     assistant_role, user_role, task = combination
-    assistant_role = str(assistant_role).zfill(3)
-    user_role = str(user_role).zfill(3)
-    task = str(task).zfill(3)
-    return f"{assistant_role}_{user_role}_{task}"
+    assistant_role_str = str(assistant_role).zfill(3)
+    user_role_str = str(user_role).zfill(3)
+    task_str = str(task).zfill(3)
+    return f"{assistant_role_str}_{user_role_str}_{task_str}"
 
 
 def solution_extraction(conversation: Dict, flattened_conversation: str,
@@ -114,7 +114,7 @@ def solution_extraction(conversation: Dict, flattened_conversation: str,
     solution_extraction_template = SolutionExtractionPromptTemplateDict()
     assistant_sys_msg_prompt = solution_extraction_template[RoleType.ASSISTANT]
 
-    assistant_sys_msg = AssistantSystemMessage(
+    assistant_sys_msg = BaseMessage.make_assistant_message(
         role_name="Solution Extractor", content=assistant_sys_msg_prompt)
 
     # We use GPT4 because it has a longer context length
@@ -123,7 +123,7 @@ def solution_extraction(conversation: Dict, flattened_conversation: str,
 
     prompt = "Here is the conversation:" + flattened_conversation
 
-    user_msg = UserChatMessage(role_name="User", content=prompt)
+    user_msg = BaseMessage.make_user_message(role_name="User", content=prompt)
     assistant_response = agent.step(user_msg)
     print(assistant_response.msg.content)
 

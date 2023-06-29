@@ -11,14 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import typing
-
 import pytest
 
 from camel.agents import ChatAgent
-from camel.messages import AssistantChatMessage, ChatMessage, SystemMessageType
+from camel.messages import BaseMessage
 from camel.societies import RolePlaying
-from camel.typing import ModelType, TaskType
+from camel.typing import ModelType, RoleType, TaskType
 
 
 def test_role_playing_init():
@@ -41,10 +39,10 @@ def test_role_playing_init():
     assert role_playing.specified_task_prompt is None
     assert role_playing.planned_task_prompt is None
 
-    assert (type(role_playing.assistant_sys_msg)
-            in typing.get_args(SystemMessageType))
-    assert (type(role_playing.user_sys_msg)
-            in typing.get_args(SystemMessageType))
+    assert isinstance(role_playing.assistant_sys_msg, BaseMessage)
+    assert role_playing.assistant_sys_msg.role_type == RoleType.ASSISTANT
+    assert isinstance(role_playing.user_sys_msg, BaseMessage)
+    assert role_playing.user_sys_msg.role_type == RoleType.USER
 
     assert isinstance(role_playing.assistant_agent, ChatAgent)
     assert isinstance(role_playing.user_agent, ChatAgent)
@@ -69,9 +67,8 @@ def test_role_playing_step(task_type, extend_sys_msg_meta_dicts,
         extend_sys_msg_meta_dicts=extend_sys_msg_meta_dicts,
         extend_task_specify_meta_dict=extend_task_specify_meta_dict,
     )
-    init_assistant_msg = AssistantChatMessage(role_name="AI Assistant",
-                                              role="assistant",
-                                              content="Hello")
+    init_assistant_msg = BaseMessage.make_assistant_message(
+        role_name="AI Assistant", content="Hello")
     print(role_playing.assistant_agent.system_message)
     print(role_playing.user_agent.system_message)
 
@@ -80,7 +77,7 @@ def test_role_playing_step(task_type, extend_sys_msg_meta_dicts,
     for response in (assistant_response, user_response):
         assert isinstance(response.msgs, list)
         assert len(response.msgs) == 1
-        assert isinstance(response.msgs[0], ChatMessage)
+        assert isinstance(response.msgs[0], BaseMessage)
         assert isinstance(response.terminated, bool)
         assert response.terminated is False
         assert isinstance(response.info, dict)
