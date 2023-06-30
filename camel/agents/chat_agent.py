@@ -248,25 +248,17 @@ class ChatAgent(BaseAgent):
             response = self.model_backend.run(openai_messages)
             self.validate_model_response(response)
             if not self.model_backend.stream:
-                output_messages = self.handle_batch_response(response)
-                info = self.get_info(
-                    response["id"],
-                    response["usage"],
-                    [
-                        str(choice["finish_reason"])
-                        for choice in response["choices"]
-                    ],
-                    num_tokens,
-                )
+                output_messages, finish_reasons, usage_dict, response_id = \
+                    self.handle_batch_response(response)
             else:
                 output_messages, finish_reasons, usage_dict, response_id = \
                     self.handle_stream_response(response, num_tokens)
-                info = self.get_info(
-                    response_id,
-                    usage_dict,
-                    finish_reasons,
-                    num_tokens,
-                )
+            info = self.get_info(
+                response_id,
+                usage_dict,
+                finish_reasons,
+                num_tokens,
+            )
         else:
             self.terminated = True
             output_messages = []
@@ -288,15 +280,17 @@ class ChatAgent(BaseAgent):
             if not isinstance(response, GeneratorType):
                 raise RuntimeError("OpenAI returned unexpected stream struct")
 
-    def handle_batch_response(self, response: Dict[str,
-                                                   Any]) -> List[BaseMessage]:
+    def handle_batch_response(
+        self, response: Dict[str, Any]
+    ) -> Tuple[List[BaseMessage], List[str], Dict[str, int], str]:
         r"""
 
         Args:
             response (dict): Model response.
 
         Returns:
-            List[ChatMessage]: A tuple of list of output `ChatMessage`.
+            tuple: A tuple of list of output `ChatMessage`, list of
+                finish reasons, usage dictionary, and response id.
         """
         output_messages: List[BaseMessage] = []
         for choice in response["choices"]:
@@ -305,18 +299,22 @@ class ChatAgent(BaseAgent):
                                        meta_dict=dict(),
                                        content=choice["message"]['content'])
             output_messages.append(chat_message)
-        return output_messages
+        finish_reasons = [
+            str(choice["finish_reason"]) for choice in response["choices"]
+        ]
+        return output_messages, finish_reasons, dict(
+            response["usage"]), response["id"]
 
     def handle_stream_response(
         self,
         response: Any,
-        num_prompt_tokens: int,
+        prompt_tokens: int,
     ) -> Tuple[List[BaseMessage], List[str], Dict[str, int], str]:
         r"""
 
         Args:
             response (dict): Model response.
-            num_prompt_tokens (int): Number of input prompt tokens.
+            prompt_tokens (int): Number of input prompt tokens.
 
         Returns:
             tuple: A tuple of list of output `ChatMessage`, list of
@@ -328,12 +326,10 @@ class ChatAgent(BaseAgent):
         response_id: str = ""
         # All choices in one response share one role
         role: str = ""
-        for i, chunk in enumerate(response):
-            chunk: Dict[str, Any]
+        for chunk in response:
             response_id = chunk["id"]
-            for _, choice in enumerate(chunk["choices"]):
+            for choice in chunk["choices"]:
                 index = choice["index"]
-                choice: Dict[str, Any]
                 delta = choice["delta"]
                 if len(delta) != 0:
                     # When response has not been stopped
@@ -351,16 +347,16 @@ class ChatAgent(BaseAgent):
         finish_reasons = [
             finish_reasons[i] for i in range(len(finish_reasons))
         ]
-        usage_dict = self.get_usage_dict(output_messages, num_prompt_tokens)
+        usage_dict = self.get_usage_dict(output_messages, prompt_tokens)
         return output_messages, finish_reasons, usage_dict, response_id
 
     def get_usage_dict(self, output_messages: List[BaseMessage],
-                       num_prompt_tokens: int) -> Dict[str, int]:
+                       prompt_tokens: int) -> Dict[str, int]:
         r"""Get usage dictionary when using the stream mode.
 
         Args:
             output_messages (list): List of output messages.
-            num_prompt_tokens (int): Number of input prompt tokens.
+            prompt_tokens (int): Number of input prompt tokens.
 
         Returns:
             dict: Usage dictionary.
@@ -369,7 +365,6 @@ class ChatAgent(BaseAgent):
         completion_tokens = 0
         for message in output_messages:
             completion_tokens += len(encoding.encode(message.content))
-        prompt_tokens = num_prompt_tokens
         usage_dict = dict(completion_tokens=completion_tokens,
                           prompt_tokens=prompt_tokens,
                           total_tokens=completion_tokens + prompt_tokens)

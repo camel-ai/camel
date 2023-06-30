@@ -63,10 +63,6 @@ class ChatGPTConfig:
         user (str, optional): A unique identifier representing your end-user,
             which can help OpenAI to monitor and detect abuse.
             (default: :obj:`""`)
-        stream (bool, optional): If set, partial message deltas will be sent,
-            like in ChatGPT. Tokens will be sent as data-only server-sent
-            events as they become available, with the stream terminated by
-            a data: [DONE] message. (default: :obj:`False`)
     """
     temperature: float = 0.2  # openai default: 1.0
     top_p: float = 1.0
@@ -78,4 +74,3 @@ class ChatGPTConfig:
     frequency_penalty: float = 0.0
     logit_bias: Dict = field(default_factory=dict)
     user: str = ""
-    stream: bool = False
