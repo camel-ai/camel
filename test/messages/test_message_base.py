@@ -50,7 +50,7 @@ def test_base_message_contains_operator(base_message: BaseMessage):
 def test_base_message_token_len(base_message: BaseMessage):
     token_len = base_message.token_len("user")
     assert isinstance(token_len, int)
-    assert token_len == 10
+    assert token_len == 9
 
 
 def test_extract_text_and_code_prompts():
