@@ -32,14 +32,19 @@ class PythonInterpreter():
     fuzzy variable matching to reveive uncertain input variable name.
 
     Args:
-        action_space (Dict[str, Any]): The dictionary mapping action names to
-            the correponding functions or classes.
-        import_white_list (Optional[List[str]], optional): The list storing the
-            importable python modules or functions which can be imported in
-            code. All submodules and functions of the modules in the list are
-            importable. Any other import statements will be rejected. :obj:`.`
-            is the seperator between the module and its submodule or its
-            function name. (default: :obj:`None`)
+        action_space (Dict[str, Any]): A dictionary that maps action names to
+            their corresponding functions or objects. The interpreter can only
+            execute functions that are either directly listed in this
+            dictionary or are member functions of objects listed in this
+            dictionary. The concept of :obj:action_space is derived from
+            EmbodiedAgent, representing the actions that an agent is capable of
+            performing.
+        import_white_list (Optional[List[str]], optional): A list that stores
+            the Python modules or functions that can be imported in the code.
+            All submodules and functions of the modules listed in this list are
+            importable. Any other import statements will be rejected. The
+            module and its submodule or function name are separated by a period
+            (:obj:`.`). (default: :obj:`None`)
     """
 
     def __init__(self, action_space: Dict[str, Any],
