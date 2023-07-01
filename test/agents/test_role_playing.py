@@ -64,6 +64,7 @@ def test_role_playing_init(critic_role_name, with_critic_in_the_loop):
             assert isinstance(role_playing.critic, CriticAgent)
             assert role_playing.critic_sys_msg is not None
 
+
 @pytest.mark.model_backend
 @pytest.mark.parametrize(
     "task_type, extend_sys_msg_meta_dicts, extend_task_specify_meta_dict",
