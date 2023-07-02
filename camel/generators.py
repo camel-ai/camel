@@ -13,8 +13,8 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Dict, Generator, List, Optional, Set, Tuple
 
-from camel.messages import SystemMessage, SystemMessageType
-from camel.prompts import PromptTemplateGenerator
+from camel.messages import BaseMessage
+from camel.prompts import PromptTemplateGenerator, TextPrompt
 from camel.typing import RoleType, TaskType
 
 
@@ -37,6 +37,8 @@ class SystemMessageGenerator:
         sys_prompts: Optional[Dict[RoleType, str]] = None,
         sys_msg_meta_dict_keys: Optional[Set[str]] = None,
     ) -> None:
+        self.sys_prompts: Dict[RoleType, str]
+
         if sys_prompts is not None:
             self.sys_prompts = sys_prompts
             self.sys_msg_meta_dict_keys = sys_msg_meta_dict_keys or set()
@@ -55,15 +57,23 @@ class SystemMessageGenerator:
                 task_type,
                 RoleType.CRITIC,
             )
+            embodiment_prompt_template = PromptTemplateGenerator(
+            ).get_system_prompt(
+                task_type,
+                RoleType.EMBODIMENT,
+            )
 
-            self.sys_prompts: Dict[RoleType, str] = dict()
+            self.sys_prompts = dict()
             self.sys_prompts[RoleType.ASSISTANT] = assistant_prompt_template
             self.sys_prompts[RoleType.USER] = user_prompt_template
             self.sys_prompts[RoleType.CRITIC] = critic_prompt_template
+            self.sys_prompts[RoleType.EMBODIMENT] = embodiment_prompt_template
 
-            self.sys_msg_meta_dict_keys = (assistant_prompt_template.key_words
-                                           | user_prompt_template.key_words
-                                           | critic_prompt_template.key_words)
+            self.sys_msg_meta_dict_keys = (
+                assistant_prompt_template.key_words
+                | user_prompt_template.key_words
+                | critic_prompt_template.key_words
+                | embodiment_prompt_template.key_words)
 
         if RoleType.DEFAULT not in self.sys_prompts:
             self.sys_prompts[RoleType.DEFAULT] = "You are a helpful assistant."
@@ -83,7 +93,7 @@ class SystemMessageGenerator:
         self,
         meta_dict: Dict[str, str],
         role_tuple: Tuple[str, RoleType] = ("", RoleType.DEFAULT),
-    ) -> SystemMessageType:
+    ) -> BaseMessage:
         r"""Generates a system message from a dictionary.
 
         Args:
@@ -93,20 +103,20 @@ class SystemMessageGenerator:
                 the role name and role type. (default: ("", RoleType.DEFAULT))
 
         Returns:
-            SystemMessageType: The generated system message.
+            BaseMessage: The generated system message.
         """
         self.validate_meta_dict_keys(meta_dict)
         role_name, role_type = role_tuple
         sys_prompt = self.sys_prompts[role_type]
         sys_prompt = sys_prompt.format(**meta_dict)
-        return SystemMessage(role_name=role_name, role_type=role_type,
-                             meta_dict=meta_dict, content=sys_prompt)
+        return BaseMessage(role_name=role_name, role_type=role_type,
+                           meta_dict=meta_dict, content=sys_prompt)
 
     def from_dicts(
         self,
         meta_dicts: List[Dict[str, str]],
         role_tuples: List[Tuple[str, RoleType]],
-    ) -> List[SystemMessageType]:
+    ) -> List[BaseMessage]:
         r"""Generates a list of system messages from a list of dictionaries.
 
         Args:
@@ -116,7 +126,7 @@ class SystemMessageGenerator:
                 containing the role name and role type for each system message.
 
         Returns:
-            List[SystemMessageType]: A list of generated system messages.
+            List[BaseMessage]: A list of generated system messages.
 
         Raises:
             ValueError: If the number of meta_dicts and role_tuples are
@@ -142,19 +152,19 @@ class RoleNameGenerator:
 
         if assistant_role_names is None:
             with open(assistant_role_names_path, "r") as f:
-                assistant_role_names: List[str] = f.read().splitlines()
+                assistant_role_names_: List[str] = f.read().splitlines()
                 self.assistant_role_names = [
                     " ".join(name.split(" ")[1:])
-                    for name in assistant_role_names
+                    for name in assistant_role_names_
                 ]
         else:
             self.assistant_role_names = assistant_role_names
 
         if user_role_names is None:
             with open(user_role_names_path, "r") as f:
-                user_role_names: List[str] = f.read().splitlines()
+                user_role_names_: List[str] = f.read().splitlines()
                 self.user_role_names = [
-                    " ".join(name.split(" ")[1:]) for name in user_role_names
+                    " ".join(name.split(" ")[1:]) for name in user_role_names_
                 ]
         else:
             self.user_role_names = user_role_names
@@ -215,7 +225,7 @@ class SingleTxtGenerator:
                 " ".join(name.split(" ")[1:]) for name in data_list
             ]
 
-    def from_role_files(self) -> Generator[Tuple, None, None]:
+    def from_role_files(self) -> Generator[str, None, None]:
         for data in self.data_list:
             yield data
 
@@ -235,7 +245,7 @@ class CodeTaskPromptGenerator:
     def from_role_files(
         self, languages_path: str = "data/code/languages.txt",
         domains_path: str = "data/code/domains.txt"
-    ) -> Generator[Tuple[str, str, str], None, None]:
+    ) -> Generator[Tuple[TextPrompt, str, str], None, None]:
         language_generator = SingleTxtGenerator(
             languages_path).from_role_files()
 
@@ -245,7 +255,7 @@ class CodeTaskPromptGenerator:
             for domain in domains_generator:
                 generated_tasks_prompt = self.generate_tasks_prompt.format(
                     language=language, domain=domain, num_tasks=self.num_tasks)
-                yield (generated_tasks_prompt, language, domain)
+                yield generated_tasks_prompt, language, domain
 
     def from_role_generator(
         self, role_generator: Generator[Tuple, None, None]

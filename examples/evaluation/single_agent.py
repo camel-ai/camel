@@ -17,7 +17,7 @@ import re
 from typing import Any, Dict, List
 
 from camel.agents import ChatAgent
-from camel.messages import AssistantSystemMessage, UserChatMessage
+from camel.messages import BaseMessage
 from camel.prompts import PromptTemplateGenerator
 from camel.typing import TaskType
 
@@ -39,7 +39,7 @@ def parse_question_string(question_string: str,
 
 def generate_questions(examples: str, category: str, save_file_name: str,
                        key: str = 'generate_questions',
-                       num_questions: int = 20) -> None:
+                       num_questions: int = 20, model=None) -> None:
     prompt_template = PromptTemplateGenerator().get_prompt_from_key(
         TaskType.EVALUATION, key)
 
@@ -51,22 +51,22 @@ def generate_questions(examples: str, category: str, save_file_name: str,
 
     prompt = prompt_template.format(**evaluation_dict)
     print(prompt)
-    assistant_sys_msg = AssistantSystemMessage(
+    assistant_sys_msg = BaseMessage.make_assistant_message(
         role_name="Assistant",
         content="You are a helpful assistant.",
     )
-    agent = ChatAgent(assistant_sys_msg)
+    agent = ChatAgent(assistant_sys_msg, model=model)
     agent.reset()
 
-    user_msg = UserChatMessage(role_name="User", content=prompt)
-    assistant_msg, _, _ = agent.step(user_msg)
+    user_msg = BaseMessage.make_user_message(role_name="User", content=prompt)
+    assistant_response = agent.step(user_msg)
 
-    if assistant_msg is not None:
+    if len(assistant_response.msgs) > 0:
 
-        print(assistant_msg[0].content)
+        print(assistant_response.msg.content)
 
-        parsed_assistant_msg = parse_question_string(assistant_msg[0].content,
-                                                     category)
+        parsed_assistant_msg = parse_question_string(
+            assistant_response.msg.content, category)
 
         # save json file
         folder_path = './evaluation_data/questions'
@@ -79,7 +79,7 @@ def generate_questions(examples: str, category: str, save_file_name: str,
                 f.write('\n')
 
 
-def main() -> None:
+def main(model=None) -> None:
 
     # generate ai society evaluation questions
     examples = ("1. What are the most effective ways to deal with stress?\n"
@@ -90,7 +90,7 @@ def main() -> None:
 
     category = 'generic task Q&A'
     save_file_name = 'questions_ai_society'
-    generate_questions(examples, category, save_file_name)
+    generate_questions(examples, category, save_file_name, model=model)
 
     # generate coding evaluation questions
     examples = (
@@ -102,7 +102,7 @@ def main() -> None:
 
     category = 'coding task'
     save_file_name = 'questions_code'
-    generate_questions(examples, category, save_file_name)
+    generate_questions(examples, category, save_file_name, model=model)
 
     # generate math evaluation questions
     examples = (
@@ -113,7 +113,7 @@ def main() -> None:
 
     category = 'math'
     save_file_name = 'questions_math'
-    generate_questions(examples, category, save_file_name)
+    generate_questions(examples, category, save_file_name, model=model)
 
     # generate science evaluation questions
     examples = (
@@ -132,7 +132,8 @@ def main() -> None:
     category = 'science'
 
     save_file_name = 'questions_science'
-    generate_questions(examples, category, save_file_name, num_questions=60)
+    generate_questions(examples, category, save_file_name, num_questions=60,
+                       model=model)
 
 
 if __name__ == "__main__":

@@ -14,17 +14,17 @@
 import pytest
 
 from camel.agents import CriticAgent
-from camel.messages import ChatMessage, SystemMessage
+from camel.messages import BaseMessage
 from camel.typing import RoleType
-from camel.utils import openai_api_key_required
 
 
 @pytest.fixture
 def critic_agent() -> CriticAgent:
     return CriticAgent(
-        SystemMessage(
+        BaseMessage(
             "critic",
             RoleType.CRITIC,
+            None,
             content=("You are a critic who assists in selecting an option "
                      "and provides explanations. "
                      "Your favorite fruit is Apple. "
@@ -34,18 +34,16 @@ def critic_agent() -> CriticAgent:
 
 def test_flatten_options(critic_agent: CriticAgent):
     messages = [
-        ChatMessage(
+        BaseMessage(
             role_name="user",
             role_type=RoleType.USER,
             meta_dict=dict(),
-            role="user",
             content="Apple",
         ),
-        ChatMessage(
+        BaseMessage(
             role_name="user",
             role_type=RoleType.USER,
             meta_dict=dict(),
-            role="user",
             content="Banana",
         ),
     ]
@@ -58,30 +56,27 @@ def test_flatten_options(critic_agent: CriticAgent):
     assert critic_agent.flatten_options(messages) == expected_output
 
 
-@openai_api_key_required
+@pytest.mark.model_backend
 def test_get_option(critic_agent: CriticAgent):
     messages = [
-        ChatMessage(
+        BaseMessage(
             role_name="user",
             role_type=RoleType.USER,
             meta_dict=dict(),
-            role="user",
             content="Apple",
         ),
-        ChatMessage(
+        BaseMessage(
             role_name="user",
             role_type=RoleType.USER,
             meta_dict=dict(),
-            role="user",
             content="Banana",
         ),
     ]
     flatten_options = critic_agent.flatten_options(messages)
-    input_message = ChatMessage(
+    input_message = BaseMessage(
         role_name="user",
         role_type=RoleType.USER,
         meta_dict=dict(),
-        role="user",
         content=flatten_options,
     )
     assert critic_agent.options_dict == {"1": "Apple", "2": "Banana"}
@@ -90,32 +85,29 @@ def test_get_option(critic_agent: CriticAgent):
 
 
 def test_parse_critic(critic_agent: CriticAgent):
-    critic_msg = ChatMessage(
+    critic_msg = BaseMessage(
         role_name="critic",
         role_type=RoleType.CRITIC,
         meta_dict=dict(),
-        role="assistant",
         content="I choose option 1",
     )
     expected_output = "1"
     assert critic_agent.parse_critic(critic_msg) == expected_output
 
 
-@openai_api_key_required
+@pytest.mark.model_backend
 def test_step(critic_agent: CriticAgent):
     messages = [
-        ChatMessage(
+        BaseMessage(
             role_name="user",
             role_type=RoleType.USER,
             meta_dict=dict(),
-            role="user",
             content="Apple",
         ),
-        ChatMessage(
+        BaseMessage(
             role_name="user",
             role_type=RoleType.USER,
             meta_dict=dict(),
-            role="user",
             content="Banana",
         ),
     ]

@@ -21,7 +21,7 @@ from camel.generators import (
     RoleNameGenerator,
     SystemMessageGenerator,
 )
-from camel.messages import UserChatMessage
+from camel.messages import BaseMessage
 from camel.prompts import PromptTemplateGenerator
 from camel.typing import ModelType, RoleType, TaskType
 
@@ -35,13 +35,12 @@ def generate_tasks(role_names: str, task_generator_prompt: str,
                                                     role_prompt=role_prompt)
     assistant_agent = ChatAgent(assistant_sys_msg, ModelType.GPT_3_5_TURBO)
 
-    user_msg = UserChatMessage(role_name="Task Generator",
-                               content=task_generator_prompt)
+    user_msg = BaseMessage.make_user_message(role_name="Task Generator",
+                                             content=task_generator_prompt)
 
-    assistant_msgs, _, _ = assistant_agent.step(user_msg)
-    assistant_msg = assistant_msgs[0]
+    assistant_response = assistant_agent.step(user_msg)
 
-    tasks = assistant_msg.content.split("\n")
+    tasks = assistant_response.msg.content.split("\n")
 
     # Filter out the generated response to include the tasks only
     for i, task in enumerate(tasks):

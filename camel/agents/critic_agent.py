@@ -14,12 +14,12 @@
 import copy
 import random
 import warnings
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional, Sequence
 
 from colorama import Fore
 
 from camel.agents import ChatAgent
-from camel.messages import ChatMessage, SystemMessage
+from camel.messages import BaseMessage
 from camel.typing import ModelType
 from camel.utils import get_first_int, print_text_animated
 
@@ -28,7 +28,7 @@ class CriticAgent(ChatAgent):
     r"""A class for the critic agent that assists in selecting an option.
 
     Args:
-        system_message (SystemMessage): The system message for the critic
+        system_message (BaseMessage): The system message for the critic
             agent.
         model (ModelType, optional): The LLM model to use for generating
             responses. (default :obj:`ModelType.GPT_3_5_TURBO`)
@@ -40,32 +40,32 @@ class CriticAgent(ChatAgent):
         retry_attempts (int, optional): The number of retry attempts if the
             critic fails to return a valid option. (default: :obj:`2`)
         verbose (bool, optional): Whether to print the critic's messages.
-        menu_color (Any): The color of the menu options displayed to the user.
-            (default: :obj:`Fore.MAGENTA`)
+        logger_color (Any): The color of the menu options displayed to the
+            user. (default: :obj:`Fore.MAGENTA`)
     """
 
     def __init__(
         self,
-        system_message: SystemMessage,
+        system_message: BaseMessage,
         model: ModelType = ModelType.GPT_3_5_TURBO,
-        model_config: Any = None,
+        model_config: Optional[Any] = None,
         message_window_size: int = 6,
         retry_attempts: int = 2,
         verbose: bool = False,
-        menu_color: Any = Fore.MAGENTA,
+        logger_color: Any = Fore.MAGENTA,
     ) -> None:
         super().__init__(system_message, model, model_config,
                          message_window_size)
         self.options_dict: Dict[str, str] = dict()
         self.retry_attempts = retry_attempts
         self.verbose = verbose
-        self.menu_color = menu_color
+        self.logger_color = logger_color
 
-    def flatten_options(self, messages: List[ChatMessage]) -> str:
+    def flatten_options(self, messages: Sequence[BaseMessage]) -> str:
         r"""Flattens the options to the critic.
 
         Args:
-            messages (List[ChatMessage]): A list of `ChatMessage` objects.
+            messages (Sequence[BaseMessage]): A list of `BaseMessage` objects.
 
         Returns:
             str: A string containing the flattened options to the critic.
@@ -83,11 +83,11 @@ class CriticAgent(ChatAgent):
             "and then your explanation and comparison: ")
         return flatten_options + format
 
-    def get_option(self, input_message: ChatMessage) -> str:
+    def get_option(self, input_message: BaseMessage) -> str:
         r"""Gets the option selected by the critic.
 
         Args:
-            input_message (ChatMessage): A `ChatMessage` object representing
+            input_message (BaseMessage): A `BaseMessage` object representing
                 the input message.
 
         Returns:
@@ -97,28 +97,27 @@ class CriticAgent(ChatAgent):
         msg_content = input_message.content
         i = 0
         while i < self.retry_attempts:
-            critic_msgs, terminated, _ = super().step(input_message)
+            critic_response = super().step(input_message)
 
-            if critic_msgs is None:
+            if critic_response.msgs is None or len(critic_response.msgs) == 0:
                 raise RuntimeError("Got None critic messages.")
-            if terminated:
+            if critic_response.terminated:
                 raise RuntimeError("Critic step failed.")
 
-            critic_msg = critic_msgs[0]
-            self.update_messages(critic_msg)
+            critic_msg = critic_response.msg
+            self.update_messages('assistant', critic_msg)
             if self.verbose:
-                print_text_animated(self.menu_color + "\n> Critic response: "
+                print_text_animated(self.logger_color + "\n> Critic response: "
                                     f"\x1b[3m{critic_msg.content}\x1b[0m\n")
             choice = self.parse_critic(critic_msg)
 
             if choice in self.options_dict:
                 return self.options_dict[choice]
             else:
-                input_message = ChatMessage(
+                input_message = BaseMessage(
                     role_name=input_message.role_name,
                     role_type=input_message.role_type,
                     meta_dict=input_message.meta_dict,
-                    role=input_message.role,
                     content="> Invalid choice. Please choose again.\n" +
                     msg_content,
                 )
@@ -128,11 +127,11 @@ class CriticAgent(ChatAgent):
                       "Returning a random option.")
         return random.choice(list(self.options_dict.values()))
 
-    def parse_critic(self, critic_msg: ChatMessage) -> Optional[str]:
+    def parse_critic(self, critic_msg: BaseMessage) -> Optional[str]:
         r"""Parses the critic's message and extracts the choice.
 
         Args:
-            critic_msg (ChatMessage): A `ChatMessage` object representing the
+            critic_msg (BaseMessage): A `BaseMessage` object representing the
                 critic's response.
 
         Returns:
@@ -142,33 +141,32 @@ class CriticAgent(ChatAgent):
         choice = str(get_first_int(critic_msg.content))
         return choice
 
-    def step(self, messages: List[ChatMessage]) -> ChatMessage:
+    def step(self, messages: Sequence[BaseMessage]) -> BaseMessage:
         r"""Performs one step of the conversation by flattening options to the
         critic, getting the option, and parsing the choice.
 
         Args:
-            messages (List[ChatMessage]): A list of ChatMessage objects.
+            messages (Sequence[BaseMessage]): A list of BaseMessage objects.
 
         Returns:
-            ChatMessage: A `ChatMessage` object representing the critic's
+            BaseMessage: A `BaseMessage` object representing the critic's
                 choice.
         """
-        meta_chat_message = ChatMessage(
+        meta_chat_message = BaseMessage(
             role_name=messages[0].role_name,
             role_type=messages[0].role_type,
             meta_dict=messages[0].meta_dict,
-            role=messages[0].role,
             content="",
         )
 
         flatten_options = self.flatten_options(messages)
         if self.verbose:
-            print_text_animated(self.menu_color +
+            print_text_animated(self.logger_color +
                                 f"\x1b[3m{flatten_options}\x1b[0m\n")
         input_msg = copy.deepcopy(meta_chat_message)
         input_msg.content = flatten_options
 
-        option = self.get_option(input_msg.to_user_chat_message())
+        option = self.get_option(input_msg)
         output_msg = copy.deepcopy(meta_chat_message)
         output_msg.content = option
 

@@ -11,18 +11,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from typing import Optional
+
+import pytest
+
 from camel.agents import TaskPlannerAgent, TaskSpecifyAgent
 from camel.configs import ChatGPTConfig
-from camel.typing import TaskType
-from camel.utils import openai_api_key_required
+from camel.typing import ModelType, TaskType
+
+parametrize = pytest.mark.parametrize('model', [
+    ModelType.STUB,
+    pytest.param(None, marks=pytest.mark.model_backend),
+])
 
 
-@openai_api_key_required
-def test_task_specify_ai_society_agent():
+@parametrize
+def test_task_specify_ai_society_agent(model: Optional[ModelType]):
     original_task_prompt = "Improving stage presence and performance skills"
     print(f"Original task prompt:\n{original_task_prompt}\n")
-    task_specify_agent = TaskSpecifyAgent(model_config=ChatGPTConfig(
-        temperature=1.0))
+    task_specify_agent = TaskSpecifyAgent(
+        model_config=ChatGPTConfig(temperature=1.0), model=model)
     specified_task_prompt = task_specify_agent.step(
         original_task_prompt, meta_dict=dict(assistant_role="Musician",
                                              user_role="Student"))
@@ -30,13 +38,14 @@ def test_task_specify_ai_society_agent():
     print(f"Specified task prompt:\n{specified_task_prompt}\n")
 
 
-@openai_api_key_required
-def test_task_specify_code_agent():
+@parametrize
+def test_task_specify_code_agent(model: Optional[ModelType]):
     original_task_prompt = "Modeling molecular dynamics"
     print(f"Original task prompt:\n{original_task_prompt}\n")
     task_specify_agent = TaskSpecifyAgent(
         task_type=TaskType.CODE,
         model_config=ChatGPTConfig(temperature=1.0),
+        model=model,
     )
     specified_task_prompt = task_specify_agent.step(
         original_task_prompt, meta_dict=dict(domain="Chemistry",
@@ -45,19 +54,20 @@ def test_task_specify_code_agent():
     print(f"Specified task prompt:\n{specified_task_prompt}\n")
 
 
-@openai_api_key_required
-def test_task_planner_agent():
+@parametrize
+def test_task_planner_agent(model: Optional[ModelType]):
     original_task_prompt = "Modeling molecular dynamics"
     print(f"Original task prompt:\n{original_task_prompt}\n")
     task_specify_agent = TaskSpecifyAgent(
         task_type=TaskType.CODE,
         model_config=ChatGPTConfig(temperature=1.0),
+        model=model,
     )
     specified_task_prompt = task_specify_agent.step(
         original_task_prompt, meta_dict=dict(domain="Chemistry",
                                              language="Python"))
     print(f"Specified task prompt:\n{specified_task_prompt}\n")
-    task_planner_agent = TaskPlannerAgent(model_config=ChatGPTConfig(
-        temperature=1.0))
+    task_planner_agent = TaskPlannerAgent(
+        model_config=ChatGPTConfig(temperature=1.0), model=model)
     planned_task_prompt = task_planner_agent.step(specified_task_prompt)
     print(f"Planned task prompt:\n{planned_task_prompt}\n")

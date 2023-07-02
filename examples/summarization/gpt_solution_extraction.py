@@ -11,19 +11,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import argparse
 import concurrent.futures
 import itertools
 import json
 import os
 import random
-from typing import Dict
+from typing import Dict, Tuple
 
 import numpy as np
 
 from camel.agents import ChatAgent
-from camel.messages import AssistantSystemMessage, UserChatMessage
+from camel.messages import BaseMessage
 from camel.prompts import SolutionExtractionPromptTemplateDict
 from camel.typing import ModelType, RoleType
+
+parser = argparse.ArgumentParser(
+    description='Arguments for conversation summarization.')
+parser.add_argument('--json_dir', type=str,
+                    help='Directory containing original json files',
+                    default='../camel/camel_data/ai_society')
+parser.add_argument(
+    '--solution_dir', type=str, help='Directory for solution json files',
+    default='../camel/camel_data/ai_society_solution_extraction')
+parser.add_argument('--seed', type=int, help='Seed for reproducibility',
+                    default=10)
 
 
 def flatten_conversation(conversation: Dict) -> str:
@@ -64,6 +76,7 @@ def flatten_conversation(conversation: Dict) -> str:
     """
 
     num_messages = conversation['num_messages']
+    assert num_messages >= 2
     role_1 = conversation['message_1']['role_name']
     role_2 = conversation['message_2']['role_name']
     task = conversation['specified_task']
@@ -87,21 +100,21 @@ def flatten_conversation(conversation: Dict) -> str:
     return formatted_data
 
 
-def format_combination(combination):
+def format_combination(combination: Tuple[int, int, int]):
     assistant_role, user_role, task = combination
-    assistant_role = str(assistant_role).zfill(3)
-    user_role = str(user_role).zfill(3)
-    task = str(task).zfill(3)
-    return f"{assistant_role}_{user_role}_{task}"
+    assistant_role_str = str(assistant_role).zfill(3)
+    user_role_str = str(user_role).zfill(3)
+    task_str = str(task).zfill(3)
+    return f"{assistant_role_str}_{user_role_str}_{task_str}"
 
 
 def solution_extraction(conversation: Dict, flattened_conversation: str,
-                        file_name: str) -> None:
+                        file_name: str, args: argparse.Namespace) -> None:
 
     solution_extraction_template = SolutionExtractionPromptTemplateDict()
     assistant_sys_msg_prompt = solution_extraction_template[RoleType.ASSISTANT]
 
-    assistant_sys_msg = AssistantSystemMessage(
+    assistant_sys_msg = BaseMessage.make_assistant_message(
         role_name="Solution Extractor", content=assistant_sys_msg_prompt)
 
     # We use GPT4 because it has a longer context length
@@ -110,29 +123,27 @@ def solution_extraction(conversation: Dict, flattened_conversation: str,
 
     prompt = "Here is the conversation:" + flattened_conversation
 
-    user_msg = UserChatMessage(role_name="User", content=prompt)
-    assistant_msg, _, _ = agent.step(user_msg)
-    print(assistant_msg[0].content)
+    user_msg = BaseMessage.make_user_message(role_name="User", content=prompt)
+    assistant_response = agent.step(user_msg)
+    print(assistant_response.msg.content)
 
     # Create folder to write solution_extraction to
-    if not os.path.exists(
-            "../camel/camel_data/ai_society_solution_extraction"):
-        os.makedirs("../camel/camel_data/ai_society_solution_extraction")
+    if not os.path.exists(args.solution_dir):
+        os.makedirs(args.solution_dir)
 
     # Append to the original JSON conversation file
-    conversation['solution_extraction'] = assistant_msg[0].content
+    conversation['solution_extraction'] = assistant_response.msg.content
 
     # Save new dictionary as JSON file
-    with open(f"./camel_data/ai_society_solution_extraction/{file_name}.json",
-              "w") as f:
+    save_path = os.path.join(args.solution_dir, f'{file_name}.json')
+    with open(save_path, "w") as f:
         json.dump(conversation, f)
 
 
 def main():
-
-    # Seed for reproducibility
-    np.random.seed(10)
-    random.seed(10)
+    args = parser.parse_args()
+    np.random.seed(args.seed)
+    random.seed(args.seed)
 
     total_num_assistant_roles = 50
     total_num_user_roles = 50
@@ -165,13 +176,9 @@ def main():
         format_combination(combination) for combination in file_names
     ]
 
-    # Directory containing original json files
-    # we want to extract solutions from AI Society dataset
-    json_dir = "../camel/camel_data/ai_society/"
-
     # Check that all files exist
     for file_name in file_names:
-        json_file = os.path.join(json_dir, file_name + ".json")
+        json_file = os.path.join(args.json_dir, f"{file_name}.json")
         if not os.path.exists(json_file):
             raise ValueError(f"File {json_file} does not exist.")
 
@@ -179,13 +186,13 @@ def main():
     with concurrent.futures.ProcessPoolExecutor(max_workers=16) as executor:
         futures = []
         for file_name in file_names:
-            json_file = os.path.join(json_dir, file_name + ".json")
+            json_file = os.path.join(args.json_dir, f"{file_name}.json")
             with open(json_file) as f:
                 conversation = json.load(f)
             flattened_conversation = flatten_conversation(conversation)
             futures.append(
                 executor.submit(solution_extraction, conversation,
-                                flattened_conversation, file_name))
+                                flattened_conversation, file_name, args))
 
         for future in concurrent.futures.as_completed(futures):
             try:

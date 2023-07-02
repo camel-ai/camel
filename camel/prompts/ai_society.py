@@ -17,7 +17,7 @@ from camel.prompts import TextPrompt, TextPromptDict
 from camel.typing import RoleType
 
 
-# flake8: noqa
+# flake8: noqa :E501
 class AISocietyPromptTemplateDict(TextPromptDict):
     r"""A dictionary containing :obj:`TextPrompt` used in the `AI Society`
     task.

@@ -15,13 +15,13 @@ from typing import Any, Dict, Optional, Union
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
-from camel.messages import SystemMessage, UserChatMessage
+from camel.messages import BaseMessage
 from camel.prompts import PromptTemplateGenerator, TextPrompt
 from camel.typing import ModelType, RoleType, TaskType
 
 
 class TaskSpecifyAgent(ChatAgent):
-    r"""An agent that Specifies a given task prompt by prompting the user to
+    r"""An agent that specifies a given task prompt by prompting the user to
     provide more details.
 
     Attributes:
@@ -39,17 +39,21 @@ class TaskSpecifyAgent(ChatAgent):
             the task. (default: :obj:`None`)
         word_limit (int): The word limit for the task prompt.
             (default: :obj:`50`)
+        output_language (str, optional): The language to be output by the
+        agent. (default: :obj:`None`)
     """
     DEFAULT_WORD_LIMIT = 50
 
     def __init__(
         self,
-        model: ModelType = ModelType.GPT_3_5_TURBO,
+        model: Optional[ModelType] = None,
         task_type: TaskType = TaskType.AI_SOCIETY,
-        model_config: Any = None,
+        model_config: Optional[Any] = None,
         task_specify_prompt: Optional[Union[str, TextPrompt]] = None,
         word_limit: int = DEFAULT_WORD_LIMIT,
+        output_language: str = None,
     ) -> None:
+
         if task_specify_prompt is None:
             task_specify_prompt_template = PromptTemplateGenerator(
             ).get_task_specify_prompt(task_type)
@@ -61,12 +65,15 @@ class TaskSpecifyAgent(ChatAgent):
 
         model_config = model_config or ChatGPTConfig(temperature=1.0)
 
-        system_message = SystemMessage(
+        system_message = BaseMessage(
             role_name="Task Specifier",
             role_type=RoleType.ASSISTANT,
+            meta_dict=None,
             content="You can make a task more specific.",
         )
-        super().__init__(system_message, model, model_config)
+
+        super().__init__(system_message, model, model_config,
+                         output_language=output_language)
 
     def step(
         self,
@@ -93,15 +100,18 @@ class TaskSpecifyAgent(ChatAgent):
             self.task_specify_prompt = (self.task_specify_prompt.format(
                 **meta_dict))
 
-        task_msg = UserChatMessage(role_name="Task Specifier",
-                                   content=self.task_specify_prompt)
-        specified_task_msgs, terminated, _ = super().step(task_msg)
-        specified_task_msg = specified_task_msgs[0]
-
-        if terminated:
+        task_msg = BaseMessage.make_user_message(
+            role_name="Task Specifier", content=self.task_specify_prompt)
+        specifier_response = super().step(task_msg)
+        if (specifier_response.msgs is None
+                or len(specifier_response.msgs) == 0):
             raise RuntimeError("Task specification failed.")
-        else:
-            return TextPrompt(specified_task_msg.content)
+        specified_task_msg = specifier_response.msgs[0]
+
+        if specifier_response.terminated:
+            raise RuntimeError("Task specification failed.")
+
+        return TextPrompt(specified_task_msg.content)
 
 
 class TaskPlannerAgent(ChatAgent):
@@ -117,23 +127,29 @@ class TaskPlannerAgent(ChatAgent):
             (default: :obj:`ModelType.GPT_3_5_TURBO`)
         model_config (Any): The configuration for the model.
             (default: :obj:`None`)
+        output_language (str, optional): The language to be output by the
+        agent. (default: :obj:`None`)
     """
 
     def __init__(
         self,
-        model: ModelType = ModelType.GPT_3_5_TURBO,
+        model: Optional[ModelType] = None,
         model_config: Any = None,
+        output_language: str = None,
     ) -> None:
 
         self.task_planner_prompt = TextPrompt(
             "Divide this task into subtasks: {task}. Be concise.")
 
-        system_message = SystemMessage(
+        system_message = BaseMessage(
             role_name="Task Planner",
             role_type=RoleType.ASSISTANT,
+            meta_dict=None,
             content="You are a helpful task planner.",
         )
-        super().__init__(system_message, model, model_config)
+
+        super().__init__(system_message, model, model_config,
+                         output_language=output_language)
 
     def step(
         self,
@@ -153,14 +169,15 @@ class TaskPlannerAgent(ChatAgent):
         self.task_planner_prompt = self.task_planner_prompt.format(
             task=task_prompt)
 
-        task_msg = UserChatMessage(role_name="Task Planner",
-                                   content=self.task_planner_prompt)
-        sub_tasks_msgs, terminated, _ = super().step(task_msg)
+        task_msg = BaseMessage.make_user_message(
+            role_name="Task Planner", content=self.task_planner_prompt)
+        # sub_tasks_msgs, terminated, _
+        task_response = super().step(task_msg)
 
-        if sub_tasks_msgs is None:
+        if task_response.msgs is None:
             raise RuntimeError("Got None Subtasks messages.")
-        if terminated:
+        if task_response.terminated:
             raise RuntimeError("Task planning failed.")
 
-        sub_tasks_msg = sub_tasks_msgs[0]
+        sub_tasks_msg = task_response.msgs[0]
         return TextPrompt(sub_tasks_msg.content)

@@ -28,16 +28,15 @@ make html
 
 4. Launch the HTML documentation from the terminal using a local HTTP server
 ```bash
-cd _build
+cd _build/html
 python -m http.server
 ```
 This command starts a local HTTP server on port 8000 by default. Once the server is running, open your web browser and enter the following URL:
 ```bash
-http://localhost:8000/html
+http://localhost:8000
 ```
 This will load the HTML documentation in your web browser from the local server.
 
 You can navigate through the documentation using the links and interact with it as you would with any other web page.
 
 To stop the local server, go back to the terminal or command prompt where it is running and press `Ctrl+C` to terminate the server.
-

@@ -14,38 +14,64 @@
 import os
 import re
 import time
+import zipfile
 from functools import wraps
-from typing import Any, Callable, List, Optional, Set
+from typing import Any, Callable, List, Optional, Set, TypeVar
 
+import requests
 import tiktoken
 
 from camel.messages import OpenAIMessage
-from camel.typing import ModelType
+from camel.typing import ModelType, TaskType
+
+F = TypeVar('F', bound=Callable[..., Any])
+
+
+def get_model_encoding(value_for_tiktoken: str):
+    r"""Get model encoding from tiktoken.
+
+    Args:
+        value_for_tiktoken: Model value for tiktoken.
+
+    Returns:
+        tiktoken.Encoding: Model encoding.
+    """
+    try:
+        encoding = tiktoken.encoding_for_model(value_for_tiktoken)
+    except KeyError:
+        print("Model not found. Using cl100k_base encoding.")
+        encoding = tiktoken.get_encoding("cl100k_base")
+    return encoding
 
 
 def count_tokens_openai_chat_models(
     messages: List[OpenAIMessage],
-    encoding: Any,
+    encoding: tiktoken.Encoding,
+    tokens_per_message: int,
+    tokens_per_name: int,
 ) -> int:
     r"""Counts the number of tokens required to generate an OpenAI chat based
     on a given list of messages.
 
     Args:
         messages (List[OpenAIMessage]): The list of messages.
-        encoding (Any): The encoding method to use.
+        encoding (tiktoken.Encoding): The encoding method to use.
+        tokens_per_message (int): Number of tokens to be added
+            to each message.
+        tokens_per_name (int): Number of tokens to be added if
+            name existed in the message.
 
     Returns:
         int: The number of tokens required.
     """
     num_tokens = 0
     for message in messages:
-        # message follows <im_start>{role/name}\n{content}<im_end>\n
-        num_tokens += 4
+        num_tokens += tokens_per_message
         for key, value in message.items():
             num_tokens += len(encoding.encode(value))
-            if key == "name":  # if there's a name, the role is omitted
-                num_tokens += -1  # role is always 1 token
-    num_tokens += 2  # every reply is primed with <im_start>assistant
+            if key == "name":
+                num_tokens += tokens_per_name
+    num_tokens += 3  # every reply is primed with <|start|>assistant<|message|>
     return num_tokens
 
 
@@ -71,16 +97,35 @@ def num_tokens_from_messages(
         - https://platform.openai.com/docs/models/gpt-4
         - https://platform.openai.com/docs/models/gpt-3-5
     """
-    try:
-        encoding = tiktoken.encoding_for_model(model.value)
-    except KeyError:
-        encoding = tiktoken.get_encoding("cl100k_base")
-    if model == ModelType.GPT_3_5_TURBO:
-        return count_tokens_openai_chat_models(messages, encoding)
-    elif model == ModelType.GPT_4:
-        return count_tokens_openai_chat_models(messages, encoding)
-    elif model == ModelType.GPT_4_32k:
-        return count_tokens_openai_chat_models(messages, encoding)
+    return _num_tokens_from_messages(messages, model.value_for_tiktoken)
+
+
+# flake8: noqa :E501
+def _num_tokens_from_messages(messages: List[OpenAIMessage], model: str):
+    r"""Return the number of tokens used by a list of messages.
+
+    References:
+        - https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
+    """
+    if model in {
+            "gpt-3.5-turbo-0613",
+            "gpt-3.5-turbo-16k-0613",
+            "gpt-4-0314",
+            "gpt-4-32k-0314",
+            "gpt-4-0613",
+            "gpt-4-32k-0613",
+    }:
+        tokens_per_message = 3
+        tokens_per_name = 1
+    elif model == "gpt-3.5-turbo-0301":
+        # Every message follows <|start|>{role/name}\n{content}<|end|>\n
+        tokens_per_message = 4
+        # If there's a name, the role is omitted
+        tokens_per_name = -1
+    elif "gpt-3.5-turbo" in model:
+        return _num_tokens_from_messages(messages, model="gpt-3.5-turbo-0613")
+    elif "gpt-4" in model:
+        return _num_tokens_from_messages(messages, model="gpt-4-0613")
     else:
         raise NotImplementedError(
             f"`num_tokens_from_messages`` is not presently implemented "
@@ -90,26 +135,12 @@ def num_tokens_from_messages(
             f"See https://platform.openai.com/docs/models/gpt-4"
             f"or https://platform.openai.com/docs/models/gpt-3-5"
             f"for information about openai chat models.")
+    encoding = get_model_encoding(model)
+    return count_tokens_openai_chat_models(messages, encoding,
+                                           tokens_per_message, tokens_per_name)
 
 
-def get_model_token_limit(model: ModelType) -> int:
-    r"""Returns the maximum token limit for a given model.
-
-    Args:
-        model (ModelType): The type of the model.
-
-    Returns:
-        int: The maximum token limit for the given model.
-    """
-    if model == ModelType.GPT_3_5_TURBO:
-        return 4096
-    if model == ModelType.GPT_4:
-        return 8192
-    if model == ModelType.GPT_4_32k:
-        return 32768
-
-
-def openai_api_key_required(func: Callable[..., Any]) -> Callable[..., Any]:
+def openai_api_key_required(func: F) -> F:
     r"""Decorator that checks if the OpenAI API key is available in the
     environment variables.
 
@@ -125,9 +156,14 @@ def openai_api_key_required(func: Callable[..., Any]) -> Callable[..., Any]:
     """
 
     @wraps(func)
-    def wrapper(*args, **kwargs) -> Callable[..., Any]:
-        if 'OPENAI_API_KEY' in os.environ:
-            return func(*args, **kwargs)
+    def wrapper(self, *args, **kwargs):
+        from camel.agents.chat_agent import ChatAgent
+        if not isinstance(self, ChatAgent):
+            raise ValueError("Expected ChatAgent")
+        if self.model == ModelType.STUB:
+            return func(self, *args, **kwargs)
+        elif 'OPENAI_API_KEY' in os.environ:
+            return func(self, *args, **kwargs)
         else:
             raise ValueError('OpenAI API key not found.')
 
@@ -141,8 +177,8 @@ def print_text_animated(text, delay: float = 0.02, end: str = ""):
         text (str): The text to print.
         delay (float, optional): The delay between each character printed.
             (default: :obj:`0.02`)
-        end (str, optional): The end character to print after the text.
-            (default: :obj:`""`)
+        end (str, optional): The end character to print after each
+            character of text. (default: :obj:`""`)
     """
     for char in text:
         print(char, end=end, flush=True)
@@ -184,3 +220,22 @@ def get_first_int(string: str) -> Optional[int]:
         return int(match.group())
     else:
         return None
+
+
+def download_tasks(task: TaskType, folder_path: str) -> None:
+    # Define the path to save the zip file
+    zip_file_path = os.path.join(folder_path, "tasks.zip")
+
+    # Download the zip file from the Google Drive link
+    response = requests.get("https://huggingface.co/datasets/camel-ai/"
+                            f"metadata/resolve/main/{task.value}_tasks.zip")
+
+    # Save the zip file
+    with open(zip_file_path, "wb") as f:
+        f.write(response.content)
+
+    with zipfile.ZipFile(zip_file_path, "r") as zip_ref:
+        zip_ref.extractall(folder_path)
+
+    # Delete the zip file
+    os.remove(zip_file_path)

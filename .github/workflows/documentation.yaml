@@ -13,12 +13,13 @@ jobs:
           pip install sphinx sphinx_book_theme recommonmark numpy openai tenacity tiktoken colorama
       - name: Sphinx build
         run: |
-          sphinx-build docs docs/_build
+          cd docs
+          make html
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master'}}
         with:
           publish_branch: gh-pages
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: docs/_build/
+          publish_dir: docs/_build/html/
           force_orphan: true
