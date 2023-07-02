@@ -29,7 +29,8 @@ OBSERVE_COLOR = Fore.LIGHTGREEN_EX
 
 
 class ReActAgent(ChatAgent):
-    r"""Class for managing conversions of a CAMEL agent following ReAct pattern.
+    r"""
+    Class for managing conversions of a CAMEL agent following ReAct pattern.
 
     Args:
         system_message (SystemMessage): The system message for ReAct agent,
