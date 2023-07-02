@@ -19,6 +19,7 @@ class RoleType(Enum):
     USER = "user"
     CRITIC = "critic"
     EMBODIMENT = "embodiment"
+    REACT = "ReAct"
     DEFAULT = "default"
 
 

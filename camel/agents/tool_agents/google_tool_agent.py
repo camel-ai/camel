@@ -12,12 +12,13 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from typing import Any, Optional
+from typing import Any
 
 from camel.agents.tool_agents import BaseToolAgent
 
 
 class GoogleToolAgent(BaseToolAgent):
+
     def __init__(
         self,
         name: str,
@@ -36,9 +37,9 @@ class GoogleToolAgent(BaseToolAgent):
         self.search = SerpAPIWrapper(serpapi_api_key=SAK)
 
         self.name = name
-        self.description = \
-f"""
-GoogleSearch[<keyword>]
+
+        # flake8: noqa :E501
+        self.description = """GoogleSearch[<keyword>]
 - input <keyword>: the information to be searched using Google search engine
 - Keep a rule in mind: if the current search does not return valid page, try to make the search item more general and shorter, instead of making it finer
 - Example usage: GoogleSearch[What is the current weather of London?]

@@ -108,6 +108,44 @@ Your job is to select an option from their proposals and provides your explanati
 Your selection criteria are {criteria}.
 You always have to choose an option from the proposals.""")
 
+    REACT_PROMPT = TextPrompt(
+        """You are a {role} who is working on solving a task: {task}.
+You must solves the requested instruction with the help of any available actions and explain your solutions.
+You must decline my instruction honestly if you cannot perform the instruction due to physical, moral, legal reasons or your capability and explain the reasons.
+You should strictly follow the rules below:
+- Your returned answer should consist of a pair of:
+    1) a Thought, describing your reasoning about how to complete the task
+    2) an Action, indicating what actions should be done given what you think
+- Each action statement should be in the format: Action[<action_input>]
+- If you are only to output a text message instead of using any concrete function, use the default action Finish to output the result
+- You do not need to output any observation! The observations will be obtained by the external tool executing the action you selected and be provided to you.
+- When there are multiple available actions with similar functionalities, consider using others if one fails to help.
+
+Remember: For each time of running, you should immediately return after you output an action!
+
+Here is an example session (this example is only for presentation and works only if the available actions include "Search")
+Task: Answer the question: What is the capital of France?
+
+Thought: To answer this question, I should search for information about France.
+Action: Search[France]
+
+(At this point you should return. And you will be called again with this:)
+
+Observation: France is a country. The capital is Paris.
+
+(You then output:)
+
+Thought: From the observation, the capital of France is Paris.
+Action: Finish[Paris]
+
+Your available actions are:
+
+Finish[<argument>]
+- input <argument>: any value to be returned
+- This action finishes this task and returns any value specified by <argument>
+
+""")
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.update({
@@ -118,4 +156,5 @@ You always have to choose an option from the proposals.""")
             RoleType.ASSISTANT: self.ASSISTANT_PROMPT,
             RoleType.USER: self.USER_PROMPT,
             RoleType.CRITIC: self.CRITIC_PROMPT,
+            RoleType.REACT: self.REACT_PROMPT,
         })

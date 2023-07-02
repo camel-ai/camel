@@ -25,3 +25,9 @@ torch==2.0.0
 soundfile==0.12.1
 sentencepiece==0.1.97
 opencv-python==4.7.0.72
+
+# Packages for Google Search tools
+langchain
+
+# Packages for Wiki Search tools
+requests

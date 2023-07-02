@@ -11,14 +11,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .base import BaseToolAgent
-from .hugging_face_tool_agent import HuggingFaceToolAgent
-from .google_tool_agent import GoogleToolAgent
-from .wiki_tool_agent import WikiToolAgent
+import pytest
 
-__all__ = [
-    'BaseToolAgent',
-    'HuggingFaceToolAgent',
-    'GoogleToolAgent',
-    'WikiToolAgent',
-]
+from camel.agents.tool_agents import GoogleToolAgent
+
+
+@pytest.mark.model_backend
+@pytest.mark.full_test_only
+def test_google_tool_agent_initialization():
+    agent = GoogleToolAgent("google_tool_agent")
+
+    assert agent.name == "google_tool_agent"
+    assert agent.description.startswith("GoogleSearch[<keyword>]")
+
+
+@pytest.mark.model_backend
+@pytest.mark.full_test_only
+def test_google_tool_agent_search_step():
+    agent = GoogleToolAgent("google_tool_agent")
+    result = agent.step("Saudi Arabia")
+
+    assert isinstance(result, str)
+    assert result.startswith(("Saudi Arabia, officially the Kingdom of Saudi"
+                              "Arabia, is a country in West Asia."))
