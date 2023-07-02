@@ -20,23 +20,23 @@ T = TypeVar('T')
 
 
 def return_prompt_wrapper(
-    cls: T,
+    cls: Any,
     func: Callable,
-) -> Callable[..., Union[T, tuple]]:
+) -> Callable[..., Union[Any, tuple]]:
     r"""Wrapper that converts the return value of a function to an input
     class instance if it's a string.
 
     Args:
-        cls (type): The class to convert to.
+        cls (Any): The class to convert to.
         func (Callable): The function to decorate.
 
     Returns:
-        Callable[..., Union[T, tuple]]: Decorated function that
+        Callable[..., Union[Any, str]]: Decorated function that
             returns the decorated class instance if the return value is a
             string.
     """
 
-    def wrapper(*args: Any, **kwargs: Any) -> Union[T, tuple]:
+    def wrapper(*args: Any, **kwargs: Any) -> Union[Any, str]:
         r"""Wrapper function that performs the conversion to :obj:`TextPrompt`
             instance.
 
@@ -45,7 +45,7 @@ def return_prompt_wrapper(
             **kwargs (Any): Arbitrary keyword arguments.
 
         Returns:
-            Union[TextPrompt, tuple]: The converted return value.
+            Union[Any, str]: The converted return value.
         """
         result = func(*args, **kwargs)
         if isinstance(result, str) and not isinstance(result, cls):
@@ -185,7 +185,7 @@ class CodePrompt(TextPrompt):
             sys.stdout = output_str
 
             global_vars = global_vars or globals()
-            local_vars = {}
+            local_vars: Dict[str, Any] = {}
             exec(
                 self,
                 global_vars,
