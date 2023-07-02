@@ -1,7 +1,21 @@
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# Licensed under the Apache License, Version 2.0 (the “License”);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an “AS IS” BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from dataclasses import dataclass
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
 
 from camel.memory.chat_message_histories import BaseChatMessageHistory
+
 
 @dataclass
 class BaseMemory:
@@ -29,7 +43,8 @@ class BaseMemory:
         """
         raise NotImplementedError
 
-    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str,
+                                                                 str]) -> None:
         r"""Saves the context of this model run to memory.
 
         Args:
@@ -71,7 +86,8 @@ class BaseChatMemory(BaseMemory):
         self.input_key = input_key
         self.return_messages = return_messages
 
-    def _get_input_output(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> Tuple[str, str]:
+    def _get_input_output(self, inputs: Dict[str, Any],
+                          outputs: Dict[str, str]) -> Tuple[str, str]:
         r"""Get input and output keys.
 
         Args:
@@ -82,20 +98,23 @@ class BaseChatMemory(BaseMemory):
             Tuple[str, str]: Input and output keys.
         """
         if self.input_key is None:
-            prompt_input_key = get_prompt_input_key(inputs, self.memory_variables)
+            prompt_input_key = get_prompt_input_key(inputs,
+                                                    self.memory_variables)
         else:
             prompt_input_key = self.input_key
 
         if self.output_key is None:
             if len(outputs) != 1:
-                raise ValueError(f"One output key expected, got {outputs.keys()}")
+                raise ValueError(
+                    f"One output key expected, got {outputs.keys()}")
             output_key = list(outputs.keys())[0]
         else:
             output_key = self.output_key
 
         return inputs[prompt_input_key], outputs[output_key]
 
-    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str,
+                                                                 str]) -> None:
         r"""Save context from this conversation to buffer.
 
         Args:

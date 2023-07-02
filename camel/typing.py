@@ -11,11 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from enum import Enum
 import abc
-
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Dict, Optional
+
 
 @dataclass
 class Document:

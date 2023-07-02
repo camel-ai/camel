@@ -11,14 +11,3 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from camel.memory.chat_message_histories.simple import SimpleChatMessageHistory
-from camel.memory.chat_message_histories.file import FileChatMessageHistory
-from camel.memory.buffer import ConversationBufferMemory
-from camel.memory.vectorstore import VectorStoreRetrieverMemory
-
-__all__ = [
-    "ConversationBufferMemory",
-    "VectorStoreRetrieverMemory",
-    "SimpleChatMessageHistory",
-    "FileChatMessageHistory",
-]
