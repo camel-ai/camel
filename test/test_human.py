@@ -39,7 +39,7 @@ def test_get_input(monkeypatch):
     assert human.get_input() == str(1)
 
 
-def test_step(monkeypatch):
+def test_reduce_step(monkeypatch):
     human = Human()
     msgs = [
         BaseMessage.make_assistant_message(role_name="assistant",
@@ -49,5 +49,5 @@ def test_step(monkeypatch):
     ]
 
     monkeypatch.setattr('builtins.input', lambda _: str(1))
-    msg = human.step(msgs)
-    assert msg.content == "Hello"
+    human_response = human.reduce_step(msgs)
+    assert human_response.msg.content == "Hello"

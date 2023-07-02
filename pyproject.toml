@@ -31,6 +31,7 @@ openai = "^0"
 tenacity = "^8"
 tiktoken = "^0"
 colorama = "^0"
+types-colorama = "^0"
 yapf = "^0"
 isort = "^5"
 flake8 = "^6"
@@ -67,3 +68,9 @@ markers = [
 
 [tool.coverage.report]
 include_namespace_packages = true
+
+[[tool.mypy.overrides]]
+module = [
+    "transformers.tools",
+]
+ignore_missing_imports = true

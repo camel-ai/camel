@@ -107,7 +107,7 @@ class ChatAgent(BaseAgent):
         self.role_name: str = system_message.role_name
         self.role_type: RoleType = system_message.role_type
         self.output_language: Optional[str] = output_language
-        if output_language is not None:
+        if self.output_language is not None:
             self.set_output_language(self.output_language)
 
         self.model: ModelType = (model if model is not None else
@@ -320,8 +320,8 @@ class ChatAgent(BaseAgent):
             tuple: A tuple of list of output `ChatMessage`, list of
                 finish reasons, usage dictionary, and response id.
         """
-        content_dict = defaultdict(lambda: "")
-        finish_reasons = defaultdict(lambda: "")
+        content_dict: defaultdict = defaultdict(lambda: "")
+        finish_reasons_dict: defaultdict = defaultdict(lambda: "")
         output_messages: List[BaseMessage] = []
         response_id: str = ""
         # All choices in one response share one role
@@ -329,8 +329,8 @@ class ChatAgent(BaseAgent):
         for chunk in response:
             response_id = chunk["id"]
             for choice in chunk["choices"]:
-                index = choice["index"]
-                delta = choice["delta"]
+                index: int = choice["index"]
+                delta: Dict = choice["delta"]
                 if len(delta) != 0:
                     # When response has not been stopped
                     # Notice that only the first chunk has the "role"
@@ -338,14 +338,14 @@ class ChatAgent(BaseAgent):
                     delta_content = delta.get("content", "")
                     content_dict[index] += delta_content
                 else:
-                    finish_reasons[index] = choice["finish_reason"]
+                    finish_reasons_dict[index] = choice["finish_reason"]
                     chat_message = BaseMessage(role_name=self.role_name,
                                                role_type=self.role_type,
                                                meta_dict=dict(),
                                                content=content_dict[index])
                     output_messages.append(chat_message)
         finish_reasons = [
-            finish_reasons[i] for i in range(len(finish_reasons))
+            finish_reasons_dict[i] for i in range(len(finish_reasons_dict))
         ]
         usage_dict = self.get_usage_dict(output_messages, prompt_tokens)
         return output_messages, finish_reasons, usage_dict, response_id
