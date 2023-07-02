@@ -22,7 +22,7 @@
 
   <a>![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-brightgreen.svg)</a>
   <a href="https://github.com/camel-ai/camel/actions/workflows/pytest_package.yml">![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/camel-ai/camel/pytest_package.yml?label=tests&logo=github)</a>
-  <a href="https://github.com/camel-ai/camel/actions/workflows/documentation.yaml">
+  <a href="https://camel-ai.github.io/camel/">
     ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/camel-ai/camel/documentation.yaml?label=docs&logo=github)
   </a>
   <a href="https://github.com/camel-ai/camel/stargazers" target="_blank">
