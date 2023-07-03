@@ -221,7 +221,7 @@ class BaseMessage:
         """
         return {"role": "assistant", "content": self.content}
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> Dict[str, Any]:
         r"""Converts the message to a dictionary.
 
         Returns:
