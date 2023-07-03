@@ -17,13 +17,16 @@ from typing import Any, Dict, Optional, Sequence
 
 from colorama import Fore
 
-from camel.agents import ChatAgent, ChatAgentResponse
+from camel.agents.chat_agent import ChatAgent
+from camel.agents.chat_agent_response import ChatAgentResponse
 from camel.messages import BaseMessage
 from camel.typing import ModelType
 from camel.utils import get_first_int, print_text_animated
 
+from .base_critic import BaseCritic
 
-class CriticAgent:
+
+class CriticAgent(BaseCritic):
     r"""A class for the critic agent that assists in selecting an option.
 
     Args:

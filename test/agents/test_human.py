@@ -11,12 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from camel.human import Human
+from camel.agents import HumanCritic
 from camel.messages import BaseMessage
 
 
 def test_display_options():
-    human = Human()
+    human = HumanCritic()
     msgs = [
         BaseMessage.make_assistant_message(role_name="assistant",
                                            content="Hello"),
@@ -27,7 +27,7 @@ def test_display_options():
 
 
 def test_get_input(monkeypatch):
-    human = Human()
+    human = HumanCritic()
     msgs = [
         BaseMessage.make_assistant_message(role_name="assistant",
                                            content="Hello"),
@@ -40,7 +40,7 @@ def test_get_input(monkeypatch):
 
 
 def test_reduce_step(monkeypatch):
-    human = Human()
+    human = HumanCritic()
     msgs = [
         BaseMessage.make_assistant_message(role_name="assistant",
                                            content="Hello"),

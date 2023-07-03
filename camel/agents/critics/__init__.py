@@ -11,24 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from abc import ABC, abstractmethod
+from .base_critic import BaseCritic
+from .critic_agent import CriticAgent
+from .human import HumanCritic
 
-from camel.agents import ChatAgentResponse
-from camel.messages import BaseMessage
-
-
-class BaseAgent(ABC):
-    r"""An abstract base class for multi-step CAMEL agents."""
-
-    @abstractmethod
-    def reset(self) -> None:
-        r"""Resets the agent to its initial state."""
-        pass
-
-    @abstractmethod
-    def step(
-        self,
-        input_message: BaseMessage,
-    ) -> ChatAgentResponse:
-        r"""Performs a single step of the agent."""
-        pass
+__all__ = [
+    'BaseCritic',
+    'CriticAgent',
+    'HumanCritic',
+]

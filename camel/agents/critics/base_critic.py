@@ -12,23 +12,15 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from abc import ABC, abstractmethod
+from typing import Sequence
 
-from camel.agents import ChatAgentResponse
+from camel.agents.chat_agent_response import ChatAgentResponse
 from camel.messages import BaseMessage
 
 
-class BaseAgent(ABC):
-    r"""An abstract base class for multi-step CAMEL agents."""
+class BaseCritic(ABC):
 
     @abstractmethod
-    def reset(self) -> None:
-        r"""Resets the agent to its initial state."""
-        pass
-
-    @abstractmethod
-    def step(
-        self,
-        input_message: BaseMessage,
-    ) -> ChatAgentResponse:
-        r"""Performs a single step of the agent."""
+    def reduce_step(self,
+                    messages: Sequence[BaseMessage]) -> ChatAgentResponse:
         pass

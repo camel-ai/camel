@@ -11,17 +11,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from typing import Dict, List, Optional, Sequence, Tuple
 
 from camel.agents import (
+    BaseCritic,
     ChatAgent,
     ChatAgentResponse,
     CriticAgent,
+    HumanCritic,
     TaskPlannerAgent,
     TaskSpecifyAgent,
 )
 from camel.generators import SystemMessageGenerator
-from camel.human import Human
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
 from camel.typing import ModelType, RoleType, TaskType
@@ -177,10 +178,10 @@ class RolePlaying:
         )
         self.user_sys_msg = self.user_agent.system_message
 
-        self.critic: Union[CriticAgent, Human, None]
+        self.critic: Optional[BaseCritic]
         if with_critic_in_the_loop:
             if critic_role_name.lower() == "human":
-                self.critic = Human(**(critic_kwargs or {}))
+                self.critic = HumanCritic(**(critic_kwargs or {}))
             else:
                 critic_criteria = (critic_criteria
                                    or "improving the task performance")
