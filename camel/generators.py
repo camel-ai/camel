@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Dict, Generator, List, Optional, Set, Tuple
 
-from camel.messages import SystemMessage, SystemMessageType
+from camel.messages import BaseMessage
 from camel.prompts import PromptTemplateGenerator, TextPrompt
 from camel.typing import RoleType, TaskType
 
@@ -93,7 +93,7 @@ class SystemMessageGenerator:
         self,
         meta_dict: Dict[str, str],
         role_tuple: Tuple[str, RoleType] = ("", RoleType.DEFAULT),
-    ) -> SystemMessageType:
+    ) -> BaseMessage:
         r"""Generates a system message from a dictionary.
 
         Args:
@@ -103,20 +103,20 @@ class SystemMessageGenerator:
                 the role name and role type. (default: ("", RoleType.DEFAULT))
 
         Returns:
-            SystemMessageType: The generated system message.
+            BaseMessage: The generated system message.
         """
         self.validate_meta_dict_keys(meta_dict)
         role_name, role_type = role_tuple
         sys_prompt = self.sys_prompts[role_type]
         sys_prompt = sys_prompt.format(**meta_dict)
-        return SystemMessage(role_name=role_name, role_type=role_type,
-                             meta_dict=meta_dict, content=sys_prompt)
+        return BaseMessage(role_name=role_name, role_type=role_type,
+                           meta_dict=meta_dict, content=sys_prompt)
 
     def from_dicts(
         self,
         meta_dicts: List[Dict[str, str]],
         role_tuples: List[Tuple[str, RoleType]],
-    ) -> List[SystemMessageType]:
+    ) -> List[BaseMessage]:
         r"""Generates a list of system messages from a list of dictionaries.
 
         Args:
@@ -126,7 +126,7 @@ class SystemMessageGenerator:
                 containing the role name and role type for each system message.
 
         Returns:
-            List[SystemMessageType]: A list of generated system messages.
+            List[BaseMessage]: A list of generated system messages.
 
         Raises:
             ValueError: If the number of meta_dicts and role_tuples are

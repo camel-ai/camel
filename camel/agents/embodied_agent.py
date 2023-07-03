@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from colorama import Fore
 
 from camel.agents import BaseToolAgent, ChatAgent, HuggingFaceToolAgent
-from camel.messages import ChatMessage, SystemMessage
+from camel.messages import BaseMessage
 from camel.typing import ModelType
 from camel.utils import PythonInterpreter, print_text_animated
 
@@ -25,7 +25,7 @@ class EmbodiedAgent(ChatAgent):
     r"""Class for managing conversations of CAMEL Embodied Agents.
 
     Args:
-        system_message (SystemMessage): The system message for the chat agent.
+        system_message (BaseMessage): The system message for the chat agent.
         model (ModelType, optional): The LLM model to use for generating
             responses. (default :obj:`ModelType.GPT_4`)
         model_config (Any, optional): Configuration options for the LLM model.
@@ -42,7 +42,7 @@ class EmbodiedAgent(ChatAgent):
 
     def __init__(
         self,
-        system_message: SystemMessage,
+        system_message: BaseMessage,
         model: ModelType = ModelType.GPT_4,
         model_config: Optional[Any] = None,
         message_window_size: Optional[int] = None,
@@ -79,15 +79,15 @@ class EmbodiedAgent(ChatAgent):
 
     def step(
         self,
-        input_message: ChatMessage,
-    ) -> Tuple[ChatMessage, bool, Dict[str, Any]]:
+        input_message: BaseMessage,
+    ) -> Tuple[BaseMessage, bool, Dict[str, Any]]:
         r"""Performs a step in the conversation.
 
         Args:
-            input_message (ChatMessage): The input message.
+            input_message (BaseMessage): The input message.
 
         Returns:
-            Tuple[ChatMessage, bool, Dict[str, Any]]: A tuple
+            Tuple[BaseMessage, bool, Dict[str, Any]]: A tuple
                 containing the output messages, termination status, and
                 additional information.
         """
@@ -131,7 +131,6 @@ class EmbodiedAgent(ChatAgent):
         # TODO: Handle errors
         content = input_message.content + (Fore.RESET +
                                            f"\n> Embodied Actions:\n{content}")
-        message = ChatMessage(input_message.role_name, input_message.role_type,
-                              input_message.meta_dict, input_message.role,
-                              content)
+        message = BaseMessage(input_message.role_name, input_message.role_type,
+                              input_message.meta_dict, content)
         return message, response.terminated, response.info

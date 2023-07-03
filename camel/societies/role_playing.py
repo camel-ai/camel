@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 from camel.agents import (
     ChatAgent,
@@ -22,7 +22,8 @@ from camel.agents import (
 from camel.agents.chat_agent import ChatAgentResponse
 from camel.generators import SystemMessageGenerator
 from camel.human import Human
-from camel.messages import AssistantChatMessage, ChatMessage, UserChatMessage
+from camel.messages import BaseMessage
+from camel.prompts import TextPrompt
 from camel.typing import ModelType, RoleType, TaskType
 
 
@@ -63,6 +64,8 @@ class RolePlaying:
             extend the system message meta dicts with. (default: :obj:`None`)
         extend_task_specify_meta_dict (Dict, optional): A dict to extend the
             task specify meta dict with. (default: :obj:`None`)
+        output_language (str, optional): The language to be output by the
+            agents. (default: :obj:`None`)
     """
 
     def __init__(
@@ -85,6 +88,7 @@ class RolePlaying:
         sys_msg_generator_kwargs: Optional[Dict] = None,
         extend_sys_msg_meta_dicts: Optional[List[Dict]] = None,
         extend_task_specify_meta_dict: Optional[Dict] = None,
+        output_language: str = None,
     ) -> None:
         self.with_task_specify = with_task_specify
         self.with_task_planner = with_task_planner
@@ -92,6 +96,7 @@ class RolePlaying:
         self.model_type = model_type
         self.task_type = task_type
 
+        self.specified_task_prompt: Optional[TextPrompt]
         if with_task_specify:
             task_specify_meta_dict = dict()
             if self.task_type in [TaskType.AI_SOCIETY, TaskType.MISALIGNMENT]:
@@ -104,6 +109,7 @@ class RolePlaying:
             task_specify_agent = TaskSpecifyAgent(
                 self.model_type,
                 task_type=self.task_type,
+                output_language=output_language,
                 **(task_specify_agent_kwargs or {}),
             )
             self.specified_task_prompt = task_specify_agent.step(
@@ -114,9 +120,11 @@ class RolePlaying:
         else:
             self.specified_task_prompt = None
 
+        self.planned_task_prompt: Optional[TextPrompt]
         if with_task_planner:
             task_planner_agent = TaskPlannerAgent(
                 self.model_type,
+                output_language=output_language,
                 **(task_planner_agent_kwargs or {}),
             )
             self.planned_task_prompt = task_planner_agent.step(task_prompt)
@@ -143,7 +151,7 @@ class RolePlaying:
             } for sys_msg_meta_dict, extend_sys_msg_meta_dict in zip(
                 sys_msg_meta_dicts, extend_sys_msg_meta_dicts)]
 
-        self.assistant_sys_msg, self.user_sys_msg = (
+        init_assistant_sys_msg, init_user_sys_msg = (
             sys_msg_generator.from_dicts(
                 meta_dicts=sys_msg_meta_dicts,
                 role_tuples=[
@@ -153,16 +161,22 @@ class RolePlaying:
             ))
 
         self.assistant_agent: ChatAgent = ChatAgent(
-            self.assistant_sys_msg,
+            init_assistant_sys_msg,
             model_type,
+            output_language=output_language,
             **(assistant_agent_kwargs or {}),
         )
+        self.assistant_sys_msg = self.assistant_agent.system_message
+
         self.user_agent: ChatAgent = ChatAgent(
-            self.user_sys_msg,
+            init_user_sys_msg,
             model_type,
+            output_language=output_language,
             **(user_agent_kwargs or {}),
         )
+        self.user_sys_msg = self.user_agent.system_message
 
+        self.critic: Union[CriticAgent, Human, None]
         if with_critic_in_the_loop:
             if critic_role_name.lower() == "human":
                 self.critic = Human(**(critic_kwargs or {}))
@@ -184,29 +198,30 @@ class RolePlaying:
         else:
             self.critic = None
 
-    def init_chat(self) -> Tuple[AssistantChatMessage, List[ChatMessage]]:
+    def init_chat(self) -> Tuple[BaseMessage, List[BaseMessage]]:
         r"""Initializes the chat by resetting both of the assistant and user
         agents, and sending the system messages again to the agents using
         chat messages. Returns the assistant's introductory message and the
         user's response messages.
 
         Returns:
-            A tuple containing an `AssistantChatMessage` representing the
-            assistant's introductory message, and a list of `ChatMessage`s
+            A tuple containing an `BaseMessage` representing the
+            assistant's introductory message, and a list of `BaseMessage`s
             representing the user's response messages.
         """
         self.assistant_agent.reset()
         self.user_agent.reset()
 
         # Send the system messages again to the agents using chat messages
-        assistant_msg = AssistantChatMessage(
-            role_name=self.assistant_sys_msg.role_name, role="assistant",
+        assistant_msg = BaseMessage.make_assistant_message(
+            role_name=self.assistant_sys_msg.role_name,
             content=(f"{self.user_sys_msg.content}. "
                      "Now start to give me instructions one by one. "
                      "Only reply with Instruction and Input."))
 
-        user_msg = UserChatMessage(role_name=self.user_sys_msg.role_name,
-                                   content=f"{self.assistant_sys_msg.content}")
+        user_msg = BaseMessage.make_user_message(
+            role_name=self.user_sys_msg.role_name,
+            content=f"{self.assistant_sys_msg.content}")
         assistant_response = self.assistant_agent.step(user_msg)
         if assistant_response.terminated or assistant_response.msgs is None:
             raise ValueError(f"Assistant agent terminated unexpectedly. "
@@ -214,20 +229,20 @@ class RolePlaying:
 
         return assistant_msg, assistant_response.msgs
 
-    def process_messages(
+    def reduce_message_options(
         self,
-        messages: Sequence[ChatMessage],
-    ) -> ChatMessage:
+        messages: Sequence[BaseMessage],
+    ) -> BaseMessage:
         r"""Processes a sequence of chat messages, returning the processed
         message. If multiple messages are provided and
         `with_critic_in_the_loop` is `False`, raises a `ValueError`.
         If no messages are provided, a `ValueError` will be raised.
 
         Args:
-            messages: A sequence of `ChatMessage` objects to process.
+            messages: A sequence of `BaseMessage` objects to process.
 
         Returns:
-            A single `ChatMessage` representing the processed message.
+            A single `BaseMessage` representing the processed message.
         """
         if len(messages) == 0:
             raise ValueError("No messages to process.")
@@ -243,7 +258,7 @@ class RolePlaying:
 
     def step(
         self,
-        assistant_msg: ChatMessage,
+        assistant_msg: BaseMessage,
     ) -> Tuple[ChatAgentResponse, ChatAgentResponse]:
         r"""Advances the conversation by taking a message from the assistant,
         processing it using the user agent, and then processing the resulting
@@ -254,7 +269,7 @@ class RolePlaying:
         terminated the conversation, and any additional user information.
 
         Args:
-            assistant_msg: A `ChatMessage` representing the message from the
+            assistant_msg: A `BaseMessage` representing the message from the
                 assistant.
 
         Returns:
@@ -270,16 +285,16 @@ class RolePlaying:
             return (ChatAgentResponse([], False, {}),
                     ChatAgentResponse([], user_response.terminated,
                                       user_response.info))
-        user_msg = self.process_messages(user_response.msgs)
-        self.user_agent.update_messages(user_msg)
+        user_msg = self.reduce_message_options(user_response.msgs)
+        self.user_agent.submit_message(user_msg)
 
         assistant_response = self.assistant_agent.step(user_msg)
         if assistant_response.terminated or assistant_response.msgs is None:
             return (ChatAgentResponse([], assistant_response.terminated,
                                       assistant_response.info),
                     ChatAgentResponse([user_msg], False, user_response.info))
-        assistant_msg = self.process_messages(assistant_response.msgs)
-        self.assistant_agent.update_messages(assistant_msg)
+        assistant_msg = self.reduce_message_options(assistant_response.msgs)
+        self.assistant_agent.submit_message(assistant_msg)
 
         return (
             ChatAgentResponse([assistant_msg], assistant_response.terminated,

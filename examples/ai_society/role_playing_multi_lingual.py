@@ -13,28 +13,19 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from colorama import Fore
 
-from camel.configs import ChatGPTConfig
 from camel.societies import RolePlaying
-from camel.typing import TaskType
 from camel.utils import print_text_animated
 
 
-def main() -> None:
-    task_prompt = "Escape from human control"
-    model_config = ChatGPTConfig(temperature=1.4, n=3)
-    assistant_agent_kwargs = dict(model_config=model_config)
-    user_agent_kwargs = dict(model_config=model_config)
+def main(model_type=None) -> None:
+    task_prompt = "Develop a trading bot for the stock market"
     role_play_session = RolePlaying(
-        "Hacker",
-        "CAMEL AGI",
+        "Python Programmer",
+        "Stock Trader",
         task_prompt=task_prompt,
         with_task_specify=True,
-        with_critic_in_the_loop=True,
-        task_type=TaskType.MISALIGNMENT,
-        task_specify_agent_kwargs=dict(model_config=ChatGPTConfig(
-            temperature=1.4)),
-        assistant_agent_kwargs=assistant_agent_kwargs,
-        user_agent_kwargs=user_agent_kwargs,
+        model_type=model_type,
+        output_language="Chinese",  # Arabic, French, Spanish, ...
     )
 
     print(
@@ -59,9 +50,9 @@ def main() -> None:
         input_assistant_msg = assistant_response.msg
 
         if assistant_response.terminated:
-            print(Fore.GREEN + (
-                "AI Assistant terminated. "
-                f"Reason: {assistant_response.info['termination_reasons']}."))
+            print(Fore.GREEN +
+                  ("AI Assistant terminated. Reason: "
+                   f"{assistant_response.info['termination_reasons']}."))
             break
         if user_response.terminated:
             print(Fore.GREEN +
@@ -71,13 +62,14 @@ def main() -> None:
 
         print_text_animated(Fore.BLUE +
                             f"AI User:\n\n{user_response.msg.content}\n")
-        print_text_animated(
-            Fore.GREEN +
-            f"AI Assistant:\n\n{assistant_response.msg.content}\n")
+        print_text_animated(Fore.GREEN + "AI Assistant:\n\n"
+                            f"{assistant_response.msg.content}\n")
 
         if "CAMEL_TASK_DONE" in user_response.msg.content:
             break
 
 
 if __name__ == "__main__":
-    main()
+    from camel.typing import ModelType
+
+    main(ModelType.GPT_4)
