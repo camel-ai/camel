@@ -36,7 +36,7 @@ class PythonInterpreter():
             their corresponding functions or objects. The interpreter can only
             execute functions that are either directly listed in this
             dictionary or are member functions of objects listed in this
-            dictionary. The concept of :obj:action_space is derived from
+            dictionary. The concept of :obj:`action_space` is derived from
             EmbodiedAgent, representing the actions that an agent is capable of
             performing.
         import_white_list (Optional[List[str]], optional): A list that stores
