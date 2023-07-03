@@ -20,7 +20,8 @@ from camel.prompts.base import (
     return_prompt_wrapper,
     wrap_prompt_functions,
 )
-from camel.utils import InterpreterError, PythonInterpreter
+from camel.utils import PythonInterpreter
+from camel.utils.python_interpreter import InterpreterError
 
 
 def test_return_prompt_wrapper():
