@@ -98,7 +98,7 @@ def test_fuzz_space(interpreter):
     assert rnt.height == 80
 
 
-def test_keep_state(interpreter):
+def test_keep_state0(interpreter):
     code1 = "a = 42"
     code2 = "b = a"
     code3 = "c = b"
@@ -112,6 +112,19 @@ def test_keep_state(interpreter):
     exec_msg = e.value.args[0]
     assert exec_msg == ("Evaluation of the code stopped at line 0. See:\n"
                         "The variable `b` is not defined.")
+
+
+def test_keep_state1(interpreter):
+    code1 = "from torch import tensor"
+    code2 = "a = tensor([[1., -1.], [1., -1.]])"
+    rnt = interpreter.execute(code1, keep_state=True)
+    rnt = interpreter.execute(code2, keep_state=False)
+    assert torch.equal(rnt, torch.tensor([[1., -1.], [1., -1.]]))
+    with pytest.raises(InterpreterError) as e:
+        interpreter.execute(code2, keep_state=False)
+    exec_msg = e.value.args[0]
+    assert exec_msg == ("Evaluation of the code stopped at line 0. See:\n"
+                        "The variable `tensor` is not defined.")
 
 
 def test_if(interpreter):
