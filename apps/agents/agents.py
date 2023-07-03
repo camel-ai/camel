@@ -29,7 +29,7 @@ import tenacity
 
 from apps.agents.text_utils import split_markdown_code
 from camel.agents import TaskSpecifyAgent
-from camel.messages import AssistantChatMessage
+from camel.messages import BaseMessage
 from camel.societies import RolePlaying
 
 REPO_ROOT = os.path.realpath(
@@ -43,17 +43,16 @@ class State:
     session: Optional[RolePlaying]
     max_messages: int
     chat: ChatBotHistory
-    saved_assistant_msg: Optional[AssistantChatMessage]
+    saved_assistant_msg: Optional[BaseMessage]
 
     @classmethod
     def empty(cls) -> 'State':
         return cls(None, 0, [], None)
 
     @staticmethod
-    def construct_inplace(
-            state: 'State', session: Optional[RolePlaying], max_messages: int,
-            chat: ChatBotHistory,
-            saved_assistant_msg: Optional[AssistantChatMessage]) -> None:
+    def construct_inplace(state: 'State', session: Optional[RolePlaying],
+                          max_messages: int, chat: ChatBotHistory,
+                          saved_assistant_msg: Optional[BaseMessage]) -> None:
         state.session = session
         state.max_messages = max_messages
         state.chat = chat
@@ -215,8 +214,8 @@ def role_playing_chat_init(state) -> \
     session: RolePlaying = state.session
 
     try:
+        init_assistant_msg: BaseMessage
         init_assistant_msg, _ = session.init_chat()
-        init_assistant_msg: AssistantChatMessage
     except (openai.error.RateLimitError, tenacity.RetryError,
             RuntimeError) as ex:
         print("OpenAI API exception 1 " + str(ex))

@@ -11,26 +11,61 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import argparse
 import codecs
 import json
 import multiprocessing
 import os
+import os.path as osp
+import warnings
 
 from camel.agents import ChatAgent
+from camel.configs import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
-from camel.messages import UserChatMessage
+from camel.messages import BaseMessage
 from camel.typing import ModelType, RoleType, TaskType
 
+warnings.filterwarnings("ignore")
 
-def translate_content(directory_path: str, file_path: str,
+language_list = [
+    "arabic", "chinese", "french", "german", "hindi", "italian", "japanese",
+    "korean", "russian", "spanish"
+]
+
+parser = argparse.ArgumentParser(description='Arguments for translation.')
+parser.add_argument('--directory_path', type=str,
+                    help='Directory that contains original json files',
+                    default='../camel_data/ai_society')
+parser.add_argument('--save_directory_path', type=str,
+                    help='Directory to save translated files',
+                    default='../camel_data/ai_society_translated')
+parser.add_argument('--single', action='store_true',
+                    help='Run translator in a non-parallel way.')
+parser.add_argument('--stream', action='store_true',
+                    help='Set OpenAI GPT model with the stream mode.')
+parser.add_argument(
+    '--language', type=str, help='Language you want to translated to. '
+    'Notice that this is not used in the parallel mode, '
+    'which uses SLURM_ARRAY_TASK_ID to indicate the '
+    'language to be translated.', choices=language_list, default='arabic')
+
+
+def translate_content(args: argparse.Namespace, file_path: str,
                       language: str) -> None:
 
-    # File_path of the .json file to translate we extract the name for saving
-    file_name = file_path.split("/")[-1].split(".json")[0]
+    # Extract file name from the .json file path to be translated
+    file_name = osp.splitext(osp.basename(file_path))[0]
 
-    # Check that file_name.json does not exist in the target directory
-    save_path = f"{directory_path}_translated/{language}/{file_name}.json"
-    if os.path.exists(save_path):
+    if not osp.exists(args.save_directory_path):
+        os.makedirs(args.save_directory_path)
+
+    save_lang_director_path = osp.join(args.save_directory_path, language)
+    if not osp.exists(save_lang_director_path):
+        os.makedirs(save_lang_director_path)
+
+    # Check that file_name.json does not exist in the save directory
+    save_path = osp.join(save_lang_director_path, f'{file_name}.json')
+    if osp.exists(save_path):
         return
 
     # Load the json file
@@ -50,10 +85,19 @@ def translate_content(directory_path: str, file_path: str,
             meta_dict=dict(language=language.capitalize()),
             role_tuple=('Language Translator', RoleType.ASSISTANT))
 
-        assistant_agent = ChatAgent(assistant_sys_msg, ModelType.GPT_3_5_TURBO)
+        if not args.stream:
+            model_config = ChatGPTConfig(stream=False)
+        else:
+            model_config = ChatGPTConfig(stream=True)
 
-        user_msg = UserChatMessage(role_name="Language Translator",
-                                   content=msg_i_content)
+        assistant_agent = ChatAgent(
+            system_message=assistant_sys_msg,
+            model=ModelType.GPT_3_5_TURBO,
+            model_config=model_config,
+        )
+
+        user_msg = BaseMessage.make_user_message(
+            role_name="Language Translator", content=msg_i_content)
 
         assistant_response = assistant_agent.step(user_msg)
         assistant_msg = assistant_response.msg
@@ -64,41 +108,46 @@ def translate_content(directory_path: str, file_path: str,
         json.dump(json_data, f, ensure_ascii=False, indent=4)
 
 
-def main(directory_path: str) -> None:
-
-    # List of languages to translate to
-    language_list = [
-        "arabic", "chinese", "french", "german", "hindi", "italian",
-        "japanese", "korean", "russian", "spanish"
-    ]
-
-    # Get the language to translate based on Slurm array index
-    try:
-        language_index = int(os.environ["SLURM_ARRAY_TASK_ID"])
-    except KeyError:
-        print("SLURM_ARRAY_TASK_ID not found. Defaulting to 0 (i.e Arabic)")
-        # Default to Arabic, you can change to any other language
-        language_index = 0
-
-    language = language_list[language_index]
+def main(args: argparse.Namespace) -> None:
+    if not args.single:
+        # Get the language to translate based on Slurm array index
+        slum_id_env = "SLURM_ARRAY_TASK_ID"
+        try:
+            language_index = int(os.environ[slum_id_env])
+        except KeyError:
+            print(f"{slum_id_env} not found. Defaulting to 0 (i.e Arabic)")
+            # Default to Arabic, you can change to any other language
+            language_index = 0
+        # List of languages to translate to
+        language_list = [
+            "arabic", "chinese", "french", "german", "hindi", "italian",
+            "japanese", "korean", "russian", "spanish"
+        ]
+        language = language_list[language_index]
+    else:
+        language = args.language
 
     # Get list of all .json files paths
     json_file_paths = []
 
-    for filename in os.listdir(directory_path):
+    for filename in os.listdir(args.directory_path):
         if filename.endswith(".json"):
-            file_path = os.path.join(directory_path, filename)
+            file_path = osp.join(args.directory_path, filename)
             json_file_paths.append(file_path)
 
-    pool = multiprocessing.Pool()
-
-    # Apply parallel translation to all .json files
-    for file_path in json_file_paths:
-        pool.apply_async(translate_content,
-                         args=(directory_path, file_path, language))
-    pool.close()
-    pool.join()
+    if not args.single:
+        pool = multiprocessing.Pool()
+        # Apply parallel translation to all .json files
+        for file_path in json_file_paths:
+            pool.apply_async(translate_content,
+                             args=(args, file_path, language))
+        pool.close()
+        pool.join()
+    else:
+        for file_path in json_file_paths:
+            translate_content(args, file_path, language)
 
 
 if __name__ == "__main__":
-    main(directory_path="./camel_data/ai_society")
+    args = parser.parse_args()
+    main(args=args)
