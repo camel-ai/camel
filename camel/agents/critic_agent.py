@@ -23,7 +23,7 @@ from camel.typing import ModelType
 from camel.utils import get_first_int, print_text_animated
 
 
-class CriticAgent(ChatAgent):
+class CriticAgent:
     r"""A class for the critic agent that assists in selecting an option.
 
     Args:
@@ -53,8 +53,8 @@ class CriticAgent(ChatAgent):
         verbose: bool = False,
         logger_color: Any = Fore.MAGENTA,
     ) -> None:
-        super().__init__(system_message, model, model_config,
-                         message_window_size)
+        self.chat_agent = ChatAgent(system_message, model, model_config,
+                                    message_window_size)
         self.options_dict: Dict[str, str] = dict()
         self.retry_attempts = retry_attempts
         self.verbose = verbose
@@ -96,7 +96,7 @@ class CriticAgent(ChatAgent):
         msg_content = input_message.content
         i = 0
         while i < self.retry_attempts:
-            critic_response = super().step(input_message)
+            critic_response = self.chat_agent.step(input_message)
 
             if critic_response.msgs is None or len(critic_response.msgs) == 0:
                 raise RuntimeError("Got None critic messages.")
@@ -104,7 +104,7 @@ class CriticAgent(ChatAgent):
                 raise RuntimeError("Critic step failed.")
 
             critic_msg = critic_response.msg
-            self.update_messages('assistant', critic_msg)
+            self.chat_agent.update_messages('assistant', critic_msg)
             if self.verbose:
                 print_text_animated(self.logger_color + "\n> Critic response: "
                                     f"\x1b[3m{critic_msg.content}\x1b[0m\n")
