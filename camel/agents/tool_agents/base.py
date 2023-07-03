@@ -11,10 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from camel.agents import BaseAgent
+from abc import ABC, abstractmethod
+from typing import Any, Optional
 
 
-class BaseToolAgent(BaseAgent):
+class BaseToolAgent(ABC):
     r"""Creates a :obj:`BaseToolAgent` object with the specified name and
         description.
 
@@ -24,15 +25,21 @@ class BaseToolAgent(BaseAgent):
     """
 
     def __init__(self, name: str, description: str) -> None:
-
         self.name = name
         self.description = description
 
+    @abstractmethod
     def reset(self) -> None:
         r"""Resets the agent to its initial state."""
         pass
 
-    def step(self) -> None:
+    @abstractmethod
+    def step(
+        self,
+        *args: Any,
+        remote: Optional[bool] = None,
+        **kwargs: Any,
+    ) -> Any:
         r"""Performs a single step of the agent."""
         pass
 

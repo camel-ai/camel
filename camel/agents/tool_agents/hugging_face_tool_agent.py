@@ -138,7 +138,7 @@ segmented_transformed_capybara_image = {name}.chat("Show me a mask of the snowy 
 segmented_transformed_capybara_image.save("./segmented_transformed_capybara_image.png")
 ```
 """
-        super(HuggingFaceToolAgent, self).__init__(name, description)
+        super().__init__(name, description)
         self.remote = remote
 
     def reset(self) -> None:

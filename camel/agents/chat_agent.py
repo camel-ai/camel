@@ -20,7 +20,7 @@ from tenacity import retry
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_exponential
 
-from camel.agents import BaseAgent
+from camel.agents import BaseAgent, ChatAgentResponse
 from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.models import BaseModelBackend, ModelFactory
@@ -30,31 +30,6 @@ from camel.utils import (
     num_tokens_from_messages,
     openai_api_key_required,
 )
-
-
-@dataclass(frozen=True)
-class ChatAgentResponse:
-    r"""Response of a ChatAgent.
-
-    Attributes:
-        msgs (List[BaseMessage]): A list of zero, one or several messages.
-            If the list is empty, there is some error in message generation.
-            If the list has one message, this is normal mode.
-            If the list has several messages, this is the critic mode.
-        terminated (bool): A boolean indicating whether the agent decided
-            to terminate the chat session.
-        info (Dict[str, Any]): Extra information about the chat message.
-    """
-    msgs: List[BaseMessage]
-    terminated: bool
-    info: Dict[str, Any]
-
-    @property
-    def msg(self):
-        if len(self.msgs) != 1:
-            raise RuntimeError("Property msg is only available"
-                               "for a single message in msgs")
-        return self.msgs[0]
 
 
 @dataclass(frozen=True)
@@ -123,7 +98,7 @@ class ChatAgent(BaseAgent):
         self.stored_messages: List[ChatRecord]
         self.init_messages()
 
-    def reset(self) -> List[ChatRecord]:
+    def reset(self) -> None:
         r"""Resets the :obj:`ChatAgent` to its initial state and returns the
         stored messages.
 
@@ -132,7 +107,6 @@ class ChatAgent(BaseAgent):
         """
         self.terminated = False
         self.init_messages()
-        return self.stored_messages
 
     def set_output_language(self, output_language: str) -> BaseMessage:
         r"""Sets the output language for the system message. This method

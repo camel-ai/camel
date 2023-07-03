@@ -12,18 +12,49 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from abc import ABC, abstractmethod
-from typing import Any
+from dataclasses import dataclass
+from typing import Any, Dict, List
+
+from camel.messages import BaseMessage
+
+
+@dataclass(frozen=True)
+class ChatAgentResponse:
+    r"""Response of a ChatAgent.
+
+    Attributes:
+        msgs (List[BaseMessage]): A list of zero, one or several messages.
+            If the list is empty, there is some error in message generation.
+            If the list has one message, this is normal mode.
+            If the list has several messages, this is the critic mode.
+        terminated (bool): A boolean indicating whether the agent decided
+            to terminate the chat session.
+        info (Dict[str, Any]): Extra information about the chat message.
+    """
+    msgs: List[BaseMessage]
+    terminated: bool
+    info: Dict[str, Any]
+
+    @property
+    def msg(self):
+        if len(self.msgs) != 1:
+            raise RuntimeError("Property msg is only available"
+                               "for a single message in msgs")
+        return self.msgs[0]
 
 
 class BaseAgent(ABC):
-    r"""An abstract base class for all CAMEL agents."""
+    r"""An abstract base class for multi-step CAMEL agents."""
 
     @abstractmethod
-    def reset(self, *args: Any, **kwargs: Any) -> Any:
+    def reset(self) -> None:
         r"""Resets the agent to its initial state."""
         pass
 
     @abstractmethod
-    def step(self, *args: Any, **kwargs: Any) -> Any:
+    def step(
+        self,
+        input_message: BaseMessage,
+    ) -> ChatAgentResponse:
         r"""Performs a single step of the agent."""
         pass

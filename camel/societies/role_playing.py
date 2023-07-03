@@ -15,11 +15,11 @@ from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 from camel.agents import (
     ChatAgent,
+    ChatAgentResponse,
     CriticAgent,
     TaskPlannerAgent,
     TaskSpecifyAgent,
 )
-from camel.agents.chat_agent import ChatAgentResponse
 from camel.generators import SystemMessageGenerator
 from camel.human import Human
 from camel.messages import BaseMessage
