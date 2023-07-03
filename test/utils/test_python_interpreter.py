@@ -16,7 +16,8 @@ import pytest
 import torch
 from PIL import Image
 
-from camel.utils import InterpreterError, PythonInterpreter
+from camel.utils import PythonInterpreter
+from camel.utils.python_interpreter import InterpreterError
 
 
 def action_function():
@@ -25,8 +26,6 @@ def action_function():
 
 @pytest.fixture()
 def interpreter():
-    # image = PIL.Image.new(mode="RGB", size=(200, 200))
-    # state = {image: image}
     action_space = {"action1": action_function}
     white_list = ["torch", "numpy.array"]
     return PythonInterpreter(action_space=action_space,
