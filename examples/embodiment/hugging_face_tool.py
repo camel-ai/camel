@@ -46,8 +46,8 @@ def main():
                  "caption the image content, "
                  "save the images by species name."),
     )
-    output_message, _, _ = embodied_agent.step(user_msg)
-    print(output_message.content)
+    response = embodied_agent.step(user_msg)
+    print(response.msg.content)
 
 
 if __name__ == "__main__":
