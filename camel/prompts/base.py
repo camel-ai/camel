@@ -181,20 +181,23 @@ class CodePrompt(TextPrompt):
         Args:
             interpreter (PythonInterpreter, optional): interpreter to be used
                 during code execution. (default: :obj:`None`)
-            user_variable (Optional[Dict[str, Any]]): varibales that can be used in the
-                code, which applying fuzzy matching, such as images or
-                documents. (default: :obj:`None`)
+            user_variable (Optional[Dict[str, Any]]): varibales that can be
+                used in the code, which applying fuzzy matching, such as images
+                or documents. (default: :obj:`None`)
 
         Returns:
             Tuple[Any, PythonInterpreter]: A tuple containing the execution
-                result and used interpreter.
-        """
+                result and the used interpreter. The execution result
+                represents the value of the last statement (excluding "import")
+                in the code. This value could potentially be the desired result
+                of the LLM-generated code.        
+    """
         # NOTE: Only supports Python code for now.
         if not interpreter:
             interpreter = PythonInterpreter(action_space=globals())
-        rnt = interpreter.execute(self, fuzz_state=user_variable,
-                                  keep_state=True)
-        return rnt, interpreter
+        execution_res = interpreter.execute(self, fuzz_state=user_variable,
+                                            keep_state=True)
+        return execution_res, interpreter
 
 
 # flake8: noqa :E501

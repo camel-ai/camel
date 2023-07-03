@@ -74,7 +74,11 @@ class PythonInterpreter():
                 they will be cleared. (default: :obj:`True`)
 
         Returns:
-            Any: An evaluation value of the last line in the code.
+            Any: The value of the last statement (excluding "import") in the
+                code. For this interpreter, the value of an expression is its
+                value, the value of an "assign" statement is the assigned
+                value, and the value of an "if" and "for" block statement is
+                the value of the last statement in the block.
         """
         if state:
             self.state.update(state)
