@@ -14,7 +14,6 @@
 import numpy as np
 import pytest
 import torch
-from PIL import Image
 
 from camel.utils import PythonInterpreter
 from camel.utils.python_interpreter import InterpreterError
@@ -91,6 +90,7 @@ def test_action_space(interpreter):
 
 
 def test_fuzz_space(interpreter):
+    from PIL import Image
     fuzz_state = {"image": Image.new("RGB", (256, 256))}
     code = "output_image = input_image.crop((20, 20, 100, 100))"
     rnt = interpreter.execute(code, fuzz_state=fuzz_state)
