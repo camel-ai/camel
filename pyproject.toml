@@ -69,3 +69,9 @@ markers = [
 
 [tool.coverage.report]
 include_namespace_packages = true
+
+[[tool.mypy.overrides]]
+module = [
+    "transformers.tools",
+]
+ignore_missing_imports = true

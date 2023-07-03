@@ -51,7 +51,7 @@ class TaskSpecifyAgent(ChatAgent):
         model_config: Optional[Any] = None,
         task_specify_prompt: Optional[Union[str, TextPrompt]] = None,
         word_limit: int = DEFAULT_WORD_LIMIT,
-        output_language: str = None,
+        output_language: Optional[str] = None,
     ) -> None:
 
         if task_specify_prompt is None:
@@ -135,7 +135,7 @@ class TaskPlannerAgent(ChatAgent):
         self,
         model: Optional[ModelType] = None,
         model_config: Any = None,
-        output_language: str = None,
+        output_language: Optional[str] = None,
     ) -> None:
 
         self.task_planner_prompt = TextPrompt(
