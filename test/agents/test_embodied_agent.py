@@ -48,7 +48,7 @@ def test_step():
         role_name=role_name,
         content="Draw all the Camelidae species.",
     )
-    output_message, terminated, info = embodied_agent.step(user_msg)
-    assert isinstance(output_message, BaseMessage)
-    assert not terminated
-    assert isinstance(info, dict)
+    response = embodied_agent.step(user_msg)
+    assert isinstance(response.msg, BaseMessage)
+    assert not response.terminated
+    assert isinstance(response.info, dict)

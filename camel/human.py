@@ -15,6 +15,7 @@ from typing import Any, Dict, Sequence
 
 from colorama import Fore
 
+from camel.agents import ChatAgentResponse
 from camel.messages import BaseMessage
 from camel.utils import print_text_animated
 
@@ -86,28 +87,26 @@ class Human:
 
         return human_input
 
-    def parse_input(self, human_input: str,
-                    meta_chat_message: BaseMessage) -> BaseMessage:
+    def parse_input(self, human_input: str) -> str:
         r"""Parses the user's input and returns a `BaseMessage` object.
 
         Args:
             human_input (str): The user's input.
-            meta_chat_message (BaseMessage): A `BaseMessage` object.
 
         Returns:
-            BaseMessage: A `BaseMessage` object.
+            content: A `str` object representing the user's input.
         """
         if self.options_dict[human_input] == self.input_button:
-            meta_chat_message.content = input(self.logger_color +
-                                              "Please enter your message: ")
-            return meta_chat_message
+            content = input(self.logger_color + "Please enter your message: ")
         elif self.options_dict[human_input] == self.kill_button:
             exit(self.logger_color + f"Killed by {self.name}.")
         else:
-            meta_chat_message.content = self.options_dict[human_input]
-            return meta_chat_message
+            content = self.options_dict[human_input]
 
-    def step(self, messages: Sequence[BaseMessage]) -> BaseMessage:
+        return content
+
+    def reduce_step(self,
+                    messages: Sequence[BaseMessage]) -> ChatAgentResponse:
         r"""Performs one step of the conversation by displaying options to the
         user, getting their input, and parsing their choice.
 
@@ -115,7 +114,8 @@ class Human:
             messages (Sequence[BaseMessage]): A list of BaseMessage objects.
 
         Returns:
-            BaseMessage: A `BaseMessage` object representing the user's choice.
+            ChatAgentResponse: A `ChatAgentResponse` object representing the
+                user's choice.
         """
         meta_chat_message = BaseMessage(
             role_name=messages[0].role_name,
@@ -125,4 +125,6 @@ class Human:
         )
         self.display_options(messages)
         human_input = self.get_input()
-        return self.parse_input(human_input, meta_chat_message)
+        content = self.parse_input(human_input)
+        message = meta_chat_message.create_new_instance(content)
+        return ChatAgentResponse([message], terminated=False, info={})
