@@ -16,7 +16,7 @@ import re
 import time
 import zipfile
 from functools import wraps
-from typing import Any, Callable, List, Optional, Set, TypeVar
+from typing import Any, Callable, List, Optional, Set, TypeVar, cast
 
 import requests
 import tiktoken
@@ -167,7 +167,7 @@ def openai_api_key_required(func: F) -> F:
         else:
             raise ValueError('OpenAI API key not found.')
 
-    return wrapper
+    return cast(F, wrapper)
 
 
 def print_text_animated(text, delay: float = 0.02, end: str = ""):
