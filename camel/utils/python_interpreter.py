@@ -80,9 +80,9 @@ class PythonInterpreter():
                 value, and the value of an "if" and "for" block statement is
                 the value of the last statement in the block.
         """
-        if state:
+        if state is not None:
             self.state.update(state)
-        if fuzz_state:
+        if fuzz_state is not None:
             self.fuzz_state.update(fuzz_state)
 
         try:
