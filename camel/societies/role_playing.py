@@ -112,7 +112,7 @@ class RolePlaying:
                 output_language=output_language,
                 **(task_specify_agent_kwargs or {}),
             )
-            self.specified_task_prompt = task_specify_agent.step(
+            self.specified_task_prompt = task_specify_agent.specify_prompt(
                 task_prompt,
                 meta_dict=task_specify_meta_dict,
             )
@@ -127,7 +127,8 @@ class RolePlaying:
                 output_language=output_language,
                 **(task_planner_agent_kwargs or {}),
             )
-            self.planned_task_prompt = task_planner_agent.step(task_prompt)
+            self.planned_task_prompt = task_planner_agent.create_plan(
+                task_prompt)
             task_prompt = f"{task_prompt}\n{self.planned_task_prompt}"
         else:
             self.planned_task_prompt = None
