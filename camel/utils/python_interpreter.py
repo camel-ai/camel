@@ -31,6 +31,37 @@ class PythonInterpreter():
     functions given in action space and import white list. It also supports
     fuzzy variable matching to reveive uncertain input variable name.
 
+    .. highlight:: none
+
+    This class is adapted from the hugging face implementation
+    `python_interpreter.py <https://github.com/huggingface/transformers/blob/8f
+    093fb799246f7dd9104ff44728da0c53a9f67a/src/transformers/tools/python_interp
+    reter.py>`_. The original license applies::
+
+        Copyright 2023 The HuggingFace Inc. team. All rights reserved.
+
+        Licensed under the Apache License, Version 2.0 (the "License");
+        you may not use this file except in compliance with the License.
+        You may obtain a copy of the License at
+
+            http://www.apache.org/licenses/LICENSE-2.0
+
+        Unless required by applicable law or agreed to in writing, software
+        distributed under the License is distributed on an "AS IS" BASIS,
+        WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+        implied. See the License for the specific language governing
+        permissions and limitations under the License.
+
+    We have modified the original code to suit our requirements. We have
+    encapsulated the original functions within a class and saved the
+    interpreter state after execution. We have added support for "import"
+    statements, "for" statements, and several binary and unary operators. We
+    have added import white list to keep `import` statement safe. Additionally,
+    we have modified the variable matching logic and introduced the
+    :obj:`fuzz_state` for fuzzy matching.
+
+    Modifications copyright (C) 2023 CAMEL-AI.org
+
     Args:
         action_space (Dict[str, Any]): A dictionary that maps action names to
             their corresponding functions or objects. The interpreter can only
