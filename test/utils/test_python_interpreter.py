@@ -34,31 +34,31 @@ def interpreter():
 def test_import_success0(interpreter):
     code = """import torch
 a = torch.tensor([[1., -1.], [1., -1.]])"""
-    rnt = interpreter.execute(code)
+    execution_res = interpreter.execute(code)
     assert torch.equal(interpreter.state["a"],
                        torch.tensor([[1., -1.], [1., -1.]]))
-    assert torch.equal(rnt, torch.tensor([[1., -1.], [1., -1.]]))
+    assert torch.equal(execution_res, torch.tensor([[1., -1.], [1., -1.]]))
 
 
 def test_import_success1(interpreter):
     code = """from torch import tensor
 a = tensor([[1., -1.], [1., -1.]])"""
-    rnt = interpreter.execute(code)
-    assert torch.equal(rnt, torch.tensor([[1., -1.], [1., -1.]]))
+    execution_res = interpreter.execute(code)
+    assert torch.equal(execution_res, torch.tensor([[1., -1.], [1., -1.]]))
 
 
 def test_import_success2(interpreter):
     code = """import torch as pytorch
 a = pytorch.tensor([[1., -1.], [1., -1.]])"""
-    rnt = interpreter.execute(code)
-    assert torch.equal(rnt, torch.tensor([[1., -1.], [1., -1.]]))
+    execution_res = interpreter.execute(code)
+    assert torch.equal(execution_res, torch.tensor([[1., -1.], [1., -1.]]))
 
 
 def test_import_success3(interpreter):
     code = """from numpy import array
 x = array([[1, 2, 3], [4, 5, 6]])"""
-    rnt = interpreter.execute(code)
-    assert np.equal(rnt, np.array([[1, 2, 3], [4, 5, 6]])).all()
+    execution_res = interpreter.execute(code)
+    assert np.equal(execution_res, np.array([[1, 2, 3], [4, 5, 6]])).all()
 
 
 def test_import_fail0(interpreter):
@@ -84,18 +84,18 @@ x = np.array([[1, 2, 3], [4, 5, 6]], np.int32)"""
 
 
 def test_action_space(interpreter):
-    code = "rnt = action1()"
-    rnt = interpreter.execute(code)
-    assert rnt == "access action function"
+    code = "res = action1()"
+    execution_res = interpreter.execute(code)
+    assert execution_res == "access action function"
 
 
 def test_fuzz_space(interpreter):
     from PIL import Image
     fuzz_state = {"image": Image.new("RGB", (256, 256))}
     code = "output_image = input_image.crop((20, 20, 100, 100))"
-    rnt = interpreter.execute(code, fuzz_state=fuzz_state)
-    assert rnt.width == 80
-    assert rnt.height == 80
+    execution_res = interpreter.execute(code, fuzz_state=fuzz_state)
+    assert execution_res.width == 80
+    assert execution_res.height == 80
 
 
 def test_keep_state0(interpreter):
@@ -103,10 +103,10 @@ def test_keep_state0(interpreter):
     code2 = "b = a"
     code3 = "c = b"
 
-    rnt = interpreter.execute(code1, keep_state=True)
-    assert rnt == 42
-    rnt = interpreter.execute(code2, keep_state=False)
-    assert rnt == 42
+    execution_res = interpreter.execute(code1, keep_state=True)
+    assert execution_res == 42
+    execution_res = interpreter.execute(code2, keep_state=False)
+    assert execution_res == 42
     with pytest.raises(InterpreterError) as e:
         interpreter.execute(code3, keep_state=False)
     exec_msg = e.value.args[0]
@@ -117,9 +117,9 @@ def test_keep_state0(interpreter):
 def test_keep_state1(interpreter):
     code1 = "from torch import tensor"
     code2 = "a = tensor([[1., -1.], [1., -1.]])"
-    rnt = interpreter.execute(code1, keep_state=True)
-    rnt = interpreter.execute(code2, keep_state=False)
-    assert torch.equal(rnt, torch.tensor([[1., -1.], [1., -1.]]))
+    execution_res = interpreter.execute(code1, keep_state=True)
+    execution_res = interpreter.execute(code2, keep_state=False)
+    assert torch.equal(execution_res, torch.tensor([[1., -1.], [1., -1.]]))
     with pytest.raises(InterpreterError) as e:
         interpreter.execute(code2, keep_state=False)
     exec_msg = e.value.args[0]
@@ -146,12 +146,12 @@ def test_for(interpreter):
 sum = 0
 for i in l:
     sum = sum + i"""
-    rnt = interpreter.execute(code)
-    assert rnt == 28
+    execution_res = interpreter.execute(code)
+    assert execution_res == 28
 
 
 def test_subscript(interpreter):
     code = """l = [2, 3, 5, 7, 11]
-rnt = l[3]"""
-    rnt = interpreter.execute(code)
-    assert rnt == 7
+res = l[3]"""
+    execution_res = interpreter.execute(code)
+    assert execution_res == 7
