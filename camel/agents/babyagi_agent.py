@@ -144,8 +144,8 @@ This result was based on this task description: {task_description}.\n"""
 
         if task_list:
             prompt += f"These are incomplete tasks: {', '.join(task_list)}\n"
-        prompt += "Based on the result, return a list of tasks to be completed \
-in order to meet the objective. "
+        prompt += "Based on the result, return a list of tasks to \
+be completed in order to meet the objective. "
 
         if task_list:
             prompt += "These new tasks must not overlap with incomplete tasks."
