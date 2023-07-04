@@ -16,6 +16,7 @@ import warnings
 from typing import Any, Dict, Optional, Sequence
 
 from colorama import Fore
+from overrides import override
 
 from camel.agents.chat_agent import ChatAgent
 from camel.agents.chat_agent_response import ChatAgentResponse
@@ -143,9 +144,10 @@ class CriticAgent(BaseCritic):
         choice = str(get_first_int(critic_msg.content))
         return choice
 
+    @override
     def reduce_step(
         self,
-        input_messages: Sequence[BaseMessage],
+        messages: Sequence[BaseMessage],
     ) -> ChatAgentResponse:
         r"""Performs one step of the conversation by flattening options to the
         critic, getting the option, and parsing the choice.
@@ -158,13 +160,13 @@ class CriticAgent(BaseCritic):
                 critic's choice.
         """
         meta_chat_message = BaseMessage(
-            role_name=input_messages[0].role_name,
-            role_type=input_messages[0].role_type,
-            meta_dict=input_messages[0].meta_dict,
+            role_name=messages[0].role_name,
+            role_type=messages[0].role_type,
+            meta_dict=messages[0].meta_dict,
             content="",
         )
 
-        flatten_options = self.flatten_options(input_messages)
+        flatten_options = self.flatten_options(messages)
         if self.verbose:
             print_text_animated(self.logger_color +
                                 f"\x1b[3m{flatten_options}\x1b[0m\n")

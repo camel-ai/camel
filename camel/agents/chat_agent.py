@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from types import GeneratorType
 from typing import Any, Dict, List, Optional, Tuple
 
+from overrides import override
 from tenacity import retry
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_exponential
@@ -98,6 +99,7 @@ class ChatAgent(BaseAgent):
         self.stored_messages: List[ChatRecord]
         self.init_messages()
 
+    @override
     def reset(self) -> None:
         r"""Resets the :obj:`ChatAgent` to its initial state and returns the
         stored messages.
@@ -189,6 +191,7 @@ class ChatAgent(BaseAgent):
 
     @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     @openai_api_key_required
+    @override
     def step(
         self,
         input_message: BaseMessage,

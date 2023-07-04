@@ -14,6 +14,7 @@
 from typing import Any, List, Optional
 
 from colorama import Fore
+from overrides import override
 
 from camel.agents import (
     BaseToolAgent,
@@ -82,6 +83,7 @@ class EmbodiedAgent(ChatAgent):
             for action in self.action_space
         ])
 
+    @override
     def step(
         self,
         input_message: BaseMessage,

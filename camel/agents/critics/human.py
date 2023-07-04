@@ -14,6 +14,7 @@
 from typing import Any, Dict, Sequence
 
 from colorama import Fore
+from overrides import override
 
 from camel.agents.chat_agent_response import ChatAgentResponse
 from camel.messages import BaseMessage
@@ -107,6 +108,7 @@ class HumanCritic(BaseCritic):
 
         return content
 
+    @override
     def reduce_step(self,
                     messages: Sequence[BaseMessage]) -> ChatAgentResponse:
         r"""Performs one step of the conversation by displaying options to the

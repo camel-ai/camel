@@ -4,6 +4,7 @@ openai
 tenacity
 tiktoken
 colorama
+overrides
 
 # Packages for development
 yapf
