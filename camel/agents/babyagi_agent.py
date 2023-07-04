@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import copy
 import os
 import re
 from collections import deque
@@ -19,16 +20,16 @@ from typing import Any, Dict, List, Optional
 import chromadb
 import openai
 import tiktoken
-# default opt out of chromadb telemetry.
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 
+from camel.agents import BaseAgent
 from camel.configs import ChatGPTConfig
 from camel.typing import ModelType
 
 RESULTS_STORE_NAME = "example_table"
 
 
-class BabyAGIAgent:
+class BabyAGIAgent(BaseAgent):
     r"""Class for managing conversations of CAMEL BabyAGI Agents.
 
     Args:
@@ -57,7 +58,7 @@ class BabyAGIAgent:
         self.objective = objective
         self.results_storage = DefaultResultsStorage()
 
-    def init_tasks(self, first_task: Dict) -> None:
+    def reset(self, first_task: Dict) -> None:
         r"""Initializes the stored tasks list with the initial task.
         """
         self.tasks_storage = SingleTaskListStorage()
@@ -90,7 +91,7 @@ class BabyAGIAgent:
         # num_tokens = num_tokens_from_messages(prompt, self.model)
         # if num_tokens < self.model_token_limit:
         response = openai.Completion.create(engine="text-davinci-003",
-                                            prompt=prompt)
+                                            prompt=prompt, max_tokens=1000)
         return response.choices[0].text.strip()
 
     def num_tokens_from_prompt(self, prompt: str) -> int:
@@ -162,10 +163,10 @@ If your list is empty, write "There are no tasks to add at this time."
 Unless your list is empty, do not include any headers before your numbered list
 or follow your numbered list with any other output."""
 
-        print(f'\n*****TASK CREATION AGENT PROMPT****\n{prompt}\n')
+        # print(f'\n*****TASK CREATION AGENT PROMPT****\n{prompt}\n')
         response = openai.Completion.create(engine="text-davinci-003",
-                                            prompt=prompt, max_tokens=2000)
-        print(f'\n****TASK CREATION AGENT RESPONSE****\n{response}\n')
+                                            prompt=prompt, max_tokens=1000)
+        # print(f'\n****TASK CREATION AGENT RESPONSE****\n{response}\n')
         new_tasks = response.choices[0].text.strip().split('\n')
         new_tasks_list = []
         for task_string in new_tasks:
@@ -207,14 +208,14 @@ The number of each entry must be followed by a period.
 Do not include any headers before your ranked list or
 follow your list with any other output."""
 
-        print(f'\n****TASK PRIORITIZATION AGENT PROMPT****\n{prompt}\n')
+        # print(f'\n****TASK PRIORITIZATION AGENT PROMPT****\n{prompt}\n')
         response = response = openai.Completion.create(
-            engine="text-davinci-003", prompt=prompt, max_tokens=2000)
+            engine="text-davinci-003", prompt=prompt, max_tokens=1000)
         response = response.choices[0].text.strip()
-        print(f'\n****TASK PRIORITIZATION AGENT RESPONSE****\n{response}\n')
+        # print(f'\n****TASK PRIORITIZATION AGENT RESPONSE****\n{response}\n')
         if not response:
-            print("Received empty response from priotritization agent.\
-                  Keeping task list unchanged.")
+            # print("Received empty response from priotritization agent.\
+            #      Keeping task list unchanged.")
             return
         new_tasks = response.split("\n") if "\n" in response else [response]
         new_tasks_list = []
@@ -230,6 +231,53 @@ follow your list with any other output."""
                     })
 
         return new_tasks_list
+
+    def step(self) -> dict:
+        r"""Performs a single step in solving one task and
+        generaing new tasks and priotizing them.
+
+        Returns:
+            dict: A info dict containing the current task,
+                this task solution, new created tasked and
+                information about their priorities.
+        """
+        info = {}
+        task = self.tasks_storage.popleft()
+        info['current_task'] = (task['task_id'], task['task_name'])
+
+        # Send to execution function to complete the task
+        # based on the context
+        result = self.execution_agent(self.objective, task["task_name"])
+        info['task_result'] = result
+
+        # Step 2: Enrich result and store in the results storage
+        # This is where you should enrich the result if needed
+        enriched_result = {"data": result}
+        result_id = f"result_{task['task_id']}"
+        self.results_storage.add(task, result, result_id)
+
+        # Step 3: Create new tasks and re-prioritize task list
+        # only the main instance in cooperative mode does that
+        new_tasks = self.task_creation_agent(
+            self.objective,
+            enriched_result,
+            task["task_name"],
+            self.tasks_storage.get_task_names(),
+        )
+        info['new_tasks_ordering'] = []
+        # Adding new tasks to task_storage
+        for new_task in new_tasks:
+            new_task.update({"task_id": self.tasks_storage.next_task_id()})
+            self.tasks_storage.append(new_task)
+            info['new_tasks_ordering'].append(new_task)
+
+        prioritized_tasks = self.prioritization_agent()
+        if prioritized_tasks:
+            self.tasks_storage.replace(prioritized_tasks)
+            info['prioritized_tasks_ordering'] = copy.deepcopy(
+                prioritized_tasks)
+
+        return info
 
 
 # Results storage using local ChromaDB

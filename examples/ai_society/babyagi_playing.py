@@ -22,59 +22,37 @@ def main() -> None:
     objective = "Solve world hunger."
     first_task = {"task_id": 1, "task_name": "Develop a task list."}
 
+    print("\033[91m\033[1m" + "\n*****OBJECTIVE*****\n" + "\033[0m\033[0m")
+    print(objective)
+
     babyagi_play_session = BabyAGIAgent(objective, mode_type)
-    babyagi_play_session.init_tasks(first_task)
+    babyagi_play_session.reset(first_task)
 
     limit = 5
     n = 0
     while n < limit:
         n += 1
         if not babyagi_play_session.tasks_storage.is_empty():
-            # Step 1: Pull the first task
-            task = babyagi_play_session.tasks_storage.popleft()
-            print("\033[92m\033[1m" + "\n*****NEXT TASK*****\n" +
-                  "\033[0m\033[0m")
-            print(str(task['task_id']) + ": " + task['task_name'])
 
-            # Send to execution function to complete the task
-            # based on the context
-            result = babyagi_play_session.execution_agent(
-                objective, task["task_name"])
+            info = babyagi_play_session.step()
+            print("\033[92m\033[1m" + "\n*****CURRENT TASK*****\n" +
+                  "\033[0m\033[0m")
+            print(
+                str(info['current_task'][0]) + ": " + info['current_task'][1])
+
             print("\033[93m\033[1m" + "\n*****TASK RESULT*****\n" +
                   "\033[0m\033[0m")
-            print(result)
+            print(info['task_result'])
 
-            # Step 2: Enrich result and store in the results storage
-            # This is where you should enrich the result if needed
-            enriched_result = {"data": result}
-            # extract the actual result from the dictionary
-            # since we don't do enrichment currently
-            # vector = enriched_result["data"]
+            print("\033[94m\033[1m" + "\n*****NEW TASKS*****\n" +
+                  "\033[0m\033[0m")
+            for new_task in info['new_tasks_ordering']:
+                print(str(new_task["task_id"]) + ": " + new_task["task_name"])
 
-            result_id = f"result_{task['task_id']}"
-            babyagi_play_session.results_storage.add(task, result, result_id)
-
-            # Step 3: Create new tasks and re-prioritize task list
-            # only the main instance in cooperative mode does that
-            new_tasks = babyagi_play_session.task_creation_agent(
-                objective,
-                enriched_result,
-                task["task_name"],
-                babyagi_play_session.tasks_storage.get_task_names(),
-            )
-
-            print('Adding new tasks to task_storage')
-            for new_task in new_tasks:
-                new_task.update({
-                    "task_id":
-                    babyagi_play_session.tasks_storage.next_task_id()
-                })
-                print(str(new_task))
-                babyagi_play_session.tasks_storage.append(new_task)
-
-            prioritized_tasks = babyagi_play_session.prioritization_agent()
-            if prioritized_tasks:
-                babyagi_play_session.tasks_storage.replace(prioritized_tasks)
+            print("\033[95m\033[1m" + "\n*****PRIORITIZED TASKS*****\n" +
+                  "\033[0m\033[0m")
+            for new_task in info['prioritized_tasks_ordering']:
+                print(str(new_task["task_id"]) + ": " + new_task["task_name"])
 
             # Sleep a bit before checking the task list again
             time.sleep(3)

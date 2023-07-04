@@ -30,7 +30,7 @@ def test_babyagi_agent(model: ModelType):
     objective = "Solve world hunger."
     first_task = {"task_id": 1, "task_name": "Develop a task list."}
     babyagi = BabyAGIAgent(objective, model=model, model_config=model_config)
-    babyagi.init_tasks(first_task)
+    babyagi.reset(first_task)
     assert babyagi.tasks_storage.is_empty() is False
 
     task = babyagi.tasks_storage.popleft()
@@ -61,7 +61,11 @@ def test_babyagi_agent(model: ModelType):
     assert isinstance(prioritized_tasks, list)
     assert len(prioritized_tasks) > 0
     assert isinstance(prioritized_tasks[0], dict)
-
+    """
+    # this test is to check if new prioritized tasks and old tasks are
+    # different only in the task ordering. But they may differ slightly.
+    # because the prioritized tasks are generated from openai api
+    # based on old tasks. Some words may change.
     old_number_tasks = list(babyagi.tasks_storage.tasks)
     old_number_tasks_names = [task['task_name'] for task in old_number_tasks]
     if prioritized_tasks:
@@ -72,3 +76,4 @@ def test_babyagi_agent(model: ModelType):
         assert task in new_number_tasks_names
     for task in new_number_tasks_names:
         assert task in old_number_tasks_names
+    """
