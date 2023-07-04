@@ -23,7 +23,7 @@ from camel.agents import (
 )
 from camel.messages import BaseMessage
 from camel.typing import ModelType
-from camel.utils import print_text_animated
+from camel.utils import PythonInterpreter, print_text_animated
 
 
 class EmbodiedAgent(ChatAgent):
@@ -120,12 +120,17 @@ class EmbodiedAgent(ChatAgent):
 
         if codes is not None:
             content = "\n> Executed Results:"
-            global_vars = {action.name: action for action in self.action_space}
-            for code in codes:
-                executed_outputs = code.execute(global_vars)
-                content += (
-                    f"- Python standard output:\n{executed_outputs[0]}\n"
-                    f"- Local variables:\n{executed_outputs[1]}\n")
+            action_space = {
+                action.name: action
+                for action in self.action_space
+            }
+            action_space.update({"print": print})
+            interpreter = PythonInterpreter(action_space=action_space)
+            for block_idx, code in enumerate(codes):
+                executed_outputs, _ = code.execute(interpreter)
+                content += (f"Executing code block {block_idx}:\n"
+                            f"  - execution output:\n{executed_outputs}\n"
+                            f"  - Local variables:\n{interpreter.state}\n")
                 content += "*" * 50 + "\n"
 
         # TODO: Handle errors
