@@ -88,7 +88,7 @@ class RolePlaying:
         sys_msg_generator_kwargs: Optional[Dict] = None,
         extend_sys_msg_meta_dicts: Optional[List[Dict]] = None,
         extend_task_specify_meta_dict: Optional[Dict] = None,
-        output_language: str = None,
+        output_language: Optional[str] = None,
     ) -> None:
         self.with_task_specify = with_task_specify
         self.with_task_planner = with_task_planner
@@ -250,7 +250,8 @@ class RolePlaying:
             raise ValueError("Got than one message to process. "
                              f"Num of messages: {len(messages)}.")
         elif self.with_critic_in_the_loop and self.critic is not None:
-            processed_msg = self.critic.step(messages)
+            critic_response = self.critic.reduce_step(messages)
+            processed_msg = critic_response.msg
         else:
             processed_msg = messages[0]
 
