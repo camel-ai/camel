@@ -367,7 +367,8 @@ class RolePlaying:
             raise ValueError("Got than one message to process. "
                              f"Num of messages: {len(messages)}.")
         elif self.with_critic_in_the_loop and self.critic is not None:
-            processed_msg = self.critic.step(messages)
+            critic_response = self.critic.reduce_step(messages)
+            processed_msg = critic_response.msg
         else:
             processed_msg = messages[0]
 
