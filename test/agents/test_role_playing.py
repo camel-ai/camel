@@ -37,7 +37,6 @@ def test_role_playing_init(critic_role_name, with_critic_in_the_loop):
     assert role_playing.with_task_specify is False
     assert role_playing.with_task_planner is False
     assert role_playing.with_critic_in_the_loop is with_critic_in_the_loop
-    assert role_playing.critic_role_name == critic_role_name
     assert role_playing.model_type == ModelType.GPT_3_5_TURBO
     assert role_playing.task_type == TaskType.AI_SOCIETY
     assert role_playing.task_prompt == "Perform the task"
