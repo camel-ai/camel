@@ -152,15 +152,6 @@ class CodePrompt(TextPrompt):
         """
         return self._code_type
 
-    @code_type.setter
-    def code_type(self, code_type: str) -> None:
-        r"""Sets the type of code.
-
-        Args:
-            code_type (str): The type of code.
-        """
-        self._code_type = code_type
-
     def set_code_type(self, code_type: str) -> None:
         r"""Sets the type of code.
 

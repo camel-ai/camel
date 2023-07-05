@@ -133,7 +133,6 @@ def test_code_prompt_set_code_type():
     code_prompt = CodePrompt("print('Hello, World!')")
     code_prompt.set_code_type("python")
     assert code_prompt.code_type == "python"
-    code_prompt.code_type = "c++"
     assert code_prompt.code_type == "c++"
 
 
