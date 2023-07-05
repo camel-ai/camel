@@ -14,6 +14,7 @@
 from camel.agents import FuncAgent
 from camel.messages import BaseMessage
 
+
 def add(a, b):
     """
     Adds Two Numbers
@@ -31,6 +32,7 @@ def add(a, b):
         sum
     """
     return a + b
+
 
 def sub(a, b):
     """
@@ -50,6 +52,7 @@ def sub(a, b):
     """
     return a - b
 
+
 def mul(a, b):
     """
     Muls Two Numbers
@@ -68,14 +71,15 @@ def mul(a, b):
     """
     return a * b
 
+
 def main():
     # Create an embodied agent
     role_name = "Student"
-    
+
     functions = [add, sub, mul]
 
     func_agent = FuncAgent(
-        role_name, 
+        role_name,
         functions,
         verbose=True,
     )
@@ -90,6 +94,7 @@ def main():
     executed = "true" if func_call else "false"
     print(f"Function is executed or not? {executed}")
     print(f"Final output:\n {output_message[0].content}")
+
 
 if __name__ == "__main__":
     main()

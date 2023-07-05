@@ -34,10 +34,11 @@ class OpenAIModel(BaseModelBackend):
         """
         super().__init__(model_type, model_config_dict)
 
-    def run(self, 
-            messages: List[Dict],
-            functions: Optional[List[Dict]] = None,
-        ) -> Dict[str, Any]:
+    def run(
+        self,
+        messages: List[Dict],
+        functions: Optional[List[Dict]] = None,
+    ) -> Dict[str, Any]:
         r"""Run inference of OpenAI chat completion.
 
         Args:
