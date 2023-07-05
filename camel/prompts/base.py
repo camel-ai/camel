@@ -12,9 +12,20 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import inspect
-from typing import Any, Callable, Dict, Optional, Set, Tuple, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 from camel.typing import RoleType
+from camel.utils import PythonInterpreter
 
 T = TypeVar('T')
 
@@ -87,16 +98,16 @@ def wrap_prompt_functions(cls: T) -> T:
 class TextPrompt(str):
     r"""A class that represents a text prompt. The :obj:`TextPrompt` class
     extends the built-in :obj:`str` class to provide a property for retrieving
-    the set of key words in the prompt.
+    the set of keywords in the prompt.
 
     Attributes:
-        key_words (set): A set of strings representing the key words in the
+        key_words (set): A set of strings representing the keywords in the
             prompt.
     """
 
     @property
     def key_words(self) -> Set[str]:
-        r"""Returns a set of strings representing the key words in the prompt.
+        r"""Returns a set of strings representing the keywords in the prompt.
         """
         from camel.utils import get_prompt_template_key_words
         return get_prompt_template_key_words(self)
@@ -124,8 +135,7 @@ class CodePrompt(TextPrompt):
     r"""A class that represents a code prompt. It extends the :obj:`TextPrompt`
     class with a :obj:`code_type` property.
 
-    Args:
-        code_string (str): The code string for the prompt.
+    Attributes:
         code_type (str, optional): The type of code. Defaults to None.
     """
 
@@ -162,47 +172,31 @@ class CodePrompt(TextPrompt):
         self._code_type = code_type
 
     def execute(
-            self,
-            global_vars: Optional[Dict] = None) -> Tuple[str, Optional[Dict]]:
-        r"""Executes the code string. If there is an error, the error is caught
-        and the traceback is returned. Otherwise, the output string and local
-        variables are returned.
+        self, interpreter: Optional[PythonInterpreter] = None,
+        user_variable: Optional[Dict[str, Any]] = None
+    ) -> Tuple[Any, PythonInterpreter]:
+        r"""Executes the code string by a given python interpreter.
 
         Args:
-            global_vars (Dict, optional): Global variables to be used during
-                code execution. (default: :obj:`None`)
+            interpreter (PythonInterpreter, optional): interpreter to be used
+                during code execution. (default: :obj:`None`)
+            user_variable (Optional[Dict[str, Any]]): varibales that can be
+                used in the code, which applying fuzzy matching, such as images
+                or documents. (default: :obj:`None`)
 
         Returns:
-            Tuple[str, Optional[Dict]]: A tuple containing the output string
-                and local variables.
-        """
+            Tuple[Any, PythonInterpreter]: A tuple containing the execution
+                result and the used interpreter. The execution result
+                represents the value of the last statement (excluding "import")
+                in the code. This value could potentially be the desired result
+                of the LLM-generated code.        
+    """
         # NOTE: Only supports Python code for now.
-        try:
-            # Execute the code string
-            import io
-            import sys
-            output_str = io.StringIO()
-            sys.stdout = output_str
-
-            global_vars = global_vars or globals()
-            local_vars: Dict[str, Any] = {}
-            exec(
-                self,
-                global_vars,
-                local_vars,
-            )
-            sys.stdout = sys.__stdout__
-            output_str.seek(0)
-
-            # If there was no error, return the output and local variables
-            return output_str.read(), local_vars
-
-        except Exception:
-            import traceback
-            traceback_str = traceback.format_exc()
-            sys.stdout = sys.__stdout__
-            # If there was an error, return the traceback
-            return traceback_str, None
+        if not interpreter:
+            interpreter = PythonInterpreter(action_space=globals())
+        execution_res = interpreter.execute(self, fuzz_state=user_variable,
+                                            keep_state=True)
+        return execution_res, interpreter
 
 
 # flake8: noqa :E501
