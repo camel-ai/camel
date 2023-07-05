@@ -75,6 +75,7 @@ module = [
     "transformers.tools",
     "tiktoken",
     "openai",
+    "openai.error",
     "tenacity",
     "tenacity.stop",
     "tenacity.wait",
@@ -83,5 +84,11 @@ module = [
     "_pytest.nodes",
     "numpy",
     "torch",
+    "sqlalchemy",
+    "google.cloud.sql.connector",
+    "gradio",
+    "database_connection",
+    "huggingface_hub",
+    "huggingface_hub.utils._errors",
 ]
 ignore_missing_imports = true

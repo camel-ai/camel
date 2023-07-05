@@ -69,3 +69,4 @@ jobs:
         run: |
           mypy --install-types --non-interactive --namespace-packages -p camel
           mypy --install-types --non-interactive --namespace-packages -p test
+          mypy --install-types --non-interactive --namespace-packages -p apps
