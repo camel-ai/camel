@@ -79,5 +79,9 @@ module = [
     "tenacity.stop",
     "tenacity.wait",
     "pytest",
+    "_pytest.config",
+    "_pytest.nodes",
+    "numpy",
+    "torch",
 ]
 ignore_missing_imports = true
