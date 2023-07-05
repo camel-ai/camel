@@ -34,6 +34,7 @@ class DummyAgent(BaseAgent):
         input_message: BaseMessage,
     ) -> ChatAgentResponse:
         self.step_count += 1
+        return ChatAgentResponse([], False, {})
 
 
 def test_base_agent():
