@@ -26,18 +26,19 @@ def action_function():
 @pytest.fixture()
 def interpreter():
     action_space = {"action1": action_function}
-    white_list = ["torch", "numpy.array"]
+    white_list = ["torch", "numpy.array", "openai"]
     return PythonInterpreter(action_space=action_space,
                              import_white_list=white_list)
 
 
 def test_import_success0(interpreter):
-    code = """import torch
-a = torch.tensor([[1., -1.], [1., -1.]])"""
+    code = """import torch as pt, openai
+a = pt.tensor([[1., -1.], [1., -1.]])
+openai.__version__"""
     execution_res = interpreter.execute(code)
     assert torch.equal(interpreter.state["a"],
                        torch.tensor([[1., -1.], [1., -1.]]))
-    assert torch.equal(execution_res, torch.tensor([[1., -1.], [1., -1.]]))
+    assert isinstance(execution_res, str)
 
 
 def test_import_success1(interpreter):
@@ -48,13 +49,6 @@ a = tensor([[1., -1.], [1., -1.]])"""
 
 
 def test_import_success2(interpreter):
-    code = """import torch as pytorch
-a = pytorch.tensor([[1., -1.], [1., -1.]])"""
-    execution_res = interpreter.execute(code)
-    assert torch.equal(execution_res, torch.tensor([[1., -1.], [1., -1.]]))
-
-
-def test_import_success3(interpreter):
     code = """from numpy import array
 x = array([[1, 2, 3], [4, 5, 6]])"""
     execution_res = interpreter.execute(code)
@@ -125,6 +119,21 @@ def test_keep_state1(interpreter):
     exec_msg = e.value.args[0]
     assert exec_msg == ("Evaluation of the code stopped at line 0. See:\n"
                         "The variable `tensor` is not defined.")
+
+
+def test_assign0(interpreter):
+    code = "a = b = 1"
+    interpreter.execute(code)
+    assert interpreter.state["a"] == 1
+    assert interpreter.state["b"] == 1
+
+
+def test_assign1(interpreter):
+    code = "a, b = c = 2, 3"
+    interpreter.execute(code)
+    assert interpreter.state["a"] == 2
+    assert interpreter.state["b"] == 3
+    assert interpreter.state["c"] == (2, 3)
 
 
 def test_if(interpreter):
