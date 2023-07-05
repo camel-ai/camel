@@ -71,9 +71,17 @@ markers = [
 [tool.coverage.report]
 include_namespace_packages = true
 
+[tool.mypy]
+exclude = ['camel/utils/python_interpreter.py']
+
 [[tool.mypy.overrides]]
 module = [
     "transformers.tools",
     "overrides",
+    "tiktoken",
+    "openai",
+    "tenacity",
+    "tenacity.stop",
+    "tenacity.wait",
 ]
 ignore_missing_imports = true
