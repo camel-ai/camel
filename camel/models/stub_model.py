@@ -24,6 +24,7 @@ class StubModel(BaseModelBackend):
     def __init__(self, model_type: ModelType,
                  model_config_dict: Dict[str, Any]) -> None:
         r"""All arguments are unused for the dummy model."""
+        super().__init__(model_type, model_config_dict)
         pass
 
     def run(self, messages: List[Dict]) -> Dict[str, Any]:

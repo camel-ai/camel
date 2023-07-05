@@ -15,7 +15,7 @@ from typing import Any, Dict, Optional, Union
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
-from camel.messages import SystemMessage, UserChatMessage
+from camel.messages import BaseMessage
 from camel.prompts import PromptTemplateGenerator, TextPrompt
 from camel.typing import ModelType, RoleType, TaskType
 
@@ -51,7 +51,7 @@ class TaskSpecifyAgent(ChatAgent):
         model_config: Optional[Any] = None,
         task_specify_prompt: Optional[Union[str, TextPrompt]] = None,
         word_limit: int = DEFAULT_WORD_LIMIT,
-        output_language: str = None,
+        output_language: Optional[str] = None,
     ) -> None:
 
         if task_specify_prompt is None:
@@ -65,9 +65,10 @@ class TaskSpecifyAgent(ChatAgent):
 
         model_config = model_config or ChatGPTConfig(temperature=1.0)
 
-        system_message = SystemMessage(
+        system_message = BaseMessage(
             role_name="Task Specifier",
             role_type=RoleType.ASSISTANT,
+            meta_dict=None,
             content="You can make a task more specific.",
         )
 
@@ -99,8 +100,8 @@ class TaskSpecifyAgent(ChatAgent):
             self.task_specify_prompt = (self.task_specify_prompt.format(
                 **meta_dict))
 
-        task_msg = UserChatMessage(role_name="Task Specifier",
-                                   content=self.task_specify_prompt)
+        task_msg = BaseMessage.make_user_message(
+            role_name="Task Specifier", content=self.task_specify_prompt)
         specifier_response = super().step(task_msg)
         if (specifier_response.msgs is None
                 or len(specifier_response.msgs) == 0):
@@ -134,15 +135,16 @@ class TaskPlannerAgent(ChatAgent):
         self,
         model: Optional[ModelType] = None,
         model_config: Any = None,
-        output_language: str = None,
+        output_language: Optional[str] = None,
     ) -> None:
 
         self.task_planner_prompt = TextPrompt(
             "Divide this task into subtasks: {task}. Be concise.")
 
-        system_message = SystemMessage(
+        system_message = BaseMessage(
             role_name="Task Planner",
             role_type=RoleType.ASSISTANT,
+            meta_dict=None,
             content="You are a helpful task planner.",
         )
 
@@ -167,8 +169,8 @@ class TaskPlannerAgent(ChatAgent):
         self.task_planner_prompt = self.task_planner_prompt.format(
             task=task_prompt)
 
-        task_msg = UserChatMessage(role_name="Task Planner",
-                                   content=self.task_planner_prompt)
+        task_msg = BaseMessage.make_user_message(
+            role_name="Task Planner", content=self.task_planner_prompt)
         # sub_tasks_msgs, terminated, _
         task_response = super().step(task_msg)
 

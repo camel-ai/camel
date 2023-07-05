@@ -15,7 +15,8 @@ from typing import Any, Dict, Sequence
 
 from colorama import Fore
 
-from camel.messages import ChatMessage
+from camel.agents import ChatAgentResponse
+from camel.messages import BaseMessage
 from camel.utils import print_text_animated
 
 
@@ -46,11 +47,11 @@ class Human:
         self.kill_button = "Stop!!!"
         self.options_dict: Dict[str, str] = dict()
 
-    def display_options(self, messages: Sequence[ChatMessage]) -> None:
+    def display_options(self, messages: Sequence[BaseMessage]) -> None:
         r"""Displays the options to the user.
 
         Args:
-            messages (Sequence[ChatMessage]): A list of `ChatMessage` objects.
+            messages (Sequence[BaseMessage]): A list of `BaseMessage` objects.
 
         Returns:
             None
@@ -86,44 +87,44 @@ class Human:
 
         return human_input
 
-    def parse_input(self, human_input: str,
-                    meta_chat_message: ChatMessage) -> ChatMessage:
-        r"""Parses the user's input and returns a `ChatMessage` object.
+    def parse_input(self, human_input: str) -> str:
+        r"""Parses the user's input and returns a `BaseMessage` object.
 
         Args:
             human_input (str): The user's input.
-            meta_chat_message (ChatMessage): A `ChatMessage` object.
 
         Returns:
-            ChatMessage: A `ChatMessage` object.
+            content: A `str` object representing the user's input.
         """
         if self.options_dict[human_input] == self.input_button:
-            meta_chat_message.content = input(self.logger_color +
-                                              "Please enter your message: ")
-            return meta_chat_message
+            content = input(self.logger_color + "Please enter your message: ")
         elif self.options_dict[human_input] == self.kill_button:
             exit(self.logger_color + f"Killed by {self.name}.")
         else:
-            meta_chat_message.content = self.options_dict[human_input]
-            return meta_chat_message
+            content = self.options_dict[human_input]
 
-    def step(self, messages: Sequence[ChatMessage]) -> ChatMessage:
+        return content
+
+    def reduce_step(self,
+                    messages: Sequence[BaseMessage]) -> ChatAgentResponse:
         r"""Performs one step of the conversation by displaying options to the
         user, getting their input, and parsing their choice.
 
         Args:
-            messages (Sequence[ChatMessage]): A list of ChatMessage objects.
+            messages (Sequence[BaseMessage]): A list of BaseMessage objects.
 
         Returns:
-            ChatMessage: A `ChatMessage` object representing the user's choice.
+            ChatAgentResponse: A `ChatAgentResponse` object representing the
+                user's choice.
         """
-        meta_chat_message = ChatMessage(
+        meta_chat_message = BaseMessage(
             role_name=messages[0].role_name,
             role_type=messages[0].role_type,
             meta_dict=messages[0].meta_dict,
-            role=messages[0].role,
             content="",
         )
         self.display_options(messages)
         human_input = self.get_input()
-        return self.parse_input(human_input, meta_chat_message)
+        content = self.parse_input(human_input)
+        message = meta_chat_message.create_new_instance(content)
+        return ChatAgentResponse([message], terminated=False, info={})

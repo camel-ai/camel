@@ -14,16 +14,17 @@
 import pytest
 
 from camel.agents import CriticAgent
-from camel.messages import ChatMessage, SystemMessage
+from camel.messages import BaseMessage
 from camel.typing import RoleType
 
 
 @pytest.fixture
 def critic_agent() -> CriticAgent:
     return CriticAgent(
-        SystemMessage(
+        BaseMessage(
             "critic",
             RoleType.CRITIC,
+            None,
             content=("You are a critic who assists in selecting an option "
                      "and provides explanations. "
                      "Your favorite fruit is Apple. "
@@ -33,18 +34,16 @@ def critic_agent() -> CriticAgent:
 
 def test_flatten_options(critic_agent: CriticAgent):
     messages = [
-        ChatMessage(
+        BaseMessage(
             role_name="user",
             role_type=RoleType.USER,
             meta_dict=dict(),
-            role="user",
             content="Apple",
         ),
-        ChatMessage(
+        BaseMessage(
             role_name="user",
             role_type=RoleType.USER,
             meta_dict=dict(),
-            role="user",
             content="Banana",
         ),
     ]
@@ -60,27 +59,24 @@ def test_flatten_options(critic_agent: CriticAgent):
 @pytest.mark.model_backend
 def test_get_option(critic_agent: CriticAgent):
     messages = [
-        ChatMessage(
+        BaseMessage(
             role_name="user",
             role_type=RoleType.USER,
             meta_dict=dict(),
-            role="user",
             content="Apple",
         ),
-        ChatMessage(
+        BaseMessage(
             role_name="user",
             role_type=RoleType.USER,
             meta_dict=dict(),
-            role="user",
             content="Banana",
         ),
     ]
     flatten_options = critic_agent.flatten_options(messages)
-    input_message = ChatMessage(
+    input_message = BaseMessage(
         role_name="user",
         role_type=RoleType.USER,
         meta_dict=dict(),
-        role="user",
         content=flatten_options,
     )
     assert critic_agent.options_dict == {"1": "Apple", "2": "Banana"}
@@ -89,11 +85,10 @@ def test_get_option(critic_agent: CriticAgent):
 
 
 def test_parse_critic(critic_agent: CriticAgent):
-    critic_msg = ChatMessage(
+    critic_msg = BaseMessage(
         role_name="critic",
         role_type=RoleType.CRITIC,
         meta_dict=dict(),
-        role="assistant",
         content="I choose option 1",
     )
     expected_output = "1"
@@ -101,23 +96,22 @@ def test_parse_critic(critic_agent: CriticAgent):
 
 
 @pytest.mark.model_backend
-def test_step(critic_agent: CriticAgent):
+def test_reduce_step(critic_agent: CriticAgent):
     messages = [
-        ChatMessage(
+        BaseMessage(
             role_name="user",
             role_type=RoleType.USER,
             meta_dict=dict(),
-            role="user",
             content="Apple",
         ),
-        ChatMessage(
+        BaseMessage(
             role_name="user",
             role_type=RoleType.USER,
             meta_dict=dict(),
-            role="user",
             content="Banana",
         ),
     ]
 
-    assert (critic_agent.step(messages)
-            == messages[0]) or (critic_agent.step(messages) == messages[1])
+    critic_response = critic_agent.reduce_step(messages)
+    assert (critic_response.msg == messages[0]) or (critic_response.msg
+                                                    == messages[1])

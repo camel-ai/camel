@@ -18,12 +18,7 @@ import os
 from camel.agents import ChatAgent, TaskSpecifyAgent
 from camel.configs import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
-from camel.messages import (
-    AssistantChatMessage,
-    AssistantSystemMessage,
-    UserChatMessage,
-    UserSystemMessage,
-)
+from camel.messages import BaseMessage
 from camel.typing import RoleType, TaskType
 from camel.utils import download_tasks
 
@@ -31,21 +26,21 @@ from camel.utils import download_tasks
 def init_chat(
     assistant_agent: ChatAgent,
     user_agent: ChatAgent,
-    user_sys_msg: UserSystemMessage,
-    assistant_sys_msg: AssistantSystemMessage,
+    user_sys_msg: BaseMessage,
+    assistant_sys_msg: BaseMessage,
 ):
     assistant_agent.reset()
     user_agent.reset()
 
     # Send the system messages again to the agents using chat messages
-    assistant_msg = AssistantChatMessage(
-        role_name=assistant_agent.role_name, role="assistant",
+    assistant_msg = BaseMessage.make_assistant_message(
+        role_name=assistant_agent.role_name,
         content=(f"{user_sys_msg.content}. "
                  "Now start to give me instructions one by one. "
                  "Only reply with Instruction and Input."))
 
-    user_msg = UserChatMessage(role_name=user_agent.role_name,
-                               content=f"{assistant_sys_msg.content}")
+    user_msg = BaseMessage.make_user_message(
+        role_name=user_agent.role_name, content=f"{assistant_sys_msg.content}")
     assistant_response = assistant_agent.step(user_msg)
 
     return assistant_msg, assistant_response.msgs
@@ -134,7 +129,7 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
                 f"{user_response.info['termination_reasons'][0]}")
             break
 
-        user_agent.update_messages(user_response.msg)
+        user_agent.submit_message(user_response.msg)
         print(f"User:\n{user_response.msg.content}\n")
 
         assistant_response = assistant_agent.step(user_response.msg)
@@ -146,7 +141,7 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
                 f"{assistant_response.info['termination_reasons'][0]}")
             break
 
-        assistant_agent.update_messages(assistant_response.msg)
+        assistant_agent.submit_message(assistant_response.msg)
         print(f"Assistant:\n{assistant_response.msg.content}\n")
 
         # Condition 3: Break if user does not give instruction
