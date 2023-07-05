@@ -19,7 +19,7 @@ class BaseAgent(ABC):
     r"""An abstract base class for all CAMEL agents."""
 
     @abstractmethod
-    def reset(self, *args: Any, **kwargs: Any) -> Any:
+    def reset(self) -> None:
         r"""Resets the agent to its initial state."""
         pass
 
