@@ -86,8 +86,8 @@ class PythonInterpreter():
         self.import_white_list = import_white_list or []
 
     def execute(self, code: str, state: Dict[str, Any] = None,
-                fuzz_state: Dict[str,
-                                 Any] = None, keep_state: bool = True) -> Any:
+                fuzz_state: Optional[Dict[str, Any]] = None,
+                keep_state: bool = True) -> Any:
         r""" Execute the input python codes in a security environment.
 
         Args:
