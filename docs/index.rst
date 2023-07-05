@@ -19,6 +19,12 @@ Welcome to CAMEL's documentation!
    get_started/text_prompt.md
    get_started/code_prompt.md
    get_started/messages.md
+   get_started/chat_agent.md
+   get_started/task_agent.md
+   get_started/task_agent_specify.md
+   get_started/critic_agent.md
+   get_started/SystemMessageGenerator.md
+   get_started/AISocietyPromptTemplateDict.md
 
 .. toctree::
    :maxdepth: 1
