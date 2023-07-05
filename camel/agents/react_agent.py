@@ -17,7 +17,7 @@ from colorama import Fore
 
 from camel.agents import BaseToolAgent, ChatAgent
 from camel.agents.chat_agent import ChatAgentResponse
-from camel.messages import ChatMessage, SystemMessage
+from camel.messages import BaseMessage
 from camel.typing import ModelType
 from camel.utils import print_text_animated
 
@@ -33,7 +33,7 @@ class ReActAgent(ChatAgent):
     Class for managing conversions of a CAMEL agent following ReAct pattern.
 
     Args:
-        system_message (SystemMessage): The system message for ReAct agent,
+        system_message (BaseMessage): The system message for ReAct agent,
             to be augmented by descriptions of actions
         model (ModelType, optional): The LLM model to use for generating
             responses. (default :obj:`ModelType.GPT_4`)
@@ -49,7 +49,7 @@ class ReActAgent(ChatAgent):
 
     def __init__(
         self,
-        system_message: SystemMessage,
+        system_message: BaseMessage,
         model: ModelType = ModelType.GPT_4,
         model_config: Optional[Any] = None,
         message_window_size: Optional[int] = None,
@@ -117,17 +117,17 @@ class ReActAgent(ChatAgent):
 
     def step(
         self,
-        input_message: ChatMessage,
+        input_message: BaseMessage,
         max_turns: int = 10,
-    ) -> Tuple[ChatMessage, Dict[str, Any]]:
+    ) -> Tuple[BaseMessage, Dict[str, Any]]:
         r"""Performs a step in the conversation.
 
         Args:
-            input_message (ChatMessage): The input message,
+            input_message (BaseMessage): The input message,
                 which should specify a task to do
 
         Returns:
-            Tuple[ChatMessage, int Dict[str, Any]]: A tuple
+            Tuple[BaseMessage, int Dict[str, Any]]: A tuple
                 containing the output messages, the number of turns
                 and additional information.
         """
@@ -142,17 +142,16 @@ class ReActAgent(ChatAgent):
             print_text_animated(TASK_COLOR +
                                 f"> Task: {input_message.content}")
 
-        i = 0
+        cnt = 0
         content = input_message.content
-        while i < max_turns:
-            i += 1
+        while cnt < max_turns:
+            cnt += 1
             content += f"\n{response.msg.content}"
 
             # Add the thought and action into the agent's conversation history
-            self.update_messages(
-                ChatMessage(role_name=self.role_name, role_type=self.role_type,
+            self.submit_message(
+                BaseMessage(role_name=self.role_name, role_type=self.role_type,
                             meta_dict=self.system_message.meta_dict,
-                            role=self.system_message.role,
                             content=response.msg.content))
 
             # Parse the new output containing a pair of Thought and Action
@@ -165,7 +164,7 @@ class ReActAgent(ChatAgent):
                                     f"> Action: {action}[{action_input}]")
 
             # Terminate
-            if action == 'Finish' or i == max_turns:
+            if action == 'Finish' or cnt == max_turns:
                 break
 
             # operation argument is for ToolAgent providing multiple actions
@@ -175,11 +174,10 @@ class ReActAgent(ChatAgent):
                 print_text_animated(OBSERVE_COLOR + f"> Observation: {obs}")
 
             # TODO not sure which type of message should be used
-            obs = ChatMessage(
+            obs = BaseMessage(
                 role_type=self.role_type,
                 role_name=self.system_message.role_name,
                 meta_dict=self.system_message.meta_dict,
-                role=self.system_message.role,
                 content=obs,
             )
             response = super().step(obs)
@@ -188,8 +186,8 @@ class ReActAgent(ChatAgent):
         # been added into the Agent's conversation history in the previous
         # loop. RolePlaying should not update the conversation history by
         # this output again.
-        finish_msg = ChatMessage(role_name=self.role_name,
+        finish_msg = BaseMessage(role_name=self.role_name,
                                  role_type=self.role_type,
                                  meta_dict=input_message.meta_dict,
-                                 role=input_message.role, content=content)
-        return finish_msg, i, response.info
+                                 content=content)
+        return finish_msg, cnt, response.info

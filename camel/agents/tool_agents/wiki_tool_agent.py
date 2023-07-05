@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any
+from typing import Any, List
 
 from camel.agents.tool_agents import BaseToolAgent
 
@@ -68,7 +68,12 @@ f"""{SEARCH_OP}[<entity>]
 - Example usage: Lookup[American]
 """
 
-    def get_sentences(self):
+    def get_sentences(self) -> List[str]:
+        r"""Returns all the sentences in the fetched page.
+
+        Returns:
+            List[str]: The list of sentences
+        """
         paragraphs = self.page.split('\n')
         paragraphs = [p.strip() for p in paragraphs if p.strip()]
 
@@ -81,11 +86,23 @@ f"""{SEARCH_OP}[<entity>]
         return sentences
 
     def get_page_obs(self):
+        r"""Returns the first 5 pages in the fetched page.
+
+        Returns:
+            List[str]: The list of the first 5 sentences
+        """
+
         sentences = self.get_sentences()
         return ' '.join(sentences[:5])
 
     # --------------------- Lookup related ---------------------------
-    def get_lookup_list(self, keyword):
+    def get_lookup_list(self, keyword: str) -> List[str]:
+        r"""Returns the senteces containing the keyword in the fetched page
+
+        Returns:
+            List[str]: The list of sentences containing the keyword
+        """
+
         if self.page is None:
             return []
 
@@ -93,9 +110,19 @@ f"""{SEARCH_OP}[<entity>]
         parts = [s for s in sentences if keyword.lower() in s]
         return parts
 
-    def lookup(self, keyword):
+    def lookup(self, keyword: str) -> str:
+        r"""Present the lookup result in the fetched page given the keyword
+
+        Args:
+            keyword (str): The keyword to be looked up in the current page
+
+        Returns:
+            str: string containing lookup information and the target sentence
+            (if there exists one) 
+        """
+
+        # start new lookup operation
         if self.lookup_keyword != keyword:
-            # new lookup operation
             self.lookup_keyword = keyword
             self.lookup_list = self.get_lookup_list(keyword)
             self.lookup_cnt = 0
@@ -112,6 +139,17 @@ f"""{SEARCH_OP}[<entity>]
 
     # --------------------- Search related ---------------------------
     def search(self, entity: str) -> str:
+        r"""Search the entity in WikiPedia and return (the first sentences of)
+        the required page.
+
+        Args:
+            entity (str): The entity to be searched.
+
+        Returns:
+            str: search result. If the page corresponding to the entity
+            exists, return the first 5 sentences in a string.
+        """
+
         import requests
         from bs4 import BeautifulSoup
 
@@ -156,15 +194,22 @@ f"""{SEARCH_OP}[<entity>]
                 self.lookup_keyword = self.lookup_list = self.lookup_cnt = None
         return self.obs
 
-    def reset(self) -> None:
-        pass
-
     def step(
         self,
-        act_input,
-        operation,
-        **kwargs: Any,
-    ) -> Any:
+        act_input: str,
+        operation: str,
+    ) -> str:
+        r"""Do the search or lookup operation
+
+        Args:
+            act_input (str): The entity to be searched or the 
+                keyword to be looked up
+            operation (str): The operation to be done, which is 
+                either search or look-up.
+
+        Returns:
+            str: the result of search or lookup.
+        """
         if operation == SEARCH_OP:
             return self.search(act_input)
         elif operation == LOOKUP_OP:

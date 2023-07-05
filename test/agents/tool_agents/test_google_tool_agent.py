@@ -15,9 +15,11 @@ import pytest
 
 from camel.agents.tool_agents import GoogleToolAgent
 
+SA_EXPECTED = ("Saudi Arabia, officially the Kingdom of Saudi "
+               "Arabia, is a country in West Asia.")
+
 
 @pytest.mark.model_backend
-@pytest.mark.full_test_only
 def test_google_tool_agent_initialization():
     agent = GoogleToolAgent("google_tool_agent")
 
@@ -26,11 +28,9 @@ def test_google_tool_agent_initialization():
 
 
 @pytest.mark.model_backend
-@pytest.mark.full_test_only
 def test_google_tool_agent_search_step():
     agent = GoogleToolAgent("google_tool_agent")
     result = agent.step("Saudi Arabia")
 
     assert isinstance(result, str)
-    assert result.startswith(("Saudi Arabia, officially the Kingdom of Saudi"
-                              "Arabia, is a country in West Asia."))
+    assert result.startswith(SA_EXPECTED)

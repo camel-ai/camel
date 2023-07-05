@@ -17,7 +17,7 @@ from camel.agents import ReActAgent
 from camel.agents.tool_agents import GoogleToolAgent, WikiToolAgent
 from camel.agents.tool_agents.wiki_tool_agent import LOOKUP_OP, SEARCH_OP
 from camel.generators import SystemMessageGenerator
-from camel.messages import ChatMessage, UserChatMessage
+from camel.messages import BaseMessage
 from camel.typing import RoleType
 
 
@@ -49,7 +49,6 @@ def test_get_action_space_prompt():
 
 
 @pytest.mark.model_backend
-@pytest.mark.full_test_only
 def test_step():
     # Create an embodied agent
     role_name = "Searcher"
@@ -74,9 +73,10 @@ def test_step():
     question = "Were Scott Derrickson and Ed Wood of the same nationality?"
     content = f"Answer the question: {question}"
 
-    user_msg = UserChatMessage(role_name=role_name, content=content)
+    user_msg = BaseMessage.make_user_message(role_name=role_name,
+                                             content=content)
     output_message, n, info = react_agent.step(user_msg)
 
-    assert isinstance(output_message, ChatMessage)
+    assert isinstance(output_message, BaseMessage)
     assert isinstance(n, int)
     assert isinstance(info, dict)

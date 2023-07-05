@@ -18,11 +18,15 @@ from camel.agents.tool_agents import BaseToolAgent
 
 
 class GoogleToolAgent(BaseToolAgent):
+    r"""Tool agent for searching contents using Goole search engine.
+
+    Args:
+        name (str): The name of the agent.
+    """
 
     def __init__(
         self,
         name: str,
-        *args: Any,
     ) -> None:
         try:
             from langchain.utilities import SerpAPIWrapper
@@ -30,10 +34,9 @@ class GoogleToolAgent(BaseToolAgent):
             raise ValueError("Could not import langchain agents"
                              "Please use pip install langchain")
 
-        SAK = os.getenv('SERPAPI_KEY')
-
         # TODO to replace the LangChain wrapper with self-implemented one
         # Define LangHChain-implemented agent which can access Wiki
+        SAK = os.getenv('SERPAPI_KEY')
         self.search = SerpAPIWrapper(serpapi_api_key=SAK)
 
         self.name = name
@@ -46,12 +49,19 @@ class GoogleToolAgent(BaseToolAgent):
     - by which we can obtain the weather information in London through Google
 """
 
-    def reset(self) -> None:
-        pass
-
     def step(
         self,
-        question,
+        keyword: str,
         **kwargs: Any,
-    ) -> Any:
-        return self.search.run(question, **kwargs)
+    ) -> str:
+        r"""Do the search operation
+
+        Args:
+            keyword (str): The keyword to be searched
+            **kwargs (Any): Any extra keyword arguments passed to the
+            search wrapper
+
+        Returns:
+            str: the result of this search
+        """
+        return self.search.run(keyword, **kwargs)

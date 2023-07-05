@@ -16,12 +16,12 @@ import pytest
 from camel.agents.tool_agents import WikiToolAgent
 from camel.agents.tool_agents.wiki_tool_agent import LOOKUP_OP, SEARCH_OP
 
-SA_WIKI = ("Saudi Arabia,[d] officially the Kingdom of Saudi Arabia (KSA)"
-           ",[e] is a country in West Asia.")
+SEARCH_EXP = ("Saudi Arabia,[d] officially the Kingdom of Saudi Arabia (KSA)"
+              ",[e] is a country in West Asia.")
+LOOK_EXP = "(Result 1 / 1) Following the amalgamation"
 
 
 @pytest.mark.model_backend
-@pytest.mark.full_test_only
 def test_wki_tool_agent_initialization():
     agent = WikiToolAgent("wiki_tool_agent")
     assert agent.name == "wiki_tool_agent"
@@ -29,17 +29,15 @@ def test_wki_tool_agent_initialization():
 
 
 @pytest.mark.model_backend
-@pytest.mark.full_test_only
 def test_wiki_tool_agent_search_step():
     agent = WikiToolAgent("wiki_tool_agent")
     result = agent.step("Saudi Arabia", SEARCH_OP)
 
     assert isinstance(result, str)
-    assert result.startswith(SA_WIKI)
+    assert result.startswith(SEARCH_EXP)
 
 
 @pytest.mark.model_backend
-@pytest.mark.full_test_only
 def test_wiki_tool_agent_lookup_step():
     agent = WikiToolAgent("wiki_tool_agent")
 
@@ -47,4 +45,4 @@ def test_wiki_tool_agent_lookup_step():
     result = agent.step("amalgamation", LOOKUP_OP)
 
     assert isinstance(result, str)
-    assert result.startswith("(Result 1 / 1) Following the amalgamation")
+    assert result.startswith(LOOK_EXP)

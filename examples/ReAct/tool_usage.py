@@ -20,11 +20,11 @@ from camel.agents.tool_agents import (
     WikiToolAgent,
 )
 from camel.generators import SystemMessageGenerator
-from camel.messages import UserChatMessage
-from camel.typing import RoleType
+from camel.messages import BaseMessage
+from camel.typing import ModelType, RoleType
 
 
-def main():
+def main(model=ModelType.GPT_4):
     role_name = "Searcher"
     meta_dict = dict(role=role_name, task="Answer questions")
     sys_msg = SystemMessageGenerator().from_dict(
@@ -44,6 +44,7 @@ def main():
     print("Creating ReActAgent...")
     react_agent = ReActAgent(
         sys_msg,
+        model=model,
         verbose=True,
         action_space=action_space,
     )
@@ -52,10 +53,10 @@ def main():
     question = ("Within which sports complex is this sports facility"
                 "located where 1990 FIFA World Cup Final between West"
                 "Germany and Argentina took place?")
-
     content = f"Answer the question: {question}"
 
-    user_msg = UserChatMessage(role_name=role_name, content=content)
+    user_msg = BaseMessage.make_user_message(role_name=role_name,
+                                             content=content)
     react_agent.step(user_msg)
 
 
