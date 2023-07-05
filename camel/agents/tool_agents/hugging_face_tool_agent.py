@@ -13,6 +13,8 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Optional
 
+from overrides import override
+
 from camel.agents.tool_agents import BaseToolAgent
 
 
@@ -141,10 +143,12 @@ segmented_transformed_capybara_image.save("./segmented_transformed_capybara_imag
         super().__init__(name, description)
         self.remote = remote
 
+    @override
     def reset(self) -> None:
         r"""Resets the chat history of the agent."""
         self.agent.prepare_for_new_chat()
 
+    @override
     def step(
         self,
         *args: Any,

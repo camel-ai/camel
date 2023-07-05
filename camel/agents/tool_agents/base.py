@@ -14,8 +14,10 @@
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
+from overrides import EnforceOverrides
 
-class BaseToolAgent(ABC):
+
+class BaseToolAgent(ABC, EnforceOverrides):
     r"""Creates a :obj:`BaseToolAgent` object with the specified name and
         description.
 

@@ -14,10 +14,12 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
+from overrides import EnforceOverrides
+
 from camel.typing import ModelType
 
 
-class BaseModelBackend(ABC):
+class BaseModelBackend(ABC, EnforceOverrides):
     r"""Base class for different model backends.
     May be OpenAI API, a local LLM, a stub for unit tests, etc."""
 

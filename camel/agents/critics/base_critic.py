@@ -14,11 +14,13 @@
 from abc import ABC, abstractmethod
 from typing import Sequence
 
+from overrides import EnforceOverrides
+
 from camel.agents.chat_agent_response import ChatAgentResponse
 from camel.messages import BaseMessage
 
 
-class BaseCritic(ABC):
+class BaseCritic(ABC, EnforceOverrides):
 
     @abstractmethod
     def reduce_step(self,

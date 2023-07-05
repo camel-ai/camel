@@ -12,8 +12,11 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import pytest
+from overrides import override
 
-from camel.agents import BaseAgent
+from camel.agents import BaseAgent, ChatAgentResponse
+from camel.messages import BaseMessage
+from camel.typing import RoleType
 
 
 class DummyAgent(BaseAgent):
@@ -21,10 +24,15 @@ class DummyAgent(BaseAgent):
     def __init__(self):
         self.step_count = 0
 
-    def reset(self):
+    @override
+    def reset(self) -> None:
         self.step_count = 0
 
-    def step(self):
+    @override
+    def step(
+        self,
+        input_message: BaseMessage,
+    ) -> ChatAgentResponse:
         self.step_count += 1
 
 
@@ -35,12 +43,14 @@ def test_base_agent():
 
 def test_dummy_agent():
     agent = DummyAgent()
+    input_message: BaseMessage = BaseMessage("foo role", RoleType.USER, None,
+                                             "content string")
     assert agent.step_count == 0
-    agent.step()
+    agent.step(input_message)
     assert agent.step_count == 1
     agent.reset()
     assert agent.step_count == 0
-    agent.step()
+    agent.step(input_message)
     assert agent.step_count == 1
-    agent.step()
+    agent.step(input_message)
     assert agent.step_count == 2

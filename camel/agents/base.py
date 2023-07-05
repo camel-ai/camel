@@ -13,11 +13,13 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from abc import ABC, abstractmethod
 
+from overrides import EnforceOverrides
+
 from camel.agents import ChatAgentResponse
 from camel.messages import BaseMessage
 
 
-class BaseAgent(ABC):
+class BaseAgent(ABC, EnforceOverrides):
     r"""An abstract base class for multi-step CAMEL agents."""
 
     @abstractmethod
