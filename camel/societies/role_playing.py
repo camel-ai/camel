@@ -92,10 +92,8 @@ class RolePlaying:
         sys_msg_generator_kwargs: Optional[Dict] = None,
         extend_sys_msg_meta_dicts: Optional[List[Dict]] = None,
         extend_task_specify_meta_dict: Optional[Dict] = None,
-        output_language: str = None,
+        output_language: Optional[str] = None,
     ) -> None:
-        self.assistant_role_name = assistant_role_name
-        self.user_role_name = user_role_name
         self.critic_role_name = critic_role_name
         self.with_task_specify = with_task_specify
         self.with_task_planner = with_task_planner
@@ -103,27 +101,30 @@ class RolePlaying:
         self.model_type = model_type
         self.task_type = task_type
         self.task_prompt = task_prompt
-        self.output_language = output_language
 
         self.specified_task_prompt: Optional[TextPrompt] = None
-        self.init_specified_task_prompt(task_specify_agent_kwargs,
-                                        extend_task_specify_meta_dict)
+        self.init_specified_task_prompt(assistant_role_name, user_role_name,
+                                        task_specify_agent_kwargs,
+                                        extend_task_specify_meta_dict,
+                                        output_language)
 
         self.planned_task_prompt: Optional[TextPrompt] = None
-        self.init_planned_task_prompt(task_planner_agent_kwargs)
+        self.init_planned_task_prompt(task_planner_agent_kwargs,
+                                      output_language)
 
         sys_msg_generator = SystemMessageGenerator(
             task_type=self.task_type, **(sys_msg_generator_kwargs or {}))
         (init_assistant_sys_msg, init_user_sys_msg,
          sys_msg_meta_dicts) = self.get_sys_message_info(
-             sys_msg_generator, extend_sys_msg_meta_dicts)
+             assistant_role_name, user_role_name, sys_msg_generator,
+             extend_sys_msg_meta_dicts)
 
         self.assistant_agent: Optional[ChatAgent] = None
         self.user_agent: Optional[ChatAgent] = None
         self.assistant_sys_msg: Optional[BaseMessage] = None
         self.user_sys_msg: Optional[BaseMessage] = None
         self.init_agents(init_assistant_sys_msg, assistant_agent_kwargs,
-                         init_user_sys_msg, user_agent_kwargs)
+                         init_user_sys_msg, user_agent_kwargs, output_language)
 
         self.critic: Optional[Union[CriticAgent, Human]] = None
         self.critic_sys_msg: Optional[BaseMessage] = None
@@ -131,50 +132,64 @@ class RolePlaying:
                          sys_msg_meta_dicts)
 
     def init_specified_task_prompt(
-            self, task_specify_agent_kwargs: Optional[Dict],
-            extend_task_specify_meta_dict: Optional[Dict]):
-        r"""Use a task specify agent to append a specified task prompt
-        to original task prompt.
+            self, assistant_role_name: str, user_role_name: str,
+            task_specify_agent_kwargs: Optional[Dict],
+            extend_task_specify_meta_dict: Optional[Dict],
+            output_language: Optional[str]):
+        r"""Use a task specify agent to generate a specified task prompt.
+        Generated specified task prompt will be used to replace original
+        task prompt. If there is no task specify agent, specified task
+        prompt will not be generated.
 
         Args:
+            assistant_role_name (str): The name of the role played by the
+                assistant.
+            user_role_name (str): The name of the role played by the user.
             task_specify_agent_kwargs (Dict, optional): Additional arguments
                 to pass to the task specify agent.
             extend_task_specify_meta_dict (Dict, optional): A dict to extend
                 the task specify meta dict with.
+            output_language (str, optional): The language to be output by the
+                agents.
         """
         if self.with_task_specify:
             task_specify_meta_dict = dict()
             if self.task_type in [TaskType.AI_SOCIETY, TaskType.MISALIGNMENT]:
                 task_specify_meta_dict.update(
-                    dict(assistant_role=self.assistant_role_name,
-                         user_role=self.user_role_name))
+                    dict(assistant_role=assistant_role_name,
+                         user_role=user_role_name))
             task_specify_meta_dict.update(extend_task_specify_meta_dict or {})
             task_specify_agent = TaskSpecifyAgent(
                 self.model_type,
                 task_type=self.task_type,
-                output_language=self.output_language,
+                output_language=output_language,
                 **(task_specify_agent_kwargs or {}),
             )
             self.specified_task_prompt = task_specify_agent.step(
                 self.task_prompt,
                 meta_dict=task_specify_meta_dict,
             )
-            self.task_prompt = (f"{self.task_prompt}\n"
-                                f"{self.specified_task_prompt}")
+            self.task_prompt = self.specified_task_prompt
 
     def init_planned_task_prompt(self,
-                                 task_planner_agent_kwargs: Optional[Dict]):
-        r"""Use a task plan agent to append a planned task prompt
-        to original task prompt.
+                                 task_planner_agent_kwargs: Optional[Dict],
+                                 output_language: Optional[str]):
+        r"""Use a task plan agent to append a planned task prompt to task
+        prompt. The planned task prompt is generated based on the task
+        prompt, which can be original task prompt or specified task prompt
+        if available. If there is no task plan agent, planned task prompt
+        will not be generated.
 
         Args:
             task_planner_agent_kwargs (Dict, optional): Additional arguments
                 to pass to the task planner agent.
+            output_language (str, optional): The language to be output by the
+                agents.
         """
         if self.with_task_planner:
             task_planner_agent = TaskPlannerAgent(
                 self.model_type,
-                output_language=self.output_language,
+                output_language=output_language,
                 **(task_planner_agent_kwargs or {}),
             )
             self.planned_task_prompt = task_planner_agent.step(
@@ -183,13 +198,17 @@ class RolePlaying:
                                 f"{self.planned_task_prompt}")
 
     def get_sys_message_info(
-        self, sys_msg_generator: SystemMessageGenerator,
+        self, assistant_role_name: str, user_role_name: str,
+        sys_msg_generator: SystemMessageGenerator,
         extend_sys_msg_meta_dicts: Optional[List[Dict]]
     ) -> Tuple[BaseMessage, BaseMessage, List[Dict]]:
         r"""Get initial assistant and user system message with a list of
         system message meta dicts.
 
         Args:
+            assistant_role_name (str): The name of the role played by the
+                assistant.
+            user_role_name (str): The name of the role played by the user.
             sys_msg_generator (SystemMessageGenerator): A system message
                 generator for agents.
             extend_sys_msg_meta_dicts (List[Dict], optional): A list of dicts
@@ -200,17 +219,12 @@ class RolePlaying:
             initial system message, a `BaseMessage` representing the user's
             initial system message, and a list of system message meta dicts.
         """
-        sys_msg_meta_dicts = [
-            dict(task=self.task_prompt),
-            dict(task=self.task_prompt)
-        ]
+        sys_msg_meta_dicts = [dict(task=self.task_prompt) for _ in range(2)]
         if (extend_sys_msg_meta_dicts is None and self.task_type
                 in [TaskType.AI_SOCIETY, TaskType.MISALIGNMENT]):
             extend_sys_msg_meta_dicts = [
-                dict(assistant_role=self.assistant_role_name,
-                     user_role=self.user_role_name),
-                dict(assistant_role=self.assistant_role_name,
-                     user_role=self.user_role_name)
+                dict(assistant_role=assistant_role_name,
+                     user_role=user_role_name) for _ in range(2)
             ]
         if extend_sys_msg_meta_dicts is not None:
             sys_msg_meta_dicts = [{
@@ -223,8 +237,8 @@ class RolePlaying:
             sys_msg_generator.from_dicts(
                 meta_dicts=sys_msg_meta_dicts,
                 role_tuples=[
-                    (self.assistant_role_name, RoleType.ASSISTANT),
-                    (self.user_role_name, RoleType.USER),
+                    (assistant_role_name, RoleType.ASSISTANT),
+                    (user_role_name, RoleType.USER),
                 ],
             ))
         return init_assistant_sys_msg, init_user_sys_msg, sys_msg_meta_dicts
@@ -232,7 +246,8 @@ class RolePlaying:
     def init_agents(self, init_assistant_sys_msg: BaseMessage,
                     assistant_agent_kwargs: Optional[Dict],
                     init_user_sys_msg: BaseMessage,
-                    user_agent_kwargs: Optional[Dict]):
+                    user_agent_kwargs: Optional[Dict],
+                    output_language: Optional[str]):
         r"""Initialize assistant and user agents with their system messages.
 
         Args:
@@ -244,18 +259,20 @@ class RolePlaying:
                 message.
             user_agent_kwargs (Dict, optional): Additional arguments to
                 pass to the user agent.
+            output_language (str, optional): The language to be output by the
+                agents.
         """
         self.assistant_agent = ChatAgent(
             init_assistant_sys_msg,
             self.model_type,
-            output_language=self.output_language,
+            output_language=output_language,
             **(assistant_agent_kwargs or {}),
         )
         self.assistant_sys_msg = self.assistant_agent.system_message
         self.user_agent = ChatAgent(
             init_user_sys_msg,
             self.model_type,
-            output_language=self.output_language,
+            output_language=output_language,
             **(user_agent_kwargs or {}),
         )
         self.user_sys_msg = self.user_agent.system_message
