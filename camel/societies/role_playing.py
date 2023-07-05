@@ -94,7 +94,6 @@ class RolePlaying:
         extend_task_specify_meta_dict: Optional[Dict] = None,
         output_language: Optional[str] = None,
     ) -> None:
-        self.critic_role_name = critic_role_name
         self.with_task_specify = with_task_specify
         self.with_task_planner = with_task_planner
         self.with_critic_in_the_loop = with_critic_in_the_loop
@@ -128,8 +127,8 @@ class RolePlaying:
 
         self.critic: Optional[Union[CriticAgent, Human]] = None
         self.critic_sys_msg: Optional[BaseMessage] = None
-        self.init_critic(critic_criteria, critic_kwargs, sys_msg_generator,
-                         sys_msg_meta_dicts)
+        self.init_critic(critic_role_name, critic_criteria, critic_kwargs,
+                         sys_msg_generator, sys_msg_meta_dicts)
 
     def init_specified_task_prompt(
             self, assistant_role_name: str, user_role_name: str,
@@ -277,7 +276,8 @@ class RolePlaying:
         )
         self.user_sys_msg = self.user_agent.system_message
 
-    def init_critic(self, critic_criteria: Optional[str],
+    def init_critic(self, critic_role_name: str,
+                    critic_criteria: Optional[str],
                     critic_kwargs: Optional[Dict],
                     sys_msg_generator: SystemMessageGenerator,
                     sys_msg_meta_dicts: List[Dict]):
@@ -287,6 +287,7 @@ class RolePlaying:
         is not specified, set it to improve task performance.
 
         Args:
+            critic_role_name (str): The name of the role played by the critic.
             critic_criteria (str, optional): Critic criteria for the
                 critic agent. If not specified, set the criteria to
                 improve task performance.
@@ -297,17 +298,17 @@ class RolePlaying:
             sys_msg_meta_dicts (list): A list of system message meta dicts.
         """
         if self.with_critic_in_the_loop:
-            if self.critic_role_name.lower() == "human":
+            if critic_role_name.lower() == "human":
                 self.critic = Human(**(critic_kwargs or {}))
             else:
                 critic_criteria = (critic_criteria
                                    or "improving the task performance")
-                critic_msg_meta_dict = dict(critic_role=self.critic_role_name,
+                critic_msg_meta_dict = dict(critic_role=critic_role_name,
                                             criteria=critic_criteria,
                                             **sys_msg_meta_dicts[0])
                 self.critic_sys_msg = sys_msg_generator.from_dict(
                     critic_msg_meta_dict,
-                    role_tuple=(self.critic_role_name, RoleType.CRITIC),
+                    role_tuple=(critic_role_name, RoleType.CRITIC),
                 )
                 self.critic = CriticAgent(
                     self.critic_sys_msg,
