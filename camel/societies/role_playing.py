@@ -118,10 +118,10 @@ class RolePlaying:
              assistant_role_name, user_role_name, sys_msg_generator,
              extend_sys_msg_meta_dicts)
 
-        self.assistant_agent: Optional[ChatAgent] = None
-        self.user_agent: Optional[ChatAgent] = None
-        self.assistant_sys_msg: Optional[BaseMessage] = None
-        self.user_sys_msg: Optional[BaseMessage] = None
+        self.assistant_agent: ChatAgent
+        self.user_agent: ChatAgent
+        self.assistant_sys_msg: BaseMessage
+        self.user_sys_msg: BaseMessage
         self.init_agents(init_assistant_sys_msg, assistant_agent_kwargs,
                          init_user_sys_msg, user_agent_kwargs, output_language)
 
