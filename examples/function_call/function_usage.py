@@ -11,13 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import List
-
 from camel.agents import FuncAgent
-from camel.generators import SystemMessageGenerator
-from camel.messages import UserChatMessage
-from camel.typing import ModelType, RoleType
-
+from camel.messages import BaseMessage
 
 def add(a, b):
     """
@@ -85,11 +80,12 @@ def main():
         verbose=True,
     )
 
-    user_msg = UserChatMessage(
+    user_msg = BaseMessage.make_user_message(
         role_name=role_name,
         content=("Caculate the result of: 2 * 2 + 4"),
+        meta_dict=None,
     )
-    output_message, func_call, info = func_agent.step(user_msg)
+    output_message, func_call, _ = func_agent.step(user_msg)
 
     executed = "true" if func_call else "false"
     print(f"Function is executed or not? {executed}")

@@ -27,7 +27,7 @@ from colorama import Fore
 from camel.agents import ChatAgent
 from camel.agents.chat_agent import ChatAgentResponse
 from camel.configs import ChatGPTConfig
-from camel.messages import ChatMessage, MessageType, SystemMessage, OpenAIMessage
+from camel.messages import BaseMessage, OpenAIMessage
 from camel.typing import ModelType, RoleType
 from camel.utils import print_text_animated
 
@@ -43,7 +43,8 @@ class FuncAgent(ChatAgent):
     r"""Class for managing conversations of CAMEL Agents supporting OpenAI function calling
 
     Args:
-        system_message (SystemMessage): The system message for the chat agent.
+        role_name (str): the name of the role to be played
+        functions (List[Callable]): list of functions available for using
         model (ModelType, optional): The LLM model to use for generating
             responses. (default :obj:`ModelType.GPT_4`)
         model_config (Any, optional): Configuration options for the LLM model.
@@ -54,6 +55,7 @@ class FuncAgent(ChatAgent):
         verbose (bool, optional): Whether to print the critic's messages.
         logger_color (Any): The color of the logger displayed to the user.
             (default: :obj:`Fore.MAGENTA`)
+        output_language (str): the language to be output 
     """
 
     def __init__(
@@ -73,9 +75,12 @@ class FuncAgent(ChatAgent):
         self.role_name: str = role_name
         self.role_type: RoleType = RoleType.FUNC
 
-        system_message = SystemMessage(self.role_name, self.role_type, 
-                                       meta_dict=dict(), role="function",
-                                       content=FUNC_SYS_MSG)
+        system_message = BaseMessage(
+            role_name=self.role_name, 
+            role_type=self.role_type,
+            meta_dict=None,
+            content=FUNC_SYS_MSG,
+        )
 
         self.functions = []
         self.func_dict = {}
@@ -180,14 +185,6 @@ class FuncAgent(ChatAgent):
             msg_dict["content"] = f'{content}'
         
         return msg_dict
-
-    def update_messages(
-        self, 
-        messages: List[OpenAIMessage]
-    ) -> List[OpenAIMessage]:
-        for message in messages:
-            self.messages.append(message)
-        return self.messages
     
     def get_num_tokens(self) -> int:
         messages = []
@@ -198,30 +195,27 @@ class FuncAgent(ChatAgent):
             messages.append(msg)
         return num_tokens_from_messages(messages, self.model)
         
-
     @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     @openai_api_key_required
     def step(
         self,
-        input_message: ChatMessage,
-    ) -> Tuple[ChatMessage, bool, Dict[str, Any]]:
-        r"""Performs a step 
+        input_message: BaseMessage,
+    ) -> Tuple[BaseMessage, bool, Dict[str, Any]]:
+        r"""Performs a step of chatting with potential function calling
 
         Args:
-            input_message (ChatMessage): The input message.
+            input_message (BaseMessage): The input message.
 
         Returns:
-            Tuple[ChatMessage, bool, Dict[str, Any]]: A tuple
+            Tuple[BaseMessage, bool, Dict[str, Any]]: A tuple
                 containing the output messages, function execution status, and
                 additional information.
         """
-        self.messages = [input_message.to_openai_message()]
+        self.messages = [input_message.to_openai_user_message()]
 
 
         func_call = False
         while True:
-            # print(f"Messages: {self.messages}")
-
             # Check whether token limit is exceeded
             num_tokens = self.get_num_tokens()
             if num_tokens >= self.model_token_limit:
@@ -242,21 +236,23 @@ class FuncAgent(ChatAgent):
             if self.verbose:
                 print('-' * 24, "response", '-' * 24)
                 print(response)
-                # print('-' * 56)
             
             # Check the type of returned response
             if not isinstance(response, dict):
                 raise RuntimeError("OpenAI returned unexpected struct")
+            
             choice = response.choices[0]
 
             # The functional running has been terminated
             if choice["finish_reason"] == "stop":
                 print("Received STOP signal")
                 if func_call:
-                    output_message =  [
-                        ChatMessage(role_name=self.role_name, role_type=self.role_type,
-                                    meta_dict=dict(), **dict(choice["message"]))
-                    ]
+                    output_message =  [BaseMessage(
+                        role_name=self.role_name, 
+                        role_type=self.role_type,
+                        meta_dict=None,
+                        content=choice["message"]["content"],
+                    )]
                     
                 info = self.get_info(
                     response["id"],
@@ -279,8 +275,13 @@ class FuncAgent(ChatAgent):
                         
                 # Pass the extracted arguments to the indicated function
                 result = func(**args)
-                assist_msg = self.get_msg_dict("assistant", func_name=func_name, args=args)
-                func_msg = self.get_msg_dict("function", func_name=func_name, result=result)
+
+                assist_msg = self.get_msg_dict(
+                    "assistant", func_name=func_name, args=args
+                )
+                func_msg = self.get_msg_dict(
+                    "function", func_name=func_name, result=result
+                )
                         
                 # Update the messages
                 self.messages += [assist_msg, func_msg]
