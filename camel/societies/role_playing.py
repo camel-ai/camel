@@ -191,8 +191,7 @@ class RolePlaying:
                 output_language=output_language,
                 **(task_planner_agent_kwargs or {}),
             )
-            self.planned_task_prompt = task_planner_agent.run(
-              self.task_prompt)
+            self.planned_task_prompt = task_planner_agent.run(self.task_prompt)
             self.task_prompt = (f"{self.task_prompt}\n"
                                 f"{self.planned_task_prompt}")
         else:
