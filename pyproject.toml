@@ -72,7 +72,9 @@ markers = [
 include_namespace_packages = true
 
 [tool.mypy]
-exclude = ["python_interpreter.py"]
+exclude = [
+    'python_interpreter\.py$'
+]
 
 [[tool.mypy.overrides]]
 module = [
