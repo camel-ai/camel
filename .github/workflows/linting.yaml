@@ -67,5 +67,5 @@ jobs:
 
       - name: Run mypy checks
         run: |
-          mypy --namespace-packages -p camel
-          mypy --namespace-packages -p test
+          mypy --install-types --namespace-packages -p camel
+          mypy --install-types --namespace-packages -p test
