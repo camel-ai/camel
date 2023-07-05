@@ -128,7 +128,7 @@ class PythonInterpreter():
             except InterpreterError as e:
                 if not keep_state:
                     self.clear_state()
-                msg = (f"Evaluation of the code stopped at line {idx}. "
+                msg = (f"Evaluation of the code stopped at node {idx}. "
                        f"See:\n{e}")
                 # More information can be provided by `ast.unparse()`,
                 # which is new in python 3.9.
@@ -228,8 +228,8 @@ class PythonInterpreter():
             self.state[target.id] = value
         elif isinstance(target, ast.Tuple):
             if not isinstance(value, tuple):
-                raise InterpreterError(
-                    f"Expected type tuple, but got {type(value)}")
+                raise InterpreterError(f"Expected type tuple, but got"
+                                       f"{value.__class__.__name__} instead.")
             if len(target.elts) != len(value):
                 raise InterpreterError(
                     f"Expected {len(target.elts)} values but got"
@@ -237,9 +237,9 @@ class PythonInterpreter():
             for t, v in zip(target.elts, value):
                 self.state[self._execute_ast(t)] = v
         else:
-            raise InterpreterError(f"Unsupport variable type. Expected"
-                                   f"ast.Name or ast.Tuple, got"
-                                   f"{type(target)} instead.")
+            raise InterpreterError(f"Unsupported variable type. Expected "
+                                   f"ast.Name or ast.Tuple, got "
+                                   f"{target.__class__.__name__} instead.")
 
     def _execute_call(self, call: ast.Call) -> Any:
         callable_func = self._execute_ast(call.func)

@@ -61,7 +61,7 @@ os.mkdir("/tmp/test")"""
     with pytest.raises(InterpreterError) as e:
         interpreter.execute(code)
     exec_msg = e.value.args[0]
-    assert exec_msg == ("Evaluation of the code stopped at line 0. See:\n"
+    assert exec_msg == ("Evaluation of the code stopped at node 0. See:\n"
                         "It is not permitted to import modules than module"
                         " white list (try to import os).")
 
@@ -72,7 +72,7 @@ x = np.array([[1, 2, 3], [4, 5, 6]], np.int32)"""
     with pytest.raises(InterpreterError) as e:
         interpreter.execute(code)
     exec_msg = e.value.args[0]
-    assert exec_msg == ("Evaluation of the code stopped at line 0. See:\n"
+    assert exec_msg == ("Evaluation of the code stopped at node 0. See:\n"
                         "It is not permitted to import modules than module"
                         " white list (try to import numpy).")
 
@@ -104,7 +104,7 @@ def test_keep_state0(interpreter):
     with pytest.raises(InterpreterError) as e:
         interpreter.execute(code3, keep_state=False)
     exec_msg = e.value.args[0]
-    assert exec_msg == ("Evaluation of the code stopped at line 0. See:\n"
+    assert exec_msg == ("Evaluation of the code stopped at node 0. See:\n"
                         "The variable `b` is not defined.")
 
 
@@ -117,7 +117,7 @@ def test_keep_state1(interpreter):
     with pytest.raises(InterpreterError) as e:
         interpreter.execute(code2, keep_state=False)
     exec_msg = e.value.args[0]
-    assert exec_msg == ("Evaluation of the code stopped at line 0. See:\n"
+    assert exec_msg == ("Evaluation of the code stopped at node 0. See:\n"
                         "The variable `tensor` is not defined.")
 
 
@@ -134,6 +134,15 @@ def test_assign1(interpreter):
     assert interpreter.state["a"] == 2
     assert interpreter.state["b"] == 3
     assert interpreter.state["c"] == (2, 3)
+
+
+def test_assign_fail(interpreter):
+    code = "x = a, b, c = 2, 3"
+    with pytest.raises(InterpreterError) as e:
+        interpreter.execute(code, keep_state=False)
+    exec_msg = e.value.args[0]
+    assert exec_msg == ("Evaluation of the code stopped at node 0. See:\n"
+                        "Expected 3 values but got 2.")
 
 
 def test_if(interpreter):
@@ -159,8 +168,19 @@ for i in l:
     assert execution_res == 28
 
 
-def test_subscript(interpreter):
+def test_subscript_access(interpreter):
     code = """l = [2, 3, 5, 7, 11]
 res = l[3]"""
     execution_res = interpreter.execute(code)
     assert execution_res == 7
+
+
+def test_subscript_assign(interpreter):
+    code = """l = [2, 3, 5, 7, 11]
+l[3] = 1"""
+    with pytest.raises(InterpreterError) as e:
+        interpreter.execute(code, keep_state=False)
+    exec_msg = e.value.args[0]
+    assert exec_msg == ("Evaluation of the code stopped at node 1. See:\n"
+                        "Unsupported variable type. Expected ast.Name or "
+                        "ast.Tuple, got Subscript instead.")
