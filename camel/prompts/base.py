@@ -98,16 +98,16 @@ def wrap_prompt_functions(cls: T) -> T:
 class TextPrompt(str):
     r"""A class that represents a text prompt. The :obj:`TextPrompt` class
     extends the built-in :obj:`str` class to provide a property for retrieving
-    the set of key words in the prompt.
+    the set of keywords in the prompt.
 
     Attributes:
-        key_words (set): A set of strings representing the key words in the
+        key_words (set): A set of strings representing the keywords in the
             prompt.
     """
 
     @property
     def key_words(self) -> Set[str]:
-        r"""Returns a set of strings representing the key words in the prompt.
+        r"""Returns a set of strings representing the keywords in the prompt.
         """
         from camel.utils import get_prompt_template_key_words
         return get_prompt_template_key_words(self)
@@ -135,8 +135,7 @@ class CodePrompt(TextPrompt):
     r"""A class that represents a code prompt. It extends the :obj:`TextPrompt`
     class with a :obj:`code_type` property.
 
-    Args:
-        code_string (str): The code string for the prompt.
+    Attributes:
         code_type (str, optional): The type of code. Defaults to None.
     """
 
