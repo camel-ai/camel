@@ -14,13 +14,16 @@
 from typing import Any, Dict, Sequence
 
 from colorama import Fore
+from overrides import override
 
-from camel.agents import ChatAgentResponse
+from camel.agents.chat_agent_response import ChatAgentResponse
 from camel.messages import BaseMessage
 from camel.utils import print_text_animated
 
+from .base_critic import BaseCritic
 
-class Human:
+
+class HumanCritic(BaseCritic):
     r"""A class representing a human user.
 
     Args:
@@ -105,6 +108,7 @@ class Human:
 
         return content
 
+    @override
     def reduce_step(self,
                     messages: Sequence[BaseMessage]) -> ChatAgentResponse:
         r"""Performs one step of the conversation by displaying options to the

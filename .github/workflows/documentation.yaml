@@ -1,5 +1,10 @@
 name: Docs
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
 permissions:
     contents: write
 jobs:
@@ -10,7 +15,8 @@ jobs:
       - uses: actions/setup-python@v3
       - name: Install dependencies
         run: |
-          pip install sphinx sphinx_book_theme recommonmark numpy openai tenacity tiktoken colorama
+          pip install -e .
+          pip install sphinx sphinx_book_theme recommonmark
       - name: Sphinx build
         run: |
           cd docs

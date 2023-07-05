@@ -11,9 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Sequence
 
 from colorama import Fore
+from overrides import override
 
 from camel.agents import (
     BaseToolAgent,
@@ -58,7 +59,8 @@ class EmbodiedAgent(ChatAgent):
         default_action_space = [
             HuggingFaceToolAgent('hugging_face_tool_agent', model=model.value),
         ]
-        self.action_space = action_space or default_action_space
+        self.action_space: Sequence[
+            BaseToolAgent] = action_space or default_action_space
         action_space_prompt = self.get_action_space_prompt()
         system_message.content = system_message.content.format(
             action_space=action_space_prompt)
@@ -82,6 +84,7 @@ class EmbodiedAgent(ChatAgent):
             for action in self.action_space
         ])
 
+    @override
     def step(
         self,
         input_message: BaseMessage,

@@ -11,25 +11,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .chat_agent_response import ChatAgentResponse
-from .base import BaseAgent
-from .chat_agent import ChatAgent
-from .task_agent import TaskPlannerAgent, TaskSpecifyAgent
-from .critics import BaseCritic, CriticAgent, HumanCritic
-from .tool_agents.base import BaseToolAgent
-from .tool_agents.hugging_face_tool_agent import HuggingFaceToolAgent
-from .embodied_agent import EmbodiedAgent
+from abc import ABC, abstractmethod
+from typing import Sequence
 
-__all__ = [
-    'ChatAgentResponse',
-    'BaseAgent',
-    'ChatAgent',
-    'TaskSpecifyAgent',
-    'TaskPlannerAgent',
-    'BaseCritic',
-    'CriticAgent',
-    'HumanCritic',
-    'BaseToolAgent',
-    'HuggingFaceToolAgent',
-    'EmbodiedAgent',
-]
+from overrides import EnforceOverrides
+
+from camel.agents.chat_agent_response import ChatAgentResponse
+from camel.messages import BaseMessage
+
+
+class BaseCritic(ABC, EnforceOverrides):
+
+    @abstractmethod
+    def reduce_step(self,
+                    messages: Sequence[BaseMessage]) -> ChatAgentResponse:
+        pass

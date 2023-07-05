@@ -11,15 +11,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from typing import Any, Optional
+
+from overrides import override
+
 from camel.agents import BaseToolAgent
 
 
 class DummyToolAgent(BaseToolAgent):
 
-    def reset(self):
+    @override
+    def reset(self) -> None:
         pass
 
-    def step(self):
+    @override
+    def step(
+        self,
+        *args: Any,
+        remote: Optional[bool] = None,
+        **kwargs: Any,
+    ) -> Any:
         pass
 
 

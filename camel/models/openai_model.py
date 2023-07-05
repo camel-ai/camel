@@ -14,6 +14,8 @@
 from types import GeneratorType
 from typing import Any, Dict, List
 
+from overrides import override
+
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.typing import ModelType
@@ -34,6 +36,7 @@ class OpenAIModel(BaseModelBackend):
         """
         super().__init__(model_type, model_config_dict)
 
+    @override
     def run(self, messages: List[Dict]) -> Dict[str, Any]:
         r"""Run inference of OpenAI chat completion.
 
