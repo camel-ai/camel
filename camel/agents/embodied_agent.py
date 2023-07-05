@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from colorama import Fore
 
@@ -120,7 +120,7 @@ class EmbodiedAgent(ChatAgent):
 
         if codes is not None:
             content = "\n> Executed Results:"
-            action_space = {
+            action_space: Dict[str, Any] = {
                 action.name: action
                 for action in self.action_space
             }
