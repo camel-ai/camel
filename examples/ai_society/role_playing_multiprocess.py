@@ -15,6 +15,7 @@ import json
 import multiprocessing
 import os
 import sys
+from typing import Any, Dict
 
 from colorama import Fore
 
@@ -57,7 +58,7 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
               f"Final task prompt:\n{role_play_session.task_prompt}\n")
 
     message_counter = 0
-    message_dict = {}
+    message_dict: Dict[str, Any] = {}
 
     assistant_agent = role_play_session.assistant_agent
     user_agent = role_play_session.user_agent
