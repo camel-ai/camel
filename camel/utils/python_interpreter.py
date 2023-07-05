@@ -14,6 +14,7 @@
 import ast
 import difflib
 import importlib
+import typing
 from typing import Any, Dict, List, Mapping, Optional
 
 
@@ -146,6 +147,9 @@ class PythonInterpreter():
         self.state = self.action_space.copy()
         self.fuzz_state = {}
 
+    # ast.Index is deprecated after python 3.9, which cannot pass type check,
+    # but is still necessary for older versions.
+    @typing.no_type_check
     def _execute_ast(self, expression: ast.AST) -> Any:
         if isinstance(expression, ast.Assign):
             # Assignement -> evaluate the assignement which should
@@ -192,6 +196,9 @@ class PythonInterpreter():
         elif isinstance(expression, ast.ImportFrom):
             self._execute_import_from(expression)
             return None
+        elif hasattr(ast, "Index") and isinstance(expression, ast.Index):
+            # cannot pass type check
+            return self._execute_ast(expression.value)
         elif isinstance(expression, ast.JoinedStr):
             return "".join(
                 [str(self._execute_ast(v)) for v in expression.values])
