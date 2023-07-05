@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import pytest
+
 from camel.prompts.base import (
     CodePrompt,
     TextPrompt,
@@ -18,6 +20,8 @@ from camel.prompts.base import (
     return_prompt_wrapper,
     wrap_prompt_functions,
 )
+from camel.utils import PythonInterpreter
+from camel.utils.python_interpreter import InterpreterError
 
 
 def test_return_prompt_wrapper():
@@ -135,13 +139,20 @@ def test_code_prompt_set_code_type():
     assert code_prompt.code_type == "python"
 
 
-def test_code_prompt_execute():
+def test_code_prompt_execute(capsys):
     code_prompt = CodePrompt("a = 1\nprint('Hello, World!')",
                              code_type="python")
-    assert code_prompt.execute() == ("Hello, World!\n", {"a": 1})
+    interpreter = PythonInterpreter(action_space={"print": print})
+    result, interpreter = code_prompt.execute(interpreter=interpreter)
+    captured = capsys.readouterr()
+    assert result == 1
+    assert interpreter.state["a"] == 1
+    assert captured.out == "Hello, World!\n"
 
 
 def test_code_prompt_execute_error():
     code_prompt = CodePrompt("print('Hello, World!'", code_type="python")
-    traceback_str, _ = code_prompt.execute()
-    assert "SyntaxError" in traceback_str
+    interpreter = PythonInterpreter(action_space={"print": print})
+    with pytest.raises(InterpreterError) as e:
+        _, _ = code_prompt.execute(interpreter=interpreter)
+    assert e.value.args[0].startswith("Syntax error in code:")
