@@ -83,7 +83,7 @@ class ReActAgent(ChatAgent):
 
     @staticmethod
     def parse_thought_and_action(
-            response: ChatAgentResponse) -> Tuple[str, str]:
+            response: ChatAgentResponse) -> Tuple[str, str, str]:
         r"""
         Parse the given response into a Thought and an Action with
         the keyword
@@ -91,6 +91,10 @@ class ReActAgent(ChatAgent):
         Args:
             response (ChatAgentResponse): the response returned
                 by the agent
+
+        Returns:
+            Tuple[str, str]: the tuple of the thought, the action name
+                and the input to the action
         """
 
         response_msg = response.msg.content

@@ -28,10 +28,6 @@ class WikiToolAgent(BaseToolAgent):
 
     Args:
         name (str): The name of the agent.
-        *args (Any): Additional positional arguments to pass to the underlying
-            Agent class.
-        **kwargs (Any): Additional keyword arguments to pass to the underlying
-            Agent class.
     """
 
     def __init__(
@@ -98,6 +94,9 @@ f"""{SEARCH_OP}[<entity>]
     # --------------------- Lookup related ---------------------------
     def get_lookup_list(self, keyword: str) -> List[str]:
         r"""Returns the senteces containing the keyword in the fetched page
+
+        Args:
+            keyword (str): the keyword to be looked up
 
         Returns:
             List[str]: The list of sentences containing the keyword
