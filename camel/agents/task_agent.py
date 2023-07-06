@@ -54,6 +54,7 @@ class TaskSpecifyAgent(ChatAgent):
         output_language: Optional[str] = None,
     ) -> None:
 
+        self.task_specify_prompt: Union[str, TextPrompt]
         if task_specify_prompt is None:
             task_specify_prompt_template = PromptTemplateGenerator(
             ).get_task_specify_prompt(task_type)
