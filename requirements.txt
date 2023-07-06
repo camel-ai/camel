@@ -27,7 +27,7 @@ sentencepiece==0.1.97
 opencv-python==4.7.0.72
 
 # Packages for Google Search tools
-langchain
+google-search-results
 
 # Packages for Wiki Search tools
 requests

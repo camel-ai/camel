@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from typing import Any
+from typing import Any, Dict
 
 from camel.agents.tool_agents import BaseToolAgent
 
@@ -29,15 +29,27 @@ class GoogleToolAgent(BaseToolAgent):
         name: str,
     ) -> None:
         try:
-            from langchain.utilities import SerpAPIWrapper
+            from serpapi import GoogleSearch
         except ImportError:
-            raise ValueError("Could not import langchain agents"
-                             "Please use pip install langchain")
+            raise ValueError("Could not import SerpAPI package"
+                             "Please use `pip install google-search-results`")
+
+        self.engine = GoogleSearch
+        self.params: dict = {
+            "engine": "google",
+            "google_domain": "google.com",
+            "gl": "us",
+            "hl": "en",
+        }
 
         # TODO to replace the LangChain wrapper with self-implemented one
         # Define LangHChain-implemented agent which can access Wiki
-        SAK = os.getenv('SERPAPI_KEY')
-        self.search = SerpAPIWrapper(serpapi_api_key=SAK)
+        SAK = os.getenv('SERPAPI_API_KEY')
+        if not SAK:
+            raise ValueError(
+                "No SerpAPI key detected. "
+                "Please specify one in environment variable 'SERPAPI_API_KEY'")
+        self.serpapi_api_key = SAK
 
         self.name = name
 
@@ -51,17 +63,101 @@ class GoogleToolAgent(BaseToolAgent):
 
     def step(
         self,
-        keyword: str,
+        query: str,
         **kwargs: Any,
     ) -> str:
         r"""Do the search operation
 
         Args:
-            keyword (str): The keyword to be searched
-            **kwargs (Any): Any extra keyword arguments passed to the
+            query (str): The query to be searched
+            **kwargs (Any): Any extra query arguments passed to the
             search wrapper
 
         Returns:
             str: the result of this search
         """
-        return self.search.run(keyword, **kwargs)
+        res = self.get_results(query)
+        return self.process_result(res)
+
+    def get_results(self, query: str) -> dict:
+        r"""Get search result using the Google search engine.
+
+        Args:
+            query (str): The query to be searched
+        
+        Returns:
+            dict: search result in dictionary to be processed
+        """
+        search_params = self.get_params(query)
+
+        res = self.engine(search_params)
+        res = res.get_dict()
+
+        return res
+
+    def get_params(self, query: str) -> Dict[str, str]:
+        r"""Format the parameter dictionary to be passed to SerpAPI
+
+        Args:
+            query (str): The query to be searched
+        
+        Returns:
+            dict: parameters for using SerpAPI
+        """
+        search_params = {
+            "api_key": self.serpapi_api_key,
+            "q": query,
+        }
+        params = {**self.params, **search_params}
+        return params
+
+    @staticmethod
+    def process_result(res: dict) -> str:
+        r"""Post-process the search results in dictionary to str
+
+        Args:
+            res (dict): the result dictionary
+        
+        Returns:
+            str: search result in string format
+        """
+        if "error" in res.keys():
+            raise ValueError(f"Got error from SerpAPI: {res['error']}")
+
+        if "answer_box" in res.keys() and type(res["answer_box"]) == list:
+            res["answer_box"] = res["answer_box"][0]
+
+        if ("answer_box" in res.keys()
+                and "answer" in res["answer_box"].keys()):
+            result = res["answer_box"]["answer"]
+
+        elif ("answer_box" in res.keys()
+              and "snippet" in res["answer_box"].keys()):
+            result = res["answer_box"]["snippet"]
+
+        elif ("answer_box" in res.keys()
+              and "snippet_highlighted_words" in res["answer_box"].keys()):
+            result = res["answer_box"]["snippet_highlighted_words"][0]
+
+        elif ("sports_results" in res.keys()
+              and "game_spotlight" in res["sports_results"].keys()):
+            result = res["sports_results"]["game_spotlight"]
+
+        elif ("shopping_results" in res.keys()
+              and "title" in res["shopping_results"][0].keys()):
+            result = res["shopping_results"][:3]
+
+        elif ("knowledge_graph" in res.keys()
+              and "description" in res["knowledge_graph"].keys()):
+            result = res["knowledge_graph"]["description"]
+
+        elif "snippet" in res["organic_results"][0].keys():
+            result = res["organic_results"][0]["snippet"]
+
+        elif "link" in res["organic_results"][0].keys():
+            result = res["organic_results"][0]["link"]
+
+        else:
+            result = "No good search result found"
+
+        return result

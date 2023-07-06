@@ -93,7 +93,7 @@ class ReActAgent(ChatAgent):
                 by the agent
 
         Returns:
-            Tuple[str, str]: the tuple of the thought, the action name
+            Tuple[str, str, str]: the tuple of the thought, the action name
                 and the input to the action
         """
 
@@ -159,8 +159,8 @@ class ReActAgent(ChatAgent):
                             content=response.msg.content))
 
             # Parse the new output containing a pair of Thought and Action
-            thought, action, action_input = self.parse_thought_and_action(
-                response)
+            thought, action, action_input = \
+                self.parse_thought_and_action(response)
 
             if self.verbose:
                 print_text_animated(THOUGHT_COLOR + f"> Thought: {thought}")
