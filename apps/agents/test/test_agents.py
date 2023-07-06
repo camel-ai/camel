@@ -42,6 +42,7 @@ def test_session():
 
     state, _, _ = cleanup_on_launch(state)
 
+    society_name = "AI Society"
     assistant = "professor"
     user = "PhD student"
     original_task = "Recommend AI conferences to publish a paper"
@@ -49,7 +50,7 @@ def test_session():
     with_task_specifier = False
     word_limit = 50
     state, specified_task_prompt, planned_task_upd, chat, progress_upd = \
-        role_playing_start(state, assistant, user, original_task,
+        role_playing_start(state, society_name, assistant, user, original_task,
                            max_messages, with_task_specifier, word_limit)
 
     assert state.session is not None
