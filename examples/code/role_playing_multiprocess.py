@@ -59,7 +59,7 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
         task_type=TaskType.CODE,
         model_config=ChatGPTConfig(temperature=1.4),
     )
-    specified_task_prompt = task_specify_agent.step(
+    specified_task_prompt = task_specify_agent.run(
         original_task_prompt,
         meta_dict=dict(domain=domain_name, language=language_name),
     )
