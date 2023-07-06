@@ -161,7 +161,7 @@ def role_playing_start(
         return {}  # may fail
 
     if society_name not in {"AI Society", "Code"}:
-        print("Error 1")
+        print(f"Error: unrecognezed society {society_name}")
         return {}
 
     task_type: TaskType = TaskType.AI_SOCIETY \
@@ -367,7 +367,6 @@ def construct_ui(blocks, api_key: Optional[str] = None) -> None:
                                         value=society['assistant_role'])
         user_dd_update = gr.update(choices=society['user_roles'],
                                    value=society['user_role'])
-        # [assistant_dd, user_dd, original_task_ta]
         return assistant_dd_update, user_dd_update, society['default_task']
 
     with gr.Row():
