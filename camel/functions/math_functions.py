@@ -18,58 +18,40 @@ from camel.functions import BaseFuncs
 
 
 def add(a, b):
-    """
-    Adds Two Numbers
+    """Adds two numbers
 
-    Args
-    ----------
-    a : integer
-        number to be added
-    b : integer
-        number to be added
+    Args:
+        a (integer): number to be added
+        b (integer): number to be added
 
-    Returns
-    -------
-    integer
-        sum
+    Returns:
+        integer: the sum of the two numbers
     """
     return a + b
 
 
 def sub(a, b):
-    """
-    Subs Two Numbers
+    """Do subtraction between two numbers
 
-    Args
-    ----------
-    a : integer
-        number to be subbed
-    b : integer
-        number to be subbed
+    Args:
+        a (integer): the minuend in subtraction
+        b (integer): the subtrahend in subtraction
 
-    Returns
-    -------
-    int
-        sub
+    Returns:
+        integer: the result of subtracting b from a
     """
     return a - b
 
 
 def mul(a, b):
-    """
-    Muls Two Numbers
+    """Multiplies two integers
 
-    Args
-    ----------
-    a : integer
-        number to be muled
-    b : integer
-        number to be muled
+    Args:
+        a (integer): the multiplier in the multiplication
+        b (integer): the multiplicand in the multiplication
 
-    Returns
-    -------
-    int
-        mul
+    Returns:
+        integer: the product of the two numbers
     """
     return a * b
 
@@ -77,7 +59,7 @@ def mul(a, b):
 @dataclass
 class MathFuncs(BaseFuncs):
     r"""Class for math function collection, which currently includes
-    integere addition, subtraction and multiplication.
+    integer addition, subtraction and multiplication.
     """
 
     def __init__(self):

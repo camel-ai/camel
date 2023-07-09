@@ -14,8 +14,10 @@
 
 from .base import BaseFuncs
 from .math_functions import MathFuncs
+from .search_functions import SearchFuncs
 
 __all__ = [
     'BaseFuncs',
     'MathFuncs',
+    'SearchFuncs',
 ]

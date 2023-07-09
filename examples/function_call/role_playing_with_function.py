@@ -16,20 +16,23 @@ from typing import List
 from colorama import Fore
 
 from camel.agents.chat_agent import FuncRecord
-from camel.functions import MathFuncs
+from camel.functions import MathFuncs, SearchFuncs
 from camel.societies import RolePlaying
 from camel.typing import ModelType
 from camel.utils import print_text_animated
 
 
 def main(model_type=ModelType.GPT_4_FUNC) -> None:
-    task_prompt = "Caculate the result of 2*2*2+10"
-    role_play_session = RolePlaying("Student", "Teacher",
+    task_prompt = ("Estimate KAUST's current age by searching the year when"
+                   "it was founded, then add 10 more years. Assume the "
+                   "current year is 2023")
+    role_play_session = RolePlaying("Searcher", "Professor",
                                     task_prompt=task_prompt,
                                     with_task_specify=False,
                                     model_type=model_type,
                                     assist_func_enable=True,
-                                    assist_funcs=[MathFuncs()])
+                                    assist_funcs=[MathFuncs(),
+                                                  SearchFuncs()])
 
     print(
         Fore.GREEN +

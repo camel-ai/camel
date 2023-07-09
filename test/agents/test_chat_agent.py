@@ -15,6 +15,7 @@ import pytest
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
+from camel.functions import MathFuncs
 from camel.generators import SystemMessageGenerator
 from camel.messages import BaseMessage
 from camel.typing import ModelType, RoleType, TaskType
@@ -132,3 +133,28 @@ def test_set_output_language():
         content="You are a help assistant."
         "\nRegardless of the input language, you must output text in Arabic.")
     assert agent.system_message.content == updated_system_message.content
+
+
+@pytest.mark.model_backend
+def test_function_calling():
+    system_message = BaseMessage(role_name="assistant",
+                                 role_type=RoleType.ASSISTANT, meta_dict=None,
+                                 content="You are a help assistant.")
+    agent = ChatAgent(system_message=system_message,
+                      model=ModelType.GPT_4_FUNC, func_enable=True,
+                      func_collects=[MathFuncs()])
+
+    ref_funcs = MathFuncs().functions
+
+    assert agent.func_enable
+    assert len(agent.func_dict) == len(ref_funcs)
+    assert len(agent.model_config_dict['functions']) == len(ref_funcs)
+
+    user_msg = BaseMessage(role_name="User", role_type=RoleType.USER,
+                           meta_dict=dict(),
+                           content="Calculate the result of: 2*8-10")
+    agent_response = agent.step(user_msg)
+
+    assert len(agent_response.info['called_functions']) > 0
+    assert str(agent_response.info['called_functions'][0])\
+        .startswith("Function Execution")

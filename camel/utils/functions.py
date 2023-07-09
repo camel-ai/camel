@@ -242,6 +242,76 @@ def download_tasks(task: TaskType, folder_path: str) -> None:
     os.remove(zip_file_path)
 
 
+# def parse_doc(func: Callable) -> Dict[str, Any]:
+#     """
+#     Parse the docstrings of a function to extract function name,
+#     description and parameters.
+
+#     Args:
+#         func (Callable): the function to be parsed
+#     Returns:
+#         Dict[str, Any]: A dictionary with the function's name,
+#             description, and parameters.
+#     """
+
+#     doc = inspect.getdoc(func)
+#     if not doc:
+#         raise ValueError(
+#             f"Invalid function {func.__name__}: no docstring provided")
+
+#     # Parse function description
+#     func_desp_search = re.search(r'(.*?)Args', doc, re.DOTALL)
+#     if not func_desp_search:
+#         raise ValueError(f"Invalid function {func.__name__}: "
+#                          "no function description found in docstring")
+#     func_desp = func_desp_search.group(1).strip()
+
+#     # Parse argument descriptions
+#     param_desp = re.findall(
+#         r'(\w+)\s*:\s*(\w+)\n(.*?)(?=\n\w+\s*:\s*|\nReturns|$)', doc,
+#         re.DOTALL)
+
+#     # Parameters from the function signature
+#     sign_params = list(inspect.signature(func).parameters.keys())
+
+#     properties = {}
+#     required = []
+#     for name, type, desp in param_desp:
+#         name = name.strip()
+#         type = type.strip()
+#         desp = desp.strip()
+
+#         required.append(name)
+#         properties[name] = {
+#             "type": type,
+#             "description": desp,
+#         }
+
+#     if len(sign_params) != len(required):
+#         raise ValueError(f"Number of parameters in function signature "
+#                          f"({len(sign_params)})"
+#                          f"does not match that in docstring ({len(required)})")
+
+#     for param in sign_params:
+#         if param not in required:
+#             raise ValueError(f"Parameter '{param}' in function signature"
+#                              "is missing in the docstring")
+
+#     parameters = {
+#         "type": "object",
+#         "properties": properties,
+#         "required": required,
+#     }
+
+#     func_dict = {
+#         "name": func.__name__,
+#         "description": func_desp,
+#         "parameters": parameters,
+#     }
+
+#     return func_dict
+
+
 def parse_doc(func: Callable) -> Dict[str, Any]:
     """
     Parse the docstrings of a function to extract function name,
@@ -259,34 +329,27 @@ def parse_doc(func: Callable) -> Dict[str, Any]:
         raise ValueError(
             f"Invalid function {func.__name__}: no docstring provided")
 
-    # Parse function description
-    func_desp_search = re.search(r'(.*?)Args', doc, re.DOTALL)
-    if not func_desp_search:
-        raise ValueError(f"Invalid function {func.__name__}: "
-                         "no function description found in docstring")
-    func_desp = func_desp_search.group(1).strip()
+    properties = {}
+    required = []
 
-    # Parse argument descriptions
-    param_desp = re.findall(
-        r'(\w+)\s*:\s*(\w+)\n(.*?)(?=\n\w+\s*:\s*|\nReturns|$)', doc,
-        re.DOTALL)
+    parts = re.split('\n\s*\n', doc)
+    func_desc = parts[0].strip()
+
+    args_section = next((p for p in parts if 'Args:' in p), None)
+    if args_section:
+        args_descs = re.findall(r'(\w+)\s*\((\w+)\):\s*(.*)', args_section)
+        properties = {
+            name.strip(): {
+                'type': type,
+                'description': desc
+            }
+            for name, type, desc in args_descs
+        }
+        for name in properties:
+            required.append(name)
 
     # Parameters from the function signature
     sign_params = list(inspect.signature(func).parameters.keys())
-
-    properties = {}
-    required = []
-    for name, type, desp in param_desp:
-        name = name.strip()
-        type = type.strip()
-        desp = desp.strip()
-
-        required.append(name)
-        properties[name] = {
-            "type": type,
-            "description": desp,
-        }
-
     if len(sign_params) != len(required):
         raise ValueError(f"Number of parameters in function signature "
                          f"({len(sign_params)})"
@@ -303,10 +366,11 @@ def parse_doc(func: Callable) -> Dict[str, Any]:
         "required": required,
     }
 
-    func_dict = {
+    # Construct the function dictionary
+    function_dict = {
         "name": func.__name__,
-        "description": func_desp,
+        "description": func_desc,
         "parameters": parameters,
     }
 
-    return func_dict
+    return function_dict

@@ -11,8 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import inspect
-import re
 from collections import defaultdict
 from dataclasses import dataclass
 from types import GeneratorType
@@ -102,9 +100,9 @@ class FuncRecord:
             str: Modified string to be represent the function calling
         """
 
-        return f"""Function Execution: {self.func_name}
-\tArgs: {self.args}
-\tResult: {self.result}"""
+        return (f"Function Execution: {self.func_name}\n"
+                f"\tArgs: {self.args}\n"
+                f"\tResult: {self.result}")
 
 
 class ChatAgent(BaseAgent):
