@@ -11,24 +11,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import inspect
+import re
 from collections import defaultdict
 from dataclasses import dataclass
 from types import GeneratorType
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from tenacity import retry
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_exponential
 
 from camel.agents import BaseAgent
-from camel.configs import ChatGPTConfig
-from camel.messages import BaseMessage
+from camel.configs import ChatGPTConfig, FuncConfig
+from camel.functions import BaseFuncs
+from camel.messages import BaseMessage, FuncMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.typing import ModelType, RoleType
 from camel.utils import (
     get_model_encoding,
     num_tokens_from_messages,
     openai_api_key_required,
+    parse_doc,
 )
 
 
@@ -78,6 +82,31 @@ class ChatRecord:
         return self.message.to_openai_message(self.role_at_backend)
 
 
+@dataclass(frozen=True)
+class FuncRecord:
+    r"""Historical records of functions called in the conversation.
+
+    Attributes:
+        func_name (str): Name of the function being called
+        args (Dict[str, Any]): Dictionary of arguments passed to the function
+        result (Any): The execution result of calling this function
+    """
+    func_name: str
+    args: Dict[str, Any]
+    result: Any
+
+    def __str__(self) -> str:
+        r"""Overriden version of string function
+
+        Returns:
+            str: Modified string to be represent the function calling
+        """
+
+        return f"""Function Execution: {self.func_name}
+\tArgs: {self.args}
+\tResult: {self.result}"""
+
+
 class ChatAgent(BaseAgent):
     r"""Class for managing conversations of CAMEL Chat Agents.
 
@@ -92,6 +121,10 @@ class ChatAgent(BaseAgent):
             is performed. (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
         agent. (default: :obj:`None`)
+        func_enable (bool): Whether to enable function calling
+            (default: :obj:`False`)
+        func_collects (Optional[List[BaseFuncs]]): List of function
+            collection objects (default: :obj:`None`)
     """
 
     def __init__(
@@ -101,6 +134,8 @@ class ChatAgent(BaseAgent):
         model_config: Optional[Any] = None,
         message_window_size: Optional[int] = None,
         output_language: Optional[str] = None,
+        func_enable: bool = False,
+        func_collects: Optional[List[BaseFuncs]] = None,
     ) -> None:
 
         self.system_message: BaseMessage = system_message
@@ -112,16 +147,64 @@ class ChatAgent(BaseAgent):
 
         self.model: ModelType = (model if model is not None else
                                  ModelType.GPT_3_5_TURBO)
-        self.model_config: ChatGPTConfig = model_config or ChatGPTConfig()
         self.message_window_size: Optional[int] = message_window_size
+        self.model_config_dict: dict
+
+        self.func_enable = func_enable
+        if func_enable:
+            if not func_collects:
+                raise ValueError(
+                    "Function calling is enabled but no function is provided")
+
+            # Change the model to the corresponding function-enabled one
+            if self.model == ModelType.GPT_3_5_TURBO \
+                    or self.model == ModelType.GPT_3_5_TURBO_16K:
+                self.model = ModelType.GPT_3_5_TURBO_FUNC
+            else:
+                self.model = ModelType.GPT_4_FUNC
+
+            self.func_dict: Dict[str, Callable] = {}
+            self.model_config_dict = \
+                (model_config or FuncConfig()).__dict__
+
+            self.load_func_config(func_collects)
+        else:
+            self.model_config_dict = \
+                (model_config or ChatGPTConfig()).__dict__
 
         self.model_backend: BaseModelBackend = ModelFactory.create(
-            self.model, self.model_config.__dict__)
+            self.model, self.model_config_dict)
         self.model_token_limit: int = self.model_backend.token_limit
 
         self.terminated: bool = False
         self.stored_messages: List[ChatRecord]
         self.init_messages()
+
+    def load_func_config(self, func_collects: List[BaseFuncs]):
+        r"""Load the function information into the model configuration
+
+        Args:
+            func_collects (List[BaseFuncs]): The list of function collection
+                objects
+        """
+        for func_collect in func_collects:
+            func_list = func_collect.functions
+
+            for func in func_list:
+                self.func_dict[func.__name__] = func
+                self.model_config_dict['functions'].append(parse_doc(func))
+
+    def add_func(self, func: Callable):
+        r"""Add new functions after initialization
+
+        Args:
+            func (Callable): the function to be added
+        """
+        if not self.func_enable:
+            raise ValueError("Function calling is disable for this agent")
+
+        self.model_backend.model_config_dict["functions"] \
+                                    .append(parse_doc(func))
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state and returns the
@@ -152,22 +235,20 @@ class ChatAgent(BaseAgent):
         self.system_message = self.system_message.create_new_instance(content)
         return self.system_message
 
-    def get_info(
-        self,
-        id: Optional[str],
-        usage: Optional[Dict[str, int]],
-        termination_reasons: List[str],
-        num_tokens: int,
-    ) -> Dict[str, Any]:
+    def get_info(self, id: Optional[str], usage: Optional[Dict[str, int]],
+                 termination_reasons: List[str], num_tokens: int,
+                 called_funcs: List[FuncRecord]) -> Dict[str, Any]:
         r"""Returns a dictionary containing information about the chat session.
 
         Args:
             id (str, optional): The ID of the chat session.
             usage (Dict[str, int], optional): Information about the usage of
                 the LLM model.
-            termination_reasons (List[str]): The reasons for the termination of
-                the chat session.
+            termination_reasons (List[str]): The reasons for the termination
+                of the chat session.
             num_tokens (int): The number of tokens used in the chat session.
+            called_funcs (List[FuncRecord]): The list of function records,
+                containing the information of called functions
 
         Returns:
             Dict[str, Any]: The chat session information.
@@ -177,6 +258,7 @@ class ChatAgent(BaseAgent):
             "usage": usage,
             "termination_reasons": termination_reasons,
             "num_tokens": num_tokens,
+            "called_functions": called_funcs,
         }
 
     def init_messages(self) -> None:
@@ -196,7 +278,7 @@ class ChatAgent(BaseAgent):
         Returns:
             List[BaseMessage]: The updated stored messages.
         """
-        if role not in {'system', 'user', 'assistant'}:
+        if role not in {'system', 'user', 'assistant', 'function'}:
             raise ValueError(f"Unsupported role {role}")
         self.stored_messages.append(ChatRecord(role, message))
         return self.stored_messages
@@ -233,45 +315,104 @@ class ChatAgent(BaseAgent):
                 and information about the chat session.
         """
         messages = self.update_messages('user', input_message)
-        if self.message_window_size is not None and len(
-                messages) > self.message_window_size:
-            messages = [ChatRecord('system', self.system_message)
-                        ] + messages[-self.message_window_size:]
-        openai_messages = [record.to_openai_message() for record in messages]
-        num_tokens = num_tokens_from_messages(openai_messages, self.model)
 
         output_messages: Optional[List[BaseMessage]]
         info: Dict[str, Any]
+        called_funcs: List[FuncRecord] = []
+        while True:
+            if self.message_window_size is not None \
+                    and len(messages) > self.message_window_size:
+                messages = [ChatRecord('system', self.system_message)
+                            ] + messages[-self.message_window_size:]
 
-        if num_tokens < self.model_token_limit:
-            response = self.model_backend.run(openai_messages)
-            self.validate_model_response(response)
-            if not self.model_backend.stream:
-                output_messages, finish_reasons, usage_dict, response_id = \
-                    self.handle_batch_response(response)
+            openai_messages = [
+                record.to_openai_message() for record in messages
+            ]
+            num_tokens = num_tokens_from_messages(openai_messages, self.model)
+
+            if num_tokens < self.model_token_limit:
+                response = self.model_backend.run(openai_messages)
+                self.validate_model_response(response)
+
+                if not self.model_backend.stream:
+                    # flake8: noqa :E501
+                    output_messages, finish_reasons, usage_dict, response_id = \
+                        self.handle_batch_response(response)
+                else:
+                    # flake8: noqa :E501
+                    output_messages, finish_reasons, usage_dict, response_id = \
+                        self.handle_stream_response(response, num_tokens)
+
+                # function calling disabled or stopped
+                if (not self.func_enable) or (finish_reasons[0] !=
+                                              "function_call"):
+                    info = self.get_info(
+                        response_id,
+                        usage_dict,
+                        finish_reasons,
+                        num_tokens,
+                        called_funcs,
+                    )
+                    break
+
+                else:  # function call
+                    choice = response["choices"][0]
+
+                    func_name = choice.message["function_call"].name
+                    func = self.func_dict[func_name]
+
+                    args = choice.message["function_call"].arguments
+                    args = eval(args)
+
+                    # Pass the extracted arguments to the indicated function
+                    result = func(**args)
+
+                    assist_msg = FuncMessage(
+                        role_name=self.role_name,
+                        role_type=RoleType.ASSISTANT,
+                        meta_dict=None,
+                        content="",
+                        func_name=func_name,
+                        args=args,
+                    )
+                    func_msg = FuncMessage(
+                        role_name=self.role_name,
+                        role_type=RoleType.FUNC,
+                        meta_dict=None,
+                        content="",
+                        func_name=func_name,
+                        result=result,
+                    )
+
+                    # Add the function record into a list to be output
+                    func_record = FuncRecord(func_name, args, result)
+                    called_funcs.append(func_record)
+
+                    # Update the messages
+                    messages = self.update_messages('assistant', assist_msg)
+                    messages = self.update_messages('function', func_msg)
             else:
-                output_messages, finish_reasons, usage_dict, response_id = \
-                    self.handle_stream_response(response, num_tokens)
-            info = self.get_info(
-                response_id,
-                usage_dict,
-                finish_reasons,
-                num_tokens,
-            )
-        else:
-            self.terminated = True
-            output_messages = []
+                self.terminated = True
+                output_messages = []
 
-            info = self.get_info(
-                None,
-                None,
-                ["max_tokens_exceeded"],
-                num_tokens,
-            )
+                info = self.get_info(
+                    None,
+                    None,
+                    ["max_tokens_exceeded"],
+                    num_tokens,
+                    called_funcs,
+                )
+
+                break
 
         return ChatAgentResponse(output_messages, self.terminated, info)
 
     def validate_model_response(self, response: Any):
+        r"""Validate the type of the response returned by the model
+
+        Args:
+            response (Any): the response returned by the model
+        """
         if not self.model_backend.stream:
             if not isinstance(response, dict):
                 raise RuntimeError("OpenAI returned unexpected batch struct")

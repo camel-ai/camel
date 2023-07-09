@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from types import GeneratorType
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
@@ -37,7 +37,6 @@ class OpenAIModel(BaseModelBackend):
     def run(
         self,
         messages: List[Dict],
-        functions: Optional[List[Dict]] = None,
     ) -> Dict[str, Any]:
         r"""Run inference of OpenAI chat completion.
 
@@ -52,7 +51,6 @@ class OpenAIModel(BaseModelBackend):
         messages_openai: List[OpenAIMessage] = messages
         response = openai.ChatCompletion.create(messages=messages_openai,
                                                 model=self.model_type.value,
-                                                functions=functions,
                                                 **self.model_config_dict)
         if not self.stream:
             if not isinstance(response, Dict):

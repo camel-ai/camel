@@ -11,8 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from camel.agents import FuncAgent
-from camel.messages import BaseMessage
+from dataclasses import dataclass
+from typing import Callable, List
+
+from camel.functions import BaseFuncs
 
 
 def add(a, b):
@@ -72,29 +74,15 @@ def mul(a, b):
     return a * b
 
 
-def main():
-    # Create an embodied agent
-    role_name = "Student"
+@dataclass
+class MathFuncs(BaseFuncs):
+    r"""Class for math function collection, which currently includes
+    integere addition, subtraction and multiplication.
+    """
 
-    functions = [add, sub, mul]
-
-    func_agent = FuncAgent(
-        role_name,
-        functions,
-        verbose=True,
-    )
-
-    user_msg = BaseMessage.make_user_message(
-        role_name=role_name,
-        content=("Caculate the result of: 2 * 2 + 4"),
-        meta_dict=None,
-    )
-    output_message, func_call, _ = func_agent.step(user_msg)
-
-    executed = "true" if func_call else "false"
-    print(f"Function is executed or not? {executed}")
-    print(f"Final output:\n {output_message[0].content}")
-
-
-if __name__ == "__main__":
-    main()
+    def __init__(self):
+        self.functions: List[Callable] = [
+            add,
+            sub,
+            mul,
+        ]

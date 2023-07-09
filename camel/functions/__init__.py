@@ -11,18 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import camel.agents
-import camel.configs
-import camel.generators
-import camel.messages
-import camel.prompts
-import camel.typing
-import camel.utils
-import camel.functions
 
-__version__ = '0.1.0'
+from .base import BaseFuncs
+from .math_functions import MathFuncs
 
 __all__ = [
-    '__version__',
-    'camel',
+    'BaseFuncs',
+    'MathFuncs',
 ]

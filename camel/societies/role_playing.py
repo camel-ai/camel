@@ -20,6 +20,7 @@ from camel.agents import (
     TaskSpecifyAgent,
 )
 from camel.agents.chat_agent import ChatAgentResponse
+from camel.functions import BaseFuncs
 from camel.generators import SystemMessageGenerator
 from camel.human import Human
 from camel.messages import BaseMessage
@@ -70,6 +71,11 @@ class RolePlaying:
             task specify meta dict with. (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
             agents. (default: :obj:`None`)
+        assist_func_enable (bool): Whether to enable the assistant
+            to use function calling (default: :obj:`False`)
+        assist_funcs (Optional[List[BaseFuncs]]): the function collection
+            objects to be loaded if function calling is enabled.
+            (default: :obj:`None`)
     """
 
     def __init__(
@@ -93,6 +99,8 @@ class RolePlaying:
         extend_sys_msg_meta_dicts: Optional[List[Dict]] = None,
         extend_task_specify_meta_dict: Optional[Dict] = None,
         output_language: Optional[str] = None,
+        assist_func_enable: bool = False,
+        assist_funcs: Optional[List[BaseFuncs]] = None,
     ) -> None:
         self.with_task_specify = with_task_specify
         self.with_task_planner = with_task_planner
@@ -100,6 +108,9 @@ class RolePlaying:
         self.model_type = model_type
         self.task_type = task_type
         self.task_prompt = task_prompt
+
+        self.assist_func_enable = assist_func_enable
+        self.assist_funcs = assist_funcs
 
         self.specified_task_prompt: Optional[TextPrompt] = None
         self.init_specified_task_prompt(assistant_role_name, user_role_name,
@@ -122,8 +133,13 @@ class RolePlaying:
         self.user_agent: ChatAgent
         self.assistant_sys_msg: BaseMessage
         self.user_sys_msg: BaseMessage
-        self.init_agents(init_assistant_sys_msg, assistant_agent_kwargs,
-                         init_user_sys_msg, user_agent_kwargs, output_language)
+        self.init_agents(
+            init_assistant_sys_msg,
+            assistant_agent_kwargs,
+            init_user_sys_msg,
+            user_agent_kwargs,
+            output_language,
+        )
 
         self.critic: Optional[Union[CriticAgent, Human]] = None
         self.critic_sys_msg: Optional[BaseMessage] = None
@@ -243,11 +259,14 @@ class RolePlaying:
             ))
         return init_assistant_sys_msg, init_user_sys_msg, sys_msg_meta_dicts
 
-    def init_agents(self, init_assistant_sys_msg: BaseMessage,
-                    assistant_agent_kwargs: Optional[Dict],
-                    init_user_sys_msg: BaseMessage,
-                    user_agent_kwargs: Optional[Dict],
-                    output_language: Optional[str]):
+    def init_agents(
+        self,
+        init_assistant_sys_msg: BaseMessage,
+        assistant_agent_kwargs: Optional[Dict],
+        init_user_sys_msg: BaseMessage,
+        user_agent_kwargs: Optional[Dict],
+        output_language: Optional[str],
+    ):
         r"""Initialize assistant and user agents with their system messages.
 
         Args:
@@ -266,9 +285,12 @@ class RolePlaying:
             init_assistant_sys_msg,
             self.model_type,
             output_language=output_language,
+            func_enable=self.assist_func_enable,
+            func_collects=self.assist_funcs,
             **(assistant_agent_kwargs or {}),
         )
         self.assistant_sys_msg = self.assistant_agent.system_message
+
         self.user_agent = ChatAgent(
             init_user_sys_msg,
             self.model_type,
@@ -338,6 +360,9 @@ class RolePlaying:
                      "Now start to give me instructions one by one. "
                      "Only reply with Instruction and Input."))
 
+        # if self.assist_func_enable:
+        #     return assistant_msg, []
+
         user_msg = BaseMessage.make_user_message(
             role_name=self.user_sys_msg.role_name,
             content=f"{self.assistant_sys_msg.content}")
@@ -400,6 +425,14 @@ class RolePlaying:
             whether the user agent terminated the conversation, and any
             additional user information.
         """
+        # print("Assistant:")
+        # for msg in self.assistant_agent.stored_messages:
+        #     print(msg)
+        # print('-' * 50)
+        # print("User:")
+        # for msg in self.user_agent.stored_messages:
+        #     print(msg)
+
         user_response = self.user_agent.step(assistant_msg)
         if user_response.terminated or user_response.msgs is None:
             return (ChatAgentResponse([], False, {}),
