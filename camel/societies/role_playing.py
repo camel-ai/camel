@@ -164,7 +164,7 @@ class RolePlaying:
                 output_language=output_language,
                 **(task_specify_agent_kwargs or {}),
             )
-            self.specified_task_prompt = task_specify_agent.step(
+            self.specified_task_prompt = task_specify_agent.run(
                 self.task_prompt,
                 meta_dict=task_specify_meta_dict,
             )
@@ -191,10 +191,11 @@ class RolePlaying:
                 output_language=output_language,
                 **(task_planner_agent_kwargs or {}),
             )
-            self.planned_task_prompt = task_planner_agent.step(
-                self.task_prompt)
+            self.planned_task_prompt = task_planner_agent.run(self.task_prompt)
             self.task_prompt = (f"{self.task_prompt}\n"
                                 f"{self.planned_task_prompt}")
+        else:
+            self.planned_task_prompt = None
 
     def get_sys_message_info(
         self, assistant_role_name: str, user_role_name: str,

@@ -123,7 +123,7 @@ class ChatAgent(BaseAgent):
         self.stored_messages: List[ChatRecord]
         self.init_messages()
 
-    def reset(self) -> List[ChatRecord]:
+    def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state and returns the
         stored messages.
 
@@ -132,7 +132,6 @@ class ChatAgent(BaseAgent):
         """
         self.terminated = False
         self.init_messages()
-        return self.stored_messages
 
     def set_output_language(self, output_language: str) -> BaseMessage:
         r"""Sets the output language for the system message. This method
