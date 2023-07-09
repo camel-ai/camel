@@ -20,10 +20,12 @@ from camel.utils import print_text_animated
 
 def main(model_type=None) -> None:
     task_prompt = "Develop a poll app"
-    meta_dict = {"language": "JavaScript", "domain": "Sociology"}
+    language = "JavaScript"
+    domain = "Sociology"
+    meta_dict = {"language": language, "domain": domain}
     role_play_session = RolePlaying(
-        "Computer Programmer",
-        "Sociologist",
+        f"{language} Programmer",
+        f"Person working in {domain}",
         task_prompt=task_prompt,
         with_task_specify=True,
         model_type=model_type,
