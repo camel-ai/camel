@@ -164,17 +164,36 @@ def role_playing_start(
         print(f"Error: unrecognezed society {society_name}")
         return {}
 
-    task_type: TaskType = TaskType.AI_SOCIETY \
-        if society_name == "AI Society" else TaskType.CODE
+    meta_dict: Optional[Dict[str, str]]
+    extend_sys_msg_meta_dicts: Optional[List[Dict]]
+    task_type: TaskType
+    if society_name == "AI Society":
+        meta_dict = None
+        extend_sys_msg_meta_dicts = None
+        # Keep user and assistant intact
+        task_type = TaskType.AI_SOCIETY
+    else:  # "Code"
+        meta_dict = {"language": assistant, "domain": user}
+        extend_sys_msg_meta_dicts = [meta_dict, meta_dict]
+        assistant = f"{assistant} Programmer"
+        user = f"Person working in {user}"
+        task_type = TaskType.CODE
 
     try:
         task_specify_kwargs = dict(word_limit=word_limit) \
             if with_task_specifier else None
 
-        session = RolePlaying(assistant, user, original_task,
-                              with_task_specify=with_task_specifier,
-                              task_specify_agent_kwargs=task_specify_kwargs,
-                              with_task_planner=False, task_type=task_type)
+        session = RolePlaying(
+            assistant,
+            user,
+            original_task,
+            with_task_specify=with_task_specifier,
+            task_specify_agent_kwargs=task_specify_kwargs,
+            with_task_planner=False,
+            task_type=task_type,
+            extend_sys_msg_meta_dicts=extend_sys_msg_meta_dicts,
+            extend_task_specify_meta_dict=meta_dict,
+        )
     except (openai.error.RateLimitError, tenacity.RetryError,
             RuntimeError) as ex:
         print("OpenAI API exception 0 " + str(ex))
