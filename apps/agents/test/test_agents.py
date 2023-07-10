@@ -38,31 +38,41 @@ def test_utils():
 
 @pytest.mark.model_backend
 def test_session():
-    state = State.empty()
 
-    state, _, _ = cleanup_on_launch(state)
+    for society_name in ("AI Society", "Code"):
 
-    assistant = "professor"
-    user = "PhD student"
-    original_task = "Recommend AI conferences to publish a paper"
-    max_messages = 10
-    with_task_specifier = False
-    word_limit = 50
-    state, specified_task_prompt, planned_task_upd, chat, progress_upd = \
-        role_playing_start(state, assistant, user, original_task,
-                           max_messages, with_task_specifier, word_limit)
+        state = State.empty()
 
-    assert state.session is not None
+        state, _, _ = cleanup_on_launch(state)
 
-    state, chat, progress_update = \
-        role_playing_chat_init(state)
+        if society_name == "AI Society":
+            assistant = "professor"
+            user = "PhD student"
+            original_task = "Recommend AI conferences to publish a paper"
+        else:
+            assistant = "JavaScript"
+            user = "Sociology"
+            original_task = "Develop a poll app"
 
-    assert state.session is not None
+        max_messages = 10
+        with_task_specifier = False
+        word_limit = 50
+        state, specified_task_prompt, planned_task_upd, chat, progress_upd = \
+            role_playing_start(state, society_name, assistant, user,
+                               original_task, max_messages,
+                               with_task_specifier, word_limit)
 
-    for _ in range(5):
-        state, chat, progress_update, start_bn_update =\
-            role_playing_chat_cont(state)
+        assert state.session is not None
 
-    state, _, _ = stop_session(state)
+        state, chat, progress_update = \
+            role_playing_chat_init(state)
 
-    assert state.session is None
+        assert state.session is not None
+
+        for _ in range(5):
+            state, chat, progress_update, start_bn_update =\
+                role_playing_chat_cont(state)
+
+        state, _, _ = stop_session(state)
+
+        assert state.session is None

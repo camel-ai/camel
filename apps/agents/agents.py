@@ -20,7 +20,7 @@ import argparse
 import os
 import re
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import gradio as gr
 import openai
@@ -31,6 +31,7 @@ from apps.agents.text_utils import split_markdown_code
 from camel.agents import TaskSpecifyAgent
 from camel.messages import BaseMessage
 from camel.societies import RolePlaying
+from camel.typing import TaskType
 
 REPO_ROOT = os.path.realpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.."))
@@ -127,6 +128,7 @@ def cleanup_on_launch(state) -> Tuple[State, ChatBotHistory, Dict]:
 
 def role_playing_start(
     state,
+    society_name: str,
     assistant: str,
     user: str,
     original_task: str,
@@ -138,6 +140,7 @@ def role_playing_start(
 
     Args:
         state (State): Role playing state.
+        society_name:
         assistant (str): Contents of the Assistant field.
         user (str): Contents of the User field.
         original_task (str): Original task field.
@@ -157,14 +160,40 @@ def role_playing_start(
         print("Double click")
         return {}  # may fail
 
+    if society_name not in {"AI Society", "Code"}:
+        print(f"Error: unrecognezed society {society_name}")
+        return {}
+
+    meta_dict: Optional[Dict[str, str]]
+    extend_sys_msg_meta_dicts: Optional[List[Dict]]
+    task_type: TaskType
+    if society_name == "AI Society":
+        meta_dict = None
+        extend_sys_msg_meta_dicts = None
+        # Keep user and assistant intact
+        task_type = TaskType.AI_SOCIETY
+    else:  # "Code"
+        meta_dict = {"language": assistant, "domain": user}
+        extend_sys_msg_meta_dicts = [meta_dict, meta_dict]
+        assistant = f"{assistant} Programmer"
+        user = f"Person working in {user}"
+        task_type = TaskType.CODE
+
     try:
         task_specify_kwargs = dict(word_limit=word_limit) \
             if with_task_specifier else None
 
-        session = RolePlaying(assistant, user, original_task,
-                              with_task_specify=with_task_specifier,
-                              task_specify_agent_kwargs=task_specify_kwargs,
-                              with_task_planner=False)
+        session = RolePlaying(
+            assistant,
+            user,
+            original_task,
+            with_task_specify=with_task_specifier,
+            task_specify_agent_kwargs=task_specify_kwargs,
+            with_task_planner=False,
+            task_type=task_type,
+            extend_sys_msg_meta_dicts=extend_sys_msg_meta_dicts,
+            extend_task_specify_meta_dict=meta_dict,
+        )
     except (openai.error.RateLimitError, tenacity.RetryError,
             RuntimeError) as ex:
         print("OpenAI API exception 0 " + str(ex))
@@ -321,32 +350,64 @@ def construct_ui(blocks, api_key: Optional[str] = None) -> None:
     if api_key is not None:
         openai.api_key = api_key
 
-    assistant_role_path = \
-        os.path.join(REPO_ROOT, "data/ai_society/assistant_roles.txt")
-    user_role_path = \
-        os.path.join(REPO_ROOT, "data/ai_society/user_roles.txt")
+    society_dict: Dict[str, Dict[str, Any]] = {}
+    for society_name in ("AI Society", "Code"):
+        if society_name == "AI Society":
+            assistant_role_subpath = "ai_society/assistant_roles.txt"
+            user_role_subpath = "ai_society/user_roles.txt"
+            assistant_role = "Python Programmer"
+            user_role = "Stock Trader"
+            default_task = "Develop a trading bot for the stock market"
+        else:
+            assistant_role_subpath = "code/languages.txt"
+            user_role_subpath = "code/domains.txt"
+            assistant_role = "JavaScript"
+            user_role = "Sociology"
+            default_task = "Develop a poll app"
 
-    assistant_roles = load_roles(assistant_role_path)
-    user_roles = load_roles(user_role_path)
+        assistant_role_path = os.path.join(REPO_ROOT,
+                                           f"data/{assistant_role_subpath}")
+        user_role_path = os.path.join(REPO_ROOT, f"data/{user_role_subpath}")
 
-    assistant_role = "Python Programmer"
-    user_role = "Stock Trader"
+        society_info = dict(
+            assistant_roles=load_roles(assistant_role_path),
+            user_roles=load_roles(user_role_path),
+            assistant_role=assistant_role,
+            user_role=user_role,
+            default_task=default_task,
+        )
+        society_dict[society_name] = society_info
 
-    default_task = "Develop a trading bot for the stock market"
+    default_society = society_dict["AI Society"]
+
+    def change_society(society_name: str) -> Tuple[Dict, Dict, str]:
+        society = society_dict[society_name]
+        assistant_dd_update = gr.update(choices=society['assistant_roles'],
+                                        value=society['assistant_role'])
+        user_dd_update = gr.update(choices=society['user_roles'],
+                                   value=society['user_role'])
+        return assistant_dd_update, user_dd_update, society['default_task']
 
     with gr.Row():
         with gr.Column(scale=1):
-            assistant_dd = gr.Dropdown(assistant_roles,
+            society_dd = gr.Dropdown(["AI Society", "Code"],
+                                     label="Choose the society",
+                                     value="AI Society", interactive=True)
+        with gr.Column(scale=2):
+            assistant_dd = gr.Dropdown(default_society['assistant_roles'],
                                        label="Example assistant roles",
-                                       value=assistant_role, interactive=True)
+                                       value=default_society['assistant_role'],
+                                       interactive=True)
             assistant_ta = gr.TextArea(label="Assistant role (EDIT ME)",
                                        lines=1, interactive=True)
-        with gr.Column(scale=1):
-            user_dd = gr.Dropdown(user_roles, label="Example user roles",
-                                  value=user_role, interactive=True)
+        with gr.Column(scale=2):
+            user_dd = gr.Dropdown(default_society['user_roles'],
+                                  label="Example user roles",
+                                  value=default_society['user_role'],
+                                  interactive=True)
             user_ta = gr.TextArea(label="User role (EDIT ME)", lines=1,
                                   interactive=True)
-        with gr.Column(scale=1):
+        with gr.Column(scale=2):
             gr.Markdown(
                 "## CAMEL: Communicative Agents for \"Mind\" Exploration"
                 " of Large Scale Language Model Society\n"
@@ -360,7 +421,8 @@ def construct_ui(blocks, api_key: Optional[str] = None) -> None:
         with gr.Column(scale=9):
             original_task_ta = gr.TextArea(
                 label="Give me a preliminary idea (EDIT ME)",
-                value=default_task, lines=1, interactive=True)
+                value=default_society['default_task'], lines=1,
+                interactive=True)
         with gr.Column(scale=1):
             universal_task_bn = gr.Button("Insert universal task")
     with gr.Row():
@@ -403,7 +465,7 @@ def construct_ui(blocks, api_key: Optional[str] = None) -> None:
     start_bn.click(cleanup_on_launch, session_state,
                    [session_state, chatbot, start_bn], queue=False) \
             .then(role_playing_start,
-                  [session_state, assistant_ta, user_ta,
+                  [session_state, society_dd, assistant_ta, user_ta,
                    original_task_ta, num_messages_sl,
                    task_specifier_cb, ts_word_limit_nb],
                   [session_state, specified_task_ta, task_prompt_ta,
@@ -418,9 +480,13 @@ def construct_ui(blocks, api_key: Optional[str] = None) -> None:
     clear_bn.click(stop_session, session_state,
                    [session_state, progress_sl, start_bn])
 
+    society_dd.change(change_society, society_dd,
+                      [assistant_dd, user_dd, original_task_ta])
     assistant_dd.change(lambda dd: dd, assistant_dd, assistant_ta)
     user_dd.change(lambda dd: dd, user_dd, user_ta)
 
+    blocks.load(change_society, society_dd,
+                [assistant_dd, user_dd, original_task_ta])
     blocks.load(lambda dd: dd, assistant_dd, assistant_ta)
     blocks.load(lambda dd: dd, user_dd, user_ta)
 
