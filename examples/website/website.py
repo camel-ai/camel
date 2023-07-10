@@ -4,10 +4,9 @@ from colorama import Fore
 from camel.agents import WebsiteAgent
 from camel.messages import BaseMessage
 from camel.configs import ChatGPTConfig
-from camel.utils.functions import database
 from camel.typing import ModelType, RoleType
 from camel.prompts import WebsitePromptTemplateDict
-from camel.utils.functions import print_text_animated
+from camel.utils.functions import database, print_text_animated
 
 
 project_path = "examples/website/markdown_editor"
