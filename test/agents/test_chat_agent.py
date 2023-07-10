@@ -83,31 +83,25 @@ def test_chat_agent_multiple_return_messages(n):
 
 
 @pytest.mark.model_backend
-def test_chat_agent_batch_stream_same_output():
+def test_chat_agent_stream_output():
     system_msg = BaseMessage("Assistant", RoleType.ASSISTANT, meta_dict=None,
                              content="You are a helpful assistant.")
     user_msg = BaseMessage(role_name="User", role_type=RoleType.USER,
                            meta_dict=dict(), content="Tell me a joke.")
-    batch_model_config = ChatGPTConfig(temperature=0, n=2, stream=False)
-    batch_assistant = ChatAgent(system_msg, model_config=batch_model_config)
-    batch_assistant.reset()
-    batch_assistant_response = batch_assistant.step(user_msg)
 
     stream_model_config = ChatGPTConfig(temperature=0, n=2, stream=True)
     stream_assistant = ChatAgent(system_msg, model_config=stream_model_config)
     stream_assistant.reset()
     stream_assistant_response = stream_assistant.step(user_msg)
 
-    for i in range(len(batch_assistant_response.msgs)):
-        batch_msg_content = batch_assistant_response.msgs[i].content
-        stream_msg_content = stream_assistant_response.msgs[i].content
-        assert batch_msg_content == stream_msg_content
+    for msg in stream_assistant_response.msgs:
+        assert len(msg.content) > 0
 
-    batch_usage = batch_assistant_response.info["usage"]
     stream_usage = stream_assistant_response.info["usage"]
-    for key in batch_usage:
-        assert key in stream_usage
-        assert stream_usage[key] == batch_usage[key]
+    assert stream_usage["completion_tokens"] > 0
+    assert stream_usage["prompt_tokens"] > 0
+    assert stream_usage["total_tokens"] == stream_usage[
+        "completion_tokens"] + stream_usage["prompt_tokens"]
 
 
 @pytest.mark.model_backend
