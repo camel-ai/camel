@@ -10,7 +10,7 @@ from camel.prompts import WebsitePromptTemplateDict
 from camel.utils.functions import print_text_animated
 
 
-project_path = "examples/markdown_editor"
+project_path = "examples/website/markdown_editor"
 template_dict = WebsitePromptTemplateDict(project_path=project_path)
 system_prompt = template_dict.ASSISTANT_PROMPT
 task_prompt = template_dict.USER_PROMPT
