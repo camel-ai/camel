@@ -23,7 +23,6 @@ model_config = ChatGPTConfig(temperature=0.1)
 assistant = WebsiteAgent(system_prompt, model=ModelType.GPT_4, model_config=model_config)
 assistant_response = assistant.step(user_msg)
 
-
 code_save_path = Path(project_path).absolute() / "workspace"
 read_write_content = database(path=code_save_path)
 print_text_animated(Fore.GREEN + f"Code Generation:\n\n{assistant_response.msg.content}\n")
