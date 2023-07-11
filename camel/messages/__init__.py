@@ -20,6 +20,7 @@ OpenAIChatMessage = Union[OpenAIUserMessage, OpenAIAssistantMessage]
 OpenAIMessage = Union[OpenAISystemMessage, OpenAIChatMessage]
 
 from .base import BaseMessage  # noqa: E402
+from .func_message import FuncMessage  # noqa: E402
 
 __all__ = [
     'OpenAISystemMessage',
@@ -28,4 +29,5 @@ __all__ = [
     'OpenAIChatMessage',
     'OpenAIMessage',
     'BaseMessage',
+    'FuncMessage',
 ]

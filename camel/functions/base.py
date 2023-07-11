@@ -11,18 +11,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import camel.agents
-import camel.configs
-import camel.generators
-import camel.messages
-import camel.prompts
-import camel.typing
-import camel.utils
-import camel.functions
+from dataclasses import dataclass, field
+from typing import Callable, List
 
-__version__ = '0.1.0'
 
-__all__ = [
-    '__version__',
-    'camel',
-]
+@dataclass
+class BaseFuncs:
+    r"""Base class for function collection objects used in CAMEL chat system.
+
+    Args:
+        functions (List[Callable]): List of functions contained in
+            this collection
+    """
+    functions: List[Callable] = field(default_factory=list)

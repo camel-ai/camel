@@ -20,6 +20,7 @@ class RoleType(Enum):
     CRITIC = "critic"
     EMBODIMENT = "embodiment"
     DEFAULT = "default"
+    FUNC = "function"
 
 
 class ModelType(Enum):

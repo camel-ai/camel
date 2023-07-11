@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from dataclasses import dataclass, field
-from typing import Dict, Optional, Sequence, Union
+from typing import Dict, List, Optional, Sequence, Union
 
 
 @dataclass(frozen=True)
@@ -74,3 +74,18 @@ class ChatGPTConfig:
     frequency_penalty: float = 0.0
     logit_bias: Dict = field(default_factory=dict)
     user: str = ""
+
+
+@dataclass(frozen=True)
+class FuncConfig(ChatGPTConfig):
+    r"""Defines the parameters for generating chat completions using the
+    OpenAI API with functions included. Note this is an unfrozen dataclass
+    allowing for dynamically adding functions into the functions field
+
+    Args:
+        functions (List[Dict[str, str]]): A list of dictionary containing
+            information of functions that may be called in the conversaion,
+            including the function names, arguments and argument descriptions.
+            (default: :obj:`[]`)
+    """
+    functions: List[Dict[str, str]] = field(default_factory=list)
