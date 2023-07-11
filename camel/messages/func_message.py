@@ -66,12 +66,15 @@ class FuncMessage(BaseMessage):
                 " due to missing function name or arguments.")
 
         msg_dict: Dict[str, Any]
-        msg_dict = {"role": "assistant"}
-        msg_dict["content"] = self.content
+        msg_dict = {
+            "role": "assistant",
+            "content": self.content,
+        }
 
-        msg_dict["function_call"] = {}
-        msg_dict["function_call"]["name"] = self.func_name
-        msg_dict["function_call"]["arguments"] = str(self.args)
+        msg_dict["function_call"] = {
+            "name": self.func_name,
+            "arguments": str(self.args),
+        }
 
         return msg_dict
 
@@ -88,10 +91,11 @@ class FuncMessage(BaseMessage):
                 "Invalid request for converting into function message"
                 " due to missing function name or results.")
 
-        msg_dict = {"role": "function"}
-        msg_dict["name"] = self.func_name
-
-        content = {"result": {str(self.result)}}
-        msg_dict["content"] = f'{content}'
+        result_content = {"result": {str(self.result)}}
+        msg_dict: Dict[str, str] = {
+            "role": "function",
+            "name": self.func_name,
+            "content": f'{result_content}',
+        }
 
         return msg_dict

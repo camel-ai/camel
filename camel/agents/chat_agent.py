@@ -33,6 +33,8 @@ from camel.utils import (
     parse_doc,
 )
 
+NO_FUNC_MSG = "Function calling is enabled but no function is provided"
+
 
 @dataclass(frozen=True)
 class ChatAgentResponse:
@@ -146,63 +148,55 @@ class ChatAgent(BaseAgent):
         self.model: ModelType = (model if model is not None else
                                  ModelType.GPT_3_5_TURBO)
         self.message_window_size: Optional[int] = message_window_size
-        self.model_config_dict: dict
+        self.model_config: ChatGPTConfig
 
         self.func_enable = func_enable
-        if func_enable:
-            if not func_collects:
-                raise ValueError(
-                    "Function calling is enabled but no function is provided")
+        if func_enable and model_config:
+            if ("functions" not in model_config.__dict__) \
+                    or len(model_config.functions) == 0:
+                raise ValueError(NO_FUNC_MSG)
 
-            # Change the model to the corresponding function-enabled one
-            if self.model == ModelType.GPT_3_5_TURBO \
-                    or self.model == ModelType.GPT_3_5_TURBO_16K:
-                self.model = ModelType.GPT_3_5_TURBO_FUNC
-            else:
-                self.model = ModelType.GPT_4_FUNC
+            self.model_config = model_config
+        elif func_enable:
+            if not func_collects:
+                raise ValueError(NO_FUNC_MSG)
 
             self.func_dict: Dict[str, Callable] = {}
-            self.model_config_dict = \
-                (model_config or FuncConfig()).__dict__
+            func_objs = self.load_func_config(func_collects)
 
-            self.load_func_config(func_collects)
+            self.model_config = FuncConfig(functions=func_objs)
         else:
-            self.model_config_dict = \
-                (model_config or ChatGPTConfig()).__dict__
+            self.model_config = model_config or ChatGPTConfig()
 
         self.model_backend: BaseModelBackend = ModelFactory.create(
-            self.model, self.model_config_dict)
+            self.model, self.model_config.__dict__)
         self.model_token_limit: int = self.model_backend.token_limit
 
         self.terminated: bool = False
         self.stored_messages: List[ChatRecord]
         self.init_messages()
 
-    def load_func_config(self, func_collects: List[BaseFuncs]):
+    def load_func_config(
+            self, func_collects: List[BaseFuncs]) -> List[Dict[str, str]]:
         r"""Load the function information into the model configuration
 
         Args:
             func_collects (List[BaseFuncs]): The list of function collection
                 objects
+        Returns:
+            List[Dict[str, str]]: A list of dictionaries containing function
+                information to be passed to OpenAI models
         """
+        func_objs: List[Dict[str, str]] = []
+
         for func_collect in func_collects:
             func_list = func_collect.functions
 
             for func in func_list:
                 self.func_dict[func.__name__] = func
-                self.model_config_dict['functions'].append(parse_doc(func))
+                func_objs.append(parse_doc(func))
 
-    def add_func(self, func: Callable):
-        r"""Add new functions after initialization
-
-        Args:
-            func (Callable): the function to be added
-        """
-        if not self.func_enable:
-            raise ValueError("Function calling is disable for this agent")
-
-        self.model_backend.model_config_dict["functions"] \
-                                    .append(parse_doc(func))
+        return func_objs
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state and returns the

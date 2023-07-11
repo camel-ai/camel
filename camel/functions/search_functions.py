@@ -43,7 +43,7 @@ def get_page_obs(page):
     return ' '.join(sentences[:5])
 
 
-def search(entity: str) -> str:
+def search_wiki(entity: str) -> str:
     r"""Search the entity in WikiPedia and return (the first sentences of)
     the required page.
 
@@ -79,7 +79,7 @@ def search(entity: str) -> str:
         ]
 
         if any("may refer to:" in p for p in page):
-            search("[" + entity + "]")
+            search_wiki("[" + entity + "]")
         else:
             res_page = ""
             for p in page:
@@ -101,5 +101,5 @@ class SearchFuncs(BaseFuncs):
 
     def __init__(self):
         self.functions: List[Callable] = [
-            search,
+            search_wiki,
         ]

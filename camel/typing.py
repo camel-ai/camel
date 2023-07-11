@@ -26,10 +26,8 @@ class RoleType(Enum):
 class ModelType(Enum):
     GPT_3_5_TURBO = "gpt-3.5-turbo"
     GPT_3_5_TURBO_16K = "gpt-3.5-turbo-16k"
-    GPT_3_5_TURBO_FUNC = "gpt-3.5-turbo-0613"
     GPT_4 = "gpt-4"
     GPT_4_32k = "gpt-4-32k"
-    GPT_4_FUNC = "gpt-4-0613"
     STUB = "stub"
 
     @property
@@ -42,12 +40,11 @@ class ModelType(Enum):
         Returns:
             int: The maximum token limit for the given model.
         """
-        if self is ModelType.GPT_3_5_TURBO or \
-                self is ModelType.GPT_3_5_TURBO_FUNC:
+        if self is ModelType.GPT_3_5_TURBO:
             return 4096
         elif self is ModelType.GPT_3_5_TURBO_16K:
             return 16384
-        elif self is ModelType.GPT_4 or self is ModelType.GPT_4_FUNC:
+        elif self is ModelType.GPT_4:
             return 8192
         elif self is ModelType.GPT_4_32k:
             return 32768

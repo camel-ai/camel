@@ -14,9 +14,15 @@
 import pytest
 
 import examples.ai_society.role_playing
+import examples.function_call.role_playing_with_function
 from camel.typing import ModelType
 
 
 @pytest.mark.slow
 def test_ai_society_role_playing_example():
     examples.ai_society.role_playing.main(ModelType.STUB)
+
+
+@pytest.mark.slow
+def test_role_playing_with_function_example():
+    examples.function_call.role_playing_with_function.main(ModelType.STUB)

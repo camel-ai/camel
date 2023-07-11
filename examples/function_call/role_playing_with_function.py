@@ -22,17 +22,19 @@ from camel.typing import ModelType
 from camel.utils import print_text_animated
 
 
-def main(model_type=ModelType.GPT_4_FUNC) -> None:
-    task_prompt = ("Estimate KAUST's current age by searching the year when"
+def main(model_type=ModelType.GPT_4) -> None:
+    task_prompt = ("Estimate KAUST's current age by searching the year when "
                    "it was founded, then add 10 more years. Assume the "
                    "current year is 2023")
-    role_play_session = RolePlaying("Searcher", "Professor",
-                                    task_prompt=task_prompt,
-                                    with_task_specify=False,
-                                    model_type=model_type,
-                                    assist_func_enable=True,
-                                    assist_funcs=[MathFuncs(),
-                                                  SearchFuncs()])
+    role_play_session = RolePlaying(
+        "Searcher",
+        "Professor",
+        task_prompt=task_prompt,
+        with_task_specify=False,
+        model_type=model_type,
+        assist_func_enable=True,
+        assist_funcs=[MathFuncs(), SearchFuncs()],
+    )
 
     print(
         Fore.GREEN +
