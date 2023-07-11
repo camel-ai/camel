@@ -57,10 +57,11 @@ def test_session():
         max_messages = 10
         with_task_specifier = False
         word_limit = 50
+        language = "English"
         state, specified_task_prompt, planned_task_upd, chat, progress_upd = \
             role_playing_start(state, society_name, assistant, user,
                                original_task, max_messages,
-                               with_task_specifier, word_limit)
+                               with_task_specifier, word_limit, language)
 
         assert state.session is not None
 
