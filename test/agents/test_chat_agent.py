@@ -140,15 +140,14 @@ def test_function_calling():
     system_message = BaseMessage(role_name="assistant",
                                  role_type=RoleType.ASSISTANT, meta_dict=None,
                                  content="You are a help assistant.")
-    agent = ChatAgent(system_message=system_message,
-                      model=ModelType.GPT_4_FUNC, func_enable=True,
-                      func_collects=[MathFuncs()])
+    agent = ChatAgent(system_message=system_message, model=ModelType.GPT_4,
+                      func_enable=True, func_collects=[MathFuncs()])
 
     ref_funcs = MathFuncs().functions
 
     assert agent.func_enable
     assert len(agent.func_dict) == len(ref_funcs)
-    assert len(agent.model_config_dict['functions']) == len(ref_funcs)
+    assert len(agent.model_config.functions) == len(ref_funcs)
 
     user_msg = BaseMessage(role_name="User", role_type=RoleType.USER,
                            meta_dict=dict(),
