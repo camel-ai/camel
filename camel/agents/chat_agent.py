@@ -119,6 +119,7 @@ class ChatAgent:
                 session.
         """
         messages = self.update_messages(input_message)
+
         if self.message_window_size is not None and len(
                 messages) > self.message_window_size:
             messages = [self.system_message
@@ -127,6 +128,7 @@ class ChatAgent:
         num_tokens = num_tokens_from_messages(openai_messages, self.model)
 
         if num_tokens < self.model_token_limit:
+
             response = openai.ChatCompletion.create(
                 model=self.model.value,
                 messages=openai_messages,
