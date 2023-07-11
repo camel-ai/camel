@@ -1,0 +1,521 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>Write Your Prompts with the TextPrompt Class &#8212; CAMEL 0.1.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" href="../_static/styles/sphinx-book-theme.css?digest=14f4ca6b54d191a8c7657f6c759bf11a5fb86285" type="text/css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?digest=5a5c038af52cf7bc1a1ec88eea08e6366ee68824"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'get_started/text_prompt';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Introduction to CodePrompt Class" href="code_prompt.html" />
+    <link rel="prev" title="Welcome to CAMEL’s documentation!" href="../index.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    <p class="title logo__title">CAMEL 0.1.0 documentation</p>
+  
+</a></div>
+        <div class="sidebar-primary-item"><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Get Started:</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Write Your Prompts with the <code class="docutils literal notranslate"><span class="pre">TextPrompt</span></code> Class</a></li>
+<li class="toctree-l1"><a class="reference internal" href="code_prompt.html">Introduction to <code class="docutils literal notranslate"><span class="pre">CodePrompt</span></code> Class</a></li>
+<li class="toctree-l1"><a class="reference internal" href="messages.html">Working with the <code class="docutils literal notranslate"><span class="pre">BaseMessage</span></code> Class</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Modules:</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../modules.html">camel</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../camel.html">Camel Package</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-2"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../camel.agents.html">camel.agents package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../camel.prompts.html">camel.prompts package</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><label class="sidebar-toggle primary-toggle btn btn-sm" for="__primary" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</label></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../_sources/get_started/text_prompt.md" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.md</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+<script>
+document.write(`
+  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  </button>
+`);
+</script>
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+<label class="sidebar-toggle secondary-toggle btn btn-sm" for="__secondary"title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</label>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>Write Your Prompts with the TextPrompt Class</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#introduction-to-the-textprompt-class">Introduction to the <code class="docutils literal notranslate"><span class="pre">TextPrompt</span></code> class</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#using-the-textprompt-class">Using the <code class="docutils literal notranslate"><span class="pre">TextPrompt</span></code> class</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-key-words-property">The <code class="docutils literal notranslate"><span class="pre">key_words</span></code> property</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-format-method">The <code class="docutils literal notranslate"><span class="pre">format</span></code> method</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#manipulating-textprompt-instances">Manipulating <code class="docutils literal notranslate"><span class="pre">TextPrompt</span></code> instances</a></li>
+</ul>
+</li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <section id="write-your-prompts-with-the-textprompt-class">
+<h1>Write Your Prompts with the <code class="docutils literal notranslate"><span class="pre">TextPrompt</span></code> Class<a class="headerlink" href="#write-your-prompts-with-the-textprompt-class" title="Permalink to this heading">#</a></h1>
+<p>In this tutorial, we will explore the <code class="docutils literal notranslate"><span class="pre">TextPrompt</span></code> class and understand its functionalities. The <code class="docutils literal notranslate"><span class="pre">TextPrompt</span></code> class is a subclass of the built-in <code class="docutils literal notranslate"><span class="pre">str</span></code> class and provides additional features for working with text prompts. We will cover the following topics:</p>
+<ul class="simple">
+<li><p>Introduction to the <code class="docutils literal notranslate"><span class="pre">TextPrompt</span></code> class</p></li>
+<li><p>Using the <code class="docutils literal notranslate"><span class="pre">TextPrompt</span></code> class</p></li>
+</ul>
+<section id="introduction-to-the-textprompt-class">
+<h2>Introduction to the <code class="docutils literal notranslate"><span class="pre">TextPrompt</span></code> class<a class="headerlink" href="#introduction-to-the-textprompt-class" title="Permalink to this heading">#</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">TextPrompt</span></code> class represents a text prompt and extends the functionality of the <code class="docutils literal notranslate"><span class="pre">str</span></code> class. It provides a property called <code class="docutils literal notranslate"><span class="pre">key_words</span></code>, which returns a set of strings representing the key words in the prompt.</p>
+<p>Here’s an example of how to use the <code class="docutils literal notranslate"><span class="pre">TextPrompt</span></code> class:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">camel.prompts</span> <span class="kn">import</span> <span class="n">TextPrompt</span>
+
+<span class="n">prompt</span> <span class="o">=</span> <span class="n">TextPrompt</span><span class="p">(</span><span class="s1">&#39;Please enter your name and age: </span><span class="si">{name}</span><span class="s1">, </span><span class="si">{age}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">prompt</span><span class="p">)</span>  
+<span class="o">&gt;&gt;&gt;</span> <span class="s1">&#39;Please enter your name and age: </span><span class="si">{name}</span><span class="s1">, </span><span class="si">{age}</span><span class="s1">&#39;</span>
+</pre></div>
+</div>
+<p>In the above example, we create a <code class="docutils literal notranslate"><span class="pre">TextPrompt</span></code> instance with a format string containing key words for name and age. We can print <code class="docutils literal notranslate"><span class="pre">TextPrompt</span></code> like Python <code class="docutils literal notranslate"><span class="pre">str</span></code>.</p>
+</section>
+<section id="using-the-textprompt-class">
+<h2>Using the <code class="docutils literal notranslate"><span class="pre">TextPrompt</span></code> class<a class="headerlink" href="#using-the-textprompt-class" title="Permalink to this heading">#</a></h2>
+<p>Once we have created a <code class="docutils literal notranslate"><span class="pre">TextPrompt</span></code> instance, we can use various methods and properties provided by the class to manipulate and work with the text prompt.</p>
+<section id="the-key-words-property">
+<h3>The <code class="docutils literal notranslate"><span class="pre">key_words</span></code> property<a class="headerlink" href="#the-key-words-property" title="Permalink to this heading">#</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">key_words</span></code> property returns a set of strings representing the key words in the prompt.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">camel.prompts</span> <span class="kn">import</span> <span class="n">TextPrompt</span>
+
+<span class="n">prompt</span> <span class="o">=</span> <span class="n">TextPrompt</span><span class="p">(</span><span class="s1">&#39;Please enter your name and age: </span><span class="si">{name}</span><span class="s1">, </span><span class="si">{age}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">prompt</span><span class="o">.</span><span class="n">key_words</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;age&#39;</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>In the above example, the <code class="docutils literal notranslate"><span class="pre">key_words</span></code> property returns a set of strings representing the key words in the prompt, which in this case are ‘name’ and ‘age’.</p>
+</section>
+<section id="the-format-method">
+<h3>The <code class="docutils literal notranslate"><span class="pre">format</span></code> method<a class="headerlink" href="#the-format-method" title="Permalink to this heading">#</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">format</span></code> method overrides the built-in <code class="docutils literal notranslate"><span class="pre">str.format</span></code> method to allow for partial formatting values in the format string. It replaces the key words in the format string with the provided values.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">camel.prompts</span> <span class="kn">import</span> <span class="n">TextPrompt</span>
+
+<span class="n">prompt</span> <span class="o">=</span> <span class="n">TextPrompt</span><span class="p">(</span><span class="s1">&#39;Your name and age are: </span><span class="si">{name}</span><span class="s1">, </span><span class="si">{age}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+<span class="n">name</span><span class="p">,</span> <span class="n">age</span> <span class="o">=</span> <span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="mi">30</span>
+<span class="n">formatted_prompt</span> <span class="o">=</span> <span class="n">prompt</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="n">age</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">formatted_prompt</span><span class="p">)</span>  
+<span class="o">&gt;&gt;&gt;</span> <span class="s2">&quot;Your name and age are: John, 30&quot;</span>
+</pre></div>
+</div>
+<p>In the above example, we use the <code class="docutils literal notranslate"><span class="pre">format</span></code> method to replace the key words <code class="docutils literal notranslate"><span class="pre">{name}</span></code> and <code class="docutils literal notranslate"><span class="pre">{age}</span></code> with the values ‘John’ and 30, respectively.</p>
+<p>We can also perform partial formatting by providing only some of the values:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">camel.prompts</span> <span class="kn">import</span> <span class="n">TextPrompt</span>
+
+<span class="n">prompt</span> <span class="o">=</span> <span class="n">TextPrompt</span><span class="p">(</span><span class="s1">&#39;Your name and age are: </span><span class="si">{name}</span><span class="s1">, </span><span class="si">{age}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+<span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;John&#39;</span>
+<span class="n">partial_formatted_prompt</span> <span class="o">=</span> <span class="n">prompt</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">partial_formatted_prompt</span><span class="p">)</span>  
+<span class="o">&gt;&gt;&gt;</span> <span class="s2">&quot;Your name and age are: John, </span><span class="si">{age}</span><span class="s2">&quot;</span>
+</pre></div>
+</div>
+<p>In the above example, we provide only the value for the <code class="docutils literal notranslate"><span class="pre">name</span></code> key word, while the <code class="docutils literal notranslate"><span class="pre">age</span></code> key word remains as it is. This will be helpful when we want to format different key words of <code class="docutils literal notranslate"><span class="pre">TextPrompt</span></code> in different agents.</p>
+</section>
+<section id="manipulating-textprompt-instances">
+<h3>Manipulating <code class="docutils literal notranslate"><span class="pre">TextPrompt</span></code> instances<a class="headerlink" href="#manipulating-textprompt-instances" title="Permalink to this heading">#</a></h3>
+<p>We can perform various string manipulation operations on <code class="docutils literal notranslate"><span class="pre">TextPrompt</span></code> instances, such as concatenation, joining, and applying string methods like Python <code class="docutils literal notranslate"><span class="pre">str</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">camel.prompts</span> <span class="kn">import</span> <span class="n">TextPrompt</span>
+
+<span class="n">prompt1</span> <span class="o">=</span> <span class="n">TextPrompt</span><span class="p">(</span><span class="s1">&#39;Hello, </span><span class="si">{name}</span><span class="s1">!&#39;</span><span class="p">)</span>
+<span class="n">prompt2</span> <span class="o">=</span> <span class="n">TextPrompt</span><span class="p">(</span><span class="s1">&#39;Welcome, </span><span class="si">{name}</span><span class="s1">!&#39;</span><span class="p">)</span>
+
+<span class="c1"># Concatenation</span>
+<span class="n">prompt3</span> <span class="o">=</span> <span class="n">prompt1</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="n">prompt2</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">prompt3</span><span class="p">)</span>  
+<span class="o">&gt;&gt;&gt;</span> <span class="s2">&quot;Hello, </span><span class="si">{name}</span><span class="s2">! Welcome, </span><span class="si">{name}</span><span class="s2">!&quot;</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">prompt3</span><span class="p">,</span> <span class="n">TextPrompt</span><span class="p">))</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="kc">True</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">prompt3</span><span class="o">.</span><span class="n">key_words</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">}</span>
+
+<span class="c1"># Joining</span>
+<span class="n">prompt4</span> <span class="o">=</span> <span class="n">TextPrompt</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">prompt1</span><span class="p">,</span> <span class="n">prompt2</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">prompt4</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="s2">&quot;Hello, </span><span class="si">{name}</span><span class="s2">! Welcome, </span><span class="si">{name}</span><span class="s2">!&quot;</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">prompt4</span><span class="p">,</span> <span class="n">TextPrompt</span><span class="p">))</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="kc">True</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">prompt4</span><span class="o">.</span><span class="n">key_words</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">}</span>
+
+<span class="c1"># Applying string methods</span>
+<span class="n">prompt5</span> <span class="o">=</span> <span class="n">prompt4</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">prompt5</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="s2">&quot;HELLO, </span><span class="si">{NAME}</span><span class="s2">! WELCOME, </span><span class="si">{NAME}</span><span class="s2">!&quot;</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">prompt5</span><span class="p">,</span> <span class="n">TextPrompt</span><span class="p">))</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="kc">True</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">prompt5</span><span class="o">.</span><span class="n">key_words</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="p">{</span><span class="s1">&#39;NAME&#39;</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>In the above example, we demonstrate concatenation using the <code class="docutils literal notranslate"><span class="pre">+</span></code> operator, joining using the <code class="docutils literal notranslate"><span class="pre">join</span></code> method, and applying the <code class="docutils literal notranslate"><span class="pre">upper</span></code> method to a <code class="docutils literal notranslate"><span class="pre">TextPrompt</span></code> instance. The resulting prompts are also instances of <code class="docutils literal notranslate"><span class="pre">TextPrompt</span></code>.</p>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+                <footer class="bd-footer-article">
+                  
+<div class="footer-article-items footer-article__inner">
+  
+    <div class="footer-article-item"><!-- Previous / next buttons -->
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../index.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Welcome to CAMEL’s documentation!</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="code_prompt.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Introduction to <code class="docutils literal notranslate"><span class="pre">CodePrompt</span></code> Class</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div></div>
+  
+</div>
+
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#introduction-to-the-textprompt-class">Introduction to the <code class="docutils literal notranslate"><span class="pre">TextPrompt</span></code> class</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#using-the-textprompt-class">Using the <code class="docutils literal notranslate"><span class="pre">TextPrompt</span></code> class</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-key-words-property">The <code class="docutils literal notranslate"><span class="pre">key_words</span></code> property</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-format-method">The <code class="docutils literal notranslate"><span class="pre">format</span></code> method</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#manipulating-textprompt-instances">Manipulating <code class="docutils literal notranslate"><span class="pre">TextPrompt</span></code> instances</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By CAMEL-AI.org
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  <p class="copyright">
+    
+      © Copyright 2023, CAMEL-AI.org.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,572 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>camel.generators &#8212; CAMEL 0.1.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+
+  
+  <link href="../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" href="../../_static/styles/sphinx-book-theme.css?digest=14f4ca6b54d191a8c7657f6c759bf11a5fb86285" type="text/css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/scripts/sphinx-book-theme.js?digest=5a5c038af52cf7bc1a1ec88eea08e6366ee68824"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/camel/generators';</script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    <p class="title logo__title">CAMEL 0.1.0 documentation</p>
+  
+</a></div>
+        <div class="sidebar-primary-item"><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Get Started:</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../get_started/text_prompt.html">Write Your Prompts with the <code class="docutils literal notranslate"><span class="pre">TextPrompt</span></code> Class</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../get_started/code_prompt.html">Introduction to <code class="docutils literal notranslate"><span class="pre">CodePrompt</span></code> Class</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../get_started/messages.html">Working with the <code class="docutils literal notranslate"><span class="pre">BaseMessage</span></code> Class</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Modules:</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../modules.html">camel</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../camel.html">Camel Package</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-2"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../camel.agents.html">camel.agents package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../camel.prompts.html">camel.prompts package</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><label class="sidebar-toggle primary-toggle btn btn-sm" for="__primary" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</label></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+<script>
+document.write(`
+  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  </button>
+`);
+</script>
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <h1>Source code for camel.generators</h1><div class="highlight"><pre>
+<span></span><span class="c1"># =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the “License”);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an “AS IS” BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="c1"># =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Generator</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">from</span> <span class="nn">camel.messages</span> <span class="kn">import</span> <span class="n">BaseMessage</span>
+<span class="kn">from</span> <span class="nn">camel.prompts</span> <span class="kn">import</span> <span class="n">PromptTemplateGenerator</span><span class="p">,</span> <span class="n">TextPrompt</span>
+<span class="kn">from</span> <span class="nn">camel.typing</span> <span class="kn">import</span> <span class="n">RoleType</span><span class="p">,</span> <span class="n">TaskType</span>
+
+
+<div class="viewcode-block" id="SystemMessageGenerator"><a class="viewcode-back" href="../../camel.html#camel.generators.SystemMessageGenerator">[docs]</a><span class="k">class</span> <span class="nc">SystemMessageGenerator</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;System message generator for agents.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        task_type (TaskType, optional): The task type.</span>
+<span class="sd">            (default: :obj:`TaskType.AI_SOCIETY`)</span>
+<span class="sd">        sys_prompts (Optional[Dict[RoleType, str]], optional): The prompts of</span>
+<span class="sd">            the system messages for each role type. (default: :obj:`None`)</span>
+<span class="sd">        sys_msg_meta_dict_keys (Optional[Set[str]], optional): The set of keys</span>
+<span class="sd">            of the meta dictionary used to fill the prompts.</span>
+<span class="sd">            (default: :obj:`None`)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">task_type</span><span class="p">:</span> <span class="n">TaskType</span> <span class="o">=</span> <span class="n">TaskType</span><span class="o">.</span><span class="n">AI_SOCIETY</span><span class="p">,</span>
+        <span class="n">sys_prompts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="n">RoleType</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">sys_msg_meta_dict_keys</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sys_prompts</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">RoleType</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">sys_prompts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sys_prompts</span> <span class="o">=</span> <span class="n">sys_prompts</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sys_msg_meta_dict_keys</span> <span class="o">=</span> <span class="n">sys_msg_meta_dict_keys</span> <span class="ow">or</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">assistant_prompt_template</span> <span class="o">=</span> <span class="n">PromptTemplateGenerator</span><span class="p">(</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">get_system_prompt</span><span class="p">(</span>
+                <span class="n">task_type</span><span class="p">,</span>
+                <span class="n">RoleType</span><span class="o">.</span><span class="n">ASSISTANT</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">user_prompt_template</span> <span class="o">=</span> <span class="n">PromptTemplateGenerator</span><span class="p">()</span><span class="o">.</span><span class="n">get_system_prompt</span><span class="p">(</span>
+                <span class="n">task_type</span><span class="p">,</span>
+                <span class="n">RoleType</span><span class="o">.</span><span class="n">USER</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">critic_prompt_template</span> <span class="o">=</span> <span class="n">PromptTemplateGenerator</span><span class="p">(</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">get_system_prompt</span><span class="p">(</span>
+                <span class="n">task_type</span><span class="p">,</span>
+                <span class="n">RoleType</span><span class="o">.</span><span class="n">CRITIC</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">embodiment_prompt_template</span> <span class="o">=</span> <span class="n">PromptTemplateGenerator</span><span class="p">(</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">get_system_prompt</span><span class="p">(</span>
+                <span class="n">task_type</span><span class="p">,</span>
+                <span class="n">RoleType</span><span class="o">.</span><span class="n">EMBODIMENT</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">sys_prompts</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sys_prompts</span><span class="p">[</span><span class="n">RoleType</span><span class="o">.</span><span class="n">ASSISTANT</span><span class="p">]</span> <span class="o">=</span> <span class="n">assistant_prompt_template</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sys_prompts</span><span class="p">[</span><span class="n">RoleType</span><span class="o">.</span><span class="n">USER</span><span class="p">]</span> <span class="o">=</span> <span class="n">user_prompt_template</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sys_prompts</span><span class="p">[</span><span class="n">RoleType</span><span class="o">.</span><span class="n">CRITIC</span><span class="p">]</span> <span class="o">=</span> <span class="n">critic_prompt_template</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sys_prompts</span><span class="p">[</span><span class="n">RoleType</span><span class="o">.</span><span class="n">EMBODIMENT</span><span class="p">]</span> <span class="o">=</span> <span class="n">embodiment_prompt_template</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">sys_msg_meta_dict_keys</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">assistant_prompt_template</span><span class="o">.</span><span class="n">key_words</span>
+                <span class="o">|</span> <span class="n">user_prompt_template</span><span class="o">.</span><span class="n">key_words</span>
+                <span class="o">|</span> <span class="n">critic_prompt_template</span><span class="o">.</span><span class="n">key_words</span>
+                <span class="o">|</span> <span class="n">embodiment_prompt_template</span><span class="o">.</span><span class="n">key_words</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">RoleType</span><span class="o">.</span><span class="n">DEFAULT</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sys_prompts</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sys_prompts</span><span class="p">[</span><span class="n">RoleType</span><span class="o">.</span><span class="n">DEFAULT</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;You are a helpful assistant.&quot;</span>
+
+<div class="viewcode-block" id="SystemMessageGenerator.validate_meta_dict_keys"><a class="viewcode-back" href="../../camel.html#camel.generators.SystemMessageGenerator.validate_meta_dict_keys">[docs]</a>    <span class="k">def</span> <span class="nf">validate_meta_dict_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">meta_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Validates the keys of the meta_dict.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            meta_dict (Dict[str, str]): The dictionary to validate.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">meta_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sys_msg_meta_dict_keys</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The keys of the meta_dict should be in &quot;</span>
+                             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sys_msg_meta_dict_keys</span><span class="si">}</span><span class="s2">. &quot;</span>
+                             <span class="sa">f</span><span class="s2">&quot;Got </span><span class="si">{</span><span class="nb">set</span><span class="p">(</span><span class="n">meta_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2"> instead.&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SystemMessageGenerator.from_dict"><a class="viewcode-back" href="../../camel.html#camel.generators.SystemMessageGenerator.from_dict">[docs]</a>    <span class="k">def</span> <span class="nf">from_dict</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">meta_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">role_tuple</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">RoleType</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">RoleType</span><span class="o">.</span><span class="n">DEFAULT</span><span class="p">),</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BaseMessage</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Generates a system message from a dictionary.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            meta_dict (Dict[str, str]): The dictionary containing the</span>
+<span class="sd">                information to generate the system message.</span>
+<span class="sd">            role_tuple (Tuple[str, RoleType], optional): The tuple containing</span>
+<span class="sd">                the role name and role type. (default: (&quot;&quot;, RoleType.DEFAULT))</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            BaseMessage: The generated system message.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">validate_meta_dict_keys</span><span class="p">(</span><span class="n">meta_dict</span><span class="p">)</span>
+        <span class="n">role_name</span><span class="p">,</span> <span class="n">role_type</span> <span class="o">=</span> <span class="n">role_tuple</span>
+        <span class="n">sys_prompt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sys_prompts</span><span class="p">[</span><span class="n">role_type</span><span class="p">]</span>
+        <span class="n">sys_prompt</span> <span class="o">=</span> <span class="n">sys_prompt</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">meta_dict</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">BaseMessage</span><span class="p">(</span><span class="n">role_name</span><span class="o">=</span><span class="n">role_name</span><span class="p">,</span> <span class="n">role_type</span><span class="o">=</span><span class="n">role_type</span><span class="p">,</span>
+                           <span class="n">meta_dict</span><span class="o">=</span><span class="n">meta_dict</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="n">sys_prompt</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SystemMessageGenerator.from_dicts"><a class="viewcode-back" href="../../camel.html#camel.generators.SystemMessageGenerator.from_dicts">[docs]</a>    <span class="k">def</span> <span class="nf">from_dicts</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">meta_dicts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span>
+        <span class="n">role_tuples</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">RoleType</span><span class="p">]],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">BaseMessage</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Generates a list of system messages from a list of dictionaries.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            meta_dicts (List[Dict[str, str]]): A list of dictionaries</span>
+<span class="sd">                containing the information to generate the system messages.</span>
+<span class="sd">            role_tuples (List[Tuple[str, RoleType]]): A list of tuples</span>
+<span class="sd">                containing the role name and role type for each system message.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[BaseMessage]: A list of generated system messages.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If the number of meta_dicts and role_tuples are</span>
+<span class="sd">                different.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">meta_dicts</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">role_tuples</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;The number of meta_dicts and role_types should be the same.&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">meta_dict</span><span class="p">,</span> <span class="n">role_tuple</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">meta_dict</span><span class="p">,</span> <span class="n">role_tuple</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">meta_dicts</span><span class="p">,</span> <span class="n">role_tuples</span><span class="p">)</span>
+        <span class="p">]</span></div></div>
+
+
+<div class="viewcode-block" id="RoleNameGenerator"><a class="viewcode-back" href="../../camel.html#camel.generators.RoleNameGenerator">[docs]</a><span class="k">class</span> <span class="nc">RoleNameGenerator</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">assistant_role_names_path</span><span class="p">:</span>
+                 <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;data/ai_society/assistant_roles.txt&quot;</span><span class="p">,</span>
+                 <span class="n">user_role_names_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;data/ai_society/user_roles.txt&quot;</span><span class="p">,</span>
+                 <span class="n">assistant_role_names</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">user_role_names</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+        <span class="k">if</span> <span class="n">assistant_role_names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">assistant_role_names_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">assistant_role_names_</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assistant_role_names</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">:])</span>
+                    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">assistant_role_names_</span>
+                <span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assistant_role_names</span> <span class="o">=</span> <span class="n">assistant_role_names</span>
+
+        <span class="k">if</span> <span class="n">user_role_names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">user_role_names_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">user_role_names_</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">user_role_names</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">:])</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">user_role_names_</span>
+                <span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">user_role_names</span> <span class="o">=</span> <span class="n">user_role_names</span>
+
+<div class="viewcode-block" id="RoleNameGenerator.from_role_files"><a class="viewcode-back" href="../../camel.html#camel.generators.RoleNameGenerator.from_role_files">[docs]</a>    <span class="k">def</span> <span class="nf">from_role_files</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">assistant_role_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">assistant_role_names</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">user_role_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_role_names</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="p">(</span><span class="n">assistant_role_name</span><span class="p">,</span> <span class="n">user_role_name</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="AISocietyTaskPromptGenerator"><a class="viewcode-back" href="../../camel.html#camel.generators.AISocietyTaskPromptGenerator">[docs]</a><span class="k">class</span> <span class="nc">AISocietyTaskPromptGenerator</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">num_tasks</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">generate_tasks_prompt</span> <span class="o">=</span> <span class="n">PromptTemplateGenerator</span><span class="p">(</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">get_generate_tasks_prompt</span><span class="p">(</span><span class="n">TaskType</span><span class="o">.</span><span class="n">AI_SOCIETY</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_tasks</span> <span class="o">=</span> <span class="n">num_tasks</span>
+
+    <span class="c1"># TODO: Return role names for user and assistant with the generator.</span>
+<div class="viewcode-block" id="AISocietyTaskPromptGenerator.from_role_files"><a class="viewcode-back" href="../../camel.html#camel.generators.AISocietyTaskPromptGenerator.from_role_files">[docs]</a>    <span class="k">def</span> <span class="nf">from_role_files</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">assistant_role_names_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;data/ai_society/assistant_roles.txt&quot;</span><span class="p">,</span>
+        <span class="n">user_role_names_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;data/ai_society/user_roles.txt&quot;</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="n">roles_generator</span> <span class="o">=</span> <span class="n">RoleNameGenerator</span><span class="p">(</span>
+            <span class="n">assistant_role_names_path</span><span class="p">,</span> <span class="n">user_role_names_path</span><span class="p">)</span><span class="o">.</span><span class="n">from_role_files</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">role_1</span><span class="p">,</span> <span class="n">role_2</span> <span class="ow">in</span> <span class="n">roles_generator</span><span class="p">:</span>
+            <span class="n">generate_tasks_prompt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_tasks_prompt</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">assistant_role</span><span class="o">=</span><span class="n">role_1</span><span class="p">,</span> <span class="n">user_role</span><span class="o">=</span><span class="n">role_2</span><span class="p">,</span>
+                <span class="n">num_tasks</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_tasks</span><span class="p">)</span>
+
+            <span class="k">yield</span> <span class="p">(</span><span class="n">generate_tasks_prompt</span><span class="p">,</span> <span class="p">(</span><span class="n">role_1</span><span class="p">,</span> <span class="n">role_2</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="AISocietyTaskPromptGenerator.from_role_generator"><a class="viewcode-back" href="../../camel.html#camel.generators.AISocietyTaskPromptGenerator.from_role_generator">[docs]</a>    <span class="k">def</span> <span class="nf">from_role_generator</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">role_generator</span><span class="p">:</span> <span class="n">Generator</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">role_1</span><span class="p">,</span> <span class="n">role_2</span> <span class="ow">in</span> <span class="n">role_generator</span><span class="p">:</span>
+            <span class="n">generate_tasks_prompt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_tasks_prompt</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">assistant_role</span><span class="o">=</span><span class="n">role_1</span><span class="p">,</span> <span class="n">user_role</span><span class="o">=</span><span class="n">role_2</span><span class="p">,</span>
+                <span class="n">num_tasks</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_tasks</span><span class="p">)</span>
+
+            <span class="k">yield</span> <span class="p">(</span><span class="n">generate_tasks_prompt</span><span class="p">,</span> <span class="p">(</span><span class="n">role_1</span><span class="p">,</span> <span class="n">role_2</span><span class="p">))</span></div></div>
+
+
+<div class="viewcode-block" id="SingleTxtGenerator"><a class="viewcode-back" href="../../camel.html#camel.generators.SingleTxtGenerator">[docs]</a><span class="k">class</span> <span class="nc">SingleTxtGenerator</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">text_file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">text_file_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">data_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data_list</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">:])</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">data_list</span>
+            <span class="p">]</span>
+
+<div class="viewcode-block" id="SingleTxtGenerator.from_role_files"><a class="viewcode-back" href="../../camel.html#camel.generators.SingleTxtGenerator.from_role_files">[docs]</a>    <span class="k">def</span> <span class="nf">from_role_files</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_list</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">data</span></div></div>
+
+
+<div class="viewcode-block" id="CodeTaskPromptGenerator"><a class="viewcode-back" href="../../camel.html#camel.generators.CodeTaskPromptGenerator">[docs]</a><span class="k">class</span> <span class="nc">CodeTaskPromptGenerator</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">num_tasks</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">generate_tasks_prompt</span> <span class="o">=</span> <span class="n">PromptTemplateGenerator</span><span class="p">(</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">get_generate_tasks_prompt</span><span class="p">(</span><span class="n">TaskType</span><span class="o">.</span><span class="n">CODE</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_tasks</span> <span class="o">=</span> <span class="n">num_tasks</span>
+
+<div class="viewcode-block" id="CodeTaskPromptGenerator.from_role_files"><a class="viewcode-back" href="../../camel.html#camel.generators.CodeTaskPromptGenerator.from_role_files">[docs]</a>    <span class="k">def</span> <span class="nf">from_role_files</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">languages_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;data/code/languages.txt&quot;</span><span class="p">,</span>
+        <span class="n">domains_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;data/code/domains.txt&quot;</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">TextPrompt</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="n">language_generator</span> <span class="o">=</span> <span class="n">SingleTxtGenerator</span><span class="p">(</span>
+            <span class="n">languages_path</span><span class="p">)</span><span class="o">.</span><span class="n">from_role_files</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">language</span> <span class="ow">in</span> <span class="n">language_generator</span><span class="p">:</span>
+            <span class="n">domains_generator</span> <span class="o">=</span> <span class="n">SingleTxtGenerator</span><span class="p">(</span>
+                <span class="n">domains_path</span><span class="p">)</span><span class="o">.</span><span class="n">from_role_files</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">domain</span> <span class="ow">in</span> <span class="n">domains_generator</span><span class="p">:</span>
+                <span class="n">generated_tasks_prompt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_tasks_prompt</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">language</span><span class="o">=</span><span class="n">language</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="n">domain</span><span class="p">,</span> <span class="n">num_tasks</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_tasks</span><span class="p">)</span>
+                <span class="k">yield</span> <span class="n">generated_tasks_prompt</span><span class="p">,</span> <span class="n">language</span><span class="p">,</span> <span class="n">domain</span></div>
+
+<div class="viewcode-block" id="CodeTaskPromptGenerator.from_role_generator"><a class="viewcode-back" href="../../camel.html#camel.generators.CodeTaskPromptGenerator.from_role_generator">[docs]</a>    <span class="k">def</span> <span class="nf">from_role_generator</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">role_generator</span><span class="p">:</span> <span class="n">Generator</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div></div>
+</pre></div>
+
+                </article>
+              
+
+              
+              
+                <footer class="bd-footer-article">
+                  
+<div class="footer-article-items footer-article__inner">
+  
+    <div class="footer-article-item"><!-- Previous / next buttons -->
+<div class="prev-next-area">
+</div></div>
+  
+</div>
+
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By CAMEL-AI.org
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  <p class="copyright">
+    
+      © Copyright 2023, CAMEL-AI.org.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
+<script src="../../_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
