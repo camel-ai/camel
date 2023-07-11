@@ -62,12 +62,15 @@ class SystemMessageGenerator:
                 task_type,
                 RoleType.EMBODIMENT,
             )
+            react_prompt_template = PromptTemplateGenerator(
+            ).get_system_prompt(task_type, RoleType.REACT)
 
             self.sys_prompts = dict()
             self.sys_prompts[RoleType.ASSISTANT] = assistant_prompt_template
             self.sys_prompts[RoleType.USER] = user_prompt_template
             self.sys_prompts[RoleType.CRITIC] = critic_prompt_template
             self.sys_prompts[RoleType.EMBODIMENT] = embodiment_prompt_template
+            self.sys_prompts[RoleType.REACT] = react_prompt_template
 
             self.sys_msg_meta_dict_keys = (
                 assistant_prompt_template.key_words
