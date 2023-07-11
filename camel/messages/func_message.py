@@ -69,11 +69,10 @@ class FuncMessage(BaseMessage):
         msg_dict = {
             "role": "assistant",
             "content": self.content,
-        }
-
-        msg_dict["function_call"] = {
-            "name": self.func_name,
-            "arguments": str(self.args),
+            "function_call": {
+                "name": self.func_name,
+                "arguments": str(self.args),
+            }
         }
 
         return msg_dict
