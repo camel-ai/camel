@@ -49,3 +49,24 @@ jobs:
       - name: Run linting
         run: |
           isort --check-only .
+
+  mypy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          pip install mypy==1.4.1
+
+      - name: Run mypy checks
+        run: |
+          mypy --install-types --non-interactive --namespace-packages -p camel
+          mypy --install-types --non-interactive --namespace-packages -p test
+          mypy --install-types --non-interactive --namespace-packages -p apps

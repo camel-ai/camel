@@ -96,7 +96,7 @@ class CriticAgent(ChatAgent):
         msg_content = input_message.content
         i = 0
         while i < self.retry_attempts:
-            critic_response = super().step(input_message)
+            critic_response = self.step(input_message)
 
             if critic_response.msgs is None or len(critic_response.msgs) == 0:
                 raise RuntimeError("Got None critic messages.")
