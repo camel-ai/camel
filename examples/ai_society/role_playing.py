@@ -7,7 +7,7 @@ from camel.utils import print_text_animated
 
 
 def main() -> None:
-    task_prompt = "Develop bot for company evaluation"
+    task_prompt = "Developing a trading bot for stock market"
 
     role_assignment_agent = RoleAssignmentAgent(model=ModelType.GPT_3_5_TURBO)
 

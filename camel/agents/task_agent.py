@@ -217,8 +217,8 @@ class RoleAssignmentAgent(ChatAgent):
             content = message.content
             names = content.split("\n")
 
-            ai_user_role_name = names[0].split(":")[1].strip()
-            ai_assistant_role_name = names[1].split(":")[1].strip()
+            ai_user_role_name = names[1].split(":")[1].strip()
+            ai_assistant_role_name = names[0].split(":")[1].strip()
 
         if ai_user_role_name is None or ai_assistant_role_name is None:
             raise RuntimeError("Got None or insufficient Role messages. ")
