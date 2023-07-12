@@ -11,10 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from dataclasses import dataclass
-from typing import Callable, List
 
-from camel.functions import BaseFuncs
+from typing import List
+
+from .openai_function import OpenAIFunction
 
 
 def add(a, b):
@@ -56,15 +56,6 @@ def mul(a, b):
     return a * b
 
 
-@dataclass
-class MathFuncs(BaseFuncs):
-    r"""Class for math function collection, which currently includes
-    integer addition, subtraction and multiplication.
-    """
-
-    def __init__(self):
-        self.functions: List[Callable] = [
-            add,
-            sub,
-            mul,
-        ]
+MATH_FUNCS: List[OpenAIFunction] = [
+    OpenAIFunction(func) for func in [add, sub, mul]
+]

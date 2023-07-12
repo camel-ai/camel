@@ -22,7 +22,7 @@ from tenacity.wait import wait_exponential
 
 from camel.agents import BaseAgent
 from camel.configs import ChatGPTConfig, FuncConfig
-from camel.functions import BaseFuncs
+from camel.functions import OpenAIFunction
 from camel.messages import BaseMessage, FuncMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.typing import ModelType, RoleType
@@ -30,10 +30,7 @@ from camel.utils import (
     get_model_encoding,
     num_tokens_from_messages,
     openai_api_key_required,
-    parse_doc,
 )
-
-NO_FUNC_MSG = "Function calling is enabled but no function is provided"
 
 
 @dataclass(frozen=True)
@@ -120,7 +117,7 @@ class ChatAgent(BaseAgent):
             messages to include in the context window. If `None`, no windowing
             is performed. (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
-        agent. (default: :obj:`None`)
+            agent. (default: :obj:`None`)
         func_enable (bool): Whether to enable function calling
             (default: :obj:`False`)
         func_collects (Optional[List[BaseFuncs]]): List of function
@@ -134,8 +131,7 @@ class ChatAgent(BaseAgent):
         model_config: Optional[Any] = None,
         message_window_size: Optional[int] = None,
         output_language: Optional[str] = None,
-        func_enable: bool = False,
-        func_collects: Optional[List[BaseFuncs]] = None,
+        function_list: Optional[List[OpenAIFunction]] = None,
     ) -> None:
 
         self.system_message: BaseMessage = system_message
@@ -148,25 +144,14 @@ class ChatAgent(BaseAgent):
         self.model: ModelType = (model if model is not None else
                                  ModelType.GPT_3_5_TURBO)
         self.message_window_size: Optional[int] = message_window_size
-        self.model_config: ChatGPTConfig
 
-        self.func_enable = func_enable
-        if func_enable and model_config:
-            if ("functions" not in model_config.__dict__) \
-                    or len(model_config.functions) == 0:
-                raise ValueError(NO_FUNC_MSG)
-
-            self.model_config = model_config
-        elif func_enable:
-            if not func_collects:
-                raise ValueError(NO_FUNC_MSG)
-
+        # This is a very dirty implementation. We should consider to
+        # move the function execution part to another class.
+        if function_list is not None:
             self.func_dict: Dict[str, Callable] = {}
-            func_objs = self.load_func_config(func_collects)
-
-            self.model_config = FuncConfig(functions=func_objs)
-        else:
-            self.model_config = model_config or ChatGPTConfig()
+            for func in function_list:
+                self.func_dict[func.name] = func.func
+        self.model_config = model_config or ChatGPTConfig()
 
         self.model_backend: BaseModelBackend = ModelFactory.create(
             self.model, self.model_config.__dict__)
@@ -175,28 +160,6 @@ class ChatAgent(BaseAgent):
         self.terminated: bool = False
         self.stored_messages: List[ChatRecord]
         self.init_messages()
-
-    def load_func_config(
-            self, func_collects: List[BaseFuncs]) -> List[Dict[str, str]]:
-        r"""Load the function information into the model configuration
-
-        Args:
-            func_collects (List[BaseFuncs]): The list of function collection
-                objects
-        Returns:
-            List[Dict[str, str]]: A list of dictionaries containing function
-                information to be passed to OpenAI models
-        """
-        func_objs: List[Dict[str, str]] = []
-
-        for func_collect in func_collects:
-            func_list = func_collect.functions
-
-            for func in func_list:
-                self.func_dict[func.__name__] = func
-                func_objs.append(parse_doc(func))
-
-        return func_objs
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state and returns the
@@ -336,8 +299,9 @@ class ChatAgent(BaseAgent):
                         self.handle_stream_response(response, num_tokens)
 
                 # function calling disabled or stopped
-                if (not self.func_enable) or (finish_reasons[0] !=
-                                              "function_call"):
+                if not isinstance(
+                        self.model_config,
+                        FuncConfig) or finish_reasons[0] != "function_call":
                     info = self.get_info(
                         response_id,
                         usage_dict,

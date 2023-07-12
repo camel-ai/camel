@@ -16,7 +16,7 @@ from typing import List
 from colorama import Fore
 
 from camel.agents.chat_agent import FuncRecord
-from camel.functions import MathFuncs, SearchFuncs
+from camel.functions import MATH_FUNCS, SEARCH_FUNCS
 from camel.societies import RolePlaying
 from camel.typing import ModelType
 from camel.utils import print_text_animated
@@ -32,8 +32,7 @@ def main(model_type=ModelType.GPT_4) -> None:
         task_prompt=task_prompt,
         with_task_specify=False,
         model_type=model_type,
-        assist_func_enable=True,
-        assist_funcs=[MathFuncs(), SearchFuncs()],
+        assist_funcs=[*MATH_FUNCS, *SEARCH_FUNCS],
     )
 
     print(

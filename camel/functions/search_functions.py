@@ -11,13 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from dataclasses import dataclass
-from typing import Callable, List
+from typing import List
 
 import requests
 from bs4 import BeautifulSoup
 
-from camel.functions import BaseFuncs
+from .openai_function import OpenAIFunction
 
 
 def clean_str(p: str) -> str:
@@ -93,13 +92,6 @@ def search_wiki(entity: str) -> str:
     return obs
 
 
-@dataclass
-class SearchFuncs(BaseFuncs):
-    r"""Class for math function collection, which currently includes
-    integer addition, subtraction and multiplication.
-    """
-
-    def __init__(self):
-        self.functions: List[Callable] = [
-            search_wiki,
-        ]
+SEARCH_FUNCS: List[OpenAIFunction] = [
+    OpenAIFunction(func) for func in [search_wiki]
+]
