@@ -22,8 +22,9 @@ from camel.typing import ModelType
 class OpenAIModel(BaseModelBackend):
     r"""OpenAI API in a unified BaseModelBackend interface."""
 
-    def __init__(self, model_type: ModelType,
-                 model_config_dict: Dict[str, Any]) -> None:
+    def __init__(
+        self, model_type: ModelType, model_config_dict: Dict[str, Any]
+    ) -> None:
         r"""Constructor for OpenAI backend.
 
         Args:
@@ -45,10 +46,13 @@ class OpenAIModel(BaseModelBackend):
             Dict[str, Any]: Response in the OpenAI API format.
         """
         import openai
+
         messages_openai: List[OpenAIMessage] = messages
-        response = openai.ChatCompletion.create(messages=messages_openai,
-                                                model=self.model_type.value,
-                                                **self.model_config_dict)
+        response = openai.ChatCompletion.create(
+            messages=messages_openai,
+            model=self.model_type.value,
+            **self.model_config_dict
+        )
         if not self.stream:
             if not isinstance(response, Dict):
                 raise RuntimeError("Unexpected batch return from OpenAI API")
@@ -64,4 +68,4 @@ class OpenAIModel(BaseModelBackend):
         Returns:
             bool: Whether the model is in stream mode.
         """
-        return self.model_config_dict.get('stream', False)
+        return self.model_config_dict.get("stream", False)

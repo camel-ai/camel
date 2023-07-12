@@ -20,17 +20,19 @@ from .solution_extraction import SolutionExtractionPromptTemplateDict
 from .evaluation import EvaluationPromptTemplateDict
 from .task_prompt_template import TaskPromptTemplateDict
 from .prompt_templates import PromptTemplateGenerator
+from .game import GamePromptTemplateDict
 
 __all__ = [
-    'TextPrompt',
-    'CodePrompt',
-    'TextPromptDict',
-    'AISocietyPromptTemplateDict',
-    'CodePromptTemplateDict',
-    'MisalignmentPromptTemplateDict',
-    'TranslationPromptTemplateDict',
-    'EvaluationPromptTemplateDict',
-    'TaskPromptTemplateDict',
-    'PromptTemplateGenerator',
-    'SolutionExtractionPromptTemplateDict',
+    "TextPrompt",
+    "CodePrompt",
+    "TextPromptDict",
+    "AISocietyPromptTemplateDict",
+    "CodePromptTemplateDict",
+    "MisalignmentPromptTemplateDict",
+    "TranslationPromptTemplateDict",
+    "EvaluationPromptTemplateDict",
+    "TaskPromptTemplateDict",
+    "PromptTemplateGenerator",
+    "SolutionExtractionPromptTemplateDict",
+    "GamePromptTemplateDict",
 ]

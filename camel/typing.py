@@ -20,6 +20,7 @@ class RoleType(Enum):
     CRITIC = "critic"
     EMBODIMENT = "embodiment"
     DEFAULT = "default"
+    PLAYER = "player"
 
 
 class ModelType(Enum):
@@ -61,6 +62,7 @@ class TaskType(Enum):
     EVALUATION = "evaluation"
     SOLUTION_EXTRACTION = "solution_extraction"
     DEFAULT = "default"
+    GAME = "game"
 
 
-__all__ = ['RoleType', 'ModelType', 'TaskType']
+__all__ = ["RoleType", "ModelType", "TaskType"]

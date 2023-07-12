@@ -52,8 +52,9 @@ class ChatAgentResponse:
     @property
     def msg(self):
         if len(self.msgs) != 1:
-            raise RuntimeError("Property msg is only available"
-                               "for a single message in msgs")
+            raise RuntimeError(
+                "Property msg is only available" "for a single message in msgs"
+            )
         return self.msgs[0]
 
 
@@ -110,13 +111,15 @@ class ChatAgent(BaseAgent):
         if self.output_language is not None:
             self.set_output_language(self.output_language)
 
-        self.model: ModelType = (model if model is not None else
-                                 ModelType.GPT_3_5_TURBO)
+        self.model: ModelType = (
+            model if model is not None else ModelType.GPT_3_5_TURBO
+        )
         self.model_config: ChatGPTConfig = model_config or ChatGPTConfig()
         self.message_window_size: Optional[int] = message_window_size
 
         self.model_backend: BaseModelBackend = ModelFactory.create(
-            self.model, self.model_config.__dict__)
+            self.model, self.model_config.__dict__
+        )
         self.model_token_limit: int = self.model_backend.token_limit
 
         self.terminated: bool = False
@@ -146,9 +149,10 @@ class ChatAgent(BaseAgent):
             BaseMessage: The updated system message object.
         """
         self.output_language = output_language
-        content = (self.system_message.content +
-                   ("\nRegardless of the input language, "
-                    f"you must output text in {output_language}."))
+        content = self.system_message.content + (
+            "\nRegardless of the input language, "
+            f"you must output text in {output_language}."
+        )
         self.system_message = self.system_message.create_new_instance(content)
         return self.system_message
 
@@ -183,10 +187,9 @@ class ChatAgent(BaseAgent):
         r"""Initializes the stored messages list with the initial system
         message.
         """
-        self.stored_messages = [ChatRecord('system', self.system_message)]
+        self.stored_messages = [ChatRecord("system", self.system_message)]
 
-    def update_messages(self, role: str,
-                        message: BaseMessage) -> List[ChatRecord]:
+    def update_messages(self, role: str, message: BaseMessage) -> List[ChatRecord]:
         r"""Updates the stored messages list with a new message.
 
         Args:
@@ -196,7 +199,7 @@ class ChatAgent(BaseAgent):
         Returns:
             List[BaseMessage]: The updated stored messages.
         """
-        if role not in {'system', 'user', 'assistant'}:
+        if role not in {"system", "user", "assistant"}:
             raise ValueError(f"Unsupported role {role}")
         self.stored_messages.append(ChatRecord(role, message))
         return self.stored_messages
@@ -210,14 +213,11 @@ class ChatAgent(BaseAgent):
             message (BaseMessage): An external message to be added as an
                 assistant response.
         """
-        self.stored_messages.append(ChatRecord('assistant', message))
+        self.stored_messages.append(ChatRecord("assistant", message))
 
     @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     @openai_api_key_required
-    def step(
-        self,
-        input_message: BaseMessage,
-    ) -> ChatAgentResponse:
+    def step(self, input_message: BaseMessage,) -> ChatAgentResponse:
         r"""Performs a single step in the chat session by generating a response
         to the input message.
 
@@ -232,11 +232,14 @@ class ChatAgent(BaseAgent):
                 a boolean indicating whether the chat session has terminated,
                 and information about the chat session.
         """
-        messages = self.update_messages('user', input_message)
-        if self.message_window_size is not None and len(
-                messages) > self.message_window_size:
-            messages = [ChatRecord('system', self.system_message)
-                        ] + messages[-self.message_window_size:]
+        messages = self.update_messages("user", input_message)
+        if (
+            self.message_window_size is not None
+            and len(messages) > self.message_window_size
+        ):
+            messages = [ChatRecord("system", self.system_message)] + messages[
+                -self.message_window_size :
+            ]
         openai_messages = [record.to_openai_message() for record in messages]
         num_tokens = num_tokens_from_messages(openai_messages, self.model)
 
@@ -247,27 +250,25 @@ class ChatAgent(BaseAgent):
             response = self.model_backend.run(openai_messages)
             self.validate_model_response(response)
             if not self.model_backend.stream:
-                output_messages, finish_reasons, usage_dict, response_id = \
-                    self.handle_batch_response(response)
+                (
+                    output_messages,
+                    finish_reasons,
+                    usage_dict,
+                    response_id,
+                ) = self.handle_batch_response(response)
             else:
-                output_messages, finish_reasons, usage_dict, response_id = \
-                    self.handle_stream_response(response, num_tokens)
-            info = self.get_info(
-                response_id,
-                usage_dict,
-                finish_reasons,
-                num_tokens,
-            )
+                (
+                    output_messages,
+                    finish_reasons,
+                    usage_dict,
+                    response_id,
+                ) = self.handle_stream_response(response, num_tokens)
+            info = self.get_info(response_id, usage_dict, finish_reasons, num_tokens,)
         else:
             self.terminated = True
             output_messages = []
 
-            info = self.get_info(
-                None,
-                None,
-                ["max_tokens_exceeded"],
-                num_tokens,
-            )
+            info = self.get_info(None, None, ["max_tokens_exceeded"], num_tokens,)
 
         return ChatAgentResponse(output_messages, self.terminated, info)
 
@@ -293,21 +294,20 @@ class ChatAgent(BaseAgent):
         """
         output_messages: List[BaseMessage] = []
         for choice in response["choices"]:
-            chat_message = BaseMessage(role_name=self.role_name,
-                                       role_type=self.role_type,
-                                       meta_dict=dict(),
-                                       content=choice["message"]['content'])
+            chat_message = BaseMessage(
+                role_name=self.role_name,
+                role_type=self.role_type,
+                meta_dict=dict(),
+                content=choice["message"]["content"],
+            )
             output_messages.append(chat_message)
         finish_reasons = [
             str(choice["finish_reason"]) for choice in response["choices"]
         ]
-        return output_messages, finish_reasons, dict(
-            response["usage"]), response["id"]
+        return output_messages, finish_reasons, dict(response["usage"]), response["id"]
 
     def handle_stream_response(
-        self,
-        response: Any,
-        prompt_tokens: int,
+        self, response: Any, prompt_tokens: int,
     ) -> Tuple[List[BaseMessage], List[str], Dict[str, int], str]:
         r"""
 
@@ -338,10 +338,12 @@ class ChatAgent(BaseAgent):
                     content_dict[index] += delta_content
                 else:
                     finish_reasons_dict[index] = choice["finish_reason"]
-                    chat_message = BaseMessage(role_name=self.role_name,
-                                               role_type=self.role_type,
-                                               meta_dict=dict(),
-                                               content=content_dict[index])
+                    chat_message = BaseMessage(
+                        role_name=self.role_name,
+                        role_type=self.role_type,
+                        meta_dict=dict(),
+                        content=content_dict[index],
+                    )
                     output_messages.append(chat_message)
         finish_reasons = [
             finish_reasons_dict[i] for i in range(len(finish_reasons_dict))
@@ -349,8 +351,9 @@ class ChatAgent(BaseAgent):
         usage_dict = self.get_usage_dict(output_messages, prompt_tokens)
         return output_messages, finish_reasons, usage_dict, response_id
 
-    def get_usage_dict(self, output_messages: List[BaseMessage],
-                       prompt_tokens: int) -> Dict[str, int]:
+    def get_usage_dict(
+        self, output_messages: List[BaseMessage], prompt_tokens: int
+    ) -> Dict[str, int]:
         r"""Get usage dictionary when using the stream mode.
 
         Args:
@@ -364,9 +367,11 @@ class ChatAgent(BaseAgent):
         completion_tokens = 0
         for message in output_messages:
             completion_tokens += len(encoding.encode(message.content))
-        usage_dict = dict(completion_tokens=completion_tokens,
-                          prompt_tokens=prompt_tokens,
-                          total_tokens=completion_tokens + prompt_tokens)
+        usage_dict = dict(
+            completion_tokens=completion_tokens,
+            prompt_tokens=prompt_tokens,
+            total_tokens=completion_tokens + prompt_tokens,
+        )
         return usage_dict
 
     def __repr__(self) -> str:

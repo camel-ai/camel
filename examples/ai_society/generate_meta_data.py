@@ -19,20 +19,17 @@ from camel.typing import TaskType
 
 def main(key: str = "generate_users", num_roles: int = 50):
     prompt_template = PromptTemplateGenerator().get_prompt_from_key(
-        TaskType.AI_SOCIETY, key)
+        TaskType.AI_SOCIETY, key
+    )
     prompt = prompt_template.format(num_roles=num_roles)
     print(prompt)
     assistant_sys_msg = BaseMessage.make_assistant_message(
-        role_name="Assistant",
-        content="You are a helpful assistant.",
+        role_name="Assistant", content="You are a helpful assistant.",
     )
     agent = ChatAgent(assistant_sys_msg)
     agent.reset()
 
-    user_msg = BaseMessage.make_user_message(
-        role_name="User",
-        content=prompt,
-    )
+    user_msg = BaseMessage.make_user_message(role_name="User", content=prompt,)
     assistant_response = agent.step(user_msg)
     if assistant_response.msgs is not None:
         print(assistant_response.msg.content)

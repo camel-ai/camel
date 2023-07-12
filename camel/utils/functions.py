@@ -24,7 +24,7 @@ import tiktoken
 from camel.messages import OpenAIMessage
 from camel.typing import ModelType, TaskType
 
-F = TypeVar('F', bound=Callable[..., Any])
+F = TypeVar("F", bound=Callable[..., Any])
 
 
 def get_model_encoding(value_for_tiktoken: str):
@@ -75,10 +75,7 @@ def count_tokens_openai_chat_models(
     return num_tokens
 
 
-def num_tokens_from_messages(
-    messages: List[OpenAIMessage],
-    model: ModelType,
-) -> int:
+def num_tokens_from_messages(messages: List[OpenAIMessage], model: ModelType,) -> int:
     r"""Returns the number of tokens used by a list of messages.
 
     Args:
@@ -108,12 +105,12 @@ def _num_tokens_from_messages(messages: List[OpenAIMessage], model: str):
         - https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
     """
     if model in {
-            "gpt-3.5-turbo-0613",
-            "gpt-3.5-turbo-16k-0613",
-            "gpt-4-0314",
-            "gpt-4-32k-0314",
-            "gpt-4-0613",
-            "gpt-4-32k-0613",
+        "gpt-3.5-turbo-0613",
+        "gpt-3.5-turbo-16k-0613",
+        "gpt-4-0314",
+        "gpt-4-32k-0314",
+        "gpt-4-0613",
+        "gpt-4-32k-0613",
     }:
         tokens_per_message = 3
         tokens_per_name = 1
@@ -134,10 +131,12 @@ def _num_tokens_from_messages(messages: List[OpenAIMessage], model: str):
             f"for information on how messages are converted to tokens. "
             f"See https://platform.openai.com/docs/models/gpt-4"
             f"or https://platform.openai.com/docs/models/gpt-3-5"
-            f"for information about openai chat models.")
+            f"for information about openai chat models."
+        )
     encoding = get_model_encoding(model)
-    return count_tokens_openai_chat_models(messages, encoding,
-                                           tokens_per_message, tokens_per_name)
+    return count_tokens_openai_chat_models(
+        messages, encoding, tokens_per_message, tokens_per_name
+    )
 
 
 def openai_api_key_required(func: F) -> F:
@@ -158,14 +157,15 @@ def openai_api_key_required(func: F) -> F:
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         from camel.agents.chat_agent import ChatAgent
+
         if not isinstance(self, ChatAgent):
             raise ValueError("Expected ChatAgent")
         if self.model == ModelType.STUB:
             return func(self, *args, **kwargs)
-        elif 'OPENAI_API_KEY' in os.environ:
+        elif "OPENAI_API_KEY" in os.environ:
             return func(self, *args, **kwargs)
         else:
-            raise ValueError('OpenAI API key not found.')
+            raise ValueError("OpenAI API key not found.")
 
     return cast(F, wrapper)
 
@@ -183,7 +183,7 @@ def print_text_animated(text, delay: float = 0.02, end: str = ""):
     for char in text:
         print(char, end=end, flush=True)
         time.sleep(delay)
-    print('\n')
+    print("\n")
 
 
 def get_prompt_template_key_words(template: str) -> Set[str]:
@@ -200,7 +200,7 @@ def get_prompt_template_key_words(template: str) -> Set[str]:
         >>> get_prompt_template_key_words('Hi, {name}! How are you {status}?')
         {'name', 'status'}
     """
-    return set(re.findall(r'{([^}]*)}', template))
+    return set(re.findall(r"{([^}]*)}", template))
 
 
 def get_first_int(string: str) -> Optional[int]:
@@ -215,7 +215,7 @@ def get_first_int(string: str) -> Optional[int]:
         int or None: The first integer number found in the string, or None if
             no integer number is found.
     """
-    match = re.search(r'\d+', string)
+    match = re.search(r"\d+", string)
     if match:
         return int(match.group())
     else:
@@ -227,8 +227,10 @@ def download_tasks(task: TaskType, folder_path: str) -> None:
     zip_file_path = os.path.join(folder_path, "tasks.zip")
 
     # Download the zip file from the Google Drive link
-    response = requests.get("https://huggingface.co/datasets/camel-ai/"
-                            f"metadata/resolve/main/{task.value}_tasks.zip")
+    response = requests.get(
+        "https://huggingface.co/datasets/camel-ai/"
+        f"metadata/resolve/main/{task.value}_tasks.zip"
+    )
 
     # Save the zip file
     with open(zip_file_path, "wb") as f:

@@ -31,10 +31,11 @@ class EvaluationPromptTemplateDict(TextPromptDict):
 Here are some example questions:
 {examples}
 
-Now generate {num_questions} questions of your own. Be creative""")
+Now generate {num_questions} questions of your own. Be creative"""
+    )
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.update({
-            "generate_questions": self.GENERATE_QUESTIONS,
-        })
+        self.update(
+            {"generate_questions": self.GENERATE_QUESTIONS,}
+        )

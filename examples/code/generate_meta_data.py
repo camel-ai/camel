@@ -19,20 +19,17 @@ from camel.typing import TaskType
 
 def generate_meta_data(meta_data: str, num: int = 50, model=None):
     prompt_template = PromptTemplateGenerator().get_prompt_from_key(
-        TaskType.CODE, f"generate_{meta_data}")
+        TaskType.CODE, f"generate_{meta_data}"
+    )
     prompt = prompt_template.format(**{f"num_{meta_data}": num})
     print(prompt)
     assistant_sys_msg = BaseMessage.make_assistant_message(
-        role_name="Assistant",
-        content="You are a helpful assistant.",
+        role_name="Assistant", content="You are a helpful assistant.",
     )
     agent = ChatAgent(assistant_sys_msg, model=model)
     agent.reset()
 
-    user_msg = BaseMessage.make_user_message(
-        role_name="User",
-        content=prompt,
-    )
+    user_msg = BaseMessage.make_user_message(role_name="User", content=prompt,)
     assistant_response = agent.step(user_msg)
     print(assistant_response.msg.content)
 

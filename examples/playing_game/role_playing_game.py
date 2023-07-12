@@ -13,25 +13,20 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from colorama import Fore
 
-from camel.configs import ChatGPTConfig
-from camel.societies import RolePlaying
+from camel.societies.role_play_adv import RolePlaying
 from camel.utils import print_text_animated
+from camel.typing import TaskType
+import json
 
 
-def main() -> None:
-    task_prompt = "Write a book about the future of AI Society"
-    model_config = ChatGPTConfig(temperature=1.4, n=3)
-    assistant_agent_kwargs = dict(model_config=model_config)
-    user_agent_kwargs = dict(model_config=model_config)
+def main(model_type=None) -> None:
+    task_prompt = "Play a game with another player, and win the highest score."
     role_play_session = RolePlaying(
-        "AGI",
-        "Writer",
-        critic_role_name="human",
+        "Player 2",
+        "Player 1",
         task_prompt=task_prompt,
-        with_task_specify=True,
-        with_critic_in_the_loop=True,
-        assistant_agent_kwargs=assistant_agent_kwargs,
-        user_agent_kwargs=user_agent_kwargs,
+        model_type=model_type,
+        task_type=TaskType.GAME,
     )
 
     print(
@@ -40,21 +35,24 @@ def main() -> None:
     )
     print(Fore.BLUE + f"AI User sys message:\n{role_play_session.user_sys_msg}\n")
 
-    print(Fore.YELLOW + f"Original task prompt:\n{task_prompt}\n")
-    print(
-        Fore.CYAN
-        + f"Specified task prompt:\n{role_play_session.specified_task_prompt}\n"
-    )
-    print(Fore.RED + f"Final task prompt:\n{role_play_session.task_prompt}\n")
+    print(f"{Fore.YELLOW}Original task prompt:\n{task_prompt}\n")
 
-    chat_turn_limit, n = 50, 0
-    input_assistant_msg, _ = role_play_session.init_chat()
+    chat_turn_limit, n = 120, 0
+    user_msg, assistant_msg = role_play_session.init_chat()
+    user_responses, assistant_responses = [], []
     while n < chat_turn_limit:
         n += 1
-        assistant_response, user_response = role_play_session.step(input_assistant_msg)
-
-        input_assistant_msg = assistant_response.msg
-
+        assistant_response, user_response = role_play_session.step(
+            user_msg, assistant_msg
+        )
+        user_responses.append(user_response)
+        assistant_responses.append(assistant_response)
+        user_msg = role_play_session.generate_next_round_msg(
+            n, user_response, assistant_response, "Player 1"
+        )
+        assistant_msg = role_play_session.generate_next_round_msg(
+            n, assistant_response, user_response, "Player 2"
+        )
         if assistant_response.terminated:
             print(
                 Fore.GREEN
@@ -76,11 +74,29 @@ def main() -> None:
 
         print_text_animated(Fore.BLUE + f"AI User:\n\n{user_response.msg.content}\n")
         print_text_animated(
-            Fore.GREEN + f"AI Assistant:\n\n{assistant_response.msg.content}\n"
+            f"{Fore.GREEN}AI Assistant:\n\n{assistant_response.msg.content}\n"
         )
-
         if "CAMEL_TASK_DONE" in user_response.msg.content:
             break
+
+    chat_log = {
+        "assistant_sys_msg": role_play_session.assistant_sys_msg.content,
+        "user_sys_msg": role_play_session.user_sys_msg.content,
+        "task_prompt": task_prompt,
+        "chat_turn_limit": chat_turn_limit,
+        "dialogue": [
+            {
+                "user": user_response.msg.content,
+                "assistant": assistant_response.msg.content,
+            }
+            for user_response, assistant_response in zip(
+                user_responses, assistant_responses
+            )
+        ],
+        "option_res": role_play_session.option_res,
+    }
+    with open("chat_log.json", "w") as file:
+        json.dump(chat_log, file)
 
 
 if __name__ == "__main__":

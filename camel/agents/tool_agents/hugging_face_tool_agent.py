@@ -34,11 +34,7 @@ class HuggingFaceToolAgent(BaseToolAgent):
     """
 
     def __init__(
-        self,
-        name: str,
-        *args: Any,
-        remote: bool = True,
-        **kwargs: Any,
+        self, name: str, *args: Any, remote: bool = True, **kwargs: Any,
     ) -> None:
         try:
             # TODO: Support other tool agents
@@ -145,12 +141,7 @@ segmented_transformed_capybara_image.save("./segmented_transformed_capybara_imag
         r"""Resets the chat history of the agent."""
         self.agent.prepare_for_new_chat()
 
-    def step(
-        self,
-        *args: Any,
-        remote: Optional[bool] = None,
-        **kwargs: Any,
-    ) -> Any:
+    def step(self, *args: Any, remote: Optional[bool] = None, **kwargs: Any,) -> Any:
         r"""Runs the agent in single execution mode.
 
         Args:
@@ -166,12 +157,7 @@ segmented_transformed_capybara_image.save("./segmented_transformed_capybara_imag
             remote = self.remote
         return self.agent.run(*args, remote=remote, **kwargs)
 
-    def chat(
-        self,
-        *args: Any,
-        remote: Optional[bool] = None,
-        **kwargs: Any,
-    ) -> Any:
+    def chat(self, *args: Any, remote: Optional[bool] = None, **kwargs: Any,) -> Any:
         r"""Runs the agent in a chat conversation mode.
 
         Args:

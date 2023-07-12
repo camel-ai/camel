@@ -19,11 +19,10 @@ from camel.typing import ModelType
 
 
 @pytest.mark.model_backend
-@pytest.mark.parametrize("model_type", [
-    ModelType.GPT_3_5_TURBO,
-    ModelType.GPT_3_5_TURBO_16K,
-    ModelType.GPT_4,
-])
+@pytest.mark.parametrize(
+    "model_type",
+    [ModelType.GPT_3_5_TURBO, ModelType.GPT_3_5_TURBO_16K, ModelType.GPT_4,],
+)
 def test_openai_model(model_type):
     model_config_dict = ChatGPTConfig().__dict__
     model = OpenAIModel(model_type, model_config_dict)

@@ -421,3 +421,5 @@ logs/
 datasets_test/
 evaluation_data/
 camel_data/
+
+./examples/ai_society/role_playing_my.py

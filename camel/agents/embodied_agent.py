@@ -56,12 +56,13 @@ class EmbodiedAgent(ChatAgent):
         logger_color: Any = Fore.MAGENTA,
     ) -> None:
         default_action_space = [
-            HuggingFaceToolAgent('hugging_face_tool_agent', model=model.value),
+            HuggingFaceToolAgent("hugging_face_tool_agent", model=model.value),
         ]
         self.action_space = action_space or default_action_space
         action_space_prompt = self.get_action_space_prompt()
         system_message.content = system_message.content.format(
-            action_space=action_space_prompt)
+            action_space=action_space_prompt
+        )
         self.verbose = verbose
         self.logger_color = logger_color
         super().__init__(
@@ -77,15 +78,14 @@ class EmbodiedAgent(ChatAgent):
         Returns:
             str: The action space prompt.
         """
-        return "\n".join([
-            f"*** {action.name} ***:\n {action.description}"
-            for action in self.action_space
-        ])
+        return "\n".join(
+            [
+                f"*** {action.name} ***:\n {action.description}"
+                for action in self.action_space
+            ]
+        )
 
-    def step(
-        self,
-        input_message: BaseMessage,
-    ) -> ChatAgentResponse:
+    def step(self, input_message: BaseMessage,) -> ChatAgentResponse:
         r"""Performs a step in the conversation.
 
         Args:
@@ -108,34 +108,42 @@ class EmbodiedAgent(ChatAgent):
 
         if self.verbose:
             for explanation, code in zip(explanations, codes):
-                print_text_animated(self.logger_color +
-                                    f"> Explanation:\n{explanation}")
+                print_text_animated(
+                    self.logger_color + f"> Explanation:\n{explanation}"
+                )
                 print_text_animated(self.logger_color + f"> Code:\n{code}")
 
             if len(explanations) > len(codes):
-                print_text_animated(self.logger_color +
-                                    f"> Explanation:\n{explanations}")
+                print_text_animated(
+                    self.logger_color + f"> Explanation:\n{explanations}"
+                )
 
         content = response.msg.content
 
         if codes is not None:
             content = "\n> Executed Results:"
             action_space: Dict[str, Any] = {
-                action.name: action
-                for action in self.action_space
+                action.name: action for action in self.action_space
             }
             action_space.update({"print": print})
             interpreter = PythonInterpreter(action_space=action_space)
             for block_idx, code in enumerate(codes):
                 executed_outputs, _ = code.execute(interpreter)
-                content += (f"Executing code block {block_idx}:\n"
-                            f"  - execution output:\n{executed_outputs}\n"
-                            f"  - Local variables:\n{interpreter.state}\n")
+                content += (
+                    f"Executing code block {block_idx}:\n"
+                    f"  - execution output:\n{executed_outputs}\n"
+                    f"  - Local variables:\n{interpreter.state}\n"
+                )
                 content += "*" * 50 + "\n"
 
         # TODO: Handle errors
-        content = input_message.content + (Fore.RESET +
-                                           f"\n> Embodied Actions:\n{content}")
-        message = BaseMessage(input_message.role_name, input_message.role_type,
-                              input_message.meta_dict, content)
+        content = input_message.content + (
+            Fore.RESET + f"\n> Embodied Actions:\n{content}"
+        )
+        message = BaseMessage(
+            input_message.role_name,
+            input_message.role_type,
+            input_message.meta_dict,
+            content,
+        )
         return ChatAgentResponse([message], response.terminated, response.info)

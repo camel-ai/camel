@@ -20,16 +20,23 @@ from camel.messages import BaseMessage
 from camel.typing import RoleType, TaskType
 
 
-def generate_tasks(task_generator_prompt: str, language: str, domain: str,
-                   start_token: str = "1.", num_tasks: int = 10,
-                   model=None) -> None:
+def generate_tasks(
+    task_generator_prompt: str,
+    language: str,
+    domain: str,
+    start_token: str = "1.",
+    num_tasks: int = 10,
+    model=None,
+) -> None:
     sys_msg_generator = SystemMessageGenerator(task_type=TaskType.DEFAULT)
     assistant_sys_msg = sys_msg_generator.from_dict(
-        dict(), role_tuple=("Task Generator", RoleType.DEFAULT))
+        dict(), role_tuple=("Task Generator", RoleType.DEFAULT)
+    )
     assistant_agent = ChatAgent(assistant_sys_msg, model=model)
 
-    user_msg = BaseMessage.make_user_message(role_name="Task Generator",
-                                             content=task_generator_prompt)
+    user_msg = BaseMessage.make_user_message(
+        role_name="Task Generator", content=task_generator_prompt
+    )
 
     assistant_response = assistant_agent.step(user_msg)
 
@@ -38,7 +45,7 @@ def generate_tasks(task_generator_prompt: str, language: str, domain: str,
     # Filter out the generated response to include the tasks only
     for i, task in enumerate(tasks):
         if start_token in task:
-            tasks = tasks[i:i + num_tasks]
+            tasks = tasks[i : i + num_tasks]
             break
 
     # Ensure exact number of tasks is generated
@@ -53,16 +60,25 @@ def main(model=None) -> None:
     start_token = "1."
 
     task_generator_prompt_gen = CodeTaskPromptGenerator(
-        num_tasks=num_tasks).from_role_files()
+        num_tasks=num_tasks
+    ).from_role_files()
 
     pool = multiprocessing.Pool()
     for task_generator_prompt, language, domain in task_generator_prompt_gen:
         if not os.path.exists(f"./code/tasks/{language}_{domain}.txt"):
             print(language, domain)
 
-            pool.apply_async(generate_tasks,
-                             (task_generator_prompt, language, domain,
-                              start_token, num_tasks, model))
+            pool.apply_async(
+                generate_tasks,
+                (
+                    task_generator_prompt,
+                    language,
+                    domain,
+                    start_token,
+                    num_tasks,
+                    model,
+                ),
+            )
 
     pool.close()
     pool.join()

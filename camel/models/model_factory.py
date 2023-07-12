@@ -25,8 +25,7 @@ class ModelFactory:
     """
 
     @staticmethod
-    def create(model_type: ModelType,
-               model_config_dict: Dict) -> BaseModelBackend:
+    def create(model_type: ModelType, model_config_dict: Dict) -> BaseModelBackend:
         r"""Creates an instance of `BaseModelBackend` of the specified type.
 
         Args:
@@ -42,10 +41,10 @@ class ModelFactory:
         """
         model_class: Any
         if model_type in {
-                ModelType.GPT_3_5_TURBO,
-                ModelType.GPT_3_5_TURBO_16K,
-                ModelType.GPT_4,
-                ModelType.GPT_4_32k,
+            ModelType.GPT_3_5_TURBO,
+            ModelType.GPT_3_5_TURBO_16K,
+            ModelType.GPT_4,
+            ModelType.GPT_4_32k,
         }:
             model_class = OpenAIModel
         elif model_type == ModelType.STUB:

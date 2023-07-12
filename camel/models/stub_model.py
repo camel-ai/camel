@@ -21,8 +21,9 @@ class StubModel(BaseModelBackend):
     r"""A dummy model used for unit tests."""
     model_type = ModelType.STUB
 
-    def __init__(self, model_type: ModelType,
-                 model_config_dict: Dict[str, Any]) -> None:
+    def __init__(
+        self, model_type: ModelType, model_config_dict: Dict[str, Any]
+    ) -> None:
         r"""All arguments are unused for the dummy model."""
         super().__init__(model_type, model_config_dict)
         pass
@@ -40,7 +41,9 @@ class StubModel(BaseModelBackend):
             id="stub_model_id",
             usage=dict(),
             choices=[
-                dict(finish_reason="stop",
-                     message=dict(content=ARBITRARY_STRING, role="assistant"))
+                dict(
+                    finish_reason="stop",
+                    message=dict(content=ARBITRARY_STRING, role="assistant"),
+                )
             ],
         )

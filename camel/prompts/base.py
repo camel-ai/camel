@@ -27,12 +27,11 @@ from typing import (
 from camel.typing import RoleType
 from camel.utils import PythonInterpreter
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def return_prompt_wrapper(
-    cls: Any,
-    func: Callable,
+    cls: Any, func: Callable,
 ) -> Callable[..., Union[Any, tuple]]:
     r"""Wrapper that converts the return value of a function to an input
     class instance if it's a string.
@@ -63,8 +62,11 @@ def return_prompt_wrapper(
             return cls(result)
         elif isinstance(result, tuple):
             new_result = tuple(
-                cls(item) if isinstance(item, str)
-                and not isinstance(item, cls) else item for item in result)
+                cls(item)
+                if isinstance(item, str) and not isinstance(item, cls)
+                else item
+                for item in result
+            )
             return new_result
         return result
 
@@ -85,7 +87,7 @@ def wrap_prompt_functions(cls: T) -> T:
     Returns:
         type: Decorated class with wrapped functions.
     """
-    excluded_attrs = {'__init__', '__new__', '__str__', '__repr__'}
+    excluded_attrs = {"__init__", "__new__", "__str__", "__repr__"}
     for attr_name in dir(cls):
         attr_value = getattr(cls, attr_name)
         if callable(attr_value) and attr_name not in excluded_attrs:
@@ -110,9 +112,10 @@ class TextPrompt(str):
         r"""Returns a set of strings representing the keywords in the prompt.
         """
         from camel.utils import get_prompt_template_key_words
+
         return get_prompt_template_key_words(self)
 
-    def format(self, *args: Any, **kwargs: Any) -> 'TextPrompt':
+    def format(self, *args: Any, **kwargs: Any) -> "TextPrompt":
         r"""Overrides the built-in :obj:`str.format` method to allow for
         default values in the format string. This is used to allow formatting
         the partial string.
@@ -125,7 +128,7 @@ class TextPrompt(str):
             TextPrompt: A new :obj:`TextPrompt` object with the format string
                 replaced with the formatted string.
         """
-        default_kwargs = {key: '{' + f'{key}' + '}' for key in self.key_words}
+        default_kwargs = {key: "{" + f"{key}" + "}" for key in self.key_words}
         default_kwargs.update(kwargs)
         return TextPrompt(super().format(*args, **default_kwargs))
 
@@ -139,7 +142,7 @@ class CodePrompt(TextPrompt):
         code_type (str, optional): The type of code. Defaults to None.
     """
 
-    def __new__(cls, *args: Any, **kwargs: Any) -> 'CodePrompt':
+    def __new__(cls, *args: Any, **kwargs: Any) -> "CodePrompt":
         r"""Creates a new instance of the :obj:`CodePrompt` class.
 
         Args:
@@ -149,7 +152,7 @@ class CodePrompt(TextPrompt):
         Returns:
             CodePrompt: The created :obj:`CodePrompt` instance.
         """
-        code_type = kwargs.pop('code_type', None)
+        code_type = kwargs.pop("code_type", None)
         instance = super().__new__(cls, *args, **kwargs)
         instance._code_type = code_type
         return instance
@@ -172,8 +175,9 @@ class CodePrompt(TextPrompt):
         self._code_type = code_type
 
     def execute(
-        self, interpreter: Optional[PythonInterpreter] = None,
-        user_variable: Optional[Dict[str, Any]] = None
+        self,
+        interpreter: Optional[PythonInterpreter] = None,
+        user_variable: Optional[Dict[str, Any]] = None,
     ) -> Tuple[Any, PythonInterpreter]:
         r"""Executes the code string by a given python interpreter.
 
@@ -194,8 +198,9 @@ class CodePrompt(TextPrompt):
         # NOTE: Only supports Python code for now.
         if not interpreter:
             interpreter = PythonInterpreter(action_space=globals())
-        execution_res = interpreter.execute(self, fuzz_state=user_variable,
-                                            keep_state=True)
+        execution_res = interpreter.execute(
+            self, fuzz_state=user_variable, keep_state=True
+        )
         return execution_res, interpreter
 
 
@@ -220,7 +225,8 @@ You can perform multiple actions.
 You can perform actions in any order.
 First, explain the actions you will perform and your reasons, then write Python code to implement your actions.
 If you decide to perform actions, you must write Python code to implement the actions.
-You may print intermediate results if necessary.""")
+You may print intermediate results if necessary."""
+    )
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)

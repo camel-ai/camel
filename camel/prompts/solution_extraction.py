@@ -35,10 +35,11 @@ You should present the solution as if its yours.
 Use present tense and as if you are the one presenting the solution. 
 You should not miss any necessary details or examples.
 Keep all provided explanations and codes provided throughout the conversation. 
-Remember your task is not to summarize rather to extract the full solution.""")
+Remember your task is not to summarize rather to extract the full solution."""
+    )
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.update({
-            RoleType.ASSISTANT: self.ASSISTANT_PROMPT,
-        })
+        self.update(
+            {RoleType.ASSISTANT: self.ASSISTANT_PROMPT,}
+        )

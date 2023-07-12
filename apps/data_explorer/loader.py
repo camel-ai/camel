@@ -30,7 +30,8 @@ AllChats = Dict[str, Any]
 Datasets = Dict[str, AllChats]
 
 REPO_ROOT = os.path.realpath(
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.."))
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..")
+)
 
 
 def parse(raw_chat: ChatHistory) -> Union[ParsedChatHistory, None]:
@@ -114,29 +115,25 @@ def load_zip(zip_path: str) -> AllChats:
     assistant_roles_set = set()
     user_roles_set = set()
     for parsed in parsed_list:
-        assistant_roles_set.add(parsed['assistant_role'])
-        user_roles_set.add(parsed['user_role'])
+        assistant_roles_set.add(parsed["assistant_role"])
+        user_roles_set.add(parsed["user_role"])
     assistant_roles = list(sorted(assistant_roles_set))
     user_roles = list(sorted(user_roles_set))
     matrix: Dict[Tuple[str, str], Dict[str, Dict]] = dict()
     for parsed in parsed_list:
-        key = (parsed['assistant_role'], parsed['user_role'])
-        original_task: str = parsed['original_task']
+        key = (parsed["assistant_role"], parsed["user_role"])
+        original_task: str = parsed["original_task"]
         new_item = {
             k: v
             for k, v in parsed.items()
-            if k not in {'assistant_role', 'user_role', 'original_task'}
+            if k not in {"assistant_role", "user_role", "original_task"}
         }
         if key in matrix:
             matrix[key][original_task] = new_item
         else:
             matrix[key] = {original_task: new_item}
 
-    return dict(
-        assistant_roles=assistant_roles,
-        user_roles=user_roles,
-        matrix=matrix,
-    )
+    return dict(assistant_roles=assistant_roles, user_roles=user_roles, matrix=matrix,)
 
 
 def load_datasets(path: Optional[str] = None) -> Datasets:

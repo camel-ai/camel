@@ -33,10 +33,11 @@ Your sole purpose is to accurately translate any text presented to you from Engl
 Please provide the {language} translation for the given text.
 If you are presented with an empty string, simply return an empty string as the translation.
 Only text in between ```TEXT``` should not be translated.
-Do not provide any explanation. Just provide a translation.""")
+Do not provide any explanation. Just provide a translation."""
+    )
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.update({
-            RoleType.ASSISTANT: self.ASSISTANT_PROMPT,
-        })
+        self.update(
+            {RoleType.ASSISTANT: self.ASSISTANT_PROMPT,}
+        )

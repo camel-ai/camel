@@ -29,6 +29,7 @@ def test_hugging_face_tool_agent_initialization():
 @pytest.mark.full_test_only
 def test_hugging_face_tool_agent_step():
     from PIL.PngImagePlugin import PngImageFile
+
     agent = HuggingFaceToolAgent("hugging_face_tool_agent")
     result = agent.step("Generate an image of a boat in the water")
     assert isinstance(result, PngImageFile)
@@ -38,6 +39,7 @@ def test_hugging_face_tool_agent_step():
 @pytest.mark.full_test_only
 def test_hugging_face_tool_agent_chat():
     from PIL.PngImagePlugin import PngImageFile
+
     agent = HuggingFaceToolAgent("hugging_face_tool_agent")
     result = agent.chat("Show me an image of a capybara")
     assert isinstance(result, PngImageFile)

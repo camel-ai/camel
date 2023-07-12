@@ -38,37 +38,37 @@ def update_license_in_file(
     start_line_start_with: str,
     end_line_start_with: str,
 ) -> bool:
-    with open(file_path, 'r') as f:
+    with open(file_path, "r") as f:
         content = f.read()
 
-    with open(license_template_path, 'r') as f:
+    with open(license_template_path, "r") as f:
         new_license = f.read().strip()
 
-    maybe_existing_licenses = re.findall(r'^#.*?(?=\n)', content,
-                                         re.MULTILINE | re.DOTALL)
-    start_index = fine_license_start_line(maybe_existing_licenses,
-                                          start_line_start_with)
-    end_index = find_license_end_line(maybe_existing_licenses,
-                                      end_line_start_with)
+    maybe_existing_licenses = re.findall(
+        r"^#.*?(?=\n)", content, re.MULTILINE | re.DOTALL
+    )
+    start_index = fine_license_start_line(
+        maybe_existing_licenses, start_line_start_with
+    )
+    end_index = find_license_end_line(maybe_existing_licenses, end_line_start_with)
     if start_index is not None and end_index is not None:
-        maybe_existing_licenses = maybe_existing_licenses[
-            start_index:end_index + 1]
+        maybe_existing_licenses = maybe_existing_licenses[start_index : end_index + 1]
     else:
         maybe_existing_licenses = None
     if maybe_existing_licenses:
-        maybe_old_licenses = '\n'.join(maybe_existing_licenses)
+        maybe_old_licenses = "\n".join(maybe_existing_licenses)
         if maybe_old_licenses.strip() != new_license.strip():
             replaced_content = content.replace(maybe_old_licenses, new_license)
-            with open(file_path, 'w') as f:
+            with open(file_path, "w") as f:
                 f.write(replaced_content)
-            print(f'Replaced license in {file_path}')
+            print(f"Replaced license in {file_path}")
             return True
         else:
             return False
     else:
-        with open(file_path, 'w') as f:
-            f.write(new_license + '\n' + content)
-        print(f'Added license to {file_path}')
+        with open(file_path, "w") as f:
+            f.write(new_license + "\n" + content)
+        print(f"Added license to {file_path}")
         return True
 
 
@@ -80,33 +80,34 @@ def update_license_in_directory(
 ) -> None:
     # Check if directory exists
     if not os.path.isdir(directory_path):
-        raise NotADirectoryError(f'{directory_path} is not a directory')
+        raise NotADirectoryError(f"{directory_path} is not a directory")
     # Check if license template exists
     if not os.path.isfile(license_template_path):
-        raise FileNotFoundError(f'{license_template_path} not found')
+        raise FileNotFoundError(f"{license_template_path} not found")
 
     file_count = 0
     for root, _, files in os.walk(directory_path):
         for file_name in files:
-            if file_name.endswith('.py'):
+            if file_name.endswith(".py"):
                 file_path = os.path.join(root, file_name)
                 if update_license_in_file(
-                        file_path,
-                        license_template_path,
-                        start_line_start_with,
-                        end_line_start_with,
+                    file_path,
+                    license_template_path,
+                    start_line_start_with,
+                    end_line_start_with,
                 ):
                     file_count += 1
 
-    print(f'Licensed update in {file_count} files')
+    print(f"Licensed update in {file_count} files")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     if len(sys.argv) < 3:
         print(
             "Usage from command line: "
             "python update_license.py <directory_path> <license_template_path>"
-            "No valid input arguments found, please enter manually.")
+            "No valid input arguments found, please enter manually."
+        )
         directory_path = input("Enter directory path: ")
         license_template_path = input("Enter license template path: ")
     else:

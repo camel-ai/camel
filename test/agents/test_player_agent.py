@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import pytest
 
-from camel.agents import ChatAgent
+from camel.agents.player_agent import PlayerAgent
 from camel.configs import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
 from camel.messages import BaseMessage
@@ -22,7 +22,7 @@ from camel.typing import ModelType, RoleType, TaskType
 parametrize = pytest.mark.parametrize(
     "model",
     [
-        ModelType.STUB,
+        (ModelType.STUB,),
         pytest.param(ModelType.GPT_3_5_TURBO, marks=pytest.mark.model_backend),
         pytest.param(ModelType.GPT_4, marks=pytest.mark.model_backend),
     ],
@@ -35,13 +35,13 @@ def test_chat_agent(model: ModelType):
     system_msg = SystemMessageGenerator(task_type=TaskType.AI_SOCIETY).from_dict(
         dict(assistant_role="doctor"), role_tuple=("doctor", RoleType.ASSISTANT),
     )
-    assistant = ChatAgent(system_msg, model=model, model_config=model_config)
+    assistant = PlayerAgent(system_msg, model=model, model_config=model_config)
 
     assert str(assistant) == ("ChatAgent(doctor, " f"RoleType.ASSISTANT, {str(model)})")
 
     assistant.reset()
     user_msg = BaseMessage(
-        role_name="Patient", role_type=RoleType.USER, meta_dict={}, content="Hello!",
+        role_name="Patient", role_type=RoleType.USER, meta_dict=dict(), content="Hello!"
     )
     assistant_response = assistant.step(user_msg)
 
@@ -57,7 +57,7 @@ def test_chat_agent(model: ModelType):
     user_msg = BaseMessage(
         role_name="Patient",
         role_type=RoleType.USER,
-        meta_dict={},
+        meta_dict=dict(),
         content="token" * (token_limit + 1),
     )
     assistant_response = assistant.step(user_msg)
@@ -80,12 +80,12 @@ def test_chat_agent_multiple_return_messages(n):
         meta_dict=None,
         content="You are a helpful assistant.",
     )
-    assistant = ChatAgent(system_msg, model_config=model_config)
+    assistant = PlayerAgent(system_msg, model_config=model_config)
     assistant.reset()
     user_msg = BaseMessage(
         role_name="User",
         role_type=RoleType.USER,
-        meta_dict={},
+        meta_dict=dict(),
         content="Tell me a joke.",
     )
     assistant_response = assistant.step(user_msg)
@@ -109,7 +109,7 @@ def test_chat_agent_stream_output():
     )
 
     stream_model_config = ChatGPTConfig(temperature=0, n=2, stream=True)
-    stream_assistant = ChatAgent(system_msg, model_config=stream_model_config)
+    stream_assistant = PlayerAgent(system_msg, model_config=stream_model_config)
     stream_assistant.reset()
     stream_assistant_response = stream_assistant.step(user_msg)
 
@@ -133,7 +133,7 @@ def test_set_output_language():
         meta_dict=None,
         content="You are a help assistant.",
     )
-    agent = ChatAgent(system_message=system_message, model=ModelType.GPT_3_5_TURBO)
+    agent = PlayerAgent(system_message=system_message, model=ModelType.GPT_3_5_TURBO)
     assert agent.output_language is None
 
     # Set the output language to "Arabic"
@@ -152,3 +152,10 @@ def test_set_output_language():
         "\nRegardless of the input language, you must output text in Arabic.",
     )
     assert agent.system_message.content == updated_system_message.content
+
+
+if __name__ == "__main__":
+    # test_chat_agent(ModelType.GPT_4)
+    # test_chat_agent_stream_output()
+    test_set_output_language()
+    # pytest.main()

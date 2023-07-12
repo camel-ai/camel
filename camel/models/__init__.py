@@ -17,8 +17,8 @@ from .stub_model import StubModel
 from .model_factory import ModelFactory
 
 __all__ = [
-    'BaseModelBackend',
-    'OpenAIModel',
-    'StubModel',
-    'ModelFactory',
+    "BaseModelBackend",
+    "OpenAIModel",
+    "StubModel",
+    "ModelFactory",
 ]

@@ -25,11 +25,14 @@ def critic_agent() -> CriticAgent:
             "critic",
             RoleType.CRITIC,
             None,
-            content=("You are a critic who assists in selecting an option "
-                     "and provides explanations. "
-                     "Your favorite fruit is Apple. "
-                     "You always have to choose an option."),
-        ))
+            content=(
+                "You are a critic who assists in selecting an option "
+                "and provides explanations. "
+                "Your favorite fruit is Apple. "
+                "You always have to choose an option."
+            ),
+        )
+    )
 
 
 def test_flatten_options(critic_agent: CriticAgent):
@@ -47,12 +50,14 @@ def test_flatten_options(critic_agent: CriticAgent):
             content="Banana",
         ),
     ]
-    expected_output = (f"> Proposals from user ({str(RoleType.USER)}). "
-                       "Please choose an option:\n"
-                       "Option 1:\nApple\n\n"
-                       "Option 2:\nBanana\n\n"
-                       f"Please first enter your choice ([1-{len(messages)}]) "
-                       "and then your explanation and comparison: ")
+    expected_output = (
+        f"> Proposals from user ({str(RoleType.USER)}). "
+        "Please choose an option:\n"
+        "Option 1:\nApple\n\n"
+        "Option 2:\nBanana\n\n"
+        f"Please first enter your choice ([1-{len(messages)}]) "
+        "and then your explanation and comparison: "
+    )
     assert critic_agent.flatten_options(messages) == expected_output
 
 
@@ -80,8 +85,7 @@ def test_get_option(critic_agent: CriticAgent):
         content=flatten_options,
     )
     assert critic_agent.options_dict == {"1": "Apple", "2": "Banana"}
-    assert critic_agent.get_option(
-        input_message) in critic_agent.options_dict.values()
+    assert critic_agent.get_option(input_message) in critic_agent.options_dict.values()
 
 
 def test_parse_critic(critic_agent: CriticAgent):
@@ -113,5 +117,4 @@ def test_reduce_step(critic_agent: CriticAgent):
     ]
 
     critic_response = critic_agent.reduce_step(messages)
-    assert (critic_response.msg == messages[0]) or (critic_response.msg
-                                                    == messages[1])
+    assert (critic_response.msg == messages[0]) or (critic_response.msg == messages[1])

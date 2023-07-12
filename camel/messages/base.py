@@ -45,14 +45,14 @@ class BaseMessage:
 
     @classmethod
     def make_user_message(
-            cls, role_name: str, content: str,
-            meta_dict: Optional[Dict[str, str]] = None) -> 'BaseMessage':
+        cls, role_name: str, content: str, meta_dict: Optional[Dict[str, str]] = None
+    ) -> "BaseMessage":
         return cls(role_name, RoleType.USER, meta_dict, content)
 
     @classmethod
     def make_assistant_message(
-            cls, role_name: str, content: str,
-            meta_dict: Optional[Dict[str, str]] = None) -> 'BaseMessage':
+        cls, role_name: str, content: str, meta_dict: Optional[Dict[str, str]] = None
+    ) -> "BaseMessage":
         return cls(role_name, RoleType.ASSISTANT, meta_dict, content)
 
     def create_new_instance(self, content: str) -> "BaseMessage":
@@ -65,9 +65,12 @@ class BaseMessage:
         Returns:
             BaseMessage: The new instance of :obj:`BaseMessage`.
         """
-        return self.__class__(role_name=self.role_name,
-                              role_type=self.role_type,
-                              meta_dict=self.meta_dict, content=content)
+        return self.__class__(
+            role_name=self.role_name,
+            role_type=self.role_type,
+            meta_dict=self.meta_dict,
+            content=content,
+        )
 
     def __add__(self, other: Any) -> Union["BaseMessage", Any]:
         r"""Addition operator override for :obj:`BaseMessage`.
@@ -85,7 +88,8 @@ class BaseMessage:
         else:
             raise TypeError(
                 f"Unsupported operand type(s) for +: '{type(self)}' and "
-                f"'{type(other)}'")
+                f"'{type(other)}'"
+            )
         return self.create_new_instance(combined_content)
 
     def __mul__(self, other: Any) -> Union["BaseMessage", Any]:
@@ -103,7 +107,8 @@ class BaseMessage:
         else:
             raise TypeError(
                 f"Unsupported operand type(s) for *: '{type(self)}' and "
-                f"'{type(other)}'")
+                f"'{type(other)}'"
+            )
 
     def __len__(self) -> int:
         r"""Length operator override for :obj:`BaseMessage`.
@@ -125,8 +130,9 @@ class BaseMessage:
         """
         return item in self.content
 
-    def token_len(self, role_at_backend: str,
-                  model: ModelType = ModelType.GPT_3_5_TURBO) -> int:
+    def token_len(
+        self, role_at_backend: str, model: ModelType = ModelType.GPT_3_5_TURBO
+    ) -> int:
         r"""Calculate the token length of the message for the specified model.
 
         Args:
@@ -139,11 +145,14 @@ class BaseMessage:
             int: The token length of the message.
         """
         from camel.utils import num_tokens_from_messages
+
         return num_tokens_from_messages(
-            [self.to_openai_message(role_at_backend)], model)
+            [self.to_openai_message(role_at_backend)], model
+        )
 
     def extract_text_and_code_prompts(
-            self) -> Tuple[List[TextPrompt], List[CodePrompt]]:
+        self,
+    ) -> Tuple[List[TextPrompt], List[CodePrompt]]:
         r"""Extract text and code prompts from the message content.
 
         Returns:
@@ -158,8 +167,7 @@ class BaseMessage:
         idx = 0
         start_idx = 0
         while idx < len(lines):
-            while idx < len(lines) and (
-                    not lines[idx].lstrip().startswith("```")):
+            while idx < len(lines) and (not lines[idx].lstrip().startswith("```")):
                 idx += 1
             text = "\n".join(lines[start_idx:idx]).strip()
             text_prompts.append(TextPrompt(text))

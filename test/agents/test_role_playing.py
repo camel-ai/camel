@@ -65,12 +65,19 @@ def test_role_playing_init(critic_role_name, with_critic_in_the_loop):
 @pytest.mark.model_backend
 @pytest.mark.parametrize(
     "task_type, extend_sys_msg_meta_dicts, extend_task_specify_meta_dict",
-    [(TaskType.AI_SOCIETY, None, None),
-     (TaskType.CODE, [dict(domain="science", language="python")] * 2,
-      dict(domain="science", language="python")),
-     (TaskType.MISALIGNMENT, None, None)])
-def test_role_playing_step(task_type, extend_sys_msg_meta_dicts,
-                           extend_task_specify_meta_dict):
+    [
+        (TaskType.AI_SOCIETY, None, None),
+        (
+            TaskType.CODE,
+            [dict(domain="science", language="python")] * 2,
+            dict(domain="science", language="python"),
+        ),
+        (TaskType.MISALIGNMENT, None, None),
+    ],
+)
+def test_role_playing_step(
+    task_type, extend_sys_msg_meta_dicts, extend_task_specify_meta_dict
+):
     role_playing = RolePlaying(
         assistant_role_name="AI Assistant",
         user_role_name="AI User",
@@ -80,7 +87,8 @@ def test_role_playing_step(task_type, extend_sys_msg_meta_dicts,
         extend_task_specify_meta_dict=extend_task_specify_meta_dict,
     )
     init_assistant_msg = BaseMessage.make_assistant_message(
-        role_name="AI Assistant", content="Hello")
+        role_name="AI Assistant", content="Hello"
+    )
     print(role_playing.assistant_agent.system_message)
     print(role_playing.user_agent.system_message)
 

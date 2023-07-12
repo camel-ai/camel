@@ -11,8 +11,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .role_playing import RolePlaying
+from camel.prompts import TextPrompt
+from camel.typing import RoleType
+from camel.prompts.game import GamePromptTemplateDict
 
-__all__ = [
-    "RolePlaying",
-]
+
+def test_game_prompt_template_dict():
+    template_dict = GamePromptTemplateDict()
+
+    # Test if the prompts are of the correct type
+    assert isinstance(template_dict.BEGIN_PROMPT, TextPrompt)
+    assert isinstance(template_dict.ROUND_PROMPT, TextPrompt)
+
+    # Test if the prompts are correctly added to the dictionary
+
+    assert template_dict["begin_prompt"] == template_dict.BEGIN_PROMPT
+    assert template_dict[RoleType.PLAYER] == template_dict.ROUND_PROMPT

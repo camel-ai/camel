@@ -39,15 +39,18 @@ class CodePromptTemplateDict(TextPromptDict):
     """
     GENERATE_LANGUAGES = TextPrompt(
         """List the {num_languages} most commonly used computer programming languages.
-Be concise. No explanation required.""")
+Be concise. No explanation required."""
+    )
 
     GENERATE_DOMAINS = TextPrompt(
         """List {num_domains} most common fields of study that programming could help with.
-Be concise. Sort them by alphabetical order. No explanation required.""")
+Be concise. Sort them by alphabetical order. No explanation required."""
+    )
 
     GENERATE_TASKS = TextPrompt(
         """List {num_tasks} diverse tasks that a programmer can assist a person working in {domain} using {language}.
-Be concise. Be creative.""")
+Be concise. Be creative."""
+    )
 
     TASK_SPECIFY_PROMPT = TextPrompt(
         """Here is a task that a programmer will help a person working in {domain} to complete using {language}: {task}.
@@ -70,7 +73,8 @@ Unless I say the task is completed, you should always start with:
 Solution: <YOUR_SOLUTION>
 
 <YOUR_SOLUTION> must contain {language} code and should be very specific, include detailed explanations and provide preferable implementations and examples for task-solving.
-Always end <YOUR_SOLUTION> with: Next request.""")
+Always end <YOUR_SOLUTION> with: Next request."""
+    )
 
     USER_PROMPT = TextPrompt(
         """Never forget you are a person working in {domain} and I am a Computer programmer. Never flip roles! You will always instruct me.
@@ -97,15 +101,18 @@ Now you must start to instruct me using the two ways described above.
 Do not add anything else other than your instruction and the optional corresponding input!
 Keep giving me instructions and necessary inputs until you think the task is completed.
 When the task is completed, you must only reply with a single word <CAMEL_TASK_DONE>.
-Never say <CAMEL_TASK_DONE> unless my responses have solved your task.""")
+Never say <CAMEL_TASK_DONE> unless my responses have solved your task."""
+    )
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.update({
-            "generate_languages": self.GENERATE_LANGUAGES,
-            "generate_domains": self.GENERATE_DOMAINS,
-            "generate_tasks": self.GENERATE_TASKS,
-            "task_specify_prompt": self.TASK_SPECIFY_PROMPT,
-            RoleType.ASSISTANT: self.ASSISTANT_PROMPT,
-            RoleType.USER: self.USER_PROMPT,
-        })
+        self.update(
+            {
+                "generate_languages": self.GENERATE_LANGUAGES,
+                "generate_domains": self.GENERATE_DOMAINS,
+                "generate_tasks": self.GENERATE_TASKS,
+                "task_specify_prompt": self.TASK_SPECIFY_PROMPT,
+                RoleType.ASSISTANT: self.ASSISTANT_PROMPT,
+                RoleType.USER: self.USER_PROMPT,
+            }
+        )
