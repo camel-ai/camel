@@ -12,12 +12,12 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from .base import BaseFuncs
-from .math_functions import MathFuncs
-from .search_functions import SearchFuncs
+from .openai_function import OpenAIFunction
+from .math_functions import MATH_FUNCS
+from .search_functions import SEARCH_FUNCS
 
 __all__ = [
-    'BaseFuncs',
-    'MathFuncs',
-    'SearchFuncs',
+    'OpenAIFunction',
+    'MATH_FUNCS',
+    'SEARCH_FUNCS',
 ]

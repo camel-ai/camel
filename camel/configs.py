@@ -83,9 +83,15 @@ class FuncConfig(ChatGPTConfig):
     allowing for dynamically adding functions into the functions field
 
     Args:
-        functions (List[Dict[str, str]]): A list of dictionary containing
-            information of functions that may be called in the conversaion,
-            including the function names, arguments and argument descriptions.
-            (default: :obj:`[]`)
+        functions (List[Dict]): A list of functions the model may generate JSON
+            inputs for.
+        function_call (Union[Dict, str], optional): Controls how the
+            model responds to function calls. :obj:`"none"` means the model
+            does not call a function, and responds to the end-user.
+            :obj:`"auto"` means the model can pick between an end-user or
+            calling a function. Specifying a particular function via
+            :obj:`{"name": "my_function"}` forces the model to call that
+            function. (default: :obj:`"auto"`)
     """
-    functions: List[Dict[str, str]] = field(default_factory=list)
+    functions: List[Dict] = field(default_factory=list)
+    function_call: Union[str, Dict] = "auto"
