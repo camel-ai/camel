@@ -12,9 +12,9 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .base_model import BaseModelBackend
+from .model_factory import ModelFactory
 from .openai_model import OpenAIModel
 from .stub_model import StubModel
-from .model_factory import ModelFactory
 
 __all__ = [
     'BaseModelBackend',
