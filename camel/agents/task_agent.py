@@ -54,11 +54,11 @@ class TaskSpecifyAgent(ChatAgent):
         word_limit: int = DEFAULT_WORD_LIMIT,
         output_language: Optional[str] = None,
     ) -> None:
-
         self.task_specify_prompt: Union[str, TextPrompt]
         if task_specify_prompt is None:
-            task_specify_prompt_template = PromptTemplateGenerator(
-            ).get_task_specify_prompt(task_type)
+            task_specify_prompt_template = (
+                PromptTemplateGenerator().get_task_specify_prompt(task_type)
+            )
 
             self.task_specify_prompt = task_specify_prompt_template.format(
                 word_limit=word_limit
@@ -103,18 +103,17 @@ class TaskSpecifyAgent(ChatAgent):
         )
 
         if meta_dict is not None:
-            self.task_specify_prompt = (
-                self.task_specify_prompt.format(**meta_dict)
+            self.task_specify_prompt = self.task_specify_prompt.format(
+                **meta_dict
             )
 
         task_msg = BaseMessage.make_user_message(
             role_name="Task Specifier", content=self.task_specify_prompt
         )
         specifier_response = self.step(task_msg)
-        if (
-            specifier_response.msgs is None
-            or len(specifier_response.msgs) == 0
-        ):
+        if specifier_response.msgs is None or len(
+            specifier_response.msgs
+        ) == 0:
             raise RuntimeError("Task specification failed.")
         specified_task_msg = specifier_response.msgs[0]
 
@@ -147,7 +146,6 @@ class TaskPlannerAgent(ChatAgent):
         model_config: Any = None,
         output_language: Optional[str] = None,
     ) -> None:
-
         self.task_planner_prompt = TextPrompt(
             "Divide this task into subtasks: {task}. Be concise."
         )

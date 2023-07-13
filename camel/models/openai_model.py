@@ -45,6 +45,7 @@ class OpenAIModel(BaseModelBackend):
             Dict[str, Any]: Response in the OpenAI API format.
         """
         import openai
+
         messages_openai: List[OpenAIMessage] = messages
         response = openai.ChatCompletion.create(
             messages=messages_openai, model=self.model_type.value,
@@ -65,4 +66,4 @@ class OpenAIModel(BaseModelBackend):
         Returns:
             bool: Whether the model is in stream mode.
         """
-        return self.model_config_dict.get('stream', False)
+        return self.model_config_dict.get("stream", False)

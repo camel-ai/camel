@@ -24,15 +24,15 @@ from camel.prompts.task_prompt_template import TaskPromptTemplateDict
 from camel.prompts.translation import TranslationPromptTemplateDict
 
 __all__ = [
-    'TextPrompt',
-    'CodePrompt',
-    'TextPromptDict',
-    'AISocietyPromptTemplateDict',
-    'CodePromptTemplateDict',
-    'MisalignmentPromptTemplateDict',
-    'TranslationPromptTemplateDict',
-    'EvaluationPromptTemplateDict',
-    'TaskPromptTemplateDict',
-    'PromptTemplateGenerator',
-    'SolutionExtractionPromptTemplateDict',
+    "TextPrompt",
+    "CodePrompt",
+    "TextPromptDict",
+    "AISocietyPromptTemplateDict",
+    "CodePromptTemplateDict",
+    "MisalignmentPromptTemplateDict",
+    "TranslationPromptTemplateDict",
+    "EvaluationPromptTemplateDict",
+    "TaskPromptTemplateDict",
+    "PromptTemplateGenerator",
+    "SolutionExtractionPromptTemplateDict",
 ]

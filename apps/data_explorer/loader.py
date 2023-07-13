@@ -35,7 +35,7 @@ REPO_ROOT = os.path.realpath(
 
 
 def parse(raw_chat: ChatHistory) -> Union[ParsedChatHistory, None]:
-    """ Gets the JSON raw chat data, validates it and transforms
+    """Gets the JSON raw chat data, validates it and transforms
         into an easy to work with form.
 
     Args:
@@ -94,7 +94,7 @@ def parse(raw_chat: ChatHistory) -> Union[ParsedChatHistory, None]:
 
 
 def load_zip(zip_path: str) -> AllChats:
-    """ Load all JSONs from a zip file and parse them.
+    """Load all JSONs from a zip file and parse them.
 
     Args:
         path (str): path to the ZIP file.
@@ -115,18 +115,18 @@ def load_zip(zip_path: str) -> AllChats:
     assistant_roles_set = set()
     user_roles_set = set()
     for parsed in parsed_list:
-        assistant_roles_set.add(parsed['assistant_role'])
-        user_roles_set.add(parsed['user_role'])
+        assistant_roles_set.add(parsed["assistant_role"])
+        user_roles_set.add(parsed["user_role"])
     assistant_roles = list(sorted(assistant_roles_set))
     user_roles = list(sorted(user_roles_set))
     matrix: Dict[Tuple[str, str], Dict[str, Dict]] = dict()
     for parsed in parsed_list:
-        key = (parsed['assistant_role'], parsed['user_role'])
-        original_task: str = parsed['original_task']
+        key = (parsed["assistant_role"], parsed["user_role"])
+        original_task: str = parsed["original_task"]
         new_item = {
             k: v
             for k, v in parsed.items()
-            if k not in {'assistant_role', 'user_role', 'original_task'}
+            if k not in {"assistant_role", "user_role", "original_task"}
         }
         if key in matrix:
             matrix[key][original_task] = new_item
@@ -141,7 +141,7 @@ def load_zip(zip_path: str) -> AllChats:
 
 
 def load_datasets(path: Optional[str] = None) -> Datasets:
-    """ Load all JSONs from a set of zip files and parse them.
+    """Load all JSONs from a set of zip files and parse them.
 
     Args:
         path (str): path to the folder with ZIP datasets.

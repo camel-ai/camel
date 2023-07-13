@@ -55,11 +55,13 @@ def test_base_message_token_len(base_message: BaseMessage):
 
 def test_extract_text_and_code_prompts():
     base_message = BaseMessage(
-        role_name="test_role_name", role_type=RoleType.USER, meta_dict=dict(),
+        role_name="test_role_name",
+        role_type=RoleType.USER,
+        meta_dict=dict(),
         content="This is a text prompt.\n\n"
         "```python\nprint('This is a code prompt')\n```\n"
         "This is another text prompt.\n\n"
-        "```c\nprintf(\"This is another code prompt\");\n```"
+        '```c\nprintf("This is another code prompt");\n```',
     )
     text_prompts, code_prompts = base_message.extract_text_and_code_prompts()
 
@@ -73,7 +75,7 @@ def test_extract_text_and_code_prompts():
     assert isinstance(code_prompts[0], CodePrompt)
     assert isinstance(code_prompts[1], CodePrompt)
     assert code_prompts[0] == "print('This is a code prompt')"
-    assert code_prompts[1] == "printf(\"This is another code prompt\");"
+    assert code_prompts[1] == 'printf("This is another code prompt");'
     assert code_prompts[0].code_type == "python"
     assert code_prompts[1].code_type == "c"
 
@@ -124,5 +126,6 @@ def test_base_message():
     assert dictionary == {
         "role_name": role_name,
         "role_type": role_type.name,
-        **(meta_dict or {}), "content": content
+        **(meta_dict or {}),
+        "content": content,
     }

@@ -48,14 +48,14 @@ class BaseMessage:
     def make_user_message(
         cls, role_name: str, content: str,
         meta_dict: Optional[Dict[str, str]] = None
-    ) -> 'BaseMessage':
+    ) -> "BaseMessage":
         return cls(role_name, RoleType.USER, meta_dict, content)
 
     @classmethod
     def make_assistant_message(
         cls, role_name: str, content: str,
         meta_dict: Optional[Dict[str, str]] = None
-    ) -> 'BaseMessage':
+    ) -> "BaseMessage":
         return cls(role_name, RoleType.ASSISTANT, meta_dict, content)
 
     def create_new_instance(self, content: str) -> "BaseMessage":
@@ -69,8 +69,10 @@ class BaseMessage:
             BaseMessage: The new instance of :obj:`BaseMessage`.
         """
         return self.__class__(
-            role_name=self.role_name, role_type=self.role_type,
-            meta_dict=self.meta_dict, content=content
+            role_name=self.role_name,
+            role_type=self.role_type,
+            meta_dict=self.meta_dict,
+            content=content,
         )
 
     def __add__(self, other: Any) -> Union["BaseMessage", Any]:
@@ -146,12 +148,13 @@ class BaseMessage:
             int: The token length of the message.
         """
         from camel.utils import num_tokens_from_messages
+
         return num_tokens_from_messages(
             [self.to_openai_message(role_at_backend)], model
         )
 
     def extract_text_and_code_prompts(
-        self
+        self,
     ) -> Tuple[List[TextPrompt], List[CodePrompt]]:
         r"""Extract text and code prompts from the message content.
 

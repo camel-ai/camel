@@ -43,7 +43,7 @@ class StubModel(BaseModelBackend):
             choices=[
                 dict(
                     finish_reason="stop",
-                    message=dict(content=ARBITRARY_STRING, role="assistant")
+                    message=dict(content=ARBITRARY_STRING, role="assistant"),
                 )
             ],
         )

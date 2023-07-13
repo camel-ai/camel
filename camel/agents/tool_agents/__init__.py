@@ -17,6 +17,6 @@ from camel.agents.tool_agents.hugging_face_tool_agent import (
 )
 
 __all__ = [
-    'BaseToolAgent',
-    'HuggingFaceToolAgent',
+    "BaseToolAgent",
+    "HuggingFaceToolAgent",
 ]

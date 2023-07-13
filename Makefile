@@ -111,6 +111,7 @@ pre-commit: pre-commit-install
 
 format: py-format-install
 	$(PYTHON) -m isort --project $(PROJECT_PATH) $(PYTHON_FILES)
+	$(PYTHON) -m black $(PYTHON_FILES) 
 	$(PYTHON) -m ruff check . --fix --exit-zero
 
 clean-py:

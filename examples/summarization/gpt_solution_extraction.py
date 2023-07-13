@@ -27,18 +27,22 @@ from camel.prompts import SolutionExtractionPromptTemplateDict
 from camel.typing import ModelType, RoleType
 
 parser = argparse.ArgumentParser(
-    description='Arguments for conversation summarization.'
+    description="Arguments for conversation summarization."
 )
 parser.add_argument(
-    '--json_dir', type=str, help='Directory containing original json files',
-    default='../camel/camel_data/ai_society'
+    "--json_dir",
+    type=str,
+    help="Directory containing original json files",
+    default="../camel/camel_data/ai_society",
 )
 parser.add_argument(
-    '--solution_dir', type=str, help='Directory for solution json files',
-    default='../camel/camel_data/ai_society_solution_extraction'
+    "--solution_dir",
+    type=str,
+    help="Directory for solution json files",
+    default="../camel/camel_data/ai_society_solution_extraction",
 )
 parser.add_argument(
-    '--seed', type=int, help='Seed for reproducibility', default=10
+    "--seed", type=int, help="Seed for reproducibility", default=10
 )
 
 
@@ -79,20 +83,22 @@ def flatten_conversation(conversation: Dict) -> str:
 
     """
 
-    num_messages = conversation['num_messages']
+    num_messages = conversation["num_messages"]
     assert num_messages >= 2
-    role_1 = conversation['message_1']['role_name']
-    role_2 = conversation['message_2']['role_name']
-    task = conversation['specified_task']
+    role_1 = conversation["message_1"]["role_name"]
+    role_2 = conversation["message_2"]["role_name"]
+    task = conversation["specified_task"]
 
     messages = []
     for i in range(1, num_messages + 1):
-        if conversation[f'message_{i}']['role_name'] == role_1:
-            message = f"User ({role_1}): " + conversation[f'message_{i}'][
-                'content']
-        elif conversation[f'message_{i}']['role_name'] == role_2:
-            message = f"Assistant ({role_2}): " + conversation[f'message_{i}'][
-                'content']
+        if conversation[f"message_{i}"]["role_name"] == role_1:
+            message = f"User ({role_1}): " + conversation[f"message_{i}"][
+                "content"]
+        elif conversation[f"message_{i}"]["role_name"] == role_2:
+            message = (
+                f"Assistant ({role_2}): " +
+                conversation[f"message_{i}"]["content"]
+            )
         else:
             raise ValueError(
                 "Unknown role name: "
@@ -100,7 +106,7 @@ def flatten_conversation(conversation: Dict) -> str:
             )
         messages.append(message)
 
-    joined_messages = '\n'.join(messages)
+    joined_messages = "\n".join(messages)
     formatted_data = f"Task: {task}\n{joined_messages}"
 
     return formatted_data
@@ -115,10 +121,11 @@ def format_combination(combination: Tuple[int, int, int]):
 
 
 def solution_extraction(
-    conversation: Dict, flattened_conversation: str, file_name: str,
-    args: argparse.Namespace
+    conversation: Dict,
+    flattened_conversation: str,
+    file_name: str,
+    args: argparse.Namespace,
 ) -> None:
-
     solution_extraction_template = SolutionExtractionPromptTemplateDict()
     assistant_sys_msg_prompt = solution_extraction_template[RoleType.ASSISTANT]
 
@@ -141,10 +148,10 @@ def solution_extraction(
         os.makedirs(args.solution_dir)
 
     # Append to the original JSON conversation file
-    conversation['solution_extraction'] = assistant_response.msg.content
+    conversation["solution_extraction"] = assistant_response.msg.content
 
     # Save new dictionary as JSON file
-    save_path = os.path.join(args.solution_dir, f'{file_name}.json')
+    save_path = os.path.join(args.solution_dir, f"{file_name}.json")
     with open(save_path, "w") as f:
         json.dump(conversation, f)
 
@@ -206,8 +213,11 @@ def main():
             flattened_conversation = flatten_conversation(conversation)
             futures.append(
                 executor.submit(
-                    solution_extraction, conversation, flattened_conversation,
-                    file_name, args
+                    solution_extraction,
+                    conversation,
+                    flattened_conversation,
+                    file_name,
+                    args,
                 )
             )
 

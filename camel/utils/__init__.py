@@ -24,13 +24,13 @@ from camel.utils.functions import (
 from camel.utils.python_interpreter import PythonInterpreter
 
 __all__ = [
-    'get_model_encoding',
-    'count_tokens_openai_chat_models',
-    'num_tokens_from_messages',
-    'openai_api_key_required',
-    'print_text_animated',
-    'get_prompt_template_key_words',
-    'get_first_int',
-    'download_tasks',
-    'PythonInterpreter',
+    "get_model_encoding",
+    "count_tokens_openai_chat_models",
+    "num_tokens_from_messages",
+    "openai_api_key_required",
+    "print_text_animated",
+    "get_prompt_template_key_words",
+    "get_first_int",
+    "download_tasks",
+    "PythonInterpreter",
 ]

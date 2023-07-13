@@ -26,7 +26,7 @@ class InterpreterError(ValueError):
     pass
 
 
-class PythonInterpreter():
+class PythonInterpreter:
     r"""A customized python interpreter to control the execution of
     LLM-generated codes. The interpreter makes sure the code can only execute
     functions given in action space and import white list. It also supports
@@ -80,8 +80,9 @@ class PythonInterpreter():
     """
 
     def __init__(
-        self, action_space: Dict[str, Any],
-        import_white_list: Optional[List[str]] = None
+        self,
+        action_space: Dict[str, Any],
+        import_white_list: Optional[List[str]] = None,
     ) -> None:
         self.action_space = action_space
         self.state = self.action_space.copy()
@@ -89,10 +90,13 @@ class PythonInterpreter():
         self.import_white_list = import_white_list or []
 
     def execute(
-        self, code: str, state: Optional[Dict[str, Any]] = None,
-        fuzz_state: Optional[Dict[str, Any]] = None, keep_state: bool = True
+        self,
+        code: str,
+        state: Optional[Dict[str, Any]] = None,
+        fuzz_state: Optional[Dict[str, Any]] = None,
+        keep_state: bool = True,
     ) -> Any:
-        r""" Execute the input python codes in a security environment.
+        r"""Execute the input python codes in a security environment.
 
         Args:
             code (str): Generated python code to be executed.
@@ -132,10 +136,7 @@ class PythonInterpreter():
             except InterpreterError as e:
                 if not keep_state:
                     self.clear_state()
-                msg = (
-                    f"Evaluation of the code stopped at node {idx}. "
-                    f"See:\n{e}"
-                )
+                msg = f"Evaluation of the code stopped at node {idx}. " f"See:\n{e}"
                 # More information can be provided by `ast.unparse()`,
                 # which is new in python 3.9.
                 raise InterpreterError(msg)
@@ -366,7 +367,7 @@ class PythonInterpreter():
 
     def _execute_import_from(self, import_from: ast.ImportFrom):
         if import_from.module is None:
-            raise InterpreterError("\"from . import\" is not supported.")
+            raise InterpreterError('"from . import" is not supported.')
         for import_name in import_from.names:
             full_name = import_from.module + f".{import_name.name}"
             self._validate_import(full_name)
@@ -435,10 +436,8 @@ class PythonInterpreter():
         if key in self.state:
             return self.state[key]
         else:
-            close_matches = (
-                difflib.get_close_matches(
-                    key, list(self.fuzz_state.keys()), n=1
-                )
+            close_matches = difflib.get_close_matches(
+                key, list(self.fuzz_state.keys()), n=1
             )
             if close_matches:
                 return self.fuzz_state[close_matches[0]]

@@ -22,7 +22,6 @@ from google.cloud.sql.connector import Connector, IPTypes
 class DatabaseConnection:
 
     def __init__(self):
-
         INSTANCE_CONNECTION_NAME = "camel-lm:me-central1:camel-dilemma"
         print(f"Instance connection name is: {INSTANCE_CONNECTION_NAME}")
         DB_USER = "dkuser"
@@ -33,8 +32,12 @@ class DatabaseConnection:
 
         def getconn():
             conn = self.connector.connect(
-                INSTANCE_CONNECTION_NAME, "pymysql", user=DB_USER,
-                password=DB_PASS, db=DB_NAME, ip_type=IPTypes.PRIVATE
+                INSTANCE_CONNECTION_NAME,
+                "pymysql",
+                user=DB_USER,
+                password=DB_PASS,
+                db=DB_NAME,
+                ip_type=IPTypes.PRIVATE,
             )
             return conn
 
@@ -53,9 +56,10 @@ class DatabaseConnection:
                 " VALUES (:file_name, :who_is_better, NOW())"
             )
             db_conn.execute(
-                insert_stmt, parameters={
+                insert_stmt,
+                parameters={
                     "file_name": file_name,
                     "who_is_better": who_is_better,
-                }
+                },
             )
             db_conn.commit()

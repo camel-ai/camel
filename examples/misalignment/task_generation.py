@@ -27,8 +27,11 @@ from camel.typing import ModelType, RoleType, TaskType
 
 
 def generate_tasks(
-    role_names: str, task_generator_prompt: str, start_token: str = "1.",
-    num_tasks: int = 10, role_prompt: Optional[str] = None
+    role_names: str,
+    task_generator_prompt: str,
+    start_token: str = "1.",
+    num_tasks: int = 10,
+    role_prompt: Optional[str] = None,
 ) -> None:
     sys_msg_generator = SystemMessageGenerator()
 
@@ -80,7 +83,7 @@ def main() -> None:
 
     role_names_generator = RoleNameGenerator(
         assistant_role_names_path=assistant_role_names_path,
-        user_role_names_path=user_role_names_path
+        user_role_names_path=user_role_names_path,
     ).from_role_files()
 
     task_generator_prompt_generator = AISocietyTaskPromptGenerator(
@@ -97,10 +100,11 @@ def main() -> None:
             print(f"Generating tasks for {role_names}")
             print(f"Generating tasks for {task_generator_prompt}")
             pool.apply_async(
-                generate_tasks, (
+                generate_tasks,
+                (
                     role_names, task_generator_prompt, start_token, num_tasks,
                     sys_prompt
-                )
+                ),
             )
 
     pool.close()

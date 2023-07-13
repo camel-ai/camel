@@ -20,10 +20,11 @@ from camel.configs import ChatGPTConfig
 from camel.typing import ModelType, TaskType
 
 parametrize = pytest.mark.parametrize(
-    'model', [
+    "model",
+    [
         ModelType.STUB,
         pytest.param(None, marks=pytest.mark.model_backend),
-    ]
+    ],
 )
 
 
@@ -36,9 +37,9 @@ def test_task_specify_ai_society_agent(model: Optional[ModelType]):
     )
     specified_task_prompt = task_specify_agent.run(
         original_task_prompt,
-        meta_dict=dict(assistant_role="Musician", user_role="Student")
+        meta_dict=dict(assistant_role="Musician", user_role="Student"),
     )
-    assert ("{" and "}" not in task_specify_agent.task_specify_prompt)
+    assert "{" and "}" not in task_specify_agent.task_specify_prompt
     print(f"Specified task prompt:\n{specified_task_prompt}\n")
 
 
@@ -55,7 +56,7 @@ def test_task_specify_code_agent(model: Optional[ModelType]):
         original_task_prompt,
         meta_dict=dict(domain="Chemistry", language="Python")
     )
-    assert ("{" and "}" not in task_specify_agent.task_specify_prompt)
+    assert "{" and "}" not in task_specify_agent.task_specify_prompt
     print(f"Specified task prompt:\n{specified_task_prompt}\n")
 
 

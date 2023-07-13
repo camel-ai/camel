@@ -114,8 +114,10 @@ class SystemMessageGenerator:
         sys_prompt = self.sys_prompts[role_type]
         sys_prompt = sys_prompt.format(**meta_dict)
         return BaseMessage(
-            role_name=role_name, role_type=role_type, meta_dict=meta_dict,
-            content=sys_prompt
+            role_name=role_name,
+            role_type=role_type,
+            meta_dict=meta_dict,
+            content=sys_prompt,
         )
 
     def from_dicts(
@@ -156,9 +158,8 @@ class RoleNameGenerator:
         assistant_role_names_path: str = "data/ai_society/assistant_roles.txt",
         user_role_names_path: str = "data/ai_society/user_roles.txt",
         assistant_role_names: Optional[List[str]] = None,
-        user_role_names: Optional[List[str]] = None
+        user_role_names: Optional[List[str]] = None,
     ) -> None:
-
         if assistant_role_names is None:
             with open(assistant_role_names_path, "r") as f:
                 assistant_role_names_: List[str] = f.read().splitlines()
@@ -190,8 +191,11 @@ class AISocietyTaskPromptGenerator:
         self,
         num_tasks: int = 10,
     ) -> None:
-        self.generate_tasks_prompt = PromptTemplateGenerator(
-        ).get_generate_tasks_prompt(TaskType.AI_SOCIETY)
+        self.generate_tasks_prompt = (
+            PromptTemplateGenerator().get_generate_tasks_prompt(
+                TaskType.AI_SOCIETY
+            )
+        )
 
         self.num_tasks = num_tasks
 
@@ -199,7 +203,7 @@ class AISocietyTaskPromptGenerator:
     def from_role_files(
         self,
         assistant_role_names_path: str = "data/ai_society/assistant_roles.txt",
-        user_role_names_path: str = "data/ai_society/user_roles.txt"
+        user_role_names_path: str = "data/ai_society/user_roles.txt",
     ) -> Generator[Tuple[str, Tuple[str, str]], None, None]:
         roles_generator = RoleNameGenerator(
             assistant_role_names_path, user_role_names_path
@@ -230,7 +234,6 @@ class SingleTxtGenerator:
         self,
         text_file_path: str,
     ) -> None:
-
         with open(text_file_path, "r") as f:
             data_list: List[str] = f.read().splitlines()
             self.data_list = [
@@ -248,15 +251,16 @@ class CodeTaskPromptGenerator:
         self,
         num_tasks: int = 50,
     ) -> None:
-
-        self.generate_tasks_prompt = PromptTemplateGenerator(
-        ).get_generate_tasks_prompt(TaskType.CODE)
+        self.generate_tasks_prompt = (
+            PromptTemplateGenerator().get_generate_tasks_prompt(TaskType.CODE)
+        )
 
         self.num_tasks = num_tasks
 
     def from_role_files(
-        self, languages_path: str = "data/code/languages.txt",
-        domains_path: str = "data/code/domains.txt"
+        self,
+        languages_path: str = "data/code/languages.txt",
+        domains_path: str = "data/code/domains.txt",
     ) -> Generator[Tuple[TextPrompt, str, str], None, None]:
         language_generator = SingleTxtGenerator(languages_path
                                                 ).from_role_files()

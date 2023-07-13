@@ -105,7 +105,6 @@ class ChatAgent(BaseAgent):
         message_window_size: Optional[int] = None,
         output_language: Optional[str] = None,
     ) -> None:
-
         self.system_message: BaseMessage = system_message
         self.role_name: str = system_message.role_name
         self.role_type: RoleType = system_message.role_type
@@ -113,9 +112,7 @@ class ChatAgent(BaseAgent):
         if self.output_language is not None:
             self.set_output_language(self.output_language)
 
-        self.model: ModelType = (
-            model if model is not None else ModelType.GPT_3_5_TURBO
-        )
+        self.model: ModelType = model if model is not None else ModelType.GPT_3_5_TURBO
         self.model_config: ChatGPTConfig = model_config or ChatGPTConfig()
         self.message_window_size: Optional[int] = message_window_size
 
@@ -151,11 +148,9 @@ class ChatAgent(BaseAgent):
             BaseMessage: The updated system message object.
         """
         self.output_language = output_language
-        content = (
-            self.system_message.content + (
-                "\nRegardless of the input language, "
-                f"you must output text in {output_language}."
-            )
+        content = self.system_message.content + (
+            "\nRegardless of the input language, "
+            f"you must output text in {output_language}."
         )
         self.system_message = self.system_message.create_new_instance(content)
         return self.system_message
@@ -191,7 +186,7 @@ class ChatAgent(BaseAgent):
         r"""Initializes the stored messages list with the initial system
         message.
         """
-        self.stored_messages = [ChatRecord('system', self.system_message)]
+        self.stored_messages = [ChatRecord("system", self.system_message)]
 
     def update_messages(self, role: str,
                         message: BaseMessage) -> List[ChatRecord]:
@@ -204,7 +199,7 @@ class ChatAgent(BaseAgent):
         Returns:
             List[BaseMessage]: The updated stored messages.
         """
-        if role not in {'system', 'user', 'assistant'}:
+        if role not in {"system", "user", "assistant"}:
             raise ValueError(f"Unsupported role {role}")
         self.stored_messages.append(ChatRecord(role, message))
         return self.stored_messages
@@ -218,7 +213,7 @@ class ChatAgent(BaseAgent):
             message (BaseMessage): An external message to be added as an
                 assistant response.
         """
-        self.stored_messages.append(ChatRecord('assistant', message))
+        self.stored_messages.append(ChatRecord("assistant", message))
 
     @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     @openai_api_key_required
@@ -240,11 +235,12 @@ class ChatAgent(BaseAgent):
                 a boolean indicating whether the chat session has terminated,
                 and information about the chat session.
         """
-        messages = self.update_messages('user', input_message)
-        if self.message_window_size is not None and len(
-            messages
-        ) > self.message_window_size:
-            messages = [ChatRecord('system', self.system_message)
+        messages = self.update_messages("user", input_message)
+        if (
+            self.message_window_size is not None
+            and len(messages) > self.message_window_size
+        ):
+            messages = [ChatRecord("system", self.system_message)
                         ] + messages[-self.message_window_size:]
         openai_messages = [record.to_openai_message() for record in messages]
         num_tokens = num_tokens_from_messages(openai_messages, self.model)
@@ -256,11 +252,19 @@ class ChatAgent(BaseAgent):
             response = self.model_backend.run(openai_messages)
             self.validate_model_response(response)
             if not self.model_backend.stream:
-                output_messages, finish_reasons, usage_dict, response_id = \
-                    self.handle_batch_response(response)
+                (
+                    output_messages,
+                    finish_reasons,
+                    usage_dict,
+                    response_id,
+                ) = self.handle_batch_response(response)
             else:
-                output_messages, finish_reasons, usage_dict, response_id = \
-                    self.handle_stream_response(response, num_tokens)
+                (
+                    output_messages,
+                    finish_reasons,
+                    usage_dict,
+                    response_id,
+                ) = self.handle_stream_response(response, num_tokens)
             info = self.get_info(
                 response_id,
                 usage_dict,
@@ -303,8 +307,10 @@ class ChatAgent(BaseAgent):
         output_messages: List[BaseMessage] = []
         for choice in response["choices"]:
             chat_message = BaseMessage(
-                role_name=self.role_name, role_type=self.role_type,
-                meta_dict=dict(), content=choice["message"]['content']
+                role_name=self.role_name,
+                role_type=self.role_type,
+                meta_dict=dict(),
+                content=choice["message"]["content"],
             )
             output_messages.append(chat_message)
         finish_reasons = [
@@ -348,8 +354,10 @@ class ChatAgent(BaseAgent):
                 else:
                     finish_reasons_dict[index] = choice["finish_reason"]
                     chat_message = BaseMessage(
-                        role_name=self.role_name, role_type=self.role_type,
-                        meta_dict=dict(), content=content_dict[index]
+                        role_name=self.role_name,
+                        role_type=self.role_type,
+                        meta_dict=dict(),
+                        content=content_dict[index],
                     )
                     output_messages.append(chat_message)
         finish_reasons = [
@@ -375,8 +383,9 @@ class ChatAgent(BaseAgent):
         for message in output_messages:
             completion_tokens += len(encoding.encode(message.content))
         usage_dict = dict(
-            completion_tokens=completion_tokens, prompt_tokens=prompt_tokens,
-            total_tokens=completion_tokens + prompt_tokens
+            completion_tokens=completion_tokens,
+            prompt_tokens=prompt_tokens,
+            total_tokens=completion_tokens + prompt_tokens,
         )
         return usage_dict
 

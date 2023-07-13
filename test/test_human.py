@@ -39,7 +39,7 @@ def test_get_input(monkeypatch):
         ),
     ]
     human.display_options(msgs)
-    monkeypatch.setattr('builtins.input', lambda _: str(1))
+    monkeypatch.setattr("builtins.input", lambda _: str(1))
     assert human.get_input() == str(1)
 
 
@@ -54,6 +54,6 @@ def test_reduce_step(monkeypatch):
         ),
     ]
 
-    monkeypatch.setattr('builtins.input', lambda _: str(1))
+    monkeypatch.setattr("builtins.input", lambda _: str(1))
     human_response = human.reduce_step(msgs)
     assert human_response.msg.content == "Hello"

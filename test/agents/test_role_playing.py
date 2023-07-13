@@ -64,13 +64,16 @@ def test_role_playing_init(critic_role_name, with_critic_in_the_loop):
 
 @pytest.mark.model_backend
 @pytest.mark.parametrize(
-    "task_type, extend_sys_msg_meta_dicts, extend_task_specify_meta_dict", [
+    "task_type, extend_sys_msg_meta_dicts, extend_task_specify_meta_dict",
+    [
         (TaskType.AI_SOCIETY, None, None),
         (
-            TaskType.CODE, [dict(domain="science", language="python")] * 2,
-            dict(domain="science", language="python")
-        ), (TaskType.MISALIGNMENT, None, None)
-    ]
+            TaskType.CODE,
+            [dict(domain="science", language="python")] * 2,
+            dict(domain="science", language="python"),
+        ),
+        (TaskType.MISALIGNMENT, None, None),
+    ],
 )
 def test_role_playing_step(
     task_type, extend_sys_msg_meta_dicts, extend_task_specify_meta_dict

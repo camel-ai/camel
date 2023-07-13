@@ -56,7 +56,7 @@ class EmbodiedAgent(ChatAgent):
         logger_color: Any = Fore.MAGENTA,
     ) -> None:
         default_action_space = [
-            HuggingFaceToolAgent('hugging_face_tool_agent', model=model.value),
+            HuggingFaceToolAgent("hugging_face_tool_agent", model=model.value),
         ]
         self.action_space = action_space or default_action_space
         action_space_prompt = self.get_action_space_prompt()
@@ -145,7 +145,9 @@ class EmbodiedAgent(ChatAgent):
             Fore.RESET + f"\n> Embodied Actions:\n{content}"
         )
         message = BaseMessage(
-            input_message.role_name, input_message.role_type,
-            input_message.meta_dict, content
+            input_message.role_name,
+            input_message.role_type,
+            input_message.meta_dict,
+            content,
         )
         return ChatAgentResponse([message], response.terminated, response.info)

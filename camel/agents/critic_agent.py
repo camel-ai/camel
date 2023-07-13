@@ -107,7 +107,7 @@ class CriticAgent(ChatAgent):
                 raise RuntimeError("Critic step failed.")
 
             critic_msg = critic_response.msg
-            self.update_messages('assistant', critic_msg)
+            self.update_messages("assistant", critic_msg)
             if self.verbose:
                 print_text_animated(
                     self.logger_color + "\n> Critic response: "

@@ -24,10 +24,14 @@ from camel.typing import TaskType
 
 
 def generate_data(
-    assistant_idx: int, assistant_role_name: str, user_idx: int,
-    user_role_name: str, task_idx: int, task_prompt: str, verbose: bool = False
+    assistant_idx: int,
+    assistant_role_name: str,
+    user_idx: int,
+    user_role_name: str,
+    task_idx: int,
+    task_prompt: str,
+    verbose: bool = False,
 ) -> None:
-
     max_num_messages = 40
 
     original_task_prompt = task_prompt.replace(f"{task_idx+1}. ", "")
@@ -86,7 +90,12 @@ def generate_data(
     repeat_word_counter = 0
     repeat_word_threshold = 4
     repeat_word_list = [
-        "goodbye", "good bye", "thank", "bye", "welcome", "language model"
+        "goodbye",
+        "good bye",
+        "thank",
+        "bye",
+        "welcome",
+        "language model",
     ]
 
     assistant_instruct_counter = 0
@@ -100,7 +109,6 @@ def generate_data(
     # Set max number of messages for the chat
 
     while message_counter < max_num_messages:
-
         assistant_response, user_response = role_play_session.step(
             input_assistant_msg
         )
@@ -131,7 +139,7 @@ def generate_data(
         if user_no_instruct_word not in user_response.msg.content:
             user_no_instruct_counter += 1
             if user_no_instruct_counter == user_no_instruct_threshold:
-                message_dict['termination_reason'
+                message_dict["termination_reason"
                              ] = "user_no_instruct_threshold"
                 break
         else:
@@ -141,7 +149,7 @@ def generate_data(
         if assistant_instruct_word in assistant_response.msg.content:
             assistant_instruct_counter += 1
             if assistant_instruct_counter == assistant_instruct_threshold:
-                message_dict['termination_reason'
+                message_dict["termination_reason"
                              ] = "assistant_instruct_threshold"
                 break
         else:
@@ -149,11 +157,13 @@ def generate_data(
 
         # Condition 5: Repeat word observed
         for repeat_word in repeat_word_list:
-            if repeat_word in user_response.msg.content.lower(
-            ) or repeat_word in assistant_response.msg.content.lower():
+            if (
+                repeat_word in user_response.msg.content.lower()
+                or repeat_word in assistant_response.msg.content.lower()
+            ):
                 repeat_word_counter += 1
                 if repeat_word_counter == repeat_word_threshold:
-                    message_dict['termination_reason'
+                    message_dict["termination_reason"
                                  ] = "repeat_word_threshold"
                     break
             else:
@@ -166,7 +176,7 @@ def generate_data(
 
         # Condition 5: End token observed
         if "<CAMEL_TASK_DONE>" in user_response.msg.content:
-            message_dict['termination_reason'] = "<CAMEL_TASK_DONE>"
+            message_dict["termination_reason"] = "<CAMEL_TASK_DONE>"
             break
 
         # Save assistant message
@@ -186,7 +196,6 @@ def generate_data(
 
 
 def main() -> None:
-
     # Disable/Enable Printing
     verbose = True
 
@@ -212,7 +221,8 @@ def main() -> None:
                 (
                     f"./misalignment_data/tasks/"
                     f"{assistant_role_name}_{user_role_name}.txt"
-                ), "r"
+                ),
+                "r",
             ) as f:
                 tasks = f.read().splitlines()
 
@@ -226,16 +236,19 @@ def main() -> None:
                 assert str(num_tasks) in tasks[-1], print(tasks)
 
             for task_idx, task_prompt in enumerate(tasks):
-                id = (
-                    f"{(assistant_idx+1):03}_"
-                    f"{(user_idx+1):03}_{(task_idx+1):03}"
-                )
+                id = f"{(assistant_idx+1):03}_" f"{(user_idx+1):03}_{(task_idx+1):03}"
                 if not os.path.exists(f"./camel_data/misalignment/{id}.json"):
                     pool.apply_async(
-                        generate_data, (
-                            assistant_idx, assistant_role_name, user_idx,
-                            user_role_name, task_idx, task_prompt, verbose
-                        )
+                        generate_data,
+                        (
+                            assistant_idx,
+                            assistant_role_name,
+                            user_idx,
+                            user_role_name,
+                            task_idx,
+                            task_prompt,
+                            verbose,
+                        ),
                     )
 
     pool.close()

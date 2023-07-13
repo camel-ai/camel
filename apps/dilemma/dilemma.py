@@ -29,36 +29,44 @@ from apps.common.auto_zip import AutoZip
 
 
 def parse_arguments():
-    """ Get command line arguments. """
+    """Get command line arguments."""
 
     parser = argparse.ArgumentParser("Dilemma tool")
     parser.add_argument(
-        '--data-path', type=str, default=None,
-        help='Path to ZIP file containing JSONs'
+        "--data-path", type=str, default=None,
+        help="Path to ZIP file containing JSONs"
     )
     parser.add_argument(
-        '--no-db', dest='no_db', action='store_true',
-        help="Set in development environment"
+        "--no-db",
+        dest="no_db",
+        action="store_true",
+        help="Set in development environment",
     )
     parser.add_argument(
-        '--share', type=bool, default=False, help='Expose the web UI to Gradio'
+        "--share", type=bool, default=False, help="Expose the web UI to Gradio"
     )
     parser.add_argument(
-        '--server-name', type=str, default="0.0.0.0",
-        help='localhost for local, 0.0.0.0 (default) for public'
+        "--server-name",
+        type=str,
+        default="0.0.0.0",
+        help="localhost for local, 0.0.0.0 (default) for public",
     )
     parser.add_argument(
-        '--server-port', type=int, default=8080,
-        help='Port ot run the web page on'
+        "--server-port", type=int, default=8080,
+        help="Port ot run the web page on"
     )
     parser.add_argument(
-        '--inbrowser', type=bool, default=False,
-        help='Open the web UI in the default browser on lunch'
+        "--inbrowser",
+        type=bool,
+        default=False,
+        help="Open the web UI in the default browser on lunch",
     )
     parser.add_argument(
-        '--concurrency-count', type=int, default=10,
-        help='Number if concurrent threads at Gradio websocket queue. ' +
-        'Increase to serve more requests but keep an eye on RAM usage.'
+        "--concurrency-count",
+        type=int,
+        default=10,
+        help="Number if concurrent threads at Gradio websocket queue. " +
+        "Increase to serve more requests but keep an eye on RAM usage.",
     )
     args, unknown = parser.parse_known_args()
     if len(unknown) > 0:
@@ -72,15 +80,16 @@ def load_dataset(data_path: str) -> Dict[str, Dict[str, str]]:
     res_dict = {}
     for path, json_str in text_dict.items():
         js = json.loads(json_str)
-        if 'summary' not in js:
+        if "summary" not in js:
             continue
-        if 'gpt_solution' not in js:
+        if "gpt_solution" not in js:
             continue
-        if 'specified_task' not in js:
+        if "specified_task" not in js:
             continue
         res_dict[path] = dict(
-            summary=js['summary'], gpt_solution=js['gpt_solution'],
-            specified_task=js['specified_task']
+            summary=js["summary"],
+            gpt_solution=js["gpt_solution"],
+            specified_task=js["specified_task"],
         )
     return res_dict
 
@@ -88,7 +97,7 @@ def load_dataset(data_path: str) -> Dict[str, Dict[str, str]]:
 def construct_ui(
     blocks, dataset: Dict[str, Dict[str, str]], has_connection: bool = True
 ):
-    """ Build Gradio UI and populate with texts from JSONs.
+    """Build Gradio UI and populate with texts from JSONs.
 
     Args:
         blocks: Gradio blocks
@@ -119,8 +128,10 @@ def construct_ui(
 
     state_st = gr.State(
         dict(
-            name="n", left=dict(who="a", text="at"),
-            right=dict(who="b", text="bt"), specified_task="st"
+            name="n",
+            left=dict(who="a", text="at"),
+            right=dict(who="b", text="bt"),
+            specified_task="st",
         )
     )
 
@@ -132,28 +143,29 @@ def construct_ui(
             name, rec = "ERROR_NAME", dict(
                 summary="ERROR_TEXT", gpt_solution="ERROR_TEXT"
             )
-        specified_task = rec['specified_task']
+        specified_task = rec["specified_task"]
         lst = list(
-            (k, v) for k, v in rec.items() if k in {'summary', 'gpt_solution'}
+            (k, v) for k, v in rec.items() if k in {"summary", "gpt_solution"}
         )
         random.shuffle(lst)
         state = dict(
-            name=name, left=dict(who=lst[0][0], text=lst[0][1]),
-            right=dict(who=lst[1][0],
-                       text=lst[1][1]), specified_task=specified_task
+            name=name,
+            left=dict(who=lst[0][0], text=lst[0][1]),
+            right=dict(who=lst[1][0], text=lst[1][1]),
+            specified_task=specified_task,
         )
         return (
-            state, state['left']['text'], state['right']['text'],
+            state, state["left"]["text"], state["right"]["text"],
             specified_task
         )
 
     def record(choice: str, state):
-        assert choice in {'left', 'draw', 'right'}
-        if choice == 'draw':
-            who_is_better = 'none'
+        assert choice in {"left", "draw", "right"}
+        if choice == "draw":
+            who_is_better = "none"
         else:
-            who_is_better = state[choice]['who']
-        name = state['name']
+            who_is_better = state[choice]["who"]
+        name = state["name"]
         print(
             "choice=", choice, "who_is_better=", who_is_better, "name=", name
         )
@@ -162,20 +174,20 @@ def construct_ui(
 
     updated_controls = [state_st, left_md, right_md, specified_task_ta]
 
-    left_better_bn.click(partial(record, 'left'), state_st, None) \
-        .then(load_random, state_st, updated_controls)
+    left_better_bn.click(partial(record, "left"), state_st,
+                         None).then(load_random, state_st, updated_controls)
 
-    not_sure_bn.click(partial(record, 'draw'), state_st, None) \
-        .then(load_random, state_st, updated_controls)
+    not_sure_bn.click(partial(record, "draw"), state_st,
+                      None).then(load_random, state_st, updated_controls)
 
-    right_better_bn.click(partial(record, 'right'), state_st, None) \
-        .then(load_random, state_st, updated_controls)
+    right_better_bn.click(partial(record, "right"), state_st,
+                          None).then(load_random, state_st, updated_controls)
 
     blocks.load(load_random, state_st, updated_controls)
 
 
 def construct_blocks(data_path: str, has_connection: bool):
-    """ Construct Blocs app but do not launch it.
+    """Construct Blocs app but do not launch it.
 
     Args:
         data_path (str): Path to the ZIP dataset with JOSNs inside.
@@ -197,15 +209,18 @@ def construct_blocks(data_path: str, has_connection: bool):
 
 
 def main():
-    """ Entry point. """
+    """Entry point."""
 
     args = parse_arguments()
 
     blocks = construct_blocks(args.data_path, not args.no_db)
 
-    blocks.queue(args.concurrency_count) \
-          .launch(share=args.share, inbrowser=args.inbrowser,
-                  server_name=args.server_name, server_port=args.server_port)
+    blocks.queue(args.concurrency_count).launch(
+        share=args.share,
+        inbrowser=args.inbrowser,
+        server_name=args.server_name,
+        server_port=args.server_port,
+    )
 
     print("Exiting.")
 

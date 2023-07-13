@@ -27,7 +27,7 @@ from typing import (
 from camel.typing import RoleType
 from camel.utils.python_interpreter import PythonInterpreter
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def return_prompt_wrapper(
@@ -86,7 +86,7 @@ def wrap_prompt_functions(cls: T) -> T:
     Returns:
         type: Decorated class with wrapped functions.
     """
-    excluded_attrs = {'__init__', '__new__', '__str__', '__repr__'}
+    excluded_attrs = {"__init__", "__new__", "__str__", "__repr__"}
     for attr_name in dir(cls):
         attr_value = getattr(cls, attr_name)
         if callable(attr_value) and attr_name not in excluded_attrs:
@@ -108,12 +108,12 @@ class TextPrompt(str):
 
     @property
     def key_words(self) -> Set[str]:
-        r"""Returns a set of strings representing the keywords in the prompt.
-        """
+        r"""Returns a set of strings representing the keywords in the prompt."""
         from camel.utils import get_prompt_template_key_words
+
         return get_prompt_template_key_words(self)
 
-    def format(self, *args: Any, **kwargs: Any) -> 'TextPrompt':
+    def format(self, *args: Any, **kwargs: Any) -> "TextPrompt":
         r"""Overrides the built-in :obj:`str.format` method to allow for
         default values in the format string. This is used to allow formatting
         the partial string.
@@ -126,7 +126,7 @@ class TextPrompt(str):
             TextPrompt: A new :obj:`TextPrompt` object with the format string
                 replaced with the formatted string.
         """
-        default_kwargs = {key: '{' + f'{key}' + '}' for key in self.key_words}
+        default_kwargs = {key: "{" + f"{key}" + "}" for key in self.key_words}
         default_kwargs.update(kwargs)
         return TextPrompt(super().format(*args, **default_kwargs))
 
@@ -140,7 +140,7 @@ class CodePrompt(TextPrompt):
         code_type (str, optional): The type of code. Defaults to None.
     """
 
-    def __new__(cls, *args: Any, **kwargs: Any) -> 'CodePrompt':
+    def __new__(cls, *args: Any, **kwargs: Any) -> "CodePrompt":
         r"""Creates a new instance of the :obj:`CodePrompt` class.
 
         Args:
@@ -150,7 +150,7 @@ class CodePrompt(TextPrompt):
         Returns:
             CodePrompt: The created :obj:`CodePrompt` instance.
         """
-        code_type = kwargs.pop('code_type', None)
+        code_type = kwargs.pop("code_type", None)
         instance = super().__new__(cls, *args, **kwargs)
         instance._code_type = code_type
         return instance
@@ -173,8 +173,9 @@ class CodePrompt(TextPrompt):
         self._code_type = code_type
 
     def execute(
-        self, interpreter: Optional[PythonInterpreter] = None,
-        user_variable: Optional[Dict[str, Any]] = None
+        self,
+        interpreter: Optional[PythonInterpreter] = None,
+        user_variable: Optional[Dict[str, Any]] = None,
     ) -> Tuple[Any, PythonInterpreter]:
         r"""Executes the code string by a given python interpreter.
 
@@ -191,7 +192,7 @@ class CodePrompt(TextPrompt):
                 represents the value of the last statement (excluding "import")
                 in the code. This value could potentially be the desired result
                 of the LLM-generated code.
-    """
+        """
         # NOTE: Only supports Python code for now.
         if not interpreter:
             interpreter = PythonInterpreter(action_space=globals())
@@ -203,8 +204,7 @@ class CodePrompt(TextPrompt):
 
 # flake8: noqa :E501
 class TextPromptDict(Dict[Any, TextPrompt]):
-    r"""A dictionary class that maps from key to :obj:`TextPrompt` object.
-    """
+    r"""A dictionary class that maps from key to :obj:`TextPrompt` object."""
     EMBODIMENT_PROMPT = TextPrompt(
         """You are the physical embodiment of the {role} who is working on solving a task: {task}.
 You can do things in the physical world including browsing the Internet, reading documents, drawing images, creating videos, executing code and so on.

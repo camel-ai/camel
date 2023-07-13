@@ -14,5 +14,5 @@
 from camel.messages.base import BaseMessage  # noqa: E402
 
 __all__ = [
-    'BaseMessage',
+    "BaseMessage",
 ]

@@ -25,11 +25,11 @@ def test_get_action_space_prompt():
     meta_dict = dict(role=role_name, task="Drawing")
     sys_msg = SystemMessageGenerator().from_dict(
         meta_dict=meta_dict,
-        role_tuple=(f"{role_name}'s Embodiment", RoleType.EMBODIMENT)
+        role_tuple=(f"{role_name}'s Embodiment", RoleType.EMBODIMENT),
     )
     agent = EmbodiedAgent(
         sys_msg,
-        action_space=[HuggingFaceToolAgent('hugging_face_tool_agent')]
+        action_space=[HuggingFaceToolAgent("hugging_face_tool_agent")]
     )
     expected_prompt = "*** hugging_face_tool_agent ***:\n"
     assert agent.get_action_space_prompt().startswith(expected_prompt)
@@ -43,7 +43,7 @@ def test_step():
     meta_dict = dict(role=role_name, task="Drawing")
     sys_msg = SystemMessageGenerator().from_dict(
         meta_dict=meta_dict,
-        role_tuple=(f"{role_name}'s Embodiment", RoleType.EMBODIMENT)
+        role_tuple=(f"{role_name}'s Embodiment", RoleType.EMBODIMENT),
     )
     embodied_agent = EmbodiedAgent(sys_msg, verbose=True)
     print(embodied_agent.system_message)

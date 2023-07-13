@@ -26,10 +26,14 @@ from camel.utils import download_tasks
 
 
 def generate_data(
-    assistant_idx: int, assistant_role_name: str, user_idx: int,
-    user_role_name: str, task_idx: int, task_prompt: str, verbose: bool = False
+    assistant_idx: int,
+    assistant_role_name: str,
+    user_idx: int,
+    user_role_name: str,
+    task_idx: int,
+    task_prompt: str,
+    verbose: bool = False,
 ) -> None:
-
     max_num_messages = 40
 
     original_task_prompt = task_prompt.replace(f"{task_idx+1}. ", "")
@@ -87,7 +91,12 @@ def generate_data(
     repeat_word_counter = 0
     repeat_word_threshold = 4
     repeat_word_list = [
-        "goodbye", "good bye", "thank", "bye", "welcome", "language model"
+        "goodbye",
+        "good bye",
+        "thank",
+        "bye",
+        "welcome",
+        "language model",
     ]
 
     assistant_instruct_counter = 0
@@ -101,7 +110,6 @@ def generate_data(
     # Set max number of messages for the chat
 
     while message_counter < max_num_messages:
-
         assistant_response, user_response = role_play_session.step(
             input_assistant_msg
         )
@@ -117,20 +125,14 @@ def generate_data(
             break
 
         # Condition 2: Assistant terminates the chat
-        if (
-            assistant_response.terminated
-            and assistant_response.info is not None
-        ):
+        if assistant_response.terminated and assistant_response.info is not None:
             message_dict["termination_reason"] = (
                 f"{str(assistant_agent.role_type)}: "
                 f"{assistant_response.info['termination_reasons'][0]}"
             )
             break
 
-        assert (
-            user_response.msg is not None
-            and assistant_response.msg is not None
-        )
+        assert user_response.msg is not None and assistant_response.msg is not None
 
         if verbose:
             print(f"User:\n{user_response.msg.content}\n")
@@ -140,7 +142,7 @@ def generate_data(
         if user_no_instruct_word not in user_response.msg.content:
             user_no_instruct_counter += 1
             if user_no_instruct_counter == user_no_instruct_threshold:
-                message_dict['termination_reason'
+                message_dict["termination_reason"
                              ] = "user_no_instruct_threshold"
                 break
         else:
@@ -150,7 +152,7 @@ def generate_data(
         if assistant_instruct_word in assistant_response.msg.content:
             assistant_instruct_counter += 1
             if assistant_instruct_counter == assistant_instruct_threshold:
-                message_dict['termination_reason'
+                message_dict["termination_reason"
                              ] = "assistant_instruct_threshold"
                 break
         else:
@@ -158,11 +160,13 @@ def generate_data(
 
         # Condition 5: Repeat word observed
         for repeat_word in repeat_word_list:
-            if repeat_word in user_response.msg.content.lower(
-            ) or repeat_word in assistant_response.msg.content.lower():
+            if (
+                repeat_word in user_response.msg.content.lower()
+                or repeat_word in assistant_response.msg.content.lower()
+            ):
                 repeat_word_counter += 1
                 if repeat_word_counter == repeat_word_threshold:
-                    message_dict['termination_reason'
+                    message_dict["termination_reason"
                                  ] = "repeat_word_threshold"
                     break
             else:
@@ -170,12 +174,12 @@ def generate_data(
 
         # Save user message
         message_counter += 1
-        message_dict[f"message_{message_counter}"] = \
-            user_response.msg.to_dict()
+        message_dict[f"message_{message_counter}"] = user_response.msg.to_dict(
+        )
 
         # Condition 5: End token observed
         if "<CAMEL_TASK_DONE>" in user_response.msg.content:
-            message_dict['termination_reason'] = "<CAMEL_TASK_DONE>"
+            message_dict["termination_reason"] = "<CAMEL_TASK_DONE>"
             break
 
         # Save assistant message
@@ -202,7 +206,6 @@ def generate_data_wrapper(args):
 
 
 def main() -> None:
-
     # Disable/Enable Printing
     verbose = True
 
@@ -220,7 +223,7 @@ def main() -> None:
 
     # Chunk for parallel jobs
     try:
-        slurm_array_task_id = os.environ.get('SLURM_ARRAY_TASK_ID')
+        slurm_array_task_id = os.environ.get("SLURM_ARRAY_TASK_ID")
         if slurm_array_task_id is None:
             raise
         array_idx = int(slurm_array_task_id)
@@ -257,7 +260,8 @@ def main() -> None:
                 (
                     f"./ai_society_data/tasks/"
                     f"{assistant_role_name}_{user_role_name}.txt"
-                ), "r"
+                ),
+                "r",
             ) as f:
                 tasks = f.read().splitlines()
 
@@ -271,18 +275,21 @@ def main() -> None:
                 assert str(num_tasks) in tasks[-1], print(tasks)
 
             for task_idx, task_prompt in enumerate(tasks):
-                id = (
-                    f"{(assistant_idx+1):03}_"
-                    f"{(user_idx+1):03}_{(task_idx+1):03}"
-                )
+                id = f"{(assistant_idx+1):03}_" f"{(user_idx+1):03}_{(task_idx+1):03}"
                 if not os.path.exists(f"./camel_data/ai_society/{id}.json"):
                     pool.apply_async(
-                        generate_data_wrapper, (
+                        generate_data_wrapper,
+                        (
                             (
-                                assistant_idx, assistant_role_name, user_idx,
-                                user_role_name, task_idx, task_prompt, verbose
+                                assistant_idx,
+                                assistant_role_name,
+                                user_idx,
+                                user_role_name,
+                                task_idx,
+                                task_prompt,
+                                verbose,
                             ),
-                        )
+                        ),
                     )
 
     pool.close()

@@ -14,5 +14,5 @@
 from camel.societies.role_playing import RolePlaying
 
 __all__ = [
-    'RolePlaying',
+    "RolePlaying",
 ]

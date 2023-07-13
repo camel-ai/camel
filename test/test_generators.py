@@ -40,8 +40,9 @@ def test_system_message_generator():
     sys_msg_generator.from_dicts(
         [
             dict(
-                assistant_role="chatbot", user_role="doctor",
-                task="Analyze a patient's medical report"
+                assistant_role="chatbot",
+                user_role="doctor",
+                task="Analyze a patient's medical report",
             )
         ] * 2,
         role_tuples=[

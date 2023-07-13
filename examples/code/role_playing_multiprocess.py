@@ -35,11 +35,12 @@ def init_chat(
 
     # Send the system messages again to the agents using chat messages
     assistant_msg = BaseMessage.make_assistant_message(
-        role_name=assistant_agent.role_name, content=(
+        role_name=assistant_agent.role_name,
+        content=(
             f"{user_sys_msg.content}. "
             "Now start to give me instructions one by one. "
             "Only reply with Instruction and Input."
-        )
+        ),
     )
 
     user_msg = BaseMessage.make_user_message(
@@ -51,10 +52,13 @@ def init_chat(
 
 
 def generate_data(
-    language_idx: int, language_name: str, domain_idx: int, domain_name: str,
-    task_idx: int, task_prompt: str
+    language_idx: int,
+    language_name: str,
+    domain_idx: int,
+    domain_name: str,
+    task_idx: int,
+    task_prompt: str,
 ) -> None:
-
     max_num_messages = 40
 
     # Remove number from task prompt
@@ -115,7 +119,12 @@ def generate_data(
     repeat_word_counter = 0
     repeat_word_threshold = 4
     repeat_word_list = [
-        "goodbye", "good bye", "thank", "bye", "welcome", "language model"
+        "goodbye",
+        "good bye",
+        "thank",
+        "bye",
+        "welcome",
+        "language model",
     ]
 
     assistant_instruct_counter = 0
@@ -129,7 +138,6 @@ def generate_data(
     # Set max number of messages for the chat
 
     while message_counter < max_num_messages:
-
         user_response = user_agent.step(input_assistant_msg)
 
         # Condition 1: User terminates the chat
@@ -160,7 +168,7 @@ def generate_data(
         if user_no_instruct_word not in user_response.msg.content:
             user_no_instruct_counter += 1
             if user_no_instruct_counter == user_no_instruct_threshold:
-                message_dict['termination_reason'
+                message_dict["termination_reason"
                              ] = "user_no_instruct_threshold"
                 break
         else:
@@ -170,7 +178,7 @@ def generate_data(
         if assistant_instruct_word in assistant_response.msg.content:
             assistant_instruct_counter += 1
             if assistant_instruct_counter == assistant_instruct_threshold:
-                message_dict['termination_reason'
+                message_dict["termination_reason"
                              ] = "assistant_instruct_threshold"
                 break
         else:
@@ -178,11 +186,13 @@ def generate_data(
 
         # Condition 5: Repeat word observed
         for repeat_word in repeat_word_list:
-            if repeat_word in user_response.msg.content.lower(
-            ) or repeat_word in assistant_response.msg.content.lower():
+            if (
+                repeat_word in user_response.msg.content.lower()
+                or repeat_word in assistant_response.msg.content.lower()
+            ):
                 repeat_word_counter += 1
                 if repeat_word_counter == repeat_word_threshold:
-                    message_dict['termination_reason'
+                    message_dict["termination_reason"
                                  ] = "repeat_word_threshold"
                     break
             else:
@@ -195,7 +205,7 @@ def generate_data(
 
         # Condition 5: End token observed
         if "<CAMEL_TASK_DONE>" in user_response.msg.content:
-            message_dict['termination_reason'] = "<CAMEL_TASK_DONE>"
+            message_dict["termination_reason"] = "<CAMEL_TASK_DONE>"
             break
 
         # Save assistant message
@@ -217,7 +227,6 @@ def generate_data(
 
 
 def main() -> None:
-
     # Define the folder path
     folder_path = "./code_data/"
 
@@ -231,7 +240,7 @@ def main() -> None:
 
     # Chunk for parallel jobs
     try:
-        slurm_array_task_id = os.environ.get('SLURM_ARRAY_TASK_ID')
+        slurm_array_task_id = os.environ.get("SLURM_ARRAY_TASK_ID")
         if not isinstance(slurm_array_task_id, str):
             raise TypeError()
         array_idx = int(slurm_array_task_id)
@@ -278,16 +287,18 @@ def main() -> None:
                 assert str(num_tasks) in tasks[-1], print(tasks)
 
             for task_idx, task_prompt in enumerate(tasks):
-                id = (
-                    f"{(language_idx+1):03}_"
-                    f"{(domain_idx+1):03}_{(task_idx+1):03}"
-                )
+                id = f"{(language_idx+1):03}_" f"{(domain_idx+1):03}_{(task_idx+1):03}"
                 if not os.path.exists(f"./camel_data/code/{id}.json"):
                     pool.apply_async(
-                        generate_data, (
-                            language_idx, language_name, domain_idx,
-                            domain_name, task_idx, task_prompt
-                        )
+                        generate_data,
+                        (
+                            language_idx,
+                            language_name,
+                            domain_idx,
+                            domain_name,
+                            task_idx,
+                            task_prompt,
+                        ),
                     )
 
     pool.close()

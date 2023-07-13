@@ -26,11 +26,11 @@ def main():
     meta_dict = dict(role=role_name, task="Drawing")
     sys_msg = SystemMessageGenerator().from_dict(
         meta_dict=meta_dict,
-        role_tuple=(f"{role_name}'s Embodiment", RoleType.EMBODIMENT)
+        role_tuple=(f"{role_name}'s Embodiment", RoleType.EMBODIMENT),
     )
     action_space = [
         HuggingFaceToolAgent(
-            'hugging_face_tool_agent',
+            "hugging_face_tool_agent",
             model=ModelType.GPT_4.value,
             remote=True,
         )

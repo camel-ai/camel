@@ -17,7 +17,7 @@ from camel.prompts import PromptTemplateGenerator
 from camel.typing import TaskType
 
 
-def main(key: str = 'generate_users', num_roles: int = 50, model=None):
+def main(key: str = "generate_users", num_roles: int = 50, model=None):
     prompt_template = PromptTemplateGenerator().get_prompt_from_key(
         TaskType.AI_SOCIETY, key
     )

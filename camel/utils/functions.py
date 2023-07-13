@@ -23,7 +23,7 @@ import tiktoken
 
 from camel.typing import ModelType, OpenAIMessage, TaskType
 
-F = TypeVar('F', bound=Callable[..., Any])
+F = TypeVar("F", bound=Callable[..., Any])
 
 
 def get_model_encoding(value_for_tiktoken: str):
@@ -159,14 +159,15 @@ def openai_api_key_required(func: F) -> F:
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         from camel.agents.chat_agent import ChatAgent
+
         if not isinstance(self, ChatAgent):
             raise ValueError("Expected ChatAgent")
         if self.model == ModelType.STUB:
             return func(self, *args, **kwargs)
-        elif 'OPENAI_API_KEY' in os.environ:
+        elif "OPENAI_API_KEY" in os.environ:
             return func(self, *args, **kwargs)
         else:
-            raise ValueError('OpenAI API key not found.')
+            raise ValueError("OpenAI API key not found.")
 
     return cast(F, wrapper)
 
@@ -184,7 +185,7 @@ def print_text_animated(text, delay: float = 0.02, end: str = ""):
     for char in text:
         print(char, end=end, flush=True)
         time.sleep(delay)
-    print('\n')
+    print("\n")
 
 
 def get_prompt_template_key_words(template: str) -> Set[str]:
@@ -201,7 +202,7 @@ def get_prompt_template_key_words(template: str) -> Set[str]:
         >>> get_prompt_template_key_words('Hi, {name}! How are you {status}?')
         {'name', 'status'}
     """
-    return set(re.findall(r'{([^}]*)}', template))
+    return set(re.findall(r"{([^}]*)}", template))
 
 
 def get_first_int(string: str) -> Optional[int]:
@@ -216,7 +217,7 @@ def get_first_int(string: str) -> Optional[int]:
         int or None: The first integer number found in the string, or None if
             no integer number is found.
     """
-    match = re.search(r'\d+', string)
+    match = re.search(r"\d+", string)
     if match:
         return int(match.group())
     else:

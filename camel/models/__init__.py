@@ -17,8 +17,8 @@ from camel.models.openai_model import OpenAIModel
 from camel.models.stub_model import StubModel
 
 __all__ = [
-    'BaseModelBackend',
-    'OpenAIModel',
-    'StubModel',
-    'ModelFactory',
+    "BaseModelBackend",
+    "OpenAIModel",
+    "StubModel",
+    "ModelFactory",
 ]

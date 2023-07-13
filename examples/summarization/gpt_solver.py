@@ -50,13 +50,13 @@ def process_file(data: Dict[str, str]) -> None:
         os.makedirs(save_dir)
 
     # save result as json file
-    with open(os.path.join(save_dir, data["id"] + ".json"), 'w') as f:
+    with open(os.path.join(save_dir, data["id"] + ".json"), "w") as f:
         json.dump(data, f)
 
 
 def main():
     # read all json files in data_dir
-    files = [f for f in os.listdir(data_dir) if f.endswith('.json')]
+    files = [f for f in os.listdir(data_dir) if f.endswith(".json")]
 
     # load all json files as data list
     data_list = []

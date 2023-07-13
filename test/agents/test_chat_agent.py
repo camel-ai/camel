@@ -20,11 +20,12 @@ from camel.messages import BaseMessage
 from camel.typing import ModelType, RoleType, TaskType
 
 parametrize = pytest.mark.parametrize(
-    'model', [
+    "model",
+    [
         ModelType.STUB,
         pytest.param(ModelType.GPT_3_5_TURBO, marks=pytest.mark.model_backend),
         pytest.param(ModelType.GPT_4, marks=pytest.mark.model_backend),
-    ]
+    ],
 )
 
 
@@ -56,13 +57,15 @@ def test_chat_agent(model: ModelType):
     assert isinstance(assistant_response.terminated, bool)
     assert assistant_response.terminated is False
     assert isinstance(assistant_response.info, dict)
-    assert assistant_response.info['id'] is not None
+    assert assistant_response.info["id"] is not None
 
     assistant.reset()
     token_limit = assistant.model_token_limit
     user_msg = BaseMessage(
-        role_name="Patient", role_type=RoleType.USER, meta_dict=dict(),
-        content="token" * (token_limit + 1)
+        role_name="Patient",
+        role_type=RoleType.USER,
+        meta_dict=dict(),
+        content="token" * (token_limit + 1),
     )
     assistant_response = assistant.step(user_msg)
 
@@ -71,25 +74,27 @@ def test_chat_agent(model: ModelType):
     assert isinstance(assistant_response.terminated, bool)
     assert assistant_response.terminated is True
     assert isinstance(assistant_response.info, dict)
-    assert (
-        assistant_response.info['termination_reasons'][0] ==
-        "max_tokens_exceeded"
-    )
+    assert assistant_response.info["termination_reasons"][
+        0] == "max_tokens_exceeded"
 
 
 @pytest.mark.model_backend
-@pytest.mark.parametrize('n', [1, 2, 3])
+@pytest.mark.parametrize("n", [1, 2, 3])
 def test_chat_agent_multiple_return_messages(n):
     model_config = ChatGPTConfig(temperature=1.4, n=n)
     system_msg = BaseMessage(
-        "Assistant", RoleType.ASSISTANT, meta_dict=None,
-        content="You are a helpful assistant."
+        "Assistant",
+        RoleType.ASSISTANT,
+        meta_dict=None,
+        content="You are a helpful assistant.",
     )
     assistant = ChatAgent(system_msg, model_config=model_config)
     assistant.reset()
     user_msg = BaseMessage(
-        role_name="User", role_type=RoleType.USER, meta_dict=dict(),
-        content="Tell me a joke."
+        role_name="User",
+        role_type=RoleType.USER,
+        meta_dict=dict(),
+        content="Tell me a joke.",
     )
     assistant_response = assistant.step(user_msg)
     assert assistant_response.msgs is not None
@@ -99,12 +104,16 @@ def test_chat_agent_multiple_return_messages(n):
 @pytest.mark.model_backend
 def test_chat_agent_stream_output():
     system_msg = BaseMessage(
-        "Assistant", RoleType.ASSISTANT, meta_dict=None,
-        content="You are a helpful assistant."
+        "Assistant",
+        RoleType.ASSISTANT,
+        meta_dict=None,
+        content="You are a helpful assistant.",
     )
     user_msg = BaseMessage(
-        role_name="User", role_type=RoleType.USER, meta_dict=dict(),
-        content="Tell me a joke."
+        role_name="User",
+        role_type=RoleType.USER,
+        meta_dict=dict(),
+        content="Tell me a joke.",
     )
 
     stream_model_config = ChatGPTConfig(temperature=0, n=2, stream=True)
@@ -118,15 +127,19 @@ def test_chat_agent_stream_output():
     stream_usage = stream_assistant_response.info["usage"]
     assert stream_usage["completion_tokens"] > 0
     assert stream_usage["prompt_tokens"] > 0
-    assert stream_usage["total_tokens"] == stream_usage[
-        "completion_tokens"] + stream_usage["prompt_tokens"]
+    assert (
+        stream_usage["total_tokens"] == stream_usage["completion_tokens"] +
+        stream_usage["prompt_tokens"]
+    )
 
 
 @pytest.mark.model_backend
 def test_set_output_language():
     system_message = BaseMessage(
-        role_name="assistant", role_type=RoleType.ASSISTANT, meta_dict=None,
-        content="You are a help assistant."
+        role_name="assistant",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
+        content="You are a help assistant.",
     )
     agent = ChatAgent(
         system_message=system_message, model=ModelType.GPT_3_5_TURBO
@@ -142,8 +155,10 @@ def test_set_output_language():
 
     # Verify that the system message is updated with the new output language
     updated_system_message = BaseMessage(
-        role_name="assistant", role_type=RoleType.ASSISTANT, meta_dict=None,
+        role_name="assistant",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
         content="You are a help assistant."
-        "\nRegardless of the input language, you must output text in Arabic."
+        "\nRegardless of the input language, you must output text in Arabic.",
     )
     assert agent.system_message.content == updated_system_message.content

@@ -22,13 +22,13 @@ from camel.agents.tool_agents.hugging_face_tool_agent import (
 )
 
 __all__ = [
-    'BaseAgent',
-    'ChatAgent',
-    'ChatAgentResponse',
-    'TaskSpecifyAgent',
-    'TaskPlannerAgent',
-    'CriticAgent',
-    'BaseToolAgent',
-    'HuggingFaceToolAgent',
-    'EmbodiedAgent',
+    "BaseAgent",
+    "ChatAgent",
+    "ChatAgentResponse",
+    "TaskSpecifyAgent",
+    "TaskPlannerAgent",
+    "CriticAgent",
+    "BaseToolAgent",
+    "HuggingFaceToolAgent",
+    "EmbodiedAgent",
 ]

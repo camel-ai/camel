@@ -75,52 +75,52 @@ def test_wrap_prompt_functions():
 
 
 def test_text_prompt_key_words():
-    prompt = TextPrompt('Please enter your name and age: {name}, {age}')
-    assert prompt.key_words == {'name', 'age'}
+    prompt = TextPrompt("Please enter your name and age: {name}, {age}")
+    assert prompt.key_words == {"name", "age"}
 
-    prompt = prompt.format(name='John')
-    assert prompt.key_words == {'age'}
+    prompt = prompt.format(name="John")
+    assert prompt.key_words == {"age"}
 
     prompt = prompt.format(age=30)
     assert prompt.key_words == set()
 
 
 def test_text_prompt_format():
-    prompt = TextPrompt('Your name and age are: {name}, {age}')
+    prompt = TextPrompt("Your name and age are: {name}, {age}")
 
-    name, age = 'John', 30
+    name, age = "John", 30
     assert prompt.format(
         name=name, age=age
-    ) == 'Your name and age are: John, 30'
+    ) == "Your name and age are: John, 30"
 
     # Partial formatting
-    assert prompt.format(name=name) == 'Your name and age are: John, {age}'
+    assert prompt.format(name=name) == "Your name and age are: John, {age}"
 
 
 def test_text_prompt_manipulate():
-    prompt1 = TextPrompt('Hello, {name}!')
-    prompt2 = TextPrompt('Welcome, {name}!')
+    prompt1 = TextPrompt("Hello, {name}!")
+    prompt2 = TextPrompt("Welcome, {name}!")
 
-    prompt3 = prompt1 + ' ' + prompt2
-    assert prompt3 == 'Hello, {name}! Welcome, {name}!'
+    prompt3 = prompt1 + " " + prompt2
+    assert prompt3 == "Hello, {name}! Welcome, {name}!"
     assert isinstance(prompt3, TextPrompt)
-    assert prompt3.key_words == {'name'}
+    assert prompt3.key_words == {"name"}
 
-    prompt4 = TextPrompt(' ').join([prompt1, prompt2])
-    assert prompt4 == 'Hello, {name}! Welcome, {name}!'
+    prompt4 = TextPrompt(" ").join([prompt1, prompt2])
+    assert prompt4 == "Hello, {name}! Welcome, {name}!"
     assert isinstance(prompt4, TextPrompt)
-    assert prompt4.key_words == {'name'}
+    assert prompt4.key_words == {"name"}
 
     prompt5 = prompt4.upper()
-    assert prompt5 == 'HELLO, {NAME}! WELCOME, {NAME}!'
+    assert prompt5 == "HELLO, {NAME}! WELCOME, {NAME}!"
     assert isinstance(prompt5, TextPrompt)
-    assert prompt5.key_words == {'NAME'}
+    assert prompt5.key_words == {"NAME"}
 
 
 def test_text_prompt_dict():
     prompt_dict = TextPromptDict()
-    prompt_dict['test'] = TextPrompt('test')
-    assert prompt_dict['test'] == TextPrompt('test')
+    prompt_dict["test"] = TextPrompt("test")
+    assert prompt_dict["test"] == TextPrompt("test")
 
 
 def test_code_prompt_initialization():

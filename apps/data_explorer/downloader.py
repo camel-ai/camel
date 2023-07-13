@@ -23,7 +23,6 @@ REPO_ROOT = os.path.realpath(
 
 
 def download_data():
-
     print("Downloading...")
 
     data_dir = os.path.join(REPO_ROOT, "datasets/")
@@ -32,15 +31,19 @@ def download_data():
 
     try:
         hf_hub_download(
-            repo_id="camel-ai/ai_society", repo_type="dataset",
-            filename="ai_society_chat.zip", local_dir=data_dir,
-            local_dir_use_symlinks=False
+            repo_id="camel-ai/ai_society",
+            repo_type="dataset",
+            filename="ai_society_chat.zip",
+            local_dir=data_dir,
+            local_dir_use_symlinks=False,
         )
 
         hf_hub_download(
-            repo_id="camel-ai/code", repo_type="dataset",
-            filename="code_chat.zip", local_dir=data_dir,
-            local_dir_use_symlinks=False
+            repo_id="camel-ai/code",
+            repo_type="dataset",
+            filename="code_chat.zip",
+            local_dir=data_dir,
+            local_dir_use_symlinks=False,
         )
     except RepositoryNotFoundError:
         for name in ("ai_society_chat.zip", "code_chat.zip"):

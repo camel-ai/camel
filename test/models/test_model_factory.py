@@ -18,14 +18,15 @@ from camel.models import ModelFactory
 from camel.typing import ModelType
 
 parametrize = pytest.mark.parametrize(
-    'model', [
+    "model",
+    [
         pytest.param(ModelType.GPT_3_5_TURBO, marks=pytest.mark.model_backend),
         pytest.param(
             ModelType.GPT_3_5_TURBO_16K, marks=pytest.mark.model_backend
         ),
         pytest.param(ModelType.GPT_4, marks=pytest.mark.model_backend),
         ModelType.STUB,
-    ]
+    ],
 )
 
 
@@ -45,21 +46,21 @@ def test_model_factory(model):
     ]
     response = model_inst.run(messages)
     assert isinstance(response, dict)
-    assert 'id' in response
-    assert isinstance(response['id'], str)
-    assert 'usage' in response
-    assert isinstance(response['usage'], dict)
-    assert 'choices' in response
-    assert isinstance(response['choices'], list)
-    assert len(response['choices']) == 1
-    choice = response['choices'][0]
-    assert 'finish_reason' in choice
-    assert isinstance(choice['finish_reason'], str)
-    assert 'message' in choice
-    message = choice['message']
+    assert "id" in response
+    assert isinstance(response["id"], str)
+    assert "usage" in response
+    assert isinstance(response["usage"], dict)
+    assert "choices" in response
+    assert isinstance(response["choices"], list)
+    assert len(response["choices"]) == 1
+    choice = response["choices"][0]
+    assert "finish_reason" in choice
+    assert isinstance(choice["finish_reason"], str)
+    assert "message" in choice
+    message = choice["message"]
     assert isinstance(message, dict)
-    assert 'content' in message
-    assert isinstance(message['content'], str)
-    assert 'role' in message
-    assert isinstance(message['role'], str)
-    assert message['role'] == 'assistant'
+    assert "content" in message
+    assert isinstance(message["content"], str)
+    assert "role" in message
+    assert isinstance(message["role"], str)
+    assert message["role"] == "assistant"

@@ -21,8 +21,12 @@ from camel.typing import RoleType, TaskType
 
 
 def generate_tasks(
-    task_generator_prompt: str, language: str, domain: str,
-    start_token: str = "1.", num_tasks: int = 10, model=None
+    task_generator_prompt: str,
+    language: str,
+    domain: str,
+    start_token: str = "1.",
+    num_tasks: int = 10,
+    model=None,
 ) -> None:
     sys_msg_generator = SystemMessageGenerator(task_type=TaskType.DEFAULT)
     assistant_sys_msg = sys_msg_generator.from_dict(
@@ -64,10 +68,15 @@ def main(model=None) -> None:
             print(language, domain)
 
             pool.apply_async(
-                generate_tasks, (
-                    task_generator_prompt, language, domain, start_token,
-                    num_tasks, model
-                )
+                generate_tasks,
+                (
+                    task_generator_prompt,
+                    language,
+                    domain,
+                    start_token,
+                    num_tasks,
+                    model,
+                ),
             )
 
     pool.close()

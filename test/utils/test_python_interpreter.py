@@ -38,7 +38,7 @@ a = pt.tensor([[1., -1.], [1., -1.]])
 openai.__version__"""
     execution_res = interpreter.execute(code)
     assert torch.equal(
-        interpreter.state["a"], torch.tensor([[1., -1.], [1., -1.]])
+        interpreter.state["a"], torch.tensor([[1.0, -1.0], [1.0, -1.0]])
     )
     assert isinstance(execution_res, str)
 
@@ -47,7 +47,7 @@ def test_import_success1(interpreter):
     code = """from torch import tensor
 a = tensor([[1., -1.], [1., -1.]])"""
     execution_res = interpreter.execute(code)
-    assert torch.equal(execution_res, torch.tensor([[1., -1.], [1., -1.]]))
+    assert torch.equal(execution_res, torch.tensor([[1.0, -1.0], [1.0, -1.0]]))
 
 
 def test_import_success2(interpreter):
@@ -91,6 +91,7 @@ def test_action_space(interpreter):
 
 def test_fuzz_space(interpreter):
     from PIL import Image
+
     fuzz_state = {"image": Image.new("RGB", (256, 256))}
     code = "output_image = input_image.crop((20, 20, 100, 100))"
     execution_res = interpreter.execute(code, fuzz_state=fuzz_state)
@@ -121,7 +122,7 @@ def test_keep_state1(interpreter):
     code2 = "a = tensor([[1., -1.], [1., -1.]])"
     execution_res = interpreter.execute(code1, keep_state=True)
     execution_res = interpreter.execute(code2, keep_state=False)
-    assert torch.equal(execution_res, torch.tensor([[1., -1.], [1., -1.]]))
+    assert torch.equal(execution_res, torch.tensor([[1.0, -1.0], [1.0, -1.0]]))
     with pytest.raises(InterpreterError) as e:
         interpreter.execute(code2, keep_state=False)
     exec_msg = e.value.args[0]
