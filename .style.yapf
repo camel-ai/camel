@@ -1,3 +1,5 @@
 [style]
 based_on_style = pep8
 split_before_named_assigns = False
+dedent_closing_brackets = true
+indent_width = 4

@@ -61,7 +61,8 @@ class TaskSpecifyAgent(ChatAgent):
             ).get_task_specify_prompt(task_type)
 
             self.task_specify_prompt = task_specify_prompt_template.format(
-                word_limit=word_limit)
+                word_limit=word_limit
+            )
         else:
             self.task_specify_prompt = TextPrompt(task_specify_prompt)
 
@@ -74,8 +75,10 @@ class TaskSpecifyAgent(ChatAgent):
             content="You can make a task more specific.",
         )
 
-        super().__init__(system_message, model, model_config,
-                         output_language=output_language)
+        super().__init__(
+            system_message, model, model_config,
+            output_language=output_language
+        )
 
     def run(
         self,
@@ -96,17 +99,22 @@ class TaskSpecifyAgent(ChatAgent):
         """
         self.reset()
         self.task_specify_prompt = self.task_specify_prompt.format(
-            task=task_prompt)
+            task=task_prompt
+        )
 
         if meta_dict is not None:
-            self.task_specify_prompt = (self.task_specify_prompt.format(
-                **meta_dict))
+            self.task_specify_prompt = (
+                self.task_specify_prompt.format(**meta_dict)
+            )
 
         task_msg = BaseMessage.make_user_message(
-            role_name="Task Specifier", content=self.task_specify_prompt)
+            role_name="Task Specifier", content=self.task_specify_prompt
+        )
         specifier_response = self.step(task_msg)
-        if (specifier_response.msgs is None
-                or len(specifier_response.msgs) == 0):
+        if (
+            specifier_response.msgs is None
+            or len(specifier_response.msgs) == 0
+        ):
             raise RuntimeError("Task specification failed.")
         specified_task_msg = specifier_response.msgs[0]
 
@@ -141,7 +149,8 @@ class TaskPlannerAgent(ChatAgent):
     ) -> None:
 
         self.task_planner_prompt = TextPrompt(
-            "Divide this task into subtasks: {task}. Be concise.")
+            "Divide this task into subtasks: {task}. Be concise."
+        )
 
         system_message = BaseMessage(
             role_name="Task Planner",
@@ -150,8 +159,10 @@ class TaskPlannerAgent(ChatAgent):
             content="You are a helpful task planner.",
         )
 
-        super().__init__(system_message, model, model_config,
-                         output_language=output_language)
+        super().__init__(
+            system_message, model, model_config,
+            output_language=output_language
+        )
 
     def run(
         self,
@@ -169,10 +180,12 @@ class TaskPlannerAgent(ChatAgent):
         # TODO: Maybe include roles information.
         self.reset()
         self.task_planner_prompt = self.task_planner_prompt.format(
-            task=task_prompt)
+            task=task_prompt
+        )
 
         task_msg = BaseMessage.make_user_message(
-            role_name="Task Planner", content=self.task_planner_prompt)
+            role_name="Task Planner", content=self.task_planner_prompt
+        )
         task_response = self.step(task_msg)
 
         if task_response.msgs is None:

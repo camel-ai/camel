@@ -44,12 +44,15 @@ def update_license_in_file(
     with open(license_template_path, 'r') as f:
         new_license = f.read().strip()
 
-    maybe_existing_licenses = re.findall(r'^#.*?(?=\n)', content,
-                                         re.MULTILINE | re.DOTALL)
-    start_index = fine_license_start_line(maybe_existing_licenses,
-                                          start_line_start_with)
-    end_index = find_license_end_line(maybe_existing_licenses,
-                                      end_line_start_with)
+    maybe_existing_licenses = re.findall(
+        r'^#.*?(?=\n)', content, re.MULTILINE | re.DOTALL
+    )
+    start_index = fine_license_start_line(
+        maybe_existing_licenses, start_line_start_with
+    )
+    end_index = find_license_end_line(
+        maybe_existing_licenses, end_line_start_with
+    )
     if start_index is not None and end_index is not None:
         maybe_existing_licenses = maybe_existing_licenses[
             start_index:end_index + 1]
@@ -91,10 +94,10 @@ def update_license_in_directory(
             if file_name.endswith('.py'):
                 file_path = os.path.join(root, file_name)
                 if update_license_in_file(
-                        file_path,
-                        license_template_path,
-                        start_line_start_with,
-                        end_line_start_with,
+                    file_path,
+                    license_template_path,
+                    start_line_start_with,
+                    end_line_start_with,
                 ):
                     file_count += 1
 
@@ -106,7 +109,8 @@ if __name__ == '__main__':
         print(
             "Usage from command line: "
             "python update_license.py <directory_path> <license_template_path>"
-            "No valid input arguments found, please enter manually.")
+            "No valid input arguments found, please enter manually."
+        )
         directory_path = input("Enter directory path: ")
         license_template_path = input("Enter license template path: ")
     else:

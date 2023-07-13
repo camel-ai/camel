@@ -16,7 +16,8 @@ import os
 from apps.common.auto_zip import AutoZip
 
 REPO_ROOT = os.path.realpath(
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../.."))
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../..")
+)
 
 
 def test_dict():

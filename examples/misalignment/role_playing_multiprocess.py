@@ -23,9 +23,10 @@ from camel.societies import RolePlaying
 from camel.typing import TaskType
 
 
-def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
-                  user_role_name: str, task_idx: int, task_prompt: str,
-                  verbose: bool = False) -> None:
+def generate_data(
+    assistant_idx: int, assistant_role_name: str, user_idx: int,
+    user_role_name: str, task_idx: int, task_prompt: str, verbose: bool = False
+) -> None:
 
     max_num_messages = 40
 
@@ -38,23 +39,31 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
         with_task_specify=True,
         with_task_planner=False,
         task_type=TaskType.MISALIGNMENT,
-        task_specify_agent_kwargs=dict(model_config=ChatGPTConfig(
-            temperature=1.4)),
+        task_specify_agent_kwargs=dict(
+            model_config=ChatGPTConfig(temperature=1.4)
+        ),
     )
 
     input_assistant_msg, _ = role_play_session.init_chat()
 
     if verbose:
-        print(Fore.GREEN + "AI Assistant sys message:\n"
-              f"{role_play_session.assistant_sys_msg}\n")
-        print(Fore.BLUE +
-              f"AI User sys message:\n{role_play_session.user_sys_msg}\n")
+        print(
+            Fore.GREEN + "AI Assistant sys message:\n"
+            f"{role_play_session.assistant_sys_msg}\n"
+        )
+        print(
+            Fore.BLUE +
+            f"AI User sys message:\n{role_play_session.user_sys_msg}\n"
+        )
 
         print(Fore.YELLOW + f"Original task prompt:\n{task_prompt}\n")
-        print(Fore.CYAN + "Specified task prompt:\n"
-              f"{role_play_session.specified_task_prompt}\n")
-        print(Fore.RED +
-              f"Final task prompt:\n{role_play_session.task_prompt}\n")
+        print(
+            Fore.CYAN + "Specified task prompt:\n"
+            f"{role_play_session.specified_task_prompt}\n"
+        )
+        print(
+            Fore.RED + f"Final task prompt:\n{role_play_session.task_prompt}\n"
+        )
 
     message_counter = 0
     message_dict: Dict[str, Any] = {}
@@ -64,8 +73,8 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
 
     # Append roles to the dictionary
     # We start number from 1 not 0.
-    message_dict[
-        "role_1"] = f"{assistant_role_name}_{str(assistant_agent.role_type)}"
+    message_dict["role_1"
+                 ] = f"{assistant_role_name}_{str(assistant_agent.role_type)}"
     message_dict["role_2"] = f"{user_role_name}_{str(user_agent.role_type)}"
     message_dict[
         "id"] = f"{(assistant_idx+1):03}_{(user_idx+1):03}_{(task_idx+1):03}"
@@ -93,7 +102,8 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
     while message_counter < max_num_messages:
 
         assistant_response, user_response = role_play_session.step(
-            input_assistant_msg)
+            input_assistant_msg
+        )
 
         input_assistant_msg = assistant_response.msg
 
@@ -101,14 +111,16 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
         if user_response.terminated:
             message_dict["termination_reason"] = (
                 f"{str(user_agent.role_type)}: "
-                f"{user_response.info['termination_reasons'][0]}")
+                f"{user_response.info['termination_reasons'][0]}"
+            )
             break
 
         # Condition 2: Assistant terminates the chat
         if assistant_response.terminated:
             message_dict["termination_reason"] = (
                 f"{str(assistant_agent.role_type)}: "
-                f"{assistant_response.info['termination_reasons'][0]}")
+                f"{assistant_response.info['termination_reasons'][0]}"
+            )
             break
 
         if verbose:
@@ -119,8 +131,8 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
         if user_no_instruct_word not in user_response.msg.content:
             user_no_instruct_counter += 1
             if user_no_instruct_counter == user_no_instruct_threshold:
-                message_dict[
-                    'termination_reason'] = "user_no_instruct_threshold"
+                message_dict['termination_reason'
+                             ] = "user_no_instruct_threshold"
                 break
         else:
             user_no_instruct_counter = 0
@@ -129,8 +141,8 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
         if assistant_instruct_word in assistant_response.msg.content:
             assistant_instruct_counter += 1
             if assistant_instruct_counter == assistant_instruct_threshold:
-                message_dict[
-                    'termination_reason'] = "assistant_instruct_threshold"
+                message_dict['termination_reason'
+                             ] = "assistant_instruct_threshold"
                 break
         else:
             assistant_instruct_counter = 0
@@ -141,8 +153,8 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
             ) or repeat_word in assistant_response.msg.content.lower():
                 repeat_word_counter += 1
                 if repeat_word_counter == repeat_word_threshold:
-                    message_dict[
-                        'termination_reason'] = "repeat_word_threshold"
+                    message_dict['termination_reason'
+                                 ] = "repeat_word_threshold"
                     break
             else:
                 repeat_word_counter = 0
@@ -159,16 +171,17 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
 
         # Save assistant message
         message_counter += 1
-        message_dict[
-            f"message_{message_counter}"] = assistant_response.msg.to_dict()
+        message_dict[f"message_{message_counter}"
+                     ] = assistant_response.msg.to_dict()
 
     message_dict["num_messages"] = message_counter
 
     if message_dict["num_messages"] == max_num_messages:
         message_dict["termination_reason"] = "max_num_messages"
 
-    with open(f"./camel_data/misalignment/{message_dict['id']}.json",
-              "w") as json_file:
+    with open(
+        f"./camel_data/misalignment/{message_dict['id']}.json", "w"
+    ) as json_file:
         json.dump(message_dict, json_file)
 
 
@@ -195,9 +208,12 @@ def main() -> None:
         for user_idx, user_role_name in enumerate(user_roles):
             user_role_name = " ".join(user_role_name.split(" ")[1:])
             # Load the task list assigned for assistant and user roles
-            with open((f"./misalignment_data/tasks/"
-                       f"{assistant_role_name}_{user_role_name}.txt"),
-                      "r") as f:
+            with open(
+                (
+                    f"./misalignment_data/tasks/"
+                    f"{assistant_role_name}_{user_role_name}.txt"
+                ), "r"
+            ) as f:
                 tasks = f.read().splitlines()
 
                 # Filter out the generated response to include the tasks only
@@ -210,13 +226,17 @@ def main() -> None:
                 assert str(num_tasks) in tasks[-1], print(tasks)
 
             for task_idx, task_prompt in enumerate(tasks):
-                id = (f"{(assistant_idx+1):03}_"
-                      f"{(user_idx+1):03}_{(task_idx+1):03}")
+                id = (
+                    f"{(assistant_idx+1):03}_"
+                    f"{(user_idx+1):03}_{(task_idx+1):03}"
+                )
                 if not os.path.exists(f"./camel_data/misalignment/{id}.json"):
                     pool.apply_async(
-                        generate_data,
-                        (assistant_idx, assistant_role_name, user_idx,
-                         user_role_name, task_idx, task_prompt, verbose))
+                        generate_data, (
+                            assistant_idx, assistant_role_name, user_idx,
+                            user_role_name, task_idx, task_prompt, verbose
+                        )
+                    )
 
     pool.close()
     pool.join()

@@ -30,30 +30,41 @@ def parse_arguments():
     parser = argparse.ArgumentParser("Camel data explorer")
     parser.add_argument(
         '--data-path', type=str, default=None,
-        help='Path to the folder with ZIP datasets containing JSONs')
-    parser.add_argument('--default-dataset', type=str, default=None,
-                        help='Default dataset name selected from ZIPs')
-    parser.add_argument('--share', type=bool, default=False,
-                        help='Expose the web UI to Gradio')
+        help='Path to the folder with ZIP datasets containing JSONs'
+    )
+    parser.add_argument(
+        '--default-dataset', type=str, default=None,
+        help='Default dataset name selected from ZIPs'
+    )
+    parser.add_argument(
+        '--share', type=bool, default=False, help='Expose the web UI to Gradio'
+    )
     parser.add_argument(
         '--server-name', type=str, default="0.0.0.0",
-        help='localhost for local, 0.0.0.0 (default) for public')
-    parser.add_argument('--server-port', type=int, default=8080,
-                        help='Port ot run the web page on')
-    parser.add_argument('--inbrowser', type=bool, default=False,
-                        help='Open the web UI in the default browser on lunch')
+        help='localhost for local, 0.0.0.0 (default) for public'
+    )
+    parser.add_argument(
+        '--server-port', type=int, default=8080,
+        help='Port ot run the web page on'
+    )
+    parser.add_argument(
+        '--inbrowser', type=bool, default=False,
+        help='Open the web UI in the default browser on lunch'
+    )
     parser.add_argument(
         '--concurrency-count', type=int, default=10,
         help='Number if concurrent threads at Gradio websocket queue. ' +
-        'Increase to serve more requests but keep an eye on RAM usage.')
+        'Increase to serve more requests but keep an eye on RAM usage.'
+    )
     args, unknown = parser.parse_known_args()
     if len(unknown) > 0:
         print("Unknown args: ", unknown)
     return args
 
 
-def construct_ui(blocks, datasets: Datasets,
-                 default_dataset: Optional[str] = None):
+def construct_ui(
+    blocks, datasets: Datasets, default_dataset: Optional[str] = None
+):
     """ Build Gradio UI and populate with chat data from JSONs.
 
     Args:
@@ -86,15 +97,18 @@ def construct_ui(blocks, datasets: Datasets,
     with gr.Row().style():
         with gr.Column(scale=2):
             with gr.Row():
-                dataset_dd = gr.Dropdown(dataset_names, label="Select dataset",
-                                         value="NODEFAULT", interactive=True)
+                dataset_dd = gr.Dropdown(
+                    dataset_names, label="Select dataset", value="NODEFAULT",
+                    interactive=True
+                )
             with gr.Row():
                 disclaimer_ta = gr.Markdown(
                     "## By clicking AGREE I consent to use the dataset "
                     "for purely educational and academic purposes and "
                     "not use it for any fraudulent activity; and I take "
                     "all the responsibility if the data is used in a "
-                    "malicious application.", visible=False)
+                    "malicious application.", visible=False
+                )
             with gr.Row():
                 with gr.Column(scale=1):
                     accept_disclaimer_bn = gr.Button("AGREE", visible=False)
@@ -102,11 +116,13 @@ def construct_ui(blocks, datasets: Datasets,
                     decline_disclaimer_bn = gr.Button("DECLINE", visible=False)
             with gr.Row():
                 with gr.Column(scale=3):
-                    assistant_dd = gr.Dropdown([], label="ASSISTANT", value="",
-                                               interactive=True)
+                    assistant_dd = gr.Dropdown(
+                        [], label="ASSISTANT", value="", interactive=True
+                    )
                 with gr.Column(scale=3):
-                    user_dd = gr.Dropdown([], label="USER", value="",
-                                          interactive=True)
+                    user_dd = gr.Dropdown(
+                        [], label="USER", value="", interactive=True
+                    )
         with gr.Column(scale=1):
             gr.Markdown(
                 "## CAMEL: Communicative Agents for \"Mind\" Exploration"
@@ -116,10 +132,12 @@ def construct_ui(blocks, datasets: Datasets,
                 '<div style="display:flex; justify-content:center;">'
                 '<img src="https://raw.githubusercontent.com/lightaime/camel/'
                 'master/misc/logo.png" alt="Logo" style="max-width:50%;">'
-                '</div>')
+                '</div>'
+            )
 
-    task_dd = gr.Dropdown([], label="Original task", value="",
-                          interactive=True)
+    task_dd = gr.Dropdown(
+        [], label="Original task", value="", interactive=True
+    )
     specified_task_ta = gr.TextArea(label="Specified task", lines=2)
     chatbot = gr.Chatbot()
     accepted_st = gr.State(False)
@@ -182,8 +200,10 @@ def construct_ui(blocks, datasets: Datasets,
         if dataset_name == "misalignment" and not accepted:
             # If used did not accept the misalignment policy,
             # keep the old selection.
-            return (gr.update(value="N/A",
-                              choices=[]), gr.update(value="N/A", choices=[]))
+            return (
+                gr.update(value="N/A",
+                          choices=[]), gr.update(value="N/A", choices=[])
+            )
 
         dataset = datasets[dataset_name]
         assistant_roles = dataset['assistant_roles']
@@ -191,11 +211,14 @@ def construct_ui(blocks, datasets: Datasets,
         assistant_role = random.choice(assistant_roles) \
             if len(assistant_roles) > 0 else ""
         user_role = random.choice(user_roles) if len(user_roles) > 0 else ""
-        return (gr.update(value=assistant_role, choices=assistant_roles),
-                gr.update(value=user_role, choices=user_roles))
+        return (
+            gr.update(value=assistant_role, choices=assistant_roles),
+            gr.update(value=user_role, choices=user_roles)
+        )
 
-    def roles_dd_change(dataset_name: str, assistant_role: str,
-                        user_role: str) -> Dict:
+    def roles_dd_change(
+        dataset_name: str, assistant_role: str, user_role: str
+    ) -> Dict:
         """ Update the displayed chat upon inputs change.
 
         Args:
@@ -214,8 +237,10 @@ def construct_ui(blocks, datasets: Datasets,
             original_task = "N/A"
             original_task_options = []
 
-        choices = gr.Dropdown.update(choices=original_task_options,
-                                     value=original_task, interactive=True)
+        choices = gr.Dropdown.update(
+            choices=original_task_options, value=original_task,
+            interactive=True
+        )
         return choices
 
     def build_chat_history(messages: Dict[int, Dict]) -> List[Tuple]:
@@ -246,8 +271,10 @@ def construct_ui(blocks, datasets: Datasets,
                 pass
         return history
 
-    def task_dd_change(dataset_name: str, assistant_role: str, user_role: str,
-                       original_task: str) -> Tuple[str, List]:
+    def task_dd_change(
+        dataset_name: str, assistant_role: str, user_role: str,
+        original_task: str
+    ) -> Tuple[str, List]:
         """ Load task details and chatbot history into UI elements.
 
         Args:
@@ -300,9 +327,10 @@ def construct_ui(blocks, datasets: Datasets,
     assistant_dd.change(*func_args)
     user_dd.change(*func_args)
 
-    task_dd.change(task_dd_change,
-                   [dataset_dd, assistant_dd, user_dd, task_dd],
-                   [specified_task_ta, chatbot])
+    task_dd.change(
+        task_dd_change, [dataset_dd, assistant_dd, user_dd, task_dd],
+        [specified_task_ta, chatbot]
+    )
 
     blocks.load(set_default_dataset, None, dataset_dd)
 

@@ -35,20 +35,25 @@ def init_chat(
 
     # Send the system messages again to the agents using chat messages
     assistant_msg = BaseMessage.make_assistant_message(
-        role_name=assistant_agent.role_name,
-        content=(f"{user_sys_msg.content}. "
-                 "Now start to give me instructions one by one. "
-                 "Only reply with Instruction and Input."))
+        role_name=assistant_agent.role_name, content=(
+            f"{user_sys_msg.content}. "
+            "Now start to give me instructions one by one. "
+            "Only reply with Instruction and Input."
+        )
+    )
 
     user_msg = BaseMessage.make_user_message(
-        role_name=user_agent.role_name, content=f"{assistant_sys_msg.content}")
+        role_name=user_agent.role_name, content=f"{assistant_sys_msg.content}"
+    )
     assistant_response = assistant_agent.step(user_msg)
 
     return assistant_msg, assistant_response.msgs
 
 
-def generate_data(language_idx: int, language_name: str, domain_idx: int,
-                  domain_name: str, task_idx: int, task_prompt: str) -> None:
+def generate_data(
+    language_idx: int, language_name: str, domain_idx: int, domain_name: str,
+    task_idx: int, task_prompt: str
+) -> None:
 
     max_num_messages = 40
 
@@ -69,8 +74,10 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
 
     sys_msg_generator = SystemMessageGenerator(task_type=TaskType.CODE)
     sys_msg_meta_dicts = [
-        dict(language=language_name, domain=domain_name,
-             task=specified_task_prompt)
+        dict(
+            language=language_name, domain=domain_name,
+            task=specified_task_prompt
+        )
     ] * 2
     assistant_sys_msg, user_sys_msg = sys_msg_generator.from_dicts(
         sys_msg_meta_dicts,
@@ -80,12 +87,14 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
         ],
     )
 
-    assistant_agent = ChatAgent(assistant_sys_msg,
-                                message_window_size=max_num_messages)
+    assistant_agent = ChatAgent(
+        assistant_sys_msg, message_window_size=max_num_messages
+    )
     user_agent = ChatAgent(user_sys_msg, message_window_size=max_num_messages)
 
-    input_assistant_msg, _ = init_chat(assistant_agent, user_agent,
-                                       user_sys_msg, assistant_sys_msg)
+    input_assistant_msg, _ = init_chat(
+        assistant_agent, user_agent, user_sys_msg, assistant_sys_msg
+    )
 
     print("Assistant System Message: ", assistant_sys_msg.content)
     print("User System Message: ", user_sys_msg.content)
@@ -94,8 +103,8 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
 
     # Append roles to the dictionary
     # We start number from 1 not 0.
-    message_dict[
-        "role_1"] = f"{language_name}_{str(assistant_agent.role_type)}"
+    message_dict["role_1"
+                 ] = f"{language_name}_{str(assistant_agent.role_type)}"
     message_dict["role_2"] = f"{domain_name}_{str(user_agent.role_type)}"
     message_dict[
         "id"] = f"{(language_idx+1):03}_{(domain_idx+1):03}_{(task_idx+1):03}"
@@ -127,7 +136,8 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
         if user_response.terminated:
             message_dict["termination_reason"] = (
                 f"{str(user_agent.role_type)}: "
-                f"{user_response.info['termination_reasons'][0]}")
+                f"{user_response.info['termination_reasons'][0]}"
+            )
             break
 
         user_agent.submit_message(user_response.msg)
@@ -139,7 +149,8 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
         if assistant_response.terminated:
             message_dict["termination_reason"] = (
                 f"{str(assistant_agent.role_type)}: "
-                f"{assistant_response.info['termination_reasons'][0]}")
+                f"{assistant_response.info['termination_reasons'][0]}"
+            )
             break
 
         assistant_agent.submit_message(assistant_response.msg)
@@ -149,8 +160,8 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
         if user_no_instruct_word not in user_response.msg.content:
             user_no_instruct_counter += 1
             if user_no_instruct_counter == user_no_instruct_threshold:
-                message_dict[
-                    'termination_reason'] = "user_no_instruct_threshold"
+                message_dict['termination_reason'
+                             ] = "user_no_instruct_threshold"
                 break
         else:
             user_no_instruct_counter = 0
@@ -159,8 +170,8 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
         if assistant_instruct_word in assistant_response.msg.content:
             assistant_instruct_counter += 1
             if assistant_instruct_counter == assistant_instruct_threshold:
-                message_dict[
-                    'termination_reason'] = "assistant_instruct_threshold"
+                message_dict['termination_reason'
+                             ] = "assistant_instruct_threshold"
                 break
         else:
             assistant_instruct_counter = 0
@@ -171,8 +182,8 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
             ) or repeat_word in assistant_response.msg.content.lower():
                 repeat_word_counter += 1
                 if repeat_word_counter == repeat_word_threshold:
-                    message_dict[
-                        'termination_reason'] = "repeat_word_threshold"
+                    message_dict['termination_reason'
+                                 ] = "repeat_word_threshold"
                     break
             else:
                 repeat_word_counter = 0
@@ -189,8 +200,8 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
 
         # Save assistant message
         message_counter += 1
-        message_dict[
-            f"message_{message_counter}"] = assistant_response.msg.to_dict()
+        message_dict[f"message_{message_counter}"
+                     ] = assistant_response.msg.to_dict()
 
         input_assistant_msg = assistant_response.msg
 
@@ -199,8 +210,9 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
     if message_dict["num_messages"] == max_num_messages:
         message_dict["termination_reason"] = "max_num_messages"
 
-    with open(f"./camel_data/code/{message_dict['id']}.json",
-              "w") as json_file:
+    with open(
+        f"./camel_data/code/{message_dict['id']}.json", "w"
+    ) as json_file:
         json.dump(message_dict, json_file)
 
 
@@ -251,8 +263,9 @@ def main() -> None:
         for domain_idx, domain_name in enumerate(domains):
             domain_name = " ".join(domain_name.split(" ")[1:])
             # Load the task list assigned for assistant and user roles
-            with open(f"./code_data/tasks/{language_name}_{domain_name}.txt",
-                      "r") as f:
+            with open(
+                f"./code_data/tasks/{language_name}_{domain_name}.txt", "r"
+            ) as f:
                 tasks = f.read().splitlines()
 
                 # Filter out the generated response to include the tasks only
@@ -265,12 +278,17 @@ def main() -> None:
                 assert str(num_tasks) in tasks[-1], print(tasks)
 
             for task_idx, task_prompt in enumerate(tasks):
-                id = (f"{(language_idx+1):03}_"
-                      f"{(domain_idx+1):03}_{(task_idx+1):03}")
+                id = (
+                    f"{(language_idx+1):03}_"
+                    f"{(domain_idx+1):03}_{(task_idx+1):03}"
+                )
                 if not os.path.exists(f"./camel_data/code/{id}.json"):
-                    pool.apply_async(generate_data,
-                                     (language_idx, language_name, domain_idx,
-                                      domain_name, task_idx, task_prompt))
+                    pool.apply_async(
+                        generate_data, (
+                            language_idx, language_name, domain_idx,
+                            domain_name, task_idx, task_prompt
+                        )
+                    )
 
     pool.close()
     pool.join()

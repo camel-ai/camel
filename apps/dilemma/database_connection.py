@@ -32,9 +32,10 @@ class DatabaseConnection:
         self.connector = Connector()
 
         def getconn():
-            conn = self.connector.connect(INSTANCE_CONNECTION_NAME, "pymysql",
-                                          user=DB_USER, password=DB_PASS,
-                                          db=DB_NAME, ip_type=IPTypes.PRIVATE)
+            conn = self.connector.connect(
+                INSTANCE_CONNECTION_NAME, "pymysql", user=DB_USER,
+                password=DB_PASS, db=DB_NAME, ip_type=IPTypes.PRIVATE
+            )
             return conn
 
         self.pool = sqlalchemy.create_engine(
@@ -49,10 +50,12 @@ class DatabaseConnection:
         with self.pool.connect() as db_conn:
             insert_stmt = sqlalchemy.text(
                 "INSERT INTO choices2 (file_name, who_is_better, date)"
-                " VALUES (:file_name, :who_is_better, NOW())")
+                " VALUES (:file_name, :who_is_better, NOW())"
+            )
             db_conn.execute(
                 insert_stmt, parameters={
                     "file_name": file_name,
                     "who_is_better": who_is_better,
-                })
+                }
+            )
             db_conn.commit()

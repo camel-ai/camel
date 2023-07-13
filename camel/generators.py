@@ -74,7 +74,8 @@ class SystemMessageGenerator:
                 assistant_prompt_template.key_words
                 | user_prompt_template.key_words
                 | critic_prompt_template.key_words
-                | embodiment_prompt_template.key_words)
+                | embodiment_prompt_template.key_words
+            )
 
         if RoleType.DEFAULT not in self.sys_prompts:
             self.sys_prompts[RoleType.DEFAULT] = "You are a helpful assistant."
@@ -86,9 +87,11 @@ class SystemMessageGenerator:
             meta_dict (Dict[str, str]): The dictionary to validate.
         """
         if not set(meta_dict.keys()).issubset(self.sys_msg_meta_dict_keys):
-            raise ValueError("The keys of the meta_dict should be in "
-                             f"{self.sys_msg_meta_dict_keys}. "
-                             f"Got {set(meta_dict.keys())} instead.")
+            raise ValueError(
+                "The keys of the meta_dict should be in "
+                f"{self.sys_msg_meta_dict_keys}. "
+                f"Got {set(meta_dict.keys())} instead."
+            )
 
     def from_dict(
         self,
@@ -110,8 +113,10 @@ class SystemMessageGenerator:
         role_name, role_type = role_tuple
         sys_prompt = self.sys_prompts[role_type]
         sys_prompt = sys_prompt.format(**meta_dict)
-        return BaseMessage(role_name=role_name, role_type=role_type,
-                           meta_dict=meta_dict, content=sys_prompt)
+        return BaseMessage(
+            role_name=role_name, role_type=role_type, meta_dict=meta_dict,
+            content=sys_prompt
+        )
 
     def from_dicts(
         self,
@@ -135,7 +140,8 @@ class SystemMessageGenerator:
         """
         if len(meta_dicts) != len(role_tuples):
             raise ValueError(
-                "The number of meta_dicts and role_types should be the same.")
+                "The number of meta_dicts and role_types should be the same."
+            )
 
         return [
             self.from_dict(meta_dict, role_tuple)
@@ -145,11 +151,13 @@ class SystemMessageGenerator:
 
 class RoleNameGenerator:
 
-    def __init__(self, assistant_role_names_path:
-                 str = "data/ai_society/assistant_roles.txt",
-                 user_role_names_path: str = "data/ai_society/user_roles.txt",
-                 assistant_role_names: Optional[List[str]] = None,
-                 user_role_names: Optional[List[str]] = None) -> None:
+    def __init__(
+        self,
+        assistant_role_names_path: str = "data/ai_society/assistant_roles.txt",
+        user_role_names_path: str = "data/ai_society/user_roles.txt",
+        assistant_role_names: Optional[List[str]] = None,
+        user_role_names: Optional[List[str]] = None
+    ) -> None:
 
         if assistant_role_names is None:
             with open(assistant_role_names_path, "r") as f:
@@ -194,11 +202,13 @@ class AISocietyTaskPromptGenerator:
         user_role_names_path: str = "data/ai_society/user_roles.txt"
     ) -> Generator[Tuple[str, Tuple[str, str]], None, None]:
         roles_generator = RoleNameGenerator(
-            assistant_role_names_path, user_role_names_path).from_role_files()
+            assistant_role_names_path, user_role_names_path
+        ).from_role_files()
         for role_1, role_2 in roles_generator:
             generate_tasks_prompt = self.generate_tasks_prompt.format(
                 assistant_role=role_1, user_role=role_2,
-                num_tasks=self.num_tasks)
+                num_tasks=self.num_tasks
+            )
 
             yield (generate_tasks_prompt, (role_1, role_2))
 
@@ -208,7 +218,8 @@ class AISocietyTaskPromptGenerator:
         for role_1, role_2 in role_generator:
             generate_tasks_prompt = self.generate_tasks_prompt.format(
                 assistant_role=role_1, user_role=role_2,
-                num_tasks=self.num_tasks)
+                num_tasks=self.num_tasks
+            )
 
             yield (generate_tasks_prompt, (role_1, role_2))
 
@@ -247,15 +258,16 @@ class CodeTaskPromptGenerator:
         self, languages_path: str = "data/code/languages.txt",
         domains_path: str = "data/code/domains.txt"
     ) -> Generator[Tuple[TextPrompt, str, str], None, None]:
-        language_generator = SingleTxtGenerator(
-            languages_path).from_role_files()
+        language_generator = SingleTxtGenerator(languages_path
+                                                ).from_role_files()
 
         for language in language_generator:
-            domains_generator = SingleTxtGenerator(
-                domains_path).from_role_files()
+            domains_generator = SingleTxtGenerator(domains_path
+                                                   ).from_role_files()
             for domain in domains_generator:
                 generated_tasks_prompt = self.generate_tasks_prompt.format(
-                    language=language, domain=domain, num_tasks=self.num_tasks)
+                    language=language, domain=domain, num_tasks=self.num_tasks
+                )
                 yield generated_tasks_prompt, language, domain
 
     def from_role_generator(

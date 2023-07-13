@@ -59,7 +59,8 @@ def test_extract_text_and_code_prompts():
         content="This is a text prompt.\n\n"
         "```python\nprint('This is a code prompt')\n```\n"
         "This is another text prompt.\n\n"
-        "```c\nprintf(\"This is another code prompt\");\n```")
+        "```c\nprintf(\"This is another code prompt\");\n```"
+    )
     text_prompts, code_prompts = base_message.extract_text_and_code_prompts()
 
     assert len(text_prompts) == 2
@@ -94,8 +95,10 @@ def test_base_message():
     role = "user"
     content = "test_content"
 
-    message = BaseMessage(role_name=role_name, role_type=role_type,
-                          meta_dict=meta_dict, content=content)
+    message = BaseMessage(
+        role_name=role_name, role_type=role_type, meta_dict=meta_dict,
+        content=content
+    )
 
     assert message.role_name == role_name
     assert message.role_type == role_type

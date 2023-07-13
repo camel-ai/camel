@@ -79,16 +79,19 @@ class PythonInterpreter():
             (:obj:`.`). (default: :obj:`None`)
     """
 
-    def __init__(self, action_space: Dict[str, Any],
-                 import_white_list: Optional[List[str]] = None) -> None:
+    def __init__(
+        self, action_space: Dict[str, Any],
+        import_white_list: Optional[List[str]] = None
+    ) -> None:
         self.action_space = action_space
         self.state = self.action_space.copy()
         self.fuzz_state: Dict[str, Any] = {}
         self.import_white_list = import_white_list or []
 
-    def execute(self, code: str, state: Optional[Dict[str, Any]] = None,
-                fuzz_state: Optional[Dict[str, Any]] = None,
-                keep_state: bool = True) -> Any:
+    def execute(
+        self, code: str, state: Optional[Dict[str, Any]] = None,
+        fuzz_state: Optional[Dict[str, Any]] = None, keep_state: bool = True
+    ) -> Any:
         r""" Execute the input python codes in a security environment.
 
         Args:
@@ -129,8 +132,10 @@ class PythonInterpreter():
             except InterpreterError as e:
                 if not keep_state:
                     self.clear_state()
-                msg = (f"Evaluation of the code stopped at node {idx}. "
-                       f"See:\n{e}")
+                msg = (
+                    f"Evaluation of the code stopped at node {idx}. "
+                    f"See:\n{e}"
+                )
                 # More information can be provided by `ast.unparse()`,
                 # which is new in python 3.9.
                 raise InterpreterError(msg)
@@ -201,7 +206,8 @@ class PythonInterpreter():
             return self._execute_ast(expression.value)
         elif isinstance(expression, ast.JoinedStr):
             return "".join(
-                [str(self._execute_ast(v)) for v in expression.values])
+                [str(self._execute_ast(v)) for v in expression.values]
+            )
         elif isinstance(expression, ast.List):
             # List -> evaluate all elements
             return [self._execute_ast(elt) for elt in expression.elts]
@@ -220,7 +226,8 @@ class PythonInterpreter():
             # For now we refuse anything else. Let's add things as we need
             # them.
             raise InterpreterError(
-                f"{expression.__class__.__name__} is not supported.")
+                f"{expression.__class__.__name__} is not supported."
+            )
 
     def _execute_assign(self, assign: ast.Assign) -> Any:
         targets = assign.targets
@@ -235,18 +242,23 @@ class PythonInterpreter():
             self.state[target.id] = value
         elif isinstance(target, ast.Tuple):
             if not isinstance(value, tuple):
-                raise InterpreterError(f"Expected type tuple, but got"
-                                       f"{value.__class__.__name__} instead.")
+                raise InterpreterError(
+                    f"Expected type tuple, but got"
+                    f"{value.__class__.__name__} instead."
+                )
             if len(target.elts) != len(value):
                 raise InterpreterError(
                     f"Expected {len(target.elts)} values but got"
-                    f" {len(value)}.")
+                    f" {len(value)}."
+                )
             for t, v in zip(target.elts, value):
                 self.state[self._execute_ast(t)] = v
         else:
-            raise InterpreterError(f"Unsupported variable type. Expected "
-                                   f"ast.Name or ast.Tuple, got "
-                                   f"{target.__class__.__name__} instead.")
+            raise InterpreterError(
+                f"Unsupported variable type. Expected "
+                f"ast.Name or ast.Tuple, got "
+                f"{target.__class__.__name__} instead."
+            )
 
     def _execute_call(self, call: ast.Call) -> Any:
         callable_func = self._execute_ast(call.func)
@@ -265,14 +277,16 @@ class PythonInterpreter():
         if not isinstance(subscript.ctx, ast.Load):
             raise InterpreterError(
                 f"{subscript.ctx.__class__.__name__} is not supported for "
-                "subscript.")
+                "subscript."
+            )
         if isinstance(value, (list, tuple)):
             return value[int(index)]
         if index in value:
             return value[index]
         if isinstance(index, str) and isinstance(value, Mapping):
-            close_matches = difflib.get_close_matches(index,
-                                                      list(value.keys()))
+            close_matches = difflib.get_close_matches(
+                index, list(value.keys())
+            )
             if len(close_matches) > 0:
                 return value[close_matches[0]]
 
@@ -289,7 +303,8 @@ class PythonInterpreter():
     def _execute_condition(self, condition):
         if len(condition.ops) > 1:
             raise InterpreterError(
-                "Cannot evaluate conditions with multiple operators")
+                "Cannot evaluate conditions with multiple operators"
+            )
 
         left = self._execute_ast(condition.left)
         comparator = condition.ops[0]
@@ -369,9 +384,11 @@ class PythonInterpreter():
                 return
 
         if not found_name:
-            raise InterpreterError(f"It is not permitted to import modules "
-                                   f"than module white list (try to import "
-                                   f"{full_name}).")
+            raise InterpreterError(
+                f"It is not permitted to import modules "
+                f"than module white list (try to import "
+                f"{full_name})."
+            )
 
     def _execute_binop(self, binop: ast.BinOp):
         left = self._execute_ast(binop.left)
@@ -418,8 +435,11 @@ class PythonInterpreter():
         if key in self.state:
             return self.state[key]
         else:
-            close_matches = (difflib.get_close_matches(
-                key, list(self.fuzz_state.keys()), n=1))
+            close_matches = (
+                difflib.get_close_matches(
+                    key, list(self.fuzz_state.keys()), n=1
+                )
+            )
             if close_matches:
                 return self.fuzz_state[close_matches[0]]
             else:

@@ -107,12 +107,12 @@ def _num_tokens_from_messages(messages: List[OpenAIMessage], model: str):
         - https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
     """
     if model in {
-            "gpt-3.5-turbo-0613",
-            "gpt-3.5-turbo-16k-0613",
-            "gpt-4-0314",
-            "gpt-4-32k-0314",
-            "gpt-4-0613",
-            "gpt-4-32k-0613",
+        "gpt-3.5-turbo-0613",
+        "gpt-3.5-turbo-16k-0613",
+        "gpt-4-0314",
+        "gpt-4-32k-0314",
+        "gpt-4-0613",
+        "gpt-4-32k-0613",
     }:
         tokens_per_message = 3
         tokens_per_name = 1
@@ -133,10 +133,12 @@ def _num_tokens_from_messages(messages: List[OpenAIMessage], model: str):
             f"for information on how messages are converted to tokens. "
             f"See https://platform.openai.com/docs/models/gpt-4"
             f"or https://platform.openai.com/docs/models/gpt-3-5"
-            f"for information about openai chat models.")
+            f"for information about openai chat models."
+        )
     encoding = get_model_encoding(model)
-    return count_tokens_openai_chat_models(messages, encoding,
-                                           tokens_per_message, tokens_per_name)
+    return count_tokens_openai_chat_models(
+        messages, encoding, tokens_per_message, tokens_per_name
+    )
 
 
 def openai_api_key_required(func: F) -> F:
@@ -226,8 +228,10 @@ def download_tasks(task: TaskType, folder_path: str) -> None:
     zip_file_path = os.path.join(folder_path, "tasks.zip")
 
     # Download the zip file from the Google Drive link
-    response = requests.get("https://huggingface.co/datasets/camel-ai/"
-                            f"metadata/resolve/main/{task.value}_tasks.zip")
+    response = requests.get(
+        "https://huggingface.co/datasets/camel-ai/"
+        f"metadata/resolve/main/{task.value}_tasks.zip"
+    )
 
     # Save the zip file
     with open(zip_file_path, "wb") as f:

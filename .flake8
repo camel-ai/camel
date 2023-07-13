@@ -1,0 +1,41 @@
+[flake8]
+max-line-length = 120
+max-doc-length = 100
+select = B,C,E,F,W,Y,SIM
+ignore =
+    # E203: whitespace before ':'
+    # W503: line break before binary operator
+    # W504: line break after binary operator
+    # format by black
+    E203,W503,W504,
+    B028,
+    # E501: line too long
+    # W505: doc line too long
+    # too long docstring due to long example blocks
+    E501,W505,
+per-file-ignores =
+    # F401: module imported but unused
+    # intentionally unused imports
+    __init__.py: F401
+    # F401: module imported but unused
+    # F403: unable to detect undefined names
+    # F405: member mey be undefined, or defined from star imports
+    # members populated from optree
+    # E301: expected 1 blank line
+    # E302: expected 2 blank lines
+    # E305: expected 2 blank lines after class or function definition
+    # E701: multiple statements on one line (colon)
+    # E704: multiple statements on one line (def)
+    # format by black
+    *.pyi: E301,E302,E305,E701,E704
+exclude =
+    .git,
+    .vscode,
+    venv,
+    third-party,
+    __pycache__,
+    docs/conf.py,
+    build,
+    dist,
+    examples,
+    test

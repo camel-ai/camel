@@ -21,8 +21,9 @@ from camel.typing import ModelType, OpenAIMessage
 class OpenAIModel(BaseModelBackend):
     r"""OpenAI API in a unified BaseModelBackend interface."""
 
-    def __init__(self, model_type: ModelType,
-                 model_config_dict: Dict[str, Any]) -> None:
+    def __init__(
+        self, model_type: ModelType, model_config_dict: Dict[str, Any]
+    ) -> None:
         r"""Constructor for OpenAI backend.
 
         Args:
@@ -45,9 +46,10 @@ class OpenAIModel(BaseModelBackend):
         """
         import openai
         messages_openai: List[OpenAIMessage] = messages
-        response = openai.ChatCompletion.create(messages=messages_openai,
-                                                model=self.model_type.value,
-                                                **self.model_config_dict)
+        response = openai.ChatCompletion.create(
+            messages=messages_openai, model=self.model_type.value,
+            **self.model_config_dict
+        )
         if not self.stream:
             if not isinstance(response, Dict):
                 raise RuntimeError("Unexpected batch return from OpenAI API")

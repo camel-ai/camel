@@ -98,39 +98,50 @@ class RolePlaying:
         self.task_prompt = task_prompt
 
         self.specified_task_prompt: Optional[TextPrompt] = None
-        self.init_specified_task_prompt(assistant_role_name, user_role_name,
-                                        task_specify_agent_kwargs,
-                                        extend_task_specify_meta_dict,
-                                        output_language)
+        self.init_specified_task_prompt(
+            assistant_role_name, user_role_name, task_specify_agent_kwargs,
+            extend_task_specify_meta_dict, output_language
+        )
 
         self.planned_task_prompt: Optional[TextPrompt] = None
-        self.init_planned_task_prompt(task_planner_agent_kwargs,
-                                      output_language)
+        self.init_planned_task_prompt(
+            task_planner_agent_kwargs, output_language
+        )
 
         sys_msg_generator = SystemMessageGenerator(
-            task_type=self.task_type, **(sys_msg_generator_kwargs or {}))
+            task_type=self.task_type, **(sys_msg_generator_kwargs or {})
+        )
+        # flake8: noqa: E121
         (init_assistant_sys_msg, init_user_sys_msg,
          sys_msg_meta_dicts) = self.get_sys_message_info(
-             assistant_role_name, user_role_name, sys_msg_generator,
-             extend_sys_msg_meta_dicts)
+             assistant_role_name,
+             user_role_name,
+             sys_msg_generator,
+             extend_sys_msg_meta_dicts,
+         )
 
         self.assistant_agent: ChatAgent
         self.user_agent: ChatAgent
         self.assistant_sys_msg: BaseMessage
         self.user_sys_msg: BaseMessage
-        self.init_agents(init_assistant_sys_msg, assistant_agent_kwargs,
-                         init_user_sys_msg, user_agent_kwargs, output_language)
+        self.init_agents(
+            init_assistant_sys_msg, assistant_agent_kwargs, init_user_sys_msg,
+            user_agent_kwargs, output_language
+        )
 
         self.critic: Optional[Union[CriticAgent, Human]] = None
         self.critic_sys_msg: Optional[BaseMessage] = None
-        self.init_critic(critic_role_name, critic_criteria, critic_kwargs,
-                         sys_msg_generator, sys_msg_meta_dicts)
+        self.init_critic(
+            critic_role_name, critic_criteria, critic_kwargs,
+            sys_msg_generator, sys_msg_meta_dicts
+        )
 
     def init_specified_task_prompt(
-            self, assistant_role_name: str, user_role_name: str,
-            task_specify_agent_kwargs: Optional[Dict],
-            extend_task_specify_meta_dict: Optional[Dict],
-            output_language: Optional[str]):
+        self, assistant_role_name: str, user_role_name: str,
+        task_specify_agent_kwargs: Optional[Dict],
+        extend_task_specify_meta_dict: Optional[Dict],
+        output_language: Optional[str]
+    ):
         r"""Use a task specify agent to generate a specified task prompt.
         Generated specified task prompt will be used to replace original
         task prompt. If there is no task specify agent, specified task
@@ -151,8 +162,11 @@ class RolePlaying:
             task_specify_meta_dict = dict()
             if self.task_type in [TaskType.AI_SOCIETY, TaskType.MISALIGNMENT]:
                 task_specify_meta_dict.update(
-                    dict(assistant_role=assistant_role_name,
-                         user_role=user_role_name))
+                    dict(
+                        assistant_role=assistant_role_name,
+                        user_role=user_role_name
+                    )
+                )
             task_specify_meta_dict.update(extend_task_specify_meta_dict or {})
             task_specify_agent = TaskSpecifyAgent(
                 self.model_type,
@@ -166,9 +180,10 @@ class RolePlaying:
             )
             self.task_prompt = self.specified_task_prompt
 
-    def init_planned_task_prompt(self,
-                                 task_planner_agent_kwargs: Optional[Dict],
-                                 output_language: Optional[str]):
+    def init_planned_task_prompt(
+        self, task_planner_agent_kwargs: Optional[Dict],
+        output_language: Optional[str]
+    ):
         r"""Use a task plan agent to append a planned task prompt to task
         prompt. The planned task prompt is generated based on the task
         prompt, which can be original task prompt or specified task prompt
@@ -188,8 +203,10 @@ class RolePlaying:
                 **(task_planner_agent_kwargs or {}),
             )
             self.planned_task_prompt = task_planner_agent.run(self.task_prompt)
-            self.task_prompt = (f"{self.task_prompt}\n"
-                                f"{self.planned_task_prompt}")
+            self.task_prompt = (
+                f"{self.task_prompt}\n"
+                f"{self.planned_task_prompt}"
+            )
         else:
             self.planned_task_prompt = None
 
@@ -216,18 +233,24 @@ class RolePlaying:
             initial system message, and a list of system message meta dicts.
         """
         sys_msg_meta_dicts = [dict(task=self.task_prompt) for _ in range(2)]
-        if (extend_sys_msg_meta_dicts is None and self.task_type
-                in [TaskType.AI_SOCIETY, TaskType.MISALIGNMENT]):
+        if (
+            extend_sys_msg_meta_dicts is None
+            and self.task_type in [TaskType.AI_SOCIETY, TaskType.MISALIGNMENT]
+        ):
             extend_sys_msg_meta_dicts = [
-                dict(assistant_role=assistant_role_name,
-                     user_role=user_role_name) for _ in range(2)
+                dict(
+                    assistant_role=assistant_role_name,
+                    user_role=user_role_name
+                ) for _ in range(2)
             ]
         if extend_sys_msg_meta_dicts is not None:
-            sys_msg_meta_dicts = [{
-                **sys_msg_meta_dict,
-                **extend_sys_msg_meta_dict
-            } for sys_msg_meta_dict, extend_sys_msg_meta_dict in zip(
-                sys_msg_meta_dicts, extend_sys_msg_meta_dicts)]
+            sys_msg_meta_dicts = [
+                {
+                    **sys_msg_meta_dict,
+                    **extend_sys_msg_meta_dict
+                } for sys_msg_meta_dict, extend_sys_msg_meta_dict in
+                zip(sys_msg_meta_dicts, extend_sys_msg_meta_dicts)
+            ]
 
         init_assistant_sys_msg, init_user_sys_msg = (
             sys_msg_generator.from_dicts(
@@ -236,14 +259,15 @@ class RolePlaying:
                     (assistant_role_name, RoleType.ASSISTANT),
                     (user_role_name, RoleType.USER),
                 ],
-            ))
+            )
+        )
         return init_assistant_sys_msg, init_user_sys_msg, sys_msg_meta_dicts
 
-    def init_agents(self, init_assistant_sys_msg: BaseMessage,
-                    assistant_agent_kwargs: Optional[Dict],
-                    init_user_sys_msg: BaseMessage,
-                    user_agent_kwargs: Optional[Dict],
-                    output_language: Optional[str]):
+    def init_agents(
+        self, init_assistant_sys_msg: BaseMessage,
+        assistant_agent_kwargs: Optional[Dict], init_user_sys_msg: BaseMessage,
+        user_agent_kwargs: Optional[Dict], output_language: Optional[str]
+    ):
         r"""Initialize assistant and user agents with their system messages.
 
         Args:
@@ -273,11 +297,12 @@ class RolePlaying:
         )
         self.user_sys_msg = self.user_agent.system_message
 
-    def init_critic(self, critic_role_name: str,
-                    critic_criteria: Optional[str],
-                    critic_kwargs: Optional[Dict],
-                    sys_msg_generator: SystemMessageGenerator,
-                    sys_msg_meta_dicts: List[Dict]):
+    def init_critic(
+        self, critic_role_name: str, critic_criteria: Optional[str],
+        critic_kwargs: Optional[Dict],
+        sys_msg_generator: SystemMessageGenerator,
+        sys_msg_meta_dicts: List[Dict]
+    ):
         r"""Initialize critic agent. If critic role name is :obj:`"human"`,
         create a :obj:`Human` critic agent. Else, create a :obj:`CriticAgent`
         critic agent with specified critic criteria. If the critic criteria
@@ -298,11 +323,13 @@ class RolePlaying:
             if critic_role_name.lower() == "human":
                 self.critic = Human(**(critic_kwargs or {}))
             else:
-                critic_criteria = (critic_criteria
-                                   or "improving the task performance")
-                critic_msg_meta_dict = dict(critic_role=critic_role_name,
-                                            criteria=critic_criteria,
-                                            **sys_msg_meta_dicts[0])
+                critic_criteria = (
+                    critic_criteria or "improving the task performance"
+                )
+                critic_msg_meta_dict = dict(
+                    critic_role=critic_role_name, criteria=critic_criteria,
+                    **sys_msg_meta_dicts[0]
+                )
                 self.critic_sys_msg = sys_msg_generator.from_dict(
                     critic_msg_meta_dict,
                     role_tuple=(critic_role_name, RoleType.CRITIC),
@@ -329,18 +356,23 @@ class RolePlaying:
 
         # Send the system messages again to the agents using chat messages
         assistant_msg = BaseMessage.make_assistant_message(
-            role_name=self.assistant_sys_msg.role_name,
-            content=(f"{self.user_sys_msg.content}. "
-                     "Now start to give me instructions one by one. "
-                     "Only reply with Instruction and Input."))
+            role_name=self.assistant_sys_msg.role_name, content=(
+                f"{self.user_sys_msg.content}. "
+                "Now start to give me instructions one by one. "
+                "Only reply with Instruction and Input."
+            )
+        )
 
         user_msg = BaseMessage.make_user_message(
             role_name=self.user_sys_msg.role_name,
-            content=f"{self.assistant_sys_msg.content}")
+            content=f"{self.assistant_sys_msg.content}"
+        )
         assistant_response = self.assistant_agent.step(user_msg)
         if assistant_response.terminated or assistant_response.msgs is None:
-            raise ValueError(f"Assistant agent terminated unexpectedly. "
-                             f"Error info: {assistant_response.info}")
+            raise ValueError(
+                f"Assistant agent terminated unexpectedly. "
+                f"Error info: {assistant_response.info}"
+            )
 
         return assistant_msg, assistant_response.msgs
 
@@ -362,8 +394,10 @@ class RolePlaying:
         if len(messages) == 0:
             raise ValueError("No messages to process.")
         if len(messages) > 1 and not self.with_critic_in_the_loop:
-            raise ValueError("Got than one message to process. "
-                             f"Num of messages: {len(messages)}.")
+            raise ValueError(
+                "Got than one message to process. "
+                f"Num of messages: {len(messages)}."
+            )
         elif self.with_critic_in_the_loop and self.critic is not None:
             critic_response = self.critic.reduce_step(messages)
             processed_msg = critic_response.msg
@@ -398,23 +432,31 @@ class RolePlaying:
         """
         user_response = self.user_agent.step(assistant_msg)
         if user_response.terminated or user_response.msgs is None:
-            return (ChatAgentResponse([], False, {}),
-                    ChatAgentResponse([], user_response.terminated,
-                                      user_response.info))
+            return (
+                ChatAgentResponse([], False, {}),
+                ChatAgentResponse(
+                    [], user_response.terminated, user_response.info
+                )
+            )
         user_msg = self.reduce_message_options(user_response.msgs)
         self.user_agent.submit_message(user_msg)
 
         assistant_response = self.assistant_agent.step(user_msg)
         if assistant_response.terminated or assistant_response.msgs is None:
-            return (ChatAgentResponse([], assistant_response.terminated,
-                                      assistant_response.info),
-                    ChatAgentResponse([user_msg], False, user_response.info))
+            return (
+                ChatAgentResponse(
+                    [], assistant_response.terminated, assistant_response.info
+                ), ChatAgentResponse([user_msg], False, user_response.info)
+            )
         assistant_msg = self.reduce_message_options(assistant_response.msgs)
         self.assistant_agent.submit_message(assistant_msg)
 
         return (
-            ChatAgentResponse([assistant_msg], assistant_response.terminated,
-                              assistant_response.info),
-            ChatAgentResponse([user_msg], user_response.terminated,
-                              user_response.info),
+            ChatAgentResponse(
+                [assistant_msg], assistant_response.terminated,
+                assistant_response.info
+            ),
+            ChatAgentResponse(
+                [user_msg], user_response.terminated, user_response.info
+            ),
         )

@@ -41,16 +41,19 @@ class AISocietyPromptTemplateDict(TextPromptDict):
     GENERATE_ASSISTANTS = TextPrompt(
         """You are a helpful assistant that can play many different roles.
 Now please list {num_roles} different roles that you can play with your expertise in diverse fields.
-Sort them by alphabetical order. No explanation required.""")
+Sort them by alphabetical order. No explanation required."""
+    )
 
     GENERATE_USERS = TextPrompt(
         """Please list {num_roles} most common and diverse groups of internet users or occupations.
 Use singular form. No explanation.
-Sort them by alphabetical order. No explanation required.""")
+Sort them by alphabetical order. No explanation required."""
+    )
 
     GENERATE_TASKS = TextPrompt(
         """List {num_tasks} diverse tasks that {assistant_role} can assist {user_role} cooperatively to achieve together.
-Be concise. Be creative.""")
+Be concise. Be creative."""
+    )
 
     TASK_SPECIFY_PROMPT = TextPrompt(
         """Here is a task that {assistant_role} will help {user_role} to complete: {task}.
@@ -73,7 +76,8 @@ Unless I say the task is completed, you should always start with:
 Solution: <YOUR_SOLUTION>
 
 <YOUR_SOLUTION> should be very specific, include detailed explanations and provide preferable detailed implementations and examples and lists for task-solving.
-Always end <YOUR_SOLUTION> with: Next request.""")
+Always end <YOUR_SOLUTION> with: Next request."""
+    )
 
     USER_PROMPT: TextPrompt = TextPrompt(
         """Never forget you are a {user_role} and I am a {assistant_role}. Never flip roles! You will always instruct me.
@@ -100,22 +104,26 @@ Now you must start to instruct me using the two ways described above.
 Do not add anything else other than your instruction and the optional corresponding input!
 Keep giving me instructions and necessary inputs until you think the task is completed.
 When the task is completed, you must only reply with a single word <CAMEL_TASK_DONE>.
-Never say <CAMEL_TASK_DONE> unless my responses have solved your task.""")
+Never say <CAMEL_TASK_DONE> unless my responses have solved your task."""
+    )
 
     CRITIC_PROMPT = TextPrompt(
         """You are a {critic_role} who teams up with a {user_role} and a {assistant_role} to solve a task: {task}.
 Your job is to select an option from their proposals and provides your explanations.
 Your selection criteria are {criteria}.
-You always have to choose an option from the proposals.""")
+You always have to choose an option from the proposals."""
+    )
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.update({
-            "generate_assistants": self.GENERATE_ASSISTANTS,
-            "generate_users": self.GENERATE_USERS,
-            "generate_tasks": self.GENERATE_TASKS,
-            "task_specify_prompt": self.TASK_SPECIFY_PROMPT,
-            RoleType.ASSISTANT: self.ASSISTANT_PROMPT,
-            RoleType.USER: self.USER_PROMPT,
-            RoleType.CRITIC: self.CRITIC_PROMPT,
-        })
+        self.update(
+            {
+                "generate_assistants": self.GENERATE_ASSISTANTS,
+                "generate_users": self.GENERATE_USERS,
+                "generate_tasks": self.GENERATE_TASKS,
+                "task_specify_prompt": self.TASK_SPECIFY_PROMPT,
+                RoleType.ASSISTANT: self.ASSISTANT_PROMPT,
+                RoleType.USER: self.USER_PROMPT,
+                RoleType.CRITIC: self.CRITIC_PROMPT,
+            }
+        )

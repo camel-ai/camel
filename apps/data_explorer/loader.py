@@ -30,7 +30,8 @@ AllChats = Dict[str, Any]
 Datasets = Dict[str, AllChats]
 
 REPO_ROOT = os.path.realpath(
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.."))
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..")
+)
 
 
 def parse(raw_chat: ChatHistory) -> Union[ParsedChatHistory, None]:

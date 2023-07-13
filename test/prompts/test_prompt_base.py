@@ -89,8 +89,9 @@ def test_text_prompt_format():
     prompt = TextPrompt('Your name and age are: {name}, {age}')
 
     name, age = 'John', 30
-    assert prompt.format(name=name,
-                         age=age) == 'Your name and age are: John, 30'
+    assert prompt.format(
+        name=name, age=age
+    ) == 'Your name and age are: John, 30'
 
     # Partial formatting
     assert prompt.format(name=name) == 'Your name and age are: John, {age}'
@@ -140,8 +141,9 @@ def test_code_prompt_set_code_type():
 
 
 def test_code_prompt_execute(capsys):
-    code_prompt = CodePrompt("a = 1\nprint('Hello, World!')",
-                             code_type="python")
+    code_prompt = CodePrompt(
+        "a = 1\nprint('Hello, World!')", code_type="python"
+    )
     interpreter = PythonInterpreter(action_space={"print": print})
     result, interpreter = code_prompt.execute(interpreter=interpreter)
     captured = capsys.readouterr()

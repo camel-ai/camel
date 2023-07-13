@@ -52,6 +52,8 @@ opencv-python = {version = "^4", optional = true}
 [tool.yapf]
 based_on_style = "pep8"
 split_before_named_assigns = false
+dedent_closing_brackets = true
+indent_width = 4
 
 [tool.isort]
 multi_line_output = 3

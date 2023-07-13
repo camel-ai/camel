@@ -64,7 +64,8 @@ def return_prompt_wrapper(
         elif isinstance(result, tuple):
             new_result = tuple(
                 cls(item) if isinstance(item, str)
-                and not isinstance(item, cls) else item for item in result)
+                and not isinstance(item, cls) else item for item in result
+            )
             return new_result
         return result
 
@@ -194,8 +195,9 @@ class CodePrompt(TextPrompt):
         # NOTE: Only supports Python code for now.
         if not interpreter:
             interpreter = PythonInterpreter(action_space=globals())
-        execution_res = interpreter.execute(self, fuzz_state=user_variable,
-                                            keep_state=True)
+        execution_res = interpreter.execute(
+            self, fuzz_state=user_variable, keep_state=True
+        )
         return execution_res, interpreter
 
 
@@ -220,7 +222,8 @@ You can perform multiple actions.
 You can perform actions in any order.
 First, explain the actions you will perform and your reasons, then write Python code to implement your actions.
 If you decide to perform actions, you must write Python code to implement the actions.
-You may print intermediate results if necessary.""")
+You may print intermediate results if necessary."""
+    )
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
