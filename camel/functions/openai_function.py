@@ -43,12 +43,18 @@ class OpenAIFunction:
                  parameters: Optional[Dict] = None):
         self.func = func
         self.name = name or func.__name__
-        self.description = description
-        self.parameters = parameters
-        if self.description is None and self.parameters is None:
+
+        try:
             info = parse_doc(self.func)
-            self.description = info["description"]
-            self.parameters = info["parameters"]
+            if description is None:
+                description = info["description"]
+            if parameters is None:
+                parameters = info["parameters"]
+        except ValueError:
+            pass
+
+        self.description = description
+        self.parameters = parameters or {"type": "object", "properties": {}}
 
     @property
     def parameters(self):
@@ -58,13 +64,12 @@ class OpenAIFunction:
     def parameters(self, value):
         # Check if the parameters schema is valid.
         # Raise jsonschema.exceptions.SchemaError if invalid.
-        if value is not None:
-            Draft202012Validator.check_schema(value)
+        Draft202012Validator.check_schema(value)
         self._parameters = value
 
     def as_dict(self) -> Dict:
         return {
-            "name": self.name,
-            "description": self.description,
-            "parameters": self.parameters
+            attr: getattr(self, attr)
+            for attr in ["name", "description", "parameters"]
+            if getattr(self, attr) is not None
         }
