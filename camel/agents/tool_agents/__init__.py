@@ -13,8 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from camel.agents.tool_agents.base import BaseToolAgent
 from camel.agents.tool_agents.hugging_face_tool_agent import (
-    HuggingFaceToolAgent,
-)
+    HuggingFaceToolAgent, )
 
 __all__ = [
     'BaseToolAgent',
