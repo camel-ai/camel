@@ -110,8 +110,8 @@ pre-commit: pre-commit-install
 # Utility functions
 
 format: py-format-install
+	$(PYTHON) -m yapf -ir $(PYTHON_FILES)
 	$(PYTHON) -m isort --project $(PROJECT_PATH) $(PYTHON_FILES)
-	$(PYTHON) -m black $(PYTHON_FILES) 
 	$(PYTHON) -m ruff check . --fix --exit-zero
 
 clean-py:
