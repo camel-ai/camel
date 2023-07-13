@@ -83,23 +83,6 @@ pytest-install:
 test-install: pytest-install
 	$(PYTHON) -m pip install --requirement tests/requirements.txt
 
-go-install:
-	# requires go >= 1.16
-	command -v go || (sudo apt-get install -y golang && sudo ln -sf /usr/lib/go/bin/go /usr/bin/go)
-
-addlicense-install: go-install
-	command -v addlicense || go install github.com/google/addlicense@latest
-
-# Tests
-
-pytest: test-install
-	cd tests && $(PYTHON) -c 'import $(PROJECT_PATH)' && \
-	$(PYTHON) -m pytest --verbose --color=yes --durations=0 \
-		--cov="$(PROJECT_PATH)" --cov-config=.coveragerc --cov-report=xml --cov-report=term-missing \
-		$(PYTESTOPTS) .
-
-test: pytest
-
 # Python linters
 
 pylint: pylint-install
@@ -119,39 +102,16 @@ ruff-fix: ruff-install
 	$(PYTHON) -m ruff check . --fix --exit-non-zero-on-fix
 
 mypy: mypy-install
-	$(PYTHON) -m mypy $(PROJECT_PATH) --install-types --non-interactive
+	$(PYTHON) -m mypy $(PROJECT_PATH) --install-types --non-interactive --namespace-packages
 
 pre-commit: pre-commit-install
 	$(PYTHON) -m pre_commit run --all-files
 
-# Documentation
-
-addlicense: addlicense-install
-	addlicense -c $(COPYRIGHT) -ignore tests/coverage.xml -l apache -y 2022-$(shell date +"%Y") -check $(SOURCE_FOLDERS)
-
-docstyle: docs-install
-	make -C docs clean
-	$(PYTHON) -m pydocstyle $(PROJECT_PATH) && doc8 docs && make -C docs html SPHINXOPTS="-W"
-
-docs: docs-install
-	$(PYTHON) -m sphinx_autobuild --watch $(PROJECT_PATH) --open-browser docs/source docs/build
-
-spelling: docs-install
-	make -C docs clean
-	make -C docs spelling SPHINXOPTS="-W"
-
-clean-docs:
-	make -C docs clean
-
 # Utility functions
 
-lint: ruff flake8 py-format mypy pylint addlicense docstyle spelling
-
-format: py-format-install ruff-install addlicense-install
+format: py-format-install
 	$(PYTHON) -m isort --project $(PROJECT_PATH) $(PYTHON_FILES)
-	$(PYTHON) -m black $(PYTHON_FILES) tutorials
 	$(PYTHON) -m ruff check . --fix --exit-zero
-	addlicense -c $(COPYRIGHT) -ignore tests/coverage.xml -l apache -y 2023 $(SOURCE_FOLDERS)
 
 clean-py:
 	find . -type f -name  '*.py[co]' -delete
