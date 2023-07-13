@@ -18,7 +18,8 @@ from camel.prompts.evaluation import EvaluationPromptTemplateDict
 from camel.prompts.misalignment import MisalignmentPromptTemplateDict
 from camel.prompts.prompt_templates import PromptTemplateGenerator
 from camel.prompts.solution_extraction import (
-    SolutionExtractionPromptTemplateDict, )
+    SolutionExtractionPromptTemplateDict,
+)
 from camel.prompts.task_prompt_template import TaskPromptTemplateDict
 from camel.prompts.translation import TranslationPromptTemplateDict
 
