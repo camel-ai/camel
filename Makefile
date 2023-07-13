@@ -49,7 +49,6 @@ flake8-install:
 
 py-format-install:
 	$(call check_pip_install,isort)
-	$(call check_pip_install_extra,black,black[jupyter])
 
 ruff-install:
 	$(call check_pip_install,ruff)
@@ -93,7 +92,7 @@ flake8: flake8-install
 
 py-format: py-format-install
 	$(PYTHON) -m isort --project $(PROJECT_PATH) --check $(PYTHON_FILES) && \
-	$(PYTHON) -m black --check $(PYTHON_FILES) tutorials
+	$(PYTHON) -m yapf -dr $(PYTHON_FILES)
 
 ruff: ruff-install
 	$(PYTHON) -m ruff check .
