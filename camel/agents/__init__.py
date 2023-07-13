@@ -18,8 +18,7 @@ from camel.agents.embodied_agent import EmbodiedAgent
 from camel.agents.task_agent import TaskPlannerAgent, TaskSpecifyAgent
 from camel.agents.tool_agents.base import BaseToolAgent
 from camel.agents.tool_agents.hugging_face_tool_agent import (
-    HuggingFaceToolAgent,
-)
+    HuggingFaceToolAgent, )
 
 __all__ = [
     'BaseAgent',

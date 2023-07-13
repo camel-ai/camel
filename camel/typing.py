@@ -66,7 +66,6 @@ class TaskType(Enum):
 
 __all__ = ['RoleType', 'ModelType', 'TaskType']
 
-
 OpenAISystemMessage = Dict[str, str]
 OpenAIAssistantMessage = Dict[str, str]
 OpenAIUserMessage = Dict[str, str]
