@@ -11,19 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from abc import ABC, abstractmethod
-from typing import Any
+import pytest
+
+import examples.code.role_playing
+from camel.typing import ModelType
 
 
-class BaseAgent(ABC):
-    r"""An abstract base class for all CAMEL agents."""
-
-    @abstractmethod
-    def reset(self, *args: Any, **kwargs: Any) -> Any:
-        r"""Resets the agent to its initial state."""
-        pass
-
-    @abstractmethod
-    def step(self, *args: Any, **kwargs: Any) -> Any:
-        r"""Performs a single step of the agent."""
-        pass
+@pytest.mark.slow
+def test_code_role_playing_example():
+    examples.code.role_playing.main(ModelType.STUB)

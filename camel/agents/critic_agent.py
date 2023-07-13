@@ -11,14 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import copy
 import random
 import warnings
 from typing import Any, Dict, Optional, Sequence
 
 from colorama import Fore
 
-from camel.agents import ChatAgent
+from camel.agents import ChatAgent, ChatAgentResponse
 from camel.messages import BaseMessage
 from camel.typing import ModelType
 from camel.utils import get_first_int, print_text_animated
@@ -97,7 +96,7 @@ class CriticAgent(ChatAgent):
         msg_content = input_message.content
         i = 0
         while i < self.retry_attempts:
-            critic_response = super().step(input_message)
+            critic_response = self.step(input_message)
 
             if critic_response.msgs is None or len(critic_response.msgs) == 0:
                 raise RuntimeError("Got None critic messages.")
@@ -141,7 +140,10 @@ class CriticAgent(ChatAgent):
         choice = str(get_first_int(critic_msg.content))
         return choice
 
-    def step(self, messages: Sequence[BaseMessage]) -> BaseMessage:
+    def reduce_step(
+        self,
+        input_messages: Sequence[BaseMessage],
+    ) -> ChatAgentResponse:
         r"""Performs one step of the conversation by flattening options to the
         critic, getting the option, and parsing the choice.
 
@@ -149,25 +151,24 @@ class CriticAgent(ChatAgent):
             messages (Sequence[BaseMessage]): A list of BaseMessage objects.
 
         Returns:
-            BaseMessage: A `BaseMessage` object representing the critic's
-                choice.
+            ChatAgentResponse: A `ChatAgentResponse` object includes the
+                critic's choice.
         """
         meta_chat_message = BaseMessage(
-            role_name=messages[0].role_name,
-            role_type=messages[0].role_type,
-            meta_dict=messages[0].meta_dict,
+            role_name=input_messages[0].role_name,
+            role_type=input_messages[0].role_type,
+            meta_dict=input_messages[0].meta_dict,
             content="",
         )
 
-        flatten_options = self.flatten_options(messages)
+        flatten_options = self.flatten_options(input_messages)
         if self.verbose:
             print_text_animated(self.logger_color +
                                 f"\x1b[3m{flatten_options}\x1b[0m\n")
-        input_msg = copy.deepcopy(meta_chat_message)
-        input_msg.content = flatten_options
+        input_msg = meta_chat_message.create_new_instance(flatten_options)
 
         option = self.get_option(input_msg)
-        output_msg = copy.deepcopy(meta_chat_message)
-        output_msg.content = option
+        output_msg = meta_chat_message.create_new_instance(option)
 
-        return output_msg
+        # TODO: The return `info` can be improved.
+        return ChatAgentResponse([output_msg], terminated=False, info={})

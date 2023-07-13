@@ -31,7 +31,7 @@ def test_task_specify_ai_society_agent(model: Optional[ModelType]):
     print(f"Original task prompt:\n{original_task_prompt}\n")
     task_specify_agent = TaskSpecifyAgent(
         model_config=ChatGPTConfig(temperature=1.0), model=model)
-    specified_task_prompt = task_specify_agent.step(
+    specified_task_prompt = task_specify_agent.run(
         original_task_prompt, meta_dict=dict(assistant_role="Musician",
                                              user_role="Student"))
     assert ("{" and "}" not in task_specify_agent.task_specify_prompt)
@@ -47,7 +47,7 @@ def test_task_specify_code_agent(model: Optional[ModelType]):
         model_config=ChatGPTConfig(temperature=1.0),
         model=model,
     )
-    specified_task_prompt = task_specify_agent.step(
+    specified_task_prompt = task_specify_agent.run(
         original_task_prompt, meta_dict=dict(domain="Chemistry",
                                              language="Python"))
     assert ("{" and "}" not in task_specify_agent.task_specify_prompt)
@@ -63,11 +63,11 @@ def test_task_planner_agent(model: Optional[ModelType]):
         model_config=ChatGPTConfig(temperature=1.0),
         model=model,
     )
-    specified_task_prompt = task_specify_agent.step(
+    specified_task_prompt = task_specify_agent.run(
         original_task_prompt, meta_dict=dict(domain="Chemistry",
                                              language="Python"))
     print(f"Specified task prompt:\n{specified_task_prompt}\n")
     task_planner_agent = TaskPlannerAgent(
         model_config=ChatGPTConfig(temperature=1.0), model=model)
-    planned_task_prompt = task_planner_agent.step(specified_task_prompt)
+    planned_task_prompt = task_planner_agent.run(specified_task_prompt)
     print(f"Planned task prompt:\n{planned_task_prompt}\n")

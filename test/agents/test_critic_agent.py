@@ -96,7 +96,7 @@ def test_parse_critic(critic_agent: CriticAgent):
 
 
 @pytest.mark.model_backend
-def test_step(critic_agent: CriticAgent):
+def test_reduce_step(critic_agent: CriticAgent):
     messages = [
         BaseMessage(
             role_name="user",
@@ -112,5 +112,6 @@ def test_step(critic_agent: CriticAgent):
         ),
     ]
 
-    assert (critic_agent.step(messages)
-            == messages[0]) or (critic_agent.step(messages) == messages[1])
+    critic_response = critic_agent.reduce_step(messages)
+    assert (critic_response.msg == messages[0]) or (critic_response.msg
+                                                    == messages[1])

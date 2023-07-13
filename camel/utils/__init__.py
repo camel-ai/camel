@@ -11,19 +11,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from abc import ABC, abstractmethod
-from typing import Any
+from .python_interpreter import PythonInterpreter
+from .functions import (
+    get_model_encoding,
+    count_tokens_openai_chat_models,
+    num_tokens_from_messages,
+    openai_api_key_required,
+    print_text_animated,
+    get_prompt_template_key_words,
+    get_first_int,
+    download_tasks,
+)
 
-
-class BaseAgent(ABC):
-    r"""An abstract base class for all CAMEL agents."""
-
-    @abstractmethod
-    def reset(self, *args: Any, **kwargs: Any) -> Any:
-        r"""Resets the agent to its initial state."""
-        pass
-
-    @abstractmethod
-    def step(self, *args: Any, **kwargs: Any) -> Any:
-        r"""Performs a single step of the agent."""
-        pass
+__all__ = [
+    'get_model_encoding',
+    'count_tokens_openai_chat_models',
+    'num_tokens_from_messages',
+    'openai_api_key_required',
+    'print_text_animated',
+    'get_prompt_template_key_words',
+    'get_first_int',
+    'download_tasks',
+    'PythonInterpreter',
+]

@@ -13,26 +13,30 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import pytest
 
-from camel.agents import ChatAgent
+from camel.agents import ChatAgent, CriticAgent
+from camel.human import Human
 from camel.messages import BaseMessage
 from camel.societies import RolePlaying
 from camel.typing import ModelType, RoleType, TaskType
 
 
-def test_role_playing_init():
+@pytest.mark.parametrize("critic_role_name", ["human", "critic agent"])
+@pytest.mark.parametrize("with_critic_in_the_loop", [True, False])
+def test_role_playing_init(critic_role_name, with_critic_in_the_loop):
     role_playing = RolePlaying(
         assistant_role_name="assistant",
         user_role_name="user",
+        critic_role_name=critic_role_name,
         task_prompt="Perform the task",
         with_task_specify=False,
         with_task_planner=False,
-        with_critic_in_the_loop=False,
+        with_critic_in_the_loop=with_critic_in_the_loop,
         model_type=ModelType.GPT_3_5_TURBO,
         task_type=TaskType.AI_SOCIETY,
     )
     assert role_playing.with_task_specify is False
     assert role_playing.with_task_planner is False
-    assert role_playing.with_critic_in_the_loop is False
+    assert role_playing.with_critic_in_the_loop is with_critic_in_the_loop
     assert role_playing.model_type == ModelType.GPT_3_5_TURBO
     assert role_playing.task_type == TaskType.AI_SOCIETY
     assert role_playing.task_prompt == "Perform the task"
@@ -47,7 +51,15 @@ def test_role_playing_init():
     assert isinstance(role_playing.assistant_agent, ChatAgent)
     assert isinstance(role_playing.user_agent, ChatAgent)
 
-    assert role_playing.critic is None
+    if not with_critic_in_the_loop:
+        assert role_playing.critic is None
+    else:
+        assert role_playing.critic is not None
+        if critic_role_name == "human":
+            assert isinstance(role_playing.critic, Human)
+        else:
+            assert isinstance(role_playing.critic, CriticAgent)
+            assert role_playing.critic_sys_msg is not None
 
 
 @pytest.mark.model_backend
