@@ -14,9 +14,8 @@
 from types import GeneratorType
 from typing import Any, Dict, List
 
-from camel.typing import OpenAIMessage
 from camel.models.base_model import BaseModelBackend
-from camel.typing import ModelType
+from camel.typing import ModelType, OpenAIMessage
 
 
 class OpenAIModel(BaseModelBackend):

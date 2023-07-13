@@ -13,10 +13,9 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
-from camel.agents.chat_agent import ChatAgent
+from camel.agents.chat_agent import ChatAgent, ChatAgentResponse
 from camel.agents.critic_agent import CriticAgent
 from camel.agents.task_agent import TaskPlannerAgent, TaskSpecifyAgent
-from camel.agents.chat_agent import ChatAgentResponse
 from camel.generators import SystemMessageGenerator
 from camel.human import Human
 from camel.messages.base import BaseMessage

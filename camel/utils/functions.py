@@ -21,7 +21,7 @@ from typing import Any, Callable, List, Optional, Set, TypeVar, cast
 import requests
 import tiktoken
 
-from camel.typing import ModelType, TaskType, OpenAIMessage
+from camel.typing import ModelType, OpenAIMessage, TaskType
 
 F = TypeVar('F', bound=Callable[..., Any])
 

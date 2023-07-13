@@ -14,8 +14,8 @@
 from typing import Dict, Generator, List, Optional, Set, Tuple
 
 from camel.messages.base import BaseMessage
-from camel.prompts.prompt_templates import PromptTemplateGenerator
 from camel.prompts.base import TextPrompt
+from camel.prompts.prompt_templates import PromptTemplateGenerator
 from camel.typing import RoleType, TaskType
 
 
