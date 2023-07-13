@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Optional
 
-from camel.agents.tool_agents import BaseToolAgent
+from camel.agents.tool_agents.base import BaseToolAgent
 
 
 # flake8: noqa :E501
@@ -78,7 +78,7 @@ rivers_and_lakes_image.save("./rivers_and_lakes_image.png")
 sea_add_island_image = {name}.step("Draw me a picture of the sea then transform the picture to add an island")
 sea_add_island_image.save("./sea_add_island_image.png")
 
-# If you'd like to keep a state across executions or to pass non-text objects to the agent, 
+# If you'd like to keep a state across executions or to pass non-text objects to the agent,
 # you can do so by specifying variables that you would like the agent to use. For example,
 # you could generate the first image of rivers and lakes, and ask the model to update that picture to add an island by doing the following:
 picture = {name}.step("Generate a picture of rivers and lakes.")

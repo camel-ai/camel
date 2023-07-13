@@ -15,9 +15,9 @@ from typing import Any, Dict, Sequence
 
 from colorama import Fore
 
-from camel.agents import ChatAgentResponse
-from camel.messages import BaseMessage
-from camel.utils import print_text_animated
+from camel.agents.chat_agent import ChatAgentResponse
+from camel.messages.base import BaseMessage
+from camel.utils.functions import print_text_animated
 
 
 class Human:

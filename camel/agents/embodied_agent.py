@@ -15,15 +15,15 @@ from typing import Any, Dict, List, Optional
 
 from colorama import Fore
 
-from camel.agents import (
-    BaseToolAgent,
-    ChatAgent,
-    ChatAgentResponse,
+from camel.agents.chat_agent import ChatAgent, ChatAgentResponse
+from camel.agents.tool_agents.base import BaseToolAgent
+from camel.agents.tool_agents.hugging_face_tool_agent import (
     HuggingFaceToolAgent,
 )
-from camel.messages import BaseMessage
+from camel.messages.base import BaseMessage
 from camel.typing import ModelType
-from camel.utils import PythonInterpreter, print_text_animated
+from camel.utils.functions import print_text_animated
+from camel.utils.python_interpreter import PythonInterpreter
 
 
 class EmbodiedAgent(ChatAgent):

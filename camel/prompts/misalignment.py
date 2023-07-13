@@ -13,11 +13,8 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any
 
-from camel.prompts import (
-    AISocietyPromptTemplateDict,
-    TextPrompt,
-    TextPromptDict,
-)
+from camel.prompts.ai_society import AISocietyPromptTemplateDict
+from camel.prompts.base import TextPrompt, TextPromptDict
 from camel.typing import RoleType
 
 

@@ -25,7 +25,7 @@ from typing import (
 )
 
 from camel.typing import RoleType
-from camel.utils import PythonInterpreter
+from camel.utils.python_interpreter import PythonInterpreter
 
 T = TypeVar('T')
 
@@ -189,7 +189,7 @@ class CodePrompt(TextPrompt):
                 result and the used interpreter. The execution result
                 represents the value of the last statement (excluding "import")
                 in the code. This value could potentially be the desired result
-                of the LLM-generated code.        
+                of the LLM-generated code.
     """
         # NOTE: Only supports Python code for now.
         if not interpreter:

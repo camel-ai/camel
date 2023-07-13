@@ -13,10 +13,11 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Dict, Optional, Union
 
-from camel.agents import ChatAgent
+from camel.agents.chat_agent import ChatAgent
 from camel.configs import ChatGPTConfig
-from camel.messages import BaseMessage
-from camel.prompts import PromptTemplateGenerator, TextPrompt
+from camel.messages.base import BaseMessage
+from camel.prompts.base import TextPrompt
+from camel.prompts.prompt_templates import PromptTemplateGenerator
 from camel.typing import ModelType, RoleType, TaskType
 
 

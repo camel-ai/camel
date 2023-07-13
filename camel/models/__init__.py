@@ -11,10 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .base_model import BaseModelBackend
-from .model_factory import ModelFactory
-from .openai_model import OpenAIModel
-from .stub_model import StubModel
+from camel.models.base_model import BaseModelBackend
+from camel.models.model_factory import ModelFactory
+from camel.models.openai_model import OpenAIModel
+from camel.models.stub_model import StubModel
 
 __all__ = [
     'BaseModelBackend',

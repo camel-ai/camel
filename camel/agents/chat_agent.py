@@ -20,12 +20,13 @@ from tenacity import retry
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_exponential
 
-from camel.agents import BaseAgent
+from camel.agents.base import BaseAgent
 from camel.configs import ChatGPTConfig
-from camel.messages import BaseMessage
-from camel.models import BaseModelBackend, ModelFactory
+from camel.messages.base import BaseMessage
+from camel.models.base_model import BaseModelBackend
+from camel.models.model_factory import ModelFactory
 from camel.typing import ModelType, RoleType
-from camel.utils import (
+from camel.utils.functions import (
     get_model_encoding,
     num_tokens_from_messages,
     openai_api_key_required,

@@ -14,14 +14,15 @@
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-from camel.messages import (
+from camel.prompts.base import CodePrompt, TextPrompt
+from camel.typing import (
+    ModelType,
     OpenAIAssistantMessage,
     OpenAIMessage,
     OpenAISystemMessage,
     OpenAIUserMessage,
+    RoleType,
 )
-from camel.prompts import CodePrompt, TextPrompt
-from camel.typing import ModelType, RoleType
 
 
 @dataclass

@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .functions import (
+from camel.utils.functions import (
     count_tokens_openai_chat_models,
     download_tasks,
     get_first_int,
@@ -21,7 +21,7 @@ from .functions import (
     openai_api_key_required,
     print_text_animated,
 )
-from .python_interpreter import PythonInterpreter
+from camel.utils.python_interpreter import PythonInterpreter
 
 __all__ = [
     'get_model_encoding',

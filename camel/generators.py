@@ -13,8 +13,9 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Dict, Generator, List, Optional, Set, Tuple
 
-from camel.messages import BaseMessage
-from camel.prompts import PromptTemplateGenerator, TextPrompt
+from camel.messages.base import BaseMessage
+from camel.prompts.prompt_templates import PromptTemplateGenerator
+from camel.prompts.base import TextPrompt
 from camel.typing import RoleType, TaskType
 
 

@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from enum import Enum
+from typing import Dict, Union
 
 
 class RoleType(Enum):
@@ -64,3 +65,10 @@ class TaskType(Enum):
 
 
 __all__ = ['RoleType', 'ModelType', 'TaskType']
+
+
+OpenAISystemMessage = Dict[str, str]
+OpenAIAssistantMessage = Dict[str, str]
+OpenAIUserMessage = Dict[str, str]
+OpenAIChatMessage = Union[OpenAIUserMessage, OpenAIAssistantMessage]
+OpenAIMessage = Union[OpenAISystemMessage, OpenAIChatMessage]

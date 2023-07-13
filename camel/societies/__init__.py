@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .role_playing import RolePlaying
+from camel.societies.role_playing import RolePlaying
 
 __all__ = [
     'RolePlaying',

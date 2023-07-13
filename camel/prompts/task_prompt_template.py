@@ -13,15 +13,13 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Dict
 
-from camel.prompts import (
-    AISocietyPromptTemplateDict,
-    CodePromptTemplateDict,
-    EvaluationPromptTemplateDict,
-    MisalignmentPromptTemplateDict,
-    SolutionExtractionPromptTemplateDict,
-    TextPromptDict,
-    TranslationPromptTemplateDict,
-)
+from camel.prompts.ai_society import AISocietyPromptTemplateDict
+from camel.prompts.base import TextPromptDict
+from camel.prompts.code import CodePromptTemplateDict
+from camel.prompts.evaluation import EvaluationPromptTemplateDict
+from camel.prompts.misalignment import MisalignmentPromptTemplateDict
+from camel.prompts.solution_extraction import SolutionExtractionPromptTemplateDict
+from camel.prompts.translation import TranslationPromptTemplateDict
 from camel.typing import TaskType
 
 

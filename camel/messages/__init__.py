@@ -11,21 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Dict, Union
-
-OpenAISystemMessage = Dict[str, str]
-OpenAIAssistantMessage = Dict[str, str]
-OpenAIUserMessage = Dict[str, str]
-OpenAIChatMessage = Union[OpenAIUserMessage, OpenAIAssistantMessage]
-OpenAIMessage = Union[OpenAISystemMessage, OpenAIChatMessage]
-
-from .base import BaseMessage  # noqa: E402
+from camel.messages.base import BaseMessage  # noqa: E402
 
 __all__ = [
-    'OpenAISystemMessage',
-    'OpenAIAssistantMessage',
-    'OpenAIUserMessage',
-    'OpenAIChatMessage',
-    'OpenAIMessage',
     'BaseMessage',
 ]

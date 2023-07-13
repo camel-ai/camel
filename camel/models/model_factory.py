@@ -13,7 +13,9 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Dict
 
-from camel.models import BaseModelBackend, OpenAIModel, StubModel
+from camel.models.base_model import BaseModelBackend
+from camel.models.openai_model import OpenAIModel
+from camel.models.stub_model import StubModel
 from camel.typing import ModelType
 
 

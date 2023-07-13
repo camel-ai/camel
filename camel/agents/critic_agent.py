@@ -17,10 +17,10 @@ from typing import Any, Dict, Optional, Sequence
 
 from colorama import Fore
 
-from camel.agents import ChatAgent, ChatAgentResponse
-from camel.messages import BaseMessage
+from camel.agents.chat_agent import ChatAgent, ChatAgentResponse
+from camel.messages.base import BaseMessage
 from camel.typing import ModelType
-from camel.utils import get_first_int, print_text_animated
+from camel.utils.functions import get_first_int, print_text_animated
 
 
 class CriticAgent(ChatAgent):
