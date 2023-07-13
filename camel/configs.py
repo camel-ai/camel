@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 
 @dataclass(frozen=True)
@@ -83,9 +83,9 @@ class FuncConfig(ChatGPTConfig):
     allowing for dynamically adding functions into the functions field
 
     Args:
-        functions (List[Dict]): A list of functions the model may generate JSON
-            inputs for.
-        function_call (Union[Dict, str], optional): Controls how the
+        functions (List[Dict[str, Any]]): A list of functions the model may
+            generate JSON inputs for.
+        function_call (Union[Dict[str, str], str], optional): Controls how the
             model responds to function calls. :obj:`"none"` means the model
             does not call a function, and responds to the end-user.
             :obj:`"auto"` means the model can pick between an end-user or
@@ -93,5 +93,5 @@ class FuncConfig(ChatGPTConfig):
             :obj:`{"name": "my_function"}` forces the model to call that
             function. (default: :obj:`"auto"`)
     """
-    functions: List[Dict] = field(default_factory=list)
-    function_call: Union[str, Dict] = "auto"
+    functions: List[Dict[str, Any]] = field(default_factory=list)
+    function_call: Union[str, Dict[str, str]] = "auto"
