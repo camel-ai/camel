@@ -103,6 +103,7 @@ class ChatAgent(BaseAgent):
         output_language: Optional[str] = None,
     ) -> None:
 
+        self.orig_sys_message: BaseMessage = system_message
         self.system_message: BaseMessage = system_message
         self.role_name: str = system_message.role_name
         self.role_type: RoleType = system_message.role_type
@@ -146,7 +147,7 @@ class ChatAgent(BaseAgent):
             BaseMessage: The updated system message object.
         """
         self.output_language = output_language
-        content = (self.system_message.content +
+        content = (self.orig_sys_message.content +
                    ("\nRegardless of the input language, "
                     f"you must output text in {output_language}."))
         self.system_message = self.system_message.create_new_instance(content)

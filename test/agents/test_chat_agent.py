@@ -126,3 +126,14 @@ def test_set_output_language():
         content="You are a help assistant."
         "\nRegardless of the input language, you must output text in Arabic.")
     assert agent.system_message.content == updated_system_message.content
+
+    # Verify that the length of the system message is kept constant even when
+    # multiple set_output_language operations are called
+    agent.set_output_language("Chinese")
+    agent.set_output_language("English")
+    agent.set_output_language("French")
+    updated_system_message = BaseMessage(
+        role_name="assistant", role_type=RoleType.ASSISTANT, meta_dict=None,
+        content="You are a help assistant."
+        "\nRegardless of the input language, you must output text in French.")
+    assert agent.system_message.content == updated_system_message.content
