@@ -12,10 +12,12 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import pytest
-
+from camel.messages import BaseMessage
 from camel.agents import BabyAGIAgent
 from camel.configs import ChatGPTConfig
-from camel.typing import ModelType
+from camel.generators import SystemMessageGenerator
+from camel.typing import ModelType, RoleType, TaskType
+from camel.agents.chat_agent import ChatAgentResponse
 
 parametrize = pytest.mark.parametrize('model', [
     ModelType.STUB,
@@ -23,30 +25,49 @@ parametrize = pytest.mark.parametrize('model', [
     pytest.param(ModelType.GPT_4, marks=pytest.mark.model_backend),
 ])
 
-
 @parametrize
 def test_babyagi_agent(model: ModelType):
+
     model_config = ChatGPTConfig()
-    objective = "Solve world hunger."
-    first_task = {"task_id": 1, "task_name": "Develop a task list."}
-    babyagi = BabyAGIAgent(objective, model=model, model_config=model_config)
-    babyagi.reset(first_task)
+    system_msg = SystemMessageGenerator(
+        task_type=TaskType.AI_SOCIETY).from_dict(
+            dict(assistant_role="doctor"),
+            role_tuple=("doctor", RoleType.ASSISTANT),
+        )
+    objective = "Solve gastric cancel."
+
+    babyagi = BabyAGIAgent(system_msg, objective, model=model, \
+                           model_config=model_config)
+    babyagi.reset()
+    assert babyagi.tasks_storage.is_empty() is True
+    babyagi.tasks_storage.append({'task_name':objective})
+    task = babyagi.tasks_storage.popleft()
+    assert babyagi.tasks_storage.is_empty() is True
+    prompt = 'Instruction: ' + task['task_name']
+    user_msg = BaseMessage(role_name="Patient", role_type=RoleType.USER,
+                    meta_dict=dict(), content=prompt)
+    response = babyagi.step(user_msg)
+    assert isinstance(response.msgs, list)
+    assert len(response.msgs) > 0
+    assert isinstance(response.terminated, bool)
+    assert response.terminated is False
+    assert isinstance(response.info, dict)
+    assert response.info['id'] is not None
     assert babyagi.tasks_storage.is_empty() is False
 
     task = babyagi.tasks_storage.popleft()
-    assert babyagi.tasks_storage.is_empty() is True
+    prompt = 'Instruction: ' + task['task_name']
+    user_msg = BaseMessage(role_name="Patient", role_type=RoleType.USER,
+                    meta_dict=dict(), content=prompt)
+    result, result_content = babyagi.execution_agent(user_msg)
+    assert isinstance(result, ChatAgentResponse)
+    assert isinstance(result_content, str)
 
-    result = babyagi.execution_agent(objective, task["task_name"])
-    assert isinstance(result, str)
-
-    result_id = f"result_{task['task_id']}"
-    babyagi.results_storage.add(task, result, result_id)
-
-    enriched_result = {"data": result}
+    enriched_result = {"data": result_content}
     new_tasks = babyagi.task_creation_agent(
-        objective,
+        babyagi.objective,
         enriched_result,
-        task["task_name"],
+        prompt,
         babyagi.tasks_storage.get_task_names(),
     )
     assert isinstance(new_tasks, list)
@@ -54,26 +75,9 @@ def test_babyagi_agent(model: ModelType):
     assert isinstance(new_tasks[0], dict)
 
     for new_task in new_tasks:
-        new_task.update({"task_id": babyagi.tasks_storage.next_task_id()})
         babyagi.tasks_storage.append(new_task)
 
     prioritized_tasks = babyagi.prioritization_agent()
     assert isinstance(prioritized_tasks, list)
     assert len(prioritized_tasks) > 0
     assert isinstance(prioritized_tasks[0], dict)
-    """
-    # this test is to check if new prioritized tasks and old tasks are
-    # different only in the task ordering. But they may differ slightly.
-    # because the prioritized tasks are generated from openai api
-    # based on old tasks. Some words may change.
-    old_number_tasks = list(babyagi.tasks_storage.tasks)
-    old_number_tasks_names = [task['task_name'] for task in old_number_tasks]
-    if prioritized_tasks:
-        babyagi.tasks_storage.replace(prioritized_tasks)
-    new_number_tasks = list(babyagi.tasks_storage.tasks)
-    new_number_tasks_names = [task['task_name'] for task in new_number_tasks]
-    for task in old_number_tasks_names:
-        assert task in new_number_tasks_names
-    for task in new_number_tasks_names:
-        assert task in old_number_tasks_names
-    """
