@@ -42,7 +42,7 @@ def test_babyagi_agent(model: ModelType):
                            model_config=model_config)
     babyagi.reset()
     assert babyagi.tasks_storage.is_empty() is True
-    babyagi.tasks_storage.append({'task_name': objective})
+    babyagi.tasks_storage.add_task({'task_name': objective})
     task = babyagi.tasks_storage.popleft()
     assert babyagi.tasks_storage.is_empty() is True
     prompt = 'Instruction: ' + task['task_name']
@@ -77,7 +77,7 @@ def test_babyagi_agent(model: ModelType):
     assert isinstance(new_tasks[0], dict)
 
     for new_task in new_tasks:
-        babyagi.tasks_storage.append(new_task)
+        babyagi.tasks_storage.add_task(new_task)
 
     prioritized_tasks = babyagi.prioritization_agent()
     assert isinstance(prioritized_tasks, list)
