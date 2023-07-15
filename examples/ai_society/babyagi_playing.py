@@ -46,8 +46,7 @@ def main() -> None:
             task = babyagi.tasks_storage.popleft()
             prompt = 'Instruction: ' + task['task_name']
             user_msg = BaseMessage(role_name="Patient",
-                                   role_type=RoleType.USER,
-                                   meta_dict=dict(),
+                                   role_type=RoleType.USER, meta_dict=dict(),
                                    content=prompt)
             response = babyagi.step(user_msg)
             info = response.info['log_info']

@@ -184,9 +184,7 @@ follow your list with any other output."""
             if len(task_parts) == 2:
                 task_name = re.sub(r'[^\w\s_]+', '', task_parts[1]).strip()
                 if task_name.strip():
-                    new_tasks_list.append({
-                        "task_name": task_name
-                    })
+                    new_tasks_list.append({"task_name": task_name})
 
         return new_tasks_list
 
@@ -237,8 +235,8 @@ follow your list with any other output."""
         # Step 2: Enrich result and store in the results storage
         # This is where you should enrich the result if needed
         # avoid system message being added to database
-        if (input_message.role_type == RoleType.USER and
-                input_message.content.startswith('Instruction:')):
+        if (input_message.role_type == RoleType.USER
+                and input_message.content.startswith('Instruction:')):
             enriched_result = {"data": response_content}
             result_id = f"result_{self.tasks_storage.next_task_id()}"
             self.results_storage.add(task, response_content, result_id)
