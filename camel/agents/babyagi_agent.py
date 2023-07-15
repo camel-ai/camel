@@ -230,7 +230,7 @@ follow your list with any other output."""
         # This is where you should enrich the result if needed
         # avoid system message being added to database
         if (input_message.role_type == RoleType.USER and
-              input_message.content.startswith('Instruction:')):
+        input_message.content.startswith('Instruction:')):
             enriched_result = {"data": response_content}
             result_id = f"result_{self.tasks_storage.next_task_id()}"
             self.results_storage.add(task, response_content, result_id)
@@ -246,7 +246,7 @@ follow your list with any other output."""
             # Adding new tasks to task_storage
             for new_task in new_tasks:
                 self.tasks_storage.append(new_task)
-                log_info['new_tasks'].append(new_task)   
+                log_info['new_tasks'].append(new_task)
             prioritized_tasks = self.prioritization_agent()
             self.tasks_storage.replace(prioritized_tasks)
             log_info['prioritized_tasks'] = copy.deepcopy(
@@ -341,4 +341,3 @@ class SingleTaskListStorage:
 
     def get_task_names(self):
         return [t["task_name"] for t in self.tasks]
-    
