@@ -17,9 +17,9 @@ from collections import deque
 from typing import Any, Dict, List, Optional
 
 import chromadb  # type: ignore
-import chromadb.utils.embedding_functions as chromadbF
 import openai
-from chromadbF import OpenAIEmbeddingFunction  # type: ignore
+from chromadb.utils.embedding_functions import \
+    OpenAIEmbeddingFunction  # type: ignore
 
 from camel.agents import ChatAgent, ChatAgentResponse
 from camel.messages import BaseMessage
