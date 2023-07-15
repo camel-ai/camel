@@ -20,7 +20,6 @@ from typing import Any, Dict, List, Optional
 import chromadb
 import openai
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
-import pdb
 from camel.agents import ChatAgent
 from camel.typing import ModelType, RoleType
 from camel.messages import BaseMessage
@@ -202,12 +201,12 @@ follow your list with any other output."""
         context = self.context_agent(query=self.objective, top_results_num=5)
         if context:
             input_message.content += \
-            '\n\nConsider the previously completed tasks:' + '\n'.join(
+              '\n\nConsider the previously completed tasks:' + '\n'.join(
                 context)
         response = super(BabyAGIAgent, self).step(input_message)
         response_content = response.msgs[0].content
         return response, response_content
-    
+
     def step(self, input_message: BaseMessage = None) -> dict:
         r"""Performs a single step in solving one task and
         generaing new tasks and priotizing them.
@@ -219,7 +218,7 @@ follow your list with any other output."""
         """
         log_info = {}
         task_name = input_message.content
-        task = {'task_name':task_name}
+        task = {'task_name': task_name}
         log_info['current_task'] = task_name
         # Send to execution function to complete the task
         # based on the context
@@ -230,8 +229,8 @@ follow your list with any other output."""
         # Step 2: Enrich result and store in the results storage
         # This is where you should enrich the result if needed
         # avoid system message being added to database
-        if (input_message.role_type == RoleType.USER and 
-            input_message.content.startswith('Instruction:')):
+        if (input_message.role_type == RoleType.USER and
+              input_message.content.startswith('Instruction:')):
             enriched_result = {"data": response_content}
             result_id = f"result_{self.tasks_storage.next_task_id()}"
             self.results_storage.add(task, response_content, result_id)
@@ -247,13 +246,11 @@ follow your list with any other output."""
             # Adding new tasks to task_storage
             for new_task in new_tasks:
                 self.tasks_storage.append(new_task)
-                log_info['new_tasks'].append(new_task)
-                
+                log_info['new_tasks'].append(new_task)   
             prioritized_tasks = self.prioritization_agent()
             self.tasks_storage.replace(prioritized_tasks)
             log_info['prioritized_tasks'] = copy.deepcopy(
                 prioritized_tasks)
-            
             num_top_tasks = 3
             tmp = '\nThree prioritizd tasks to perform: \n'
             response.msgs[0].content += tmp
@@ -344,3 +341,4 @@ class SingleTaskListStorage:
 
     def get_task_names(self):
         return [t["task_name"] for t in self.tasks]
+    
