@@ -33,22 +33,23 @@ def main() -> None:
     print("\033[91m\033[1m" + "\n*****OBJECTIVE*****\n" + "\033[0m\033[0m")
     print(objective)
 
-    babyagi_play_session = BabyAGIAgent(system_msg, objective, model=
-                                        model, model_config=model_config)
-    babyagi_play_session.reset()
+    babyagi = BabyAGIAgent(system_msg, objective, model=model, 
+                           model_config=model_config)
+    babyagi.reset()
 
     limit = 15
     n = 0
-    babyagi_play_session.tasks_storage.append({'task_name': objective})
+    babyagi.tasks_storage.append({'task_name': objective})
     while n < limit:
         n += 1
-        if not babyagi_play_session.tasks_storage.is_empty():
-            task = babyagi_play_session.tasks_storage.popleft()
+        if not babyagi.tasks_storage.is_empty():
+            task = babyagi.tasks_storage.popleft()
             prompt = 'Instruction: ' + task['task_name']
-            user_msg = BaseMessage(role_name="Patient", role_type=
-                                   RoleType.USER, meta_dict=dict(),
+            user_msg = BaseMessage(role_name="Patient", 
+                                   role_type=RoleType.USER, 
+                                   meta_dict=dict(),
                                    content=prompt)
-            response = babyagi_play_session.step(user_msg)
+            response = babyagi.step(user_msg)
             info = response.info['log_info']
             print("\033[92m\033[1m" + "\n*****CURRENT TASK*****\n" +
                   "\033[0m\033[0m")

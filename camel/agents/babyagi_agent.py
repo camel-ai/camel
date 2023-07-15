@@ -230,7 +230,7 @@ follow your list with any other output."""
         # This is where you should enrich the result if needed
         # avoid system message being added to database
         if (input_message.role_type == RoleType.USER and
-            input_message.content.startswith('Instruction:')):
+                input_message.content.startswith('Instruction:')):
             enriched_result = {"data": response_content}
             result_id = f"result_{self.tasks_storage.next_task_id()}"
             self.results_storage.add(task, response_content, result_id)
