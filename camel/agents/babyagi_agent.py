@@ -16,9 +16,10 @@ import re
 from collections import deque
 from typing import Any, Dict, List, Optional
 
-import chromadb
+import chromadb  # type: ignore
+import chromadb.utils.embedding_functions as chromadbF
 import openai
-from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
+from chromadbF import OpenAIEmbeddingFunction  # type: ignore
 
 from camel.agents import ChatAgent, ChatAgentResponse
 from camel.messages import BaseMessage
@@ -223,10 +224,10 @@ follow your list with any other output."""
                 a boolean indicating whether the chat session has terminated,
                 and information about the chat session.
         """
-        log_info = dict() # type: Dict
+        log_info = dict()  # type: Dict
         log_info['new_tasks'] = []
         log_info['prioritized_tasks'] = []
-        task_name = input_message.content # type: str
+        task_name = input_message.content  # type: str
         task = {'task_name': task_name}
         log_info['current_task'] = task_name
         # Send to execution function to complete the task
