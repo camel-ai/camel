@@ -223,7 +223,9 @@ follow your list with any other output."""
                 a boolean indicating whether the chat session has terminated,
                 and information about the chat session.
         """
-        log_info = dict(new_tasks= [], prioritized_tasks= []) # type: Dict
+        log_info = dict() # type: Dict
+        log_info['new_tasks'] = []
+        log_info['prioritized_tasks'] = []
         task_name = input_message.content # type: str
         task = {'task_name': task_name}
         log_info['current_task'] = task_name
@@ -311,7 +313,7 @@ class DefaultResultsStorage:
                 },
             )
 
-    def query(self, query: str, top_results_num: int) -> List[dict]:
+    def query(self, query: str, top_results_num: int) -> List[str]:
         count: int = self.collection.count()
         if count == 0:
             return []
