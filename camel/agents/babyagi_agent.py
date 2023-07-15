@@ -11,11 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import copy
 import os
 import re
 from collections import deque
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import chromadb
 import openai
@@ -224,7 +223,7 @@ follow your list with any other output."""
                 a boolean indicating whether the chat session has terminated,
                 and information about the chat session.
         """
-        log_info = {}
+        log_info = {'new_tasks':[], 'prioritized_tasks':[]}
         task_name = input_message.content
         task = {'task_name': task_name}
         log_info['current_task'] = task_name
@@ -232,8 +231,6 @@ follow your list with any other output."""
         # based on the context
         response, response_content = self.execution_agent(input_message)
         log_info['task_result'] = response_content
-        log_info['new_tasks'] = []
-        log_info['prioritized_tasks'] = []
         # Step 2: Enrich result and store in the results storage
         # This is where you should enrich the result if needed
         # avoid system message being added to database
