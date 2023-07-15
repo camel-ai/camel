@@ -223,7 +223,7 @@ follow your list with any other output."""
                 a boolean indicating whether the chat session has terminated,
                 and information about the chat session.
         """
-        log_info = {'new_tasks':[], 'prioritized_tasks':[]}
+        log_info = dict(new_tasks = [], prioritized_tasks= [])
         task_name = input_message.content
         task = {'task_name': task_name}
         log_info['current_task'] = task_name
