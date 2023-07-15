@@ -12,7 +12,9 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .role_playing import RolePlaying
+from .role_playing_multi_model import RolePlayingMultiModel
 
 __all__ = [
     'RolePlaying',
+    'RolePlayingMultiModel',
 ]
