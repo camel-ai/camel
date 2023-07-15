@@ -68,7 +68,7 @@ class BabyAGIAgent(ChatAgent):
             input=[text],
             model="text-embedding-ada-002")["data"][0]["embedding"]
 
-    def context_agent(self, query: str, top_results_num: int) -> List[dict]:
+    def context_agent(self, query: str, top_results_num: int) -> List[str]:
         r"""
         Retrieves top n completed tasks as context for a given query.
 
@@ -83,7 +83,7 @@ class BabyAGIAgent(ChatAgent):
                                              top_results_num=top_results_num)
         return results
 
-    def task_creation_agent(self, objective: str, result: Dict,
+    def task_creation_agent(self, objective: str, result: dict,
                             task_description: str,
                             task_list: List[str]) -> List[dict]:
         r"""
@@ -175,7 +175,7 @@ follow your list with any other output."""
         if not response:
             # print("Received empty response from priotritization agent.\
             #      Keeping task list unchanged.")
-            return
+            return []
         new_tasks = response.split("\n") if "\n" in response else [response]
         new_tasks_list = []
         for task_string in new_tasks:
@@ -211,7 +211,7 @@ follow your list with any other output."""
         response_content = response.msgs[0].content
         return response, response_content
 
-    def step(self, input_message: BaseMessage = None) -> ChatAgentResponse:
+    def step(self, input_message: BaseMessage) -> ChatAgentResponse:
         r"""Performs a single step in solving one task and
         generaing new tasks and priotizing them.
 
@@ -223,8 +223,8 @@ follow your list with any other output."""
                 a boolean indicating whether the chat session has terminated,
                 and information about the chat session.
         """
-        log_info = dict(new_tasks = [], prioritized_tasks= [])
-        task_name = input_message.content
+        log_info = dict(new_tasks= [], prioritized_tasks= []) # type: Dict
+        task_name = input_message.content # type: str
         task = {'task_name': task_name}
         log_info['current_task'] = task_name
         # Send to execution function to complete the task
