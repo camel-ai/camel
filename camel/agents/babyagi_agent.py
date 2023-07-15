@@ -15,7 +15,7 @@ import copy
 import os
 import re
 from collections import deque
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import chromadb
 import openai
@@ -190,7 +190,7 @@ follow your list with any other output."""
 
         return new_tasks_list
 
-    def execution_agent(self, input_message: BaseMessage) -> Tuple[ChatAgentResponse, str]:
+    def execution_agent(self, input_message: BaseMessage):
         r"""
         Executes a task based on the given objective and previous context.
 
@@ -252,13 +252,13 @@ follow your list with any other output."""
                 self.tasks_storage.get_task_names(),
             )
             # Adding new tasks to task_storage
+            log_info['new_tasks'] = new_tasks
             for new_task in new_tasks:
                 self.tasks_storage.add_task(new_task)
-                log_info['new_tasks'].append(new_task)
+
             prioritized_tasks = self.prioritization_agent()
             self.tasks_storage.replace(prioritized_tasks)
-            log_info['prioritized_tasks'] = copy.deepcopy(
-                prioritized_tasks)
+            log_info['prioritized_tasks'] = prioritized_tasks
             num_top_tasks = 3
             tmp = '\nThree prioritizd tasks to perform: \n'
             response.msgs[0].content += tmp
