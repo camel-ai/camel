@@ -33,7 +33,7 @@ def main() -> None:
     print("\033[91m\033[1m" + "\n*****OBJECTIVE*****\n" + "\033[0m\033[0m")
     print(objective)
 
-    babyagi = BabyAGIAgent(system_msg, objective, model=model, 
+    babyagi = BabyAGIAgent(system_msg, objective, model=model,
                            model_config=model_config)
     babyagi.reset()
 
@@ -45,8 +45,8 @@ def main() -> None:
         if not babyagi.tasks_storage.is_empty():
             task = babyagi.tasks_storage.popleft()
             prompt = 'Instruction: ' + task['task_name']
-            user_msg = BaseMessage(role_name="Patient", 
-                                   role_type=RoleType.USER, 
+            user_msg = BaseMessage(role_name="Patient",
+                                   role_type=RoleType.USER,
                                    meta_dict=dict(),
                                    content=prompt)
             response = babyagi.step(user_msg)
