@@ -15,24 +15,16 @@ import copy
 import os
 import re
 from collections import deque
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Optional
 
 import chromadb
 import openai
-import tiktoken
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 import pdb
-from camel.agents import BaseAgent, ChatAgent
-from camel.agents.chat_agent import ChatRecord, ChatAgentResponse
-from camel.configs import ChatGPTConfig
+from camel.agents import ChatAgent
 from camel.typing import ModelType, RoleType
 from camel.messages import BaseMessage
-from camel.models import BaseModelBackend, ModelFactory
-from camel.utils import (
-    get_model_encoding,
-    num_tokens_from_messages,
-    openai_api_key_required,
-)
+
 RESULTS_STORE_NAME = "example_table_5"
 
 
@@ -209,7 +201,8 @@ follow your list with any other output."""
         """
         context = self.context_agent(query=self.objective, top_results_num=5)
         if context:
-            input_message.content += '\n\nConsider the previously completed tasks:' + '\n'.join(
+            input_message.content += \
+            '\n\nConsider the previously completed tasks:' + '\n'.join(
                 context)
         response = super(BabyAGIAgent, self).step(input_message)
         response_content = response.msgs[0].content
@@ -232,8 +225,8 @@ follow your list with any other output."""
         # based on the context
         response, response_content = self.execution_agent(input_message)
         log_info['task_result'] = response_content
-        log_info['new_tasks_ordering'] = []
-        log_info['prioritized_tasks_ordering'] = []
+        log_info['new_tasks'] = []
+        log_info['prioritized_tasks'] = []
         # Step 2: Enrich result and store in the results storage
         # This is where you should enrich the result if needed
         # avoid system message being added to database
@@ -254,17 +247,19 @@ follow your list with any other output."""
             # Adding new tasks to task_storage
             for new_task in new_tasks:
                 self.tasks_storage.append(new_task)
-                log_info['new_tasks_ordering'].append(new_task)
+                log_info['new_tasks'].append(new_task)
                 
             prioritized_tasks = self.prioritization_agent()
             self.tasks_storage.replace(prioritized_tasks)
-            log_info['prioritized_tasks_ordering'] = copy.deepcopy(
+            log_info['prioritized_tasks'] = copy.deepcopy(
                 prioritized_tasks)
             
             num_top_tasks = 3
-            response.msgs[0].content += '\nThree prioritizd tasks to perform: \n'
+            tmp = '\nThree prioritizd tasks to perform: \n'
+            response.msgs[0].content += tmp
             for i in range(num_top_tasks):
-                response.msgs[0].content += f"{prioritized_tasks[i]['task_name']}\n"
+                tmp = f"{prioritized_tasks[i]['task_name']}\n"
+                response.msgs[0].content += tmp
         response.info['log_info'] = log_info
         return response
 

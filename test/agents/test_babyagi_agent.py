@@ -25,6 +25,7 @@ parametrize = pytest.mark.parametrize('model', [
     pytest.param(ModelType.GPT_4, marks=pytest.mark.model_backend),
 ])
 
+
 @parametrize
 def test_babyagi_agent(model: ModelType):
 
@@ -36,16 +37,16 @@ def test_babyagi_agent(model: ModelType):
         )
     objective = "Solve gastric cancel."
 
-    babyagi = BabyAGIAgent(system_msg, objective, model=model, \
+    babyagi = BabyAGIAgent(system_msg, objective, model=model,
                            model_config=model_config)
     babyagi.reset()
     assert babyagi.tasks_storage.is_empty() is True
-    babyagi.tasks_storage.append({'task_name':objective})
+    babyagi.tasks_storage.append({'task_name': objective})
     task = babyagi.tasks_storage.popleft()
     assert babyagi.tasks_storage.is_empty() is True
     prompt = 'Instruction: ' + task['task_name']
     user_msg = BaseMessage(role_name="Patient", role_type=RoleType.USER,
-                    meta_dict=dict(), content=prompt)
+                           meta_dict=dict(), content=prompt)
     response = babyagi.step(user_msg)
     assert isinstance(response.msgs, list)
     assert len(response.msgs) > 0
@@ -58,7 +59,7 @@ def test_babyagi_agent(model: ModelType):
     task = babyagi.tasks_storage.popleft()
     prompt = 'Instruction: ' + task['task_name']
     user_msg = BaseMessage(role_name="Patient", role_type=RoleType.USER,
-                    meta_dict=dict(), content=prompt)
+                           meta_dict=dict(), content=prompt)
     result, result_content = babyagi.execution_agent(user_msg)
     assert isinstance(result, ChatAgentResponse)
     assert isinstance(result_content, str)
