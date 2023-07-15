@@ -20,9 +20,10 @@ from typing import Any, Dict, List, Optional
 import chromadb
 import openai
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
+
 from camel.agents import ChatAgent
-from camel.typing import ModelType, RoleType
 from camel.messages import BaseMessage
+from camel.typing import ModelType, RoleType
 
 RESULTS_STORE_NAME = "example_table_5"
 

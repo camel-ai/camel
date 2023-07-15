@@ -12,12 +12,13 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import pytest
-from camel.messages import BaseMessage
+
 from camel.agents import BabyAGIAgent
+from camel.agents.chat_agent import ChatAgentResponse
 from camel.configs import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
+from camel.messages import BaseMessage
 from camel.typing import ModelType, RoleType, TaskType
-from camel.agents.chat_agent import ChatAgentResponse
 
 parametrize = pytest.mark.parametrize('model', [
     ModelType.STUB,

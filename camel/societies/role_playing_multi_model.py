@@ -12,9 +12,10 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Dict, List, Optional, Sequence, Tuple, Union
+
 from camel.agents import (
-    ChatAgent,
     BabyAGIAgent,
+    ChatAgent,
     CriticAgent,
     TaskPlannerAgent,
     TaskSpecifyAgent,
