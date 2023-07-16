@@ -147,6 +147,7 @@ class ChatAgent(BaseAgent):
 
         # This is a very dirty implementation. We should consider to
         # move the function execution part to another class.
+        self.func_enable = (function_list is not None)
         if function_list is not None:
             self.func_dict: Dict[str, Callable] = {}
             for func in function_list:
@@ -299,9 +300,8 @@ class ChatAgent(BaseAgent):
                         self.handle_stream_response(response, num_tokens)
 
                 # function calling disabled or stopped
-                if not isinstance(
-                        self.model_config,
-                        FuncConfig) or finish_reasons[0] != "function_call":
+                if (not self.func_enable) \
+                        or (finish_reasons[0] != "function_call"):
                     info = self.get_info(
                         response_id,
                         usage_dict,
