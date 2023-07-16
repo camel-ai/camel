@@ -128,6 +128,7 @@ def test_set_output_language():
         "\nRegardless of the input language, you must output text in Arabic.")
     assert agent.system_message.content == updated_system_message.content
 
+
 @pytest.mark.model_backend
 def test_function_calling():
     system_message = BaseMessage(role_name="assistant",
@@ -151,7 +152,7 @@ def test_function_calling():
     assert len(agent_response.info['called_functions']) > 0
     assert str(agent_response.info['called_functions'][0])\
         .startswith("Function Execution")
-    
+
     # Verify that the length of the system message is kept constant even when
     # multiple set_output_language operations are called
     agent.set_output_language("Chinese")
@@ -162,4 +163,3 @@ def test_function_calling():
         content="You are a help assistant."
         "\nRegardless of the input language, you must output text in French.")
     assert agent.system_message.content == updated_system_message.content
-
