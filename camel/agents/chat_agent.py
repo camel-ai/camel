@@ -149,9 +149,8 @@ class ChatAgent(BaseAgent):
         # This is a very dirty implementation. We should consider to
         # move the function execution part to another class.
         self.func_enable = (function_list is not None)
-        self.func_dict: Optional[Dict[str, Callable]] = None
+        self.func_dict: Dict[str, Callable] = {}
         if function_list is not None:
-            self.func_dict = {}
             for func in function_list:
                 self.func_dict[func.name] = func.func
         self.model_config = model_config or ChatGPTConfig()
