@@ -11,12 +11,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from abc import ABC
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence, Union
 
 
 @dataclass(frozen=True)
-class ChatGPTConfig:
+class BaseConfig(ABC):
+    pass
+
+
+@dataclass(frozen=True)
+class ChatGPTConfig(BaseConfig):
     r"""Defines the parameters for generating chat completions using the
     OpenAI API.
 

@@ -21,7 +21,7 @@ from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_exponential
 
 from camel.agents import BaseAgent
-from camel.configs import ChatGPTConfig, FuncConfig
+from camel.configs import BaseConfig, ChatGPTConfig
 from camel.functions import OpenAIFunction
 from camel.messages import BaseMessage, FuncMessage
 from camel.models import BaseModelBackend, ModelFactory
@@ -128,7 +128,7 @@ class ChatAgent(BaseAgent):
         self,
         system_message: BaseMessage,
         model: Optional[ModelType] = None,
-        model_config: Optional[Any] = None,
+        model_config: Optional[BaseConfig] = None,
         message_window_size: Optional[int] = None,
         output_language: Optional[str] = None,
         function_list: Optional[List[OpenAIFunction]] = None,
