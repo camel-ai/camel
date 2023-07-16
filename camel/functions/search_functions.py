@@ -63,6 +63,7 @@ def search_wiki(entity: str) -> str:
     soup = BeautifulSoup(response_text, features="html.parser")
     result_divs = soup.find_all("div", {"class": "mw-search-result-heading"})
 
+    obs: str
     if result_divs:
         # only similar concepts exist
         result_titles = [
@@ -78,7 +79,7 @@ def search_wiki(entity: str) -> str:
         ]
 
         if any("may refer to:" in p for p in page):
-            search_wiki("[" + entity + "]")
+            return search_wiki("[" + entity + "]")
         else:
             res_page = ""
             for p in page:

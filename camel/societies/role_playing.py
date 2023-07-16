@@ -363,9 +363,6 @@ class RolePlaying:
                      "Now start to give me instructions one by one. "
                      "Only reply with Instruction and Input."))
 
-        # if self.assist_func_enable:
-        #     return assistant_msg, []
-
         user_msg = BaseMessage.make_user_message(
             role_name=self.user_sys_msg.role_name,
             content=f"{self.assistant_sys_msg.content}")

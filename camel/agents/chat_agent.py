@@ -149,8 +149,9 @@ class ChatAgent(BaseAgent):
         # This is a very dirty implementation. We should consider to
         # move the function execution part to another class.
         self.func_enable = (function_list is not None)
+        self.func_dict: Optional[Dict[str, Callable]] = None
         if function_list is not None:
-            self.func_dict: Dict[str, Callable] = {}
+            self.func_dict = {}
             for func in function_list:
                 self.func_dict[func.name] = func.func
         self.model_config = model_config or ChatGPTConfig()
@@ -172,6 +173,14 @@ class ChatAgent(BaseAgent):
         """
         self.terminated = False
         self.init_messages()
+
+    @property
+    def system_message(self) -> BaseMessage:
+        return self._system_message
+
+    @system_message.setter
+    def system_message(self, value: BaseMessage):
+        self._system_message = value
 
     def set_output_language(self, output_language: str) -> BaseMessage:
         r"""Sets the output language for the system message. This method
