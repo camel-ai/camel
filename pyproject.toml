@@ -91,5 +91,6 @@ module = [
     "database_connection",
     "huggingface_hub",
     "huggingface_hub.utils._errors",
+    "chromadb.utils.embedding_functions",
 ]
 ignore_missing_imports = true
