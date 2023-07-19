@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Optional
 
-from packaging import version
+from packaging import version  # type: ignore
 from transformers.tools.agent_types import AgentImage  # type: ignore
 
 from camel.agents.tool_agents import BaseToolAgent
@@ -45,7 +45,7 @@ class HuggingFaceToolAgent(BaseToolAgent):
     ) -> None:
         try:
             # TODO: Support other tool agents
-            import transformers
+            import transformers  # type: ignore
             from transformers.tools import OpenAiAgent
             assert version.parse(
                 transformers.__version__) >= version.parse("4.31.0")
