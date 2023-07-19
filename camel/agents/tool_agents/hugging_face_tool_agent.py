@@ -13,6 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Optional
 
+from packaging import version
 from transformers.tools.agent_types import AgentImage  # type: ignore
 
 from camel.agents.tool_agents import BaseToolAgent
@@ -44,8 +45,11 @@ class HuggingFaceToolAgent(BaseToolAgent):
     ) -> None:
         try:
             # TODO: Support other tool agents
+            import transformers
             from transformers.tools import OpenAiAgent
-        except ImportError:
+            assert version.parse(
+                transformers.__version__) >= version.parse("4.31.0")
+        except (ImportError, AssertionError):
             raise ValueError(
                 "Could not import transformers tool agents. "
                 "Please setup the environment with "
