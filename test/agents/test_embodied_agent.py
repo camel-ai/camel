@@ -34,7 +34,7 @@ def test_get_action_space_prompt():
 
 
 @pytest.mark.model_backend
-# @pytest.mark.full_test_only
+@pytest.mark.full_test_only
 def test_step():
     # Create an embodied agent
     role_name = "Artist"
