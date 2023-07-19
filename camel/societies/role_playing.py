@@ -72,9 +72,9 @@ class RolePlaying:
             task specify meta dict with. (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
             agents. (default: :obj:`None`)
-        assist_funcs (Optional[List[OpenAIFunction]]): the function collection
-            objects to be loaded. If :obj:`None`, function calling is disabled.
-            (default: :obj:`None`)
+        assistant_functions (Optional[List[OpenAIFunction]]): the function
+            collection objects to be loaded. If :obj:`None`, function calling
+            is disabled. (default: :obj:`None`)
     """
 
     def __init__(
@@ -98,7 +98,7 @@ class RolePlaying:
         extend_sys_msg_meta_dicts: Optional[List[Dict]] = None,
         extend_task_specify_meta_dict: Optional[Dict] = None,
         output_language: Optional[str] = None,
-        assist_funcs: Optional[List[OpenAIFunction]] = None,
+        assistant_functions: Optional[List[OpenAIFunction]] = None,
     ) -> None:
         self.with_task_specify = with_task_specify
         self.with_task_planner = with_task_planner
@@ -107,7 +107,7 @@ class RolePlaying:
         self.task_type = task_type
         self.task_prompt = task_prompt
 
-        self.assist_funcs = assist_funcs
+        self.assistant_functions = assistant_functions
 
         self.specified_task_prompt: Optional[TextPrompt] = None
         self.init_specified_task_prompt(assistant_role_name, user_role_name,
@@ -278,10 +278,11 @@ class RolePlaying:
             output_language (str, optional): The language to be output by the
                 agents.
         """
-        if self.assist_funcs is not None:
+        if self.assistant_functions is not None:
             assistant_config = FuncConfig(
-                functions=[func.as_dict() for func in self.assist_funcs],
-                function_call="auto")
+                functions=[
+                    func.as_dict() for func in self.assistant_functions
+                ], function_call="auto")
         else:
             assistant_config = None
         self.assistant_agent = ChatAgent(
@@ -289,7 +290,7 @@ class RolePlaying:
             self.model_type,
             model_config=assistant_config,
             output_language=output_language,
-            function_list=self.assist_funcs,
+            function_list=self.assistant_functions,
             **(assistant_agent_kwargs or {}),
         )
         self.assistant_sys_msg = self.assistant_agent.system_message

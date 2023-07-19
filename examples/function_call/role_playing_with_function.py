@@ -32,7 +32,7 @@ def main(model_type=ModelType.GPT_4) -> None:
         task_prompt=task_prompt,
         with_task_specify=False,
         model_type=model_type,
-        assist_funcs=[*MATH_FUNCS, *SEARCH_FUNCS],
+        assistant_functions=[*MATH_FUNCS, *SEARCH_FUNCS],
     )
 
     print(

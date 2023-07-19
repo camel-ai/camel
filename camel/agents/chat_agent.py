@@ -133,7 +133,7 @@ class ChatAgent(BaseAgent):
     ) -> None:
 
         self.orig_sys_message: BaseMessage = system_message
-        self.system_message: BaseMessage = system_message
+        self.system_message = system_message
         self.role_name: str = system_message.role_name
         self.role_type: RoleType = system_message.role_type
         self.output_language: Optional[str] = output_language
@@ -144,9 +144,6 @@ class ChatAgent(BaseAgent):
                                  ModelType.GPT_3_5_TURBO)
         self.message_window_size: Optional[int] = message_window_size
 
-        # This is a very dirty implementation. We should consider to
-        # move the function execution part to another class.
-        self.func_enable = (function_list is not None)
         self.func_dict: Dict[str, Callable] = {}
         if function_list is not None:
             for func in function_list:
@@ -173,11 +170,34 @@ class ChatAgent(BaseAgent):
 
     @property
     def system_message(self) -> BaseMessage:
+        r"""Getter method for the property `system_message`
+
+        Returns:
+            BaseMessage: The system message of this agent.
+        """
         return self._system_message
 
     @system_message.setter
     def system_message(self, value: BaseMessage):
+        r"""Setter method for the property `system_message`
+
+        Args:
+            value (BaseMessage): The value of the message to be set
+                as the new system message of this agent
+        """
         self._system_message = value
+
+    @property
+    def func_enable(self) -> bool:
+        r"""Getter method for the property `func_enable`, indicating
+        whether OpenAI function calling is enabled for this agent
+
+        Returns:
+            bool: Whether OpenAI function calling is enabled for this
+                agent, determined by whether the dictionary of functions
+                is empty
+        """
+        return len(self.func_dict) > 0
 
     def set_output_language(self, output_language: str) -> BaseMessage:
         r"""Sets the output language for the system message. This method
@@ -257,7 +277,7 @@ class ChatAgent(BaseAgent):
         """
         self.stored_messages.append(ChatRecord('assistant', message))
 
-    # @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
+    @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     @openai_api_key_required
     def step(
         self,
@@ -286,7 +306,7 @@ class ChatAgent(BaseAgent):
             # Format messages and get the token number
             openai_messages: Optional[List[OpenAIMessage]]
             num_tokens: int
-            openai_messages, num_tokens = self.truc_messages(messages)
+            openai_messages, num_tokens = self.truncate_messages(messages)
 
             # Terminate when number of tokens exceeds the limit
             if openai_messages is None:
@@ -323,7 +343,7 @@ class ChatAgent(BaseAgent):
 
         return ChatAgentResponse(output_messages, self.terminated, info)
 
-    def truc_messages(
+    def truncate_messages(
         self, messages: List[ChatRecord]
     ) -> Tuple[Optional[List[OpenAIMessage]], int]:
         r"""Truncate the list of messages if message window is defined and
@@ -529,7 +549,7 @@ class ChatAgent(BaseAgent):
 
         # Record information about this function call
         func_record = FuncRecord(func_name, args, result)
-        return (messages, func_record)
+        return messages, func_record
 
     def get_usage_dict(self, output_messages: List[BaseMessage],
                        prompt_tokens: int) -> Dict[str, int]:

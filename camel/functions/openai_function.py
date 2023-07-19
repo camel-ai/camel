@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 from jsonschema.validators import Draft202012Validator
 
@@ -24,6 +24,7 @@ class OpenAIFunction:
     :obj:`description` and :obj:`parameters` are both :obj:`None`, try to use
     document parser to generate them.
 
+    # flake8: noqa :E501
     Args:
         func (Callable): The function to call.
         name (str, optional): The name of the function to be called. Must be
@@ -31,43 +32,54 @@ class OpenAIFunction:
             length of 64. If :obj:`None`, use the name of :obj:`func`.
         description (Optional[str], optional): The description of what the
             function does. (default: :obj:`None`)
-        parameters (Optional[Dict], optional): The parameters the functions
-            accepts, described as a JSON Schema object. See the `guide <https:
-            //platform.openai.com/docs/guides/gpt/function-calling>`_ for
-            examples, and the `JSON Schema reference <https://json-schema.org/
-            understanding-json-schema/>`_ for documentation about the format.
+        parameters (Optional[Dict[str, Any]], optional): The parameters the
+            functions accepts, described as a JSON Schema object. See the
+            guide <https://platform.openai.com/docs/guides/gpt/function-calling>`
+            for examples, and the `JSON Schema reference <https://json-schema.org/
+            understanding-json-schema/>` for documentation about the format.
     """
 
     def __init__(self, func: Callable, name: Optional[str] = None,
                  description: Optional[str] = None,
-                 parameters: Optional[Dict] = None):
+                 parameters: Optional[Dict[str, Any]] = None):
         self.func = func
         self.name = name or func.__name__
 
-        try:
-            info = parse_doc(self.func)
-            if description is None:
-                description = info["description"]
-            if parameters is None:
-                parameters = info["parameters"]
-        except ValueError:
-            pass
-
-        self.description = description
-        self.parameters = parameters or {"type": "object", "properties": {}}
+        info = parse_doc(self.func)
+        self.description = description or info["description"]
+        self.parameters = parameters or info["parameters"]
 
     @property
-    def parameters(self):
+    def parameters(self) -> Dict[str, Any]:
+        r"""Getter method for the property `parameters`
+
+        Returns:
+            Dict[str, Any]: the dictionary containing information of
+                parameters of this function
+        """
         return self._parameters
 
     @parameters.setter
-    def parameters(self, value):
-        # Check if the parameters schema is valid.
-        # Raise jsonschema.exceptions.SchemaError if invalid.
+    def parameters(self, value: Dict[str, Any]):
+        r"""Setter method for the property `parameters". It will
+        firstly check if the input parameters schema is valid. If
+        invalid, the method will raise jsonschema.exceptions.SchemaError.
+
+        Args:
+            value (Dict[str, Any]): the new dictionary value for the
+                function's parameters
+        """
         Draft202012Validator.check_schema(value)
         self._parameters = value
 
-    def as_dict(self) -> Dict:
+    def as_dict(self) -> Dict[str, Any]:
+        r"""Method to represent the information of this function into
+        a dictionary object
+
+        Returns:
+            Dict[str, Any]: The dictionary object containing information
+                of this function's name, description and parameters.
+        """
         return {
             attr: getattr(self, attr)
             for attr in ["name", "description", "parameters"]

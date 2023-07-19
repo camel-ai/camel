@@ -20,6 +20,15 @@ from .openai_function import OpenAIFunction
 
 
 def clean_str(p: str) -> str:
+    r"""Cleans the input string by encoding and decoding it multiple times
+    to ensure it can be properly read and processed by Python code
+
+    Args:
+        p (str): The input string to be cleaned, typically from the webpage
+
+    Returns:
+        str: The cleaned string
+    """
     return p.encode().decode("unicode-escape")\
             .encode("latin1").decode("utf-8")
 
