@@ -47,7 +47,7 @@ class HuggingFaceToolAgent(BaseToolAgent):
             raise ValueError(
                 "Could not import transformers tool agents. "
                 "Please setup the environment with "
-                "pip install huggingface_hub==0.14.1 transformers==4.29.0 diffusers accelerate datasets torch soundfile sentencepiece opencv-python"
+                "pip install huggingface_hub==0.14.1 transformers==4.31.0 diffusers accelerate datasets torch soundfile sentencepiece opencv-python"
             )
         self.agent = OpenAiAgent(*args, **kwargs)
         description = f"""The `{name}` is a tool agent that can perform a variety of tasks including:
@@ -164,7 +164,11 @@ segmented_transformed_capybara_image.save("./segmented_transformed_capybara_imag
         """
         if remote is None:
             remote = self.remote
-        return self.agent.run(*args, remote=remote, **kwargs)
+        agent_output = self.agent.run(*args, remote=remote, **kwargs)
+        from transformers.tools.agent_types import AgentImage
+        if isinstance(agent_output, AgentImage):
+            agent_output = agent_output.to_raw()
+        return agent_output
 
     def chat(
         self,
@@ -185,4 +189,8 @@ segmented_transformed_capybara_image.save("./segmented_transformed_capybara_imag
         """
         if remote is None:
             remote = self.remote
-        return self.agent.chat(*args, remote=remote, **kwargs)
+        agent_output = self.agent.chat(*args, remote=remote, **kwargs)
+        from transformers.tools.agent_types import AgentImage
+        if isinstance(agent_output, AgentImage):
+            agent_output = agent_output.to_raw()
+        return agent_output

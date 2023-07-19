@@ -43,7 +43,6 @@ def test_step():
         meta_dict=meta_dict,
         role_tuple=(f"{role_name}'s Embodiment", RoleType.EMBODIMENT))
     embodied_agent = EmbodiedAgent(sys_msg, verbose=True)
-    print(embodied_agent.system_message)
     user_msg = BaseMessage.make_user_message(
         role_name=role_name,
         content="Draw all the Camelidae species.",
