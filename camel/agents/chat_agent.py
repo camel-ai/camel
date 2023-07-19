@@ -281,96 +281,72 @@ class ChatAgent(BaseAgent):
         """
         messages = self.update_messages('user', input_message)
 
-        output_messages: Optional[List[BaseMessage]]
+        loop_msg: bool = True
+        output_messages: List[BaseMessage]
         info: Dict[str, Any]
         called_funcs: List[FuncRecord] = []
-        while True:
-            if self.message_window_size is not None \
-                    and len(messages) > self.message_window_size:
-                messages = [ChatRecord('system', self.system_message)
-                            ] + messages[-self.message_window_size:]
-
-            openai_messages = [
-                record.to_openai_message() for record in messages
-            ]
+        while loop_msg:
+            # Format messages and get the token number
+            messages = self.truc_messages(messages)
+            openai_messages = \
+                [record.to_openai_message() for record in messages]
             num_tokens = num_tokens_from_messages(openai_messages, self.model)
 
-            if num_tokens < self.model_token_limit:
-                response = self.model_backend.run(openai_messages)
-                self.validate_model_response(response)
+            # Terminate when number of tokens exceeds the limit
+            if num_tokens >= self.model_token_limit:
+                return self.step_token_exceed(num_tokens, called_funcs)
 
-                if not self.model_backend.stream:
-                    # flake8: noqa :E501
-                    output_messages, finish_reasons, usage_dict, response_id = \
-                        self.handle_batch_response(response)
-                else:
-                    # flake8: noqa :E501
-                    output_messages, finish_reasons, usage_dict, response_id = \
-                        self.handle_stream_response(response, num_tokens)
+            # Obtain LLM's response and validate it
+            response = self.model_backend.run(openai_messages)
+            self.validate_model_response(response)
 
-                # function calling disabled or stopped
-                if (not self.func_enable) \
-                        or (finish_reasons[0] != "function_call"):
-                    info = self.get_info(
-                        response_id,
-                        usage_dict,
-                        finish_reasons,
-                        num_tokens,
-                        called_funcs,
-                    )
-                    break
-
-                else:  # function call
-                    choice = response["choices"][0]
-
-                    func_name = choice.message["function_call"].name
-                    func = self.func_dict[func_name]
-
-                    args = choice.message["function_call"].arguments
-                    args = eval(args)
-
-                    # Pass the extracted arguments to the indicated function
-                    result = func(**args)
-
-                    assist_msg = FuncMessage(
-                        role_name=self.role_name,
-                        role_type=RoleType.ASSISTANT,
-                        meta_dict=None,
-                        content="",
-                        func_name=func_name,
-                        args=args,
-                    )
-                    func_msg = FuncMessage(
-                        role_name=self.role_name,
-                        role_type=RoleType.FUNC,
-                        meta_dict=None,
-                        content="",
-                        func_name=func_name,
-                        result=result,
-                    )
-
-                    # Add the function record into a list to be output
-                    func_record = FuncRecord(func_name, args, result)
-                    called_funcs.append(func_record)
-
-                    # Update the messages
-                    messages = self.update_messages('assistant', assist_msg)
-                    messages = self.update_messages('function', func_msg)
+            if not self.model_backend.stream:
+                # flake8: noqa :E501
+                output_messages, finish_reasons, usage_dict, response_id = \
+                    self.handle_batch_response(response)
             else:
-                self.terminated = True
-                output_messages = []
+                # flake8: noqa :E501
+                output_messages, finish_reasons, usage_dict, response_id = \
+                    self.handle_stream_response(response, num_tokens)
 
+            # Postprocess the response or execute function call
+            if self.step_end(finish_reasons[0]):
+                # function calling disabled or chat stopped
                 info = self.get_info(
-                    None,
-                    None,
-                    ["max_tokens_exceeded"],
+                    response_id,
+                    usage_dict,
+                    finish_reasons,
                     num_tokens,
                     called_funcs,
                 )
-
-                break
+                loop_msg = False
+            else:
+                # function call
+                messages, func_record = self.step_func_call(response)
+                called_funcs.append(func_record)
 
         return ChatAgentResponse(output_messages, self.terminated, info)
+
+    def truc_messages(self, messages: List[ChatRecord]):
+        r"""Truncate the list of messages if message window is defined and
+        the current length of message list is beyond the window size
+
+        Args:
+            messages (List[ChatRecord]): the list of structs containing
+                information about previous chat messages
+
+        Returns:
+            List[ChatRecord]: truncated list of messages if the orignal list
+                has its length beyond the defined limit. Otherwise no change
+                is applied.
+        """
+        if (self.message_window_size is not None) and \
+                (len(messages) > self.message_window_size):
+            messages = \
+                [ChatRecord('system', self.system_message)] + \
+                messages[-self.message_window_size:]
+
+        return messages
 
     def validate_model_response(self, response: Any):
         r"""Validate the type of the response returned by the model
@@ -454,6 +430,100 @@ class ChatAgent(BaseAgent):
         ]
         usage_dict = self.get_usage_dict(output_messages, prompt_tokens)
         return output_messages, finish_reasons, usage_dict, response_id
+
+    def step_token_exceed(self, num_tokens: int,
+                          called_funcs: List[FuncRecord]) -> ChatAgentResponse:
+        r"""Return trivial response containing number of tokens and information
+        of called functions when the number of tokens exceeds
+
+        Args:
+            num_tokens (int): number of tokens in the messages
+            called_funcs (List[FuncRecord]): list of information objects
+                of functions called in the current step
+
+        Returns:
+            ChatAgentResponse: the struct containing trivial outputs and
+                information about token number and called functions
+        """
+
+        self.terminated = True
+        output_messages: List[BaseMessage] = []
+
+        info = self.get_info(
+            None,
+            None,
+            ["max_tokens_exceeded"],
+            num_tokens,
+            called_funcs,
+        )
+
+        return ChatAgentResponse(
+            output_messages,
+            self.terminated,
+            info,
+        )
+
+    def step_end(self, finish_reason: str) -> bool:
+        r"""Check whether the current step should be ended.
+
+        Args:
+            finish_reason (str): the reason why the response is ended
+
+        Returns:
+            bool: whether this message exchange should be ended because of
+                function calling is disabled or the finish reason is not
+                "function_call"
+        """
+        return (not self.func_enable) or (finish_reason != "function_call")
+
+    def step_func_call(
+            self, response: Dict[str,
+                                 Any]) -> Tuple[List[ChatRecord], FuncRecord]:
+        r"""Execute the function with arguments following the LLM's response
+
+        Args:
+            response (Dict[str, Any]): the response obtained by calling 
+                the LLM model
+
+        Returns:
+            tuple: a tuple containing the updated message history and the
+                struct containig information about this function call
+        """
+        choice = response["choices"][0]
+
+        func_name = choice.message["function_call"].name
+        func = self.func_dict[func_name]
+
+        args = choice.message["function_call"].arguments
+        args = eval(args)
+
+        # Pass the extracted arguments to the indicated function
+        result = func(**args)
+
+        assist_msg = FuncMessage(
+            role_name=self.role_name,
+            role_type=RoleType.ASSISTANT,
+            meta_dict=None,
+            content="",
+            func_name=func_name,
+            args=args,
+        )
+        func_msg = FuncMessage(
+            role_name=self.role_name,
+            role_type=RoleType.FUNC,
+            meta_dict=None,
+            content="",
+            func_name=func_name,
+            result=result,
+        )
+
+        # Update the messages
+        messages = self.update_messages('assistant', assist_msg)
+        messages = self.update_messages('function', func_msg)
+
+        # Record information about this function call
+        func_record = FuncRecord(func_name, args, result)
+        return (messages, func_record)
 
     def get_usage_dict(self, output_messages: List[BaseMessage],
                        prompt_tokens: int) -> Dict[str, int]:
