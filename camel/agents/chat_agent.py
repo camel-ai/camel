@@ -118,10 +118,8 @@ class ChatAgent(BaseAgent):
             is performed. (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
-        func_enable (bool): Whether to enable function calling
-            (default: :obj:`False`)
-        func_collects (Optional[List[BaseFuncs]]): List of function
-            collection objects (default: :obj:`None`)
+        function_list (Optional[List[OpenAIFunction]]): List of OpenAIFunction
+            objects (default: :obj:`None`)
     """
 
     def __init__(
@@ -310,7 +308,8 @@ class ChatAgent(BaseAgent):
                     self.handle_stream_response(response, num_tokens)
 
             # Postprocess the response or execute function call
-            if self.step_end(finish_reasons[0]):
+            loop_msg = not self.step_end(finish_reasons[0])
+            if not loop_msg:
                 # function calling disabled or chat stopped
                 info = self.get_info(
                     response_id,
@@ -319,7 +318,6 @@ class ChatAgent(BaseAgent):
                     num_tokens,
                     called_funcs,
                 )
-                loop_msg = False
             else:
                 # function call
                 messages, func_record = self.step_func_call(response)

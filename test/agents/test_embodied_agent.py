@@ -34,7 +34,7 @@ def test_get_action_space_prompt():
 
 
 @pytest.mark.model_backend
-@pytest.mark.full_test_only
+# @pytest.mark.full_test_only
 def test_step():
     # Create an embodied agent
     role_name = "Artist"
@@ -43,7 +43,7 @@ def test_step():
         meta_dict=meta_dict,
         role_tuple=(f"{role_name}'s Embodiment", RoleType.EMBODIMENT))
     embodied_agent = EmbodiedAgent(sys_msg, verbose=True)
-    print(embodied_agent.system_message)
+
     user_msg = BaseMessage.make_user_message(
         role_name=role_name,
         content="Draw all the Camelidae species.",
