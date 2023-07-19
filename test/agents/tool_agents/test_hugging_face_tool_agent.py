@@ -28,19 +28,19 @@ def test_hugging_face_tool_agent_initialization():
 @pytest.mark.model_backend
 @pytest.mark.full_test_only
 def test_hugging_face_tool_agent_step():
-    from transformers.tools.agent_types import AgentImage
+    from PIL.PngImagePlugin import PngImageFile
     agent = HuggingFaceToolAgent("hugging_face_tool_agent")
     result = agent.step("Generate an image of a boat in the water")
-    assert isinstance(result, AgentImage)
+    assert isinstance(result, PngImageFile)
 
 
 @pytest.mark.model_backend
 @pytest.mark.full_test_only
 def test_hugging_face_tool_agent_chat():
-    from transformers.tools.agent_types import AgentImage
+    from PIL.PngImagePlugin import PngImageFile
     agent = HuggingFaceToolAgent("hugging_face_tool_agent")
     result = agent.chat("Show me an image of a capybara")
-    assert isinstance(result, AgentImage)
+    assert isinstance(result, PngImageFile)
 
 
 @pytest.mark.model_backend
