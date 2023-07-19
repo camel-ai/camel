@@ -165,7 +165,7 @@ segmented_transformed_capybara_image.save("./segmented_transformed_capybara_imag
         if remote is None:
             remote = self.remote
         agent_output = self.agent.run(*args, remote=remote, **kwargs)
-        from transformers.tools.agent_types import AgentImage
+        from transformers.tools.agent_types import AgentImage  # type: ignore
         if isinstance(agent_output, AgentImage):
             agent_output = agent_output.to_raw()
         return agent_output
@@ -190,7 +190,7 @@ segmented_transformed_capybara_image.save("./segmented_transformed_capybara_imag
         if remote is None:
             remote = self.remote
         agent_output = self.agent.chat(*args, remote=remote, **kwargs)
-        from transformers.tools.agent_types import AgentImage
+        from transformers.tools.agent_types import AgentImage  # type: ignore
         if isinstance(agent_output, AgentImage):
             agent_output = agent_output.to_raw()
         return agent_output
