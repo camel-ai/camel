@@ -23,7 +23,7 @@ from tenacity.wait import wait_exponential
 from camel.agents import BaseAgent
 from camel.configs import BaseConfig, ChatGPTConfig
 from camel.functions import OpenAIFunction
-from camel.messages import BaseMessage, FuncMessage
+from camel.messages import BaseMessage, FuncMessage, OpenAIMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.typing import ModelType, RoleType
 from camel.utils import (
@@ -257,7 +257,7 @@ class ChatAgent(BaseAgent):
         """
         self.stored_messages.append(ChatRecord('assistant', message))
 
-    @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
+    # @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     @openai_api_key_required
     def step(
         self,
@@ -279,19 +279,17 @@ class ChatAgent(BaseAgent):
         """
         messages = self.update_messages('user', input_message)
 
-        loop_msg: bool = True
         output_messages: List[BaseMessage]
         info: Dict[str, Any]
         called_funcs: List[FuncRecord] = []
-        while loop_msg:
+        while True:
             # Format messages and get the token number
-            messages = self.truc_messages(messages)
-            openai_messages = \
-                [record.to_openai_message() for record in messages]
-            num_tokens = num_tokens_from_messages(openai_messages, self.model)
+            openai_messages: Optional[List[OpenAIMessage]]
+            num_tokens: int
+            openai_messages, num_tokens = self.truc_messages(messages)
 
             # Terminate when number of tokens exceeds the limit
-            if num_tokens >= self.model_token_limit:
+            if openai_messages is None:
                 return self.step_token_exceed(num_tokens, called_funcs)
 
             # Obtain LLM's response and validate it
@@ -308,8 +306,7 @@ class ChatAgent(BaseAgent):
                     self.handle_stream_response(response, num_tokens)
 
             # Postprocess the response or execute function call
-            loop_msg = not self.step_end(finish_reasons[0])
-            if not loop_msg:
+            if self.step_end(finish_reasons[0]):
                 # function calling disabled or chat stopped
                 info = self.get_info(
                     response_id,
@@ -318,6 +315,7 @@ class ChatAgent(BaseAgent):
                     num_tokens,
                     called_funcs,
                 )
+                break
             else:
                 # function call
                 messages, func_record = self.step_func_call(response)
@@ -325,7 +323,9 @@ class ChatAgent(BaseAgent):
 
         return ChatAgentResponse(output_messages, self.terminated, info)
 
-    def truc_messages(self, messages: List[ChatRecord]):
+    def truc_messages(
+        self, messages: List[ChatRecord]
+    ) -> Tuple[Optional[List[OpenAIMessage]], int]:
         r"""Truncate the list of messages if message window is defined and
         the current length of message list is beyond the window size
 
@@ -334,9 +334,10 @@ class ChatAgent(BaseAgent):
                 information about previous chat messages
 
         Returns:
-            List[ChatRecord]: truncated list of messages if the orignal list
-                has its length beyond the defined limit. Otherwise no change
-                is applied.
+            tuple: a tuple containing the truncated list of messages in
+                OpenAI's input format and the number of tokens. If number
+                of tokens exceeds the limit, None will replace the message
+                list
         """
         if (self.message_window_size is not None) and \
                 (len(messages) > self.message_window_size):
@@ -344,7 +345,14 @@ class ChatAgent(BaseAgent):
                 [ChatRecord('system', self.system_message)] + \
                 messages[-self.message_window_size:]
 
-        return messages
+        openai_messages = \
+                [record.to_openai_message() for record in messages]
+        num_tokens = num_tokens_from_messages(openai_messages, self.model)
+
+        if num_tokens >= self.model_token_limit:
+            return None, num_tokens
+        else:
+            return openai_messages, num_tokens
 
     def validate_model_response(self, response: Any):
         r"""Validate the type of the response returned by the model
