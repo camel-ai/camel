@@ -57,7 +57,7 @@ class HuggingFaceToolAgent(BaseToolAgent):
                 "Please setup the environment with "
                 "pip install huggingface_hub==0.14.1 transformers==4.31.0 diffusers accelerate datasets torch soundfile sentencepiece opencv-python"
             )
-        self.AgentImage = AgentImage
+        self.agent_image_type = AgentImage
         self.agent = OpenAiAgent(*args, **kwargs)
         description = f"""The `{name}` is a tool agent that can perform a variety of tasks including:
 - Document question answering: given a document (such as a PDF) in image format, answer a question on this document
@@ -174,7 +174,7 @@ segmented_transformed_capybara_image.save("./segmented_transformed_capybara_imag
         if remote is None:
             remote = self.remote
         agent_output = self.agent.run(*args, remote=remote, **kwargs)
-        if isinstance(agent_output, self.AgentImage):
+        if isinstance(agent_output, self.agent_image_type):
             agent_output = agent_output.to_raw()
         return agent_output
 
@@ -198,6 +198,6 @@ segmented_transformed_capybara_image.save("./segmented_transformed_capybara_imag
         if remote is None:
             remote = self.remote
         agent_output = self.agent.chat(*args, remote=remote, **kwargs)
-        if isinstance(agent_output, self.AgentImage):
+        if isinstance(agent_output, self.agent_image_type):
             agent_output = agent_output.to_raw()
         return agent_output
