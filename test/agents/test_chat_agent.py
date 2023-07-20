@@ -14,11 +14,13 @@
 import pytest
 
 from camel.agents import ChatAgent
+from camel.agents.chat_agent import ChatRecord
 from camel.configs import ChatGPTConfig, FuncConfig
 from camel.functions import MATH_FUNCS
 from camel.generators import SystemMessageGenerator
 from camel.messages import BaseMessage
 from camel.typing import ModelType, RoleType, TaskType
+from camel.utils import num_tokens_from_messages
 
 parametrize = pytest.mark.parametrize('model', [
     ModelType.STUB,
@@ -69,6 +71,79 @@ def test_chat_agent(model: ModelType):
 
 
 @pytest.mark.model_backend
+def test_chat_agent_stored_messages():
+    model_config = ChatGPTConfig()
+    system_msg = SystemMessageGenerator(
+        task_type=TaskType.AI_SOCIETY).from_dict(
+            dict(assistant_role="doctor"),
+            role_tuple=("doctor", RoleType.ASSISTANT),
+        )
+    assistant = ChatAgent(system_msg, model_config=model_config)
+
+    expected_stored_msg = [ChatRecord('system', system_msg)]
+    assert assistant.stored_messages == expected_stored_msg
+
+    user_msg = BaseMessage(role_name="User", role_type=RoleType.USER,
+                           meta_dict=dict(), content="Tell me a joke.")
+    assistant.update_messages("user", user_msg)
+    expected_stored_msg = [
+        ChatRecord('system', system_msg),
+        ChatRecord('user', user_msg)
+    ]
+    assert assistant.stored_messages == expected_stored_msg
+
+    illegal_role = "xxx"
+    with pytest.raises(ValueError, match=f"Unsupported role {illegal_role}"):
+        assistant.update_messages(illegal_role, user_msg)
+
+
+@pytest.mark.model_backend
+def test_chat_agent_truncate_messages_window():
+    system_msg = BaseMessage(role_name="assistant",
+                             role_type=RoleType.ASSISTANT, meta_dict=None,
+                             content="You are a help assistant.")
+    assistant = ChatAgent(
+        system_message=system_msg,
+        model=ModelType.GPT_3_5_TURBO,
+        message_window_size=1,
+    )
+
+    user_msg = BaseMessage(role_name="User", role_type=RoleType.USER,
+                           meta_dict=dict(), content="Tell me a joke.")
+    user_msg = ChatRecord("user", user_msg)
+    system_msg = ChatRecord("system", system_msg)
+
+    openai_messages, _ = assistant.truncate_messages([system_msg, user_msg])
+    assert len(openai_messages) == 2
+
+
+@pytest.mark.model_backend
+def test_chat_agent_truncate_messages_token_number():
+    system_msg = BaseMessage(role_name="assistant",
+                             role_type=RoleType.ASSISTANT, meta_dict=None,
+                             content="You are a help assistant.")
+    assistant = ChatAgent(
+        system_message=system_msg,
+        model=ModelType.GPT_3_5_TURBO,
+    )
+    assistant.model_token_limit = 1
+
+    user_msg = BaseMessage(role_name="User", role_type=RoleType.USER,
+                           meta_dict=dict(), content="Tell me a joke.")
+    user_msg = ChatRecord("user", user_msg)
+    system_msg = ChatRecord("system", system_msg)
+    msgs = [system_msg, user_msg]
+
+    expect_openai_messages = [record.to_openai_message() for record in msgs]
+    expect_num_tokens = \
+        num_tokens_from_messages(expect_openai_messages, assistant.model)
+
+    openai_messages, num_tokens = assistant.truncate_messages(msgs)
+    assert openai_messages is None
+    assert num_tokens == expect_num_tokens
+
+
+@pytest.mark.model_backend
 @pytest.mark.parametrize('n', [1, 2, 3])
 def test_chat_agent_multiple_return_messages(n):
     model_config = ChatGPTConfig(temperature=1.4, n=n)
@@ -81,6 +156,27 @@ def test_chat_agent_multiple_return_messages(n):
     assistant_response = assistant.step(user_msg)
     assert assistant_response.msgs is not None
     assert len(assistant_response.msgs) == n
+
+
+@pytest.mark.model_backend
+@pytest.mark.parametrize('n', [2])
+def test_chat_agent_multiple_return_message_error(n):
+    model_config = ChatGPTConfig(temperature=1.4, n=n)
+    system_msg = BaseMessage("Assistant", RoleType.ASSISTANT, meta_dict=None,
+                             content="You are a helpful assistant.")
+
+    assistant = ChatAgent(system_msg, model_config=model_config)
+    assistant.reset()
+
+    user_msg = BaseMessage(role_name="User", role_type=RoleType.USER,
+                           meta_dict=dict(), content="Tell me a joke.")
+    assistant_response = assistant.step(user_msg)
+
+    with pytest.raises(
+            RuntimeError,
+            match="Property msg is only available for a single message in msgs"
+    ):
+        _ = assistant_response.msg
 
 
 @pytest.mark.model_backend
@@ -130,6 +226,65 @@ def test_set_output_language():
 
 
 @pytest.mark.model_backend
+def test_set_multiple_output_language():
+    system_message = BaseMessage(role_name="assistant",
+                                 role_type=RoleType.ASSISTANT, meta_dict=None,
+                                 content="You are a help assistant.")
+    agent = ChatAgent(system_message=system_message,
+                      model=ModelType.GPT_3_5_TURBO)
+
+    # Verify that the length of the system message is kept constant even when
+    # multiple set_output_language operations are called
+    agent.set_output_language("Chinese")
+    agent.set_output_language("English")
+    agent.set_output_language("French")
+    updated_system_message = BaseMessage(
+        role_name="assistant", role_type=RoleType.ASSISTANT, meta_dict=None,
+        content="You are a help assistant."
+        "\nRegardless of the input language, you must output text in French.")
+    assert agent.system_message.content == updated_system_message.content
+
+
+@pytest.mark.model_backend
+def test_token_exceed_return():
+    system_message = BaseMessage(role_name="assistant",
+                                 role_type=RoleType.ASSISTANT, meta_dict=None,
+                                 content="You are a help assistant.")
+    agent = ChatAgent(system_message=system_message,
+                      model=ModelType.GPT_3_5_TURBO)
+
+    expect_info = {
+        "id": None,
+        "usage": None,
+        "termination_reasons": ["max_tokens_exceeded"],
+        "num_tokens": 1000,
+        "called_functions": [],
+    }
+    response = agent.step_token_exceed(1000, [])
+    assert response.msgs == []
+    assert response.terminated
+    assert response.info == expect_info
+
+
+@pytest.mark.model_backend
+def test_function_enabled():
+    system_message = BaseMessage(role_name="assistant",
+                                 role_type=RoleType.ASSISTANT, meta_dict=None,
+                                 content="You are a help assistant.")
+    model_config = FuncConfig(
+        functions=[func.as_dict() for func in MATH_FUNCS])
+    agent_no_func = ChatAgent(system_message=system_message,
+                              model_config=model_config, model=ModelType.GPT_4)
+    agent_with_funcs = ChatAgent(system_message=system_message,
+                                 model_config=model_config,
+                                 model=ModelType.GPT_4,
+                                 function_list=MATH_FUNCS)
+
+    assert not agent_no_func.is_function_enabled()
+    assert agent_with_funcs.is_function_enabled()
+
+
+@pytest.mark.model_backend
 def test_function_calling():
     system_message = BaseMessage(role_name="assistant",
                                  role_type=RoleType.ASSISTANT, meta_dict=None,
@@ -149,17 +304,13 @@ def test_function_calling():
                            content="Calculate the result of: 2*8-10")
     agent_response = agent.step(user_msg)
 
-    assert len(agent_response.info['called_functions']) > 0
-    assert str(agent_response.info['called_functions'][0])\
-        .startswith("Function Execution")
+    called_funcs = agent_response.info['called_functions']
+    for called_func in called_funcs:
+        print(str(called_func))
 
-    # Verify that the length of the system message is kept constant even when
-    # multiple set_output_language operations are called
-    agent.set_output_language("Chinese")
-    agent.set_output_language("English")
-    agent.set_output_language("French")
-    updated_system_message = BaseMessage(
-        role_name="assistant", role_type=RoleType.ASSISTANT, meta_dict=None,
-        content="You are a help assistant."
-        "\nRegardless of the input language, you must output text in French.")
-    assert agent.system_message.content == updated_system_message.content
+    assert len(called_funcs) > 0
+    assert str(called_funcs[0]).startswith("Function Execution")
+
+    assert called_funcs[0].func_name == "mul"
+    assert called_funcs[0].args == {"a": 2, "b": 8}
+    assert called_funcs[0].result == 16

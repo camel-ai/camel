@@ -53,7 +53,7 @@ class ChatAgentResponse:
     @property
     def msg(self):
         if len(self.msgs) != 1:
-            raise RuntimeError("Property msg is only available"
+            raise RuntimeError("Property msg is only available "
                                "for a single message in msgs")
         return self.msgs[0]
 
@@ -187,10 +187,8 @@ class ChatAgent(BaseAgent):
         """
         self._system_message = value
 
-    @property
-    def func_enable(self) -> bool:
-        r"""Getter method for the property `func_enable`, indicating
-        whether OpenAI function calling is enabled for this agent
+    def is_function_enabled(self) -> bool:
+        r"""Whether OpenAI function calling is enabled for this agent
 
         Returns:
             bool: Whether OpenAI function calling is enabled for this
@@ -317,11 +315,9 @@ class ChatAgent(BaseAgent):
             self.validate_model_response(response)
 
             if not self.model_backend.stream:
-                # flake8: noqa :E501
                 output_messages, finish_reasons, usage_dict, response_id = \
                     self.handle_batch_response(response)
             else:
-                # flake8: noqa :E501
                 output_messages, finish_reasons, usage_dict, response_id = \
                     self.handle_stream_response(response, num_tokens)
 
@@ -338,7 +334,7 @@ class ChatAgent(BaseAgent):
                 break
             else:
                 # function call
-                messages, func_record = self.step_func_call(response)
+                messages, func_record = self.step_function_call(response)
                 called_funcs.append(func_record)
 
         return ChatAgentResponse(output_messages, self.terminated, info)
@@ -366,7 +362,7 @@ class ChatAgent(BaseAgent):
                 messages[-self.message_window_size:]
 
         openai_messages = \
-                [record.to_openai_message() for record in messages]
+            [record.to_openai_message() for record in messages]
         num_tokens = num_tokens_from_messages(openai_messages, self.model)
 
         if num_tokens >= self.model_token_limit:
@@ -500,15 +496,16 @@ class ChatAgent(BaseAgent):
                 function calling is disabled or the finish reason is not
                 "function_call"
         """
-        return (not self.func_enable) or (finish_reason != "function_call")
+        return (not self.is_function_enabled()) \
+            or (finish_reason != "function_call")
 
-    def step_func_call(
+    def step_function_call(
             self, response: Dict[str,
                                  Any]) -> Tuple[List[ChatRecord], FuncRecord]:
         r"""Execute the function with arguments following the LLM's response
 
         Args:
-            response (Dict[str, Any]): the response obtained by calling 
+            response (Dict[str, Any]): the response obtained by calling
                 the LLM model
 
         Returns:

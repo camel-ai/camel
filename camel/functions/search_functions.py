@@ -87,17 +87,14 @@ def search_wiki(entity: str) -> str:
             for p in soup.find_all("p") + soup.find_all("ul")
         ]
 
-        if any("may refer to:" in p for p in page):
-            return search_wiki("[" + entity + "]")
-        else:
-            res_page = ""
-            for p in page:
-                if len(p.split(" ")) > 2:
-                    res_page += clean_str(p)
-                    if not p.endswith("\n"):
-                        res_page += "\n"
+        res_page = ""
+        for p in page:
+            if len(p.split(" ")) > 2:
+                res_page += clean_str(p)
+                if not p.endswith("\n"):
+                    res_page += "\n"
 
-            obs = get_page_obs(res_page)
+        obs = get_page_obs(res_page)
 
     return obs
 
