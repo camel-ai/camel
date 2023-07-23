@@ -55,7 +55,7 @@ class HuggingFaceToolAgent(BaseToolAgent):
             raise ValueError(
                 "Could not import transformers tool agents. "
                 "Please setup the environment with "
-                "pip install huggingface_hub==0.14.1 transformers==4.31.0 diffusers accelerate datasets torch soundfile sentencepiece opencv-python"
+                "pip install huggingface_hub==0.14.1 transformers==4.31.0 diffusers accelerate==0.20.3 datasets torch soundfile sentencepiece opencv-python"
             )
         self.agent_image_type = AgentImage
         self.agent = OpenAiAgent(*args, **kwargs)
