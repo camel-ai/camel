@@ -124,7 +124,7 @@ class EmbodiedAgent(ChatAgent):
                 action.name: action
                 for action in self.action_space
             }
-            action_space.update({"print": print})
+            action_space.update({"print": print, "enumerate": enumerate})
             interpreter = PythonInterpreter(action_space=action_space)
             for block_idx, code in enumerate(codes):
                 executed_outputs, _ = code.execute(interpreter)
