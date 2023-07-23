@@ -14,7 +14,6 @@
 from colorama import Fore
 
 from camel.societies import RolePlaying
-from camel.typing import ModelType
 from camel.utils import print_text_animated
 
 
@@ -72,4 +71,4 @@ def main(model_type=None) -> None:
 
 
 if __name__ == "__main__":
-    main(model_type=ModelType.GPT_3_5_TURBO_16K)
+    main()
