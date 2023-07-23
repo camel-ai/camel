@@ -72,7 +72,8 @@ include_namespace_packages = true
 
 [[tool.mypy.overrides]]
 module = [
-    "transformers.tools",
+    "transformers.*",
+    "packaging.*",
     "tiktoken",
     "openai",
     "openai.error",
