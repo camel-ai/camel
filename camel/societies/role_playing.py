@@ -26,7 +26,7 @@ from camel.generators import SystemMessageGenerator
 from camel.human import Human
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
-from camel.typing import ModelType, RoleType, TaskType
+from camel.typing import RoleType, TaskType
 
 
 class RolePlaying:
@@ -50,8 +50,6 @@ class RolePlaying:
             in the loop. (default: :obj:`False`)
         critic_criteria (str, optional): Critic criteria for the critic agent.
             If not specified, set the criteria to improve task performance.
-        model_type (ModelType, optional): The type of backend model to use.
-            (default: :obj:`ModelType.GPT_3_5_TURBO`)
         task_type (TaskType, optional): The type of task to perform.
             (default: :obj:`TaskType.AI_SOCIETY`)
         assistant_agent_kwargs (Dict, optional): Additional arguments to pass
@@ -87,7 +85,6 @@ class RolePlaying:
         with_task_planner: bool = False,
         with_critic_in_the_loop: bool = False,
         critic_criteria: Optional[str] = None,
-        model_type: ModelType = ModelType.GPT_3_5_TURBO,
         task_type: TaskType = TaskType.AI_SOCIETY,
         assistant_agent_kwargs: Optional[Dict] = None,
         user_agent_kwargs: Optional[Dict] = None,
@@ -103,7 +100,6 @@ class RolePlaying:
         self.with_task_specify = with_task_specify
         self.with_task_planner = with_task_planner
         self.with_critic_in_the_loop = with_critic_in_the_loop
-        self.model_type = model_type
         self.task_type = task_type
         self.task_prompt = task_prompt
 
@@ -172,7 +168,6 @@ class RolePlaying:
                          user_role=user_role_name))
             task_specify_meta_dict.update(extend_task_specify_meta_dict or {})
             task_specify_agent = TaskSpecifyAgent(
-                self.model_type,
                 task_type=self.task_type,
                 output_language=output_language,
                 **(task_specify_agent_kwargs or {}),
@@ -200,7 +195,6 @@ class RolePlaying:
         """
         if self.with_task_planner:
             task_planner_agent = TaskPlannerAgent(
-                self.model_type,
                 output_language=output_language,
                 **(task_planner_agent_kwargs or {}),
             )
@@ -287,7 +281,6 @@ class RolePlaying:
             assistant_config = None
         self.assistant_agent = ChatAgent(
             init_assistant_sys_msg,
-            self.model_type,
             model_config=assistant_config,
             output_language=output_language,
             function_list=self.assistant_functions,
@@ -297,7 +290,6 @@ class RolePlaying:
 
         self.user_agent = ChatAgent(
             init_user_sys_msg,
-            self.model_type,
             output_language=output_language,
             **(user_agent_kwargs or {}),
         )
@@ -339,7 +331,6 @@ class RolePlaying:
                 )
                 self.critic = CriticAgent(
                     self.critic_sys_msg,
-                    self.model_type,
                     **(critic_kwargs or {}),
                 )
 

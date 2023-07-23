@@ -23,21 +23,28 @@ from camel.typing import ModelType, RoleType, TaskType
 @pytest.mark.parametrize("critic_role_name", ["human", "critic agent"])
 @pytest.mark.parametrize("with_critic_in_the_loop", [True, False])
 def test_role_playing_init(critic_role_name, with_critic_in_the_loop):
+    # Only specify critic model if critic is not human
+    critic_kwargs = dict(
+        model=ModelType.GPT_4_32k) if critic_role_name != "human" else {}
+
     role_playing = RolePlaying(
         assistant_role_name="assistant",
+        assistant_agent_kwargs=dict(model=ModelType.GPT_3_5_TURBO_16K),
         user_role_name="user",
+        user_agent_kwargs=dict(model=ModelType.GPT_3_5_TURBO_16K),
         critic_role_name=critic_role_name,
         task_prompt="Perform the task",
         with_task_specify=False,
+        task_specify_agent_kwargs=dict(model=ModelType.GPT_4),
         with_task_planner=False,
+        task_planner_agent_kwargs=dict(model=ModelType.GPT_4),
         with_critic_in_the_loop=with_critic_in_the_loop,
-        model_type=ModelType.GPT_3_5_TURBO,
+        critic_kwargs=critic_kwargs,
         task_type=TaskType.AI_SOCIETY,
     )
     assert role_playing.with_task_specify is False
     assert role_playing.with_task_planner is False
     assert role_playing.with_critic_in_the_loop is with_critic_in_the_loop
-    assert role_playing.model_type == ModelType.GPT_3_5_TURBO
     assert role_playing.task_type == TaskType.AI_SOCIETY
     assert role_playing.task_prompt == "Perform the task"
     assert role_playing.specified_task_prompt is None
@@ -49,7 +56,9 @@ def test_role_playing_init(critic_role_name, with_critic_in_the_loop):
     assert role_playing.user_sys_msg.role_type == RoleType.USER
 
     assert isinstance(role_playing.assistant_agent, ChatAgent)
+    assert role_playing.assistant_agent.model == ModelType.GPT_3_5_TURBO_16K
     assert isinstance(role_playing.user_agent, ChatAgent)
+    assert role_playing.user_agent.model == ModelType.GPT_3_5_TURBO_16K
 
     if not with_critic_in_the_loop:
         assert role_playing.critic is None
@@ -60,6 +69,7 @@ def test_role_playing_init(critic_role_name, with_critic_in_the_loop):
         else:
             assert isinstance(role_playing.critic, CriticAgent)
             assert role_playing.critic_sys_msg is not None
+            assert role_playing.critic.model == ModelType.GPT_4_32k
 
 
 @pytest.mark.model_backend
@@ -73,8 +83,11 @@ def test_role_playing_step(task_type, extend_sys_msg_meta_dicts,
                            extend_task_specify_meta_dict):
     role_playing = RolePlaying(
         assistant_role_name="AI Assistant",
+        assistant_agent_kwargs=dict(model=ModelType.GPT_3_5_TURBO),
         user_role_name="AI User",
+        user_agent_kwargs=dict(model=ModelType.GPT_3_5_TURBO),
         task_prompt="Perform the task",
+        task_specify_agent_kwargs=dict(model=ModelType.GPT_3_5_TURBO),
         task_type=task_type,
         extend_sys_msg_meta_dicts=extend_sys_msg_meta_dicts,
         extend_task_specify_meta_dict=extend_task_specify_meta_dict,
