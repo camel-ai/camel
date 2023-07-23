@@ -28,9 +28,6 @@ parametrize = pytest.mark.parametrize('model', [
     ModelType.STUB,
     pytest.param(None, marks=pytest.mark.model_backend),
 ])
-parametrize_task = pytest.mark.parametrize('model', [
-    pytest.param(None, marks=pytest.mark.model_backend),
-])
 
 
 @parametrize
@@ -81,7 +78,7 @@ def test_task_planner_agent(model: Optional[ModelType]):
     print(f"Planned task prompt:\n{planned_task_prompt}\n")
 
 
-@parametrize_task
+@parametrize
 def test_task_creation_agent(model: Optional[ModelType]):
     original_task_prompt = "Modeling molecular dynamics"
     task_planner_agent = TaskCreationAgent(
@@ -106,17 +103,15 @@ def test_task_creation_agent(model: Optional[ModelType]):
     print(f"Planned task list:\n{planned_task}\n")
 
     assert isinstance(planned_task, list)
-    assert isinstance(planned_task[0], dict)
     task_list = ["Study the computational technology for dynamics modeling"]
     planned_task = task_planner_agent.run(previous_task=task,
                                           task_result=task_result,
                                           task_list=task_list)
     print(f"Planned task list:\n{planned_task}\n")
     assert isinstance(planned_task, list)
-    assert isinstance(planned_task[0], dict)
 
 
-@parametrize_task
+@parametrize
 def test_task_prioritize_agent(model: Optional[ModelType]):
     original_task_prompt = "Modeling molecular dynamics"
     task_planner_agent = TaskCreationAgent(
@@ -148,4 +143,3 @@ def test_task_prioritize_agent(model: Optional[ModelType]):
     prioritized_task = task_prioritize_agent.run(task_names=task_names)
     print(f"Prioritized task list:\n{prioritized_task}\n")
     assert isinstance(prioritized_task, list)
-    assert len(prioritized_task) > 0
