@@ -17,6 +17,7 @@ import examples.code.generate_meta_data
 import examples.code.task_generation
 import examples.evaluation.single_agent
 import examples.misalignment.single_agent
+import examples.ReAct.tool_usage
 import examples.single_agent
 from camel.typing import ModelType
 
@@ -44,6 +45,18 @@ def test_evaluation_single_agent(model):
 @parametrize
 def test_code_generate_metadata(model):
     examples.code.generate_meta_data.main(model=model)
+
+
+@parametrize
+def test_react_tool_usage(model):
+    if model != ModelType.STUB:
+        examples.ReAct.tool_usage.main(model=model)
+    else:
+        try:
+            examples.ReAct.tool_usage.main(model=model)
+            assert False
+        except ValueError:
+            assert True
 
 
 @pytest.mark.parametrize(
