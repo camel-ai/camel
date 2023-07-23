@@ -24,11 +24,13 @@ def main(model_type=None) -> None:
     domain = "Sociology"
     meta_dict = {"language": language, "domain": domain}
     role_play_session = RolePlaying(
-        f"{language} Programmer",
-        f"Person working in {domain}",
+        assistant_role_name=f"{language} Programmer",
+        assistant_agent_kwargs=dict(mode=model_type),
+        user_role_name=f"Person working in {domain}",
+        user_agent_kwargs=dict(mode=model_type),
         task_prompt=task_prompt,
         with_task_specify=True,
-        model_type=model_type,
+        task_specify_agent_kwargs=dict(mode=model_type),
         task_type=TaskType.CODE,
         extend_sys_msg_meta_dicts=[meta_dict, meta_dict],
         extend_task_specify_meta_dict=meta_dict,
