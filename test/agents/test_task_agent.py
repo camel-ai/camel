@@ -15,12 +15,20 @@ from typing import Optional
 
 import pytest
 
-from camel.agents import TaskPlannerAgent, TaskSpecifyAgent
+from camel.agents import (
+    TaskCreationAgent,
+    TaskPlannerAgent,
+    TaskPrioritizeAgent,
+    TaskSpecifyAgent,
+)
 from camel.configs import ChatGPTConfig
 from camel.typing import ModelType, TaskType
 
 parametrize = pytest.mark.parametrize('model', [
     ModelType.STUB,
+    pytest.param(None, marks=pytest.mark.model_backend),
+])
+parametrize_task = pytest.mark.parametrize('model', [
     pytest.param(None, marks=pytest.mark.model_backend),
 ])
 
@@ -71,3 +79,73 @@ def test_task_planner_agent(model: Optional[ModelType]):
         model_config=ChatGPTConfig(temperature=1.0), model=model)
     planned_task_prompt = task_planner_agent.run(specified_task_prompt)
     print(f"Planned task prompt:\n{planned_task_prompt}\n")
+
+
+@parametrize_task
+def test_task_creation_agent(model: Optional[ModelType]):
+    original_task_prompt = "Modeling molecular dynamics"
+    task_planner_agent = TaskCreationAgent(
+        model_config=ChatGPTConfig(temperature=1.0), model=model,
+        objective=original_task_prompt)
+    task = "Search math tools for dynamics modeling"
+    task_result = "Molecular dynamics trajectories are the result of \
+        molecular dynamics simulations. Trajectories are sequential \
+        snapshots of simulated molecular system which represents atomic \
+        coordinates at specific time periods. Based on the definition, \
+        in a text format trajectory files are characterized by their \
+        simplicity and uselessness. To obtain information from such files, \
+        special programs and information processing techniques are applied: \
+        from molecular dynamics animation to finding characteristics \
+        along the trajectory (versus time). In this review, we describe \
+        different programs for processing molecular dynamics trajectories. \
+        The performance of these programs, usefulness for analyses of \
+        molecular dynamics trajectories, strongs and weaks are discussed."
+
+    planned_task = task_planner_agent.run(previous_task=task,
+                                          task_result=task_result)
+    print(f"Planned task list:\n{planned_task}\n")
+
+    assert isinstance(planned_task, list)
+    assert isinstance(planned_task[0], dict)
+    task_list = ["Study the computational technology for dynamics modeling"]
+    planned_task = task_planner_agent.run(previous_task=task,
+                                          task_result=task_result,
+                                          task_list=task_list)
+    print(f"Planned task list:\n{planned_task}\n")
+    assert isinstance(planned_task, list)
+    assert isinstance(planned_task[0], dict)
+
+
+@parametrize_task
+def test_task_prioritize_agent(model: Optional[ModelType]):
+    original_task_prompt = "Modeling molecular dynamics"
+    task_planner_agent = TaskCreationAgent(
+        model_config=ChatGPTConfig(temperature=1.0), model=model,
+        objective=original_task_prompt)
+    task = "Search math tools for dynamics modeling"
+    task_result = "Molecular dynamics trajectories are the result of \
+        molecular dynamics simulations. Trajectories are sequential \
+        snapshots of simulated molecular system which represents atomic \
+        coordinates at specific time periods. Based on the definition, \
+        in a text format trajectory files are characterized by their \
+        simplicity and uselessness. To obtain information from such files, \
+        special programs and information processing techniques are applied: \
+        from molecular dynamics animation to finding characteristics \
+        along the trajectory (versus time). In this review, we describe \
+        different programs for processing molecular dynamics trajectories. \
+        The performance of these programs, usefulness for analyses of \
+        molecular dynamics trajectories, strongs and weaks are discussed."
+
+    planned_task = task_planner_agent.run(previous_task=task,
+                                          task_result=task_result)
+    print(f"Planned task list:\n{planned_task}\n")
+
+    task_prioritize_agent = TaskPrioritizeAgent(
+        model_config=ChatGPTConfig(temperature=1.0), model=model,
+        objective=original_task_prompt)
+
+    task_names = [task['task_name'] for task in planned_task]
+    prioritized_task = task_prioritize_agent.run(task_names=task_names)
+    print(f"Prioritized task list:\n{prioritized_task}\n")
+    assert isinstance(prioritized_task, list)
+    assert len(prioritized_task) > 0
