@@ -136,7 +136,7 @@ class TaskPlannerAgent(ChatAgent):
     def __init__(
         self,
         model: Optional[ModelType] = None,
-        model_config: Any = None,
+        model_config: Optional[Any] = None,
         output_language: Optional[str] = None,
     ) -> None:
 
@@ -207,9 +207,9 @@ class TaskCreationAgent(ChatAgent):
     def __init__(
         self,
         model: Optional[ModelType] = None,
-        model_config: Any = None,
+        model_config: Optional[Any] = None,
         output_language: Optional[str] = None,
-        objective: str = None,
+        objective: Optional[str] = None,
     ) -> None:
 
         self.task_creator_prompt = TextPrompt(
@@ -318,7 +318,7 @@ class TaskPrioritizeAgent(ChatAgent):
     def __init__(
         self,
         model: Optional[ModelType] = None,
-        model_config: Any = None,
+        model_config: Optional[Any] = None,
         output_language: Optional[str] = None,
         objective: Optional[str] = None,
     ) -> None:
