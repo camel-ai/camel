@@ -426,13 +426,6 @@ class RolePlaying:
             whether the user agent terminated the conversation, and any
             additional user information.
         """
-        # print("Assistant:")
-        # for msg in self.assistant_agent.stored_messages:
-        #     print(msg)
-        # print('-' * 50)
-        # print("User:")
-        # for msg in self.user_agent.stored_messages:
-        #     print(msg)
 
         user_response = self.user_agent.step(assistant_msg)
         if user_response.terminated or user_response.msgs is None:
