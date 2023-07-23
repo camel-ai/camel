@@ -244,7 +244,7 @@ Be concise.\n")
         self,
         previous_task: Union[str, TextPrompt],
         task_result: Union[str, TextPrompt],
-        task_list: List[Union[str, TextPrompt]] = None,
+        task_list: List[str],
     ) -> List[dict]:
         r"""Generate subtasks based on the previous task results and
         incomplete task list.
@@ -315,11 +315,11 @@ class TaskPrioritizeAgent(ChatAgent):
         model: Optional[ModelType] = None,
         model_config: Any = None,
         output_language: Optional[str] = None,
-        objective: str = None,
+        objective: Optional[str] = None,
     ) -> None:
 
         self.task_prioritizer_prompt = TextPrompt(
-            "Prioritize the following tasks with the following tasks: {task_names}.\n\
+            "Prioritize the following tasks : {task_names}.\n\
 Consider the ultimate objective of you: {objective}.\n\
 Tasks should be sorted from highest to lowest priority, \
 where higher-priority tasks are those \
