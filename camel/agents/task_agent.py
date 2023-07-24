@@ -303,7 +303,7 @@ class TaskPrioritizeAgent(ChatAgent):
 
     Attributes:
         task_planner_prompt (TextPrompt): A prompt for the agent to
-        prioritize tasks.
+            prioritize tasks.
 
     Args:
         model (ModelType): The type of model to use for the agent.
