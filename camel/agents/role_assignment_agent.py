@@ -65,7 +65,6 @@ class RoleAssignmentAgent(ChatAgent):
         for message in role_msgs:
             content = message.content
             lines = content.split("\n\n")
-            print(content)
 
             if len(lines) == 2:
                 for line in lines:
