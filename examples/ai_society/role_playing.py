@@ -1,19 +1,23 @@
 from colorama import Fore
 
 from camel.agents import RolePlaying
-from camel.agents.task_agent import RoleAssignmentAgent
+from camel.agents.role_assignment_agent import RoleAssignmentAgent
 from camel.typing import ModelType
 from camel.utils import print_text_animated
 
 
 def main() -> None:
-    task_prompt = "Developing a trading bot for stock market"
+    task_prompt = "Establish a business company solving climate change issue"
 
     role_assignment_agent = RoleAssignmentAgent(model=ModelType.GPT_3_5_TURBO)
 
-    roles = role_assignment_agent.step(task_prompt)
-    ai_user_role = roles[0]
-    ai_assistant_role = roles[1]
+    roles = role_assignment_agent.step(task_prompt, 2)
+    if len(roles) == 2:
+        ai_user_role = roles['ai_user']
+        ai_assistant_role = roles['ai_assistant']
+    else:
+        ai_user_role = roles['role_name_1']
+        ai_assistant_role = roles['role_name_2']
 
     role_play_session = RolePlaying(
         ai_assistant_role,
