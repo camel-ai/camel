@@ -201,7 +201,7 @@ class TaskCreationAgent(ChatAgent):
             (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
         agent. (default: :obj:`None`)
-        objective: The objective for the AI to perform the task.
+        objective (str, optional): The objective for the AI to perform the task.
     """
 
     def __init__(
