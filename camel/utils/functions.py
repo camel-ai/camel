@@ -239,3 +239,17 @@ def download_tasks(task: TaskType, folder_path: str) -> None:
 
     # Delete the zip file
     os.remove(zip_file_path)
+
+
+def get_task_list(task_response: str) -> List[dict]:
+    # Parse the response of LLM and return task list.
+    new_tasks_list = []
+
+    # each task starts with #.
+    for task_string in task_response:
+        task_parts = task_string.strip().split(".", 1)
+        if len(task_parts) == 2:
+            task_name = re.sub(r'[^\w\s_]+', '', task_parts[1]).strip()
+            if task_name.strip():
+                new_tasks_list.append({"task_name": task_name})
+    return new_tasks_list

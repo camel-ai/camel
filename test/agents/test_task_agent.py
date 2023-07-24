@@ -98,15 +98,15 @@ def test_task_creation_agent(model: Optional[ModelType]):
         The performance of these programs, usefulness for analyses of \
         molecular dynamics trajectories, strongs and weaks are discussed."
 
-    planned_task = task_planner_agent.run(previous_task=task,
-                                          task_result=task_result)
+    planned_task = task_creation_agent.run(previous_task=task,
+                                           task_result=task_result)
     print(f"Planned task list:\n{planned_task}\n")
 
     assert isinstance(planned_task, list)
     task_list = ["Study the computational technology for dynamics modeling"]
-    planned_task = task_planner_agent.run(previous_task=task,
-                                          task_result=task_result,
-                                          task_list=task_list)
+    planned_task = task_creation_agent.run(previous_task=task,
+                                           task_result=task_result,
+                                           task_list=task_list)
     print(f"Planned task list:\n{planned_task}\n")
     assert isinstance(planned_task, list)
 
@@ -114,7 +114,7 @@ def test_task_creation_agent(model: Optional[ModelType]):
 @parametrize
 def test_task_prioritize_agent(model: Optional[ModelType]):
     original_task_prompt = "Modeling molecular dynamics"
-    task_planner_agent = TaskCreationAgent(
+    task_creation_agent = TaskCreationAgent(
         model_config=ChatGPTConfig(temperature=1.0), model=model,
         objective=original_task_prompt)
     task = "Search math tools for dynamics modeling"
@@ -131,15 +131,15 @@ def test_task_prioritize_agent(model: Optional[ModelType]):
         The performance of these programs, usefulness for analyses of \
         molecular dynamics trajectories, strongs and weaks are discussed."
 
-    planned_task = task_planner_agent.run(previous_task=task,
-                                          task_result=task_result)
+    planned_task = task_creation_agent.run(previous_task=task,
+                                           task_result=task_result)
     print(f"Planned task list:\n{planned_task}\n")
 
     task_prioritize_agent = TaskPrioritizeAgent(
         model_config=ChatGPTConfig(temperature=1.0), model=model,
         objective=original_task_prompt)
 
-    task_names = [task['task_name'] for task in planned_task]
-    prioritized_task = task_prioritize_agent.run(task_names=task_names)
+    task_list = [task['task_name'] for task in planned_task]
+    prioritized_task = task_prioritize_agent.run(task_list=task_list)
     print(f"Prioritized task list:\n{prioritized_task}\n")
     assert isinstance(prioritized_task, list)
