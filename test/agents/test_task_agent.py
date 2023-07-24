@@ -81,7 +81,7 @@ def test_task_planner_agent(model: Optional[ModelType]):
 @parametrize
 def test_task_creation_agent(model: Optional[ModelType]):
     original_task_prompt = "Modeling molecular dynamics"
-    task_planner_agent = TaskCreationAgent(
+    task_creation_agent = TaskCreationAgent(
         model_config=ChatGPTConfig(temperature=1.0), model=model,
         objective=original_task_prompt)
     task = "Search math tools for dynamics modeling"
