@@ -18,16 +18,21 @@ from camel.agents.task_agent import RoleAssignmentAgent
 from camel.typing import ModelType
 from camel.utils import print_text_animated
 
+AI_USER_ROLE_INDEX = 0
+AI_ASSISTANT_ROLE_INDEX = 1
+
 
 def main() -> None:
     task_prompt = "Developing a trading bot for stock market"
 
     role_assignment_agent = RoleAssignmentAgent(model=ModelType.GPT_3_5_TURBO)
 
-    role_names, role_description_dict = role_assignment_agent.step_completion(
-        task_prompt=task_prompt)
-    ai_user_role = role_names[0]
-    ai_assistant_role = role_names[1]
+    role_names, role_description_dict, _, _ = (
+        role_assignment_agent.step_completion(num_roles=2,
+                                              task_prompt=task_prompt))
+
+    ai_user_role = role_names[AI_USER_ROLE_INDEX]
+    ai_assistant_role = role_names[AI_ASSISTANT_ROLE_INDEX]
 
     role_play_session = RolePlaying(
         assistant_role_name=ai_assistant_role,

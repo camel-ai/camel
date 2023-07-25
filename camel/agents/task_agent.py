@@ -264,7 +264,7 @@ class RoleAssignmentAgent(ChatAgent):
         role_assignment_generation_msg = AssistantChatMessage(
             role_name="Role Assigner", content=role_assignment_generation)
 
-        output_completions, terminated, _ = super().step_completion(
+        output_completions, terminated, info = super().step_completion(
             input_prompt_for_completion=role_assignment_generation_msg,
             max_tokens=100 * num_roles,  # 100 maximum tokens per role
         )
@@ -291,4 +291,4 @@ class RoleAssignmentAgent(ChatAgent):
         if terminated:
             raise RuntimeError("Role assignment failed.")
 
-        return role_names, role_description_dict
+        return role_names, role_description_dict, terminated, info
