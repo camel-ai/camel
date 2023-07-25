@@ -16,7 +16,7 @@ import pytest
 from camel.functions import OpenAIFunction
 
 
-def add_with_doc(a, b):
+def add_with_doc(a: int, b: int) -> int:
     r"""Adds two numbers
 
     Args:
@@ -29,11 +29,11 @@ def add_with_doc(a, b):
     return a + b
 
 
-def add_without_doc(a, b):
+def add_without_doc(a: int, b: int) -> int:
     return a + b
 
 
-def add_with_wrong_doc(a, b):
+def add_with_wrong_doc(a: int, b: int) -> int:
     r"""Adds two numbers
 
     Args:

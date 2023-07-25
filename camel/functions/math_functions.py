@@ -17,7 +17,7 @@ from typing import List
 from .openai_function import OpenAIFunction
 
 
-def add(a, b):
+def add(a: int, b: int) -> int:
     r"""Adds two numbers
 
     Args:
@@ -30,7 +30,7 @@ def add(a, b):
     return a + b
 
 
-def sub(a, b):
+def sub(a: int, b: int) -> int:
     r"""Do subtraction between two numbers
 
     Args:
@@ -43,7 +43,7 @@ def sub(a, b):
     return a - b
 
 
-def mul(a, b):
+def mul(a: int, b: int) -> int:
     r"""Multiplies two integers
 
     Args:
