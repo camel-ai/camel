@@ -33,14 +33,15 @@ def clean_str(p: str) -> str:
                              "escape").encode("latin1").decode("utf-8")
 
 
-def get_page_obs(page: str) -> str:
-    r"""Returns the first 5 pages in the fetched page.
+def get_page_abstract(page: str) -> str:
+    r"""Returns the first :obj:`5` sentences of the fetched page.
 
     Args:
         page (str): The fetched page.
 
     Returns:
-        str: The concatenation of the first 5 sentences in the give page.
+        str: The concatenation of the first :obj:`5` sentences in the
+            given page.
     """
     paragraphs = page.split('\n')
     paragraphs = [p.strip() for p in paragraphs if p.strip()]
@@ -48,22 +49,26 @@ def get_page_obs(page: str) -> str:
     # find all sentences
     sentences = []
     for p in paragraphs:
-        sentences += p.split('. ')
+        sents = p.split('. ')
+        if sents[-1].endswith('.'):
+            sents[-1] = sents[-1][:-1]
+        sentences += sents
     sentences = [s.strip() + '.' for s in sentences if s.strip()]
 
     return ' '.join(sentences[:5])
 
 
 def search_wiki(entity: str) -> str:
-    r"""Search the entity in WikiPedia and return (the first sentences of)
-    the required page, containing factual information about the given entity.
+    r"""Search the entity in WikiPedia and return (the first :obj:`5`
+    sentences of) the required page, containing factual information
+    about the given entity.
 
     Args:
         entity (string): The entity to be searched.
 
     Returns:
         string: The search result. If the page corresponding to the entity
-            exists, return the first 5 sentences in a string.
+            exists, return the first :obj:`5` sentences in a string.
     """
     entity_ = entity.replace(" ", "+")
     search_url = f"https://en.wikipedia.org/w/index.php?search={entity_}"
@@ -75,14 +80,14 @@ def search_wiki(entity: str) -> str:
     soup = BeautifulSoup(response_text, features="html.parser")
     result_divs = soup.find_all("div", {"class": "mw-search-result-heading"})
 
-    obs: str
+    observation: str
     if result_divs:
         # only similar concepts exist
         result_titles = [
             clean_str(div.get_text().strip()) for div in result_divs
         ]
-        obs = (f"Could not find {entity}. "
-               f"Similar: {result_titles[:5]}.")
+        observation = (f"Could not find {entity}. "
+                       f"Similar: {result_titles[:5]}.")
     else:
         # the page corresponding to the entity exists
         page = [
@@ -97,9 +102,9 @@ def search_wiki(entity: str) -> str:
                 if not p.endswith("\n"):
                     res_page += "\n"
 
-        obs = get_page_obs(res_page)
+        observation = get_page_abstract(res_page)
 
-    return obs
+    return observation
 
 
 SEARCH_FUNCS: List[OpenAIFunction] = [

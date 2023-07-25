@@ -171,9 +171,8 @@ def test_chat_agent_multiple_return_message_error(n):
     assistant_response = assistant.step(user_msg)
 
     with pytest.raises(
-            RuntimeError,
-            match="Property msg is only available for a single message in msgs"
-    ):
+            RuntimeError, match=("Property msg is only available "
+                                 "for a single message in msgs.")):
         _ = assistant_response.msg
 
 
@@ -299,7 +298,7 @@ def test_function_calling():
 
     user_msg = BaseMessage(role_name="User", role_type=RoleType.USER,
                            meta_dict=dict(),
-                           content="Calculate the result of: 2*8-10")
+                           content="Calculate the result of: 2*8-10.")
     agent_response = agent.step(user_msg)
 
     called_funcs = agent_response.info['called_functions']

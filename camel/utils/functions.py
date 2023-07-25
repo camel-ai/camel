@@ -243,12 +243,11 @@ def download_tasks(task: TaskType, folder_path: str) -> None:
 
 
 def parse_doc(func: Callable) -> Dict[str, Any]:
-    """
-    Parse the docstrings of a function to extract function name,
+    r"""Parse the docstrings of a function to extract the function name,
     description and parameters.
 
     Args:
-        func (Callable): the function to be parsed
+        func (Callable): The function to be parsed.
     Returns:
         Dict[str, Any]: A dictionary with the function's name,
             description, and parameters.

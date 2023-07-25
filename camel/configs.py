@@ -15,6 +15,8 @@ from abc import ABC
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence, Union
 
+from camel.functions import OpenAIFunction
+
 
 @dataclass(frozen=True)
 class BaseConfig(ABC):
@@ -100,3 +102,29 @@ class FuncConfig(ChatGPTConfig):
     """
     functions: List[Dict[str, Any]] = field(default_factory=list)
     function_call: Union[str, Dict[str, str]] = "auto"
+
+    @classmethod
+    def from_openai_function_list(
+        cls,
+        function_list: List[OpenAIFunction],
+        function_call: Union[str, Dict[str, str]] = "auto",
+    ):
+        r"""Class method for creating an instance given the function-related
+        arguments.
+
+        Args:
+            function_list (List[OpenAIFunction]): The list of function objects
+                to be loaded into this configuration and passed to the model.
+            function_call (Union[Dict[str, str], str], optional): Controls how
+                the model responds to function calls, as specified in the
+                creator's documentation.
+
+        Return:
+            FuncConfig: A new instance which loads the given function list
+                into a list of dictionaries and the input
+                :obj:`function_call` argument
+        """
+        return cls(
+            functions=[func.as_dict() for func in function_list],
+            function_call=function_call,
+        )

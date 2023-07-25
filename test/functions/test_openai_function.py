@@ -24,7 +24,7 @@ def add_with_doc(a: int, b: int) -> int:
         b (integer): The second number to be added.
 
     Returns:
-        integer: the sum of the two numbers
+        integer: The sum of the two numbers
     """
     return a + b
 
@@ -37,10 +37,10 @@ def add_with_wrong_doc(a: int, b: int) -> int:
     r"""Adds two numbers.
 
     Args:
-        a (integer): number to be added
+        a (integer): The first number to be added.
 
     Returns:
-        integer: the sum of the two numbers
+        integer: The sum of the two numbers
     """
     return a + b
 
@@ -70,7 +70,7 @@ def test_correct_function():
 def test_function_without_doc():
     with pytest.raises(
             ValueError,
-            match="Invalid function add_without_doc: no docstring provided"):
+            match="Invalid function add_without_doc: no docstring provided."):
         _ = OpenAIFunction(add_without_doc, name="add")
 
 

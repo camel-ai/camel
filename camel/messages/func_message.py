@@ -25,9 +25,12 @@ class FuncMessage(BaseMessage):
     function-related messages.
 
     Args:
-        func_name (Optional[str]): The name of the function used
-        args (Optional[Dict]): dictionary of arguments passed to the function
-        result (Optional[Any]): result of function execution
+        func_name (Optional[str]): The name of the function used.
+            (default: :obj:`None`)
+        args (Optional[Dict]): The dictionary of arguments passed to the
+            function. (default: :obj:`None`)
+        result (Optional[Any]): The result of function execution.
+            (default: :obj:`None`)
     """
     func_name: Optional[str] = None
     args: Optional[Dict] = None
@@ -79,7 +82,7 @@ class FuncMessage(BaseMessage):
 
     def to_openai_function_message(self) -> OpenAIMessage:
         r"""Converts the message to an :obj:`OpenAIMessage` object
-        with the role being "function
+        with the role being "function".
 
         Returns:
             OpenAIMessage: The converted :obj:`OpenAIMessage` object

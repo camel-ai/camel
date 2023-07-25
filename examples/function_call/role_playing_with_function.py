@@ -18,13 +18,14 @@ from colorama import Fore
 from camel.agents.chat_agent import FuncRecord
 from camel.functions import MATH_FUNCS, SEARCH_FUNCS
 from camel.societies import RolePlaying
+from camel.typing import ModelType
 from camel.utils import print_text_animated
 
 
-def main(model_type=None) -> None:
-    task_prompt = ("Estimate KAUST's current age by searching the year when "
-                   "it was founded, then add 10 more years to it. Assume the "
-                   "current year is 2023")
+def main(model_type=ModelType.GPT_4) -> None:
+    task_prompt = ("Assuming the current year is 2023, estimate KAUST's "
+                   "current age by searching the year when it was founded "
+                   "using wiki, then add 10 more years to this age.")
     role_play_session = RolePlaying(
         assistant_role_name="Searcher",
         user_role_name="Professor",

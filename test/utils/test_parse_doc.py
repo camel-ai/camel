@@ -51,8 +51,8 @@ def test_parse_doc_mismatch():
         """Multiplies three numbers.
 
         Args:
-            a (int): number to be multiplied.
-            b (int): another number to be multiplied.
+            a (int): The first number to be multiplied.
+            b (int): The second number to be multiplied.
         """
         return a * b * c
 

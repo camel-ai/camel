@@ -55,7 +55,7 @@ class ChatAgentResponse:
     def msg(self):
         if len(self.msgs) != 1:
             raise RuntimeError("Property msg is only available "
-                               "for a single message in msgs")
+                               "for a single message in msgs.")
         return self.msgs[0]
 
 
@@ -499,8 +499,9 @@ class ChatAgent(BaseAgent):
                 the LLM model.
 
         Returns:
-            tuple: a tuple containing two obj:`FuncMessage` and a struct
-                containig information about this function call.
+            tuple: a tuple consisting of two obj:`FuncMessage`, one about the
+                arguments and the other about the execution result, and a
+                struct for logging information about this function call.
         """
 
         # Note that when function calling is enabled, `n` is set to 1.

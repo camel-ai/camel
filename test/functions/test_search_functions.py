@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from camel.functions.search_functions import (
     clean_str,
-    get_page_obs,
+    get_page_abstract,
     search_wiki,
 )
 
@@ -24,7 +24,7 @@ def test_clean_str():
     assert clean_str(input_str) == expected_output
 
 
-def test_get_page_obs():
+def test_get_page_abstract():
     input_page = "\n".join([
         "This is the first sentence", "This is the second sentence",
         "This is the third sentence", "This is the fourth sentence",
@@ -35,15 +35,15 @@ def test_get_page_obs():
         "This is the third sentence. This is the fourth sentence. "
         "This is the fifth sentence.")
 
-    assert get_page_obs(input_page) == expected_output
+    assert get_page_abstract(input_page) == expected_output
 
 
 def test_search_wiki_normal():
     expected_output = (
         "Erygia sigillata is a species of moth in the family Erebidae found "
         "in Himachal Pradesh, Northern India.[2] The moth was officially "
-        "recognized and classified in 1892.. This Erebinae-related article "
-        "is a stub. You can help Wikipedia by expanding it.. Main "
+        "recognized and classified in 1892. This Erebinae-related article "
+        "is a stub. You can help Wikipedia by expanding it. Main "
         "pageContentsCurrent eventsRandom articleAbout WikipediaContact "
         "usDonate. HelpLearn to editCommunity portalRecent "
         "changesUpload file.")

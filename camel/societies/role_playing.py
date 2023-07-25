@@ -273,10 +273,10 @@ class RolePlaying:
                 agents.
         """
         if self.assistant_functions is not None:
-            assistant_config = FuncConfig(
-                functions=[
-                    func.as_dict() for func in self.assistant_functions
-                ], function_call="auto")
+            assistant_config = FuncConfig.from_openai_function_list(
+                function_list=self.assistant_functions,
+                function_call="auto",
+            )
         else:
             assistant_config = None
         self.assistant_agent = ChatAgent(
