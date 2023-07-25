@@ -42,7 +42,7 @@ def assistant_func_message() -> FuncMessage:
 @pytest.fixture
 def function_func_message() -> FuncMessage:
     role_name = "test_function"
-    role_type = RoleType.FUNC
+    role_type = RoleType.ASSISTANT
     meta_dict = None
     content = "test function message"
 

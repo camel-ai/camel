@@ -17,7 +17,7 @@ from camel.functions import OpenAIFunction
 
 
 def add_with_doc(a, b):
-    """Adds two numbers
+    r"""Adds two numbers
 
     Args:
         a (integer): number to be added
@@ -34,7 +34,7 @@ def add_without_doc(a, b):
 
 
 def add_with_wrong_doc(a, b):
-    """Adds two numbers
+    r"""Adds two numbers
 
     Args:
         a (integer): number to be added

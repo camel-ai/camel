@@ -72,13 +72,10 @@ def test_chat_agent(model: ModelType):
 
 @pytest.mark.model_backend
 def test_chat_agent_stored_messages():
-    model_config = ChatGPTConfig()
-    system_msg = SystemMessageGenerator(
-        task_type=TaskType.AI_SOCIETY).from_dict(
-            dict(assistant_role="doctor"),
-            role_tuple=("doctor", RoleType.ASSISTANT),
-        )
-    assistant = ChatAgent(system_msg, model_config=model_config)
+    system_msg = BaseMessage(role_name="assistant",
+                             role_type=RoleType.ASSISTANT, meta_dict=None,
+                             content="You are a help assistant.")
+    assistant = ChatAgent(system_msg)
 
     expected_stored_msg = [ChatRecord('system', system_msg)]
     assert assistant.stored_messages == expected_stored_msg
@@ -98,7 +95,7 @@ def test_chat_agent_stored_messages():
 
 
 @pytest.mark.model_backend
-def test_chat_agent_truncate_messages_window():
+def test_chat_agent_preprocess_messages_window():
     system_msg = BaseMessage(role_name="assistant",
                              role_type=RoleType.ASSISTANT, meta_dict=None,
                              content="You are a help assistant.")
@@ -113,12 +110,12 @@ def test_chat_agent_truncate_messages_window():
     user_msg = ChatRecord("user", user_msg)
     system_msg = ChatRecord("system", system_msg)
 
-    openai_messages, _ = assistant.truncate_messages([system_msg, user_msg])
+    openai_messages, _ = assistant.preprocess_messages([system_msg, user_msg])
     assert len(openai_messages) == 2
 
 
 @pytest.mark.model_backend
-def test_chat_agent_truncate_messages_token_number():
+def test_chat_agent_step_exceed_token_number():
     system_msg = BaseMessage(role_name="assistant",
                              role_type=RoleType.ASSISTANT, meta_dict=None,
                              content="You are a help assistant.")
@@ -130,17 +127,18 @@ def test_chat_agent_truncate_messages_token_number():
 
     user_msg = BaseMessage(role_name="User", role_type=RoleType.USER,
                            meta_dict=dict(), content="Tell me a joke.")
-    user_msg = ChatRecord("user", user_msg)
+    user_msg_record = ChatRecord("user", user_msg)
     system_msg = ChatRecord("system", system_msg)
-    msgs = [system_msg, user_msg]
+    msgs = [system_msg, user_msg_record]
 
     expect_openai_messages = [record.to_openai_message() for record in msgs]
     expect_num_tokens = \
         num_tokens_from_messages(expect_openai_messages, assistant.model)
 
-    openai_messages, num_tokens = assistant.truncate_messages(msgs)
-    assert openai_messages is None
-    assert num_tokens == expect_num_tokens
+    response = assistant.step(user_msg)
+    assert len(response.msgs) == 0
+    assert response.terminated
+    assert response.info["num_tokens"] == expect_num_tokens
 
 
 @pytest.mark.model_backend
@@ -280,8 +278,8 @@ def test_function_enabled():
                                  model=ModelType.GPT_4,
                                  function_list=MATH_FUNCS)
 
-    assert not agent_no_func.is_function_enabled()
-    assert agent_with_funcs.is_function_enabled()
+    assert not agent_no_func.is_function_calling_enabled()
+    assert agent_with_funcs.is_function_calling_enabled()
 
 
 @pytest.mark.model_backend

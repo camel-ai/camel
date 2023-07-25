@@ -37,7 +37,7 @@ class ChatGPTConfig(BaseConfig):
             the tokens comprising the top 10% probability mass are considered.
             (default: :obj:`1.0`)
         n (int, optional): How many chat completion choices to generate for
-            each input message. ()default: :obj:`1`)
+            each input message. (default: :obj:`1`)
         stream (bool, optional): If True, partial message deltas will be sent
             as data-only server-sent events as they become available.
             (default: :obj:`False`)
@@ -85,8 +85,7 @@ class ChatGPTConfig(BaseConfig):
 @dataclass(frozen=True)
 class FuncConfig(ChatGPTConfig):
     r"""Defines the parameters for generating chat completions using the
-    OpenAI API with functions included. Note this is an unfrozen dataclass
-    allowing for dynamically adding functions into the functions field
+    OpenAI API with functions included.
 
     Args:
         functions (List[Dict[str, Any]]): A list of functions the model may

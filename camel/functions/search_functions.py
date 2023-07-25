@@ -29,15 +29,18 @@ def clean_str(p: str) -> str:
     Returns:
         str: The cleaned string
     """
-    return p.encode().decode("unicode-escape")\
-            .encode("latin1").decode("utf-8")
+    return p.encode().decode("unicode-"
+                             "escape").encode("latin1").decode("utf-8")
 
 
-def get_page_obs(page):
+def get_page_obs(page: str) -> str:
     r"""Returns the first 5 pages in the fetched page.
 
+    Args:
+        page (str): The fetched page.
+
     Returns:
-        List[str]: The list of the first 5 sentences
+        str: The concatenation of the first 5 sentences in the give page.
     """
     paragraphs = page.split('\n')
     paragraphs = [p.strip() for p in paragraphs if p.strip()]
@@ -53,7 +56,7 @@ def get_page_obs(page):
 
 def search_wiki(entity: str) -> str:
     r"""Search the entity in WikiPedia and return (the first sentences of)
-    the required page.
+    the required page, containing factual information about the given entity.
 
     Args:
         entity (string): The entity to be searched.

@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import json
 from collections import defaultdict
 from dataclasses import dataclass
 from types import GeneratorType
@@ -84,9 +85,10 @@ class FuncRecord:
     r"""Historical records of functions called in the conversation.
 
     Attributes:
-        func_name (str): Name of the function being called
-        args (Dict[str, Any]): Dictionary of arguments passed to the function
-        result (Any): The execution result of calling this function
+        func_name (str): The name of the function being called.
+        args (Dict[str, Any]): The dictionary of arguments passed to
+            the function.
+        result (Any): The execution result of calling this function.
     """
     func_name: str
     args: Dict[str, Any]
@@ -118,8 +120,8 @@ class ChatAgent(BaseAgent):
             is performed. (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
-        function_list (Optional[List[OpenAIFunction]]): List of OpenAIFunction
-            objects (default: :obj:`None`)
+        function_list (Optional[List[OpenAIFunction]]): List of available
+            :obj:`OpenAIFunction`. (default: :obj:`None`)
     """
 
     def __init__(
@@ -178,16 +180,16 @@ class ChatAgent(BaseAgent):
         return self._system_message
 
     @system_message.setter
-    def system_message(self, value: BaseMessage):
+    def system_message(self, message: BaseMessage):
         r"""Setter method for the property `system_message`
 
         Args:
-            value (BaseMessage): The value of the message to be set
-                as the new system message of this agent
+            message (BaseMessage): The message to be set as the
+                new system message of this agent
         """
-        self._system_message = value
+        self._system_message = message
 
-    def is_function_enabled(self) -> bool:
+    def is_function_calling_enabled(self) -> bool:
         r"""Whether OpenAI function calling is enabled for this agent
 
         Returns:
@@ -304,10 +306,10 @@ class ChatAgent(BaseAgent):
             # Format messages and get the token number
             openai_messages: Optional[List[OpenAIMessage]]
             num_tokens: int
-            openai_messages, num_tokens = self.truncate_messages(messages)
+            openai_messages, num_tokens = self.preprocess_messages(messages)
 
             # Terminate when number of tokens exceeds the limit
-            if openai_messages is None:
+            if num_tokens >= self.model_token_limit:
                 return self.step_token_exceed(num_tokens, called_funcs)
 
             # Obtain LLM's response and validate it
@@ -323,7 +325,7 @@ class ChatAgent(BaseAgent):
 
             # Postprocess the response or execute function call
             if self.step_end(finish_reasons[0]):
-                # function calling disabled or chat stopped
+                # Function calling disabled or chat stopped
                 info = self.get_info(
                     response_id,
                     usage_dict,
@@ -333,48 +335,49 @@ class ChatAgent(BaseAgent):
                 )
                 break
             else:
-                # function call
-                messages, func_record = self.step_function_call(response)
+                # Function calling
+                func_assistant_msg, func_result_msg, func_record = \
+                    self.step_function_call(response)
+
+                # Update the messages
+                messages = self.update_messages('assistant',
+                                                func_assistant_msg)
+                messages = self.update_messages('function', func_result_msg)
                 called_funcs.append(func_record)
 
         return ChatAgentResponse(output_messages, self.terminated, info)
 
-    def truncate_messages(
-        self, messages: List[ChatRecord]
-    ) -> Tuple[Optional[List[OpenAIMessage]], int]:
+    def preprocess_messages(
+            self,
+            messages: List[ChatRecord]) -> Tuple[List[OpenAIMessage], int]:
         r"""Truncate the list of messages if message window is defined and
         the current length of message list is beyond the window size
 
         Args:
-            messages (List[ChatRecord]): the list of structs containing
-                information about previous chat messages
+            messages (List[ChatRecord]): The list of structs containing
+                information about previous chat messages.
 
         Returns:
-            tuple: a tuple containing the truncated list of messages in
-                OpenAI's input format and the number of tokens. If number
-                of tokens exceeds the limit, None will replace the message
-                list
+            tuple: A tuple containing the truncated list of messages in
+                OpenAI's input format and the number of tokens.
         """
-        if (self.message_window_size is not None) and \
-                (len(messages) > self.message_window_size):
-            messages = \
-                [ChatRecord('system', self.system_message)] + \
-                messages[-self.message_window_size:]
 
-        openai_messages = \
-            [record.to_openai_message() for record in messages]
+        if (self.message_window_size
+                is not None) and (len(messages) > self.message_window_size):
+            messages = [ChatRecord('system', self.system_message)
+                        ] + messages[-self.message_window_size:]
+
+        openai_messages: List[OpenAIMessage]
+        openai_messages = [record.to_openai_message() for record in messages]
         num_tokens = num_tokens_from_messages(openai_messages, self.model)
 
-        if num_tokens >= self.model_token_limit:
-            return None, num_tokens
-        else:
-            return openai_messages, num_tokens
+        return openai_messages, num_tokens
 
     def validate_model_response(self, response: Any):
-        r"""Validate the type of the response returned by the model
+        r"""Validate the type of the response returned by the model.
 
         Args:
-            response (Any): the response returned by the model
+            response (Any): The response returned by the model.
         """
         if not self.model_backend.stream:
             if not isinstance(response, dict):
@@ -459,13 +462,13 @@ class ChatAgent(BaseAgent):
         of called functions when the number of tokens exceeds
 
         Args:
-            num_tokens (int): number of tokens in the messages
-            called_funcs (List[FuncRecord]): list of information objects
-                of functions called in the current step
+            num_tokens (int): Number of tokens in the messages.
+            called_funcs (List[FuncRecord]): List of information objects
+                of functions called in the current step.
 
         Returns:
-            ChatAgentResponse: the struct containing trivial outputs and
-                information about token number and called functions
+            ChatAgentResponse: The struct containing trivial outputs and
+                information about token number and called functions.
         """
 
         self.terminated = True
@@ -494,14 +497,15 @@ class ChatAgent(BaseAgent):
         Returns:
             bool: whether this message exchange should be ended because of
                 function calling is disabled or the finish reason is not
-                "function_call"
+                "function_call".
         """
-        return (not self.is_function_enabled()) \
+        return (not self.is_function_calling_enabled()) \
             or (finish_reason != "function_call")
 
     def step_function_call(
-            self, response: Dict[str,
-                                 Any]) -> Tuple[List[ChatRecord], FuncRecord]:
+        self,
+        response: Dict[str,
+                       Any]) -> Tuple[FuncMessage, FuncMessage, FuncRecord]:
         r"""Execute the function with arguments following the LLM's response
 
         Args:
@@ -509,23 +513,28 @@ class ChatAgent(BaseAgent):
                 the LLM model
 
         Returns:
-            tuple: a tuple containing the updated message history and the
-                struct containig information about this function call
+            tuple: a tuple containing two new messages and a struct
+                containig information about this function call.
         """
         choice = response["choices"][0]
 
-        func_name = choice.message["function_call"].name
+        func_name = choice["message"]["function_call"]["name"]
         func = self.func_dict[func_name]
 
-        args = choice.message["function_call"].arguments
-        args = eval(args)
+        args = choice["message"]["function_call"]["arguments"]
+        args = json.loads(args.replace("\'", "\""))
 
         # Pass the extracted arguments to the indicated function
-        result = func(**args)
+        try:
+            result = func(**args)
+        except Exception:
+            raise ValueError(
+                f"Execution of function {func.__name__} failed with "
+                f"arguments being {args}")
 
         assist_msg = FuncMessage(
             role_name=self.role_name,
-            role_type=RoleType.ASSISTANT,
+            role_type=self.role_type,
             meta_dict=None,
             content="",
             func_name=func_name,
@@ -533,20 +542,16 @@ class ChatAgent(BaseAgent):
         )
         func_msg = FuncMessage(
             role_name=self.role_name,
-            role_type=RoleType.FUNC,
+            role_type=self.role_type,
             meta_dict=None,
             content="",
             func_name=func_name,
             result=result,
         )
 
-        # Update the messages
-        messages = self.update_messages('assistant', assist_msg)
-        messages = self.update_messages('function', func_msg)
-
         # Record information about this function call
         func_record = FuncRecord(func_name, args, result)
-        return messages, func_record
+        return assist_msg, func_msg, func_record
 
     def get_usage_dict(self, output_messages: List[BaseMessage],
                        prompt_tokens: int) -> Dict[str, int]:

@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Callable, Dict, Optional
 
-from jsonschema.validators import Draft202012Validator
+from jsonschema.validators import Draft202012Validator as JSONValidator
 
 from camel.utils import parse_doc
 
@@ -29,14 +29,15 @@ class OpenAIFunction:
         func (Callable): The function to call.
         name (str, optional): The name of the function to be called. Must be
             a-z, A-Z, 0-9, or contain underscores and dashes, with a maximum
-            length of 64. If :obj:`None`, use the name of :obj:`func`.
+            length of 64. If :obj:`None`, use the name of :obj:`func`. 
+            (default: :obj:`None`)
         description (Optional[str], optional): The description of what the
             function does. (default: :obj:`None`)
         parameters (Optional[Dict[str, Any]], optional): The parameters the
             functions accepts, described as a JSON Schema object. See the
-            guide <https://platform.openai.com/docs/guides/gpt/function-calling>`
-            for examples, and the `JSON Schema reference <https://json-schema.org/
-            understanding-json-schema/>` for documentation about the format.
+            `Function calling guide <https://platform.openai.com/docs/guides/gpt/function-calling>`_
+            for examples, and the `JSON Schema reference <https://json-schema.org/understanding-json-schema/>`_
+            for documentation about the format.
     """
 
     def __init__(self, func: Callable, name: Optional[str] = None,
@@ -61,15 +62,15 @@ class OpenAIFunction:
 
     @parameters.setter
     def parameters(self, value: Dict[str, Any]):
-        r"""Setter method for the property `parameters". It will
-        firstly check if the input parameters schema is valid. If
-        invalid, the method will raise jsonschema.exceptions.SchemaError.
+        r"""Setter method for the property :obj:`parameters`. It will
+        firstly check if the input parameters schema is valid. If invalid,
+        the method will raise :obj:`jsonschema.exceptions.SchemaError`.
 
         Args:
             value (Dict[str, Any]): the new dictionary value for the
                 function's parameters
         """
-        Draft202012Validator.check_schema(value)
+        JSONValidator.check_schema(value)
         self._parameters = value
 
     def as_dict(self) -> Dict[str, Any]:

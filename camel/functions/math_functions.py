@@ -18,7 +18,7 @@ from .openai_function import OpenAIFunction
 
 
 def add(a, b):
-    """Adds two numbers
+    r"""Adds two numbers
 
     Args:
         a (integer): number to be added
@@ -31,7 +31,7 @@ def add(a, b):
 
 
 def sub(a, b):
-    """Do subtraction between two numbers
+    r"""Do subtraction between two numbers
 
     Args:
         a (integer): the minuend in subtraction
@@ -44,7 +44,7 @@ def sub(a, b):
 
 
 def mul(a, b):
-    """Multiplies two integers
+    r"""Multiplies two integers
 
     Args:
         a (integer): the multiplier in the multiplication
