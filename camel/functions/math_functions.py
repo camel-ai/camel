@@ -18,40 +18,40 @@ from .openai_function import OpenAIFunction
 
 
 def add(a: int, b: int) -> int:
-    r"""Adds two numbers
+    r"""Adds two numbers.
 
     Args:
-        a (integer): number to be added
-        b (integer): number to be added
+        a (integer): The first number to be added.
+        b (integer): The second number to be added.
 
     Returns:
-        integer: the sum of the two numbers
+        integer: The sum of the two numbers.
     """
     return a + b
 
 
 def sub(a: int, b: int) -> int:
-    r"""Do subtraction between two numbers
+    r"""Do subtraction between two numbers.
 
     Args:
-        a (integer): the minuend in subtraction
-        b (integer): the subtrahend in subtraction
+        a (integer): The minuend in subtraction.
+        b (integer): The subtrahend in subtraction.
 
     Returns:
-        integer: the result of subtracting b from a
+        integer: The result of subtracting :obj:`b` from :obj:`a`.
     """
     return a - b
 
 
 def mul(a: int, b: int) -> int:
-    r"""Multiplies two integers
+    r"""Multiplies two integers.
 
     Args:
-        a (integer): the multiplier in the multiplication
-        b (integer): the multiplicand in the multiplication
+        a (integer): The multiplier in the multiplication.
+        b (integer): The multiplicand in the multiplication.
 
     Returns:
-        integer: the product of the two numbers
+        integer: The product of the two numbers.
     """
     return a * b
 

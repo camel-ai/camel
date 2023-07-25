@@ -257,7 +257,7 @@ def parse_doc(func: Callable) -> Dict[str, Any]:
     doc = inspect.getdoc(func)
     if not doc:
         raise ValueError(
-            f"Invalid function {func.__name__}: no docstring provided")
+            f"Invalid function {func.__name__}: no docstring provided.")
 
     properties = {}
     required = []
@@ -281,14 +281,14 @@ def parse_doc(func: Callable) -> Dict[str, Any]:
     # Parameters from the function signature
     sign_params = list(inspect.signature(func).parameters.keys())
     if len(sign_params) != len(required):
-        raise ValueError(f"Number of parameters in function signature "
-                         f"({len(sign_params)}) "
-                         f"does not match that in docstring ({len(required)})")
+        raise ValueError(
+            f"Number of parameters in function signature ({len(sign_params)})"
+            f" does not match that in docstring ({len(required)}).")
 
     for param in sign_params:
         if param not in required:
             raise ValueError(f"Parameter '{param}' in function signature"
-                             " is missing in the docstring")
+                             " is missing in the docstring.")
 
     parameters = {
         "type": "object",

@@ -17,11 +17,11 @@ from camel.functions import OpenAIFunction
 
 
 def add_with_doc(a: int, b: int) -> int:
-    r"""Adds two numbers
+    r"""Adds two numbers.
 
     Args:
-        a (integer): number to be added
-        b (integer): number to be added
+        a (integer): The first number to be added.
+        b (integer): The second number to be added.
 
     Returns:
         integer: the sum of the two numbers
@@ -34,7 +34,7 @@ def add_without_doc(a: int, b: int) -> int:
 
 
 def add_with_wrong_doc(a: int, b: int) -> int:
-    r"""Adds two numbers
+    r"""Adds two numbers.
 
     Args:
         a (integer): number to be added
@@ -49,17 +49,17 @@ def test_correct_function():
     add = OpenAIFunction(add_with_doc, name="add")
     assert add.as_dict() == {
         "name": "add",
-        "description": "Adds two numbers",
+        "description": "Adds two numbers.",
         "parameters": {
             'type': 'object',
             'properties': {
                 'a': {
                     'type': 'integer',
-                    'description': 'number to be added'
+                    'description': 'The first number to be added.'
                 },
                 'b': {
                     'type': 'integer',
-                    'description': 'number to be added'
+                    'description': 'The second number to be added.'
                 }
             },
             'required': ['a', 'b']

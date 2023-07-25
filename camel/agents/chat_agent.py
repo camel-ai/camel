@@ -95,10 +95,10 @@ class FuncRecord:
     result: Any
 
     def __str__(self) -> str:
-        r"""Overriden version of string function
+        r"""Overridden version of the string function.
 
         Returns:
-            str: Modified string to be represent the function calling
+            str: Modified string to represent the function calling.
         """
 
         return (f"Function Execution: {self.func_name}\n"
@@ -172,7 +172,7 @@ class ChatAgent(BaseAgent):
 
     @property
     def system_message(self) -> BaseMessage:
-        r"""Getter method for the property `system_message`
+        r"""The getter method for the property :obj:`system_message`.
 
         Returns:
             BaseMessage: The system message of this agent.
@@ -181,21 +181,21 @@ class ChatAgent(BaseAgent):
 
     @system_message.setter
     def system_message(self, message: BaseMessage):
-        r"""Setter method for the property `system_message`
+        r"""The setter method for the property :obj:`system_message`.
 
         Args:
             message (BaseMessage): The message to be set as the
-                new system message of this agent
+                new system message of this agent.
         """
         self._system_message = message
 
     def is_function_calling_enabled(self) -> bool:
-        r"""Whether OpenAI function calling is enabled for this agent
+        r"""Whether OpenAI function calling is enabled for this agent.
 
         Returns:
             bool: Whether OpenAI function calling is enabled for this
                 agent, determined by whether the dictionary of functions
-                is empty
+                is empty.
         """
         return len(self.func_dict) > 0
 
@@ -231,7 +231,7 @@ class ChatAgent(BaseAgent):
                 of the chat session.
             num_tokens (int): The number of tokens used in the chat session.
             called_funcs (List[FuncRecord]): The list of function records,
-                containing the information of called functions
+                containing the information of called functions.
 
         Returns:
             Dict[str, Any]: The chat session information.
@@ -323,8 +323,18 @@ class ChatAgent(BaseAgent):
                 output_messages, finish_reasons, usage_dict, response_id = \
                     self.handle_stream_response(response, num_tokens)
 
-            # Postprocess the response or execute function call
-            if self.step_end(finish_reasons[0]):
+            if self.is_function_calling_enabled(
+            ) and finish_reasons[0] == 'function_call':
+                # Do function calling.
+                func_assistant_msg, func_result_msg, func_record = \
+                    self.step_function_call(response)
+
+                # Update the messages
+                messages = self.update_messages('assistant',
+                                                func_assistant_msg)
+                messages = self.update_messages('function', func_result_msg)
+                called_funcs.append(func_record)
+            else:
                 # Function calling disabled or chat stopped
                 info = self.get_info(
                     response_id,
@@ -334,16 +344,6 @@ class ChatAgent(BaseAgent):
                     called_funcs,
                 )
                 break
-            else:
-                # Function calling
-                func_assistant_msg, func_result_msg, func_record = \
-                    self.step_function_call(response)
-
-                # Update the messages
-                messages = self.update_messages('assistant',
-                                                func_assistant_msg)
-                messages = self.update_messages('function', func_result_msg)
-                called_funcs.append(func_record)
 
         return ChatAgentResponse(output_messages, self.terminated, info)
 
@@ -459,7 +459,7 @@ class ChatAgent(BaseAgent):
     def step_token_exceed(self, num_tokens: int,
                           called_funcs: List[FuncRecord]) -> ChatAgentResponse:
         r"""Return trivial response containing number of tokens and information
-        of called functions when the number of tokens exceeds
+        of called functions when the number of tokens exceeds.
 
         Args:
             num_tokens (int): Number of tokens in the messages.
@@ -488,34 +488,22 @@ class ChatAgent(BaseAgent):
             info,
         )
 
-    def step_end(self, finish_reason: str) -> bool:
-        r"""Check whether the current step should be ended.
-
-        Args:
-            finish_reason (str): the reason why the response is ended
-
-        Returns:
-            bool: whether this message exchange should be ended because of
-                function calling is disabled or the finish reason is not
-                "function_call".
-        """
-        return (not self.is_function_calling_enabled()) \
-            or (finish_reason != "function_call")
-
     def step_function_call(
         self,
         response: Dict[str,
                        Any]) -> Tuple[FuncMessage, FuncMessage, FuncRecord]:
-        r"""Execute the function with arguments following the LLM's response
+        r"""Execute the function with arguments following the LLM's response.
 
         Args:
             response (Dict[str, Any]): the response obtained by calling
-                the LLM model
+                the LLM model.
 
         Returns:
-            tuple: a tuple containing two new messages and a struct
+            tuple: a tuple containing two obj:`FuncMessage` and a struct
                 containig information about this function call.
         """
+
+        # Note that when function calling is enabled, `n` is set to 1.
         choice = response["choices"][0]
 
         func_name = choice["message"]["function_call"]["name"]
@@ -530,7 +518,7 @@ class ChatAgent(BaseAgent):
         except Exception:
             raise ValueError(
                 f"Execution of function {func.__name__} failed with "
-                f"arguments being {args}")
+                f"arguments being {args}.")
 
         assist_msg = FuncMessage(
             role_name=self.role_name,

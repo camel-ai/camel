@@ -21,13 +21,13 @@ from .openai_function import OpenAIFunction
 
 def clean_str(p: str) -> str:
     r"""Cleans the input string by encoding and decoding it multiple times
-    to ensure it can be properly read and processed by Python code
+    to ensure it can be properly read and processed by Python code.
 
     Args:
-        p (str): The input string to be cleaned, typically from the webpage
+        p (str): The input string to be cleaned, typically from the webpage.
 
     Returns:
-        str: The cleaned string
+        str: The cleaned string.
     """
     return p.encode().decode("unicode-"
                              "escape").encode("latin1").decode("utf-8")
@@ -62,8 +62,8 @@ def search_wiki(entity: str) -> str:
         entity (string): The entity to be searched.
 
     Returns:
-        string: search result. If the page corresponding to the entity
-        exists, return the first 5 sentences in a string.
+        string: The search result. If the page corresponding to the entity
+            exists, return the first 5 sentences in a string.
     """
     entity_ = entity.replace(" ", "+")
     search_url = f"https://en.wikipedia.org/w/index.php?search={entity_}"

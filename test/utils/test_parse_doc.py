@@ -19,17 +19,17 @@ from camel.utils import parse_doc
 def test_parse_doc_valid():
 
     def add(a, b):
-        """Adds two numbers
+        """Adds two numbers.
 
         Args:
-            a (int): number to be added
-            b (int): another number to be added
+            a (int): The first number to be added.
+            b (int): The second number to be added.
         """
         return a + b
 
     parsed = parse_doc(add)
     assert parsed['name'] == 'add'
-    assert parsed['description'] == 'Adds two numbers'
+    assert parsed['description'] == 'Adds two numbers.'
     assert parsed['parameters']['properties']['a']['type'] == 'int'
     assert parsed['parameters']['properties']['b']['type'] == 'int'
 
@@ -41,39 +41,39 @@ def test_parse_doc_no_docstring():
 
     with pytest.raises(
             ValueError,
-            match=f"Invalid function {sub.__name__}: no docstring provided"):
+            match=f"Invalid function {sub.__name__}: no docstring provided."):
         parse_doc(sub)
 
 
 def test_parse_doc_mismatch():
 
     def mul(a, b, c):
-        """Multiplies three numbers
+        """Multiplies three numbers.
 
         Args:
-            a (int): number to be multiplied
-            b (int): another number to be multiplied
+            a (int): number to be multiplied.
+            b (int): another number to be multiplied.
         """
         return a * b * c
 
     with pytest.raises(
             ValueError,
             match=(r"Number of parameters in function signature "
-                   r"\(3\) does not match that in docstring \(2\)")):
+                   r"\(3\) does not match that in docstring \(2\).")):
         parse_doc(mul)
 
 
 def test_parse_doc_no_args_section():
 
     def return_param(a):
-        """Return the parameter
+        """Return the parameter.
 
         Args:
-            b (int): parameter to be returned
+            b (int): The parameter to be returned.
         """
         return a
 
     with pytest.raises(
             ValueError, match=("Parameter 'a' in function signature"
-                               " is missing in the docstring")):
+                               " is missing in the docstring.")):
         parse_doc(return_param)
