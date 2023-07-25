@@ -24,14 +24,16 @@ def main() -> None:
 
     role_assignment_agent = RoleAssignmentAgent(model=ModelType.GPT_3_5_TURBO)
 
-    role_names, _ = role_assignment_agent.step_completion(
+    role_names, role_description_dict = role_assignment_agent.step_completion(
         task_prompt=task_prompt)
     ai_user_role = role_names[0]
     ai_assistant_role = role_names[1]
 
     role_play_session = RolePlaying(
-        ai_assistant_role,
-        ai_user_role,
+        assistant_role_name=ai_assistant_role,
+        user_role_name=ai_user_role,
+        assistant_description=role_description_dict[ai_assistant_role],
+        user_description=role_description_dict[ai_user_role],
         task_prompt=task_prompt,
         with_task_specify=True,
     )
