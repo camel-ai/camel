@@ -24,7 +24,7 @@ def add_with_doc(a: int, b: int) -> int:
         b (integer): The second number to be added.
 
     Returns:
-        integer: The sum of the two numbers
+        integer: The sum of the two numbers.
     """
     return a + b
 
@@ -40,7 +40,7 @@ def add_with_wrong_doc(a: int, b: int) -> int:
         a (integer): The first number to be added.
 
     Returns:
-        integer: The sum of the two numbers
+        integer: The sum of the two numbers.
     """
     return a + b
 
