@@ -210,7 +210,7 @@ class TaskCreationAgent(ChatAgent):
         model: Optional[ModelType] = None,
         model_config: Optional[Any] = None,
         output_language: Optional[str] = None,
-        objective: str = None,
+        objective: str = "",
     ) -> None:
 
         self.task_creator_prompt = TextPrompt(
@@ -312,7 +312,7 @@ class TaskPrioritizeAgent(ChatAgent):
         model: Optional[ModelType] = None,
         model_config: Optional[Any] = None,
         output_language: Optional[str] = None,
-        objective: str = None,
+        objective: str = "",
     ) -> None:
 
         self.task_prioritizer_prompt = TextPrompt(
