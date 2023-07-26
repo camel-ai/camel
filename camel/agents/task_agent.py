@@ -339,7 +339,7 @@ Be concise.\n""")
         super().__init__(system_message, model, model_config,
                          output_language=output_language)
 
-        if (objective):
+        if objective:
             self.objective = objective
             self.task_prioritizer_prompt = self.task_prioritizer_prompt.format(
                 objective=self.objective)
