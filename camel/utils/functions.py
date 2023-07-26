@@ -241,7 +241,7 @@ def download_tasks(task: TaskType, folder_path: str) -> None:
     os.remove(zip_file_path)
 
 
-def get_task_list(task_response: str) -> List[dict]:
+def get_task_list(task_response: str) -> List[str]:
     # Parse the response of LLM and return task list.
     new_tasks_list = []
 
@@ -251,5 +251,5 @@ def get_task_list(task_response: str) -> List[dict]:
         if len(task_parts) == 2:
             task_name = re.sub(r'[^\w\s_]+', '', task_parts[1]).strip()
             if task_name.strip():
-                new_tasks_list.append({"task_name": task_name})
+                new_tasks_list.append(task_name)
     return new_tasks_list

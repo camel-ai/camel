@@ -139,7 +139,6 @@ def test_task_prioritize_agent(model: Optional[ModelType]):
         model_config=ChatGPTConfig(temperature=1.0), model=model,
         objective=original_task_prompt)
 
-    task_list = [task['task_name'] for task in planned_task]
-    prioritized_task = task_prioritize_agent.run(task_list=task_list)
+    prioritized_task = task_prioritize_agent.run(task_list=planned_task)
     print(f"Prioritized task list:\n{prioritized_task}\n")
     assert isinstance(prioritized_task, list)
