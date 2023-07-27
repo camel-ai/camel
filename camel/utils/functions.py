@@ -244,7 +244,7 @@ def download_tasks(task: TaskType, folder_path: str) -> None:
 def get_task_list(task_response: str) -> List[str]:
     # Parse the response of LLM and return task list.
     new_tasks_list = []
-
+    task_string_list = task_response.strip().split('\n')
     # each task starts with #.
     for task_string in task_response:
         task_parts = task_string.strip().split(".", 1)
