@@ -196,13 +196,13 @@ class TaskCreationAgent(ChatAgent):
             new tasks.
 
     Args:
+        objective (Union[str, TextPrompt]): The objective of the Agent to perform the task.
         model (ModelType, optional): The type of model to use for the agent.
             (default: :obj:`ModelType.GPT_3_5_TURBO`)
         model_config (Any, optional): The configuration for the model.
             (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
-        objective (str): The objective of the Agent to perform the task.
     """
 
     def __init__(
