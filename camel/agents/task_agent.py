@@ -207,10 +207,10 @@ class TaskCreationAgent(ChatAgent):
 
     def __init__(
         self,
+        objective: Union[str, TextPrompt],
         model: Optional[ModelType] = None,
         model_config: Optional[Any] = None,
         output_language: Optional[str] = None,
-        objective: str = "",
     ) -> None:
 
         self.task_creator_prompt = TextPrompt(
