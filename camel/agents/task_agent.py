@@ -279,7 +279,7 @@ The number of each entry must be followed by a period. Be concise.
 
         task_response = self.step(task_msg)
 
-        if task_response.msgs is None:
+        if len(task_response.msgs) == 0:
             raise RuntimeError("Got None Subtasks messages.")
         if task_response.terminated:
             raise RuntimeError("Task planning failed.")
