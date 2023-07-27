@@ -246,7 +246,7 @@ def get_task_list(task_response: str) -> List[str]:
     new_tasks_list = []
     task_string_list = task_response.strip().split('\n')
     # each task starts with #.
-    for task_string in task_response:
+    for task_string in task_string_list:
         task_parts = task_string.strip().split(".", 1)
         if len(task_parts) == 2:
             task_name = re.sub(r'[^\w\s_]+', '', task_parts[1]).strip()
