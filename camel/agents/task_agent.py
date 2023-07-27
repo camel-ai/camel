@@ -285,8 +285,7 @@ The number of each entry must be followed by a period. Be concise.
             raise RuntimeError("Task planning failed.")
 
         sub_tasks_msg = task_response.msgs[0]
-        new_tasks = sub_tasks_msg.content.strip().split('\n')
-        return get_task_list(new_tasks)
+        return get_task_list(sub_tasks_msg.content)
 
 
 class TaskPrioritizeAgent(ChatAgent):
