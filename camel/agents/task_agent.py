@@ -327,7 +327,7 @@ The result must be a numbered list in the format:
 
 The entries must be consecutively numbered, starting with 1.
 The number of each entry must be followed by a period.
-Be concise.\n""")
+Be concise.""")
 
         system_message = BaseMessage(
             role_name="Task Prioritizer",
