@@ -242,14 +242,23 @@ def download_tasks(task: TaskType, folder_path: str) -> None:
 
 
 def get_task_list(task_response: str) -> List[str]:
-    # Parse the response of LLM and return task list.
+    r"""Parse the response of the Agent and return task list.
+
+    Args:
+        task_response (str): The string response of the Agent.
+
+    Returns:
+        List[str]: A list of the string tasks.
+    """
+
     new_tasks_list = []
     task_string_list = task_response.strip().split('\n')
     # each task starts with #.
     for task_string in task_string_list:
         task_parts = task_string.strip().split(".", 1)
         if len(task_parts) == 2:
+            task_id = ''.join(s for s in task_parts[0] if s.isnumeric())
             task_name = re.sub(r'[^\w\s_]+', '', task_parts[1]).strip()
-            if task_name.strip():
+            if task_name.strip() and task_id.isnumeric():
                 new_tasks_list.append(task_name)
     return new_tasks_list

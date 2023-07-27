@@ -265,7 +265,8 @@ The number of each entry must be followed by a period. Be concise.
         self.task_creator_prompt = self.task_creator_prompt.format(
             task=previous_task, task_result=task_result)
         if task_list is not None:
-            unsolved = (f"These are unsolved tasks: {task_list}.\n"
+            unsolved = (
+                f"These are unsolved tasks: {task_list}.\n"
                 "These new tasks must not overlap with incomplete tasks.")
 
             self.task_creator_prompt = self.task_creator_prompt.format(
@@ -297,21 +298,21 @@ class TaskPrioritizeAgent(ChatAgent):
             prioritize tasks.
 
     Args:
+        objective (Union[str, TextPrompt]): The objective of the Agent to perform the task.
         model (ModelType, optional): The type of model to use for the agent.
             (default: :obj:`ModelType.GPT_3_5_TURBO`)
         model_config (Any, optional): The configuration for the model.
             (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
-        objective (str): The objective of Agent to perform task.
     """
 
     def __init__(
         self,
+        objective: Union[str, TextPrompt],
         model: Optional[ModelType] = None,
         model_config: Optional[Any] = None,
         output_language: Optional[str] = None,
-        objective: str = "",
     ) -> None:
 
         self.task_prioritizer_prompt = TextPrompt(
@@ -369,5 +370,4 @@ Be concise.""")
             raise RuntimeError("Task Prioritizing failed.")
 
         sub_tasks_msg = task_response.msgs[0]
-        new_tasks = sub_tasks_msg.content.strip().split('\n')
-        return get_task_list(new_tasks)
+        return get_task_list(sub_tasks_msg.content)
