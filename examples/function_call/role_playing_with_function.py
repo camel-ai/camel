@@ -15,7 +15,7 @@ from typing import List
 
 from colorama import Fore
 
-from camel.agents.chat_agent import FuncRecord
+from camel.agents.chat_agent import FunctionCallingRecord
 from camel.functions import MATH_FUNCS, SEARCH_FUNCS
 from camel.societies import RolePlaying
 from camel.typing import ModelType
@@ -24,8 +24,7 @@ from camel.utils import print_text_animated
 
 def main(model_type=ModelType.GPT_4) -> None:
     task_prompt = ("Assuming the current year is 2023, estimate KAUST's "
-                   "current age by searching the year when it was founded "
-                   "using wiki, then add 10 more years to this age.")
+                   "current age and then add 10 more years to this age.")
     role_play_session = RolePlaying(
         assistant_role_name="Searcher",
         user_role_name="Professor",
@@ -76,7 +75,7 @@ def main(model_type=ModelType.GPT_4) -> None:
         # Print output from the assistant, including any function
         # execution information
         print_text_animated(Fore.GREEN + "AI Assistant:")
-        called_functions: List[FuncRecord] = \
+        called_functions: List[FunctionCallingRecord] = \
             assistant_response.info['called_functions']
         for func_record in called_functions:
             print_text_animated(f"{func_record}")

@@ -15,7 +15,7 @@ import pytest
 
 from camel.agents import ChatAgent
 from camel.agents.chat_agent import ChatRecord
-from camel.configs import ChatGPTConfig, FuncConfig
+from camel.configs import ChatGPTConfig, FunctionCallingConfig
 from camel.functions import MATH_FUNCS
 from camel.generators import SystemMessageGenerator
 from camel.messages import BaseMessage
@@ -268,7 +268,7 @@ def test_function_enabled():
     system_message = BaseMessage(role_name="assistant",
                                  role_type=RoleType.ASSISTANT, meta_dict=None,
                                  content="You are a help assistant.")
-    model_config = FuncConfig(
+    model_config = FunctionCallingConfig(
         functions=[func.as_dict() for func in MATH_FUNCS])
     agent_no_func = ChatAgent(system_message=system_message,
                               model_config=model_config, model=ModelType.GPT_4)
@@ -286,7 +286,7 @@ def test_function_calling():
     system_message = BaseMessage(role_name="assistant",
                                  role_type=RoleType.ASSISTANT, meta_dict=None,
                                  content="You are a help assistant.")
-    model_config = FuncConfig(
+    model_config = FunctionCallingConfig(
         functions=[func.as_dict() for func in MATH_FUNCS])
     agent = ChatAgent(system_message=system_message, model_config=model_config,
                       model=ModelType.GPT_4, function_list=MATH_FUNCS)

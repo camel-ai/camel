@@ -20,7 +20,7 @@ from camel.agents import (
     TaskSpecifyAgent,
 )
 from camel.agents.chat_agent import ChatAgentResponse
-from camel.configs import FuncConfig
+from camel.configs import FunctionCallingConfig
 from camel.functions import OpenAIFunction
 from camel.generators import SystemMessageGenerator
 from camel.human import Human
@@ -273,10 +273,11 @@ class RolePlaying:
                 agents.
         """
         if self.assistant_functions is not None:
-            assistant_config = FuncConfig.from_openai_function_list(
-                function_list=self.assistant_functions,
-                function_call="auto",
-            )
+            assistant_config = \
+                FunctionCallingConfig.from_openai_function_list(
+                    function_list=self.assistant_functions,
+                    function_call="auto",
+                )
         else:
             assistant_config = None
         self.assistant_agent = ChatAgent(

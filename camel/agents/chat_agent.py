@@ -24,7 +24,7 @@ from tenacity.wait import wait_exponential
 from camel.agents import BaseAgent
 from camel.configs import BaseConfig, ChatGPTConfig
 from camel.functions import OpenAIFunction
-from camel.messages import BaseMessage, FuncMessage, OpenAIMessage
+from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.typing import ModelType, RoleType
 from camel.utils import (
@@ -81,7 +81,7 @@ class ChatRecord:
 
 
 @dataclass(frozen=True)
-class FuncRecord:
+class FunctionCallingRecord:
     r"""Historical records of functions called in the conversation.
 
     Attributes:
@@ -220,7 +220,7 @@ class ChatAgent(BaseAgent):
 
     def get_info(self, id: Optional[str], usage: Optional[Dict[str, int]],
                  termination_reasons: List[str], num_tokens: int,
-                 called_funcs: List[FuncRecord]) -> Dict[str, Any]:
+                 called_funcs: List[FunctionCallingRecord]) -> Dict[str, Any]:
         r"""Returns a dictionary containing information about the chat session.
 
         Args:
@@ -230,8 +230,9 @@ class ChatAgent(BaseAgent):
             termination_reasons (List[str]): The reasons for the termination
                 of the chat session.
             num_tokens (int): The number of tokens used in the chat session.
-            called_funcs (List[FuncRecord]): The list of function records,
-                containing the information of called functions.
+            called_funcs (List[FunctionCallingRecord]): The list of function
+                calling records, containing the information of called
+                functions.
 
         Returns:
             Dict[str, Any]: The chat session information.
@@ -301,7 +302,7 @@ class ChatAgent(BaseAgent):
 
         output_messages: List[BaseMessage]
         info: Dict[str, Any]
-        called_funcs: List[FuncRecord] = []
+        called_funcs: List[FunctionCallingRecord] = []
         while True:
             # Format messages and get the token number
             openai_messages: Optional[List[OpenAIMessage]]
@@ -456,15 +457,16 @@ class ChatAgent(BaseAgent):
         usage_dict = self.get_usage_dict(output_messages, prompt_tokens)
         return output_messages, finish_reasons, usage_dict, response_id
 
-    def step_token_exceed(self, num_tokens: int,
-                          called_funcs: List[FuncRecord]) -> ChatAgentResponse:
+    def step_token_exceed(
+            self, num_tokens: int,
+            called_funcs: List[FunctionCallingRecord]) -> ChatAgentResponse:
         r"""Return trivial response containing number of tokens and information
         of called functions when the number of tokens exceeds.
 
         Args:
             num_tokens (int): Number of tokens in the messages.
-            called_funcs (List[FuncRecord]): List of information objects
-                of functions called in the current step.
+            called_funcs (List[FunctionCallingRecord]): List of information
+                objects of functions called in the current step.
 
         Returns:
             ChatAgentResponse: The struct containing trivial outputs and
@@ -489,9 +491,9 @@ class ChatAgent(BaseAgent):
         )
 
     def step_function_call(
-        self,
-        response: Dict[str,
-                       Any]) -> Tuple[FuncMessage, FuncMessage, FuncRecord]:
+        self, response: Dict[str, Any]
+    ) -> Tuple[FunctionCallingMessage, FunctionCallingMessage,
+               FunctionCallingRecord]:
         r"""Execute the function with arguments following the LLM's response.
 
         Args:
@@ -499,9 +501,10 @@ class ChatAgent(BaseAgent):
                 the LLM model.
 
         Returns:
-            tuple: a tuple consisting of two obj:`FuncMessage`, one about the
-                arguments and the other about the execution result, and a
-                struct for logging information about this function call.
+            tuple: a tuple consisting of two obj:`FunctionCallingMessage`,
+                one about the arguments and the other about the execution
+                result, and a struct for logging information about this
+                function call.
         """
 
         # Note that when function calling is enabled, `n` is set to 1.
@@ -521,7 +524,7 @@ class ChatAgent(BaseAgent):
                 f"Execution of function {func.__name__} failed with "
                 f"arguments being {args}.")
 
-        assist_msg = FuncMessage(
+        assist_msg = FunctionCallingMessage(
             role_name=self.role_name,
             role_type=self.role_type,
             meta_dict=None,
@@ -529,7 +532,7 @@ class ChatAgent(BaseAgent):
             func_name=func_name,
             args=args,
         )
-        func_msg = FuncMessage(
+        func_msg = FunctionCallingMessage(
             role_name=self.role_name,
             role_type=self.role_type,
             meta_dict=None,
@@ -539,7 +542,7 @@ class ChatAgent(BaseAgent):
         )
 
         # Record information about this function call
-        func_record = FuncRecord(func_name, args, result)
+        func_record = FunctionCallingRecord(func_name, args, result)
         return assist_msg, func_msg, func_record
 
     def get_usage_dict(self, output_messages: List[BaseMessage],

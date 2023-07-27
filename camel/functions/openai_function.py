@@ -52,11 +52,11 @@ class OpenAIFunction:
 
     @property
     def parameters(self) -> Dict[str, Any]:
-        r"""Getter method for the property `parameters`
+        r"""Getter method for the property :obj:`parameters`.
 
         Returns:
             Dict[str, Any]: the dictionary containing information of
-                parameters of this function
+                parameters of this function.
         """
         return self._parameters
 
@@ -68,14 +68,14 @@ class OpenAIFunction:
 
         Args:
             value (Dict[str, Any]): the new dictionary value for the
-                function's parameters
+                function's parameters.
         """
         JSONValidator.check_schema(value)
         self._parameters = value
 
     def as_dict(self) -> Dict[str, Any]:
         r"""Method to represent the information of this function into
-        a dictionary object
+        a dictionary object.
 
         Returns:
             Dict[str, Any]: The dictionary object containing information

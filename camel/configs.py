@@ -85,7 +85,7 @@ class ChatGPTConfig(BaseConfig):
 
 
 @dataclass(frozen=True)
-class FuncConfig(ChatGPTConfig):
+class FunctionCallingConfig(ChatGPTConfig):
     r"""Defines the parameters for generating chat completions using the
     OpenAI API with functions included.
 
@@ -101,13 +101,13 @@ class FuncConfig(ChatGPTConfig):
             function. (default: :obj:`"auto"`)
     """
     functions: List[Dict[str, Any]] = field(default_factory=list)
-    function_call: Union[str, Dict[str, str]] = "auto"
+    function_call: Union[Dict[str, str], str] = "auto"
 
     @classmethod
     def from_openai_function_list(
         cls,
         function_list: List[OpenAIFunction],
-        function_call: Union[str, Dict[str, str]] = "auto",
+        function_call: Union[Dict[str, str], str] = "auto",
     ):
         r"""Class method for creating an instance given the function-related
         arguments.
@@ -120,9 +120,9 @@ class FuncConfig(ChatGPTConfig):
                 creator's documentation.
 
         Return:
-            FuncConfig: A new instance which loads the given function list
-                into a list of dictionaries and the input
-                :obj:`function_call` argument
+            FunctionCallingConfig: A new instance which loads the given
+                function list into a list of dictionaries and the input
+                :obj:`function_call` argument.
         """
         return cls(
             functions=[func.as_dict() for func in function_list],

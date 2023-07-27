@@ -20,7 +20,7 @@ from .base import BaseMessage
 
 
 @dataclass
-class FuncMessage(BaseMessage):
+class FunctionCallingMessage(BaseMessage):
     r"""Class for message objects used specifically for
     function-related messages.
 

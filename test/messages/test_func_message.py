@@ -15,18 +15,18 @@ from typing import Any, Dict
 
 import pytest
 
-from camel.messages import FuncMessage
+from camel.messages import FunctionCallingMessage
 from camel.typing import RoleType
 
 
 @pytest.fixture
-def assistant_func_message() -> FuncMessage:
+def assistant_func_message() -> FunctionCallingMessage:
     role_name = "test_assistant"
     role_type = RoleType.ASSISTANT
     meta_dict = None
     content = "test function message"
 
-    return FuncMessage(
+    return FunctionCallingMessage(
         role_name=role_name,
         role_type=role_type,
         meta_dict=meta_dict,
@@ -40,13 +40,13 @@ def assistant_func_message() -> FuncMessage:
 
 
 @pytest.fixture
-def function_func_message() -> FuncMessage:
+def function_func_message() -> FunctionCallingMessage:
     role_name = "test_function"
     role_type = RoleType.ASSISTANT
     meta_dict = None
     content = "test function message"
 
-    return FuncMessage(
+    return FunctionCallingMessage(
         role_name=role_name,
         role_type=role_type,
         meta_dict=meta_dict,
@@ -56,7 +56,8 @@ def function_func_message() -> FuncMessage:
     )
 
 
-def test_assistant_func_message(assistant_func_message: FuncMessage):
+def test_assistant_func_message(
+        assistant_func_message: FunctionCallingMessage):
     content = "test function message"
 
     assert assistant_func_message.func_name == "add"
@@ -77,7 +78,7 @@ def test_assistant_func_message(assistant_func_message: FuncMessage):
     assert assistant_func_message.to_openai_assistant_message() == msg_dict
 
 
-def test_function_func_message(function_func_message: FuncMessage):
+def test_function_func_message(function_func_message: FunctionCallingMessage):
     assert function_func_message.func_name == "add"
     assert function_func_message.result == 3
 
@@ -91,7 +92,7 @@ def test_function_func_message(function_func_message: FuncMessage):
 
 
 def test_assistant_func_message_to_openai_function_message(
-        assistant_func_message: FuncMessage):
+        assistant_func_message: FunctionCallingMessage):
     with pytest.raises(
             ValueError,
             match=("Invalid request for converting into function message"
@@ -100,7 +101,7 @@ def test_assistant_func_message_to_openai_function_message(
 
 
 def test_function_func_message_to_openai_assistant_message(
-        function_func_message: FuncMessage):
+        function_func_message: FunctionCallingMessage):
     with pytest.raises(
             ValueError,
             match=("Invalid request for converting into assistant message"
@@ -109,7 +110,7 @@ def test_function_func_message_to_openai_assistant_message(
 
 
 def test_to_openai_message_with_user_backend(
-        assistant_func_message: FuncMessage):
+        assistant_func_message: FunctionCallingMessage):
     with pytest.raises(
             ValueError,
             match=("Invalid role for function-related message: user")):
