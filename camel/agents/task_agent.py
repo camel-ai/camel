@@ -265,8 +265,8 @@ The number of each entry must be followed by a period. Be concise.
         self.task_creator_prompt = self.task_creator_prompt.format(
             task=previous_task, task_result=task_result)
         if task_list is not None:
-            unsolved = f"These are unsolved tasks: {task_list}.\n\
-                These new tasks must not overlap with incomplete tasks."
+            unsolved = (f"These are unsolved tasks: {task_list}.\n"
+                "These new tasks must not overlap with incomplete tasks.")
 
             self.task_creator_prompt = self.task_creator_prompt.format(
                 unsolved_tasks=unsolved)
