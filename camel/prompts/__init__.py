@@ -20,6 +20,7 @@ from .solution_extraction import SolutionExtractionPromptTemplateDict
 from .evaluation import EvaluationPromptTemplateDict
 from .task_prompt_template import TaskPromptTemplateDict
 from .prompt_templates import PromptTemplateGenerator
+from .website import WebsitePromptTemplateDict
 
 __all__ = [
     'TextPrompt',
@@ -33,4 +34,5 @@ __all__ = [
     'TaskPromptTemplateDict',
     'PromptTemplateGenerator',
     'SolutionExtractionPromptTemplateDict',
+    'WebsitePromptTemplateDict',
 ]
