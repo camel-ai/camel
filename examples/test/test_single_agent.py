@@ -12,7 +12,6 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import pytest
-from mock import patch
 
 import examples.code.generate_meta_data
 import examples.code.task_generation
@@ -41,8 +40,7 @@ def test_misalignment_single_agent(model):
     ModelType.STUB,
 ])
 def test_evaluation_single_agent(model):
-    with patch('time.sleep', return_value=None):
-        examples.evaluation.single_agent.main(model=model)
+    examples.evaluation.single_agent.main(model=model)
 
 
 @parametrize
@@ -59,5 +57,4 @@ def test_code_generate_metadata(model):
         #              marks=[pytest.mark.model_backend, pytest.mark.slow]),
     ])
 def test_code_task_generation(model):
-    with patch('time.sleep', return_value=None):
-        examples.code.task_generation.main(model=model)
+    examples.code.task_generation.main(model=model)
