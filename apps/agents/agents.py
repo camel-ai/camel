@@ -187,7 +187,7 @@ def role_playing_start(
         session = RolePlaying(
             assistant,
             user,
-            original_task,
+            task_prompt=original_task,
             with_task_specify=with_task_specifier,
             task_specify_agent_kwargs=task_specify_kwargs,
             with_task_planner=False,
