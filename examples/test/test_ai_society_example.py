@@ -11,12 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import pytest
+from mock import patch
 
 import examples.ai_society.role_playing
 from camel.typing import ModelType
 
 
-@pytest.mark.slow
 def test_ai_society_role_playing_example():
-    examples.ai_society.role_playing.main(ModelType.STUB)
+    with patch('time.sleep', return_value=None):
+        examples.ai_society.role_playing.main(ModelType.STUB)

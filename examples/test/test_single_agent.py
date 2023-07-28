@@ -37,7 +37,9 @@ def test_misalignment_single_agent(model):
     examples.misalignment.single_agent.main(model=model)
 
 
-@parametrize
+@pytest.mark.parametrize('model', [
+    ModelType.STUB,
+])
 def test_evaluation_single_agent(model):
     with patch('time.sleep', return_value=None):
         examples.evaluation.single_agent.main(model=model)
