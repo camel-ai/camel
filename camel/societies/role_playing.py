@@ -79,6 +79,7 @@ class RolePlaying:
         self,
         assistant_role_name: str,
         user_role_name: str,
+        *,
         critic_role_name: str = "critic",
         task_prompt: str = "",
         with_task_specify: bool = True,
