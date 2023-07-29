@@ -11,12 +11,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from abc import ABC
 from dataclasses import dataclass, field
-from typing import Dict, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
+
+from camel.functions import OpenAIFunction
 
 
 @dataclass(frozen=True)
-class ChatGPTConfig:
+class BaseConfig(ABC):
+    pass
+
+
+@dataclass(frozen=True)
+class ChatGPTConfig(BaseConfig):
     r"""Defines the parameters for generating chat completions using the
     OpenAI API.
 
@@ -31,7 +39,7 @@ class ChatGPTConfig:
             the tokens comprising the top 10% probability mass are considered.
             (default: :obj:`1.0`)
         n (int, optional): How many chat completion choices to generate for
-            each input message. ()default: :obj:`1`)
+            each input message. (default: :obj:`1`)
         stream (bool, optional): If True, partial message deltas will be sent
             as data-only server-sent events as they become available.
             (default: :obj:`False`)
@@ -74,3 +82,49 @@ class ChatGPTConfig:
     frequency_penalty: float = 0.0
     logit_bias: Dict = field(default_factory=dict)
     user: str = ""
+
+
+@dataclass(frozen=True)
+class FunctionCallingConfig(ChatGPTConfig):
+    r"""Defines the parameters for generating chat completions using the
+    OpenAI API with functions included.
+
+    Args:
+        functions (List[Dict[str, Any]]): A list of functions the model may
+            generate JSON inputs for.
+        function_call (Union[Dict[str, str], str], optional): Controls how the
+            model responds to function calls. :obj:`"none"` means the model
+            does not call a function, and responds to the end-user.
+            :obj:`"auto"` means the model can pick between an end-user or
+            calling a function. Specifying a particular function via
+            :obj:`{"name": "my_function"}` forces the model to call that
+            function. (default: :obj:`"auto"`)
+    """
+    functions: List[Dict[str, Any]] = field(default_factory=list)
+    function_call: Union[Dict[str, str], str] = "auto"
+
+    @classmethod
+    def from_openai_function_list(
+        cls,
+        function_list: List[OpenAIFunction],
+        function_call: Union[Dict[str, str], str] = "auto",
+    ):
+        r"""Class method for creating an instance given the function-related
+        arguments.
+
+        Args:
+            function_list (List[OpenAIFunction]): The list of function objects
+                to be loaded into this configuration and passed to the model.
+            function_call (Union[Dict[str, str], str], optional): Controls how
+                the model responds to function calls, as specified in the
+                creator's documentation.
+
+        Return:
+            FunctionCallingConfig: A new instance which loads the given
+                function list into a list of dictionaries and the input
+                :obj:`function_call` argument.
+        """
+        return cls(
+            functions=[func.as_dict() for func in function_list],
+            function_call=function_call,
+        )
