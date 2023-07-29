@@ -75,8 +75,9 @@ def main(model_type=ModelType.GPT_4) -> None:
         # Print output from the assistant, including any function
         # execution information
         print_text_animated(Fore.GREEN + "AI Assistant:")
-        called_functions: List[FunctionCallingRecord] = \
-            assistant_response.info['called_functions']
+        called_functions: List[
+            FunctionCallingRecord] = assistant_response.info[
+                'called_functions']
         for func_record in called_functions:
             print_text_animated(f"{func_record}")
         print_text_animated(f"{assistant_response.msg.content}\n")

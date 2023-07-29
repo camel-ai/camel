@@ -11,10 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from typing import List
+
 import pytest
 
 from camel.agents import ChatAgent
-from camel.agents.chat_agent import ChatRecord
+from camel.agents.chat_agent import ChatRecord, FunctionCallingRecord
 from camel.configs import ChatGPTConfig, FunctionCallingConfig
 from camel.functions import MATH_FUNCS
 from camel.generators import SystemMessageGenerator
@@ -132,8 +134,10 @@ def test_chat_agent_step_exceed_token_number():
     msgs = [system_msg, user_msg_record]
 
     expect_openai_messages = [record.to_openai_message() for record in msgs]
-    expect_num_tokens = \
-        num_tokens_from_messages(expect_openai_messages, assistant.model)
+    expect_num_tokens = num_tokens_from_messages(
+        expect_openai_messages,
+        assistant.model,
+    )
 
     response = assistant.step(user_msg)
     assert len(response.msgs) == 0
@@ -294,14 +298,16 @@ def test_function_calling():
     ref_funcs = MATH_FUNCS
 
     assert len(agent.func_dict) == len(ref_funcs)
-    assert len(agent.model_config.functions) == len(ref_funcs)
+    model_config: FunctionCallingConfig = agent.model_config
+    assert len(model_config.functions) == len(ref_funcs)
 
     user_msg = BaseMessage(role_name="User", role_type=RoleType.USER,
                            meta_dict=dict(),
                            content="Calculate the result of: 2*8-10.")
     agent_response = agent.step(user_msg)
 
-    called_funcs = agent_response.info['called_functions']
+    called_funcs: List[FunctionCallingRecord] = agent_response.info[
+        'called_functions']
     for called_func in called_funcs:
         print(str(called_func))
 

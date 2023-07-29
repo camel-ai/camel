@@ -49,7 +49,7 @@ class FunctionCallingMessage(BaseMessage):
         """
         if role_at_backend not in {"assistant", "function"}:
             raise ValueError("Invalid role for function-related message: "
-                             f"{role_at_backend}")
+                             f"{role_at_backend}.")
 
         if role_at_backend == "assistant":
             return self.to_openai_assistant_message()
@@ -86,7 +86,7 @@ class FunctionCallingMessage(BaseMessage):
 
         Returns:
             OpenAIMessage: The converted :obj:`OpenAIMessage` object
-                with its role being "function"
+                with its role being "function".
         """
         if (not self.func_name) or (not self.result):
             raise ValueError(

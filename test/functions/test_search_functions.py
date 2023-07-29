@@ -53,9 +53,7 @@ def test_search_wiki_normal():
 
 
 def test_search_wiki_not_found():
-    search_output = search_output = \
-        search_wiki("South Africa Women Football Team")
-    assert \
-        search_output.startswith(
-            "Could not find South Africa Women Football Team."
-        )
+    search_output = search_output = search_wiki(
+        "South Africa Women Football Team")
+    assert search_output.startswith(
+        "Could not find South Africa Women Football Team.")

@@ -289,7 +289,7 @@ class ChatAgent(BaseAgent):
 
         Args:
             input_message (BaseMessage): The input message to the agent.
-            Its `role` field that specifies the role at backen may be either
+            Its `role` field that specifies the role at backend may be either
             `user` or `assistant` but it will be set to `user` anyway since
             for the self agent any incoming message is external.
 
@@ -318,17 +318,17 @@ class ChatAgent(BaseAgent):
             self.validate_model_response(response)
 
             if not self.model_backend.stream:
-                output_messages, finish_reasons, usage_dict, response_id = \
-                    self.handle_batch_response(response)
+                output_messages, finish_reasons, usage_dict, response_id = (
+                    self.handle_batch_response(response))
             else:
-                output_messages, finish_reasons, usage_dict, response_id = \
-                    self.handle_stream_response(response, num_tokens)
+                output_messages, finish_reasons, usage_dict, response_id = (
+                    self.handle_stream_response(response, num_tokens))
 
             if self.is_function_calling_enabled(
             ) and finish_reasons[0] == 'function_call':
-                # Do function calling.
-                func_assistant_msg, func_result_msg, func_record = \
-                    self.step_function_call(response)
+                # Do function calling
+                func_assistant_msg, func_result_msg, func_record = (
+                    self.step_function_call(response))
 
                 # Update the messages
                 messages = self.update_messages('assistant',
@@ -352,7 +352,9 @@ class ChatAgent(BaseAgent):
             self,
             messages: List[ChatRecord]) -> Tuple[List[OpenAIMessage], int]:
         r"""Truncate the list of messages if message window is defined and
-        the current length of message list is beyond the window size
+        the current length of message list is beyond the window size. Then
+        convert the list of messages to OpenAI's input format and calculate
+        the number of tokens.
 
         Args:
             messages (List[ChatRecord]): The list of structs containing
@@ -374,7 +376,7 @@ class ChatAgent(BaseAgent):
 
         return openai_messages, num_tokens
 
-    def validate_model_response(self, response: Any):
+    def validate_model_response(self, response: Any) -> None:
         r"""Validate the type of the response returned by the model.
 
         Args:
@@ -494,11 +496,11 @@ class ChatAgent(BaseAgent):
         self, response: Dict[str, Any]
     ) -> Tuple[FunctionCallingMessage, FunctionCallingMessage,
                FunctionCallingRecord]:
-        r"""Execute the function with arguments following the LLM's response.
+        r"""Execute the function with arguments following the model's response.
 
         Args:
-            response (Dict[str, Any]): the response obtained by calling
-                the LLM model.
+            response (Dict[str, Any]): the response obtained by calling the
+                model.
 
         Returns:
             tuple: a tuple consisting of two obj:`FunctionCallingMessage`,
@@ -513,8 +515,8 @@ class ChatAgent(BaseAgent):
         func_name = choice["message"]["function_call"]["name"]
         func = self.func_dict[func_name]
 
-        args = choice["message"]["function_call"]["arguments"]
-        args = json.loads(args.replace("\'", "\""))
+        args_str: str = choice["message"]["function_call"]["arguments"]
+        args = json.loads(args_str.replace("\'", "\""))
 
         # Pass the extracted arguments to the indicated function
         try:
