@@ -22,7 +22,7 @@ def test_ai_society_role_playing_example():
     with patch('time.sleep', return_value=None):
         examples.ai_society.role_playing.main(ModelType.STUB)
 
-  
+
 def test_role_playing_with_function_example():
     with patch('time.sleep', return_value=None):
         examples.function_call.role_playing_with_function.main(ModelType.STUB)
