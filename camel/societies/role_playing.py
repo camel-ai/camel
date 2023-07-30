@@ -26,7 +26,7 @@ from camel.generators import SystemMessageGenerator
 from camel.human import Human
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
-from camel.typing import RoleType, TaskType
+from camel.typing import ModelType, RoleType, TaskType
 
 
 class RolePlaying:
@@ -50,6 +50,9 @@ class RolePlaying:
             in the loop. (default: :obj:`False`)
         critic_criteria (str, optional): Critic criteria for the critic agent.
             If not specified, set the criteria to improve task performance.
+        model_type (ModelType, optional): Model type that will be used for
+            role playing. If specified, it will override the model in all
+            agents. (default: :obj:`None`)
         task_type (TaskType, optional): The type of task to perform.
             (default: :obj:`TaskType.AI_SOCIETY`)
         assistant_agent_kwargs (Dict, optional): Additional arguments to pass
@@ -70,9 +73,9 @@ class RolePlaying:
             task specify meta dict with. (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
             agents. (default: :obj:`None`)
-        assistant_functions (Optional[List[OpenAIFunction]]): the function
-            collection objects to be loaded. If :obj:`None`, function calling
-            is disabled. (default: :obj:`None`)
+        assistant_functions (List[OpenAIFunction], optional): The function
+            collection objects to be loaded. If not specified, function
+            calling will be disabled. (default: :obj:`None`)
     """
 
     def __init__(
@@ -86,6 +89,7 @@ class RolePlaying:
         with_task_planner: bool = False,
         with_critic_in_the_loop: bool = False,
         critic_criteria: Optional[str] = None,
+        model_type: Optional[ModelType] = None,
         task_type: TaskType = TaskType.AI_SOCIETY,
         assistant_agent_kwargs: Optional[Dict] = None,
         user_agent_kwargs: Optional[Dict] = None,
@@ -101,6 +105,7 @@ class RolePlaying:
         self.with_task_specify = with_task_specify
         self.with_task_planner = with_task_planner
         self.with_critic_in_the_loop = with_critic_in_the_loop
+        self.model_type = model_type
         self.task_type = task_type
         self.task_prompt = task_prompt
 
@@ -168,6 +173,10 @@ class RolePlaying:
                     dict(assistant_role=assistant_role_name,
                          user_role=user_role_name))
             task_specify_meta_dict.update(extend_task_specify_meta_dict or {})
+            if self.model_type is not None:
+                if task_specify_agent_kwargs is None:
+                    task_specify_agent_kwargs = {}
+                task_specify_agent_kwargs.update(dict(model=self.model_type))
             task_specify_agent = TaskSpecifyAgent(
                 task_type=self.task_type,
                 output_language=output_language,
@@ -195,6 +204,10 @@ class RolePlaying:
                 agents.
         """
         if self.with_task_planner:
+            if self.model_type is not None:
+                if task_planner_agent_kwargs is None:
+                    task_planner_agent_kwargs = {}
+                task_planner_agent_kwargs.update(dict(model=self.model_type))
             task_planner_agent = TaskPlannerAgent(
                 output_language=output_language,
                 **(task_planner_agent_kwargs or {}),
@@ -280,6 +293,15 @@ class RolePlaying:
             )
         else:
             assistant_config = None
+
+        if self.model_type is not None:
+            if assistant_agent_kwargs is None:
+                assistant_agent_kwargs = {}
+            assistant_agent_kwargs.update(dict(model=self.model_type))
+            if user_agent_kwargs is None:
+                user_agent_kwargs = {}
+            user_agent_kwargs.update(dict(model=self.model_type))
+
         self.assistant_agent = ChatAgent(
             init_assistant_sys_msg,
             model_config=assistant_config,
@@ -330,6 +352,10 @@ class RolePlaying:
                     critic_msg_meta_dict,
                     role_tuple=(critic_role_name, RoleType.CRITIC),
                 )
+                if self.model_type is not None:
+                    if critic_kwargs is None:
+                        critic_kwargs = {}
+                    critic_kwargs.update(dict(model=self.model_type))
                 self.critic = CriticAgent(
                     self.critic_sys_msg,
                     **(critic_kwargs or {}),
