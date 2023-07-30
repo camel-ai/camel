@@ -73,9 +73,9 @@ class RolePlaying:
             task specify meta dict with. (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
             agents. (default: :obj:`None`)
-        assistant_functions (List[OpenAIFunction], optional): The function
-            collection objects to be loaded. If not specified, function
-            calling will be disabled. (default: :obj:`None`)
+        assistant_functions (list, optional): List of
+            :obj:`OpenAIFunction` objects to be loaded. If not specified,
+            function calling will be disabled. (default: :obj:`None`)
     """
 
     def __init__(
