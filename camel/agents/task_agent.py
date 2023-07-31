@@ -98,7 +98,7 @@ class TaskSpecifyAgent(ChatAgent):
         task_specify_prompt = self.task_specify_prompt.format(task=task_prompt)
 
         if meta_dict is not None:
-            task_specify_prompt = (task_specify_prompt.format(**meta_dict))
+            task_specify_prompt = task_specify_prompt.format(**meta_dict)
 
         task_msg = BaseMessage.make_user_message(role_name="Task Specifier",
                                                  content=task_specify_prompt)
