@@ -104,7 +104,7 @@ class TaskSpecifyAgent(ChatAgent):
                                                  content=task_specify_prompt)
         specifier_response = self.step(task_msg)
         if len(specifier_response.msgs) == 0:
-            raise RuntimeError("Task specification failed.")
+            raise RuntimeError("Got no specification message.")
         specified_task_msg = specifier_response.msgs[0]
 
         if specifier_response.terminated:
@@ -172,7 +172,7 @@ class TaskPlannerAgent(ChatAgent):
         task_response = self.step(task_msg)
 
         if len(task_response.msgs) == 0:
-            raise RuntimeError("Got no task planning messages.")
+            raise RuntimeError("Got no task planning message.")
         if task_response.terminated:
             raise RuntimeError("Task planning failed.")
 
@@ -282,7 +282,7 @@ The number of each entry must be followed by a period. Be concise.""")
         task_response = self.step(task_msg)
 
         if len(task_response.msgs) == 0:
-            raise RuntimeError("Got no task creation messages.")
+            raise RuntimeError("Got no task creation message.")
         if task_response.terminated:
             raise RuntimeError("Task creation failed.")
 
@@ -369,7 +369,7 @@ Be concise.""")
         task_response = self.step(task_msg)
 
         if len(task_response.msgs) == 0:
-            raise RuntimeError("Got no task prioritization messages.")
+            raise RuntimeError("Got no task prioritization message.")
         if task_response.terminated:
             raise RuntimeError("Task prioritization failed.")
 
