@@ -33,7 +33,7 @@ class TaskSpecifyAgent(ChatAgent):
         model (ModelType, optional): The type of model to use for the agent.
             (default: :obj:`ModelType.GPT_3_5_TURBO`)
         task_type (TaskType, optional): The type of task for which to generate
-            a prompt. default: :obj:`TaskType.AI_SOCIETY`)
+            a prompt. (default: :obj:`TaskType.AI_SOCIETY`)
         model_config (Any, optional): The configuration for the model.
             (default: :obj:`None`)
         task_specify_prompt (Union[str, TextPrompt], optional): The prompt for
