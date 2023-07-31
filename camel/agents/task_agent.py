@@ -152,6 +152,7 @@ class TaskPlannerAgent(ChatAgent):
         sub_tasks_msg = sub_tasks_msgs[0]
         return TextPrompt(sub_tasks_msg.content)
 
+
 class RoleAssignmentAgent(ChatAgent):
     r"""
     An agent that generates role names based on the task prompt.
@@ -200,7 +201,7 @@ class RoleAssignmentAgent(ChatAgent):
 
         self.reset()
 
-        task_msg = AssistantChatMessage(
+        task_msg = UserChatMessage(
             role_name="Role Assigner",
             content=self.role_assignment_prompt.format(task=task_prompt),
         )
@@ -257,7 +258,7 @@ class RoleAssignmentAgent(ChatAgent):
         role_assignment_generation = role_assignment_generation_prompt.format(
             num_roles=num_roles, task=task_prompt)
 
-        role_assignment_generation_msg = AssistantChatMessage(
+        role_assignment_generation_msg = UserChatMessage(
             role_name="Role Assigner", content=role_assignment_generation)
 
         output_completions, terminated, info = super().step_completion(

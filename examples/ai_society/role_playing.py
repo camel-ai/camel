@@ -15,7 +15,6 @@
 from colorama import Fore
 
 from camel.agents import RolePlaying
-from camel.utils import print_text_animated
 from camel.agents.role_assignment_agent import RoleAssignmentAgent
 from camel.typing import ModelType
 from camel.utils import print_text_animated
@@ -26,7 +25,7 @@ def main() -> None:
 
     role_assignment_agent = RoleAssignmentAgent(model=ModelType.GPT_3_5_TURBO)
 
-    roles = role_assignment_agent.step_completion(task_prompt, 2)
+    roles = role_assignment_agent.step(task_prompt, 2)
     if len(roles) == 2:
         ai_user_role = roles['ai_user']
         ai_assistant_role = roles['ai_assistant']
@@ -39,7 +38,7 @@ def main() -> None:
         ai_user_role,
         task_prompt=task_prompt,
         with_task_specify=True,
-        model_type=model_type,
+        model_type=ModelType.GPT_3_5_TURBO,
     )
 
     print(
