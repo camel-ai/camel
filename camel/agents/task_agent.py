@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional, Tuple, Union
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
-from camel.messages import AssistantChatMessage, SystemMessage, UserChatMessage
+from camel.messages import SystemMessage, UserChatMessage
 from camel.prompts import PromptTemplateGenerator, TextPrompt
 from camel.typing import ModelType, RoleType, TaskType
 
@@ -81,12 +81,9 @@ class TaskSpecifyAgent(ChatAgent):
             self.task_specify_prompt = self.task_specify_prompt.format(
                 **meta_dict)
 
-        print("ready to go")
         task_msg = UserChatMessage(role_name="Task Specifier",
                                    content=self.task_specify_prompt)
-        print("ready to step")
         specified_task_msgs, terminated, _ = super().step(task_msg)
-        print("step succesfully")
         specified_task_msg = specified_task_msgs[0]
 
         if terminated:
@@ -154,7 +151,6 @@ class TaskPlannerAgent(ChatAgent):
 
         sub_tasks_msg = sub_tasks_msgs[0]
         return TextPrompt(sub_tasks_msg.content)
-
 
 class RoleAssignmentAgent(ChatAgent):
     r"""
