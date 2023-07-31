@@ -4,6 +4,7 @@ openai
 tenacity
 tiktoken
 colorama
+jsonschema
 
 # Packages for development
 yapf

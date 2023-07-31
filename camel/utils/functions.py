@@ -11,12 +11,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import inspect
 import os
 import re
 import time
 import zipfile
 from functools import wraps
-from typing import Any, Callable, List, Optional, Set, TypeVar, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    TypeVar,
+    cast,
+)
 
 import requests
 import tiktoken
@@ -68,7 +79,7 @@ def count_tokens_openai_chat_models(
     for message in messages:
         num_tokens += tokens_per_message
         for key, value in message.items():
-            num_tokens += len(encoding.encode(value))
+            num_tokens += len(encoding.encode(str(value)))
             if key == "name":
                 num_tokens += tokens_per_name
     num_tokens += 3  # every reply is primed with <|start|>assistant<|message|>
@@ -239,6 +250,70 @@ def download_tasks(task: TaskType, folder_path: str) -> None:
 
     # Delete the zip file
     os.remove(zip_file_path)
+
+
+def parse_doc(func: Callable) -> Dict[str, Any]:
+    r"""Parse the docstrings of a function to extract the function name,
+    description and parameters.
+
+    Args:
+        func (Callable): The function to be parsed.
+    Returns:
+        Dict[str, Any]: A dictionary with the function's name,
+            description, and parameters.
+    """
+
+    doc = inspect.getdoc(func)
+    if not doc:
+        raise ValueError(
+            f"Invalid function {func.__name__}: no docstring provided.")
+
+    properties = {}
+    required = []
+
+    parts = re.split('\n\s*\n', doc)
+    func_desc = parts[0].strip()
+
+    args_section = next((p for p in parts if 'Args:' in p), None)
+    if args_section:
+        args_descs: List[Tuple[str, str, str, ]] = re.findall(
+            r'(\w+)\s*\((\w+)\):\s*(.*)', args_section)
+        properties = {
+            name.strip(): {
+                'type': type,
+                'description': desc
+            }
+            for name, type, desc in args_descs
+        }
+        for name in properties:
+            required.append(name)
+
+    # Parameters from the function signature
+    sign_params = list(inspect.signature(func).parameters.keys())
+    if len(sign_params) != len(required):
+        raise ValueError(
+            f"Number of parameters in function signature ({len(sign_params)})"
+            f" does not match that in docstring ({len(required)}).")
+
+    for param in sign_params:
+        if param not in required:
+            raise ValueError(f"Parameter '{param}' in function signature"
+                             " is missing in the docstring.")
+
+    parameters = {
+        "type": "object",
+        "properties": properties,
+        "required": required,
+    }
+
+    # Construct the function dictionary
+    function_dict = {
+        "name": func.__name__,
+        "description": func_desc,
+        "parameters": parameters,
+    }
+
+    return function_dict
 
 
 def get_task_list(task_response: str) -> List[str]:
