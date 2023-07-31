@@ -1,13 +1,11 @@
 [build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
 
-[project]
+[tool.poetry]
 name="camel"
 version="0.1.0"
-authors=[
-    {name="CAMEL TEAM", email="camel.ai.team@gmail.com"},
-]
+authors=["CAMEL-AI.org"]
 description="Communicative Agents for AI Society Study"
 readme="README.md"
 requires-python=">=3.7"
@@ -21,24 +19,36 @@ keywords=[
     "natural-language-processing",
     "large-language-models",
 ]
-classifiers=[
-    "Development Status :: 2 - Pre-Alpha",
-    "License :: OSI Approved :: Apache License 2.0",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3 :: Only",
-]
-
-dynamic=["dependencies", "optional-dependencies"]
-
-[project.urls]
+license="Apache License 2.0"
 homepage="https://www.camel-ai.org/"
-repository="https://github.com/lightaime/camel"
-changelog="https://github.com/lightaime/camel/blob/master/CHANGELOG.md"
+repository="https://github.com/camel-ai/camel"
+documentation="https://docs.camel-ai.org"
+
+[tool.poetry.dependencies]
+python = "^3.7"
+numpy = "^1"
+openai = "^0"
+tenacity = "^8"
+tiktoken = "^0"
+colorama = "^0"
+jsonschema = "^4"
+types-colorama = "^0"
+types-requests = "^2"
+yapf = "^0"
+isort = "^5"
+flake8 = "^6"
+pre-commit = "^3"
+pytest = "^7"
+pytest-cov = "^4"
+bs4 = {version = "^0", optional = true}
+transformers = {version = "^4", optional = true}
+diffusers = {version = "^0", optional = true}
+accelerate = {version = "^0", optional = true}
+datasets = {version = "^2", optional = true}
+torch = {version = "^1", optional = true}
+soundfile = {version = "^0", optional = true}
+sentencepiece = {version = "^0", optional = true}
+opencv-python = {version = "^4", optional = true}
 
 [tool.yapf]
 based_on_style = "pep8"
@@ -50,6 +60,37 @@ include_trailing_comma = true
 skip = [".gitingore", "__init__.py"]
 
 [tool.pytest.ini_options]
-pythonpath = [
-    ".",
+pythonpath = ["."]
+addopts = ["--strict-markers"]
+markers = [
+    "full_test_only: mark a test to run only in full test mode",
+    "slow: mark a test as slow",
+    "model_backend: for tests that require OpenAI API key or a local LLM",
 ]
+
+[tool.coverage.report]
+include_namespace_packages = true
+
+[[tool.mypy.overrides]]
+module = [
+    "transformers.*",
+    "packaging.*",
+    "tiktoken",
+    "openai",
+    "openai.error",
+    "tenacity",
+    "tenacity.stop",
+    "tenacity.wait",
+    "pytest",
+    "_pytest.config",
+    "_pytest.nodes",
+    "numpy",
+    "torch",
+    "sqlalchemy",
+    "google.cloud.sql.connector",
+    "gradio",
+    "database_connection",
+    "huggingface_hub",
+    "huggingface_hub.utils._errors",
+]
+ignore_missing_imports = true
