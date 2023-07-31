@@ -23,7 +23,6 @@ from .functions import (
     download_tasks,
     parse_doc,
     get_task_list,
-
 )
 
 __all__ = [
