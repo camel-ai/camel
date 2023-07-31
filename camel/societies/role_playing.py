@@ -20,6 +20,8 @@ from camel.agents import (
     TaskSpecifyAgent,
 )
 from camel.agents.chat_agent import ChatAgentResponse
+from camel.configs import FunctionCallingConfig
+from camel.functions import OpenAIFunction
 from camel.generators import SystemMessageGenerator
 from camel.human import Human
 from camel.messages import BaseMessage
@@ -68,12 +70,16 @@ class RolePlaying:
             task specify meta dict with. (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
             agents. (default: :obj:`None`)
+        assistant_functions (Optional[List[OpenAIFunction]]): the function
+            collection objects to be loaded. If :obj:`None`, function calling
+            is disabled. (default: :obj:`None`)
     """
 
     def __init__(
         self,
         assistant_role_name: str,
         user_role_name: str,
+        *,
         critic_role_name: str = "critic",
         task_prompt: str = "",
         with_task_specify: bool = True,
@@ -90,12 +96,15 @@ class RolePlaying:
         extend_sys_msg_meta_dicts: Optional[List[Dict]] = None,
         extend_task_specify_meta_dict: Optional[Dict] = None,
         output_language: Optional[str] = None,
+        assistant_functions: Optional[List[OpenAIFunction]] = None,
     ) -> None:
         self.with_task_specify = with_task_specify
         self.with_task_planner = with_task_planner
         self.with_critic_in_the_loop = with_critic_in_the_loop
         self.task_type = task_type
         self.task_prompt = task_prompt
+
+        self.assistant_functions = assistant_functions
 
         self.specified_task_prompt: Optional[TextPrompt] = None
         self.init_specified_task_prompt(assistant_role_name, user_role_name,
@@ -118,8 +127,13 @@ class RolePlaying:
         self.user_agent: ChatAgent
         self.assistant_sys_msg: BaseMessage
         self.user_sys_msg: BaseMessage
-        self.init_agents(init_assistant_sys_msg, assistant_agent_kwargs,
-                         init_user_sys_msg, user_agent_kwargs, output_language)
+        self.init_agents(
+            init_assistant_sys_msg,
+            assistant_agent_kwargs,
+            init_user_sys_msg,
+            user_agent_kwargs,
+            output_language,
+        )
 
         self.critic: Optional[Union[CriticAgent, Human]] = None
         self.critic_sys_msg: Optional[BaseMessage] = None
@@ -237,11 +251,14 @@ class RolePlaying:
             ))
         return init_assistant_sys_msg, init_user_sys_msg, sys_msg_meta_dicts
 
-    def init_agents(self, init_assistant_sys_msg: BaseMessage,
-                    assistant_agent_kwargs: Optional[Dict],
-                    init_user_sys_msg: BaseMessage,
-                    user_agent_kwargs: Optional[Dict],
-                    output_language: Optional[str]):
+    def init_agents(
+        self,
+        init_assistant_sys_msg: BaseMessage,
+        assistant_agent_kwargs: Optional[Dict],
+        init_user_sys_msg: BaseMessage,
+        user_agent_kwargs: Optional[Dict],
+        output_language: Optional[str],
+    ):
         r"""Initialize assistant and user agents with their system messages.
 
         Args:
@@ -256,12 +273,22 @@ class RolePlaying:
             output_language (str, optional): The language to be output by the
                 agents.
         """
+        if self.assistant_functions is not None:
+            assistant_config = FunctionCallingConfig.from_openai_function_list(
+                function_list=self.assistant_functions,
+                function_call="auto",
+            )
+        else:
+            assistant_config = None
         self.assistant_agent = ChatAgent(
             init_assistant_sys_msg,
+            model_config=assistant_config,
             output_language=output_language,
+            function_list=self.assistant_functions,
             **(assistant_agent_kwargs or {}),
         )
         self.assistant_sys_msg = self.assistant_agent.system_message
+
         self.user_agent = ChatAgent(
             init_user_sys_msg,
             output_language=output_language,
@@ -391,6 +418,7 @@ class RolePlaying:
             whether the user agent terminated the conversation, and any
             additional user information.
         """
+
         user_response = self.user_agent.step(assistant_msg)
         if user_response.terminated or user_response.msgs is None:
             return (ChatAgentResponse([], False, {}),
