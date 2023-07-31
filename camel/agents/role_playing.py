@@ -23,6 +23,10 @@ class RolePlaying:
             (default: :obj:`"critic"`)
         task_prompt (str, optional): A prompt for the task to be performed.
             (default: :obj:`""`)
+        assistant_description (str, optional): A description of the assistant.
+            (default: :obj:`None`)
+        user_description (str, optional): A description of the user.
+            (default: :obj:`None`)
         with_task_specify (bool, optional): Whether to use a task specify
             agent. (default: :obj:`True`)
         with_task_planner (bool, optional): Whether to use a task planner
@@ -57,6 +61,8 @@ class RolePlaying:
         user_role_name: str,
         critic_role_name: str = "critic",
         task_prompt: str = "",
+        assistant_description: Optional[str] = None,
+        user_description: Optional[str] = None,
         with_task_specify: bool = True,
         with_task_planner: bool = False,
         with_critic_in_the_loop: bool = False,
@@ -118,10 +124,19 @@ class RolePlaying:
         sys_msg_meta_dicts = [dict(task=task_prompt)] * 2
         if (extend_sys_msg_meta_dicts is None and self.task_type
                 in [TaskType.AI_SOCIETY, TaskType.MISALIGNMENT]):
-            extend_sys_msg_meta_dicts = [
-                dict(assistant_role=assistant_role_name,
-                     user_role=user_role_name)
-            ] * 2
+            if assistant_description and user_description:
+                extend_sys_msg_meta_dicts = [
+                    dict(assistant_role=assistant_role_name,
+                         assistant_description=assistant_description,
+                         user_role=user_role_name,
+                         user_description=user_description)
+                ] * 2
+            else:
+                extend_sys_msg_meta_dicts = [
+                    dict(assistant_role=assistant_role_name,
+                         user_role=user_role_name)
+                ] * 2
+
         if extend_sys_msg_meta_dicts is not None:
             sys_msg_meta_dicts = [{
                 **sys_msg_meta_dict,

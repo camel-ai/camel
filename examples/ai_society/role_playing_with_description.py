@@ -11,35 +11,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-
 from colorama import Fore
 
 from camel.agents import RolePlaying
-from camel.utils import print_text_animated
-from camel.agents.role_assignment_agent import RoleAssignmentAgent
+from camel.agents.task_agent import RoleAssignmentAgent
 from camel.typing import ModelType
 from camel.utils import print_text_animated
 
+AI_USER_ROLE_INDEX = 0
+AI_ASSISTANT_ROLE_INDEX = 1
+
 
 def main() -> None:
-    task_prompt = "Establish a business company solving climate change issue"
+    task_prompt = "Developing a trading bot for stock market"
 
     role_assignment_agent = RoleAssignmentAgent(model=ModelType.GPT_3_5_TURBO)
 
-    roles = role_assignment_agent.step_completion(task_prompt, 2)
-    if len(roles) == 2:
-        ai_user_role = roles['ai_user']
-        ai_assistant_role = roles['ai_assistant']
-    else:
-        ai_user_role = roles['role_name_1']
-        ai_assistant_role = roles['role_name_2']
+    role_names, role_description_dict, _, _ = (
+        role_assignment_agent.step_completion(num_roles=2,
+                                              task_prompt=task_prompt))
+
+    ai_user_role = role_names[AI_USER_ROLE_INDEX]
+    ai_assistant_role = role_names[AI_ASSISTANT_ROLE_INDEX]
 
     role_play_session = RolePlaying(
-        ai_assistant_role,
-        ai_user_role,
+        assistant_role_name=ai_assistant_role,
+        user_role_name=ai_user_role,
+        assistant_description=role_description_dict[ai_assistant_role],
+        user_description=role_description_dict[ai_user_role],
         task_prompt=task_prompt,
         with_task_specify=True,
-        model_type=model_type,
     )
 
     print(
@@ -55,31 +56,29 @@ def main() -> None:
     print(Fore.RED + f"Final task prompt:\n{role_play_session.task_prompt}\n")
 
     chat_turn_limit, n = 50, 0
-    input_assistant_msg, _ = role_play_session.init_chat()
+    assistant_msg, _ = role_play_session.init_chat()
     while n < chat_turn_limit:
         n += 1
-        assistant_response, user_response = role_play_session.step(
-            input_assistant_msg)
+        assistant_return, user_return = role_play_session.step(assistant_msg)
+        assistant_msg, assistant_terminated, assistant_info = assistant_return
+        user_msg, user_terminated, user_info = user_return
 
-        input_assistant_msg = assistant_response.msg
-
-        if assistant_response.terminated:
+        if assistant_terminated:
             print(Fore.GREEN +
-                  ("AI Assistant terminated. Reason: "
-                   f"{assistant_response.info['termination_reasons']}."))
+                  ("AI Assistant terminated. "
+                   f"Reason: {assistant_info['termination_reasons']}."))
             break
-        if user_response.terminated:
+        if user_terminated:
             print(Fore.GREEN +
                   ("AI User terminated. "
-                   f"Reason: {user_response.info['termination_reasons']}."))
+                   f"Reason: {user_info['termination_reasons']}."))
             break
 
-        print_text_animated(Fore.BLUE +
-                            f"AI User:\n\n{user_response.msg.content}\n")
-        print_text_animated(Fore.GREEN + "AI Assistant:\n\n"
-                            f"{assistant_response.msg.content}\n")
+        print_text_animated(Fore.BLUE + f"AI User:\n\n{user_msg.content}\n")
+        print_text_animated(Fore.GREEN +
+                            f"AI Assistant:\n\n{assistant_msg.content}\n")
 
-        if "CAMEL_TASK_DONE" in user_response.msg.content:
+        if "CAMEL_TASK_DONE" in user_msg.content:
             break
 
 
