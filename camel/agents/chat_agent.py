@@ -12,8 +12,9 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
+import openai
 from tenacity import retry
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_exponential
@@ -234,6 +235,72 @@ class ChatAgent(BaseAgent):
             )
 
         return ChatAgentResponse(output_messages, self.terminated, info)
+
+    @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
+    def step_completion(
+        self,
+        input_prompt_for_completion: ChatMessage,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+    ) -> Tuple[Optional[List[ChatMessage]], bool, Dict[str, Any]]:
+        r"""Performs a single step in the chat session by generating a response
+        to the input message.
+
+        Args:
+            input_prompt_for_completion (ChatMessage): The input prompt
+                requiring completion.
+            temperature (float): The temperature of the model for generating.
+            max_tokens (int): The maximum number of tokens to use for
+                generating.
+
+        Returns:
+            Tuple[Optional[List[ChatMessage]], bool, Dict[str, Any]]: A tuple
+                containing the output messages, a boolean indicating whether
+                the chat session has terminated, and information about the chat
+                session.
+        """
+        messages = self.update_messages(input_prompt_for_completion)
+
+        if self.message_window_size is not None and len(
+                messages) > self.message_window_size:
+            messages = [self.system_message
+                        ] + messages[-self.message_window_size:]
+        openai_messages = [message.to_openai_message() for message in messages]
+        num_tokens = num_tokens_from_messages(openai_messages, self.model)
+
+        if num_tokens < self.model_token_limit:
+
+            response = openai.Completion.create(
+                model="text-davinci-003",
+                prompt=input_prompt_for_completion.content,
+                temperature=(temperature if temperature else
+                             self.model_config.temperature),
+                max_tokens=(max_tokens
+                            if max_tokens else self.model_config.max_tokens),
+            )
+            output_completions = [choice for choice in response["choices"]]
+            info = self.get_info(
+                response["id"],
+                response["usage"],
+                [
+                    str(choice["finish_reason"])
+                    for choice in response["choices"]
+                ],
+                num_tokens,
+            )
+
+        else:
+            self.terminated = True
+            output_completions = None
+
+            info = self.get_info(
+                None,
+                None,
+                ["max_tokens_exceeded"],
+                num_tokens,
+            )
+
+        return output_completions, self.terminated, info
 
     def __repr__(self) -> str:
         r"""Returns a string representation of the :obj:`ChatAgent`.
