@@ -20,7 +20,7 @@ from camel.typing import ModelType
 from camel.utils import print_text_animated
 
 
-def main() -> None:
+def main(model_type=None) -> None:
     task_prompt = "Establish a business company solving climate change issue"
 
     role_assignment_agent = RoleAssignmentAgent(model=ModelType.GPT_3_5_TURBO)
@@ -36,6 +36,8 @@ def main() -> None:
     role_play_session = RolePlaying(
         ai_assistant_role,
         ai_user_role,
+        assistant_agent_kwargs=dict(model=model_type),
+        user_agent_kwargs=dict(model=model_type),
         task_prompt=task_prompt,
         with_task_specify=True,
         model_type=ModelType.GPT_3_5_TURBO,
@@ -60,8 +62,6 @@ def main() -> None:
         assistant_response, user_response = role_play_session.step(
             input_assistant_msg)
 
-        input_assistant_msg = assistant_response.msg
-
         if assistant_response.terminated:
             print(Fore.GREEN +
                   ("AI Assistant terminated. Reason: "
@@ -80,6 +80,8 @@ def main() -> None:
 
         if "CAMEL_TASK_DONE" in user_response.msg.content:
             break
+
+        input_assistant_msg = assistant_response.msg
 
 
 if __name__ == "__main__":
