@@ -11,45 +11,65 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import typing
-
 import pytest
 
-from camel.agents import ChatAgent
-from camel.messages import AssistantChatMessage, ChatMessage, SystemMessageType
+from camel.agents import ChatAgent, CriticAgent
+from camel.human import Human
+from camel.messages import BaseMessage
 from camel.societies import RolePlaying
-from camel.typing import ModelType, TaskType
+from camel.typing import ModelType, RoleType, TaskType
 
 
-def test_role_playing_init():
+@pytest.mark.parametrize("critic_role_name", ["human", "critic agent"])
+@pytest.mark.parametrize("with_critic_in_the_loop", [True, False])
+def test_role_playing_init(critic_role_name, with_critic_in_the_loop):
+    # Only specify critic model if critic is not human
+    critic_kwargs = dict(
+        model=ModelType.GPT_4_32k) if critic_role_name != "human" else {}
+
     role_playing = RolePlaying(
         assistant_role_name="assistant",
+        assistant_agent_kwargs=dict(model=ModelType.GPT_3_5_TURBO_16K),
         user_role_name="user",
+        user_agent_kwargs=dict(model=ModelType.GPT_3_5_TURBO_16K),
+        critic_role_name=critic_role_name,
         task_prompt="Perform the task",
         with_task_specify=False,
+        task_specify_agent_kwargs=dict(model=ModelType.GPT_4),
         with_task_planner=False,
-        with_critic_in_the_loop=False,
-        model_type=ModelType.GPT_3_5_TURBO,
+        task_planner_agent_kwargs=dict(model=ModelType.GPT_4),
+        with_critic_in_the_loop=with_critic_in_the_loop,
+        critic_kwargs=critic_kwargs,
         task_type=TaskType.AI_SOCIETY,
     )
     assert role_playing.with_task_specify is False
     assert role_playing.with_task_planner is False
-    assert role_playing.with_critic_in_the_loop is False
-    assert role_playing.model_type == ModelType.GPT_3_5_TURBO
+    assert role_playing.with_critic_in_the_loop is with_critic_in_the_loop
     assert role_playing.task_type == TaskType.AI_SOCIETY
     assert role_playing.task_prompt == "Perform the task"
     assert role_playing.specified_task_prompt is None
     assert role_playing.planned_task_prompt is None
 
-    assert (type(role_playing.assistant_sys_msg)
-            in typing.get_args(SystemMessageType))
-    assert (type(role_playing.user_sys_msg)
-            in typing.get_args(SystemMessageType))
+    assert isinstance(role_playing.assistant_sys_msg, BaseMessage)
+    assert role_playing.assistant_sys_msg.role_type == RoleType.ASSISTANT
+    assert isinstance(role_playing.user_sys_msg, BaseMessage)
+    assert role_playing.user_sys_msg.role_type == RoleType.USER
 
     assert isinstance(role_playing.assistant_agent, ChatAgent)
+    assert role_playing.assistant_agent.model == ModelType.GPT_3_5_TURBO_16K
     assert isinstance(role_playing.user_agent, ChatAgent)
+    assert role_playing.user_agent.model == ModelType.GPT_3_5_TURBO_16K
 
-    assert role_playing.critic is None
+    if not with_critic_in_the_loop:
+        assert role_playing.critic is None
+    else:
+        assert role_playing.critic is not None
+        if critic_role_name == "human":
+            assert isinstance(role_playing.critic, Human)
+        else:
+            assert isinstance(role_playing.critic, CriticAgent)
+            assert role_playing.critic_sys_msg is not None
+            assert role_playing.critic.model == ModelType.GPT_4_32k
 
 
 @pytest.mark.model_backend
@@ -63,15 +83,17 @@ def test_role_playing_step(task_type, extend_sys_msg_meta_dicts,
                            extend_task_specify_meta_dict):
     role_playing = RolePlaying(
         assistant_role_name="AI Assistant",
+        assistant_agent_kwargs=dict(model=ModelType.GPT_3_5_TURBO),
         user_role_name="AI User",
+        user_agent_kwargs=dict(model=ModelType.GPT_3_5_TURBO),
         task_prompt="Perform the task",
+        task_specify_agent_kwargs=dict(model=ModelType.GPT_3_5_TURBO),
         task_type=task_type,
         extend_sys_msg_meta_dicts=extend_sys_msg_meta_dicts,
         extend_task_specify_meta_dict=extend_task_specify_meta_dict,
     )
-    init_assistant_msg = AssistantChatMessage(role_name="AI Assistant",
-                                              role="assistant",
-                                              content="Hello")
+    init_assistant_msg = BaseMessage.make_assistant_message(
+        role_name="AI Assistant", content="Hello")
     print(role_playing.assistant_agent.system_message)
     print(role_playing.user_agent.system_message)
 
@@ -80,7 +102,7 @@ def test_role_playing_step(task_type, extend_sys_msg_meta_dicts,
     for response in (assistant_response, user_response):
         assert isinstance(response.msgs, list)
         assert len(response.msgs) == 1
-        assert isinstance(response.msgs[0], ChatMessage)
+        assert isinstance(response.msgs[0], BaseMessage)
         assert isinstance(response.terminated, bool)
         assert response.terminated is False
         assert isinstance(response.info, dict)

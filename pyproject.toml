@@ -31,6 +31,9 @@ openai = "^0"
 tenacity = "^8"
 tiktoken = "^0"
 colorama = "^0"
+jsonschema = "^4"
+types-colorama = "^0"
+types-requests = "^2"
 yapf = "^0"
 isort = "^5"
 flake8 = "^6"
@@ -67,3 +70,27 @@ markers = [
 
 [tool.coverage.report]
 include_namespace_packages = true
+
+[[tool.mypy.overrides]]
+module = [
+    "transformers.*",
+    "packaging.*",
+    "tiktoken",
+    "openai",
+    "openai.error",
+    "tenacity",
+    "tenacity.stop",
+    "tenacity.wait",
+    "pytest",
+    "_pytest.config",
+    "_pytest.nodes",
+    "numpy",
+    "torch",
+    "sqlalchemy",
+    "google.cloud.sql.connector",
+    "gradio",
+    "database_connection",
+    "huggingface_hub",
+    "huggingface_hub.utils._errors",
+]
+ignore_missing_imports = true

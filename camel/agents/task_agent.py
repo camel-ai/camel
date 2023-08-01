@@ -15,7 +15,7 @@ from typing import Any, Dict, Optional, Union
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
-from camel.messages import SystemMessage, UserChatMessage
+from camel.messages import BaseMessage
 from camel.prompts import PromptTemplateGenerator, TextPrompt
 from camel.typing import ModelType, RoleType, TaskType
 
@@ -51,9 +51,10 @@ class TaskSpecifyAgent(ChatAgent):
         model_config: Optional[Any] = None,
         task_specify_prompt: Optional[Union[str, TextPrompt]] = None,
         word_limit: int = DEFAULT_WORD_LIMIT,
-        output_language: str = None,
+        output_language: Optional[str] = None,
     ) -> None:
 
+        self.task_specify_prompt: Union[str, TextPrompt]
         if task_specify_prompt is None:
             task_specify_prompt_template = PromptTemplateGenerator(
             ).get_task_specify_prompt(task_type)
@@ -61,28 +62,29 @@ class TaskSpecifyAgent(ChatAgent):
             self.task_specify_prompt = task_specify_prompt_template.format(
                 word_limit=word_limit)
         else:
-            self.task_specify_prompt = task_specify_prompt
+            self.task_specify_prompt = TextPrompt(task_specify_prompt)
 
         model_config = model_config or ChatGPTConfig(temperature=1.0)
 
-        system_message = SystemMessage(
+        system_message = BaseMessage(
             role_name="Task Specifier",
             role_type=RoleType.ASSISTANT,
+            meta_dict=None,
             content="You can make a task more specific.",
         )
 
         super().__init__(system_message, model, model_config,
                          output_language=output_language)
 
-    def step(
+    def run(
         self,
-        original_task_prompt: Union[str, TextPrompt],
+        task_prompt: Union[str, TextPrompt],
         meta_dict: Optional[Dict[str, Any]] = None,
     ) -> TextPrompt:
         r"""Specify the given task prompt by providing more details.
 
         Args:
-            original_task_prompt (Union[str, TextPrompt]): The original task
+            task_prompt (Union[str, TextPrompt]): The original task
                 prompt.
             meta_dict (Optional[Dict[str, Any]]): A dictionary containing
                 additional information to include in the prompt.
@@ -93,15 +95,15 @@ class TaskSpecifyAgent(ChatAgent):
         """
         self.reset()
         self.task_specify_prompt = self.task_specify_prompt.format(
-            task=original_task_prompt)
+            task=task_prompt)
 
         if meta_dict is not None:
             self.task_specify_prompt = (self.task_specify_prompt.format(
                 **meta_dict))
 
-        task_msg = UserChatMessage(role_name="Task Specifier",
-                                   content=self.task_specify_prompt)
-        specifier_response = super().step(task_msg)
+        task_msg = BaseMessage.make_user_message(
+            role_name="Task Specifier", content=self.task_specify_prompt)
+        specifier_response = self.step(task_msg)
         if (specifier_response.msgs is None
                 or len(specifier_response.msgs) == 0):
             raise RuntimeError("Task specification failed.")
@@ -134,22 +136,23 @@ class TaskPlannerAgent(ChatAgent):
         self,
         model: Optional[ModelType] = None,
         model_config: Any = None,
-        output_language: str = None,
+        output_language: Optional[str] = None,
     ) -> None:
 
         self.task_planner_prompt = TextPrompt(
             "Divide this task into subtasks: {task}. Be concise.")
 
-        system_message = SystemMessage(
+        system_message = BaseMessage(
             role_name="Task Planner",
             role_type=RoleType.ASSISTANT,
+            meta_dict=None,
             content="You are a helpful task planner.",
         )
 
         super().__init__(system_message, model, model_config,
                          output_language=output_language)
 
-    def step(
+    def run(
         self,
         task_prompt: Union[str, TextPrompt],
     ) -> TextPrompt:
@@ -167,10 +170,9 @@ class TaskPlannerAgent(ChatAgent):
         self.task_planner_prompt = self.task_planner_prompt.format(
             task=task_prompt)
 
-        task_msg = UserChatMessage(role_name="Task Planner",
-                                   content=self.task_planner_prompt)
-        # sub_tasks_msgs, terminated, _
-        task_response = super().step(task_msg)
+        task_msg = BaseMessage.make_user_message(
+            role_name="Task Planner", content=self.task_planner_prompt)
+        task_response = self.step(task_msg)
 
         if task_response.msgs is None:
             raise RuntimeError("Got None Subtasks messages.")

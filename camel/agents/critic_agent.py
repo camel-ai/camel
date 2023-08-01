@@ -11,15 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import copy
 import random
 import warnings
 from typing import Any, Dict, Optional, Sequence
 
 from colorama import Fore
 
-from camel.agents import ChatAgent
-from camel.messages import ChatMessage, SystemMessage
+from camel.agents import ChatAgent, ChatAgentResponse
+from camel.messages import BaseMessage
 from camel.typing import ModelType
 from camel.utils import get_first_int, print_text_animated
 
@@ -28,7 +27,7 @@ class CriticAgent(ChatAgent):
     r"""A class for the critic agent that assists in selecting an option.
 
     Args:
-        system_message (SystemMessage): The system message for the critic
+        system_message (BaseMessage): The system message for the critic
             agent.
         model (ModelType, optional): The LLM model to use for generating
             responses. (default :obj:`ModelType.GPT_3_5_TURBO`)
@@ -46,7 +45,7 @@ class CriticAgent(ChatAgent):
 
     def __init__(
         self,
-        system_message: SystemMessage,
+        system_message: BaseMessage,
         model: ModelType = ModelType.GPT_3_5_TURBO,
         model_config: Optional[Any] = None,
         message_window_size: int = 6,
@@ -61,11 +60,11 @@ class CriticAgent(ChatAgent):
         self.verbose = verbose
         self.logger_color = logger_color
 
-    def flatten_options(self, messages: Sequence[ChatMessage]) -> str:
+    def flatten_options(self, messages: Sequence[BaseMessage]) -> str:
         r"""Flattens the options to the critic.
 
         Args:
-            messages (Sequence[ChatMessage]): A list of `ChatMessage` objects.
+            messages (Sequence[BaseMessage]): A list of `BaseMessage` objects.
 
         Returns:
             str: A string containing the flattened options to the critic.
@@ -83,11 +82,11 @@ class CriticAgent(ChatAgent):
             "and then your explanation and comparison: ")
         return flatten_options + format
 
-    def get_option(self, input_message: ChatMessage) -> str:
+    def get_option(self, input_message: BaseMessage) -> str:
         r"""Gets the option selected by the critic.
 
         Args:
-            input_message (ChatMessage): A `ChatMessage` object representing
+            input_message (BaseMessage): A `BaseMessage` object representing
                 the input message.
 
         Returns:
@@ -97,15 +96,15 @@ class CriticAgent(ChatAgent):
         msg_content = input_message.content
         i = 0
         while i < self.retry_attempts:
-            critic_response = super().step(input_message)
+            critic_response = self.step(input_message)
 
             if critic_response.msgs is None or len(critic_response.msgs) == 0:
                 raise RuntimeError("Got None critic messages.")
             if critic_response.terminated:
                 raise RuntimeError("Critic step failed.")
 
-            critic_msg = critic_response.msgs[0]
-            self.update_messages(critic_msg)
+            critic_msg = critic_response.msg
+            self.update_messages('assistant', critic_msg)
             if self.verbose:
                 print_text_animated(self.logger_color + "\n> Critic response: "
                                     f"\x1b[3m{critic_msg.content}\x1b[0m\n")
@@ -114,11 +113,10 @@ class CriticAgent(ChatAgent):
             if choice in self.options_dict:
                 return self.options_dict[choice]
             else:
-                input_message = ChatMessage(
+                input_message = BaseMessage(
                     role_name=input_message.role_name,
                     role_type=input_message.role_type,
                     meta_dict=input_message.meta_dict,
-                    role=input_message.role,
                     content="> Invalid choice. Please choose again.\n" +
                     msg_content,
                 )
@@ -128,11 +126,11 @@ class CriticAgent(ChatAgent):
                       "Returning a random option.")
         return random.choice(list(self.options_dict.values()))
 
-    def parse_critic(self, critic_msg: ChatMessage) -> Optional[str]:
+    def parse_critic(self, critic_msg: BaseMessage) -> Optional[str]:
         r"""Parses the critic's message and extracts the choice.
 
         Args:
-            critic_msg (ChatMessage): A `ChatMessage` object representing the
+            critic_msg (BaseMessage): A `BaseMessage` object representing the
                 critic's response.
 
         Returns:
@@ -142,34 +140,35 @@ class CriticAgent(ChatAgent):
         choice = str(get_first_int(critic_msg.content))
         return choice
 
-    def step(self, messages: Sequence[ChatMessage]) -> ChatMessage:
+    def reduce_step(
+        self,
+        input_messages: Sequence[BaseMessage],
+    ) -> ChatAgentResponse:
         r"""Performs one step of the conversation by flattening options to the
         critic, getting the option, and parsing the choice.
 
         Args:
-            messages (Sequence[ChatMessage]): A list of ChatMessage objects.
+            messages (Sequence[BaseMessage]): A list of BaseMessage objects.
 
         Returns:
-            ChatMessage: A `ChatMessage` object representing the critic's
-                choice.
+            ChatAgentResponse: A `ChatAgentResponse` object includes the
+                critic's choice.
         """
-        meta_chat_message = ChatMessage(
-            role_name=messages[0].role_name,
-            role_type=messages[0].role_type,
-            meta_dict=messages[0].meta_dict,
-            role=messages[0].role,
+        meta_chat_message = BaseMessage(
+            role_name=input_messages[0].role_name,
+            role_type=input_messages[0].role_type,
+            meta_dict=input_messages[0].meta_dict,
             content="",
         )
 
-        flatten_options = self.flatten_options(messages)
+        flatten_options = self.flatten_options(input_messages)
         if self.verbose:
             print_text_animated(self.logger_color +
                                 f"\x1b[3m{flatten_options}\x1b[0m\n")
-        input_msg = copy.deepcopy(meta_chat_message)
-        input_msg.content = flatten_options
+        input_msg = meta_chat_message.create_new_instance(flatten_options)
 
         option = self.get_option(input_msg)
-        output_msg = copy.deepcopy(meta_chat_message)
-        output_msg.content = option
+        output_msg = meta_chat_message.create_new_instance(option)
 
-        return output_msg
+        # TODO: The return `info` can be improved.
+        return ChatAgentResponse([output_msg], terminated=False, info={})

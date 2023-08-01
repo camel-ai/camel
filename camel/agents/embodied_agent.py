@@ -11,21 +11,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from colorama import Fore
 
-from camel.agents import BaseToolAgent, ChatAgent, HuggingFaceToolAgent
-from camel.messages import ChatMessage, SystemMessage
+from camel.agents import (
+    BaseToolAgent,
+    ChatAgent,
+    ChatAgentResponse,
+    HuggingFaceToolAgent,
+)
+from camel.messages import BaseMessage
 from camel.typing import ModelType
-from camel.utils import print_text_animated
+from camel.utils import PythonInterpreter, print_text_animated
 
 
 class EmbodiedAgent(ChatAgent):
     r"""Class for managing conversations of CAMEL Embodied Agents.
 
     Args:
-        system_message (SystemMessage): The system message for the chat agent.
+        system_message (BaseMessage): The system message for the chat agent.
         model (ModelType, optional): The LLM model to use for generating
             responses. (default :obj:`ModelType.GPT_4`)
         model_config (Any, optional): Configuration options for the LLM model.
@@ -42,7 +47,7 @@ class EmbodiedAgent(ChatAgent):
 
     def __init__(
         self,
-        system_message: SystemMessage,
+        system_message: BaseMessage,
         model: ModelType = ModelType.GPT_4,
         model_config: Optional[Any] = None,
         message_window_size: Optional[int] = None,
@@ -79,17 +84,17 @@ class EmbodiedAgent(ChatAgent):
 
     def step(
         self,
-        input_message: ChatMessage,
-    ) -> Tuple[ChatMessage, bool, Dict[str, Any]]:
+        input_message: BaseMessage,
+    ) -> ChatAgentResponse:
         r"""Performs a step in the conversation.
 
         Args:
-            input_message (ChatMessage): The input message.
+            input_message (BaseMessage): The input message.
 
         Returns:
-            Tuple[ChatMessage, bool, Dict[str, Any]]: A tuple
-                containing the output messages, termination status, and
-                additional information.
+            ChatAgentResponse: A struct containing the output messages,
+                a boolean indicating whether the chat session has terminated,
+                and information about the chat session.
         """
         response = super().step(input_message)
 
@@ -115,18 +120,22 @@ class EmbodiedAgent(ChatAgent):
 
         if codes is not None:
             content = "\n> Executed Results:"
-            global_vars = {action.name: action for action in self.action_space}
-            for code in codes:
-                executed_outputs = code.execute(global_vars)
-                content += (
-                    f"- Python standard output:\n{executed_outputs[0]}\n"
-                    f"- Local variables:\n{executed_outputs[1]}\n")
+            action_space: Dict[str, Any] = {
+                action.name: action
+                for action in self.action_space
+            }
+            action_space.update({"print": print, "enumerate": enumerate})
+            interpreter = PythonInterpreter(action_space=action_space)
+            for block_idx, code in enumerate(codes):
+                executed_outputs, _ = code.execute(interpreter)
+                content += (f"Executing code block {block_idx}:\n"
+                            f"  - execution output:\n{executed_outputs}\n"
+                            f"  - Local variables:\n{interpreter.state}\n")
                 content += "*" * 50 + "\n"
 
         # TODO: Handle errors
         content = input_message.content + (Fore.RESET +
                                            f"\n> Embodied Actions:\n{content}")
-        message = ChatMessage(input_message.role_name, input_message.role_type,
-                              input_message.meta_dict, input_message.role,
-                              content)
-        return message, response.terminated, response.info
+        message = BaseMessage(input_message.role_name, input_message.role_type,
+                              input_message.meta_dict, content)
+        return ChatAgentResponse([message], response.terminated, response.info)

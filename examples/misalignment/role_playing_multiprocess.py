@@ -14,6 +14,7 @@
 import json
 import multiprocessing
 import os
+from typing import Any, Dict
 
 from colorama import Fore
 
@@ -56,7 +57,7 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
               f"Final task prompt:\n{role_play_session.task_prompt}\n")
 
     message_counter = 0
-    message_dict = {}
+    message_dict: Dict[str, Any] = {}
 
     assistant_agent = role_play_session.assistant_agent
     user_agent = role_play_session.user_agent
@@ -93,8 +94,6 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
 
         assistant_response, user_response = role_play_session.step(
             input_assistant_msg)
-
-        input_assistant_msg = assistant_response.msg
 
         # Condition 1: User terminates the chat
         if user_response.terminated:
@@ -160,6 +159,8 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
         message_counter += 1
         message_dict[
             f"message_{message_counter}"] = assistant_response.msg.to_dict()
+
+        input_assistant_msg = assistant_response.msg
 
     message_dict["num_messages"] = message_counter
 

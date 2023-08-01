@@ -33,11 +33,13 @@ def main(model_type=None) -> None:
         ai_assistant_role = roles['role_name_2']
 
     role_play_session = RolePlaying(
+
         ai_assistant_role,
         ai_user_role,
         task_prompt=task_prompt,
         with_task_specify=True,
         model_type=ModelType.GPT_3_5_TURBO,
+
     )
 
     print(
@@ -59,8 +61,6 @@ def main(model_type=None) -> None:
         assistant_response, user_response = role_play_session.step(
             input_assistant_msg)
 
-        input_assistant_msg = assistant_response.msg
-
         if assistant_response.terminated:
             print(Fore.GREEN +
                   ("AI Assistant terminated. Reason: "
@@ -79,6 +79,8 @@ def main(model_type=None) -> None:
 
         if "CAMEL_TASK_DONE" in user_response.msg.content:
             break
+
+        input_assistant_msg = assistant_response.msg
 
 
 if __name__ == "__main__":

@@ -29,7 +29,7 @@ def main() -> None:
         "CAMEL AGI",
         task_prompt=task_prompt,
         with_task_specify=True,
-        with_human_in_the_loop=True,
+        with_critic_in_the_loop=True,
         task_type=TaskType.MISALIGNMENT,
         task_specify_agent_kwargs=dict(model_config=ChatGPTConfig(
             temperature=1.4)),
@@ -56,8 +56,6 @@ def main() -> None:
         assistant_response, user_response = role_play_session.step(
             input_assistant_msg)
 
-        input_assistant_msg = assistant_response.msg
-
         if assistant_response.terminated:
             print(Fore.GREEN + (
                 "AI Assistant terminated. "
@@ -77,6 +75,8 @@ def main() -> None:
 
         if "CAMEL_TASK_DONE" in user_response.msg.content:
             break
+
+        input_assistant_msg = assistant_response.msg
 
 
 if __name__ == "__main__":
