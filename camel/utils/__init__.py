@@ -22,6 +22,7 @@ from .functions import (
     get_first_int,
     download_tasks,
     parse_doc,
+    get_task_list,
 )
 
 __all__ = [
@@ -35,4 +36,5 @@ __all__ = [
     'download_tasks',
     'PythonInterpreter',
     'parse_doc',
+    'get_task_list',
 ]
