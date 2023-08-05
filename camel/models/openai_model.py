@@ -48,16 +48,10 @@ class OpenAIModel(BaseModelBackend):
             Dict[str, Any]: Response in the OpenAI API format.
         """
         import openai
-        if self.model_type == ModelType.TEXT_DAVINCI_003:
-            prompt = messages[-1]['content']
-            response = openai.Completion.create(
-                prompt=prompt, model=ModelType.TEXT_DAVINCI_003.value,
-                **self.model_config_dict)
-        else:
-            messages_openai: List[OpenAIMessage] = messages
-            response = openai.ChatCompletion.create(
-                messages=messages_openai, model=self.model_type.value,
-                **self.model_config_dict)
+        messages_openai: List[OpenAIMessage] = messages
+        response = openai.ChatCompletion.create(messages=messages_openai,
+                                                model=self.model_type.value,
+                                                **self.model_config_dict)
         if not self.stream:
             if not isinstance(response, Dict):
                 raise RuntimeError("Unexpected batch return from OpenAI API")

@@ -58,14 +58,15 @@ Please make it more specific. Be creative and imaginative.
 Please reply with the specified task in {word_limit} words or less. Do not add anything else."""
     )
 
-    ROLE_DESCRIPTION_PROMPT = TextPrompt("""===== ROLES WITH DESCRIPTION =====
-{user_role} and {assistant_role} are collaborating to complete a task: {task}
-{user_role}'s competencies, professional characteristics, duties and workflows to complete the task: {user_description}
-{assistant_role}'s competencies, professional characteristics, duties and workflows to complete the task: {assistant_description}
-""")
 
-    ASSISTANT_PROMPT: TextPrompt = TextPrompt("""===== RULES OF ASSISTANT =====
-Never forget you are a {assistant_role} and I am a {user_role}. Never flip roles! Never instruct me!
+    ROLE_DESCRIPTION_PROMPT = TextPrompt("""========== CONTEXT ==========
+ {user_role} and {assistant_role} are collaborating to complete a task: {task}
+ {user_role}'s competencies, professional characteristics, duties and workflows to complete the task: {user_description}
+ {assistant_role}'s competencies, professional characteristics, duties and workflows to complete the task: {assistant_description}"""
+                                         )
+
+    ASSISTANT_PROMPT: TextPrompt = TextPrompt(
+        """Never forget you are a {assistant_role} and I am a {user_role}. Never flip roles! Never instruct me!
 We share a common interest in collaborating to successfully complete a task.
 You must help me to complete the task.
 Here is the task: {task}. Never forget our task!
@@ -81,8 +82,8 @@ Solution: <YOUR_SOLUTION>
 <YOUR_SOLUTION> should be very specific, include detailed explanations and provide preferable detailed implementations and examples and lists for task-solving.
 Always end <YOUR_SOLUTION> with: Next request.""")
 
-    USER_PROMPT: TextPrompt = TextPrompt("""===== RULES OF USER =====
-Never forget you are a {user_role} and I am a {assistant_role}. Never flip roles! You will always instruct me.
+    USER_PROMPT: TextPrompt = TextPrompt(
+        """Never forget you are a {user_role} and I am a {assistant_role}. Never flip roles! You will always instruct me.
 We share a common interest in collaborating to successfully complete a task.
 I must help you to complete the task.
 Here is the task: {task}. Never forget our task!
