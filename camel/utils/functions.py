@@ -119,12 +119,9 @@ def _num_tokens_from_messages(messages: List[OpenAIMessage], model: str):
         - https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
     """
     if model in {
-            "gpt-3.5-turbo-0613",
-            "gpt-3.5-turbo-16k-0613",
-            "gpt-4-0314",
-            "gpt-4-32k-0314",
-            "gpt-4-0613",
-            "gpt-4-32k-0613",
+            "gpt-3.5-turbo-0613", "gpt-3.5-turbo-16k-0613", "gpt-4-0314",
+            "gpt-4-32k-0314", "gpt-4-0613", "gpt-4-32k-0613",
+            "text-davinci-003"
     }:
         tokens_per_message = 3
         tokens_per_name = 1
@@ -137,6 +134,8 @@ def _num_tokens_from_messages(messages: List[OpenAIMessage], model: str):
         return _num_tokens_from_messages(messages, model="gpt-3.5-turbo-0613")
     elif "gpt-4" in model:
         return _num_tokens_from_messages(messages, model="gpt-4-0613")
+    elif "davinci" in model:
+        return _num_tokens_from_messages(messages, model="text-davinci-003")
     else:
         raise NotImplementedError(
             f"`num_tokens_from_messages`` is not presently implemented "

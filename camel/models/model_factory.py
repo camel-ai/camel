@@ -46,6 +46,7 @@ class ModelFactory:
                 ModelType.GPT_3_5_TURBO_16K,
                 ModelType.GPT_4,
                 ModelType.GPT_4_32k,
+                ModelType.TEXT_DAVINCI_003,
         }:
             model_class = OpenAIModel
         elif model_type == ModelType.STUB:
