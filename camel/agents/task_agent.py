@@ -411,7 +411,7 @@ class RoleAssignmentAgent(ChatAgent):
     def run_role_with_description(
         self,
         num_roles: Optional[int] = 2,
-        task_prompt: Union[str, TextPrompt] = None,
+        task_prompt: Union[str, TextPrompt] = "",
     ) -> Tuple[List[str], Dict[str, str], bool, Dict[str, Any]]:
         r""" "
         Generate role names based on the input task prompt.
@@ -430,7 +430,7 @@ class RoleAssignmentAgent(ChatAgent):
         expert_prompt = "\n".join(
             f"Domain expert {i + 1}: <|blank|>\n"
             f"Associated competencies, professional characteristics, duties "
-            f"and workflows: <|blank|>. End.\n" for i in range(num_roles))
+            f"and workflows: <|blank|>. End.\n" for i in range(num_roles or 0))
         role_assignment_generation_prompt = TextPrompt(
             "You are the boss, you need to recruit experts in {num_roles} " +
             "different fields to solve the task.\n" +
