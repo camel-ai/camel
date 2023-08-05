@@ -83,7 +83,7 @@ class PromptTemplateGenerator:
             prompt = "You are a helpful assistant."
 
             warnings.warn("Failed to get system prompt template for "
-                          f"task: {task_type.value}, role: {role_type.value}. "
+                          f"task: {task_type.value}, role: {role_type}. "
                           f"Set template to: {prompt}")
 
         return TextPrompt(prompt)
