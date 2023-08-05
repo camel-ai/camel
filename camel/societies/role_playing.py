@@ -133,8 +133,9 @@ class RolePlaying:
          sys_msg_meta_dicts) = self.get_sys_message_info(
              assistant_role_name=assistant_role_name,
              user_role_name=user_role_name,
-             assistant_description=assistant_description,
-             user_description=user_description,
+             assistant_description=assistant_agent_kwargs.get(
+                 "role_description"),
+             user_description=user_agent_kwargs.get("role_description"),
              sys_msg_generator=sys_msg_generator,
              extend_sys_msg_meta_dicts=extend_sys_msg_meta_dicts)
 
