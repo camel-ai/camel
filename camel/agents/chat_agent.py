@@ -382,6 +382,8 @@ class ChatAgent(BaseAgent):
                                               self.model)
 
         # Terminate when number of tokens exceeds the limit
+        if self.model_config.max_tokens is None:
+            self.model_config.max_tokens = 500
         if num_tokens >= self.model_token_limit + self.model_config.max_tokens:
             return self.step_token_exceed(num_tokens)
 
