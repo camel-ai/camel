@@ -133,9 +133,9 @@ class RolePlaying:
          sys_msg_meta_dicts) = self.get_sys_message_info(
              assistant_role_name=assistant_role_name,
              user_role_name=user_role_name, assistant_description=(
-                 None if assistant_agent_kwargs is None else
+                 "" if assistant_agent_kwargs is None else
                  assistant_agent_kwargs.get("role_description")),
-             user_description=(None if user_agent_kwargs is None else
+             user_description=("" if user_agent_kwargs is None else
                                user_agent_kwargs.get("role_description")),
              sys_msg_generator=sys_msg_generator,
              extend_sys_msg_meta_dicts=extend_sys_msg_meta_dicts)
@@ -234,8 +234,8 @@ class RolePlaying:
         assistant_role_name: str,
         user_role_name: str,
         sys_msg_generator: SystemMessageGenerator,
-        assistant_description: Optional[str] = None,
-        user_description: Optional[str] = None,
+        assistant_description: Optional[str] = "",
+        user_description: Optional[str] = "",
         extend_sys_msg_meta_dicts: Optional[List[Dict]] = None,
     ) -> Tuple[BaseMessage, BaseMessage, List[Dict]]:
         r"""Get initial assistant and user system message with a list of
