@@ -122,6 +122,8 @@ class ChatAgent(BaseAgent):
             agent. (default: :obj:`None`)
         function_list (Optional[List[OpenAIFunction]]): List of available
             :obj:`OpenAIFunction`. (default: :obj:`None`)
+        role_description (str, optional): Description of the role
+            :obj:`str`. (default: :obj:`None`)
     """
 
     def __init__(
@@ -132,12 +134,14 @@ class ChatAgent(BaseAgent):
         message_window_size: Optional[int] = None,
         output_language: Optional[str] = None,
         function_list: Optional[List[OpenAIFunction]] = None,
+        role_description: Optional[str] = None,
     ) -> None:
 
         self.orig_sys_message: BaseMessage = system_message
         self.system_message = system_message
         self.role_name: str = system_message.role_name
         self.role_type: RoleType = system_message.role_type
+        self.role_description: Optional[str] = role_description
         self.output_language: Optional[str] = output_language
         if self.output_language is not None:
             self.set_output_language(self.output_language)
@@ -347,6 +351,59 @@ class ChatAgent(BaseAgent):
                 break
 
         return ChatAgentResponse(output_messages, self.terminated, info)
+
+    def step_completion(
+        self,
+        input_prompt_for_completion: BaseMessage,
+    ) -> ChatAgentResponse:
+        r"""Performs a single step in the chat session by generating a response
+        to the input message.
+
+        Args:
+            input_prompt_for_completion (ChatMessage): The input prompt
+                requiring completion.
+            temperature (float): The temperature of the model for generating.
+
+        Returns:
+            Tuple[Optional[List[ChatMessage]], bool, Dict[str, Any]]: A tuple
+                containing the output messages, a boolean indicating whether
+                the chat session has terminated, and information about the chat
+                session.
+        """
+        self.reset()
+        messages = self.update_messages('user', input_prompt_for_completion)
+
+        openai_messages: List[OpenAIMessage]
+        # openai_messages = messages[-1].to_openai_message()
+        openai_messages = [message.to_openai_message() for message in messages]
+
+        # Format messages and get the token number
+        num_tokens = num_tokens_from_messages([openai_messages[-1]],
+                                              self.model)
+
+        # Terminate when number of tokens exceeds the limit
+        if num_tokens >= self.model_token_limit + self.model_config.max_tokens:
+            return self.step_token_exceed(num_tokens)
+
+        # Obtain LLM's response and validate it
+        response = self.model_backend.run(openai_messages)
+        self.validate_model_response(response)
+
+        output_completion = BaseMessage('assistant', RoleType.ASSISTANT,
+                                        dict(), response['choices'][0]['text'])
+        output_completions = [output_completion]
+
+        usage_dict = self.get_usage_dict(output_completions, num_tokens)
+
+        info = self.get_info(
+            id=response['id'],
+            usage=usage_dict,
+            termination_reasons=response['choices'][0]['finish_reason'],
+            num_tokens=num_tokens,
+            called_funcs=[],
+        )
+
+        return ChatAgentResponse(output_completions, self.terminated, info)
 
     def preprocess_messages(
             self,
