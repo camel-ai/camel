@@ -123,6 +123,21 @@ class RolePlaying:
 
         sys_msg_generator = SystemMessageGenerator(
             task_type=self.task_type, **(sys_msg_generator_kwargs or {}))
+
+        assistant_description = ("" if assistant_agent_kwargs is None else
+                                 assistant_agent_kwargs.get(
+                                     "role_description", ""))
+        user_description = ("" if user_agent_kwargs is None else
+                            user_agent_kwargs.get("role_description", ""))
+        (init_assistant_sys_msg, init_user_sys_msg,
+         sys_msg_meta_dicts) = self.get_sys_message_info(
+             assistant_role_name=assistant_role_name,
+             user_role_name=user_role_name,
+             assistant_description=assistant_description,
+             user_description=user_description,
+             sys_msg_generator=sys_msg_generator,
+             extend_sys_msg_meta_dicts=extend_sys_msg_meta_dicts)
+
         (init_assistant_sys_msg, init_user_sys_msg,
          sys_msg_meta_dicts) = self.get_sys_message_info(
              assistant_role_name=assistant_role_name,

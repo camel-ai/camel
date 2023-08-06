@@ -11,19 +11,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from colorama import Fore
-
 from camel.agents.role_assignment import RoleAssignmentAgent
 from camel.configs import ChatGPTConfig
 from camel.societies import RolePlaying
 from camel.typing import ModelType
-from camel.utils import print_text_animated
 
 AI_ASSISTANT_ROLE_INDEX = 0
 AI_USER_ROLE_INDEX = 1
 
 
-def main(model_type=None) -> None:
+def test_ai_society_with_role_generation():
+    model_type = ModelType.GPT_3_5_TURBO
     task_prompt = "Develop a trading bot for the stock market."
 
     model_config_description = ChatGPTConfig(
@@ -62,54 +60,15 @@ def main(model_type=None) -> None:
         task_specify_agent_kwargs=dict(model=model_type),
     )
 
-    print(
-        Fore.GREEN +
-        f"AI Assistant sys message:\n{role_play_session.assistant_sys_msg}\n")
-    print(Fore.BLUE +
-          f"AI User sys message:\n{role_play_session.user_sys_msg}\n")
-    print(Fore.GREEN + f"AI Assistant role description:\n"
-          f"{role_play_session.assistant_sys_msg.role_name}\n"
-          f"{role_description_dict[ai_assistant_role]}\n")
-    print(Fore.BLUE + f"AI User role description:\n"
-          f"{role_play_session.user_sys_msg.role_name}\n"
-          f"{role_description_dict[ai_user_role]}\n")
-
-    print(Fore.YELLOW + f"Original task prompt:\n{task_prompt}\n")
-    print(
-        Fore.CYAN +
-        f"Specified task prompt:\n{role_play_session.specified_task_prompt}\n")
-    print(Fore.RED + f"Final task prompt:\n{role_play_session.task_prompt}\n")
-
-    chat_turn_limit, n = 50, 0
-    input_assistant_msg, _ = role_play_session.init_chat()
-    while n < chat_turn_limit:
-        n += 1
-        assistant_response, user_response = role_play_session.step(
-            input_assistant_msg)
-
-        if assistant_response.terminated:
-            print(Fore.GREEN + (
-                "AI Assistant terminated. "
-                f"Reason: {assistant_response.info['termination_reasons']}."))
-            break
-        if user_response.terminated:
-            print(Fore.GREEN +
-                  ("AI User terminated. "
-                   f"Reason: {user_response.info['termination_reasons']}."))
-            break
-
-        print_text_animated(
-            Fore.BLUE +
-            f"AI User: {ai_user_role}\n\n{user_response.msg.content}\n")
-        print_text_animated(Fore.GREEN +
-                            f"AI Assistant:{ai_assistant_role}\n\n" +
-                            f"{assistant_response.msg.content}\n")
-
-        if "CAMEL_TASK_DONE" in user_response.msg.content:
-            break
-
-        input_assistant_msg = assistant_response.msg
-
-
-if __name__ == "__main__":
-    main(model_type=ModelType.GPT_3_5_TURBO)
+    assert role_play_session is not None, (
+        "RolePlaying instance should not be None")
+    assert role_play_session.assistant_sys_msg.role_name is not None, (
+        "RolePlaying instance should have assistant name")
+    assert role_play_session.user_sys_msg.role_name is not None, (
+        "RolePlaying instance should have user name")
+    assert role_play_session.assistant_sys_msg.meta_dict[
+        'assistant_description'] is not None, (
+            "RolePlaying instance should have assistant description")
+    assert role_play_session.user_sys_msg.meta_dict[
+        'user_description'] is not None, (
+            "RolePlaying instance should have user description")
