@@ -211,7 +211,7 @@ class BabyAGI:
 
         """
         if not self.tasks:
-            new_task_list = self.task_creation_agent.run(task_list=None)
+            new_task_list = self.task_creation_agent.run(task_list=[])
             prio_task_list = self.task_prioritize_agent.run(new_task_list)
             self.tasks = deque(prio_task_list)
 
