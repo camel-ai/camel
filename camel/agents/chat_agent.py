@@ -382,10 +382,10 @@ class ChatAgent(BaseAgent):
                                               self.model)
 
         # Terminate when number of tokens exceeds the limit
-        if self.model_config.max_tokens is None:
-            self.model_config.max_tokens = 500
-        if num_tokens >= self.model_token_limit + self.model_config.max_tokens:
-            return self.step_token_exceed(num_tokens)
+        assert isinstance(self.model_config, ChatGPTConfig)
+        max_tokens_completion = self.model_config.max_tokens or 0
+        if num_tokens >= self.model_token_limit - max_tokens_completion:
+            return self.step_token_exceed(num_tokens, [])
 
         # Obtain LLM's response and validate it
         response = self.model_backend.run(openai_messages)
