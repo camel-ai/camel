@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from collections import deque
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 from colorama import Fore
 
@@ -106,8 +106,8 @@ class BabyAGI:
                          task_prioritize_agent_kwargs, output_language,
                          message_window_size)
 
-        self.tasks = deque([])  # deque
-        self.solved_tasks = []  # List[str]
+        self.tasks: deque = deque([])
+        self.solved_tasks: List[str] = []
         self.MAX_TASK_HISTORY = 10
 
     def init_specified_task_prompt(
@@ -211,7 +211,7 @@ class BabyAGI:
 
         """
         if not self.tasks:
-            new_task_list = self.task_creation_agent.run()
+            new_task_list = self.task_creation_agent.run(task_list=None)
             prio_task_list = self.task_prioritize_agent.run(new_task_list)
             self.tasks = deque(prio_task_list)
 
