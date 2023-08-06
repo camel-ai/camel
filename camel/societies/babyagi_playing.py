@@ -106,8 +106,9 @@ class BabyAGI:
                          task_prioritize_agent_kwargs, output_language,
                          message_window_size)
 
-        self.tasks = deque([])
-        self.solved_tasks = []
+        self.tasks = deque([])  # deque
+        self.solved_tasks = []  # List[str]
+        self.MAX_TASK_HISTORY = 10
 
     def init_specified_task_prompt(
             self, assistant_role_name: str, user_role_name: str,
@@ -226,16 +227,15 @@ class BabyAGI:
 
         self.solved_tasks.append(task_name)
         past_tasks = self.solved_tasks + list(self.tasks)
-        MAX_TASK_HISTORY = 10
+
         new_task_list = self.task_creation_agent.run(
-            task_list=past_tasks[-MAX_TASK_HISTORY:])
+            task_list=past_tasks[-self.MAX_TASK_HISTORY:])
 
         if new_task_list:
             for task in new_task_list:
                 self.tasks.append(task)
             prio_task_list = self.task_prioritize_agent.run(
-                task_list=list(self.tasks)[-MAX_TASK_HISTORY:],
-                prev_task_list=self.solved_tasks[-MAX_TASK_HISTORY:])
+                task_list=list(self.tasks)[-self.MAX_TASK_HISTORY:])
             self.tasks = deque(prio_task_list)
         else:
             print("no new tasks")
