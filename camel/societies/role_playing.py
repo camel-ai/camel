@@ -215,8 +215,8 @@ class RolePlaying:
         assistant_role_name: str,
         user_role_name: str,
         sys_msg_generator: SystemMessageGenerator,
-        assistant_description: Optional[str] = "",
-        user_description: Optional[str] = "",
+        assistant_description: Optional[str] = None,
+        user_description: Optional[str] = None,
         extend_sys_msg_meta_dicts: Optional[List[Dict]] = None,
     ) -> Tuple[BaseMessage, BaseMessage, List[Dict]]:
         r"""Get initial assistant and user system message with a list of
@@ -242,7 +242,8 @@ class RolePlaying:
         sys_msg_meta_dicts = [dict(task=self.task_prompt) for _ in range(2)]
         if (extend_sys_msg_meta_dicts is None and self.task_type
                 in [TaskType.AI_SOCIETY, TaskType.MISALIGNMENT]):
-            if (assistant_description != "" and user_description != ""):
+            if (assistant_description is not None
+                    or user_description is not None):
                 extend_sys_msg_meta_dicts = [
                     dict(assistant_role=assistant_role_name,
                          user_role=user_role_name,
