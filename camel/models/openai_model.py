@@ -49,6 +49,13 @@ class OpenAIModel(BaseModelBackend):
         """
         import openai
         if self.model_type == ModelType.TEXT_DAVINCI_003:
+            if not messages:
+                raise ValueError("The messages list is empty.")
+            if 'content' not in messages[-1]:
+                raise KeyError(
+                    "The 'content' key is not present in the last message.")
+            prompt = messages[-1]['content']
+
             prompt = messages[-1]['content']
             response = openai.Completion.create(
                 prompt=prompt, model=ModelType.TEXT_DAVINCI_003.value,

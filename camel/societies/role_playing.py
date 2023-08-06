@@ -121,22 +121,30 @@ class RolePlaying:
         self.init_planned_task_prompt(task_planner_agent_kwargs,
                                       output_language)
 
-        sys_msg_generator = SystemMessageGenerator(
-            task_type=self.task_type, **(sys_msg_generator_kwargs or {}))
+        if (assistant_agent_kwargs is not None
+                and "role_description" in assistant_agent_kwargs
+                and user_agent_kwargs is not None
+                and "role_description" in user_agent_kwargs):
+            with_role_description = True
+        else:
+            with_role_description = False
 
-        assistant_description = ("" if assistant_agent_kwargs is None else
+        sys_msg_generator = SystemMessageGenerator(
+            task_type=self.task_type,
+            with_role_description=with_role_description,
+            **(sys_msg_generator_kwargs or {}))
+
+        assistant_description = (None if assistant_agent_kwargs is None else
                                  assistant_agent_kwargs.get(
-                                     "role_description", ""))
-        user_description = ("" if user_agent_kwargs is None else
-                            user_agent_kwargs.get("role_description", ""))
+                                     "role_description", None))
+        user_description = (None if user_agent_kwargs is None else
+                            user_agent_kwargs.get("role_description", None))
         (init_assistant_sys_msg, init_user_sys_msg,
          sys_msg_meta_dicts) = self.get_sys_message_info(
              assistant_role_name=assistant_role_name,
-             user_role_name=user_role_name, assistant_description=(
-                 "" if assistant_agent_kwargs is None else
-                 assistant_agent_kwargs.get("role_description")),
-             user_description=("" if user_agent_kwargs is None else
-                               user_agent_kwargs.get("role_description")),
+             user_role_name=user_role_name,
+             assistant_description=assistant_description,
+             user_description=user_description,
              sys_msg_generator=sys_msg_generator,
              extend_sys_msg_meta_dicts=extend_sys_msg_meta_dicts)
 
@@ -262,7 +270,7 @@ class RolePlaying:
         if (extend_sys_msg_meta_dicts is None and self.task_type
                 in [TaskType.AI_SOCIETY, TaskType.MISALIGNMENT]):
             if (assistant_description is not None
-                    or user_description is not None):
+                    and user_description is not None):
                 extend_sys_msg_meta_dicts = [
                     dict(assistant_role=assistant_role_name,
                          user_role=user_role_name,
