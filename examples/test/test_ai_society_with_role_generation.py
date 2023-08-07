@@ -24,20 +24,9 @@ def test_ai_society_with_role_generation():
     model_type = ModelType.GPT_3_5_TURBO
     task_prompt = "Develop a trading bot for the stock market."
 
-    model_config_description = ChatGPTConfig(
-        temperature=0.2,
-        top_p=1.0,
-        n=1,
-        stream=False,
-        stop=None,
-        max_tokens=500,  # related to num_roles
-        presence_penalty=0.0,
-        frequency_penalty=0.0,
-        logit_bias={},
-        user='')
+    model_config_description = ChatGPTConfig()
     role_description_agent = RoleAssignmentAgent(
-        model=ModelType.TEXT_DAVINCI_003,
-        model_config=model_config_description)
+        model=model_type, model_config=model_config_description)
 
     role_names, role_description_dict, _, _ = (
         role_description_agent.run_role_with_description(

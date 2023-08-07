@@ -121,7 +121,7 @@ You always have to choose an option from the proposals.""")
             "generate_users": self.GENERATE_USERS,
             "generate_tasks": self.GENERATE_TASKS,
             "task_specify_prompt": self.TASK_SPECIFY_PROMPT,
-            RoleType.ROLE_DESCRIPTION: self.ROLE_DESCRIPTION_PROMPT,
+            DescriptionType.DEFAULT: self.ROLE_DESCRIPTION_PROMPT,
             RoleType.ASSISTANT: self.ASSISTANT_PROMPT,
             RoleType.USER: self.USER_PROMPT,
             RoleType.CRITIC: self.CRITIC_PROMPT,

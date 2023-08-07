@@ -64,7 +64,7 @@ class SystemMessageGenerator:
                 RoleType.EMBODIMENT,
             )
             role_description_prompt_template = PromptTemplateGenerator(
-            ).get_system_prompt(task_type, RoleType.ROLE_DESCRIPTION)
+            ).get_system_prompt(task_type, DescriptionType.DEFAULT)
 
             self.sys_prompts = dict()
             self.sys_prompts[RoleType.ASSISTANT] = assistant_prompt_template
@@ -72,7 +72,7 @@ class SystemMessageGenerator:
             self.sys_prompts[RoleType.CRITIC] = critic_prompt_template
             self.sys_prompts[RoleType.EMBODIMENT] = embodiment_prompt_template
             self.sys_prompts[
-                RoleType.ROLE_DESCRIPTION] = role_description_prompt_template
+                DescriptionType.DEFAULT] = role_description_prompt_template
 
             self.sys_msg_meta_dict_keys = (
                 assistant_prompt_template.key_words
@@ -115,7 +115,7 @@ class SystemMessageGenerator:
         role_name, role_type = role_tuple
         if ("assistant_description" in meta_dict
                 and "user_description" in meta_dict):
-            sys_prompt = (self.sys_prompts[RoleType.ROLE_DESCRIPTION] +
+            sys_prompt = (self.sys_prompts[DescriptionType.DEFAULT] +
                           self.sys_prompts[role_type])
         else:
             sys_prompt = self.sys_prompts[role_type]
