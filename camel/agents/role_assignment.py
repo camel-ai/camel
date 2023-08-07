@@ -11,93 +11,115 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from colorama import Fore
+import re
+from typing import Any, Dict, List, Optional, Tuple, Union
 
-from camel.agents.role_assignment import RoleAssignmentAgent
-from camel.configs import ChatGPTConfig
-from camel.societies import RolePlaying
-from camel.utils import print_text_animated
+from tenacity import retry, stop_after_attempt, wait_exponential
 
-AI_ASSISTANT_ROLE_INDEX = 0
-AI_USER_ROLE_INDEX = 1
-
-
-def main(model_type=None) -> None:
-    task_prompt = "Develop a trading bot for the stock market."
-
-    model_config_description = ChatGPTConfig()
-    role_description_agent = RoleAssignmentAgent(
-        model=model_type, model_config=model_config_description)
-
-    role_names, role_description_dict, _, _ = (
-        role_description_agent.run_role_with_description(
-            num_roles=2, task_prompt=task_prompt))
-
-    ai_assistant_role = role_names[AI_ASSISTANT_ROLE_INDEX]
-    ai_user_role = role_names[AI_USER_ROLE_INDEX]
-
-    role_play_session = RolePlaying(
-        task_prompt=task_prompt,
-        with_task_specify=True,
-        assistant_role_name=ai_assistant_role,
-        user_role_name=ai_user_role,
-        assistant_agent_kwargs=dict(
-            model=model_type,
-            role_description=role_description_dict[ai_assistant_role]),
-        user_agent_kwargs=dict(
-            model=model_type,
-            role_description=role_description_dict[ai_user_role]),
-        task_specify_agent_kwargs=dict(model=model_type),
-    )
-
-    print(
-        Fore.GREEN +
-        f"AI Assistant sys message:\n{role_play_session.assistant_sys_msg}\n")
-    print(Fore.BLUE +
-          f"AI User sys message:\n{role_play_session.user_sys_msg}\n")
-    print(Fore.GREEN + f"AI Assistant role description:\n"
-          f"{role_play_session.assistant_sys_msg.role_name}\n"
-          f"{role_description_dict[ai_assistant_role]}\n")
-    print(Fore.BLUE + f"AI User role description:\n"
-          f"{role_play_session.user_sys_msg.role_name}\n"
-          f"{role_description_dict[ai_user_role]}\n")
-
-    print(Fore.YELLOW + f"Original task prompt:\n{task_prompt}\n")
-    print(
-        Fore.CYAN +
-        f"Specified task prompt:\n{role_play_session.specified_task_prompt}\n")
-    print(Fore.RED + f"Final task prompt:\n{role_play_session.task_prompt}\n")
-
-    chat_turn_limit, n = 50, 0
-    input_assistant_msg, _ = role_play_session.init_chat()
-    while n < chat_turn_limit:
-        n += 1
-        assistant_response, user_response = role_play_session.step(
-            input_assistant_msg)
-
-        if assistant_response.terminated:
-            print(Fore.GREEN + (
-                "AI Assistant terminated. "
-                f"Reason: {assistant_response.info['termination_reasons']}."))
-            break
-        if user_response.terminated:
-            print(Fore.GREEN +
-                  ("AI User terminated. "
-                   f"Reason: {user_response.info['termination_reasons']}."))
-            break
-
-        print_text_animated(
-            Fore.BLUE +
-            f"AI User: {ai_user_role}\n\n{user_response.msg.content}\n")
-        print_text_animated(Fore.GREEN +
-                            f"AI Assistant:{ai_assistant_role}\n\n" +
-                            f"{assistant_response.msg.content}\n")
-
-        if "CAMEL_TASK_DONE" in user_response.msg.content:
-            break
-
-        input_assistant_msg = assistant_response.msg
+from camel.agents import ChatAgent
+from camel.messages import BaseMessage
+from camel.prompts import TextPrompt
+from camel.typing import ModelType, RoleType
 
 
-if __name__ == "__main__":
-    main()
+class RoleAssignmentAgent(ChatAgent):
+    r"""
+    An agent that generates role names based on the task prompt.
+    Attributes:
+        role_assignment_prompt (TextPrompt): A prompt for the agent to generate
+        role names.
+    args:
+        model (ModelType): The tupe of model to use for the agent.
+            (default: :obj: 'ModelType.GPT_3_5_TURBO')
+        model_config (Any): The configuration for the model.
+            (default: :obj: 'None')
+    """
+
+    def __init__(
+        self,
+        model: ModelType = ModelType.GPT_3_5_TURBO,
+        model_config: Optional[Any] = None,
+    ) -> None:
+        self.role_assignment_prompt = TextPrompt(
+            'Given this task, "{task}", generate two role names, ' +
+            'one for the AI user and one for the AI assistant.')
+
+        system_message = BaseMessage(
+            role_name="Role Assigner",
+            role_type=RoleType.ASSISTANT,
+            meta_dict=None,
+            content="You assign roles based on tasks.",
+        )
+        super().__init__(system_message, model, model_config)
+
+    @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
+    def run_role_with_description(
+        self,
+        num_roles: Optional[int] = 2,
+        task_prompt: Union[str, TextPrompt] = "",
+    ) -> Tuple[List[str], Dict[str, str], bool, Dict[str, Any]]:
+        r""" "
+        Generate role names based on the input task prompt.
+
+        Args:
+            num_roles (int): The number of roles to generate.
+                (default: :obj:`2`)
+            task_prompt (Union[str, TextPrompt]): The prompt
+                for the task based on which the roles are to be generated.
+
+        Returns:
+            Tuple[List[str], Dict[str, str], bool, Dict[str, Any]]: A tuple
+        """
+        self.reset()
+
+        expert_prompt = "\n".join(
+            f"Domain expert {i + 1}: <|blank|>\n"
+            f"Associated competencies, professional characteristics, duties "
+            f"and workflows: <|blank|>. End.\n" for i in range(num_roles or 0))
+        role_assignment_generation_prompt = TextPrompt(
+            "You are the boss, you need to recruit experts in {num_roles} " +
+            "different fields to solve the task.\n" +
+            "Please tell me which domain experts should be recruited, " +
+            "and what competencies, professional characteristics, duties " +
+            "and workflows to complete the task.\n" +
+            "ONLY return the content in BLANK.\n\n" + "===== TASK =====\n" +
+            "{task}\n\n" + "===== PROMPT =====\n" + expert_prompt)
+        role_assignment_generation = role_assignment_generation_prompt.format(
+            num_roles=num_roles, task=task_prompt)
+
+        role_assignment_generation_msg = BaseMessage.make_user_message(
+            role_name="Role Assigner", content=role_assignment_generation)
+
+        response_completion = super().step(
+            input_message=role_assignment_generation_msg)
+
+        output_completion = response_completion.msg  # type: BaseMessage
+        terminated = response_completion.terminated
+        info = response_completion.info
+
+        # Distribute the output completions into role names and descriptions
+        role_names = [
+            desc.replace("<|", "").replace("|>", "") for desc in re.findall(
+                r"Domain expert \d: (.+?)\nAssociated competencies,",
+                output_completion.content,
+                re.DOTALL,
+            )
+        ]
+        role_descriptions = [
+            desc.replace("<|", "").replace("|>", "") for desc in re.findall(
+                r"Associated competencies, professional characteristics, "
+                r"duties and workflows: (.+?) End.", output_completion.content,
+                re.DOTALL)
+        ]
+
+        if len(role_names) != num_roles or len(role_descriptions) != num_roles:
+            raise RuntimeError("Got None or insufficient Role messages. ")
+        if terminated:
+            raise RuntimeError("Role assignment failed.")
+
+        role_descriptions_dict = {
+            role_name: description
+            for role_name, description in zip(role_names, role_descriptions)
+        }
+
+        return role_names, role_descriptions_dict, terminated, info

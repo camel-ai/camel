@@ -29,9 +29,6 @@ class ModelType(Enum):
     GPT_4 = "gpt-4"
     GPT_4_32k = "gpt-4-32k"
     STUB = "stub"
-    # "Warning":the "text-davinci-003" model version is deprecated.
-    # Migrate before January 4, 2024.
-    TEXT_DAVINCI_003 = "text-davinci-003"
 
     @property
     def value_for_tiktoken(self) -> str:
@@ -52,8 +49,6 @@ class ModelType(Enum):
         elif self is ModelType.GPT_4_32k:
             return 32768
         elif self is ModelType.STUB:
-            return 4096
-        elif self is ModelType.TEXT_DAVINCI_003:
             return 4096
         else:
             raise ValueError("Unknown model type")
