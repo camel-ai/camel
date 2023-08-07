@@ -133,17 +133,6 @@ class RolePlaying:
              sys_msg_generator=sys_msg_generator,
              extend_sys_msg_meta_dicts=extend_sys_msg_meta_dicts)
 
-        (init_assistant_sys_msg, init_user_sys_msg,
-         sys_msg_meta_dicts) = self.get_sys_message_info(
-             assistant_role_name=assistant_role_name,
-             user_role_name=user_role_name, assistant_description=(
-                 "" if assistant_agent_kwargs is None else
-                 assistant_agent_kwargs.get("role_description")),
-             user_description=("" if user_agent_kwargs is None else
-                               user_agent_kwargs.get("role_description")),
-             sys_msg_generator=sys_msg_generator,
-             extend_sys_msg_meta_dicts=extend_sys_msg_meta_dicts)
-
         self.assistant_agent: ChatAgent
         self.user_agent: ChatAgent
         self.assistant_sys_msg: BaseMessage
@@ -258,7 +247,7 @@ class RolePlaying:
         if (extend_sys_msg_meta_dicts is None and self.task_type
                 in [TaskType.AI_SOCIETY, TaskType.MISALIGNMENT]):
             if (assistant_description is not None
-                    or user_description is not None):
+                    and user_description is not None):
                 extend_sys_msg_meta_dicts = [
                     dict(assistant_role=assistant_role_name,
                          user_role=user_role_name,
@@ -455,7 +444,6 @@ class RolePlaying:
             whether the user agent terminated the conversation, and any
             additional user information.
         """
-
         user_response = self.user_agent.step(assistant_msg)
         if user_response.terminated or user_response.msgs is None:
             return (ChatAgentResponse([], False, {}),

@@ -26,20 +26,9 @@ AI_USER_ROLE_INDEX = 1
 def main(model_type=None) -> None:
     task_prompt = "Develop a trading bot for the stock market."
 
-    model_config_description = ChatGPTConfig(
-        temperature=0.2,
-        top_p=1.0,
-        n=1,
-        stream=False,
-        stop=None,
-        max_tokens=500,  # related to num_roles
-        presence_penalty=0.0,
-        frequency_penalty=0.0,
-        logit_bias={},
-        user='')
+    model_config_description = ChatGPTConfig()
     role_description_agent = RoleAssignmentAgent(
-        model=ModelType.TEXT_DAVINCI_003,
-        model_config=model_config_description)
+        model=model_type, model_config=model_config_description)
 
     role_names, role_description_dict, _, _ = (
         role_description_agent.run_role_with_description(

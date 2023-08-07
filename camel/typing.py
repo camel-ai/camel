@@ -64,4 +64,8 @@ class TaskType(Enum):
     DEFAULT = "default"
 
 
+class DescriptionType(Enum):
+    DEFAULT = "default_description"
+
+
 __all__ = ['RoleType', 'ModelType', 'TaskType']

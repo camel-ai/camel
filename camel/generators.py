@@ -11,11 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Dict, Generator, List, Optional, Set, Tuple
+from typing import Dict, Generator, List, Optional, Set, Tuple, Union
 
 from camel.messages import BaseMessage
 from camel.prompts import PromptTemplateGenerator, TextPrompt
-from camel.typing import RoleType, TaskType
+from camel.typing import DescriptionType, RoleType, TaskType
 
 
 class SystemMessageGenerator:
@@ -34,7 +34,8 @@ class SystemMessageGenerator:
     def __init__(
         self,
         task_type: TaskType = TaskType.AI_SOCIETY,
-        sys_prompts: Optional[Dict[RoleType, str]] = None,
+        sys_prompts: Optional[Dict[Union[RoleType, DescriptionType],
+                                   str]] = None,
         sys_msg_meta_dict_keys: Optional[Set[str]] = None,
     ) -> None:
         self.sys_prompts: Dict[RoleType, str]
@@ -63,7 +64,7 @@ class SystemMessageGenerator:
                 RoleType.EMBODIMENT,
             )
             role_description_prompt_template = PromptTemplateGenerator(
-            ).get_system_prompt(task_type, RoleType.ROLE_DESCRIPTION)
+            ).get_system_prompt(task_type, DescriptionType.DEFAULT)
 
             self.sys_prompts = dict()
             self.sys_prompts[RoleType.ASSISTANT] = assistant_prompt_template
@@ -71,7 +72,7 @@ class SystemMessageGenerator:
             self.sys_prompts[RoleType.CRITIC] = critic_prompt_template
             self.sys_prompts[RoleType.EMBODIMENT] = embodiment_prompt_template
             self.sys_prompts[
-                RoleType.ROLE_DESCRIPTION] = role_description_prompt_template
+                DescriptionType.DEFAULT] = role_description_prompt_template
 
             self.sys_msg_meta_dict_keys = (
                 assistant_prompt_template.key_words
@@ -114,7 +115,7 @@ class SystemMessageGenerator:
         role_name, role_type = role_tuple
         if ("assistant_description" in meta_dict
                 and "user_description" in meta_dict):
-            sys_prompt = (self.sys_prompts[RoleType.ROLE_DESCRIPTION] +
+            sys_prompt = (self.sys_prompts[DescriptionType.DEFAULT] +
                           self.sys_prompts[role_type])
         else:
             sys_prompt = self.sys_prompts[role_type]
