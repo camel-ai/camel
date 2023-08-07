@@ -1,3 +1,0 @@
-camel
-gradio
-pytest

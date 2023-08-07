@@ -1,3 +1,0 @@
-camel
-mock
-pytest
