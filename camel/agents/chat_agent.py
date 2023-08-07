@@ -352,61 +352,6 @@ class ChatAgent(BaseAgent):
 
         return ChatAgentResponse(output_messages, self.terminated, info)
 
-    def step_completion(
-        self,
-        input_prompt_for_completion: BaseMessage,
-    ) -> ChatAgentResponse:
-        r"""Performs a single step in the chat session by generating a response
-        to the input message.
-
-        Args:
-            input_prompt_for_completion (ChatMessage): The input prompt
-                requiring completion.
-            temperature (float): The temperature of the model for generating.
-
-        Returns:
-            Tuple[Optional[List[ChatMessage]], bool, Dict[str, Any]]: A tuple
-                containing the output messages, a boolean indicating whether
-                the chat session has terminated, and information about the chat
-                session.
-        """
-        self.reset()
-        messages = self.update_messages('user', input_prompt_for_completion)
-
-        openai_messages: List[OpenAIMessage]
-        # openai_messages = messages[-1].to_openai_message()
-        openai_messages = [message.to_openai_message() for message in messages]
-
-        # Format messages and get the token number
-        num_tokens = num_tokens_from_messages([openai_messages[-1]],
-                                              self.model)
-
-        # Terminate when number of tokens exceeds the limit
-        assert isinstance(self.model_config, ChatGPTConfig)
-        max_tokens_completion = self.model_config.max_tokens or 0
-        if num_tokens >= self.model_token_limit - max_tokens_completion:
-            return self.step_token_exceed(num_tokens, [])
-
-        # Obtain LLM's response and validate it
-        response = self.model_backend.run(openai_messages)
-        self.validate_model_response(response)
-
-        output_completion = BaseMessage('assistant', RoleType.ASSISTANT,
-                                        dict(), response['choices'][0]['text'])
-        output_completions = [output_completion]
-
-        usage_dict = self.get_usage_dict(output_completions, num_tokens)
-
-        info = self.get_info(
-            id=response['id'],
-            usage=usage_dict,
-            termination_reasons=response['choices'][0]['finish_reason'],
-            num_tokens=num_tokens,
-            called_funcs=[],
-        )
-
-        return ChatAgentResponse(output_completions, self.terminated, info)
-
     def preprocess_messages(
             self,
             messages: List[ChatRecord]) -> Tuple[List[OpenAIMessage], int]:
