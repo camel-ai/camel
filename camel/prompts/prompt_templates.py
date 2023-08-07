@@ -12,10 +12,10 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import warnings
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from camel.prompts import TaskPromptTemplateDict, TextPrompt
-from camel.typing import RoleType, TaskType
+from camel.typing import DescriptionType, RoleType, TaskType
 
 
 class PromptTemplateGenerator:
@@ -59,7 +59,7 @@ class PromptTemplateGenerator:
     def get_system_prompt(
         self,
         task_type: TaskType,
-        role_type: RoleType,
+        role_type: Union[RoleType, DescriptionType],
     ) -> TextPrompt:
         r"""Generates a text prompt for the system role, using the specified
         :obj:`task_type` and :obj:`role_type`.
