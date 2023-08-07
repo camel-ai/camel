@@ -14,6 +14,8 @@
 import re
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+from tenacity import retry, stop_after_attempt, wait_exponential
+
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
@@ -28,14 +30,14 @@ class RoleAssignmentAgent(ChatAgent):
         role names.
     args:
         model (ModelType): The tupe of model to use for the agent.
-            (default: :obj: 'ModelType.TEXT_DAVINCI_003')
+            (default: :obj: 'ModelType.GPT_3_5_TURBO')
         model_config (Any): The configuration for the model.
             (default: :obj: 'None')
     """
 
     def __init__(
         self,
-        model: ModelType = ModelType.TEXT_DAVINCI_003,
+        model: ModelType = ModelType.GPT_3_5_TURBO,
         model_config: Optional[Any] = None,
     ) -> None:
         self.role_assignment_prompt = TextPrompt(
@@ -50,6 +52,7 @@ class RoleAssignmentAgent(ChatAgent):
         )
         super().__init__(system_message, model, model_config)
 
+    @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     def run_role_with_description(
         self,
         num_roles: Optional[int] = 2,
@@ -87,25 +90,27 @@ class RoleAssignmentAgent(ChatAgent):
         role_assignment_generation_msg = BaseMessage.make_user_message(
             role_name="Role Assigner", content=role_assignment_generation)
 
-        response_completion = super().step_completion(
-            input_prompt_for_completion=role_assignment_generation_msg)
+        response_completion = super().step(
+            input_message=role_assignment_generation_msg)
 
         output_completion = response_completion.msg  # type: BaseMessage
         terminated = response_completion.terminated
         info = response_completion.info
 
         # Distribute the output completions into role names and descriptions
-        role_names = re.findall(
-            r"Domain expert \d: (.+?)\nAssociated competencies,",
-            output_completion.content,
-            re.DOTALL,
-        )
-        role_descriptions = re.findall(
-            r"Associated competencies, professional characteristics, duties"
-            " and workflows: (.+?) End.",
-            output_completion.content,
-            re.DOTALL,
-        )
+        role_names = [
+            desc.replace("<|", "").replace("|>", "") for desc in re.findall(
+                r"Domain expert \d: (.+?)\nAssociated competencies,",
+                output_completion.content,
+                re.DOTALL,
+            )
+        ]
+        role_descriptions = [
+            desc.replace("<|", "").replace("|>", "") for desc in re.findall(
+                r"Associated competencies, professional characteristics, "
+                r"duties and workflows: (.+?) End.", output_completion.content,
+                re.DOTALL)
+        ]
 
         if len(role_names) != num_roles or len(role_descriptions) != num_roles:
             raise RuntimeError("Got None or insufficient Role messages. ")
