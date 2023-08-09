@@ -14,6 +14,7 @@
 from mock import patch
 
 import examples.ai_society.role_playing
+import examples.ai_society.role_playing_with_role_generation
 import examples.function_call.role_playing_with_function
 from camel.typing import ModelType
 
@@ -21,6 +22,12 @@ from camel.typing import ModelType
 def test_ai_society_role_playing_example():
     with patch('time.sleep', return_value=None):
         examples.ai_society.role_playing.main(ModelType.STUB)
+
+
+def test_role_playing_with_role_generation_example():
+    with patch('time.sleep', return_value=None):
+        examples.ai_society.role_playing_with_role_generation.main(
+            ModelType.GPT_3_5_TURBO)
 
 
 def test_role_playing_with_function_example():
