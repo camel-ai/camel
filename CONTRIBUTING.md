@@ -51,15 +51,15 @@ git clone https://github.com/camel-ai/camel.git
 # Change directory into project directory
 cd camel
 
+# Activate camel virtual environment
+poetry shell
+
 # Install camel from source
-# It takes about 90 seconds to resolve dependencies
+# It takes about 75s to resolve dependencies and 10s to install them, depending on your hardware and network,
 poetry install --with dev,docs
 
 # Or if you want to use "huggingface agent"
 poetry install --with dev,docs -E huggingface-agent # (Optional)
-
-# Activate camel virtual environment
-poetry shell
 
 pre-commit install
 

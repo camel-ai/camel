@@ -68,10 +68,16 @@ We provide a [![Google Colab](https://colab.research.google.com/assets/colab-bad
 Install `CAMEL` from source with poetry (Recommended):
 ```sh
 # Clone github repo
+# For the latest code:
+git clone https://github.com/camel-ai/camel.git
+# Or for the stable code:
 git clone -b v0.1.0 https://github.com/camel-ai/camel.git
 
 # Change directory into project directory
 cd camel
+
+# Activate camel virtual environment
+poetry shell
 
 # Install camel from source
 # It takes about 90 seconds to resolve dependencies
@@ -79,9 +85,6 @@ poetry install
 
 # Or if you want to use "huggingface agent"
 poetry install -E huggingface-agent # (Optional)
-
-# Activate camel virtual environment
-poetry shell
 
 # do something with camel
 
