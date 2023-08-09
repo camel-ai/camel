@@ -29,7 +29,6 @@ from camel.models import BaseModelBackend, ModelFactory
 from camel.typing import ModelType, RoleType
 from camel.utils import (
     get_model_encoding,
-    num_tokens_from_messages,
     openai_api_key_required,
 )
 
@@ -156,7 +155,7 @@ class ChatAgent(BaseAgent):
             self.model, self.model_config.__dict__)
         self.model_token_limit: int = self.model_backend.token_limit
 
-        self.terminated: bool = False
+        self.terminated: bool = False 
         self.stored_messages: List[ChatRecord]
         self.init_messages()
 
@@ -278,7 +277,7 @@ class ChatAgent(BaseAgent):
         """
         self.stored_messages.append(ChatRecord('assistant', message))
 
-    @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
+    # @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     @openai_api_key_required
     def step(
         self,
@@ -372,7 +371,8 @@ class ChatAgent(BaseAgent):
 
         openai_messages: List[OpenAIMessage]
         openai_messages = [record.to_openai_message() for record in messages]
-        num_tokens = num_tokens_from_messages(openai_messages, self.model)
+        num_tokens = self.model_backend.count_tokens_from_messages(openai_messages)
+        # num_tokens = num_tokens_from_messages(openai_messages, self.model)
 
         return openai_messages, num_tokens
 

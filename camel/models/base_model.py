@@ -15,6 +15,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
 from camel.typing import ModelType
+from camel.utils import BaseTokenCounter, TokenCounterFactory
 
 
 class BaseModelBackend(ABC):
@@ -31,6 +32,8 @@ class BaseModelBackend(ABC):
         """
         self.model_type = model_type
         self.model_config_dict = model_config_dict
+        self.token_counter: BaseTokenCounter = \
+            TokenCounterFactory.create(model_type)
 
     @abstractmethod
     def run(self, messages: List[Dict]) -> Dict[str, Any]:
@@ -48,6 +51,9 @@ class BaseModelBackend(ABC):
             Dict[str, Any]: All backends must return a dict in OpenAI format.
         """
         pass
+
+    def count_tokens_from_messages(self, messages: List[Dict]) -> int:
+        return self.token_counter.count_tokens_from_messages(messages)
 
     @property
     def token_limit(self) -> int:

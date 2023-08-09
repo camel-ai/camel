@@ -18,7 +18,6 @@ from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.typing import ModelType
 
-
 class OpenAIModel(BaseModelBackend):
     r"""OpenAI API in a unified BaseModelBackend interface."""
 
@@ -59,6 +58,12 @@ class OpenAIModel(BaseModelBackend):
             if not isinstance(response, GeneratorType):
                 raise RuntimeError("Unexpected stream return from OpenAI API")
         return response
+
+    def count_tokens_from_messages(
+        self,
+        messages: List[OpenAIMessage],
+    ) -> int:
+        return self.token_counter.count_tokens_from_messages(messages)
 
     @property
     def stream(self) -> bool:
