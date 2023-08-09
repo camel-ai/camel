@@ -112,6 +112,9 @@ class ChatAgent(BaseAgent):
         system_message (BaseMessage): The system message for the chat agent.
         model (ModelType, optional): The LLM model to use for generating
             responses. (default :obj:`ModelType.GPT_3_5_TURBO`)
+        model_path (str): The path to the folder containing the model file and
+            necessary components (such as tokenizer). This is only necessary
+            for open-source models. (default: :obj:`None`)
         model_config (Any, optional): Configuration options for the LLM model.
             (default: :obj:`None`)
         message_window_size (int, optional): The maximum number of previous
@@ -127,6 +130,7 @@ class ChatAgent(BaseAgent):
         self,
         system_message: BaseMessage,
         model: Optional[ModelType] = None,
+        model_path: Optional[str] = None,
         model_config: Optional[BaseConfig] = None,
         message_window_size: Optional[int] = None,
         output_language: Optional[str] = None,
@@ -152,7 +156,7 @@ class ChatAgent(BaseAgent):
         self.model_config = model_config or ChatGPTConfig()
 
         self.model_backend: BaseModelBackend = ModelFactory.create(
-            self.model, self.model_config.__dict__)
+            self.model, self.model_config.__dict__, model_path)
         self.model_token_limit: int = self.model_backend.token_limit
 
         self.terminated: bool = False 

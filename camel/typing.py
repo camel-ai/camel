@@ -29,6 +29,8 @@ class ModelType(Enum):
     GPT_4_32k = "gpt-4-32k"
     STUB = "stub"
 
+    LLAMA_2 = "llama-2"
+
     @property
     def value_for_tiktoken(self) -> str:
         return self.value if self.name != "STUB" else "gpt-3.5-turbo"
@@ -48,6 +50,8 @@ class ModelType(Enum):
         elif self is ModelType.GPT_4_32k:
             return 32768
         elif self is ModelType.STUB:
+            return 4096
+        elif self is ModelType.LLAMA_2:
             return 4096
         else:
             raise ValueError("Unknown model type")

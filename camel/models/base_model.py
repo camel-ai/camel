@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from camel.typing import ModelType
 from camel.utils import BaseTokenCounter, TokenCounterFactory
@@ -23,7 +23,8 @@ class BaseModelBackend(ABC):
     May be OpenAI API, a local LLM, a stub for unit tests, etc."""
 
     def __init__(self, model_type: ModelType,
-                 model_config_dict: Dict[str, Any]) -> None:
+                 model_config_dict: Dict[str, Any],
+                 model_path: Optional[str] = None) -> None:
         r"""Constructor for the model backend.
 
         Args:
@@ -32,8 +33,12 @@ class BaseModelBackend(ABC):
         """
         self.model_type = model_type
         self.model_config_dict = model_config_dict
-        self.token_counter: BaseTokenCounter = \
-            TokenCounterFactory.create(model_type)
+
+        self.token_counter: BaseTokenCounter
+        self.token_counter = TokenCounterFactory.create(
+            model_type, 
+            {"model_path": model_path} if model_path else {},
+        )
 
     @abstractmethod
     def run(self, messages: List[Dict]) -> Dict[str, Any]:

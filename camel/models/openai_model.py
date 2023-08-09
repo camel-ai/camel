@@ -11,8 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import os
 from types import GeneratorType
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
@@ -22,7 +23,8 @@ class OpenAIModel(BaseModelBackend):
     r"""OpenAI API in a unified BaseModelBackend interface."""
 
     def __init__(self, model_type: ModelType,
-                 model_config_dict: Dict[str, Any]) -> None:
+                 model_config_dict: Dict[str, Any],
+                 model_path: Optional[str] = None) -> None:
         r"""Constructor for OpenAI backend.
 
         Args:
@@ -31,7 +33,21 @@ class OpenAIModel(BaseModelBackend):
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into openai.ChatCompletion.create().
         """
-        super().__init__(model_type, model_config_dict)
+        super().__init__(model_type, model_config_dict, model_path)
+
+        self.openai_api_base: Optional[str] = \
+                                        os.environ.get('OPENAI_API_BASE')
+        if model_path is not None and self.openai_api_base is None:
+            raise ValueError(
+                "Path to open-source model files is provided"
+                " but server URL is not specified."
+            )
+        elif model_path is None and self.openai_api_base is not None:
+            # unable to set tokenizer for token counting
+            raise ValueError(
+                "Server for open-source model is provided "
+                "but path to model files is not specified."
+            )
 
     def run(
         self,
@@ -47,6 +63,9 @@ class OpenAIModel(BaseModelBackend):
             Dict[str, Any]: Response in the OpenAI API format.
         """
         import openai
+        if self.openai_api_base:
+            openai.api_base = self.openai_api_base
+
         messages_openai: List[OpenAIMessage] = messages
         response = openai.ChatCompletion.create(messages=messages_openai,
                                                 model=self.model_type.value,
@@ -58,12 +77,6 @@ class OpenAIModel(BaseModelBackend):
             if not isinstance(response, GeneratorType):
                 raise RuntimeError("Unexpected stream return from OpenAI API")
         return response
-
-    def count_tokens_from_messages(
-        self,
-        messages: List[OpenAIMessage],
-    ) -> int:
-        return self.token_counter.count_tokens_from_messages(messages)
 
     @property
     def stream(self) -> bool:

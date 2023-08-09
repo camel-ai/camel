@@ -12,8 +12,10 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import tiktoken
-from typing import List
+from typing import List, Dict, Any
 from abc import ABC, abstractmethod
+
+from transformers import AutoTokenizer
 
 from camel.messages import OpenAIMessage
 from camel.typing import ModelType
@@ -27,6 +29,42 @@ OPENAI_MODEL_VALUES = {
     "gpt-4-0613",
     "gpt-4-32k-0613",
 }
+
+# register_conv_template(
+#     Conversation(
+#         name="llama-2",
+#         system_template="[INST] <<SYS>>\n{system_message}\n<</SYS>>\n\n",
+#         roles=("[INST]", "[/INST]"),
+#         messages=(),
+#         offset=0,
+#         sep_style=SeparatorStyle.LLAMA2,
+#         sep=" ",
+#         sep2=" </s><s>",
+#         stop_token_ids=[2],
+#     )
+# )
+# reference: https://github.com/facebookresearch/llama/blob/cfc3fc8c1968d390eb830e65c63865e980873a06/llama/generation.py#L212
+def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
+    system_message = messages[0]["content"]
+
+    if model == ModelType.LLAMA_2:
+        seps = [" ", " </s><s>"]
+        ret = ""
+        role_map = {"user": "[INST]", "assistant": "[/INST]"}
+        system_prompt = f"[INST] <<SYS>>\n{system_message}\n<</SYS>>\n\n"
+        for i, msg in enumerate(messages[1:]):
+            role = role_map[msg["role"]]
+            message = msg["content"]
+            if message:
+                if i == 0:
+                    ret += system_prompt + message
+                else:
+                    ret += role + " " + message + seps[i % 2]
+            else:
+                ret += role
+        return ret
+    else:
+        raise ValueError(f"Invalid model type: {model}")
 
 def get_model_encoding(value_for_tiktoken: str):
     r"""Get model encoding from tiktoken.
@@ -52,6 +90,31 @@ class BaseTokenCounter(ABC):
         messages: List[OpenAIMessage]
     ) -> int:
         pass
+
+class OpenSourceTokenCounter(BaseTokenCounter):
+    def __init__(self, model: ModelType, model_path: str):
+        try:
+            tokenizer = AutoTokenizer.from_pretrained(
+                model_path,
+                use_fast=True,
+            )
+        except TypeError:
+            tokenizer = AutoTokenizer.from_pretrained(
+                model_path,
+                use_fast=False,
+            )
+
+        self.tokenizer = tokenizer
+        self.model_type = model
+
+    def count_tokens_from_messages(
+        self, 
+        messages: List[OpenAIMessage]
+    ) -> int:
+        prompt = messages_to_prompt(messages, self.model_type)
+        input_ids = self.tokenizer(prompt).input_ids
+
+        return len(input_ids)
 
 class OpenAITokenCounter(BaseTokenCounter):
     def __init__(self, model: ModelType):
@@ -105,13 +168,13 @@ class TokenCounterFactory:
     """
 
     @staticmethod
-    def create(model_type: ModelType) -> BaseTokenCounter:
+    def create(model_type: ModelType, kwargs: Dict[str, Any]) -> BaseTokenCounter:
         r"""Creates an instance of `BaseModelBackend` of the specified type.
 
         Args:
             model_type (ModelType): Model for which a backend is created.
-            model_config_dict (Dict): a dictionary that will be fed into
-                the backend constructor.
+            kwargs (Dict[str, Any]): a dictionary containing additional
+                information, such as the path to the tokenizer
 
         Raises:
             ValueError: If there is not backend for the model.
@@ -119,7 +182,6 @@ class TokenCounterFactory:
         Returns:
             BaseModelBackend: The initialized backend.
         """
-        counter_class: BaseTokenCounter
         if model_type in {
                 ModelType.GPT_3_5_TURBO,
                 ModelType.GPT_3_5_TURBO_16K,
@@ -127,9 +189,10 @@ class TokenCounterFactory:
                 ModelType.GPT_4_32k,
                 ModelType.STUB,
         }:
-            counter_class = OpenAITokenCounter
+            return OpenAITokenCounter(model_type)
+        elif model_type in {
+            ModelType.LLAMA_2
+        }:
+            return OpenSourceTokenCounter(model_type, **kwargs)
         else:
             raise ValueError("Unknown model")
-
-        inst = counter_class(model_type)
-        return inst

@@ -280,6 +280,7 @@ class RolePlaying:
             )
         else:
             assistant_config = None
+
         self.assistant_agent = ChatAgent(
             init_assistant_sys_msg,
             model_config=assistant_config,

@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from camel.models import BaseModelBackend
 from camel.typing import ModelType
@@ -22,9 +22,10 @@ class StubModel(BaseModelBackend):
     model_type = ModelType.STUB
 
     def __init__(self, model_type: ModelType,
-                 model_config_dict: Dict[str, Any]) -> None:
+                 model_config_dict: Dict[str, Any],
+                 model_path: Optional[str]) -> None:
         r"""All arguments are unused for the dummy model."""
-        super().__init__(model_type, model_config_dict)
+        super().__init__(model_type, model_config_dict, model_path)
         pass
 
     def run(self, messages: List[Dict]) -> Dict[str, Any]:
