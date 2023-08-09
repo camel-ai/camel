@@ -28,8 +28,8 @@ jobs:
       name: Cache for the virtual environment based on pyproject.toml
       with:
         path: ./.venv
-        key: ${{ runner.os }}-venv-${{ hashFiles('pyproject.toml') }}
-        restore-keys: ${{ runner.os }}-venv
+        key: ${{ runner.os }}-venv-docs-${{ hashFiles('pyproject.toml') }}
+        restore-keys: ${{ runner.os }}-venv-docs
     - name: Install the project dependencies
       run: poetry install --with docs
     - name: Sphinx build
