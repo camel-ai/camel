@@ -16,7 +16,6 @@ from colorama import Fore
 from camel.agents.role_assignment import RoleAssignmentAgent
 from camel.configs import ChatGPTConfig
 from camel.societies import RolePlaying
-from camel.typing import ModelType
 from camel.utils import print_text_animated
 
 AI_ASSISTANT_ROLE_INDEX = 0
@@ -101,4 +100,4 @@ def main(model_type=None) -> None:
 
 
 if __name__ == "__main__":
-    main(model_type=ModelType.GPT_3_5_TURBO)
+    main()
