@@ -44,25 +44,29 @@ In line with this, we do have specific guidelines for code linting, formatting, 
 
 To get started with CAMEL, follow these steps:
 
-```bash
-# Create a conda virtual environment
-conda create --name camel python=3.10
-
-# Activate the camel conda environment
-conda activate camel
-
-# Clone the GitHub repo
+```sh
+# Clone github repo
 git clone https://github.com/camel-ai/camel.git
 
-# Change to the project directory
+# Change directory into project directory
 cd camel
 
-# Install CAMEL from source
-pip install -e .
+# Install camel from source
+# It takes about 90 seconds to resolve dependencies
+poetry install --with dev,docs
 
-# Install pre-commit within the camel environment (only needed for opening pull requests)
-pip install pre-commit
+# Or if you want to use "huggingface agent"
+poetry install --with dev,docs -E huggingface-agent # (Optional)
+
+# Activate camel virtual environment
+poetry shell
+
 pre-commit install
+
+# do something with camel
+
+# Exit the virtual environment
+exit
 ```
 
 These commands will install all the necessary dependencies for running the package, examples, linting, formatting, tests, and coverage.

@@ -65,8 +65,8 @@ flake8 = "^6"
 pre-commit = "^3"
 pytest = "^7"
 pytest-cov = "^4"
-gradio = "*"
-mock = "*"
+gradio = "^3"
+mock = "^5"
 
 [tool.poetry.group.docs]
 optional = true
