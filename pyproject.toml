@@ -34,14 +34,27 @@ jsonschema = "^4"
 types-colorama = "^0"
 types-requests = "^2"
 bs4 = "^0"
-transformers = "^4"
-diffusers = "^0"
-accelerate = "^0"
-datasets = "^2"
-torch = "^1"
-soundfile = "^0"
-sentencepiece = "^0"
-opencv-python = "^4"
+
+transformers = { version = "^4", optional = true }
+diffusers = { version = "^0", optional = true }
+accelerate = { version = "^0", optional = true }
+datasets = { version = "^2", optional = true }
+torch = { version = "^1", optional = true }
+soundfile = { version = "^0", optional = true }
+sentencepiece = { version = "^0", optional = true }
+opencv-python = { version = "^4", optional = true }
+
+[tool.poetry.extras]
+huggingface-agent = [
+    "transformers",
+    "diffusers",
+    "accelerate",
+    "datasets",
+    "torch",
+    "soundfile",
+    "sentencepiece",
+    "opencv-python",
+]
 
 [tool.poetry.group.dev]
 optional = true
@@ -52,7 +65,6 @@ flake8 = "^6"
 pre-commit = "^3"
 pytest = "^7"
 pytest-cov = "^4"
-# Following two packages should be removed in the future because they are not dependency of camel lib.
 gradio = "*"
 mock = "*"
 
