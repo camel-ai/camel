@@ -34,7 +34,6 @@ jobs:
       with:
         path: ./.venv
         key: ${{ runner.os }}-venv-${{ hashFiles('pyproject.toml') }}
-        restore-keys: ${{ runner.os }}-venv
     - name: Install the project dependencies
       run: poetry install --with dev
     - name: Run pytest
@@ -63,7 +62,6 @@ jobs:
       with:
         path: ./.venv
         key: ${{ runner.os }}-venv-${{ hashFiles('pyproject.toml') }}
-        restore-keys: ${{ runner.os }}-venv
     - name: Install the project dependencies
       run: poetry install --with dev
     - name: Run pytest
