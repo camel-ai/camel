@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Dict, Generator, List, Optional, Set, Tuple, Union
+from typing import Dict, Generator, List, Optional, Set, Tuple
 
 from camel.messages import BaseMessage
 from camel.prompts import PromptTemplateGenerator, TextPrompt
@@ -29,14 +29,16 @@ class SystemMessageGenerator:
         sys_msg_meta_dict_keys (Optional[Set[str]], optional): The set of keys
             of the meta dictionary used to fill the prompts.
             (default: :obj:`None`)
+        description_type (Optional[DescriptionType], optional): The type of
+            description. (default: :obj:`None`)
     """
 
     def __init__(
         self,
         task_type: TaskType = TaskType.AI_SOCIETY,
-        sys_prompts: Optional[Dict[Union[RoleType, DescriptionType],
-                                   str]] = None,
+        sys_prompts: Optional[Dict[RoleType, str]] = None,
         sys_msg_meta_dict_keys: Optional[Set[str]] = None,
+        description_type: Optional[DescriptionType] = None,
     ) -> None:
         self.sys_prompts: Dict[RoleType, str]
 
@@ -48,10 +50,12 @@ class SystemMessageGenerator:
             ).get_system_prompt(
                 task_type,
                 RoleType.ASSISTANT,
+                description_type=description_type,
             )
             user_prompt_template = PromptTemplateGenerator().get_system_prompt(
                 task_type,
                 RoleType.USER,
+                description_type=description_type,
             )
             critic_prompt_template = PromptTemplateGenerator(
             ).get_system_prompt(
@@ -63,23 +67,18 @@ class SystemMessageGenerator:
                 task_type,
                 RoleType.EMBODIMENT,
             )
-            role_description_prompt_template = PromptTemplateGenerator(
-            ).get_system_prompt(task_type, DescriptionType.DEFAULT)
 
             self.sys_prompts = dict()
             self.sys_prompts[RoleType.ASSISTANT] = assistant_prompt_template
             self.sys_prompts[RoleType.USER] = user_prompt_template
             self.sys_prompts[RoleType.CRITIC] = critic_prompt_template
             self.sys_prompts[RoleType.EMBODIMENT] = embodiment_prompt_template
-            self.sys_prompts[
-                DescriptionType.DEFAULT] = role_description_prompt_template
 
             self.sys_msg_meta_dict_keys = (
                 assistant_prompt_template.key_words
                 | user_prompt_template.key_words
                 | critic_prompt_template.key_words
-                | embodiment_prompt_template.key_words
-                | role_description_prompt_template.key_words)
+                | embodiment_prompt_template.key_words)
 
         if RoleType.DEFAULT not in self.sys_prompts:
             self.sys_prompts[RoleType.DEFAULT] = "You are a helpful assistant."
@@ -113,12 +112,7 @@ class SystemMessageGenerator:
         """
         self.validate_meta_dict_keys(meta_dict)
         role_name, role_type = role_tuple
-        if ("assistant_description" in meta_dict
-                and "user_description" in meta_dict):
-            sys_prompt = (self.sys_prompts[DescriptionType.DEFAULT] +
-                          self.sys_prompts[role_type])
-        else:
-            sys_prompt = self.sys_prompts[role_type]
+        sys_prompt = self.sys_prompts[role_type]
         sys_prompt = sys_prompt.format(**meta_dict)
         return BaseMessage(role_name=role_name, role_type=role_type,
                            meta_dict=meta_dict, content=sys_prompt)
