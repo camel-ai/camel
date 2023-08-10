@@ -56,6 +56,17 @@ huggingface-agent = [
     "opencv-python",
 ]
 
+all = [
+    "transformers",
+    "diffusers",
+    "accelerate",
+    "datasets",
+    "torch",
+    "soundfile",
+    "sentencepiece",
+    "opencv-python",
+]
+
 [tool.poetry.group.dev]
 optional = true
 [tool.poetry.group.dev.dependencies]
