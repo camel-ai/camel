@@ -29,9 +29,8 @@ jobs:
       with:
         path: ./.venv
         key: ${{ runner.os }}-venv-docs-${{ hashFiles('pyproject.toml') }}
-        restore-keys: ${{ runner.os }}-venv-docs
     - name: Install the project dependencies
-      run: poetry install --with docs
+      run: poetry install --with docs -E all
     - name: Sphinx build
       run: |
         cd docs

@@ -34,9 +34,8 @@ jobs:
       with:
         path: ./.venv
         key: ${{ runner.os }}-venv-${{ hashFiles('pyproject.toml') }}
-        restore-keys: ${{ runner.os }}-venv
     - name: Install the project dependencies
-      run: poetry install --with dev
+      run: poetry install --with dev -E all
     - name: Run pytest
       env:
         OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
@@ -64,9 +63,8 @@ jobs:
       with:
         path: ./.venv
         key: ${{ runner.os }}-venv-${{ hashFiles('pyproject.toml') }}
-        restore-keys: ${{ runner.os }}-venv
     - name: Install the project dependencies
-      run: poetry install --with dev
+      run: poetry install --with dev -E all
     - name: Run pytest
       env:
         OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
@@ -94,9 +92,8 @@ jobs:
       with:
         path: ./.venv
         key: ${{ runner.os }}-venv-${{ hashFiles('pyproject.toml') }}
-        restore-keys: ${{ runner.os }}-venv
     - name: Install the project dependencies
-      run: poetry install --with dev
+      run: poetry install --with dev -E all
     - name: Run pytest
       env:
         OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
