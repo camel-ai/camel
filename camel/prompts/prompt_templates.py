@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import warnings
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 from camel.prompts import TaskPromptTemplateDict, TextPrompt
 from camel.typing import DescriptionType, RoleType, TaskType
@@ -34,13 +34,20 @@ class PromptTemplateGenerator:
         self.task_prompt_template_dict = (task_prompt_template_dict
                                           or TaskPromptTemplateDict())
 
-    def get_prompt_from_key(self, task_type: TaskType, key: Any) -> TextPrompt:
+    def get_prompt_from_key(
+        self,
+        task_type: TaskType,
+        key: Any,
+        description_type: Optional[DescriptionType] = None,
+    ) -> TextPrompt:
         r"""Generates a text prompt using the specified :obj:`task_type` and
         :obj:`key`.
 
         Args:
             task_type (TaskType): The type of task.
             key (Any): The key used to generate the prompt.
+            description_type (DescriptionType, optional): The type of
+                description. Defaults to None.
 
         Returns:
             TextPrompt: The generated text prompt.
@@ -50,7 +57,17 @@ class PromptTemplateGenerator:
                 :obj:`task_type` and :obj:`key`.
         """
         try:
-            return self.task_prompt_template_dict[task_type][key]
+            if (description_type is not None
+                    and task_type == TaskType.AI_SOCIETY
+                    and key in {RoleType.USER, RoleType.ASSISTANT}):
+                description_type = DescriptionType.DEFAULT
+                role_description = self.task_prompt_template_dict[task_type][
+                    description_type]
+                task_prompt_template = self.task_prompt_template_dict[
+                    task_type][key]
+                return TextPrompt(role_description + task_prompt_template)
+            else:
+                return self.task_prompt_template_dict[task_type][key]
 
         except KeyError:
             raise KeyError("Failed to get generate prompt template for "
@@ -59,7 +76,8 @@ class PromptTemplateGenerator:
     def get_system_prompt(
         self,
         task_type: TaskType,
-        role_type: Union[RoleType, DescriptionType],
+        role_type: RoleType,
+        description_type: Optional[DescriptionType] = None,
     ) -> TextPrompt:
         r"""Generates a text prompt for the system role, using the specified
         :obj:`task_type` and :obj:`role_type`.
@@ -68,6 +86,8 @@ class PromptTemplateGenerator:
             task_type (TaskType): The type of task.
             role_type (RoleType): The type of role, either "USER" or
                 "ASSISTANT".
+            description_type (DescriptionType, optional): The type of
+                description. Defaults to None.
 
         Returns:
             TextPrompt: The generated text prompt.
@@ -77,7 +97,8 @@ class PromptTemplateGenerator:
                 :obj:`task_type` and :obj:`role_type`.
         """
         try:
-            return self.get_prompt_from_key(task_type, role_type)
+            return self.get_prompt_from_key(task_type, role_type,
+                                            description_type)
 
         except KeyError:
             prompt = "You are a helpful assistant."
