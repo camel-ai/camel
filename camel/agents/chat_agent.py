@@ -374,7 +374,6 @@ class ChatAgent(BaseAgent):
         openai_messages = [record.to_openai_message() for record in messages]
         num_tokens = self.model_backend.count_tokens_from_messages(
             openai_messages)
-        # num_tokens = num_tokens_from_messages(openai_messages, self.model)
 
         return openai_messages, num_tokens
 

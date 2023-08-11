@@ -22,7 +22,6 @@ from camel.functions import MATH_FUNCS
 from camel.generators import SystemMessageGenerator
 from camel.messages import BaseMessage
 from camel.typing import ModelType, RoleType, TaskType
-from camel.utils import num_tokens_from_messages
 
 parametrize = pytest.mark.parametrize('model', [
     ModelType.STUB,
@@ -134,10 +133,8 @@ def test_chat_agent_step_exceed_token_number():
     msgs = [system_msg, user_msg_record]
 
     expect_openai_messages = [record.to_openai_message() for record in msgs]
-    expect_num_tokens = num_tokens_from_messages(
-        expect_openai_messages,
-        assistant.model,
-    )
+    expect_num_tokens = assistant.model_backend.count_tokens_from_messages(
+        expect_openai_messages)
 
     response = assistant.step(user_msg)
     assert len(response.msgs) == 0
