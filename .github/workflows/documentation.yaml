@@ -9,23 +9,37 @@ permissions:
     contents: write
 jobs:
   docs:
+
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v3
-      - name: Install dependencies
-        run: |
-          pip install -e .
-          pip install sphinx sphinx_book_theme recommonmark
-      - name: Sphinx build
-        run: |
-          cd docs
-          make html
-      - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master'}}
-        with:
-          publish_branch: gh-pages
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: docs/_build/html/
-          force_orphan: true
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.8"
+    - name: Install poetry
+      uses: abatilo/actions-poetry@v2
+    - name: Setup poetry virtual environment
+      run: |
+        poetry config virtualenvs.create true --local
+        poetry config virtualenvs.in-project true --local
+    - uses: actions/cache@v3
+      name: Cache for the virtual environment based on pyproject.toml
+      with:
+        path: ./.venv
+        key: ${{ runner.os }}-venv-docs-${{ hashFiles('pyproject.toml') }}
+    - name: Install the project dependencies
+      run: poetry install --with docs -E all
+    - name: Sphinx build
+      run: |
+        cd docs
+        poetry run make html
+    - name: Deploy
+      uses: peaceiris/actions-gh-pages@v3
+      if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master'}}
+      with:
+        publish_branch: gh-pages
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: docs/_build/html/
+        force_orphan: true

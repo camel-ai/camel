@@ -64,8 +64,36 @@ We provide a [![Google Colab](https://colab.research.google.com/assets/colab-bad
 [CAMEL package documentation pages](https://camel-ai.github.io/camel/)
 
 ## Installation
-Install `CAMEL` from source with conda:
+
+Install `CAMEL` from source with poetry (Recommended):
+```sh
+# Clone github repo
+# For the latest code:
+git clone https://github.com/camel-ai/camel.git
+# Or for the stable code:
+git clone -b v0.1.0 https://github.com/camel-ai/camel.git
+
+# Change directory into project directory
+cd camel
+
+# Activate camel virtual environment
+poetry shell
+
+# Install camel from source
+# It takes about 90 seconds to resolve dependencies
+poetry install
+
+# Or if you want to use "huggingface agent"
+poetry install -E huggingface-agent # (Optional)
+
+# do something with camel
+
+# Exit the virtual environment
+exit
 ```
+
+Install `CAMEL` from source with conda and pip:
+```sh
 # Create a conda virtual environment
 conda create --name camel python=3.10
 
@@ -81,9 +109,8 @@ cd camel
 # Install camel from source
 pip install -e .
 
-# Install pre-commmit within camel env (only needed for opening pull requests)
-pip install pre-commit
-pre-commit install
+# Or if you want to use "huggingface agent"
+pip install -e .[huggingface-agent] # (Optional)
 ```
 ## Example
 You can find a list of tasks for different set of assistant and user role pairs [here](https://drive.google.com/file/d/194PPaSTBR07m-PzjS-Ty6KlPLdFIPQDd/view?usp=share_link)
