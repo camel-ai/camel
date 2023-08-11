@@ -76,8 +76,12 @@ class PromptTemplateGenerator:
     def get_system_prompt(
         self,
         task_type: TaskType,
+<<<<<<< HEAD
+        role_type: Union[RoleType, DescriptionType],
+=======
         role_type: RoleType,
         description_type: Optional[DescriptionType] = None,
+>>>>>>> c552d25c27701432ad85086948c1f475212c6830
     ) -> TextPrompt:
         r"""Generates a text prompt for the system role, using the specified
         :obj:`task_type` and :obj:`role_type`.
