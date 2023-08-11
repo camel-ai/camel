@@ -13,8 +13,8 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from colorama import Fore
 
-from camel.typing import ModelType
 from camel.societies import RolePlaying
+from camel.typing import ModelType
 from camel.utils import print_text_animated
 
 
@@ -24,10 +24,7 @@ def main(model_type=None) -> None:
     # only tokenizer-related files will be downloaded
     assist_model_path = "meta-llama/Llama-2-7b-chat-hf"
     assist_model_type = model_type
-    assist_kwargs = dict(
-        model=assist_model_type, 
-        model_path=assist_model_path
-    )
+    assist_kwargs = dict(model=assist_model_type, model_path=assist_model_path)
 
     other_model_type = \
         ModelType.GPT_4 if model_type != ModelType.STUB else model_type

@@ -13,20 +13,17 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from colorama import Fore
 
-from camel.typing import ModelType
 from camel.societies import RolePlaying
+from camel.typing import ModelType
 from camel.utils import print_text_animated
 
 
 def main(model_type=None) -> None:
     task_prompt = "Develop a trading bot for the stock market"
-    
+
     assist_model_path = "lmsys/vicuna-7b-v1.5"
     assist_model_type = model_type
-    assist_kwargs = dict(
-        model=assist_model_type, 
-        model_path=assist_model_path
-    )
+    assist_kwargs = dict(model=assist_model_type, model_path=assist_model_path)
     other_model_type = \
         ModelType.GPT_4 if model_type != ModelType.STUB else model_type
 
@@ -39,7 +36,6 @@ def main(model_type=None) -> None:
         with_task_specify=True,
         task_specify_agent_kwargs=dict(model=other_model_type),
     )
-
 
     print(
         Fore.GREEN +

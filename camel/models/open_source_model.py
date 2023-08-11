@@ -19,11 +19,12 @@ from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.typing import ModelType
 
+
 class OpenSourceModel(BaseModelBackend):
     r"""OpenAI API in a unified BaseModelBackend interface."""
 
-    def __init__(self, model_type: ModelType,
-                 model_config_dict: Dict[str, Any],
+    def __init__(self, model_type: ModelType, model_config_dict: Dict[str,
+                                                                      Any],
                  model_path: Optional[str] = None) -> None:
         r"""Constructor for OpenAI backend.
 
@@ -39,10 +40,9 @@ class OpenSourceModel(BaseModelBackend):
         if not model_type.is_open_source:
             raise ValueError(
                 f"Model {model_type} is not a supported open-source model")
-        
+
         if model_path is None:
-            raise ValueError(
-                "Path to open-source model is not provided")
+            raise ValueError("Path to open-source model is not provided")
 
         super().__init__(model_type, model_config_dict, model_path)
 
@@ -54,8 +54,7 @@ class OpenSourceModel(BaseModelBackend):
             raise ValueError(
                 "URL to server running open-source LLM is missing. "
                 "Please specify the URL in environmental variable "
-                "OPENAI_API_BASE."
-            )
+                "OPENAI_API_BASE.")
         self.server_url = server_url
 
         self.model_name: str
@@ -63,8 +62,7 @@ class OpenSourceModel(BaseModelBackend):
         if not self.model_type.match_model(self.model_name):
             raise ValueError(
                 f"Model name {self.model_name} does not match model type "
-                f"{self.model_type.value}."
-            )
+                f"{self.model_type.value}.")
 
     def run(
         self,
