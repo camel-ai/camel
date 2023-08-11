@@ -29,6 +29,8 @@ class SystemMessageGenerator:
         sys_msg_meta_dict_keys (Optional[Set[str]], optional): The set of keys
             of the meta dictionary used to fill the prompts.
             (default: :obj:`None`)
+        description_type (Optional[DescriptionType], optional): The type of
+            description. (default: :obj:`None`)
     """
 
     def __init__(
@@ -37,6 +39,7 @@ class SystemMessageGenerator:
         sys_prompts: Optional[Dict[Union[RoleType, DescriptionType],
                                    str]] = None,
         sys_msg_meta_dict_keys: Optional[Set[str]] = None,
+        description_type: Optional[DescriptionType] = None,
     ) -> None:
         self.sys_prompts: Dict[RoleType, str]
 
@@ -48,10 +51,12 @@ class SystemMessageGenerator:
             ).get_system_prompt(
                 task_type,
                 RoleType.ASSISTANT,
+                description_type=description_type,
             )
             user_prompt_template = PromptTemplateGenerator().get_system_prompt(
                 task_type,
                 RoleType.USER,
+                description_type=description_type,
             )
             critic_prompt_template = PromptTemplateGenerator(
             ).get_system_prompt(
