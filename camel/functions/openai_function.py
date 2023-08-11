@@ -31,9 +31,9 @@ class OpenAIFunction:
             a-z, A-Z, 0-9, or contain underscores and dashes, with a maximum
             length of 64. If :obj:`None`, use the name of :obj:`func`. 
             (default: :obj:`None`)
-        description (Optional[str], optional): The description of what the
+        description (str, optional): The description of what the
             function does. (default: :obj:`None`)
-        parameters (Optional[Dict[str, Any]], optional): The parameters the
+        parameters (dict, optional): The parameters the
             functions accepts, described as a JSON Schema object. See the
             `Function calling guide <https://platform.openai.com/docs/guides/gpt/function-calling>`_
             for examples, and the `JSON Schema reference <https://json-schema.org/understanding-json-schema/>`_
