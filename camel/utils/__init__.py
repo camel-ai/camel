@@ -21,7 +21,7 @@ from .functions import (
     parse_doc,
     get_task_list,
 )
-from .token_counting import(
+from .token_counting import (
     get_model_encoding,
     BaseTokenCounter,
     OpenAITokenCounter,

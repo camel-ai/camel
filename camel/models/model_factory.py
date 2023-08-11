@@ -13,7 +13,12 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Dict, Optional
 
-from camel.models import BaseModelBackend, OpenAIModel, StubModel
+from camel.models import (
+    BaseModelBackend,
+    OpenAIModel,
+    OpenSourceModel,
+    StubModel,
+)
 from camel.typing import ModelType
 
 
@@ -53,6 +58,12 @@ class ModelFactory:
             model_class = OpenAIModel
         elif model_type == ModelType.STUB:
             model_class = StubModel
+        elif model_type in {
+                ModelType.LLAMA_2,
+                ModelType.VICUNA,
+                ModelType.VICUNA_16K,
+        }:
+            model_class = OpenSourceModel
         else:
             raise ValueError("Unknown model")
 

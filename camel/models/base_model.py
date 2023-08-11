@@ -20,23 +20,27 @@ from camel.utils import BaseTokenCounter, TokenCounterFactory
 
 class BaseModelBackend(ABC):
     r"""Base class for different model backends.
-    May be OpenAI API, a local LLM, a stub for unit tests, etc."""
+    May be OpenAI API, a local LLM, a stub for unit tests, etc.
+    """
 
-    def __init__(self, model_type: ModelType,
-                 model_config_dict: Dict[str, Any],
+    def __init__(self, model_type: ModelType, model_config_dict: Dict[str,
+                                                                      Any],
                  model_path: Optional[str] = None) -> None:
         r"""Constructor for the model backend.
 
         Args:
             model_type (ModelType): Model for which a backend is created.
             model_config_dict (Dict[str, Any]): A config dictionary.
+            model_path (Optional[str]): The path to the model files, only
+                applicable for open-source models that need to be deployed
+                by users. (default: :obj:`None`)
         """
         self.model_type = model_type
         self.model_config_dict = model_config_dict
 
         self.token_counter: BaseTokenCounter
         self.token_counter = TokenCounterFactory.create(
-            model_type, 
+            model_type,
             {"model_path": model_path} if model_path else {},
         )
 
@@ -58,6 +62,16 @@ class BaseModelBackend(ABC):
         pass
 
     def count_tokens_from_messages(self, messages: List[Dict]) -> int:
+        r"""Count the number of tokens in the messages using the specific
+        tokenizer.
+
+        Args:
+            messages (List[Dict]): message list with the chat history
+                in OpenAI API format.
+
+        Returns:
+            int: Number of tokens in the messages.
+        """
         return self.token_counter.count_tokens_from_messages(messages)
 
     @property

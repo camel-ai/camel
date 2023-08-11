@@ -16,7 +16,6 @@ import os
 import re
 import time
 import zipfile
-import requests
 from functools import wraps
 from typing import (
     Any,
@@ -29,6 +28,8 @@ from typing import (
     TypeVar,
     cast,
 )
+
+import requests
 
 from camel.typing import ModelType, TaskType
 
@@ -56,6 +57,8 @@ def openai_api_key_required(func: F) -> F:
         if not isinstance(self, ChatAgent):
             raise ValueError("Expected ChatAgent")
         if self.model == ModelType.STUB:
+            return func(self, *args, **kwargs)
+        elif self.model.is_open_source:
             return func(self, *args, **kwargs)
         elif 'OPENAI_API_KEY' in os.environ:
             return func(self, *args, **kwargs)
@@ -155,7 +158,7 @@ def parse_doc(func: Callable) -> Dict[str, Any]:
     properties = {}
     required = []
 
-    parts = re.split('\n\s*\n', doc)
+    parts = re.split(r'\n\s*\n', doc)
     func_desc = parts[0].strip()
 
     args_section = next((p for p in parts if 'Args:' in p), None)

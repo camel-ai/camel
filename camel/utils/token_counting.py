@@ -11,15 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import tiktoken
-from typing import List, Dict, Any
 from abc import ABC, abstractmethod
+from typing import Any, Dict, List
 
+import tiktoken
 from transformers import AutoTokenizer
 
 from camel.messages import OpenAIMessage
 from camel.typing import ModelType
-
 
 OPENAI_MODEL_VALUES = {
     "gpt-3.5-turbo-0613",
@@ -30,28 +29,29 @@ OPENAI_MODEL_VALUES = {
     "gpt-4-32k-0613",
 }
 
-# register_conv_template(
-#     Conversation(
-#         name="llama-2",
-#         system_template="[INST] <<SYS>>\n{system_message}\n<</SYS>>\n\n",
-#         roles=("[INST]", "[/INST]"),
-#         messages=(),
-#         offset=0,
-#         sep_style=SeparatorStyle.LLAMA2,
-#         sep=" ",
-#         sep2=" </s><s>",
-#         stop_token_ids=[2],
-#     )
-# )
-# reference: https://github.com/facebookresearch/llama/blob/cfc3fc8c1968d390eb830e65c63865e980873a06/llama/generation.py#L212
+
 def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
+    r"""Parse the message list into a single prompt following model-specifc
+    formats.
+
+    Args:
+        messages (List[OpenAIMessage]): Message list with the chat history
+            in OpenAI API format.
+        model (ModelType): Model type for which messages will be parsed.
+
+    Returns:
+        str: A single prompt summarizing all the messages.
+    """
     system_message = messages[0]["content"]
 
+    ret: str
     if model == ModelType.LLAMA_2:
+        # reference: https://github.com/facebookresearch/llama/blob/cfc3fc8c1968d390eb830e65c63865e980873a06/llama/generation.py#L212
         seps = [" ", " </s><s>"]
-        ret = ""
         role_map = {"user": "[INST]", "assistant": "[/INST]"}
+
         system_prompt = f"[INST] <<SYS>>\n{system_message}\n<</SYS>>\n\n"
+        ret = ""
         for i, msg in enumerate(messages[1:]):
             role = role_map[msg["role"]]
             message = msg["content"]
@@ -63,8 +63,23 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
             else:
                 ret += role
         return ret
+    elif model == ModelType.VICUNA or model == ModelType.VICUNA_16K:
+        seps = [" ", "</s>"]
+        role_map = {"user": "USER", "assistant": "ASSISTANT"}
+
+        system_prompt = f"{system_message}"
+        ret = system_prompt + seps[0]
+        for i, msg in enumerate(messages[1:]):
+            role = role_map[msg["role"]]
+            message = msg["content"]
+            if message:
+                ret += role + ": " + message + seps[i % 2]
+            else:
+                ret += role + ":"
+        return ret
     else:
         raise ValueError(f"Invalid model type: {model}")
+
 
 def get_model_encoding(value_for_tiktoken: str):
     r"""Get model encoding from tiktoken.
@@ -84,15 +99,33 @@ def get_model_encoding(value_for_tiktoken: str):
 
 
 class BaseTokenCounter(ABC):
+    r"""Base class for token counters of different kinds of models."""
+
     @abstractmethod
-    def count_tokens_from_messages(
-        self, 
-        messages: List[OpenAIMessage]
-    ) -> int:
+    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
+        r"""Count number of tokens in the provided message list.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+
+        Returns:
+            int: Number of tokens in the messages.
+        """
         pass
 
+
 class OpenSourceTokenCounter(BaseTokenCounter):
+
     def __init__(self, model: ModelType, model_path: str):
+        r"""Constructor for the token counter for open-source models.
+
+        Args:
+            model_type (ModelType): Model type for which tokens will be
+                counted.
+            model_path (str): The path to the model files, where the tokenizer
+                model should be located.
+        """
         try:
             tokenizer = AutoTokenizer.from_pretrained(
                 model_path,
@@ -107,32 +140,47 @@ class OpenSourceTokenCounter(BaseTokenCounter):
         self.tokenizer = tokenizer
         self.model_type = model
 
-    def count_tokens_from_messages(
-        self, 
-        messages: List[OpenAIMessage]
-    ) -> int:
+    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
+        r"""Count number of tokens in the provided message list using
+        loaded tokenizer specific for this type of model.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+
+        Returns:
+            int: Number of tokens in the messages.
+        """
         prompt = messages_to_prompt(messages, self.model_type)
         input_ids = self.tokenizer(prompt).input_ids
 
         return len(input_ids)
 
+
 class OpenAITokenCounter(BaseTokenCounter):
+
     def __init__(self, model: ModelType):
+        r"""Constructor for the token counter for OpenAI models.
+
+        Args:
+            model_type (ModelType): Model type for which tokens will be
+                counted.
+        """
         self.model: str = model.value_for_tiktoken
 
         self.tokens_per_message: int
         self.tokens_per_name: int
-        if (self.model in OPENAI_MODEL_VALUES) or \
-              ("gpt-3.5-turbo" in self.model) or \
-              ("gpt-4" in self.model):
-            self.tokens_per_message = 3
-            self.tokens_per_name = 1
-        elif self.model == "gpt-3.5-turbo-0301":
+
+        if self.model == "gpt-3.5-turbo-0301":
             # Every message follows <|start|>{role/name}\n{content}<|end|>\n
             self.tokens_per_message = 4
             # If there's a name, the role is omitted
             self.tokens_per_name = -1
+        elif ("gpt-3.5-turbo" in self.model) or ("gpt-4" in self.model):
+            self.tokens_per_message = 3
+            self.tokens_per_name = 1
         else:
+            # flake8: noqa :E501
             raise NotImplementedError(
                 "Token counting for OpenAI Models is not presently "
                 f"implemented for model {model}. "
@@ -143,11 +191,18 @@ class OpenAITokenCounter(BaseTokenCounter):
                 "for information about openai chat models.")
 
         self.encoding = get_model_encoding(self.model)
-    
-    def count_tokens_from_messages(
-        self, 
-        messages: List[OpenAIMessage]
-    ) -> int:
+
+    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
+        r"""Count number of tokens in the provided message list with the
+        help of package tiktoken
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+
+        Returns:
+            int: Number of tokens in the messages.
+        """
         num_tokens = 0
         for message in messages:
             num_tokens += self.tokens_per_message
@@ -155,32 +210,37 @@ class OpenAITokenCounter(BaseTokenCounter):
                 num_tokens += len(self.encoding.encode(str(value)))
                 if key == "name":
                     num_tokens += self.tokens_per_name
-        num_tokens += 3  # every reply is primed with <|start|>assistant<|message|>
+
+        # every reply is primed with <|start|>assistant<|message|>
+        num_tokens += 3
         return num_tokens
 
 
-
 class TokenCounterFactory:
-    r"""Factory of backend models.
+    r"""Factory of token counters
 
     Raises:
-        ValueError: in case the provided model type is unknown.
+        ValueError: in case the token counter is not defined for
+            the provided model.
     """
 
     @staticmethod
-    def create(model_type: ModelType, kwargs: Dict[str, Any]) -> BaseTokenCounter:
-        r"""Creates an instance of `BaseModelBackend` of the specified type.
+    def create(model_type: ModelType, kwargs: Dict[str,
+                                                   Any]) -> BaseTokenCounter:
+        r"""Creates an instance of `BaseTokenCounter` of the specified type.
 
         Args:
-            model_type (ModelType): Model for which a backend is created.
-            kwargs (Dict[str, Any]): a dictionary containing additional
-                information, such as the path to the tokenizer
+            model_type (ModelType): Model for which a token counter
+                is created.
+            kwargs (Dict[str, Any]): A dictionary containing additional
+                information, such as the path to the model (tokenizer).
 
         Raises:
-            ValueError: If there is not backend for the model.
+            ValueError: If the token counter is not defined for this type
+                of model.
 
         Returns:
-            BaseModelBackend: The initialized backend.
+            BaseTokenCounter: The initialized token counter object.
         """
         if model_type in {
                 ModelType.GPT_3_5_TURBO,
@@ -191,7 +251,9 @@ class TokenCounterFactory:
         }:
             return OpenAITokenCounter(model_type)
         elif model_type in {
-            ModelType.LLAMA_2
+                ModelType.LLAMA_2,
+                ModelType.VICUNA,
+                ModelType.VICUNA_16K,
         }:
             return OpenSourceTokenCounter(model_type, **kwargs)
         else:
