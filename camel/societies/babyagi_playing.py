@@ -67,7 +67,6 @@ class BabyAGI:
         assistant_role_name: str,
         user_role_name: str,
         task_prompt: str = "",
-        with_task_specify: bool = True,
         task_type: TaskType = TaskType.AI_SOCIETY,
         assistant_agent_kwargs: Optional[Dict] = None,
         task_specify_agent_kwargs: Optional[Dict] = None,
@@ -78,10 +77,9 @@ class BabyAGI:
         output_language: Optional[str] = None,
         message_window_size: Optional[int] = None,
     ) -> None:
-        self.with_task_specify = with_task_specify
         self.task_type = task_type
         self.task_prompt = task_prompt
-        self.specified_task_prompt: Optional[TextPrompt] = None
+        self.specified_task_prompt: TextPrompt
         self.init_specified_task_prompt(assistant_role_name, user_role_name,
                                         task_specify_agent_kwargs,
                                         extend_task_specify_meta_dict,
@@ -131,22 +129,21 @@ class BabyAGI:
             output_language (str, optional): The language to be output by the
                 agents.
         """
-        if self.with_task_specify:
-            task_specify_meta_dict = dict()
-            if self.task_type in [TaskType.AI_SOCIETY, TaskType.MISALIGNMENT]:
-                task_specify_meta_dict.update(
-                    dict(assistant_role=assistant_role_name,
-                         user_role=user_role_name))
-            task_specify_meta_dict.update(extend_task_specify_meta_dict or {})
-            task_specify_agent = TaskSpecifyAgent(
-                task_type=self.task_type,
-                output_language=output_language,
-                **(task_specify_agent_kwargs or {}),
-            )
-            self.specified_task_prompt = task_specify_agent.run(
-                self.task_prompt,
-                meta_dict=task_specify_meta_dict,
-            )
+        task_specify_meta_dict = dict()
+        if self.task_type in [TaskType.AI_SOCIETY, TaskType.MISALIGNMENT]:
+            task_specify_meta_dict.update(
+                dict(assistant_role=assistant_role_name,
+                     user_role=user_role_name))
+        task_specify_meta_dict.update(extend_task_specify_meta_dict or {})
+        task_specify_agent = TaskSpecifyAgent(
+            task_type=self.task_type,
+            output_language=output_language,
+            **(task_specify_agent_kwargs or {}),
+        )
+        self.specified_task_prompt = task_specify_agent.run(
+            self.task_prompt,
+            meta_dict=task_specify_meta_dict,
+        )
 
     def init_agents(self, init_assistant_sys_msg: BaseMessage,
                     assistant_agent_kwargs: Optional[Dict],
@@ -258,7 +255,6 @@ if __name__ == "__main__":
         assistant_agent_kwargs=dict(model=model_type),
         user_role_name="Stock Trader",
         task_prompt=task_prompt,
-        with_task_specify=True,
         task_specify_agent_kwargs=dict(model=model_type),
         message_window_size=5,
     )
