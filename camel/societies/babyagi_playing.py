@@ -91,7 +91,7 @@ class BabyAGI:
             task_type=self.task_type, **(sys_msg_generator_kwargs or {}))
 
         init_assistant_sys_msg = sys_msg_generator.from_dicts(
-            meta_dicts=[dict(task=self.task_prompt)],
+            meta_dicts=[dict(task=self.specified_task_prompt)],
             role_tuples=[
                 (assistant_role_name, RoleType.ASSISTANT),
             ],
@@ -147,7 +147,6 @@ class BabyAGI:
                 self.task_prompt,
                 meta_dict=task_specify_meta_dict,
             )
-            self.task_prompt = self.specified_task_prompt
 
     def init_agents(self, init_assistant_sys_msg: BaseMessage,
                     assistant_agent_kwargs: Optional[Dict],
@@ -182,7 +181,7 @@ class BabyAGI:
         self.assistant_agent.reset()
 
         self.task_creation_agent = TaskCreationAgent(
-            objective=self.task_prompt,
+            objective=self.specified_task_prompt,
             role_name=self.assistant_sys_msg.role_name,
             output_language=output_language,
             message_window_size=message_window_size,
@@ -191,7 +190,7 @@ class BabyAGI:
         self.task_creation_agent.reset()
 
         self.task_prioritize_agent = TaskPrioritizeAgent(
-            objective=self.task_prompt,
+            objective=self.specified_task_prompt,
             output_language=output_language,
             message_window_size=message_window_size,
             **(task_prioritize_agent_kwargs or {}),
@@ -270,7 +269,8 @@ if __name__ == "__main__":
     print(Fore.YELLOW + f"Original task prompt:\n{task_prompt}\n")
     print(Fore.CYAN +
           f"Specified task prompt:\n{babyagi_session.specified_task_prompt}\n")
-    print(Fore.RED + f"Final task prompt:\n{babyagi_session.task_prompt}\n")
+    print(Fore.RED +
+          f"Final task prompt:\n{babyagi_session.specified_task_prompt}\n")
 
     chat_turn_limit, n = 15, 0
     while n < chat_turn_limit:

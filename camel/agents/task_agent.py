@@ -11,10 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import pdb
 from typing import Any, Dict, List, Optional, Union
-
-import openai
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
