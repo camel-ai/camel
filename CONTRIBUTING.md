@@ -6,7 +6,14 @@ Thank you for your interest in contributing to the CAMEL project! 🎉 We're exc
 
 ### Contributing to the Code 👨‍💻👩‍💻
 
-If you're eager to contribute to this project, that's fantastic! We're thrilled to have your support. Just remember to follow the [Fork-and-Pull-Request](https://docs.github.com/en/get-started/quickstart/contributing-to-projects) workflow when opening your pull requests. Make sure to mention any related issues and tag the relevant maintainers too. 💪
+If you're eager to contribute to this project, that's fantastic! We're thrilled to have your support. 
+
+- If you are a contributor from the community:
+  - Follow the [Fork-and-Pull-Request](https://docs.github.com/en/get-started/quickstart/contributing-to-projects) workflow when opening your pull requests.
+- If you are a member of [CAMEL-AI.org](https://github.com/camel-ai):
+  - Follow the [Checkout-and-Pull-Request](https://opensource.com/article/19/7/create-pull-request-github) workflow when opening your pull request, this will allows the PR to pass to all tests that require [GitHub Secretes](https://docs.github.com/en/actions/security-guides/encrypted-secrets).
+
+Make sure to mention any related issues and tag the relevant maintainers too. 💪
 
 Before your pull request can be merged, it must pass the formatting, linting, and testing checks. You can find instructions on running these checks locally under the **Common Tasks** section below. 🔍
 
