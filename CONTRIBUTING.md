@@ -11,7 +11,7 @@ If you're eager to contribute to this project, that's fantastic! We're thrilled 
 - If you are a contributor from the community:
   - Follow the [Fork-and-Pull-Request](https://docs.github.com/en/get-started/quickstart/contributing-to-projects) workflow when opening your pull requests.
 - If you are a member of [CAMEL-AI.org](https://github.com/camel-ai):
-  - Follow the [Checkout-and-Pull-Request](https://opensource.com/article/19/7/create-pull-request-github) workflow when opening your pull request, this will allows the PR to pass to all tests that require [GitHub Secretes](https://docs.github.com/en/actions/security-guides/encrypted-secrets).
+  - Follow the [Checkout-and-Pull-Request](https://opensource.com/article/19/7/create-pull-request-github) workflow when opening your pull request; this will allow the PR to pass all tests that require [GitHub Secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets).
 
 Make sure to mention any related issues and tag the relevant maintainers too. 💪
 
