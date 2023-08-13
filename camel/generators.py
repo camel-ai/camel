@@ -15,7 +15,7 @@ from typing import Dict, Generator, List, Optional, Set, Tuple
 
 from camel.messages import BaseMessage
 from camel.prompts import PromptTemplateGenerator, TextPrompt
-from camel.typing import DescriptionType, RoleType, TaskType
+from camel.typing import RoleType, TaskType
 
 
 class SystemMessageGenerator:
@@ -29,8 +29,8 @@ class SystemMessageGenerator:
         sys_msg_meta_dict_keys (Optional[Set[str]], optional): The set of keys
             of the meta dictionary used to fill the prompts.
             (default: :obj:`None`)
-        description_type (Optional[DescriptionType], optional): The type of
-            description. (default: :obj:`None`)
+        with_role_description (bool, optional): Whether to include the role
+            description in the system message. (default: :obj:`False`)
     """
 
     def __init__(
@@ -38,7 +38,7 @@ class SystemMessageGenerator:
         task_type: TaskType = TaskType.AI_SOCIETY,
         sys_prompts: Optional[Dict[RoleType, str]] = None,
         sys_msg_meta_dict_keys: Optional[Set[str]] = None,
-        description_type: Optional[DescriptionType] = None,
+        with_role_description: bool = False,
     ) -> None:
         self.sys_prompts: Dict[RoleType, str]
 
@@ -50,12 +50,12 @@ class SystemMessageGenerator:
             ).get_system_prompt(
                 task_type,
                 RoleType.ASSISTANT,
-                description_type=description_type,
+                with_role_description=with_role_description,
             )
             user_prompt_template = PromptTemplateGenerator().get_system_prompt(
                 task_type,
                 RoleType.USER,
-                description_type=description_type,
+                with_role_description=with_role_description,
             )
             critic_prompt_template = PromptTemplateGenerator(
             ).get_system_prompt(
