@@ -34,13 +34,20 @@ class PromptTemplateGenerator:
         self.task_prompt_template_dict = (task_prompt_template_dict
                                           or TaskPromptTemplateDict())
 
-    def get_prompt_from_key(self, task_type: TaskType, key: Any) -> TextPrompt:
+    def get_prompt_from_key(
+        self,
+        task_type: TaskType,
+        key: Any,
+        with_role_description: bool = False,
+    ) -> TextPrompt:
         r"""Generates a text prompt using the specified :obj:`task_type` and
         :obj:`key`.
 
         Args:
             task_type (TaskType): The type of task.
             key (Any): The key used to generate the prompt.
+            with_role_description (bool, optional): Whether to include the
+                role description in the generated prompt. Defaults to False.
 
         Returns:
             TextPrompt: The generated text prompt.
@@ -50,7 +57,14 @@ class PromptTemplateGenerator:
                 :obj:`task_type` and :obj:`key`.
         """
         try:
-            return self.task_prompt_template_dict[task_type][key]
+            if (with_role_description):
+                role_description = self.task_prompt_template_dict[task_type][
+                    "role_description"]
+                task_prompt_template = self.task_prompt_template_dict[
+                    task_type][key]
+                return TextPrompt(role_description + task_prompt_template)
+            else:
+                return self.task_prompt_template_dict[task_type][key]
 
         except KeyError:
             raise KeyError("Failed to get generate prompt template for "
@@ -60,6 +74,7 @@ class PromptTemplateGenerator:
         self,
         task_type: TaskType,
         role_type: RoleType,
+        with_role_description: bool = False,
     ) -> TextPrompt:
         r"""Generates a text prompt for the system role, using the specified
         :obj:`task_type` and :obj:`role_type`.
@@ -68,6 +83,8 @@ class PromptTemplateGenerator:
             task_type (TaskType): The type of task.
             role_type (RoleType): The type of role, either "USER" or
                 "ASSISTANT".
+            with_role_description (bool, optional): Whether to include the
+                role description in the generated prompt. Defaults to False.
 
         Returns:
             TextPrompt: The generated text prompt.
@@ -77,13 +94,14 @@ class PromptTemplateGenerator:
                 :obj:`task_type` and :obj:`role_type`.
         """
         try:
-            return self.get_prompt_from_key(task_type, role_type)
+            return self.get_prompt_from_key(task_type, role_type,
+                                            with_role_description)
 
         except KeyError:
             prompt = "You are a helpful assistant."
 
             warnings.warn("Failed to get system prompt template for "
-                          f"task: {task_type.value}, role: {role_type.value}. "
+                          f"task: {task_type.value}, role: {role_type}. "
                           f"Set template to: {prompt}")
 
         return TextPrompt(prompt)

@@ -115,6 +115,7 @@ class ChatAgent(BaseAgent):
         self.system_message = system_message
         self.role_name: str = system_message.role_name
         self.role_type: RoleType = system_message.role_type
+        self.role_description: Optional[str] = role_description
         self.output_language: Optional[str] = output_language
         if self.output_language is not None:
             self.set_output_language(self.output_language)

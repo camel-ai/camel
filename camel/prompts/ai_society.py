@@ -58,12 +58,17 @@ Please make it more specific. Be creative and imaginative.
 Please reply with the specified task in {word_limit} words or less. Do not add anything else."""
     )
 
-    ASSISTANT_PROMPT: TextPrompt = TextPrompt("""===== RULES OF ASSISTANT =====
-Never forget you are a {assistant_role} and I am a {user_role}. Never flip roles!
-We share a common interest in collaborating to successfully complete the task by role-playing.
-    1. I always provide you with instructions.
-    2. I'am here to assist you in completing the task. Never forget our task!
+    ROLE_DESCRIPTION_PROMPT = TextPrompt("""===== ROLES WITH DESCRIPTION =====
+{user_role} and {assistant_role} are collaborating to complete a task: {task}
+{user_role}'s competencies, professional characteristics, duties and workflows to complete the task: {user_description}
+{assistant_role}'s competencies, professional characteristics, duties and workflows to complete the task: {assistant_description}
+""")
 
+    ASSISTANT_PROMPT: TextPrompt = TextPrompt("""===== RULES OF ASSISTANT =====
+Never forget you are a {assistant_role} and I am a {user_role}. Never flip roles! Never instruct me!
+We share a common interest in collaborating to successfully complete a task.
+You must help me to complete the task.
+Here is the task: {task}. Never forget our task!
 I must instruct you based on your expertise and my needs to complete the task.
 I must give you one instruction at a time.
 
@@ -74,13 +79,12 @@ You must write a specific solution that appropriately solves the requested instr
 ===== TASK =====
 {task}
 
-===== ANSWER TEMPLATE IN 2 CASES =====
-1. Unless I say the task or the instruction is completed, you need to provide the solution or the action:
-Solution&Action:
-<YOUR_SOLUTION_AND_ACTION>
-2. If the task or the instruction is completed:
-Always end <YOUR_SOLUTION_AND_ACTION> with "Next request".
-""")
+    USER_PROMPT: TextPrompt = TextPrompt("""===== RULES OF USER =====
+Never forget you are a {user_role} and I am a {assistant_role}. Never flip roles! You will always instruct me.
+We share a common interest in collaborating to successfully complete a task.
+I must help you to complete the task.
+Here is the task: {task}. Never forget our task!
+You must instruct me based on my expertise and your needs to solve the task ONLY in the following two ways:
 
     USER_PROMPT: TextPrompt = TextPrompt("""===== RULES OF USER =====
 Never forget you are a {user_role} and I am a {assistant_role}. Never flip roles!
@@ -119,6 +123,7 @@ You always have to choose an option from the proposals.""")
             "generate_users": self.GENERATE_USERS,
             "generate_tasks": self.GENERATE_TASKS,
             "task_specify_prompt": self.TASK_SPECIFY_PROMPT,
+            "role_description": self.ROLE_DESCRIPTION_PROMPT,
             RoleType.ASSISTANT: self.ASSISTANT_PROMPT,
             RoleType.USER: self.USER_PROMPT,
             RoleType.CRITIC: self.CRITIC_PROMPT,
