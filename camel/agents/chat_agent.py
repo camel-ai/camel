@@ -122,6 +122,8 @@ class ChatAgent(BaseAgent):
             agent. (default: :obj:`None`)
         function_list (Optional[List[OpenAIFunction]]): List of available
             :obj:`OpenAIFunction`. (default: :obj:`None`)
+        role_description (str, optional): Description of the role
+            :obj:`str`. (default: :obj:`None`)
     """
 
     def __init__(
@@ -132,12 +134,14 @@ class ChatAgent(BaseAgent):
         message_window_size: Optional[int] = None,
         output_language: Optional[str] = None,
         function_list: Optional[List[OpenAIFunction]] = None,
+        role_description: Optional[str] = None,
     ) -> None:
 
         self.orig_sys_message: BaseMessage = system_message
         self.system_message = system_message
         self.role_name: str = system_message.role_name
         self.role_type: RoleType = system_message.role_type
+        self.role_description: Optional[str] = role_description
         self.output_language: Optional[str] = output_language
         if self.output_language is not None:
             self.set_output_language(self.output_language)

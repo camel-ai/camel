@@ -121,12 +121,32 @@ class RolePlaying:
         self.init_planned_task_prompt(task_planner_agent_kwargs,
                                       output_language)
 
+        if (assistant_agent_kwargs is not None
+                and "role_description" in assistant_agent_kwargs
+                and user_agent_kwargs is not None
+                and "role_description" in user_agent_kwargs):
+            with_role_description = True
+        else:
+            with_role_description = False
+
         sys_msg_generator = SystemMessageGenerator(
-            task_type=self.task_type, **(sys_msg_generator_kwargs or {}))
+            task_type=self.task_type,
+            with_role_description=with_role_description,
+            **(sys_msg_generator_kwargs or {}))
+
+        assistant_description = (None if assistant_agent_kwargs is None else
+                                 assistant_agent_kwargs.get(
+                                     "role_description", None))
+        user_description = (None if user_agent_kwargs is None else
+                            user_agent_kwargs.get("role_description", None))
         (init_assistant_sys_msg, init_user_sys_msg,
          sys_msg_meta_dicts) = self.get_sys_message_info(
-             assistant_role_name, user_role_name, sys_msg_generator,
-             extend_sys_msg_meta_dicts)
+             assistant_role_name=assistant_role_name,
+             user_role_name=user_role_name,
+             assistant_description=assistant_description,
+             user_description=user_description,
+             sys_msg_generator=sys_msg_generator,
+             extend_sys_msg_meta_dicts=extend_sys_msg_meta_dicts)
 
         self.assistant_agent: ChatAgent
         self.user_agent: ChatAgent
@@ -139,7 +159,6 @@ class RolePlaying:
             user_agent_kwargs,
             output_language,
         )
-
         self.critic: Optional[Union[CriticAgent, Human]] = None
         self.critic_sys_msg: Optional[BaseMessage] = None
         self.init_critic(critic_role_name, critic_criteria, critic_kwargs,
@@ -219,9 +238,13 @@ class RolePlaying:
             self.planned_task_prompt = None
 
     def get_sys_message_info(
-        self, assistant_role_name: str, user_role_name: str,
+        self,
+        assistant_role_name: str,
+        user_role_name: str,
         sys_msg_generator: SystemMessageGenerator,
-        extend_sys_msg_meta_dicts: Optional[List[Dict]]
+        assistant_description: Optional[str] = None,
+        user_description: Optional[str] = None,
+        extend_sys_msg_meta_dicts: Optional[List[Dict]] = None,
     ) -> Tuple[BaseMessage, BaseMessage, List[Dict]]:
         r"""Get initial assistant and user system message with a list of
         system message meta dicts.
@@ -232,6 +255,9 @@ class RolePlaying:
             user_role_name (str): The name of the role played by the user.
             sys_msg_generator (SystemMessageGenerator): A system message
                 generator for agents.
+            assistant_description (str, optional): The description of the
+                assistant.
+            user_description (str, optional): The description of the user.
             extend_sys_msg_meta_dicts (List[Dict], optional): A list of dicts
                 to extend the system message meta dicts with.
 
@@ -243,10 +269,20 @@ class RolePlaying:
         sys_msg_meta_dicts = [dict(task=self.task_prompt) for _ in range(2)]
         if (extend_sys_msg_meta_dicts is None and self.task_type
                 in [TaskType.AI_SOCIETY, TaskType.MISALIGNMENT]):
-            extend_sys_msg_meta_dicts = [
-                dict(assistant_role=assistant_role_name,
-                     user_role=user_role_name) for _ in range(2)
-            ]
+            if (assistant_description is not None
+                    and user_description is not None):
+                extend_sys_msg_meta_dicts = [
+                    dict(assistant_role=assistant_role_name,
+                         user_role=user_role_name,
+                         assistant_description=assistant_description,
+                         user_description=user_description) for _ in range(2)
+                ]
+            else:
+                extend_sys_msg_meta_dicts = [
+                    dict(assistant_role=assistant_role_name,
+                         user_role=user_role_name) for _ in range(2)
+                ]
+
         if extend_sys_msg_meta_dicts is not None:
             sys_msg_meta_dicts = [{
                 **sys_msg_meta_dict,
@@ -444,7 +480,6 @@ class RolePlaying:
             whether the user agent terminated the conversation, and any
             additional user information.
         """
-
         user_response = self.user_agent.step(assistant_msg)
         if user_response.terminated or user_response.msgs is None:
             return (ChatAgentResponse([], False, {}),
