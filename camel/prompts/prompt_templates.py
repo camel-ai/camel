@@ -15,7 +15,7 @@ import warnings
 from typing import Any, Optional
 
 from camel.prompts import TaskPromptTemplateDict, TextPrompt
-from camel.typing import DescriptionType, RoleType, TaskType
+from camel.typing import RoleType, TaskType
 
 
 class PromptTemplateGenerator:
@@ -38,7 +38,7 @@ class PromptTemplateGenerator:
         self,
         task_type: TaskType,
         key: Any,
-        description_type: Optional[DescriptionType] = None,
+        with_role_description: bool = False,
     ) -> TextPrompt:
         r"""Generates a text prompt using the specified :obj:`task_type` and
         :obj:`key`.
@@ -46,8 +46,8 @@ class PromptTemplateGenerator:
         Args:
             task_type (TaskType): The type of task.
             key (Any): The key used to generate the prompt.
-            description_type (DescriptionType, optional): The type of
-                description. Defaults to None.
+            with_role_description (bool, optional): Whether to include the
+                role description in the generated prompt. Defaults to False.
 
         Returns:
             TextPrompt: The generated text prompt.
@@ -57,12 +57,9 @@ class PromptTemplateGenerator:
                 :obj:`task_type` and :obj:`key`.
         """
         try:
-            if (description_type is not None
-                    and task_type == TaskType.AI_SOCIETY
-                    and key in {RoleType.USER, RoleType.ASSISTANT}):
-                description_type = DescriptionType.DEFAULT
+            if (with_role_description):
                 role_description = self.task_prompt_template_dict[task_type][
-                    description_type]
+                    "role_description"]
                 task_prompt_template = self.task_prompt_template_dict[
                     task_type][key]
                 return TextPrompt(role_description + task_prompt_template)
@@ -77,7 +74,7 @@ class PromptTemplateGenerator:
         self,
         task_type: TaskType,
         role_type: RoleType,
-        description_type: Optional[DescriptionType] = None,
+        with_role_description: bool = False,
     ) -> TextPrompt:
         r"""Generates a text prompt for the system role, using the specified
         :obj:`task_type` and :obj:`role_type`.
@@ -86,8 +83,8 @@ class PromptTemplateGenerator:
             task_type (TaskType): The type of task.
             role_type (RoleType): The type of role, either "USER" or
                 "ASSISTANT".
-            description_type (DescriptionType, optional): The type of
-                description. Defaults to None.
+            with_role_description (bool, optional): Whether to include the
+                role description in the generated prompt. Defaults to False.
 
         Returns:
             TextPrompt: The generated text prompt.
@@ -98,7 +95,7 @@ class PromptTemplateGenerator:
         """
         try:
             return self.get_prompt_from_key(task_type, role_type,
-                                            description_type)
+                                            with_role_description)
 
         except KeyError:
             prompt = "You are a helpful assistant."

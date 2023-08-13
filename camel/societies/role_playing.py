@@ -26,7 +26,7 @@ from camel.generators import SystemMessageGenerator
 from camel.human import Human
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
-from camel.typing import DescriptionType, ModelType, RoleType, TaskType
+from camel.typing import ModelType, RoleType, TaskType
 
 
 class RolePlaying:
@@ -125,13 +125,13 @@ class RolePlaying:
                 and "role_description" in assistant_agent_kwargs
                 and user_agent_kwargs is not None
                 and "role_description" in user_agent_kwargs):
-            # supposing that the description type is default here
-            description_type = DescriptionType.DEFAULT
+            with_role_description = True
         else:
-            description_type = None
+            with_role_description = False
 
         sys_msg_generator = SystemMessageGenerator(
-            task_type=self.task_type, description_type=description_type,
+            task_type=self.task_type,
+            with_role_description=with_role_description,
             **(sys_msg_generator_kwargs or {}))
 
         assistant_description = (None if assistant_agent_kwargs is None else
