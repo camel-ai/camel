@@ -29,7 +29,6 @@ from .token_counting import (
 )
 
 __all__ = [
-    'get_model_encoding',
     'count_tokens_openai_chat_models',
     'openai_api_key_required',
     'print_text_animated',

@@ -82,7 +82,7 @@ class ModelType(Enum):
         else:
             raise ValueError("Unknown model type")
 
-    def match_model(self, model_name: str) -> bool:
+    def validate_model_name(self, model_name: str) -> bool:
         r"""Checks whether the model type and the model name matches.
 
         Args:

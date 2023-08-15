@@ -57,14 +57,10 @@ class ModelFactory:
             model_class = OpenAIModel
         elif model_type == ModelType.STUB:
             model_class = StubModel
-        elif model_type in {
-                ModelType.LLAMA_2,
-                ModelType.VICUNA,
-                ModelType.VICUNA_16K,
-        }:
+        elif model_type.is_open_source:
             model_class = OpenSourceModel
         else:
-            raise ValueError("Unknown model")
+            raise ValueError(f"Unknown model type `{model_type}` is input")
 
         inst = model_class(model_type, model_config_dict)
         return inst

@@ -22,14 +22,16 @@ from camel.utils import TokenCounterFactory
 
 
 class OpenSourceModel(BaseModelBackend):
-    r"""OpenAI API in a unified BaseModelBackend interface."""
+    r"""Class for interace with OpenAI-API-compatible servers running
+    open-source models.
+    """
 
     def __init__(
         self,
         model_type: ModelType,
         model_config_dict: Dict[str, Any],
     ) -> None:
-        r"""Constructor for OpenAI backend.
+        r"""Constructor for model backends of Open-source models.
 
         Args:
             model_type (ModelType): Model for which a backend is created,
@@ -42,23 +44,23 @@ class OpenSourceModel(BaseModelBackend):
         # Check whether the input model type is open-source
         if not model_type.is_open_source:
             raise ValueError(
-                f"Model {model_type} is not a supported open-source model")
+                f"Model `{model_type}` is not a supported open-source model")
 
         # Check whether a path to the model is provided
         if "model_path" not in model_config_dict:
-            raise ValueError(
-                "Open-source model is requested but no model path is provided")
+            raise ValueError("Open-source model is requested but no"
+                             " `model_path` is provided")
         model_path = self.model_config_dict.pop("model_path")
 
         # Check whether the model name matches the model type
         self.model_name: str
         self.model_name = model_path.split('/')[-1]
-        if not self.model_type.match_model(self.model_name):
+        if not self.model_type.validate_model_name(self.model_name):
             raise ValueError(
-                f"Model name {self.model_name} does not match model type "
-                f"{self.model_type.value}.")
+                f"Model name `{self.model_name}` does not match model type "
+                f"`{self.model_type.value}`.")
 
-        # initialize token counter
+        # Initialize token counter
         self.token_counter = TokenCounterFactory.create(
             model_type,
             kwargs={"model_path": model_path},

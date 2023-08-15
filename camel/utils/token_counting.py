@@ -14,9 +14,6 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
-import tiktoken
-from transformers import AutoTokenizer
-
 from camel.messages import OpenAIMessage
 from camel.typing import ModelType
 
@@ -81,6 +78,7 @@ def get_model_encoding(value_for_tiktoken: str):
     Returns:
         tiktoken.Encoding: Model encoding.
     """
+    import tiktoken
     try:
         encoding = tiktoken.encoding_for_model(value_for_tiktoken)
     except KeyError:
@@ -117,6 +115,11 @@ class OpenSourceTokenCounter(BaseTokenCounter):
             model_path (str): The path to the model files, where the tokenizer
                 model should be located.
         """
+
+        # Use a fast Rust-based tokenizer if it is supported for a given model.
+        # If a fast tokenizer is not available for a given model,
+        # a normal Python-based tokenizer is returned instead.
+        from transformers import AutoTokenizer
         try:
             tokenizer = AutoTokenizer.from_pretrained(
                 model_path,
@@ -185,7 +188,7 @@ class OpenAITokenCounter(BaseTokenCounter):
 
     def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
         r"""Count number of tokens in the provided message list with the
-        help of package tiktoken
+        help of package tiktoken.
 
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history

@@ -287,14 +287,16 @@ class RolePlaying:
                 agents.
         """
         if self.assistant_functions is not None:
-            assistant_config = FunctionCallingConfig.from_openai_function_list(
-                function_list=self.assistant_functions,
-                function_call="auto",
-            )
+            assistant_model_config = \
+                FunctionCallingConfig.from_openai_function_list(
+                    function_list=self.assistant_functions,
+                    function_call="auto",
+                )
         elif assistant_agent_kwargs:
-            assistant_config = assistant_agent_kwargs.pop("model_config", None)
+            assistant_model_config = assistant_agent_kwargs.pop(
+                "model_config", None)
         else:
-            assistant_config = None
+            assistant_model_config = None
 
         if self.model_type is not None:
             if assistant_agent_kwargs is None:
@@ -306,7 +308,7 @@ class RolePlaying:
 
         self.assistant_agent = ChatAgent(
             init_assistant_sys_msg,
-            model_config=assistant_config,
+            model_config=assistant_model_config,
             output_language=output_language,
             function_list=self.assistant_functions,
             **(assistant_agent_kwargs or {}),
