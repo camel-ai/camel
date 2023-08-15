@@ -57,7 +57,7 @@ class PromptTemplateGenerator:
                 :obj:`task_type` and :obj:`key`.
         """
         try:
-            if (with_role_description):
+            if with_role_description:
                 role_description = self.task_prompt_template_dict[task_type][
                     "role_description"]
                 task_prompt_template = self.task_prompt_template_dict[
