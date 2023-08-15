@@ -133,12 +133,9 @@ class RolePlaying:
                             user_agent_kwargs.get("role_description", None))
         (init_assistant_sys_msg, init_user_sys_msg,
          sys_msg_meta_dicts) = self.get_sys_message_info(
-             assistant_role_name=assistant_role_name,
-             user_role_name=user_role_name,
-             assistant_description=assistant_description,
-             user_description=user_description,
-             sys_msg_generator=sys_msg_generator,
-             extend_sys_msg_meta_dicts=extend_sys_msg_meta_dicts)
+             assistant_role_name, user_role_name, sys_msg_generator,
+             assistant_description, user_description,
+             extend_sys_msg_meta_dicts)
 
         self.assistant_agent: ChatAgent
         self.user_agent: ChatAgent
@@ -269,11 +266,15 @@ class RolePlaying:
                          assistant_description=assistant_description,
                          user_description=user_description) for _ in range(2)
                 ]
-            else:
+            elif (assistant_description is None and user_description is None):
                 extend_sys_msg_meta_dicts = [
                     dict(assistant_role=assistant_role_name,
                          user_role=user_role_name) for _ in range(2)
                 ]
+            else:
+                raise ValueError(
+                    "Both assistant and user descriptions should "
+                    "either be 'None' or both should have values.")
 
         if extend_sys_msg_meta_dicts is not None:
             sys_msg_meta_dicts = [{
