@@ -128,3 +128,8 @@ class FunctionCallingConfig(ChatGPTConfig):
             functions=[func.as_dict() for func in function_list],
             function_call=function_call,
         )
+
+
+@dataclass(frozen=True)
+class OpenSourceConfig(ChatGPTConfig):
+    model_path: str = ""

@@ -13,6 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from colorama import Fore
 
+from camel.configs import OpenSourceConfig
 from camel.societies import RolePlaying
 from camel.typing import ModelType
 from camel.utils import print_text_animated
@@ -20,23 +21,24 @@ from camel.utils import print_text_animated
 
 def main(model_type=None) -> None:
     task_prompt = "Develop a trading bot for the stock market"
+    model_path = "meta-llama/Llama-2-7b-chat-hf"
 
-    # only tokenizer-related files will be downloaded
-    assist_model_path = "meta-llama/Llama-2-7b-chat-hf"
-    assist_model_type = model_type
-    assist_kwargs = dict(model=assist_model_type, model_path=assist_model_path)
-
-    other_model_type = \
-        ModelType.GPT_4 if model_type != ModelType.STUB else model_type
+    num_agents = 3
+    agent_kwargs = [
+        dict(
+            model=model_type,
+            model_config=OpenSourceConfig(model_path=model_path),
+        ) for _ in range(0, num_agents)
+    ]
 
     role_play_session = RolePlaying(
         assistant_role_name="Python Programmer",
-        assistant_agent_kwargs=assist_kwargs,
+        assistant_agent_kwargs=agent_kwargs[0],
         user_role_name="Stock Trader",
-        user_agent_kwargs=dict(model=other_model_type),
+        user_agent_kwargs=agent_kwargs[1],
         task_prompt=task_prompt,
         with_task_specify=True,
-        task_specify_agent_kwargs=dict(model=other_model_type),
+        task_specify_agent_kwargs=agent_kwargs[2],
     )
 
     print(

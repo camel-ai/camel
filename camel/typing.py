@@ -46,8 +46,11 @@ class ModelType(Enum):
             bool: Whether this type of models is open-source.
         """
         if self.name in {
-                "GPT_3_5_TURBO", "GPT_3_5_TURBO_16K", "GPT_4", "GPT_4_32k",
-                "STUB"
+                "GPT_3_5_TURBO",
+                "GPT_3_5_TURBO_16K",
+                "GPT_4",
+                "GPT_4_32k",
+                "STUB",
         }:
             return False
         else:

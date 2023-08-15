@@ -12,11 +12,12 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from types import GeneratorType
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.typing import ModelType
+from camel.utils import TokenCounterFactory
 
 DEFAULT_API_BASE = "https://api.openai.com/v1"
 
@@ -24,9 +25,11 @@ DEFAULT_API_BASE = "https://api.openai.com/v1"
 class OpenAIModel(BaseModelBackend):
     r"""OpenAI API in a unified BaseModelBackend interface."""
 
-    def __init__(self, model_type: ModelType, model_config_dict: Dict[str,
-                                                                      Any],
-                 model_path: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        model_type: ModelType,
+        model_config_dict: Dict[str, Any],
+    ) -> None:
         r"""Constructor for OpenAI backend.
 
         Args:
@@ -34,10 +37,14 @@ class OpenAIModel(BaseModelBackend):
                 one of GPT_* series.
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into openai.ChatCompletion.create().
-            model_path (Optional[str]): The path to the model files, not
-                applicable for the OpenAI models. (default: :obj:`None`)
         """
-        super().__init__(model_type, model_config_dict, model_path)
+        super().__init__(model_type, model_config_dict)
+
+        if "model_path" in model_config_dict:
+            raise ValueError(
+                "Invalid argument `model_path` is fed into OpenAI model")
+
+        self.token_counter = TokenCounterFactory.create(model_type, {})
 
     def run(
         self,

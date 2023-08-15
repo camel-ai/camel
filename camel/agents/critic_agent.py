@@ -53,7 +53,7 @@ class CriticAgent(ChatAgent):
         verbose: bool = False,
         logger_color: Any = Fore.MAGENTA,
     ) -> None:
-        super().__init__(system_message=system_message, model=model,
+        super().__init__(system_message, model=model,
                          model_config=model_config,
                          message_window_size=message_window_size)
         self.options_dict: Dict[str, str] = dict()

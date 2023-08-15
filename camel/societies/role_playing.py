@@ -278,8 +278,10 @@ class RolePlaying:
                 function_list=self.assistant_functions,
                 function_call="auto",
             )
+        elif assistant_agent_kwargs:
+            assistant_config = assistant_agent_kwargs.pop("model_config", None)
         else:
-            assistant_config = None
+            assistant_agent_kwargs = None
 
         self.assistant_agent = ChatAgent(
             init_assistant_sys_msg,

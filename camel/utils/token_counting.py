@@ -20,15 +20,6 @@ from transformers import AutoTokenizer
 from camel.messages import OpenAIMessage
 from camel.typing import ModelType
 
-OPENAI_MODEL_VALUES = {
-    "gpt-3.5-turbo-0613",
-    "gpt-3.5-turbo-16k-0613",
-    "gpt-4-0314",
-    "gpt-4-32k-0314",
-    "gpt-4-0613",
-    "gpt-4-32k-0613",
-}
-
 
 def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
     r"""Parse the message list into a single prompt following model-specifc
@@ -242,19 +233,7 @@ class TokenCounterFactory:
         Returns:
             BaseTokenCounter: The initialized token counter object.
         """
-        if model_type in {
-                ModelType.GPT_3_5_TURBO,
-                ModelType.GPT_3_5_TURBO_16K,
-                ModelType.GPT_4,
-                ModelType.GPT_4_32k,
-                ModelType.STUB,
-        }:
+        if not model_type.is_open_source:
             return OpenAITokenCounter(model_type)
-        elif model_type in {
-                ModelType.LLAMA_2,
-                ModelType.VICUNA,
-                ModelType.VICUNA_16K,
-        }:
-            return OpenSourceTokenCounter(model_type, **kwargs)
         else:
-            raise ValueError("Unknown model")
+            return OpenSourceTokenCounter(model_type, **kwargs)
