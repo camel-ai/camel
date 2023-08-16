@@ -19,7 +19,6 @@ from camel.typing import ModelType
 from camel.utils import OpenSourceTokenCounter
 
 MODEL_PATH_MAP = {
-    ModelType.LLAMA_2: "meta-llama/Llama-2-7b-chat-hf",
     ModelType.VICUNA: "lmsys/vicuna-7b-v1.5",
     ModelType.VICUNA_16K: "lmsys/vicuna-7b-v1.5-16k",
 }
@@ -27,7 +26,6 @@ MODEL_PATH_MAP = {
 
 @pytest.mark.model_backend
 @pytest.mark.parametrize("model_type", [
-    ModelType.LLAMA_2,
     ModelType.VICUNA,
     ModelType.VICUNA_16K,
 ])
@@ -56,8 +54,8 @@ def test_open_source_model(model_type):
 
 @pytest.mark.model_backend
 def test_open_source_model_invalid_model_path():
-    model_type = ModelType.LLAMA_2
-    model_path = "Llama-2-7b-chat-hf"
+    model_type = ModelType.VICUNA
+    model_path = "vicuna-7b-v1.5"
     model_config = OpenSourceConfig(
         model_path=model_path,
         server_url="http://localhost:8000/v1",
@@ -67,7 +65,7 @@ def test_open_source_model_invalid_model_path():
     import re
     with pytest.raises(
             ValueError, match=re.escape(
-                ("Invalid `model_path` (Llama-2-7b-chat-hf) is provided. "
+                ("Invalid `model_path` (vicuna-7b-v1.5) is provided. "
                  "Tokenizer loading failed"))):
         _ = OpenSourceModel(model_type, model_config_dict)
 
@@ -91,8 +89,8 @@ def test_open_source_model_unmatched_model_path():
 
 @pytest.mark.model_backend
 def test_open_source_model_missing_server_url():
-    model_type = ModelType.LLAMA_2
-    model_path = "meta-llama/Llama-2-7b-chat-hf"
+    model_type = ModelType.VICUNA
+    model_path = "lmsys/vicuna-7b-v1.5"
     model_config = OpenSourceConfig(model_path=model_path, )
     model_config_dict = model_config.__dict__
 
