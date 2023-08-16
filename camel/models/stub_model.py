@@ -15,21 +15,17 @@ from typing import Any, Dict, List
 
 from camel.models import BaseModelBackend
 from camel.typing import ModelType
-from camel.utils import TokenCounterFactory
+from camel.utils import BaseTokenCounter, OpenAITokenCounter
 
 
 class StubModel(BaseModelBackend):
     r"""A dummy model used for unit tests."""
     model_type = ModelType.STUB
 
-    def __init__(
-        self,
-        model_type: ModelType,
-        model_config_dict: Dict[str, Any],
-    ) -> None:
+    def __init__(self, model_type: ModelType,
+                 model_config_dict: Dict[str, Any]) -> None:
         r"""All arguments are unused for the dummy model."""
         super().__init__(model_type, model_config_dict)
-        self.token_counter = TokenCounterFactory.create(model_type, {})
 
     def run(self, messages: List[Dict]) -> Dict[str, Any]:
         r"""Run fake inference by returning a fixed string.
@@ -48,3 +44,12 @@ class StubModel(BaseModelBackend):
                      message=dict(content=ARBITRARY_STRING, role="assistant"))
             ],
         )
+
+    def initialize_token_counter(self) -> BaseTokenCounter:
+        r"""Initialize the token counter for stub model backend.
+
+        Returns:
+            BaseTokenCounter: The token counter following OpenAI models'
+                tokenization style.
+        """
+        return OpenAITokenCounter(self.model_type)

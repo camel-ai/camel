@@ -26,7 +26,6 @@ from .token_counting import (
     BaseTokenCounter,
     OpenAITokenCounter,
     OpenSourceTokenCounter,
-    TokenCounterFactory,
 )
 
 __all__ = [
@@ -43,5 +42,4 @@ __all__ = [
     'BaseTokenCounter',
     'OpenAITokenCounter',
     'OpenSourceTokenCounter',
-    'TokenCounterFactory',
 ]

@@ -67,7 +67,8 @@ def test_open_source_model_invalid_model_path():
             ValueError, match=re.escape(
                 ("Invalid `model_path` (vicuna-7b-v1.5) is provided. "
                  "Tokenizer loading failed"))):
-        _ = OpenSourceModel(model_type, model_config_dict)
+        model = OpenSourceModel(model_type, model_config_dict)
+        _ = model.token_counter
 
 
 @pytest.mark.model_backend
@@ -88,13 +89,27 @@ def test_open_source_model_unmatched_model_path():
 
 
 @pytest.mark.model_backend
+def test_open_source_model_missing_model_path():
+    model_type = ModelType.VICUNA
+    model_config = OpenSourceConfig(
+        model_path=None,
+        server_url="http://localhost:8000/v1",
+    )
+    model_config_dict = model_config.__dict__
+
+    with pytest.raises(ValueError,
+                       match=("Path to open-source model is not provided.")):
+        _ = OpenSourceModel(model_type, model_config_dict)
+
+
+@pytest.mark.model_backend
 def test_open_source_model_missing_server_url():
     model_type = ModelType.VICUNA
     model_path = "lmsys/vicuna-7b-v1.5"
-    model_config = OpenSourceConfig(model_path=model_path, )
+    model_config = OpenSourceConfig(model_path=model_path, server_url=None)
     model_config_dict = model_config.__dict__
 
     with pytest.raises(
             ValueError,
-            match=("URL to server running open-source LLM is missing.")):
+            match=("URL to server running open-source LLM is not provided.")):
         _ = OpenSourceModel(model_type, model_config_dict)

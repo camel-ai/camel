@@ -17,7 +17,7 @@ from typing import Any, Dict, List
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.typing import ModelType
-from camel.utils import TokenCounterFactory
+from camel.utils import BaseTokenCounter, OpenAITokenCounter
 
 DEFAULT_API_BASE = "https://api.openai.com/v1"
 
@@ -25,11 +25,8 @@ DEFAULT_API_BASE = "https://api.openai.com/v1"
 class OpenAIModel(BaseModelBackend):
     r"""OpenAI API in a unified BaseModelBackend interface."""
 
-    def __init__(
-        self,
-        model_type: ModelType,
-        model_config_dict: Dict[str, Any],
-    ) -> None:
+    def __init__(self, model_type: ModelType,
+                 model_config_dict: Dict[str, Any]) -> None:
         r"""Constructor for OpenAI backend.
 
         Args:
@@ -39,12 +36,6 @@ class OpenAIModel(BaseModelBackend):
                 be fed into openai.ChatCompletion.create().
         """
         super().__init__(model_type, model_config_dict)
-
-        if "model_path" in model_config_dict:
-            raise ValueError(
-                "Invalid argument `model_path` is fed into OpenAI model")
-
-        self.token_counter = TokenCounterFactory.create(model_type, {})
 
     def run(
         self,
@@ -73,6 +64,15 @@ class OpenAIModel(BaseModelBackend):
             if not isinstance(response, GeneratorType):
                 raise RuntimeError("Unexpected stream return from OpenAI API")
         return response
+
+    def initialize_token_counter(self) -> BaseTokenCounter:
+        r"""Initialize the token counter for OpenAI model backend.
+
+        Returns:
+            BaseTokenCounter: The token counter following OpenAI models'
+                tokenization style.
+        """
+        return OpenAITokenCounter(self.model_type)
 
     @property
     def stream(self) -> bool:

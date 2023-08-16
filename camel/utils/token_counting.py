@@ -212,35 +212,3 @@ class OpenAITokenCounter(BaseTokenCounter):
         # every reply is primed with <|start|>assistant<|message|>
         num_tokens += 3
         return num_tokens
-
-
-class TokenCounterFactory:
-    r"""Factory of token counters
-
-    Raises:
-        ValueError: in case the token counter is not defined for
-            the provided model.
-    """
-
-    @staticmethod
-    def create(model_type: ModelType, kwargs: Dict[str,
-                                                   Any]) -> BaseTokenCounter:
-        r"""Creates an instance of `BaseTokenCounter` of the specified type.
-
-        Args:
-            model_type (ModelType): Model for which a token counter
-                is created.
-            kwargs (Dict[str, Any]): A dictionary containing additional
-                information, such as the path to the model (tokenizer).
-
-        Raises:
-            ValueError: If the token counter is not defined for this type
-                of model.
-
-        Returns:
-            BaseTokenCounter: The initialized token counter object.
-        """
-        if not model_type.is_open_source:
-            return OpenAITokenCounter(model_type)
-        else:
-            return OpenSourceTokenCounter(model_type, **kwargs)

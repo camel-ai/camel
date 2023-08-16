@@ -17,7 +17,7 @@ from typing import Any, Dict, List
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.typing import ModelType
-from camel.utils import TokenCounterFactory
+from camel.utils import BaseTokenCounter, OpenSourceTokenCounter
 
 
 class OpenSourceModel(BaseModelBackend):
@@ -40,38 +40,46 @@ class OpenSourceModel(BaseModelBackend):
         """
         super().__init__(model_type, model_config_dict)
 
-        import copy
-        self.model_config_dict = copy.copy(model_config_dict)
-
         # Check whether the input model type is open-source
         if not model_type.is_open_source:
             raise ValueError(
                 f"Model `{model_type}` is not a supported open-source model")
 
         # Check whether input model path is empty
-        model_path: str = self.model_config_dict.pop("model_path")
-        if model_path == "":
-            raise ValueError(
-                "Input `model_path` to open-source model is empty.")
+        model_path: str | None = self.model_config_dict.get("model_path", None)
+        if not model_path:
+            raise ValueError("Path to open-source model is not provided.")
+        self.model_path: str = model_path
 
         # Check whether the model name matches the model type
-        self.model_name: str = model_path.split('/')[-1]
+        self.model_name: str = self.model_path.split('/')[-1]
         if not self.model_type.validate_model_name(self.model_name):
             raise ValueError(
                 f"Model name `{self.model_name}` does not match model type "
                 f"`{self.model_type.value}`.")
 
-        # Initialize token counter
-        self.token_counter = TokenCounterFactory.create(
-            model_type,
-            kwargs={"model_path": model_path},
-        )
-
-        server_url = self.model_config_dict.pop("server_url")
-        if server_url == "":
+        # Load the server URL and check whether it is None
+        server_url: str | None = self.model_config_dict.get("server_url", None)
+        if not server_url:
             raise ValueError(
-                "URL to server running open-source LLM is missing.")
+                "URL to server running open-source LLM is not provided.")
         self.server_url: str = server_url
+
+        # Reassemble the argument dictionary to be passed to the API
+        self.model_config_dict = {
+            key: value
+            for key, value in self.model_config_dict.items()
+            if key != "model_path" and key != "server_url"
+        }
+
+    def initialize_token_counter(self) -> BaseTokenCounter:
+        r"""Initialize the token counter for open-source model backends.
+
+        Returns:
+            BaseTokenCounter: The token counter following the provided
+                open-source model's tokenization style.
+        """
+        return OpenSourceTokenCounter(self.model_type, self.model_path)
 
     def run(
         self,

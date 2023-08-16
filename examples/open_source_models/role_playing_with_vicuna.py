@@ -22,24 +22,27 @@ from camel.utils import print_text_animated
 def main(model_type=None) -> None:
     task_prompt = "Develop a trading bot for the stock market"
     model_path = "lmsys/vicuna-7b-v1.5"
-
     server_url = "http://localhost:8000/v1"
-    agent_kwargs = dict(
-        model=model_type,
-        model_config=OpenSourceConfig(
-            model_path=model_path,
-            server_url=server_url,
-        ),
-    )
+
+    agent_kwargs = {
+        role: dict(
+            model=model_type,
+            model_config=OpenSourceConfig(
+                model_path=model_path,
+                server_url=server_url,
+            ),
+        )
+        for role in ["assistant", "user", "task-specify"]
+    }
 
     role_play_session = RolePlaying(
         assistant_role_name="Python Programmer",
-        assistant_agent_kwargs=agent_kwargs,
+        assistant_agent_kwargs=agent_kwargs["assistant"],
         user_role_name="Stock Trader",
-        user_agent_kwargs=agent_kwargs,
+        user_agent_kwargs=agent_kwargs["user"],
         task_prompt=task_prompt,
         with_task_specify=True,
-        task_specify_agent_kwargs=agent_kwargs,
+        task_specify_agent_kwargs=agent_kwargs["task-specify"],
     )
 
     print(

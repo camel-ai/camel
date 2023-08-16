@@ -30,15 +30,13 @@ class ModelFactory:
     """
 
     @staticmethod
-    def create(
-        model_type: ModelType,
-        model_config_dict: Dict,
-    ) -> BaseModelBackend:
+    def create(model_type: ModelType,
+               model_config_dict: Dict) -> BaseModelBackend:
         r"""Creates an instance of `BaseModelBackend` of the specified type.
 
         Args:
             model_type (ModelType): Model for which a backend is created.
-            model_config_dict (Dict): a dictionary that will be fed into
+            model_config_dict (Dict): A dictionary that will be fed into
                 the backend constructor.
 
         Raises:

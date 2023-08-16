@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from camel.typing import ModelType
 from camel.utils import BaseTokenCounter
@@ -23,11 +23,8 @@ class BaseModelBackend(ABC):
     May be OpenAI API, a local LLM, a stub for unit tests, etc.
     """
 
-    def __init__(
-        self,
-        model_type: ModelType,
-        model_config_dict: Dict[str, Any],
-    ) -> None:
+    def __init__(self, model_type: ModelType,
+                 model_config_dict: Dict[str, Any]) -> None:
         r"""Constructor for the model backend.
 
         Args:
@@ -36,7 +33,19 @@ class BaseModelBackend(ABC):
         """
         self.model_type = model_type
         self.model_config_dict = model_config_dict
-        self.token_counter: BaseTokenCounter
+        self._token_counter: Optional[BaseTokenCounter] = None
+
+    @property
+    def token_counter(self) -> BaseTokenCounter:
+        r"""Initialize the token counter for the model backend.
+
+        Returns:
+            BaseTokenCounter: The token counter following the model's
+                tokenization style.
+        """
+        if not self._token_counter:
+            self._token_counter = self.initialize_token_counter()
+        return self._token_counter
 
     @abstractmethod
     def run(self, messages: List[Dict]) -> Dict[str, Any]:
@@ -52,6 +61,16 @@ class BaseModelBackend(ABC):
 
         Returns:
             Dict[str, Any]: All backends must return a dict in OpenAI format.
+        """
+        pass
+
+    @abstractmethod
+    def initialize_token_counter(self) -> BaseTokenCounter:
+        r"""Initialize the token counter for OpenAI model backend.
+
+        Returns:
+            BaseTokenCounter: The token counter following OpenAI models'
+                tokenization style.
         """
         pass
 
