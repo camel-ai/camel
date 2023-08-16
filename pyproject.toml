@@ -34,9 +34,9 @@ jsonschema = "^4"
 types-colorama = "^0"
 types-requests = "^2"
 bs4 = "^0"
+protobuf = ^4"
 
 transformers = { version = "^4", optional = true }
-protobuf = { version = "^4", optional = true }
 diffusers = { version = "^0", optional = true }
 accelerate = { version = "^0", optional = true }
 datasets = { version = "^2", optional = true }
