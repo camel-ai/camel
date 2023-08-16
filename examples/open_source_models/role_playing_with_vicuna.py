@@ -23,22 +23,23 @@ def main(model_type=None) -> None:
     task_prompt = "Develop a trading bot for the stock market"
     model_path = "lmsys/vicuna-7b-v1.5"
 
-    num_agents = 3
-    agent_kwargs = [
-        dict(
-            model=model_type,
-            model_config=OpenSourceConfig(model_path=model_path),
-        ) for _ in range(0, num_agents)
-    ]
+    server_url = "http://localhost:8000/v1"
+    agent_kwargs = dict(
+        model=model_type,
+        model_config=OpenSourceConfig(
+            model_path=model_path,
+            server_url=server_url,
+        ),
+    )
 
     role_play_session = RolePlaying(
         assistant_role_name="Python Programmer",
-        assistant_agent_kwargs=agent_kwargs[0],
+        assistant_agent_kwargs=agent_kwargs,
         user_role_name="Stock Trader",
-        user_agent_kwargs=agent_kwargs[1],
+        user_agent_kwargs=agent_kwargs,
         task_prompt=task_prompt,
         with_task_specify=True,
-        task_specify_agent_kwargs=agent_kwargs[2],
+        task_specify_agent_kwargs=agent_kwargs,
     )
 
     print(

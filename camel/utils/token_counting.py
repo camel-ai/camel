@@ -106,7 +106,7 @@ class BaseTokenCounter(ABC):
 
 class OpenSourceTokenCounter(BaseTokenCounter):
 
-    def __init__(self, model: ModelType, model_path: str):
+    def __init__(self, model_type: ModelType, model_path: str):
         r"""Constructor for the token counter for open-source models.
 
         Args:
@@ -130,9 +130,13 @@ class OpenSourceTokenCounter(BaseTokenCounter):
                 model_path,
                 use_fast=False,
             )
+        except:
+            raise ValueError(
+                f"Invalid `model_path` ({model_path}) is provided. "
+                "Tokenizer loading failed")
 
         self.tokenizer = tokenizer
-        self.model_type = model
+        self.model_type = model_type
 
     def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
         r"""Count number of tokens in the provided message list using

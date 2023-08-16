@@ -286,6 +286,9 @@ class RolePlaying:
             output_language (str, optional): The language to be output by the
                 agents.
         """
+        import copy
+        assistant_agent_kwargs = copy.deepcopy(assistant_agent_kwargs)
+
         if self.assistant_functions is not None:
             assistant_model_config = \
                 FunctionCallingConfig.from_openai_function_list(

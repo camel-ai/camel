@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import os
 from types import GeneratorType
 from typing import Any, Dict, List
 
@@ -41,20 +40,22 @@ class OpenSourceModel(BaseModelBackend):
         """
         super().__init__(model_type, model_config_dict)
 
+        import copy
+        self.model_config_dict = copy.copy(model_config_dict)
+
         # Check whether the input model type is open-source
         if not model_type.is_open_source:
             raise ValueError(
                 f"Model `{model_type}` is not a supported open-source model")
 
-        # Check whether a path to the model is provided
-        if "model_path" not in model_config_dict:
-            raise ValueError("Open-source model is requested but no"
-                             " `model_path` is provided")
-        model_path = self.model_config_dict.pop("model_path")
+        # Check whether input model path is empty
+        model_path: str = self.model_config_dict.pop("model_path")
+        if model_path == "":
+            raise ValueError(
+                "Input `model_path` to open-source model is empty.")
 
         # Check whether the model name matches the model type
-        self.model_name: str
-        self.model_name = model_path.split('/')[-1]
+        self.model_name: str = model_path.split('/')[-1]
         if not self.model_type.validate_model_name(self.model_name):
             raise ValueError(
                 f"Model name `{self.model_name}` does not match model type "
@@ -66,14 +67,10 @@ class OpenSourceModel(BaseModelBackend):
             kwargs={"model_path": model_path},
         )
 
-        # The URL to the server running the model is obtained from
-        # environmental variable 'OPENAI_API_BASE'
-        server_url = os.environ.get('OPENAI_API_BASE')
-        if server_url is None:
+        server_url = self.model_config_dict.pop("server_url")
+        if server_url == "":
             raise ValueError(
-                "URL to server running open-source LLM is missing. "
-                "Please specify the URL in environmental variable "
-                "OPENAI_API_BASE.")
+                "URL to server running open-source LLM is missing.")
         self.server_url: str = server_url
 
     def run(

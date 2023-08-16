@@ -25,6 +25,7 @@ from .token_counting import (
     get_model_encoding,
     BaseTokenCounter,
     OpenAITokenCounter,
+    OpenSourceTokenCounter,
     TokenCounterFactory,
 )
 
@@ -41,5 +42,6 @@ __all__ = [
     'get_model_encoding',
     'BaseTokenCounter',
     'OpenAITokenCounter',
+    'OpenSourceTokenCounter',
     'TokenCounterFactory',
 ]

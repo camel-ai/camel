@@ -133,3 +133,4 @@ class FunctionCallingConfig(ChatGPTConfig):
 @dataclass(frozen=True)
 class OpenSourceConfig(ChatGPTConfig):
     model_path: str = ""
+    server_url: str = ""
