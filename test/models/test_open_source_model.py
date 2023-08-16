@@ -53,6 +53,7 @@ def test_open_source_model(model_type):
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
 
+
 @pytest.mark.model_backend
 def test_open_source_model_invalid_model_path():
     model_type = ModelType.LLAMA_2
@@ -65,11 +66,9 @@ def test_open_source_model_invalid_model_path():
 
     import re
     with pytest.raises(
-        ValueError,
-        match=re.escape(
-            ("Invalid `model_path` (Llama-2-7b-chat-hf) is provided. "
-            "Tokenizer loading failed"))
-    ):
+            ValueError, match=re.escape(
+                ("Invalid `model_path` (Llama-2-7b-chat-hf) is provided. "
+                 "Tokenizer loading failed"))):
         _ = OpenSourceModel(model_type, model_config_dict)
 
 
@@ -82,26 +81,22 @@ def test_open_source_model_unmatched_model_path():
         server_url="http://localhost:8000/v1",
     )
     model_config_dict = model_config.__dict__
-    
+
     with pytest.raises(
-        ValueError,
-        match=(
-            f"Model name `vicuna-7b-v1.5` does not match model type "
-            f"`{model_type.value}`.")
-    ):
+            ValueError,
+            match=(f"Model name `vicuna-7b-v1.5` does not match model type "
+                   f"`{model_type.value}`.")):
         _ = OpenSourceModel(model_type, model_config_dict)
+
 
 @pytest.mark.model_backend
 def test_open_source_model_missing_server_url():
     model_type = ModelType.LLAMA_2
     model_path = "meta-llama/Llama-2-7b-chat-hf"
-    model_config = OpenSourceConfig(
-        model_path=model_path,
-    )
+    model_config = OpenSourceConfig(model_path=model_path, )
     model_config_dict = model_config.__dict__
-    
+
     with pytest.raises(
-        ValueError,
-        match=("URL to server running open-source LLM is missing.")
-    ):
+            ValueError,
+            match=("URL to server running open-source LLM is missing.")):
         _ = OpenSourceModel(model_type, model_config_dict)
