@@ -26,7 +26,7 @@ def main(model_type=None, num_roles=3) -> None:
 
     role_names, role_description_dict, _, _ = (
         role_description_agent.run_role_with_description(
-            num_roles=num_roles, task_prompt=task_prompt))
+            task_prompt=task_prompt, num_roles=num_roles))
 
     if (len(role_names) != num_roles):
         raise ValueError(f"Length of role_names ({len(role_names)}) "
