@@ -13,48 +13,43 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from colorama import Fore
 
-from camel.agents import RoleAssignmentAgent
+from camel.agents.role_assignment import RoleAssignmentAgent
 from camel.configs import ChatGPTConfig
 from camel.societies import RolePlaying
 from camel.typing import TaskType
 from camel.utils import print_text_animated
 
-AI_ASSISTANT_ROLE_INDEX = 1
-AI_USER_ROLE_INDEX = 0
+AI_ASSISTANT_ROLE_INDEX = 0
+AI_USER_ROLE_INDEX = 1
 
 
-def main(model_type_for_role_generation=None, model_type=None) -> None:
+def main(model_type=None) -> None:
     task_prompt = "Develop a trading bot for the stock market."
 
     model_config_description = ChatGPTConfig()
     role_description_agent = RoleAssignmentAgent(
-        model=model_type_for_role_generation,
-        model_config=model_config_description)
+        model=model_type, model_config=model_config_description)
 
-    role_description_dict = (role_description_agent.run(
-        task_prompt=task_prompt, num_roles=2))
+    role_names, role_description_dict, _, _ = (
+        role_description_agent.run_role_with_description(
+            task_prompt=task_prompt, num_roles=2))
 
-    ai_assistant_role = list(
-        role_description_dict.keys())[AI_ASSISTANT_ROLE_INDEX]
-    ai_user_role = list(role_description_dict.keys())[AI_USER_ROLE_INDEX]
-    ai_assistant_description = role_description_dict[ai_assistant_role]
-    ai_user_description = role_description_dict[ai_user_role]
-
-    sys_msg_meta_dicts = [
-        dict(assistant_role=ai_assistant_role, user_role=ai_user_role,
-             assistant_description=ai_assistant_description,
-             user_description=ai_user_description) for _ in range(2)
-    ]
+    ai_assistant_role = role_names[AI_ASSISTANT_ROLE_INDEX]
+    ai_user_role = role_names[AI_USER_ROLE_INDEX]
 
     role_play_session = RolePlaying(
+        task_prompt=task_prompt,
+        task_type=TaskType.ROLE_DESCRIPTION,  # important for role description
+        with_task_specify=True,
         assistant_role_name=ai_assistant_role,
         user_role_name=ai_user_role,
-        task_prompt=task_prompt,
-        model_type=model_type,
-        task_type=TaskType.ROLE_DESCRIPTION,  # Important for role description
-        with_task_specify=True,
+        assistant_agent_kwargs=dict(
+            model=model_type,
+            role_description=role_description_dict[ai_assistant_role]),
+        user_agent_kwargs=dict(
+            model=model_type,
+            role_description=role_description_dict[ai_user_role]),
         task_specify_agent_kwargs=dict(model=model_type),
-        extend_sys_msg_meta_dicts=sys_msg_meta_dicts,
     )
 
     print(
@@ -62,10 +57,10 @@ def main(model_type_for_role_generation=None, model_type=None) -> None:
         f"AI Assistant sys message:\n{role_play_session.assistant_sys_msg}\n")
     print(Fore.BLUE +
           f"AI User sys message:\n{role_play_session.user_sys_msg}\n")
-    print(Fore.GREEN + f"Role description of AI Assistant:\n"
+    print(Fore.GREEN + f"AI Assistant role description:\n"
           f"{role_play_session.assistant_sys_msg.role_name}\n"
           f"{role_description_dict[ai_assistant_role]}\n")
-    print(Fore.BLUE + f"Role description of AI User:\n"
+    print(Fore.BLUE + f"AI User role description:\n"
           f"{role_play_session.user_sys_msg.role_name}\n"
           f"{role_description_dict[ai_user_role]}\n")
 
@@ -97,7 +92,7 @@ def main(model_type_for_role_generation=None, model_type=None) -> None:
             Fore.BLUE +
             f"AI User: {ai_user_role}\n\n{user_response.msg.content}\n")
         print_text_animated(Fore.GREEN +
-                            f"AI Assistant: {ai_assistant_role}\n\n" +
+                            f"AI Assistant:{ai_assistant_role}\n\n" +
                             f"{assistant_response.msg.content}\n")
 
         if "CAMEL_TASK_DONE" in user_response.msg.content:
