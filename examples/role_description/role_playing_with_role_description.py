@@ -16,6 +16,7 @@ from colorama import Fore
 from camel.agents.role_assignment import RoleAssignmentAgent
 from camel.configs import ChatGPTConfig
 from camel.societies import RolePlaying
+from camel.typing import TaskType
 from camel.utils import print_text_animated
 
 AI_ASSISTANT_ROLE_INDEX = 0
@@ -38,6 +39,7 @@ def main(model_type=None) -> None:
 
     role_play_session = RolePlaying(
         task_prompt=task_prompt,
+        task_type=TaskType.ROLE_DESCRIPTION,  # important for role description
         with_task_specify=True,
         assistant_role_name=ai_assistant_role,
         user_role_name=ai_user_role,

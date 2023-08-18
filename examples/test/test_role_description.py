@@ -13,16 +13,17 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from mock import patch
 
-import examples.ai_society.role_playing
-import examples.function_call.role_playing_with_function
+import examples.role_description.role_generation
+import examples.role_description.role_playing_with_role_description
 from camel.typing import ModelType
 
 
-def test_ai_society_role_playing_example():
+def test_role_generation_example():
     with patch('time.sleep', return_value=None):
-        examples.ai_society.role_playing.main(ModelType.STUB)
+        examples.role_description.role_generation.main(ModelType.GPT_3_5_TURBO)
 
 
-def test_role_playing_with_function_example():
+def test_role_playing_with_role_description_example():
     with patch('time.sleep', return_value=None):
-        examples.function_call.role_playing_with_function.main(ModelType.STUB)
+        examples.role_description.role_playing_with_role_description.main(
+            ModelType.GPT_3_5_TURBO)
