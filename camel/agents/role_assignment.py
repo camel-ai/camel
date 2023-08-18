@@ -23,8 +23,7 @@ from camel.typing import ModelType, RoleType
 
 
 class RoleAssignmentAgent(ChatAgent):
-    r"""
-    An agent that generates role names based on the task prompt.
+    r"""An agent that generates role names based on the task prompt.
     Attributes:
         role_assignment_prompt (TextPrompt): A prompt for the agent to generate
         role names.
@@ -58,8 +57,7 @@ class RoleAssignmentAgent(ChatAgent):
         num_roles: Optional[int] = 2,
         task_prompt: Union[str, TextPrompt] = "",
     ) -> Tuple[List[str], Dict[str, str], bool, Dict[str, Any]]:
-        r""" "
-        Generate role names based on the input task prompt.
+        r"""Generate role names based on the input task prompt.
 
         Args:
             num_roles (int): The number of roles to generate.
