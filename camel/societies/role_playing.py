@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import warnings
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 from camel.agents import (
@@ -113,28 +114,24 @@ class RolePlaying:
         self.init_planned_task_prompt(task_planner_agent_kwargs,
                                       output_language)
 
-        if (assistant_agent_kwargs is not None
-                and "role_description" in assistant_agent_kwargs
-                and user_agent_kwargs is not None
-                and "role_description" in user_agent_kwargs):
-            with_role_description = True
-        else:
-            with_role_description = False
-
         sys_msg_generator = SystemMessageGenerator(
-            task_type=self.task_type,
-            with_role_description=with_role_description,
-            **(sys_msg_generator_kwargs or {}))
+            task_type=self.task_type, **(sys_msg_generator_kwargs or {}))
 
-        assistant_description = (None if assistant_agent_kwargs is None else
-                                 assistant_agent_kwargs.get(
-                                     "role_description", None))
-        user_description = (None if user_agent_kwargs is None else
-                            user_agent_kwargs.get("role_description", None))
+        if self.task_type == TaskType.ROLE_DESCRIPTION:
+            if not (assistant_agent_kwargs is not None and "role_description"
+                    in assistant_agent_kwargs and user_agent_kwargs is not None
+                    and "role_description" in user_agent_kwargs):
+                raise ValueError(
+                    "Ensure both `role_description` of the assistant and "
+                    "the user are not None.")
+        if (self.task_type != TaskType.ROLE_DESCRIPTION
+                and ("role_description" in assistant_agent_kwargs
+                     or "role_description" in user_agent_kwargs)):
+            warnings.warn("Role description is unused.")
+
         (init_assistant_sys_msg, init_user_sys_msg,
          sys_msg_meta_dicts) = self.get_sys_message_info(
              assistant_role_name, user_role_name, sys_msg_generator,
-             assistant_description, user_description,
              extend_sys_msg_meta_dicts)
 
         self.assistant_agent: ChatAgent
@@ -231,8 +228,6 @@ class RolePlaying:
         assistant_role_name: str,
         user_role_name: str,
         sys_msg_generator: SystemMessageGenerator,
-        assistant_description: Optional[str] = None,
-        user_description: Optional[str] = None,
         extend_sys_msg_meta_dicts: Optional[List[Dict]] = None,
     ) -> Tuple[BaseMessage, BaseMessage, List[Dict]]:
         r"""Get initial assistant and user system message with a list of
@@ -244,9 +239,6 @@ class RolePlaying:
             user_role_name (str): The name of the role played by the user.
             sys_msg_generator (SystemMessageGenerator): A system message
                 generator for agents.
-            assistant_description (str, optional): The description of the
-                assistant.
-            user_description (str, optional): The description of the user.
             extend_sys_msg_meta_dicts (List[Dict], optional): A list of dicts
                 to extend the system message meta dicts with.
 
@@ -256,25 +248,17 @@ class RolePlaying:
             initial system message, and a list of system message meta dicts.
         """
         sys_msg_meta_dicts = [dict(task=self.task_prompt) for _ in range(2)]
-        if (extend_sys_msg_meta_dicts is None and self.task_type
-                in [TaskType.AI_SOCIETY, TaskType.MISALIGNMENT]):
-            if (assistant_description is not None
-                    and user_description is not None):
-                extend_sys_msg_meta_dicts = [
-                    dict(assistant_role=assistant_role_name,
-                         user_role=user_role_name,
-                         assistant_description=assistant_description,
-                         user_description=user_description) for _ in range(2)
-                ]
-            elif (assistant_description is None and user_description is None):
-                extend_sys_msg_meta_dicts = [
-                    dict(assistant_role=assistant_role_name,
-                         user_role=user_role_name) for _ in range(2)
-                ]
-            else:
-                raise ValueError(
-                    "Both assistant and user descriptions should "
-                    "either be 'None' or both should have values.")
+        if (extend_sys_msg_meta_dicts is None and self.task_type in [
+                TaskType.AI_SOCIETY, TaskType.MISALIGNMENT,
+                TaskType.ROLE_DESCRIPTION
+        ]):
+            extend_sys_msg_meta_dicts = [
+                dict(assistant_role=assistant_role_name,
+                     user_role=user_role_name) for _ in range(2)
+            ]
+        else:
+            raise ValueError("Both assistant and user descriptions should "
+                             "either be 'None' or both should have values.")
 
         if extend_sys_msg_meta_dicts is not None:
             sys_msg_meta_dicts = [{
