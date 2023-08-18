@@ -11,9 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import re
+
 import pytest
 
-from camel.configs import OpenSourceConfig
+from camel.configs import ChatGPTConfig, OpenSourceConfig
 from camel.models import OpenSourceModel
 from camel.typing import ModelType
 from camel.utils import OpenSourceTokenCounter
@@ -53,6 +55,38 @@ def test_open_source_model(model_type):
 
 
 @pytest.mark.model_backend
+def test_open_source_model_mismatched_model_config():
+    model_type = ModelType.VICUNA
+    model_config = ChatGPTConfig()
+    model_config_dict = model_config.__dict__
+
+    with pytest.raises(
+            ValueError, match=re.escape(
+                ("Invalid configuration for open-source model backend with "
+                 ":obj:`model_path` or :obj:`server_url` missing."))):
+        _ = OpenSourceModel(model_type, model_config_dict)
+
+
+@pytest.mark.model_backend
+def test_open_source_model_unexpected_argument():
+    model_type = ModelType.VICUNA
+    model_path = "vicuna-7b-v1.5"
+    model_config = OpenSourceConfig(
+        model_path=model_path,
+        server_url="http://localhost:8000/v1",
+    )
+    model_config_dict = model_config.__dict__
+
+    model_config_dict.update({"functions": []})
+
+    with pytest.raises(
+            ValueError, match=re.escape(
+                ("Unexpected argument `functions` is "
+                 "input into open-source model backend."))):
+        _ = OpenSourceModel(model_type, model_config_dict)
+
+
+@pytest.mark.model_backend
 def test_open_source_model_invalid_model_path():
     model_type = ModelType.VICUNA
     model_path = "vicuna-7b-v1.5"
@@ -62,11 +96,10 @@ def test_open_source_model_invalid_model_path():
     )
     model_config_dict = model_config.__dict__
 
-    import re
     with pytest.raises(
             ValueError, match=re.escape(
                 ("Invalid `model_path` (vicuna-7b-v1.5) is provided. "
-                 "Tokenizer loading failed"))):
+                 "Tokenizer loading failed."))):
         model = OpenSourceModel(model_type, model_config_dict)
         _ = model.token_counter
 

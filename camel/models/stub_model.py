@@ -53,3 +53,8 @@ class StubModel(BaseModelBackend):
                 tokenization style.
         """
         return OpenAITokenCounter(self.model_type)
+
+    def check_model_config(self):
+        r"""Directly pass the check on arguments to STUB model.
+        """
+        pass

@@ -19,10 +19,8 @@ from camel.typing import ModelType
 from camel.utils import print_text_animated
 
 
-def main(model_type=None) -> None:
+def main(model_type=None, model_path=" ", server_url=" ") -> None:
     task_prompt = "Develop a trading bot for the stock market"
-    model_path = "lmsys/vicuna-7b-v1.5"
-    server_url = "http://localhost:8000/v1"
 
     agent_kwargs = {
         role: dict(
@@ -87,4 +85,11 @@ def main(model_type=None) -> None:
 
 
 if __name__ == "__main__":
-    main(ModelType.VICUNA)
+    # Here :obj:`model_type` can be any of the supported open-source
+    # model types and :obj:`model_path` should be set corresponding to
+    # model type. 
+    main(
+        model_type=ModelType.LLAMA_2,
+        model_path="meta-llama/Llama-2-7b-chat-hf",
+        server_url="http://localhost:8000/v1",
+    )

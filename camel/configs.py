@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from abc import ABC
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Optional, Sequence, Union
 
 from camel.functions import OpenAIFunction
@@ -134,3 +134,10 @@ class FunctionCallingConfig(ChatGPTConfig):
 class OpenSourceConfig(ChatGPTConfig):
     model_path: str
     server_url: str
+
+
+OPENAI_API_PARAMS = {param for param in asdict(ChatGPTConfig()).keys()}
+OPENAI_API_PARAMS_WITH_FUNCTIONS = {
+    param
+    for param in asdict(FunctionCallingConfig()).keys()
+}

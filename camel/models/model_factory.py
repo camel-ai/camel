@@ -46,12 +46,7 @@ class ModelFactory:
             BaseModelBackend: The initialized backend.
         """
         model_class: Any
-        if model_type in {
-                ModelType.GPT_3_5_TURBO,
-                ModelType.GPT_3_5_TURBO_16K,
-                ModelType.GPT_4,
-                ModelType.GPT_4_32k,
-        }:
+        if model_type.is_openai:
             model_class = OpenAIModel
         elif model_type == ModelType.STUB:
             model_class = StubModel

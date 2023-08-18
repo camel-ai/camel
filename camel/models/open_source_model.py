@@ -14,6 +14,7 @@
 from types import GeneratorType
 from typing import Any, Dict, List
 
+from camel.configs import OPENAI_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.typing import ModelType
@@ -33,10 +34,9 @@ class OpenSourceModel(BaseModelBackend):
         r"""Constructor for model backends of Open-source models.
 
         Args:
-            model_type (ModelType): Model for which a backend is created,
-                one of GPT_* series.
+            model_type (ModelType): Model for which a backend is created.
             model_config_dict (Dict[str, Any]): A dictionary that will
-                be fed into openai.ChatCompletion.create().
+                be fed into :obj:`openai.ChatCompletion.create()`.
         """
         super().__init__(model_type, model_config_dict)
 
@@ -72,15 +72,6 @@ class OpenSourceModel(BaseModelBackend):
             if key != "model_path" and key != "server_url"
         }
 
-    def initialize_token_counter(self) -> BaseTokenCounter:
-        r"""Initialize the token counter for open-source model backends.
-
-        Returns:
-            BaseTokenCounter: The token counter following the provided
-                open-source model's tokenization style.
-        """
-        return OpenSourceTokenCounter(self.model_type, self.model_path)
-
     def run(
         self,
         messages: List[Dict],
@@ -108,6 +99,36 @@ class OpenSourceModel(BaseModelBackend):
             if not isinstance(response, GeneratorType):
                 raise RuntimeError("Unexpected stream return from OpenAI API")
         return response
+
+    def check_model_config(self):
+        r"""Check whether the model configuration is valid for open-source
+        model backends.
+
+        Raises:
+            ValueError: If the model configuration dictionary contains any
+                unexpected arguments to OpenAI API, or it does not contain
+                :obj:`model_path` or :obj:`server_url`.
+        """
+        if ("model_path" not in self.model_config_dict
+                or "server_url" not in self.model_config_dict):
+            raise ValueError(
+                "Invalid configuration for open-source model backend with "
+                ":obj:`model_path` or :obj:`server_url` missing.")
+
+        for param in self.model_config_dict:
+            if (param not in OPENAI_API_PARAMS and param != "model_path"
+                    and param != "server_url"):
+                raise ValueError(f"Unexpected argument `{param}` is "
+                                 "input into open-source model backend.")
+
+    def initialize_token_counter(self) -> BaseTokenCounter:
+        r"""Initialize the token counter for open-source model backends.
+
+        Returns:
+            BaseTokenCounter: The token counter following the provided
+                open-source model's tokenization style.
+        """
+        return OpenSourceTokenCounter(self.model_type, self.model_path)
 
     @property
     def stream(self) -> bool:

@@ -32,7 +32,10 @@ class BaseModelBackend(ABC):
             model_config_dict (Dict[str, Any]): A config dictionary.
         """
         self.model_type = model_type
+
         self.model_config_dict = model_config_dict
+        self.check_model_config()
+
         self._token_counter: Optional[BaseTokenCounter] = None
 
     @property
@@ -52,15 +55,26 @@ class BaseModelBackend(ABC):
         r"""Runs the query to the backend model.
 
         Args:
-            messages (List[Dict]): message list with the chat history
+            messages (List[Dict]): Message list with the chat history
                 in OpenAI API format.
 
         Raises:
-            RuntimeError: if the return value from OpenAI API
-            is not a dict that is expected.
+            RuntimeError: If the return value from OpenAI API
+                is not a dict that is expected.
 
         Returns:
             Dict[str, Any]: All backends must return a dict in OpenAI format.
+        """
+        pass
+
+    @abstractmethod
+    def check_model_config(self):
+        r"""Check whether the input model configuration contains unexpected
+        arguments
+
+        Raises:
+            ValueError: If the model configuration dictionary contains any
+                unexpected argument for this model class.
         """
         pass
 

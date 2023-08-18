@@ -39,22 +39,33 @@ class ModelType(Enum):
         return self.value if self.name != "STUB" else "gpt-3.5-turbo"
 
     @property
-    def is_open_source(self) -> bool:
-        r"""Returns whether this type of models is open-source.
+    def is_openai(self) -> bool:
+        r"""Returns whether this type of models is an OpenAI-released model.
 
         Returns:
-            bool: Whether this type of models is open-source.
+            bool: Whether this type of models belongs to OpenAI.
         """
         if self.name in {
                 "GPT_3_5_TURBO",
                 "GPT_3_5_TURBO_16K",
                 "GPT_4",
                 "GPT_4_32k",
-                "STUB",
         }:
-            return False
-        else:
             return True
+        else:
+            return False
+
+    @property
+    def is_open_source(self) -> bool:
+        r"""Returns whether this type of models is open-source.
+
+        Returns:
+            bool: Whether this type of models is open-source.
+        """
+        if self.name in {"LLAMA_2", "VICUNA", "VICUNA_16K"}:
+            return True
+        else:
+            return False
 
     @property
     def token_limit(self) -> int:
@@ -96,6 +107,9 @@ class ModelType(Enum):
         elif self is ModelType.VICUNA_16K:
             pattern = r'^vicuna-\d+b-v\d+\.\d+-16k$'
             return bool(re.match(pattern, model_name))
+        elif self is ModelType.LLAMA_2:
+            return (self.value in model_name.lower()
+                    or "llama2" in model_name.lower())
         else:
             return self.value in model_name.lower()
 

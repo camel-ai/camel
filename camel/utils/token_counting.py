@@ -133,7 +133,7 @@ class OpenSourceTokenCounter(BaseTokenCounter):
         except:
             raise ValueError(
                 f"Invalid `model_path` ({model_path}) is provided. "
-                "Tokenizer loading failed")
+                "Tokenizer loading failed.")
 
         self.tokenizer = tokenizer
         self.model_type = model_type

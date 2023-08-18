@@ -14,6 +14,7 @@
 from types import GeneratorType
 from typing import Any, Dict, List
 
+from camel.configs import OPENAI_API_PARAMS_WITH_FUNCTIONS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.typing import ModelType
@@ -64,6 +65,19 @@ class OpenAIModel(BaseModelBackend):
             if not isinstance(response, GeneratorType):
                 raise RuntimeError("Unexpected stream return from OpenAI API")
         return response
+
+    def check_model_config(self):
+        r"""Check whether the model configuration contains any
+        unexpected arguments to OpenAI API.
+
+        Raises:
+            ValueError: If the model configuration dictionary contains any
+                unexpected arguments to OpenAI API.
+        """
+        for param in self.model_config_dict:
+            if param not in OPENAI_API_PARAMS_WITH_FUNCTIONS:
+                raise ValueError(f"Unexpected argument `{param}` is "
+                                 "input into OpenAI model backend.")
 
     def initialize_token_counter(self) -> BaseTokenCounter:
         r"""Initialize the token counter for OpenAI model backend.

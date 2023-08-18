@@ -15,8 +15,7 @@ from mock import patch
 
 import examples.ai_society.role_playing
 import examples.function_call.role_playing_with_function
-import examples.open_source_models.role_playing_with_llama2
-import examples.open_source_models.role_playing_with_vicuna
+import examples.open_source_models.role_playing_with_open_source_model
 from camel.typing import ModelType
 
 
@@ -30,13 +29,7 @@ def test_role_playing_with_function_example():
         examples.function_call.role_playing_with_function.main(ModelType.STUB)
 
 
-def test_role_playing_with_llama2():
+def test_role_playing_with_open_source_model():
     with patch('time.sleep', return_value=None):
-        examples.open_source_models.role_playing_with_llama2.main(
-            ModelType.STUB)
-
-
-def test_role_playing_with_vicuna():
-    with patch('time.sleep', return_value=None):
-        examples.open_source_models.role_playing_with_vicuna.main(
+        examples.open_source_models.role_playing_with_open_source_model.main(
             ModelType.STUB)

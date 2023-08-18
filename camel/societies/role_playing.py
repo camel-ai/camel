@@ -287,11 +287,11 @@ class RolePlaying:
                 agents.
         """
         if self.assistant_functions is not None:
-            assistant_model_config = \
+            assistant_model_config = (
                 FunctionCallingConfig.from_openai_function_list(
                     function_list=self.assistant_functions,
                     function_call="auto",
-                )
+                ))
         elif assistant_agent_kwargs:
             assistant_model_config = assistant_agent_kwargs.pop(
                 "model_config", None)
