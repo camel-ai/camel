@@ -31,7 +31,7 @@ def main(model_type=None) -> None:
 
     role_names, role_description_dict, _, _ = (
         role_description_agent.run_role_with_description(
-            num_roles=2, task_prompt=task_prompt))
+            task_prompt=task_prompt, num_roles=2))
 
     ai_assistant_role = role_names[AI_ASSISTANT_ROLE_INDEX]
     ai_user_role = role_names[AI_USER_ROLE_INDEX]

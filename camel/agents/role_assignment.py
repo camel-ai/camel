@@ -27,7 +27,7 @@ class RoleAssignmentAgent(ChatAgent):
     Attributes:
         role_assignment_prompt (TextPrompt): A prompt for the agent to generate
         role names.
-    
+
     Args:
         model (ModelType, optional): The type of model to use for the agent.
             (default: :obj:`ModelType.GPT_3_5_TURBO`)
@@ -55,16 +55,16 @@ class RoleAssignmentAgent(ChatAgent):
     @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     def run_role_with_description(
         self,
+        task_prompt: Union[str, TextPrompt],
         num_roles: int = 2,
-        task_prompt: Union[str, TextPrompt] = "",
     ) -> Tuple[List[str], Dict[str, str], bool, Dict[str, Any]]:
         r"""Generate role names based on the input task prompt.
 
         Args:
-            num_roles (int, optional): The number of roles to generate.
-                (default: :obj:`2`)
             task_prompt (Union[str, TextPrompt]): The prompt
                 for the task based on which the roles are to be generated.
+            num_roles (int, optional): The number of roles to generate.
+                (default: :obj:`2`)
 
         Returns:
             Tuple[List[str], Dict[str, str], bool, Dict[str, Any]]: A tuple
