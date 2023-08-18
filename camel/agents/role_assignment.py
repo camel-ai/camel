@@ -55,7 +55,7 @@ class RoleAssignmentAgent(ChatAgent):
     @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     def run_role_with_description(
         self,
-        num_roles: Optional[int] = 2,
+        num_roles: int = 2,
         task_prompt: Union[str, TextPrompt] = "",
     ) -> Tuple[List[str], Dict[str, str], bool, Dict[str, Any]]:
         r"""Generate role names based on the input task prompt.
