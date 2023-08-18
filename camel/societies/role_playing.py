@@ -133,8 +133,8 @@ class RolePlaying:
                     "Ensure both `role_description` of the assistant and "
                     "the user are not None.")
         if (self.task_type != TaskType.ROLE_DESCRIPTION
-                and ("role_description" in assistant_agent_kwargs
-                     or "role_description" in user_agent_kwargs)):
+                and ("role_description" in (assistant_agent_kwargs or {})
+                     or "role_description" in (user_agent_kwargs or {}))):
             warnings.warn("Role description is unused.")
 
         (init_assistant_sys_msg, init_user_sys_msg,
@@ -264,9 +264,6 @@ class RolePlaying:
                 dict(assistant_role=assistant_role_name,
                      user_role=user_role_name) for _ in range(2)
             ]
-        else:
-            raise ValueError("Both assistant and user descriptions should "
-                             "either be 'None' or both should have values.")
 
         if extend_sys_msg_meta_dicts is not None:
             sys_msg_meta_dicts = [{
