@@ -31,8 +31,8 @@ class RoleAssignmentAgent(ChatAgent):
     Args:
         model (ModelType, optional): The type of model to use for the agent.
             (default: :obj:`ModelType.GPT_3_5_TURBO`)
-        model_config (Any): The configuration for the model.
-            (default: :obj: 'None')
+        model_config (Any, optional): The configuration for the model.
+            (default: :obj:`None`)
     """
 
     def __init__(
