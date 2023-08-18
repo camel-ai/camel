@@ -34,11 +34,7 @@ class PromptTemplateGenerator:
         self.task_prompt_template_dict = (task_prompt_template_dict
                                           or TaskPromptTemplateDict())
 
-    def get_prompt_from_key(
-        self,
-        task_type: TaskType,
-        key: Any,
-    ) -> TextPrompt:
+    def get_prompt_from_key(self, task_type: TaskType, key: Any) -> TextPrompt:
         r"""Generates a text prompt using the specified :obj:`task_type` and
         :obj:`key`.
 
@@ -87,7 +83,7 @@ class PromptTemplateGenerator:
             prompt = "You are a helpful assistant."
 
             warnings.warn("Failed to get system prompt template for "
-                          f"task: {task_type.value}, role: {role_type}. "
+                          f"task: {task_type.value}, role: {role_type.value}. "
                           f"Set template to: {prompt}")
 
         return TextPrompt(prompt)
