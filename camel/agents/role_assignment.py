@@ -27,7 +27,8 @@ class RoleAssignmentAgent(ChatAgent):
     Attributes:
         role_assignment_prompt (TextPrompt): A prompt for the agent to generate
         role names.
-    args:
+    
+    Args:
         model (ModelType, optional): The type of model to use for the agent.
             (default: :obj:`ModelType.GPT_3_5_TURBO`)
         model_config (Any): The configuration for the model.
