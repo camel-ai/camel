@@ -61,7 +61,7 @@ class RoleAssignmentAgent(ChatAgent):
         r"""Generate role names based on the input task prompt.
 
         Args:
-            num_roles (int): The number of roles to generate.
+            num_roles (int, optional): The number of roles to generate.
                 (default: :obj:`2`)
             task_prompt (Union[str, TextPrompt]): The prompt
                 for the task based on which the roles are to be generated.
