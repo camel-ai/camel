@@ -87,7 +87,7 @@ def main(model_type=None, model_path=" ", server_url=" ") -> None:
 if __name__ == "__main__":
     # Here :obj:`model_type` can be any of the supported open-source
     # model types and :obj:`model_path` should be set corresponding to
-    # model type. 
+    # model type.
     main(
         model_type=ModelType.LLAMA_2,
         model_path="meta-llama/Llama-2-7b-chat-hf",
