@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from types import GeneratorType
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from camel.configs import OPENAI_API_PARAMS
 from camel.messages import OpenAIMessage
@@ -46,7 +46,8 @@ class OpenSourceModel(BaseModelBackend):
                 f"Model `{model_type}` is not a supported open-source model")
 
         # Check whether input model path is empty
-        model_path: str | None = self.model_config_dict.get("model_path", None)
+        model_path: Optional[str] = (self.model_config_dict.get(
+            "model_path", None))
         if not model_path:
             raise ValueError("Path to open-source model is not provided.")
         self.model_path: str = model_path
@@ -59,7 +60,8 @@ class OpenSourceModel(BaseModelBackend):
                 f"`{self.model_type.value}`.")
 
         # Load the server URL and check whether it is None
-        server_url: str | None = self.model_config_dict.get("server_url", None)
+        server_url: Optional[str] = (self.model_config_dict.get(
+            "server_url", None))
         if not server_url:
             raise ValueError(
                 "URL to server running open-source LLM is not provided.")

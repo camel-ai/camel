@@ -132,6 +132,15 @@ class FunctionCallingConfig(ChatGPTConfig):
 
 @dataclass(frozen=True, kw_only=True)
 class OpenSourceConfig(ChatGPTConfig):
+    r"""Defines the parameters for generating chat completions using the
+    OpenAI API and some extra parameters for setting up open-source models.
+
+    Args:
+        model_path (str): The path to a local folder containing the model
+            files or the model card in HuggingFace hub.
+        server_url (str): The URL to the server running the model inference
+            which will be used as the API base of OpenAI API.
+    """
     model_path: str
     server_url: str
 
