@@ -62,14 +62,16 @@ def test_search_wiki_not_found():
 
 def tests_earch_wiki_by_api():
     expected_output = (
-        "New York, often called New York State, is a state in the Northeastern "
-        "United States.  A Mid-Atlantic state, New York borders New England, and "
-        "has an international border with Canada. With almost 19.7 million residents, "
-        "it is the fourth-most populous state in the United States and seventh-most "
-        "densely populated as of 2022. New York is the 27th-largest U.S. state by area, "
-        "with a total area of 54,556 square miles (141,300 km2).New York has a varied "
-        "geography. The southeastern part of the state, known as Downstate, encompasses "
-        "New York City (the most populous city in the United States), Long Island (the "
-        "most populous island in the United States), and the lower Hudson Valley."
+        "New York, often called New York State, is a state in the "
+        "Northeastern United States.  A Mid-Atlantic state, New York "
+        "borders New England, and has an international border with "
+        "Canada. With almost 19.7 million residents, it is the fourth-most "
+        "populous state in the United States and seventh-most densely "
+        "populated as of 2022. New York is the 27th-largest U.S. state by "
+        "area, with a total area of 54,556 square miles (141,300 km2).New "
+        "York has a varied geography. The southeastern part of the state, "
+        "known as Downstate, encompasses New York City (the most populous "
+        "city in the United States), Long Island (the most populous island "
+        "in the United States), and the lower Hudson Valley."
     )
     assert search_wiki_by_api("New York") == expected_output
