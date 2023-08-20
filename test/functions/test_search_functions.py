@@ -72,6 +72,5 @@ def tests_earch_wiki_by_api():
         "York has a varied geography. The southeastern part of the state, "
         "known as Downstate, encompasses New York City (the most populous "
         "city in the United States), Long Island (the most populous island "
-        "in the United States), and the lower Hudson Valley."
-    )
+        "in the United States), and the lower Hudson Valley.")
     assert search_wiki_by_api("New York") == expected_output

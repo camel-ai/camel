@@ -12,8 +12,9 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import List
-import wikipedia
+
 import requests
+import wikipedia
 from bs4 import BeautifulSoup
 
 from .openai_function import OpenAIFunction
