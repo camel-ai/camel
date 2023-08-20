@@ -36,6 +36,13 @@ def main(model_type=None) -> None:
 
     ai_assistant_role = role_names[AI_ASSISTANT_ROLE_INDEX]
     ai_user_role = role_names[AI_USER_ROLE_INDEX]
+    ai_assistant_description = role_description_dict[ai_assistant_role]
+    ai_user_description = role_description_dict[ai_user_role]
+
+    sys_msg_meta_dicts = [
+        dict(assistant_description=ai_assistant_description,
+             user_description=ai_user_description) for _ in range(2)
+    ]
 
     role_play_session = RolePlaying(
         task_prompt=task_prompt,
@@ -43,13 +50,8 @@ def main(model_type=None) -> None:
         with_task_specify=True,
         assistant_role_name=ai_assistant_role,
         user_role_name=ai_user_role,
-        assistant_agent_kwargs=dict(
-            model=model_type,
-            role_description=role_description_dict[ai_assistant_role]),
-        user_agent_kwargs=dict(
-            model=model_type,
-            role_description=role_description_dict[ai_user_role]),
         task_specify_agent_kwargs=dict(model=model_type),
+        extend_sys_msg_meta_dicts=sys_msg_meta_dicts,
     )
 
     print(

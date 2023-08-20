@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import warnings
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 from camel.agents import (
@@ -116,18 +115,6 @@ class RolePlaying:
 
         sys_msg_generator = SystemMessageGenerator(
             task_type=self.task_type, **(sys_msg_generator_kwargs or {}))
-
-        if self.task_type == TaskType.ROLE_DESCRIPTION:
-            if not (assistant_agent_kwargs is not None and "role_description"
-                    in assistant_agent_kwargs and user_agent_kwargs is not None
-                    and "role_description" in user_agent_kwargs):
-                raise ValueError(
-                    "Ensure both `role_description` of the assistant and "
-                    "the user are not None.")
-        if (self.task_type != TaskType.ROLE_DESCRIPTION
-                and ("role_description" in (assistant_agent_kwargs or {})
-                     or "role_description" in (user_agent_kwargs or {}))):
-            warnings.warn("Role description is unused.")
 
         (init_assistant_sys_msg, init_user_sys_msg,
          sys_msg_meta_dicts) = self.get_sys_message_info(
@@ -249,13 +236,39 @@ class RolePlaying:
         """
         sys_msg_meta_dicts = [dict(task=self.task_prompt) for _ in range(2)]
         if (extend_sys_msg_meta_dicts is None and self.task_type in [
-                TaskType.AI_SOCIETY, TaskType.MISALIGNMENT,
-                TaskType.ROLE_DESCRIPTION
+                TaskType.AI_SOCIETY,
+                TaskType.MISALIGNMENT,
         ]):
             extend_sys_msg_meta_dicts = [
                 dict(assistant_role=assistant_role_name,
                      user_role=user_role_name) for _ in range(2)
             ]
+        elif (self.task_type == TaskType.ROLE_DESCRIPTION):
+            if (extend_sys_msg_meta_dicts is None
+                    or len(extend_sys_msg_meta_dicts) != 2):
+                # In `TaskType.ROLE_DESCRIPTION`, `extend_sys_msg_meta_dicts`
+                # should have two elements, one for assistant and one for user
+                raise ValueError("`extend_sys_msg_meta_dicts` should have two "
+                                 "elements for `TaskType.ROLE_DESCRIPTION`.")
+            # Validate `extend_sys_msg_meta_dicts` has `assistant_description`
+            # and `user_description`
+            if ("assistant_description" not in extend_sys_msg_meta_dicts[0]
+                    or "user_description" not in extend_sys_msg_meta_dicts[0]
+                    or "assistant_description"
+                    not in extend_sys_msg_meta_dicts[1]
+                    or "user_description" not in extend_sys_msg_meta_dicts[1]):
+                raise ValueError("Ensure both `assistant_description` and "
+                                 "`user_description` are not None.")
+
+            role_name_msg_meta_dicts = [
+                dict(assistant_role=assistant_role_name,
+                     user_role=user_role_name) for _ in range(2)
+            ]
+            extend_sys_msg_meta_dicts = [{
+                **role_name_msg_meta_dict,
+                **sys_msg_meta_dict
+            } for role_name_msg_meta_dict, sys_msg_meta_dict in zip(
+                role_name_msg_meta_dicts, extend_sys_msg_meta_dicts)]
 
         if extend_sys_msg_meta_dicts is not None:
             sys_msg_meta_dicts = [{
