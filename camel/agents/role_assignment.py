@@ -71,18 +71,19 @@ class RoleAssignmentAgent(ChatAgent):
         """
         self.reset()
 
-        expert_prompt = "\n".join(
-            f"Domain expert {i + 1}: <|blank|>\n"
-            f"Associated competencies, professional characteristics, duties "
-            f"and workflows: <|blank|>. End.\n" for i in range(num_roles or 0))
+        expert_prompt = "===== ANSWER PROMPT =====\n" + "\n".join(
+            f"Domain expert {i + 1}: <BLANK>\n"
+            f"Associated competencies, characteristics, duties "
+            f"and workflows: <BLANK>. End." for i in range(num_roles or 0))
         role_assignment_generation_prompt = TextPrompt(
-            "You are the boss, you need to recruit experts in {num_roles} " +
-            "different fields to solve the task.\n" +
-            "Please tell me which domain experts should be recruited, " +
-            "and what competencies, professional characteristics, duties " +
-            "and workflows to complete the task.\n" +
-            "ONLY return the content in BLANK.\n\n" + "===== TASK =====\n" +
-            "{task}\n\n" + "===== PROMPT =====\n" + expert_prompt)
+            "You are the boss, and you're in charge of recruiting " +
+            "{num_roles} experts for the following task." +
+            "\n==== TASK =====\n {task}\n\n" +
+            "Identify the domain experts you'd recruit and detail their " +
+            "associated competencies, characteristics, duties and workflows " +
+            "to complete the task.\n " +
+            "Your answer MUST adhere to the format of ANSWER PROMPT, and " +
+            "ONLY answer the BLANKs.\n" + expert_prompt)
         role_assignment_generation = role_assignment_generation_prompt.format(
             num_roles=num_roles, task=task_prompt)
 
@@ -106,13 +107,14 @@ class RoleAssignmentAgent(ChatAgent):
         ]
         role_descriptions = [
             desc.replace("<|", "").replace("|>", "") for desc in re.findall(
-                r"Associated competencies, professional characteristics, "
-                r"duties and workflows: (.+?) End.", output_completion.content,
+                r"Associated competencies, characteristics, "
+                r"duties and workflows:(.+?) End.", output_completion.content,
                 re.DOTALL)
         ]
 
         if len(role_names) != num_roles or len(role_descriptions) != num_roles:
-            raise RuntimeError("Got None or insufficient Role messages. ")
+            raise RuntimeError(
+                "Got None or insufficient information of roles.")
         if terminated:
             raise RuntimeError("Role assignment failed.")
 
