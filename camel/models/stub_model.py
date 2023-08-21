@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from camel.models import BaseModelBackend
 from camel.typing import ModelType
@@ -26,6 +26,19 @@ class StubModel(BaseModelBackend):
                  model_config_dict: Dict[str, Any]) -> None:
         r"""All arguments are unused for the dummy model."""
         super().__init__(model_type, model_config_dict)
+        self._token_counter: Optional[BaseTokenCounter] = None
+
+    @property
+    def token_counter(self) -> BaseTokenCounter:
+        r"""Initialize the token counter for the model backend.
+
+        Returns:
+            BaseTokenCounter: The token counter following the model's
+                tokenization style.
+        """
+        if not self._token_counter:
+            self._token_counter = OpenAITokenCounter(self.model_type)
+        return self._token_counter
 
     def run(self, messages: List[Dict]) -> Dict[str, Any]:
         r"""Run fake inference by returning a fixed string.
@@ -44,15 +57,6 @@ class StubModel(BaseModelBackend):
                      message=dict(content=ARBITRARY_STRING, role="assistant"))
             ],
         )
-
-    def initialize_token_counter(self) -> BaseTokenCounter:
-        r"""Initialize the token counter for stub model backend.
-
-        Returns:
-            BaseTokenCounter: The token counter following OpenAI models'
-                tokenization style.
-        """
-        return OpenAITokenCounter(self.model_type)
 
     def check_model_config(self):
         r"""Directly pass the check on arguments to STUB model.

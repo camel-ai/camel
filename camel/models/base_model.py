@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from camel.typing import ModelType
 from camel.utils import BaseTokenCounter
@@ -36,9 +36,8 @@ class BaseModelBackend(ABC):
         self.model_config_dict = model_config_dict
         self.check_model_config()
 
-        self._token_counter: Optional[BaseTokenCounter] = None
-
     @property
+    @abstractmethod
     def token_counter(self) -> BaseTokenCounter:
         r"""Initialize the token counter for the model backend.
 
@@ -46,9 +45,7 @@ class BaseModelBackend(ABC):
             BaseTokenCounter: The token counter following the model's
                 tokenization style.
         """
-        if not self._token_counter:
-            self._token_counter = self.initialize_token_counter()
-        return self._token_counter
+        pass
 
     @abstractmethod
     def run(self, messages: List[Dict]) -> Dict[str, Any]:
@@ -75,16 +72,6 @@ class BaseModelBackend(ABC):
         Raises:
             ValueError: If the model configuration dictionary contains any
                 unexpected argument for this model class.
-        """
-        pass
-
-    @abstractmethod
-    def initialize_token_counter(self) -> BaseTokenCounter:
-        r"""Initialize the token counter for OpenAI model backend.
-
-        Returns:
-            BaseTokenCounter: The token counter following OpenAI models'
-                tokenization style.
         """
         pass
 

@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from types import GeneratorType
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from camel.configs import OPENAI_API_PARAMS_WITH_FUNCTIONS
 from camel.messages import OpenAIMessage
@@ -37,6 +37,19 @@ class OpenAIModel(BaseModelBackend):
                 be fed into openai.ChatCompletion.create().
         """
         super().__init__(model_type, model_config_dict)
+        self._token_counter: Optional[BaseTokenCounter] = None
+
+    @property
+    def token_counter(self) -> BaseTokenCounter:
+        r"""Initialize the token counter for the model backend.
+
+        Returns:
+            BaseTokenCounter: The token counter following the model's
+                tokenization style.
+        """
+        if not self._token_counter:
+            self._token_counter = OpenAITokenCounter(self.model_type)
+        return self._token_counter
 
     def run(
         self,
@@ -78,15 +91,6 @@ class OpenAIModel(BaseModelBackend):
             if param not in OPENAI_API_PARAMS_WITH_FUNCTIONS:
                 raise ValueError(f"Unexpected argument `{param}` is "
                                  "input into OpenAI model backend.")
-
-    def initialize_token_counter(self) -> BaseTokenCounter:
-        r"""Initialize the token counter for OpenAI model backend.
-
-        Returns:
-            BaseTokenCounter: The token counter following OpenAI models'
-                tokenization style.
-        """
-        return OpenAITokenCounter(self.model_type)
 
     @property
     def stream(self) -> bool:

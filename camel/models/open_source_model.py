@@ -39,6 +39,7 @@ class OpenSourceModel(BaseModelBackend):
                 be fed into :obj:`openai.ChatCompletion.create()`.
         """
         super().__init__(model_type, model_config_dict)
+        self._token_counter: Optional[BaseTokenCounter] = None
 
         # Check whether the input model type is open-source
         if not model_type.is_open_source:
@@ -73,6 +74,19 @@ class OpenSourceModel(BaseModelBackend):
             for key, value in self.model_config_dict.items()
             if key != "model_path" and key != "server_url"
         }
+
+    @property
+    def token_counter(self) -> BaseTokenCounter:
+        r"""Initialize the token counter for the model backend.
+
+        Returns:
+            BaseTokenCounter: The token counter following the model's
+                tokenization style.
+        """
+        if not self._token_counter:
+            self._token_counter = OpenSourceTokenCounter(
+                self.model_type, self.model_path)
+        return self._token_counter
 
     def run(
         self,
@@ -122,15 +136,6 @@ class OpenSourceModel(BaseModelBackend):
                     and param != "server_url"):
                 raise ValueError(f"Unexpected argument `{param}` is "
                                  "input into open-source model backend.")
-
-    def initialize_token_counter(self) -> BaseTokenCounter:
-        r"""Initialize the token counter for open-source model backends.
-
-        Returns:
-            BaseTokenCounter: The token counter following the provided
-                open-source model's tokenization style.
-        """
-        return OpenSourceTokenCounter(self.model_type, self.model_path)
 
     @property
     def stream(self) -> bool:
