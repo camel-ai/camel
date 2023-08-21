@@ -151,6 +151,58 @@ python examples/ai_society/role_playing.py
 
 Please note that the environment variable is session-specific. If you open a new terminal window or tab, you will need to set the API key again in that new session.
 
+
+## Use Open-Source Models as Backends
+
+The basic workflow of using an open-sourced model as the backend is based on an external server running LLM inference service, e.g. during the development we chose [FastChat](https://github.com/lm-sys/FastChat) to run the service. 
+
+We do not fix the choice of server to decouple the implementation of any specific LLM inference server with CAMEL (indicating the server needs to be deployed by the user himself). But the server to be deployed must satisfy that **it supports OpenAI-compatible APIs, especially the method `openai.ChatCompletion.create`**.
+
+Here are some instructions for enabling open-source backends, where we use the [FastChat](https://github.com/lm-sys/FastChat) and a LLaMA2-based model ([`meta-llama/Llama-2-7b-chat-hf`](https://huggingface.co/meta-llama/Llama-2-7b-chat-hf)) in the example. Please install FastChat in advance following their installation guidance.
+
+1. Before running CAMEL, we should firstly launch FastChat server following the guidance on https://github.com/lm-sys/FastChat/blob/main/docs/openai_api.md. The instructions summarized below should be kept running **in separate processes**:
+
+```sh
+# Launch the controller
+python -m fastchat.serve.controller
+
+# Launch the model worker(s)
+python3 -m fastchat.serve.model_worker --model-path meta-llama/Llama-2-7b-chat-hf
+
+# Launch the RESTful API server
+python3 -m fastchat.serve.openai_api_server --host localhost --port 8000
+```
+
+2. After observing the controller successfully receiving the heart beat signal from the worker, the server should be ready for use at http://localhost:8000/v1. 
+
+3. Then we can try on running `role_playing_with_open_source_model.py`, where each agent in this example is initialized with specifying the `model_path` and `server_url`, similar to the example code below:
+
+```python
+system_message = # ...
+output_language = # ...
+
+agent_kwargs = dict(
+    model=model_type,
+    model_config=OpenSourceConfig(
+        model_path="meta-llama/Llama-2-7b-chat-hf",
+        server_url="http://localhost:8000/v1",
+    ),
+)
+
+agent = ChatAgent(
+    system_message,
+    output_language=output_language,
+    **assistant_agent_kwargs,
+)
+```
+
+### Support Models
+
+- LLaMA2-based models
+  - example: [meta-llama/Llama-2-7b-chat-hf](https://huggingface.co/meta-llama/Llama-2-7b-chat-hf)
+- Vicuna-based models
+  - example: [lmsys/vicuna-7b-v1.5](https://huggingface.co/lmsys/vicuna-7b-v1.5)
+
 ## Data (Hosted on Hugging Face)
 | Dataset | Chat format | Instruction format | Chat format (translated) |
 | -- | -- | -- | -- |
