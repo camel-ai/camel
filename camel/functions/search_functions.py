@@ -14,6 +14,7 @@
 from typing import List
 
 import requests
+import wikipedia
 from bs4 import BeautifulSoup
 
 from .openai_function import OpenAIFunction
@@ -107,6 +108,33 @@ def search_wiki(entity: str) -> str:
     return observation
 
 
+def search_wiki_by_api(entity: str) -> str:
+    r"""Using wikipedia api to search the entity in WikiPedia and
+    return the summary of the given entity. The auto suggest and
+    redirect are enabled by default.
+
+    Args:
+        entity (string): The entity to be searched.
+
+    Returns:
+        string: The search result. If the page corresponding to the entity
+        exists, return the summary in a string.
+    """
+    result: str
+
+    try:
+        result = wikipedia.summary(entity, sentences=5)
+
+    except wikipedia.exceptions.DisambiguationError as e:
+        result = wikipedia.summary(e.options[0], sentences=5)
+    except wikipedia.exceptions.PageError:
+        result = "Page does not exist!"
+    except wikipedia.exceptions.WikipediaException as e:
+        result = f"An error occurred: {e}"
+
+    return result
+
+
 SEARCH_FUNCS: List[OpenAIFunction] = [
-    OpenAIFunction(func) for func in [search_wiki]
+    OpenAIFunction(func) for func in [search_wiki, search_wiki_by_api]
 ]

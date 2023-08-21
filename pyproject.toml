@@ -43,6 +43,7 @@ torch = { version = "^1", optional = true }
 soundfile = { version = "^0", optional = true }
 sentencepiece = { version = "^0", optional = true }
 opencv-python = { version = "^4", optional = true }
+wikipedia = { version = "^1", optional = true }
 
 [tool.poetry.extras]
 huggingface-agent = [
@@ -54,6 +55,7 @@ huggingface-agent = [
     "soundfile",
     "sentencepiece",
     "opencv-python",
+    "wikipedia",
 ]
 
 all = [
@@ -65,6 +67,7 @@ all = [
     "soundfile",
     "sentencepiece",
     "opencv-python",
+    "wikipedia",
 ]
 
 [tool.poetry.group.dev]
@@ -128,5 +131,6 @@ module = [
     "database_connection",
     "huggingface_hub",
     "huggingface_hub.utils._errors",
+    "wikipedia",
 ]
 ignore_missing_imports = true
