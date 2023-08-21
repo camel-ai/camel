@@ -20,6 +20,7 @@ from camel.messages.base import BaseMessage
 
 
 class LongTermMemory(BaseMemory):
+
     def __init__(self, storage: Optional[BaseLongTermStorage] = None):
         """
         Initializes a new instance of LongTermMemory.
@@ -28,7 +29,8 @@ class LongTermMemory(BaseMemory):
             storage (Optional[BaseLongTermStorage]): The storage mechanism for long-term memory.
         """
         if storage is None:
-            raise ValueError("A valid long-term storage mechanism must be provided.")
+            raise ValueError(
+                "A valid long-term storage mechanism must be provided.")
         self.memory_storage = storage
 
     def read(self) -> Optional[BaseMessage]:
@@ -68,7 +70,8 @@ class LongTermMemory(BaseMemory):
         if hasattr(self.memory_storage, "archive"):
             self.memory_storage.archive(msg)
         else:
-            raise NotImplementedError("The storage mechanism does not support archiving.")
+            raise NotImplementedError(
+                "The storage mechanism does not support archiving.")
 
     def retrieve_archived(self, id: str) -> BaseMessage:
         """
@@ -83,4 +86,6 @@ class LongTermMemory(BaseMemory):
         if hasattr(self.memory_storage, "retrieve_archived"):
             return self.memory_storage.retrieve_archived(id)
         else:
-            raise NotImplementedError("The storage mechanism does not support retrieving archived messages.")
+            raise NotImplementedError(
+                "The storage mechanism does not support retrieving archived messages."
+            )

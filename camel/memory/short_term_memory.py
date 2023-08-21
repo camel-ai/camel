@@ -21,6 +21,7 @@ from camel.messages.base import BaseMessage
 
 
 class ShortTermMemory(BaseMemory):
+
     def __init__(self, storage: Optional[BaseShortTermStorage] = None):
         """
         Initializes a new instance of ShortTermMemory.

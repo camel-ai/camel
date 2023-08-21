@@ -13,7 +13,9 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from abc import ABC
+
 from camel.memory.base_memory import BaseMemoryStorage
+
 
 class BaseShortTermStorage(BaseMemoryStorage, ABC):
     """

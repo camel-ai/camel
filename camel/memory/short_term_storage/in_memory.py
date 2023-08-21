@@ -19,6 +19,7 @@ from camel.messages.base import BaseMessage
 
 
 class InMemoryStorage(BaseShortTermStorage):
+
     def __init__(self):
         self.memory_list: List[BaseMessage] = []
 

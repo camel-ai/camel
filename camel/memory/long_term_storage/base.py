@@ -14,8 +14,9 @@
 
 from abc import ABC, abstractmethod
 
-from camel.messages.base import BaseMessage
 from camel.memory.base_memory import BaseMemoryStorage
+from camel.messages.base import BaseMessage
+
 
 class BaseLongTermStorage(BaseMemoryStorage, ABC):
     """
