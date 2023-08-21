@@ -48,8 +48,9 @@ class RolePlaying:
             in the loop. (default: :obj:`False`)
         critic_criteria (str, optional): Critic criteria for the critic agent.
             If not specified, set the criteria to improve task performance.
-        model_type (ModelType, optional): The type of backend model to use.
-            (default: :obj:`ModelType.GPT_3_5_TURBO`)
+        model_type (ModelType, optional): Model type that will be used for
+            role playing. If specified, it will override the model in all
+            agents. (default: :obj:`None`)
         task_type (TaskType, optional): The type of task to perform.
             (default: :obj:`TaskType.AI_SOCIETY`)
         assistant_agent_kwargs (Dict, optional): Additional arguments to pass
@@ -76,13 +77,14 @@ class RolePlaying:
         self,
         assistant_role_name: str,
         user_role_name: str,
+        *,
         critic_role_name: str = "critic",
         task_prompt: str = "",
         with_task_specify: bool = True,
         with_task_planner: bool = False,
         with_critic_in_the_loop: bool = False,
         critic_criteria: Optional[str] = None,
-        model_type: ModelType = ModelType.GPT_3_5_TURBO,
+        model_type: Optional[ModelType] = None,
         task_type: TaskType = TaskType.AI_SOCIETY,
         assistant_agent_kwargs: Optional[Dict] = None,
         user_agent_kwargs: Optional[Dict] = None,
@@ -122,8 +124,13 @@ class RolePlaying:
         self.user_agent: ChatAgent
         self.assistant_sys_msg: BaseMessage
         self.user_sys_msg: BaseMessage
-        self.init_agents(init_assistant_sys_msg, assistant_agent_kwargs,
-                         init_user_sys_msg, user_agent_kwargs, output_language)
+        self.init_agents(
+            init_assistant_sys_msg,
+            assistant_agent_kwargs,
+            init_user_sys_msg,
+            user_agent_kwargs,
+            output_language,
+        )
 
         self.critic: Optional[Union[CriticAgent, Human]] = None
         self.critic_sys_msg: Optional[BaseMessage] = None
@@ -158,8 +165,11 @@ class RolePlaying:
                     dict(assistant_role=assistant_role_name,
                          user_role=user_role_name))
             task_specify_meta_dict.update(extend_task_specify_meta_dict or {})
+            if self.model_type is not None:
+                if task_specify_agent_kwargs is None:
+                    task_specify_agent_kwargs = {}
+                task_specify_agent_kwargs.update(dict(model=self.model_type))
             task_specify_agent = TaskSpecifyAgent(
-                self.model_type,
                 task_type=self.task_type,
                 output_language=output_language,
                 **(task_specify_agent_kwargs or {}),
@@ -186,8 +196,11 @@ class RolePlaying:
                 agents.
         """
         if self.with_task_planner:
+            if self.model_type is not None:
+                if task_planner_agent_kwargs is None:
+                    task_planner_agent_kwargs = {}
+                task_planner_agent_kwargs.update(dict(model=self.model_type))
             task_planner_agent = TaskPlannerAgent(
-                self.model_type,
                 output_language=output_language,
                 **(task_planner_agent_kwargs or {}),
             )
@@ -243,11 +256,14 @@ class RolePlaying:
             ))
         return init_assistant_sys_msg, init_user_sys_msg, sys_msg_meta_dicts
 
-    def init_agents(self, init_assistant_sys_msg: BaseMessage,
-                    assistant_agent_kwargs: Optional[Dict],
-                    init_user_sys_msg: BaseMessage,
-                    user_agent_kwargs: Optional[Dict],
-                    output_language: Optional[str]):
+    def init_agents(
+        self,
+        init_assistant_sys_msg: BaseMessage,
+        assistant_agent_kwargs: Optional[Dict],
+        init_user_sys_msg: BaseMessage,
+        user_agent_kwargs: Optional[Dict],
+        output_language: Optional[str],
+    ):
         r"""Initialize assistant and user agents with their system messages.
 
         Args:
@@ -262,16 +278,23 @@ class RolePlaying:
             output_language (str, optional): The language to be output by the
                 agents.
         """
+        if self.model_type is not None:
+            if assistant_agent_kwargs is None:
+                assistant_agent_kwargs = {}
+            assistant_agent_kwargs.update(dict(model=self.model_type))
+            if user_agent_kwargs is None:
+                user_agent_kwargs = {}
+            user_agent_kwargs.update(dict(model=self.model_type))
+
         self.assistant_agent = ChatAgent(
             init_assistant_sys_msg,
-            self.model_type,
             output_language=output_language,
             **(assistant_agent_kwargs or {}),
         )
         self.assistant_sys_msg = self.assistant_agent.system_message
+
         self.user_agent = ChatAgent(
             init_user_sys_msg,
-            self.model_type,
             output_language=output_language,
             **(user_agent_kwargs or {}),
         )
@@ -311,9 +334,12 @@ class RolePlaying:
                     critic_msg_meta_dict,
                     role_tuple=(critic_role_name, RoleType.CRITIC),
                 )
+                if self.model_type is not None:
+                    if critic_kwargs is None:
+                        critic_kwargs = {}
+                    critic_kwargs.update(dict(model=self.model_type))
                 self.critic = CriticAgent(
                     self.critic_sys_msg,
-                    self.model_type,
                     **(critic_kwargs or {}),
                 )
 
@@ -400,6 +426,7 @@ class RolePlaying:
             whether the user agent terminated the conversation, and any
             additional user information.
         """
+
         user_response = self.user_agent.step(assistant_msg)
         if user_response.terminated or user_response.msgs is None:
             return (ChatAgentResponse([], False, {}),

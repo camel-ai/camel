@@ -21,6 +21,8 @@ from .functions import (
     get_prompt_template_key_words,
     get_first_int,
     download_tasks,
+    parse_doc,
+    get_task_list,
 )
 
 __all__ = [
@@ -33,4 +35,6 @@ __all__ = [
     'get_first_int',
     'download_tasks',
     'PythonInterpreter',
+    'parse_doc',
+    'get_task_list',
 ]

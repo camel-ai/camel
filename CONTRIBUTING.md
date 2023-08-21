@@ -6,7 +6,14 @@ Thank you for your interest in contributing to the CAMEL project! 🎉 We're exc
 
 ### Contributing to the Code 👨‍💻👩‍💻
 
-If you're eager to contribute to this project, that's fantastic! We're thrilled to have your support. Just remember to follow the [Fork-and-Pull-Request](https://docs.github.com/en/get-started/quickstart/contributing-to-projects) workflow when opening your pull requests. Make sure to mention any related issues and tag the relevant maintainers too. 💪
+If you're eager to contribute to this project, that's fantastic! We're thrilled to have your support. 
+
+- If you are a contributor from the community:
+  - Follow the [Fork-and-Pull-Request](https://docs.github.com/en/get-started/quickstart/contributing-to-projects) workflow when opening your pull requests.
+- If you are a member of [CAMEL-AI.org](https://github.com/camel-ai):
+  - Follow the [Checkout-and-Pull-Request](https://dev.to/ceceliacreates/how-to-create-a-pull-request-on-github-16h1) workflow when opening your pull request; this will allow the PR to pass all tests that require [GitHub Secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets).
+
+Make sure to mention any related issues and tag the relevant maintainers too. 💪
 
 Before your pull request can be merged, it must pass the formatting, linting, and testing checks. You can find instructions on running these checks locally under the **Common Tasks** section below. 🔍
 
@@ -44,25 +51,31 @@ In line with this, we do have specific guidelines for code linting, formatting, 
 
 To get started with CAMEL, follow these steps:
 
-```bash
-# Create a conda virtual environment
-conda create --name camel python=3.10
-
-# Activate the camel conda environment
-conda activate camel
-
-# Clone the GitHub repo
+```sh
+# Clone github repo
 git clone https://github.com/camel-ai/camel.git
 
-# Change to the project directory
+# Change directory into project directory
 cd camel
 
-# Install CAMEL from source
-pip install -e .
+# Activate camel virtual environment
+poetry shell
 
-# Install pre-commit within the camel environment (only needed for opening pull requests)
-pip install pre-commit
+# Install camel from source
+# It takes about 75s to resolve dependencies and 10s to install them, depending on your hardware and network,
+poetry install --with dev,docs
+
+# Or if you want to use "huggingface agent"
+poetry install --with dev,docs -E huggingface-agent # (Optional)
+
+# The following command installs a pre-commit hook into the local git repo,
+$ so every commit gets auto-formatted and linted.
 pre-commit install
+
+# do something with camel
+
+# Exit the virtual environment
+exit
 ```
 
 These commands will install all the necessary dependencies for running the package, examples, linting, formatting, tests, and coverage.
