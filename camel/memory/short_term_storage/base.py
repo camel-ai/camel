@@ -13,9 +13,14 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from abc import ABC
+from camel.memory.base_memory import BaseMemoryStorage
 
-from camel.memory.base_memory import BaseMemory
+class BaseShortTermStorage(BaseMemoryStorage, ABC):
+    """
+    Abstract base class representing the basic operations
+    required for short-term memory storage.
 
-
-class BaseShortTermStorage(BaseMemory, ABC):
+    Inherits the basic storage operations from BaseMemoryStorage.
+    Any additional short-term specific operations can be added here.
+    """
     pass

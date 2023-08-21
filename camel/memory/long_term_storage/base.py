@@ -12,10 +12,40 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from abc import ABC
+from abc import ABC, abstractmethod
 
-from camel.memory.base_memory import BaseMemory
+from camel.messages.base import BaseMessage
+from camel.memory.base_memory import BaseMemoryStorage
 
+class BaseLongTermStorage(BaseMemoryStorage, ABC):
+    """
+    Abstract base class representing the basic operations
+    required for long-term memory storage.
 
-class BaseLongTermStorage(BaseMemory, ABC):
-    pass
+    Inherits the fundamental memory operations from BaseMemory.
+    Additional long-term specific operations can be added here.
+    """
+
+    @abstractmethod
+    def archive(self, msg: BaseMessage) -> None:
+        """
+        Archives a message in long-term storage. Archiving may differ
+        from standard storage in terms of compression, backup, redundancy, etc.
+
+        Args:
+            msg (BaseMessage): The message to be archived.
+        """
+        pass
+
+    @abstractmethod
+    def retrieve_archived(self, id: str) -> BaseMessage:
+        """
+        Retrieves an archived message from long-term storage based on its identifier.
+
+        Args:
+            id (str): The unique identifier of the archived message.
+
+        Returns:
+            BaseMessage: The retrieved archived message.
+        """
+        pass

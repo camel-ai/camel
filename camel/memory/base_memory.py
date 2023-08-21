@@ -19,34 +19,68 @@ from camel.messages.base import BaseMessage
 
 
 class BaseMemory(ABC):
-    r"""
+    """
+    Abstract base class representing the basic operations
+    required for a memory system.
     """
 
     @abstractmethod
-    def read(self) -> BaseMessage:
+    def read(self) -> Union[BaseMessage, List[BaseMessage]]:
+        """
+        Reads a message or messages from memory.
+
+        Returns:
+            Union[BaseMessage, List[BaseMessage]]: Retrieved message or list of messages.
+        """
         ...
 
     @abstractmethod
     def write(self, msg: BaseMessage) -> None:
+        """
+        Writes a message to memory.
+
+        Args:
+            msg (BaseMessage): The message to be written.
+        """
         ...
 
     @abstractmethod
     def clear(self) -> None:
+        """
+        Clears all messages from memory.
+        """
         ...
 
 
 class BaseMemoryStorage(ABC):
-    r"""
+    """
+    Abstract base class representing the basic operations
+    required for storing and retrieving messages in a storage system.
     """
 
     @abstractmethod
     def store(self, msg: BaseMessage) -> None:
+        """
+        Stores a message.
+
+        Args:
+            msg (BaseMessage): The message to be stored.
+        """
         ...
 
     @abstractmethod
     def load(self) -> List[BaseMessage]:
+        """
+        Loads all stored messages.
+
+        Returns:
+            List[BaseMessage]: List of loaded messages.
+        """
         ...
 
     @abstractmethod
     def clear(self) -> None:
+        """
+        Clears all stored messages.
+        """
         ...
