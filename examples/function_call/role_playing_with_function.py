@@ -26,11 +26,13 @@ from camel.utils import print_text_animated
 def main(model_type=ModelType.GPT_4) -> None:
     task_prompt = ("Assuming the current year is 2023, estimate KAUST's "
                    "current age and then add 10 more years to this age.")
+
     function_list = [*MATH_FUNCS, *SEARCH_FUNCS]
     assistant_model_config = FunctionCallingConfig.from_openai_function_list(
         function_list=function_list,
-        function_call="auto",
+        kwargs=dict(temperature=0),
     )
+
     role_play_session = RolePlaying(
         assistant_role_name="Searcher",
         user_role_name="Professor",

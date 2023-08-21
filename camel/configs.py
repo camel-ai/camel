@@ -108,6 +108,7 @@ class FunctionCallingConfig(ChatGPTConfig):
         cls,
         function_list: List[OpenAIFunction],
         function_call: Union[Dict[str, str], str] = "auto",
+        kwargs: Optional[Dict[str, Any]] = None,
     ):
         r"""Class method for creating an instance given the function-related
         arguments.
@@ -118,6 +119,8 @@ class FunctionCallingConfig(ChatGPTConfig):
             function_call (Union[Dict[str, str], str], optional): Controls how
                 the model responds to function calls, as specified in the
                 creator's documentation.
+            kwargs (Optional[Dict[str, Any]]): The extra modifications to be
+                made on the original settings defined in :obj:`ChatGPTConfig`.
 
         Return:
             FunctionCallingConfig: A new instance which loads the given
@@ -127,4 +130,5 @@ class FunctionCallingConfig(ChatGPTConfig):
         return cls(
             functions=[func.as_dict() for func in function_list],
             function_call=function_call,
+            **(kwargs or {}),
         )
