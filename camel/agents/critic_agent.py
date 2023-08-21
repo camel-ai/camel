@@ -17,8 +17,9 @@ from typing import Any, Dict, Optional, Sequence
 
 from colorama import Fore
 
-from camel.agents import ChatAgent, ChatAgentResponse
+from camel.agents import ChatAgent
 from camel.messages import BaseMessage
+from camel.response import ChatAgentResponse
 from camel.typing import ModelType
 from camel.utils import get_first_int, print_text_animated
 

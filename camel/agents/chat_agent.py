@@ -26,37 +26,14 @@ from camel.configs import BaseConfig, ChatGPTConfig
 from camel.functions import OpenAIFunction
 from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
 from camel.models import BaseModelBackend, ModelFactory
+from camel.response import ChatAgentResponse
+from camel.termination import ResponseTermination, TokenLimitTermination
 from camel.typing import ModelType, RoleType
 from camel.utils import (
     get_model_encoding,
     num_tokens_from_messages,
     openai_api_key_required,
 )
-
-
-@dataclass(frozen=True)
-class ChatAgentResponse:
-    r"""Response of a ChatAgent.
-
-    Attributes:
-        msgs (List[BaseMessage]): A list of zero, one or several messages.
-            If the list is empty, there is some error in message generation.
-            If the list has one message, this is normal mode.
-            If the list has several messages, this is the critic mode.
-        terminated (bool): A boolean indicating whether the agent decided
-            to terminate the chat session.
-        info (Dict[str, Any]): Extra information about the chat message.
-    """
-    msgs: List[BaseMessage]
-    terminated: bool
-    info: Dict[str, Any]
-
-    @property
-    def msg(self):
-        if len(self.msgs) != 1:
-            raise RuntimeError("Property msg is only available "
-                               "for a single message in msgs.")
-        return self.msgs[0]
 
 
 @dataclass(frozen=True)
@@ -132,6 +109,7 @@ class ChatAgent(BaseAgent):
         message_window_size: Optional[int] = None,
         output_language: Optional[str] = None,
         function_list: Optional[List[OpenAIFunction]] = None,
+        response_terminations: Optional[List[ResponseTermination]] = None,
     ) -> None:
 
         self.orig_sys_message: BaseMessage = system_message
@@ -157,6 +135,9 @@ class ChatAgent(BaseAgent):
         self.model_token_limit: int = self.model_backend.token_limit
 
         self.terminated: bool = False
+        self.token_limit_termination = TokenLimitTermination(
+            self.model_token_limit)
+        self.response_terminations = response_terminations
         self.stored_messages: List[ChatRecord]
         self.init_messages()
 
@@ -169,6 +150,7 @@ class ChatAgent(BaseAgent):
         """
         self.terminated = False
         self.init_messages()
+        self.token_limit_termination.reset()
 
     @property
     def system_message(self) -> BaseMessage:
@@ -310,8 +292,11 @@ class ChatAgent(BaseAgent):
             openai_messages, num_tokens = self.preprocess_messages(messages)
 
             # Terminate when number of tokens exceeds the limit
-            if num_tokens >= self.model_token_limit:
-                return self.step_token_exceed(num_tokens, called_funcs)
+            self.terminated, termination_reasons = \
+                self.token_limit_termination.terminated(num_tokens)
+            if self.terminated:
+                return self.step_token_exceed(num_tokens, called_funcs,
+                                              termination_reasons)
 
             # Obtain LLM's response and validate it
             response = self.model_backend.run(openai_messages)
@@ -346,6 +331,14 @@ class ChatAgent(BaseAgent):
                 )
                 break
 
+        # Loop over response terminations
+        if self.response_terminations is not None:
+            for termination in self.response_terminations:
+                terminated, termination_reasons = termination.terminated(
+                    output_messages)
+                if terminated:
+                    info["termination_reasons"].extend(termination_reasons)
+                    self.terminated = terminated
         return ChatAgentResponse(output_messages, self.terminated, info)
 
     def preprocess_messages(
@@ -459,9 +452,9 @@ class ChatAgent(BaseAgent):
         usage_dict = self.get_usage_dict(output_messages, prompt_tokens)
         return output_messages, finish_reasons, usage_dict, response_id
 
-    def step_token_exceed(
-            self, num_tokens: int,
-            called_funcs: List[FunctionCallingRecord]) -> ChatAgentResponse:
+    def step_token_exceed(self, num_tokens: int,
+                          called_funcs: List[FunctionCallingRecord],
+                          termination_reasons: List[str]) -> ChatAgentResponse:
         r"""Return trivial response containing number of tokens and information
         of called functions when the number of tokens exceeds.
 
@@ -475,13 +468,12 @@ class ChatAgent(BaseAgent):
                 information about token number and called functions.
         """
 
-        self.terminated = True
         output_messages: List[BaseMessage] = []
 
         info = self.get_info(
             None,
             None,
-            ["max_tokens_exceeded"],
+            termination_reasons,
             num_tokens,
             called_funcs,
         )

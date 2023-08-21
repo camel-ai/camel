@@ -11,28 +11,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .base import BaseAgent
-from .chat_agent import ChatAgent
-from .task_agent import (
-    TaskSpecifyAgent,
-    TaskPlannerAgent,
-    TaskCreationAgent,
-    TaskPrioritizationAgent,
-)
-from .critic_agent import CriticAgent
-from .tool_agents.base import BaseToolAgent
-from .tool_agents.hugging_face_tool_agent import HuggingFaceToolAgent
-from .embodied_agent import EmbodiedAgent
+import pytest
 
-__all__ = [
-    'BaseAgent',
-    'ChatAgent',
-    'TaskSpecifyAgent',
-    'TaskPlannerAgent',
-    'TaskCreationAgent',
-    'TaskPrioritizationAgent',
-    'CriticAgent',
-    'BaseToolAgent',
-    'HuggingFaceToolAgent',
-    'EmbodiedAgent',
-]
+from camel.termination import TokenLimitTermination
+
+
+@pytest.mark.parametrize('num_tokens', [5, 10])
+def test_token_limit_termination(num_tokens):
+    termination = TokenLimitTermination(token_limit=10)
+    terminated, termination_reasons = termination.terminated(
+        num_tokens=num_tokens)
+    if num_tokens == 5:
+        assert not terminated
+        assert termination_reasons == []
+    if num_tokens == 10:
+        assert terminated
+        assert termination_reasons[0] == "max_tokens_exceeded"
