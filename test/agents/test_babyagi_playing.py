@@ -11,23 +11,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import pytest
+
 from camel.agents import ChatAgent, TaskCreationAgent, TaskPrioritizeAgent
 from camel.messages import BaseMessage
 from camel.societies import BabyAGI
 from camel.typing import ModelType, RoleType, TaskType
 
+parametrize = pytest.mark.parametrize('model', [
+    None,
+    pytest.param(ModelType.GPT_3_5_TURBO, marks=pytest.mark.model_backend),
+    pytest.param(ModelType.GPT_4, marks=pytest.mark.model_backend),
+])
 
-def test_babyagi_playing_init():
 
-    model_type = None
+@parametrize
+def test_babyagi_playing_init(model: ModelType):
+
     task_prompt = "Develop a trading bot for the stock market"
 
     babyagi_playing = BabyAGI(
         assistant_role_name="Python Programmer",
-        assistant_agent_kwargs=dict(model=model_type),
+        assistant_agent_kwargs=dict(model=model),
         user_role_name="Stock Trader",
         task_prompt=task_prompt,
-        task_specify_agent_kwargs=dict(model=model_type),
+        task_specify_agent_kwargs=dict(model=model),
         message_window_size=5,
     )
 
@@ -37,29 +45,25 @@ def test_babyagi_playing_init():
     assert isinstance(babyagi_playing.assistant_sys_msg, BaseMessage)
     assert babyagi_playing.assistant_sys_msg.role_type == RoleType.ASSISTANT
 
-    model = ModelType.GPT_3_5_TURBO
     assert isinstance(babyagi_playing.assistant_agent, ChatAgent)
-    assert babyagi_playing.assistant_agent.model == model
     assert isinstance(babyagi_playing.task_creation_agent, TaskCreationAgent)
-    assert babyagi_playing.task_creation_agent.model == model
     assert isinstance(babyagi_playing.task_prioritize_agent,
                       TaskPrioritizeAgent)
-    assert babyagi_playing.task_prioritize_agent.model == model
 
     assert len(babyagi_playing.tasks) == 0
     assert len(babyagi_playing.solved_tasks) == 0
 
 
-def test_babyagi_playing_step():
-    model_type = None
+@parametrize
+def test_babyagi_playing_step(model: ModelType):
     task_prompt = "Develop a trading bot for the stock market"
 
     babyagi_playing = BabyAGI(
         assistant_role_name="Python Programmer",
-        assistant_agent_kwargs=dict(model=model_type),
+        assistant_agent_kwargs=dict(model=model),
         user_role_name="Stock Trader",
         task_prompt=task_prompt,
-        task_specify_agent_kwargs=dict(model=model_type),
+        task_specify_agent_kwargs=dict(model=model),
         message_window_size=5,
     )
 
@@ -78,3 +82,7 @@ def test_babyagi_playing_step():
 
     assert len(babyagi_playing.tasks) > 0
     assert len(babyagi_playing.solved_tasks) == 1
+
+    assert len(babyagi_playing.assistant_agent.stored_messages) > 0
+    assert len(babyagi_playing.task_creation_agent.stored_messages) > 0
+    assert len(babyagi_playing.task_prioritize_agent.stored_messages) > 0
