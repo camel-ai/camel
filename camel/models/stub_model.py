@@ -13,9 +13,26 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Dict, List, Optional
 
+from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.typing import ModelType
-from camel.utils import BaseTokenCounter, OpenAITokenCounter
+from camel.utils import BaseTokenCounter
+
+
+class StubTokenCounter(BaseTokenCounter):
+
+    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
+        r"""Token counting for STUB models, directly returning a constant.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+
+        Returns:
+            int: A constant to act as the number of the tokens in the
+                messages.
+        """
+        return 10
 
 
 class StubModel(BaseModelBackend):
@@ -37,7 +54,7 @@ class StubModel(BaseModelBackend):
                 tokenization style.
         """
         if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(self.model_type)
+            self._token_counter = StubTokenCounter()
         return self._token_counter
 
     def run(self, messages: List[Dict]) -> Dict[str, Any]:
