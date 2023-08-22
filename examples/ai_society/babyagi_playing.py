@@ -17,7 +17,8 @@ from colorama import Fore
 from camel.societies import BabyAGI
 from camel.utils import print_text_animated
 
-if __name__ == "__main__":
+
+def main():
     model_type = None
     task_prompt = "Develop a trading bot for the stock market"
     babyagi_session = BabyAGI(
@@ -42,9 +43,6 @@ if __name__ == "__main__":
     while n < chat_turn_limit:
         n += 1
         assistant_response = babyagi_session.step()
-
-        input_assistant_msg = assistant_response.msg
-
         if assistant_response.terminated:
             print(Fore.GREEN +
                   ("AI Assistant terminated. Reason: "
@@ -55,3 +53,7 @@ if __name__ == "__main__":
 
         print_text_animated(Fore.GREEN + "AI Assistant:\n\n"
                             f"{assistant_response.msg.content}\n")
+
+
+if __name__ == "__main__":
+    main()
