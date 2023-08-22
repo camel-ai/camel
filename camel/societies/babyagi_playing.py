@@ -14,8 +14,6 @@
 from collections import deque
 from typing import Dict, List, Optional
 
-from colorama import Fore
-
 from camel.agents import (
     ChatAgent,
     TaskCreationAgent,
@@ -27,7 +25,6 @@ from camel.generators import SystemMessageGenerator
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
 from camel.typing import RoleType, TaskType
-from camel.utils import print_text_animated
 
 
 class BabyAGI:
@@ -39,8 +36,6 @@ class BabyAGI:
         user_role_name (str): The name of the role played by the user.
         task_prompt (str, optional): A prompt for the task to be performed.
             (default: :obj:`""`)
-        with_task_specify (bool, optional): Whether to use a task specify
-            agent. (default: :obj:`True`)
         task_type (TaskType, optional): The type of task to perform.
             (default: :obj:`TaskType.AI_SOCIETY`)
         assistant_agent_kwargs (Dict, optional): Additional arguments to pass
@@ -245,43 +240,3 @@ class BabyAGI:
         return ChatAgentResponse([assistant_msg],
                                  assistant_response.terminated,
                                  assistant_response.info)
-
-
-if __name__ == "__main__":
-    model_type = None
-    task_prompt = "Develop a trading bot for the stock market"
-    babyagi_session = BabyAGI(
-        assistant_role_name="Python Programmer",
-        assistant_agent_kwargs=dict(model=model_type),
-        user_role_name="Stock Trader",
-        task_prompt=task_prompt,
-        task_specify_agent_kwargs=dict(model=model_type),
-        message_window_size=5,
-    )
-
-    print(Fore.GREEN +
-          f"AI Assistant sys message:\n{babyagi_session.assistant_sys_msg}\n")
-
-    print(Fore.YELLOW + f"Original task prompt:\n{task_prompt}\n")
-    print(Fore.CYAN +
-          f"Specified task prompt:\n{babyagi_session.specified_task_prompt}\n")
-    print(Fore.RED +
-          f"Final task prompt:\n{babyagi_session.specified_task_prompt}\n")
-
-    chat_turn_limit, n = 15, 0
-    while n < chat_turn_limit:
-        n += 1
-        assistant_response = babyagi_session.step()
-
-        input_assistant_msg = assistant_response.msg
-
-        if assistant_response.terminated:
-            print(Fore.GREEN +
-                  ("AI Assistant terminated. Reason: "
-                   f"{assistant_response.info['termination_reasons']}."))
-            break
-        print_text_animated(Fore.RED + "Task Name:\n\n"
-                            f"{assistant_response.info['task_name']}\n")
-
-        print_text_animated(Fore.GREEN + "AI Assistant:\n\n"
-                            f"{assistant_response.msg.content}\n")
