@@ -21,7 +21,6 @@ from camel.typing import ModelType, RoleType, TaskType
 from camel.utils import get_task_list
 
 
-# flake8: noqa :E501
 class TaskSpecifyAgent(ChatAgent):
     r"""An agent that specifies a given task prompt by prompting the user to
     provide more details.
@@ -31,15 +30,15 @@ class TaskSpecifyAgent(ChatAgent):
         task_specify_prompt (TextPrompt): The prompt for specifying the task.
 
     Args:
-        model (ModelType): The type of model to use for the agent.
+        model (ModelType, optional): The type of model to use for the agent.
             (default: :obj:`ModelType.GPT_3_5_TURBO`)
-        task_type (TaskType): The type of task for which to generate a prompt.
-            (default: :obj:`TaskType.AI_SOCIETY`)
-        model_config (Any): The configuration for the model.
+        task_type (TaskType, optional): The type of task for which to generate
+            a prompt. (default: :obj:`TaskType.AI_SOCIETY`)
+        model_config (Any, optional): The configuration for the model.
             (default: :obj:`None`)
-        task_specify_prompt (Optional[TextPrompt]): The prompt for specifying
-            the task. (default: :obj:`None`)
-        word_limit (int): The word limit for the task prompt.
+        task_specify_prompt (Union[str, TextPrompt], optional): The prompt for
+            specifying the task. (default: :obj:`None`)
+        word_limit (int, optional): The word limit for the task prompt.
             (default: :obj:`50`)
         output_language (str, optional): The language to be output by the
         agent. (default: :obj:`None`)
@@ -88,7 +87,7 @@ class TaskSpecifyAgent(ChatAgent):
         Args:
             task_prompt (Union[str, TextPrompt]): The original task
                 prompt.
-            meta_dict (Optional[Dict[str, Any]]): A dictionary containing
+            meta_dict (Dict[str, Any], optional): A dictionary containing
                 additional information to include in the prompt.
                 (default: :obj:`None`)
 
@@ -96,19 +95,16 @@ class TaskSpecifyAgent(ChatAgent):
             TextPrompt: The specified task prompt.
         """
         self.reset()
-        self.task_specify_prompt = self.task_specify_prompt.format(
-            task=task_prompt)
+        task_specify_prompt = self.task_specify_prompt.format(task=task_prompt)
 
         if meta_dict is not None:
-            self.task_specify_prompt = (self.task_specify_prompt.format(
-                **meta_dict))
+            task_specify_prompt = task_specify_prompt.format(**meta_dict)
 
-        task_msg = BaseMessage.make_user_message(
-            role_name="Task Specifier", content=self.task_specify_prompt)
+        task_msg = BaseMessage.make_user_message(role_name="Task Specifier",
+                                                 content=task_specify_prompt)
         specifier_response = self.step(task_msg)
-        if (specifier_response.msgs is None
-                or len(specifier_response.msgs) == 0):
-            raise RuntimeError("Task specification failed.")
+        if len(specifier_response.msgs) == 0:
+            raise RuntimeError("Got no specification message.")
         specified_task_msg = specifier_response.msgs[0]
 
         if specifier_response.terminated:
@@ -126,9 +122,9 @@ class TaskPlannerAgent(ChatAgent):
             the task into subtasks.
 
     Args:
-        model (ModelType): The type of model to use for the agent.
+        model (ModelType, optional): The type of model to use for the agent.
             (default: :obj:`ModelType.GPT_3_5_TURBO`)
-        model_config (Any): The configuration for the model.
+        model_config (Any, optional): The configuration for the model.
             (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
         agent. (default: :obj:`None`)
@@ -168,16 +164,15 @@ class TaskPlannerAgent(ChatAgent):
         """
         # TODO: Maybe include roles information.
         self.reset()
-        self.task_planner_prompt = self.task_planner_prompt.format(
-            task=task_prompt)
+        task_planner_prompt = self.task_planner_prompt.format(task=task_prompt)
 
-        task_msg = BaseMessage.make_user_message(
-            role_name="Task Planner", content=self.task_planner_prompt)
+        task_msg = BaseMessage.make_user_message(role_name="Task Planner",
+                                                 content=task_planner_prompt)
 
         task_response = self.step(task_msg)
 
         if len(task_response.msgs) == 0:
-            raise RuntimeError("Got None Subtasks messages.")
+            raise RuntimeError("Got no task planning message.")
         if task_response.terminated:
             raise RuntimeError("Task planning failed.")
 
@@ -189,7 +184,8 @@ class TaskCreationAgent(ChatAgent):
     r"""An agent that helps create new tasks based on the objective
     and last completed task. Compared to :obj:`TaskPlannerAgent`,
     it's still a task planner, but it has more context information
-    like last task and incompleted task list.
+    like last task and incomplete task list. Modified from
+    `BabyAGI <https://github.com/yoheinakajima/babyagi>`_.
 
     Attributes:
         task_creator_prompt (TextPrompt): A prompt for the agent to create
@@ -219,7 +215,7 @@ class TaskCreationAgent(ChatAgent):
         message_window_size: Optional[int] = None,
     ) -> None:
 
-        self.task_creator_prompt = TextPrompt(
+        task_creation_prompt = TextPrompt(
             """Create new a task with the following objective: {objective}.
 Never forget you are a Task Creator and I am {role_name}.
 You must instruct me based on my expertise and your needs to solve the task. 
@@ -231,25 +227,27 @@ The result must be a numbered list in the format:
     #. Second Task
     #. Third Task
 
-You can only give me up to three tasks at a time. Each task shoud be concise, concrete and doable for a Python Programmer.
+You can only give me up to three tasks at a time. Each task shoud be concise, \
+concrete and doable for a Python Programmer.
 You should make task plan and not ask me questions. 
-If you think no new tasks are needed right now, write "There are no tasks to add at this time."
+If you think no new tasks are needed right now, write "No tasks to add."
 Now start to give me new tasks one by one. No more than three tasks. Be concrete.
 """)
+
+        self.task_creation_prompt = task_creation_prompt.format(
+            objective=objective, role_name=role_name)
+        self.objective = objective
+
         system_message = BaseMessage(
             role_name="Task Creator",
             role_type=RoleType.ASSISTANT,
             meta_dict=None,
             content="You are a helpful task creator.",
         )
-
+        
         super().__init__(system_message, model, model_config,
                          output_language=output_language,
                          message_window_size=message_window_size)
-
-        self.objective = objective
-        self.task_creator_prompt = self.task_creator_prompt.format(
-            objective=self.objective, role_name=role_name)
 
     def run(
         self,
@@ -266,13 +264,13 @@ Now start to give me new tasks one by one. No more than three tasks. Be concrete
         """
 
         if len(task_list) > 0:
-            task_creator_prompt = self.task_creator_prompt.format(
+            task_creation_prompt = self.task_creation_prompt.format(
                 task_list=task_list)
         else:
-            task_creator_prompt = self.task_creator_prompt.format(task_list="")
+            task_creation_prompt = self.task_creation_prompt.format(task_list="")
 
         task_msg = BaseMessage.make_user_message(role_name="Task Planner",
-                                                 content=task_creator_prompt)
+                                                 content=task_creation_prompt)
         task_response = self.step(task_msg)
 
         if len(task_response.msgs) == 0:
@@ -281,13 +279,13 @@ Now start to give me new tasks one by one. No more than three tasks. Be concrete
             raise RuntimeError("Task planning failed.")
 
         sub_tasks_msg = task_response.msgs[0]
-        new_tasks = get_task_list(sub_tasks_msg.content)
-        return new_tasks
+        return get_task_list(sub_tasks_msg.content)
 
 
 class TaskPrioritizeAgent(ChatAgent):
-    r"""An agent that helps reprioritize the task list and
-    returns numbered prioritized list.
+    r"""An agent that helps re-prioritize the task list and
+    returns numbered prioritized list. Modified from
+    `BabyAGI <https://github.com/yoheinakajima/babyagi>`_.
 
     Attributes:
         task_prioritizer_prompt (TextPrompt): A prompt for the agent to
@@ -314,10 +312,11 @@ class TaskPrioritizeAgent(ChatAgent):
         output_language: Optional[str] = None,
         message_window_size: Optional[int] = None,
     ) -> None:
-        self.task_prioritizer_prompt = TextPrompt(
+        task_prioritization_prompt = TextPrompt(
             """Prioritize the following tasks : {task_list}.
 Consider the ultimate objective of you: {objective}.
-Tasks should be sorted from highest to lowest priority, where higher-priority tasks are those that act as pre-requisites or are more essential for meeting the objective.
+Tasks should be sorted from highest to lowest priority, where higher-priority tasks \
+are those that act as pre-requisites or are more essential for meeting the objective.
 Return one task per line in your response. Do not remove or modify any tasks. 
 The result must be a numbered list in the format:
 
@@ -328,6 +327,11 @@ The entries must be consecutively numbered, starting with 1.
 The number of each entry must be followed by a period.
 Do not include any headers before your ranked list or follow your list with any other output."""
         )
+
+        self.task_prioritization_prompt = task_prioritization_prompt.format(
+            objective=objective)
+        self.objective = objective
+
         system_message = BaseMessage(
             role_name="Task Prioritizer",
             role_type=RoleType.ASSISTANT,
@@ -338,10 +342,6 @@ Do not include any headers before your ranked list or follow your list with any 
         super().__init__(system_message, model, model_config,
                          output_language=output_language,
                          message_window_size=message_window_size)
-
-        self.objective = objective
-        self.task_prioritizer_prompt = self.task_prioritizer_prompt.format(
-            objective=self.objective)
 
     def run(
         self,
@@ -354,11 +354,11 @@ Do not include any headers before your ranked list or follow your list with any 
         Returns:
             List[str]: The new prioritized task list generated by the Agent.
         """
-        task_prioritizer_prompt = self.task_prioritizer_prompt.format(
+        task_prioritization_prompt = self.task_prioritization_prompt.format(
             task_list=task_list)
 
         task_msg = BaseMessage.make_user_message(
-            role_name="Task Prioritizer", content=task_prioritizer_prompt)
+            role_name="Task Prioritizer", content=task_prioritization_prompt)
 
         task_response = self.step(task_msg)
 
@@ -368,5 +368,4 @@ Do not include any headers before your ranked list or follow your list with any 
             raise RuntimeError("Task Prioritizing failed.")
 
         sub_tasks_msg = task_response.msgs[0]
-        new_tasks = get_task_list(sub_tasks_msg.content)
-        return new_tasks
+        return get_task_list(sub_tasks_msg.content)
