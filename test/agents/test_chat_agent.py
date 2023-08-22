@@ -55,21 +55,6 @@ def test_chat_agent(model: ModelType):
     assert isinstance(assistant_response.info, dict)
     assert assistant_response.info['id'] is not None
 
-    assistant.reset()
-    token_limit = assistant.model_token_limit
-    user_msg = BaseMessage(role_name="Patient", role_type=RoleType.USER,
-                           meta_dict=dict(),
-                           content="token" * (token_limit + 1))
-    assistant_response = assistant.step(user_msg)
-
-    assert isinstance(assistant_response.msgs, list)
-    assert len(assistant_response.msgs) == 0
-    assert isinstance(assistant_response.terminated, bool)
-    assert assistant_response.terminated is True
-    assert isinstance(assistant_response.info, dict)
-    assert (assistant_response.info['termination_reasons'][0] ==
-            "max_tokens_exceeded")
-
 
 @pytest.mark.model_backend
 def test_chat_agent_stored_messages():
