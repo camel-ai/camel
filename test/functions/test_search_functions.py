@@ -63,7 +63,7 @@ def test_search_wiki_not_found():
 def tests_earch_wiki_by_api():
     expected_output = (
         "New York, often called New York State, is a state in the "
-        "Northeastern United States.  A Mid-Atlantic state, New York "
+        "Northeastern United States. A Mid-Atlantic state, New York "
         "borders New England, and has an international border with "
         "Canada. With almost 19.7 million residents, it is the fourth-most"
         " populous state in the United States and seventh-most densely "
