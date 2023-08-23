@@ -11,23 +11,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-
+from abc import ABC, abstractmethod
 from typing import List
 
-from camel.memory.short_term_storage.base import BaseShortTermStorage
-from camel.messages.base import BaseMessage
 
+class BaseEmbedding(ABC):
+    """
+    """
 
-class InMemoryStorage(BaseShortTermStorage):
+    @abstractmethod
+    def embed(self, text: str) -> List[float]:
+        ...
 
-    def __init__(self):
-        self.memory_list: List[BaseMessage] = []
-
-    def store(self, msg: BaseMessage) -> None:
-        self.memory_list.append(msg)
-
-    def load(self) -> List[BaseMessage]:
-        return self.memory_list
-
-    def clear(self) -> None:
-        self.memory_list.clear()
+    @abstractmethod
+    def get_output_dim(self) -> int:
+        ...

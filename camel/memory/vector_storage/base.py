@@ -13,12 +13,25 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from enum import Enum
+from typing import Any, Dict, List, Optional
 
-from camel.memory.base_memory import BaseMemoryStorage
-from camel.messages.base import BaseMessage
+
+class Distance(Enum):
+    DOT = "Dot"
+    COSINE = "Cosine"
+    EUCLID = "Euclid"
 
 
-class BaseLongTermStorage(BaseMemoryStorage, ABC):
+@dataclass
+class VectorRecord():
+    id: int
+    vector: List[float]
+    payload: Optional[Dict[str, Any]] = None
+
+
+class BaseVectorStorage(ABC):
     """
     Abstract base class representing the basic operations
     required for long-term memory storage.
@@ -28,7 +41,19 @@ class BaseLongTermStorage(BaseMemoryStorage, ABC):
     """
 
     @abstractmethod
-    def archive(self, msg: BaseMessage) -> None:
+    def create_collection(self, collection: str, size: int,
+                          distance: str = "dot", **kwargs):
+        """_summary_
+
+        Args:
+            collection (str): _description_
+            size (int): _description_
+            distance (str, optional): _description_. Defaults to "dot".
+        """
+        ...
+
+    @abstractmethod
+    def add_points(self, collection, points: List[VectorRecord]) -> None:
         """
         Archives a message in long-term storage. Archiving may differ
         from standard storage in terms of compression, backup, redundancy, etc.
@@ -36,12 +61,14 @@ class BaseLongTermStorage(BaseMemoryStorage, ABC):
         Args:
             msg (BaseMessage): The message to be archived.
         """
-        pass
+        ...
 
     @abstractmethod
-    def retrieve_archived(self, id: str) -> BaseMessage:
+    def search(self, query_point: VectorRecord,
+               limit: int) -> List[VectorRecord]:
         """
-        Retrieves an archived message from long-term storage based on its identifier.
+        Retrieves an archived message from long-term storage based on its
+            identifier.
 
         Args:
             id (str): The unique identifier of the archived message.
@@ -49,4 +76,4 @@ class BaseLongTermStorage(BaseMemoryStorage, ABC):
         Returns:
             BaseMessage: The retrieved archived message.
         """
-        pass
+        ...

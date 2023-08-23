@@ -12,19 +12,33 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from abc import ABC, abstractmethod
+from dataclasses import asdict
 from typing import List, Optional
 
+from camel.memory.base_memory import BaseMemory
+from camel.memory.lossless_storage.base import LosslessStorage
+from camel.memory.lossless_storage.in_memory import InMemoryStorage
 from camel.messages.base import BaseMessage
 
 
-class BaseMemory(ABC):
-    """
-    Abstract base class representing the basic operations
-    required for a memory system.
+class ChatHistoryMemory(BaseMemory):
+    """_summary_
+
+    Args:
+        BaseMemory (_type_): _description_
     """
 
-    @abstractmethod
+    def __init__(self, storage: Optional[LosslessStorage] = None) -> None:
+        """
+        Reads the latest message from memory. If no messages are present,
+            returns None.
+
+        Returns:
+            Optional[BaseMessage]: The latest message or None if memory
+                is empty.
+        """
+        self.storage = storage or InMemoryStorage()
+
     def read(self,
              current_state: Optional[BaseMessage] = None) -> List[BaseMessage]:
         """
@@ -34,9 +48,8 @@ class BaseMemory(ABC):
             Union[BaseMessage, List[BaseMessage]]: Retrieved message or list of
                 messages.
         """
-        ...
+        return [BaseMessage(record) for record in self.storage.load()]
 
-    @abstractmethod
     def write(self, msgs: List[BaseMessage]) -> None:
         """
         Writes a message to memory.
@@ -44,11 +57,10 @@ class BaseMemory(ABC):
         Args:
             msg (BaseMessage): The message to be written.
         """
-        ...
+        self.storage.save([asdict(msg) for msg in msgs])
 
-    @abstractmethod
     def clear(self) -> None:
         """
         Clears all messages from memory.
         """
-        ...
+        self.storage.clear()

@@ -12,31 +12,44 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from abc import ABC, abstractmethod
 from typing import List, Optional
 
+from camel.embedding.base import BaseEmbedding
+from camel.embedding.openai_embedding import OpenAiEmbedding
+from camel.memory.base_memory import BaseMemory
+from camel.memory.vector_storage.base import BaseVectorStorage
+from camel.memory.vector_storage.qdrant import Qdrant
 from camel.messages.base import BaseMessage
 
 
-class BaseMemory(ABC):
-    """
-    Abstract base class representing the basic operations
-    required for a memory system.
-    """
+class VectorDBMemory(BaseMemory):
 
-    @abstractmethod
+    def __init__(self, storage: Optional[BaseVectorStorage] = None,
+                 embedding: Optional[BaseEmbedding] = None):
+        """
+        Initializes a new instance of LongTermMemory.
+
+        Args:
+            storage (Optional[BaseLongTermStorage]): The storage mechanism for
+                long-term memory.
+        """
+        self.storage = storage or Qdrant()
+        self.embedding = embedding or OpenAiEmbedding()
+
     def read(self,
              current_state: Optional[BaseMessage] = None) -> List[BaseMessage]:
         """
         Reads a message or messages from memory.
 
         Returns:
-            Union[BaseMessage, List[BaseMessage]]: Retrieved message or list of
-                messages.
+            Union[BaseMessage, List[BaseMessage]]: Retrieved message or list
+                of messages.
         """
-        ...
+        if current_state is None:
+            raise RuntimeError(
+                "Readling vector database memeory without message input")
+        self.embedding.embed(current_state)
 
-    @abstractmethod
     def write(self, msgs: List[BaseMessage]) -> None:
         """
         Writes a message to memory.
@@ -46,7 +59,6 @@ class BaseMemory(ABC):
         """
         ...
 
-    @abstractmethod
     def clear(self) -> None:
         """
         Clears all messages from memory.

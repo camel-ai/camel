@@ -13,42 +13,26 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from abc import ABC, abstractmethod
-from typing import List, Optional
-
-from camel.messages.base import BaseMessage
+from typing import Any, Dict, List
 
 
-class BaseMemory(ABC):
+class LosslessStorage(ABC):
     """
     Abstract base class representing the basic operations
-    required for a memory system.
+    required for short-term memory storage.
+
+    Inherits the basic storage operations from BaseMemoryStorage.
+    Any additional short-term specific operations can be added here.
     """
 
     @abstractmethod
-    def read(self,
-             current_state: Optional[BaseMessage] = None) -> List[BaseMessage]:
-        """
-        Reads a message or messages from memory.
-
-        Returns:
-            Union[BaseMessage, List[BaseMessage]]: Retrieved message or list of
-                messages.
-        """
+    def save(self, records: List[Dict[str, Any]]) -> None:
         ...
 
     @abstractmethod
-    def write(self, msgs: List[BaseMessage]) -> None:
-        """
-        Writes a message to memory.
-
-        Args:
-            msg (BaseMessage): The message to be written.
-        """
+    def load(self) -> List[Dict[str, Any]]:
         ...
 
     @abstractmethod
     def clear(self) -> None:
-        """
-        Clears all messages from memory.
-        """
         ...

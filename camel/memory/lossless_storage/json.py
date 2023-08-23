@@ -12,17 +12,27 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from abc import ABC
+import json
+from pathlib import Path
+from typing import Any, Dict, List
 
-from camel.memory.base_memory import BaseMemoryStorage
+from camel.memory.lossless_storage.base import LosslessStorage
 
 
-class BaseShortTermStorage(BaseMemoryStorage, ABC):
-    """
-    Abstract base class representing the basic operations
-    required for short-term memory storage.
+class JsonStorage(LosslessStorage):
 
-    Inherits the basic storage operations from BaseMemoryStorage.
-    Any additional short-term specific operations can be added here.
-    """
-    pass
+    def __init__(self, path: Path = Path("chat_history.json")):
+        self.json_path = path
+        self.json_path.touch()
+
+    def save(self, records: List[Dict[str, Any]]) -> None:
+        with self.json_path.open("a") as f:
+            f.writelines([json.dumps(r) for r in records])
+
+    def load(self) -> List[Dict[str, Any]]:
+        with self.json_path.open("r") as f:
+            return [json.loads(r) for r in f.readlines()]
+
+    def clear(self) -> None:
+        with self.json_path.open("w"):
+            pass
