@@ -19,6 +19,7 @@ from qdrant_client import QdrantClient
 from qdrant_client.http.models import (
     CollectionStatus,
     Distance,
+    PointIdsList,
     PointStruct,
     UpdateStatus,
     VectorParams,
@@ -49,7 +50,7 @@ class Qdrant():
         size: int,
         distance: base.Distance = base.Distance.DOT,
         **kwargs,
-    ):
+    ) -> None:
         distance_map = {
             base.Distance.DOT: Distance.DOT,
             base.Distance.COSINE: Distance.COSINE,
@@ -62,12 +63,20 @@ class Qdrant():
             **kwargs,
         )
 
+    def delete_collection(
+        self,
+        collection: str,
+        **kwargs,
+    ) -> None:
+        self.client.delete_collection(collection_name=collection, **kwargs)
+
     def check_collection(self, collection: str) -> None:
+        # TODO: check more information
         collection_info = self.client.get_collection(
             collection_name=collection)
         if collection_info.status != CollectionStatus.GREEN:
-            raise RuntimeError(
-                f"Connect to Qdrant collection \"{collection}\" failed.")
+            raise RuntimeWarning(f"Qdrant collection \"{collection}\" status: "
+                                 f"{collection_info.status}")
 
     def add_vectors(
         self,
@@ -80,15 +89,27 @@ class Qdrant():
                 **asdict(p),
             ) for p in vectors
         ]
-        operation_info = self.client.upsert(
+        op_info = self.client.upsert(
             collection_name=collection,
             points=qdrant_points,
             wait=True,
         )
-        if operation_info.status != UpdateStatus.COMPLETED:
+        if op_info.status != UpdateStatus.COMPLETED:
             raise RuntimeError(
-                "Failed to add vectors in Qdrant, operation_info: "
-                f"{operation_info}")
+                "Failed to add vectors in Qdrant, operation info: "
+                f"{op_info}")
+
+    def delete_vectors(self, collection: str,
+                       ids: List[base.VectorRecord]) -> None:
+        op_info = self.client.delete(
+            collection_name=collection,
+            points_selector=PointIdsList([p.id for p in ids]),
+            wait=True,
+        )
+        if op_info.status != UpdateStatus.COMPLETED:
+            raise RuntimeError(
+                "Failed to delete vectors in Qdrant, operation info: "
+                f"{op_info}")
 
     def search(
         self,

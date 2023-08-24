@@ -41,8 +41,13 @@ class BaseVectorStorage(ABC):
     """
 
     @abstractmethod
-    def create_collection(self, collection: str, size: int,
-                          distance: str = "dot", **kwargs):
+    def create_collection(
+        self,
+        collection: str,
+        size: int,
+        distance: str = "dot",
+        **kwargs,
+    ):
         """_summary_
 
         Args:
@@ -53,7 +58,11 @@ class BaseVectorStorage(ABC):
         ...
 
     @abstractmethod
-    def add_vectors(self, collection, vectors: List[VectorRecord]) -> None:
+    def add_vectors(
+        self,
+        collection: str,
+        vectors: List[VectorRecord],
+    ) -> None:
         """
         Archives a message in long-term storage. Archiving may differ
         from standard storage in terms of compression, backup, redundancy, etc.
@@ -64,7 +73,19 @@ class BaseVectorStorage(ABC):
         ...
 
     @abstractmethod
-    def delete_vectors(self, collection, vectors: List[VectorRecord]) -> None:
+    def delete_collection(
+        self,
+        collection: str,
+        **kwargs,
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def delete_vectors(
+        self,
+        collection: str,
+        vectors: List[VectorRecord],
+    ) -> None:
         """
         Archives a message in long-term storage. Archiving may differ
         from standard storage in terms of compression, backup, redundancy, etc.
@@ -75,8 +96,11 @@ class BaseVectorStorage(ABC):
         ...
 
     @abstractmethod
-    def search(self, query_vector: VectorRecord,
-               limit: int) -> List[VectorRecord]:
+    def search(
+        self,
+        query_vector: VectorRecord,
+        limit: int,
+    ) -> List[VectorRecord]:
         """
         Retrieves an archived message from long-term storage based on its
             identifier.
