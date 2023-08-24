@@ -12,14 +12,10 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from .base_memory import BaseMemory
-from .chat_history_memory import ChatHistoryMemory
-from .cognize_memory import CognizeMemory
-from .vectordb_memory import VectorDBMemory
+from .base import BaseVectorStorage
+from .qdrant import Qdrant
 
 __all__ = [
-    'BaseMemory',
-    'ChatHistoryMemory',
-    'CognizeMemory',
-    'VectorDBMemory',
+    'BaseVectorStorage',
+    'Qdrant',
 ]

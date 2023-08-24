@@ -48,7 +48,7 @@ class ChatHistoryMemory(BaseMemory):
             Union[BaseMessage, List[BaseMessage]]: Retrieved message or list of
                 messages.
         """
-        return [BaseMessage(record) for record in self.storage.load()]
+        return [BaseMessage(**record) for record in self.storage.load()]
 
     def write(self, msgs: List[BaseMessage]) -> None:
         """

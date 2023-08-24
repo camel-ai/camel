@@ -13,6 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from dataclasses import asdict
 from typing import List, Optional
+from uuid import uuid4
 
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import (
@@ -46,20 +47,20 @@ class Qdrant():
         self,
         collection: str,
         size: int,
-        distance: base.Distance.DOT,
+        distance: base.Distance = base.Distance.DOT,
         **kwargs,
     ):
         distance_map = {
             base.Distance.DOT: Distance.DOT,
             base.Distance.COSINE: Distance.COSINE,
-            base.Distance.EUCLID: Distance.EUCLID,
+            base.Distance.EUCLIDEAN: Distance.EUCLID,
         }
-
         self.client.recreate_collection(
             collection_name=collection,
             vectors_config=VectorParams(size=size,
                                         distance=distance_map[distance]),
-            **kwargs)
+            **kwargs,
+        )
 
     def check_collection(self, collection: str) -> None:
         collection_info = self.client.get_collection(
@@ -68,41 +69,48 @@ class Qdrant():
             raise RuntimeError(
                 f"Connect to Qdrant collection \"{collection}\" failed.")
 
-    def add_points(
+    def add_vectors(
         self,
         collection: str,
-        points: List[base.VectorRecord],
+        vectors: List[base.VectorRecord],
     ) -> None:
-        points = [PointStruct(**asdict(p)) for p in points]
+        qdrant_points = [
+            PointStruct(
+                id=p.id if p.id is not None else str(uuid4()),
+                **asdict(p),
+            ) for p in vectors
+        ]
         operation_info = self.client.upsert(
             collection_name=collection,
-            points=points,
+            points=qdrant_points,
             wait=True,
         )
         if operation_info.status != UpdateStatus.COMPLETED:
             raise RuntimeError(
-                "Failed to add points in Qdrant, operation_info: "
+                "Failed to add vectors in Qdrant, operation_info: "
                 f"{operation_info}")
 
     def search(
         self,
-        query_point: base.VectorRecord,
+        query_vector: base.VectorRecord,
         limit: int = 3,
     ) -> List[base.VectorRecord]:
         # TODO: filter
+        if query_vector.vector is None:
+            raise RuntimeError("Searching vector cannot be None")
         search_result = self.client.search(
             collection_name="test_collection",
-            query_vector=query_point.vector,
+            query_vector=query_vector.vector,
             with_payload=True,
-            with_vectors=True,  # not necessary?
             limit=limit,
         )
         # TODO: including score?
-        result_records = [
-            base.VectorRecord(
-                id=res.id,
-                vector=res.vector,
-                payload=res.payload,
-            ) for res in search_result
-        ]
+        result_records = []
+        for res in search_result:
+            result_records.append(
+                base.VectorRecord(
+                    id=res.id,
+                    payload=res.payload,
+                ))
+
         return result_records

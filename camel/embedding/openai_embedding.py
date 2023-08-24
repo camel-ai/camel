@@ -32,6 +32,7 @@ class OpenAiEmbedding(BaseEmbedding):
     """
 
     def __init__(self, model: ModelType = ModelType.ADA2) -> None:
+        self.model = model
         if self.model == ModelType.ADA2:
             self.output_dim = 1536
         elif self.model == ModelType.ADA1:
@@ -44,7 +45,6 @@ class OpenAiEmbedding(BaseEmbedding):
             self.output_dim = 12288
         else:
             raise RuntimeError(f"Model type {model} not support")
-        self.model = model
 
     def embed(self, text: str) -> List[float]:
         # TODO: count tokens

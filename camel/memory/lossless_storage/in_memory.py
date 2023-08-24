@@ -19,7 +19,7 @@ from camel.memory.lossless_storage.base import LosslessStorage
 
 class InMemoryStorage(LosslessStorage):
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.memory_list: List[Dict] = []
 
     def save(self, records: List[Dict[str, Any]]) -> None:

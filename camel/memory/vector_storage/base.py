@@ -15,19 +15,19 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 
 class Distance(Enum):
-    DOT = "Dot"
-    COSINE = "Cosine"
-    EUCLID = "Euclid"
+    DOT = 1
+    COSINE = 2
+    EUCLIDEAN = 3
 
 
 @dataclass
 class VectorRecord():
-    id: int
-    vector: List[float]
+    id: Optional[Union[int, str]] = None
+    vector: Optional[List[float]] = None
     payload: Optional[Dict[str, Any]] = None
 
 
@@ -53,7 +53,7 @@ class BaseVectorStorage(ABC):
         ...
 
     @abstractmethod
-    def add_points(self, collection, points: List[VectorRecord]) -> None:
+    def add_vectors(self, collection, vectors: List[VectorRecord]) -> None:
         """
         Archives a message in long-term storage. Archiving may differ
         from standard storage in terms of compression, backup, redundancy, etc.
@@ -64,7 +64,18 @@ class BaseVectorStorage(ABC):
         ...
 
     @abstractmethod
-    def search(self, query_point: VectorRecord,
+    def delete_vectors(self, collection, vectors: List[VectorRecord]) -> None:
+        """
+        Archives a message in long-term storage. Archiving may differ
+        from standard storage in terms of compression, backup, redundancy, etc.
+
+        Args:
+            msg (BaseMessage): The message to be archived.
+        """
+        ...
+
+    @abstractmethod
+    def search(self, query_vector: VectorRecord,
                limit: int) -> List[VectorRecord]:
         """
         Retrieves an archived message from long-term storage based on its

@@ -14,7 +14,7 @@
 from enum import Enum
 
 
-class RoleType(Enum):
+class RoleType(str, Enum):
     ASSISTANT = "assistant"
     USER = "user"
     CRITIC = "critic"

@@ -27,7 +27,7 @@ class JsonStorage(LosslessStorage):
 
     def save(self, records: List[Dict[str, Any]]) -> None:
         with self.json_path.open("a") as f:
-            f.writelines([json.dumps(r) for r in records])
+            f.writelines([json.dumps(r) + "\n" for r in records])
 
     def load(self) -> List[Dict[str, Any]]:
         with self.json_path.open("r") as f:
