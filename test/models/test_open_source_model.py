@@ -15,7 +15,11 @@ import re
 
 import pytest
 
-from camel.configs import ChatGPTConfig, OpenSourceConfig
+from camel.configs import (
+    ChatGPTConfig,
+    FunctionCallingConfig,
+    OpenSourceConfig,
+)
 from camel.models import OpenSourceModel
 from camel.typing import ModelType
 from camel.utils import OpenSourceTokenCounter
@@ -44,10 +48,7 @@ def test_open_source_model(model_type):
     assert model.model_type == model_type
     assert model.model_name == model_name
     assert model.server_url == model_config.server_url
-
-    model_config_dict.pop("server_url")
-    model_config_dict.pop("model_path")
-    assert model.model_config_dict == model_config.__dict__
+    assert model.model_config_dict == model_config.api_params.__dict__
 
     assert isinstance(model.token_counter, OpenSourceTokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
@@ -74,10 +75,9 @@ def test_open_source_model_unexpected_argument():
     model_config = OpenSourceConfig(
         model_path=model_path,
         server_url="http://localhost:8000/v1",
+        api_params=FunctionCallingConfig(),
     )
     model_config_dict = model_config.__dict__
-
-    model_config_dict.update({"functions": []})
 
     with pytest.raises(
             ValueError, match=re.escape(

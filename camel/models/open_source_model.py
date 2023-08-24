@@ -68,12 +68,9 @@ class OpenSourceModel(BaseModelBackend):
                 "URL to server running open-source LLM is not provided.")
         self.server_url: str = server_url
 
-        # Reassemble the argument dictionary to be passed to the API
-        self.model_config_dict = {
-            key: value
-            for key, value in self.model_config_dict.items()
-            if key != "model_path" and key != "server_url"
-        }
+        # Replace :obj:model_config_dict with only the params to be
+        # passed to OpenAI API
+        self.model_config_dict = self.model_config_dict["api_params"].__dict__
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -131,9 +128,8 @@ class OpenSourceModel(BaseModelBackend):
                 "Invalid configuration for open-source model backend with "
                 ":obj:`model_path` or :obj:`server_url` missing.")
 
-        for param in self.model_config_dict:
-            if (param not in OPENAI_API_PARAMS and param != "model_path"
-                    and param != "server_url"):
+        for param in self.model_config_dict["api_params"].__dict__:
+            if param not in OPENAI_API_PARAMS:
                 raise ValueError(f"Unexpected argument `{param}` is "
                                  "input into open-source model backend.")
 

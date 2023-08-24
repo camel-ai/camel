@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from colorama import Fore
 
-from camel.configs import OpenSourceConfig
+from camel.configs import ChatGPTConfig, OpenSourceConfig
 from camel.societies import RolePlaying
 from camel.typing import ModelType
 from camel.utils import print_text_animated
@@ -28,6 +28,7 @@ def main(model_type=None, model_path=" ", server_url=" ") -> None:
             model_config=OpenSourceConfig(
                 model_path=model_path,
                 server_url=server_url,
+                api_params=ChatGPTConfig(temperature=0),
             ),
         )
         for role in ["assistant", "user", "task-specify"]
