@@ -18,8 +18,7 @@ from camel.societies import BabyAGI
 from camel.utils import print_text_animated
 
 
-def main():
-    model_type = None
+def main(model_type=None) -> None:
     task_prompt = "Develop a trading bot for the stock market"
     babyagi_session = BabyAGI(
         assistant_role_name="Python Programmer",
