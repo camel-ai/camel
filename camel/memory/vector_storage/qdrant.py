@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from typing import List, Optional
 from uuid import uuid4
 
@@ -82,12 +82,14 @@ class Qdrant():
         self,
         collection: str,
         vectors: List[base.VectorRecord],
-    ) -> None:
+    ) -> List[base.VectorRecord]:
+        processed_vectors = [replace(v) for v in vectors]
+        for v in processed_vectors:
+            if v.id is None:
+                v.id = str(uuid4())
+
         qdrant_points = [
-            PointStruct(
-                id=p.id if p.id is not None else str(uuid4()),
-                **asdict(p),
-            ) for p in vectors
+            PointStruct(**asdict(p)) for p in processed_vectors
         ]
         op_info = self.client.upsert(
             collection_name=collection,
@@ -98,12 +100,25 @@ class Qdrant():
             raise RuntimeError(
                 "Failed to add vectors in Qdrant, operation info: "
                 f"{op_info}")
+            
+        return processed_vectors
 
     def delete_vectors(self, collection: str,
-                       ids: List[base.VectorRecord]) -> None:
+                       vectors: List[base.VectorRecord]) -> List[base.VectorRecord]:
+        processed_vectors = [replace(v) for v in vectors]
+        for v in processed_vectors:
+            if v.id is None:
+                search_result = self.client.search(
+                    collection_name="test_collection",
+                    query_vector=v.vector,
+                    with_payload=False,
+                    limit=1,
+                )
+                v.id = str(search_result[0].id)
+                # TODO: bug
         op_info = self.client.delete(
             collection_name=collection,
-            points_selector=PointIdsList([p.id for p in ids]),
+            points_selector=PointIdsList(points = [v.id for v in vectors]),
             wait=True,
         )
         if op_info.status != UpdateStatus.COMPLETED:

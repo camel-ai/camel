@@ -12,10 +12,12 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from .base import BaseVectorStorage
+from .base import BaseVectorStorage, Distance, VectorRecord
 from .qdrant import Qdrant
 
 __all__ = [
     'BaseVectorStorage',
     'Qdrant',
+    'Distance',
+    'VectorRecord',
 ]
