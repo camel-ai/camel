@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from dataclasses import asdict, replace
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
 from qdrant_client import QdrantClient
@@ -25,10 +25,11 @@ from qdrant_client.http.models import (
     VectorParams,
 )
 
-import camel.memory.vector_storage.base as base
+from camel.memory.vector_storage.base import BaseVectorStorage, VectorRecord
+from camel.typing import VectorDistance
 
 
-class Qdrant():
+class Qdrant(BaseVectorStorage):
 
     def __init__(
         self,
@@ -38,23 +39,23 @@ class Qdrant():
         **kwargs,
     ) -> None:
         if url is not None:
-            self.client = QdrantClient(url=url, api_key=api_key)
+            self.client = QdrantClient(url=url, api_key=api_key, **kwargs)
         elif path is not None:
-            self.client = QdrantClient(path=path)
+            self.client = QdrantClient(path=path, **kwargs)
         else:
-            self.client = QdrantClient(":memory:")
+            self.client = QdrantClient(":memory:", **kwargs)
 
     def create_collection(
         self,
         collection: str,
         size: int,
-        distance: base.Distance = base.Distance.DOT,
+        distance: VectorDistance = VectorDistance.DOT,
         **kwargs,
     ) -> None:
         distance_map = {
-            base.Distance.DOT: Distance.DOT,
-            base.Distance.COSINE: Distance.COSINE,
-            base.Distance.EUCLIDEAN: Distance.EUCLID,
+            VectorDistance.DOT: Distance.DOT,
+            VectorDistance.COSINE: Distance.COSINE,
+            VectorDistance.EUCLIDEAN: Distance.EUCLID,
         }
         self.client.recreate_collection(
             collection_name=collection,
@@ -70,19 +71,27 @@ class Qdrant():
     ) -> None:
         self.client.delete_collection(collection_name=collection, **kwargs)
 
-    def check_collection(self, collection: str) -> None:
+    def check_collection(self, collection: str) -> Dict[str, Any]:
         # TODO: check more information
         collection_info = self.client.get_collection(
             collection_name=collection)
         if collection_info.status != CollectionStatus.GREEN:
             raise RuntimeWarning(f"Qdrant collection \"{collection}\" status: "
                                  f"{collection_info.status}")
+        vector_config = collection_info.config.params.vectors
+        return {
+            "vector_dim":
+            vector_config.size
+            if isinstance(vector_config, VectorParams) else None,
+            "vector_count":
+            collection_info.vectors_count,
+        }
 
     def add_vectors(
         self,
         collection: str,
-        vectors: List[base.VectorRecord],
-    ) -> List[base.VectorRecord]:
+        vectors: List[VectorRecord],
+    ) -> List[VectorRecord]:
         processed_vectors = [replace(v) for v in vectors]
         for v in processed_vectors:
             if v.id is None:
@@ -102,8 +111,10 @@ class Qdrant():
         return processed_vectors
 
     def delete_vectors(
-            self, collection: str,
-            vectors: List[base.VectorRecord]) -> List[base.VectorRecord]:
+        self,
+        collection: str,
+        vectors: List[VectorRecord],
+    ) -> List[VectorRecord]:
         processed_vectors = [replace(v) for v in vectors]
         for v in processed_vectors:
             if v.id is None:
@@ -131,9 +142,9 @@ class Qdrant():
 
     def search(
         self,
-        query_vector: base.VectorRecord,
+        query_vector: VectorRecord,
         limit: int = 3,
-    ) -> List[base.VectorRecord]:
+    ) -> List[VectorRecord]:
         # TODO: filter
         if query_vector.vector is None:
             raise RuntimeError("Searching vector cannot be None")
@@ -147,7 +158,7 @@ class Qdrant():
         result_records = []
         for res in search_result:
             result_records.append(
-                base.VectorRecord(
+                VectorRecord(
                     id=res.id,
                     payload=res.payload,
                 ))

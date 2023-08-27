@@ -14,7 +14,8 @@
 
 import pytest
 
-from camel.memory.vector_storage import Distance, Qdrant, VectorRecord
+from camel.memory.vector_storage import Qdrant, VectorRecord
+from camel.typing import VectorDistance
 
 
 @pytest.fixture()
@@ -53,7 +54,7 @@ def test_add_delete_vector(server: Qdrant):
     server.create_collection(
         collection=collection_name,
         size=4,
-        distance=Distance.DOT,
+        distance=VectorDistance.DOT,
     )
     server.add_vectors(collection=collection_name, vectors=vectors)
 
@@ -96,7 +97,7 @@ def test_add_delete_vector_without_id(server: Qdrant):
     server.create_collection(
         collection=collection_name,
         size=4,
-        distance=Distance.DOT,
+        distance=VectorDistance.DOT,
     )
     add_vectors_rnt = server.add_vectors(
         collection=collection_name,

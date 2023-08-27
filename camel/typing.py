@@ -63,4 +63,10 @@ class TaskType(Enum):
     DEFAULT = "default"
 
 
-__all__ = ['RoleType', 'ModelType', 'TaskType']
+class VectorDistance(Enum):
+    DOT = 1
+    COSINE = 2
+    EUCLIDEAN = 3
+
+
+__all__ = ['RoleType', 'ModelType', 'TaskType', 'VectorDistance']

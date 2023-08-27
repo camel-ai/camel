@@ -12,20 +12,30 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
+from dataclasses import asdict
 from typing import List, Optional
+from uuid import uuid4
 
 from camel.embedding.base import BaseEmbedding
 from camel.embedding.openai_embedding import OpenAiEmbedding
 from camel.memory.base_memory import BaseMemory
-from camel.memory.vector_storage.base import BaseVectorStorage
+from camel.memory.vector_storage.base import BaseVectorStorage, VectorRecord
 from camel.memory.vector_storage.qdrant import Qdrant
 from camel.messages.base import BaseMessage
+from camel.typing import VectorDistance
 
 
 class VectorDBMemory(BaseMemory):
 
-    def __init__(self, storage: Optional[BaseVectorStorage] = None,
-                 embedding: Optional[BaseEmbedding] = None):
+    def __init__(
+        self,
+        storage: Optional[BaseVectorStorage] = None,
+        embedding: Optional[BaseEmbedding] = None,
+        distance: VectorDistance = VectorDistance.DOT,
+        collection_name: Optional[str] = None,
+        del_collection: bool = False,
+        **kwargs,
+    ) -> None:
         """
         Initializes a new instance of LongTermMemory.
 
@@ -35,9 +45,39 @@ class VectorDBMemory(BaseMemory):
         """
         self.storage = storage or Qdrant()
         self.embedding = embedding or OpenAiEmbedding()
+        self.vector_dim = self.embedding.get_output_dim()
+        self.del_collection = del_collection
+        self.distance = distance
 
-    def read(self,
-             current_state: Optional[BaseMessage] = None) -> List[BaseMessage]:
+        if collection_name is not None:
+            try:
+                info = self.storage.check_collection(collection_name)
+                if info["vector_dim"] != self.vector_dim:
+                    raise RuntimeError(
+                        "Vector dimension of the existing collection "
+                        f"{collection_name} ({info['vector_dim']}) "
+                        "is different from the embedding dim "
+                        f"({self.vector_dim}).")
+                return
+            except ValueError:
+                pass
+        self.collection_name = collection_name or str(uuid4())
+        self.storage.create_collection(
+            collection=self.collection_name,
+            size=self.vector_dim,
+            distance=distance,
+            **kwargs,
+        )
+
+    def __del__(self):
+        if self.del_collection:
+            self.storage.delete_collection(self.collection_name)
+
+    def read(
+        self,
+        current_state: Optional[BaseMessage] = None,
+        limit: int = 3,
+    ) -> List[BaseMessage]:
         """
         Reads a message or messages from memory.
 
@@ -47,8 +87,14 @@ class VectorDBMemory(BaseMemory):
         """
         if current_state is None:
             raise RuntimeError(
-                "Readling vector database memeory without message input")
-        self.embedding.embed(current_state)
+                "Reading vector database memeory without message input is not "
+                "allowed.")
+        query_vector = self.embedding.embed(current_state.content)
+        results = self.storage.search(VectorRecord(vector=query_vector), limit)
+        return [
+            BaseMessage(**res.payload) for res in results
+            if res.payload is not None
+        ]
 
     def write(self, msgs: List[BaseMessage]) -> None:
         """
@@ -57,10 +103,25 @@ class VectorDBMemory(BaseMemory):
         Args:
             msg (BaseMessage): The message to be written.
         """
-        ...
+        records = [
+            VectorRecord(
+                vector=self.embedding.embed(msg.content),
+                payload=asdict(msg),
+            ) for msg in msgs
+        ]
+
+        self.storage.add_vectors(
+            collection=self.collection_name,
+            vectors=records,
+        )
 
     def clear(self) -> None:
         """
         Clears all messages from memory.
         """
-        ...
+        self.storage.delete_collection(self.collection_name)
+        self.storage.create_collection(
+            self.collection_name,
+            size=self.vector_dim,
+            distance=self.distance,
+        )

@@ -14,14 +14,9 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
-
-class Distance(Enum):
-    DOT = 1
-    COSINE = 2
-    EUCLIDEAN = 3
+from camel.typing import VectorDistance
 
 
 @dataclass
@@ -45,7 +40,7 @@ class BaseVectorStorage(ABC):
         self,
         collection: str,
         size: int,
-        distance: str = "dot",
+        distance: VectorDistance,
         **kwargs,
     ):
         """_summary_
@@ -58,11 +53,15 @@ class BaseVectorStorage(ABC):
         ...
 
     @abstractmethod
+    def check_collection(self, collection: str) -> Dict[str, Any]:
+        ...
+
+    @abstractmethod
     def add_vectors(
         self,
         collection: str,
         vectors: List[VectorRecord],
-    ) -> None:
+    ) -> List[VectorRecord]:
         """
         Archives a message in long-term storage. Archiving may differ
         from standard storage in terms of compression, backup, redundancy, etc.
@@ -85,7 +84,7 @@ class BaseVectorStorage(ABC):
         self,
         collection: str,
         vectors: List[VectorRecord],
-    ) -> None:
+    ) -> List[VectorRecord]:
         """
         Archives a message in long-term storage. Archiving may differ
         from standard storage in terms of compression, backup, redundancy, etc.
