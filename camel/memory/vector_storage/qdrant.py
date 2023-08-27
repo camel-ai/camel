@@ -88,9 +88,7 @@ class Qdrant():
             if v.id is None:
                 v.id = str(uuid4())
 
-        qdrant_points = [
-            PointStruct(**asdict(p)) for p in processed_vectors
-        ]
+        qdrant_points = [PointStruct(**asdict(p)) for p in processed_vectors]
         op_info = self.client.upsert(
             collection_name=collection,
             points=qdrant_points,
@@ -100,31 +98,36 @@ class Qdrant():
             raise RuntimeError(
                 "Failed to add vectors in Qdrant, operation info: "
                 f"{op_info}")
-            
+
         return processed_vectors
 
-    def delete_vectors(self, collection: str,
-                       vectors: List[base.VectorRecord]) -> List[base.VectorRecord]:
+    def delete_vectors(
+            self, collection: str,
+            vectors: List[base.VectorRecord]) -> List[base.VectorRecord]:
         processed_vectors = [replace(v) for v in vectors]
         for v in processed_vectors:
             if v.id is None:
+                if v.vector is None:
+                    raise RuntimeError("Deleting vector records should "
+                                       "contains either id or vector.")
                 search_result = self.client.search(
                     collection_name="test_collection",
                     query_vector=v.vector,
                     with_payload=False,
                     limit=1,
                 )
-                v.id = str(search_result[0].id)
-                # TODO: bug
+                v.id = search_result[0].id
+        delete_points = [v.id for v in processed_vectors if v.id is not None]
         op_info = self.client.delete(
             collection_name=collection,
-            points_selector=PointIdsList(points = [v.id for v in vectors]),
+            points_selector=PointIdsList(points=delete_points),
             wait=True,
         )
         if op_info.status != UpdateStatus.COMPLETED:
             raise RuntimeError(
                 "Failed to delete vectors in Qdrant, operation info: "
                 f"{op_info}")
+        return processed_vectors
 
     def search(
         self,
