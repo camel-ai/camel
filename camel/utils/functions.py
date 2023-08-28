@@ -168,10 +168,7 @@ def openai_api_key_required(func: F) -> F:
 
     @wraps(func)
     def wrapper(self, *args, **kwargs):
-        from camel.agents.chat_agent import ChatAgent
-        if not isinstance(self, ChatAgent):
-            raise ValueError("Expected ChatAgent")
-        if self.model == ModelType.STUB:
+        if hasattr(self, "model") and self.model == ModelType.STUB:
             return func(self, *args, **kwargs)
         elif 'OPENAI_API_KEY' in os.environ:
             return func(self, *args, **kwargs)

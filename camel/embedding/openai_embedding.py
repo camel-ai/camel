@@ -17,35 +17,36 @@ from typing import List
 import openai
 
 from camel.embedding.base import BaseEmbedding
-
-
-class ModelType(Enum):
-    ADA2 = "text-embedding-ada-002"
-    ADA1 = "text-embedding-ada-001"
-    BABBAGE1 = "text-embedding-babbage-001"
-    CURIE1 = "text-embedding-curie-001"
-    DAVINCI1 = "text-embedding-davinci-001"
+from camel.utils import openai_api_key_required
 
 
 class OpenAiEmbedding(BaseEmbedding):
     """
     """
 
+    class ModelType(str, Enum):
+        ADA2 = "text-embedding-ada-002"
+        ADA1 = "text-embedding-ada-001"
+        BABBAGE1 = "text-embedding-babbage-001"
+        CURIE1 = "text-embedding-curie-001"
+        DAVINCI1 = "text-embedding-davinci-001"
+
     def __init__(self, model: ModelType = ModelType.ADA2) -> None:
         self.model = model
-        if self.model == ModelType.ADA2:
+        if self.model == self.ModelType.ADA2:
             self.output_dim = 1536
-        elif self.model == ModelType.ADA1:
+        elif self.model == self.ModelType.ADA1:
             self.output_dim = 1024
-        elif self.model == ModelType.BABBAGE1:
+        elif self.model == self.ModelType.BABBAGE1:
             self.output_dim = 2048
-        elif self.model == ModelType.CURIE1:
+        elif self.model == self.ModelType.CURIE1:
             self.output_dim = 4096
-        elif self.model == ModelType.DAVINCI1:
+        elif self.model == self.ModelType.DAVINCI1:
             self.output_dim = 12288
         else:
             raise RuntimeError(f"Model type {model} not support")
 
+    @openai_api_key_required
     def embed(self, text: str) -> List[float]:
         # TODO: count tokens
         response = openai.Embedding.create(input=text, model=self.model)
