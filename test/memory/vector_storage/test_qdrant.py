@@ -68,7 +68,8 @@ def test_add_delete_vector(server: Qdrant):
         collection=collection_name,
         vectors=[vectors[1], vectors[3]],
     )
-    result = server.search(query_vector=query_vector, limit=2)
+    result = server.search(collection=collection_name,
+                           query_vector=query_vector, limit=2)
     assert result[0].id == 1
     assert result[1].id == 3
     assert result[1].payload == {"message": "text"}
@@ -108,7 +109,8 @@ def test_add_delete_vector_without_id(server: Qdrant):
         assert v.id is not None
 
     query_vector = VectorRecord(vector=[1, 1, 1, 1])
-    result = server.search(query_vector=query_vector, limit=2)
+    result = server.search(collection=collection_name,
+                           query_vector=query_vector, limit=2)
     assert result[0].id == add_vectors_rnt[0].id
     assert result[1].id == add_vectors_rnt[3].id
     assert result[1].payload == {"message": "text", "number": 1}
