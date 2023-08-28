@@ -97,6 +97,7 @@ class BaseVectorStorage(ABC):
     @abstractmethod
     def search(
         self,
+        collection: str,
         query_vector: VectorRecord,
         limit: int,
     ) -> List[VectorRecord]:

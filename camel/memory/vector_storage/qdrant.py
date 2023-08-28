@@ -122,7 +122,7 @@ class Qdrant(BaseVectorStorage):
                     raise RuntimeError("Deleting vector records should "
                                        "contains either id or vector.")
                 search_result = self.client.search(
-                    collection_name="test_collection",
+                    collection_name=collection,
                     query_vector=v.vector,
                     with_payload=False,
                     limit=1,
@@ -142,6 +142,7 @@ class Qdrant(BaseVectorStorage):
 
     def search(
         self,
+        collection: str,
         query_vector: VectorRecord,
         limit: int = 3,
     ) -> List[VectorRecord]:
@@ -149,7 +150,7 @@ class Qdrant(BaseVectorStorage):
         if query_vector.vector is None:
             raise RuntimeError("Searching vector cannot be None")
         search_result = self.client.search(
-            collection_name="test_collection",
+            collection_name=collection,
             query_vector=query_vector.vector,
             with_payload=True,
             limit=limit,

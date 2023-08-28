@@ -90,7 +90,11 @@ class VectorDBMemory(BaseMemory):
                 "Reading vector database memeory without message input is not "
                 "allowed.")
         query_vector = self.embedding.embed(current_state.content)
-        results = self.storage.search(VectorRecord(vector=query_vector), limit)
+        results = self.storage.search(
+            self.collection_name,
+            VectorRecord(vector=query_vector),
+            limit,
+        )
         return [
             BaseMessage(**res.payload) for res in results
             if res.payload is not None
