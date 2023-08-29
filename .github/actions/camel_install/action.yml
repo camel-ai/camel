@@ -8,18 +8,17 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: actions/checkout@v3
     - name: Set up Python
       uses: actions/setup-python@v3
       with:
         python-version: '${{ inputs.python-version }}'
-        cache: 'poetry'
     - name: Install poetry
       uses: abatilo/actions-poetry@v2
     - name: Setup poetry virtual environment
       run: |
         poetry config virtualenvs.create true --local
         poetry config virtualenvs.in-project true --local
+      shell: bash
     - uses: actions/cache@v3
       name: Cache for the virtual environment based on poetry.lock
       with:
@@ -27,3 +26,4 @@ runs:
         key: venv-${{ hashFiles('poetry.lock') }}
     - name: Install the project dependencies
       run: poetry install --with dev,docs -E alll
+      shell: bash

@@ -14,23 +14,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Python 3.8
-      uses: actions/setup-python@v3
+    - name: Set up Python environment and install dependencies
+      uses: ./.github/actions/camel_install
       with:
         python-version: "3.8"
-    - name: Install poetry
-      uses: abatilo/actions-poetry@v2
-    - name: Setup poetry virtual environment
-      run: |
-        poetry config virtualenvs.create true --local
-        poetry config virtualenvs.in-project true --local
-    - uses: actions/cache@v3
-      name: Cache for the virtual environment based on poetry.lock
-      with:
-        path: ./.venv
-        key: venv-${{ hashFiles('poetry.lock') }}
-    - name: Install the project dependencies
-      run: poetry install --with dev,docs -E all
     - name: Sphinx build
       run: |
         cd docs
