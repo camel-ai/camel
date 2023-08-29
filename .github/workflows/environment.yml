@@ -1,0 +1,35 @@
+# This reusable workflow will setup python environment and install dependencies by poetry
+
+name: Pytest Gradio Apps and Examples
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  environment_setup:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.8"
+        cache: 'poetry'
+    - name: Install poetry
+      uses: abatilo/actions-poetry@v2
+    - name: Setup poetry virtual environment
+      run: |
+        poetry config virtualenvs.create true --local
+        poetry config virtualenvs.in-project true --local
+    - uses: actions/cache@v3
+      name: Cache for the virtual environment based on poetry.lock
+      with:
+        path: ./.venv
+        key: venv-${{ hashFiles('poetry.lock') }}
+    - name: Install the project dependencies
+      run: poetry install --with dev,docs -E alll

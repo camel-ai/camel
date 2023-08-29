@@ -25,12 +25,12 @@ jobs:
         poetry config virtualenvs.create true --local
         poetry config virtualenvs.in-project true --local
     - uses: actions/cache@v3
-      name: Cache for the virtual environment based on pyproject.toml
+      name: Cache for the virtual environment based on poetry.lock
       with:
         path: ./.venv
-        key: ${{ runner.os }}-venv-docs-${{ hashFiles('pyproject.toml') }}
+        key: venv-${{ hashFiles('poetry.lock') }}
     - name: Install the project dependencies
-      run: poetry install --with docs -E all
+      run: poetry install --with dev,docs -E all
     - name: Sphinx build
       run: |
         cd docs

@@ -19,23 +19,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Python 3.8
-      uses: actions/setup-python@v3
+    - name: Set up Python environment and install dependencies
+      uses: ./.github/actions/camel_install
       with:
         python-version: "3.8"
-    - name: Install poetry
-      uses: abatilo/actions-poetry@v2
-    - name: Setup poetry virtual environment
-      run: |
-        poetry config virtualenvs.create true --local
-        poetry config virtualenvs.in-project true --local
-    - uses: actions/cache@v3
-      name: Cache for the virtual environment based on pyproject.toml
-      with:
-        path: ./.venv
-        key: ${{ runner.os }}-venv-${{ hashFiles('pyproject.toml') }}
-    - name: Install the project dependencies
-      run: poetry install --with dev -E all
     - name: Run pytest
       env:
         OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
@@ -47,24 +34,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python 3.8
-      uses: actions/setup-python@v3
+    - name: Set up Python environment and install dependencies
+      uses: ./.github/actions/camel_install
       with:
         python-version: "3.8"
-    - name: Install poetry
-      uses: abatilo/actions-poetry@v2
-    - name: Setup poetry virtual environment
-      run: |
-        poetry config virtualenvs.create true --local
-        poetry config virtualenvs.in-project true --local
-    - uses: actions/cache@v3
-      name: Cache for the virtual environment based on pyproject.toml
-      with:
-        path: ./.venv
-        key: ${{ runner.os }}-venv-${{ hashFiles('pyproject.toml') }}
-    - name: Install the project dependencies
-      run: poetry install --with dev -E all
     - name: Run pytest
       env:
         OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
@@ -76,24 +49,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python 3.8
-      uses: actions/setup-python@v3
+    - name: Set up Python environment and install dependencies
+      uses: ./.github/actions/camel_install
       with:
         python-version: "3.8"
-    - name: Install poetry
-      uses: abatilo/actions-poetry@v2
-    - name: Setup poetry virtual environment
-      run: |
-        poetry config virtualenvs.create true --local
-        poetry config virtualenvs.in-project true --local
-    - uses: actions/cache@v3
-      name: Cache for the virtual environment based on pyproject.toml
-      with:
-        path: ./.venv
-        key: ${{ runner.os }}-venv-${{ hashFiles('pyproject.toml') }}
-    - name: Install the project dependencies
-      run: poetry install --with dev -E all
     - name: Run pytest
       env:
         OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
