@@ -22,12 +22,12 @@ jobs:
         python-version: "3.8"
     - name: Run flake8 checks
       run: |
-        peotry run flake8 .
+        poetry run flake8 camel test examples apps
     - name: run isort checks
       run: |
-        peotry run isort --check-only .
+        poetry run isort --check-only camel test examples apps
     - name: Run mypy checks
       run: |
-        mypy --install-types --non-interactive --namespace-packages -p camel
-        mypy --install-types --non-interactive --namespace-packages -p test
-        mypy --install-types --non-interactive --namespace-packages -p apps
+        poetry run mypy --install-types --non-interactive --namespace-packages -p camel
+        poetry run mypy --install-types --non-interactive --namespace-packages -p test
+        poetry run mypy --install-types --non-interactive --namespace-packages -p apps
