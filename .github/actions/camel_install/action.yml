@@ -25,5 +25,5 @@ runs:
         path: ./.venv
         key: venv-${{ hashFiles('poetry.lock') }}
     - name: Install the project dependencies
-      run: poetry install --with dev,docs -E alll
+      run: poetry install --with dev,docs -E all
       shell: bash
