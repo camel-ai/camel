@@ -104,7 +104,7 @@ skip = [".gitingore", "__init__.py"]
 pythonpath = ["."]
 addopts = ["--strict-markers"]
 markers = [
-    "full_test_only: mark a test to run only in full test mode",
+    "very_slow: mark a very slow test to run only in full test mode",
     "model_backend: for tests that require OpenAI API key or a local LLM",
 ]
 
