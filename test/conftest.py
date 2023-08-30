@@ -20,19 +20,21 @@ from _pytest.nodes import Item
 
 def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addoption("--full-test-mode", action="store_true",
-                     help="Enable full test mode")
+                     help="Run all tests")
     parser.addoption("--fast-test-mode", action="store_true",
-                     help="Enable fast test mode")
+                     help="Run all tests without LLM inference")
+    parser.addoption("--main-test-only", action="store_true",
+                     help="Run all tests except ones of optional modules")
+    parser.addoption("--optional-test-only", action="store_true",
+                     help="Run only tests with \"optional\" mark")
+    parser.addoption("--slow-test-only", action="store_true",
+                     help="Run only tests with LLM inefrence")
 
 
 def pytest_collection_modifyitems(config: Config, items: List[Item]) -> None:
-    # Skip full test only tests if not in full test mode
-    if not config.getoption("--full-test-mode"):
-        skip_full_test = pytest.mark.skip(
-            reason="Test runs only in full test mode")
-        for item in items:
-            if "full_test_only" in item.keywords:
-                item.add_marker(skip_full_test)
+    # Run all tests in full test mode
+    if config.getoption("--full-test-mode"):
+        return
 
     # Skip all tests involving LLM inference both remote
     # (including OpenAI API) and local ones, since they are slow
@@ -40,5 +42,6 @@ def pytest_collection_modifyitems(config: Config, items: List[Item]) -> None:
     if config.getoption("--fast-test-mode"):
         skip_slow = pytest.mark.skip(reason="Skipped for fast test mode")
         for item in items:
-            if "slow" in item.keywords or "model_backend" in item.keywords:
+            if "model_backend" in item.keywords or "optional" in item.keywords:
                 item.add_marker(skip_slow)
+        return

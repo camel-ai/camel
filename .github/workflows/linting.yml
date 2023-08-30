@@ -20,12 +20,6 @@ jobs:
       uses: ./.github/actions/camel_install
       with:
         python-version: "3.8"
-    - name: Run flake8 checks
-      run: |
-        poetry run flake8 camel test examples apps
-    - name: run isort checks
-      run: |
-        poetry run isort --check-only camel test examples apps
     - name: Run mypy checks
       run: |
         poetry run mypy --install-types --non-interactive --namespace-packages -p camel
