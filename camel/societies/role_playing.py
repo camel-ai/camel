@@ -19,6 +19,7 @@ from camel.agents import (
     TaskPlannerAgent,
     TaskSpecifyAgent,
 )
+from camel.agents.chat_agent import ChatAgentResponse
 from camel.generators import SystemMessageGenerator
 from camel.human import Human
 from camel.messages import BaseMessage

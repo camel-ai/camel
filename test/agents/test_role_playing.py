@@ -117,3 +117,32 @@ def test_role_playing_step(task_type, extend_sys_msg_meta_dicts,
         assert isinstance(response.terminated, bool)
         assert response.terminated is False
         assert isinstance(response.info, dict)
+
+
+@pytest.mark.model_backend
+def test_role_playing_with_function():
+    function_list = [*MATH_FUNCS]
+    assistant_model_config = FunctionCallingConfig.from_openai_function_list(
+        function_list=function_list)
+
+    role_playing = RolePlaying(
+        assistant_role_name="AI Assistant",
+        assistant_agent_kwargs=dict(model=ModelType.GPT_3_5_TURBO,
+                                    model_config=assistant_model_config,
+                                    function_list=function_list),
+        user_role_name="AI User",
+        user_agent_kwargs=dict(model=ModelType.GPT_3_5_TURBO),
+        task_prompt="Perform the task",
+        task_specify_agent_kwargs=dict(model=ModelType.GPT_3_5_TURBO),
+        task_type=TaskType.AI_SOCIETY,
+    )
+
+    init_assistant_msg, _ = role_playing.init_chat()
+    assistant_response, user_response = role_playing.step(init_assistant_msg)
+    for response in (assistant_response, user_response):
+        assert isinstance(response.msgs, list)
+        assert len(response.msgs) == 1
+        assert isinstance(response.msgs[0], BaseMessage)
+        assert isinstance(response.terminated, bool)
+        assert response.terminated is False
+        assert isinstance(response.info, dict)
