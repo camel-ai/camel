@@ -75,7 +75,7 @@ class RoleAssignmentAgent(ChatAgent):
             f"Associated competencies, characteristics, duties "
             f"and workflows: <BLANK>. End." for i in range(num_roles or 0))
         role_assignment_generation_prompt = TextPrompt(
-            "You are the boss, and you're in charge of recruiting " +
+            "You are a role assignment agent, and you're in charge of recruiting " +
             "{num_roles} experts for the following task." +
             "\n==== TASK =====\n {task}\n\n" +
             "Identify the domain experts you'd recruit and detail their " +
