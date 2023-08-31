@@ -239,6 +239,7 @@ class RolePlaying:
         if (extend_sys_msg_meta_dicts is None and self.task_type in [
                 TaskType.AI_SOCIETY,
                 TaskType.MISALIGNMENT,
+                TaskType.ROLE_DESCRIPTION,
         ]):
             extend_sys_msg_meta_dicts = [
                 dict(assistant_role=assistant_role_name,
