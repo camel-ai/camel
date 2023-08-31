@@ -44,7 +44,7 @@ class OpenSourceModel(BaseModelBackend):
         # Check whether the input model type is open-source
         if not model_type.is_open_source:
             raise ValueError(
-                f"Model `{model_type}` is not a supported open-source model")
+                f"Model `{model_type}` is not a supported open-source model.")
 
         # Check whether input model path is empty
         model_path: Optional[str] = (self.model_config_dict.get(
@@ -68,7 +68,7 @@ class OpenSourceModel(BaseModelBackend):
                 "URL to server running open-source LLM is not provided.")
         self.server_url: str = server_url
 
-        # Replace :obj:model_config_dict with only the params to be
+        # Replace `model_config_dict`` with only the params to be
         # passed to OpenAI API
         self.model_config_dict = self.model_config_dict["api_params"].__dict__
 

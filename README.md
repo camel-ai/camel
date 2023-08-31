@@ -179,7 +179,6 @@ python3 -m fastchat.serve.openai_api_server --host localhost --port 8000
 
 ```python
 system_message = # ...
-output_language = # ...
 
 agent_kwargs = dict(
     model=model_type,
@@ -191,12 +190,11 @@ agent_kwargs = dict(
 
 agent = ChatAgent(
     system_message,
-    output_language=output_language,
-    **assistant_agent_kwargs,
+    **agent_kwargs,
 )
 ```
 
-### Support Models
+### Supported Models
 
 - LLaMA2-based models
   - example: [meta-llama/Llama-2-7b-chat-hf](https://huggingface.co/meta-llama/Llama-2-7b-chat-hf)
