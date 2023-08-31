@@ -40,10 +40,6 @@ class RoleAssignmentAgent(ChatAgent):
         model: ModelType = ModelType.GPT_3_5_TURBO,
         model_config: Optional[Any] = None,
     ) -> None:
-        self.role_assignment_prompt = TextPrompt(
-            'Given this task, "{task}", generate two role names, ' +
-            'one for the AI user and one for the AI assistant.')
-
         system_message = BaseMessage(
             role_name="Role Assigner",
             role_type=RoleType.ASSISTANT,
@@ -68,6 +64,9 @@ class RoleAssignmentAgent(ChatAgent):
 
         Returns:
             Tuple[List[str], Dict[str, str], bool, Dict[str, Any]]: A tuple
+            containing the generated role names, the generated role
+            descriptions, whether the role assignment is terminated, and
+            additional information.
         """
         self.reset()
 
@@ -90,12 +89,11 @@ class RoleAssignmentAgent(ChatAgent):
         role_assignment_generation_msg = BaseMessage.make_user_message(
             role_name="Role Assigner", content=role_assignment_generation)
 
-        response_completion = super().step(
-            input_message=role_assignment_generation_msg)
+        response = super().step(input_message=role_assignment_generation_msg)
 
-        output_completion = response_completion.msg  # type: BaseMessage
-        terminated = response_completion.terminated
-        info = response_completion.info
+        output_completion = response.msg  # type: BaseMessage
+        terminated = response.terminated
+        info = response.info
 
         # Distribute the output completions into role names and descriptions
         role_names = [
