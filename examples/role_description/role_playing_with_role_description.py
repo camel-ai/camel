@@ -30,12 +30,12 @@ def main(model_type=None) -> None:
     role_description_agent = RoleAssignmentAgent(
         model=model_type, model_config=model_config_description)
 
-    role_names, role_description_dict, _, _ = (
-        role_description_agent.run_role_with_description(
-            task_prompt=task_prompt, num_roles=2))
+    role_description_dict = (role_description_agent.run_role_with_description(
+        task_prompt=task_prompt, num_roles=2))
 
-    ai_assistant_role = role_names[AI_ASSISTANT_ROLE_INDEX]
-    ai_user_role = role_names[AI_USER_ROLE_INDEX]
+    ai_assistant_role = list(
+        role_description_dict.keys())[AI_ASSISTANT_ROLE_INDEX]
+    ai_user_role = list(role_description_dict.keys())[AI_USER_ROLE_INDEX]
     ai_assistant_description = role_description_dict[ai_assistant_role]
     ai_user_description = role_description_dict[ai_user_role]
 
@@ -45,11 +45,11 @@ def main(model_type=None) -> None:
     ]
 
     role_play_session = RolePlaying(
+        assistant_role_name=ai_assistant_role,
+        user_role_name=ai_user_role,
         task_prompt=task_prompt,
         task_type=TaskType.ROLE_DESCRIPTION,  # important for role description
         with_task_specify=True,
-        assistant_role_name=ai_assistant_role,
-        user_role_name=ai_user_role,
         task_specify_agent_kwargs=dict(model=model_type),
         extend_sys_msg_meta_dicts=sys_msg_meta_dicts,
     )

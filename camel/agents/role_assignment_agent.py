@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import re
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Union
 
 from tenacity import retry, stop_after_attempt, wait_exponential
 
@@ -53,7 +53,7 @@ class RoleAssignmentAgent(ChatAgent):
         self,
         task_prompt: Union[str, TextPrompt],
         num_roles: int = 2,
-    ) -> Tuple[List[str], Dict[str, str], bool, Dict[str, Any]]:
+    ) -> Dict[str, str]:
         r"""Generate role names based on the input task prompt.
 
         Args:
@@ -63,10 +63,8 @@ class RoleAssignmentAgent(ChatAgent):
                 (default: :obj:`2`)
 
         Returns:
-            Tuple[List[str], Dict[str, str], bool, Dict[str, Any]]: A tuple
-            containing the generated role names, the generated role
-            descriptions, whether the role assignment is terminated, and
-            additional information.
+            Dict[str, str]: A dictionary mapping role names to their
+                descriptions.
         """
         self.reset()
 
@@ -75,8 +73,8 @@ class RoleAssignmentAgent(ChatAgent):
             f"Associated competencies, characteristics, duties "
             f"and workflows: <BLANK>. End." for i in range(num_roles or 0))
         role_assignment_generation_prompt = TextPrompt(
-            "You are a role assignment agent, and you're in charge of recruiting " +
-            "{num_roles} experts for the following task." +
+            "You are a role assignment agent, and you're in charge of " +
+            "recruiting {num_roles} experts for the following task." +
             "\n==== TASK =====\n {task}\n\n" +
             "Identify the domain experts you'd recruit and detail their " +
             "associated competencies, characteristics, duties and workflows " +
@@ -91,23 +89,21 @@ class RoleAssignmentAgent(ChatAgent):
 
         response = super().step(input_message=role_assignment_generation_msg)
 
-        output_completion = response.msg  # type: BaseMessage
+        msg = response.msg  # type: BaseMessage
         terminated = response.terminated
-        info = response.info
 
         # Distribute the output completions into role names and descriptions
         role_names = [
             desc.replace("<|", "").replace("|>", "") for desc in re.findall(
                 r"Domain expert \d: (.+?)\nAssociated competencies,",
-                output_completion.content,
+                msg.content,
                 re.DOTALL,
             )
         ]
         role_descriptions = [
             desc.replace("<|", "").replace("|>", "") for desc in re.findall(
                 r"Associated competencies, characteristics, "
-                r"duties and workflows:(.+?) End.", output_completion.content,
-                re.DOTALL)
+                r"duties and workflows:(.+?) End.", msg.content, re.DOTALL)
         ]
 
         if len(role_names) != num_roles or len(role_descriptions) != num_roles:
@@ -121,4 +117,4 @@ class RoleAssignmentAgent(ChatAgent):
             for role_name, description in zip(role_names, role_descriptions)
         }
 
-        return role_names, role_descriptions_dict, terminated, info
+        return role_descriptions_dict
