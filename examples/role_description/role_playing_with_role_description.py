@@ -23,12 +23,13 @@ AI_ASSISTANT_ROLE_INDEX = 0
 AI_USER_ROLE_INDEX = 1
 
 
-def main(model_type=None) -> None:
+def main(model_type_for_role_generation=None, model_type=None) -> None:
     task_prompt = "Develop a trading bot for the stock market."
 
     model_config_description = ChatGPTConfig()
     role_description_agent = RoleAssignmentAgent(
-        model=model_type, model_config=model_config_description)
+        model=model_type_for_role_generation,
+        model_config=model_config_description)
 
     role_description_dict = (role_description_agent.run_role_with_description(
         task_prompt=task_prompt, num_roles=2))
@@ -45,6 +46,7 @@ def main(model_type=None) -> None:
     ]
 
     role_play_session = RolePlaying(
+        model_type=model_type,
         assistant_role_name=ai_assistant_role,
         user_role_name=ai_user_role,
         task_prompt=task_prompt,

@@ -20,10 +20,10 @@ from camel.typing import ModelType
 
 def test_role_generation_example():
     with patch('time.sleep', return_value=None):
-        examples.role_description.role_generation.main(ModelType.GPT_3_5_TURBO)
+        examples.role_description.role_generation.main(ModelType.STUB)
 
 
 def test_role_playing_with_role_description_example():
     with patch('time.sleep', return_value=None):
         examples.role_description.role_playing_with_role_description.main(
-            ModelType.GPT_3_5_TURBO)
+            ModelType.GPT_3_5_TURBO, ModelType.STUB)
