@@ -59,10 +59,10 @@ def main(model_type=None) -> None:
         f"AI Assistant sys message:\n{role_play_session.assistant_sys_msg}\n")
     print(Fore.BLUE +
           f"AI User sys message:\n{role_play_session.user_sys_msg}\n")
-    print(Fore.GREEN + f"AI Assistant role description:\n"
+    print(Fore.GREEN + f"Role description of AI Assistant:\n"
           f"{role_play_session.assistant_sys_msg.role_name}\n"
           f"{role_description_dict[ai_assistant_role]}\n")
-    print(Fore.BLUE + f"AI User role description:\n"
+    print(Fore.BLUE + f"Role description of AI User:\n"
           f"{role_play_session.user_sys_msg.role_name}\n"
           f"{role_description_dict[ai_user_role]}\n")
 
