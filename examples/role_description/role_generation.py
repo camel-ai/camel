@@ -24,17 +24,17 @@ def main(model_type=None, num_roles=3) -> None:
     role_description_agent = RoleAssignmentAgent(
         model=model_type, model_config=model_config_description)
 
-    role_names, role_description_dict, _, _ = (
-        role_description_agent.run_role_with_description(
-            task_prompt=task_prompt, num_roles=num_roles))
+    role_description_dict = (role_description_agent.run_role_with_description(
+        task_prompt=task_prompt, num_roles=num_roles))
 
-    if (len(role_names) != num_roles):
-        raise ValueError(f"Length of role_names ({len(role_names)}) "
-                         f"does not equal to num_roles ({num_roles}).")
+    if (len(role_description_dict) != num_roles):
+        raise ValueError(
+            f"Length of role_names ({len(role_description_dict)}) "
+            f"does not equal to num_roles ({num_roles}).")
 
     print(Fore.YELLOW + f"Original task prompt:\n{task_prompt}\n")
     print(Fore.GREEN + f"List of {num_roles} roles with description:")
-    for role_name in role_names:
+    for role_name in role_description_dict.keys():
         print(Fore.BLUE + f"{role_name}:\n"
               f"{role_description_dict[role_name]}\n")
 
