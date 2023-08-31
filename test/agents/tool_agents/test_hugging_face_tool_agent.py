@@ -14,6 +14,7 @@
 import binascii
 
 import pytest
+import requests
 
 from camel.agents import HuggingFaceToolAgent
 
@@ -34,7 +35,7 @@ def test_hugging_face_tool_agent_step():
     agent = HuggingFaceToolAgent("hugging_face_tool_agent")
     try:
         result = agent.step("Generate an image of a boat in the water")
-    except binascii.Error as ex:
+    except (binascii.Error, requests.exceptions.ConnectionError) as ex:
         print("Warning: caught an exception, ignoring it since "
               f"it is a known issue of Huggingface ({str(ex)})")
         return
@@ -48,7 +49,7 @@ def test_hugging_face_tool_agent_chat():
     agent = HuggingFaceToolAgent("hugging_face_tool_agent")
     try:
         result = agent.chat("Show me an image of a capybara")
-    except binascii.Error as ex:
+    except (binascii.Error, requests.exceptions.ConnectionError) as ex:
         print("Warning: caught an exception, ignoring it since "
               f"it is a known issue of Huggingface ({str(ex)})")
         return
