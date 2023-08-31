@@ -17,21 +17,49 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from camel.memory.lossless_storage.base import LosslessStorage
+from camel.typing import ModelType, RoleType, TaskType, VectorDistance
 
 
 class JsonStorage(LosslessStorage):
+
+    class _CamelJSONEncoder(json.JSONEncoder):
+        CAMEL_ENUMS = {
+            "RoleType": RoleType,
+            "TaskType": TaskType,
+            "ModelType": ModelType,
+            "VectorDistance": VectorDistance,
+        }
+
+        def default(self, obj):
+            if type(obj) in self.CAMEL_ENUMS.values():
+                return {"__enum__": str(obj)}
+            # Let the base class default method raise the TypeError
+            return json.JSONEncoder.default(self, obj)
 
     def __init__(self, path: Path = Path("chat_history.json")):
         self.json_path = path
         self.json_path.touch()
 
+    def _json_object_hook(self, d):
+        if "__enum__" in d:
+            name, member = d["__enum__"].split(".")
+            return getattr(self._CamelJSONEncoder.CAMEL_ENUMS[name], member)
+        else:
+            return d
+
     def save(self, records: List[Dict[str, Any]]) -> None:
         with self.json_path.open("a") as f:
-            f.writelines([json.dumps(r) + "\n" for r in records])
+            f.writelines([
+                json.dumps(r, cls=self._CamelJSONEncoder) + "\n"
+                for r in records
+            ])
 
     def load(self) -> List[Dict[str, Any]]:
         with self.json_path.open("r") as f:
-            return [json.loads(r) for r in f.readlines()]
+            return [
+                json.loads(r, object_hook=self._json_object_hook)
+                for r in f.readlines()
+            ]
 
     def clear(self) -> None:
         with self.json_path.open("w"):
