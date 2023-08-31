@@ -23,7 +23,7 @@ class RoleDescriptionPromptTemplateDict(AISocietyPromptTemplateDict):
     task.
 
     Attributes:
-        DEFAULT_ROLE_DESCRIPTION_PROMPT (TextPrompt): A default prompt to
+        ROLE_DESCRIPTION_PROMPT (TextPrompt): A default prompt to
             describe the role descriptions.
         ASSISTANT_PROMPT (TextPrompt): A system prompt for the AI assistant
             that outlines the rules of the conversation and provides
@@ -32,23 +32,22 @@ class RoleDescriptionPromptTemplateDict(AISocietyPromptTemplateDict):
             outlines the rules of the conversation and provides instructions
             for giving instructions to the AI assistant.
     """
-    DEFAULT_ROLE_DESCRIPTION_PROMPT = TextPrompt(
-        """===== ROLES WITH DESCRIPTION =====
-{user_role} and {assistant_role} are collaborating to complete a task: {task}
+    ROLE_DESCRIPTION_PROMPT = TextPrompt("""===== ROLES WITH DESCRIPTION =====
+{user_role} and {assistant_role} are collaborating to complete a task: {task}.
 {user_role}'s competencies, characteristics, duties and workflows to complete the task: {user_description}
 {assistant_role}'s competencies, characteristics, duties and workflows to complete the task: {assistant_description}
 """)
 
-    ASSISTANT_PROMPT = TextPrompt(DEFAULT_ROLE_DESCRIPTION_PROMPT +
+    ASSISTANT_PROMPT = TextPrompt(ROLE_DESCRIPTION_PROMPT +
                                   AISocietyPromptTemplateDict.ASSISTANT_PROMPT)
 
-    USER_PROMPT = TextPrompt(DEFAULT_ROLE_DESCRIPTION_PROMPT +
+    USER_PROMPT = TextPrompt(ROLE_DESCRIPTION_PROMPT +
                              AISocietyPromptTemplateDict.USER_PROMPT)
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.update({
-            "default_role_description": self.DEFAULT_ROLE_DESCRIPTION_PROMPT,
+            "role_description": self.ROLE_DESCRIPTION_PROMPT,
             RoleType.ASSISTANT: self.ASSISTANT_PROMPT,
             RoleType.USER: self.USER_PROMPT,
         })
