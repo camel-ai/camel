@@ -68,7 +68,7 @@ class OpenSourceModel(BaseModelBackend):
                 "URL to server running open-source LLM is not provided.")
         self.server_url: str = server_url
 
-        # Replace `model_config_dict`` with only the params to be
+        # Replace `model_config_dict` with only the params to be
         # passed to OpenAI API
         self.model_config_dict = self.model_config_dict["api_params"].__dict__
 
