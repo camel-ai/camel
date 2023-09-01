@@ -13,7 +13,12 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Dict
 
-from camel.models import BaseModelBackend, OpenAIModel, StubModel
+from camel.models import (
+    BaseModelBackend,
+    OpenAIModel,
+    OpenSourceModel,
+    StubModel,
+)
 from camel.typing import ModelType
 
 
@@ -31,7 +36,7 @@ class ModelFactory:
 
         Args:
             model_type (ModelType): Model for which a backend is created.
-            model_config_dict (Dict): a dictionary that will be fed into
+            model_config_dict (Dict): A dictionary that will be fed into
                 the backend constructor.
 
         Raises:
@@ -41,17 +46,14 @@ class ModelFactory:
             BaseModelBackend: The initialized backend.
         """
         model_class: Any
-        if model_type in {
-                ModelType.GPT_3_5_TURBO,
-                ModelType.GPT_3_5_TURBO_16K,
-                ModelType.GPT_4,
-                ModelType.GPT_4_32k,
-        }:
+        if model_type.is_openai:
             model_class = OpenAIModel
         elif model_type == ModelType.STUB:
             model_class = StubModel
+        elif model_type.is_open_source:
+            model_class = OpenSourceModel
         else:
-            raise ValueError("Unknown model")
+            raise ValueError(f"Unknown model type `{model_type}` is input")
 
         inst = model_class(model_type, model_config_dict)
         return inst

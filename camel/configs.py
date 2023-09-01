@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from abc import ABC
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Optional, Sequence, Union
 
 from camel.functions import OpenAIFunction
@@ -132,3 +132,28 @@ class FunctionCallingConfig(ChatGPTConfig):
             function_call=function_call,
             **(kwargs or {}),
         )
+
+
+@dataclass(frozen=True)
+class OpenSourceConfig(BaseConfig):
+    r"""Defines parameters for setting up open-source models and includes
+    parameters to be passed to chat completion function of OpenAI API.
+
+    Args:
+        model_path (str): The path to a local folder containing the model
+            files or the model card in HuggingFace hub.
+        server_url (str): The URL to the server running the model inference
+            which will be used as the API base of OpenAI API.
+        api_params (ChatGPTConfig): An instance of :obj:ChatGPTConfig to
+            contain the arguments to be passed to OpenAI API.
+    """
+    model_path: str
+    server_url: str
+    api_params: ChatGPTConfig = ChatGPTConfig()
+
+
+OPENAI_API_PARAMS = {param for param in asdict(ChatGPTConfig()).keys()}
+OPENAI_API_PARAMS_WITH_FUNCTIONS = {
+    param
+    for param in asdict(FunctionCallingConfig()).keys()
+}
