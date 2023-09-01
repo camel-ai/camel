@@ -11,10 +11,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
+from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.typing import ModelType
+from camel.utils import BaseTokenCounter
+
+
+class StubTokenCounter(BaseTokenCounter):
+
+    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
+        r"""Token counting for STUB models, directly returning a constant.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+
+        Returns:
+            int: A constant to act as the number of the tokens in the
+                messages.
+        """
+        return 10
 
 
 class StubModel(BaseModelBackend):
@@ -25,7 +43,19 @@ class StubModel(BaseModelBackend):
                  model_config_dict: Dict[str, Any]) -> None:
         r"""All arguments are unused for the dummy model."""
         super().__init__(model_type, model_config_dict)
-        pass
+        self._token_counter: Optional[BaseTokenCounter] = None
+
+    @property
+    def token_counter(self) -> BaseTokenCounter:
+        r"""Initialize the token counter for the model backend.
+
+        Returns:
+            BaseTokenCounter: The token counter following the model's
+                tokenization style.
+        """
+        if not self._token_counter:
+            self._token_counter = StubTokenCounter()
+        return self._token_counter
 
     def run(self, messages: List[Dict]) -> Dict[str, Any]:
         r"""Run fake inference by returning a fixed string.
@@ -44,3 +74,8 @@ class StubModel(BaseModelBackend):
                      message=dict(content=ARBITRARY_STRING, role="assistant"))
             ],
         )
+
+    def check_model_config(self):
+        r"""Directly pass the check on arguments to STUB model.
+        """
+        pass
