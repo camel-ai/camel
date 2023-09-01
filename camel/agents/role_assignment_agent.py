@@ -103,7 +103,7 @@ class RoleAssignmentAgent(ChatAgent):
         role_descriptions = [
             desc.replace("<|", "").replace("|>", "") for desc in re.findall(
                 r"Associated competencies, characteristics, "
-                r"duties and workflows:(.+?) End.", msg.content, re.DOTALL)
+                r"duties and workflows: (.+?) End.", msg.content, re.DOTALL)
         ]
 
         if len(role_names) != num_roles or len(role_descriptions) != num_roles:
