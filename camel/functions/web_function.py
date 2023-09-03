@@ -235,5 +235,5 @@ def search_web(query: str) -> str:
 
 
 WEB_FUNCS: List[OpenAIFunction] = [
-    OpenAIFunction(func) for func in [search_web]
+    OpenAIFunction(func) for func in [search_web, search_google]
 ]
