@@ -24,7 +24,3 @@ __all__ = [
     'WEB_FUNCS',
 ]
 
-<<<<<<< Updated upstream
-=======
-
->>>>>>> Stashed changes

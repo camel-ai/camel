@@ -17,30 +17,15 @@ import requests
 
 
 def test_google_api():
-<<<<<<< Updated upstream
     # check the google search api
 
     # key can find here https://developers.google.com/custom-search/v1/overview
     GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
     # id can find here https://cse.google.com/cse/all
-=======
-
-    # https://developers.google.com/custom-search/v1/overview
-    GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-    # https://cse.google.com/cse/all
->>>>>>> Stashed changes
     SEARCH_ENGINE_ID = os.getenv("SEARCH_ENGINE_ID")
 
     url = f"https://www.googleapis.com/customsearch/v1?" \
           f"key={GOOGLE_API_KEY}&cx={SEARCH_ENGINE_ID}&q=any"
-<<<<<<< Updated upstream
     result = requests.get(url)
 
     assert result.status_code == 200
-=======
-
-    result = requests.get(url)
-
-    assert result.status_code == 200
-    
->>>>>>> Stashed changes
