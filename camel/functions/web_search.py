@@ -21,7 +21,7 @@ from bs4 import BeautifulSoup
 from .openai_function import OpenAIFunction
 
 
-def search_google(query: str) -> Any:
+def search_google(query: str) -> List[Dict[str, Any]]:
     r"""using google search engine to search information for the given query.
 
     Args:
@@ -85,7 +85,7 @@ def search_google(query: str) -> Any:
     return responses
 
 
-def text_extract_from_web(url: str) -> Any:
+def text_extract_from_web(url: str) -> str:
     r"""Get the text information from given url.
 
     Args:
@@ -118,7 +118,7 @@ def text_extract_from_web(url: str) -> Any:
 
 
 # Split a text into smaller chunks of size n
-def create_chunks(text: str, n: int) -> Any:
+def create_chunks(text: str, n: int):
     r"""Returns successive n-sized chunks from provided text."""
 
     i = 0
@@ -139,7 +139,7 @@ def create_chunks(text: str, n: int) -> Any:
         i = j
 
 
-def summarise_text(text: str, query: str) -> Any:
+def summarise_text(text: str, query: str) -> str:
     r"""Summarise the information from the text, base on the query if query is
     given.
 
@@ -186,7 +186,7 @@ def summarise_text(text: str, query: str) -> Any:
     return response["choices"][0]["message"]["content"]
 
 
-def search_web(query: str) -> Any:
+def search_web(query: str) -> str:
     r"""search webs for information.
 
     Args:
