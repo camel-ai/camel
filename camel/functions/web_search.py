@@ -69,12 +69,13 @@ def search_google(query: str):
 
             # extract the page url
             link = search_item.get("link")
-            response = {"Result_id": i,
-                        "Title": title,
-                        "Description": snippet,
-                        "Long_description": long_description,
-                        "URL": link
-                        }
+            response = {
+                "Result_id": i,
+                "Title": title,
+                "Description": snippet,
+                "Long_description": long_description,
+                "URL": link
+            }
             responses.append(response)
 
     except requests.RequestException:
@@ -106,8 +107,8 @@ def text_extract_from_web(url: str) -> str:
         text = soup.get_text()
         # strip text
         lines = (line.strip() for line in text.splitlines())
-        chunks = (phrase.strip() for line in lines for phrase
-                  in line.split("  "))
+        chunks = (phrase.strip() for line in lines
+                  for phrase in line.split("  "))
         text = ".".join(chunk for chunk in chunks if chunk)
 
     except requests.RequestException:
@@ -176,8 +177,10 @@ def summarise_text(text: str, query: str) -> str:
     response = openai.ChatCompletion.create(
         api_key=os.getenv("OPENAI_API_KEY"),
         model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}]
-    )
+        messages=[{
+            "role": "user",
+            "content": prompt
+        }])
 
     return response["choices"][0]["message"]["content"]
 
@@ -207,8 +210,10 @@ def search_web(query: str) -> str:
         response = openai.ChatCompletion.create(
             api_key=os.getenv("OPENAI_API_KEY"),
             model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}]
-        )
+            messages=[{
+                "role": "user",
+                "content": prompt
+            }])
         # add the source
         answer += f"\nFrom: {url}"
 
@@ -220,6 +225,6 @@ def search_web(query: str) -> str:
 
 
 WEB_FUNCS: List[OpenAIFunction] = [
-    OpenAIFunction(func) for func in [search_web, search_google,
-                                      text_extract_from_web, summarise_text]
+    OpenAIFunction(func) for func in
+    [search_web, search_google, text_extract_from_web, summarise_text]
 ]
