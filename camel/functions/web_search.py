@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
 import openai
 import requests
@@ -140,7 +140,7 @@ def create_chunks(text, n):
         i = j
 
 
-def summarise_text(text: str, query: str) -> str:
+def summarise_text(text: str, query: str) -> Any:
     r"""Summarise the information from the text, base on the query if query is
     given.
 
