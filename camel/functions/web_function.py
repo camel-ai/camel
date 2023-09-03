@@ -14,13 +14,12 @@
 import os
 from typing import Any, Dict, List
 
-import openai
+import camel.agents
 import requests
 from bs4 import BeautifulSoup
 
-from .openai_function import OpenAIFunction
-import camel.agents
 from camel.messages import BaseMessage
+from .openai_function import OpenAIFunction
 
 
 def search_google(query: str) -> List[Dict[str, Any]]:
