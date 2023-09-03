@@ -119,7 +119,15 @@ def text_extract_from_web(url: str) -> str:
 
 # Split a text into smaller chunks of size n
 def create_chunks(text: str, n: int) -> List[str]:
-    r"""Returns successive n-sized chunks from provided text."""
+    r"""Returns successive n-sized chunks from provided text."
+    
+    Args:
+        text: what need to be cut.
+        n: max length of chunk.
+
+    Returns:
+        List[str]: a list of chunks
+    """""
 
     chunks = []
     i = 0
@@ -228,5 +236,6 @@ def search_web(query: str) -> str:
 
 WEB_FUNCS: List[OpenAIFunction] = [
     OpenAIFunction(func) for func in
-    [search_web, search_google, text_extract_from_web, summarise_text]
+    [search_web, search_google, text_extract_from_web, summarise_text,
+     create_chunks]
 ]
