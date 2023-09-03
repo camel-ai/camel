@@ -29,9 +29,6 @@ def search_google(query: str):
     Returns:
         a list of web information, include title, descrption, url.
     """
-    # key can find here https://developers.google.com/custom-search/v1/overview
-    GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-    # id can find here https://cse.google.com/cse/all
     # https://developers.google.com/custom-search/v1/overview
     GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
     # https://cse.google.com/cse/all
