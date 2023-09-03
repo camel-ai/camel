@@ -19,6 +19,8 @@ import requests
 from bs4 import BeautifulSoup
 
 from .openai_function import OpenAIFunction
+import camel.agents
+from camel.messages import BaseMessage
 
 
 def search_google(query: str) -> List[Dict[str, Any]]:
@@ -149,6 +151,26 @@ def create_chunks(text: str, n: int) -> List[str]:
     return chunks
 
 
+def single_step_agent(prompt: str) -> str:
+    """single step agent."""
+
+    assistant_sys_msg = BaseMessage.make_assistant_message(
+        role_name="Assistant",
+        content="You are a helpful assistant.",
+    )
+    agent = camel.agents.ChatAgent(assistant_sys_msg)
+    agent.reset()
+
+    user_msg = BaseMessage.make_user_message(
+        role_name="User",
+        content=prompt,
+    )
+    assistant_response = agent.step(user_msg)
+    if assistant_response.msgs is not None:
+        return assistant_response.msg.content
+    return ""
+
+
 def summarise_text(text: str, query: str) -> str:
     r"""Summarise the information from the text, base on the query if query is
     given.
@@ -170,13 +192,7 @@ def summarise_text(text: str, query: str) -> str:
     # summarise
     for i, chunk in enumerate(chunks, start=1):
         prompt = summary_prompt + str(i) + ": " + chunk
-        response = openai.ChatCompletion.create(
-            api_key=os.getenv("OPENAI_API_KEY"), model="gpt-3.5-turbo",
-            messages=[{
-                "role": "user",
-                "content": prompt
-            }])
-        result = response["choices"][0]["message"]["content"]
+        result = single_step_agent(prompt)
         results += result + "\n"
 
     # final summarise
@@ -185,15 +201,9 @@ def summarise_text(text: str, query: str) -> str:
                    f"answer the question: {query}.\n\nText: "
     prompt = final_prompt + results
 
-    response = openai.ChatCompletion.create(
-        api_key=os.getenv("OPENAI_API_KEY"), model="gpt-3.5-turbo", messages=[{
-            "role":
-            "user",
-            "content":
-            prompt
-        }])
+    response = single_step_agent(prompt)
 
-    return response["choices"][0]["message"]["content"]
+    return response
 
 
 def search_web(query: str) -> str:
@@ -218,16 +228,10 @@ def search_web(query: str) -> str:
         # let chatgpt decide whether to continue search or not
         prompt = f"Do you think the answer: {answer} can answer the query: " \
                  f"{query}. Use only 'yes' or 'no' to answer."
-        response = openai.ChatCompletion.create(
-            api_key=os.getenv("OPENAI_API_KEY"), model="gpt-3.5-turbo",
-            messages=[{
-                "role": "user",
-                "content": prompt
-            }])
         # add the source
         answer += f"\nFrom: {url}"
 
-        reply = response["choices"][0]["message"]["content"]
+        reply = single_step_agent(prompt)
         if "yes" in str(reply).lower():
             break
 
