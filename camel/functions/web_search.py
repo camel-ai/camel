@@ -176,10 +176,11 @@ def summarise_text(text: str, query: str) -> str:
     prompt = final_prompt + results
 
     response = openai.ChatCompletion.create(
-        api_key=os.getenv("OPENAI_API_KEY"), model="gpt-3.5-turbo",
-        messages=[{
-            "role": "user",
-            "content": prompt
+        api_key=os.getenv("OPENAI_API_KEY"), model="gpt-3.5-turbo", messages=[{
+            "role":
+            "user",
+            "content":
+            prompt
         }])
 
     return response["choices"][0]["message"]["content"]
