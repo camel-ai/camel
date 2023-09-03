@@ -121,6 +121,7 @@ def text_extract_from_web(url: str) -> str:
 def create_chunks(text: str, n: int) -> List[str]:
     r"""Returns successive n-sized chunks from provided text."""
 
+    chunks = []
     i = 0
     while i < len(text):
         # Find the nearest end of sentence within a range of 0.5 * n
@@ -135,8 +136,9 @@ def create_chunks(text: str, n: int) -> List[str]:
         # If no end of sentence found, use n tokens as the chunk size
         if j == i + int(0.8 * n):
             j = min(i + n, len(text))
-        yield text[i:j]
+        chunks.append(text[i:j])
         i = j
+    return chunks
 
 
 def summarise_text(text: str, query: str) -> str:
@@ -193,7 +195,7 @@ def search_web(query: str) -> str:
         query (string): question you want to be answered.
 
     Returns:
-        string: Summarised information from webs,
+        string: Summarised information from webs.
     """
     # google search will return a list of urls
     result = search_google(query)
