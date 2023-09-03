@@ -23,4 +23,3 @@ __all__ = [
     'SEARCH_FUNCS',
     'WEB_FUNCS',
 ]
-
