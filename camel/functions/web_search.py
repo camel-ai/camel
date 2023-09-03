@@ -218,7 +218,7 @@ def search_web(query: str) -> str:
         answer += f"\nFrom: {url}"
 
         reply = response["choices"][0]["message"]["content"]
-        if 'yes' in reply.lower():
+        if "yes" in str(reply).lower():
             break
 
     return answer
