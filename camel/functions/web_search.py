@@ -12,14 +12,14 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from time import sleep
+from typing import List
 
 import openai
 import requests
 from bs4 import BeautifulSoup
-from typing import List
 
-from .openai_function import OpenAIFunction
+from camel.functions import OpenAIFunction
+
 
 def search_google(query: str):
     """
@@ -46,7 +46,8 @@ def search_google(query: str):
     # constructing the URL
     # doc: https://developers.google.com/custom-search/v1/using_rest
     url = f"https://www.googleapis.com/customsearch/v1?" \
-          f"key={GOOGLE_API_KEY}&cx={SEARCH_ENGINE_ID}&q={query}&start={start}&lr={language}&num={numbers}"
+          f"key={GOOGLE_API_KEY}&cx={SEARCH_ENGINE_ID}&q={query}&start=" \
+          f"{start}&lr={language}&num={numbers}"
 
     responses = []
     # make the get
@@ -60,7 +61,8 @@ def search_google(query: str):
         # iterate over 10 results found
         for i, search_item in enumerate(search_items, start=1):
             try:
-                long_description = search_item["pagemap"]["metatags"][0]["og:description"]
+                long_description = \
+                    search_item["pagemap"]["metatags"][0]["og:description"]
             except KeyError:
                 long_description = "N/A"
             # get the page title
@@ -79,7 +81,7 @@ def search_google(query: str):
             responses.append(response)
 
     except requests.RequestException:
-        responses.append("google search failed.")
+        responses.append({"erro": "google search failed."})
 
     return responses
 
@@ -107,7 +109,8 @@ def text_extract_from_web(url: str) -> str:
         text = soup.get_text()
         # strip text
         lines = (line.strip() for line in text.splitlines())
-        chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+        chunks = (phrase.strip() for line in lines for phrase
+                  in line.split("  "))
         text = ".".join(chunk for chunk in chunks if chunk)
 
     except requests.RequestException:
@@ -121,7 +124,8 @@ def create_chunks(text, n):
 
     i = 0
     while i < len(text):
-        # Find the nearest end of sentence within a range of 0.5 * n and 1.5 * n tokens
+        # Find the nearest end of sentence within a range of 0.5 * n
+        # and 1.5 * n tokens
         j = min(i + int(1.2 * n), len(text))
         while j > i + int(0.8 * n):
             # Decode the tokens and check for full stop or newline
@@ -138,7 +142,8 @@ def create_chunks(text, n):
 
 def summarise_text(text: str, query: str) -> str:
     """
-    Summarise the information from the text, base on the query if query is given.
+    Summarise the information from the text, base on the query if query is
+    given.
     Args:
         text(string): text to summarise.
         query(string): what information you want.
@@ -146,7 +151,8 @@ def summarise_text(text: str, query: str) -> str:
     Returns:
         Strings with information.
     """
-    summary_prompt = f"Gather information from this text that relative to the question, but do not directly answer " \
+    summary_prompt = f"Gather information from this text that relative to " \
+                     f"the question, but do not directly answer " \
                      f"the question.\nquestion: {query}\ntext "
     # max length of each chunk
     max_len = 3000
@@ -160,12 +166,12 @@ def summarise_text(text: str, query: str) -> str:
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}]
         )
-        sleep(30)
         result = response["choices"][0]["message"]["content"]
         results += result + "\n"
 
     # final summarise
-    final_prompt = f"Here are some summarised texts which split from one text, Using the information to " \
+    final_prompt = f"Here are some summarised texts which split from one " \
+                   f"text, Using the information to " \
                    f"answer the question: {query}.\n\nText: "
     prompt = final_prompt + results
 
@@ -198,8 +204,8 @@ def search_web(query: str) -> str:
         answer = summarise_text(text, query)
 
         # let chatgpt decide whether to continue search or not
-        prompt = f"Do you think the answer: {answer} can answer the query: {query}. " \
-                 f"Use only 'yes' or 'no' to answer."
+        prompt = f"Do you think the answer: {answer} can answer the query: " \
+                 f"{query}. Use only 'yes' or 'no' to answer."
         response = openai.ChatCompletion.create(
             api_key=os.getenv("OPENAI_API_KEY"),
             model="gpt-3.5-turbo",
@@ -216,5 +222,6 @@ def search_web(query: str) -> str:
 
 
 WEB_FUNCS: List[OpenAIFunction] = [
-    OpenAIFunction(func) for func in [search_web, search_google, text_extract_from_web, summarise_text]
+    OpenAIFunction(func) for func in [search_web, search_google,
+                                      text_extract_from_web, summarise_text]
 ]

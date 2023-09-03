@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
+
 import requests
 
 
@@ -28,5 +29,3 @@ def test_google_api():
     result = requests.get(url)
 
     assert result.status_code == 200
-
-
