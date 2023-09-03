@@ -118,7 +118,7 @@ def text_extract_from_web(url: str) -> str:
 
 
 # Split a text into smaller chunks of size n
-def create_chunks(text: str, n: int):
+def create_chunks(text: str, n: int) -> List[str]:
     r"""Returns successive n-sized chunks from provided text."""
 
     i = 0
@@ -201,7 +201,7 @@ def search_web(query: str) -> str:
     for item in result:
         url = item.get("URL")
         # extract text
-        text = text_extract_from_web(url)
+        text = text_extract_from_web(str(url))
         # using chatgpt summarise text
         answer = summarise_text(text, query)
 
