@@ -16,7 +16,12 @@ from typing import List
 from colorama import Fore
 
 from camel.agents.chat_agent import FunctionCallingRecord
+<<<<<<< Updated upstream
 from camel.functions import MATH_FUNCS, SEARCH_FUNCS
+=======
+from camel.configs import ChatGPTConfig, FunctionCallingConfig
+from camel.functions import MATH_FUNCS, SEARCH_FUNCS, WEB_FUNCS
+>>>>>>> Stashed changes
 from camel.societies import RolePlaying
 from camel.typing import ModelType
 from camel.utils import print_text_animated
@@ -25,6 +30,18 @@ from camel.utils import print_text_animated
 def main(model_type=ModelType.GPT_4) -> None:
     task_prompt = ("Assuming the current year is 2023, estimate KAUST's "
                    "current age and then add 10 more years to this age.")
+<<<<<<< Updated upstream
+=======
+
+    user_model_config = ChatGPTConfig(temperature=0.0)
+
+    function_list = [*WEB_FUNCS, *MATH_FUNCS, *SEARCH_FUNCS]
+    assistant_model_config = FunctionCallingConfig.from_openai_function_list(
+        function_list=function_list,
+        kwargs=dict(temperature=0.0),
+    )
+
+>>>>>>> Stashed changes
     role_play_session = RolePlaying(
         assistant_role_name="Searcher",
         user_role_name="Professor",
