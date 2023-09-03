@@ -18,7 +18,7 @@ import openai
 import requests
 from bs4 import BeautifulSoup
 
-from camel.functions import OpenAIFunction
+from .openai_function import OpenAIFunction
 
 
 def search_google(query: str):
