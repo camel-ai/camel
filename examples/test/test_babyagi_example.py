@@ -21,6 +21,7 @@ parametrize = pytest.mark.parametrize('model', [
     pytest.param(None, marks=pytest.mark.model_backend),
 ])
 
+
 @parametrize
 def test_ai_society_babyagi_playing_example(model):
     examples.ai_society.babyagi_playing.main(model_type=model)
