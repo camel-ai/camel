@@ -21,7 +21,7 @@ from bs4 import BeautifulSoup
 from .openai_function import OpenAIFunction
 
 
-def search_google(query: str):
+def search_google(query: str) -> list:
     r"""using google search engine to search information for the given query.
 
     Args:
