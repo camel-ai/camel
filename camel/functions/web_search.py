@@ -30,9 +30,15 @@ def search_google(query: str):
         a list of web information, include title, descrption, url.
     """
 
+<<<<<<< Updated upstream
     # key can find here https://developers.google.com/custom-search/v1/overview
     GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
     # id can find here https://cse.google.com/cse/all
+=======
+    # https://developers.google.com/custom-search/v1/overview
+    GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+    # https://cse.google.com/cse/all
+>>>>>>> Stashed changes
     SEARCH_ENGINE_ID = os.getenv("SEARCH_ENGINE_ID")
 
     # the search query you want

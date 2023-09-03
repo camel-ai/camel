@@ -17,7 +17,12 @@ from colorama import Fore
 
 from camel.agents.chat_agent import FunctionCallingRecord
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 from camel.functions import MATH_FUNCS, SEARCH_FUNCS
+=======
+from camel.configs import ChatGPTConfig, FunctionCallingConfig
+from camel.functions import MATH_FUNCS, SEARCH_FUNCS, WEB_FUNCS
+>>>>>>> Stashed changes
 =======
 from camel.configs import ChatGPTConfig, FunctionCallingConfig
 from camel.functions import MATH_FUNCS, SEARCH_FUNCS, WEB_FUNCS
