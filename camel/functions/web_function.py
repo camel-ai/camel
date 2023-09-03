@@ -14,11 +14,12 @@
 import os
 from typing import Any, Dict, List
 
-import camel.agents
 import requests
 from bs4 import BeautifulSoup
 
+import camel.agents
 from camel.messages import BaseMessage
+
 from .openai_function import OpenAIFunction
 
 
