@@ -22,8 +22,8 @@ from camel.functions import OpenAIFunction
 
 
 def search_google(query: str):
-    """
-    using google search engine to search information for the given query.
+    r"""using google search engine to search information for the given query.
+
     Args:
         query(string): what question to search.
     Returns:
@@ -85,8 +85,8 @@ def search_google(query: str):
 
 
 def text_extract_from_web(url: str) -> str:
-    """
-    Get the text information from given url.
+    r"""Get the text information from given url.
+
     Args:
         url(string): The web site you want to search.
 
@@ -119,7 +119,7 @@ def text_extract_from_web(url: str) -> str:
 
 # Split a text into smaller chunks of size n
 def create_chunks(text, n):
-    """Returns successive n-sized chunks from provided text."""
+    r"""Returns successive n-sized chunks from provided text."""
 
     i = 0
     while i < len(text):
@@ -140,9 +140,9 @@ def create_chunks(text, n):
 
 
 def summarise_text(text: str, query: str) -> str:
-    """
-    Summarise the information from the text, base on the query if query is
+    r"""Summarise the information from the text, base on the query if query is
     given.
+
     Args:
         text(string): text to summarise.
         query(string): what information you want.
@@ -186,8 +186,8 @@ def summarise_text(text: str, query: str) -> str:
 
 
 def search_web(query: str) -> str:
-    """
-    search webs for information.
+    r"""search webs for information.
+
     Args:
         query(string): question you want to be answered.
 
