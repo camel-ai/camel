@@ -21,13 +21,13 @@ from bs4 import BeautifulSoup
 from .openai_function import OpenAIFunction
 
 
-def search_google(query: str):
+def search_google(query: str) -> List:
     r"""using google search engine to search information for the given query.
 
     Args:
-        query(string): what question to search.
+        query (string): what question to search.
     Returns:
-        a list of web information, include title, descrption, url.
+        List: a list of web information, include title, descrption, url.
     """
     # https://developers.google.com/custom-search/v1/overview
     GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
@@ -88,10 +88,10 @@ def text_extract_from_web(url: str) -> str:
     r"""Get the text information from given url.
 
     Args:
-        url(string): The web site you want to search.
+        url (string): The web site you want to search.
 
     Returns:
-        All texts extract from the web.
+        string: All texts extract from the web.
     """
     text: str = ""
     try:
@@ -144,11 +144,11 @@ def summarise_text(text: str, query: str) -> str:
     given.
 
     Args:
-        text(string): text to summarise.
-        query(string): what information you want.
+        text (string): text to summarise.
+        query (string): what information you want.
 
     Returns:
-        Strings with information.
+        string: Strings with information.
     """
     summary_prompt = f"Gather information from this text that relative to " \
                      f"the question, but do not directly answer " \
@@ -190,10 +190,10 @@ def search_web(query: str) -> str:
     r"""search webs for information.
 
     Args:
-        query(string): question you want to be answered.
+        query (string): question you want to be answered.
 
     Returns:
-        Summarised information from webs,
+        string: Summarised information from webs,
     """
     # google search will return a list of urls
     response = search_google(query)
