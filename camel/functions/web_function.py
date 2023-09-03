@@ -127,7 +127,7 @@ def create_chunks(text: str, n: int) -> List[str]:
 
     Returns:
         List[str]: a list of chunks
-    """""
+    """
 
     chunks = []
     i = 0
