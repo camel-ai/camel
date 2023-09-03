@@ -196,9 +196,9 @@ def search_web(query: str) -> str:
         string: Summarised information from webs,
     """
     # google search will return a list of urls
-    response = search_google(query)
+    result = search_google(query)
     answer: str = ""
-    for item in response:
+    for item in result:
         url = item.get("URL")
         # extract text
         text = text_extract_from_web(url)
