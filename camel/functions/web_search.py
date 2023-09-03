@@ -161,10 +161,11 @@ def summarise_text(text: str, query: str) -> str:
     for i, chunk in enumerate(chunks, start=1):
         prompt = summary_prompt + str(i) + ": " + chunk
         response = openai.ChatCompletion.create(
-            api_key=os.getenv("OPENAI_API_KEY"),
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}]
-        )
+            api_key=os.getenv("OPENAI_API_KEY"), model="gpt-3.5-turbo",
+            messages=[{
+                "role": "user",
+                "content": prompt
+            }])
         result = response["choices"][0]["message"]["content"]
         results += result + "\n"
 
@@ -175,8 +176,7 @@ def summarise_text(text: str, query: str) -> str:
     prompt = final_prompt + results
 
     response = openai.ChatCompletion.create(
-        api_key=os.getenv("OPENAI_API_KEY"),
-        model="gpt-3.5-turbo",
+        api_key=os.getenv("OPENAI_API_KEY"), model="gpt-3.5-turbo",
         messages=[{
             "role": "user",
             "content": prompt
@@ -208,8 +208,7 @@ def search_web(query: str) -> str:
         prompt = f"Do you think the answer: {answer} can answer the query: " \
                  f"{query}. Use only 'yes' or 'no' to answer."
         response = openai.ChatCompletion.create(
-            api_key=os.getenv("OPENAI_API_KEY"),
-            model="gpt-3.5-turbo",
+            api_key=os.getenv("OPENAI_API_KEY"), model="gpt-3.5-turbo",
             messages=[{
                 "role": "user",
                 "content": prompt
