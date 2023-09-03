@@ -15,7 +15,7 @@
 from .openai_function import OpenAIFunction
 from .math_functions import MATH_FUNCS
 from .search_functions import SEARCH_FUNCS
-from .web_search import WEB_FUNCS
+from .web_function import WEB_FUNCS
 
 __all__ = [
     'OpenAIFunction',
