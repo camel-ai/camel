@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from typing import List
+from typing import List, Dict, Any
 
 import openai
 import requests
@@ -21,7 +21,7 @@ from bs4 import BeautifulSoup
 from .openai_function import OpenAIFunction
 
 
-def search_google(query: str) -> list:
+def search_google(query: str) -> List[Dict[str, Any]]:
     r"""using google search engine to search information for the given query.
 
     Args:
