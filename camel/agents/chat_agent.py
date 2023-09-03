@@ -24,6 +24,7 @@ from tenacity.wait import wait_exponential
 from camel.agents import BaseAgent
 from camel.configs import BaseConfig, ChatGPTConfig
 from camel.functions import OpenAIFunction
+from camel.memory import BaseMemory, ChatHistoryMemory
 from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.typing import ModelType, RoleType
@@ -60,27 +61,6 @@ class ChatAgentResponse:
 
 
 @dataclass(frozen=True)
-class ChatRecord:
-    r"""Historical records of who made what message.
-
-    Attributes:
-        role_at_backend (str): Role of the message that mirrors OpenAI
-            message role that may be `system` or `user` or `assistant`.
-        message (BaseMessage): Message payload.
-    """
-    role_at_backend: str
-    message: BaseMessage
-
-    def to_openai_message(self):
-        r"""Converts the payload message to OpenAI-compatible format.
-
-        Returns:
-            OpenAIMessage: OpenAI-compatible message
-        """
-        return self.message.to_openai_message(self.role_at_backend)
-
-
-@dataclass(frozen=True)
 class FunctionCallingRecord:
     r"""Historical records of functions called in the conversation.
 
@@ -113,8 +93,9 @@ class ChatAgent(BaseAgent):
         system_message (BaseMessage): The system message for the chat agent.
         model (ModelType, optional): The LLM model to use for generating
             responses. (default :obj:`ModelType.GPT_3_5_TURBO`)
-        model_config (Any, optional): Configuration options for the LLM model.
-            (default: :obj:`None`)
+        model_config (BaseConfig, optional): Configuration options for the
+            LLM model. (default: :obj:`None`)
+        memory (Base)
         message_window_size (int, optional): The maximum number of previous
             messages to include in the context window. If `None`, no windowing
             is performed. (default: :obj:`None`)
@@ -129,6 +110,7 @@ class ChatAgent(BaseAgent):
         system_message: BaseMessage,
         model: Optional[ModelType] = None,
         model_config: Optional[BaseConfig] = None,
+        memory: Optional[BaseMemory] = None,
         message_window_size: Optional[int] = None,
         output_language: Optional[str] = None,
         function_list: Optional[List[OpenAIFunction]] = None,
@@ -144,7 +126,8 @@ class ChatAgent(BaseAgent):
 
         self.model: ModelType = (model if model is not None else
                                  ModelType.GPT_3_5_TURBO)
-        self.message_window_size: Optional[int] = message_window_size
+        self.memory = memory or ChatHistoryMemory(
+            window_size=message_window_size)
 
         self.func_dict: Dict[str, Callable] = {}
         if function_list is not None:
@@ -157,7 +140,6 @@ class ChatAgent(BaseAgent):
         self.model_token_limit: int = self.model_backend.token_limit
 
         self.terminated: bool = False
-        self.stored_messages: List[ChatRecord]
         self.init_messages()
 
     def reset(self):
@@ -187,6 +169,7 @@ class ChatAgent(BaseAgent):
             message (BaseMessage): The message to be set as the
                 new system message of this agent.
         """
+        message.meta_dict["role_at_backend"] = "system"
         self._system_message = message
 
     def is_function_calling_enabled(self) -> bool:
@@ -249,23 +232,7 @@ class ChatAgent(BaseAgent):
         r"""Initializes the stored messages list with the initial system
         message.
         """
-        self.stored_messages = [ChatRecord('system', self.system_message)]
-
-    def update_messages(self, role: str,
-                        message: BaseMessage) -> List[ChatRecord]:
-        r"""Updates the stored messages list with a new message.
-
-        Args:
-            message (BaseMessage): The new message to add to the stored
-                messages.
-
-        Returns:
-            List[BaseMessage]: The updated stored messages.
-        """
-        if role not in {'system', 'user', 'assistant', 'function'}:
-            raise ValueError(f"Unsupported role {role}")
-        self.stored_messages.append(ChatRecord(role, message))
-        return self.stored_messages
+        self.memory.write([self.system_message])
 
     def submit_message(self, message: BaseMessage) -> None:
         r"""Submits the externally provided message as if it were an answer of
@@ -276,7 +243,9 @@ class ChatAgent(BaseAgent):
             message (BaseMessage): An external message to be added as an
                 assistant response.
         """
-        self.stored_messages.append(ChatRecord('assistant', message))
+        # self.stored_messages.append(ChatRecord('assistant', message))
+        message.meta_dict["role_at_backend"] = "assistant"
+        self.memory.write([message])
 
     @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     @openai_api_key_required
@@ -298,7 +267,8 @@ class ChatAgent(BaseAgent):
                 a boolean indicating whether the chat session has terminated,
                 and information about the chat session.
         """
-        messages = self.update_messages('user', input_message)
+        input_message.meta_dict["role_at_backend"] = "user"
+        self.memory.write([input_message])
 
         output_messages: List[BaseMessage]
         info: Dict[str, Any]
@@ -307,7 +277,8 @@ class ChatAgent(BaseAgent):
             # Format messages and get the token number
             openai_messages: Optional[List[OpenAIMessage]]
             num_tokens: int
-            openai_messages, num_tokens = self.preprocess_messages(messages)
+            openai_messages, num_tokens = self.preprocess_messages(
+                input_message)
 
             # Terminate when number of tokens exceeds the limit
             if num_tokens >= self.model_token_limit:
@@ -324,16 +295,16 @@ class ChatAgent(BaseAgent):
                 output_messages, finish_reasons, usage_dict, response_id = (
                     self.handle_stream_response(response, num_tokens))
 
-            if self.is_function_calling_enabled(
-            ) and finish_reasons[0] == 'function_call':
+            if (self.is_function_calling_enabled()
+                    and finish_reasons[0] == 'function_call'):
                 # Do function calling
                 func_assistant_msg, func_result_msg, func_record = (
                     self.step_function_call(response))
 
                 # Update the messages
-                messages = self.update_messages('assistant',
-                                                func_assistant_msg)
-                messages = self.update_messages('function', func_result_msg)
+                func_assistant_msg.meta_dict["role_at_backend"] = "assistant"
+                func_result_msg.meta_dict["role_at_backend"] = "function"
+                self.memory.write([func_assistant_msg, func_result_msg])
                 called_funcs.append(func_record)
             else:
                 # Function calling disabled or chat stopped
@@ -350,7 +321,7 @@ class ChatAgent(BaseAgent):
 
     def preprocess_messages(
             self,
-            messages: List[ChatRecord]) -> Tuple[List[OpenAIMessage], int]:
+            input_message: BaseMessage) -> Tuple[List[OpenAIMessage], int]:
         r"""Truncate the list of messages if message window is defined and
         the current length of message list is beyond the window size. Then
         convert the list of messages to OpenAI's input format and calculate
@@ -364,14 +335,12 @@ class ChatAgent(BaseAgent):
             tuple: A tuple containing the truncated list of messages in
                 OpenAI's input format and the number of tokens.
         """
-
-        if (self.message_window_size
-                is not None) and (len(messages) > self.message_window_size):
-            messages = [ChatRecord('system', self.system_message)
-                        ] + messages[-self.message_window_size:]
-
-        openai_messages: List[OpenAIMessage]
-        openai_messages = [record.to_openai_message() for record in messages]
+        messages = self.memory.read(input_message)
+        openai_messages: List[OpenAIMessage] = [
+            msg.to_openai_message(
+                role_at_backend=msg.meta_dict["role_at_backend"])
+            for msg in messages
+        ]
         num_tokens = num_tokens_from_messages(openai_messages, self.model)
 
         return openai_messages, num_tokens
@@ -529,7 +498,6 @@ class ChatAgent(BaseAgent):
         assist_msg = FunctionCallingMessage(
             role_name=self.role_name,
             role_type=self.role_type,
-            meta_dict=None,
             content="",
             func_name=func_name,
             args=args,
@@ -537,7 +505,6 @@ class ChatAgent(BaseAgent):
         func_msg = FunctionCallingMessage(
             role_name=self.role_name,
             role_type=self.role_type,
-            meta_dict=None,
             content="",
             func_name=func_name,
             result=result,

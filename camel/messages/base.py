@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from camel.messages import (
@@ -40,20 +40,26 @@ class BaseMessage:
     """
     role_name: str
     role_type: RoleType
-    meta_dict: Optional[Dict[str, str]]
     content: str
+    meta_dict: Dict[str, str] = field(default_factory=dict)
 
     @classmethod
     def make_user_message(
             cls, role_name: str, content: str,
             meta_dict: Optional[Dict[str, str]] = None) -> 'BaseMessage':
-        return cls(role_name, RoleType.USER, meta_dict, content)
+        if meta_dict is not None:
+            return cls(role_name, RoleType.USER, content, meta_dict)
+        else:
+            return cls(role_name, RoleType.USER, content)
 
     @classmethod
     def make_assistant_message(
             cls, role_name: str, content: str,
             meta_dict: Optional[Dict[str, str]] = None) -> 'BaseMessage':
-        return cls(role_name, RoleType.ASSISTANT, meta_dict, content)
+        if meta_dict is not None:
+            return cls(role_name, RoleType.ASSISTANT, content, meta_dict)
+        else:
+            return cls(role_name, RoleType.ASSISTANT, content)
 
     def create_new_instance(self, content: str) -> "BaseMessage":
         r"""Create a new instance of the :obj:`BaseMessage` with updated

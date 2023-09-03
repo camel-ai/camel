@@ -16,16 +16,33 @@ import tempfile
 from pathlib import Path
 
 from camel.memory.lossless_storage import InMemoryStorage, JsonStorage
+from camel.typing import RoleType
 
 
 def test_in_memory_storage():
     in_memory = InMemoryStorage()
-    msg1 = {"key1": "value1", "message": "Do a task"}
-    msg2 = {"key1": "value2", "assistant_msg": "Ok"}
+    msg1 = {
+        "key1": "value1",
+        "role": RoleType.USER,
+        "message": "Do a task",
+        "additional_dict": {
+            "1": 1,
+            "2": 2
+        },
+    }
+    msg2 = {
+        "key1": "value2",
+        "role": RoleType.ASSISTANT,
+        "assistant_msg": "Ok",
+    }
     in_memory.save([msg1, msg2])
     load_msg = in_memory.load()
     assert load_msg[0] == msg1
     assert load_msg[1] == msg2
+
+    msg1_copy = msg1.copy()
+    msg1.clear()
+    assert load_msg[0] == msg1_copy
 
     in_memory.clear()
     load_msg = in_memory.load()
@@ -36,8 +53,20 @@ def test_json_storage():
     _, path = tempfile.mkstemp()
     path = Path(path)
     json_storage = JsonStorage(path)
-    msg1 = {"key1": "value1", "message": "Do a task"}
-    msg2 = {"key1": "value2", "assistant_msg": "Ok"}
+    msg1 = {
+        "key1": "value1",
+        "role": RoleType.USER,
+        "message": "Do a task",
+        "additional_dict": {
+            "1": 1,
+            "2": 2
+        },
+    }
+    msg2 = {
+        "key1": "value2",
+        "role": RoleType.ASSISTANT,
+        "assistant_msg": "Ok",
+    }
     json_storage.save([msg1, msg2])
     assert path.read_text() != ""
 

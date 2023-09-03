@@ -28,7 +28,8 @@ class ChatHistoryMemory(BaseMemory):
         BaseMemory (_type_): _description_
     """
 
-    def __init__(self, storage: Optional[LosslessStorage] = None) -> None:
+    def __init__(self, storage: Optional[LosslessStorage] = None,
+                 window_size: Optional[int] = None) -> None:
         """
         Reads the latest message from memory. If no messages are present,
             returns None.
@@ -38,6 +39,7 @@ class ChatHistoryMemory(BaseMemory):
                 is empty.
         """
         self.storage = storage or InMemoryStorage()
+        self.window_size = window_size
 
     def read(self,
              current_state: Optional[BaseMessage] = None) -> List[BaseMessage]:
@@ -48,7 +50,19 @@ class ChatHistoryMemory(BaseMemory):
             Union[BaseMessage, List[BaseMessage]]: Retrieved message or list of
                 messages.
         """
-        return [BaseMessage(**record) for record in self.storage.load()]
+        history_messages = [
+            BaseMessage(**record) for record in self.storage.load()
+        ]
+        if len(history_messages) == 0:
+            raise ValueError("The ChatHistoryMemory is empty.")
+        if history_messages[0].meta_dict["role_at_backend"] != "system":
+            raise ValueError(
+                "The first message in ChatHistoryMemory should be a system "
+                "message.")
+        if self.window_size is not None:
+            history_messages = history_messages[0:1] + history_messages[
+                -self.window_size:]
+        return history_messages
 
     def write(self, msgs: List[BaseMessage]) -> None:
         """
@@ -57,6 +71,14 @@ class ChatHistoryMemory(BaseMemory):
         Args:
             msg (BaseMessage): The message to be written.
         """
+        for m in msgs:
+            if "role_at_backend" not in m.meta_dict:
+                raise ValueError(
+                    "Messages storing in ChatHistoryMemory should have "
+                    "\"role_at_backend\" key in meta_dict.")
+            role = m.meta_dict["role_at_backend"]
+            if role not in ['system', 'user', 'assistant', 'function']:
+                raise ValueError(f"Unsupported role \"{role}\".")
         self.storage.save([asdict(msg) for msg in msgs])
 
     def clear(self) -> None:
