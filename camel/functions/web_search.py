@@ -118,6 +118,7 @@ def text_extract_from_web(url: str) -> str:
 
     return text
 
+
 # Split a text into smaller chunks of size n
 def create_chunks(text, n):
     """Returns successive n-sized chunks from provided text."""
