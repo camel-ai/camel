@@ -27,7 +27,7 @@ class InMemoryStorage(LosslessStorage):
         self.memory_list.extend(deepcopy(records))
 
     def load(self) -> List[Dict[str, Any]]:
-        return self.memory_list
+        return deepcopy(self.memory_list)
 
     def clear(self) -> None:
         self.memory_list.clear()

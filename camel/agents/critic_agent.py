@@ -108,7 +108,7 @@ class CriticAgent(ChatAgent):
 
             critic_msg = critic_response.msg
             critic_msg.meta_dict["role_at_backend"] = "assistant"
-            self.memory.write(critic_msg)
+            self.memory.write([critic_msg])
             if self.verbose:
                 print_text_animated(self.logger_color + "\n> Critic response: "
                                     f"\x1b[3m{critic_msg.content}\x1b[0m\n")

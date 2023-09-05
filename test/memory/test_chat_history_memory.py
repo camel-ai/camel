@@ -24,14 +24,20 @@ from camel.typing import RoleType
 
 def test_chat_history_memory():
     memory = ChatHistoryMemory()
+    system_msg = BaseMessage("system", role_type=RoleType.DEFAULT,
+                             meta_dict={"role_at_backend": "system"},
+                             content="You are a helpful assistant")
     user_msg = BaseMessage("AI user", role_type=RoleType.USER,
-                           meta_dict={"key": "value"}, content="Do a task")
+                           meta_dict={"role_at_backend":
+                                      "user"}, content="Do a task")
     assistant_msg = BaseMessage("AI assistant", role_type=RoleType.ASSISTANT,
-                                meta_dict={"key2": "value2"}, content="OK")
-    memory.write([user_msg, assistant_msg])
+                                meta_dict={"role_at_backend":
+                                           "assistant"}, content="OK")
+    memory.write([system_msg, user_msg, assistant_msg])
     load_msgs = memory.read()
-    assert asdict(load_msgs[0]) == asdict(user_msg)
-    assert asdict(load_msgs[1]) == asdict(assistant_msg)
+    assert asdict(load_msgs[0]) == asdict(system_msg)
+    assert asdict(load_msgs[1]) == asdict(user_msg)
+    assert asdict(load_msgs[2]) == asdict(assistant_msg)
 
 
 def test_chat_history_memory_json_storage():
@@ -39,13 +45,19 @@ def test_chat_history_memory_json_storage():
     path = Path(path)
     storage = JsonStorage(path)
     memory = ChatHistoryMemory(storage=storage)
+    system_msg = BaseMessage("system", role_type=RoleType.DEFAULT,
+                             meta_dict={"role_at_backend": "system"},
+                             content="You are a helpful assistant")
     user_msg = BaseMessage("AI user", role_type=RoleType.USER,
-                           meta_dict={"key": "value"}, content="Do a task")
+                           meta_dict={"role_at_backend":
+                                      "user"}, content="Do a task")
     assistant_msg = BaseMessage("AI assistant", role_type=RoleType.ASSISTANT,
-                                meta_dict={"key2": "value2"}, content="OK")
-    memory.write([user_msg, assistant_msg])
+                                meta_dict={"role_at_backend":
+                                           "assistant"}, content="OK")
+    memory.write([system_msg, user_msg, assistant_msg])
     load_msgs = memory.read()
-    assert asdict(load_msgs[0]) == asdict(user_msg)
-    assert asdict(load_msgs[1]) == asdict(assistant_msg)
+    assert asdict(load_msgs[0]) == asdict(system_msg)
+    assert asdict(load_msgs[1]) == asdict(user_msg)
+    assert asdict(load_msgs[2]) == asdict(assistant_msg)
 
     path = Path(path)

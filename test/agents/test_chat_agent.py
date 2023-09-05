@@ -131,7 +131,7 @@ def test_chat_agent_step_exceed_token_number():
 @pytest.mark.parametrize('n', [1, 2, 3])
 def test_chat_agent_multiple_return_messages(n):
     model_config = ChatGPTConfig(temperature=1.4, n=n)
-    system_msg = BaseMessage("Assistant", RoleType.ASSISTANT, meta_dict=None,
+    system_msg = BaseMessage("Assistant", RoleType.ASSISTANT,
                              content="You are a helpful assistant.")
     assistant = ChatAgent(system_msg, model_config=model_config)
     assistant.reset()
@@ -146,7 +146,7 @@ def test_chat_agent_multiple_return_messages(n):
 @pytest.mark.parametrize('n', [2])
 def test_chat_agent_multiple_return_message_error(n):
     model_config = ChatGPTConfig(temperature=1.4, n=n)
-    system_msg = BaseMessage("Assistant", RoleType.ASSISTANT, meta_dict=None,
+    system_msg = BaseMessage("Assistant", RoleType.ASSISTANT,
                              content="You are a helpful assistant.")
 
     assistant = ChatAgent(system_msg, model_config=model_config)
@@ -164,7 +164,7 @@ def test_chat_agent_multiple_return_message_error(n):
 
 @pytest.mark.model_backend
 def test_chat_agent_stream_output():
-    system_msg = BaseMessage("Assistant", RoleType.ASSISTANT, meta_dict=None,
+    system_msg = BaseMessage("Assistant", RoleType.ASSISTANT,
                              content="You are a helpful assistant.")
     user_msg = BaseMessage(role_name="User", role_type=RoleType.USER,
                            meta_dict=dict(), content="Tell me a joke.")
@@ -187,7 +187,7 @@ def test_chat_agent_stream_output():
 @pytest.mark.model_backend
 def test_set_output_language():
     system_message = BaseMessage(role_name="assistant",
-                                 role_type=RoleType.ASSISTANT, meta_dict=None,
+                                 role_type=RoleType.ASSISTANT,
                                  content="You are a help assistant.")
     agent = ChatAgent(system_message=system_message,
                       model=ModelType.GPT_3_5_TURBO)
@@ -202,7 +202,7 @@ def test_set_output_language():
 
     # Verify that the system message is updated with the new output language
     updated_system_message = BaseMessage(
-        role_name="assistant", role_type=RoleType.ASSISTANT, meta_dict=None,
+        role_name="assistant", role_type=RoleType.ASSISTANT,
         content="You are a help assistant."
         "\nRegardless of the input language, you must output text in Arabic.")
     assert agent.system_message.content == updated_system_message.content
@@ -211,7 +211,7 @@ def test_set_output_language():
 @pytest.mark.model_backend
 def test_set_multiple_output_language():
     system_message = BaseMessage(role_name="assistant",
-                                 role_type=RoleType.ASSISTANT, meta_dict=None,
+                                 role_type=RoleType.ASSISTANT,
                                  content="You are a help assistant.")
     agent = ChatAgent(system_message=system_message,
                       model=ModelType.GPT_3_5_TURBO)
@@ -222,7 +222,7 @@ def test_set_multiple_output_language():
     agent.set_output_language("English")
     agent.set_output_language("French")
     updated_system_message = BaseMessage(
-        role_name="assistant", role_type=RoleType.ASSISTANT, meta_dict=None,
+        role_name="assistant", role_type=RoleType.ASSISTANT,
         content="You are a help assistant."
         "\nRegardless of the input language, you must output text in French.")
     assert agent.system_message.content == updated_system_message.content
@@ -231,7 +231,7 @@ def test_set_multiple_output_language():
 @pytest.mark.model_backend
 def test_token_exceed_return():
     system_message = BaseMessage(role_name="assistant",
-                                 role_type=RoleType.ASSISTANT, meta_dict=None,
+                                 role_type=RoleType.ASSISTANT,
                                  content="You are a help assistant.")
     agent = ChatAgent(system_message=system_message,
                       model=ModelType.GPT_3_5_TURBO)
@@ -252,7 +252,7 @@ def test_token_exceed_return():
 @pytest.mark.model_backend
 def test_function_enabled():
     system_message = BaseMessage(role_name="assistant",
-                                 role_type=RoleType.ASSISTANT, meta_dict=None,
+                                 role_type=RoleType.ASSISTANT,
                                  content="You are a help assistant.")
     model_config = FunctionCallingConfig(
         functions=[func.as_dict() for func in MATH_FUNCS])
@@ -270,7 +270,7 @@ def test_function_enabled():
 @pytest.mark.model_backend
 def test_function_calling():
     system_message = BaseMessage(role_name="assistant",
-                                 role_type=RoleType.ASSISTANT, meta_dict=None,
+                                 role_type=RoleType.ASSISTANT,
                                  content="You are a help assistant.")
     model_config = FunctionCallingConfig(
         functions=[func.as_dict() for func in MATH_FUNCS])

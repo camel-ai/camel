@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
+import pickle
 from dataclasses import asdict
 from typing import List, Optional
 
@@ -50,18 +51,25 @@ class ChatHistoryMemory(BaseMemory):
             Union[BaseMessage, List[BaseMessage]]: Retrieved message or list of
                 messages.
         """
-        history_messages = [
-            BaseMessage(**record) for record in self.storage.load()
-        ]
+        history_messages = []
+        for msg_dict in self.storage.load():
+            if "__class__" in msg_dict.keys():
+                cls = pickle.loads(msg_dict["__class__"])
+                msg_dict.pop("__class__")
+                history_messages.append(cls(**msg_dict))
+            else:
+                history_messages.append(BaseMessage(**msg_dict))
+
         if len(history_messages) == 0:
             raise ValueError("The ChatHistoryMemory is empty.")
         if history_messages[0].meta_dict["role_at_backend"] != "system":
             raise ValueError(
                 "The first message in ChatHistoryMemory should be a system "
                 "message.")
-        if self.window_size is not None:
-            history_messages = history_messages[0:1] + history_messages[
-                -self.window_size:]
+        if self.window_size is not None and len(
+                history_messages) > self.window_size + 1:
+            history_messages = (history_messages[0:1] +
+                                history_messages[-self.window_size:])
         return history_messages
 
     def write(self, msgs: List[BaseMessage]) -> None:
@@ -71,6 +79,7 @@ class ChatHistoryMemory(BaseMemory):
         Args:
             msg (BaseMessage): The message to be written.
         """
+        stored_msgs = []
         for m in msgs:
             if "role_at_backend" not in m.meta_dict:
                 raise ValueError(
@@ -79,7 +88,11 @@ class ChatHistoryMemory(BaseMemory):
             role = m.meta_dict["role_at_backend"]
             if role not in ['system', 'user', 'assistant', 'function']:
                 raise ValueError(f"Unsupported role \"{role}\".")
-        self.storage.save([asdict(msg) for msg in msgs])
+            msg_dict = asdict(m)
+            if type(m) != BaseMessage:
+                msg_dict["__class__"] = pickle.dumps(m.__class__)
+            stored_msgs.append(msg_dict)
+        self.storage.save(stored_msgs)
 
     def clear(self) -> None:
         """
