@@ -28,11 +28,7 @@ from camel.memory import BaseMemory, ChatHistoryMemory
 from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.typing import ModelType, RoleType
-from camel.utils import (
-    get_model_encoding,
-    num_tokens_from_messages,
-    openai_api_key_required,
-)
+from camel.utils import get_model_encoding, openai_api_key_required
 
 
 @dataclass(frozen=True)
@@ -341,8 +337,8 @@ class ChatAgent(BaseAgent):
                 role_at_backend=msg.meta_dict["role_at_backend"])
             for msg in messages
         ]
-        num_tokens = num_tokens_from_messages(openai_messages, self.model)
-
+        num_tokens = self.model_backend.count_tokens_from_messages(
+            openai_messages)
         return openai_messages, num_tokens
 
     def validate_model_response(self, response: Any) -> None:

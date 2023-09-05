@@ -1,0 +1,27 @@
+name: Linting
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  merge_group:
+
+concurrency:
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ startsWith(github.ref, 'refs/pull/') || github.run_number }}
+
+jobs:
+  linting:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python environment and install dependencies
+      uses: ./.github/actions/camel_install
+      with:
+        python-version: "3.8"
+    - name: Run mypy checks
+      run: |
+        poetry run mypy --install-types --non-interactive --namespace-packages -p camel
+        poetry run mypy --install-types --non-interactive --namespace-packages -p test
+        poetry run mypy --install-types --non-interactive --namespace-packages -p apps
