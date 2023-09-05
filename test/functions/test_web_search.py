@@ -15,7 +15,7 @@ import requests
 
 
 def test_google_api():
-    # check the google search api
+    # Check the google search api
 
     # https://developers.google.com/custom-search/v1/overview
     GOOGLE_API_KEY = "AIzaSyAFATycX7C9SgqpeL5ciCZ7dFBsqIqLhtY"

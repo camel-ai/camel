@@ -27,50 +27,52 @@ def search_google(query: str) -> List[Dict[str, Any]]:
     r"""using google search engine to search information for the given query.
 
     Args:
-        query (string): what question to search.
+        query (string): The query to be searched.
 
     Returns:
-        List: a list of web information, include title, descrption, url.
+        List[Dict[str, Any]]: A list of dictionary objects, each of which
+        title, descrption, url of a website.
     """
     # https://developers.google.com/custom-search/v1/overview
     GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
     # https://cse.google.com/cse/all
     SEARCH_ENGINE_ID = os.getenv("SEARCH_ENGINE_ID")
 
-    # using the first page
-    start = 1
-    # different language may get different result
-    language = "en"
-    # how many pages to return
-    numbers = 10
-    # constructing the URL
-    # doc: https://developers.google.com/custom-search/v1/using_rest
+    # Using the first page
+    start_page_idx = 1
+    # Different language may get different result
+    search_language = "en"
+    # How many pages to return
+    num_result_pages = 10
+    # Constructing the URL
+    # Doc: https://developers.google.com/custom-search/v1/using_rest
     url = f"https://www.googleapis.com/customsearch/v1?" \
           f"key={GOOGLE_API_KEY}&cx={SEARCH_ENGINE_ID}&q={query}&start=" \
-          f"{start}&lr={language}&num={numbers}"
+          f"{start_page_idx}&lr={search_language}&num={num_result_pages}"
 
     responses = []
-    # make the get
+    # Fetch the results given the URL
     try:
+        # Make the get
         result = requests.get(url)
         data = result.json()
 
-        # get the result items
+        # Get the result items
         search_items = data.get("items")
 
-        # iterate over 10 results found
+        # Iterate over 10 results found
         for i, search_item in enumerate(search_items, start=1):
             try:
                 long_description = \
                     search_item["pagemap"]["metatags"][0]["og:description"]
             except KeyError:
                 long_description = "N/A"
-            # get the page title
+            # Get the page title
             title = search_item.get("title")
-            # page snippet
+            # Page snippet
             snippet = search_item.get("snippet")
 
-            # extract the page url
+            # Extract the page url
             link = search_item.get("link")
             response = {
                 "Result_id": i,
@@ -124,11 +126,11 @@ def create_chunks(text: str, n: int) -> List[str]:
     r"""Returns successive n-sized chunks from provided text."
 
     Args:
-        text: what need to be cut.
-        n: max length of chunk.
+        text (string): The text to be split.
+        n (int): The max length of a single chunk.
 
     Returns:
-        List[str]: a list of chunks
+        List[str]: A list of splited texts.
     """
 
     chunks = []
@@ -152,7 +154,7 @@ def create_chunks(text: str, n: int) -> List[str]:
 
 
 def single_step_agent(prompt: str) -> str:
-    """single step agent."""
+    """Single step agent. Summarise texts or answer a question."""
 
     assistant_sys_msg = BaseMessage.make_assistant_message(
         role_name="Assistant",
@@ -185,17 +187,17 @@ def summarise_text(text: str, query: str) -> str:
     summary_prompt = f"Gather information from this text that relative to " \
                      f"the question, but do not directly answer " \
                      f"the question.\nquestion: {query}\ntext "
-    # max length of each chunk
+    # Max length of each chunk
     max_len = 3000
     results = ""
     chunks = create_chunks(text, max_len)
-    # summarise
+    # Summarise
     for i, chunk in enumerate(chunks, start=1):
         prompt = summary_prompt + str(i) + ": " + chunk
         result = single_step_agent(prompt)
         results += result + "\n"
 
-    # final summarise
+    # Final summarise
     final_prompt = f"Here are some summarised texts which split from one " \
                    f"text, Using the information to " \
                    f"answer the question: {query}.\n\nText: "
@@ -207,28 +209,28 @@ def summarise_text(text: str, query: str) -> str:
 
 
 def search_web(query: str) -> str:
-    r"""search webs for information.
+    r"""Search webs for information.
 
     Args:
-        query (string): question you want to be answered.
+        query (string): Question you want to be answered.
 
     Returns:
         string: Summarised information from webs.
     """
-    # google search will return a list of urls
+    # Google search will return a list of urls
     result = search_google(query)
     answer: str = ""
     for item in result:
         url = item.get("URL")
-        # extract text
+        # Extract text
         text = text_extract_from_web(str(url))
-        # using chatgpt summarise text
+        # Using chatgpt summarise text
         answer = summarise_text(text, query)
 
-        # let chatgpt decide whether to continue search or not
+        # Let chatgpt decide whether to continue search or not
         prompt = f"Do you think the answer: {answer} can answer the query: " \
                  f"{query}. Use only 'yes' or 'no' to answer."
-        # add the source
+        # Add the source
         answer += f"\nFrom: {url}"
 
         reply = single_step_agent(prompt)
