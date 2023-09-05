@@ -20,25 +20,49 @@ from _pytest.nodes import Item
 
 def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addoption("--full-test-mode", action="store_true",
-                     help="Enable full test mode")
+                     help="Run all tests")
+    parser.addoption("--default-test-mode", action="store_true",
+                     help="Run all tests except the very slow ones")
     parser.addoption("--fast-test-mode", action="store_true",
-                     help="Enable fast test mode")
+                     help="Run only tests without LLM inference")
+    parser.addoption(
+        "--llm-test-only",
+        action="store_true",
+        help="Run only tests with LLM inference except the very slow ones",
+    )
+    parser.addoption("--very-slow-test-only", action="store_true",
+                     help="Run only the very slow tests")
 
 
 def pytest_collection_modifyitems(config: Config, items: List[Item]) -> None:
-    # Skip full test only tests if not in full test mode
-    if not config.getoption("--full-test-mode"):
-        skip_full_test = pytest.mark.skip(
-            reason="Test runs only in full test mode")
+    if config.getoption("--llm-test-only"):
+        skip_fast = pytest.mark.skip(reason="Skipped for llm test only")
         for item in items:
-            if "full_test_only" in item.keywords:
-                item.add_marker(skip_full_test)
-
+            if "model_backend" not in item.keywords:
+                item.add_marker(skip_fast)
+        return
+    elif config.getoption("--very-slow-test-only"):
+        skip_fast = pytest.mark.skip(reason="Skipped for very slow test only")
+        for item in items:
+            if "very_slow" not in item.keywords:
+                item.add_marker(skip_fast)
+        return
+    # Run all tests in full test mode
+    elif config.getoption("--full-test-mode"):
+        return
     # Skip all tests involving LLM inference both remote
     # (including OpenAI API) and local ones, since they are slow
     # and may drain money if fast test mode is enabled.
-    if config.getoption("--fast-test-mode"):
-        skip_slow = pytest.mark.skip(reason="Skipped for fast test mode")
+    elif config.getoption("--fast-test-mode"):
+        skip = pytest.mark.skip(reason="Skipped for fast test mode")
         for item in items:
-            if "slow" in item.keywords or "model_backend" in item.keywords:
-                item.add_marker(skip_slow)
+            if "optional" in item.keywords or "model_backend" in item.keywords:
+                item.add_marker(skip)
+        return
+    else:
+        skip_full_test = pytest.mark.skip(
+            reason="Very slow test runs only in full test mode")
+        for item in items:
+            if "very_slow" in item.keywords:
+                item.add_marker(skip_full_test)
+        return
