@@ -23,33 +23,50 @@ from camel.messages.base import BaseMessage
 
 
 class ChatHistoryMemory(BaseMemory):
-    """_summary_
+    """
+    An agent memory for maintaining a record of chat histories.
+
+    This memory class helps manage conversation histories with a designated
+    storage mechanism, either provided by the user or using a default
+    in-memory storage. It offers a windowed approach to retrieving chat
+    histories, allowing users to specify how many recent messages they'd
+    like to fetch.
+
+    `ChatHistoryMemory` requires messages to be stored with certain
+    metadata (e.g., `role_at_backend`) to maintain consistency and validate
+    the chat history.
 
     Args:
-        BaseMemory (_type_): _description_
+        storage (LosslessStorage): A storage mechanism for storing chat
+            history.
+        window_size (int, optional): Specifies the number of recent chat
+            messages to retrieve. If not provided, the entire chat history
+            will be retrieved.
     """
 
     def __init__(self, storage: Optional[LosslessStorage] = None,
                  window_size: Optional[int] = None) -> None:
-        """
-        Reads the latest message from memory. If no messages are present,
-            returns None.
-
-        Returns:
-            Optional[BaseMessage]: The latest message or None if memory
-                is empty.
-        """
         self.storage = storage or InMemoryStorage()
         self.window_size = window_size
 
     def read(self,
              current_state: Optional[BaseMessage] = None) -> List[BaseMessage]:
         """
-        Reads a message or messages from memory.
+        Retrieves chat messages from the memory based on the window size or
+        fetches the entire chat history if no window size is specified.
+
+        Args:
+            current_state (Optional[BaseMessage], optional): This argument is
+                available due to the base class but is not utilized in this
+                method.
 
         Returns:
-            Union[BaseMessage, List[BaseMessage]]: Retrieved message or list of
-                messages.
+            List[BaseMessage]: A list of chat messages retrieved from the
+                memory.
+
+        Raises:
+            ValueError: If the memory is empty or if the first message is not a
+                system message.
         """
         history_messages = []
         for msg_dict in self.storage.load():
@@ -74,10 +91,15 @@ class ChatHistoryMemory(BaseMemory):
 
     def write(self, msgs: List[BaseMessage]) -> None:
         """
-        Writes a message to memory.
+        Writes chat messages to the memory. Additionally, performs validation
+        checks on the messages.
 
         Args:
-            msg (BaseMessage): The message to be written.
+            msgs (List[BaseMessage]): Messages to be added to the memory.
+
+        Raises:
+            ValueError: If the message metadata does not contain
+                :obj:`role_at_backend` or if it has an unsupported role.
         """
         stored_msgs = []
         for m in msgs:
@@ -96,6 +118,6 @@ class ChatHistoryMemory(BaseMemory):
 
     def clear(self) -> None:
         """
-        Clears all messages from memory.
+            Clears all chat messages from the memory.
         """
         self.storage.clear()

@@ -26,6 +26,32 @@ from camel.typing import VectorDistance
 
 
 class VectorDBMemory(BaseMemory):
+    """
+    An agent memory for maintaining and retrieving information using vector
+    embeddings within a vector database.
+
+    This class leverages embeddings to convert chat messages into vector
+    representations, which are then stored in a vector database. This mechanism
+    facilitates efficient searches based on content similarity, enabling
+    functionalities like context retrieval, recommendation, etc.
+
+    Args:
+        storage (Optional[BaseVectorStorage], optional): The storage mechanism
+            for the vector database. Defaults to in-memory :obj:`Qdrant` if not
+            provided. (default: :obj:`None`)
+        embedding (Optional[BaseEmbedding], optional): Embedding mechanism to
+            convert chat messages into vector representations. Defaults to
+            :obj:`OpenAiEmbedding` if not provided. (default: :obj:`None`)
+        distance (VectorDistance, optional): The distance metric used in the
+            vector database. (default: :obj:`VectorDistance.DOT`)
+        collection_name (Optional[str], optional): Desired name for the
+            collection within the vector database. If not provided, a unique
+            identifier is generated. (default: :obj:`None`)
+        del_collection (bool, optional): Determines whether to delete the
+            collection upon object destruction. (default: :obj:`False`)
+        **kwargs: Additional keyword arguments passing to
+            :obj:`create_collection`.
+    """
 
     def __init__(
         self,
@@ -36,13 +62,6 @@ class VectorDBMemory(BaseMemory):
         del_collection: bool = False,
         **kwargs,
     ) -> None:
-        """
-        Initializes a new instance of LongTermMemory.
-
-        Args:
-            storage (Optional[BaseLongTermStorage]): The storage mechanism for
-                long-term memory.
-        """
         self.storage = storage or Qdrant()
         self.embedding = embedding or OpenAiEmbedding()
         self.vector_dim = self.embedding.get_output_dim()
@@ -70,6 +89,10 @@ class VectorDBMemory(BaseMemory):
         )
 
     def __del__(self):
+        """
+        Destructor that deletes the collection if :obj:`del_collection` is set
+        to :obj:`True`.
+        """
         if self.del_collection:
             self.storage.delete_collection(self.collection_name)
 
@@ -79,14 +102,26 @@ class VectorDBMemory(BaseMemory):
         limit: int = 3,
     ) -> List[BaseMessage]:
         """
-        Reads a message or messages from memory.
+        Retrieves similar chat messages from the vector database based on the
+        content of the current state message.
+
+        Args:
+            current_state (Optional[BaseMessage], optional): **Mandatory.** An
+                incoming message representing the current state. This message's
+                content will be converted into a vector representation to query
+                the database. (default: :obj:`None`)
+            limit (int, optional): The maximum number of similar messages to
+                retrieve. (default: :obj:`3`).
 
         Returns:
-            Union[BaseMessage, List[BaseMessage]]: Retrieved message or list
-                of messages.
+            List[BaseMessage]: A list of chat messages retrieved from the
+                vector database based on similarity to :obj:`current_state`.
+
+        Raises:
+            ValueError: If the current state is not provided.
         """
         if current_state is None:
-            raise RuntimeError(
+            raise ValueError(
                 "Reading vector database memeory without message input is not "
                 "allowed.")
         query_vector = self.embedding.embed(current_state.content)
@@ -102,10 +137,12 @@ class VectorDBMemory(BaseMemory):
 
     def write(self, msgs: List[BaseMessage]) -> None:
         """
-        Writes a message to memory.
+        Converts the provided chat messages into vector representations and
+        writes them to the vector database.
 
         Args:
-            msg (BaseMessage): The message to be written.
+            msgs (List[BaseMessage]): Messages to be added to the vector
+                database.
         """
         records = [
             VectorRecord(
@@ -121,7 +158,8 @@ class VectorDBMemory(BaseMemory):
 
     def clear(self) -> None:
         """
-        Clears all messages from memory.
+        Clears all vector representations and chat messages from the collection
+        and reinitializes the collection in the vector database.
         """
         self.storage.delete_collection(self.collection_name)
         self.storage.create_collection(

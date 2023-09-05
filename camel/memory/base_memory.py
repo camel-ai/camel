@@ -20,35 +20,57 @@ from camel.messages.base import BaseMessage
 
 class BaseMemory(ABC):
     """
-    Abstract base class representing the basic operations
-    required for a memory system.
+    An abstract base class that defines the foundational operations for a
+    memory component within an agent's memory system.
+
+    The memory component is tasked with functions like saving chat histories,
+    fetching or storing information in vector databases, and other related
+    operations. Every memory system should incorporate at least one instance of
+    a subclass derived from `BaseMemory`.
+
+    These instances, known as "memories", typically communicate using the
+    `BaseMessage` object. Usually, a memory has at least one "storage"
+    mechanism, allowing it to interface with various storage systems, such as
+    disks or vector databases. Additionally, some memories might embed other
+    memory instances, enabling them to function as a high-level controller
+    within the broader memory system.
+
+    By default, when executing the `step()` method, an agent retrieves messages
+    from its designated memory and combines them with an incoming message for
+    input to a LLM. Subsequently, both the response message and the incoming
+    messages are archived back into the memory.
     """
 
     @abstractmethod
     def read(self,
              current_state: Optional[BaseMessage] = None) -> List[BaseMessage]:
         """
-        Reads a message or messages from memory.
+        Retrieves messages from the memory based on the current state.
+
+        Args:
+            current_state (BaseMessage, optional): An incoming
+                message representing the current state. This may be utilized to
+                fetch messages from a vector database. If not required by the
+                memory, this parameter is ignored. (default: :obj:`None`)
 
         Returns:
-            Union[BaseMessage, List[BaseMessage]]: Retrieved message or list of
-                messages.
+            List[BaseMessage]: A list of messages retrieved from the memory.
         """
         ...
 
     @abstractmethod
     def write(self, msgs: List[BaseMessage]) -> None:
         """
-        Writes a message to memory.
+        Writes messages to the memory, appending them to existing ones.
 
         Args:
-            msg (BaseMessage): The message to be written.
+            msgs (List[BaseMessage]): Messages to be added to the memory.
         """
         ...
 
     @abstractmethod
     def clear(self) -> None:
         """
-        Clears all messages from memory.
+        Clears all messages from the memory.
         """
         ...
