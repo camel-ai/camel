@@ -27,13 +27,14 @@ from camel.typing import VectorDistance
 
 class VectorDBMemory(BaseMemory):
     """
-    An agent memory for maintaining and retrieving information using vector
-    embeddings within a vector database.
+    An implementation of the :obj:`BaseMemory` abstract base class for
+    maintaining and retrieving information using vector embeddings within a
+    vector database.
 
-    This class leverages embeddings to convert chat messages into vector
-    representations, which are then stored in a vector database. This mechanism
-    facilitates efficient searches based on content similarity, enabling
-    functionalities like context retrieval, recommendation, etc.
+    This memory class leverages embeddings to convert chat messages
+    into vector representations, which are then stored in a vector database.
+    This mechanism facilitates efficient searches based on content similarity,
+    enabling functionalities like context retrieval, recommendation, etc.
 
     Args:
         storage (Optional[BaseVectorStorage], optional): The storage mechanism

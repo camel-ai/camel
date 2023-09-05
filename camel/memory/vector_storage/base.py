@@ -27,33 +27,40 @@ class VectorRecord():
 
 
 class BaseVectorStorage(ABC):
-    """
-    Abstract base class representing the basic operations
-    required for long-term memory storage.
-
-    Inherits the fundamental memory operations from BaseMemory.
-    Additional long-term specific operations can be added here.
-    """
 
     @abstractmethod
     def create_collection(
         self,
         collection: str,
         size: int,
-        distance: VectorDistance,
+        distance: VectorDistance = VectorDistance.DOT,
         **kwargs,
     ):
-        """_summary_
+        """
+        Creates a new collection in the database.
 
         Args:
-            collection (str): _description_
-            size (int): _description_
-            distance (str, optional): _description_. Defaults to "dot".
+            collection (str): Name of the collection to be created.
+            size (int): Dimensionality of vectors to be stored in this
+                collection.
+            distance (VectorDistance, optional): The distance metric to be used
+                for vector similarity. (default: :obj:`VectorDistance.DOT`)
+            **kwargs: Additional keyword arguments.
         """
         ...
 
     @abstractmethod
     def check_collection(self, collection: str) -> Dict[str, Any]:
+        """
+        Retrieves details of an existing collection.
+
+        Args:
+            collection (str): Name of the collection to be checked.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing details about the
+                collection.
+        """
         ...
 
     @abstractmethod
@@ -63,11 +70,18 @@ class BaseVectorStorage(ABC):
         vectors: List[VectorRecord],
     ) -> List[VectorRecord]:
         """
-        Archives a message in long-term storage. Archiving may differ
-        from standard storage in terms of compression, backup, redundancy, etc.
+        Adds a list of vectors to the specified collection.
 
         Args:
-            msg (BaseMessage): The message to be archived.
+            collection (str): Name of the collection.
+            vectors (List[VectorRecord]): List of vectors to be added. If a
+                vector does not have an 'id', a new unique ID will be generated
+                for it.
+
+        Returns:
+            List[VectorRecord]: The list of vectors that were successfully
+                added. Vectors in this list will have an 'id' attribute, even
+                if it was not provided in the original input.
         """
         ...
 
@@ -77,6 +91,13 @@ class BaseVectorStorage(ABC):
         collection: str,
         **kwargs,
     ) -> None:
+        """
+        Deletes an existing collection from the database.
+
+        Args:
+            collection (str): Name of the collection to be deleted.
+            **kwargs: Additional keyword arguments.
+        """
         ...
 
     @abstractmethod
@@ -86,11 +107,19 @@ class BaseVectorStorage(ABC):
         vectors: List[VectorRecord],
     ) -> List[VectorRecord]:
         """
-        Archives a message in long-term storage. Archiving may differ
-        from standard storage in terms of compression, backup, redundancy, etc.
+        Deletes a list of vectors from the specified collection.
 
         Args:
-            msg (BaseMessage): The message to be archived.
+            collection (str): Name of the collection.
+            vectors (List[VectorRecord]): List of vectors to be deleted. If a
+                vector does not have an 'id', the method will attempt to find
+                the closest matching vector in the collection and delete it.
+
+        Returns:
+            List[VectorRecord]: The list of vectors that were successfully
+                deleted. Vectors in this list will always have an 'id'
+                attribute, representing either the original ID provided or the
+                ID of the closest matching vector that was found and deleted.
         """
         ...
 
@@ -99,16 +128,21 @@ class BaseVectorStorage(ABC):
         self,
         collection: str,
         query_vector: VectorRecord,
-        limit: int,
+        limit: int = 3,
     ) -> List[VectorRecord]:
         """
-        Retrieves an archived message from long-term storage based on its
-            identifier.
+        Searches for similar vectors in the specified collection based on a
+        query vector.
 
         Args:
-            id (str): The unique identifier of the archived message.
+            collection (str): Name of the collection.
+            query_vector (VectorRecord): The vector to be used as the search
+                query.
+            limit (int, optional): The maximum number of similar vectors to
+                retrieve. (default: :obj:`3`)
 
         Returns:
-            BaseMessage: The retrieved archived message.
+            List[VectorRecord]: A list of vectors retrieved from the collection
+                based on similarity to :obj:`query_vector`.
         """
         ...

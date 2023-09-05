@@ -30,6 +30,32 @@ from camel.typing import VectorDistance
 
 
 class Qdrant(BaseVectorStorage):
+    """
+    An implementation of the `BaseVectorStorage` abstract base class tailored
+    for Qdrant, a vector search engine.
+
+    This class allows users to interact with Qdrant for operations like
+    creating and deleting collections, adding and removing vectors, and
+    searching for vectors based on similarity.
+
+    Args:
+        path (Optional[str], optional): Local path for the Qdrant database.
+            This is used for initializing the client if `url` is not provided.
+        url (Optional[str], optional): URL endpoint for a remote Qdrant
+            instance. If provided, this takes precedence over the `path`
+            parameter.
+        api_key (Optional[str], optional): API key for the Qdrant instance, if
+            required.
+        **kwargs: Additional keyword arguments for QdrantClient.
+
+    Notes:
+        - If `url` is provided, it takes priority and the client will attempt
+          to connect to the remote Qdrant instance using the URL endpoint.
+        - If `url` is not provided and `path` is given, the client will use the
+          local path to initialize Qdrant.
+        - If neither `url` nor `path` is provided, the client will be
+          initialized with an in-memory storage (`":memory:"`).
+    """
 
     def __init__(
         self,
@@ -52,6 +78,9 @@ class Qdrant(BaseVectorStorage):
         distance: VectorDistance = VectorDistance.DOT,
         **kwargs,
     ) -> None:
+        """
+        :doc:`../base.py`
+        """
         distance_map = {
             VectorDistance.DOT: Distance.DOT,
             VectorDistance.COSINE: Distance.COSINE,
@@ -69,9 +98,18 @@ class Qdrant(BaseVectorStorage):
         collection: str,
         **kwargs,
     ) -> None:
+        """
+        :doc:`../base.py`
+        """
         self.client.delete_collection(collection_name=collection, **kwargs)
 
     def check_collection(self, collection: str) -> Dict[str, Any]:
+        """
+        :doc:`../base.py`
+
+        Raises:
+            RuntimeWarning: If the collection's status is not GREEN.
+        """
         # TODO: check more information
         collection_info = self.client.get_collection(
             collection_name=collection)
@@ -92,6 +130,12 @@ class Qdrant(BaseVectorStorage):
         collection: str,
         vectors: List[VectorRecord],
     ) -> List[VectorRecord]:
+        """
+        :doc:`../base.py`
+
+        Raises:
+            RuntimeError: If there was an error in the addition process.
+        """
         processed_vectors = [replace(v) for v in vectors]
         for v in processed_vectors:
             if v.id is None:
@@ -115,6 +159,26 @@ class Qdrant(BaseVectorStorage):
         collection: str,
         vectors: List[VectorRecord],
     ) -> List[VectorRecord]:
+        """
+        Deletes a list of vectors from the specified collection.
+
+        Args:
+            collection (str): Name of the collection.
+            vectors (List[VectorRecord]): List of vectors to be deleted. If a
+                vector does not have an 'id', the method will attempt to find
+                the closest matching vector in the collection and delete it.
+
+        Returns:
+            List[VectorRecord]: The list of vectors that were successfully
+                deleted. Vectors in this list will always have an 'id'
+                attribute, representing either the original ID provided or the
+                ID of the closest matching vector that was found and deleted.
+
+        Raises:
+            RuntimeError: If there was an error in the deletion process or if a
+                provided vector record lacks both an ID and a vector for
+                deletion.
+        """
         processed_vectors = [replace(v) for v in vectors]
         for v in processed_vectors:
             if v.id is None:
@@ -146,6 +210,24 @@ class Qdrant(BaseVectorStorage):
         query_vector: VectorRecord,
         limit: int = 3,
     ) -> List[VectorRecord]:
+        """
+        Searches for similar vectors in the specified collection based on a
+        query vector.
+
+        Args:
+            collection (str): Name of the collection.
+            query_vector (VectorRecord): The vector to be used as the search
+                query.
+            limit (int, optional): The maximum number of similar vectors to
+                retrieve. (default: :obj:`3`)
+
+        Returns:
+            List[VectorRecord]: A list of vectors retrieved from the collection
+                based on similarity to :obj:`query_vector`.
+
+        Raises:
+            RuntimeError: If the provided search vector is :obj:`None`.
+        """
         # TODO: filter
         if query_vector.vector is None:
             raise RuntimeError("Searching vector cannot be None")

@@ -24,7 +24,8 @@ from camel.messages.base import BaseMessage
 
 class ChatHistoryMemory(BaseMemory):
     """
-    An agent memory for maintaining a record of chat histories.
+    An implementation of the :obj:`BaseMemory` abstract base class for
+    maintaining a record of chat histories.
 
     This memory class helps manage conversation histories with a designated
     storage mechanism, either provided by the user or using a default
