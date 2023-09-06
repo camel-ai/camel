@@ -14,10 +14,8 @@
 
 from .base_memory import BaseMemory
 from .chat_history_memory import ChatHistoryMemory
-from .vectordb_memory import VectorDBMemory
 
 __all__ = [
     'BaseMemory',
     'ChatHistoryMemory',
-    'VectorDBMemory',
 ]
