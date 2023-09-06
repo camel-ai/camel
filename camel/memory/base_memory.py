@@ -26,19 +26,19 @@ class BaseMemory(ABC):
     The memory component is tasked with functions like saving chat histories,
     fetching or storing information in vector databases, and other related
     operations. Every memory system should incorporate at least one instance of
-    a subclass derived from `BaseMemory`.
+    a subclass derived from :obj:`BaseMemory`.
 
     These instances, known as "memories", typically communicate using the
-    `BaseMessage` object. Usually, a memory has at least one "storage"
+    :obj:`BaseMessage` object. Usually, a memory has at least one "storage"
     mechanism, allowing it to interface with various storage systems, such as
     disks or vector databases. Additionally, some memories might embed other
     memory instances, enabling them to function as a high-level controller
     within the broader memory system.
 
-    By default, when executing the `step()` method, an agent retrieves messages
-    from its designated memory and combines them with an incoming message for
-    input to a LLM. Subsequently, both the response message and the incoming
-    messages are archived back into the memory.
+    By default, when executing the :obj:`step()` method, an agent retrieves
+    messages from its designated memory and combines them with an incoming
+    message for input to a LLM. Subsequently, both the response message and the
+    incoming messages are archived back into the memory.
     """
 
     @abstractmethod

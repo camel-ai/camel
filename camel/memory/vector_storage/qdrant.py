@@ -79,7 +79,8 @@ class Qdrant(BaseVectorStorage):
         **kwargs,
     ) -> None:
         """
-        :doc:`../base.py`
+        See :func:`~camel.memory.vector_storage.base.BaseVectorStorage.\
+create_collection`.
         """
         distance_map = {
             VectorDistance.DOT: Distance.DOT,
@@ -99,13 +100,15 @@ class Qdrant(BaseVectorStorage):
         **kwargs,
     ) -> None:
         """
-        :doc:`../base.py`
+        See :func:`~camel.memory.vector_storage.base.BaseVectorStorage.\
+delete_collection`.
         """
         self.client.delete_collection(collection_name=collection, **kwargs)
 
     def check_collection(self, collection: str) -> Dict[str, Any]:
         """
-        :doc:`../base.py`
+        See :func:`~camel.memory.vector_storage.base.BaseVectorStorage.\
+check_collection`.
 
         Raises:
             RuntimeWarning: If the collection's status is not GREEN.
@@ -131,7 +134,8 @@ class Qdrant(BaseVectorStorage):
         vectors: List[VectorRecord],
     ) -> List[VectorRecord]:
         """
-        :doc:`../base.py`
+        See :func:`~camel.memory.vector_storage.base.BaseVectorStorage.\
+add_vectors`.
 
         Raises:
             RuntimeError: If there was an error in the addition process.
@@ -160,19 +164,8 @@ class Qdrant(BaseVectorStorage):
         vectors: List[VectorRecord],
     ) -> List[VectorRecord]:
         """
-        Deletes a list of vectors from the specified collection.
-
-        Args:
-            collection (str): Name of the collection.
-            vectors (List[VectorRecord]): List of vectors to be deleted. If a
-                vector does not have an 'id', the method will attempt to find
-                the closest matching vector in the collection and delete it.
-
-        Returns:
-            List[VectorRecord]: The list of vectors that were successfully
-                deleted. Vectors in this list will always have an 'id'
-                attribute, representing either the original ID provided or the
-                ID of the closest matching vector that was found and deleted.
+        See :func:`~camel.memory.vector_storage.base.BaseVectorStorage.\
+delete_vectors`.
 
         Raises:
             RuntimeError: If there was an error in the deletion process or if a
@@ -211,19 +204,8 @@ class Qdrant(BaseVectorStorage):
         limit: int = 3,
     ) -> List[VectorRecord]:
         """
-        Searches for similar vectors in the specified collection based on a
-        query vector.
-
-        Args:
-            collection (str): Name of the collection.
-            query_vector (VectorRecord): The vector to be used as the search
-                query.
-            limit (int, optional): The maximum number of similar vectors to
-                retrieve. (default: :obj:`3`)
-
-        Returns:
-            List[VectorRecord]: A list of vectors retrieved from the collection
-                based on similarity to :obj:`query_vector`.
+        See :func:`~camel.memory.vector_storage.base.BaseVectorStorage.\
+search`.
 
         Raises:
             RuntimeError: If the provided search vector is :obj:`None`.
