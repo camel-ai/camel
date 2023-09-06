@@ -18,21 +18,36 @@ from typing import Any, Dict, List
 
 class LosslessStorage(ABC):
     """
-    Abstract base class representing the basic operations
-    required for short-term memory storage.
-
-    Inherits the basic storage operations from BaseMemoryStorage.
-    Any additional short-term specific operations can be added here.
+    Abstract base class for lossless storage systems. Provides a consistent
+    interface for saving, loading, and clearing data records without any loss
+    of information.
     """
 
     @abstractmethod
     def save(self, records: List[Dict[str, Any]]) -> None:
+        """
+        Saves the given records into the storage system.
+
+        Args:
+            records (List[Dict[str, Any]]): A list of dictionaries representing
+                records to be saved.
+        """
         ...
 
     @abstractmethod
     def load(self) -> List[Dict[str, Any]]:
+        """
+        Loads all records from the storage system.
+
+        Returns:
+            List[Dict[str, Any]]: A list of dictionaries representing the
+                stored records.
+        """
         ...
 
     @abstractmethod
     def clear(self) -> None:
+        """
+        Clears all records from the storage system.
+        """
         ...

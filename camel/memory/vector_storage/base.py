@@ -21,12 +21,38 @@ from camel.typing import VectorDistance
 
 @dataclass
 class VectorRecord():
+    """
+    Encapsulates information about a vector's unique identifier and its
+    payload, which is primarily used as a data transfer object when interacting
+    with vector storage operations.
+
+    Attributes:
+        id (Optional[str]): A unique identifier for the vector. If not
+            provided, an ID will be generated during storage.
+        vector (List[float]): The numerical representation of the vector.
+        payload (Optional[Dict[str, Any]]): Any additional metadata or
+            information related to the vector.
+    """
     id: Optional[Union[int, str]] = None
     vector: Optional[List[float]] = None
     payload: Optional[Dict[str, Any]] = None
 
 
 class BaseVectorStorage(ABC):
+    """
+    An abstract base class representing a vector storage system.
+    Implementations of this class will define how vectors are stored,
+    retrieved, and managed in various vector databases or storage systems.
+
+    The class provides abstract methods for common operations like creating
+    collections, adding vectors, deleting vectors, and searching for similar
+    vectors.
+
+    Note:
+        Implementations of this class are expected to provide concrete
+        implementations for all the abstract methods. The methods defined are
+        common operations one would perform on a vector storage system.
+    """
 
     @abstractmethod
     def create_collection(

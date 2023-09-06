@@ -21,8 +21,20 @@ from camel.typing import ModelType, RoleType, TaskType, VectorDistance
 
 
 class JsonStorage(LosslessStorage):
+    """
+    Concrete implementation of the :obj:`LosslessStorage` using JSON files.
+    Allows for persistent storage of records in a human-readable format.
+
+    Args:
+        path (Path, optional): Path to the desired JSON file. (default:
+            :obj:`Path("./chat_history")`)
+    """
 
     class _CamelJSONEncoder(json.JSONEncoder):
+        """
+        Custom JSON encoder for serializing specific enumerated types. Ensures
+        enumerated types can be stored in and retrieved from JSON format.
+        """
         CAMEL_ENUMS = {
             "RoleType": RoleType,
             "TaskType": TaskType,
@@ -36,7 +48,7 @@ class JsonStorage(LosslessStorage):
             # Let the base class default method raise the TypeError
             return json.JSONEncoder.default(self, obj)
 
-    def __init__(self, path: Path = Path("chat_history.json")):
+    def __init__(self, path: Path = Path("./chat_history.json")):
         self.json_path = path
         self.json_path.touch()
 

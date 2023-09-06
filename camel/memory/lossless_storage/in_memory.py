@@ -19,6 +19,11 @@ from camel.memory.lossless_storage.base import LosslessStorage
 
 
 class InMemoryStorage(LosslessStorage):
+    """
+    Concrete implementation of the :obj:`LosslessStorage` using in-memory list.
+    Ideal for temporary storage purposes, as data will be lost when the program
+    ends.
+    """
 
     def __init__(self) -> None:
         self.memory_list: List[Dict] = []
