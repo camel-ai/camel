@@ -105,7 +105,8 @@ class SystemMessageGenerator:
         Returns:
             BaseMessage: The generated system message.
         """
-        self.validate_meta_dict_keys(meta_dict)
+        # self.validate_meta_dict_keys(meta_dict)
+        # why is only this function containing validation?
         role_name, role_type = role_tuple
         sys_prompt = self.sys_prompts[role_type]
         sys_prompt = sys_prompt.format(**meta_dict)
