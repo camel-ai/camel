@@ -16,9 +16,9 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
 
-class LosslessStorage(ABC):
+class DictStorage(ABC):
     """
-    Abstract base class for lossless storage systems. Provides a consistent
+    Abstract base class for Dict storage systems. Provides a consistent
     interface for saving, loading, and clearing data records without any loss
     of information.
     """

@@ -12,27 +12,12 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from copy import deepcopy
-from typing import Any, Dict, List
+from .base import DictStorage
+from .in_memory import InMemoryDictStorage
+from .json import JsonStorage
 
-from camel.memory.lossless_storage.base import LosslessStorage
-
-
-class InMemoryStorage(LosslessStorage):
-    """
-    Concrete implementation of the :obj:`LosslessStorage` using in-memory list.
-    Ideal for temporary storage purposes, as data will be lost when the program
-    ends.
-    """
-
-    def __init__(self) -> None:
-        self.memory_list: List[Dict] = []
-
-    def save(self, records: List[Dict[str, Any]]) -> None:
-        self.memory_list.extend(deepcopy(records))
-
-    def load(self) -> List[Dict[str, Any]]:
-        return deepcopy(self.memory_list)
-
-    def clear(self) -> None:
-        self.memory_list.clear()
+__all__ = [
+    'DictStorage',
+    'InMemoryDictStorage',
+    'JsonStorage',
+]

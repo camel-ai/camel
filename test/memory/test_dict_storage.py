@@ -15,12 +15,12 @@
 import tempfile
 from pathlib import Path
 
-from camel.memory.lossless_storage import InMemoryStorage, JsonStorage
+from camel.memory.dict_storage import InMemoryDictStorage, JsonStorage
 from camel.typing import RoleType
 
 
 def test_in_memory_storage():
-    in_memory = InMemoryStorage()
+    in_memory = InMemoryDictStorage()
     msg1 = {
         "key1": "value1",
         "role": RoleType.USER,
