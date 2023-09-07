@@ -16,13 +16,13 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List
 
-from camel.memory.dict_storage.base import DictStorage
+from camel.memory.dict_storage.base import BaseDictStorage
 from camel.typing import ModelType, RoleType, TaskType, VectorDistance
 
 
-class JsonStorage(DictStorage):
+class JsonStorage(BaseDictStorage):
     """
-    Concrete implementation of the :obj:`DictStorage` using JSON files.
+    Concrete implementation of the :obj:`BaseDictStorage` using JSON files.
     Allows for persistent storage of records in a human-readable format.
 
     Args:

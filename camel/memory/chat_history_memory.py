@@ -17,7 +17,7 @@ from dataclasses import asdict
 from typing import List, Optional
 
 from camel.memory.base_memory import BaseMemory
-from camel.memory.dict_storage.base import DictStorage
+from camel.memory.dict_storage.base import BaseDictStorage
 from camel.memory.dict_storage.in_memory import InMemoryDictStorage
 from camel.messages.base import BaseMessage
 
@@ -38,14 +38,14 @@ class ChatHistoryMemory(BaseMemory):
     the chat history.
 
     Args:
-        storage (DictStorage): A storage mechanism for storing chat
+        storage (BaseDictStorage): A storage mechanism for storing chat
             history.
         window_size (int, optional): Specifies the number of recent chat
             messages to retrieve. If not provided, the entire chat history
             will be retrieved.
     """
 
-    def __init__(self, storage: Optional[DictStorage] = None,
+    def __init__(self, storage: Optional[BaseDictStorage] = None,
                  window_size: Optional[int] = None) -> None:
         self.storage = storage or InMemoryDictStorage()
         self.window_size = window_size
