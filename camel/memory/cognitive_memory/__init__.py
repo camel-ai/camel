@@ -12,27 +12,16 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from typing import List, Optional
+from .episodic_memory import EpisodicMemory
+from .procedural_memory import ProceduralMemory
+from .semantic_memory import SemanticMemory
+from .sensory_memory import SensoryMemory
+from .working_memory import WorkingMemory
 
-from camel.memory.base_memory import BaseMemory
-from camel.memory.vector_storage import BaseVectorStorage, Qdrant
-from camel.messages import BaseMessage
-
-
-class EpisodicMemory(BaseMemory):
-    """
-    A long-term memory capturing and storing the agent state.
-    """
-
-    def __init__(self, storage: Optional[BaseVectorStorage] = None) -> None:
-        self.storage = storage or Qdrant()
-
-    def read(self,
-             current_state: Optional[BaseMessage] = None) -> List[BaseMessage]:
-        ...
-
-    def write(self, msgs: List[BaseMessage]) -> None:
-        ...
-
-    def clear(self) -> None:
-        ...
+__all__ = [
+    "EpisodicMemory",
+    "ProceduralMemory",
+    "SemanticMemory",
+    "SensoryMemory",
+    "WorkingMemory",
+]

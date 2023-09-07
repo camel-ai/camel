@@ -11,35 +11,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-
 from typing import List, Optional
 
 from camel.memory.base_memory import BaseMemory
+from camel.memory.dict_storage.base import BaseDictStorage
+from camel.memory.dict_storage.in_memory import InMemoryDictStorage
 from camel.messages import BaseMessage
 
-from .episodic_memory import EpisodicMemory
-from .procedural_memory import ProceduralMemory
-from .semantic_memory import SemanticMemory
-from .sensory_memory import SensoryMemory
 
-
-class WorkingMemory(BaseMemory):
+class SensoryMemory(BaseMemory):
     """
-    A short-term memory directly interact with the environment.
+    A memory storing information collected from outer sensors, such as camera,
+    microphone, and more.
     """
 
-    def __init__(
-        self,
-        procedural_memory: Optional[ProceduralMemory] = None,
-        episodic_memory: Optional[EpisodicMemory] = None,
-        semantic_memory: Optional[SemanticMemory] = None,
-        sensory_memory: Optional[SensoryMemory] = None,
-    ) -> None:
-        super().__init__()
-        self.procedural_memory = procedural_memory or ProceduralMemory()
-        self.episodic_memory = episodic_memory or EpisodicMemory()
-        self.semantic_memory = semantic_memory or SemanticMemory()
-        self.sensory_memory = sensory_memory or SensoryMemory()
+    def __init__(self, storage: Optional[BaseDictStorage] = None) -> None:
+        self.storage = storage or InMemoryDictStorage()
 
     def read(self,
              current_state: Optional[BaseMessage] = None) -> List[BaseMessage]:
