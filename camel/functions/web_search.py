@@ -24,7 +24,7 @@ from .openai_function import OpenAIFunction
 
 
 def search_google(query: str) -> List[Dict[str, Any]]:
-    r"""using google search engine to search information for the given query.
+    r"""Use google search engine to search information for the given query.
 
     Args:
         query (string): The query to be searched.
@@ -99,17 +99,17 @@ def text_extract_from_web(url: str) -> str:
         string: All texts extract from the web.
     """
     try:
-        # request the target page
+        # Request the target page
         response_text = requests.get(url).text
 
-        # parse the obtained page
+        # Parse the obtained page
         soup = BeautifulSoup(response_text, features="html.parser")
 
         for script in soup(["script", "style"]):
             script.extract()
 
         text = soup.get_text()
-        # strip text
+        # Strip text
         lines = (line.strip() for line in text.splitlines())
         chunks = (phrase.strip() for line in lines
                   for phrase in line.split("  "))
@@ -178,8 +178,8 @@ def summarise_text(text: str, query: str) -> str:
     given.
 
     Args:
-        text (string): text to summarise.
-        query (string): what information you want.
+        text (string): Text to summarise.
+        query (string): What information you want.
 
     Returns:
         string: Strings with information.
@@ -209,7 +209,9 @@ def summarise_text(text: str, query: str) -> str:
 
 
 def search_web(query: str) -> str:
-    r"""Search webs for information.
+    r"""Search webs for information. Input a query, this function will use
+    google search engine search related information from the internet, then
+    return a summarised answer.
 
     Args:
         query (string): Question you want to be answered.
