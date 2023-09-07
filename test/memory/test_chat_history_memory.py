@@ -17,7 +17,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from camel.memory import ChatHistoryMemory
-from camel.memory.lossless_storage import JsonStorage
+from camel.memory.dict_storage import JsonStorage
 from camel.messages import BaseMessage
 from camel.typing import RoleType
 
