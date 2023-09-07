@@ -16,7 +16,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
 
-class DictStorage(ABC):
+class BaseDictStorage(ABC):
     """
     Abstract base class for Dict storage systems. Provides a consistent
     interface for saving, loading, and clearing data records without any loss
