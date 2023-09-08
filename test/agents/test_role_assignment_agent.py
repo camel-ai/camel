@@ -51,6 +51,7 @@ def test_role_assignment_agent(mock_step, model_type, num_roles):
 
 # Generate mock content according to the number of roles
 def generate_mock_content(num_roles):
+    assert num_roles <= 3
     roles_with_descriptions = [
         ("Trading Strategist", "Design trading strategies. End."),
         ("Data Scientist", "Analyze market data. End."),
@@ -70,6 +71,7 @@ def generate_mock_content(num_roles):
 
 # Generate expected dictionary according to the number of roles
 def generate_expected_dict(num_roles):
+    assert num_roles <= 3
     roles_with_descriptions = {
         "Trading Strategist": "Design trading strategies.",
         "Data Scientist": "Analyze market data.",
