@@ -42,8 +42,7 @@ def test_role_assignment_agent(mock_step, model_type, num_roles):
         model=model_type, model_config=model_config_description)
 
     # Generate the role description dictionary based on the mock step function
-    role_description_dict = role_description_agent.run_role_with_description(
-        task_prompt, num_roles)
+    role_description_dict = role_description_agent.run(task_prompt, num_roles)
 
     expected_dict = generate_expected_dict(num_roles)
 
