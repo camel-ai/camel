@@ -87,7 +87,7 @@ class RoleAssignmentAgent(ChatAgent):
         role_assignment_generation_msg = BaseMessage.make_user_message(
             role_name="Role Assigner", content=role_assignment_generation)
 
-        response = super().step(input_message=role_assignment_generation_msg)
+        response = self.step(input_message=role_assignment_generation_msg)
 
         msg = response.msg  # type: BaseMessage
         terminated = response.terminated
