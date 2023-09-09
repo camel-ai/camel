@@ -36,7 +36,7 @@ types-requests = "^2"
 bs4 = "^0"
 protobuf = "^4"
 docx2txt = "^0" 
-fitz = "^0"      
+PyMuPDF = "^1.22.5"      
 pathlib = "^0"   
 
 transformers = { version = "^4", optional = true }
