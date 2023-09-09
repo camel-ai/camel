@@ -21,6 +21,7 @@ from camel.configs import ChatGPTConfig, FunctionCallingConfig
 from camel.functions import MATH_FUNCS
 from camel.generators import SystemMessageGenerator
 from camel.messages import BaseMessage
+from camel.terminator import ResponseWordsTerminator
 from camel.typing import ModelType, RoleType, TaskType
 
 parametrize = pytest.mark.parametrize('model', [
@@ -301,3 +302,22 @@ def test_function_calling():
     assert called_funcs[0].func_name == "mul"
     assert called_funcs[0].args == {"a": 2, "b": 8}
     assert called_funcs[0].result == 16
+
+
+def test_response_words_termination():
+    system_message = BaseMessage(role_name="assistant",
+                                 role_type=RoleType.ASSISTANT, meta_dict=None,
+                                 content="You are a help assistant.")
+    response_terminator = ResponseWordsTerminator(words_dict=dict(goodbye=1))
+    model_config = ChatGPTConfig(temperature=0)
+    agent = ChatAgent(system_message=system_message,
+                      model=ModelType.GPT_3_5_TURBO, model_config=model_config,
+                      response_terminators=[response_terminator])
+    user_msg = BaseMessage(role_name="User", role_type=RoleType.USER,
+                           meta_dict=dict(),
+                           content="Just say 'goodbye' once.")
+    agent_response = agent.step(user_msg)
+
+    assert agent.terminated
+    assert agent_response.terminated
+    assert "goodbye" in agent_response.info['termination_reasons'][0]

@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from abc import ABC, abstractmethod
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from camel.messages import BaseMessage
 
@@ -21,10 +21,10 @@ class BaseTerminator(ABC):
 
     def __init__(self, *args, **kwargs):
         self._terminated: bool = False
-        self._termination_reasons: List[str] = []
+        self._termination_reason: Optional[str] = None
 
     @abstractmethod
-    def is_terminated(self, *args, **kwargs) -> Tuple[bool, List[str]]:
+    def is_terminated(self, *args, **kwargs) -> Tuple[bool, str]:
         pass
 
     @abstractmethod

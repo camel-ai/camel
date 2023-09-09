@@ -289,11 +289,11 @@ class ChatAgent(BaseAgent):
             openai_messages, num_tokens = self.preprocess_messages(messages)
 
             # Terminate when number of tokens exceeds the limit
-            self.terminated, termination_reasons = \
+            self.terminated, termination_reason = \
                 self.token_limit_terminator.is_terminated(num_tokens)
             if self.terminated:
                 return self.step_token_exceed(num_tokens, called_funcs,
-                                              termination_reasons)
+                                              termination_reason)
 
             # Obtain LLM's response and validate it
             response = self.model_backend.run(openai_messages)
@@ -331,13 +331,11 @@ class ChatAgent(BaseAgent):
         # Loop over responses terminations
         if self.response_terminators is not None:
             for terminator in self.response_terminators:
-                terminated, termination_reasons = terminator.is_terminated(
+                terminated, termination_reason = terminator.is_terminated(
                     output_messages)
                 if terminated:
                     for i in range(len(info["termination_reasons"])):
-                        if i < len(termination_reasons):
-                            termination_str = "\n" + termination_reasons[i]
-                            info["termination_reasons"][i] += termination_str
+                        info["termination_reasons"][i] = termination_reason
                     self.terminated = terminated
         return ChatAgentResponse(output_messages, self.terminated, info)
 
@@ -455,7 +453,7 @@ class ChatAgent(BaseAgent):
 
     def step_token_exceed(self, num_tokens: int,
                           called_funcs: List[FunctionCallingRecord],
-                          termination_reasons: List[str]) -> ChatAgentResponse:
+                          termination_reason: str) -> ChatAgentResponse:
         r"""Return trivial response containing number of tokens and information
         of called functions when the number of tokens exceeds.
 
@@ -463,7 +461,7 @@ class ChatAgent(BaseAgent):
             num_tokens (int): Number of tokens in the messages.
             called_funcs (List[FunctionCallingRecord]): List of information
                 objects of functions called in the current step.
-            termination_reasons (list): List of termination reasons.
+            termination_reason (str): String of termination reason.
 
         Returns:
             ChatAgentResponse: The struct containing trivial outputs and
@@ -475,7 +473,7 @@ class ChatAgent(BaseAgent):
         info = self.get_info(
             None,
             None,
-            termination_reasons,
+            [termination_reason],
             num_tokens,
             called_funcs,
         )

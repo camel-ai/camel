@@ -150,7 +150,8 @@ class CriticAgent(ChatAgent):
         critic, getting the option, and parsing the choice.
 
         Args:
-            messages (Sequence[BaseMessage]): A list of BaseMessage objects.
+            input_messages (Sequence[BaseMessage]): A list of BaseMessage
+                objects.
 
         Returns:
             ChatAgentResponse: A `ChatAgentResponse` object includes the

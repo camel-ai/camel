@@ -43,13 +43,13 @@ def test_response_words_termination(mode):
     }
     termination = ResponseWordsTerminator(words_dict=words_dict, mode=mode)
     messages = _create_messages()
-    terminated, termination_reasons = termination.is_terminated(messages)
+    terminated, termination_reason = termination.is_terminated(messages)
     if mode == TerminationMode.ANY:
         assert terminated
-        assert "goodbye" in termination_reasons[0]
+        assert "goodbye" in termination_reason
     if mode == TerminationMode.ALL:
         assert not terminated
-        assert termination_reasons == []
+        assert termination_reason is None
     termination.reset()
     assert not termination._terminated
-    assert termination._termination_reasons == []
+    assert termination._termination_reason is None

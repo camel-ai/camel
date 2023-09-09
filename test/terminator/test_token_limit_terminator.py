@@ -19,11 +19,11 @@ from camel.terminator import TokenLimitTerminator
 @pytest.mark.parametrize('num_tokens', [5, 10])
 def test_token_limit_termination(num_tokens):
     termination = TokenLimitTerminator(token_limit=10)
-    terminated, termination_reasons = termination.is_terminated(
+    terminated, termination_reason = termination.is_terminated(
         num_tokens=num_tokens)
     if num_tokens == 5:
         assert not terminated
-        assert termination_reasons == []
+        assert termination_reason is None
     if num_tokens == 10:
         assert terminated
-        assert termination_reasons[0] == "max_tokens_exceeded"
+        assert termination_reason == "max_tokens_exceeded"
