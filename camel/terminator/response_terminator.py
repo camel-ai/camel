@@ -42,7 +42,7 @@ class ResponseWordsTerminator(ResponseTerminator):
                                  f"be larger than 0, got `{threshold}`")
 
     def is_terminated(self,
-                   messages: List[BaseMessage]) -> Tuple[bool, List[str]]:
+                      messages: List[BaseMessage]) -> Tuple[bool, List[str]]:
         if self._terminated:
             return True, self._termination_reasons
         for word in self.words_dict:
