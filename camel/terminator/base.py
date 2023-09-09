@@ -17,28 +17,28 @@ from typing import List, Tuple
 from camel.messages import BaseMessage
 
 
-class Termination(ABC):
+class BaseTerminator(ABC):
 
     def __init__(self, *args, **kwargs):
         self._terminated: bool = False
         self._termination_reasons: List[str] = []
 
     @abstractmethod
-    def terminated(self, *args, **kwargs) -> Tuple[bool, List[str]]:
-        raise NotImplementedError
+    def is_terminated(self, *args, **kwargs) -> Tuple[bool, List[str]]:
+        pass
 
     @abstractmethod
     def reset(self):
-        raise NotImplementedError
+        pass
 
 
-class ResponseTermination(Termination):
+class ResponseTerminator(BaseTerminator):
 
     @abstractmethod
-    def terminated(self,
+    def is_terminated(self,
                    messages: List[BaseMessage]) -> Tuple[bool, List[str]]:
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def reset(self):
-        raise NotImplementedError
+        pass

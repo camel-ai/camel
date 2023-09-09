@@ -11,19 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import pytest
+from .responses import ChatAgentResponse
 
-from camel.termination import TokenLimitTermination
-
-
-@pytest.mark.parametrize('num_tokens', [5, 10])
-def test_token_limit_termination(num_tokens):
-    termination = TokenLimitTermination(token_limit=10)
-    terminated, termination_reasons = termination.terminated(
-        num_tokens=num_tokens)
-    if num_tokens == 5:
-        assert not terminated
-        assert termination_reasons == []
-    if num_tokens == 10:
-        assert terminated
-        assert termination_reasons[0] == "max_tokens_exceeded"
+__all__ = [
+    'ChatAgentResponse',
+]

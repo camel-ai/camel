@@ -13,10 +13,10 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import List, Tuple
 
-from camel.termination import Termination
+from camel.terminator import BaseTerminator
 
 
-class TokenLimitTermination(Termination):
+class TokenLimitTerminator(BaseTerminator):
 
     def __init__(self, token_limit: int):
         super().__init__()
@@ -24,10 +24,12 @@ class TokenLimitTermination(Termination):
 
     def _validate(self):
         if self.token_limit <= 0:
-            raise ValueError(f"'token_limit' should be a "
-                             f"value larger than 0, got {self.token_limit}")
+            raise ValueError(f"`token_limit` should be a "
+                             f"value larger than 0, got {self.token_limit}.")
 
-    def terminated(self, num_tokens: int) -> Tuple[bool, List[str]]:
+    def is_terminated(self, num_tokens: int) -> Tuple[bool, List[str]]:
+        if self._terminated:
+            return True, self._termination_reasons
         if num_tokens >= self.token_limit:
             self._terminated = True
             self._termination_reasons = ["max_tokens_exceeded"]

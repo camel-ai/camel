@@ -11,13 +11,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .termination import Termination
-from .response_termination import ResponseWordsTermination, ResponseTermination
-from .token_limit_termination import TokenLimitTermination
+import pytest
 
-__all__ = [
-    'Termination',
-    'ResponseTermination',
-    'ResponseWordsTermination',
-    'TokenLimitTermination',
-]
+from camel.terminator import TokenLimitTerminator
+
+
+@pytest.mark.parametrize('num_tokens', [5, 10])
+def test_token_limit_termination(num_tokens):
+    termination = TokenLimitTerminator(token_limit=10)
+    terminated, termination_reasons = termination.is_terminated(
+        num_tokens=num_tokens)
+    if num_tokens == 5:
+        assert not terminated
+        assert termination_reasons == []
+    if num_tokens == 10:
+        assert terminated
+        assert termination_reasons[0] == "max_tokens_exceeded"

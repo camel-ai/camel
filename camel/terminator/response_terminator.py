@@ -17,10 +17,10 @@ from typing import Dict, List, Tuple
 from camel.messages import BaseMessage
 from camel.typing import TerminationMode
 
-from .termination import ResponseTermination
+from .base import ResponseTerminator
 
 
-class ResponseWordsTermination(ResponseTermination):
+class ResponseWordsTerminator(ResponseTerminator):
 
     def __init__(self, words_dict: Dict[str,
                                         int], case_sensitive: bool = False,
@@ -38,10 +38,10 @@ class ResponseWordsTermination(ResponseTermination):
         for word in self.words_dict:
             threshold = self.words_dict[word]
             if threshold <= 0:
-                raise ValueError(f"Threshold for word {word} should "
-                                 f"be larger than 0, got {threshold}")
+                raise ValueError(f"Threshold for word `{word}` should "
+                                 f"be larger than 0, got `{threshold}`")
 
-    def terminated(self,
+    def is_terminated(self,
                    messages: List[BaseMessage]) -> Tuple[bool, List[str]]:
         if self._terminated:
             return True, self._termination_reasons
@@ -60,9 +60,9 @@ class ResponseWordsTermination(ResponseTermination):
         for word, value in self._word_count_dict.items():
             if value >= self.words_dict[word]:
                 num_reached += 1
-                reason = (f"Word {word} appears {value} "
+                reason = (f"Word `{word}` appears {value} "
                           f"times in response which has reached termination "
-                          f"threshold {self.words_dict[word]}")
+                          f"threshold {self.words_dict[word]}.")
                 reasons.append(reason)
 
         if self.mode == TerminationMode.ANY:
@@ -74,7 +74,7 @@ class ResponseWordsTermination(ResponseTermination):
                 self._terminated = True
                 self._termination_reasons = reasons
         else:
-            raise ValueError(f"Unsupported termination mode {self.mode}")
+            raise ValueError(f"Unsupported termination mode `{self.mode}`")
         return self._terminated, self._termination_reasons
 
     def reset(self):

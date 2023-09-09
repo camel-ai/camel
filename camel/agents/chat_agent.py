@@ -26,8 +26,8 @@ from camel.configs import BaseConfig, ChatGPTConfig
 from camel.functions import OpenAIFunction
 from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
 from camel.models import BaseModelBackend, ModelFactory
-from camel.response import ChatAgentResponse
-from camel.termination import ResponseTermination, TokenLimitTermination
+from camel.responses import ChatAgentResponse
+from camel.terminator import ResponseTerminator, TokenLimitTerminator
 from camel.typing import ModelType, RoleType
 from camel.utils import get_model_encoding, openai_api_key_required
 
@@ -105,7 +105,7 @@ class ChatAgent(BaseAgent):
         message_window_size: Optional[int] = None,
         output_language: Optional[str] = None,
         function_list: Optional[List[OpenAIFunction]] = None,
-        response_terminations: Optional[List[ResponseTermination]] = None,
+        response_terminators: Optional[List[ResponseTerminator]] = None,
     ) -> None:
 
         self.orig_sys_message: BaseMessage = system_message
@@ -131,9 +131,9 @@ class ChatAgent(BaseAgent):
         self.model_token_limit: int = self.model_backend.token_limit
 
         self.terminated: bool = False
-        self.token_limit_termination = TokenLimitTermination(
+        self.token_limit_terminator = TokenLimitTerminator(
             self.model_token_limit)
-        self.response_terminations = response_terminations
+        self.response_terminators = response_terminators
         self.stored_messages: List[ChatRecord]
         self.init_messages()
 
@@ -146,7 +146,7 @@ class ChatAgent(BaseAgent):
         """
         self.terminated = False
         self.init_messages()
-        self.token_limit_termination.reset()
+        self.token_limit_terminator.reset()
 
     @property
     def system_message(self) -> BaseMessage:
@@ -234,6 +234,7 @@ class ChatAgent(BaseAgent):
         r"""Updates the stored messages list with a new message.
 
         Args:
+            role (str): Role of the agent.
             message (BaseMessage): The new message to add to the stored
                 messages.
 
@@ -289,7 +290,7 @@ class ChatAgent(BaseAgent):
 
             # Terminate when number of tokens exceeds the limit
             self.terminated, termination_reasons = \
-                self.token_limit_termination.terminated(num_tokens)
+                self.token_limit_terminator.is_terminated(num_tokens)
             if self.terminated:
                 return self.step_token_exceed(num_tokens, called_funcs,
                                               termination_reasons)
@@ -327,13 +328,16 @@ class ChatAgent(BaseAgent):
                 )
                 break
 
-        # Loop over response terminations
-        if self.response_terminations is not None:
-            for termination in self.response_terminations:
-                terminated, termination_reasons = termination.terminated(
+        # Loop over responses terminations
+        if self.response_terminators is not None:
+            for terminator in self.response_terminators:
+                terminated, termination_reasons = terminator.is_terminated(
                     output_messages)
                 if terminated:
-                    info["termination_reasons"].extend(termination_reasons)
+                    for i in range(len(info["termination_reasons"])):
+                        if i < len(termination_reasons):
+                            termination_str = "\n" + termination_reasons[i]
+                            info["termination_reasons"][i] += termination_str
                     self.terminated = terminated
         return ChatAgentResponse(output_messages, self.terminated, info)
 
@@ -459,6 +463,7 @@ class ChatAgent(BaseAgent):
             num_tokens (int): Number of tokens in the messages.
             called_funcs (List[FunctionCallingRecord]): List of information
                 objects of functions called in the current step.
+            termination_reasons (list): List of termination reasons.
 
         Returns:
             ChatAgentResponse: The struct containing trivial outputs and
@@ -488,11 +493,11 @@ class ChatAgent(BaseAgent):
         r"""Execute the function with arguments following the model's response.
 
         Args:
-            response (Dict[str, Any]): the response obtained by calling the
+            response (Dict[str, Any]): The response obtained by calling the
                 model.
 
         Returns:
-            tuple: a tuple consisting of two obj:`FunctionCallingMessage`,
+            tuple: A tuple consisting of two obj:`FunctionCallingMessage`,
                 one about the arguments and the other about the execution
                 result, and a struct for logging information about this
                 function call.

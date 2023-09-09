@@ -16,7 +16,7 @@ from typing import List
 import pytest
 
 from camel.messages import BaseMessage
-from camel.termination import ResponseWordsTermination
+from camel.terminator import ResponseWordsTerminator
 from camel.typing import RoleType, TerminationMode
 
 NUM_TIMES = 4
@@ -41,9 +41,9 @@ def test_response_words_termination(mode):
         "welcome": NUM_TIMES,
         "language model": NUM_TIMES,
     }
-    termination = ResponseWordsTermination(words_dict=words_dict, mode=mode)
+    termination = ResponseWordsTerminator(words_dict=words_dict, mode=mode)
     messages = _create_messages()
-    terminated, termination_reasons = termination.terminated(messages)
+    terminated, termination_reasons = termination.is_terminated(messages)
     if mode == TerminationMode.ANY:
         assert terminated
         assert "goodbye" in termination_reasons[0]
