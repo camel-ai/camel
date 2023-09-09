@@ -2079,12 +2079,13 @@ xml = ["lxml (>=4.6.3)"]
 
 [[package]]
 name = "pathlib"
-version = "0.97"
+version = "1.0.1"
 description = "Object-oriented filesystem paths"
 optional = false
 python-versions = "*"
 files = [
-    {file = "pathlib-0.97.tar.gz", hash = "sha256:c0a56ab34969e6e3220fc4c3c6ffe6802a878592eb77e0dbecdd5abd4b0cf381"},
+    {file = "pathlib-1.0.1-py3-none-any.whl", hash = "sha256:f35f95ab8b0f59e6d354090350b44a80a80635d22efdedfa84c7ad1cf0a74147"},
+    {file = "pathlib-1.0.1.tar.gz", hash = "sha256:6940718dfc3eff4258203ad5021090933e5c04707d5ca8cc9e73c94a7894ea9f"},
 ]
 
 [[package]]
@@ -4087,4 +4088,4 @@ huggingface-agent = ["accelerate", "datasets", "diffusers", "opencv-python", "se
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8.1"
-content-hash = "6ba36066578bb42f6442bdaa24ae76635aad76d4657175016916652088b6364a"
+content-hash = "ef8ff37a1b548adebcf6eadabd284867344f03bc388a94b074c1e9dc89db2bbc"

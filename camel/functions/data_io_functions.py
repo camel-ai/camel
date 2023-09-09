@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from io import BytesIO
-from typing import List, Any, Optional
+from typing import List, Any, Optional, Dict
 import re
 import docx2txt
 import fitz
@@ -30,8 +30,8 @@ class File(ABC):
         self,
         name: str,
         id: str,
-        metadata: Optional[dict[str, Any]] = None,
-        docs: Optional[List[dict[str, Any]]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        docs: Optional[List[Dict[str, Any]]] = None,
     ):
         self.name = name
         self.id = id
