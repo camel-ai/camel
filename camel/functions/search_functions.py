@@ -13,8 +13,6 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import List
 
-import wikipedia
-
 from .openai_function import OpenAIFunction
 
 
@@ -29,6 +27,7 @@ def search_wiki(entity: str) -> str:
         string: The search result. If the page corresponding to the entity
             exists, return the summary of this entity in a string.
     """
+    import wikipedia
     result: str
 
     try:
