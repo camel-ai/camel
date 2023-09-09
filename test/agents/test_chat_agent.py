@@ -110,6 +110,7 @@ def test_chat_agent_step_exceed_token_number():
         model=ModelType.GPT_3_5_TURBO,
     )
     assistant.model_token_limit = 1
+    assistant.token_limit_terminator.token_limit = 1
 
     user_msg = BaseMessage(role_name="User", role_type=RoleType.USER,
                            meta_dict=dict(), content="Tell me a joke.")
@@ -243,7 +244,8 @@ def test_token_exceed_return():
         "num_tokens": 1000,
         "called_functions": [],
     }
-    response = agent.step_token_exceed(1000, [])
+    agent.terminated = True
+    response = agent.step_token_exceed(1000, [], ["max_tokens_exceeded"])
     assert response.msgs == []
     assert response.terminated
     assert response.info == expect_info
