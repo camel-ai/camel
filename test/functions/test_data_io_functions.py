@@ -1,17 +1,19 @@
-import pytest
 from io import BytesIO
 from pathlib import Path
+
+import pytest
+
 from camel.functions.data_io_functions import (
     DocxFile,
+    File,
+    HtmlFile,
+    JsonFile,
     PdfFile,
     TxtFile,
-    JsonFile,
-    HtmlFile,
     read_file,
     strip_consecutive_newlines,
 )
 
-from camel.functions.data_io_functions import (File)
 
 # Define a FakeFile class for testing purposes
 class FakeFile(File):

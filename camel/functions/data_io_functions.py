@@ -12,16 +12,18 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from io import BytesIO
-from typing import List, Any, Optional, Dict
+import json
 import re
+from abc import ABC, abstractmethod
+from copy import deepcopy
+from hashlib import md5
+from io import BytesIO
+from typing import Any, Dict, List, Optional
+
 import docx2txt
 import fitz
-from hashlib import md5
-from abc import abstractmethod, ABC
-from copy import deepcopy
-import json
 from bs4 import BeautifulSoup
+
 
 class File(ABC):
     """Represents an uploaded file comprised of Documents"""
