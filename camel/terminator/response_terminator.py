@@ -29,7 +29,7 @@ class ResponseWordsTerminator(ResponseTerminator):
         self.words_dict = words_dict
         self.case_sensitive = case_sensitive
         self.mode = mode
-        self._word_count_dict = defaultdict(int)
+        self._word_count_dict: Dict[str, int] = defaultdict(int)
         self._validate()
 
     def _validate(self):
