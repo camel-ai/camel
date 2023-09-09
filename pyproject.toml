@@ -35,6 +35,9 @@ types-colorama = "^0"
 types-requests = "^2"
 bs4 = "^0"
 protobuf = "^4"
+docx2txt = "^0" 
+fitz = "^0"      
+pathlib = "^0"   
 
 transformers = { version = "^4", optional = true }
 diffusers = { version = "^0", optional = true }
