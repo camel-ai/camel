@@ -1,3 +1,16 @@
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# Licensed under the Apache License, Version 2.0 (the “License”);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an “AS IS” BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from io import BytesIO
 from pathlib import Path
 
@@ -18,10 +31,11 @@ from camel.functions.data_io_functions import (
 # Define a FakeFile class for testing purposes
 class FakeFile(File):
     """A fake file for testing purposes"""
-    
+
     @classmethod
     def from_bytes(cls, file: BytesIO) -> "FakeFile":
         return NotImplemented
+
 
 # Define paths to test resources
 UNIT_TESTS_ROOT = Path(__file__).parent.resolve()
@@ -53,10 +67,8 @@ def test_docx_file_with_multiple_pages():
     assert docx_file.name == "test.docx"
     assert len(docx_file.docs) == 1
     # Access 'page_content' from the dictionary in the docs list
-    assert (
-        docx_file.docs[0]["page_content"]
-        == "Hello World 1\nHello World 2\nHello World 3"
-    )
+    assert (docx_file.docs[0]["page_content"] ==
+            "Hello World 1\nHello World 2\nHello World 3")
 
 
 def test_pdf_file_with_single_page():
@@ -70,17 +82,19 @@ def test_pdf_file_with_single_page():
     # Access 'page_content' from the dictionary in the docs list
     assert pdf_file.docs[0]["page_content"] == "Hello World"
 
+
 def test_pdf_file_with_multiple_pages():
     with open(SAMPLE_ROOT / "test_hello_multi.pdf", "rb") as f:
         file = BytesIO(f.read())
         file.name = "test_hello_multiple.pdf"
         pdf_file = PdfFile.from_bytes(file)
-    
+
     assert pdf_file.name == "test_hello_multiple.pdf"
     assert len(pdf_file.docs) == 3
     assert pdf_file.docs[0]["page_content"] == "Hello World 1"
     assert pdf_file.docs[1]["page_content"] == "Hello World 2"
     assert pdf_file.docs[2]["page_content"] == "Hello World 3"
+
 
 def test_txt_file():
     with open(SAMPLE_ROOT / "test_hello.txt", "rb") as f:
@@ -136,10 +150,8 @@ def test_read_file():
         assert file_obj.name == f"test_hello{ext}"
         assert len(file_obj.docs) == 1
         # Access 'page_content' from the dictionary in the docs list
-        assert (
-            file_obj.docs[0]["page_content"]
-            == "Hello World" or '{"message": "Hello World"}'
-        )
+        assert (file_obj.docs[0]["page_content"] == "Hello World"
+                or '{"message": "Hello World"}')
 
 
 # Test that read_file raises a NotImplementedError for unsupported file types

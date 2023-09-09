@@ -20,8 +20,8 @@ from hashlib import md5
 from io import BytesIO
 from typing import Any, Dict, List, Optional
 
-import docx2txt
-import fitz
+import docx2txt  # type: ignore
+import fitz  # type: ignore
 from bs4 import BeautifulSoup
 
 
@@ -46,13 +46,12 @@ class File(ABC):
         """Creates a File from a BytesIO object"""
 
     def __repr__(self) -> str:
-        return (
-            f"File(name={self.name}, id={self.id}, "
-            f"metadata={self.metadata}, docs={self.docs})"
-        )
+        return (f"File(name={self.name}, id={self.id}, "
+                f"metadata={self.metadata}, docs={self.docs})")
 
     def __str__(self) -> str:
-        return f"File(name={self.name}, id={self.id}, metadata={self.metadata})"
+        return (
+            f"File(name={self.name}, id={self.id}, metadata={self.metadata})")
 
     def copy(self) -> "File":
         """Create a deep copy of this File"""
@@ -63,11 +62,14 @@ class File(ABC):
             docs=deepcopy(self.docs),
         )
 
+
 def strip_consecutive_newlines(text: str) -> str:
-    """Strips consecutive newlines from a string, possibly with whitespace in between"""
+    """Strips consecutive newlines from a string"""
     return re.sub(r"\s*\n\s*", "\n", text)
 
+
 class DocxFile(File):
+
     @classmethod
     def from_bytes(cls, file: BytesIO) -> "DocxFile":
         # Use docx2txt to extract text from docx files
@@ -81,7 +83,9 @@ class DocxFile(File):
         file.seek(0)
         return cls(name=file.name, id=file_id, docs=[doc])
 
+
 class PdfFile(File):
+
     @classmethod
     def from_bytes(cls, file: BytesIO) -> "PdfFile":
         # Use fitz to extract text from pdf files
@@ -99,7 +103,9 @@ class PdfFile(File):
         file.seek(0)
         return cls(name=file.name, id=file_id, docs=docs)
 
+
 class TxtFile(File):
+
     @classmethod
     def from_bytes(cls, file: BytesIO) -> "TxtFile":
         # Read the text from the file
@@ -113,7 +119,9 @@ class TxtFile(File):
         file.seek(0)
         return cls(name=file.name, id=file_id, docs=[doc])
 
+
 class JsonFile(File):
+
     @classmethod
     def from_bytes(cls, file: BytesIO) -> "JsonFile":
         # Parse the JSON data from the file
@@ -126,7 +134,9 @@ class JsonFile(File):
         file.seek(0)
         return cls(name=file.name, id=file_id, docs=[doc])
 
+
 class HtmlFile(File):
+
     @classmethod
     def from_bytes(cls, file: BytesIO) -> "HtmlFile":
         # Parse the HTML data from the file
@@ -140,6 +150,7 @@ class HtmlFile(File):
         # Reset the file pointer to the beginning
         file.seek(0)
         return cls(name=file.name, id=file_id, docs=[doc])
+
 
 def read_file(file: BytesIO) -> File:
     """Reads an uploaded file and returns a File object"""
@@ -156,5 +167,4 @@ def read_file(file: BytesIO) -> File:
         return HtmlFile.from_bytes(file)
     else:
         raise NotImplementedError(
-            f"File type {file.name.split('.')[-1]} not supported"
-        )
+            f"File type {file.name.split('.')[-1]} not supported")
