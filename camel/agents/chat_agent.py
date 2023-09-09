@@ -292,6 +292,7 @@ class ChatAgent(BaseAgent):
             self.terminated, termination_reason = \
                 self.token_limit_terminator.is_terminated(num_tokens)
             if self.terminated:
+                assert isinstance(termination_reason, str)
                 return self.step_token_exceed(num_tokens, called_funcs,
                                               termination_reason)
 

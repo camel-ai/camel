@@ -246,7 +246,7 @@ def test_token_exceed_return():
         "called_functions": [],
     }
     agent.terminated = True
-    response = agent.step_token_exceed(1000, [], ["max_tokens_exceeded"])
+    response = agent.step_token_exceed(1000, [], "max_tokens_exceeded")
     assert response.msgs == []
     assert response.terminated
     assert response.info == expect_info

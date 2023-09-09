@@ -24,7 +24,7 @@ class BaseTerminator(ABC):
         self._termination_reason: Optional[str] = None
 
     @abstractmethod
-    def is_terminated(self, *args, **kwargs) -> Tuple[bool, str]:
+    def is_terminated(self, *args, **kwargs) -> Tuple[bool, Optional[str]]:
         pass
 
     @abstractmethod
@@ -35,8 +35,8 @@ class BaseTerminator(ABC):
 class ResponseTerminator(BaseTerminator):
 
     @abstractmethod
-    def is_terminated(self,
-                      messages: List[BaseMessage]) -> Tuple[bool, List[str]]:
+    def is_terminated(
+            self, messages: List[BaseMessage]) -> Tuple[bool, Optional[str]]:
         pass
 
     @abstractmethod
