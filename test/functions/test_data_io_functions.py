@@ -10,11 +10,8 @@ from camel.functions.data_io_functions import (
     read_file,
     strip_consecutive_newlines,
 )
-from langchain.docstore.document import Document
 
 from camel.functions.data_io_functions import (File)
-import fitz
-
 
 # Define a FakeFile class for testing purposes
 class FakeFile(File):
@@ -38,10 +35,11 @@ def test_docx_file():
         file = BytesIO(f.read())
         file.name = "test.docx"
         docx_file = DocxFile.from_bytes(file)
-    
+
     assert docx_file.name == "test.docx"
     assert len(docx_file.docs) == 1
-    assert docx_file.docs[0].page_content == "Hello World"
+    # Access 'page_content' from the dictionary in the docs list
+    assert docx_file.docs[0]["page_content"] == "Hello World"
 
 
 def test_docx_file_with_multiple_pages():
@@ -49,11 +47,12 @@ def test_docx_file_with_multiple_pages():
         file = BytesIO(f.read())
         file.name = "test.docx"
         docx_file = DocxFile.from_bytes(file)
-    
+
     assert docx_file.name == "test.docx"
     assert len(docx_file.docs) == 1
+    # Access 'page_content' from the dictionary in the docs list
     assert (
-        docx_file.docs[0].page_content
+        docx_file.docs[0]["page_content"]
         == "Hello World 1\nHello World 2\nHello World 3"
     )
 
@@ -63,11 +62,11 @@ def test_pdf_file_with_single_page():
         file = BytesIO(f.read())
         file.name = "test_hello.pdf"
         pdf_file = PdfFile.from_bytes(file)
-    
+
     assert pdf_file.name == "test_hello.pdf"
     assert len(pdf_file.docs) == 1
-    assert pdf_file.docs[0].page_content == "Hello World"
-
+    # Access 'page_content' from the dictionary in the docs list
+    assert pdf_file.docs[0]["page_content"] == "Hello World"
 
 def test_pdf_file_with_multiple_pages():
     with open(SAMPLE_ROOT / "test_hello_multi.pdf", "rb") as f:
@@ -77,23 +76,20 @@ def test_pdf_file_with_multiple_pages():
     
     assert pdf_file.name == "test_hello_multiple.pdf"
     assert len(pdf_file.docs) == 3
-    assert pdf_file.docs[0].page_content == "Hello World 1"
-    assert pdf_file.docs[1].page_content == "Hello World 2"
-    assert pdf_file.docs[2].page_content == "Hello World 3"
-    assert pdf_file.docs[0].metadata["page"] == 1
-    assert pdf_file.docs[1].metadata["page"] == 2
-    assert pdf_file.docs[2].metadata["page"] == 3
-
+    assert pdf_file.docs[0]["page_content"] == "Hello World 1"
+    assert pdf_file.docs[1]["page_content"] == "Hello World 2"
+    assert pdf_file.docs[2]["page_content"] == "Hello World 3"
 
 def test_txt_file():
     with open(SAMPLE_ROOT / "test_hello.txt", "rb") as f:
         file = BytesIO(f.read())
         file.name = "test.txt"
         txt_file = TxtFile.from_bytes(file)
-    
+
     assert txt_file.name == "test.txt"
     assert len(txt_file.docs) == 1
-    assert txt_file.docs[0].page_content == "Hello World"
+    # Access 'page_content' from the dictionary in the docs list
+    assert txt_file.docs[0]["page_content"] == "Hello World"
 
 
 def test_json_file():
@@ -101,11 +97,11 @@ def test_json_file():
         file = BytesIO(f.read())
         file.name = "test.json"
         json_file = JsonFile.from_bytes(file)
-    
+
     assert json_file.name == "test.json"
     assert len(json_file.docs) == 1
-    assert json_file.docs[0].page_content == '{"message": "Hello World"}'
-
+    # Access 'page_content' from the dictionary in the docs list
+    assert json_file.docs[0]["page_content"] == '{"message": "Hello World"}'
 
 
 def test_html_file():
@@ -113,10 +109,11 @@ def test_html_file():
         file = BytesIO(f.read())
         file.name = "test.html"
         html_file = HtmlFile.from_bytes(file)
-    
+
     assert html_file.name == "test.html"
     assert len(html_file.docs) == 1
-    assert html_file.docs[0].page_content == "Hello World"
+    # Access 'page_content' from the dictionary in the docs list
+    assert html_file.docs[0]["page_content"] == "Hello World"
 
 
 # Test the `read_file` function with each file type
@@ -132,11 +129,15 @@ def test_read_file():
             file = BytesIO(f.read())
             file.name = f"test_hello{ext}"
             file_obj = read_file(file)
-        
+
         assert isinstance(file_obj, FileClass)
         assert file_obj.name == f"test_hello{ext}"
         assert len(file_obj.docs) == 1
-        assert file_obj.docs[0].page_content == "Hello World" or '{"message": "Hello World"}'
+        # Access 'page_content' from the dictionary in the docs list
+        assert (
+            file_obj.docs[0]["page_content"]
+            == "Hello World" or '{"message": "Hello World"}'
+        )
 
 
 # Test that read_file raises a NotImplementedError for unsupported file types
@@ -150,33 +151,33 @@ def test_read_file_not_implemented():
 # Test the File.copy() method
 def test_file_copy():
     # Create a Document and FakeFile instance
-    document = Document(page_content="test content", metadata={"page": "1"})
+    document = {"page_content": "test content", "metadata": {"page": "1"}}
     file = FakeFile("test_file", "1234", {"author": "test"}, [document])
-    
+
     # Create a copy of the file
     file_copy = file.copy()
-    
+
     # Check that the original and copy are distinct objects
     assert file is not file_copy
-    
+
     # Check that the copy has the same attributes as the original
     assert file.name == file_copy.name
     assert file.id == file_copy.id
-    
+
     # Check that the mutable attributes were deeply copied
     assert file.metadata == file_copy.metadata
     assert file.metadata is not file_copy.metadata
-    
+
     # Check that the documents were deeply copied
     assert file.docs == file_copy.docs
     assert file.docs is not file_copy.docs
-    
+
     # Check that individual documents are not the same objects
     assert file.docs[0] is not file_copy.docs[0]
-    
+
     # Check that the documents have the same attributes
-    assert file.docs[0].page_content == file_copy.docs[0].page_content
-    assert file.docs[0].metadata == file_copy.docs[0].metadata
+    assert file.docs[0]["page_content"] == file_copy.docs[0]["page_content"]
+    assert file.docs[0]["metadata"] == file_copy.docs[0]["metadata"]
 
 
 # Test the strip_consecutive_newlines function
@@ -185,22 +186,22 @@ def test_strip_consecutive_newlines():
     text = "\n\n\n"
     expected = "\n"
     assert strip_consecutive_newlines(text) == expected
-    
+
     # Test with newlines and spaces
     text = "\n \n \n"
     expected = "\n"
     assert strip_consecutive_newlines(text) == expected
-    
+
     # Test with newlines and tabs
     text = "\n\t\n\t\n"
     expected = "\n"
     assert strip_consecutive_newlines(text) == expected
-    
+
     # Test with mixed whitespace characters
     text = "\n \t\n \t \n"
     expected = "\n"
     assert strip_consecutive_newlines(text) == expected
-    
+
     # Test with no consecutive newlines
     text = "\nHello\nWorld\n"
     expected = "\nHello\nWorld\n"

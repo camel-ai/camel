@@ -16,7 +16,6 @@ from io import BytesIO
 from typing import List, Any, Optional
 import re
 import docx2txt
-from langchain.docstore.document import Document
 import fitz
 from hashlib import md5
 from abc import abstractmethod, ABC
@@ -32,7 +31,7 @@ class File(ABC):
         name: str,
         id: str,
         metadata: Optional[dict[str, Any]] = None,
-        docs: Optional[List[Document]] = None,
+        docs: Optional[List[dict[str, Any]]] = None,
     ):
         self.name = name
         self.id = id
@@ -72,10 +71,10 @@ class DocxFile(File):
         # Use docx2txt to extract text from docx files
         text = docx2txt.process(file)
         text = strip_consecutive_newlines(text)
-        # Create a Document object from the extracted text
-        doc = Document(page_content=text.strip())
+        # Create a dictionary with the extracted text
+        doc = {"page_content": text.strip()}
         # Calculate a unique identifier for the file
-        file_id = md5(file.read()).hexdigest()
+        file_id = md5(file.getvalue()).hexdigest()
         # Reset the file pointer to the beginning
         file.seek(0)
         return cls(name=file.name, id=file_id, docs=[doc])
@@ -89,12 +88,11 @@ class PdfFile(File):
         for i, page in enumerate(pdf):
             text = page.get_text(sort=True)
             text = strip_consecutive_newlines(text)
-            # Create a Document object from the extracted text
-            doc = Document(page_content=text.strip())
-            doc.metadata["page"] = i + 1
+            # Create a dictionary with the extracted text
+            doc = {"page_content": text.strip(), "page": i + 1}
             docs.append(doc)
         # Calculate a unique identifier for the file
-        file_id = md5(file.read()).hexdigest()
+        file_id = md5(file.getvalue()).hexdigest()
         # Reset the file pointer to the beginning
         file.seek(0)
         return cls(name=file.name, id=file_id, docs=docs)
@@ -105,10 +103,10 @@ class TxtFile(File):
         # Read the text from the file
         text = file.read().decode("utf-8")
         text = strip_consecutive_newlines(text)
-        # Create a Document object from the extracted text
-        doc = Document(page_content=text.strip())
+        # Create a dictionary with the extracted text
+        doc = {"page_content": text.strip()}
         # Calculate a unique identifier for the file
-        file_id = md5(file.read()).hexdigest()
+        file_id = md5(file.getvalue()).hexdigest()
         # Reset the file pointer to the beginning
         file.seek(0)
         return cls(name=file.name, id=file_id, docs=[doc])
@@ -117,12 +115,11 @@ class JsonFile(File):
     @classmethod
     def from_bytes(cls, file: BytesIO) -> "JsonFile":
         # Parse the JSON data from the file
-        #data = json.loads(file.read())
-        data = json.dumps(json.load(file))
-        # Create a Document object from the parsed data
-        doc = Document(page_content=data)
+        data = json.load(file)
+        # Create a dictionary with the parsed data
+        doc = {"page_content": json.dumps(data)}
         # Calculate a unique identifier for the file
-        file_id = md5(file.read()).hexdigest()
+        file_id = md5(file.getvalue()).hexdigest()
         # Reset the file pointer to the beginning
         file.seek(0)
         return cls(name=file.name, id=file_id, docs=[doc])
@@ -134,10 +131,10 @@ class HtmlFile(File):
         soup = BeautifulSoup(file, "html.parser")
         text = soup.get_text()
         text = strip_consecutive_newlines(text)
-        # Create a Document object from the parsed data
-        doc = Document(page_content=text.strip())
+        # Create a dictionary with the parsed data
+        doc = {"page_content": text.strip()}
         # Calculate a unique identifier for the file
-        file_id = md5(file.read()).hexdigest()
+        file_id = md5(file.getvalue()).hexdigest()
         # Reset the file pointer to the beginning
         file.seek(0)
         return cls(name=file.name, id=file_id, docs=[doc])
