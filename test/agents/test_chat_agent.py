@@ -22,7 +22,6 @@ from camel.functions import MATH_FUNCS
 from camel.generators import SystemMessageGenerator
 from camel.messages import BaseMessage
 from camel.typing import ModelType, RoleType, TaskType
-from camel.utils import num_tokens_from_messages
 
 parametrize = pytest.mark.parametrize('model', [
     ModelType.STUB,
@@ -55,21 +54,6 @@ def test_chat_agent(model: ModelType):
     assert assistant_response.terminated is False
     assert isinstance(assistant_response.info, dict)
     assert assistant_response.info['id'] is not None
-
-    assistant.reset()
-    token_limit = assistant.model_token_limit
-    user_msg = BaseMessage(role_name="Patient", role_type=RoleType.USER,
-                           meta_dict=dict(),
-                           content="token" * (token_limit + 1))
-    assistant_response = assistant.step(user_msg)
-
-    assert isinstance(assistant_response.msgs, list)
-    assert len(assistant_response.msgs) == 0
-    assert isinstance(assistant_response.terminated, bool)
-    assert assistant_response.terminated is True
-    assert isinstance(assistant_response.info, dict)
-    assert (assistant_response.info['termination_reasons'][0] ==
-            "max_tokens_exceeded")
 
 
 @pytest.mark.model_backend
@@ -134,10 +118,8 @@ def test_chat_agent_step_exceed_token_number():
     msgs = [system_msg, user_msg_record]
 
     expect_openai_messages = [record.to_openai_message() for record in msgs]
-    expect_num_tokens = num_tokens_from_messages(
-        expect_openai_messages,
-        assistant.model,
-    )
+    expect_num_tokens = assistant.model_backend.count_tokens_from_messages(
+        expect_openai_messages)
 
     response = assistant.step(user_msg)
     assert len(response.msgs) == 0

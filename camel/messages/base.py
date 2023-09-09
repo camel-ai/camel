@@ -21,7 +21,7 @@ from camel.messages import (
     OpenAIUserMessage,
 )
 from camel.prompts import CodePrompt, TextPrompt
-from camel.typing import ModelType, RoleType
+from camel.typing import RoleType
 
 
 @dataclass
@@ -122,23 +122,6 @@ class BaseMessage:
                 :obj:`False` otherwise.
         """
         return item in self.content
-
-    def token_len(self, role_at_backend: str,
-                  model: ModelType = ModelType.GPT_3_5_TURBO) -> int:
-        r"""Calculate the token length of the message for the specified model.
-
-        Args:
-            role_at_backend (str): interpret this message as of a specified
-                role, so that the special tokens can be counted properly.
-            model (ModelType, optional): The model type to calculate the token
-                length. (default: :obj:`ModelType.GPT_3_5_TURBO`)
-
-        Returns:
-            int: The token length of the message.
-        """
-        from camel.utils import num_tokens_from_messages
-        return num_tokens_from_messages(
-            [self.to_openai_message(role_at_backend)], model)
 
     def extract_text_and_code_prompts(
             self) -> Tuple[List[TextPrompt], List[CodePrompt]]:

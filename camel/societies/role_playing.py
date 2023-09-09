@@ -19,8 +19,7 @@ from camel.agents import (
     TaskPlannerAgent,
     TaskSpecifyAgent,
 )
-from camel.configs import FunctionCallingConfig
-from camel.functions import OpenAIFunction
+from camel.agents.chat_agent import ChatAgentResponse
 from camel.generators import SystemMessageGenerator
 from camel.human import Human
 from camel.messages import BaseMessage
@@ -73,9 +72,6 @@ class RolePlaying:
             task specify meta dict with. (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
             agents. (default: :obj:`None`)
-        assistant_functions (list, optional): List of
-            :obj:`OpenAIFunction` objects to be loaded. If not specified,
-            function calling will be disabled. (default: :obj:`None`)
     """
 
     def __init__(
@@ -100,7 +96,6 @@ class RolePlaying:
         extend_sys_msg_meta_dicts: Optional[List[Dict]] = None,
         extend_task_specify_meta_dict: Optional[Dict] = None,
         output_language: Optional[str] = None,
-        assistant_functions: Optional[List[OpenAIFunction]] = None,
     ) -> None:
         self.with_task_specify = with_task_specify
         self.with_task_planner = with_task_planner
@@ -108,8 +103,6 @@ class RolePlaying:
         self.model_type = model_type
         self.task_type = task_type
         self.task_prompt = task_prompt
-
-        self.assistant_functions = assistant_functions
 
         self.specified_task_prompt: Optional[TextPrompt] = None
         self.init_specified_task_prompt(assistant_role_name, user_role_name,
@@ -123,6 +116,7 @@ class RolePlaying:
 
         sys_msg_generator = SystemMessageGenerator(
             task_type=self.task_type, **(sys_msg_generator_kwargs or {}))
+
         (init_assistant_sys_msg, init_user_sys_msg,
          sys_msg_meta_dicts) = self.get_sys_message_info(
              assistant_role_name, user_role_name, sys_msg_generator,
@@ -139,7 +133,6 @@ class RolePlaying:
             user_agent_kwargs,
             output_language,
         )
-
         self.critic: Optional[Union[CriticAgent, Human]] = None
         self.critic_sys_msg: Optional[BaseMessage] = None
         self.init_critic(critic_role_name, critic_criteria, critic_kwargs,
@@ -219,9 +212,11 @@ class RolePlaying:
             self.planned_task_prompt = None
 
     def get_sys_message_info(
-        self, assistant_role_name: str, user_role_name: str,
+        self,
+        assistant_role_name: str,
+        user_role_name: str,
         sys_msg_generator: SystemMessageGenerator,
-        extend_sys_msg_meta_dicts: Optional[List[Dict]]
+        extend_sys_msg_meta_dicts: Optional[List[Dict]] = None,
     ) -> Tuple[BaseMessage, BaseMessage, List[Dict]]:
         r"""Get initial assistant and user system message with a list of
         system message meta dicts.
@@ -241,12 +236,15 @@ class RolePlaying:
             initial system message, and a list of system message meta dicts.
         """
         sys_msg_meta_dicts = [dict(task=self.task_prompt) for _ in range(2)]
-        if (extend_sys_msg_meta_dicts is None and self.task_type
-                in [TaskType.AI_SOCIETY, TaskType.MISALIGNMENT]):
+        if (extend_sys_msg_meta_dicts is None and self.task_type in [
+                TaskType.AI_SOCIETY,
+                TaskType.MISALIGNMENT,
+        ]):
             extend_sys_msg_meta_dicts = [
                 dict(assistant_role=assistant_role_name,
                      user_role=user_role_name) for _ in range(2)
             ]
+
         if extend_sys_msg_meta_dicts is not None:
             sys_msg_meta_dicts = [{
                 **sys_msg_meta_dict,
@@ -286,14 +284,6 @@ class RolePlaying:
             output_language (str, optional): The language to be output by the
                 agents.
         """
-        if self.assistant_functions is not None:
-            assistant_config = FunctionCallingConfig.from_openai_function_list(
-                function_list=self.assistant_functions,
-                function_call="auto",
-            )
-        else:
-            assistant_config = None
-
         if self.model_type is not None:
             if assistant_agent_kwargs is None:
                 assistant_agent_kwargs = {}
@@ -304,9 +294,7 @@ class RolePlaying:
 
         self.assistant_agent = ChatAgent(
             init_assistant_sys_msg,
-            model_config=assistant_config,
             output_language=output_language,
-            function_list=self.assistant_functions,
             **(assistant_agent_kwargs or {}),
         )
         self.assistant_sys_msg = self.assistant_agent.system_message
@@ -444,7 +432,6 @@ class RolePlaying:
             whether the user agent terminated the conversation, and any
             additional user information.
         """
-
         user_response = self.user_agent.step(assistant_msg)
         if user_response.terminated or user_response.msgs is None:
             return (ChatAgentResponse([], False, {}),

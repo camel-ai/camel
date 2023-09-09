@@ -14,12 +14,11 @@
 import binascii
 
 import pytest
+import requests
 
 from camel.agents import HuggingFaceToolAgent
 
 
-@pytest.mark.model_backend
-@pytest.mark.full_test_only
 def test_hugging_face_tool_agent_initialization():
     agent = HuggingFaceToolAgent("hugging_face_tool_agent")
     assert agent.name == "hugging_face_tool_agent"
@@ -28,13 +27,13 @@ def test_hugging_face_tool_agent_initialization():
 
 
 @pytest.mark.model_backend
-@pytest.mark.full_test_only
+@pytest.mark.very_slow
 def test_hugging_face_tool_agent_step():
     from PIL.PngImagePlugin import PngImageFile
     agent = HuggingFaceToolAgent("hugging_face_tool_agent")
     try:
         result = agent.step("Generate an image of a boat in the water")
-    except binascii.Error as ex:
+    except (binascii.Error, requests.exceptions.ConnectionError) as ex:
         print("Warning: caught an exception, ignoring it since "
               f"it is a known issue of Huggingface ({str(ex)})")
         return
@@ -42,21 +41,19 @@ def test_hugging_face_tool_agent_step():
 
 
 @pytest.mark.model_backend
-@pytest.mark.full_test_only
+@pytest.mark.very_slow
 def test_hugging_face_tool_agent_chat():
     from PIL.PngImagePlugin import PngImageFile
     agent = HuggingFaceToolAgent("hugging_face_tool_agent")
     try:
         result = agent.chat("Show me an image of a capybara")
-    except binascii.Error as ex:
+    except (binascii.Error, requests.exceptions.ConnectionError) as ex:
         print("Warning: caught an exception, ignoring it since "
               f"it is a known issue of Huggingface ({str(ex)})")
         return
     assert isinstance(result, PngImageFile)
 
 
-@pytest.mark.model_backend
-@pytest.mark.full_test_only
 def test_hugging_face_tool_agent_reset():
     agent = HuggingFaceToolAgent("hugging_face_tool_agent")
     agent.reset()

@@ -84,6 +84,10 @@ To verify that everything is set up correctly, run `pytest .` This will ensure t
 
 ## Common Actions 🔄
 
+### Update dependencies
+
+Whenever you add, update, or delete any dependencies in `pyproject.toml`, please run `poetry lock` to synchronize the dependencies with the lock file.
+
 ### Linting & Formatting ✨
 
 ```bash
@@ -133,7 +137,7 @@ pytest .
 
 To quickly run only local isolated unit and integration tests:
 ```bash
-pytest -m "not model_backend and not slow" .
+pytest --fast-test-mode .
 ```
 
 If you're developing with VSCode, make sure to create a `.env` file in the repository root and include your OpenAI API key:

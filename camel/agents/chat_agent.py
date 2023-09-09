@@ -29,11 +29,7 @@ from camel.models import BaseModelBackend, ModelFactory
 from camel.response import ChatAgentResponse
 from camel.termination import ResponseTermination, TokenLimitTermination
 from camel.typing import ModelType, RoleType
-from camel.utils import (
-    get_model_encoding,
-    num_tokens_from_messages,
-    openai_api_key_required,
-)
+from camel.utils import get_model_encoding, openai_api_key_required
 
 
 @dataclass(frozen=True)
@@ -365,7 +361,8 @@ class ChatAgent(BaseAgent):
 
         openai_messages: List[OpenAIMessage]
         openai_messages = [record.to_openai_message() for record in messages]
-        num_tokens = num_tokens_from_messages(openai_messages, self.model)
+        num_tokens = self.model_backend.count_tokens_from_messages(
+            openai_messages)
 
         return openai_messages, num_tokens
 
