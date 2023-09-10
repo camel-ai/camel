@@ -20,8 +20,8 @@ from hashlib import md5
 from io import BytesIO
 from typing import Any, Dict, List, Optional
 
-import docx2txt
-import fitz
+import docx2txt  # type: ignore
+import fitz  # type: ignore
 from bs4 import BeautifulSoup
 
 
