@@ -18,7 +18,6 @@ from .misalignment import MisalignmentPromptTemplateDict
 from .translation import TranslationPromptTemplateDict
 from .solution_extraction import SolutionExtractionPromptTemplateDict
 from .evaluation import EvaluationPromptTemplateDict
-from .role_description_prompt_template import RoleDescriptionPromptTemplateDict
 from .task_prompt_template import TaskPromptTemplateDict
 from .prompt_templates import PromptTemplateGenerator
 
@@ -31,7 +30,6 @@ __all__ = [
     'MisalignmentPromptTemplateDict',
     'TranslationPromptTemplateDict',
     'EvaluationPromptTemplateDict',
-    'RoleDescriptionPromptTemplateDict',
     'TaskPromptTemplateDict',
     'PromptTemplateGenerator',
     'SolutionExtractionPromptTemplateDict',
