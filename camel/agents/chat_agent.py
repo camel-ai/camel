@@ -92,7 +92,7 @@ class ChatAgent(BaseAgent):
         model_config (BaseConfig, optional): Configuration options for the
             LLM model. (default: :obj:`None`)
         memory (BaseMemory, optional): The agent memory for managing chat
-            messages.
+            messages. (default: :obj:`ChatHistoryMemory()`)
         message_window_size (int, optional): The maximum number of previous
             messages to include in the context window. If `None`, no windowing
             is performed. (default: :obj:`None`)
