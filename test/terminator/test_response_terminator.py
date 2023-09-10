@@ -19,12 +19,12 @@ from camel.messages import BaseMessage
 from camel.terminator import ResponseWordsTerminator
 from camel.typing import RoleType, TerminationMode
 
-NUM_TIMES = 4
+NUM_TIMES = 2
 
 
 def _create_messages() -> List[BaseMessage]:
     messages = []
-    for _ in range(NUM_TIMES):
+    for _ in range(3):
         message = BaseMessage(role_name="user", role_type=RoleType.USER,
                               meta_dict={}, content="GoodBye")
         messages.append(message)
@@ -39,9 +39,13 @@ def test_response_words_termination(mode):
         "thank": NUM_TIMES,
         "bye": NUM_TIMES,
         "welcome": NUM_TIMES,
-        "language model": NUM_TIMES,
+        "language model": NUM_TIMES + 1,
     }
     termination = ResponseWordsTerminator(words_dict=words_dict, mode=mode)
+    messages = _create_messages()
+    terminated, termination_reason = termination.is_terminated(messages)
+    assert not terminated
+    assert termination_reason is None
     messages = _create_messages()
     terminated, termination_reason = termination.is_terminated(messages)
     if mode == TerminationMode.ANY:

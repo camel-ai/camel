@@ -17,6 +17,11 @@ from camel.terminator import BaseTerminator
 
 
 class TokenLimitTerminator(BaseTerminator):
+    r"""Terminate agent if number of tokens reached to token limit threshold.
+
+    Args:
+        token_limit (int): Token limit threshold.
+    """
 
     def __init__(self, token_limit: int):
         super().__init__()
@@ -35,7 +40,7 @@ class TokenLimitTerminator(BaseTerminator):
             num_tokens (int): Number of tokens.
 
         Returns:
-            tuple: A tuple containing whether the response should be
+            tuple: A tuple containing whether the agent should be
                 terminated and a string of termination reason.
         """
         if self._terminated:

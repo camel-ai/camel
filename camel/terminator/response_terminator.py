@@ -21,6 +21,18 @@ from .base import ResponseTerminator
 
 
 class ResponseWordsTerminator(ResponseTerminator):
+    r"""Terminate agent when some words reached to occurrence
+    limit by any message of the response.
+
+    Args:
+        words_dict (dict): Dictionary of words and its occurrence
+            threshold.
+        case_sensitive (bool): Whether count the words as
+            case-sensitive. (default: :obj:`False`)
+        mode (TerminationMode): Whether terminate agent if any
+            or all pre-set words reached the threshold.
+            (default: :obj:`TerminationMode.ANY`)
+    """
 
     def __init__(self, words_dict: Dict[str,
                                         int], case_sensitive: bool = False,
@@ -29,7 +41,7 @@ class ResponseWordsTerminator(ResponseTerminator):
         self.words_dict = words_dict
         self.case_sensitive = case_sensitive
         self.mode = mode
-        self._word_count_dict: Dict[str, int] = defaultdict(int)
+        self._word_count_dict: List[Dict[str, int]] = []
         self._validate()
 
     def _validate(self):
@@ -43,48 +55,61 @@ class ResponseWordsTerminator(ResponseTerminator):
 
     def is_terminated(
             self, messages: List[BaseMessage]) -> Tuple[bool, Optional[str]]:
-        r"""Whether terminate the response by checking the occurrence
+        r"""Whether terminate the agent by checking the occurrence
         of specified words reached to preset thresholds.
 
         Args:
             messages (list): List of :obj:`BaseMessage` from a response.
 
         Returns:
-            tuple: A tuple containing whether the response should be
+            tuple: A tuple containing whether the agent should be
                 terminated and a string of termination reason.
         """
         if self._terminated:
             return True, self._termination_reason
+
+        for i in range(len(messages)):
+            if i >= len(self._word_count_dict):
+                self._word_count_dict.append(defaultdict(int))
+
         for word in self.words_dict:
             special_word = word if self.case_sensitive else word.lower()
-            for message in messages:
+            for i, message in enumerate(messages):
                 if self.case_sensitive:
                     content = message.content
                 else:
                     content = message.content.lower()
                 if special_word in content:
-                    self._word_count_dict[word] += 1
+                    self._word_count_dict[i][word] += 1
 
-        num_reached = 0
-        reasons: List[str] = []
-        for word, value in self._word_count_dict.items():
-            if value >= self.words_dict[word]:
-                num_reached += 1
-                reason = (f"Word `{word}` appears {value} "
-                          f"times in response which has reached termination "
-                          f"threshold {self.words_dict[word]}.")
-                reasons.append(reason)
+        num_reached: List[int] = []
+        all_reasons: List[List[str]] = []
+        for i in range(len(self._word_count_dict)):
+            reached = 0
+            reasons: List[str] = []
+            for word, value in self._word_count_dict[i].items():
+                if value >= self.words_dict[word]:
+                    reached += 1
+                    reason = (f"Word `{word}` appears {value} times in the "
+                              f"{i + 1} message of the response which has "
+                              f"reached termination threshold "
+                              f"{self.words_dict[word]}.")
+                    reasons.append(reason)
+            all_reasons.append(reasons)
+            num_reached.append(reached)
 
-        if self.mode == TerminationMode.ANY:
-            if num_reached > 0:
-                self._terminated = True
-                self._termination_reason = "\n".join(reasons)
-        elif self.mode == TerminationMode.ALL:
-            if num_reached >= len(self.words_dict):
-                self._terminated = True
-                self._termination_reason = "\n".join(reasons)
-        else:
-            raise ValueError(f"Unsupported termination mode `{self.mode}`")
+        for i, reached in enumerate(num_reached):
+            if self.mode == TerminationMode.ANY:
+                if reached > 0:
+                    self._terminated = True
+                    self._termination_reason = "\n".join(all_reasons[i])
+            elif self.mode == TerminationMode.ALL:
+                if reached >= len(self.words_dict):
+                    self._terminated = True
+                    self._termination_reason = "\n".join(all_reasons[i])
+            else:
+                raise ValueError(f"Unsupported termination mode "
+                                 f"`{self.mode}`")
         return self._terminated, self._termination_reason
 
     def reset(self):
