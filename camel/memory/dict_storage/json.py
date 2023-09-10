@@ -20,6 +20,25 @@ from camel.memory.dict_storage.base import BaseDictStorage
 from camel.typing import ModelType, RoleType, TaskType, VectorDistance
 
 
+class _CamelJSONEncoder(json.JSONEncoder):
+    """
+    Custom JSON encoder for serializing specific enumerated types. Ensures
+    enumerated types can be stored in and retrieved from JSON format.
+    """
+    CAMEL_ENUMS = {
+        "RoleType": RoleType,
+        "TaskType": TaskType,
+        "ModelType": ModelType,
+        "VectorDistance": VectorDistance,
+    }
+
+    def default(self, obj):
+        if type(obj) in self.CAMEL_ENUMS.values():
+            return {"__enum__": str(obj)}
+        # Let the base class default method raise the TypeError
+        return json.JSONEncoder.default(self, obj)
+
+
 class JsonStorage(BaseDictStorage):
     """
     Concrete implementation of the :obj:`BaseDictStorage` using JSON files.
@@ -30,24 +49,6 @@ class JsonStorage(BaseDictStorage):
             :obj:`Path("./chat_history")`)
     """
 
-    class _CamelJSONEncoder(json.JSONEncoder):
-        """
-        Custom JSON encoder for serializing specific enumerated types. Ensures
-        enumerated types can be stored in and retrieved from JSON format.
-        """
-        CAMEL_ENUMS = {
-            "RoleType": RoleType,
-            "TaskType": TaskType,
-            "ModelType": ModelType,
-            "VectorDistance": VectorDistance,
-        }
-
-        def default(self, obj):
-            if type(obj) in self.CAMEL_ENUMS.values():
-                return {"__enum__": str(obj)}
-            # Let the base class default method raise the TypeError
-            return json.JSONEncoder.default(self, obj)
-
     def __init__(self, path: Path = Path("./chat_history.json")):
         self.json_path = path
         self.json_path.touch()
@@ -55,16 +56,14 @@ class JsonStorage(BaseDictStorage):
     def _json_object_hook(self, d):
         if "__enum__" in d:
             name, member = d["__enum__"].split(".")
-            return getattr(self._CamelJSONEncoder.CAMEL_ENUMS[name], member)
+            return getattr(_CamelJSONEncoder.CAMEL_ENUMS[name], member)
         else:
             return d
 
     def save(self, records: List[Dict[str, Any]]) -> None:
         with self.json_path.open("a") as f:
-            f.writelines([
-                json.dumps(r, cls=self._CamelJSONEncoder) + "\n"
-                for r in records
-            ])
+            f.writelines(
+                [json.dumps(r, cls=_CamelJSONEncoder) + "\n" for r in records])
 
     def load(self) -> List[Dict[str, Any]]:
         with self.json_path.open("r") as f:
