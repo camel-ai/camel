@@ -91,7 +91,8 @@ class ChatAgent(BaseAgent):
             responses. (default :obj:`ModelType.GPT_3_5_TURBO`)
         model_config (BaseConfig, optional): Configuration options for the
             LLM model. (default: :obj:`None`)
-        memory (Base)
+        memory (BaseMemory, optional): The agent memory for managing chat
+            messages.
         message_window_size (int, optional): The maximum number of previous
             messages to include in the context window. If `None`, no windowing
             is performed. (default: :obj:`None`)
