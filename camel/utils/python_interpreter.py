@@ -152,7 +152,7 @@ class PythonInterpreter():
     @typing.no_type_check
     def _execute_ast(self, expression: ast.AST) -> Any:
         if isinstance(expression, ast.Assign):
-            # Assignement -> evaluate the assignement which should
+            # Assignment -> evaluate the assignment which should
             # update the state. We return the variable assigned as it may
             # be used to determine the final result.
             return self._execute_assign(expression)
