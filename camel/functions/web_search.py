@@ -62,10 +62,10 @@ def search_google(query: str) -> List[Dict[str, Any]]:
 
         # Iterate over 10 results found
         for i, search_item in enumerate(search_items, start=1):
-            try:
+            if "og:description" in search_item["pagemap"]["metatags"][0]:
                 long_description = \
                     search_item["pagemap"]["metatags"][0]["og:description"]
-            except KeyError:
+            else:
                 long_description = "N/A"
             # Get the page title
             title = search_item.get("title")

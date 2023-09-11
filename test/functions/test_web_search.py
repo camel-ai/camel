@@ -13,6 +13,8 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import requests
 
+from camel.functions.web_search import search_web
+
 
 def test_google_api():
     # Check the google search api
@@ -27,3 +29,10 @@ def test_google_api():
     result = requests.get(url)
 
     assert result.status_code == 200
+
+
+def test_web_search():
+    query = "What big things are happening in 2023?"
+    answer = search_web(query)
+
+    assert answer is not None
