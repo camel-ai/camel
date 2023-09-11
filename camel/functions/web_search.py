@@ -58,30 +58,33 @@ def search_google(query: str) -> List[Dict[str, Any]]:
         data = result.json()
 
         # Get the result items
-        search_items = data.get("items")
+        if "items" in data:
+            search_items = data.get("items")
 
-        # Iterate over 10 results found
-        for i, search_item in enumerate(search_items, start=1):
-            if "og:description" in search_item["pagemap"]["metatags"][0]:
-                long_description = \
-                    search_item["pagemap"]["metatags"][0]["og:description"]
-            else:
-                long_description = "N/A"
-            # Get the page title
-            title = search_item.get("title")
-            # Page snippet
-            snippet = search_item.get("snippet")
+            # Iterate over 10 results found
+            for i, search_item in enumerate(search_items, start=1):
+                if "og:description" in search_item["pagemap"]["metatags"][0]:
+                    long_description = \
+                        search_item["pagemap"]["metatags"][0]["og:description"]
+                else:
+                    long_description = "N/A"
+                # Get the page title
+                title = search_item.get("title")
+                # Page snippet
+                snippet = search_item.get("snippet")
 
-            # Extract the page url
-            link = search_item.get("link")
-            response = {
-                "Result_id": i,
-                "Title": title,
-                "Description": snippet,
-                "Long_description": long_description,
-                "URL": link
-            }
-            responses.append(response)
+                # Extract the page url
+                link = search_item.get("link")
+                response = {
+                    "Result_id": i,
+                    "Title": title,
+                    "Description": snippet,
+                    "Long_description": long_description,
+                    "URL": link
+                }
+                responses.append(response)
+        else:
+            responses.append({"erro": "google search failed."})
 
     except requests.RequestException:
         responses.append({"erro": "google search failed."})
