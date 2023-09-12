@@ -21,16 +21,16 @@ def main(model_type=None) -> None:
     task_prompt = "Develop a trading bot for the stock market."
 
     model_config_description = ChatGPTConfig()
-    role_description_agent = RoleAssignmentAgent(
+    role_assignment_agent = RoleAssignmentAgent(
         model=model_type, model_config=model_config_description)
 
-    role_description_dict = role_description_agent.run(task_prompt=task_prompt,
-                                                       num_roles=4)
+    role_description_dict = role_assignment_agent.run(task_prompt=task_prompt,
+                                                      num_roles=4)
 
     num_subtasks = 6
 
-    subtasks = role_description_agent.split_tasks(task_prompt, num_subtasks,
-                                                  role_description_dict)
+    subtasks = role_assignment_agent.split_tasks(task_prompt, num_subtasks,
+                                                 role_description_dict)
 
     if subtasks is None:
         raise ValueError("subtasks is None.")
