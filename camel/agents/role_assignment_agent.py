@@ -145,6 +145,8 @@ class RoleAssignmentAgent(ChatAgent):
         """
         role_descriptions_dict = (role_descriptions_dict
                                   or self.role_descriptions_dict)
+        if role_descriptions_dict is None:
+            raise ValueError("role_descriptions_dict is None.")
         role_names = list(role_descriptions_dict.keys())
 
         task_prompt = TextPrompt("===== TASK =====\n" + task_prompt + "\n\n")
@@ -173,14 +175,14 @@ class RoleAssignmentAgent(ChatAgent):
         subtasks_generation_msg = BaseMessage.make_user_message(
             role_name="Task Splitter", content=subtasks_generation)
 
-        response = super().step(input_message=subtasks_generation_msg)
+        response = self.step(input_message=subtasks_generation_msg)
 
         msg = response.msg  # type: BaseMessage
         terminated = response.terminated
 
         # Distribute the output completions into subtasks
         subtasks = [
-            desc.replace("<|", "").replace("|>", "")
+            desc.replace("<", "").replace("|", "")
             for desc in re.findall(r"Content of subtask \d: (.+?)(?=\n|$)",
                                    msg.content, re.DOTALL)
         ]
@@ -193,3 +195,98 @@ class RoleAssignmentAgent(ChatAgent):
 
         self.subtasks = subtasks
         return subtasks
+
+    @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
+    def evaluate_role_compatibility(
+        self,
+        subtask_prompt: Union[str, TextPrompt],
+        role_descriptions_dict: Optional[Dict[str, str]] = None,
+    ) -> None:
+        r"""Evaluate the compatibility scores of each role in relation to the
+            specified task.
+
+            Args:
+                subtask_prompt (Union[str, TextPrompt]): The prompt for the
+                    subtask based on which the roles are to be evaluated.
+                role_descriptions_dict (Optional[Dict[str, str]], optional):
+                    The role descriptions of each role. (default: :obj:`None`)
+
+            Returns:
+                None
+        """
+        role_descriptions_dict = (role_descriptions_dict
+                                  or self.role_descriptions_dict)
+        if role_descriptions_dict is None:
+            raise ValueError("role_descriptions_dict is None.")
+        role_names = list(role_descriptions_dict.keys())
+
+        compatibility_instruction_prompt = TextPrompt(
+            "===== INSTRUCTIONS OF COMPATIBILITY EVALUATION =====\n" +
+            "To evaluate the compatibility scores, consider these guiding " +
+            "principles:\n" +
+            "1. Assess the alignment between the primary responsibilities " +
+            "and expertise of the role with the task requirements. Factor " +
+            "in the likelihood of the role successfully executing the task " +
+            "based on its competencies.\n" +
+            "2. Analyze the congruence between keywords or key concepts in " +
+            "the task description and those present in the role " +
+            "description. This will gauge the direct relevance of the role " +
+            "to the task.\n" +
+            "3. Drawing from a comprehensive knowledge base, ascertain the " +
+            "potential value each role brings to the table when it comes to " +
+            "accomplishing the specific task. This evaluation should be " +
+            "based on empirical data or established norms in the relevant " +
+            "domain.\n\n")
+        task_prompt = TextPrompt("===== TASK =====\n" + subtask_prompt +
+                                 "\n\n")
+        role_with_description_prompt = \
+            "===== ROLES WITH DESCRIPTION =====\n" + "\n".join(
+                f"{role_name}:\n{role_descriptions_dict[role_name]}\n"
+                for role_name in role_names) + "\n\n"
+        answer_prompt = \
+            "===== ANSWER TEMPLATE =====\n" + "\n".join(
+                f"Explanation for role {role_name}: <BLANK>\n"
+                f"Score of role {role_name}: <BLANK>\n"
+                for role_name in role_names) + "\n\n"
+        compatibility_scoring_prompt = TextPrompt(
+            "You are a compatibility scorer, and you're in asked with " +
+            "evaluating/calculating/generating the compatibility of each role "
+            +
+            "relative to a specific task (the score is an integer from 0 to " +
+            "100). In your team consists of {num_roles} domain experts each " +
+            "contributing to the TASK. Your answer MUST adhere to the format" +
+            "of ANSWER TEMPLATE, and ONLY answer the content of subtask" +
+            "without roles in BLANKs.\n\n" + answer_prompt +
+            compatibility_instruction_prompt + task_prompt +
+            role_with_description_prompt)
+
+        compatibility_scoring = compatibility_scoring_prompt.format(
+            num_roles=len(role_names))
+
+        compatibility_scoring_msg = BaseMessage.make_user_message(
+            role_name="Compatibility Scorer", content=compatibility_scoring)
+
+        response = self.step(input_message=compatibility_scoring_msg)
+
+        msg = response.msg  # type: BaseMessage
+        terminated = response.terminated
+
+        # Distribute the output completions into scores
+        role_compatibility_scores = [
+            desc.replace("<", "").replace(">", "") for desc in re.findall(
+                r"Score of role .+?: (.+?)(?=\n|$)", msg.content, re.DOTALL)
+        ]
+
+        if len(role_compatibility_scores) != len(role_names):
+            raise RuntimeError("Got None or insufficient information of " +
+                               "role compatibility scores.")
+        if terminated:
+            raise RuntimeError("Role compatibility scoring failed.")
+
+        role_compatibility_scores_dict = {
+            role_name: score
+            for role_name, score in zip(role_names, role_compatibility_scores)
+        }
+
+        self.role_compatibility_scores_dict = role_compatibility_scores_dict
+        return role_compatibility_scores_dict
