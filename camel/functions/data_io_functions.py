@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-
 import json
 import re
 from abc import ABC, abstractmethod
@@ -35,6 +34,15 @@ class File(ABC):
         metadata: Optional[Dict[str, Any]] = None,
         docs: Optional[List[Dict[str, Any]]] = None,
     ):
+        """
+        Args:
+            name (str): The name of the file.
+            id (str): The unique identifier of the file.
+            metadata (Dict[str, Any], optional):
+            Additional metadata associated with the file. Defaults to None.
+            docs (List[Dict[str, Any]], optional):
+            A list of documents contained within the file. Defaults to None.
+        """
         self.name = name
         self.id = id
         self.metadata = metadata or {}
@@ -43,7 +51,16 @@ class File(ABC):
     @classmethod
     @abstractmethod
     def from_bytes(cls, file: BytesIO) -> "File":
-        """Creates a File from a BytesIO object"""
+        """
+        Creates a File object from a BytesIO object.
+
+        Args:
+            file (BytesIO):
+            A BytesIO object representing the contents of the file.
+
+        Returns:
+            File: A File object.
+        """
 
     def __repr__(self) -> str:
         return (f"File(name={self.name}, id={self.id}, "
@@ -64,7 +81,15 @@ class File(ABC):
 
 
 def strip_consecutive_newlines(text: str) -> str:
-    """Strips consecutive newlines from a string"""
+    """
+    Strips consecutive newlines from a string.
+
+    Args:
+        text (str): The string to strip.
+
+    Returns:
+        str: The string with consecutive newlines stripped.
+    """
     return re.sub(r"\s*\n\s*", "\n", text)
 
 
@@ -72,6 +97,16 @@ class DocxFile(File):
 
     @classmethod
     def from_bytes(cls, file: BytesIO) -> "DocxFile":
+        """
+        Creates a DocxFile object from a BytesIO object.
+
+        Args:
+            file (BytesIO):
+            A BytesIO object representing the contents of the docx file.
+
+        Returns:
+            DocxFile: A DocxFile object.
+        """
         # Use docx2txt to extract text from docx files
         text = docx2txt.process(file)
         text = strip_consecutive_newlines(text)
@@ -88,6 +123,16 @@ class PdfFile(File):
 
     @classmethod
     def from_bytes(cls, file: BytesIO) -> "PdfFile":
+        """
+        Creates a PdfFile object from a BytesIO object.
+
+        Args:
+            file (BytesIO):
+            A BytesIO object representing the contents of the pdf file.
+
+        Returns:
+            PdfFile: A PdfFile object.
+        """
         # Use fitz to extract text from pdf files
         pdf = fitz.open(stream=file.read(), filetype="pdf")
         docs = []
@@ -108,6 +153,16 @@ class TxtFile(File):
 
     @classmethod
     def from_bytes(cls, file: BytesIO) -> "TxtFile":
+        """
+        Creates a TxtFile object from a BytesIO object.
+
+        Args:
+            file (BytesIO):
+            A BytesIO object representing the contents of the txt file.
+
+        Returns:
+            TxtFile: A TxtFile object.
+        """
         # Read the text from the file
         text = file.read().decode("utf-8")
         text = strip_consecutive_newlines(text)
@@ -124,6 +179,16 @@ class JsonFile(File):
 
     @classmethod
     def from_bytes(cls, file: BytesIO) -> "JsonFile":
+        """
+        Creates a JsonFile object from a BytesIO object.
+
+        Args:
+            file (BytesIO):
+            A BytesIO object representing the contents of the json file.
+
+        Returns:
+            JsonFile: A JsonFile object.
+        """
         # Parse the JSON data from the file
         data = json.load(file)
         # Create a dictionary with the parsed data
@@ -139,6 +204,16 @@ class HtmlFile(File):
 
     @classmethod
     def from_bytes(cls, file: BytesIO) -> "HtmlFile":
+        """
+        Creates a HtmlFile object from a BytesIO object.
+
+        Args:
+            file (BytesIO):
+            A BytesIO object representing the contents of the html file.
+
+        Returns:
+            HtmlFile: A HtmlFile object.
+        """
         # Parse the HTML data from the file
         soup = BeautifulSoup(file, "html.parser")
         text = soup.get_text()
@@ -153,7 +228,15 @@ class HtmlFile(File):
 
 
 def read_file(file: BytesIO) -> File:
-    """Reads an uploaded file and returns a File object"""
+    """
+    Reads an uploaded file and returns a File object.
+
+    Args:
+        file (BytesIO): A BytesIO object representing the contents of the file.
+
+    Returns:
+        File: A File object.
+    """
     # Determine the file type based on the file extension
     if file.name.lower().endswith(".docx"):
         return DocxFile.from_bytes(file)
