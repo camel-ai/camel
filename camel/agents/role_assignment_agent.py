@@ -212,7 +212,8 @@ class RoleAssignmentAgent(ChatAgent):
                     The role descriptions of each role. (default: :obj:`None`)
 
             Returns:
-                None
+                Dict[str, int]: A dictionary mapping role names to their
+                    compatibility scores.
         """
         role_descriptions_dict = (role_descriptions_dict
                                   or self.role_descriptions_dict)
