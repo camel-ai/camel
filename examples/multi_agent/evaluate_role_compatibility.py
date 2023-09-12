@@ -63,6 +63,22 @@ def main(model_type=None) -> None:
          "risk management best practices.")
     }
     one_subtask = "Collect and preprocess market data."
+    explanation = (
+        "The purpose of COMPATIBILITY EVALUATION is to assist users in "
+        "determining the suitability of a specific role for a given task. It "
+        "evaluates the alignment of a role's primary responsibilities and "
+        "expertise with the requirements of a task. By assessing the "
+        "congruence between keywords or core concepts in both the task and "
+        "role descriptions, as well as drawing on empirical data or "
+        "established norms from the relevant domain, this evaluation offers "
+        "in-depth insights into the level of compatibility between a role and "
+        "a task."
+        "\n"
+        "Application scenarios include, but are not limited to: companies "
+        "assigning appropriate team members to specific projects or tasks, HR "
+        "departments matching employees with job positions, and ensuring "
+        "optimal utilization of each individual's skills and knowledge in "
+        "collaborative environments.")
 
     model_config_description = ChatGPTConfig()
     role_assignment_agent = RoleAssignmentAgent(
@@ -71,10 +87,6 @@ def main(model_type=None) -> None:
     role_compatibility_scores_dict = (
         role_assignment_agent.evaluate_role_compatibility(
             one_subtask, role_description_dict))
-
-    print(Fore.YELLOW + f"One specific subtask prompt:\n{one_subtask}\n")
-    for (role_name, score) in role_compatibility_scores_dict.items():
-        print(Fore.GREEN + f"Score of {role_name}: {score}")
 
     if role_compatibility_scores_dict is None:
         raise ValueError("role_compatibility_scores_dict is None.")
@@ -85,6 +97,11 @@ def main(model_type=None) -> None:
                          f"({len_role_compatibility_scores_dict}) "
                          f"does not equal to length of role_description_dict "
                          f"({len_role_description_dict}).")
+
+    print(Fore.BLUE + f"{explanation}\n")
+    print(Fore.YELLOW + f"One specific subtask prompt:\n{one_subtask}\n")
+    for (role_name, score) in role_compatibility_scores_dict.items():
+        print(Fore.GREEN + f"Score of {role_name}: {score}")
 
 
 if __name__ == "__main__":
