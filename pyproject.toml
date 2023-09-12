@@ -138,6 +138,8 @@ module = [
     "huggingface_hub.utils._errors",
     "wikipedia",
     "jsonschema.*",
-    "bs4.*"
+    "bs4.*",
+    "docx2txt",
+    "PyMuPDF"
 ]
 ignore_missing_imports = true
