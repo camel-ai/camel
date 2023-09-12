@@ -37,7 +37,6 @@ bs4 = "^0"
 protobuf = "^4"
 docx2txt = "^0.8" 
 PyMuPDF = "^1.22.5"  
-fitz = "^0"
 pathlib = "^1.0.1"   
 
 transformers = { version = "^4", optional = true }
