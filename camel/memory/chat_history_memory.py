@@ -12,14 +12,12 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-import pickle
-from dataclasses import asdict
 from typing import List, Optional
 
-from camel.memory.base_memory import BaseMemory
+from camel.memory.base_memory import BaseMemory, MemoryRecord
 from camel.memory.dict_storage.base import BaseDictStorage
 from camel.memory.dict_storage.in_memory import InMemoryDictStorage
-from camel.messages.base import BaseMessage
+from camel.typing import OpenAIBackendRole
 
 
 class ChatHistoryMemory(BaseMemory):
@@ -50,16 +48,10 @@ class ChatHistoryMemory(BaseMemory):
         self.storage = storage or InMemoryDictStorage()
         self.window_size = window_size
 
-    def read(self,
-             current_state: Optional[BaseMessage] = None) -> List[BaseMessage]:
+    def retrieve(self) -> List[MemoryRecord]:
         """
         Retrieves chat messages from the memory based on the window size or
         fetches the entire chat history if no window size is specified.
-
-        Args:
-            current_state (Optional[BaseMessage], optional): This argument is
-                available due to the base class but is not utilized in this
-                method.
 
         Returns:
             List[BaseMessage]: A list of chat messages retrieved from the
@@ -69,28 +61,24 @@ class ChatHistoryMemory(BaseMemory):
             ValueError: If the memory is empty or if the first message is not a
                 system message.
         """
-        history_messages = []
-        for msg_dict in self.storage.load():
-            if "__class__" in msg_dict.keys():
-                cls = pickle.loads(msg_dict["__class__"])
-                msg_dict.pop("__class__")
-                history_messages.append(cls(**msg_dict))
-            else:
-                history_messages.append(BaseMessage(**msg_dict))
-
-        if len(history_messages) == 0:
+        record_dicts = self.storage.load()
+        if len(record_dicts) == 0:
             raise ValueError("The ChatHistoryMemory is empty.")
-        if history_messages[0].meta_dict["role_at_backend"] != "system":
-            raise ValueError(
-                "The first message in ChatHistoryMemory should be a system "
-                "message.")
-        if self.window_size is not None and len(
-                history_messages) > self.window_size + 1:
-            history_messages = (history_messages[0:1] +
-                                history_messages[-self.window_size:])
-        return history_messages
 
-    def write(self, msgs: List[BaseMessage]) -> None:
+        system_record = MemoryRecord.from_dict(record_dicts[0])
+        if system_record.role_at_backend != OpenAIBackendRole.SYSTEM:
+            raise ValueError(
+                "The first record in ChatHistoryMemory should contain a system"
+                " message.")
+
+        chat_records: List[MemoryRecord] = []
+        truncate_idx = 1 if self.window_size is None else -self.window_size
+        for record_dict in record_dicts[truncate_idx:]:
+            chat_records.append(MemoryRecord.from_dict(record_dict))
+
+        return [system_record] + chat_records
+
+    def write_records(self, records: List[MemoryRecord]) -> None:
         """
         Writes chat messages to the memory. Additionally, performs validation
         checks on the messages.
@@ -102,20 +90,10 @@ class ChatHistoryMemory(BaseMemory):
             ValueError: If the message metadata does not contain
                 :obj:`role_at_backend` or if it has an unsupported role.
         """
-        stored_msgs = []
-        for m in msgs:
-            if "role_at_backend" not in m.meta_dict:
-                raise ValueError(
-                    "Messages storing in ChatHistoryMemory should have "
-                    "\"role_at_backend\" key in meta_dict.")
-            role = m.meta_dict["role_at_backend"]
-            if role not in ['system', 'user', 'assistant', 'function']:
-                raise ValueError(f"Unsupported role \"{role}\".")
-            msg_dict = asdict(m)
-            if type(m) != BaseMessage:
-                msg_dict["__class__"] = pickle.dumps(m.__class__)
-            stored_msgs.append(msg_dict)
-        self.storage.save(stored_msgs)
+        stored_records = []
+        for record in records:
+            stored_records.append(record.to_dict())
+        self.storage.save(stored_records)
 
     def clear(self) -> None:
         """

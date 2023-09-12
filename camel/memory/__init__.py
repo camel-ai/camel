@@ -14,8 +14,6 @@
 
 from .base_memory import BaseMemory
 from .chat_history_memory import ChatHistoryMemory
+from .memory_record import MemoryRecord
 
-__all__ = [
-    'BaseMemory',
-    'ChatHistoryMemory',
-]
+__all__ = ['BaseMemory', 'ChatHistoryMemory', 'MemoryRecord']

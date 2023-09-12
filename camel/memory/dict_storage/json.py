@@ -17,7 +17,13 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from camel.memory.dict_storage.base import BaseDictStorage
-from camel.typing import ModelType, RoleType, TaskType, VectorDistance
+from camel.typing import (
+    ModelType,
+    OpenAIBackendRole,
+    RoleType,
+    TaskType,
+    VectorDistance,
+)
 
 
 class _CamelJSONEncoder(json.JSONEncoder):
@@ -29,6 +35,7 @@ class _CamelJSONEncoder(json.JSONEncoder):
         "RoleType": RoleType,
         "TaskType": TaskType,
         "ModelType": ModelType,
+        "OpenAIBackendRole": OpenAIBackendRole,
         "VectorDistance": VectorDistance,
     }
 

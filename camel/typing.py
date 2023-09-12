@@ -130,4 +130,13 @@ class VectorDistance(Enum):
     EUCLIDEAN = 3
 
 
-__all__ = ['RoleType', 'ModelType', 'TaskType', 'VectorDistance']
+class OpenAIBackendRole(Enum):
+    ASSISTANT = "assistant"
+    SYSTEM = "system"
+    USER = "user"
+    FUNCTION = "function"
+
+
+__all__ = [
+    'RoleType', 'ModelType', 'TaskType', 'OpenAIBackendRole', 'VectorDistance'
+]

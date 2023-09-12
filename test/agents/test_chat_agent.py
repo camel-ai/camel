@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from dataclasses import replace
 from typing import List
 
 import pytest
@@ -21,8 +20,9 @@ from camel.agents.chat_agent import FunctionCallingRecord
 from camel.configs import ChatGPTConfig, FunctionCallingConfig
 from camel.functions import MATH_FUNCS
 from camel.generators import SystemMessageGenerator
+from camel.memory import MemoryRecord
 from camel.messages import BaseMessage
-from camel.typing import ModelType, RoleType, TaskType
+from camel.typing import ModelType, OpenAIBackendRole, RoleType, TaskType
 
 parametrize = pytest.mark.parametrize('model', [
     ModelType.STUB,
@@ -58,34 +58,57 @@ def test_chat_agent(model: ModelType):
 
 
 @pytest.mark.model_backend
-def test_chat_agent_chat_history_memory():
-    system_msg = BaseMessage(
-        role_name="assistant",
-        role_type=RoleType.ASSISTANT,
-        content="You are a help assistant.",
-    )
-    expected_memory_msg = [
-        replace(system_msg, meta_dict={"role_at_backend": "system"})
-    ]
+def test_chat_agent_stored_messages():
+    system_msg = BaseMessage(role_name="assistant",
+                             role_type=RoleType.ASSISTANT, meta_dict=None,
+                             content="You are a help assistant.")
     assistant = ChatAgent(system_msg)
-    assert assistant.memory.read() == expected_memory_msg
 
-    user_msg = BaseMessage(
-        role_name="User",
-        role_type=RoleType.USER,
-        meta_dict={"role_at_backend": "user"},
-        content="Tell me a joke.",
+    expected_memory = [
+        MemoryRecord(system_msg, OpenAIBackendRole.SYSTEM).to_dict()
+    ]
+    memory_content = [
+        record.to_dict() for record in assistant.memory.retrieve()
+    ]
+    assert memory_content == expected_memory
+
+    user_msg = BaseMessage(role_name="User", role_type=RoleType.USER,
+                           meta_dict=dict(), content="Tell me a joke.")
+    assistant.update_memory(user_msg, OpenAIBackendRole.USER)
+    expected_memory = [
+        MemoryRecord(system_msg, OpenAIBackendRole.SYSTEM).to_dict(),
+        MemoryRecord(user_msg, OpenAIBackendRole.USER).to_dict(),
+    ]
+    memory_content = [
+        record.to_dict() for record in assistant.memory.retrieve()
+    ]
+    assert memory_content == expected_memory
+
+
+@pytest.mark.model_backend
+def test_chat_agent_messages_window():
+    system_msg = BaseMessage(role_name="assistant",
+                             role_type=RoleType.ASSISTANT, meta_dict=None,
+                             content="You are a help assistant.")
+    assistant = ChatAgent(
+        system_message=system_msg,
+        model=ModelType.GPT_3_5_TURBO,
+        message_window_size=1,
     )
-    assistant.memory.write([user_msg])
 
-    expected_memory_msg.append(user_msg)
-    assert assistant.memory.read() == expected_memory_msg
+    user_msg = BaseMessage(role_name="User", role_type=RoleType.USER,
+                           meta_dict=dict(), content="Tell me a joke.")
+    user_record = MemoryRecord(user_msg, OpenAIBackendRole.USER)
+
+    assistant.memory.write_records([user_record] * 5)
+    openai_messages, _ = assistant.preprocess_messages()
+    assert len(openai_messages) == 2
 
 
 @pytest.mark.model_backend
 def test_chat_agent_step_exceed_token_number():
     system_msg = BaseMessage(role_name="assistant",
-                             role_type=RoleType.ASSISTANT,
+                             role_type=RoleType.ASSISTANT, meta_dict=None,
                              content="You are a help assistant.")
     assistant = ChatAgent(
         system_message=system_msg,
@@ -95,11 +118,11 @@ def test_chat_agent_step_exceed_token_number():
 
     user_msg = BaseMessage(role_name="User", role_type=RoleType.USER,
                            meta_dict=dict(), content="Tell me a joke.")
+    user_record = MemoryRecord(user_msg, OpenAIBackendRole.USER)
+    system_record = MemoryRecord(system_msg, OpenAIBackendRole.SYSTEM)
+    records = [system_record, user_record]
 
-    expect_openai_messages = [
-        system_msg.to_openai_system_message(),
-        user_msg.to_openai_user_message(),
-    ]
+    expect_openai_messages = [record.to_openai_message() for record in records]
     expect_num_tokens = assistant.model_backend.count_tokens_from_messages(
         expect_openai_messages)
 
@@ -113,7 +136,7 @@ def test_chat_agent_step_exceed_token_number():
 @pytest.mark.parametrize('n', [1, 2, 3])
 def test_chat_agent_multiple_return_messages(n):
     model_config = ChatGPTConfig(temperature=1.4, n=n)
-    system_msg = BaseMessage("Assistant", RoleType.ASSISTANT,
+    system_msg = BaseMessage("Assistant", RoleType.ASSISTANT, meta_dict=None,
                              content="You are a helpful assistant.")
     assistant = ChatAgent(system_msg, model_config=model_config)
     assistant.reset()
@@ -128,7 +151,7 @@ def test_chat_agent_multiple_return_messages(n):
 @pytest.mark.parametrize('n', [2])
 def test_chat_agent_multiple_return_message_error(n):
     model_config = ChatGPTConfig(temperature=1.4, n=n)
-    system_msg = BaseMessage("Assistant", RoleType.ASSISTANT,
+    system_msg = BaseMessage("Assistant", RoleType.ASSISTANT, meta_dict=None,
                              content="You are a helpful assistant.")
 
     assistant = ChatAgent(system_msg, model_config=model_config)
@@ -146,7 +169,7 @@ def test_chat_agent_multiple_return_message_error(n):
 
 @pytest.mark.model_backend
 def test_chat_agent_stream_output():
-    system_msg = BaseMessage("Assistant", RoleType.ASSISTANT,
+    system_msg = BaseMessage("Assistant", RoleType.ASSISTANT, meta_dict=None,
                              content="You are a helpful assistant.")
     user_msg = BaseMessage(role_name="User", role_type=RoleType.USER,
                            meta_dict=dict(), content="Tell me a joke.")
@@ -169,7 +192,7 @@ def test_chat_agent_stream_output():
 @pytest.mark.model_backend
 def test_set_output_language():
     system_message = BaseMessage(role_name="assistant",
-                                 role_type=RoleType.ASSISTANT,
+                                 role_type=RoleType.ASSISTANT, meta_dict=None,
                                  content="You are a help assistant.")
     agent = ChatAgent(system_message=system_message,
                       model=ModelType.GPT_3_5_TURBO)
@@ -184,7 +207,7 @@ def test_set_output_language():
 
     # Verify that the system message is updated with the new output language
     updated_system_message = BaseMessage(
-        role_name="assistant", role_type=RoleType.ASSISTANT,
+        role_name="assistant", role_type=RoleType.ASSISTANT, meta_dict=None,
         content="You are a help assistant."
         "\nRegardless of the input language, you must output text in Arabic.")
     assert agent.system_message.content == updated_system_message.content
@@ -193,7 +216,7 @@ def test_set_output_language():
 @pytest.mark.model_backend
 def test_set_multiple_output_language():
     system_message = BaseMessage(role_name="assistant",
-                                 role_type=RoleType.ASSISTANT,
+                                 role_type=RoleType.ASSISTANT, meta_dict=None,
                                  content="You are a help assistant.")
     agent = ChatAgent(system_message=system_message,
                       model=ModelType.GPT_3_5_TURBO)
@@ -204,7 +227,7 @@ def test_set_multiple_output_language():
     agent.set_output_language("English")
     agent.set_output_language("French")
     updated_system_message = BaseMessage(
-        role_name="assistant", role_type=RoleType.ASSISTANT,
+        role_name="assistant", role_type=RoleType.ASSISTANT, meta_dict=None,
         content="You are a help assistant."
         "\nRegardless of the input language, you must output text in French.")
     assert agent.system_message.content == updated_system_message.content
@@ -213,7 +236,7 @@ def test_set_multiple_output_language():
 @pytest.mark.model_backend
 def test_token_exceed_return():
     system_message = BaseMessage(role_name="assistant",
-                                 role_type=RoleType.ASSISTANT,
+                                 role_type=RoleType.ASSISTANT, meta_dict=None,
                                  content="You are a help assistant.")
     agent = ChatAgent(system_message=system_message,
                       model=ModelType.GPT_3_5_TURBO)
@@ -234,7 +257,7 @@ def test_token_exceed_return():
 @pytest.mark.model_backend
 def test_function_enabled():
     system_message = BaseMessage(role_name="assistant",
-                                 role_type=RoleType.ASSISTANT,
+                                 role_type=RoleType.ASSISTANT, meta_dict=None,
                                  content="You are a help assistant.")
     model_config = FunctionCallingConfig(
         functions=[func.as_dict() for func in MATH_FUNCS])
@@ -252,7 +275,7 @@ def test_function_enabled():
 @pytest.mark.model_backend
 def test_function_calling():
     system_message = BaseMessage(role_name="assistant",
-                                 role_type=RoleType.ASSISTANT,
+                                 role_type=RoleType.ASSISTANT, meta_dict=None,
                                  content="You are a help assistant.")
     model_config = FunctionCallingConfig(
         functions=[func.as_dict() for func in MATH_FUNCS])

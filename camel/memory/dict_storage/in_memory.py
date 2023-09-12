@@ -12,7 +12,6 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from copy import deepcopy
 from typing import Any, Dict, List
 
 from camel.memory.dict_storage.base import BaseDictStorage
@@ -29,10 +28,10 @@ class InMemoryDictStorage(BaseDictStorage):
         self.memory_list: List[Dict] = []
 
     def save(self, records: List[Dict[str, Any]]) -> None:
-        self.memory_list.extend(deepcopy(records))
+        self.memory_list.extend(records)
 
     def load(self) -> List[Dict[str, Any]]:
-        return deepcopy(self.memory_list)
+        return self.memory_list
 
     def clear(self) -> None:
         self.memory_list.clear()

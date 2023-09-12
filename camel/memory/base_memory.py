@@ -13,9 +13,9 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List
 
-from camel.messages.base import BaseMessage
+from camel.memory.memory_record import MemoryRecord
 
 
 class BaseMemory(ABC):
@@ -42,16 +42,9 @@ class BaseMemory(ABC):
     """
 
     @abstractmethod
-    def read(self,
-             current_state: Optional[BaseMessage] = None) -> List[BaseMessage]:
+    def retrieve(self) -> List[MemoryRecord]:
         """
         Retrieves messages from the memory based on the current state.
-
-        Args:
-            current_state (BaseMessage, optional): An incoming
-                message representing the current state. This may be utilized to
-                fetch messages from a vector database. If not required by the
-                memory, this parameter is ignored. (default: :obj:`None`)
 
         Returns:
             List[BaseMessage]: A list of messages retrieved from the memory.
@@ -59,7 +52,7 @@ class BaseMemory(ABC):
         ...
 
     @abstractmethod
-    def write(self, msgs: List[BaseMessage]) -> None:
+    def write_records(self, records: List[MemoryRecord]) -> None:
         """
         Writes messages to the memory, appending them to existing ones.
 

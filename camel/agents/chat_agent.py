@@ -24,10 +24,10 @@ from tenacity.wait import wait_exponential
 from camel.agents import BaseAgent
 from camel.configs import BaseConfig, ChatGPTConfig
 from camel.functions import OpenAIFunction
-from camel.memory import BaseMemory, ChatHistoryMemory
+from camel.memory import BaseMemory, ChatHistoryMemory, MemoryRecord
 from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
 from camel.models import BaseModelBackend, ModelFactory
-from camel.typing import ModelType, RoleType
+from camel.typing import ModelType, OpenAIBackendRole, RoleType
 from camel.utils import get_model_encoding, openai_api_key_required
 
 
@@ -166,7 +166,6 @@ class ChatAgent(BaseAgent):
             message (BaseMessage): The message to be set as the
                 new system message of this agent.
         """
-        message.meta_dict["role_at_backend"] = "system"
         self._system_message = message
 
     def is_function_calling_enabled(self) -> bool:
@@ -178,6 +177,16 @@ class ChatAgent(BaseAgent):
                 is empty.
         """
         return len(self.func_dict) > 0
+
+    def update_memory(self, message: BaseMessage,
+                      role: OpenAIBackendRole) -> None:
+        r"""Updates the agent memory with a new message.
+        Args:
+            message (BaseMessage): The new message to add to the stored
+                messages.
+            role (OpenAIBackendRole): The backend role type.
+        """
+        self.memory.write_records([MemoryRecord(message, role)])
 
     def set_output_language(self, output_language: str) -> BaseMessage:
         r"""Sets the output language for the system message. This method
@@ -229,7 +238,10 @@ class ChatAgent(BaseAgent):
         r"""Initializes the stored messages list with the initial system
         message.
         """
-        self.memory.write([self.system_message])
+        system_record = MemoryRecord(self.system_message,
+                                     OpenAIBackendRole.SYSTEM)
+        self.memory.clear()
+        self.memory.write_records([system_record])
 
     def submit_message(self, message: BaseMessage) -> None:
         r"""Submits the externally provided message as if it were an answer of
@@ -240,9 +252,8 @@ class ChatAgent(BaseAgent):
             message (BaseMessage): An external message to be added as an
                 assistant response.
         """
-        # self.stored_messages.append(ChatRecord('assistant', message))
-        message.meta_dict["role_at_backend"] = "assistant"
-        self.memory.write([message])
+        record = MemoryRecord(message, OpenAIBackendRole.ASSISTANT)
+        self.memory.write_records([record])
 
     @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     @openai_api_key_required
@@ -264,8 +275,8 @@ class ChatAgent(BaseAgent):
                 a boolean indicating whether the chat session has terminated,
                 and information about the chat session.
         """
-        input_message.meta_dict["role_at_backend"] = "user"
-        self.memory.write([input_message])
+        record = MemoryRecord(input_message, OpenAIBackendRole.USER)
+        self.memory.write_records([record])
 
         output_messages: List[BaseMessage]
         info: Dict[str, Any]
@@ -274,8 +285,7 @@ class ChatAgent(BaseAgent):
             # Format messages and get the token number
             openai_messages: Optional[List[OpenAIMessage]]
             num_tokens: int
-            openai_messages, num_tokens = self.preprocess_messages(
-                input_message)
+            openai_messages, num_tokens = self.preprocess_messages()
 
             # Terminate when number of tokens exceeds the limit
             if num_tokens >= self.model_token_limit:
@@ -299,9 +309,16 @@ class ChatAgent(BaseAgent):
                     self.step_function_call(response))
 
                 # Update the messages
-                func_assistant_msg.meta_dict["role_at_backend"] = "assistant"
-                func_result_msg.meta_dict["role_at_backend"] = "function"
-                self.memory.write([func_assistant_msg, func_result_msg])
+                func_assistant_record = MemoryRecord(
+                    func_assistant_msg,
+                    OpenAIBackendRole.ASSISTANT,
+                )
+                func_result_record = MemoryRecord(
+                    func_result_msg,
+                    OpenAIBackendRole.FUNCTION,
+                )
+                self.memory.write_records(
+                    [func_assistant_record, func_result_record])
                 called_funcs.append(func_record)
             else:
                 # Function calling disabled or chat stopped
@@ -316,27 +333,17 @@ class ChatAgent(BaseAgent):
 
         return ChatAgentResponse(output_messages, self.terminated, info)
 
-    def preprocess_messages(
-            self,
-            input_message: BaseMessage) -> Tuple[List[OpenAIMessage], int]:
-        r"""Truncate the list of messages if message window is defined and
-        the current length of message list is beyond the window size. Then
-        convert the list of messages to OpenAI's input format and calculate
-        the number of tokens.
-
-        Args:
-            messages (List[ChatRecord]): The list of structs containing
-                information about previous chat messages.
+    def preprocess_messages(self) -> Tuple[List[OpenAIMessage], int]:
+        r""" Convert the messages in the agent memory to OpenAI's input format
+        and calculate the number of tokens.
 
         Returns:
             tuple: A tuple containing the truncated list of messages in
                 OpenAI's input format and the number of tokens.
         """
-        messages = self.memory.read(input_message)
+        records = self.memory.retrieve()
         openai_messages: List[OpenAIMessage] = [
-            msg.to_openai_message(
-                role_at_backend=msg.meta_dict["role_at_backend"])
-            for msg in messages
+            record.to_openai_message() for record in records
         ]
         num_tokens = self.model_backend.count_tokens_from_messages(
             openai_messages)

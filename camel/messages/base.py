@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from camel.messages import (
@@ -21,7 +21,7 @@ from camel.messages import (
     OpenAIUserMessage,
 )
 from camel.prompts import CodePrompt, TextPrompt
-from camel.typing import RoleType
+from camel.typing import ModelType, RoleType
 
 
 @dataclass
@@ -40,26 +40,20 @@ class BaseMessage:
     """
     role_name: str
     role_type: RoleType
+    meta_dict: Optional[Dict[str, str]]
     content: str
-    meta_dict: Dict[str, str] = field(default_factory=dict)
 
     @classmethod
     def make_user_message(
             cls, role_name: str, content: str,
             meta_dict: Optional[Dict[str, str]] = None) -> 'BaseMessage':
-        if meta_dict is not None:
-            return cls(role_name, RoleType.USER, content, meta_dict)
-        else:
-            return cls(role_name, RoleType.USER, content)
+        return cls(role_name, RoleType.USER, meta_dict, content)
 
     @classmethod
     def make_assistant_message(
             cls, role_name: str, content: str,
             meta_dict: Optional[Dict[str, str]] = None) -> 'BaseMessage':
-        if meta_dict is not None:
-            return cls(role_name, RoleType.ASSISTANT, content, meta_dict)
-        else:
-            return cls(role_name, RoleType.ASSISTANT, content)
+        return cls(role_name, RoleType.ASSISTANT, meta_dict, content)
 
     def create_new_instance(self, content: str) -> "BaseMessage":
         r"""Create a new instance of the :obj:`BaseMessage` with updated
@@ -130,6 +124,23 @@ class BaseMessage:
                 :obj:`False` otherwise.
         """
         return item in self.content
+
+    def token_len(self, role_at_backend: str,
+                  model: ModelType = ModelType.GPT_3_5_TURBO) -> int:
+        r"""Calculate the token length of the message for the specified model.
+
+        Args:
+            role_at_backend (str): interpret this message as of a specified
+                role, so that the special tokens can be counted properly.
+            model (ModelType, optional): The model type to calculate the token
+                length. (default: :obj:`ModelType.GPT_3_5_TURBO`)
+
+        Returns:
+            int: The token length of the message.
+        """
+        from camel.utils import num_tokens_from_messages
+        return num_tokens_from_messages(
+            [self.to_openai_message(role_at_backend)], model)
 
     def extract_text_and_code_prompts(
             self) -> Tuple[List[TextPrompt], List[CodePrompt]]:

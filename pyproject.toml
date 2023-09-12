@@ -24,7 +24,7 @@ repository = "https://github.com/camel-ai/camel"
 documentation = "https://docs.camel-ai.org"
 
 [tool.poetry.dependencies]
-python = ">= 3.8.1, <3.12"
+python = "^3.8.1"
 numpy = "^1"
 openai = "^0"
 tenacity = "^8"
@@ -34,7 +34,6 @@ jsonschema = "^4"
 types-colorama = "^0"
 types-requests = "^2"
 bs4 = "^0"
-qdrant-client = "^1.4.0"
 protobuf = "^4"
 
 transformers = { version = "^4", optional = true }
@@ -136,6 +135,6 @@ module = [
     "huggingface_hub.utils._errors",
     "wikipedia",
     "jsonschema.*",
-    "bs4.*"
+    "bs4.*",
 ]
 ignore_missing_imports = true
