@@ -29,7 +29,7 @@ class BaseMemory(ABC):
     a subclass derived from :obj:`BaseMemory`.
 
     These instances, known as "memories", typically communicate using the
-    :obj:`BaseMessage` object. Usually, a memory has at least one "storage"
+    :obj:`MemoryRecord` object. Usually, a memory has at least one "storage"
     mechanism, allowing it to interface with various storage systems, such as
     disks or vector databases. Additionally, some memories might embed other
     memory instances, enabling them to function as a high-level controller

@@ -54,12 +54,12 @@ class ChatHistoryMemory(BaseMemory):
         fetches the entire chat history if no window size is specified.
 
         Returns:
-            List[BaseMessage]: A list of chat messages retrieved from the
+            List[MemoryRecord]: A list of memory records retrieved from the
                 memory.
 
         Raises:
-            ValueError: If the memory is empty or if the first message is not a
-                system message.
+            ValueError: If the memory is empty or if the first message in the
+                memory is not a system message.
         """
         record_dicts = self.storage.load()
         if len(record_dicts) == 0:
@@ -80,15 +80,12 @@ class ChatHistoryMemory(BaseMemory):
 
     def write_records(self, records: List[MemoryRecord]) -> None:
         """
-        Writes chat messages to the memory. Additionally, performs validation
+        Writes memory records to the memory. Additionally, performs validation
         checks on the messages.
 
         Args:
-            msgs (List[BaseMessage]): Messages to be added to the memory.
-
-        Raises:
-            ValueError: If the message metadata does not contain
-                :obj:`role_at_backend` or if it has an unsupported role.
+            msgs (List[MemoryRecord]): Memory records to be added to the
+                memory.
         """
         stored_records = []
         for record in records:
