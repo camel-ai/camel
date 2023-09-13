@@ -123,7 +123,7 @@ class ChatAgent(BaseAgent):
 
         self.model: ModelType = (model if model is not None else
                                  ModelType.GPT_3_5_TURBO)
-        self.memory = memory or ChatHistoryMemory(
+        self.memory: BaseMemory = memory or ChatHistoryMemory(
             window_size=message_window_size)
 
         self.func_dict: Dict[str, Callable] = {}
