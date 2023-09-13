@@ -70,6 +70,7 @@ class TaskSpecifyAgent(ChatAgent):
         system_message = BaseMessage(
             role_name="Task Specifier",
             role_type=RoleType.ASSISTANT,
+            meta_dict=None,
             content="You can make a task more specific.",
         )
 
@@ -142,6 +143,7 @@ class TaskPlannerAgent(ChatAgent):
         system_message = BaseMessage(
             role_name="Task Planner",
             role_type=RoleType.ASSISTANT,
+            meta_dict=None,
             content="You are a helpful task planner.",
         )
 
@@ -234,6 +236,7 @@ The number of each entry must be followed by a period. Be concise.""")
         system_message = BaseMessage(
             role_name="Task Creator",
             role_type=RoleType.ASSISTANT,
+            meta_dict=None,
             content="You are a helpful task creator.",
         )
 
@@ -339,6 +342,7 @@ Be concise.""")
         system_message = BaseMessage(
             role_name="Task Prioritizer",
             role_type=RoleType.ASSISTANT,
+            meta_dict=None,
             content="You are a helpful task prioritizer.",
         )
 

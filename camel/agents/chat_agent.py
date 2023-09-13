@@ -502,6 +502,7 @@ class ChatAgent(BaseAgent):
         assist_msg = FunctionCallingMessage(
             role_name=self.role_name,
             role_type=self.role_type,
+            meta_dict=None,
             content="",
             func_name=func_name,
             args=args,
@@ -509,6 +510,7 @@ class ChatAgent(BaseAgent):
         func_msg = FunctionCallingMessage(
             role_name=self.role_name,
             role_type=self.role_type,
+            meta_dict=None,
             content="",
             func_name=func_name,
             result=result,

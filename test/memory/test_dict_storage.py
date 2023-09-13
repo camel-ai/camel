@@ -15,12 +15,29 @@
 import tempfile
 from pathlib import Path
 
-from camel.memory.dict_storage import InMemoryDictStorage, JsonStorage
+import pytest
+
+from camel.memory.dict_storage import (
+    BaseDictStorage,
+    InMemoryDictStorage,
+    JsonStorage,
+)
 from camel.typing import RoleType
 
 
-def test_in_memory_storage():
-    in_memory = InMemoryDictStorage()
+@pytest.fixture
+def storage(request):
+    if request.param == "in-memory":
+        yield InMemoryDictStorage()
+    elif request.param == "json":
+        _, path = tempfile.mkstemp()
+        path = Path(path)
+        yield JsonStorage(path)
+        path.unlink()
+
+
+@pytest.mark.parametrize("storage", ["in-memory", "json"], indirect=True)
+def test_dict_storage(storage: BaseDictStorage):
     msg1 = {
         "key1": "value1",
         "role": RoleType.USER,
@@ -35,8 +52,8 @@ def test_in_memory_storage():
         "role": RoleType.ASSISTANT,
         "assistant_msg": "Ok",
     }
-    in_memory.save([msg1, msg2])
-    load_msg = in_memory.load()
+    storage.save([msg1, msg2])
+    load_msg = storage.load()
     assert load_msg[0] == msg1
     assert load_msg[1] == msg2
 
@@ -44,38 +61,6 @@ def test_in_memory_storage():
     msg1.clear()
     assert load_msg[0] == msg1_copy
 
-    in_memory.clear()
-    load_msg = in_memory.load()
+    storage.clear()
+    load_msg = storage.load()
     assert load_msg == []
-
-
-def test_json_storage():
-    _, path = tempfile.mkstemp()
-    path = Path(path)
-    json_storage = JsonStorage(path)
-    msg1 = {
-        "key1": "value1",
-        "role": RoleType.USER,
-        "message": "Do a task",
-        "additional_dict": {
-            "1": 1,
-            "2": 2
-        },
-    }
-    msg2 = {
-        "key1": "value2",
-        "role": RoleType.ASSISTANT,
-        "assistant_msg": "Ok",
-    }
-    json_storage.save([msg1, msg2])
-    assert path.read_text() != ""
-
-    load_msg = json_storage.load()
-    assert load_msg[0] == msg1
-    assert load_msg[1] == msg2
-
-    json_storage.clear()
-    load_msg = json_storage.load()
-    assert load_msg == []
-
-    path.unlink()

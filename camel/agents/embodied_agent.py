@@ -137,5 +137,5 @@ class EmbodiedAgent(ChatAgent):
         content = input_message.content + (Fore.RESET +
                                            f"\n> Embodied Actions:\n{content}")
         message = BaseMessage(input_message.role_name, input_message.role_type,
-                              content, input_message.meta_dict)
+                              input_message.meta_dict, content)
         return ChatAgentResponse([message], response.terminated, response.info)

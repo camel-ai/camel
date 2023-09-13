@@ -23,11 +23,13 @@ from camel.typing import RoleType
 def assistant_func_message() -> FunctionCallingMessage:
     role_name = "test_assistant"
     role_type = RoleType.ASSISTANT
+    meta_dict = None
     content = "test function message"
 
     return FunctionCallingMessage(
         role_name=role_name,
         role_type=role_type,
+        meta_dict=meta_dict,
         content=content,
         func_name="add",
         args={
@@ -41,11 +43,13 @@ def assistant_func_message() -> FunctionCallingMessage:
 def function_func_message() -> FunctionCallingMessage:
     role_name = "test_function"
     role_type = RoleType.ASSISTANT
+    meta_dict = None
     content = "test function message"
 
     return FunctionCallingMessage(
         role_name=role_name,
         role_type=role_type,
+        meta_dict=meta_dict,
         content=content,
         func_name="add",
         result=3,
