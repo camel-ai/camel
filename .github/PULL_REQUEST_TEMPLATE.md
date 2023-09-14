@@ -32,6 +32,7 @@ So that [explain the benefit or value this new functionality will bring]
 [Specify any dependencies that need to be resolved before working on this story]
 
 🤝 **Required Prerequisites:**
-- [ ] I have read the documentation <https://camel-ai.github.io/camel/camel.html>.
-- [ ] I have searched the [Issue Tracker](https://github.com/camel-ai/camel/issues) and [Discussions](https://github.com/camel-ai/camel/discussions) that this hasn't already been reported. (+1 or comment there if it has.)
-- [ ] Consider asking first in a [Discussion](https://github.com/camel-ai/camel/discussions/new).
+- [ ] I have read the [CONTRIBUTION](https://github.com/camel-ai/camel/blob/master/CONTRIBUTING.md) guide. (**required**)
+- [ ] My change requires a change to the documentation.
+- [ ] I have updated the tests accordingly. (*required for a bug fix or a new feature*)
+- [ ] I have updated the documentation accordingly.
