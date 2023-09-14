@@ -36,8 +36,8 @@ from camel.typing import ModelType, TaskType
 F = TypeVar('F', bound=Callable[..., Any])
 
 
-def openai_api_key_required(func: F) -> F:
-    r"""Decorator that checks if the OpenAI API key is available in the
+def api_key_required(func: F) -> F:
+    r"""Decorator that checks if the OpenAI/Anthropic API key is available in the
     environment variables.
 
     Args:
@@ -60,8 +60,16 @@ def openai_api_key_required(func: F) -> F:
             return func(self, *args, **kwargs)
         elif self.model.is_open_source:
             return func(self, *args, **kwargs)
-        elif 'OPENAI_API_KEY' in os.environ:
-            return func(self, *args, **kwargs)
+        elif self.model.is_anthropic:
+            if 'ANTHROPIC_API_KEY' in os.environ:
+                return func(self, *args, **kwargs)
+            else:
+                raise ValueError('Anthropic API key not found.')
+        elif self.model.is_openai:
+            if 'OPENAI_API_KEY' in os.environ:
+                return func(self, *args, **kwargs)
+            else:
+                raise ValueError('OpenAI API key not found.')
         else:
             raise ValueError('OpenAI API key not found.')
 

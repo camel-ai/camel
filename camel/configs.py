@@ -16,7 +16,7 @@ from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Optional, Sequence, Union
 
 from camel.functions import OpenAIFunction
-
+from anthropic._types import NotGiven, NOT_GIVEN
 
 @dataclass(frozen=True)
 class BaseConfig(ABC):
@@ -156,4 +156,33 @@ OPENAI_API_PARAMS = {param for param in asdict(ChatGPTConfig()).keys()}
 OPENAI_API_PARAMS_WITH_FUNCTIONS = {
     param
     for param in asdict(FunctionCallingConfig()).keys()
+}
+
+
+@dataclass(frozen=True)
+class AnthropicConfig(BaseConfig):
+    r"""Defines parameters for setting up anthropic models and includes
+    parameters to be passed to chat completion function of Anthropic API.
+
+    Args:
+        model_path (str): The path to a local folder containing the model
+            files or the model card in HuggingFace hub.
+        server_url (str): The URL to the server running the model inference
+            which will be used as the API base of OpenAI API.
+        api_params (ChatGPTConfig): An instance of :obj:ChatGPTConfig to
+            contain the arguments to be passed to OpenAI API.
+
+    See: https://docs.anthropic.com/claude/reference/complete_post
+    """
+    max_tokens_to_sample: int = 256
+    stop_sequences: List[str] | NotGiven = NOT_GIVEN
+    temperature: float = 1
+    top_p: float = 0.7
+    top_k: int = 5
+    metadata: NotGiven = NOT_GIVEN
+    stream: bool = False
+
+ANTHROPIC_API_PARAMS_WITH_FUNCTIONS = {
+    param
+    for param in asdict(AnthropicConfig()).keys()
 }

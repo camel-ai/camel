@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .python_interpreter import PythonInterpreter
 from .functions import (
-    openai_api_key_required,
+    api_key_required,
     print_text_animated,
     get_prompt_template_key_words,
     get_first_int,
@@ -26,11 +26,12 @@ from .token_counting import (
     BaseTokenCounter,
     OpenAITokenCounter,
     OpenSourceTokenCounter,
+    AnthropicTokenCounter
 )
 
 __all__ = [
     'count_tokens_openai_chat_models',
-    'openai_api_key_required',
+    'api_key_required',
     'print_text_animated',
     'get_prompt_template_key_words',
     'get_first_int',
@@ -42,4 +43,5 @@ __all__ = [
     'BaseTokenCounter',
     'OpenAITokenCounter',
     'OpenSourceTokenCounter',
+    'AnthropicTokenCounter'
 ]

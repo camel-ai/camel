@@ -34,6 +34,9 @@ class ModelType(Enum):
     VICUNA = "vicuna"
     VICUNA_16K = "vicuna-16k"
 
+    CLAUDE_2 = "claude-2"
+    CLAUDE_INSTANT = "claude-instant-1"
+
     @property
     def value_for_tiktoken(self) -> str:
         return self.value if self.name != "STUB" else "gpt-3.5-turbo"
@@ -66,6 +69,18 @@ class ModelType(Enum):
             return True
         else:
             return False
+    
+    @property
+    def is_anthropic(self) -> bool:
+        r"""Returns whether this type of models is Anthropic-released model.
+
+        Returns:
+            bool: Whether this type of models is anthropic.
+        """
+        if self.name in {"CLAUDE_2", "CLAUDE_INSTANT"}:
+            return True
+        else:
+            return False
 
     @property
     def token_limit(self) -> int:
@@ -90,6 +105,8 @@ class ModelType(Enum):
             return 2048
         elif self is ModelType.VICUNA_16K:
             return 16384
+        elif self in {ModelType.CLAUDE_2, ModelType.CLAUDE_INSTANT}:
+            return 100_000
         else:
             raise ValueError("Unknown model type")
 
