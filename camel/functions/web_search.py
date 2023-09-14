@@ -167,7 +167,7 @@ def create_chunks(text: str, n: int) -> List[str]:
     return chunks
 
 
-def single_step_agent(prompt: str) -> str:
+def prompt_single_step_agent(prompt: str) -> str:
     """Single step agent. Summarise texts or answer a question."""
 
     assistant_sys_msg = BaseMessage.make_assistant_message(
