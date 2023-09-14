@@ -1,37 +1,37 @@
-## Description
+💡 **User Story:**
+As a developer,
+I want to [describe the action or functionality you want to add]
+So that [explain the benefit or value this new functionality will bring]
 
-Describe your changes in detail.
-
-## Motivation and Context
-
-Why is this change required? What problem does it solve?
-If it fixes an open issue, please link to the issue here.
-You can use the syntax `close #15213` if this solves the issue #15213
-
-- [ ] I have raised an issue to propose this change ([required](https://github.com/camel-ai/camel/issues) for new features and bug fixes)
-
-## Types of changes
-
-What types of changes does your code introduce? Put an `x` in all the boxes that apply:
-
+🛒 **Types of Changes:**
 - [ ] Bug fix (non-breaking change which fixes an issue)
 - [ ] New feature (non-breaking change which adds core functionality)
 - [ ] Breaking change (fix or feature that would cause existing functionality to change)
 - [ ] Documentation (update in the documentation)
 - [ ] Example (update in the folder of example)
 
-## Implemented Tasks
+🚀 **Acceptance Criteria:**
+[Clearly define the conditions that must be met for the story to be considered complete]
+[List any specific requirements, features, or behaviors the new item should exhibit]
 
-- [ ] Subtask 1
-- [ ] Subtask 2
-- [ ] Subtask 3
+🔀 **Related User Stories:**
+- [List related user stories that contribute to this story]
+- [User Story 1]
+- [User Story 2]
 
-## Checklist
+🛠️ **Technical Details:**
+[Provide any technical specifications, tools, or frameworks that should be used]
+[If there are any constraints or limitations, mention them here]
 
-Go over all the following points, and put an `x` in all the boxes that apply.
-If you are unsure about any of these, don't hesitate to ask. We are here to help!
+📑 **Tasks:**
+[List specific tasks or steps required to implement the user story]
+[Break down the development process into manageable tasks]
+...
 
-- [ ] I have read the [CONTRIBUTION](https://github.com/camel-ai/camel/blob/master/CONTRIBUTING.md) guide. (**required**)
-- [ ] My change requires a change to the documentation.
-- [ ] I have updated the tests accordingly. (*required for a bug fix or a new feature*)
-- [ ] I have updated the documentation accordingly.
+🔑 **Dependencies:**
+[Specify any dependencies that need to be resolved before working on this story]
+
+🤝 **Required Prerequisites:**
+- [ ] I have read the documentation <https://camel-ai.github.io/camel/camel.html>.
+- [ ] I have searched the [Issue Tracker](https://github.com/camel-ai/camel/issues) and [Discussions](https://github.com/camel-ai/camel/discussions) that this hasn't already been reported. (+1 or comment there if it has.)
+- [ ] Consider asking first in a [Discussion](https://github.com/camel-ai/camel/discussions/new).
