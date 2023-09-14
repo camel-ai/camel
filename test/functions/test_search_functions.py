@@ -11,11 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import wikipedia
 import requests
+import wikipedia
 
-from camel.functions.search_functions import search_wiki, \
-    search_google_and_summarize
+from camel.functions.search_functions import (
+    search_google_and_summarize,
+    search_wiki,
+)
 
 
 def test_search_wiki_normal():

@@ -18,7 +18,6 @@ import requests
 from bs4 import BeautifulSoup
 
 import camel.agents
-
 from camel.functions import OpenAIFunction
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
@@ -290,6 +289,6 @@ def search_google_and_summarize(query: str) -> str:
 
 
 SEARCH_FUNCS: List[OpenAIFunction] = [
-    OpenAIFunction(func) for func in
-    [search_wiki, search_google_and_summarize, search_google]
+    OpenAIFunction(func)
+    for func in [search_wiki, search_google_and_summarize, search_google]
 ]
