@@ -95,7 +95,7 @@ def search_google(query: str) -> List[Dict[str, Any]]:
                 }
                 responses.append(response)
         else:
-            responses.append({"erro": "google search failed."})
+            responses.append({"error": "google search failed."})
 
     except requests.RequestException:
         responses.append({"erro": "google search failed."})
