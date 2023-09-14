@@ -245,7 +245,7 @@ def summarize_text(text: str, query: str) -> str:
 
     # Final summarise
     final_prompt = TextPrompt(
-        '''Here are some summarized texts which split from one text, Using the 
+        '''Here are some summarized texts which split from one text, Using the
         information to answer the question: {query}.\n\nText: ''')
     final_prompt = final_prompt.format(query=query)
     prompt = final_prompt + results
@@ -278,8 +278,8 @@ def search_google_and_summarize(query: str) -> str:
 
             # Let chatgpt decide whether to continue search or not
             prompt = TextPrompt(
-                '''Do you think the answer: {answer} can answer the query: {query}. 
-                Use only 'yes' or 'no' to answer.''')
+                '''Do you think the answer: {answer} can answer the query:
+                {query}. Use only 'yes' or 'no' to answer.''')
             prompt = prompt.format(answer=answer, query=query)
             reply = prompt_single_step_agent(prompt)
             if "yes" in str(reply).lower():
