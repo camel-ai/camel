@@ -30,7 +30,18 @@ def search_google(query: str) -> List[Dict[str, Any]]:
         query (string): The query to be searched.
 
     Returns:
-        List[Dict[str, Any]]: A list of dictionary objects, each of which
+        List[Dict[str, Any]]: A list of dictionaries where each dictionary represents a website. 
+            Each dictionary contains the following keys:
+            - 'title': The title of the website.
+            - 'description': A brief description of the website.
+            - 'url': The URL of the website.
+
+            Example:
+            {
+                'title': 'OpenAI',
+                'description': 'An organization focused on ensuring that artificial general intelligence benefits all of humanity.',
+                'url': 'https://www.openai.com'
+            }
         title, descrption, url of a website.
     """
     # https://developers.google.com/custom-search/v1/overview
