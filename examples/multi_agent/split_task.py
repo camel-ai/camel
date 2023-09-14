@@ -29,8 +29,9 @@ def main(model_type=None) -> None:
 
     num_subtasks = 6
 
-    subtasks = role_assignment_agent.split_tasks(task_prompt, num_subtasks,
-                                                 role_description_dict)
+    subtasks = role_assignment_agent.split_tasks(task_prompt,
+                                                 role_description_dict,
+                                                 num_subtasks)
 
     if subtasks is None:
         raise ValueError("subtasks is None.")
