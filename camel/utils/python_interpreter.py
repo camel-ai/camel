@@ -15,7 +15,7 @@ import ast
 import difflib
 import importlib
 import typing
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Optional
 
 
 class InterpreterError(ValueError):
@@ -165,6 +165,9 @@ class PythonInterpreter():
         elif isinstance(expression, ast.Call):
             # Function call -> return the value of the function call
             return self._execute_call(expression)
+        elif isinstance(expression, ast.Compare):
+            # Compare -> return True or False
+            return self._execute_condition(expression)
         elif isinstance(expression, ast.Constant):
             # Constant -> just return the value
             return expression.value
@@ -270,9 +273,11 @@ class PythonInterpreter():
             return value[int(index)]
         if index in value:
             return value[index]
-        if isinstance(index, str) and isinstance(value, Mapping):
-            close_matches = difflib.get_close_matches(index,
-                                                      list(value.keys()))
+        if isinstance(index, str) and isinstance(value, dict):
+            close_matches = difflib.get_close_matches(
+                index,
+                [key for key in list(value.keys()) if isinstance(key, str)],
+            )
             if len(close_matches) > 0:
                 return value[close_matches[0]]
 
@@ -286,7 +291,7 @@ class PythonInterpreter():
         else:
             raise InterpreterError(f"{name.ctx} is not supported.")
 
-    def _execute_condition(self, condition):
+    def _execute_condition(self, condition: ast.Compare):
         if len(condition.ops) > 1:
             raise InterpreterError(
                 "Cannot evaluate conditions with multiple operators")
