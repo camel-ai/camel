@@ -53,6 +53,7 @@ class RoleAssignmentAgent(ChatAgent):
         self,
         task_prompt: Union[str, TextPrompt],
         num_roles: int = 2,
+        role_names: Optional[List[str]] = None,
     ) -> Dict[str, str]:
         r"""Generate role names based on the input task prompt.
 
@@ -61,6 +62,8 @@ class RoleAssignmentAgent(ChatAgent):
                 for the task based on which the roles are to be generated.
             num_roles (int, optional): The number of roles to generate.
                 (default: :obj:`2`)
+            role_names (Optional[List[str]], optional): The names of the roles
+                to generate. (default: :obj:`None`)
 
         Returns:
             Dict[str, str]: A dictionary mapping role names to their
@@ -68,11 +71,24 @@ class RoleAssignmentAgent(ChatAgent):
         """
         self.reset()
 
+        if num_roles < 1:
+            raise ValueError("Number of roles must be greater than 0.")
+        if role_names is None and len(role_names) != num_roles:
+            raise RuntimeError(
+                "Got None or insufficient information of roles.")
+
         task_prompt = TextPrompt("===== TASK =====\n" + task_prompt + "\n\n")
-        expert_prompt = "===== ANSWER TEMPLATE =====\n" + "\n".join(
-            f"Domain expert {i + 1}: <BLANK>\n"
-            f"Associated competencies, characteristics, duties "
-            f"and workflows: <BLANK>. End." for i in range(num_roles or 0))
+        if role_names is None:
+            expert_prompt = "===== ANSWER TEMPLATE =====\n" + "\n".join(
+                f"Domain expert {i + 1}: <BLANK>\n"
+                f"Associated competencies, characteristics, duties "
+                f"and workflows: <BLANK>. End." for i in range(num_roles))
+        else:
+            expert_prompt = "===== ANSWER TEMPLATE =====\n" + "\n".join(
+                f"Domain expert {i + 1}: {role_name}\n"
+                f"Associated competencies, characteristics, duties "
+                f"and workflows: <BLANK>. End."
+                for i, role_name in enumerate(role_names))
         role_assignment_generation_prompt = TextPrompt(
             "You are a role assignment agent, and you're in charge of " +
             "recruiting {num_roles} experts, who may have identical roles " +
