@@ -15,8 +15,10 @@ from abc import ABC
 from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Optional, Sequence, Union
 
+from anthropic._types import NOT_GIVEN, NotGiven
+
 from camel.functions import OpenAIFunction
-from anthropic._types import NotGiven, NOT_GIVEN
+
 
 @dataclass(frozen=True)
 class BaseConfig(ABC):
@@ -181,6 +183,7 @@ class AnthropicConfig(BaseConfig):
     top_k: int = 5
     metadata: NotGiven = NOT_GIVEN
     stream: bool = False
+
 
 ANTHROPIC_API_PARAMS_WITH_FUNCTIONS = {
     param

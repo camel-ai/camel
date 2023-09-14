@@ -27,7 +27,7 @@ from camel.functions import OpenAIFunction
 from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.typing import ModelType, RoleType
-from camel.utils import get_model_encoding, api_key_required
+from camel.utils import api_key_required, get_model_encoding
 
 
 @dataclass(frozen=True)
@@ -274,7 +274,7 @@ class ChatAgent(BaseAgent):
         """
         self.stored_messages.append(ChatRecord('assistant', message))
 
-    # @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
+    @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     @api_key_required
     def step(
         self,

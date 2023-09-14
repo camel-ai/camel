@@ -37,8 +37,8 @@ F = TypeVar('F', bound=Callable[..., Any])
 
 
 def api_key_required(func: F) -> F:
-    r"""Decorator that checks if the OpenAI/Anthropic API key is available in the
-    environment variables.
+    r"""Decorator that checks if the OpenAI/Anthropic API key is available in
+     the environment variables.
 
     Args:
         func (callable): The function to be wrapped.

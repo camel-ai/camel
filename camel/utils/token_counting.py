@@ -66,7 +66,8 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
                 ret += role + ":"
         return ret
     elif model.is_anthropic:
-        from anthropic import HUMAN_PROMPT, AI_PROMPT
+        from anthropic import AI_PROMPT, HUMAN_PROMPT
+
         # use XML tag to decorate prompt
         # https://docs.anthropic.com/claude/docs/constructing-a-prompt#mark-different-parts-of-the-prompt
         # https://docs.anthropic.com/claude/docs/roleplay-dialogue
@@ -235,6 +236,7 @@ class OpenAITokenCounter(BaseTokenCounter):
 
 
 class AnthropicTokenCounter(BaseTokenCounter):
+
     def __init__(self, model_type: ModelType):
         r"""Constructor for the token counter for Anthropic models.
 
@@ -247,7 +249,7 @@ class AnthropicTokenCounter(BaseTokenCounter):
         self.model_type = model_type
         self.client = Anthropic()
         self.tokenizer = self.client.get_tokenizer()
-    
+
     def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
         r"""Count number of tokens in the provided message list using
         loaded tokenizer specific for this type of model.

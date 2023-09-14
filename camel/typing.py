@@ -69,7 +69,7 @@ class ModelType(Enum):
             return True
         else:
             return False
-    
+
     @property
     def is_anthropic(self) -> bool:
         r"""Returns whether this type of models is Anthropic-released model.

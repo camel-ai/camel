@@ -13,9 +13,10 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from colorama import Fore
 
+from camel.configs import AnthropicConfig
 from camel.societies import RolePlaying
 from camel.utils import print_text_animated
-from camel.configs import AnthropicConfig
+
 
 def main(model_type=None) -> None:
     task_prompt = "Develop a trading bot for the stock market"

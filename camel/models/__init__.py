@@ -21,7 +21,7 @@ from .model_factory import ModelFactory
 __all__ = [
     'BaseModelBackend',
     'OpenAIModel',
-    'AnthropicModel'
+    'AnthropicModel',
     'StubModel',
     'OpenSourceModel',
     'ModelFactory',

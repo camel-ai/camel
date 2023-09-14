@@ -14,9 +14,9 @@
 from typing import Any, Dict
 
 from camel.models import (
+    AnthropicModel,
     BaseModelBackend,
     OpenAIModel,
-    AnthropicModel,
     OpenSourceModel,
     StubModel,
 )
