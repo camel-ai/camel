@@ -321,10 +321,14 @@ class PythonInterpreter():
         elif isinstance(comparator, ast.NotIn):
             return left not in right
         else:
-            raise InterpreterError(f"Operator not supported: {comparator}")
+            raise InterpreterError(f"Unsupported operator: {comparator}")
 
     def _execute_if(self, if_statement: ast.If):
         result = None
+        if not isinstance(if_statement.test, ast.Compare):
+            raise InterpreterError(
+                "Only Campare expr supported in if statement, get"
+                f" {if_statement.test.__class__.__name__}")
         if self._execute_condition(if_statement.test):
             for line in if_statement.body:
                 line_result = self._execute_ast(line)
