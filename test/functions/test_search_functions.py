@@ -12,8 +12,10 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import wikipedia
+import requests
 
-from camel.functions.search_functions import search_wiki
+from camel.functions.search_functions import search_wiki, \
+    search_google_and_summarize
 
 
 def test_search_wiki_normal():
@@ -38,3 +40,25 @@ def test_search_wiki_with_ambiguity():
     expected_output = wikipedia.summary("New York (state)", sentences=5,
                                         auto_suggest=False)
     assert search_wiki("New York") == expected_output
+
+
+def test_google_api():
+    # Check the google search api
+
+    # https://developers.google.com/custom-search/v1/overview
+    GOOGLE_API_KEY = "AIzaSyAFATycX7C9SgqpeL5ciCZ7dFBsqIqLhtY"
+    # https://cse.google.com/cse/all
+    SEARCH_ENGINE_ID = "50393d7ebc1ef4bf9"
+
+    url = f"https://www.googleapis.com/customsearch/v1?" \
+          f"key={GOOGLE_API_KEY}&cx={SEARCH_ENGINE_ID}&q=any"
+    result = requests.get(url)
+
+    assert result.status_code == 200
+
+
+def test_web_search():
+    query = "What big things are happening in 2023?"
+    answer = search_google_and_summarize(query)
+
+    assert answer is not None

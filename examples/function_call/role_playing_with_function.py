@@ -17,7 +17,7 @@ from colorama import Fore
 
 from camel.agents.chat_agent import FunctionCallingRecord
 from camel.configs import ChatGPTConfig, FunctionCallingConfig
-from camel.functions import MATH_FUNCS, SEARCH_FUNCS, WEB_FUNCS
+from camel.functions import MATH_FUNCS, SEARCH_FUNCS
 from camel.societies import RolePlaying
 from camel.typing import ModelType
 from camel.utils import print_text_animated
@@ -29,7 +29,7 @@ def main(model_type=ModelType.GPT_4) -> None:
 
     user_model_config = ChatGPTConfig(temperature=0.0)
 
-    function_list = [*WEB_FUNCS, *MATH_FUNCS, *SEARCH_FUNCS]
+    function_list = [*MATH_FUNCS, *SEARCH_FUNCS]
     assistant_model_config = FunctionCallingConfig.from_openai_function_list(
         function_list=function_list,
         kwargs=dict(temperature=0.0),
