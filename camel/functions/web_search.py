@@ -20,7 +20,7 @@ from bs4 import BeautifulSoup
 import camel.agents
 from camel.messages import BaseMessage
 
-from .openai_function import OpenAIFunction
+from camel.functions import OpenAIFunction
 
 
 def search_google(query: str) -> List[Dict[str, Any]]:
