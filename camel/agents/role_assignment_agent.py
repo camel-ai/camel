@@ -54,6 +54,7 @@ class RoleAssignmentAgent(ChatAgent):
         task_prompt: Union[str, TextPrompt],
         num_roles: int = 2,
         role_names: Optional[List[str]] = None,
+        role_descriptions_instruction: Optional[Union[str, TextPrompt]] = None,
     ) -> Dict[str, str]:
         r"""Generate role names based on the input task prompt.
 
@@ -64,6 +65,8 @@ class RoleAssignmentAgent(ChatAgent):
                 (default: :obj:`2`)
             role_names (Optional[List[str]], optional): The names of the roles
                 to generate. (default: :obj:`None`)
+            role_descriptions_instruction (Optional[Union[str, TextPrompt]],
+                optional): The instruction for the role descriptions.
 
         Returns:
             Dict[str, str]: A dictionary mapping role names to their
@@ -80,22 +83,28 @@ class RoleAssignmentAgent(ChatAgent):
         task_prompt = TextPrompt("===== TASK =====\n" + task_prompt + "\n\n")
         if role_names is None:
             expert_prompt = "===== ANSWER TEMPLATE =====\n" + "\n".join(
-                f"Domain expert {i + 1}: <BLANK>\n"
+                f"Domain expert {i + 1}:\n<BLANK>\n"
                 f"Associated competencies, characteristics, and duties: "
-                f"<BLANK>.\nEnd." for i in range(num_roles))
+                f"<BLANK>.\nEnd." for i in range(num_roles)) + "\n\n"
         else:
             expert_prompt = "===== ANSWER TEMPLATE =====\n" + "\n".join(
                 f"Domain expert {i + 1}: {role_name}\n"
                 f"Associated competencies, characteristics, and duties: "
-                f"<BLANK>.\nEnd." for i, role_name in enumerate(role_names))
+                f"<BLANK>.\nEnd."
+                for i, role_name in enumerate(role_names)) + "\n\n"
+        if role_descriptions_instruction is None:
+            role_descriptions_instruction = ""
         role_assignment_generation_prompt = TextPrompt(
             "You are a role assignment agent, and you're in charge of " +
             "recruiting {num_roles} experts, who may have identical roles " +
             "but different names. Identify the domain experts you'd recruit " +
             "and detail descriptions, like their associated competencies, " +
-            "characteristics and duties to complete the task.\n " +
-            "Your answer MUST adhere to the format of ANSWER TEMPLATE, and " +
-            "ONLY answer the BLANKs.\n" + expert_prompt + task_prompt)
+            "characteristics and duties to complete the task. " +
+            "Moreover, " + role_descriptions_instruction + "\n" +
+            "Your answer MUST strictly adhere to the structure of ANSWER " +
+            "TEMPLATE, ONLY fill in the BLANKs, and DO NOT alter or modify " +
+            "any other part of the template.\n\n" + expert_prompt +
+            task_prompt)
         role_assignment_generation = role_assignment_generation_prompt.format(
             num_roles=num_roles, task=task_prompt)
 
@@ -174,9 +183,10 @@ class RoleAssignmentAgent(ChatAgent):
             "dividing the main TASK into {num_subtasks} subtasks. " +
             "In your team consists of {num_roles} domain experts each " +
             "contributing to the {num_subtasks} subtasks.\n" +
-            "Your answer MUST adhere to the format of ANSWER TEMPLATE, and " +
-            "ONLY answer the content of subtask without roles in BLANKs.\n\n" +
-            answer_prompt + task_prompt + role_with_description_prompt)
+            "Your answer MUST strictly adhere to the structure of ANSWER " +
+            "TEMPLATE, ONLY fill in the BLANKs, and DO NOT alter or modify " +
+            "any other part of the template.\n\n" + answer_prompt +
+            task_prompt + role_with_description_prompt)
 
         if num_subtasks is None:
             subtasks_generation = splict_task_prompt.format(
@@ -260,13 +270,13 @@ class RoleAssignmentAgent(ChatAgent):
                 for role_name in role_names) + "\n\n"
         compatibility_scoring_prompt = TextPrompt(
             "You are a compatibility scorer, and you're in asked with " +
-            "evaluating/calculating/generating the compatibility of each role "
-            +
-            "relative to a specific task (the score is an integer from 0 to " +
-            "100). In your team consists of {num_roles} domain experts each " +
-            "contributing to the TASK. Your answer MUST adhere to the format" +
-            "of ANSWER TEMPLATE, and ONLY answer the content of subtask" +
-            "without roles in BLANKs.\n\n" + answer_prompt +
+            "evaluating/calculating/generating the compatibility of each " +
+            "role relative to a specific task (the score is an integer from " +
+            "0 to 100). In your team consists of {num_roles} domain experts " +
+            "each contributing to the TASK.\n" +
+            "Your answer MUST strictly adhere to the structure of ANSWER " +
+            "TEMPLATE, ONLY fill in the BLANKs, and DO NOT alter or modify " +
+            "any other part of the template.\n\n" + answer_prompt +
             compatibility_instruction_prompt + task_prompt +
             role_with_description_prompt)
 
