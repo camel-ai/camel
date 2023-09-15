@@ -34,8 +34,8 @@ class RoleDescriptionPromptTemplateDict(AISocietyPromptTemplateDict):
     """
     ROLE_DESCRIPTION_PROMPT = TextPrompt("""===== ROLES WITH DESCRIPTION =====
 {user_role} and {assistant_role} are collaborating to complete a task.
-Competencies, characteristics, duties and workflows of {user_role} to complete the task: {user_description}
-{assistant_role}'s competencies, characteristics, duties and workflows to complete the task: {assistant_description}
+Competencies, characteristics and duties of {user_role} to complete the task: {user_description}
+{assistant_role}'s competencies, characteristics and duties to complete the task: {assistant_description}
 """)
 
     ASSISTANT_PROMPT = TextPrompt(ROLE_DESCRIPTION_PROMPT +
