@@ -82,7 +82,7 @@ class RoleAssignmentAgent(ChatAgent):
             expert_prompt = "===== ANSWER TEMPLATE =====\n" + "\n".join(
                 f"Domain expert {i + 1}: <BLANK>\n"
                 f"Associated competencies, characteristics, and duties: "
-                f"<BLANK>. End." for i in range(num_roles))
+                f"<BLANK>.\nEnd." for i in range(num_roles))
         else:
             expert_prompt = "===== ANSWER TEMPLATE =====\n" + "\n".join(
                 f"Domain expert {i + 1}: {role_name}\n"
