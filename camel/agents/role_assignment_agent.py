@@ -94,7 +94,7 @@ class RoleAssignmentAgent(ChatAgent):
             "recruiting {num_roles} experts, who may have identical roles " +
             "but different names. Identify the domain experts you'd recruit " +
             "and detail descriptions, like their associated competencies, " +
-            "characteristics, duties and workflows to complete the task.\n " +
+            "characteristics and duties to complete the task.\n " +
             "Your answer MUST adhere to the format of ANSWER TEMPLATE, and " +
             "ONLY answer the BLANKs.\n" + expert_prompt + task_prompt)
         role_assignment_generation = role_assignment_generation_prompt.format(
@@ -118,9 +118,8 @@ class RoleAssignmentAgent(ChatAgent):
         ]
         role_descriptions = [
             desc.replace("<|", "").replace("|>", "") for desc in re.findall(
-                r"Associated competencies, characteristics, "
-                r"duties and workflows:(?:\n)?(.+?)\nEnd.", msg.content,
-                re.DOTALL)
+                r"Associated competencies, characteristics, and duties:"
+                r"(?:\n)?(.+?)\nEnd.", msg.content, re.DOTALL)
         ]
 
         if len(role_names) != num_roles or len(role_descriptions) != num_roles:
