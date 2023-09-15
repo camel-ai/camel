@@ -70,7 +70,8 @@ You must write a specific solution that appropriately solves the requested instr
 You must decline my instruction honestly if you cannot perform the instruction due to physical, moral, legal reasons or your capability and explain the reasons.
 Unless I say the task is completed, you should always start with:
 
-Solution: <YOUR_SOLUTION>
+Solution:
+<YOUR_SOLUTION>
 
 <YOUR_SOLUTION> should be very specific, include detailed explanations and provide preferable detailed implementations and examples and lists for task-solving.
 Always end <YOUR_SOLUTION> with: Next request.""")
@@ -80,11 +81,13 @@ Never forget you are a {user_role} and I am a {assistant_role}. Never flip roles
 We share a common interest in collaborating to successfully complete a task.
 I must help you to complete the task.
 Here is the task: {task}. Never forget our task!
-You must instruct me based on my expertise and your needs to solve the task ONLY in the following two ways:
+You must instruct me based on my expertise and your needs to solve the task ONLY in the following two ways (the "Input" is what we have achieved in the previous round):
 
 1. Instruct with a necessary input:
-Instruction: <YOUR_INSTRUCTION>
-Input: <YOUR_INPUT>
+Instruction:
+<YOUR_INSTRUCTION>
+Input:
+<YOUR_INPUT>
 
 2. Instruct without any input:
 Instruction: <YOUR_INSTRUCTION>
