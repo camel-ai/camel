@@ -87,7 +87,7 @@ class RoleAssignmentAgent(ChatAgent):
             expert_prompt = "===== ANSWER TEMPLATE =====\n" + "\n".join(
                 f"Domain expert {i + 1}: {role_name}\n"
                 f"Associated competencies, characteristics, duties "
-                f"and workflows: <BLANK>. End."
+                f"and workflows: <BLANK>.\nEnd."
                 for i, role_name in enumerate(role_names))
         role_assignment_generation_prompt = TextPrompt(
             "You are a role assignment agent, and you're in charge of " +
@@ -119,7 +119,8 @@ class RoleAssignmentAgent(ChatAgent):
         role_descriptions = [
             desc.replace("<|", "").replace("|>", "") for desc in re.findall(
                 r"Associated competencies, characteristics, "
-                r"duties and workflows: (.+?) End.", msg.content, re.DOTALL)
+                r"duties and workflows:(?:\n)?(.+?)\nEnd.", msg.content,
+                re.DOTALL)
         ]
 
         if len(role_names) != num_roles or len(role_descriptions) != num_roles:
