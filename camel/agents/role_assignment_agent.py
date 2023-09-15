@@ -83,7 +83,7 @@ class RoleAssignmentAgent(ChatAgent):
         task_prompt = TextPrompt("===== TASK =====\n" + task_prompt + "\n\n")
         if role_names is None:
             expert_prompt = "===== ANSWER TEMPLATE =====\n" + "\n".join(
-                f"Domain expert {i + 1}:\n<BLANK>\n"
+                f"Domain expert {i + 1}: <BLANK>\n"
                 f"Associated competencies, characteristics, and duties: "
                 f"<BLANK>.\nEnd." for i in range(num_roles)) + "\n\n"
         else:
