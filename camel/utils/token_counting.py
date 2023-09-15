@@ -74,8 +74,8 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
         # https://docs.anthropic.com/claude/docs/human-and-assistant-formatting
         system_prompt = f"\n{system_message}\n"
         ret = system_prompt
-        for message in messages[1:]:
-            role, content = message["role"], message["content"]
+        for msg in messages[1:]:
+            role, content = msg["role"], msg["content"]
             # Claude does not perform well if the system message RULE OF USER/ASSISTANT is sent twice. (see role_playing/RolePlaying.init_chat())
             # Here is a special treatment for Claude to remove the redundant system message.
             if content.startswith(system_message):

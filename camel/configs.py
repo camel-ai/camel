@@ -177,7 +177,7 @@ class AnthropicConfig(BaseConfig):
     See: https://docs.anthropic.com/claude/reference/complete_post
     """
     max_tokens_to_sample: int = 256
-    stop_sequences: List[str] | NotGiven = NOT_GIVEN
+    stop_sequences: Union[List[str], NotGiven] = NOT_GIVEN
     temperature: float = 1
     top_p: float = 0.7
     top_k: int = 5

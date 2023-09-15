@@ -44,7 +44,7 @@ class AnthropicModel(BaseModelBackend):
     def _convert_response_from_anthropic_to_openai(self, response: Completion):
         obj = OpenAIObject.construct_from(
             dict(
-                id=response.log_id, object="chat.completion", created=0,
+                id=None, object="chat.completion", created=0,
                 model=response.model, choices=[
                     dict(
                         index=0, message={
