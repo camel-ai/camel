@@ -81,14 +81,13 @@ class RoleAssignmentAgent(ChatAgent):
         if role_names is None:
             expert_prompt = "===== ANSWER TEMPLATE =====\n" + "\n".join(
                 f"Domain expert {i + 1}: <BLANK>\n"
-                f"Associated competencies, characteristics, duties "
-                f"and workflows: <BLANK>. End." for i in range(num_roles))
+                f"Associated competencies, characteristics, and duties: "
+                f"<BLANK>. End." for i in range(num_roles))
         else:
             expert_prompt = "===== ANSWER TEMPLATE =====\n" + "\n".join(
                 f"Domain expert {i + 1}: {role_name}\n"
-                f"Associated competencies, characteristics, duties "
-                f"and workflows: <BLANK>.\nEnd."
-                for i, role_name in enumerate(role_names))
+                f"Associated competencies, characteristics, and duties: "
+                f"<BLANK>.\nEnd." for i, role_name in enumerate(role_names))
         role_assignment_generation_prompt = TextPrompt(
             "You are a role assignment agent, and you're in charge of " +
             "recruiting {num_roles} experts, who may have identical roles " +
