@@ -73,7 +73,7 @@ class RoleAssignmentAgent(ChatAgent):
 
         if num_roles < 1:
             raise ValueError("Number of roles must be greater than 0.")
-        if role_names is None and len(role_names) != num_roles:
+        if role_names is not None and len(role_names) != num_roles:
             raise RuntimeError(
                 "Got None or insufficient information of roles.")
 
