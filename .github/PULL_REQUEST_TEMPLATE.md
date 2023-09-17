@@ -15,10 +15,11 @@ So that [explain the benefit or value this new functionality will bring]
 [Clearly define the conditions that must be met for the story to be considered complete]
 [List any specific requirements, features, or behaviors the new item should exhibit]
 
-🔀 **Related User Stories:**
+🔀 **Related User Stories or Open Issue:**
 - [List related user stories that contribute to this story]
 - [User Story 1]
-- [User Story 2]
+- [List related open issue if it fixes an open issue]
+- [`close #15213`]
 
 🛠️ **Technical Details:**
 [Provide any technical specifications, tools, or frameworks that should be used]
