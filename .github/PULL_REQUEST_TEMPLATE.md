@@ -22,7 +22,7 @@ So that [explain the benefit or value this new functionality will bring]
 - [`close #15213`]
 
 🛠️ **Technical Details:**
-[Provide any technical specifications, tools, or frameworks that should be used]
+[Provide any technical specifications, third-party packages, tools, or frameworks that should be used]
 [If there are any constraints or limitations, mention them here]
 
 📑 **Tasks:**
