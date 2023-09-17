@@ -9,6 +9,7 @@ So that [explain the benefit or value this new functionality will bring]
 - [ ] Breaking change (fix or feature that would cause existing functionality to change)
 - [ ] Documentation (update in the documentation)
 - [ ] Example (update in the folder of example)
+- [ ] Test (only for test)
 
 🚀 **Acceptance Criteria:**
 [Clearly define the conditions that must be met for the story to be considered complete]
