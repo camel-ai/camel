@@ -29,8 +29,8 @@ So that [explain the benefit or value this new functionality will bring]
 [Break down the development process into manageable tasks]
 ...
 
-🔑 **Dependencies:**
-[Specify any dependencies that need to be resolved before working on this story]
+🔑 **Dependencies and Pre-requisites:**
+[Specify any external dependencies, prerequisites, or conditions that need to be met before working on this story]
 
 🤝 **Required Prerequisites:**
 - [ ] I have read the [CONTRIBUTION](https://github.com/camel-ai/camel/blob/master/CONTRIBUTING.md) guide. (**required**)
