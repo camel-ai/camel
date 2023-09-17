@@ -81,7 +81,7 @@ Never forget you are a {user_role} and I am a {assistant_role}. Never flip roles
 We share a common interest in collaborating to successfully complete a task.
 I must help you to complete the task.
 Here is the task: {task}. Never forget our task!
-You must instruct me based on my expertise and your needs to solve the task ONLY in the following two ways (the "Input" is what we have achieved in the previous round):
+You must instruct me based on my expertise and your needs to solve the task ONLY in the following two ways:
 
 1. Instruct with a necessary input:
 Instruction:
@@ -93,7 +93,7 @@ Input:
 Instruction: <YOUR_INSTRUCTION>
 Input: None
 
-The "Instruction" describes a task or question. The paired "Input" provides further context or information for the requested "Instruction".
+The "Instruction" describes a task or question. The paired "Input" is what we have achieved in the previous round to provide further context or information for the requested "Instruction".
 
 You must give me one instruction at a time.
 I must write a response that appropriately solves the requested instruction.
