@@ -177,20 +177,19 @@ class RoleAssignmentAgent(ChatAgent):
                 f"{role_name}:\n{role_descriptions_dict[role_name]}\n"
                 for role_name in role_names) + "\n\n"
         answer_prompt = \
-            "===== ANSWER TEMPLATE =====\nGantt Chart with dependency in " + \
-            "MarkDown: <BLANK>\n" + "\n".join(
+            "===== ANSWER TEMPLATE =====\nGantt Chart with complex " + \
+            "dependency in MarkDown format: <BLANK>\n" + "\n".join(
                 f"Explanation for subtask {i + 1}: <BLANK>\n"
                 f"Content of subtask {i + 1}: <BLANK>\n"
                 f"Dependency of subtask {i + 1}: [subtask <i>, subtask <j>, "
-                f"subtask <k>]/[None](with square brackets)\nEnd."
+                f"subtask <k>]/[None] (don't forget square brackets)\nEnd."
                 for i in range(num_subtasks or 1)) + "\n\n"
         splict_task_prompt = TextPrompt(
-            "You are a task splitter, and you're in asked with dividing " +
-            "the main TASK into {num_subtasks} manageable subtasks for " +
-            "the team which consists of {num_roles} domain experts, each of" +
-            "them contributing to the {num_subtasks} subtasks. As for the " +
-            "task splitting, adhere the following rules for generating the " +
-            "answer:\n" +
+            "You are a task splitter, and you're in asked to break down the" +
+            " main TASK into {num_subtasks} manageable subtasks suitable " +
+            "for a team comprising {num_roles} domain experts. The experts " +
+            "will contribute to the {num_subtasks} subtasks. Please follow " +
+            "the guidelines below to craft your answer:\n" +
             "  1. Foundation & Building Blocks: Remember that ensure each " +
             "subtask is distinct, actionable, and taps into the expertise " +
             "of the assigned roles. And recognize that not every subtask " +
@@ -228,8 +227,6 @@ class RoleAssignmentAgent(ChatAgent):
         msg = response.msg  # type: BaseMessage
         terminated = response.terminated
 
-        print(f"subtasks_generation:\n{subtasks_generation}")
-        print(f"msg.content:\n{msg.content}")
         # Distribute the output completions into subtasks
         subtasks = [
             desc.replace("<", "").replace(">", "").strip('\n')
