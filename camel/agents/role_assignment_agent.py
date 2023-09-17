@@ -118,14 +118,16 @@ class RoleAssignmentAgent(ChatAgent):
 
         # Distribute the output completions into role names and descriptions
         role_names = [
-            desc.replace("<|", "").replace("|>", "") for desc in re.findall(
+            desc.replace("<", "").replace(">", "").strip('\n')
+            for desc in re.findall(
                 r"Domain expert \d: (.+?)\nAssociated competencies,",
                 msg.content,
                 re.DOTALL,
             )
         ]
         role_descriptions = [
-            desc.replace("<|", "").replace("|>", "") for desc in re.findall(
+            desc.replace("<", "").replace(">", "").strip('\n')
+            for desc in re.findall(
                 r"Associated competencies, characteristics, and duties:"
                 r"(?:\n)?(.+?)\nEnd.", msg.content, re.DOTALL)
         ]
@@ -174,15 +176,38 @@ class RoleAssignmentAgent(ChatAgent):
             "===== ROLES WITH DESCRIPTION =====\n" + "\n".join(
                 f"{role_name}:\n{role_descriptions_dict[role_name]}\n"
                 for role_name in role_names) + "\n\n"
-        answer_prompt = "===== ANSWER TEMPLATE =====\n" + "\n".join(
-            f"Explanation for subtask {i + 1}: <BLANK>\n"
-            f"Content of subtask {i + 1}: <BLANK>"
-            for i in range(num_subtasks or 1)) + "\n\n"
+        answer_prompt = \
+            "===== ANSWER TEMPLATE =====\nGantt Chart with dependency in " + \
+            "MarkDown: <BLANK>\n" + "\n".join(
+                f"Explanation for subtask {i + 1}: <BLANK>\n"
+                f"Content of subtask {i + 1}: <BLANK>\n"
+                f"Dependency of subtask {i + 1}: [subtask <i>, subtask <j>, "
+                f"subtask <k>]/[None](with square brackets)\nEnd."
+                for i in range(num_subtasks or 1)) + "\n\n"
         splict_task_prompt = TextPrompt(
-            "You are a role assignment agent, and you're in asked with " +
-            "dividing the main TASK into {num_subtasks} subtasks. " +
-            "In your team consists of {num_roles} domain experts each " +
-            "contributing to the {num_subtasks} subtasks.\n" +
+            "You are a task splitter, and you're in asked with dividing " +
+            "the main TASK into {num_subtasks} manageable subtasks for " +
+            "the team which consists of {num_roles} domain experts, each of" +
+            "them contributing to the {num_subtasks} subtasks. As for the " +
+            "task splitting, adhere the following rules for generating the " +
+            "answer:\n" +
+            "  1. Foundation & Building Blocks: Remember that ensure each " +
+            "subtask is distinct, actionable, and taps into the expertise " +
+            "of the assigned roles. And recognize that not every subtask " +
+            "needs to directly reflect the main TASK's ultimate aim. Some " +
+            "subtasks serve as essential building blocks, paving the way " +
+            "for more central subtasks.\n" +
+            "  2. Balanced Granularity: While each subtask should be " +
+            "distinct and actionable, it should not be so detailed that it " +
+            "requires the input of more than two domain experts. Design " +
+            "each subtask to be comprehensive but not overly complex.\n" +
+            "  3. Dependencies & Gantt Chart: Identify and account for the " +
+            "dependencies within these subtasks. Ensure that each subtask " +
+            "logically flows from one to the next, or can run concurrently, " +
+            "in a manner that could be efficiently represented on a Gantt " +
+            "chart.\n" +
+            "  4. The content of each subtask should avoid mentioning any " +
+            "title or any role of the experts.\n" +
             "Your answer MUST strictly adhere to the structure of ANSWER " +
             "TEMPLATE, ONLY fill in the BLANKs, and DO NOT alter or modify " +
             "any other part of the template.\n\n" + answer_prompt +
@@ -190,7 +215,7 @@ class RoleAssignmentAgent(ChatAgent):
 
         if num_subtasks is None:
             subtasks_generation = splict_task_prompt.format(
-                num_subtasks=num_subtasks or "SEVERAL",
+                num_subtasks=num_subtasks or "SEVERAL/ENOUGH",
                 num_roles=len(role_names))
         else:
             subtasks_generation = splict_task_prompt.format(
@@ -203,10 +228,12 @@ class RoleAssignmentAgent(ChatAgent):
         msg = response.msg  # type: BaseMessage
         terminated = response.terminated
 
+        print(f"subtasks_generation:\n{subtasks_generation}")
+        print(f"msg.content:\n{msg.content}")
         # Distribute the output completions into subtasks
         subtasks = [
-            desc.replace("<", "").replace("|", "")
-            for desc in re.findall(r"Content of subtask \d: (.+?)(?=\n|$)",
+            desc.replace("<", "").replace(">", "").strip('\n')
+            for desc in re.findall(r"Content of subtask \d: (.+?)Dependency",
                                    msg.content, re.DOTALL)
         ]
 
@@ -293,8 +320,9 @@ class RoleAssignmentAgent(ChatAgent):
 
         # Distribute the output completions into scores
         role_compatibility_scores = [
-            desc.replace("<", "").replace(">", "") for desc in re.findall(
-                r"Score of role .+?: (.+?)(?=\n|$)", msg.content, re.DOTALL)
+            desc.replace("<", "").replace(">", "").strip('\n')
+            for desc in re.findall(r"Score of role .+?: (.+?)(?=\n|$)",
+                                   msg.content, re.DOTALL)
         ]
 
         if len(role_compatibility_scores) != len(role_names):
