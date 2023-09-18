@@ -251,7 +251,7 @@ class RoleAssignmentAgent(ChatAgent):
         if len(order) != len(graph):
             return "There exists a cycle in the graph.Can't determine an order"
         else:
-            return order
+            return order[::-1]
 
     @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     def split_tasks(
