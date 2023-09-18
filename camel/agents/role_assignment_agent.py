@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import re
+from collections import deque
 from typing import Any, Dict, List, Optional, Union
 
 from tenacity import retry, stop_after_attempt, wait_exponential
@@ -143,9 +144,114 @@ class RoleAssignmentAgent(ChatAgent):
 
         return role_descriptions_dict
 
-    def run_task_assignment():
-        # TODO: Implement task assignment
-        print("Not implemented yet.")
+    def run_task_assignment(self, task_prompt: Union[str, TextPrompt],
+                            subtasks) -> Dict[str, Any]:
+        """
+        Assign dependencies between subtasks generated from the task prompt.
+
+        Args:
+            task_prompt(Union[str, TextPrompt]): The prompt for the task based
+            on which DAG is to be generated.
+
+        Returns:
+            Dict[str, Any]: A JSON representing the DAG of subtasks and their
+            dependencies.
+
+        """
+        # Ensure we have subtasks generated
+        if not subtasks:
+            self.split_tasks(task_prompt)
+
+        # Formatted prompt to constrain agent's response to the desired format
+        structured_prompt = "===== DEPENDENCY ASSIGNMENT ===== \n" + "\n".join(
+            f"Subtask{i+1}: {subtask}\n Dependencies: <BLANK>;"
+            for i, subtask in enumerate(subtasks)) + "\nEnd"
+        form = '; '.join(f'subtask{i+1}: {s}' for i, s in enumerate(subtasks))
+
+        prompt = (
+            "You are a subtask planning agent, and your task is to" +
+            " establish dependencies between the following subtasks. "
+            f"Subtasks: {form}\n\n"
+            "Please generate a DAG of subtasks and their dependencies." +
+            "Dependencies for each subtask should be separated by semicolon." +
+            "Your answer MUST adhere to the format of" +
+            f"the DEPENDENCY ASSIGNMENT section below:\n {structured_prompt}")
+
+        # Use the agent to get the response
+        task_msg = BaseMessage.make_user_message(
+            role_name="Task Planning Agent", content=prompt)
+
+        response = super().step(input_message=task_msg)
+        msg_content = response.msg.content
+
+        # Now, we parse the response to create a structured JSON representation
+        # The desired example, should follow the output of
+        # Subtask1: Dependency1, Dependency2; Subtask2: Dependency1;
+        # Using the function
+        # Regex pattern to extract roles, their descriptions, and dependencies
+        pattern = r"(Subtask\d+): (.*?)\nDependencies: (.*?);"
+
+        matches = re.findall(pattern, msg_content, re.DOTALL)
+
+        dependencies_dict = {}
+        for match in matches:
+            subtask_identifier = match[0]
+            description = match[1].strip()
+            if match[2].strip() != "None":
+                dependencies = [dep.strip() for dep in match[2].split(",")]
+            else:
+                dependencies = []
+            dependencies_dict[subtask_identifier] = {
+                "description": description,
+                "dependencies": dependencies
+            }
+
+        graph = {
+            subtask: data["dependencies"]
+            for subtask, data in dependencies_dict.items()
+        }
+
+        order = self.topological_sort(graph)
+        print(f"The executable order is as follows: {order}")
+
+        return dependencies_dict
+
+    def topological_sort(self, graph):
+        # Count of incoming edges
+        in_degree = {u: 0 for u in graph}
+
+        for u in graph:
+            for v in graph[u]:
+                in_degree[v] += 1
+
+        # The queue will contain all nodes with in_degree = 0
+        queue = deque()
+        for i in in_degree:
+            if in_degree[i] == 0:
+                queue.append(i)
+
+        order = []
+
+        while queue:
+            # Extract front of the queue and add it to the topological order
+            u = queue.popleft()
+            order.append(u)
+
+            # Iterate through all neighboring nodes
+            # of the dequeued node u
+            # and decrease their in_degree by 1
+            for i in graph[u]:
+                in_degree[i] -= 1
+                # if in_degree becomes zero, add it to the queue
+                if in_degree[i] == 0:
+                    queue.append(i)
+
+        # If the count of the order is not equal to
+        # the number of nodes in the graph
+        if len(order) != len(graph):
+            return "There exists a cycle in the graph.Can't determine an order"
+        else:
+            return order
 
     @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     def split_tasks(
