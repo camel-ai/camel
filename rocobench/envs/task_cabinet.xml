@@ -1,0 +1,163 @@
+  <mujoco model="ur5e table">
+  <!--  meshdir="assets" texturedir="assets" autolimits="true"/>  -->
+  <compiler angle="radian" autolimits="true"/> 
+  <!-- <statistic center="0.3 0 0.4" extent="0.8"/>  -->
+  <include file="assets/ur5e/ur5e_assets.xml"/>  
+  <include file="assets/ur5e/ur5e_0_assets.xml"/> 
+  <include file="assets/ur5e/ur5e_1_assets.xml"/>
+  <include file="assets/robotiq/robotiq_assets.xml"/> 
+  <include file="assets/ur5e/suction_assets.xml"/>   
+  <include file="assets/panda/panda_assets.xml"/>   
+  <include file="assets/scene_assets.xml"/>
+  <include file="assets/object_assets.xml"/>   
+  
+  <visual>
+    <headlight diffuse="0.6 0.6 0.6"  ambient="0.1 0.1 0.1" specular="0 0 0"/>
+    <rgba haze="0.15 0.25 0.35 1"/>
+    <global azimuth="120" elevation="-20" offwidth="2000" offheight="2000"/>
+    <quality shadowsize="4096"/>
+  </visual>
+ 
+  <worldbody>
+    <light pos="0 0 1.5" dir="0 0 -1" directional="true"/>
+    <geom name="floor" pos="0 0 -0.5" size="0 0 0.05" type="plane" material="groundplane"/> 
+    <!-- adding a table box -->
+    <body name="table" pos="0 0.5 0">
+      <geom name="table_collision" pos="0 0 0.1" size="1.6 0.4 0.05" type="box" group="0" friction="1 0.005 0.0001"/>
+      <body name="table_top" pos="0 0 0.1">
+        <geom name="table_top" size="1.6 0.4 0.05" type="box" conaffinity="0" contype="0" group="1" />
+       
+      </body>
+      
+      <geom name="table_left" pos="-1.63 0 1" size="0.02 1.6 1.5" rgba="1 1 1 0" type="box"/>
+      <geom name="table_right" pos="1.63 0 1" size="0.02 1.6 1.5" rgba="1 1 1 0" type="box"/>
+      <geom name="table_front" pos="0 1.63 1" size="1.7 0.02 1.5" rgba="1 1 1 0" type="box"/>
+      <geom name="table_back" pos="0 -1.63 1" size="1.7 0.02 1.5" rgba="1 1 1 0" type="box"/>
+
+      <site name="table_left" pos="-0.1 0 0.3" class="site_top"/> 
+      <site name="table_right" pos="0.5 0 0.3" class="site_top"/>
+ 
+      <geom name="mug_coaster" pos="0.3 -0.15 0.15" size="0.06 0.06 0.005" type="box" rgba="0.5 0.5 0.5 1" material="urblue"/>
+      <geom name="cup_coaster" pos="0.3 0.15 0.15" size="0.06 0.06 0.005" type="box" rgba="0.5 0.5 0.5 1" material="cube-yellow"/>
+      
+    </body> 
+
+
+    <!--  the arm! -->
+    <body name="ur5e_robotiq" pos="-0.1 -0.2 0.1" > 
+      <include file="assets/ur5e/ur5e_robotiq.xml" />
+    </body>
+    <!-- the franka panda -->
+    <body name="panda" pos="-0.7 1.3 0.1" >
+      <include file="assets/panda/panda_include.xml" />
+    </body> 
+
+    <body name="ur5e_suction" pos="0.6 1.1 0.1" > 
+      <include file="assets/ur5e/ur5e_suction.xml" />
+    </body>
+ 
+    <!-- <body name="cabinet" pos="-0.8 0.5 0.47"  quat="0.707 0 0 0.707" > -->
+    <body name="cabinet" pos="-0.7 0.5 0.47"  quat="0.707 0 0 0.707" >  
+    <include file="assets/cabinet/cabinet_include.xml"/> 
+    </body>
+
+    <body name="mug" pos="-0.4 0.5 0.55" >
+      <freejoint name="mug_joint" />
+      <!-- <geom mesh="mug_mesh" euler="0 0 1.57" type="mesh" material="urblue" class="object_visual" /> -->
+      <!-- <geom name="mug_collision" pos="-0.02 0 0" type="box" size="0.05 0.05 0.07" rgba="1 0 0 0" group="0" density="1500"/> -> inaccurate box collision -->
+
+      <!-- contact0 ~ 13: -->
+      <geom name="mug_contact0" type="mesh" mesh="mug_contact0" class='object_collision'/>
+      <geom name="mug_contact1" type="mesh" mesh="mug_contact1" class='object_collision'/>
+      <geom name="mug_contact2" type="mesh" mesh="mug_contact2" class='object_collision'/>
+      <geom name="mug_contact3" type="mesh" mesh="mug_contact3" class='object_collision'/>
+      <geom name="mug_contact4" type="mesh" mesh="mug_contact4" class='object_collision'/>
+      <geom name="mug_contact5" type="mesh" mesh="mug_contact5" class='object_collision'/>
+      <geom name="mug_contact6" type="mesh" mesh="mug_contact6" class='object_collision'/>
+      <geom name="mug_contact7" type="mesh" mesh="mug_contact7" class='object_collision'/>
+      <geom name="mug_contact8" type="mesh" mesh="mug_contact8" class='object_collision'/>
+      <geom name="mug_contact9" type="mesh" mesh="mug_contact9" class='object_collision'/>
+      <geom name="mug_contact10" type="mesh" mesh="mug_contact10" class='object_collision'/>
+      <geom name="mug_contact11" type="mesh" mesh="mug_contact11" class='object_collision'/>
+      <geom name="mug_contact12" type="mesh" mesh="mug_contact12" class='object_collision'/>
+      <geom name="mug_contact13" type="mesh" mesh="mug_contact13" class='object_collision'/>
+
+      <site name="mug_right" pos="0.15 -0.02 0.06" class="site_right" />
+      <site name="mug_left" pos="-0.15 -0.02 0.06" class="site_left" />
+      <body name="mug_weld" pos="0.06 -0.02 0.03" zaxis="1 0 0" />
+      <body name="mug_weld_left" pos="-0.06 -0.02 0.03" zaxis="-1 0 0" />
+      <!-- NOTE: the weld body can be relatively closer to gripper, site should be further away to avoid collision -->
+    </body>
+    
+    <body name="cup" pos="-0.4 0.5 0.3">
+      <freejoint name="cup_joint" />
+      <geom mesh="cup_mesh" type="mesh" rgba="0.8 0.7 0 1" class="object_visual" />
+      <!-- <geom name="cup_collision" pos="-0.02 0 0" type="box" size="0.05 0.05 0.067" rgba="1 0 0 0" group="0" density="1500"/> -> inaccurate box collision -->
+      <geom name="cup_contact0" type="mesh" mesh="cup_contact0" class='object_collision'/>
+      <geom name="cup_contact1" type="mesh" mesh="cup_contact1" class='object_collision'/>
+      <geom name="cup_contact2" type="mesh" mesh="cup_contact2" class='object_collision'/>
+      <geom name="cup_contact3" type="mesh" mesh="cup_contact3" class='object_collision'/>
+      <geom name="cup_contact4" type="mesh" mesh="cup_contact4" class='object_collision'/> 
+      <geom name="cup_contact5" type="mesh" mesh="cup_contact5" class='object_collision'/>
+      <geom name="cup_contact6" type="mesh" mesh="cup_contact6" class='object_collision'/>
+      <geom name="cup_contact7" type="mesh" mesh="cup_contact7" class='object_collision'/>
+      <geom name="cup_contact8" type="mesh" mesh="cup_contact8" class='object_collision'/>
+      <geom name="cup_contact9" type="mesh" mesh="cup_contact9" class='object_collision'/>
+      <geom name="cup_contact10" type="mesh" mesh="cup_contact10" class='object_collision'/>
+      <geom name="cup_contact11" type="mesh" mesh="cup_contact11" class='object_collision'/>
+      
+      <site name="cup_right" pos="0.15 0 0.06" class="site_right" />
+      <site name="cup_left" pos="-0.15 0 0.06" class="site_left" />
+      <body name="cup_weld" pos="0.06 0 0.03" zaxis="1 0 0" /> 
+      <body name="cup_weld_left" pos="-0.06 0 0.03" zaxis="-1 0 0" />
+    </body> 
+
+    <camera mode="fixed" name="face_panda" pos="0.062 -2.806 0.768" xyaxes="1.000 0.009 -0.000 0.001 -0.131 0.991"/>
+    <camera mode="fixed" name="face_ur5e" pos="0.084 3.711 0.772" xyaxes="-1.000 0.016 0.000 0.002 0.111 0.994"/>
+    <camera mode="fixed" name="top_cam" pos="-0.001 0.652 2.057" xyaxes="-1.000 -0.000 -0.000 0.000 -1.000 0.019"/>
+    <camera mode="fixed" name="right_cam" pos="1.873 0.605 0.926" xyaxes="0.014 1.000 0.000 -0.242 0.003 0.970"/>
+    <camera mode="fixed" name="left_cam" pos="-1.873 0.605 0.926" xyaxes="-0.000 -1.000 0.000 0.177 -0.000 0.984"/>
+    <camera name="teaser" pos="2.675 -0.747 1.997" xyaxes="0.496 0.869 -0.000 -0.429 0.245 0.869"/>
+    <camera name='video' pos="1.957 -0.281 1.731" xyaxes="0.487 0.874 0.000 -0.500 0.278 0.820"/>
+
+  </worldbody> 
+
+  <equality>
+    <weld name="left_door_handle_robotiq" body1='left_door_handle' body2='robotiq_tip' relpose='0 0 0 1 0 0 0' active='false'/>
+    <weld name="left_door_handle_panda" body1='left_door_handle' body2='panda_palm' relpose='0 0 0 1 0 0 0' active='false'/>
+    <weld name="left_door_handle_suction" body1='left_door_handle' body2='suction_tip_1' relpose='0 0 0 1 0 0 0' active='false'/>
+
+    <weld name="right_door_handle_robotiq" body1='right_door_handle' body2='robotiq_tip' relpose='0 0 0 1 0 0 0' active='false'/>
+    <weld name="right_door_handle_panda" body1='right_door_handle' body2='panda_palm' relpose='0 0 0.01 1 0 0 0' active='false'/>
+    <weld name="right_door_handle_suction" body1='right_door_handle' body2='suction_tip_1' relpose='0 0 0 1 0 0 0' active='false'/>
+
+    <weld name="mug_right_robotiq" body1='mug_weld' body2='robotiq_tip' relpose='0 0 0.02 1 0 0 0' active='false'/>
+    <weld name="mug_right_panda" body1='mug_weld' body2='panda_palm' relpose='0 0 0.02 1 0 0 0' active='false'/>
+    <weld name="mug_right_suction" body1='mug_weld' body2='suction_tip_1' relpose='0 0 0 1 0 0 0' active='false'/>
+
+    <weld name="mug_left_robotiq" body1='mug_weld_left' body2='robotiq_tip' relpose='0 0 0.02 1 0 0 0' active='false'/>
+    <weld name="mug_left_panda" body1='mug_weld_left' body2='panda_palm' relpose='0 0 0.02 1 0 0 0' active='false'/>
+    <weld name="mug_left_suction" body1='mug_weld_left' body2='suction_tip_1' relpose='0 0 0 1 0 0 0' active='false'/>
+
+    <weld name="cup_right_robotiq" body1='cup_weld' body2='robotiq_tip' relpose='0 0 0 1 0 0 0' active='false'/>
+    <weld name="cup_right_panda" body1='cup_weld' body2='panda_palm' relpose='0 0 0.01 1 0 0 0' active='false'/> 
+    <weld name="cup_right_suction" body1='cup_weld' body2='suction_tip_1' relpose='0 0 0 1 0 0 0' active='false'/>
+
+    <weld name="cup_left_robotiq" body1='cup_weld_left' body2='robotiq_tip' relpose='0 0 0 1 0 0 0' active='false'/>
+    <weld name="cup_left_panda" body1='cup_weld_left' body2='panda_palm' relpose='0 0 0.01 1 0 0 0' active='false'/>
+    <weld name="cup_left_suction" body1='cup_weld_left' body2='suction_tip_1' relpose='0 0 0 1 0 0 0' active='false'/>
+    
+  </equality>
+
+
+  <keyframe>     
+    <key 
+      name="home"   
+      ctrl="0 -1.5708 -1.5708 1.5708 -1.5708 -1.5708 0      0 -1.5708 -1.5708 1.5708 -1.5708 -1.5708 0 0          0 0 0 0 0 -1.57079 0 1.57079 -0.7853 255" 
+      qpos='-7.85167e-16 -1.5708 -1.56483 1.5767 -1.57002 -1.5708 -2.29951e-09 0.00292335 0.0027008 0.00717658 -0.0128126 0.00292335 0.00270015 0.00717411 -0.0128074 4.00879e-31 -1.13233e-33 0.00658171 -1.77871e-06 -1.5771 -0.000334485 1.56965 -0.7853 0.04 0.04 -6.5753e-17 -1.5708 -1.56576 1.57579 -1.57023 -1.5708 2.70197e-13 0 -6.93691e-35 -0.6 0.5 0.554784 1 3.74483e-09 4.00815e-09 -2.95992e-17 -0.6 0.5 0.251784 1 2.83396e-14 4.19294e-09 1.89897e-17'
+      />  
+   </keyframe>
+   
+ 
+</mujoco>
+

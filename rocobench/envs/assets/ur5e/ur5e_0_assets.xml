@@ -1,0 +1,17 @@
+<mujocoinclude>
+  <compiler angle="radian" meshdir="assets" texturedir="assets" autolimits="true"/>
+ <actuator>
+    <position name="ur5e_0_base" joint="ur5e_0_base_joint" kp="1000" ctrlrange="-1.5 1.3"/>
+    <position name="ur5e_0_shoulder_pan" joint="ur5e_0_shoulder_pan_joint" class="size3" />
+    <position name="ur5e_0_shoulder_lift" joint="ur5e_0_shoulder_lift_joint" class="size3" />
+    <position name="ur5e_0_elbow" joint="ur5e_0_elbow_joint" class="size3_limited" />
+    <position name="ur5e_0_wrist_1" joint="ur5e_0_wrist_1_joint" class="size1" />
+    <position name="ur5e_0_wrist_2" joint="ur5e_0_wrist_2_joint" class="size1" />
+    <position name="ur5e_0_wrist_3" joint="ur5e_0_wrist_3_joint" class="size1" /> 
+  </actuator>
+
+   
+
+
+
+</mujocoinclude>

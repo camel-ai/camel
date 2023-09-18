@@ -1,0 +1,206 @@
+  <mujoco model="ur5e table">
+  <!--  meshdir="assets" texturedir="assets" autolimits="true"/>  -->
+  <compiler angle="radian" autolimits="true"/> 
+  <!-- <statistic center="0.3 0 0.4" extent="0.8"/>  -->
+  <include file="assets/ur5e/ur5e_assets.xml"/>   
+  <include file="assets/ur5e/ur5e_0_assets.xml"/>   
+  <include file="assets/robotiq/robotiq_assets.xml"/>   
+  <include file="assets/panda/panda_assets.xml"/>   
+  <include file="assets/scene_assets.xml"/>
+  <include file="assets/object_assets.xml"/>
+  <!-- <include file="../../object_sim/banana/assets.xml"/> --> 
+  <visual>
+    <headlight diffuse="0.6 0.6 0.6"  ambient="0.1 0.1 0.1" specular="0 0 0"/>
+    <rgba haze="0.15 0.25 0.35 1"/>
+    <global azimuth="120" elevation="-20"/>
+  </visual>
+
+  <asset>
+    
+  </asset>
+
+   
+  <worldbody>
+    <light pos="0 0 1.5" dir="0 0 -1" directional="true"/>
+    <geom name="floor" pos="0 0 -0.5" size="0 0 0.05" type="plane" material="groundplane"/>
+
+    <!-- adding a table box -->
+    <body name="table" pos="0 0.5 0">
+      <geom name="table_collision" pos="0 0 0.1" size="1.6 0.4 0.05" type="box" friction="1 0.005 0.0001"/>
+      <body name="table_top" pos="0 0 0.1">
+        <geom name="table_top" size="1.6 0.4 0.05" type="box" conaffinity="0" contype="0" group="1" />
+        <site name="table_top" size="0.001 0.001 0.001" class="site_top"/> 
+      </body>
+      
+      <geom name="table_left" pos="-1.63 0 1" size="0.02 1.6 1.5" rgba="1 1 1 0" type="box"/>
+      <geom name="table_right" pos="1.63 0 1" size="0.02 1.6 1.5" rgba="1 1 1 0" type="box"/>
+      <geom name="table_front" pos="0 1.63 1" size="1.7 0.02 1.5" rgba="1 1 1 0" type="box"/>
+      <geom name="table_back" pos="0 -1.63 1" size="1.7 0.02 1.5" rgba="1 1 1 0" type="box"/>
+      
+    </body> 
+    <!--  the arm! -->
+    <body name="ur5e_robotiq" pos="-0.2 -0.2 0.15" > 
+      <include file="assets/ur5e/ur5e_robotiq.xml" />
+    </body>
+    <!-- the franka panda -->
+    <body name="panda" pos="0.6 1.02 0.1" >
+      <include file="assets/panda/panda_include.xml" />
+    </body> 
+
+    <body name='broom' pos="0.6 0.9 0.6">
+      <freejoint name="broom_joint"/>
+      <geom type="mesh" mesh="broom" class="object_visual" material="broom" />
+      <geom type="box" size="0.013 0.013 0.25"  rgba="0 1 0 0" friction="0.95 0.6 0.1" quat="0 0 0 1" density="800"/>
+      <geom type="box" pos="0 0 -0.2" size="0.032 0.07 0.08"  rgba="0 1 0 0" friction="0.95 0.6 0.1" quat="0 0 0 1" density="800"/>
+      <!-- <site name="broom_handle" pos="0 0 0.15" class="site_right"/>
+      <body name="broom_handle" pos="0 0 0.15" zaxis="1 0 0"  /> -->
+      <site name="broom_handle" pos="0 0 0.15" class="site_right"/>
+      <body name="broom_handle" pos="0 0 0.15" zaxis="1 0 0"  />
+      <site name="broom_bottom" pos="0 0 -0.28" class="site_bottom"/>
+    </body>
+
+    <body name='dustpan' pos="0 0.5 0.6">
+      <freejoint name="dustpan_joint"/> 
+      <!-- <geom type="mesh" mesh="dustpan" class="object_visual" rgba="0.216 0.063 0.012 1" /> -->
+      <geom type="mesh" mesh="dustpan" class="object_visual" material="cube-orange"/>
+
+      <body name="dustpan_left" pos="-0.12 0 0">
+        <geom name='dustpan_left' type="box"  size="0.005 0.12 0.02"  rgba="1 0 0 0" friction="0.95 0.6 0.1"  density="800"/>
+      </body>
+
+      <body name="dustpan_front" pos="-0.01 -0.12 0">
+        <geom name='dustpan_front' type="box" size="0.1 0.005 0.02"  rgba="1 0 0 0" friction="0.95 0.6 0.1"  density="800"/>
+      </body>
+
+      <body name="dustpan_back" pos="-0.01 0.12 0">
+        <geom name='dustpan_back' type="box" size="0.1 0.005 0.02"  rgba="1 0 0 0" friction="0.95 0.6 0.1"  density="800"/>
+      </body>
+
+      <body name="dustpan_bottom"  pos="0 0 -0.026" >
+        <geom name='dustpan_bottom' type="box" size="0.125 0.11 0.0015" material="cube-orange" density="800" friction="2 0.005 0.0001"  />
+      </body>
+
+      <body name="dustpan_bottom_down"  pos="0 0 -0.029" >
+        <geom name='dustpan_bottom_down' type="box" size="0.123 0.12 0.0015" material="cube-orange" density="1000"/>
+      </body>
+ 
+      <body name="dustpan_handle" pos="-0.175 0 0.04">
+        <site name="dustpan_handle" type='cylinder' rgba='1 1 0 1' size="0.003 0.01" quat="0 0 0 1" />
+        <geom name='dustpan_handle' type="box" pos="-0.02 0 -0.025" size="0.08 0.03 0.01"  rgba="1 0 0 0" friction="0.95 0.6 0.1"  density="800"/>
+      </body>
+      
+      <site name="dustpan_bottom" pos="0 0 -0.028" quat="0 0 0 1" />
+      <site name="dustpan_rim" pos="0.1 0 -0.01" type='cylinder' rgba='1 1 0 1' size="0.003 0.01" quat="0 0 0 1" />
+      
+    </body>
+
+    <body name="trash_bin" pos="-0.5 0.5 0.05" >
+      <!-- NOTE: lack contact mesh, using boxes to approximate-->
+      <geom pos="0 0 0.1" type="mesh" mesh="trash_bin" class="object_visual" material="cube-gray"  quat="0 0 0 1" />
+      <site name="trash_bin_top" pos="0 -0.2 0.45" class="site_top"/>
+
+      <body name="trash_bin_bottom" pos="0 0 0.08" >
+        <geom name="trash_bin_botton" type="box" rgba="1 0 0 0"  size="0.12 0.18 0.04" />
+      </body>
+      
+      <body name="trash_bin_front" pos="0 -0.18 0.15">
+        <joint name="trash_bin_front_joint" pos="0 0 -0.05" axis="1 0 0" range="0.6 0.61" damping="100"/>
+        <geom name="trash_bin_front"  type="box" material="jointgray" rgba="1 0 0 0" size="0.13 0.01 0.07" />
+      </body>
+
+      <body name="trash_bin_back" pos="0 0.18 0.15">
+        <joint name="trash_bin_back_joint" pos="0 0 -0.05" axis="1 0 0" range="-0.61 -0.6" damping="100"/>
+        <geom name="trash_bin_back"  type="box" material="jointgray" rgba="1 0 0 0" size="0.13 0.01 0.07" />
+      </body>
+
+      <body name="trash_bin_left" pos="-0.15 0 0.15">
+        <joint name="trash_bin_left_joint" pos="0 0 -0.05" axis="0 1 0" range="-0.49 -0.48" damping="100"/>
+        <geom name="trash_bin_left"  type="box" material="jointgray" rgba="1 0 0 0" size="0.01 0.15 0.07" />
+      </body>
+
+      <body name="trash_bin_right" pos="0.15 0 0.15">
+        <joint name="trash_bin_right_joint" pos="0 0 -0.05" axis="0 1 0" range="0.49 0.5" damping="100"/>
+        <geom name="trash_bin_right"  type="box" material="jointgray" rgba="1 0 0 0" size="0.01 0.15 0.07" />
+      </body>
+       
+
+    </body>
+
+    <!-- <geom name="panel1" pos="0.05 0.5 0.15" size="0.08 0.15 0.01" type="box" friction="1 0.005 0.0001" rgba="1 1 0 1" conaffinity="0" contype="0"  group="1" mass="0.00001"  /> -->
+    <geom name="panel2" pos="0.3 0.5 0.15" size="0.08 0.1 0.01" type="box" friction="1 0.005 0.0001" rgba="1 1 0 0" conaffinity="0" contype="0"  group="1" mass="0.00001"  />
+    <geom name="panel3" pos="0.55 0.5 0.15" size="0.08 0.1 0.01" type="box" friction="1 0.005 0.0001" rgba="1 1 0 0" conaffinity="0" contype="0"  group="1" mass="0.00001"  />
+    <geom name="panel4" pos="0.8 0.5 0.15" size="0.08 0.1 0.01" type="box" friction="1 0.005 0.0001" rgba="1 1 0 0" conaffinity="0" contype="0"  group="1" mass="0.00001"  />
+    <geom name="panel5" pos="1.05 0.5 0.15" size="0.08 0.1 0.01" type="box" friction="1 0.005 0.0001" rgba="1 1 0 0" conaffinity="0" contype="0"  group="1" mass="0.00001"   />
+    
+
+    <body name="red_cube" pos="0 0.5 0.3" >
+      <freejoint name="red_cube_joint" />
+      <geom type="box" material="cube-red" group="0" density="1000"  size='0.025 0.025 0.025'  />
+      <site name="red_cube_top" pos="0 0 0.08" class="site_top" />
+      <site name="red_cube" pos="0 0 0" class="site_top" />
+      <body name="red_cube_weld" pos="0 0 0.06" />
+
+      <site name="red_cube_left" pos="-0.15 0 0.03" class="site_top"/>
+      <site name="red_cube_right" pos="0.15 0 0.03" class="site_top"/>
+    </body> 
+
+    <body name="green_cube" pos="0.5 0.4 0.3" >
+      <freejoint name="green_cube_joint" />
+      <geom type="box" material="cube-green" group="0" density="1000"  size='0.025 0.025 0.025' />
+      <site name="green_cube_top" pos="0 0 0.08" class="site_top" />
+      <site name="green_cube" pos="0 0 0" class="site_top" />
+      <body name="green_cube_weld" pos="0 0 0.06" />
+
+      <site name="green_cube_left" pos="-0.15 0 0.03" />
+      <site name="green_cube_right" pos="0.15 0 0.03" />
+    </body>
+
+    <body name="blue_cube" pos="0.7 0.5 0.3" >
+      <freejoint name="blue_cube_joint" />
+      <geom type="box" material="cube-blue" group="0" density="1000"  size='0.025 0.025 0.025' />
+      <site name="blue_cube_top" pos="0 0 0.08" class="site_top" />
+      <site name="blue_cube" pos="0 0 0" class="site_top" />
+      <body name="blue_cube_weld" pos="0 0 0.06"/>
+
+      <site name="blue_cube_left" pos="-0.15 0 0.03" class="site_top"/>
+      <site name="blue_cube_right" pos="0.15 0 0.03" class="site_top"/>
+    </body>
+
+ 
+     
+
+    <camera mode="fixed" name="face_panda" pos="0.223 -1.064 0.758" xyaxes="1.000 0.003 0.000 -0.000 0.143 0.990"/>
+    <camera mode="fixed" name="face_ur5e" pos="-0.207 2.256 1.027" xyaxes="-1.000 0.005 0.000 -0.001 -0.296 0.955"/>
+    <camera name="teaser" pos="2.675 -0.747 1.997" xyaxes="0.496 0.869 -0.000 -0.429 0.245 0.869"/>
+    <!-- <camera mode="fixed" name="top_cam" pos="0.017 0.690 3.624" xyaxes="-1.000 -0.000 -0.000 0.000 -1.000 0.022"/> -->
+    <camera mode="fixed" name="top_cam" pos="-0.001 0.652 2.057" xyaxes="-1.000 -0.000 -0.000 0.000 -1.000 0.019"/>
+    <camera mode="fixed" name="right_cam" pos="1.873 0.605 0.926" xyaxes="0.014 1.000 0.000 -0.242 0.003 0.970"/>
+    <camera mode="fixed" name="left_cam" pos="-1.873 0.605 0.926" xyaxes="-0.000 -1.000 0.000 0.177 -0.000 0.984"/>
+    <!-- <camera name="video" pos="2.098 -0.364 1.640" xyaxes="0.498 0.867 -0.000 -0.513 0.294 0.806"/> -->
+    <camera name='video' pos="1.957 -0.281 1.731" xyaxes="0.487 0.874 0.000 -0.500 0.278 0.820"/>
+
+  </worldbody> 
+
+  <visual>
+    <!-- <map fogstart="3" fogend="5" force="0.1" znear="0.1"/> -->
+    <quality shadowsize="4096"/>
+    <global offwidth="2000" offheight="2000"/>
+  </visual>
+
+  <equality>
+    <weld name="broom_handle_robotiq" body1='broom_handle' body2='robotiq_tip' relpose='0 0 0 1 0 0 0' active='false'/>
+    <weld name="broom_handle_panda" body1='broom_handle' body2='panda_palm' relpose='0 0 0 1 0 0 0' active='true'/>
+
+    <weld name="dustpan_handle_robotiq" body1='dustpan_handle' body2='robotiq_tip' relpose='0 0 0 1 0 0 0' active='true'/>
+    <weld name="dustpan_handle_panda" body1='dustpan_handle' body2='panda_palm' relpose='0 0 0 1 0 0 0' active='false'/>
+
+  </equality>
+
+  <keyframe>     
+    <key name="home" ctrl="0 -1.5708 -1.5708 1.5708 -1.5708 -1.5708 1.5708 255    0 -1.57 0 1.57079 -1.57079 -1.57079 1.57 -0.7853 0" 
+    qpos='-0.000409775 -1.5708 -1.56395 1.57756 -1.56986 -1.57105 1.5708 0.799112 0.0399209 0.75465 -0.967893 0.800387 -0.0062286 0.84794 -0.639149 1.55729e-08 -1.57 0.000855771 1.57078 -1.57897 -1.56874 1.57001 -0.785298 0.0101015 0.0101007 1.15393 0.836272 0.674846 0.70712 0.00393569 0.00175927 0.70708 0.262195 0.108924 0.46332 -0.707093 -0.00589935 -0.00619639 -0.707069 0.480205 -0.480249 -0.532184 0.557433 3.44791e-18 0.5 0.174784 1 4.3031e-17 -6.88902e-20 -4.79616e-18 0.5 0.4 0.174784 1 4.52091e-17 -9.24911e-19 7.95197e-18 0.7 0.5 0.174784 1 4.51035e-17 -9.96664e-19 7.3358e-18'
+    />
+    </keyframe>
+   
+ 
+</mujoco>

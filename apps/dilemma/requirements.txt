@@ -1,2 +1,0 @@
-cloud-sql-python-connector["pymysql"]
-SQLAlchemy==2.0.7

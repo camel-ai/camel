@@ -1,0 +1,37 @@
+<mujocoinclude>
+  <body name="suction_base" >
+    <geom pos="0 0 0" mesh="suction_base_mesh" type="mesh" material="DarkGrey" friction="1.0 0.005 0.0001"/> 
+      <!-- reference to translate urdf into xml linertia: http://wiki.ros.org/urdf/Tutorials/Adding%20Physical%20and%20Collision%20Properties%20to%20a%20URDF%20Model  -->
+    <inertial mass="0.1" pos="0 0 0" fullinertia="1 1 1 0 0 0"/>  
+    <body name="suction_midLink" pos="0 0 0.025"> 
+        <geom type="mesh" mesh="suction_mid_mesh" material="linkgray" /> 
+        <site type='sphere' size='.01' name='midlink_site' pos='0 0 0.07' rgba='.5 .5 .5 .3' />
+        
+        <body name="suction_headLink" pos="0 0 0.07"  >
+            <geom pos="0 0 0" mesh="suction_head_mesh" type="mesh" material="DarkGrey" friction="1.0 0.005 0.0001"/>
+            <!-- <joint name="tip_joint" damping=".01" />   -->
+            <body name="suction_tipLink" pos="0 0 0.029" >
+                <geom pos="0 0 0" contype="0" conaffinity="0" group="2" mesh="suction_tip_mesh" type="mesh" material="suction_blue"/>
+                <geom pos="0 0 0" class="collision" size="0.001 0.014" material="suction_blue" />
+                
+                <body name="suction_disk" pos="0 0 0.02"> 
+                  <site name="suction_ee" group="3"  zaxis="0 0 -1" size="0.1" />
+                  <!-- <geom pos="0 0 0.023" type="cylinder" condim="4" size="0.012 0.001" material="suction_blue" class="active_adhesion"  /> -->
+                  <geom name="suction-plane" type="box" size="0.015 0.015 0.003" material="suction_blue" condim="4" class="active_adhesion" />
+                </body>
+
+                <body name="suction_tip" pos="0 0 0.03" >
+                  <site name="suction_tip" group="1"/>    
+                </body>
+
+                <body name="suction_tip_1" pos="0 0 0.023" zaxis="0 0 -1" >
+                  <site name="suction_tip_1" class="site_top" />    
+                </body>
+                
+                <site type='sphere' size='.01' name='ur5e_1_disk_site' pos='0 0 0.2' rgba='.5 .5 .5 .3' />
+                
+            </body>
+        </body> 
+    </body>    
+  </body>    
+</mujocoinclude>

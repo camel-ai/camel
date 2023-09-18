@@ -1,0 +1,187 @@
+<mujocoinclude>
+  <default>
+    <default class="object_visual">
+      <geom type="mesh" conaffinity="0" contype="0"  group="1" mass="0.00001" />
+    </default>
+
+    <default class="obj_sites">
+      <site type='cylinder' size='0.003 0.006' group="3"/>
+      <default class="site_top"> 
+        <geom rgba='1 0 0 0' type='cylinder' size='0.003 0.003' conaffinity="0" contype="0"  group="1" mass="0.00001"/>
+        <site rgba='1 0 0 1' zaxis="0 0 1"/>
+      </default>
+      <default class="site_bottom"> 
+        <geom rgba='0 1 0 0.3' type='cylinder' size='0.003 0.003' conaffinity="0" contype="0"  group="1" mass="0.00001"/>
+        <site rgba='0 1 0 0.3' zaxis="0 0 -1" />
+      </default>
+      <default class="site_front"> 
+        <geom rgba='1 1 0 0.3' type='cylinder' size='0.003 0.003' conaffinity="0" contype="0"  group="1" mass="0.00001"/>
+        <site rgba='1 1 0 0.3' zaxis="0 1 0" />
+      </default>
+      <default class="site_back"> 
+        <geom rgba='0 1 1 0.3' type='cylinder' size='0.003 0.003' conaffinity="0" contype="0"  group="1" mass="0.00001"/>
+        <site rgba='0 1 1 0.3' zaxis="0 -1 0"/>
+      </default>
+      <default class="site_left"> 
+        <geom rgba='1 0 1 0.3' type='cylinder' size='0.003 0.006' zaxis="-1 0 0" conaffinity="0" contype="0"  group="1" mass="0.00001"/>
+        <site rgba='1 0 1 0.3' zaxis="-1 0 0"/>
+      </default>
+      <default class="site_right"> 
+        <geom rgba='0 0 1 0.3' type='cylinder' size='0.003 0.003' conaffinity="0" contype="0"  group="1" mass="0.00001"/>
+        <site rgba='0 0 1 0.3' zaxis="1 0 0" />
+      </default>
+       
+    </default>
+
+    <default class="object_collision">
+        <geom density="500" rgba="0.8 0.8 0.8 0.9" group="3"/>
+        <!-- friction="1 0.5 0.01" margin="0.0005"  -->
+    </default>  
+    <default class="hingecabinet">
+      <joint damping="2" frictionloss="2" armature=".01" limited="true"/> 
+      <default class="hinge_collision">
+          <!-- <geom conaffinity="1" condim="3" contype="0" group="4" margin="0.001" material="hinge_collision_blue" solimp=".8 .9 .01" solref=".02 1"/> -->
+          <geom type="box" material="white-wood" /> 
+      </default>
+    </default>
+
+  </default>
+
+  <asset>
+    <!-- CREDIT: taken from robosuite -->
+    <!-- milk -->
+    <mesh file="objects/meshes/milk.msh" name="milk_mesh" scale="1.5 1.5 1.5"/>
+    <mesh file="objects/meshes/milk_contact0.stl" name="milk_contact0" scale="1.5 1.5 1.5"/>
+    <texture file="objects/textures/ceramic.png" name="tex-ceramic" type="2d"/>
+    <material name="ceramic" reflectance="0.5" texrepeat="1 1" texture="tex-ceramic" texuniform="true"/>
+  
+    <!-- pantry box -->
+    <texture file="objects/textures/light-wood.png" type="2d" name="tex-light-wood"/>
+    <material name="light-wood" reflectance="0" texrepeat="15 15" texture="tex-light-wood" texuniform="true"/>
+    <material name="wood" reflectance="0" texrepeat="4 4" texture="tex-light-wood" texuniform="true" />
+
+    <!-- bread -->
+    <texture file="objects/textures/bread.png" type="2d" name="tex-bread" />
+    <texture file="objects/textures/bread_slice.png" type="2d" name="tex-bread-slice" gridsize="1 1" />
+    <material name="bread" reflectance="0.7" texrepeat="10 10" texture="tex-bread" texuniform="true"/>
+    <material name="bread-slice" reflectance="0.01" texrepeat="10 10" texture="tex-bread" texuniform="false"/>
+    <mesh file="objects/meshes/bread.stl" name="bread_mesh" scale="1.4 2.4 1.4"/>
+    <mesh file="objects/meshes/bread_slice.stl" name="bread_slice_mesh" scale="1 1 1"/>
+
+    <!-- soda can -->
+    <mesh file="objects/meshes/can.msh" name="can_mesh" scale="1.4 1.4 1.4"/>
+    <texture file="objects/textures/soda.png" name="tex-can" type="2d"/>
+    <material name="can" reflectance="0.7" texrepeat="5 5" texture="tex-can" texuniform="true"/>
+
+    <!-- cereal box -->
+    <mesh file="objects/meshes/cereal.msh" name="cereal" scale="1.2 1.4 1.2"/>
+    <texture type="2d" file="objects/textures/cereal.png" rgb1="1 1 1" name="tex-cereal"/>
+    <material name="cereal" reflectance="0.5" texrepeat="1 1" texture="tex-cereal" texuniform="false"/>
+
+    <!-- trash bin -->
+    <mesh file="objects/meshes/bin.stl" name="trash_bin" scale="0.6 0.85 0.3"/>
+
+    <!-- cheese -->
+    <texture name="tex-cheese" type="2d" file="objects/textures/cheese.png"/> 
+    <material name="cheese" reflectance="0.001" texrepeat="0.9 0.9" texture="tex-cheese" texuniform="false"/>
+    
+    <!-- bacon -->
+    <texture name="tex-bacon" type="2d" file="objects/textures/bacon.png"/> 
+    <material name="bacon" reflectance="0" texrepeat="0.4 0.4" texture="tex-bacon" texuniform="false"/>
+
+
+    <!-- tomato -->
+    <texture name="tex-tomato" type="2d" file="objects/textures/tomato.png"/> 
+    <material name="tomato"  texrepeat="0.6 0.6" texture="tex-tomato" texuniform="false"/>
+
+    <texture name="tex-cucumber" type="2d" file="objects/textures/cucumber.png"/> 
+    <material name="cucumber" shininess="0" reflectance="0" specular="0.001"  texrepeat="0.9 0.9" texture="tex-cucumber" texuniform="false"/>
+
+    <texture name="tex-ham" type="2d" file="objects/textures/ham.png"/> 
+    <material name="ham" specular="0" shininess="0" texrepeat="0.8 0.8" texture="tex-ham" texuniform="false"/>
+
+    <!-- patty -->
+    <texture name="tex-patty" type="2d" file="objects/textures/patty.png"/>
+    <material name="patty" specular="0.01" texrepeat="0.9 0.9" texture="tex-patty" texuniform="false"/>
+
+    <!-- egg -->
+    <texture name="tex-egg" type="2d" file="objects/textures/egg.png"/>
+    <material name="egg" reflectance="0" texrepeat="1 1" texture="tex-egg" texuniform="false"/>
+
+
+    <!-- CREDIT: below sections are taken from object_sim -->
+    <!-- banana -->
+    <mesh name="banana" file="object_sim/banana/banana.stl" scale="1 1 1" /> 
+    <mesh name="banana_contact0" file="object_sim/banana/contact0.stl" scale="1 1 1"/>
+    <mesh name="banana_contact1" file="object_sim/banana/contact1.stl"/>
+    <mesh name="banana_contact2" file="object_sim/banana/contact2.stl"/>
+    <mesh name="banana_contact3" file="object_sim/banana/contact3.stl"/>
+    <mesh name="banana_contact4" file="object_sim/banana/contact4.stl"/>
+
+    <!-- apple -->
+    <mesh name="apple" file="object_sim/apple/apple.stl" />
+    <mesh name="apple_contact0" file="object_sim/apple/contact0.stl"/>
+    <mesh name="apple_contact1" file="object_sim/apple/contact1.stl"/>
+
+    <!-- mug -->
+    <mesh name="mug_mesh" file="object_sim/mug/mug.stl" scale="1.3 1.3 1.3" />
+    <mesh name="mug_contact0" file="object_sim/mug/contact0.stl" scale="1.3 1.3 1.3" />
+    <mesh name="mug_contact1" file="object_sim/mug/contact1.stl" scale="1.3 1.3 1.3" />
+    <mesh name="mug_contact2" file="object_sim/mug/contact2.stl" scale="1.3 1.3 1.3" />
+    <mesh name="mug_contact3" file="object_sim/mug/contact3.stl" scale="1.3 1.3 1.3" />
+    <mesh name="mug_contact4" file="object_sim/mug/contact4.stl" scale="1.3 1.3 1.3" />
+    <mesh name="mug_contact5" file="object_sim/mug/contact5.stl" scale="1.3 1.3 1.3" />
+    <mesh name="mug_contact6" file="object_sim/mug/contact6.stl" scale="1.3 1.3 1.3" />
+    <mesh name="mug_contact7" file="object_sim/mug/contact7.stl" scale="1.3 1.3 1.3" />
+    <mesh name="mug_contact8" file="object_sim/mug/contact8.stl" scale="1.3 1.3 1.3" />
+    <mesh name="mug_contact9" file="object_sim/mug/contact9.stl" scale="1.3 1.3 1.3" />
+    <mesh name="mug_contact10" file="object_sim/mug/contact10.stl" scale="1.3 1.3 1.3" />
+    <mesh name="mug_contact11" file="object_sim/mug/contact11.stl" scale="1.3 1.3 1.3" />
+    <mesh name="mug_contact12" file="object_sim/mug/contact12.stl" scale="1.3 1.3 1.3" />
+    <mesh name="mug_contact13" file="object_sim/mug/contact13.stl" scale="1.3 1.3 1.3" />
+
+
+    <!-- cup -->
+    <mesh name="cup_mesh" file="object_sim/cup/cup.stl" scale="1.3 1.3 1.3" />
+    <mesh name="cup_contact0" file="object_sim/cup/contact0.stl" scale="1.3 1.3 1.3" />
+    <mesh name="cup_contact1" file="object_sim/cup/contact1.stl" scale="1.3 1.3 1.3" />
+    <mesh name="cup_contact2" file="object_sim/cup/contact2.stl" scale="1.3 1.3 1.3" />
+    <mesh name="cup_contact3" file="object_sim/cup/contact3.stl" scale="1.3 1.3 1.3" />
+    <mesh name="cup_contact4" file="object_sim/cup/contact4.stl" scale="1.3 1.3 1.3" /> 
+    <mesh name="cup_contact5" file="object_sim/cup/contact5.stl" scale="1.3 1.3 1.3" />
+    <mesh name="cup_contact6" file="object_sim/cup/contact6.stl" scale="1.3 1.3 1.3" />
+    <mesh name="cup_contact7" file="object_sim/cup/contact7.stl" scale="1.3 1.3 1.3" />
+    <mesh name="cup_contact8" file="object_sim/cup/contact8.stl" scale="1.3 1.3 1.3" />
+    <mesh name="cup_contact9" file="object_sim/cup/contact9.stl" scale="1.3 1.3 1.3" />
+    <mesh name="cup_contact10" file="object_sim/cup/contact10.stl" scale="1.3 1.3 1.3" />
+    <mesh name="cup_contact11" file="object_sim/cup/contact11.stl" scale="1.3 1.3 1.3" /> 
+
+    <!-- cabinet -->
+    <texture file="objects/textures/white-wood.png" type="2d" name="tex-white-wood"/>
+    <material name="white-wood" reflectance="0.6" texrepeat="15 15" texture="tex-white-wood" texuniform="true"/>
+
+    <!-- polygon, trapozoid -->
+    <mesh name="polygon_mesh" file="objects/meshes/polygon.stl" scale="1.6 1.6 1.3" />
+    <mesh name="trapezoid_mesh" file="objects/meshes/trapezoid.stl" scale="1.7 1 1.3" />
+    <material name="cube-purple" rgba="0.584 0.424 0.706 1" reflectance="0.5" shininess="0.5"/>
+    <material name="cube-red" rgba="0.839 0.373 0.373 1" reflectance="0.5" shininess="0.5"/>
+    <material name="cube-blue" rgba='0.003 0.451 0.698 1' reflectance="0.5" shininess="0.5"/>
+    <material name="cube-green" rgba="0.008 0.62 0.451 1" reflectance="0.5" shininess="0.5"/>
+    <material name="cube-orange" rgba="0.8 0.47 0 1" reflectance="0.5" shininess="0.5"/>
+    <material name="cube-yellow" rgba="0.8 0.7 0 1" reflectance="0.5" shininess="0.5"/>
+    <material name="cube-pink" rgba='0.984 0.686 0.894 1' reflectance="0.5" shininess="0.5"/>
+    <material name="cube-gray" rgba='0.58 0.58 0.58 1' reflectance="0.5" shininess="0.5"/>
+
+    <!-- broom -->
+    <mesh file="objects/meshes/broom.stl" name="broom" scale="1 1 0.8"/>
+    <texture type="2d" file="objects/textures/light-wood.png" rgb1="1 1 1" name="tex-broom"/>
+    <material name="broom" reflectance="0.5" texrepeat="1 1" texture="tex-broom" texuniform="false"/>
+
+    <!-- dustpan -->
+    <mesh file="objects/meshes/dustpan.stl" name="dustpan" scale="1.2 1.2 1.2"/>
+
+    <material name="stove-metal" rgba="0.8 0.8 0.8 1" />
+    <material name="stove-black" rgba="0 0 0 1" />
+    
+  </asset> 
+</mujocoinclude>

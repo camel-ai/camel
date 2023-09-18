@@ -1,0 +1,101 @@
+<?xml version="0.0" ?>
+<robot name="suction-head.urdf">
+  <link name="headLink">
+    <contact>
+      <lateral_friction value="1.0"/>
+      <rolling_friction value="0.0001"/>
+      <inertia_scaling value="3.0"/>
+    </contact>
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+       <mass value=".1"/>
+       <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="head.obj" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="darkgrey">
+        <color rgba="0.2 0.2 0.2 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="head.obj" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="tipJoint" type="fixed">
+    <parent link="headLink"/>
+    <child link="tipLink"/>
+    <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.029"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="150.0" lower="-6.28318530718" upper="6.28318530718" velocity="3.15"/>
+    <dynamics damping="10.0" friction="0.0"/>
+  </joint>
+
+  <link name="tipLink">
+    <contact>
+      <lateral_friction value="1.0"/>
+      <rolling_friction value="0.0001"/>
+      <inertia_scaling value="3.0"/>
+    </contact>
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+       <mass value=".1"/>
+       <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="tip.obj" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="blue">
+        <color rgba="0.18039216, 0.50588235, 0.77254902 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <!-- <geometry>
+        <mesh filename="tip.obj" scale="0.001 0.001 0.001"/>
+      </geometry> -->
+      <geometry>
+        <cylinder length="0.028" radius="0.001"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- <link name="asdfLink">
+    <contact>
+      <lateral_friction value="1.0"/>
+      <rolling_friction value="0.0001"/>
+      <inertia_scaling value="3.0"/>
+    </contact>
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+       <mass value=".1"/>
+       <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <cylinder length="0.028" radius="0.001"/>
+      </geometry>
+    </visual>
+  </link>
+
+  <joint name="asdfoint" type="fixed">
+    <parent link="tipLink"/>
+    <child link="asdfLink"/>
+    <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="150.0" lower="-6.28318530718" upper="6.28318530718" velocity="3.15"/>
+    <dynamics damping="10.0" friction="0.0"/>
+  </joint> -->
+
+
+</robot>
+

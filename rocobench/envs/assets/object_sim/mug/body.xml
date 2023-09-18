@@ -1,0 +1,24 @@
+<mujocoinclude model="">
+<!-- =================================================
+    Copyright 2019 Vikash Kumar
+    Model   :: Objects (MuJoCoV2.0)
+    Author  :: Vikash Kumar (vikashplus@gmail.com), Sudeep Dasari (sdasari@andrew.cmu.edu )
+    Details :: https://github.com/vikashplus/object_sim
+    License :: Under Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+====================================================== -©vk©-->
+    <geom name="mug_visual" mesh="mug" rgba="0 0 0.7 1.0" />
+    <geom name="mug_contact0" mesh="contact0" class="object_col"/>
+    <geom name="mug_contact1" mesh="contact1" class="object_col"/>
+    <geom name="mug_contact2" mesh="contact2" class="object_col"/>
+    <geom name="mug_contact3" mesh="contact3" class="object_col"/>
+    <geom name="mug_contact4" mesh="contact4" class="object_col"/>
+    <geom name="mug_contact5" mesh="contact5" class="object_col"/>
+    <geom name="mug_contact6" mesh="contact6" class="object_col"/>
+    <geom name="mug_contact7" mesh="contact7" class="object_col"/>
+    <geom name="mug_contact8" mesh="contact8" class="object_col"/>
+    <geom name="mug_contact9" mesh="contact9" class="object_col"/>
+    <geom name="mug_contact10" mesh="contact10" class="object_col"/>
+    <geom name="mug_contact11" mesh="contact11" class="object_col"/>
+    <geom name="mug_contact12" mesh="contact12" class="object_col"/>
+    <geom name="mug_contact13" mesh="contact13" class="object_col"/>
+</mujocoinclude>

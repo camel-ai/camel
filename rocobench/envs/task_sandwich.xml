@@ -1,0 +1,178 @@
+  <mujoco model="ur5e table">
+  <!--  meshdir="assets" texturedir="assets" autolimits="true"/>  -->
+  <compiler angle="radian" autolimits="true"/> 
+  <!-- <statistic center="0.3 0 0.4" extent="0.8"/>  -->
+  <include file="assets/ur5e/ur5e_assets.xml"/>   
+  <include file="assets/ur5e/ur5e_1_assets.xml"/>  
+  <include file="assets/ur5e/suction_assets.xml"/>  
+  <include file="assets/humanoid_assets.xml"/>
+  <include file="assets/scene_assets.xml"/>
+  <include file="assets/object_assets.xml"/>  
+  
+  <visual>
+    <headlight diffuse="0.6 0.6 0.6"  ambient="0.1 0.1 0.1" specular="0 0 0"/>
+    <rgba haze="0.15 0.25 0.35 1"/>
+    <global azimuth="120" elevation="-20"/>
+  </visual>
+ 
+  <worldbody>
+    <light pos="0 0 1.5" dir="0 0 -1" directional="true"/>
+    <geom name="floor" pos="0 0 -0.5" size="0 0 0.05" type="plane" material="groundplane"/> 
+    <!-- adding a table box -->
+    <body name="table" pos="0 0.5 0">
+      <geom name="table_collision" pos="0 0 0.1" size="1.6 0.4 0.05" type="box" group="0" friction="1 0.5 0.0001" rgba="1 1 1 1"/>
+      <body name="table_top" pos="0 0 0.1">
+        <geom name="table_top" size="1.6 0.4 0.05" type="box" conaffinity="0" contype="0" group="1" rgba="1 1 1 1"/>
+       
+      </body>
+      
+      <geom name="table_left" pos="-1.63 0 1" size="0.02 1.6 1.5" rgba="1 1 1 0" type="box"/>
+      <geom name="table_right" pos="1.63 0 1" size="0.02 1.6 1.5" rgba="1 1 1 0" type="box"/>
+      <geom name="table_front" pos="0 1.63 1" size="1.7 0.02 1.5" rgba="1 1 1 0" type="box"/>
+      <geom name="table_back" pos="0 -1.63 1" size="1.7 0.02 1.5" rgba="1 1 1 0" type="box"/>
+ 
+    </body> 
+
+    <body name="humanoid" pos="0.2 1.06 0.17" > 
+      <include file="assets/humanoid_include.xml" />
+    </body>
+     
+
+    <body name="ur5e_suction" pos="-0.1 -0.2 0.1"  > 
+      <include file="assets/ur5e/ur5e_suction.xml" />
+    </body>
+
+    <geom name="panel1" pos="-0.8 0.6 0.2" size="0.05 0.05 0.01" type="box" conaffinity="0" contype="0"  group="1" mass="0.00001" friction="1 0.005 0.0001" rgba="1 1 0 0" />
+    <geom name="panel2" pos="-0.8 0.4 0.2" size="0.05 0.05 0.01" type="box" conaffinity="0" contype="0"  group="1" mass="0.00001" friction="1 0.005 0.0001" rgba="1 1 0 0" />
+    
+    <geom name="panel3" pos="-0.6 0.6 0.2" size="0.05 0.05 0.01" type="box" conaffinity="0" contype="0"  group="1" mass="0.00001" friction="1 0.005 0.0001" rgba="1 1 0 0" />
+    <geom name="panel4" pos="-0.6 0.4 0.2" size="0.05 0.05 0.01" type="box" conaffinity="0" contype="0"  group="1" mass="0.00001" friction="1 0.005 0.0001" rgba="1 1 0 0" />
+    
+    <geom name="panel5" pos="-0.4 0.6 0.2" size="0.05 0.05 0.01" type="box" conaffinity="0" contype="0"  group="1" mass="0.00001" friction="1 0.005 0.0001" rgba="1 1 0 0" />
+    <geom name="panel6" pos="-0.4 0.4 0.2" size="0.05 0.05 0.01" type="box" conaffinity="0" contype="0"  group="1" mass="0.00001" friction="1 0.005 0.0001" rgba="1 1 0 0" />
+     
+    <geom name="panel7" pos="0.4 0.6 0.2" size="0.05 0.05 0.01" type="box" conaffinity="0" contype="0"  group="1" mass="0.00001" friction="1 0.005 0.0001" rgba="1 1 0 0" />
+    <geom name="panel8" pos="0.4 0.4 0.2" size="0.05 0.05 0.01" type="box" conaffinity="0" contype="0"  group="1" mass="0.00001" friction="1 0.005 0.0001" rgba="1 1 0 0" />
+
+    <geom name="panel9" pos="0.6 0.6 0.2" size="0.05 0.05 0.01" type="box" conaffinity="0" contype="0"  group="1" mass="0.00001" friction="1 0.005 0.0001" rgba="1 1 0 0" />
+    <geom name="panel10" pos="0.6 0.4 0.2" size="0.05 0.05 0.01" type="box" conaffinity="0" contype="0"  group="1" mass="0.00001" friction="1 0.005 0.0001" rgba="1 1 0 0" />
+
+    <geom name="panel11" pos="0.8 0.6 0.2" size="0.05 0.05 0.01" type="box" conaffinity="0" contype="0"  group="1" mass="0.00001" friction="1 0.005 0.0001" rgba="1 1 0 0" />
+    <geom name="panel12" pos="0.8 0.4 0.2" size="0.05 0.05 0.01" type="box" conaffinity="0" contype="0"  group="1" mass="0.00001" friction="1 0.005 0.0001" rgba="1 1 0 0" />
+
+    <geom name="panel13" pos="1.0 0.6 0.2" size="0.05 0.05 0.01" type="box" conaffinity="0" contype="0"  group="1" mass="0.00001" friction="1 0.005 0.0001" rgba="1 1 0 0" />
+    <geom name="panel14" pos="1.0 0.4 0.2" size="0.05 0.05 0.01" type="box" conaffinity="0" contype="0"  group="1" mass="0.00001" friction="1 0.005 0.0001" rgba="1 1 0 0" />
+
+  
+    <body name="cutting_board" pos="0 0.5 0.16" >
+      <geom name="cutting_board" pos="0 0 0" size="0.17 0.25 0.02" type="box" group="0" friction="1 0.005 0.0001" material="wood" />  
+      <site name="cutting_board" pos="0 0.05 0.06" rgba='1 0 0 1' type='cylinder' size='0.003 0.006' />
+    </body>
+      
+
+    <body name="bread_slice1" pos="-0.4 0.3 0.2" >
+      <freejoint name="bread_slice1_joint"/>
+      <geom mesh="bread_slice_mesh" type="mesh" material="bread-slice" class="object_visual" /> 
+      <geom type="box" group="0" rgba="1 0 0 0" size="0.07 0.07 0.015" density="500" friction="1 1 0.1"/>
+      <site pos="0 0 0.05" name="bread_slice1" class="site_top" /> 
+    </body> 
+
+    <body name="bread_slice2" pos="0.4 0.3 0.2" >
+      <freejoint name="bread_slice2_joint"/>
+      <geom mesh="bread_slice_mesh" type="mesh" material="bread-slice" class="object_visual" /> 
+      <geom type="box" group="0" rgba="1 0 0 0" size="0.07 0.07 0.015" density="500" friction="1 1 0.1"/>
+      <!-- <geom type="box" group="0" material="bread-slice"  size="0.07 0.07 0.015" density="500" friction="1 1 0.1"/> -->
+      
+      <site pos="0 0 0.05" name="bread_slice2" class="site_top" /> 
+    </body> 
+
+    <body name="bacon" pos="0.6 0.35 0.2"  >
+      <freejoint name="bacon_joint"/>
+      <geom type="box" group="0" size="0.06 0.035 0.005" density="1000" material="bacon" friction="1 1 0.1"/>
+      <site pos="0 0 0.05" name="bacon" class="site_top"/>
+    </body>
+
+    <body name="beef_patty" pos="0.5 0.7 0.2"  >
+      <freejoint name="beef_patty_joint"/>
+      <geom type="cylinder" class='object_visual' friction="1 0.1 0.05" solref="0.01 1.5" condim="6" group="0" size="0.06 0.006" density="100" material="patty"/>
+      <geom type="box" group="0" size="0.06 0.06 0.005" density="1000" rgba="1 0 0 0" friction="1 1 0.1"/>
+      <site pos="0 0 0.05" name="beef_patty" class="site_top"/>
+    </body>
+
+  <!-- cheese -->
+    <body name="cheese" pos="-0.8 0.6 0.2">  
+      <freejoint name="cheese_joint"/> 
+      <geom type="box" group="0" size="0.07 0.07 0.005" density="1000" material="cheese" friction="1 1 0.1"/>
+      <site pos="0 0 0.05" name="cheese" class="site_top" />
+    </body>
+    
+    <body name="tomato" pos="0.8 0.6 0.2">  
+      <freejoint name="tomato_joint"/> 
+      <geom type="cylinder" class='object_visual' friction="1 0.1 0.05" solref="0.01 1.5" condim="6" group="0" size="0.06 0.004" density="100" material="tomato"/>
+      <geom type="box" group="0" size="0.06 0.06 0.005" density="1000" rgba="1 0 0 0" friction="1 1 0.1"/>
+      <site pos="0 0 0.07" name="tomato" class="site_top"/>
+    </body>
+
+    <body name="cucumber" pos="1.2 0.7 0.4">  
+      <freejoint name="cucumber_joint"/> 
+      <geom pos="0 0 0" size="0.03 0.002" type="cylinder" class='object_visual' friction="1 0.1 0.05" solref="0.01 1.5" condim="6" group="0" density="100" material="cucumber"/>
+      <geom pos="0.02 0 0.005" size="0.03 0.002"  type="cylinder" class='object_visual' friction="1 0.1 0.05" solref="0.01 1.5" condim="6" group="0" density="100" material="cucumber"/>
+      <geom pos="0.04 0.02 0" size="0.03 0.002"  type="cylinder" class='object_visual' friction="1 0.1 0.05" solref="0.01 1.5" condim="6" group="0" density="100" material="cucumber"/>
+      
+      <geom type="box" group="0" size="0.06 0.06 0.005" density="1000" rgba="1 0 0 0" friction="1 1 0.1"/>
+      <site pos="0 0 0.07" name="cucumber" class="site_top"/>
+    </body>
+    
+    <body name="ham" pos="-0.7 0.3 0.2">  
+      <freejoint name="ham_joint"/> 
+      <geom pos="0 0 0" size="0.05 0.002" type="cylinder" class='object_visual' friction="1 0.1 0.05" solref="0.01 1.5" condim="6" group="0" density="100" material="ham"/>
+      <geom pos="0.02 0 0.005" size="0.05 0.002"  type="cylinder" class='object_visual' friction="1 0.1 0.05" solref="0.01 1.5" condim="6" group="0" density="100" material="ham"/>
+      <geom type="box" group="0" size="0.06 0.06 0.005" density="1000" rgba="1 0 0 0" friction="1 1 0.1"/>
+      <site pos="0 0 0.07" name="ham" class="site_top"/>
+    </body>
+    
+ 
+    <camera mode="fixed" name="face_panda" pos="0.062 -2.806 0.768" xyaxes="1.000 0.009 -0.000 0.001 -0.131 0.991"/>
+    <camera mode="fixed" name="face_ur5e" pos="0.084 3.711 0.772" xyaxes="-1.000 0.016 0.000 0.002 0.111 0.994"/>
+    <camera mode="fixed" name="top_cam" pos="-0.001 0.652 2.057" xyaxes="-1.000 -0.000 -0.000 0.000 -1.000 0.019"/>
+    <camera mode="fixed" name="right_cam" pos="1.873 0.605 0.926" xyaxes="0.014 1.000 0.000 -0.242 0.003 0.970"/>
+    <camera mode="fixed" name="left_cam" pos="-1.873 0.605 0.926" xyaxes="-0.000 -1.000 0.000 0.177 -0.000 0.984"/>
+    <camera name="teaser" pos="2.675 -0.747 1.997" xyaxes="0.496 0.869 -0.000 -0.429 0.245 0.869"/>
+    <camera name='recipe' pos="1.257 -0.407 1.244" xyaxes="0.579 0.815 0.000 -0.401 0.285 0.871"/>
+    <camera name='video' pos="1.957 -0.281 1.731" xyaxes="0.487 0.874 0.000 -0.500 0.278 0.820"/>
+
+
+  </worldbody> 
+
+  <equality>
+    <weld name="bacon_suction" body1='bacon' body2='suction_tip_1' relpose='0 0 0 1 0 0 0' active='false'/>
+    <weld name="cheese_suction" body1='cheese' body2='suction_tip_1' relpose='0 0 0 1 0 0 0' active='false'/>
+    <weld name="tomato_suction" body1='tomato' body2='suction_tip_1' relpose='0 0 0 1 0 0 0' active='false'/>
+    <weld name="bread_slice1_suction" body1='bread_slice1' body2='suction_tip_1' relpose='0 0 0 1 0 0 0' active='false'/>
+    <weld name="bread_slice2_suction" body1='bread_slice2' body2='suction_tip_1' relpose='0 0 0 1 0 0 0' active='false'/>
+    <weld name="cucumber_suction" body1='cucumber' body2='suction_tip_1' relpose='0 0 0 1 0 0 0' active='false'/>
+    <weld name="ham_suction" body1='ham' body2='suction_tip_1' relpose='0 0 0 1 0 0 0' active='false'/>
+    <weld name="beef_patty_suction" body1='beef_patty' body2='suction_tip_1' relpose='0 0 0 1 0 0 0' active='false'/>
+
+    <weld name='bacon_rpalm' body1='bacon' body2='rpalm' relpose='0.0 0.0 0 0.0 1.0 0.0 0.0' active='false'/>
+    <weld name='cheese_rpalm' body1='cheese' body2='rpalm' relpose='0.0 0.0 0 0.0 1.0 0.0 0.0' active='false'/>
+    <weld name='tomato_rpalm' body1='tomato' body2='rpalm' relpose='0.0 0.0 0 0.0 1.0 0.0 0.0' active='false'/>
+    <weld name='bread_slice1_rpalm' body1='bread_slice1' body2='rpalm' relpose='0.0 0.0 0 0.0 1.0 0.0 0.0' active='false'/>
+    <weld name='bread_slice2_rpalm' body1='bread_slice2' body2='rpalm' relpose='0.0 0.0 0 0.0 1.0 0.0 0.0' active='false'/>
+    <weld name='cucumber_rpalm' body1='cucumber' body2='rpalm' relpose='0.0 0.0 0 0.0 1.0 0.0 0.0' active='false'/>
+    <weld name='ham_rpalm' body1='ham' body2='rpalm' relpose='0.0 0.0 0 0.0 1.0 0.0 0.0' active='false'/>
+    <weld name='beef_patty_rpalm' body1='beef_patty' body2='rpalm' relpose='0.0 0.0 0 0.0 1.0 0.0 0.0' active='false'/> 
+ 
+  </equality>
+  
+  <keyframe>     
+    <key 
+    name="home"   
+    ctrl="0 -1.5708 -1.5708 1.5708 -1.5708 -1.5708 0 0     0 0 0 0 0 -0.25 0 -0.3 0.7 0 0 0 0 0 0 0" 
+    qpos='-3.09045e-07 0.00482237 1.64097e-05 -0.00617895 -0.0161173 1.03212 0.383236 -0.548004 -0.116539 -0.00940649 -0.0201149 0.158207 0.0206823 0.0984588 0.0102944 0.00595989 4.80231e-05 -0.252486 0.00187773 -0.304223 0.698156 2.01836e-05 0.000264468 -3.46015e-05 5.389e-05 -1.50264e-06 1.74216e-05 -7.3564e-18 -1.5708 -1.56576 1.57579 -1.57023 -1.5708 2.70197e-13 -0.4 0.3 0.16494 1 9.70873e-17 -1.39463e-16 9.92144e-17 0.4 0.3 0.16494 1 9.70873e-17 -1.39463e-16 9.92144e-17 0.6 0.35 0.15494 1 3.65702e-17 1.52225e-18 -6.05067e-11 0.5 0.7 0.15494 1 3.30488e-17 -2.1818e-18 -1.08463e-16 -0.8 0.6 0.15494 1 2.48471e-17 3.00262e-20 -1.26614e-16 0.8 0.6 0.15494 1 3.58171e-17 -1.464e-18 7.88657e-17 0.942824 0.332426 0.15494 0.999762 -1.23062e-08 3.43962e-08 0.0218363 -1 0.3 0.15494 1 2.69756e-17 1.1553e-08 3.52576e-13' />
+    
+    </keyframe>
+   
+ 
+</mujoco>
+

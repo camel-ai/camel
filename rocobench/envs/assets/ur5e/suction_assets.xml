@@ -1,0 +1,8 @@
+<mujocoinclude>
+  <actuator>
+    <adhesion name="adhere_gripper" body="suction_disk" ctrlrange="0 1" gain="100"/>
+  </actuator>
+  <!-- <sensor>
+    <force site="force_sensor"/>
+  </sensor> -->
+</mujocoinclude>

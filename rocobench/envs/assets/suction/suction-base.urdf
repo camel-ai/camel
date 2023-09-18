@@ -1,0 +1,54 @@
+<?xml version="0.0" ?>
+<robot name="suction-base.urdf">
+  <material name="DarkGrey">
+    <color rgba="0.2 0.2 0.2 1.0"/>
+  </material>
+
+  <link name="baseLink">
+    <contact>
+      <lateral_friction value="1.0"/>
+      <rolling_friction value="0.0001"/>
+      <inertia_scaling value="3.0"/>
+    </contact>
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+       <mass value=".1"/>
+       <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="suction/base.obj" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="DarkGrey"/>
+    </visual>
+  </link>
+
+  <link name="midLink">
+    <contact>
+      <lateral_friction value="1.0"/>
+      <rolling_friction value="0.0001"/>
+      <inertia_scaling value="3.0"/>
+    </contact>
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+       <mass value=".1"/>
+       <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="suction/mid.obj" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="DarkGrey"/>
+    </visual>
+  </link>
+
+  <joint name="baseLink-midLink" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0 0.025"/>
+    <parent link="baseLink"/>
+    <child link="midLink"/>
+  </joint>
+
+</robot>
+

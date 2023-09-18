@@ -1,0 +1,206 @@
+<mujocoinclude>
+<joint name="human_base_joint" type="slide" axis="1 0 0" range="-1.5 0.1" armature="0.1" damping="1000" />
+<body name="root" childclass="humanoid" pos="0 0 0" euler="1.57  0 0">
+      <site name="root" size=".01" rgba="0.5 0.5 0.5 0"/>
+      <!-- <freejoint name="root"/> -->
+      <camera name="face" pos="0 0 0" xyaxes="1 0 0 0 0 1" fovy="80"/>
+      <geom name="root_geom"  size="0.09 0.06" pos="0 -0.05 0" quat="1 0 -1 0"/>
+      <!-- <body name="lhipjoint">
+        <geom name="lhipjoint" size="0.008 0.022" pos="0.051 -0.046 0.025" quat="0.5708 -0.566602 -0.594264 0"/>
+        <body name="lfemur" pos="0.102 -0.092 0.05" quat="1 0 0 0.17365">
+          <joint name="lfemurrz" axis="0 0 1" range="-60 70" class="stiff_medium"/>
+          <joint name="lfemurry" axis="0 1 0" range="-70 70" class="stiff_medium"/>
+          <joint name="lfemurrx" axis="1 0 0" range="-160 20" class="stiff_medium"/>
+          <geom name="lfemur" size="0.06 0.17" pos="-.01 -0.202473 0" quat="0.7 -0.7 -0.1228 -0.07"/>
+          <body name="ltibia" pos="0 -0.404945 0">
+            <joint name="ltibiarx" axis="1 0 0" range="1   170" class="stiff_low"/>
+            <geom name="ltibia" size="0.03 0.1825614" pos="0 -0.202846 0" quat="0.7 -0.7 -0.1228 -0.1228"/>
+            <geom name="lcalf"  size="0.045 0.08" pos="0 -0.1 -.01" quat="0.7 -0.7 -0.1228 -0.1228"/>
+            <body name="lfoot" pos="0 -0.405693 0" quat="0.707107 -0.707107 0 0">
+              <site name="lfoot_touch" type="box" pos="-.005 -.02 -0.025" size=".04 .08 .02" euler="10 0 0" class="touch"/>
+              <joint name="lfootrz" axis="0 0 1" range="-70 20" class="stiff_medium"/>
+              <joint name="lfootrx" axis="1 0 0" range="-45    1.5708" class="stiff_medium"/>
+              <geom name="lfoot0" size="0.02 0.06" pos="-0.02 -0.023 -0.01" euler="100 -2 0"/>
+              <geom name="lfoot1" size="0.02 0.06" pos="0 -0.023 -0.01" euler="100 0 0"/>
+              <geom name="lfoot2" size="0.02 0.06" pos=".01 -0.023 -0.01" euler="100 10 0"/>
+              <body name="ltoes" pos="0 -0.106372 -0.0227756">
+                <joint name="ltoesrx" axis="1 0 0" range="-1.5708 20"/>
+                <geom name="ltoes0" type="sphere" size="0.02" pos="-.025 -0.01 -.01"/>
+                <geom name="ltoes1" type="sphere" size="0.02" pos="0 -0.005 -.01"/>
+                <geom name="ltoes2" type="sphere" size="0.02" pos=".02 .001 -.01"/>
+                <site name="ltoes_touch" type="capsule" pos="-.005 -.005 -.01" size="0.025 0.02" zaxis="1 .2 0" class="touch"/>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body> -->
+
+      <!-- <body name="rhipjoint">
+        <geom name="rhipjoint" size="0.008 0.022" pos="-0.051 -0.046 0.025" quat="0.574856 -0.547594 0.608014 0"/>
+        <body name="rfemur" pos="-0.102 -0.092 0.05" quat="1 0 0 -0.17365"> 
+          <joint name="rfemurrz" axis="0 0 1" range="-70 60" class="stiff_medium"/>
+          <joint name="rfemurry" axis="0 1 0" range="-70 70" class="stiff_medium"/>
+          <joint name="rfemurrx" axis="1 0 0" range="-160 20" class="stiff_medium"/>
+          <geom name="rfemur" size="0.06 0.17" pos=".01 -0.202473 0" quat="0.7 -0.7 0.1228 0.07"/>
+          <body name="rtibia" pos="0 -0.404945 0">
+            <joint name="rtibiarx" axis="1 0 0" range="1   170" class="stiff_low"/>
+            <geom name="rtibia" size="0.03 0.1825614" pos="0 -0.202846 0" quat="0.7 -0.7 0.1228 0.1228"/>
+            <geom name="rcalf" size="0.045 0.08" pos="0 -0.1 -.01" quat="0.7 -0.7 -0.1228 -0.1228"/>
+            <body name="rfoot" pos="0 -0.405693 0" quat="0.707107 -0.707107 0 0">
+              <site name="rfoot_touch" type="box" pos=".005 -.02 -0.025" size=".04 .08 .02" euler="10 0 0" class="touch"/>
+              <joint name="rfootrz" axis="0 0 1" range="-20 70" class="stiff_medium"/>
+              <joint name="rfootrx" axis="1 0 0" range="-45    1.5708" class="stiff_medium"/>
+              <geom name="rfoot0" size="0.02 0.06" pos="0.02 -0.023 -0.01" euler="100 2 0"/>
+              <geom name="rfoot1" size="0.02 0.06" pos="0 -0.023 -0.01" euler="100 0 0"/>
+              <geom name="rfoot2" size="0.02 0.06" pos="-.01 -0.023 -0.01" euler="100 -10 0"/>
+              <body name="rtoes" pos="0 -0.106372 -0.0227756">
+                <joint name="rtoesrx" axis="1 0 0" range="-1.5708 20"/>
+                <geom name="rtoes0" type="sphere" size="0.02" pos=".025 -0.01 -.01"/>
+                <geom name="rtoes1" type="sphere" size="0.02" pos="0 -0.005 -.01"/>
+                <geom name="rtoes2" type="sphere" size="0.02" pos="-.02 .001 -.01"/>
+                <site name="rtoes_touch" type="capsule" pos=".005 -.005 -.01" size="0.025 0.02" zaxis="1 -.2 0" class="touch"/>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body> -->
+
+      <body name="lowerback">
+        <!-- <joint name="lowerbackrz" axis="0 0 1" range="-30 30" class="stiff_high"/>
+        <joint name="lowerbackry" axis="0 1 0" range="-30 30" class="stiff_high"/>
+        <joint name="lowerbackrx" axis="1 0 0" range="-20 45" class="stiff_high"/> -->
+        <geom name="lowerback" size="0.065 0.055" pos="0 0.056 .03" quat="1 0 1 0" />
+        <body name="upperback" pos="0 0.1 -0.01">
+          <!-- <joint name="upperbackrz" axis="0 0 1" range="-30 30" class="stiff_high"/>
+          <joint name="upperbackry" axis="0 1 0" range="-30 30" class="stiff_high"/>
+          <joint name="upperbackrx" axis="1 0 0" range="-20 45" class="stiff_high"/> -->
+          <geom name="upperback" size="0.06 0.06" pos="0 0.06 0.02" quat="1 0 1 0" />
+          <body name="thorax" pos="0.000512528 0.11356 0.000936821">
+            <joint name="thoraxrx" axis="1 0 0" range="-0.2 0.3" class="stiff_high"/>
+            <!-- <joint name="thoraxrz" axis="0 0 1" range="-0.5236 0.5236" class="stiff_high"/> -->
+            <joint name="thoraxry" axis="0 1 0" range="-0.5236 0.5236" class="stiff_high"/>
+            <!-- <joint name="thoraxrx" axis="1 0 0" range="-20 45" class="stiff_high"/> -->
+            <geom name="thorax" size="0.08 0.07" pos="0 0.05 0" quat="1 0 1 0" />
+            <body name="lowerneck" pos="0 0.113945 0.00468037">
+              <!-- <joint name="lowerneckrz" axis="0 0 1" range="-30 30" class="stiff_medium"/>
+              <joint name="lowerneckry" axis="0 1 0" range="-30 30" class="stiff_medium"/>
+              <joint name="lowerneckrx" axis="1 0 0" range="-20 45" class="stiff_medium"/> -->
+              <geom name="lowerneck" size="0.08 0.02" pos="0 0.04 -.02" quat="1 1 0 0" />
+              <body name="upperneck" pos="0 0.09 0.01">
+                <!-- <joint name="upperneckrz" axis="0 0 1" range="-30 30" class="stiff_medium"/>
+                <joint name="upperneckry" axis="0 1 0" range="-30 30" class="stiff_medium"/>
+                <joint name="upperneckrx" axis="1 0 0" range="-20 45" class="stiff_medium"/> -->
+                <geom name="upperneck" size="0.05 0.03" pos="0 0.05 0" quat=".8 1 0 0"/>
+                <body name="head" pos="0 0.09 0">
+                  <site name="head_keyp" class="keypoint"/> 
+                  <camera name="egocentric" pos="0 0 0" xyaxes="-1 0 0 0 1 0" fovy="80"/>
+                  <!-- <joint name="headrz" axis="0 0 1" range="-30 30" class="stiff_medium"/>
+                  <joint name="headry" axis="0 1 0" range="-30 30" class="stiff_medium"/>
+                  <joint name="headrx" axis="1 0 0" range="-20 45" class="stiff_medium"/> -->
+                  <!-- <geom name="head" size="0.085 0.035" pos="0 0.11 0.03" quat="1 .9 0 0"/> -->
+                  <geom name="head" type="sphere" size="0.13" pos="0 0.11 0.03" />  
+                  <site name="head_top_keyp" pos="0 0.21 0.03" class="keypoint"/>
+                  <geom name="head_top_keyp" pos="0 0.11 0.03" class="keypoint"/>
+                </body>
+              </body>
+            </body>
+            <body name="lclavicle" pos="0 0.113945 0.00468037">
+              <joint name="lclaviclerz" axis="0 0 1" range="0 0.349" class="stiff_high"/>
+              <joint name="lclaviclery" axis="0 1 0" range="-0.349 0.174533" class="stiff_high"/>
+              <geom name="lclavicle" size="0.08 0.04" pos="0.09 0.05 -.01" quat="1 0 -1 -.4"/>
+              <body name="lhumerus" pos="0.183 0.076 0.01" quat="0.18 0.68 -0.68 0.18">
+                <site name="lhumerus_keyp" class="keypoint"/>
+                <joint name="lhumerusrz" axis="0 0 1" range="-1.5708 1.5708" class="stiff_low"/>
+                <joint name="lhumerusry" axis="0 1 0" range="-1.5708 1.5708" class="stiff_low"/>
+                <joint name="lhumerusrx" axis="1 0 0" range="-1.0472 1.5708" class="stiff_low"/> 
+
+                <!-- this is the left upper arm! --> 
+                <geom name="lhumerus" size="0.035 0.124" pos="0 -0.138 0" quat="0.612 -0.612 0.35 0.35"/>
+                <body name="lradius" pos="0 -0.277 0">  
+                  <site name="lradius_keyp" class="keypoint"/>
+                  <joint name="lradiusrx" axis="1 0 0" range="-0.174533 2.967" class="stiff_low"/>
+                  <geom name="lradius" size="0.03 0.06" pos="0 -0.08 0" quat="0.612 -0.612 0.35 0.35"/> 
+                  <body name="lwrist" pos="0 -0.17 0" quat="-0.5 0 0.866 0">
+                    <joint name="lwristry" axis="0 1 0" range="-3.14159 0"/>
+                    <geom name="lwrist" size="0.025 0.03" pos="0 -0.02 0" quat="0 0 -1 -1"/>
+                    <body name="lhand" pos="0 -0.08 0">
+                      <site name="lhand_keyp" class="keypoint"/>
+                      <joint name="lhandrz" axis="0 0 1" range="-0.7853 0.7853"/>
+                      <joint name="lhandrx" axis="1 0 0" range="-1.5708 1.5708"/>
+                      <geom name="lhand" type="ellipsoid" size=".048 0.02 0.06" pos="0 -0.047 0" quat="0 0 -1 -1"/>
+                      <geom pos='0.0 -0.04 -0.02' type="box" size="0.03 0.03 0.001" rgba="1 0 0 0" condim="4" class="hand_adhesion" />
+                      <site name='left_hand_site' pos='0.0 -0.04 -0.025' class="site_top"/>
+                      <body name="lfingers" pos="0 -0.08 0">
+                        <joint name="lfingersrx" axis="1 0 0" range="0 1.5708"/>
+                        <geom name="lfinger0" size="0.01 0.04" pos="-.03 -0.05 0" quat="1 -1 0 0" />
+                        <geom name="lfinger1" size="0.01 0.04" pos="-.008 -0.06 0" quat="1 -1 0 0" />
+                        <geom name="lfinger2" size="0.009 0.04" pos=".014 -0.06 0" quat="1 -1 0 0" />
+                        <geom name="lfinger3" size="0.008 0.04" pos=".032 -0.05 0" quat="1 -1 0 0" />
+                      </body>
+                      <body name="lthumb" pos="-.02 -.03 0" quat="0.92388 0 0 -0.382683">
+                        <joint name="lthumbrz" axis="0 0 1" range="-0.7853 0.7853"/>
+                        <joint name="lthumbrx" axis="1 0 0" range="0 1.5708"/>
+                        <geom name="lthumb" size="0.012 0.025" pos="0 -0.06 0" quat="0 0 -1 -1"/>
+                      </body>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+            <body name="rclavicle" pos="0 0.113945 0.00468037">
+              <joint name="rclaviclerz" axis="0 0 1" range="-0.349 0" class="stiff_high"/>
+              <joint name="rclaviclery" axis="0 1 0" range="-0.174533 0.349" class="stiff_high"/>
+              <geom name="rclavicle" size="0.08 0.04" pos="-.09 0.05 -.01" quat="1 0 -1 .4" />
+              <body name="rhumerus" pos="-0.183 0.076 0.01" quat="0.18 0.68 0.68 -0.18">
+                <site name="rhumerus_keyp" class="keypoint"/> 
+                <joint name="rhumerusrx" axis="1 0 0" range="-1.0472 1.5708" class="stiff_low"/>
+                <joint name="rhumerusry" axis="0 1 0" range="-1.5708 1.5708" class="stiff_low"/>
+                <joint name="rhumerusrz" axis="0 0 1" range="-1.5708 1.5708" class="stiff_low"/>
+                <geom name="rhumerus" size="0.035 0.124" pos="0 -0.138 0" quat="0.61 -0.61 -0.35 -0.35" />
+                <body name="rradius" pos="0 -0.277 0">
+                  <site name="rradius_keyp" class="keypoint"/>
+                  <joint name="rradiusrx" axis="1 0 0" range="-0.174533 2.967" class="stiff_low"/>
+                  <geom name="rradius" size="0.03 0.06" pos="0 -0.08 0" quat="0.612 -0.612 -0.35 -0.35"/>
+                  <body name="rwrist" pos="0 -0.17 0" quat="-0.5 0 -0.866 0">
+                    <joint name="rwristry" axis="0 1 0" range="-3.14159 0"/>
+                    <geom name="rwrist" size="0.025 0.03" pos="0 -0.02 0" quat="0 0 1 1"/>
+                    <body name="rhand" pos="0 -0.08 0">
+                      <site name="rhand_keyp" class="keypoint"/>
+                      <joint name="rhandrx" axis="1 0 0" range="-1.5708 1.5708"/>
+                      <joint name="rhandrz" axis="0 0 1" range="-0.7853 0.7853"/>
+                      <geom name="rhand" type="ellipsoid" size=".048 0.02 .06" pos='0.0 -0.047 0' quat="0 0 -1 -1"/>  
+                      <!-- <body name="rpalm"  pos='0.0 -0.15 -0.025' zaxis="0 0 -1"></body>  -->
+                      <!-- <site name='right_hand_site' pos='0.0 -0.04 -0.02'/> -->
+                      <geom name="adhesion_pane" pos='0.0 -0.04 -0.02' type="box" size="0.02 0.02 0.001" rgba="1 0 0 0.01" condim="4" class="hand_adhesion" />
+                      <body name="rfingers" pos="0 -0.08 0">
+                        <joint name="rfingersrx" axis="1 0 0" range="0 1.5708"/>
+                        <geom name="rfinger0" size="0.01 0.04" pos=".03 -0.05 0" quat="1 -1  0 0" />
+                        <geom name="rfinger1" size="0.01 0.04" pos=".008 -0.06 0" quat="1 -1  0 0" />
+                        <geom name="rfinger2" size="0.009 0.04" pos="-.014 -0.06 0" quat="1 -1  0 0" />
+                        <geom name="rfinger3" size="0.008 0.04" pos="-.032 -0.05 0" quat="1 -1  0 0" />
+
+                        <body name="rpalm"  pos='0 -0.08 -0.03' zaxis="0 0 -1"></body> 
+                        <site name='right_hand_site' pos='0.0 -0.08 -0.03' type="cylinder" size="0.005 0.01" rgba="1 1 0 1"/>
+
+                      </body>
+                      <body name="rthumb" pos=".02 -.03 0" quat="0.92388 0 0 0.382683">
+                        <joint name="rthumbrz" axis="0 0 1" range="-0.7853 0.7853"/>
+                        <joint name="rthumbrx" axis="1 0 0" range="0 1.5708"/>
+                        <geom name="rthumb" size="0.012 0.025" pos="0 -0.06 0" quat="0 0 1 1"/>
+                      </body>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+
+
+</mujocoinclude>
+
+<!-- 
+  mujoco length unit in ur5e: 0.2 length -> 40 cm; 1 length -> 200 cm
+ -->

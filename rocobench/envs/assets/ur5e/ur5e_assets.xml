@@ -1,0 +1,83 @@
+<mujocoinclude>
+  <compiler angle="radian" meshdir="assets" texturedir="assets" autolimits="true"/>
+  <default>
+    <joint axis="0 1 0" range="-6.28319 6.28319"/>
+    <position ctrlrange="-6.2831 6.2831"/>
+
+    <default class="visual">
+      <geom type="mesh" contype="0" conaffinity="0" group="2"/>
+    </default>
+    
+    <default class="collision">
+      <geom type="capsule" group="3"/>
+      <default class="eef_collision">
+        <geom type="cylinder"/>
+      </default>
+    </default>
+    <site size="0.001" rgba="0.5 0.5 0.5 0.3" group="4"/>
+
+    <!-- Reference:
+      https://www.universal-robots.com/articles/ur/robot-care-maintenance/max-joint-torques/ -->
+    <default class="size3">
+      <joint armature="0.1" damping="200"/>
+      <position kp="3500" forcerange="-150 150"/>
+      <default class="size3_limited">
+      <!-- NOTE(Mandi): temp change 3.1415 into 2.1415 -->
+        <joint range="-3.1415 2.1415"/> 
+        <position ctrlrange="-3.1415 2.1415"/>
+      </default>
+    </default>
+    <default class="size1">
+      <joint armature="0.1" damping="15"/>
+      <position kp="3000" forcerange="-28 28"/>
+    </default>
+
+    <default class="active_adhesion">
+      <!--
+        Geoms in the active_adhesion class are "inflated" with a margin of 1cm, but contacts are
+        activated only at a depth gap of 1cm, leading to a layer of inactive contacts at a 1cm
+        distance from the surface. However the contacts can be used by the adhesion actuator.
+      -->
+      <geom margin=".01" gap=".01"/>
+    </default>     
+  </default>
+
+  <asset>
+    <material name="black" specular="0.5" shininess="0.25" rgba="0.033 0.033 0.033 1"/>
+    <material name="jointgray" specular="0.5" shininess="0.25" rgba="0.278 0.278 0.278 1"/>
+    <material name="linkgray" specular="0.5" shininess="0.25" rgba="0.82 0.82 0.82 1"/>
+    <material name="urblue" specular="0.5" shininess="0.25" rgba="0.49 0.678 0.8 1"/>
+
+    <mesh file="ur5e/assets/base_0.obj"/>
+    <mesh file="ur5e/assets/base_1.obj"/>
+    <mesh file="ur5e/assets/shoulder_0.obj"/>
+    <mesh file="ur5e/assets/shoulder_1.obj"/>
+    <mesh file="ur5e/assets/shoulder_2.obj"/>
+    <mesh file="ur5e/assets/upperarm_0.obj"/>
+    <mesh file="ur5e/assets/upperarm_1.obj"/>
+    <mesh file="ur5e/assets/upperarm_2.obj"/>
+    <mesh file="ur5e/assets/upperarm_3.obj"/>
+    <mesh file="ur5e/assets/forearm_0.obj"/>
+    <mesh file="ur5e/assets/forearm_1.obj"/>
+    <mesh file="ur5e/assets/forearm_2.obj"/>
+    <mesh file="ur5e/assets/forearm_3.obj"/>
+    <mesh file="ur5e/assets/wrist1_0.obj"/>
+    <mesh file="ur5e/assets/wrist1_1.obj"/>
+    <mesh file="ur5e/assets/wrist1_2.obj"/>
+    <mesh file="ur5e/assets/wrist2_0.obj"/>
+    <mesh file="ur5e/assets/wrist2_1.obj"/>
+    <mesh file="ur5e/assets/wrist2_2.obj"/>
+    <mesh file="ur5e/assets/wrist3.obj"/>
+
+     <!-- suction gripper -->
+    <mesh file="suction/base.obj" name="suction_base_mesh" scale="0.001 0.001 0.001" /> 
+    <mesh file="suction/mid_suction.obj" name="suction_mid_mesh" scale="0.001 0.001 0.001" /> 
+    <mesh file="suction/head.obj" name="suction_head_mesh" scale="0.0015 0.0015 0.0015" /> 
+    <mesh file="suction/tip.obj" name="suction_tip_mesh" scale="0.0015 0.0015 0.0015" /> 
+    <material name="DarkGrey" rgba="0.2 0.2 0.2 1.0"  />
+    <material name="suction_blue" rgba="0.18039216 0.50588235 0.77254902 1"/>
+
+  </asset>
+  
+
+</mujocoinclude>

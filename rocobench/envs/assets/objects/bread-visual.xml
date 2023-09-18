@@ -1,0 +1,15 @@
+<mujoco model="bread-visual">
+  <asset>
+    <mesh file="meshes/bread.stl" name="bread_mesh" scale="0.8 0.8 0.8"/>
+  </asset>
+  <worldbody>
+    <body>
+      <body name="object">
+        <geom pos="0 0 0" mesh="bread_mesh" type="mesh" rgba="0.8 0.8 0.8 0.3"  conaffinity="0" contype="0"  group="1" mass="0.0001"/>
+      </body>
+      <site rgba="0 0 0 0" size="0.005" pos="0 0 -0.045" name="bottom_site"/>
+      <site rgba="0 0 0 0" size="0.005" pos="0 0 0.03" name="top_site"/>
+      <site rgba="0 0 0 0" size="0.005" pos="0.03 0.03 0" name="horizontal_radius_site"/>
+    </body>
+  </worldbody>
+</mujoco>

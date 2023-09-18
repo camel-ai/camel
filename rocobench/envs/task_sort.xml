@@ -1,0 +1,151 @@
+  <mujoco model="ur5e table">
+  <compiler angle="radian" autolimits="true"/> 
+  <include file="assets/ur5e/ur5e_assets.xml"/> 
+  <include file="assets/ur5e/ur5e_0_assets.xml"/> 
+  <include file="assets/ur5e/ur5e_1_assets.xml"/> 
+  <include file="assets/robotiq/robotiq_assets.xml"/> 
+  <include file="assets/ur5e/suction_assets.xml"/>   
+  <include file="assets/panda/panda_assets.xml"/>   
+  <include file="assets/scene_assets.xml"/>
+  <include file="assets/object_assets.xml"/>  
+  
+  <visual>
+    <headlight diffuse="0.6 0.6 0.6"  ambient="0.1 0.1 0.1" specular="0 0 0"/>
+    <rgba haze="0.15 0.25 0.35 1"/>
+    <global azimuth="120" elevation="-20" offwidth="2000" offheight="2000"/>
+    <quality shadowsize="4096"/>
+  </visual>
+   
+  <worldbody>
+    <light pos="0 0 1.5" dir="0 0 -1" directional="true"/>
+    <geom name="floor" pos="0 0 -0.5" size="0 0 0.05" type="plane" material="groundplane"/> 
+    <!-- adding a table box -->
+    <body name="table" pos="0 0.5 0">
+      <geom name="table_collision" pos="0 0.0 0.1" size="1.6 0.4 0.05" type="box" group="0" friction="1 0.005 0.0001"/>
+      <body name="table_top" pos="0 0.0 0.1">
+        <geom name="table_top" size="1.6 0.4 0.05" type="box" conaffinity="0" contype="0" group="1" />
+        <site name="table_top" size="0.001 0.001 0.001" class="site_top"/> 
+      </body>
+      
+      <geom name="table_left" pos="-1.63 0 1" size="0.02 1.6 1.5" rgba="1 1 1 0" type="box"/>
+      <geom name="table_right" pos="1.63 0 1" size="0.02 1.6 1.5" rgba="1 1 1 0" type="box"/>
+      <geom name="table_front" pos="0 1.63 1" size="1.7 0.02 1.5" rgba="1 1 1 0" type="box"/>
+      <geom name="table_back" pos="0 -1.63 1" size="1.7 0.02 1.5" rgba="1 1 1 0" type="box"/>
+      
+    </body> 
+    <!--  the arm! -->
+    <body name="ur5e_robotiq" pos="-0.7 1.05 0.1" > 
+      <include file="assets/ur5e/ur5e_robotiq.xml" />
+    </body> 
+    <!-- the franka panda -->
+    <body name="panda" pos="0 -0.05 0.1" >
+      <include file="assets/panda/panda_include.xml" />
+    </body> 
+    <body name="ur5e_suction" pos="0.9 1.05 0.1" > 
+      <include file="assets/ur5e/ur5e_suction.xml" />
+    </body>
+
+    <geom name="panel1" pos="-1.12 0.5 0.4" size="0.05 0.05 0.01" type="box" conaffinity="0" contype="0"  group="1" mass="0.00001" friction="1 0.005 0.0001" rgba="1 1 0 0" />
+    <!-- <geom name="panel2" pos="-1.12 0.4 0.2" size="0.05 0.05 0.01" type="box" group="0" friction="1 0.005 0.0001" rgba="1 1 0 0" /> -->
+    
+    <geom name="panel3" pos="-0.4 0.5 0.4" size="0.05 0.05 0.01" type="box" conaffinity="0" contype="0"  group="1" mass="0.00001" friction="1 0.005 0.0001" rgba="1 1 0 0" />
+    <!-- <geom name="panel4" pos="-0.4 0.4 0.2" size="0.05 0.05 0.01" type="box" group="0" friction="1 0.005 0.0001" rgba="1 1 0 0" /> -->
+    
+    <geom name="panel5" pos="0.4 0.5 0.4" size="0.05 0.05 0.01" type="box" conaffinity="0" contype="0"  group="1" mass="0.00001" friction="1 0.005 0.0001" rgba="1 1 0 0" />
+    <!-- <geom name="panel6" pos="0.4 0.4 0.2" size="0.05 0.05 0.01" type="box" group="0" friction="1 0.005 0.0001" rgba="1 1 0 0" /> -->
+     
+    <geom name="panel7" pos="1.2 0.5 0.4" size="0.05 0.05 0.01" type="box" conaffinity="0" contype="0"  group="1" mass="0.00001" friction="1 0.005 0.0001" rgba="1 1 0 0" />
+    <!-- <geom name="panel8" pos="1.2 0.4 0.2" size="0.05 0.05 0.01" type="box" group="0" friction="1 0.005 0.0001" rgba="1 1 0 0" /> -->
+
+    <body name="panel2" pos="-0.8 0.5 0.16" >
+      <geom name="panel2" material="cube-blue" pos="0 0 0" size="0.14 0.14 0.02" type="box" group="0" density="1000"/>
+      <site name="panel2_left" pos="-0.13 0 0.3" class="site_top" />
+      <site name="panel2_right" pos="0.13 0 0.3" class="site_top" />
+      <site name="panel2_middle" pos="0 0 0.3" class="site_top" />
+      <site name="panel2_top" pos="0 0 0.3" class="site_top" />
+    </body>
+
+    <body name="panel4" pos="0 0.5 0.16">
+      <geom name="panel4" material="cube-pink" pos="0 0 0" size="0.14 0.14 0.02" type="box" group="0" density="1000"/>
+      <site name="panel4_left" pos="-0.13 0 0.3" class="site_top" />
+      <site name="panel4_right" pos="0.13 0 0.3" class="site_top" />
+      <site name="panel4_middle" pos="0 0 0.3" class="site_top" />
+      <site name="panel4_top" pos="0 0 0.3" class="site_top" />
+    </body>
+
+    <body name="panel6" pos="0.8 0.5 0.16" >
+      <geom name="panel6" material="cube-yellow" pos="0 0 0" size="0.14 0.14 0.02" type="box" group="0" density="1000"/>
+      <site name="panel6_left" pos="-0.13 0 0.3" class="site_top" />
+      <site name="panel6_right" pos="0.13 0 0.3" class="site_top" />
+      <site name="panel6_middle" pos="0 0 0.3" class="site_top" />
+      <site name="panel6_top" pos="0 0 0.3" class="site_top" />
+    </body>
+     
+
+    <body name="blue_square" pos="-0.8 0.5 0.25">
+      <freejoint name="blue_square_joint" />
+      <geom type="box" material="cube-blue" size='0.04 0.04 0.04' density="1000" />
+      <site name="blue_square_top" pos="0 0 0.1" class="site_top" />
+      <body name="blue_square_weld" pos="0 0 0.06" /> 
+    </body>
+ 
+    <body name="pink_polygon" pos="0 0.5 0.25" > 
+      <freejoint name="pink_polygon_joint" />
+      <geom mesh="polygon_mesh" type="mesh" material="cube-pink" class="object_visual" /> 
+      <!-- <geom type="box" group="0" rgba="1 0 0 0" size="0.037 0.037 0.053" density="1000"/>  -->
+      <geom mesh="polygon_mesh" type="mesh" class="object_collision" /> 
+      <site name="pink_polygon_top" pos="0 0 0.1" class="site_top" />
+      <body name="pink_polygon_weld" pos="0 0 0.06" />
+    </body> 
+
+    <body name="yellow_trapezoid" pos="0.8 0.5 0.25">
+      <freejoint name="yellow_trapezoid_joint" />
+      <geom mesh="trapezoid_mesh" type="mesh" material="cube-yellow" class="object_visual" /> 
+      <geom type="box" group="0" rgba="1 0 0 0" size="0.04 0.06 0.035"  density="1000"/> 
+      <!-- <geom mesh="trapezoid_mesh" type="mesh" class="object_collision" /> NOTE: the actually collision mesh is unstable -->
+      <site name="yellow_trapezoid_top" pos="0 0 0.1" class="site_top" />
+      <body name="yellow_trapezoid_weld" pos="0 0 0.06" quat="0.707 0 0 0.707" /> 
+    </body>
+
+    <camera mode="fixed" name="face_panda" pos="0.223 -1.064 0.758" xyaxes="1.000 0.003 0.000 -0.000 0.143 0.990"/>
+    <camera mode="fixed" name="face_ur5e" pos="-0.207 2.256 1.027" xyaxes="-1.000 0.005 0.000 -0.001 -0.296 0.955"/>
+    <camera name="teaser" pos="2.675 -0.747 1.997" xyaxes="0.496 0.869 -0.000 -0.429 0.245 0.869"/>
+    <!-- <camera mode="fixed" name="top_cam" pos="0.017 0.690 3.624" xyaxes="-1.000 -0.000 -0.000 0.000 -1.000 0.022"/> -->
+    <camera mode="fixed" name="top_cam" pos="-0.001 0.652 2.057" xyaxes="-1.000 -0.000 -0.000 0.000 -1.000 0.019"/>
+    <camera mode="fixed" name="right_cam" pos="1.873 0.605 0.926" xyaxes="0.014 1.000 0.000 -0.242 0.003 0.970"/>
+    <camera mode="fixed" name="left_cam" pos="-1.873 0.605 0.926" xyaxes="-0.000 -1.000 0.000 0.177 -0.000 0.984"/>
+    <camera name='video' pos="1.957 -0.281 1.731" xyaxes="0.487 0.874 0.000 -0.500 0.278 0.820"/>
+
+  </worldbody> 
+
+  <equality>
+    <weld name="pink_polygon_top_robotiq" body1='pink_polygon_weld' body2='robotiq_tip' relpose='0 0 0 1 0 0 0' active='false'/>
+    
+    <weld name="pink_polygon_top_panda" body1='pink_polygon_weld' body2='panda_palm' relpose='0 0 0.01 1 0 0 0' active='false'/>
+    
+    <weld name="pink_polygon_top_suction" body1='pink_polygon_weld' body2='suction_tip_1' relpose='0 0 0 1 0 0 0' active='false'/>
+     
+    <weld name="yellow_trapezoid_top_robotiq" body1='yellow_trapezoid_weld' body2='robotiq_tip' relpose='0 0 0 1 0 0 0' active='false'/>
+     
+    <weld name="yellow_trapezoid_top_panda" body1='yellow_trapezoid_weld' body2='panda_palm' relpose='0 0 0.01 1 0 0 0' active='false'/>
+     
+    <weld name="yellow_trapezoid_top_suction" body1='yellow_trapezoid_weld' body2='suction_tip_1' relpose='0 0 0 1 0 0 0' active='false'/>
+    
+    <weld name="blue_square_top_robotiq" body1='blue_square_weld' body2='robotiq_tip' relpose='0 0 0 1 0 0 0' active='false'/>
+    
+    <weld name="blue_square_top_panda" body1='blue_square_weld' body2='panda_palm' relpose='0 0 0.01 1 0 0 0' active='false'/>
+
+    <weld name="blue_square_top_suction" body1='blue_square_weld' body2='suction_tip_1' relpose='0 0 0 1 0 0 0' active='false'/>
+
+  </equality>
+
+  <keyframe>     
+    <key 
+      name="home" ctrl="0 -1.5708 -1.5708 1.5708 -1.5708 -1.5708 0      0 -1.5708 -1.5708 1.5708 -1.5708 -1.5708 0   0   0       0 0 0 0 -1.57079 0 1.57079 -0.7853 255" 
+      qpos='-2.43554e-05 -1.5708 -1.56483 1.5767 -1.57002 -1.5708 -2.29999e-09 0.00292335 0.0027008 0.00717658 -0.0128126 0.00292335 0.00270015 0.00717411 -0.0128074 1.42425e-08 1.60393e-12 0.00658171 -1.7787e-06 -1.5771 -0.000334485 1.56965 -0.7853 0.04 0.04 -1.98305e-05 -1.5708 -1.56576 1.57579 -1.57023 -1.5708 -3.21378e-12 -0.7 0.6 0.219784 1 3.16668e-17 2.83801e-18 3.20698e-17 -0.100001 0.399999 0.232481 1 7.11085e-06 -2.99432e-06 1.87907e-10 0.699999 0.6 0.21233 1 -1.92316e-07 -9.40474e-06 -1.63381e-09'  
+    />
+    </keyframe>
+   
+ 
+</mujoco>
+

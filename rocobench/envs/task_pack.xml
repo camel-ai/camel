@@ -1,0 +1,225 @@
+  <mujoco model="task_pack">
+  <compiler angle="radian" autolimits="true"/> 
+  <include file="assets/ur5e/ur5e_assets.xml"/>
+  <include file="assets/ur5e/ur5e_0_assets.xml"/>   
+  <include file="assets/robotiq/robotiq_assets.xml"/>
+  <include file="assets/panda/panda_assets.xml"/>   
+  <include file="assets/scene_assets.xml"/>
+  <include file="assets/object_assets.xml"/>
+
+  <visual>
+    <headlight diffuse="0.6 0.6 0.6"  ambient="0.1 0.1 0.1" specular="0 0 0"/>
+    <rgba haze="0.15 0.25 0.35 1"/>
+    <global azimuth="120" elevation="-20" offwidth="2000" offheight="2000"/>
+    <quality shadowsize="4096"/> 
+  </visual>
+
+  <worldbody>
+    <light pos="0 0 1.5" dir="0 0 -1" directional="true"/>
+    <geom name="floor" pos="0 0 -0.5" size="0 0 0.05" type="plane" material="groundplane"/>
+    <!-- adding a table box -->
+    <body name="table" pos="0 0.5 0">
+      <geom name="table_collision" pos="0 0 0.1" size="1.6 0.4 0.05" type="box" group="0" friction="1 0.005 0.0001" rgba='1 1 1 1'/>
+      <body name="table_top" pos="0 0 0.1">
+        <geom name="table_top" size="1.6 0.4 0.05" type="box" conaffinity="0" contype="0" group="3" rgba='1 1 1 1' />
+        <site name="table_top" size="0.001 0.001 0.001" class="site_top"/> 
+      </body>
+      
+      <geom name="table_left" pos="-1.63 0 1" size="0.02 1.6 1.5" rgba="1 1 1 0" type="box"/>
+      <geom name="table_right" pos="1.63 0 1" size="0.02 1.6 1.5" rgba="1 1 1 0" type="box"/>
+      <geom name="table_front" pos="0 1.63 1" size="1.7 0.02 1.5" rgba="1 1 1 0" type="box"/>
+      <geom name="table_back" pos="0 -1.63 1" size="1.7 0.02 1.5" rgba="1 1 1 0" type="box"/>
+      
+    </body> 
+
+    <body name="ur5e_robotiq" pos="-0.2 -0.07 0.15" > 
+      <include file="assets/ur5e/ur5e_robotiq.xml" />
+    </body>
+
+    <body name="panda" pos="-0.2 1.05 0.1" >
+      <include file="assets/panda/panda_include.xml" />
+    </body> 
+
+    <!-- useful for sampling random object initial locations -->
+    <geom name="grid1" pos="-0.05 0.4 0.15" size="0.05 0.03 0.01" type="box" conaffinity="0" contype="0"  group="1" mass="0.00001" rgba="1 1 0 0" />
+    <geom name="grid2" pos="-0.05 0.6 0.15" size="0.05 0.03 0.01" type="box" conaffinity="0" contype="0"  group="1" mass="0.00001" rgba="1 1 0 0" />
+    <geom name="grid3" pos="-0.25 0.4 0.15" size="0.05 0.03 0.01" type="box" conaffinity="0" contype="0"  group="1" mass="0.00001" rgba="1 1 0 0" />
+    <geom name="grid4" pos="-0.25 0.6 0.15" size="0.05 0.03 0.01" type="box" conaffinity="0" contype="0"  group="1" mass="0.00001" rgba="1 1 0 0" />
+    <geom name="grid5" pos="-0.5 0.4 0.15" size="0.05 0.03 0.01" type="box" conaffinity="0" contype="0"  group="1" mass="0.00001" rgba="1 1 0 0" />
+    <geom name="grid6" pos="-0.5 0.6 0.15" size="0.05 0.03 0.01" type="box" conaffinity="0" contype="0"  group="1" mass="0.00001" rgba="1 1 0 0" />
+    <geom name="grid7" pos="-0.75 0.4 0.15" size="0.05 0.03 0.01" type="box" conaffinity="0" contype="0"  group="1" mass="0.00001" rgba="1 1 0 0" />
+    <geom name="grid8" pos="-0.75 0.6 0.15" size="0.05 0.03 0.01" type="box" conaffinity="0" contype="0"  group="1" mass="0.00001" rgba="1 1 0 0" />
+    
+  
+    <body name="bin" pos="0.45 0.5 0.16">
+      <body name="bin_inside" pos="0 0 0">
+        <geom name="bin_inside_bottom" pos="0 0 0" size="0.35 0.2 0.02" type="box" group="3" friction="1 0.005 0.0001" material="light-wood" /> 
+        <geom name="bin_inside_front" pos="0 0.2 0.03" size="0.35 0.01 0.06" type="box" group="3" friction="1 0.005 0.0001" material="light-wood" />  
+        <geom name="bin_inside_back" pos="0 -0.2 0.03" size="0.35 0.01 0.06" type="box" group="3" friction="1 0.005 0.0001" material="light-wood" />
+        <geom name="bin_inside_right" pos="0.38 0 0.03" size="0.01 0.18 0.06" type="box" group="3" friction="1 0.005 0.0001" rgba="1 0 0 0" />
+        <geom name="bin_inside_left" pos="-0.38 0 0.03" size="0.01 0.18 0.06" type="box" group="3" friction="1 0.005 0.0001" rgba="1 0 0 0" />
+      </body>
+      <geom name="bin_right" pos="0.35 0 0.03" size="0.01 0.2 0.06" type="box" group="3" friction="1 0.005 0.0001" material="light-wood" margin="0.01" />
+      <geom name="bin_left" pos="-0.35 0 0.03" size="0.01 0.2 0.06" type="box" group="3" friction="1 0.005 0.0001" material="light-wood" margin="0.01"/>
+      
+      <site name="bin_front_left" pos="-0.2 -0.085 0.2" type="cylinder" group="3" rgba='1 1 0 1' size="0.01 0.005" quat="1 0 0 0" />  
+      <site name="bin_front_middle" pos="0 -0.085 0.2"  type="cylinder" group="3" rgba='1 1 0 1' size="0.01 0.005" quat="1 0 0 0" />  
+      <site name="bin_front_right" pos="0.2 -0.085 0.2"  type="cylinder" group="3" rgba='1 1 0 1' size="0.01 0.005" quat="1 0 0 0" />  
+
+      <site name="bin_back_left" pos="-0.2 0.085 0.2"  type="cylinder" group="3" rgba='1 1 0 1' size="0.01 0.005" quat="1 0 0 0" />  
+      <site name="bin_back_middle" pos="0 0.085 0.2"  type="cylinder" group="3" rgba='1 1 0 1' size="0.01 0.005" quat="1 0 0 0" />  
+      <site name="bin_back_right" pos="0.2 0.085 0.2"  type="cylinder" group="3" rgba='1 1 0 1' size="0.01 0.005" quat="1 0 0 0" />  
+   </body>
+  
+    <body name="apple" pos="-0.5 0.5 0.2">
+      <freejoint name="apple_joint" />
+      <geom type="mesh" name="apple_visual" mesh="apple" rgba="0.78 0.215 0.184 1" />
+      <!-- <geom name="apple_contact" type="box" pos="0 0 -0.01" rgba="0.1 0.1 0.2 0"  size="0.04 0.04 0.04" friction="0.95 0.6 0.1" density="1000"/> -->
+      <geom name="apple_contact" type="mesh" class="object_collision" mesh="apple_contact1" />
+      <site name="apple_top" pos="0 0 0.05" class="site_top"/>
+      <body name="apple_top" pos="0 0 0.04"/>
+      <site name="apple_bottom" pos="0 0 -0.06" class="site_bottom"/>
+      <site name="apple_left" pos="-0.06 0 0" class="site_left"/>
+      <site name="apple_right" pos="0.06 0 0" class="site_right"/>
+    </body>
+
+    <body name="banana" pos="-0.2 0.7 0.2" > 
+      <freejoint name="banana_joint"/>
+      <geom type="mesh" mesh="banana" class="object_visual" rgba="0.8 0.7 0 1" />
+      <!-- <geom type="box" pos="0 0 0" rgba="0.1 0.1 0.2 1"  size="0.125 0.02 0.04" friction="0.95 0.6 0.1" density="1000" /> -->
+      <site name="banana_top" pos="0 0.03 0.05" class="site_top" />
+      <body name="banana_top" pos="0 0.03 0.035" />
+      <site name="banana_bottom" pos="0 0.03 -0.035" class="site_bottom" /> 
+      <geom name="banana_contact0" type="mesh" class="object_collision" mesh="banana_contact0" />
+      <geom name="banana_contact1" type="mesh" class="object_collision" mesh="banana_contact1" />
+      <geom name="banana_contact" type="mesh" class="object_collision" mesh="banana_contact2" />
+      <geom name="banana_contact3" type="mesh" class="object_collision" mesh="banana_contact3" />
+      <geom name="banana_contact4" type="mesh" class="object_collision" mesh="banana_contact4" />
+    </body>
+
+    <body name="milk" pos="-0.6 0.4 0.3">
+        <freejoint name="milk_joint"/>
+        <geom mesh="milk_mesh" type="mesh" material="ceramic" class="object_visual"/> 
+        <geom name="milk_contact0" type="mesh" material="ceramic" mesh="milk_contact0" class='object_collision'/>
+        <geom name="milk_contact" type="box" pos="0 0 -0.01" size="0.035 0.035 0.09" class='object_collision'/>
+        <body name="milk_top" pos="0 0 0.15" />
+        <site name="milk_top" pos="0 0 0.17" class="site_top"/>
+        <site name="milk_left" pos="-0.06 0 0.06" class="site_left"/> 
+        <site name="milk_right" pos="0.06 0 0.06" class="site_right"/>
+        <site name="milk_bottom" pos="0 0 -0.12" class="site_bottom"/> 
+      </body>
+
+    <body name="bread" pos="-0.7 0.6 0.2">
+      <freejoint name="bread_joint"/>
+      <geom mesh="bread_mesh" type="mesh" material="bread"  class="object_visual"/> 
+      <geom name="bread_contact" type="box" group="3" rgba="1 0 0 0" size="0.044 0.058 0.042" density="1000"/> 
+      
+      <site name="bread_top" pos="0 0 0.07" type="cylinder" group="3" rgba='1 1 0 1' size="0.01 0.005" quat="1 0 0 1"/>
+      <body name="bread_top" pos="0 0 0.04" quat="1 0 0 1" />
+
+      <site name="bread_bottom" pos="0 0 -0.06" class="site_bottom"/> 
+      <site name="bread_front" pos="0 -0.05 0" class="site_front"/> 
+      <site name="bread_back" pos="0 0.05 0" class="site_back"/>  
+      <site name="bread_left" pos="-0.06 0 -0.01" class="site_left"/> 
+      <site name="bread_right" pos="0.06 0 -0.01" class="site_right"/>
+    </body> 
+
+    <body name='cereal' pos="-0.8 0.45 0.4" >
+      <freejoint name="cereal_joint"/>
+      <geom type="mesh" mesh="cereal" class="object_visual" material="cereal"/>
+      <geom name="cereal_contact" type="box" size="0.06 0.022 0.09"  rgba="0 1 0 0" friction="1 1 1"  density="5000"/>
+      <site name="cereal_top"      pos="0 0 0.15" class="site_top"/> 
+      <site name="cereal_bottom"   pos="0 0 -0.1" class="site_bottom"/>
+      <body name="cereal_top"      pos="0 0 0.13"/>
+    </body>
+ 
+    <body name="soda_can" pos="-0.4 0.6 0.25" > 
+      <freejoint name="soda_can_joint"/>
+      <!-- <geom name="soda_can_contact" pos="0 0 0" type="box" rgba="0.1 0.1 0.2 0"  size="0.037 0.04 0.057" friction="0.95 0.6 0.1" density="1000" /> -->
+       <geom name="soda_can_contact" pos="0 0 0" type="cylinder" rgba="0.1 0.1 0.2 0"  size="0.037 0.06" group="3" density="500"/>
+      <!-- <geom pos="0 0 0" mesh="can_mesh" type="mesh" class="object_visual" material="can" />    -->
+      
+      <site name="soda_can_top"  pos="0 0 0.08"   class="site_top" /> 
+      <site name="soda_can_bottom" pos="0 0 -0.06" class="site_bottom" />
+      <body name="soda_can_top" pos="0 0 0.06"/>
+    </body>
+
+    <camera mode="fixed" name="face_panda" pos="0.223 -1.064 0.758" xyaxes="1.000 0.003 0.000 -0.000 0.143 0.990"/>
+    <camera mode="fixed" name="face_ur5e" pos="-0.207 2.256 1.027" xyaxes="-1.000 0.005 0.000 -0.001 -0.296 0.955"/>
+    <camera mode="fixed" name="top_cam" pos="-0.001 0.652 2.057" xyaxes="-1.000 -0.000 -0.000 0.000 -1.000 0.019"/>
+    <camera mode="fixed" name="right_cam" pos="1.873 0.605 0.926" xyaxes="0.014 1.000 0.000 -0.242 0.003 0.970"/>
+    <camera mode="fixed" name="left_cam" pos="-1.873 0.605 0.926" xyaxes="-0.000 -1.000 0.000 0.177 -0.000 0.984"/>
+    <camera name="teaser" pos="2.675 -0.747 1.997" xyaxes="0.496 0.869 -0.000 -0.429 0.245 0.869"/>
+    <camera name='video' pos="1.957 -0.281 1.731" xyaxes="0.487 0.874 0.000 -0.500 0.278 0.820"/>
+
+  </worldbody> 
+
+ 
+  <equality>
+    <weld name='apple_top_panda' body1='apple_top' body2='panda_palm' relpose='0 0 0 1 0 0 0' active='false'/>
+    <weld name='apple_top_robotiq' body1='apple_top' body2='robotiq_tip' relpose='0 0 0 1 0 0 0' active='false'/>
+    
+    <weld name='banana_top_panda' body1='banana_top' body2='panda_palm' relpose='0 0 0 1 0 0 0' active='false'/>
+    <weld name='banana_top_robotiq' body1='banana_top' body2='robotiq_tip' relpose='0 0 0 1 0 0 0' active='false'/>
+    
+    <weld name='milk_top_panda' body1='milk_top' body2='panda_palm' relpose='0 0 0 1 0 0 0' active='false'/>
+    <weld name='milk_top_robotiq' body1='milk_top' body2='robotiq_tip' relpose='0 0 0 1 0 0 0' active='false'/>
+
+    <weld name='bread_top_panda' body1='bread_top' body2='panda_palm' relpose='0 0 0.02 1 0 0 0' active='false'/>
+    <weld name='bread_top_robotiq' body1='bread_top' body2='robotiq_tip' relpose='0 0 0 1 0 0 0' active='false'/>
+    
+    <!-- distable some unrealistic grasps -->
+    <weld name='cereal_top_panda' body1='cereal_top' body2='panda_palm' relpose='0 0 0 1 0 0 0' active='false'/>
+    <weld name='cereal_top_robotiq' body1='cereal_top' body2='robotiq_tip' relpose='0 0 -0.01 1 0 0 0' active='false'/>
+    
+    <weld name='soda_can_top_panda' body1='soda_can_top' body2='panda_palm' relpose='0 0 0 1 0 0 0' active='false'/>
+    <weld name='soda_can_top_robotiq' body1='soda_can_top' body2='robotiq_tip' relpose='0 0 0 1 0 0 0' active='false'/>
+     
+  </equality> 
+
+
+  <contact>
+    <!-- <pair name="apple_banana" geom1="apple_contact" geom2="banana_contact" margin="0.02"/> -->
+    <pair name="apple_milk" geom1="apple_contact" geom2="milk_contact" margin="0.02"/>
+    <pair name="apple_bread" geom1="apple_contact" geom2="bread_contact" margin="0.02"/>
+    <pair name="apple_cereal" geom1="apple_contact" geom2="cereal_contact" margin="0.02"/>
+    <pair name="apple_soda_can" geom1="apple_contact" geom2="soda_can_contact" margin="0.02"/>
+    <pair name="banana_milk" geom1="banana_contact" geom2="milk_contact" margin="0.02"/>
+    <pair name="banana_bread" geom1="banana_contact" geom2="bread_contact" margin="0.02"/>
+    <pair name="banana_cereal" geom1="banana_contact" geom2="cereal_contact" margin="0.02"/>
+    <pair name="banana_soda_can" geom1="banana_contact" geom2="soda_can_contact" margin="0.02"/>
+    <pair name="milk_bread" geom1="milk_contact" geom2="bread_contact" margin="0.02"/>
+    <pair name="milk_cereal" geom1="milk_contact" geom2="cereal_contact" margin="0.02"/>
+    <pair name="milk_soda_can" geom1="milk_contact" geom2="soda_can_contact" margin="0.02"/>
+    <pair name="bread_cereal" geom1="bread_contact" geom2="cereal_contact" margin="0.02"/>
+    <pair name="bread_soda_can" geom1="bread_contact" geom2="soda_can_contact" margin="0.02"/>
+    <pair name="cereal_soda_can" geom1="cereal_contact" geom2="soda_can_contact" margin="0.02"/>
+
+    <pair name="apple_bin_right" geom1="apple_contact" geom2="bin_right" margin="0.02"/>
+    <pair name="banana_bin_right" geom1="banana_contact" geom2="bin_right" margin="0.02"/>
+    <pair name="milk_bin_right" geom1="milk_contact" geom2="bin_right" margin="0.02"/>
+    <pair name="bread_bin_right" geom1="bread_contact" geom2="bin_right" margin="0.02"/>
+    <pair name="cereal_bin_right" geom1="cereal_contact" geom2="bin_right" margin="0.02"/>
+
+    <pair name="apple_bin_left" geom1="apple_contact" geom2="bin_left" margin="0.02"/>
+    <pair name="banana_bin_left" geom1="banana_contact" geom2="bin_left" margin="0.02"/>
+    <pair name="milk_bin_left" geom1="milk_contact" geom2="bin_left" margin="0.02"/>
+    <pair name="bread_bin_left" geom1="bread_contact" geom2="bin_left" margin="0.02"/>
+    <pair name="cereal_bin_left" geom1="cereal_contact" geom2="bin_left" margin="0.02"/>
+
+    <pair name="milk_panda" geom1="panda_hand_collision" geom2="milk_contact" margin="0.05" />
+    <pair name="milk_robotiq" geom1="robotiq_collision" geom2="milk_contact" margin="0.05" />
+    <pair name="cereal_panda" geom1="panda_hand_collision" geom2="cereal_contact" margin="0.05" />
+    <pair name="cereal_robotiq" geom1="robotiq_collision" geom2="cereal_contact" margin="0.05" />
+    
+  </contact>
+
+
+  <keyframe> 
+    <key name="home" 
+    ctrl="0 -1.5708 -1.5708 1.5708 -1.5708 -1.5708 0      0 0 0 0 0 -1.57079 0 1.57079 -0.7853 255"
+    qpos='1.12783e-13 -1.5708 -1.56483 1.5767 -1.57002 -1.5708 -2.29951e-09 0.00292335 0.0027008 0.00717658 -0.0128126 0.00292335 0.00270015 0.00717411 -0.0128074 5.86814e-20 1.8588e-22 0.00658171 -1.77871e-06 -1.5771 -0.000334485 1.56965 -0.7853 0.04 0.04 -1.00107 0.627579 0.199784 0.997282 -1.06997e-07 -6.79817e-06 0.0736819 -0.670256 0.629387 0.169784 0.943607 5.04823e-09 9.65585e-10 0.331068 -0.61116 0.781788 0.254784 0.999977 1.35787e-16 9.9725e-16 -0.00685527 -0.4 0.6 0.194784 1 9.32793e-17 -1.06903e-16 2.44683e-16 -0.166066 0.669853 0.256784 0.99999 -3.48249e-13 4.39421e-14 -0.00440076 0.392892 0.451066 0.236784 -0.285049 3.82738e-11 -2.02185e-10 -0.958513'
+    /> 
+  </keyframe>
+ 
+</mujoco>

@@ -1,0 +1,199 @@
+<mujocoinclude>
+  <compiler angle="radian"  />
+  <statistic extent="2" center="0 0 1"/> 
+  <default class="main">
+    <joint limited="true" solimplimit="0 0.99 0.01" stiffness="0.1" armature=".01" damping="1"/>
+    <geom friction="0.7" solref="0.015 1" solimp="0.95 0.99 0.003"/>
+    <motor ctrllimited="true" ctrlrange="-1 1"/>
+    
+    <default class="humanoid">
+      <geom type="capsule" material="self"/> 
+      <default class="stiff_low">
+        <!-- <joint stiffness=".5" damping="4" armature="0.1" /> -->
+        <joint stiffness="1" damping="80" armature="0.1" />
+      </default>
+      <default class="stiff_medium">
+        <!-- <joint stiffness="10" damping="5" armature="0.1" /> -->
+        <joint stiffness="1" damping="80" armature="0.1" /> 
+      </default>
+      <default class="stiff_high">
+        <!-- <joint stiffness="30" damping="10" armature="0.1" /> -->
+        <joint stiffness="1" damping="80" armature="0.1" />
+      </default>
+      
+      <default class="joint_act">
+        <!-- <joint armature="0.1" damping="15"/> -->
+        <position kp="1000"  forcerange="-90 90"/>
+      </default>
+      
+      <default class="touch">
+        <site group="3" rgba="0 0 1 .5"/>
+      </default>
+      
+      <default class="keypoint">
+        <site size="0.01" type="sphere" rgba="1 0 0 0"/>
+        <geom rgba='0 0.5 1 1' type='cylinder' size='0.005 0.01' conaffinity="0" contype="0"  group="1" mass="0.00001"/>
+      </default>
+    </default>
+
+    <default class="hand_adhesion"> 
+      <geom margin=".015" gap=".015"/>
+    </default>
+  </default>
+
+  <asset>
+    <texture name="grid" type="2d" builtin="checker" rgb1=".1 .2 .3" rgb2=".2 .3 .4" width="300" height="300" mark="edge" markrgb=".2 .3 .4"/>
+    <material name="grid" texture="grid" texrepeat="1 1" texuniform="true" reflectance=".2"/>
+    <!-- <material name="self" rgba=".7 .5 .3 1"/> -->
+    <material name="self" rgba="0.7490196078431373 0.6196078431372549 0.5725490196078431 1" reflectance=".1"/>
+    <material name="self_default" rgba=".7 .5 .3 1"/>
+    <material name="self_highlight" rgba="0 .5 .3 1"/>
+    <material name="effector" rgba=".7 .4 .2 1"/>
+    <material name="effector_default" rgba=".7 .4 .2 1"/>
+    <material name="effector_highlight" rgba="0 .5 .3 1"/>
+    <material name="decoration" rgba=".3 .5 .7 1"/>
+    <material name="eye" rgba="0 .2 1 1"/>
+    <material name="target" rgba=".6 .3 .3 1"/>
+    <material name="target_default" rgba=".6 .3 .3 1"/>
+    <material name="target_highlight" rgba=".6 .3 .3 .4"/>
+    <material name="site" rgba=".5 .5 .5 .3"/>
+  </asset>
+
+  <contact>
+    <exclude body1="lclavicle" body2="rclavicle"/>
+    <exclude body1="lowerneck" body2="lclavicle"/>
+    <exclude body1="lowerneck" body2="rclavicle"/>
+    <exclude body1="upperneck" body2="lclavicle"/>
+    <exclude body1="upperneck" body2="rclavicle"/>
+  </contact>
+ 
+  <actuator>
+    <position name="human_base" joint="human_base_joint" ctrlrange="-1.5 0.1" kp="1000" /> 
+    <position name="thoraxrx" joint="thoraxrx" ctrlrange="-0.2 0.3" class="joint_act" />
+    <position name="thoraxry" joint="thoraxry" ctrlrange="-0.5236 0.5236" class="joint_act" /> 
+    <!-- <position name="thoraxrz" joint="thoraxrz" ctrlrange="-0.5236 0.5236" class="joint_act" /> -->
+    <!-- <motor name="headrx" joint="headrx" gear="20"/>
+    <motor name="headry" joint="headry" gear="20"/>
+    <motor name="headrz" joint="headrz" gear="20"/> -->
+
+  <!-- motor version of the left side controllable joints: -->
+    <!-- <motor name="lclaviclery" joint="lclaviclery" gear="20"/>
+    <motor name="lclaviclerz" joint="lclaviclerz" gear="20"/>
+    <motor name="lhandrx" joint="lhandrx" gear="20"/>
+    <motor name="lhandrz" joint="lhandrz" gear="20"/>
+    <motor name="lhumerusrx" joint="lhumerusrx" gear="40"/>
+    <motor name="lhumerusry" joint="lhumerusry" gear="40"/>
+    <motor name="lhumerusrz" joint="lhumerusrz" gear="40"/>
+    <motor name="lradiusrx" joint="lradiusrx" gear="40"/>
+    <motor name="lthumbrx" joint="lthumbrx" gear="20"/>
+    <motor name="lthumbrz" joint="lthumbrz" gear="20"/> 
+    <motor name="lwristry" joint="lwristry" gear="20"/>
+    <motor name="lfingersrx" joint="lfingersrx" gear="20"/> -->
+
+  <!-- position version of the left side joints: -->
+    <!-- <position name="lclaviclery" joint="lclaviclery" ctrlrange="0 0.349" class="joint_act"/> 
+    <position name="lclaviclerz" joint="lclaviclerz" ctrlrange="-0.349 0.174533" class="joint_act"/> 
+    <position name="lhumerusrx" joint="lhumerusrx" ctrlrange="-1 3.1415" class="joint_act" />
+    <position name="lhumerusry" joint="lhumerusry" ctrlrange="-1.67 1.67" class="joint_act" />
+    <position name="lhumerusrz" joint="lhumerusrz" ctrlrange="-1.67 1.67" class="joint_act" />
+    <position name="lradiusrx" joint="lradiusrx" ctrlrange="-0.174533 2.967" class="joint_act" /> 
+    <position name="lwristry" joint="lwristry" ctrlrange="-3.1415 3.1415" class="joint_act" />
+    <position name="lhandrx" joint="lhandrx" ctrlrange="-1.6 1.6" class="joint_act" />
+    <position name="lhandrz" joint="lhandrz" ctrlrange="-1.67 1.67" class="joint_act" />
+    <position name="lfingersrx" joint="lfingersrx" ctrlrange="0 1.6" class="joint_act"/>
+    <adhesion name="adhere_left_hand" body="lhand" ctrlrange="0 1" gain="200"/> -->
+
+    
+    <!-- joints from body:  "lhipjoint"-->
+    <!-- 
+    <motor name="lfemurrx" joint="lfemurrx" gear="120"/>
+    <motor name="lfemurry" joint="lfemurry" gear="40"/>
+    <motor name="lfemurrz" joint="lfemurrz" gear="40"/>
+    <motor name="ltibiarx" joint="ltibiarx" gear="80"/>
+    <motor name="lfootrx" joint="lfootrx" gear="20"/>
+    <motor name="lfootrz" joint="lfootrz" gear="20"/>
+    <motor name="ltoesrx" joint="ltoesrx" gear="20"/> 
+    -->
+
+    <!-- joints from body:  "rhipjoint"-->
+    <!-- 
+    <motor name="rfemurrx" joint="rfemurrx" gear="120"/>
+    <motor name="rfemurry" joint="rfemurry" gear="40"/>
+    <motor name="rfemurrz" joint="rfemurrz" gear="40"/>
+    <motor name="rfootrx" joint="rfootrx" gear="20"/>
+    <motor name="rfootrz" joint="rfootrz" gear="20"/>
+    <motor name="rtibiarx" joint="rtibiarx" gear="80"/>
+    <motor name="rtoesrx" joint="rtoesrx" gear="20"/>
+    -->
+
+    
+
+    <!-- <motor name="lowerbackrx" joint="lowerbackrx" gear="40"/>
+    <motor name="lowerbackry" joint="lowerbackry" gear="40"/>
+    <motor name="lowerbackrz" joint="lowerbackrz" gear="40"/> -->
+    <!-- <motor name="lowerneckrx" joint="lowerneckrx" gear="20"/>
+    <motor name="lowerneckry" joint="lowerneckry" gear="20"/>
+    <motor name="lowerneckrz" joint="lowerneckrz" gear="20"/> -->
+
+   
+    <!-- <motor name="rclaviclery" joint="rclaviclery" gear="20"/>
+    <motor name="rclaviclerz" joint="rclaviclerz" gear="20"/> 
+    <motor name="rhumerusrx" joint="rhumerusrx" ctrlrange="0 1" gear="40"/> 
+    <motor name="rhumerusry" joint="rhumerusry"  ctrlrange="0 1" gear="40"/>
+    <motor name="rhumerusrz" joint="rhumerusrz"  ctrlrange="0 1"  gear="40"/>
+    <motor name="rradiusrx" joint="rradiusrx" gear="40"/> 
+    <motor name="rwristry" joint="rwristry" gear="20"/> 
+    <motor name="rhandrx" joint="rhandrx" gear="20"/>
+    <motor name="rhandrz" joint="rhandrz" gear="20"/>
+    <motor name="rfingersrx" joint="rfingersrx" gear="20"/>   -->
+
+    <!-- position version of the right side joints: -->
+    <position name="rclaviclery" joint="rclaviclery" ctrlrange="-0.174533 0.349" class="joint_act"/> 
+    <position name="rclaviclerz" joint="rclaviclerz" ctrlrange="-0.349 0" class="joint_act"/> 
+    <position name="rhumerusrx" joint="rhumerusrx" ctrlrange="-1.0472 1.5708" class="joint_act"  />
+    <position name="rhumerusry" joint="rhumerusry" ctrlrange="-1.5708 1.5708" class="joint_act" />
+    <position name="rhumerusrz" joint="rhumerusrz" ctrlrange="-1.5708 1.5708" class="joint_act" /> 
+    <position name="rradiusrx" joint="rradiusrx" ctrlrange="-0.174533 2.967" class="joint_act" /> 
+    <position name="rwristry" joint="rwristry" ctrlrange="-3.1415 0" class="joint_act" />  
+    <position name="rhandrx" joint="rhandrx" ctrlrange="-1.5708 1.5708" class="joint_act" />
+    <position name="rhandrz" joint="rhandrz" ctrlrange="-0.7853 0.7853" class="joint_act" />
+    <position name="rfingersrx" joint="rfingersrx" ctrlrange="0 1.6" class="joint_act"/> 
+    <position name="rthumbrx" joint="rthumbrx" ctrlrange="0 1.5708" class="joint_act"/> 
+    <position name="rthumbrz" joint="rthumbrz" ctrlrange="-0.7853 0.7853" class="joint_act"/> 
+
+    <adhesion name="adhere_hand" body="rhand" ctrlrange="0 1" gain="600"/>
+    
+    
+    
+    <!-- <motor name="rthumbrx" joint="rthumbrx" gear="20"/>
+    <motor name="rthumbrz" joint="rthumbrz" gear="20"/>  -->
+    
+    
+    <!-- NOTE(Mandi): keeps just one joint, thoraxry, to keep thorax body stable -->
+    <!-- <motor name="thoraxrx" joint="thoraxrx" gear="40"/> -->
+    <!-- <motor name="thoraxry" joint="thoraxry" gear="40"/> -->
+    <!-- <motor name="thoraxrz" joint="thoraxrz" gear="40"/> -->
+
+    <!-- <motor name="upperbackrx" joint="upperbackrx" gear="40"/>
+    <motor name="upperbackry" joint="upperbackry" gear="40"/>
+    <motor name="upperbackrz" joint="upperbackrz" gear="40"/> -->
+    <!-- <motor name="upperneckrx" joint="upperneckrx" gear="20"/>
+    <motor name="upperneckry" joint="upperneckry" gear="20"/>
+    <motor name="upperneckrz" joint="upperneckrz" gear="20"/> -->
+
+  </actuator>
+
+  <sensor>
+    <subtreelinvel name="thorax_subtreelinvel" body="thorax"/>
+    <velocimeter name="sensor_root_veloc" site="root"/>
+    <gyro name="sensor_root_gyro" site="root"/>
+    <accelerometer name="sensor_root_accel" site="root"/>
+
+    <!-- <touch name="sensor_touch_ltoes" site="ltoes_touch"/> -->
+    <!-- <touch name="sensor_touch_rtoes" site="rtoes_touch"/> -->
+    <!-- <touch name="sensor_touch_rfoot" site="rfoot_touch"/> -->
+    <!-- <touch name="sensor_touch_lfoot" site="lfoot_touch"/> -->
+  </sensor>
+
+
+</mujocoinclude>
