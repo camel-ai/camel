@@ -25,6 +25,8 @@ jobs:
     - name: Run pytest
       env:
         OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
+        GOOGLE_API_KEY: "${{ secrets.GOOGLE_API_KEY }}"
+        SEARCH_ENGINE_ID: "${{ secrets.SEARCH_ENGINE_ID }}"
       run: poetry run pytest --fast-test-mode test/
 
   pytest_package_llm_test:
@@ -38,6 +40,8 @@ jobs:
     - name: Run pytest
       env:
         OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
+        GOOGLE_API_KEY: "${{ secrets.GOOGLE_API_KEY }}"
+        SEARCH_ENGINE_ID: "${{ secrets.SEARCH_ENGINE_ID }}"
       run: poetry run pytest --llm-test-only test/
 
   pytest_package_very_slow_test:
@@ -51,4 +55,6 @@ jobs:
     - name: Run pytest
       env:
         OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
+        GOOGLE_API_KEY: "${{ secrets.GOOGLE_API_KEY }}"
+        SEARCH_ENGINE_ID: "${{ secrets.SEARCH_ENGINE_ID }}"
       run: poetry run pytest --very-slow-test-only test/
