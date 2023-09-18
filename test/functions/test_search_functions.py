@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import os
+
 import requests
 import wikipedia
 
@@ -48,9 +50,9 @@ def test_google_api():
     # Check the google search api
 
     # https://developers.google.com/custom-search/v1/overview
-    GOOGLE_API_KEY = "AIzaSyAFATycX7C9SgqpeL5ciCZ7dFBsqIqLhtY"
+    GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
     # https://cse.google.com/cse/all
-    SEARCH_ENGINE_ID = "50393d7ebc1ef4bf9"
+    SEARCH_ENGINE_ID = os.getenv("SEARCH_ENGINE_ID")
 
     url = f"https://www.googleapis.com/customsearch/v1?" \
           f"key={GOOGLE_API_KEY}&cx={SEARCH_ENGINE_ID}&q=any"

@@ -14,9 +14,6 @@
 import os
 from typing import Any, Dict, List
 
-import requests
-from bs4 import BeautifulSoup
-
 import camel.agents
 from camel.functions import OpenAIFunction
 from camel.messages import BaseMessage
@@ -62,19 +59,28 @@ def search_google(query: str) -> List[Dict[str, Any]]:
         List[Dict[str, Any]]: A list of dictionaries where each dictionary
         represents a website.
             Each dictionary contains the following keys:
+            - 'result_id': A number in order.
             - 'title': The title of the website.
             - 'description': A brief description of the website.
+            - 'long_description': More detail of the website.
             - 'url': The URL of the website.
 
             Example:
             {
+                'result_id': 1,
                 'title': 'OpenAI',
                 'description': 'An organization focused on ensuring that
                 artificial general intelligence benefits all of humanity.',
+                'long_description': 'OpenAI is a non-profit artificial
+                 intelligence research company. Our goal is to advance digital
+                intelligence in the way that is most likely to benefit humanity
+                as a whole',
                 'url': 'https://www.openai.com'
             }
         title, descrption, url of a website.
     """
+    import requests
+
     # https://developers.google.com/custom-search/v1/overview
     GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
     # https://cse.google.com/cse/all
@@ -143,6 +149,9 @@ def text_extract_from_web(url: str) -> str:
     Returns:
         string: All texts extract from the web.
     """
+    import requests
+    from bs4 import BeautifulSoup
+
     try:
         # Request the target page
         response_text = requests.get(url).text
