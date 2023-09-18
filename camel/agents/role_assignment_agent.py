@@ -146,42 +146,40 @@ class RoleAssignmentAgent(ChatAgent):
 
         return role_descriptions_dict
 
-    def run_task_assignment(self, task_prompt: Union[str, TextPrompt],
-                            subtasks) -> Dict[str, Any]:
+    def run_task_assignment(self, subtasks: List[str]) -> Dict[str, Any]:
         """
         Assign dependencies between subtasks generated from the task prompt.
 
         Args:
-            task_prompt(Union[str, TextPrompt]): The prompt for the task based
-            on which DAG is to be generated.
+            subtasks (List[str]): The subtasks to complete the whole task.
 
         Returns:
             Dict[str, Any]: A JSON representing the DAG of subtasks and their
             dependencies.
-
         """
-        # Ensure we have subtasks generated
-        if not subtasks:
-            self.split_tasks(task_prompt)
-
         # Formatted prompt to constrain agent's response to the desired format
-        structured_prompt = "===== DEPENDENCY ASSIGNMENT ===== \n" + "\n".join(
-            f"Subtask{i+1}: {subtask}\n Dependencies: <BLANK>;"
-            for i, subtask in enumerate(subtasks)) + "\nEnd"
+        subtask_with_dependency_prompt = "===== ANSWER TEMPLATE =====\n" + \
+            "\n".join(
+                f"Subtask{i + 1}: {subtask}\nDependencies: <BLANK>;"
+                for i, subtask in enumerate(subtasks)) + "\nEnd"
         form = '; '.join(f'subtask{i+1}: {s}' for i, s in enumerate(subtasks))
 
-        prompt = (
-            "You are a subtask planning agent, and your task is to" +
-            " establish dependencies between the following subtasks. "
-            f"Subtasks: {form}\n\n"
-            "Please generate a DAG of subtasks and their dependencies." +
-            "Dependencies for each subtask should be separated by semicolon." +
-            "Your answer MUST adhere to the format of" +
-            f"the DEPENDENCY ASSIGNMENT section below:\n {structured_prompt}")
+        dependency_prompt = (
+            "You are a subtask planning agent, and your task is to " +
+            "establish dependencies between the following subtasks. " +
+            "Subtasks: {form}\n\n"
+            "Please generate a DAG of subtasks and their dependencies. " +
+            "Dependencies for each subtask should be separated by " +
+            "semicolon. Your answer MUST adhere to the format of" +
+            "the ANSWER TEMPLATE section below:\n" +
+            "{subtask_with_dependency_prompt}")
+        dependencies_of_subtasks = dependency_prompt.format(
+            form=form,
+            subtask_with_dependency_prompt=subtask_with_dependency_prompt)
 
         # Use the agent to get the response
         task_msg = BaseMessage.make_user_message(
-            role_name="Task Planning Agent", content=prompt)
+            role_name="Task Planning Agent", content=dependencies_of_subtasks)
 
         response = super().step(input_message=task_msg)
         msg_content = response.msg.content
