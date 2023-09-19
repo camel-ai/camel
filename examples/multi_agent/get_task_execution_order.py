@@ -11,8 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import json
-
 from colorama import Fore
 
 from camel.agents.role_assignment_agent import RoleAssignmentAgent
@@ -32,26 +30,26 @@ def main(model_type=None) -> None:
 
     num_subtasks = 6
 
-    subtasks = role_assignment_agent.split_tasks(task_prompt,
-                                                 role_description_dict,
-                                                 num_subtasks)
+    subtasks_with_dependencies_dict = \
+        role_assignment_agent.split_tasks(task_prompt, role_description_dict,
+                                          num_subtasks)
 
     # Run task assignment to generate dependencies among subtasks
-    dag_json = role_assignment_agent.run_task_assignment(task_prompt, subtasks)
+    subtasks_execution_pipelines = \
+        role_assignment_agent.get_task_execution_order(
+            subtasks_with_dependencies_dict)
 
-    if not dag_json:
+    if not subtasks_execution_pipelines:
         raise ValueError("Dependency graph (DAG) is empty.")
 
-    print(Fore.BLUE + "\nDependencies among subtasks: ")
-    print(json.dumps(dag_json, indent=4))
-    for (i, subtask) in enumerate(subtasks):
-        print(Fore.GREEN + f"\nSubtasks {i+1}: {subtask}")
-        subtask_key = f"Subtask{i+1}"
-        dependencies = dag_json.get(subtask_key, {}).get("dependencies", [])
-        if dependencies:
-            print(Fore.CYAN + "Dependencies: ", ", ".join(dependencies))
-        else:
-            print(Fore.RED + "No Dependencies Found.")
+    for (i, subtask) in enumerate(subtasks_with_dependencies_dict.keys()):
+        descs = subtasks_with_dependencies_dict[subtask]["description"]
+        print(Fore.GREEN + f"\nSubtask {i+1}: {descs}")
+        deps = subtasks_with_dependencies_dict[subtask]["dependencies"]
+        print(Fore.CYAN + "Dependencies: [" + ", ".join(dep
+                                                        for dep in deps) + "]")
+    for idx, subtask_group in enumerate(subtasks_execution_pipelines, 1):
+        print(Fore.YELLOW + f"Pipeline {idx}: {', '.join(subtask_group)}")
 
 
 if __name__ == "__main__":
