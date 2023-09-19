@@ -146,112 +146,79 @@ class RoleAssignmentAgent(ChatAgent):
 
         return role_descriptions_dict
 
-    def run_task_assignment(self, subtasks: List[str]) -> Dict[str, Any]:
-        """
-        Assign dependencies between subtasks generated from the task prompt.
+    def run_task_execution_order(
+        self,
+        subtasks_with_dependencies_dict: Dict[str, List[str]],
+    ) -> List[List[str]]:
+        r"""Assign dependencies between subtasks generated from the task
+            prompt.
 
         Args:
-            subtasks (List[str]): The subtasks to complete the whole task.
+            subtasks_with_dependencies_dict (Dict[str, List[str]]): The
+                subtasks with their dependencies.
 
         Returns:
-            Dict[str, Any]: A JSON representing the DAG of subtasks and their
-            dependencies.
+            List[List[str]]: A list of lists of subtasks that can be executed
+                concurrently.
         """
-        # Formatted prompt to constrain agent's response to the desired format
-        subtask_with_dependency_prompt = "===== ANSWER TEMPLATE =====\n" + \
-            "\n".join(
-                f"Subtask{i + 1}: {subtask}\nDependencies: <BLANK>;"
-                for i, subtask in enumerate(subtasks)) + "\nEnd"
-        form = '; '.join(f'subtask{i+1}: {s}' for i, s in enumerate(subtasks))
+        oriented_graph = {}
+        for subtask, details in subtasks_with_dependencies_dict.items():
+            dependencies = details["dependencies"]
+            oriented_graph[subtask] = dependencies
 
-        dependency_prompt = (
-            "You are a subtask planning agent, and your task is to " +
-            "establish dependencies between the following subtasks. " +
-            "Subtasks: {form}\n\n"
-            "Please generate a DAG of subtasks and their dependencies. " +
-            "Dependencies for each subtask should be separated by " +
-            "semicolon. Your answer MUST adhere to the format of" +
-            "the ANSWER TEMPLATE section below:\n" +
-            "{subtask_with_dependency_prompt}")
-        dependencies_of_subtasks = dependency_prompt.format(
-            form=form,
-            subtask_with_dependency_prompt=subtask_with_dependency_prompt)
+        subtasks_execution_pipelines = \
+            self.sort_oriented_graph(oriented_graph)
 
-        # Use the agent to get the response
-        task_msg = BaseMessage.make_user_message(
-            role_name="Task Planning Agent", content=dependencies_of_subtasks)
+        return subtasks_execution_pipelines
 
-        response = super().step(input_message=task_msg)
-        msg_content = response.msg.content
+    def sort_oriented_graph(
+            self, oriented_graph: Dict[str, List[str]]) -> List[List[str]]:
+        r"""Sort the subtasks in topological order and group them into
+            concurrent pipelines.
 
-        # Now, we parse the response to create a structured JSON representation
-        # The desired example, should follow the output of
-        # Subtask1: Dependency1, Dependency2; Subtask2: Dependency1;
-        # Using the function
-        # Regex pattern to extract roles, their descriptions, and dependencies
-        pattern = r"(Subtask\d+): (.*?)\nDependencies: (.*?);"
+        Args:
+            oriented_graph (Dict[str, List[str]]): The DAG of subtasks and
+                their dependencies.
 
-        matches = re.findall(pattern, msg_content, re.DOTALL)
-
-        dependencies_dict = {}
-        for match in matches:
-            subtask_identifier = match[0]
-            description = match[1].strip()
-            if match[2].strip() != "None":
-                dependencies = [dep.strip() for dep in match[2].split(",")]
-            else:
-                dependencies = []
-            dependencies_dict[subtask_identifier] = {
-                "description": description,
-                "dependencies": dependencies
-            }
-
-        graph = {
-            subtask: data["dependencies"]
-            for subtask, data in dependencies_dict.items()
-        }
-
-        order = self.topological_sort(graph)
-        print(f"The executable order is as follows: {order}")
-
-        return dependencies_dict
-
-    def topological_sort(self, graph):
+        Returns:
+            List[List[str]]: A list of lists of subtasks that can be executed
+                concurrently.
+        """
         # Count of incoming edges
-        in_degree = {u: 0 for u in graph}
+        in_degree = {u: 0 for u in oriented_graph}
 
-        for u in graph:
-            for v in graph[u]:
+        for u in oriented_graph:
+            for v in oriented_graph[u]:
                 in_degree[v] += 1
 
         # The queue will contain all nodes with in_degree = 0
-        queue = deque()
-        for i in in_degree:
-            if in_degree[i] == 0:
-                queue.append(i)
+        queue = deque(filter(lambda i: in_degree[i] == 0, in_degree))
 
-        order = []
+        parallel_subtask_pipelines = []
 
         while queue:
-            # Extract front of the queue and add it to the topological order
-            u = queue.popleft()
-            order.append(u)
+            # Collect nodes that can be processed concurrently in this round
+            concurrent_nodes = list(queue)
+            parallel_subtask_pipelines.insert(0, concurrent_nodes)
 
-            # Iterate through all neighboring nodes
-            # of the dequeued node u
-            # and decrease their in_degree by 1
-            for i in graph[u]:
-                in_degree[i] -= 1
-                # if in_degree becomes zero, add it to the queue
-                if in_degree[i] == 0:
-                    queue.append(i)
+            # Empty the queue for the next round
+            queue.clear()
 
-        # If the count of the order is not equal to
-        # the number of nodes in the graph
-        if len(order) != len(graph):
-            return "There exists a cycle in the graph.Can't determine an order"
-        else:
-            return order[::-1]
+            # For each concurrently processed node, decrease the in-degree of
+            # its successors
+            for u in concurrent_nodes:
+                for i in oriented_graph[u]:
+                    in_degree[i] -= 1
+                    if in_degree[i] == 0:
+                        queue.append(i)
+
+        # If the count of the order is not equal to the number of nodes in
+        # the graph
+        if sum(len(sublist) for sublist in parallel_subtask_pipelines) != len(
+                oriented_graph):
+            return ("There exists a cycle in the graph. "
+                    "Can't determine an order.")
+        return parallel_subtask_pipelines
 
     @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     def split_tasks(
@@ -332,27 +299,48 @@ class RoleAssignmentAgent(ChatAgent):
         terminated = response.terminated
 
         # Distribute the output completions into subtasks
-        subtasks = [
+        subtask_descriptions = [
             desc.replace("<", "").replace(">", "").strip('\n')
             for desc in re.findall(r"Content of subtask \d: (.+?)Dependency",
                                    msg.content, re.DOTALL)
         ]
+        subtask_dependencies = [[
+            dep.strip() for dep in re.findall(r"\[(.+?)\]", desc)[0].split(",")
+        ] for desc in re.findall(r"Dependency of subtask \d: \[.+?\]",
+                                 msg.content, re.DOTALL)]
 
-        if (num_subtasks is not None
-                and len(subtasks) != num_subtasks) or (subtasks is None):
+        # Extracting dependencies and creating a dictionary
+        dependent_subtasks_list = [[
+            f"subtask {int(dep.split()[1])}" for dep in dependencies
+            if "subtask" in dep
+        ] for dependencies in subtask_dependencies]
+        # Creating a dictionary of subtasks with dependencies
+        subtasks_with_dependencies_dict = {
+            f"subtask {index+1}": {
+                "description": description,
+                "dependencies": dependencies
+            }
+            for index, (description, dependencies) in enumerate(
+                zip(subtask_descriptions, dependent_subtasks_list))
+        }
+
+        if (num_subtasks is not None and
+            (len(subtask_descriptions) != num_subtasks)
+                or (len(dependent_subtasks_list) != num_subtasks)):
             raise RuntimeError(
                 "Got None or insufficient information of subtasks.")
+
         if terminated:
             raise RuntimeError("Subtask split failed.")
 
-        return subtasks
+        return subtasks_with_dependencies_dict
 
     @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     def evaluate_role_compatibility(
         self,
         subtask_prompt: Union[str, TextPrompt],
         role_descriptions_dict: [Dict[str, str]],
-    ) -> None:
+    ) -> Dict[str, int]:
         r"""Evaluate the compatibility scores of each role in relation to the
             specified task.
 
