@@ -24,10 +24,22 @@ def main(model_type=None, num_roles=3) -> None:
     role_description_agent = RoleAssignmentAgent(
         model=model_type, model_config=model_config_description)
 
-    role_description_dict = role_description_agent.run(task_prompt=task_prompt,
-                                                       num_roles=num_roles)
+    role_names = [
+        "AI Tutor in Machine Learning", "AI Student", "Software Engineer"
+    ]  # Optional
+    role_descriptions_instruction = ("You MUST generate the Google " +
+                                     "Engineering Levels (L2-L7) " +
+                                     "of each role incorporating " +
+                                     "their duties within the expert " +
+                                     "descriptions.")
+    role_description_dict = \
+        role_description_agent.run(task_prompt=task_prompt,
+                                   num_roles=num_roles,
+                                   role_names=role_names,
+                                   role_descriptions_instruction=(
+                                       role_descriptions_instruction))
 
-    if (len(role_description_dict) != num_roles):
+    if len(role_description_dict) != num_roles:
         raise ValueError(
             f"Length of role_names ({len(role_description_dict)}) "
             f"does not equal to num_roles ({num_roles}).")
