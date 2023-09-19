@@ -294,7 +294,8 @@ class ChatAgent(BaseAgent):
                 a boolean indicating whether the chat session has terminated,
                 and information about the chat session.
         """
-        messages = self.update_messages('user', input_message)
+        messages = self.update_messages(input_message.role_type.value,
+                                        input_message)
 
         output_messages: List[BaseMessage]
         info: Dict[str, Any]

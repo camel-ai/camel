@@ -24,8 +24,7 @@ from camel.utils import print_text_animated
 
 
 def main(model_type=ModelType.GPT_4) -> None:
-    task_prompt = ("Assuming the current year is 2023, estimate KAUST's "
-                   "current age and then add 10 more years to this age.")
+    task_prompt = "How to learn Python."
 
     user_model_config = ChatGPTConfig(temperature=0.0)
 
@@ -37,7 +36,7 @@ def main(model_type=ModelType.GPT_4) -> None:
 
     role_play_session = RolePlaying(
         assistant_role_name="Searcher",
-        user_role_name="Professor",
+        user_role_name="Student",
         assistant_agent_kwargs=dict(
             model=model_type,
             model_config=assistant_model_config,
