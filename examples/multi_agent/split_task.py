@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import json
+
 from colorama import Fore
 
 from camel.agents.role_assignment_agent import RoleAssignmentAgent
@@ -29,9 +31,13 @@ def main(model_type=None) -> None:
 
     num_subtasks = 6
 
-    subtasks = role_assignment_agent.split_tasks(task_prompt,
-                                                 role_description_dict,
-                                                 num_subtasks)
+    subtasks_with_dependencies_dict = \
+        role_assignment_agent.split_tasks(task_prompt, role_description_dict,
+                                          num_subtasks)
+    subtasks = [
+        subtasks_with_dependencies_dict[key]["description"]
+        for key in sorted(subtasks_with_dependencies_dict.keys())
+    ]
 
     if subtasks is None:
         raise ValueError("subtasks is None.")
@@ -39,8 +45,14 @@ def main(model_type=None) -> None:
         raise ValueError(f"Number of subtasks ({len(subtasks)}) "
                          f"does not equal to num_subtasks ({num_subtasks}).")
 
-    for (i, subtask) in enumerate(subtasks):
-        print(Fore.BLUE + f"Subtask {i + 1}. {subtask}")
+    print(Fore.BLUE + "Dependencies among subtasks: " +
+          json.dumps(subtasks_with_dependencies_dict, indent=4))
+    for (i, subtask) in enumerate(subtasks_with_dependencies_dict.keys()):
+        print(Fore.GREEN + f"\nSubtask {i+1}: " +
+              "{subtasks_with_dependencies_dict[subtask]['description']}")
+        deps = subtasks_with_dependencies_dict[subtask]["dependencies"]
+        print(Fore.CYAN + "Dependencies: [" + ", ".join(dep
+                                                        for dep in deps) + "]")
     for (i, (role_name,
              role_description)) in enumerate(role_description_dict.items()):
         print(Fore.GREEN + f"Role {i + 1}. {role_name}: {role_description}")
