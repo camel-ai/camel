@@ -223,7 +223,7 @@ class RoleAssignmentAgent(ChatAgent):
         task_prompt: Union[str, TextPrompt],
         role_descriptions_dict: [Dict[str, str]],
         num_subtasks: Optional[int] = None,
-    ) -> List[str]:
+    ) -> Dict[str, Dict[str, Union[str, List[str]]]]:
         r"""Split the task into subtasks based on the input task prompt.
 
         Args:
@@ -235,7 +235,8 @@ class RoleAssignmentAgent(ChatAgent):
                 split the task into. (default: :obj:`None`)
 
         Returns:
-            List[str]: The subtasks to complete the whole task.
+            Dict[str, Dict[str, Union[str, List[str]]]]: A dictionary mapping
+                subtask names to their descriptions and dependencies.
         """
         role_names = list(role_descriptions_dict.keys())
 
@@ -280,13 +281,9 @@ class RoleAssignmentAgent(ChatAgent):
             "any other part of the template.\n\n" + answer_prompt +
             task_prompt + role_with_description_prompt)
 
-        if num_subtasks is None:
-            subtasks_generation = splict_task_prompt.format(
-                num_subtasks=num_subtasks or "SEVERAL/ENOUGH",
-                num_roles=len(role_names))
-        else:
-            subtasks_generation = splict_task_prompt.format(
-                num_subtasks=num_subtasks, num_roles=len(role_names))
+        subtasks_generation = splict_task_prompt.format(
+            num_subtasks=num_subtasks or "SEVERAL/ENOUGH",
+            num_roles=len(role_names))
         subtasks_generation_msg = BaseMessage.make_user_message(
             role_name="Task Splitter", content=subtasks_generation)
 
@@ -321,11 +318,13 @@ class RoleAssignmentAgent(ChatAgent):
                 zip(subtask_descriptions, dependent_subtasks_list))
         }
 
-        if (num_subtasks is not None and
-            (len(subtask_descriptions) != num_subtasks)
-                or (len(dependent_subtasks_list) != num_subtasks)):
+        if (num_subtasks is not None
+                and (len(subtask_descriptions) != num_subtasks
+                     or len(dependent_subtasks_list) != num_subtasks)):
             raise RuntimeError(
-                "Got None or insufficient information of subtasks.")
+                f"Got None or insufficient information of subtasks. "
+                f"Length of generated subtasks: {len(subtask_descriptions)}, "
+                f"length of required subtasks: {num_subtasks}")
 
         if terminated:
             raise RuntimeError("Subtask split failed.")
