@@ -93,7 +93,7 @@ Input:
 Instruction: <YOUR_INSTRUCTION>
 Input: None
 
-The "Instruction" describes a task or question. The paired "Input" is what we have achieved in the previous round to provide further context or information for the requested "Instruction".
+The "Instruction" describes a task or question. The "Input" is what we have achieved in the previous round to provide further context or information for the requested "Instruction".
 
 You must give me one instruction at a time.
 I must write a response that appropriately solves the requested instruction.
