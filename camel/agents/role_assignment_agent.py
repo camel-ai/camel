@@ -146,7 +146,7 @@ class RoleAssignmentAgent(ChatAgent):
 
         return role_descriptions_dict
 
-    def run_task_execution_order(
+    def get_task_execution_order(
         self,
         subtasks_with_dependencies_dict: Dict[str, List[str]],
     ) -> List[List[str]]:
@@ -184,16 +184,14 @@ class RoleAssignmentAgent(ChatAgent):
             List[List[str]]: A list of lists of subtasks that can be executed
                 concurrently.
         """
-        # Count of incoming edges
+        # Compute the in-degree of each node
         in_degree = {u: 0 for u in oriented_graph}
-
         for u in oriented_graph:
             for v in oriented_graph[u]:
                 in_degree[v] += 1
 
-        # The queue will contain all nodes with in_degree = 0
+        # Initialize the queue with nodes that have no incoming edges
         queue = deque(filter(lambda i: in_degree[i] == 0, in_degree))
-
         parallel_subtask_pipelines = []
 
         while queue:
@@ -201,23 +199,22 @@ class RoleAssignmentAgent(ChatAgent):
             concurrent_nodes = list(queue)
             parallel_subtask_pipelines.insert(0, concurrent_nodes)
 
-            # Empty the queue for the next round
+            # Clear the queue for the next round
             queue.clear()
 
-            # For each concurrently processed node, decrease the in-degree of
-            # its successors
+            # Iterate over the nodes each of which has no incoming edges
             for u in concurrent_nodes:
                 for i in oriented_graph[u]:
                     in_degree[i] -= 1
                     if in_degree[i] == 0:
                         queue.append(i)
 
-        # If the count of the order is not equal to the number of nodes in
-        # the graph
+        # If the graph is not a DAG, there exists a cycle
         if sum(len(sublist) for sublist in parallel_subtask_pipelines) != len(
                 oriented_graph):
             return ("There exists a cycle in the graph. "
                     "Can't determine an order.")
+
         return parallel_subtask_pipelines
 
     @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
