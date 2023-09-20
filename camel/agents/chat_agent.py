@@ -272,7 +272,8 @@ class ChatAgent(BaseAgent):
             message (BaseMessage): An external message to be added as an
                 assistant response.
         """
-        self.stored_messages.append(ChatRecord(message.role_type.value, message))
+        self.stored_messages.append(
+            ChatRecord(message.role_type.value, message))
 
     @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     @openai_api_key_required
