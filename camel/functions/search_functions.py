@@ -137,7 +137,7 @@ def search_google(query: str) -> List[Dict[str, Any]]:
     except requests.RequestException:
         responses.append({"erro": "google search failed."})
 
-    return responses
+    return responses[:5]
 
 
 def text_extract_from_web(url: str) -> str:
