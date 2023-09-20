@@ -137,7 +137,7 @@ def search_google(query: str) -> List[Dict[str, Any]]:
     except requests.RequestException:
         responses.append({"erro": "google search failed."})
 
-    return responses[:5]
+    return responses
 
 
 def text_extract_from_web(url: str) -> str:
@@ -299,5 +299,5 @@ def search_google_and_summarize(query: str) -> str:
 
 SEARCH_FUNCS: List[OpenAIFunction] = [
     OpenAIFunction(func)
-    for func in [search_wiki, search_google_and_summarize, search_google]
+    for func in [search_wiki, search_google_and_summarize]
 ]
