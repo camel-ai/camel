@@ -365,14 +365,14 @@ class RolePlaying:
         # Send the system messages again to the agents using chat messages
         assistant_msg = BaseMessage.make_assistant_message(
             role_name=self.assistant_sys_msg.role_name,
-            content=(f"{self.user_sys_msg.content}. "
+            content=(f"{self.assistant_sys_msg.content}. "
                      "Now start to give me instructions one by one. "
                      "Only reply with Instruction and Input."))
 
         user_msg = BaseMessage.make_user_message(
             role_name=self.user_sys_msg.role_name,
-            content=f"{self.assistant_sys_msg.content}")
-        assistant_response = self.assistant_agent.step(user_msg)
+            content=f"{self.user_sys_msg.content}")
+        assistant_response = self.assistant_agent.step(assistant_msg)
         if assistant_response.terminated or assistant_response.msgs is None:
             raise ValueError(f"Assistant agent terminated unexpectedly. "
                              f"Error info: {assistant_response.info}")
