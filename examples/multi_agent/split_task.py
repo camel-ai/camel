@@ -49,7 +49,7 @@ def main(model_type=None) -> None:
           json.dumps(subtasks_with_dependencies_dict, indent=4))
     for (i, subtask) in enumerate(subtasks_with_dependencies_dict.keys()):
         print(Fore.GREEN + f"\nSubtask {i+1}: " +
-              "{subtasks_with_dependencies_dict[subtask]['description']}")
+              f"{subtasks_with_dependencies_dict[subtask]['description']}")
         deps = subtasks_with_dependencies_dict[subtask]["dependencies"]
         print(Fore.CYAN + "Dependencies: [" + ", ".join(dep
                                                         for dep in deps) + "]")
