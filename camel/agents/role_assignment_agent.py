@@ -25,10 +25,6 @@ from camel.typing import ModelType, RoleType
 
 class RoleAssignmentAgent(ChatAgent):
     r"""An agent that generates role names based on the task prompt.
-    Attributes:
-        role_assignment_prompt (TextPrompt): A prompt for the agent to generate
-        role names.
-
     Args:
         model (ModelType, optional): The type of model to use for the agent.
             (default: :obj:`ModelType.GPT_3_5_TURBO`)
@@ -114,8 +110,9 @@ class RoleAssignmentAgent(ChatAgent):
 
         response = self.step(input_message=role_assignment_generation_msg)
 
+        if (response.terminated):
+            raise RuntimeError("Role compatibility scoring failed.")
         msg = response.msg  # type: BaseMessage
-        terminated = response.terminated
 
         # Distribute the output completions into role names and descriptions
         role_names = [
@@ -136,8 +133,6 @@ class RoleAssignmentAgent(ChatAgent):
         if len(role_names) != num_roles or len(role_descriptions) != num_roles:
             raise RuntimeError(
                 "Got None or insufficient information of roles.")
-        if terminated:
-            raise RuntimeError("Role assignment failed.")
 
         role_descriptions_dict = {
             role_name: description
@@ -289,8 +284,9 @@ class RoleAssignmentAgent(ChatAgent):
 
         response = self.step(input_message=subtasks_generation_msg)
 
+        if (response.terminated):
+            raise RuntimeError("Role compatibility scoring failed.")
         msg = response.msg  # type: BaseMessage
-        terminated = response.terminated
 
         # Distribute the output completions into subtasks
         subtask_descriptions = [
@@ -325,9 +321,6 @@ class RoleAssignmentAgent(ChatAgent):
                 f"Got None or insufficient information of subtasks. "
                 f"Length of generated subtasks: {len(subtask_descriptions)}, "
                 f"length of required subtasks: {num_subtasks}")
-
-        if terminated:
-            raise RuntimeError("Subtask split failed.")
 
         return subtasks_with_dependencies_dict
 
@@ -400,8 +393,9 @@ class RoleAssignmentAgent(ChatAgent):
 
         response = self.step(input_message=compatibility_scoring_msg)
 
+        if (response.terminated):
+            raise RuntimeError("Role compatibility scoring failed.")
         msg = response.msg  # type: BaseMessage
-        terminated = response.terminated
 
         # Distribute the output completions into scores
         role_compatibility_scores = [
@@ -413,8 +407,6 @@ class RoleAssignmentAgent(ChatAgent):
         if len(role_compatibility_scores) != len(role_names):
             raise RuntimeError("Got None or insufficient information of " +
                                "role compatibility scores.")
-        if terminated:
-            raise RuntimeError("Role compatibility scoring failed.")
 
         role_compatibility_scores_dict = {
             role_name: int(score)
