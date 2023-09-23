@@ -89,7 +89,7 @@ class OpenSourceModel(BaseModelBackend):
         self,
         messages: List[Dict],
     ) -> Dict[str, Any]:
-        r"""Run inference of OpenAI chat completion.
+        r"""Run inference of OpenAI-API-style chat completion.
 
         Args:
             messages (List[Dict]): Message list with the chat history
