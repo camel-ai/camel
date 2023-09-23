@@ -6,6 +6,7 @@ So that [explain the benefit or value this new functionality will bring]
 🛒 **Types of Changes:**
 - [ ] Bug fix (non-breaking change which fixes an issue)
 - [ ] New feature (non-breaking change which adds core functionality)
+- [ ] Improvement (non-breaking change which improves existing core functionality)
 - [ ] Breaking change (fix or feature that would cause existing functionality to change)
 - [ ] Documentation (update in the documentation)
 - [ ] Example (update in the folder of example)
@@ -13,7 +14,7 @@ So that [explain the benefit or value this new functionality will bring]
 
 🚀 **Acceptance Criteria:**
 [Clearly define the conditions that must be met for the story to be considered complete]
-[List any specific requirements, features, or behaviors the new item should exhibit]
+[List any specific features or behaviors the new item should exhibit]
 
 🔀 **Related User Stories or Open Issue:**
 - [List related user stories that contribute to this story]
