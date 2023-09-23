@@ -111,7 +111,8 @@ Code coverage measures the extent to which unit tests cover the code, helping id
 To generate a report showing the current code coverage, execute one of the following commands.
 
 To include all source files into coverage:
-```
+
+```bash
 coverage erase
 coverage run --source=. -m pytest .
 coverage html
