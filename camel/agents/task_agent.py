@@ -189,8 +189,8 @@ class TaskCreationAgent(ChatAgent):
     `BabyAGI <https://github.com/yoheinakajima/babyagi>`_.
 
     Attributes:
-        task_creator_prompt (TextPrompt): A prompt for the agent to create
-            new tasks.
+        task_creation_prompt (TextPrompt): A prompt for the agent to 
+            create new tasks.
 
     Args:
         role_name (str): The role name of the Agent to create the task.
@@ -205,6 +205,8 @@ class TaskCreationAgent(ChatAgent):
         message_window_size (int, optional): The maximum number of previous
             messages to include in the context window. If `None`, no windowing
             is performed. (default: :obj:`None`)
+        max_task_num (int, optional): The maximum number of planned
+            tasks in one round. (default: :obj:3)
     """
 
     def __init__(
@@ -215,11 +217,12 @@ class TaskCreationAgent(ChatAgent):
         model_config: Optional[Any] = None,
         output_language: Optional[str] = None,
         message_window_size: Optional[int] = None,
+        max_task_num: Optional[int] = 3,
     ) -> None:
 
         task_creation_prompt = TextPrompt(
             """Create new a task with the following objective: {objective}.
-Never forget you are a Task Creator and I am {role_name}.
+Never forget you are a Task Creator of {role_name}.
 You must instruct me based on my expertise and your needs to solve the task.
 You should consider past solved tasks and in-progress tasks: {task_list}.
 The new created tasks must not overlap with these past tasks.
@@ -229,8 +232,8 @@ The result must be a numbered list in the format:
     #. Second Task
     #. Third Task
 
-You can only give me up to three tasks at a time. Each task shoud be concise, \
-concrete and doable for a Python Programmer.
+You can only give me up to {max_task_num} tasks at a time. \
+Each task shoud be concise, concrete and doable for a {role_name}.
 You should make task plan and not ask me questions.
 If you think no new tasks are needed right now, write "No tasks to add."
 Now start to give me new tasks one by one. No more than three tasks.
@@ -238,7 +241,8 @@ Be concrete.
 """)
 
         self.task_creation_prompt = task_creation_prompt.format(
-            objective=objective, role_name=role_name)
+            objective=objective, role_name=role_name,
+            max_task_num=max_task_num)
         self.objective = objective
 
         system_message = BaseMessage(
@@ -273,26 +277,26 @@ Be concrete.
             task_creation_prompt = self.task_creation_prompt.format(
                 task_list="")
 
-        task_msg = BaseMessage.make_user_message(role_name="Task Planner",
+        task_msg = BaseMessage.make_user_message(role_name="Task Creator",
                                                  content=task_creation_prompt)
         task_response = self.step(task_msg)
 
         if len(task_response.msgs) == 0:
-            raise RuntimeError("Got None Subtasks messages.")
+            raise RuntimeError("Got no task creation message.")
         if task_response.terminated:
-            raise RuntimeError("Task planning failed.")
+            raise RuntimeError("Task creation failed.")
 
         sub_tasks_msg = task_response.msgs[0]
         return get_task_list(sub_tasks_msg.content)
 
 
-class TaskPrioritizeAgent(ChatAgent):
+class TaskPrioritizationAgent(ChatAgent):
     r"""An agent that helps re-prioritize the task list and
     returns numbered prioritized list. Modified from
     `BabyAGI <https://github.com/yoheinakajima/babyagi>`_.
 
     Attributes:
-        task_prioritizer_prompt (TextPrompt): A prompt for the agent to
+        task_prioritization_prompt (TextPrompt): A prompt for the agent to
             prioritize tasks.
 
     Args:
@@ -369,9 +373,9 @@ with any other output.""")
         task_response = self.step(task_msg)
 
         if len(task_response.msgs) == 0:
-            raise RuntimeError("Got None Subtasks messages.")
+            raise RuntimeError("Got no task prioritization message.")
         if task_response.terminated:
-            raise RuntimeError("Task Prioritizing failed.")
+            raise RuntimeError("Task prioritization failed.")
 
         sub_tasks_msg = task_response.msgs[0]
         return get_task_list(sub_tasks_msg.content)

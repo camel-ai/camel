@@ -13,7 +13,11 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import pytest
 
-from camel.agents import ChatAgent, TaskCreationAgent, TaskPrioritizeAgent
+from camel.agents import (
+    ChatAgent, 
+    TaskCreationAgent, 
+    TaskPrioritizationAgent,
+)
 from camel.messages import BaseMessage
 from camel.societies import BabyAGI
 from camel.typing import ModelType, RoleType, TaskType
@@ -47,11 +51,11 @@ def test_babyagi_playing_init(model: ModelType):
 
     assert isinstance(babyagi_playing.assistant_agent, ChatAgent)
     assert isinstance(babyagi_playing.task_creation_agent, TaskCreationAgent)
-    assert isinstance(babyagi_playing.task_prioritize_agent,
-                      TaskPrioritizeAgent)
+    assert isinstance(babyagi_playing.task_prioritization_agent,
+                      TaskPrioritizationAgent)
 
-    assert len(babyagi_playing.tasks) == 0
-    assert len(babyagi_playing.solved_tasks) == 0
+    assert len(babyagi_playing.subtasks) == 0
+    assert len(babyagi_playing.solved_subtasks) == 0
 
 
 @parametrize
@@ -80,9 +84,9 @@ def test_babyagi_playing_step(model: ModelType):
     assert assistant_response.terminated is False
     assert isinstance(assistant_response.info, dict)
 
-    assert len(babyagi_playing.tasks) > 0
-    assert len(babyagi_playing.solved_tasks) == 1
+    assert len(babyagi_playing.subtasks) > 0
+    assert len(babyagi_playing.solved_subtasks) == 1
 
     assert len(babyagi_playing.assistant_agent.stored_messages) > 0
     assert len(babyagi_playing.task_creation_agent.stored_messages) > 0
-    assert len(babyagi_playing.task_prioritize_agent.stored_messages) > 0
+    assert len(babyagi_playing.task_prioritization_agent.stored_messages) > 0

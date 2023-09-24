@@ -17,7 +17,7 @@ from .task_agent import (
     TaskSpecifyAgent,
     TaskPlannerAgent,
     TaskCreationAgent,
-    TaskPrioritizeAgent,
+    TaskPrioritizationAgent,
 )
 from .critic_agent import CriticAgent
 from .tool_agents.base import BaseToolAgent
@@ -31,7 +31,7 @@ __all__ = [
     'TaskSpecifyAgent',
     'TaskPlannerAgent',
     'TaskCreationAgent',
-    'TaskPrioritizeAgent',
+    'TaskPrioritizationAgent',
     'CriticAgent',
     'BaseToolAgent',
     'HuggingFaceToolAgent',

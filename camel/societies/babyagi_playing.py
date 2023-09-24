@@ -17,7 +17,7 @@ from typing import Dict, List, Optional
 from camel.agents import (
     ChatAgent,
     TaskCreationAgent,
-    TaskPrioritizeAgent,
+    TaskPrioritizationAgent,
     TaskSpecifyAgent,
 )
 from camel.agents.chat_agent import ChatAgentResponse
@@ -42,10 +42,10 @@ class BabyAGI:
             to the assistant agent. (default: :obj:`None`)
         task_specify_agent_kwargs (Dict, optional): Additional arguments to
             pass to the task specify agent. (default: :obj:`None`)
-        task_create_agent_kwargs (Dict, optional): Additional arguments to
-            pass to the task create agent. (default: :obj:`None`)
-        task_prioritize_agent_kwargs (Dict, optional): Additional arguments to
-            pass to the task prioritize agent. (default: :obj:`None`)
+        task_creation_agent_kwargs (Dict, optional): Additional arguments to
+            pass to the task creation agent. (default: :obj:`None`)
+        task_prioritization_agent_kwargs (Dict, optional): Additional arguments 
+            to pass to the task prioritization agent. (default: :obj:`None`)
         sys_msg_generator_kwargs (Dict, optional): Additional arguments to
             pass to the system message generator. (default: :obj:`None`)
         extend_task_specify_meta_dict (Dict, optional): A dict to extend the
@@ -55,6 +55,8 @@ class BabyAGI:
         message_window_size (int, optional): The maximum number of previous
             messages to include in the context window. If `None`, no windowing
             is performed. (default: :obj:`None`)
+        max_task_history (int, optional): The maximum number of previous
+            tasks information to include in the task agent. (default: :obj:10)
     """
 
     def __init__(
@@ -65,12 +67,13 @@ class BabyAGI:
         task_type: TaskType = TaskType.AI_SOCIETY,
         assistant_agent_kwargs: Optional[Dict] = None,
         task_specify_agent_kwargs: Optional[Dict] = None,
-        task_create_agent_kwargs: Optional[Dict] = None,
-        task_prioritize_agent_kwargs: Optional[Dict] = None,
+        task_creation_agent_kwargs: Optional[Dict] = None,
+        task_prioritization_agent_kwargs: Optional[Dict] = None,
         sys_msg_generator_kwargs: Optional[Dict] = None,
         extend_task_specify_meta_dict: Optional[Dict] = None,
         output_language: Optional[str] = None,
         message_window_size: Optional[int] = None,
+        max_task_history: Optional[int] = 10,
     ) -> None:
         self.task_type = task_type
         self.task_prompt = task_prompt
@@ -84,7 +87,13 @@ class BabyAGI:
             task_type=self.task_type, **(sys_msg_generator_kwargs or {}))
 
         init_assistant_sys_msg = sys_msg_generator.from_dicts(
-            meta_dicts=[dict(task=self.specified_task_prompt)],
+            meta_dicts=[
+                dict(
+                    assistant_role=assistant_role_name,
+                    user_role=user_role_name,
+                    task=self.specified_task_prompt,
+                )
+            ],
             role_tuples=[
                 (assistant_role_name, RoleType.ASSISTANT),
             ],
@@ -93,15 +102,15 @@ class BabyAGI:
         self.assistant_agent: ChatAgent
         self.assistant_sys_msg: BaseMessage
         self.task_creation_agent: TaskCreationAgent
-        self.task_prioritize_agent: TaskPrioritizeAgent
+        self.task_prioritization_agent: TaskPrioritizationAgent
         self.init_agents(init_assistant_sys_msg[0], assistant_agent_kwargs,
-                         task_create_agent_kwargs,
-                         task_prioritize_agent_kwargs, output_language,
+                         task_creation_agent_kwargs,
+                         task_prioritization_agent_kwargs, output_language,
                          message_window_size)
 
-        self.tasks: deque = deque([])
-        self.solved_tasks: List[str] = []
-        self.MAX_TASK_HISTORY = 10
+        self.subtasks: deque = deque([])
+        self.solved_subtasks: List[str] = []
+        self.MAX_TASK_HISTORY = max_task_history
 
     def init_specified_task_prompt(
             self, assistant_role_name: str, user_role_name: str,
@@ -142,8 +151,8 @@ class BabyAGI:
 
     def init_agents(self, init_assistant_sys_msg: BaseMessage,
                     assistant_agent_kwargs: Optional[Dict],
-                    task_create_agent_kwargs: Optional[Dict],
-                    task_prioritize_agent_kwargs: Optional[Dict],
+                    task_creation_agent_kwargs: Optional[Dict],
+                    task_prioritization_agent_kwargs: Optional[Dict],
                     output_language: Optional[str],
                     message_window_size: Optional[int] = None):
         r"""Initialize assistant and user agents with their system messages.
@@ -153,10 +162,10 @@ class BabyAGI:
                 system message.
             assistant_agent_kwargs (Dict, optional): Additional arguments to
                 pass to the assistant agent.
-            task_create_agent_kwargs (Dict, optional): Additional arguments to
+            task_creation_agent_kwargs (Dict, optional): Additional arguments to
                 pass to the task creation agent.
-            task_prioritize_agent_kwargs (Dict, optional): Additional arguments
-                to pass to the task prioritize agent.
+            task_prioritization_agent_kwargs (Dict, optional): Additional arguments
+                to pass to the task prioritization agent.
             output_language (str, optional): The language to be output by the
                 agents.
             message_window_size (int, optional): The maximum number of previous
@@ -177,17 +186,17 @@ class BabyAGI:
             role_name=self.assistant_sys_msg.role_name,
             output_language=output_language,
             message_window_size=message_window_size,
-            **(task_create_agent_kwargs or {}),
+            **(task_creation_agent_kwargs or {}),
         )
         self.task_creation_agent.reset()
 
-        self.task_prioritize_agent = TaskPrioritizeAgent(
+        self.task_prioritization_agent = TaskPrioritizationAgent(
             objective=self.specified_task_prompt,
             output_language=output_language,
             message_window_size=message_window_size,
-            **(task_prioritize_agent_kwargs or {}),
+            **(task_prioritization_agent_kwargs or {}),
         )
-        self.task_prioritize_agent.reset()
+        self.task_prioritization_agent.reset()
 
     def step(self) -> ChatAgentResponse:
         r"""BabyAGI agent would pull the first task from the task list,
@@ -201,12 +210,13 @@ class BabyAGI:
             and any additional assistant information.
 
         """
-        if not self.tasks:
-            new_task_list = self.task_creation_agent.run(task_list=[])
-            prio_task_list = self.task_prioritize_agent.run(new_task_list)
-            self.tasks = deque(prio_task_list)
+        if not self.subtasks:
+            new_subtask_list = self.task_creation_agent.run(task_list=[])
+            prioritized_subtask_list = self.task_prioritization_agent.run(
+                new_subtask_list)
+            self.subtasks = deque(prioritized_subtask_list)
 
-        task_name = self.tasks.popleft()
+        task_name = self.subtasks.popleft()
         assistant_msg_msg = BaseMessage.make_user_message(
             role_name=self.assistant_sys_msg.role_name, content=f"{task_name}")
 
@@ -214,24 +224,24 @@ class BabyAGI:
         assistant_msg = assistant_response.msgs[0]
         self.assistant_agent.submit_message(assistant_msg)
         self.task_creation_agent.submit_message(assistant_msg)
-        self.task_prioritize_agent.submit_message(assistant_msg)
+        self.task_prioritization_agent.submit_message(assistant_msg)
 
-        self.solved_tasks.append(task_name)
-        past_tasks = self.solved_tasks + list(self.tasks)
+        self.solved_subtasks.append(task_name)
+        past_tasks = self.solved_subtasks + list(self.subtasks)
 
-        new_task_list = self.task_creation_agent.run(
+        new_subtask_list = self.task_creation_agent.run(
             task_list=past_tasks[-self.MAX_TASK_HISTORY:])
 
-        if new_task_list:
-            for task in new_task_list:
-                self.tasks.append(task)
-            prio_task_list = self.task_prioritize_agent.run(
-                task_list=list(self.tasks)[-self.MAX_TASK_HISTORY:])
-            self.tasks = deque(prio_task_list)
+        if new_subtask_list:
+            self.subtasks.extend(new_subtask_list)
+            prioritized_subtask_list = self.task_prioritization_agent.run(
+                task_list=list(self.subtasks)[-self.MAX_TASK_HISTORY:])
+            self.subtasks = deque(prioritized_subtask_list)
         else:
             print("no new tasks")
         assistant_response.info['task_name'] = task_name
-        if not self.tasks:
+        assistant_response.info['subtasks'] = list(self.subtasks)
+        if not self.subtasks:
             terminated = True
             assistant_response.info[
                 'termination_reasons'] = "All tasks are solved"

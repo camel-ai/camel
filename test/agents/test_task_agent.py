@@ -18,7 +18,7 @@ import pytest
 from camel.agents import (
     TaskCreationAgent,
     TaskPlannerAgent,
-    TaskPrioritizeAgent,
+    TaskPrioritizationAgent,
     TaskSpecifyAgent,
 )
 from camel.configs import ChatGPTConfig
@@ -105,7 +105,7 @@ def test_task_prioritization_agent(model: Optional[ModelType]):
         "Become a professor of mathematics",
     ]
 
-    task_prioritization_agent = TaskPrioritizeAgent(
+    task_prioritization_agent = TaskPrioritizationAgent(
         model_config=ChatGPTConfig(temperature=1.0),
         model=model,
         objective=original_task_prompt,
