@@ -57,6 +57,7 @@ class BabyAGI:
             is performed. (default: :obj:`None`)
         max_task_history (int, optional): The maximum number of previous
             tasks information to include in the task agent. (default: :obj:10)
+            max_task_history: Optional[int] = 10,
     """
 
     def __init__(
@@ -73,7 +74,6 @@ class BabyAGI:
         extend_task_specify_meta_dict: Optional[Dict] = None,
         output_language: Optional[str] = None,
         message_window_size: Optional[int] = None,
-        max_task_history: Optional[int] = 10,
     ) -> None:
         self.task_type = task_type
         self.task_prompt = task_prompt
@@ -110,7 +110,7 @@ class BabyAGI:
 
         self.subtasks: deque = deque([])
         self.solved_subtasks: List[str] = []
-        self.MAX_TASK_HISTORY = max_task_history
+        self.MAX_TASK_HISTORY = 10
 
     def init_specified_task_prompt(
             self, assistant_role_name: str, user_role_name: str,
