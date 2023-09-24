@@ -20,6 +20,7 @@ from .functions import (
     download_tasks,
     parse_doc,
     get_task_list,
+    check_server_running,
 )
 from .token_counting import (
     get_model_encoding,
@@ -39,6 +40,7 @@ __all__ = [
     'parse_doc',
     'get_task_list',
     'get_model_encoding',
+    'check_server_running',
     'BaseTokenCounter',
     'OpenAITokenCounter',
     'OpenSourceTokenCounter',
