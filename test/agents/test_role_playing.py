@@ -176,6 +176,3 @@ def test_role_playing_role_sequence(model_type=None):
            ['system', 'assistant', 'user', 'assistant', 'user']
     assert assistant_role_sequence == \
            ['system', 'assistant', 'user', 'assistant', 'user', 'assistant']
-
-
-
