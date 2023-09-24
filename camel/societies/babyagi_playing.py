@@ -44,7 +44,7 @@ class BabyAGI:
             pass to the task specify agent. (default: :obj:`None`)
         task_creation_agent_kwargs (Dict, optional): Additional arguments to
             pass to the task creation agent. (default: :obj:`None`)
-        task_prioritization_agent_kwargs (Dict, optional): Additional arguments 
+        task_prioritization_agent_kwargs (Dict, optional): Additional arguments
             to pass to the task prioritization agent. (default: :obj:`None`)
         sys_msg_generator_kwargs (Dict, optional): Additional arguments to
             pass to the system message generator. (default: :obj:`None`)
@@ -162,10 +162,10 @@ class BabyAGI:
                 system message.
             assistant_agent_kwargs (Dict, optional): Additional arguments to
                 pass to the assistant agent.
-            task_creation_agent_kwargs (Dict, optional): Additional arguments to
-                pass to the task creation agent.
-            task_prioritization_agent_kwargs (Dict, optional): Additional arguments
-                to pass to the task prioritization agent.
+            task_creation_agent_kwargs (Dict, optional): Additional arguments
+                to pass to the task creation agent.
+            task_prioritization_agent_kwargs (Dict, optional): Additional
+                arguments to pass to the task prioritization agent.
             output_language (str, optional): The language to be output by the
                 agents.
             message_window_size (int, optional): The maximum number of previous

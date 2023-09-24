@@ -13,11 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import pytest
 
-from camel.agents import (
-    ChatAgent, 
-    TaskCreationAgent, 
-    TaskPrioritizationAgent,
-)
+from camel.agents import ChatAgent, TaskCreationAgent, TaskPrioritizationAgent
 from camel.messages import BaseMessage
 from camel.societies import BabyAGI
 from camel.typing import ModelType, RoleType, TaskType

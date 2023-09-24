@@ -19,7 +19,7 @@ from camel.utils import print_text_animated
 
 
 def main(model_type=None) -> None:
-    
+
     task_prompt = "Develop a trading bot for the stock market"
     babyagi_session = BabyAGI(
         assistant_role_name="Python Programmer",
@@ -29,17 +29,6 @@ def main(model_type=None) -> None:
         task_specify_agent_kwargs=dict(model=model_type),
         message_window_size=5,
     )
-    """
-    task_prompt = "Develop math formulation for safe grasping and manipulating knife"
-    babyagi_session = BabyAGI(
-        assistant_role_name="Safe constraint mathematician",
-        assistant_agent_kwargs=dict(model=model_type),
-        user_role_name="Robotics Manipulation Developer",
-        task_prompt=task_prompt,
-        task_specify_agent_kwargs=dict(model=model_type),
-        message_window_size=5,
-    )
-    """
 
     print(Fore.GREEN +
           f"AI Assistant sys message:\n{babyagi_session.assistant_sys_msg}\n")

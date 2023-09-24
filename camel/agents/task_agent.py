@@ -189,7 +189,7 @@ class TaskCreationAgent(ChatAgent):
     `BabyAGI <https://github.com/yoheinakajima/babyagi>`_.
 
     Attributes:
-        task_creation_prompt (TextPrompt): A prompt for the agent to 
+        task_creation_prompt (TextPrompt): A prompt for the agent to
             create new tasks.
 
     Args:
