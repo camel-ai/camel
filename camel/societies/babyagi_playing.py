@@ -38,6 +38,9 @@ class BabyAGI:
             (default: :obj:`""`)
         task_type (TaskType, optional): The type of task to perform.
             (default: :obj:`TaskType.AI_SOCIETY`)
+        max_task_history (int): The maximum number of previous tasks
+            information to include in the task agent.
+            (default: :obj:10)
         assistant_agent_kwargs (Dict, optional): Additional arguments to pass
             to the assistant agent. (default: :obj:`None`)
         task_specify_agent_kwargs (Dict, optional): Additional arguments to
@@ -55,9 +58,6 @@ class BabyAGI:
         message_window_size (int, optional): The maximum number of previous
             messages to include in the context window. If `None`, no windowing
             is performed. (default: :obj:`None`)
-        max_task_history (int, optional): The maximum number of previous
-            tasks information to include in the task agent. (default: :obj:10)
-            max_task_history: Optional[int] = 10,
     """
 
     def __init__(
@@ -66,6 +66,7 @@ class BabyAGI:
         user_role_name: str,
         task_prompt: str = "",
         task_type: TaskType = TaskType.AI_SOCIETY,
+        max_task_history: int = 10,
         assistant_agent_kwargs: Optional[Dict] = None,
         task_specify_agent_kwargs: Optional[Dict] = None,
         task_creation_agent_kwargs: Optional[Dict] = None,
@@ -110,7 +111,7 @@ class BabyAGI:
 
         self.subtasks: deque = deque([])
         self.solved_subtasks: List[str] = []
-        self.MAX_TASK_HISTORY = 10
+        self.MAX_TASK_HISTORY = max_task_history
 
     def init_specified_task_prompt(
             self, assistant_role_name: str, user_role_name: str,
