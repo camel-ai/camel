@@ -146,3 +146,36 @@ def test_role_playing_with_function():
         assert isinstance(response.terminated, bool)
         assert response.terminated is False
         assert isinstance(response.info, dict)
+
+
+def test_role_playing_role_sequence(model_type=None):
+    task_prompt = "Develop a trading bot for the stock market"
+    role_playing = RolePlaying(
+        assistant_role_name="Python Programmer",
+        assistant_agent_kwargs=dict(model=model_type),
+        user_role_name="Stock Trader",
+        user_agent_kwargs=dict(model=model_type),
+        task_prompt=task_prompt,
+        with_task_specify=True,
+        task_specify_agent_kwargs=dict(model=model_type),
+    )
+    assistant_role_sequence = []
+    user_role_sequence = []
+
+    input_assistant_msg, _ = role_playing.init_chat()
+    assistant_response, user_response = role_playing.step(input_assistant_msg)
+    input_assistant_msg = assistant_response.msg
+    assistant_response, user_response = role_playing.step(input_assistant_msg)
+
+    for record in role_playing.user_agent.stored_messages:
+        user_role_sequence.append(record.role_at_backend)
+    for record in role_playing.assistant_agent.stored_messages:
+        assistant_role_sequence.append(record.role_at_backend)
+
+    assert user_role_sequence == \
+           ['system', 'assistant', 'user', 'assistant', 'user']
+    assert assistant_role_sequence == \
+           ['system', 'assistant', 'user', 'assistant', 'user', 'assistant']
+
+
+

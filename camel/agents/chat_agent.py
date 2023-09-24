@@ -272,7 +272,8 @@ class ChatAgent(BaseAgent):
             message (BaseMessage): An external message to be added as an
                 assistant response.
         """
-        self.stored_messages.append(ChatRecord('assistant', message))
+        self.stored_messages.append(
+            ChatRecord(message.role_type.value, message))
 
     @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     @openai_api_key_required
@@ -294,7 +295,8 @@ class ChatAgent(BaseAgent):
                 a boolean indicating whether the chat session has terminated,
                 and information about the chat session.
         """
-        messages = self.update_messages('user', input_message)
+        messages = self.update_messages(input_message.role_type.value,
+                                        input_message)
 
         output_messages: List[BaseMessage]
         info: Dict[str, Any]
