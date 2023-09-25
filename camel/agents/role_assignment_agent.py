@@ -110,7 +110,7 @@ class RoleAssignmentAgent(ChatAgent):
 
         response = self.step(input_message=role_assignment_generation_msg)
 
-        if (response.terminated):
+        if response.terminated:
             raise RuntimeError("Role compatibility scoring failed.")
         msg = response.msg  # type: BaseMessage
 
@@ -233,6 +233,8 @@ class RoleAssignmentAgent(ChatAgent):
             Dict[str, Dict[str, Union[str, List[str]]]]: A dictionary mapping
                 subtask names to their descriptions and dependencies.
         """
+        self.reset()
+
         role_names = list(role_descriptions_dict.keys())
 
         task_prompt = TextPrompt("===== TASK =====\n" + task_prompt + "\n\n")
@@ -301,16 +303,16 @@ class RoleAssignmentAgent(ChatAgent):
 
         # Extracting dependencies and creating a dictionary
         dependent_subtasks_list = [[
-            f"subtask {int(dep.split()[1])}" for dep in dependencies
-            if "subtask" in dep
-        ] for dependencies in subtask_dependencies]
+            f"subtask {int(dep.split()[1])}" for dep in deps
+            if "subtask" in dep.lower()
+        ] for deps in subtask_dependencies]
         # Creating a dictionary of subtasks with dependencies
         subtasks_with_dependencies_dict = {
             f"subtask {index+1}": {
-                "description": description,
-                "dependencies": dependencies
+                "description": desp,
+                "dependencies": deps
             }
-            for index, (description, dependencies) in enumerate(
+            for index, (desp, deps) in enumerate(
                 zip(subtask_descriptions, dependent_subtasks_list))
         }
 
@@ -343,6 +345,8 @@ class RoleAssignmentAgent(ChatAgent):
                 Dict[str, int]: A dictionary mapping role names to their
                     compatibility scores.
         """
+        self.reset()
+
         role_names = list(role_descriptions_dict.keys())
 
         compatibility_instruction_prompt = TextPrompt(
@@ -393,7 +397,7 @@ class RoleAssignmentAgent(ChatAgent):
 
         response = self.step(input_message=compatibility_scoring_msg)
 
-        if (response.terminated):
+        if response.terminated:
             raise RuntimeError("Role compatibility scoring failed.")
         msg = response.msg  # type: BaseMessage
 
