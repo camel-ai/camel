@@ -35,6 +35,9 @@ types-colorama = "^0"
 types-requests = "^2"
 bs4 = "^0"
 protobuf = "^4"
+docx2txt = "^0.8" 
+PyMuPDF = "^1.22.5"  
+pathlib = "^1.0.1"   
 
 transformers = { version = "^4", optional = true }
 diffusers = { version = "^0", optional = true }
@@ -135,6 +138,9 @@ module = [
     "huggingface_hub.utils._errors",
     "wikipedia",
     "jsonschema.*",
-    "bs4.*"
+    "bs4.*",
+    "docx2txt",
+    "PyMuPDF",
+    "fitz"
 ]
 ignore_missing_imports = true
