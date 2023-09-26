@@ -14,7 +14,8 @@
 import ast
 import difflib
 import importlib
-from typing import Any, Dict, List, Mapping, Optional, Union
+import typing
+from typing import Any, Dict, List, Optional
 
 
 class InterpreterError(ValueError):
@@ -82,12 +83,12 @@ class PythonInterpreter():
                  import_white_list: Optional[List[str]] = None) -> None:
         self.action_space = action_space
         self.state = self.action_space.copy()
-        self.fuzz_state = {}
+        self.fuzz_state: Dict[str, Any] = {}
         self.import_white_list = import_white_list or []
 
-    def execute(self, code: str, state: Dict[str, Any] = None,
-                fuzz_state: Dict[str,
-                                 Any] = None, keep_state: bool = True) -> Any:
+    def execute(self, code: str, state: Optional[Dict[str, Any]] = None,
+                fuzz_state: Optional[Dict[str, Any]] = None,
+                keep_state: bool = True) -> Any:
         r""" Execute the input python codes in a security environment.
 
         Args:
@@ -128,7 +129,7 @@ class PythonInterpreter():
             except InterpreterError as e:
                 if not keep_state:
                     self.clear_state()
-                msg = (f"Evaluation of the code stopped at line {idx}. "
+                msg = (f"Evaluation of the code stopped at node {idx}. "
                        f"See:\n{e}")
                 # More information can be provided by `ast.unparse()`,
                 # which is new in python 3.9.
@@ -146,9 +147,12 @@ class PythonInterpreter():
         self.state = self.action_space.copy()
         self.fuzz_state = {}
 
+    # ast.Index is deprecated after python 3.9, which cannot pass type check,
+    # but is still necessary for older versions.
+    @typing.no_type_check
     def _execute_ast(self, expression: ast.AST) -> Any:
         if isinstance(expression, ast.Assign):
-            # Assignement -> evaluate the assignement which should
+            # Assignment -> evaluate the assignment which should
             # update the state. We return the variable assigned as it may
             # be used to determine the final result.
             return self._execute_assign(expression)
@@ -161,14 +165,21 @@ class PythonInterpreter():
         elif isinstance(expression, ast.Call):
             # Function call -> return the value of the function call
             return self._execute_call(expression)
+        elif isinstance(expression, ast.Compare):
+            # Compare -> return True or False
+            return self._execute_condition(expression)
         elif isinstance(expression, ast.Constant):
             # Constant -> just return the value
             return expression.value
         elif isinstance(expression, ast.Dict):
             # Dict -> evaluate all keys and values
-            keys = [self._execute_ast(k) for k in expression.keys]
-            values = [self._execute_ast(v) for v in expression.values]
-            return dict(zip(keys, values))
+            result: Dict = {}
+            for k, v in zip(expression.keys, expression.values):
+                if k is not None:
+                    result[self._execute_ast(k)] = self._execute_ast(v)
+                else:
+                    result.update(self._execute_ast(v))
+            return result
         elif isinstance(expression, ast.Expr):
             # Expression -> evaluate the content
             return self._execute_ast(expression.value)
@@ -183,15 +194,13 @@ class PythonInterpreter():
             return self._execute_if(expression)
         elif isinstance(expression, ast.Import):
             # Import -> add imported names in self.state and return None.
-            for module in expression.names:
-                self._execute_import(module)
+            self._execute_import(expression)
             return None
         elif isinstance(expression, ast.ImportFrom):
-            module = expression.module
-            for name in expression.names:
-                self._execute_import(module, name)
+            self._execute_import_from(expression)
             return None
         elif hasattr(ast, "Index") and isinstance(expression, ast.Index):
+            # cannot pass type check
             return self._execute_ast(expression.value)
         elif isinstance(expression, ast.JoinedStr):
             return "".join(
@@ -217,26 +226,30 @@ class PythonInterpreter():
                 f"{expression.__class__.__name__} is not supported.")
 
     def _execute_assign(self, assign: ast.Assign) -> Any:
-        var_names = assign.targets
+        targets = assign.targets
         result = self._execute_ast(assign.value)
 
-        for var_name in var_names:
-            self._assign(var_name, result)
+        for target in targets:
+            self._assign(target, result)
         return result
 
-    def _assign(self, target: Union[ast.Name, ast.Tuple], value: Any):
+    def _assign(self, target: ast.expr, value: Any):
         if isinstance(target, ast.Name):
             self.state[target.id] = value
         elif isinstance(target, ast.Tuple):
-            if len(value) != len(target):
-                raise InterpreterError(f"Expected {len(target)} values but got"
-                                       f"{len(value)}.")
-            for v, r in zip(target.ctx, value):
-                self.state[v.id] = r
+            if not isinstance(value, tuple):
+                raise InterpreterError(f"Expected type tuple, but got"
+                                       f"{value.__class__.__name__} instead.")
+            if len(target.elts) != len(value):
+                raise InterpreterError(
+                    f"Expected {len(target.elts)} values but got"
+                    f" {len(value)}.")
+            for t, v in zip(target.elts, value):
+                self.state[self._execute_ast(t)] = v
         else:
-            raise InterpreterError(f"Unsupport variable type. Expected"
-                                   f"ast.Name or ast.Tuple, got"
-                                   f"{type(target)} instead.")
+            raise InterpreterError(f"Unsupported variable type. Expected "
+                                   f"ast.Name or ast.Tuple, got "
+                                   f"{target.__class__.__name__} instead.")
 
     def _execute_call(self, call: ast.Call) -> Any:
         callable_func = self._execute_ast(call.func)
@@ -249,25 +262,36 @@ class PythonInterpreter():
         }
         return callable_func(*args, **kwargs)
 
-    def _execute_subscript(self, subscript):
+    def _execute_subscript(self, subscript: ast.Subscript):
         index = self._execute_ast(subscript.slice)
         value = self._execute_ast(subscript.value)
+        if not isinstance(subscript.ctx, ast.Load):
+            raise InterpreterError(
+                f"{subscript.ctx.__class__.__name__} is not supported for "
+                "subscript.")
         if isinstance(value, (list, tuple)):
             return value[int(index)]
         if index in value:
             return value[index]
-        if isinstance(index, str) and isinstance(value, Mapping):
-            close_matches = difflib.get_close_matches(index,
-                                                      list(value.keys()))
+        if isinstance(index, str) and isinstance(value, dict):
+            close_matches = difflib.get_close_matches(
+                index,
+                [key for key in list(value.keys()) if isinstance(key, str)],
+            )
             if len(close_matches) > 0:
                 return value[close_matches[0]]
 
         raise InterpreterError(f"Could not index {value} with '{index}'.")
 
     def _execute_name(self, name: ast.Name):
-        return self._get_value_from_state(name.id)
+        if isinstance(name.ctx, ast.Store):
+            return name.id
+        elif isinstance(name.ctx, ast.Load):
+            return self._get_value_from_state(name.id)
+        else:
+            raise InterpreterError(f"{name.ctx} is not supported.")
 
-    def _execute_condition(self, condition):
+    def _execute_condition(self, condition: ast.Compare):
         if len(condition.ops) > 1:
             raise InterpreterError(
                 "Cannot evaluate conditions with multiple operators")
@@ -297,10 +321,14 @@ class PythonInterpreter():
         elif isinstance(comparator, ast.NotIn):
             return left not in right
         else:
-            raise InterpreterError(f"Operator not supported: {comparator}")
+            raise InterpreterError(f"Unsupported operator: {comparator}")
 
     def _execute_if(self, if_statement: ast.If):
         result = None
+        if not isinstance(if_statement.test, ast.Compare):
+            raise InterpreterError(
+                "Only Campare expr supported in if statement, get"
+                f" {if_statement.test.__class__.__name__}")
         if self._execute_condition(if_statement.test):
             for line in if_statement.body:
                 line_result = self._execute_ast(line)
@@ -324,31 +352,35 @@ class PythonInterpreter():
 
         return result
 
-    def _execute_import(self, module: Union[str, ast.alias],
-                        import_name: Optional[ast.alias] = None) -> None:
-        module_name = module if isinstance(module, str) else module.name
-        found_name = False
+    def _execute_import(self, import_module: ast.Import) -> None:
+        for module in import_module.names:
+            self._validate_import(module.name)
+            alias = module.asname or module.name
+            self.state[alias] = importlib.import_module(module.name)
+
+    def _execute_import_from(self, import_from: ast.ImportFrom):
+        if import_from.module is None:
+            raise InterpreterError("\"from . import\" is not supported.")
+        for import_name in import_from.names:
+            full_name = import_from.module + f".{import_name.name}"
+            self._validate_import(full_name)
+            imported_module = importlib.import_module(import_from.module)
+            alias = import_name.asname or import_name.name
+            self.state[alias] = getattr(imported_module, import_name.name)
+
+    def _validate_import(self, full_name: str):
         tmp_name = ""
-        full_name = (module_name if import_name is None else module_name +
-                     f".{import_name.name}")
+        found_name = False
         for name in full_name.split("."):
             tmp_name += name if tmp_name == "" else f".{name}"
             if tmp_name in self.import_white_list:
                 found_name = True
-                break
+                return
 
         if not found_name:
             raise InterpreterError(f"It is not permitted to import modules "
                                    f"than module white list (try to import "
-                                   f"{module_name}).")
-
-        if import_name is None:
-            alias = (module.asname or module_name)
-            self.state[alias] = importlib.import_module(module_name)
-        else:
-            imported_module = importlib.import_module(module_name)
-            alias = import_name.asname or import_name.name
-            self.state[alias] = getattr(imported_module, import_name.name)
+                                   f"{full_name}).")
 
     def _execute_binop(self, binop: ast.BinOp):
         left = self._execute_ast(binop.left)

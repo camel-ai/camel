@@ -20,11 +20,13 @@ from camel.utils import print_text_animated
 def main(model_type=None) -> None:
     task_prompt = "Develop a trading bot for the stock market"
     role_play_session = RolePlaying(
-        "Python Programmer",
-        "Stock Trader",
+        assistant_role_name="Python Programmer",
+        assistant_agent_kwargs=dict(model=model_type),
+        user_role_name="Stock Trader",
+        user_agent_kwargs=dict(model=model_type),
         task_prompt=task_prompt,
         with_task_specify=True,
-        model_type=model_type,
+        task_specify_agent_kwargs=dict(model=model_type),
     )
 
     print(
@@ -46,8 +48,6 @@ def main(model_type=None) -> None:
         assistant_response, user_response = role_play_session.step(
             input_assistant_msg)
 
-        input_assistant_msg = assistant_response.msg
-
         if assistant_response.terminated:
             print(Fore.GREEN +
                   ("AI Assistant terminated. Reason: "
@@ -66,6 +66,8 @@ def main(model_type=None) -> None:
 
         if "CAMEL_TASK_DONE" in user_response.msg.content:
             break
+
+        input_assistant_msg = assistant_response.msg
 
 
 if __name__ == "__main__":

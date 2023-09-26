@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from typing import Any, Dict
+
 import pytest
 
 from camel.messages import BaseMessage
@@ -59,12 +61,12 @@ def test_chat_message(chat_message: BaseMessage) -> None:
     assert chat_message.content == content
 
     dictionary = chat_message.to_dict()
-    assert dictionary == {
+    reference_dict: Dict[str, Any] = {
         "role_name": role_name,
         "role_type": role_type.name,
-        **(meta_dict or {}),
         "content": content,
     }
+    assert dictionary == reference_dict
 
 
 def test_assistant_chat_message(assistant_chat_message: BaseMessage) -> None:
@@ -79,12 +81,12 @@ def test_assistant_chat_message(assistant_chat_message: BaseMessage) -> None:
     assert assistant_chat_message.content == content
 
     dictionary = assistant_chat_message.to_dict()
-    assert dictionary == {
+    reference_dict: Dict[str, Any] = {
         "role_name": role_name,
         "role_type": role_type.name,
-        **(meta_dict or {}),
         "content": content,
     }
+    assert dictionary == reference_dict
 
 
 def test_user_chat_message(user_chat_message: BaseMessage) -> None:
@@ -99,9 +101,9 @@ def test_user_chat_message(user_chat_message: BaseMessage) -> None:
     assert user_chat_message.content == content
 
     dictionary = user_chat_message.to_dict()
-    assert dictionary == {
+    reference_dict: Dict[str, Any] = {
         "role_name": role_name,
         "role_type": role_type.name,
-        **(meta_dict or {}),
         "content": content,
     }
+    assert dictionary == reference_dict

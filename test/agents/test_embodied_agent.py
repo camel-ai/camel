@@ -11,7 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import binascii
+
 import pytest
+import requests
 
 from camel.agents import EmbodiedAgent, HuggingFaceToolAgent
 from camel.generators import SystemMessageGenerator
@@ -34,7 +37,7 @@ def test_get_action_space_prompt():
 
 
 @pytest.mark.model_backend
-@pytest.mark.full_test_only
+@pytest.mark.very_slow
 def test_step():
     # Create an embodied agent
     role_name = "Artist"
@@ -43,12 +46,16 @@ def test_step():
         meta_dict=meta_dict,
         role_tuple=(f"{role_name}'s Embodiment", RoleType.EMBODIMENT))
     embodied_agent = EmbodiedAgent(sys_msg, verbose=True)
-    print(embodied_agent.system_message)
     user_msg = BaseMessage.make_user_message(
         role_name=role_name,
         content="Draw all the Camelidae species.",
     )
-    response = embodied_agent.step(user_msg)
+    try:
+        response = embodied_agent.step(user_msg)
+    except (binascii.Error, requests.exceptions.ConnectionError) as ex:
+        print("Warning: caught an exception, ignoring it since "
+              f"it is a known issue of Huggingface ({str(ex)})")
+        return
     assert isinstance(response.msg, BaseMessage)
     assert not response.terminated
     assert isinstance(response.info, dict)

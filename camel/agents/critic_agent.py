@@ -53,8 +53,9 @@ class CriticAgent(ChatAgent):
         verbose: bool = False,
         logger_color: Any = Fore.MAGENTA,
     ) -> None:
-        super().__init__(system_message, model, model_config,
-                         message_window_size)
+        super().__init__(system_message, model=model,
+                         model_config=model_config,
+                         message_window_size=message_window_size)
         self.options_dict: Dict[str, str] = dict()
         self.retry_attempts = retry_attempts
         self.verbose = verbose
@@ -96,7 +97,7 @@ class CriticAgent(ChatAgent):
         msg_content = input_message.content
         i = 0
         while i < self.retry_attempts:
-            critic_response = super().step(input_message)
+            critic_response = self.step(input_message)
 
             if critic_response.msgs is None or len(critic_response.msgs) == 0:
                 raise RuntimeError("Got None critic messages.")
