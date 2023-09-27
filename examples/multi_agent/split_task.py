@@ -26,14 +26,16 @@ def main(model_type=None) -> None:
     role_assignment_agent = RoleAssignmentAgent(
         model=model_type, model_config=model_config_description)
 
-    role_description_dict = role_assignment_agent.run(task_prompt=task_prompt,
-                                                      num_roles=4)
+    num_roles = 4
 
-    num_subtasks = 6
+    role_descriptions_dict = role_assignment_agent.run(task_prompt=task_prompt,
+                                                       num_roles=num_roles)
 
-    subtasks_with_dependencies_dict = \
-        role_assignment_agent.split_tasks(task_prompt, role_description_dict,
-                                          num_subtasks)
+    # num_subtasks = 6
+
+    subtasks_with_dependencies_dict = role_assignment_agent.split_tasks(
+        task_prompt=task_prompt, role_descriptions_dict=role_descriptions_dict,
+        context_text=task_prompt)
     subtasks = [
         subtasks_with_dependencies_dict[key]["description"]
         for key in sorted(subtasks_with_dependencies_dict.keys())
@@ -41,20 +43,17 @@ def main(model_type=None) -> None:
 
     if subtasks is None:
         raise ValueError("subtasks is None.")
-    if len(subtasks) != num_subtasks:
-        raise ValueError(f"Number of subtasks ({len(subtasks)}) "
-                         f"does not equal to num_subtasks ({num_subtasks}).")
 
     print(Fore.BLUE + "Dependencies among subtasks: " +
           json.dumps(subtasks_with_dependencies_dict, indent=4))
     for (i, subtask) in enumerate(subtasks_with_dependencies_dict.keys()):
-        print(Fore.GREEN + f"\nSubtask {i+1}: " +
+        print(Fore.GREEN + f"Subtask {i+1}:\n" +
               f"{subtasks_with_dependencies_dict[subtask]['description']}")
         deps = subtasks_with_dependencies_dict[subtask]["dependencies"]
         print(Fore.CYAN + "Dependencies: [" + ", ".join(dep
                                                         for dep in deps) + "]")
     for (i, (role_name,
-             role_description)) in enumerate(role_description_dict.items()):
+             role_description)) in enumerate(role_descriptions_dict.items()):
         print(Fore.GREEN + f"Role {i + 1}. {role_name}: {role_description}")
 
 

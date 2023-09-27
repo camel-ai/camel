@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Optional, Union
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from camel.agents import ChatAgent
+from camel.agents.insight_agent import InsightAgent
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
 from camel.typing import ModelType, RoleType
@@ -218,6 +219,7 @@ class RoleAssignmentAgent(ChatAgent):
         task_prompt: Union[str, TextPrompt],
         role_descriptions_dict: [Dict[str, str]],
         num_subtasks: Optional[int] = None,
+        context_text: Optional[str] = None,
     ) -> Dict[str, Dict[str, Union[str, List[str]]]]:
         r"""Split the task into subtasks based on the input task prompt.
 
@@ -228,6 +230,8 @@ class RoleAssignmentAgent(ChatAgent):
                 descriptions of each role.
             num_subtasks (Optional[int], optional): The number of subtasks to
                 split the task into. (default: :obj:`None`)
+            context_text (Optional[str], optional): The context text to
+                generate insights from. (default: :obj:`None`)
 
         Returns:
             Dict[str, Dict[str, Union[str, List[str]]]]: A dictionary mapping
@@ -236,6 +240,19 @@ class RoleAssignmentAgent(ChatAgent):
         self.reset()
 
         role_names = list(role_descriptions_dict.keys())
+
+        # Generate insights from the context text to help split the task
+        if context_text is not None:
+            insight_agent = InsightAgent(model=self.model,
+                                         model_config=self.model_config)
+            task_insights_json = insight_agent.run(context_text=context_text)
+            task_context_prompt = \
+                TextPrompt("===== NovaDive&QuestXplorer FOR CONTEXT OF " +
+                           "TASK =====\n")
+            task_context_prompt += insight_agent.convert_json_to_str(
+                task_insights_json)
+        else:
+            task_context_prompt = ""
 
         task_prompt = TextPrompt("===== TASK =====\n" + task_prompt + "\n\n")
         role_with_description_prompt = \
@@ -276,7 +293,7 @@ class RoleAssignmentAgent(ChatAgent):
             "Your answer MUST strictly adhere to the structure of ANSWER " +
             "TEMPLATE, ONLY fill in the BLANKs, and DO NOT alter or modify " +
             "any other part of the template.\n\n" + answer_prompt +
-            task_prompt + role_with_description_prompt)
+            task_prompt + task_context_prompt + role_with_description_prompt)
 
         subtasks_generation = splict_task_prompt.format(
             num_subtasks=num_subtasks or "SEVERAL/ENOUGH",
