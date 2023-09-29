@@ -18,7 +18,7 @@ from camel.utils import parse_doc
 
 def test_parse_doc_valid():
 
-    def add(a, b):
+    def add_google_style(a, b):
         """Adds two numbers.
 
         Args:
@@ -27,8 +27,70 @@ def test_parse_doc_valid():
         """
         return a + b
 
-    parsed = parse_doc(add)
-    assert parsed['name'] == 'add'
+    parsed = parse_doc(add_google_style)
+    assert parsed['name'] == 'add_google_style'
+    assert parsed['description'] == 'Adds two numbers.'
+    assert parsed['parameters']['properties']['a']['type'] == 'int'
+    assert parsed['parameters']['properties']['b']['type'] == 'int'
+
+    def add_rest_style(a, b):
+        """
+        Adds two numbers.
+
+        :param a: The first number to be added.
+        :type a: int
+        :param b: The second number to be added.
+        :type b: int
+        :return: The sum of the two numbers.
+        :rtype: int
+        """
+        return a + b
+
+    parsed = parse_doc(add_rest_style)
+    assert parsed['name'] == 'add_rest_style'
+    assert parsed['description'] == 'Adds two numbers.'
+    assert parsed['parameters']['properties']['a']['type'] == 'int'
+    assert parsed['parameters']['properties']['b']['type'] == 'int'
+
+    def add_numpy_style(a, b):
+        """
+        Adds two numbers.
+
+        Parameters
+        ----------
+        a : int
+            The first number to be added.
+        b : int
+            The second number to be added.
+
+        Returns
+        -------
+        int
+            The sum of the two numbers.
+        """
+        return a + b
+
+    parsed = parse_doc(add_numpy_style)
+    assert parsed['name'] == 'add_numpy_style'
+    assert parsed['description'] == 'Adds two numbers.'
+    assert parsed['parameters']['properties']['a']['type'] == 'int'
+    assert parsed['parameters']['properties']['b']['type'] == 'int'
+
+    def add_epydoc_style(a, b):
+        """
+        Adds two numbers.
+
+        @param a: The first number to be added.
+        @type a: int
+        @param b: The second number to be added.
+        @type b: int
+        @return: The sum of the two numbers.
+        @rtype: int
+        """
+        return a + b
+
+    parsed = parse_doc(add_epydoc_style)
+    assert parsed['name'] == 'add_epydoc_style'
     assert parsed['description'] == 'Adds two numbers.'
     assert parsed['parameters']['properties']['a']['type'] == 'int'
     assert parsed['parameters']['properties']['b']['type'] == 'int'
@@ -57,13 +119,9 @@ def test_parse_doc_mismatch():
         return a * b * c
 
     with pytest.raises(
-            ValueError,
-            match=(r"Number of parameters in function signature "
-                   r"\(3\) does not match that in docstring \(2\).")):
+            ValueError, match="Parameter 'c' in function signature" +
+            " is missing in the docstring."):
         parse_doc(mul)
-
-
-def test_parse_doc_no_args_section():
 
     def return_param(a):
         """Return the parameter.
@@ -74,6 +132,19 @@ def test_parse_doc_no_args_section():
         return a
 
     with pytest.raises(
-            ValueError, match=("Parameter 'a' in function signature"
-                               " is missing in the docstring.")):
+            ValueError, match="Parameter 'a' in function signature" +
+            " is missing in the docstring."):
         parse_doc(return_param)
+
+
+def test_parse_doc_with_default_parameter():
+
+    def add_default(a, b=1):
+        """Return the parameter.
+            Args:
+                a (int): The first number to be added.
+                b (int): The second default number to be added.
+        """
+        return a + b
+
+    parse_doc(add_default)
