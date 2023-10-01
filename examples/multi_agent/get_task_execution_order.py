@@ -28,7 +28,7 @@ def main(model_type=None) -> None:
     role_description_dict = role_assignment_agent.run(task_prompt=task_prompt,
                                                       num_roles=4)
 
-    num_subtasks = 6
+    num_subtasks = 9
 
     subtasks_with_dependencies_dict = \
         role_assignment_agent.split_tasks(task_prompt, role_description_dict,
