@@ -311,7 +311,7 @@ class RoleAssignmentAgent(ChatAgent):
         subtasks_generation = splict_task_prompt.format(
             num_subtasks=num_subtasks or "SEVERAL/ENOUGH",
             num_roles=len(role_names))
-        print(f"subtasks_generation:\n{subtasks_generation}")
+
         subtasks_generation_msg = BaseMessage.make_user_message(
             role_name="Task Splitter", content=subtasks_generation)
 
