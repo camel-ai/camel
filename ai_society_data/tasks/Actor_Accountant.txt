@@ -1,0 +1,10 @@
+1. Actor can help Accountant with data entry and organization of financial records.
+2. Actor can assist Accountant with preparing and sending invoices to clients.
+3. Actor can help Accountant with reconciling bank statements and credit card transactions.
+4. Actor can assist Accountant with preparing financial reports and statements.
+5. Actor can help Accountant with tracking and managing expenses.
+6. Actor can assist Accountant with preparing and filing tax returns.
+7. Actor can help Accountant with managing payroll and employee benefits.
+8. Actor can assist Accountant with conducting financial analysis and forecasting.
+9. Actor can help Accountant with managing accounts payable and receivable.
+10. Actor can assist Accountant with communicating financial information to clients and stakeholders.

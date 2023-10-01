@@ -1,0 +1,10 @@
+1. Localizing software user interfaces for different languages and cultures.
+2. Translating technical documentation and user manuals for software products.
+3. Assisting with internationalization efforts to ensure software can be easily adapted for different languages and regions.
+4. Providing language support for customer service and technical support teams.
+5. Translating marketing materials and website content to reach a global audience.
+6. Collaborating on software development projects with international teams and stakeholders.
+7. Conducting multilingual testing and quality assurance to ensure software functions properly in different languages.
+8. Providing language expertise for natural language processing and machine learning projects.
+9. Translating software code comments and documentation to facilitate collaboration among international developers.
+10. Assisting with cross-cultural communication and understanding between software development teams and clients.

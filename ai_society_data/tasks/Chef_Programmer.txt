@@ -1,0 +1,10 @@
+1. Automating the deployment of a web application using Chef's infrastructure automation capabilities and the programmer's knowledge of the application's codebase.
+2. Creating a custom Chef cookbook to manage the configuration of a database server for a programmer's application.
+3. Collaborating on the development of a Chef recipe to automate the installation and configuration of a load balancer for a web application.
+4. Using Chef to manage the installation and configuration of a development environment for a programmer's team.
+5. Creating a Chef cookbook to automate the deployment of a microservices architecture for a programmer's application.
+6. Collaborating on the development of a Chef recipe to automate the installation and configuration of a caching layer for a web application.
+7. Using Chef to manage the configuration of a continuous integration and deployment pipeline for a programmer's application.
+8. Creating a custom Chef cookbook to manage the installation and configuration of a messaging system for a programmer's application.
+9. Collaborating on the development of a Chef recipe to automate the installation and configuration of a monitoring system for a web application.
+10. Using Chef to manage the configuration of a container orchestration platform for a programmer's application.

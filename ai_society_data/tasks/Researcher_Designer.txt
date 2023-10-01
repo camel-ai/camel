@@ -1,0 +1,10 @@
+1. Conducting user research to inform design decisions
+2. Creating user personas to guide design choices
+3. Testing and evaluating design prototypes with users
+4. Analyzing user feedback to improve design iterations
+5. Conducting competitive analysis to inform design strategy
+6. Developing user journey maps to identify pain points and opportunities
+7. Conducting usability testing to identify areas of improvement
+8. Creating wireframes and mockups based on user research insights
+9. Conducting A/B testing to optimize design choices
+10. Developing design guidelines based on user research insights.

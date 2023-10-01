@@ -1,0 +1,10 @@
+1. Identifying key terminology and creating a glossary for a specific project.
+2. Analyzing the target audience to ensure the translation is appropriate and effective.
+3. Reviewing the source text for cultural nuances and providing guidance to the translator.
+4. Conducting research on industry-specific terminology and providing guidance to the translator.
+5. Creating a style guide to ensure consistency in the translation.
+6. Providing feedback on the translation to ensure accuracy and clarity.
+7. Collaborating on the localization of graphics and other visual elements.
+8. Identifying potential legal or regulatory issues in the translation and providing guidance to the translator.
+9. Reviewing the translation for formatting and layout issues.
+10. Collaborating on the creation of a translation memory to improve efficiency and consistency in future translations.

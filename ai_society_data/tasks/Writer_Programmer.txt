@@ -1,0 +1,10 @@
+1. Writing clear and concise documentation for the software.
+2. Creating user manuals and help guides.
+3. Writing marketing materials and website content.
+4. Developing tutorials and training materials.
+5. Crafting error messages and notifications.
+6. Creating UI/UX copy and microcopy.
+7. Writing test cases and scenarios.
+8. Developing use cases and user stories.
+9. Crafting release notes and changelogs.
+10. Creating technical blog posts and articles.
