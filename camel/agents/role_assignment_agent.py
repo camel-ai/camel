@@ -53,7 +53,7 @@ class RoleAssignmentAgent(ChatAgent):
         num_roles: int = 2,
         role_names: Optional[List[str]] = None,
         role_descriptions_instruction: Optional[Union[str, TextPrompt]] = None,
-    ) -> Dict[str, str]:
+    ) -> Dict[str, Dict[str, List[str]]]:
         r"""Generate role names based on the input task prompt.
 
         Args:
@@ -67,8 +67,8 @@ class RoleAssignmentAgent(ChatAgent):
                 optional): The instruction for the role descriptions.
 
         Returns:
-            Dict[str, str]: A dictionary mapping role names to their
-                descriptions.
+            Dict[str, Dict[str, List[str]]]: A dictionary mapping role names
+                to their descriptions and dependencies.
         """
         self.reset()
 
@@ -158,9 +158,9 @@ class RoleAssignmentAgent(ChatAgent):
                 concurrently.
         """
         oriented_graph = {}
-        for subtask, details in subtasks_with_dependencies_dict.items():
-            dependencies = details["dependencies"]
-            oriented_graph[subtask] = dependencies
+        for subtask_idx, details in subtasks_with_dependencies_dict.items():
+            deps = details["dependencies"]
+            oriented_graph[subtask_idx] = deps
 
         subtasks_execution_pipelines = \
             self.sort_oriented_graph(oriented_graph)
@@ -208,8 +208,8 @@ class RoleAssignmentAgent(ChatAgent):
         # If the graph is not a DAG, there exists a cycle
         if sum(len(sublist) for sublist in parallel_subtask_pipelines) != len(
                 oriented_graph):
-            return ("There exists a cycle in the graph. "
-                    "Can't determine an order.")
+            raise RuntimeError("There exists a cycle in the graph. "
+                               "Can't determine an order.")
 
         return parallel_subtask_pipelines
 
@@ -247,8 +247,10 @@ class RoleAssignmentAgent(ChatAgent):
                                          model_config=self.model_config)
             task_insights_json = insight_agent.run(context_text=context_text)
             task_context_prompt = \
-                TextPrompt("===== NovaDive&QuestXplorer FOR CONTEXT OF " +
-                           "TASK =====\n")
+                TextPrompt("===== CONTEXT TEXT =====\n" +
+                           "When splitting the task, ensure that each " +
+                           "subtask incorporates specific details from the " +
+                           "context for clarity.\n")
             task_context_prompt += insight_agent.convert_json_to_str(
                 task_insights_json)
         else:
@@ -259,37 +261,48 @@ class RoleAssignmentAgent(ChatAgent):
             "===== ROLES WITH DESCRIPTION =====\n" + "\n".join(
                 f"{role_name}:\n{role_descriptions_dict[role_name]}\n"
                 for role_name in role_names) + "\n\n"
-        answer_prompt = \
-            "===== ANSWER TEMPLATE =====\nGantt Chart with complex " + \
-            "dependency in MarkDown format: <BLANK>\n" + "\n".join(
-                f"Explanation for subtask {i + 1}: <BLANK>\n"
-                f"Content of subtask {i + 1}: <BLANK>\n"
-                f"Dependency of subtask {i + 1}: [subtask <i>, subtask <j>, "
-                f"subtask <k>]/[None] (don't forget square brackets)\nEnd."
-                for i in range(num_subtasks or 1)) + "\n\n"
+        if num_subtasks is None:
+            answer_prompt = \
+                "===== ANSWER TEMPLATE =====\n".join(
+                    "Details of subtask <NUM>:\n<BLANK>\n"
+                    "Dependency of subtask <NUM>: [subtask <i>, subtask <j>, "
+                    "subtask <k>]/[None] (don't forget square brackets)\nEnd."
+                    for _ in range(2)
+                ) + "\n\n"
+        else:
+            answer_prompt = \
+                "===== ANSWER TEMPLATE =====\n".join(
+                    f"Details of subtask {i + 1}:\n<BLANK>\n"
+                    f"Dependency of subtask {i + 1}: [subtask <i>, subtask "
+                    f"<j>, subtask <k>]/[None] (include square brackets)"
+                    f"\nEnd."
+                    for i in range(num_subtasks or 1)) + "\n\n"
         splict_task_prompt = TextPrompt(
             "You are a task splitter, and you're in asked to break down the" +
             " main TASK into {num_subtasks} manageable subtasks suitable " +
             "for a team comprising {num_roles} domain experts. The experts " +
             "will contribute to the {num_subtasks} subtasks. Please follow " +
             "the guidelines below to craft your answer:\n" +
-            "  1. Foundation & Building Blocks: Remember that ensure each " +
-            "subtask is distinct, actionable, and taps into the expertise " +
-            "of the assigned roles. And recognize that not every subtask " +
-            "needs to directly reflect the main TASK's ultimate aim. Some " +
-            "subtasks serve as essential building blocks, paving the way " +
-            "for more central subtasks.\n" +
-            "  2. Balanced Granularity: While each subtask should be " +
-            "distinct and actionable, it should not be so detailed that it " +
-            "requires the input of more than two domain experts. Design " +
-            "each subtask to be comprehensive but not overly complex.\n" +
+            "  1. Action-Oriented Foundation & Building Blocks: Ensure each " +
+            "subtask is actionable, distinct, tapping into the expertise of " +
+            "the assigned roles. Recognize that not every subtask needs to " +
+            "directly reflect the main TASK's ultimate aim. Some subtasks " +
+            "serve as essential building blocks, paving the way for more " +
+            "central subtasks, but avoid creating subtasks that are self-" +
+            "dependent or overly foundational.\n" +
+            "  2. Balanced Granularity with a Bias for Action: While each " +
+            "subtask should be detailed and actionable, it should not be so " +
+            "ambiguous that it requires the input of more than two domain " +
+            "experts. Prioritize tangible actions in subtask such as " +
+            "implementation, creation, testing, or other tangible " +
+            "activities over mere understanding.\n" +
             "  3. Dependencies & Gantt Chart: Identify and account for the " +
-            "dependencies within these subtasks. Ensure that each subtask " +
-            "logically flows from one to the next, or can run concurrently, " +
-            "in a manner that could be efficiently represented on a Gantt " +
-            "chart.\n" +
-            "  4. The content of each subtask should avoid mentioning any " +
-            "title or any role of the experts.\n" +
+            "dependencies within the subtasks. Ensure that each subtask " +
+            "logically flows from one to the next, or can run concurrently " +
+            "where no subtask is dependent on itself, in a manner that " +
+            "could be efficiently represented on a Gantt chart.\n" +
+            "  4. Refrain from mentioning specific titles or roles within " +
+            "the content of subtasks.\n" +
             "Your answer MUST strictly adhere to the structure of ANSWER " +
             "TEMPLATE, ONLY fill in the BLANKs, and DO NOT alter or modify " +
             "any other part of the template.\n\n" + answer_prompt +
@@ -298,6 +311,7 @@ class RoleAssignmentAgent(ChatAgent):
         subtasks_generation = splict_task_prompt.format(
             num_subtasks=num_subtasks or "SEVERAL/ENOUGH",
             num_roles=len(role_names))
+        print(f"subtasks_generation:\n{subtasks_generation}")
         subtasks_generation_msg = BaseMessage.make_user_message(
             role_name="Task Splitter", content=subtasks_generation)
 
@@ -310,7 +324,7 @@ class RoleAssignmentAgent(ChatAgent):
         # Distribute the output completions into subtasks
         subtask_descriptions = [
             desc.replace("<", "").replace(">", "").strip('\n')
-            for desc in re.findall(r"Content of subtask \d: (.+?)Dependency",
+            for desc in re.findall(r"Details of subtask \d:\n(.+?)Dependency",
                                    msg.content, re.DOTALL)
         ]
         subtask_dependencies = [[
@@ -333,6 +347,8 @@ class RoleAssignmentAgent(ChatAgent):
                 zip(subtask_descriptions, dependent_subtasks_list))
         }
 
+        if len(subtasks_with_dependencies_dict) == 0:
+            raise RuntimeError("The task is not split into subtasks.")
         if (num_subtasks is not None
                 and (len(subtask_descriptions) != num_subtasks
                      or len(dependent_subtasks_list) != num_subtasks)):
