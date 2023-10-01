@@ -1,0 +1,10 @@
+1. Developing algorithms for data analysis and interpretation
+2. Building custom software for laboratory automation
+3. Creating visualizations for scientific data
+4. Developing machine learning models for predictive analysis
+5. Designing and implementing databases for scientific data management
+6. Developing software for simulation and modeling
+7. Building web-based interfaces for scientific data sharing and collaboration
+8. Developing software for image analysis and processing
+9. Building custom software for instrument control and data acquisition
+10. Developing software for high-performance computing and parallel processing.

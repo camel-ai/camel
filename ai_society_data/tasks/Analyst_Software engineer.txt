@@ -1,0 +1,10 @@
+1. Gathering and analyzing user requirements for software development.
+2. Creating use cases and user stories to guide software development.
+3. Conducting feasibility studies to determine the viability of software projects.
+4. Developing functional specifications for software development.
+5. Creating test plans and test cases to ensure software quality.
+6. Collaborating on software design and architecture.
+7. Conducting code reviews to ensure code quality and maintainability.
+8. Developing and maintaining project documentation.
+9. Providing technical support to end-users.
+10. Conducting user acceptance testing to ensure software meets user needs.

@@ -1,0 +1,10 @@
+1. Data cleaning and preprocessing
+2. Statistical analysis and modeling
+3. Developing and implementing machine learning algorithms
+4. Creating visualizations and dashboards to communicate findings
+5. Conducting literature reviews and synthesizing research
+6. Designing and executing experiments
+7. Collecting and managing data from various sources
+8. Conducting quality control checks on data and results
+9. Developing and maintaining databases and data pipelines
+10. Collaborating on research proposals and grant applications.

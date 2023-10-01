@@ -1,0 +1,10 @@
+1. Creating wireframes and prototypes to help developers understand the design vision and functionality of the product.
+2. Collaborating on user experience design to ensure that the product is intuitive and easy to use.
+3. Working together to optimize website or application performance and load times.
+4. Developing a consistent design system that can be easily implemented by developers.
+5. Creating accessible designs that meet WCAG guidelines and can be used by people with disabilities.
+6. Designing responsive layouts that work well on different devices and screen sizes.
+7. Collaborating on the selection of fonts, colors, and other design elements to ensure a cohesive visual identity.
+8. Creating animations and interactions that enhance the user experience and engage users.
+9. Conducting user research and usability testing to validate design decisions and identify areas for improvement.
+10. Working together to ensure that the final product meets both design and technical requirements.

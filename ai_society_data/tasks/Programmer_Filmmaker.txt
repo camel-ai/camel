@@ -1,0 +1,10 @@
+1. Developing custom software to automate repetitive post-production tasks.
+2. Creating a custom video player with advanced features for a specific project.
+3. Building a mobile app to enhance the viewing experience of a film.
+4. Developing a virtual reality experience to accompany a film.
+5. Creating a website to showcase a filmmaker's work and allow for online distribution.
+6. Developing a tool to analyze audience engagement with a film through social media data.
+7. Building a custom tool to assist with color grading and correction.
+8. Creating a custom tool to assist with sound design and mixing.
+9. Developing a tool to assist with script analysis and storyboarding.
+10. Building a custom tool to assist with location scouting and management.

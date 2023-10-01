@@ -1,0 +1,10 @@
+1. Conducting user research and gathering feedback to inform software development decisions.
+2. Creating wireframes and prototypes to visualize and test software design concepts.
+3. Writing and editing technical documentation to ensure clear and concise communication of software features and functionality.
+4. Conducting code reviews and providing feedback on software architecture and implementation.
+5. Developing and executing test plans to ensure software quality and functionality.
+6. Collaborating on software design and development, including brainstorming and problem-solving sessions.
+7. Conducting market research and competitive analysis to inform software development strategy.
+8. Developing and implementing marketing and promotional strategies to increase software adoption and usage.
+9. Providing technical support and troubleshooting assistance to software users.
+10. Developing and delivering training materials and workshops to educate users on software features and functionality.

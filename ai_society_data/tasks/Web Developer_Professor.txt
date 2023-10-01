@@ -1,0 +1,10 @@
+1. Developing an interactive online course platform with multimedia content.
+2. Creating a website for a research project with data visualization tools.
+3. Designing and implementing a custom database for a research project.
+4. Developing a mobile application for a classroom activity or project.
+5. Creating a website for a student organization with event calendars and sign-up forms.
+6. Developing an online portfolio for students to showcase their work.
+7. Designing and implementing an online survey tool for research purposes.
+8. Creating a website for a conference with registration and payment processing.
+9. Developing an online tool for peer review and feedback on student work.
+10. Creating a website for a community outreach program with volunteer sign-up and event information.

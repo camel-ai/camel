@@ -1,0 +1,10 @@
+1. User research and persona creation to inform software design decisions.
+2. Collaborating on wireframes and prototypes to ensure user experience is intuitive and efficient.
+3. Designing and implementing a consistent visual language and branding across the software.
+4. Conducting usability testing to identify areas for improvement and optimize user experience.
+5. Creating accessible design solutions to ensure software is usable for all users.
+6. Developing a style guide and design system to ensure consistency and efficiency in design and development.
+7. Collaborating on user interface animations and micro-interactions to enhance user engagement and delight.
+8. Designing and implementing responsive design solutions to ensure software is usable on all devices.
+9. Creating marketing materials and graphics to promote the software and its features.
+10. Collaborating on user documentation and tutorials to ensure users can easily understand and utilize the software.

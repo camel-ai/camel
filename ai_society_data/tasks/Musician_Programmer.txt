@@ -1,0 +1,10 @@
+1. Developing a music app that requires both programming and musical expertise.
+2. Creating sound effects for video games or animations.
+3. Designing and implementing an interactive installation that combines music and technology.
+4. Developing a program that generates music based on user input or data.
+5. Creating a virtual reality experience that incorporates music and sound design.
+6. Developing a program that transcribes music into code for use in other applications.
+7. Creating a program that analyzes music and generates visualizations or animations.
+8. Designing and building a musical instrument that incorporates technology and programming.
+9. Developing a program that allows users to create and share music collaboratively online.
+10. Creating a program that uses machine learning to generate music based on user preferences and feedback.

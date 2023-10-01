@@ -15,6 +15,8 @@ import re
 from collections import deque
 from typing import Any, Dict, List, Optional, Union
 
+import matplotlib.pyplot as plt
+import networkx as nx
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from camel.agents import ChatAgent
@@ -167,6 +169,22 @@ class RoleAssignmentAgent(ChatAgent):
 
         return subtasks_execution_pipelines
 
+    def draw_graph(self, oriented_graph: Dict[str, List[str]]) -> str:
+        G = nx.DiGraph()
+        for subtask, details in oriented_graph.items():
+            for dep in details:
+                G.add_edge(dep, subtask)
+
+        pos = nx.spring_layout(G)
+        plt.figure(figsize=(10, 6))
+        nx.draw(G, pos, with_labels=True, node_size=2000, node_color='skyblue',
+                font_size=15, width=2, edge_color='gray', font_weight='bold')
+        plt.title("Task Dependency Graph")
+        # Save the figure locally
+        filepath = "examples/multi_agent/task_dependency_graph.png"
+        plt.savefig(filepath)
+        plt.close()
+
     def sort_oriented_graph(
             self, oriented_graph: Dict[str, List[str]]) -> List[List[str]]:
         r"""Sort the subtasks in topological order and group them into
@@ -210,6 +228,7 @@ class RoleAssignmentAgent(ChatAgent):
                 oriented_graph):
             return ("There exists a cycle in the graph. "
                     "Can't determine an order.")
+        self.draw_graph(oriented_graph)
 
         return parallel_subtask_pipelines
 

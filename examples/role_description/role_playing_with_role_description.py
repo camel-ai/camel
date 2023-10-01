@@ -24,7 +24,7 @@ AI_USER_ROLE_INDEX = 1
 
 
 def main(model_type_for_role_generation=None, model_type=None) -> None:
-    task_prompt = "Develop a trading bot for the stock market."
+    task_prompt = "开发一个股票交易机器人"
 
     model_config_description = ChatGPTConfig()
     role_description_agent = RoleAssignmentAgent(

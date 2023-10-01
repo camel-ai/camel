@@ -1,0 +1,10 @@
+1. Solving puzzles in a cooperative game.
+2. Defeating a difficult boss in a multiplayer game.
+3. Building a complex structure in a sandbox game.
+4. Collecting resources in a survival game.
+5. Completing a challenging level in a platformer game.
+6. Exploring a vast open world in an adventure game.
+7. Strategizing and coordinating attacks in a real-time strategy game.
+8. Racing against other players in a multiplayer racing game.
+9. Creating and designing custom levels in a level editor.
+10. Unlocking achievements and completing challenges in a game.

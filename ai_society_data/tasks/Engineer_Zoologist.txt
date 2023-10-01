@@ -1,0 +1,10 @@
+1. Design and build a custom camera trap system to monitor animal behavior and movements.
+2. Develop and implement a drone-based surveying system to map and monitor animal populations.
+3. Create a specialized tracking collar for endangered species to better understand their behavior and habitat use.
+4. Design and build a remote-controlled underwater vehicle to study marine life in their natural habitat.
+5. Develop a specialized software program to analyze large amounts of animal behavior data collected in the field.
+6. Build a custom enclosure for a zoo or wildlife sanctuary to provide a safe and comfortable environment for animals.
+7. Design and build a specialized vehicle for transporting animals safely and comfortably over long distances.
+8. Develop a system for monitoring and controlling the temperature and humidity in animal habitats to ensure their health and well-being.
+9. Create a specialized feeding system for animals in captivity to ensure they receive the proper nutrition and diet.
+10. Design and build a specialized camera system for capturing high-quality images and videos of animals in the wild.

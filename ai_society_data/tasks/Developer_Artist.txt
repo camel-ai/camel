@@ -1,0 +1,10 @@
+1. Developing a custom shader for a specific visual effect in a game or application.
+2. Creating a tool that automates the process of exporting and importing 3D models between software packages.
+3. Implementing a physics engine to simulate realistic movement and interactions of objects in a scene.
+4. Optimizing the performance of a game or application to run smoothly on a variety of hardware configurations.
+5. Designing and implementing a user interface that is intuitive and visually appealing.
+6. Creating a system for procedural generation of terrain, objects, or textures.
+7. Developing a plugin or extension for a 3D modeling software that streamlines the workflow for artists.
+8. Integrating motion capture data into a game or application to create realistic character animations.
+9. Building a networked multiplayer system that allows players to interact with each other in real-time.
+10. Creating a custom lighting system that enhances the mood and atmosphere of a scene.
