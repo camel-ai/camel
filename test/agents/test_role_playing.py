@@ -173,6 +173,6 @@ def test_role_playing_role_sequence(model_type=None):
         assistant_role_sequence.append(record.role_at_backend)
 
     assert user_role_sequence == \
-           ['system', 'assistant', 'user', 'assistant', 'user']
+           ['system', 'user', 'assistant', 'user', 'assistant']
     assert assistant_role_sequence == \
-           ['system', 'assistant', 'user', 'assistant', 'user', 'assistant']
+           ['system', 'user', 'user', 'assistant', 'user', 'assistant']
