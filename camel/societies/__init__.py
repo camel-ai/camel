@@ -12,7 +12,10 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .role_playing import RolePlaying
+from .role_playing_with_human_analysis import RolePlayingWithAnalysis
 
 __all__ = [
     'RolePlaying',
+    'RolePlayingWithAnalysis',
 ]
+

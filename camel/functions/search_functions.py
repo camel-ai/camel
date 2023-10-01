@@ -222,9 +222,9 @@ def prompt_single_step_agent(prompt: str) -> str:
         content=prompt,
     )
     assistant_response = agent.step(user_msg)
-    if assistant_response.msgs is not None:
-        return assistant_response.msg.content
-    return ""
+    if assistant_response.terminated or assistant_response.msgs is None:
+        return ""
+    return assistant_response.msg.content
 
 
 def summarize_text(text: str, query: str) -> str:
