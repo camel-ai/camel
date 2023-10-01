@@ -175,10 +175,11 @@ class RoleAssignmentAgent(ChatAgent):
             for dep in details:
                 G.add_edge(dep, subtask)
 
-        pos = nx.spring_layout(G)
+        pos = nx.spring_layout(G, k=0.5)
         plt.figure(figsize=(10, 6))
         nx.draw(G, pos, with_labels=True, node_size=2000, node_color='skyblue',
-                font_size=15, width=2, edge_color='gray', font_weight='bold')
+                alpha=0.5, font_size=15, width=2, edge_color='gray',
+                font_weight='bold')
         plt.title("Task Dependency Graph")
         # Save the figure locally
         filepath = "examples/multi_agent/task_dependency_graph.png"
