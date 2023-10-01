@@ -37,7 +37,7 @@ class InsightAgent(ChatAgent):
         model_config: Optional[Any] = None,
     ) -> None:
         system_message = BaseMessage(
-            role_name="Role Assigner",
+            role_name="NovaDive&QuestXplorer",
             role_type=RoleType.ASSISTANT,
             meta_dict=None,
             content="You assign roles based on tasks.",
@@ -122,7 +122,7 @@ class InsightAgent(ChatAgent):
                             "- Iterative Feedback:\n<BLANK or N/A>\n" +
                             "- Formulate Questions:\n<BLANK or N/A>\n" +
                             "- Answer to \"Formulate Questions\" using " +
-                            "CONTEXT TEXT:\n<BLANK or N/A>\n")
+                            "CONTEXT TEXT:\n<BLANK or N/A>\nEnd.\n")
         answer_template_prompt = TextPrompt(
             "===== ANSWER TEMPLATE =====\n" +
             "You need to generate multiple insights, and " +
@@ -145,7 +145,7 @@ class InsightAgent(ChatAgent):
 
         # Replace the "N/A", "None", "NONE" with None
         def handle_none_values_in_msg(value):
-            if value in ["N/A", "None", "NONE"]:
+            if value in ["N/A", "None", "NONE", "null", "NULL"]:
                 return None
             return value.strip() if value else None
 
@@ -164,7 +164,7 @@ class InsightAgent(ChatAgent):
             r"(?:\s+- Formulate Questions:\s*((?:.|\n)+?)"
             r"(?=\s+- Answer to \"Formulate Questions\" using CONTEXT "
             r"TEXT|\Z))?(?:\s+- Answer to \"Formulate Questions\" using "
-            r"CONTEXT TEXT:\s*((?:.|\n)+?)(?=\n*Insight \d+|\Z))?")
+            r"CONTEXT TEXT:\s*((?:.|\n)+?)(?=\n*End.|\Z))?")
 
         insights_matches = re.findall(insights_pattern, msg.content, re.DOTALL)
 
@@ -173,14 +173,44 @@ class InsightAgent(ChatAgent):
             (insight_num, topic, entity, extract, context, feedback, question,
              answer) = match
             insights_json[f"insight {insight_num}"] = {
-                "topic segmentation": handle_none_values_in_msg(topic),
-                "entity recognition": handle_none_values_in_msg(entity),
-                "extract details": handle_none_values_in_msg(extract),
-                "contextual understanding": handle_none_values_in_msg(context),
-                "iterative feedback": handle_none_values_in_msg(feedback),
-                "formulate questions": handle_none_values_in_msg(question),
-                "answer to formulate questions":
+                "topic_segmentation": handle_none_values_in_msg(topic),
+                "entity_recognition": handle_none_values_in_msg(entity),
+                "extract_details": handle_none_values_in_msg(extract),
+                "contextual_understanding": handle_none_values_in_msg(context),
+                "iterative_feedback": handle_none_values_in_msg(feedback),
+                "formulate_questions": handle_none_values_in_msg(question),
+                "answer_to_formulate_questions":
                 handle_none_values_in_msg(answer)
             }
 
+        # Remove the insight if the topic segmentation/insight is None or empty
+        remove_empty_insights_list = []
+        for insight_idx, _ in insights_json.items():
+            if insights_json[insight_idx]["topic_segmentation"] is None:
+                remove_empty_insights_list.append(insight_idx)
+        for insight_idx in remove_empty_insights_list:
+            insights_json.pop(insight_idx)
+
         return insights_json
+
+    def convert_json_to_str(self, insights_json: Dict[str, Dict[str,
+                                                                str]]) -> str:
+        r"""Convert the insights from json format to string format.
+
+        Args:
+            insights_json (Dict[str, Dict[str, str]]): The insights in json
+                format.
+
+        Returns:
+            str: The insights in string format.
+        """
+        insights_str = ""
+        for insight_idx, insight in insights_json.items():
+            insights_str += f"{insight_idx}:\n"
+            for key, value in insight.items():
+                if value is not None:
+                    insights_str += f"- {key}:\n{value}\n"
+                else:
+                    insights_str += f"- {key}:\nN/A\n"
+            insights_str += "\n"
+        return insights_str
