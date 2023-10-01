@@ -26,16 +26,44 @@ def main(model_type=None) -> None:
     role_assignment_agent = RoleAssignmentAgent(
         model=model_type, model_config=model_config_description)
 
-    num_roles = 4
+    num_roles = 5
 
     role_descriptions_dict = role_assignment_agent.run(task_prompt=task_prompt,
                                                        num_roles=num_roles)
 
-    # num_subtasks = 6
+    context_text = """### **Enterprise Overview:**
+**Enterprise Name:** GlobalTradeCorp
+**Industry:** Financial Technology
+**Years in Business:** 15 years
+**Key Business Area:** Developing trading algorithms and financial tools for institutions and retail traders.
+
+### **Background & Need:**
+GlobalTradeCorp has always been at the forefront of financial innovations. With the advent of algorithmic trading, our institution saw a rise in demand for automated tools that can aid both retail and institutional traders. Our clientele base, ranging from hedge funds to independent day traders, has been expressing the need for a sophisticated trading bot that can adapt to the ever-changing stock market dynamics.
+
+### **Existing Infrastructure & Tools:**
+- **Trading Platforms**: Our enterprise uses a mix of MetaTrader 4, Thinkorswim, and proprietary platforms for executing trades.
+- **Data Feed**: We receive real-time data feeds from Bloomberg Terminal, which includes stock prices, news alerts, and other relevant trading information.
+- **Cloud Infrastructure**: Most of our applications are hosted on AWS, leveraging services like EC2, RDS, and Lambda.
+- **Current Bots**: We have a few basic trading bots in place, mainly for forex trading, based on predefined strategies like MACD crossovers and Bollinger Bands.
+
+### **Objective of the New Trading Bot:**
+The new trading bot should be able to:
+1. Analyze large datasets in real-time, including stock prices, news feeds, and social media sentiments.
+2. Make buy/sell decisions based on a mix of predefined strategies and adaptive AI algorithms.
+3. Automatically adjust its strategies based on market conditions (e.g., bull markets, bear markets, high volatility).
+4. Provide a user-friendly interface where traders can set their risk levels, investment amounts, and other preferences.
+5. Offer simulation modes for back-testing strategies.
+
+### **Challenges & Considerations:**
+- **Latency**: Every millisecond counts in algorithmic trading. The bot should be optimized for speed.
+- **Regulations**: Ensure the bot adheres to all SEC regulations and other regional financial guidelines.
+- **Error Handling**: A minor bug or miscalculation can lead to significant losses. Robust error handling and fail-safes are crucial.
+- **Adaptability**: Stock markets are influenced by myriad factors. The bot should be adaptable and not overly reliant on any single strategy."""  # noqa: E501
 
     subtasks_with_dependencies_dict = role_assignment_agent.split_tasks(
         task_prompt=task_prompt, role_descriptions_dict=role_descriptions_dict,
-        context_text=task_prompt)
+        num_subtasks=None,
+        context_text=context_text)  # let LLM decide the number of subtasks
     subtasks = [
         subtasks_with_dependencies_dict[key]["description"]
         for key in sorted(subtasks_with_dependencies_dict.keys())
