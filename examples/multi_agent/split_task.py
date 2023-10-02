@@ -52,13 +52,7 @@ The new trading bot should be able to:
 2. Make buy/sell decisions based on a mix of predefined strategies and adaptive AI algorithms.
 3. Automatically adjust its strategies based on market conditions (e.g., bull markets, bear markets, high volatility).
 4. Provide a user-friendly interface where traders can set their risk levels, investment amounts, and other preferences.
-5. Offer simulation modes for back-testing strategies.
-
-### **Challenges & Considerations:**
-- **Latency**: Every millisecond counts in algorithmic trading. The bot should be optimized for speed.
-- **Regulations**: Ensure the bot adheres to all SEC regulations and other regional financial guidelines.
-- **Error Handling**: A minor bug or miscalculation can lead to significant losses. Robust error handling and fail-safes are crucial.
-- **Adaptability**: Stock markets are influenced by myriad factors. The bot should be adaptable and not overly reliant on any single strategy."""  # noqa: E501
+5. Offer simulation modes for back-testing strategies."""  # noqa: E501
 
     subtasks_with_dependencies_dict = role_assignment_agent.split_tasks(
         task_prompt=task_prompt, role_descriptions_dict=role_descriptions_dict,
