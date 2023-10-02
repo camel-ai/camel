@@ -329,13 +329,11 @@ PART III:
         subtasks_generation = splict_task_prompt.format(
             num_subtasks=num_subtasks or "SEVERAL/ENOUGH",
             num_roles=len(role_names))
-        print(f"\n\nsubtasks_generation:\n{subtasks_generation}")
 
         subtasks_generation_msg = BaseMessage.make_user_message(
             role_name="Task Splitter", content=subtasks_generation)
 
         response = self.step(input_message=subtasks_generation_msg)
-        print(f"\n\nresponse:\n{response.msg.content}")
 
         if (response.terminated):
             raise RuntimeError("Role compatibility scoring failed.")
