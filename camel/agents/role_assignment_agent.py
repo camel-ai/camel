@@ -277,7 +277,7 @@ PART III:
 """ + "\n".join("Incorporate Contextual Parameters into Details of "
                 "subtask <NUM>:\n<BLANK>\n"
                 "Dependency of subtask <NUM>: [subtask <i>, subtask <j>, "
-                "subtask <k>]/[None] (don't forget square brackets)\nEnd."
+                "subtask <k>]/[None] (include square brackets)\nEnd."
                 for _ in range(1)) + "\n\n"
         else:
             answer_prompt = """===== ANSWER TEMPLATE =====
@@ -290,7 +290,8 @@ PART II:
 Gantt Chart with complex dependency in MarkDown format:
 <BLANK>
 PART III:
-""" + "\n".join(f"Details of subtask {i + 1}:\n<BLANK>\n"
+""" + "\n".join(f"Incorporate Contextual Parameters into Details of "
+                f"subtask {i + 1}:\n<BLANK>\n"
                 f"Dependency of subtask {i + 1}: [subtask <i>, subtask "
                 f"<j>, subtask <k>]/[None] (include square brackets)"
                 f"\nEnd." for i in range(num_subtasks)) + "\n\n"
@@ -344,7 +345,7 @@ PART III:
         subtask_descriptions = [
             desc.replace("<", "").replace(">", "").strip('\n')
             for desc in re.findall(
-                r"Incorporate Contextual Parameters into Details ",
+                r"Incorporate Contextual Parameters into Details "
                 r"of subtask \d:\n(.+?)Dependency", msg.content, re.DOTALL)
         ]
         subtask_dependencies = [[
