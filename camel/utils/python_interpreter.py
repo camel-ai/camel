@@ -15,7 +15,7 @@ import ast
 import difflib
 import importlib
 import typing
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Optional
 
 
 class InterpreterError(ValueError):
@@ -152,7 +152,7 @@ class PythonInterpreter():
     @typing.no_type_check
     def _execute_ast(self, expression: ast.AST) -> Any:
         if isinstance(expression, ast.Assign):
-            # Assignement -> evaluate the assignement which should
+            # Assignment -> evaluate the assignment which should
             # update the state. We return the variable assigned as it may
             # be used to determine the final result.
             return self._execute_assign(expression)
@@ -165,6 +165,9 @@ class PythonInterpreter():
         elif isinstance(expression, ast.Call):
             # Function call -> return the value of the function call
             return self._execute_call(expression)
+        elif isinstance(expression, ast.Compare):
+            # Compare -> return True or False
+            return self._execute_condition(expression)
         elif isinstance(expression, ast.Constant):
             # Constant -> just return the value
             return expression.value
@@ -270,9 +273,11 @@ class PythonInterpreter():
             return value[int(index)]
         if index in value:
             return value[index]
-        if isinstance(index, str) and isinstance(value, Mapping):
-            close_matches = difflib.get_close_matches(index,
-                                                      list(value.keys()))
+        if isinstance(index, str) and isinstance(value, dict):
+            close_matches = difflib.get_close_matches(
+                index,
+                [key for key in list(value.keys()) if isinstance(key, str)],
+            )
             if len(close_matches) > 0:
                 return value[close_matches[0]]
 
@@ -286,7 +291,7 @@ class PythonInterpreter():
         else:
             raise InterpreterError(f"{name.ctx} is not supported.")
 
-    def _execute_condition(self, condition):
+    def _execute_condition(self, condition: ast.Compare):
         if len(condition.ops) > 1:
             raise InterpreterError(
                 "Cannot evaluate conditions with multiple operators")
@@ -316,10 +321,14 @@ class PythonInterpreter():
         elif isinstance(comparator, ast.NotIn):
             return left not in right
         else:
-            raise InterpreterError(f"Operator not supported: {comparator}")
+            raise InterpreterError(f"Unsupported operator: {comparator}")
 
     def _execute_if(self, if_statement: ast.If):
         result = None
+        if not isinstance(if_statement.test, ast.Compare):
+            raise InterpreterError(
+                "Only Campare expr supported in if statement, get"
+                f" {if_statement.test.__class__.__name__}")
         if self._execute_condition(if_statement.test):
             for line in if_statement.body:
                 line_result = self._execute_ast(line)
