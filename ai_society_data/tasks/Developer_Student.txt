@@ -1,0 +1,10 @@
+1. Building a website for a school project
+2. Developing a mobile app for a community service organization
+3. Creating a game to teach coding concepts to kids
+4. Designing a database for a research project
+5. Developing a chatbot to assist with student inquiries
+6. Building a virtual reality experience for a museum exhibit
+7. Creating a data visualization tool for a non-profit organization
+8. Developing a machine learning model to predict student success
+9. Designing a website to showcase student artwork
+10. Building a platform for peer-to-peer tutoring and mentoring.

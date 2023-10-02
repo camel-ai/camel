@@ -1,0 +1,10 @@
+1. Setting up and configuring development environments.
+2. Managing and monitoring server resources to optimize performance.
+3. Providing access to necessary databases and other resources.
+4. Implementing security measures to protect against cyber threats.
+5. Troubleshooting and resolving technical issues that arise during development.
+6. Managing version control and code repositories.
+7. Automating deployment processes to streamline development.
+8. Providing technical support and training to developers.
+9. Collaborating on project planning and prioritization.
+10. Conducting regular code reviews to ensure quality and consistency.

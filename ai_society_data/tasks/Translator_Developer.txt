@@ -1,0 +1,10 @@
+1. Localizing software user interfaces for different languages and cultures.
+2. Translating technical documentation and user manuals for international audiences.
+3. Collaborating on the translation of marketing materials and website content.
+4. Providing linguistic and cultural insights to ensure software is appropriate for different regions.
+5. Assisting with the translation of error messages and other system notifications.
+6. Helping to translate and adapt software for accessibility needs, such as screen readers.
+7. Supporting the translation of chatbots and other conversational interfaces.
+8. Working together to ensure that software meets legal and regulatory requirements in different countries.
+9. Providing feedback on the usability and effectiveness of translations in context.
+10. Collaborating on the translation of software strings and other code-related content.

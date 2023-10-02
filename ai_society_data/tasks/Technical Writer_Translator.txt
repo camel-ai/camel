@@ -1,0 +1,10 @@
+1. Creating a glossary of technical terms to ensure consistency in translations.
+2. Reviewing and editing translations for accuracy and clarity.
+3. Providing context and background information to aid in translation.
+4. Developing style guides to ensure consistency in language and formatting.
+5. Conducting research on technical topics to aid in translation.
+6. Collaborating on the creation of user manuals and other technical documentation.
+7. Providing feedback on translations to improve readability and usability.
+8. Creating visual aids, such as diagrams and illustrations, to aid in translation.
+9. Developing templates and formatting guidelines to ensure consistency in documentation.
+10. Conducting usability testing on translated materials to ensure they meet user needs.

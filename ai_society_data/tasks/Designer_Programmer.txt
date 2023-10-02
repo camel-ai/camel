@@ -1,0 +1,10 @@
+1. Creating wireframes and prototypes for user interface design.
+2. Developing a design system to ensure consistency across the application.
+3. Collaborating on user research to inform design decisions.
+4. Designing and implementing animations and transitions to enhance user experience.
+5. Creating visual assets such as icons, logos, and illustrations.
+6. Conducting user testing to validate design decisions.
+7. Developing responsive design solutions for different screen sizes and devices.
+8. Collaborating on accessibility design to ensure the application is usable for all users.
+9. Designing and implementing a style guide for the application.
+10. Collaborating on the development of a user-centered content strategy.

@@ -1,0 +1,10 @@
+1. Creating user manuals and guides for software applications.
+2. Writing technical documentation for software development projects.
+3. Developing online help systems for software applications.
+4. Creating API documentation for software libraries.
+5. Writing release notes and change logs for software updates.
+6. Developing training materials for software users and developers.
+7. Creating technical diagrams and flowcharts to illustrate software processes.
+8. Writing test plans and test cases for software testing.
+9. Developing installation and configuration guides for software applications.
+10. Creating troubleshooting guides and FAQs for software support.

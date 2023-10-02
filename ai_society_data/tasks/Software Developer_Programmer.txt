@@ -1,0 +1,10 @@
+1. Designing and implementing software architecture
+2. Developing and testing software modules
+3. Debugging and troubleshooting software issues
+4. Optimizing software performance and scalability
+5. Integrating third-party libraries and APIs
+6. Creating and maintaining software documentation
+7. Conducting code reviews and providing feedback
+8. Implementing security measures and best practices
+9. Collaborating on project planning and management
+10. Providing technical support and training to end-users.

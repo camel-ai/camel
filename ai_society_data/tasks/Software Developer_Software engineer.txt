@@ -1,0 +1,10 @@
+1. Developing and implementing software architecture
+2. Writing and testing code
+3. Debugging and troubleshooting software issues
+4. Designing and implementing user interfaces
+5. Integrating software with external systems and APIs
+6. Developing and implementing security measures
+7. Conducting code reviews and providing feedback
+8. Optimizing software performance and scalability
+9. Creating and maintaining technical documentation
+10. Collaborating on software project planning and management.
