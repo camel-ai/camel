@@ -37,7 +37,7 @@ class InsightAgent(ChatAgent):
         model_config: Optional[Any] = None,
     ) -> None:
         system_message = BaseMessage(
-            role_name="NovaDive&QuestXplorer",
+            role_name="Insight Agent",
             role_type=RoleType.ASSISTANT,
             meta_dict=None,
             content="You assign roles based on tasks.",
@@ -69,7 +69,7 @@ class InsightAgent(ChatAgent):
         self.reset()
 
         insights_instruction_prompt = \
-            TextPrompt("{insights_instruction} Based on the CONTEXT TEXT " +
+            TextPrompt("{insights_instruction}\n Based on the CONTEXT TEXT " +
                        "provided, generate a comprehensive set of distinct " +
                        "insights following the \"RULES OF INSIGHTS " +
                        "GENERATION\" and use the \"ANSWER TEMPLATE\" to " +
@@ -80,40 +80,26 @@ class InsightAgent(ChatAgent):
                        "alter or modify any other part of the template.\n")
         context_text_prompt = TextPrompt(
             "===== CONTEXT TEXT =====\n{context_text}\n\n")
-        insights_prompt = (
-            "===== RULES OF INSIGHTS GENERATION =====\n" +
-            "According to the following rules, summary the unknowns in your " +
-            "answer from the CONTEXT " + "TEXT:\n" +
-            "1. Text/Code Decomposition (Breaking it Down):\n" +
-            "- Topic/Functionality Segmentation: Divide the text into main " +
-            "topics or themes. What is more, multiple topics or themes are " +
-            "possible.\n" +
-            "- Entity/Code Environment Recognition: Identify names, places, " +
-            "dates, or specific technical terms that might be associated " +
-            "with events or innovations post-2022.\n" +
-            "- Extract Details: Within these main topics or themes, identify "
-            + "key facts, statements, or claims that are made.\n" +
-            "2. Question Generation (Identifying Potential " + "Unknowns):\n" +
-            "For each identified entity or detail from the decomposition:\n" +
-            "- Cross-Referencing: Check against your knowledge base up to " +
-            "2022. If it's a known entity or detail, move on. If not:\n" +
-            "    a. Contextual Understanding: Even if the entity is " +
-            "unknown, understanding the context can be vital. For instance, " +
-            "even if I don't know a specific person named in 2023, if the " +
-            "text mentions they are an astronaut, I can craft my questions " +
-            "based on that role.\n" +
-            "    b. Formulate/Code Questions: Generate specific questions " +
-            "targeting the UNKNOWN. Questions can vary in nature:\n" +
-            "        i. Factual: \"Who/What is [unknown entity/code]?\"\n" +
-            "        ii. Conceptual: \"How does the [unknown " +
-            "technology/code] work?\"\n" +
-            "        iii. Historical: \"When was [unknown event/code] first " +
-            "introduced?\"\n" +
-            "        iv. Implication-based: \"What is the significance of " +
-            "[unknown event/code] in related domain knowledge?\"\n" +
-            "    c. Iterative Feedback: Depending on the user's responses " +
-            "to these questions, you can generate follow-up questions for " +
-            "deeper understanding.\n\n")
+        insights_prompt = """===== RULES OF INSIGHTS GENERATION =====
+According to the following rules, extract insights and details in your answer from the CONTEXT TEXT:
+1. Text/Code Decomposition (Breaking it Down):
+- Topic/Functionality Segmentation: Divide the text into main topics or themes. What is more, multiple topics or themes are possible.
+- Entity/Code Environment Recognition: Identify names, places, dates, specific technical terms or contextual parameters that might be associated with events, innovations post-2022.
+- Extract Details: Within these main topics or themes, identify key facts, statements, claims or contextual parameters. Please identify and write any detail(s) or term(s) from the CONTEXT TEXT that are either not present in your knowledge base, might be post-2022 developments, or can influence the nature of any task to be executed.
+2. Question Generation (Identifying Potential Unknowns):
+For each identified entity or detail from the decomposition:
+- Cross-Referencing: Check against your knowledge base up to 2022. If it's a known entity or detail, move on. If not:
+    a. Contextual Understanding: Even if the entity is unknown, understanding the context can be vital. For instance, even if I don't know a specific person named in 2023, if the text mentions they are an astronaut, I can craft my questions based on that role.
+    b. Formulate/Code Questions: Generate specific questions targeting the unfamiliar or context-specific information. Questions can vary in nature:
+        i. Factual: "Who/What is [unknown entity/infomation/code]?"
+        ii. Conceptual: "How does the [unknown technology/code] work?"
+        iii. Historical: "When was [unknown event/code] first introduced?"
+        iv. Implication-based: "What is the significance of [unknown event/code] in related domain knowledge?"
+    c. Iterative Feedback: Depending on the user's responses to these questions, you can generate follow-up questions for deeper understanding.
+3. Generate as many insights as you find relevant from the CONTEXT TEXT, abhering to ANSWER TEMPLATE. In answer, use nouns and phrases to replace sentences.
+
+"""  # noqa: E501
+
         insight_template = ("Insight <NUM>:\n" +
                             "- Topic Segmentation:\n<BLLANK or N/A>\n" +
                             "- Entity Recognition:\n<BLANK or N/A>\n" +
@@ -125,8 +111,9 @@ class InsightAgent(ChatAgent):
                             "CONTEXT TEXT:\n<BLANK or N/A>\nEnd.\n")
         answer_template_prompt = TextPrompt(
             "===== ANSWER TEMPLATE =====\n" +
-            "You need to generate multiple insights, and " +
-            "there are several insights in total:\n" +
+            "You need to generate multiple insights, and the number of " +
+            "insights depend on the number of Topic/Functionality " +
+            "Segmentation. So the total number of insights is <NUM>.\n" +
             "\n".join(insight_template for _ in range(2)))
         insights_generation_prompt = insights_instruction_prompt + \
             context_text_prompt + insights_prompt + answer_template_prompt
@@ -135,7 +122,7 @@ class InsightAgent(ChatAgent):
             context_text=context_text)
 
         insights_generation_msg = BaseMessage.make_user_message(
-            role_name="NovaDive&QuestXplorer", content=insights_generation)
+            role_name="Insight Agent", content=insights_generation)
 
         response = self.step(input_message=insights_generation_msg)
 
