@@ -248,9 +248,11 @@ class RoleAssignmentAgent(ChatAgent):
             task_insights_json = insight_agent.run(context_text=context_text)
             task_context_prompt = \
                 TextPrompt("===== CONTEXT TEXT =====\n" +
-                           "When splitting the task, ensure that each " +
-                           "subtask incorporates specific details from the " +
-                           "context for clarity.\n")
+                           "The CONTEXT TEXT is related to TASK and " +
+                           "Contextual Parameters of subtask. When " +
+                           "splitting the task, ensure that each subtask " +
+                           "incorporates specific details from the " +
+                           "INSIGHTS of CONTEXT TEXT.\n")
             task_context_prompt += insight_agent.convert_json_to_str(
                 task_insights_json)
         else:
@@ -262,21 +264,36 @@ class RoleAssignmentAgent(ChatAgent):
                 f"{role_name}:\n{role_descriptions_dict[role_name]}\n"
                 for role_name in role_names) + "\n\n"
         if num_subtasks is None:
-            answer_prompt = \
-                "===== ANSWER TEMPLATE =====\n".join(
-                    "Details of subtask <NUM>:\n<BLANK>\n"
-                    "Dependency of subtask <NUM>: [subtask <i>, subtask <j>, "
-                    "subtask <k>]/[None] (don't forget square brackets)\nEnd."
-                    for _ in range(2)
-                ) + "\n\n"
+            answer_prompt = """===== ANSWER TEMPLATE =====
+PART I:
+Details of subtask <NUM>:
+<BLANK>
+Contextual Parameters(only related to CONTEXT TEXT) of subtask <NUM>:
+<BLANK>
+PART II:
+Gantt Chart with complex dependency in MarkDown format:
+<BLANK>
+PART III:
+""" + "\n".join("Incorporate Contextual Parameters into Details of "
+                "subtask <NUM>:\n<BLANK>\n"
+                "Dependency of subtask <NUM>: [subtask <i>, subtask <j>, "
+                "subtask <k>]/[None] (don't forget square brackets)\nEnd."
+                for _ in range(1)) + "\n\n"
         else:
-            answer_prompt = \
-                "===== ANSWER TEMPLATE =====\n".join(
-                    f"Details of subtask {i + 1}:\n<BLANK>\n"
-                    f"Dependency of subtask {i + 1}: [subtask <i>, subtask "
-                    f"<j>, subtask <k>]/[None] (include square brackets)"
-                    f"\nEnd."
-                    for i in range(num_subtasks or 1)) + "\n\n"
+            answer_prompt = """===== ANSWER TEMPLATE =====
+PART I:
+Details of subtask <NUM>:
+<BLANK>
+Contextual Parameters of subtask <NUM>:
+<BLANK>
+PART II:
+Gantt Chart with complex dependency in MarkDown format:
+<BLANK>
+PART III:
+""" + "\n".join(f"Details of subtask {i + 1}:\n<BLANK>\n"
+                f"Dependency of subtask {i + 1}: [subtask <i>, subtask "
+                f"<j>, subtask <k>]/[None] (include square brackets)"
+                f"\nEnd." for i in range(num_subtasks)) + "\n\n"
         splict_task_prompt = TextPrompt(
             "You are a task splitter, and you're in asked to break down the" +
             " main TASK into {num_subtasks} manageable subtasks suitable " +
@@ -311,11 +328,13 @@ class RoleAssignmentAgent(ChatAgent):
         subtasks_generation = splict_task_prompt.format(
             num_subtasks=num_subtasks or "SEVERAL/ENOUGH",
             num_roles=len(role_names))
+        print(f"\n\nsubtasks_generation:\n{subtasks_generation}")
 
         subtasks_generation_msg = BaseMessage.make_user_message(
             role_name="Task Splitter", content=subtasks_generation)
 
         response = self.step(input_message=subtasks_generation_msg)
+        print(f"\n\nresponse:\n{response.msg.content}")
 
         if (response.terminated):
             raise RuntimeError("Role compatibility scoring failed.")
@@ -324,8 +343,9 @@ class RoleAssignmentAgent(ChatAgent):
         # Distribute the output completions into subtasks
         subtask_descriptions = [
             desc.replace("<", "").replace(">", "").strip('\n')
-            for desc in re.findall(r"Details of subtask \d:\n(.+?)Dependency",
-                                   msg.content, re.DOTALL)
+            for desc in re.findall(
+                r"Incorporate Contextual Parameters into Details ",
+                r"of subtask \d:\n(.+?)Dependency", msg.content, re.DOTALL)
         ]
         subtask_dependencies = [[
             dep.strip() for dep in re.findall(r"\[(.+?)\]", desc)[0].split(",")
