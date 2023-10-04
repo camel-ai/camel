@@ -14,9 +14,11 @@
 
 from typing import List, Optional
 
-from camel.memory.base_memory import BaseMemory, MemoryRecord
+from camel.memory.base import BaseMemory, MemoryRecord
+from camel.memory.context_creator.base import BaseContextCreator
 from camel.memory.dict_storage.base import BaseDictStorage
 from camel.memory.dict_storage.in_memory import InMemoryDictStorage
+from camel.messages import OpenAIMessage
 from camel.typing import OpenAIBackendRole
 
 
@@ -43,12 +45,17 @@ class ChatHistoryMemory(BaseMemory):
             will be retrieved.
     """
 
-    def __init__(self, storage: Optional[BaseDictStorage] = None,
-                 window_size: Optional[int] = None) -> None:
+    def __init__(
+        self,
+        context_creator: BaseContextCreator,
+        storage: Optional[BaseDictStorage] = None,
+        window_size: Optional[int] = None,
+    ) -> None:
+        self.context_creator = context_creator
         self.storage = storage or InMemoryDictStorage()
         self.window_size = window_size
 
-    def retrieve(self) -> List[MemoryRecord]:
+    def get_context(self) -> List[OpenAIMessage]:
         """
         Retrieves chat messages from the memory based on the window size or
         fetches the entire chat history if no window size is specified.
@@ -75,8 +82,8 @@ class ChatHistoryMemory(BaseMemory):
         truncate_idx = 1 if self.window_size is None else -self.window_size
         for record_dict in record_dicts[truncate_idx:]:
             chat_records.append(MemoryRecord.from_dict(record_dict))
-
-        return [system_record] + chat_records
+        output_records = [system_record] + chat_records
+        return self.context_creator.create_context(output_records)
 
     def write_records(self, records: List[MemoryRecord]) -> None:
         """

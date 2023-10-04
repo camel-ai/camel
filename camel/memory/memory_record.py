@@ -14,6 +14,7 @@
 
 from dataclasses import asdict, dataclass, field
 from typing import Any, Dict
+from uuid import UUID, uuid4
 
 from camel.messages.base import BaseMessage
 from camel.messages.func_message import FunctionCallingMessage
@@ -28,10 +29,11 @@ MESSAGE_TYPES = {
 @dataclass(frozen=True)
 class MemoryRecord():
     """
-    A basic message storing unit in the CAMEL memory system.
+    The basic message storing unit in the CAMEL memory system.
     """
     message: BaseMessage
     role_at_backend: OpenAIBackendRole
+    uuid: UUID = field(default_factory=uuid4)
     extra_info: Dict[str, str] = field(default_factory=dict)
 
     @classmethod
@@ -47,6 +49,7 @@ class MemoryRecord():
         kwargs.pop("__class__")
         recons_message = message_cls(**kwargs)
         return cls(
+            uuid=UUID(record_dict["uuid"]),
             message=recons_message,
             role_at_backend=record_dict["role_at_backend"],
             extra_info=record_dict["extra_info"],
@@ -57,6 +60,7 @@ class MemoryRecord():
         Convert the :obj:`MemoryRecord` to a dict for serialization purpose.
         """
         return {
+            "uuid": str(self.uuid),
             "message": {
                 "__class__": self.message.__class__.__name__,
                 **asdict(self.message)
@@ -70,3 +74,12 @@ class MemoryRecord():
         Converts the record to an :obj:`OpenAIMessage` object.
         """
         return self.message.to_openai_message(self.role_at_backend.value)
+
+
+@dataclass(frozen=True)
+class ContextRecord():
+    """
+    The result of memory retrieving.
+    """
+    m_record: MemoryRecord
+    importance: float

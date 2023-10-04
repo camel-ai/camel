@@ -11,9 +11,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from abc import ABC, abstractmethod
+from typing import List
 
-from .base import BaseMemory
-from .chat_history_memory import ChatHistoryMemory
-from .memory_record import MemoryRecord
+from camel.memory.memory_record import ContextRecord
+from camel.messages import OpenAIMessage
+from camel.utils.token_counting import BaseTokenCounter
 
-__all__ = ['BaseMemory', 'ChatHistoryMemory', 'MemoryRecord']
+
+class BaseContextCreator(ABC):
+
+    @property
+    @abstractmethod
+    def token_counter(self) -> BaseTokenCounter:
+        ...
+
+    @property
+    @abstractmethod
+    def token_limit(self) -> int:
+        ...
+
+    @abstractmethod
+    def create_context(self,
+                       records: List[ContextRecord]) -> List[OpenAIMessage]:
+        ...

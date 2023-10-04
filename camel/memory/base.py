@@ -16,6 +16,7 @@ from abc import ABC, abstractmethod
 from typing import List
 
 from camel.memory.memory_record import MemoryRecord
+from camel.messages import OpenAIMessage
 
 
 class BaseMemory(ABC):
@@ -42,24 +43,33 @@ class BaseMemory(ABC):
     """
 
     @abstractmethod
-    def retrieve(self) -> List[MemoryRecord]:
+    def get_context(self) -> List[OpenAIMessage]:
         """
-        Retrieves messages from the memory based on the current state.
+        TODO
 
         Returns:
-            List[BaseMessage]: A list of messages retrieved from the memory.
+            List[RetrieveResult]: A list of messages retrieved from the memory.
         """
         ...
 
     @abstractmethod
     def write_records(self, records: List[MemoryRecord]) -> None:
         """
-        Writes messages to the memory, appending them to existing ones.
+        Writes records to the memory, appending them to existing ones.
 
         Args:
-            msgs (List[BaseMessage]): Messages to be added to the memory.
+            records (List[MemoryRecord]): Records to be added to the memory.
         """
         ...
+
+    def write_record(self, record: MemoryRecord) -> None:
+        """
+        Writes a record to the memory, appending them to existing ones.
+
+        Args:
+            record (List[MemoryRecord]): Record to be added to the memory.
+        """
+        self.write_records([record])
 
     @abstractmethod
     def clear(self) -> None:

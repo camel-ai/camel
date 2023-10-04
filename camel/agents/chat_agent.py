@@ -25,6 +25,7 @@ from camel.agents import BaseAgent
 from camel.configs import BaseConfig, ChatGPTConfig
 from camel.functions import OpenAIFunction
 from camel.memory import BaseMemory, ChatHistoryMemory, MemoryRecord
+from camel.memory.context_creator.default import DefaultContextCreator
 from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.typing import ModelType, OpenAIBackendRole, RoleType
@@ -123,8 +124,6 @@ class ChatAgent(BaseAgent):
 
         self.model: ModelType = (model if model is not None else
                                  ModelType.GPT_3_5_TURBO)
-        self.memory: BaseMemory = memory or ChatHistoryMemory(
-            window_size=message_window_size)
 
         self.func_dict: Dict[str, Callable] = {}
         if function_list is not None:
@@ -135,6 +134,12 @@ class ChatAgent(BaseAgent):
         self.model_backend: BaseModelBackend = ModelFactory.create(
             self.model, self.model_config.__dict__)
         self.model_token_limit: int = self.model_backend.token_limit
+        context_creator = DefaultContextCreator(
+            self.model_backend.token_counter,
+            self.model_backend.token_limit,
+        )
+        self.memory: BaseMemory = memory or ChatHistoryMemory(
+            context_creator, window_size=message_window_size)
 
         self.terminated: bool = False
         self.init_messages()
