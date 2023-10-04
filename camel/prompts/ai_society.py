@@ -75,7 +75,6 @@ You must write a specific solution that appropriately solves the requested instr
 {task}
 
 ===== ANSWER TEMPLATE =====
-, you should always start with:
 1. Unless I say the task or the instruction is completed, you need to provide a solution:
 Solution:
 <YOUR_SOLUTION>
