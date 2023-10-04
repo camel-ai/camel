@@ -74,13 +74,12 @@ You must write a specific solution that appropriately solves the requested instr
 ===== TASK =====
 {task}
 
-===== ANSWER TEMPLATE =====
-1. Unless I say the task or the instruction is completed, you need to provide a solution:
-Solution:
-<YOUR_SOLUTION>
-
+===== ANSWER TEMPLATE IN 2 CASES =====
+1. Unless I say the task or the instruction is completed, you need to provide the solution or the action:
+Solution&Action:
+<YOUR_SOLUTION_AND_ACTION>
 2. If the task or the instruction is completed:
-Always end <YOUR_SOLUTION> with "Next request".
+Always end <YOUR_SOLUTION_AND_ACTION> with "Next request".
 """)
 
     USER_PROMPT: TextPrompt = TextPrompt("""===== RULES OF USER =====
@@ -94,22 +93,17 @@ I must decline your instruction honestly if I cannot perform the instruction due
 
 You must instruct me based on my expertise and your needs to solve the task. Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE.
     - The "Instruction" describes a task or question. You should give me one instruction at a time. You should instruct me not ask me questions.
-    - The "Input" is what we have achieved in the previous conversation round to provide further context or information for the requested "Instruction".
+    - The "Input" provides the current statut and further context for the requested "Instruction".
     - Continue instructing until you deem the task complete. When finished, respond with <CAMEL_TASK_DONE>. Only use this once the task is truly resolved.
 
 ===== TASK =====
 {task}
 
 ===== ANSWER TEMPLATE =====
-1. Instruct with a necessary input:
 Instruction:
 <YOUR_INSTRUCTION>
 Input:
-<YOUR_INPUT>
-
-2. Instruct without any input:
-Instruction: <YOUR_INSTRUCTION>
-Input: None
+<YOUR_INPUT>/None
 """)
 
     CRITIC_PROMPT = TextPrompt(
