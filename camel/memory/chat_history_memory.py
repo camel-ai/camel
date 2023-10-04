@@ -16,9 +16,9 @@ from typing import List, Optional
 
 from camel.memory.base import BaseMemory, MemoryRecord
 from camel.memory.context_creator.base import BaseContextCreator
-from camel.memory.dict_storage.base import BaseDictStorage
-from camel.memory.dict_storage.in_memory import InMemoryDictStorage
 from camel.messages import OpenAIMessage
+from camel.storage.dict_storage.base import BaseDictStorage
+from camel.storage.dict_storage.in_memory import InMemoryDictStorage
 from camel.typing import OpenAIBackendRole
 
 

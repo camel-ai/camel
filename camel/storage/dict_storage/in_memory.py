@@ -15,7 +15,7 @@
 from copy import deepcopy
 from typing import Any, Dict, List
 
-from camel.memory.dict_storage.base import BaseDictStorage
+from camel.storage.dict_storage.base import BaseDictStorage
 
 
 class InMemoryDictStorage(BaseDictStorage):

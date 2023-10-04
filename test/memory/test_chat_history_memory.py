@@ -19,8 +19,8 @@ from pathlib import Path
 import pytest
 
 from camel.memory import ChatHistoryMemory, MemoryRecord
-from camel.memory.dict_storage import InMemoryDictStorage, JsonStorage
 from camel.messages import BaseMessage
+from camel.storage.dict_storage import InMemoryDictStorage, JsonStorage
 from camel.typing import OpenAIBackendRole, RoleType
 
 
