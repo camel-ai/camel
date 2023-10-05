@@ -26,6 +26,8 @@ jobs:
     - name: Run pytest
       env:
         OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
+        GOOGLE_API_KEY: "${{ secrets.GOOGLE_API_KEY }}"
+        SEARCH_ENGINE_ID: "${{ secrets.SEARCH_ENGINE_ID }}"
       run: poetry run pytest -v apps/
 
   pytest_examples:
@@ -41,4 +43,6 @@ jobs:
     - name: Run pytest
       env:
         OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
+        GOOGLE_API_KEY: "${{ secrets.GOOGLE_API_KEY }}"
+        SEARCH_ENGINE_ID: "${{ secrets.SEARCH_ENGINE_ID }}"
       run: poetry run pytest -v examples/
