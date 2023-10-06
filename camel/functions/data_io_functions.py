@@ -27,6 +27,7 @@ from bs4 import BeautifulSoup
 class File(ABC):
     r"""Represents an uploaded file comprised of Documents"""
 
+
     def __init__(
         self,
         name: str,
@@ -35,6 +36,7 @@ class File(ABC):
         docs: Optional[List[Dict[str, Any]]] = None,
     ):
         r"""
+
         Args:
             name (str): The name of the file.
             id (str): The unique identifier of the file.
@@ -52,6 +54,7 @@ class File(ABC):
     @abstractmethod
     def from_bytes(cls, file: BytesIO) -> "File":
         r"""
+
         Creates a File object from a BytesIO object.
 
         Args:
@@ -72,6 +75,7 @@ class File(ABC):
 
     def copy(self) -> "File":
         r"""Create a deep copy of this File"""
+
         return self.__class__(
             name=self.name,
             id=self.id,
@@ -82,6 +86,7 @@ class File(ABC):
 
 def strip_consecutive_newlines(text: str) -> str:
     r"""
+    
     Strips consecutive newlines from a string.
 
     Args:
@@ -98,6 +103,7 @@ class DocxFile(File):
     @classmethod
     def from_bytes(cls, file: BytesIO) -> "DocxFile":
         r"""
+
         Creates a DocxFile object from a BytesIO object.
 
         Args:
@@ -124,6 +130,7 @@ class PdfFile(File):
     @classmethod
     def from_bytes(cls, file: BytesIO) -> "PdfFile":
         r"""
+
         Creates a PdfFile object from a BytesIO object.
 
         Args:
@@ -154,6 +161,7 @@ class TxtFile(File):
     @classmethod
     def from_bytes(cls, file: BytesIO) -> "TxtFile":
         r"""
+
         Creates a TxtFile object from a BytesIO object.
 
         Args:
@@ -180,6 +188,7 @@ class JsonFile(File):
     @classmethod
     def from_bytes(cls, file: BytesIO) -> "JsonFile":
         r"""
+
         Creates a JsonFile object from a BytesIO object.
 
         Args:
@@ -205,6 +214,7 @@ class HtmlFile(File):
     @classmethod
     def from_bytes(cls, file: BytesIO) -> "HtmlFile":
         r"""
+
         Creates a HtmlFile object from a BytesIO object.
 
         Args:
@@ -229,6 +239,7 @@ class HtmlFile(File):
 
 def read_file(file: BytesIO) -> File:
     r"""
+
     Reads an uploaded file and returns a File object.
 
     Args:
