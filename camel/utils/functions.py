@@ -18,20 +18,11 @@ import socket
 import time
 import zipfile
 from functools import wraps
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    TypeVar,
-    cast,
-)
+from typing import Any, Callable, Dict, List, Optional, Set, TypeVar, cast
 from urllib.parse import urlparse
 
 import requests
+from docstring_parser import parse
 
 from camel.typing import ModelType, TaskType
 
@@ -151,55 +142,56 @@ def parse_doc(func: Callable) -> Dict[str, Any]:
         Dict[str, Any]: A dictionary with the function's name,
             description, and parameters.
     """
-
-    doc = inspect.getdoc(func)
-    if not doc:
+    if not func.__doc__:
         raise ValueError(
             f"Invalid function {func.__name__}: no docstring provided.")
+    try:
+        docstring = parse(func.__doc__)
+    except Exception:
+        raise ValueError(
+            f"Invalid docstring {func.__name__}: Currently only support ReST, "
+            f"Google, Numpydoc-style and Epydoc docstring style.")
+
+    func_description = docstring.short_description
+    if not func_description:
+        raise ValueError(f"Invalid function {func.__name__}: "
+                         f"no function description provided.")
+
+    # https://platform.openai.com/docs/api-reference/chat/create#functions
+    signature = inspect.signature(func)
+
+    required = []
+    for param_name, parameter in signature.parameters.items():
+        if parameter.default == inspect.Parameter.empty:
+            required.append(param_name)
 
     properties = {}
-    required = []
+    for param in docstring.params:
+        if param.arg_name in required:
+            if param.description:
+                properties[param.arg_name] = {
+                    "type": param.type_name,
+                    "description": param.description,
+                }
+            else:
+                raise ValueError(f"Miss description for "
+                                 f"parameter '{param.arg_name}'")
 
-    parts = re.split(r'\n\s*\n', doc)
-    func_desc = parts[0].strip()
-
-    args_section = next((p for p in parts if 'Args:' in p), None)
-    if args_section:
-        args_descs: List[Tuple[str, str, str, ]] = re.findall(
-            r'(\w+)\s*\((\w+)\):\s*(.*)', args_section)
-        properties = {
-            name.strip(): {
-                'type': type,
-                'description': desc
-            }
-            for name, type, desc in args_descs
-        }
-        for name in properties:
-            required.append(name)
-
-    # Parameters from the function signature
-    sign_params = list(inspect.signature(func).parameters.keys())
-    if len(sign_params) != len(required):
-        raise ValueError(
-            f"Number of parameters in function signature ({len(sign_params)})"
-            f" does not match that in docstring ({len(required)}).")
-
-    for param in sign_params:
-        if param not in required:
-            raise ValueError(f"Parameter '{param}' in function signature"
+    for param_name in required:
+        if param_name not in properties.keys():
+            raise ValueError(f"Parameter '{param_name}' in function signature"
                              " is missing in the docstring.")
 
-    parameters = {
-        "type": "object",
-        "properties": properties,
-        "required": required,
-    }
-
-    # Construct the function dictionary
+    # Construct the function dictionary according to
+    # https://platform.openai.com/docs/api-reference/chat/create#functions
     function_dict = {
         "name": func.__name__,
-        "description": func_desc,
-        "parameters": parameters,
+        "description": docstring.short_description,
+        "parameters": {
+            "type": "object",
+            "properties": properties,
+            "required": required,
+        }
     }
 
     return function_dict

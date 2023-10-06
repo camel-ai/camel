@@ -77,6 +77,6 @@ def test_function_without_doc():
 def test_function_with_wrong_doc():
     with pytest.raises(
             ValueError,
-            match=(r"Number of parameters in function signature \(2\)"
-                   r" does not match that in docstring \(1\)")):
+            match="Parameter 'b' in function signature "
+                  "is missing in the docstring."):
         _ = OpenAIFunction(add_with_wrong_doc, name="add")
