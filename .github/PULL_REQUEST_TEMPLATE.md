@@ -10,7 +10,7 @@
 - [ ] Improvement (non-breaking change which improves existing core functionality)
 - [ ] Documentation (update in the documentation)
 - [ ] Example (update in the folder of example)
-- [ ] Test (only for test)
+- [ ] Test (only tests are modified or added)
 
 🚀 **Acceptance Criteria:**
 [Clearly define the conditions that must be met for the story to be considered complete]
