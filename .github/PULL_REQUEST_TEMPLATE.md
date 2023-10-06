@@ -1,7 +1,8 @@
-💡 **User Story:**
-As a developer,
-I want to [describe the action or functionality you want to add]
-So that [explain the benefit or value this new functionality will bring]
+🚀 **Description:**
+[Describe your changes in detail.]
+
+💡 **Motivation and Context:**
+[Why is this change required? What problem does it solve?]
 
 🛒 **Types of Changes:**
 - [ ] Bug fix (non-breaking change which fixes an issue)
