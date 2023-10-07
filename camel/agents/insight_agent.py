@@ -199,5 +199,4 @@ For each identified entity or detail from the decomposition:
                     insights_str += f"- {key}:\n{value}\n"
                 else:
                     insights_str += f"- {key}:\nN/A\n"
-            insights_str += "\n"
         return insights_str
