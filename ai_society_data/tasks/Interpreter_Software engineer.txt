@@ -1,0 +1,10 @@
+1. Debugging code by interpreting error messages and identifying issues in the code.
+2. Translating technical documentation and specifications for software development projects.
+3. Communicating with non-English speaking clients or team members during project meetings.
+4. Assisting with localization efforts by translating user interfaces and content for different languages.
+5. Interpreting user feedback and incorporating it into software development plans.
+6. Providing language support for software testing and quality assurance.
+7. Assisting with cross-cultural communication between team members from different countries.
+8. Translating technical articles and research papers for software engineers to stay up-to-date with industry developments.
+9. Providing language support for software training and user support.
+10. Assisting with internationalization efforts by identifying cultural differences and adapting software accordingly.

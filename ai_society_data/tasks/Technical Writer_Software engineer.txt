@@ -1,0 +1,10 @@
+1. Creating user manuals and guides for software products.
+2. Writing technical documentation for software development processes.
+3. Developing online help systems for software applications.
+4. Creating release notes and version history documentation.
+5. Writing API documentation for software libraries and frameworks.
+6. Developing tutorials and training materials for software products.
+7. Creating technical whitepapers and case studies for software solutions.
+8. Writing error messages and system notifications for software applications.
+9. Developing user interface text and labeling for software products.
+10. Creating marketing materials and presentations for software products.

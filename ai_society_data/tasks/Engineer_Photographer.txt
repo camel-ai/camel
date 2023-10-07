@@ -1,0 +1,10 @@
+1. Design and build a custom camera rig for unique shots.
+2. Develop software to automate post-processing tasks.
+3. Create a specialized lighting system for a specific shoot.
+4. Build a drone for aerial photography and videography.
+5. Design and build a portable power supply for remote shoots.
+6. Develop a mobile app for on-location photo management.
+7. Create a 3D model of a location for pre-shoot planning.
+8. Build a custom lens adapter for unique lens combinations.
+9. Develop a system for remote camera control and monitoring.
+10. Design and build a specialized camera housing for underwater photography.

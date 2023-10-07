@@ -1,0 +1,10 @@
+1. Testing and debugging code
+2. Designing and implementing user interfaces
+3. Developing and integrating APIs
+4. Creating and managing databases
+5. Automating repetitive tasks
+6. Conducting code reviews and providing feedback
+7. Optimizing code performance
+8. Developing and implementing security measures
+9. Creating and maintaining documentation
+10. Collaborating with other team members to ensure project success.

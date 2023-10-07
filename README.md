@@ -2,14 +2,17 @@
   <a href="https://colab.research.google.com/drive/1AzP33O8rnMW__7ocWJhVBXjKziJXPtim?usp=sharing" target="_blank">
     <img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" />
   </a>
+  <a href="https://huggingface.co/camel-ai" target="_blank">
+    <img alt="Hugging Face" src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-CAMEL--AI-ffc107?color=ffc107&logoColor=white" />
+  </a>
   <a href="https://join.slack.com/t/camel-kwr1314/shared_invite/zt-1vy8u9lbo-ZQmhIAyWSEfSwLCl2r2eKA" target="_blank">
       <img alt="Slack" src="https://img.shields.io/badge/Slack-CAMEL--AI-blueviolet?logo=slack" />
   </a>
   <a href="https://discord.gg/CNcNpquyDc" target="_blank">
     <img alt="Discord" src="https://img.shields.io/badge/Discord-CAMEL--AI-7289da?logo=discord&logoColor=white&color=7289da" />
   </a>
-  <a href="https://huggingface.co/camel-ai" target="_blank">
-    <img alt="Hugging Face" src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-CAMEL--AI-ffc107?color=ffc107&logoColor=white" />
+  <a href="https://ghli.org/camel/wechat.png" target="_blank">
+    <img alt="Discord" src="https://img.shields.io/badge/WeChat-CamelAIOrg-brightgreen?logo=wechat&logoColor=white" />
   </a>
   <a href="https://twitter.com/CamelAIOrg" target="_blank">
     <img alt="Twitter Follow" src="https://img.shields.io/twitter/follow/CamelAIOrg?style=social&color=brightgreen&logo=twitter" />
@@ -50,7 +53,9 @@
 The rapid advancement of conversational and chat-based language models has led to remarkable progress in complex task-solving. However, their success heavily relies on human input to guide the conversation, which can be challenging and time-consuming. This paper explores the potential of building scalable techniques to facilitate autonomous cooperation among communicative agents and provide insight into their "cognitive" processes. To address the challenges of achieving autonomous cooperation, we propose a novel communicative agent framework named *role-playing*. Our approach involves using *inception prompting* to guide chat agents toward task completion while maintaining consistency with human intentions. We showcase how role-playing can be used to generate conversational data for studying the behaviors and capabilities of chat agents, providing a valuable resource for investigating conversational language models. Our contributions include introducing a novel communicative agent framework, offering a scalable approach for studying the cooperative behaviors and capabilities of multi-agent systems, and open-sourcing our library to support research on communicative agents and beyond. The GitHub repository of this project is made publicly available on: [https://github.com/camel-ai/camel](https://github.com/camel-ai/camel).
 
 ## Community
-🐫 CAMEL is an open-source library designed for the study of autonomous and communicative agents. We believe that studying these agents on a large scale offers valuable insights into their behaviors, capabilities, and potential risks. To facilitate research in this field, we implement and support various types of agents, tasks, prompts, models, and simulated environments. Join us ([slack](https://join.slack.com/t/camel-kwr1314/shared_invite/zt-1vy8u9lbo-ZQmhIAyWSEfSwLCl2r2eKA), [discord](https://discord.gg/CNcNpquyDc)) in pushing the boundaries of simulating AI Society with CAMEL.
+🐫 CAMEL is an open-source library designed for the study of autonomous and communicative agents. We believe that studying these agents on a large scale offers valuable insights into their behaviors, capabilities, and potential risks. To facilitate research in this field, we implement and support various types of agents, tasks, prompts, models, and simulated environments.
+
+Join us ([*Slack*](https://join.slack.com/t/camel-kwr1314/shared_invite/zt-1vy8u9lbo-ZQmhIAyWSEfSwLCl2r2eKA), [*Discord*](https://discord.gg/CNcNpquyDc) or [*WeChat*](https://ghli.org/camel/wechat.png)) in pushing the boundaries of building AI Societiy.
 
 ## Try it yourself
 We provide a [![Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1AzP33O8rnMW__7ocWJhVBXjKziJXPtim?usp=sharing) demo showcasing a conversation between two ChatGPT agents playing roles as a python programmer and a stock trader collaborating on developing a trading bot for stock market.
@@ -150,6 +155,56 @@ python examples/ai_society/role_playing.py
 ```
 
 Please note that the environment variable is session-specific. If you open a new terminal window or tab, you will need to set the API key again in that new session.
+
+
+## Use Open-Source Models as Backends
+
+The basic workflow of using an open-sourced model as the backend is based on an external server running LLM inference service, e.g. during the development we chose [FastChat](https://github.com/lm-sys/FastChat) to run the service. 
+
+We do not fix the choice of server to decouple the implementation of any specific LLM inference server with CAMEL (indicating the server needs to be deployed by the user himself). But the server to be deployed must satisfy that **it supports OpenAI-compatible APIs, especially the method `openai.ChatCompletion.create`**.
+
+Here are some instructions for enabling open-source backends, where we use the [FastChat](https://github.com/lm-sys/FastChat) and a LLaMA2-based model ([`meta-llama/Llama-2-7b-chat-hf`](https://huggingface.co/meta-llama/Llama-2-7b-chat-hf)) in the example. Please install FastChat in advance following their installation guidance.
+
+1. Before running CAMEL, we should firstly launch FastChat server following the guidance on https://github.com/lm-sys/FastChat/blob/main/docs/openai_api.md. The instructions summarized below should be kept running **in separate processes**:
+
+```sh
+# Launch the controller
+python -m fastchat.serve.controller
+
+# Launch the model worker(s)
+python3 -m fastchat.serve.model_worker --model-path meta-llama/Llama-2-7b-chat-hf
+
+# Launch the RESTful API server
+python3 -m fastchat.serve.openai_api_server --host localhost --port 8000
+```
+
+2. After observing the controller successfully receiving the heart beat signal from the worker, the server should be ready for use at http://localhost:8000/v1. 
+
+3. Then we can try on running `role_playing_with_open_source_model.py`, where each agent in this example is initialized with specifying the `model_path` and `server_url`, similar to the example code below:
+
+```python
+system_message = # ...
+
+agent_kwargs = dict(
+    model=model_type,
+    model_config=OpenSourceConfig(
+        model_path="meta-llama/Llama-2-7b-chat-hf",
+        server_url="http://localhost:8000/v1",
+    ),
+)
+
+agent = ChatAgent(
+    system_message,
+    **agent_kwargs,
+)
+```
+
+### Supported Models
+
+- LLaMA2-based models
+  - example: [meta-llama/Llama-2-7b-chat-hf](https://huggingface.co/meta-llama/Llama-2-7b-chat-hf)
+- Vicuna-based models
+  - example: [lmsys/vicuna-7b-v1.5](https://huggingface.co/lmsys/vicuna-7b-v1.5)
 
 ## Data (Hosted on Hugging Face)
 | Dataset | Chat format | Instruction format | Chat format (translated) |

@@ -1,0 +1,10 @@
+1. Designing user interfaces for software applications
+2. Creating icons and graphics for software features
+3. Developing a consistent visual brand for the software product
+4. Designing marketing materials such as brochures and website graphics
+5. Creating wireframes and prototypes for software features
+6. Designing user manuals and help documentation
+7. Developing a responsive design for the software product
+8. Creating animations and videos to showcase software features
+9. Designing custom themes and skins for the software product
+10. Developing a style guide for the software product to ensure consistency in design.

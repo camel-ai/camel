@@ -1,0 +1,10 @@
+1. Conduct user research to gather insights on user needs and preferences.
+2. Analyze data to identify trends and patterns that can inform design decisions.
+3. Collaborate on creating user personas to guide design decisions.
+4. Develop user scenarios to test and validate design concepts.
+5. Conduct usability testing to evaluate the effectiveness of design solutions.
+6. Create wireframes and prototypes to visualize design concepts.
+7. Analyze user feedback to refine and improve design solutions.
+8. Develop design guidelines and standards to ensure consistency across products.
+9. Conduct competitive analysis to identify best practices and opportunities for innovation.
+10. Collaborate on creating design specifications to guide development.

@@ -1,0 +1,10 @@
+1. Developing an app that identifies animal species based on photos taken by users, with the zoologist providing expertise on animal behavior and identification.
+2. Creating a virtual reality experience that simulates a wildlife habitat, with the zoologist advising on the accuracy of animal behavior and interactions.
+3. Developing a machine learning algorithm that can identify and track individual animals in a video feed, with the zoologist providing training data and expertise on animal behavior.
+4. Creating an educational game that teaches children about animal behavior and conservation, with the zoologist providing content and accuracy checks.
+5. Developing a sensor network that can monitor animal populations and behavior in the wild, with the zoologist advising on sensor placement and data interpretation.
+6. Creating a social media platform that connects wildlife enthusiasts with conservation organizations, with the zoologist providing content and expertise on conservation issues.
+7. Developing a drone-based system for monitoring animal populations and behavior, with the zoologist advising on drone design and data interpretation.
+8. Creating a database of animal vocalizations for use in machine learning and acoustic monitoring, with the zoologist providing recordings and expertise on vocalizations.
+9. Developing a mobile app that allows users to report wildlife sightings and contribute to citizen science projects, with the zoologist advising on data quality and interpretation.
+10. Creating an interactive exhibit for a museum or zoo that showcases animal behavior and conservation issues, with the zoologist providing content and accuracy checks.

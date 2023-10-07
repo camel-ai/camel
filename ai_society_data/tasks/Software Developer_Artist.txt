@@ -1,0 +1,10 @@
+1. Developing a custom software tool for creating digital art.
+2. Creating an interactive installation that responds to user input.
+3. Developing a virtual reality experience for showcasing artwork.
+4. Building a website or online portfolio to showcase the artist's work.
+5. Creating a mobile app for sharing and promoting the artist's work.
+6. Developing a tool for automating repetitive tasks in the artist's workflow.
+7. Creating a custom plugin for a popular design software.
+8. Building a system for managing and organizing the artist's digital assets.
+9. Developing a tool for generating 3D models from 2D sketches.
+10. Creating a system for generating procedural art.

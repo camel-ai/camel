@@ -1,0 +1,10 @@
+1. Developing user stories and scenarios for software development.
+2. Conducting user research and usability testing to inform design decisions.
+3. Collaborating on the creation of wireframes and prototypes.
+4. Writing and reviewing code to ensure it meets functional requirements.
+5. Debugging and troubleshooting issues in software applications.
+6. Conducting code reviews to ensure code quality and maintainability.
+7. Creating and maintaining technical documentation for software applications.
+8. Developing and executing test plans to ensure software quality.
+9. Collaborating on the development of software architecture and design patterns.
+10. Providing technical support and training to end-users of software applications.

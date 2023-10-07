@@ -14,8 +14,7 @@
 import pytest
 from mock import patch
 
-from camel.agents.chat_agent import ChatAgent, ChatAgentResponse
-from camel.agents.role_assignment_agent import RoleAssignmentAgent
+from camel.agents import ChatAgent, ChatAgentResponse, RoleAssignmentAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.typing import ModelType, RoleType
@@ -23,9 +22,13 @@ from camel.typing import ModelType, RoleType
 
 @patch.object(ChatAgent, 'step')
 @pytest.mark.parametrize("model_type", [None, ModelType.GPT_3_5_TURBO])
-@pytest.mark.parametrize("num_roles", [1, 2, 3])
-def test_role_assignment_agent(mock_step, model_type, num_roles):
-    mock_content = generate_mock_content(num_roles)
+@pytest.mark.parametrize(
+    "num_roles, role_names",
+    [(1, ["Trading Strategist"]),
+     (2, ["Trading Strategist", "Data Scientist"]),
+     (3, ["Trading Strategist", "Data Scientist", "Software Developer"])])
+def test_role_assignment_agent(mock_step, model_type, num_roles, role_names):
+    mock_content = generate_mock_content(num_roles, role_names)
     mock_msg = BaseMessage(role_name="Role Assigner",
                            role_type=RoleType.ASSISTANT, meta_dict=None,
                            content=mock_content)
@@ -42,8 +45,7 @@ def test_role_assignment_agent(mock_step, model_type, num_roles):
         model=model_type, model_config=model_config_description)
 
     # Generate the role description dictionary based on the mock step function
-    role_description_dict = role_description_agent.run_role_with_description(
-        task_prompt, num_roles)
+    role_description_dict = role_description_agent.run(task_prompt, num_roles)
 
     expected_dict = generate_expected_dict(num_roles)
 
@@ -51,7 +53,9 @@ def test_role_assignment_agent(mock_step, model_type, num_roles):
 
 
 # Generate mock content according to the number of roles
-def generate_mock_content(num_roles):
+def generate_mock_content(num_roles, role_names):
+    assert num_roles <= 3
+    assert len(role_names) == num_roles
     roles_with_descriptions = [
         ("Trading Strategist", "Design trading strategies. End."),
         ("Data Scientist", "Analyze market data. End."),
@@ -71,6 +75,7 @@ def generate_mock_content(num_roles):
 
 # Generate expected dictionary according to the number of roles
 def generate_expected_dict(num_roles):
+    assert num_roles <= 3
     roles_with_descriptions = {
         "Trading Strategist": "Design trading strategies.",
         "Data Scientist": "Analyze market data.",

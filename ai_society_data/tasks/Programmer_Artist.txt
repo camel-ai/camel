@@ -1,0 +1,10 @@
+1. Developing a custom shader to achieve a specific visual effect in a game or animation.
+2. Creating a tool that automates the process of generating textures or other assets.
+3. Implementing a physics engine to simulate realistic movement and interactions of objects.
+4. Designing a user interface that is intuitive and visually appealing.
+5. Optimizing code and assets to improve performance and reduce load times.
+6. Integrating motion capture data into a character animation pipeline.
+7. Developing a procedural generation system to create unique environments or levels.
+8. Creating a tool that allows artists to easily iterate on and refine their work.
+9. Implementing a real-time lighting system that reacts to changes in the environment.
+10. Developing a system for dynamic weather effects, such as rain or snow.

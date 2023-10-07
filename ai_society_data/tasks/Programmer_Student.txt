@@ -1,0 +1,10 @@
+1. Developing a website for a school project
+2. Creating a mobile app for a student organization
+3. Automating data analysis for a research project
+4. Building a chatbot for a school counseling service
+5. Developing a game for a computer science club
+6. Creating a database for a school library
+7. Building a virtual reality simulation for a science class
+8. Developing a social media platform for a student group
+9. Creating a personalized study tool for a student's learning style
+10. Building a tool to help students manage their time and assignments.
