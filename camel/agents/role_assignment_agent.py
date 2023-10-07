@@ -127,7 +127,7 @@ class RoleAssignmentAgent(ChatAgent):
             )
         ]
         role_descriptions = [
-            desc.replace("<", "").replace(">", "").strip('\n')
+            desc.lstrip('\n').replace("<", "").replace(">", "").strip('\n')
             for desc in re.findall(
                 r"Associated competencies, characteristics, and duties:"
                 r"(?:\n)?(.+?)\nEnd.", msg.content, re.DOTALL)
@@ -169,21 +169,39 @@ class RoleAssignmentAgent(ChatAgent):
 
         return subtasks_execution_pipelines
 
-    def draw_graph(self, oriented_graph: Dict[str, List[str]]) -> str:
+    def draw_subtasks_graph(self, oriented_graph: Dict[str, List[str]],
+                            graph_file_path: str = None) -> str:
+        r"""Draw the task dependency graph.
+
+        Args:
+            oriented_graph (Dict[str, List[str]]): The DAG of subtasks and
+                their dependencies.
+            graph_file_path (str, optional): The filepath to save the graph.
+                (default: :obj:`None`)
+
+        Returns:
+            str: The filepath of the saved graph.
+        """
+
+        # Initialize the graph
         G = nx.DiGraph()
         for subtask, details in oriented_graph.items():
             for dep in details:
                 G.add_edge(dep, subtask)
-
         pos = nx.spring_layout(G, k=0.5)
         plt.figure(figsize=(10, 6))
+        plt.title("Task Dependency Graph")
+
+        # Draw the graph
         nx.draw(G, pos, with_labels=True, node_size=2000, node_color='skyblue',
                 alpha=0.5, font_size=15, width=2, edge_color='gray',
                 font_weight='bold')
-        plt.title("Task Dependency Graph")
+
         # Save the figure locally
-        filepath = "examples/multi_agent/task_dependency_graph.png"
-        plt.savefig(filepath)
+        if graph_file_path is None:
+            graph_file_path = \
+                "examples/multi_agent/task_dependency_graph.png"
+        plt.savefig(graph_file_path)
         plt.close()
 
     def sort_oriented_graph(
@@ -295,6 +313,8 @@ Gantt Chart with complex dependency in MarkDown format:
 PART III:
 """ + "\n".join("Incorporate Contextual Parameters into Details of "
                 "subtask <NUM>:\n<BLANK>\n"
+                "Input of subtask <NUM>:\n<BLANK>/None\n"
+                "Task completion standard of subtask <NUM>:\n<BLANK>\n"
                 "Dependency of subtask <NUM>: [subtask <i>, subtask <j>, "
                 "subtask <k>]/[None] (include square brackets)\nEnd."
                 for _ in range(1)) + "\n\n"
@@ -311,41 +331,31 @@ Gantt Chart with complex dependency in MarkDown format:
 PART III:
 """ + "\n".join(f"Incorporate Contextual Parameters into Details of "
                 f"subtask {i + 1}:\n<BLANK>\n"
+                f"Input of subtask {i + 1}:\n<BLANK>/None\n"
+                f"Task completion standard of subtask {i + 1}:\n<BLANK>\n"
                 f"Dependency of subtask {i + 1}: [subtask <i>, subtask "
                 f"<j>, subtask <k>]/[None] (include square brackets)"
                 f"\nEnd." for i in range(num_subtasks)) + "\n\n"
-        splict_task_prompt = TextPrompt(
-            "You are a task splitter, and you're in asked to break down the" +
-            " main TASK into {num_subtasks} manageable subtasks suitable " +
-            "for a team comprising {num_roles} domain experts. The experts " +
-            "will contribute to the {num_subtasks} subtasks. Please follow " +
-            "the guidelines below to craft your answer:\n" +
-            "  1. Action-Oriented Foundation & Building Blocks: Ensure each " +
-            "subtask is actionable, distinct, tapping into the expertise of " +
-            "the assigned roles. Recognize that not every subtask needs to " +
-            "directly reflect the main TASK's ultimate aim. Some subtasks " +
-            "serve as essential building blocks, paving the way for more " +
-            "central subtasks, but avoid creating subtasks that are self-" +
-            "dependent or overly foundational.\n" +
-            "  2. Balanced Granularity with a Bias for Action: While each " +
-            "subtask should be detailed and actionable, it should not be so " +
-            "ambiguous that it requires the input of more than two domain " +
-            "experts. Prioritize tangible actions in subtask such as " +
-            "implementation, creation, testing, or other tangible " +
-            "activities over mere understanding.\n" +
-            "  3. Dependencies & Gantt Chart: Identify and account for the " +
-            "dependencies within the subtasks. Ensure that each subtask " +
-            "logically flows from one to the next, or can run concurrently " +
-            "where no subtask is dependent on itself, in a manner that " +
-            "could be efficiently represented on a Gantt chart.\n" +
-            "  4. Refrain from mentioning specific titles or roles within " +
-            "the content of subtasks.\n" +
-            "Your answer MUST strictly adhere to the structure of ANSWER " +
-            "TEMPLATE, ONLY fill in the BLANKs, and DO NOT alter or modify " +
-            "any other part of the template.\n\n" + answer_prompt +
-            task_prompt + task_context_prompt + role_with_description_prompt)
-
-        subtasks_generation = splict_task_prompt.format(
+        split_task_rules_prompt = """You are a task splitter, and you're in asked to break down the main TASK into {num_subtasks} manageable subtasks suitable for a team comprising {num_roles} domain experts. The experts will contribute to the {num_subtasks} subtasks. Please follow the guidelines below to craft your answer:
+    1. Action-Oriented Foundation & Building Blocks: Ensure each subtask is actionable, distinct, tapping into the expertise of the assigned roles. Recognize that not every subtask needs to directly reflect the main TASK's ultimate aim. Some subtasks serve as essential building blocks, paving the way for more central subtasks, but avoid creating subtasks that are self-dependent or overly foundational.
+    2. Balanced Granularity with a Bias for Action: While each subtask should be detailed and actionable, it should not be so ambiguous that it requires the input of more than two domain experts. Prioritize tangible actions in subtask such as implementation, creation, testing, or other tangible activities over mere understanding.
+    3. Dependencies & Gantt Chart: Identify and account for the dependencies within the subtasks. Ensure that each subtask logically flows from one to the next, or can run concurrently where no subtask is dependent on itself, in a manner that could be efficiently represented on a Gantt chart.
+    4. I define the tags of the Input of subtask:
+        - Interlinking of Inputs: Ensure that the inputs are not siloed and can be interlinked within privous subtasks if necessary, providing a holistic view of what is required for the subtask.
+        - Hierarchy and Prioritization: Identify and clearly state the priority and hierarchy (if applicable) among the inputs, ensuring the most critical elements are addressed promptly.
+        - Accessibility and Clarity: Ensure that all provided inputs are accessible, clear, and understandable to the relevant team members.
+        - Adjustability: Consider that inputs may need to be adjusted as the project progresses and ensure a mechanism for the same.
+    5. I define the Task Completion Standard in order to implement a feature in the software that can identify and mark a task as completed:
+        - A task is considered completed when its intended output is produced.
+        - If possible, the completion standard should be quantifiable to facilitate automatic detection by the software or tool feature.
+        - The completion standard should be applicable to common project management scenarios and adaptable to various types of tasks, such as development, testing, and review tasks.
+    6. Refrain from mentioning specific titles or roles within the content of subtasks.
+Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill in the BLANKs, and DO NOT alter or modify any other part of the template.\n\n"""  # noqa: E501
+        split_task_prompt = TextPrompt(split_task_rules_prompt +
+                                       answer_prompt + task_prompt +
+                                       task_context_prompt +
+                                       role_with_description_prompt)
+        subtasks_generation = split_task_prompt.format(
             num_subtasks=num_subtasks or "SEVERAL/ENOUGH",
             num_roles=len(role_names))
 
@@ -363,12 +373,24 @@ PART III:
             desc.replace("<", "").replace(">", "").strip('\n')
             for desc in re.findall(
                 r"Incorporate Contextual Parameters into Details "
-                r"of subtask \d:\n(.+?)Dependency", msg.content, re.DOTALL)
+                r"of subtask \d:\n(.+?)Input of ", msg.content, re.DOTALL)
+        ]
+        subtask_inputs = [
+            ipt.replace("<", "").replace(">", "").strip('\n')
+            for ipt in re.findall(
+                r"Input of subtask \d:\n(.+?)Task completion standard",
+                msg.content, re.DOTALL)
+        ]
+        subtask_outputs_standard = [
+            opt_std.replace("<", "").replace(">", "").strip('\n')
+            for opt_std in re.findall(
+                r"Task completion standard of subtask \d:\n(.+?)Dependency "
+                r"of subtask", msg.content, re.DOTALL)
         ]
         subtask_dependencies = [[
-            dep.strip() for dep in re.findall(r"\[(.+?)\]", desc)[0].split(",")
-        ] for desc in re.findall(r"Dependency of subtask \d: \[.+?\]",
-                                 msg.content, re.DOTALL)]
+            dep.strip() for dep in re.findall(r"\[(.+?)\]", dep)[0].split(",")
+        ] for dep in re.findall(r"Dependency of subtask \d: \[.+?\]",
+                                msg.content, re.DOTALL)]
 
         # Extracting dependencies and creating a dictionary
         dependent_subtasks_list = [[
@@ -379,10 +401,13 @@ PART III:
         subtasks_with_dependencies_dict = {
             f"subtask {index+1}": {
                 "description": desp,
-                "dependencies": deps
+                "dependencies": deps,
+                "input": ipt,
+                "output_standard": opt_std
             }
-            for index, (desp, deps) in enumerate(
-                zip(subtask_descriptions, dependent_subtasks_list))
+            for index, (desp, deps, ipt, opt_std) in enumerate(
+                zip(subtask_descriptions, dependent_subtasks_list,
+                    subtask_inputs, subtask_outputs_standard))
         }
 
         if len(subtasks_with_dependencies_dict) == 0:
