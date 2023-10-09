@@ -368,7 +368,6 @@ class RolePlaying:
             content=(f"{self.user_sys_msg.content}. "
                      "Now start to give me instructions one by one. "
                      "Only reply with Instruction and Input."))
-
         user_msg = BaseMessage.make_user_message(
             role_name=self.user_sys_msg.role_name,
             content=f"{self.assistant_sys_msg.content}")
