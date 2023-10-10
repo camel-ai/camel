@@ -114,7 +114,8 @@ class RoleAssignmentAgent(ChatAgent):
         response = self.step(input_message=role_assignment_generation_msg)
 
         if response.terminated:
-            raise RuntimeError("Role compatibility scoring failed.")
+            raise RuntimeError("Role compatibility scoring failed.\n" +
+                               f"Error:\n{response.info}")
         msg = response.msg  # type: BaseMessage
 
         # Distribute the output completions into role names and descriptions
@@ -136,7 +137,6 @@ class RoleAssignmentAgent(ChatAgent):
         if len(role_names) != num_roles or len(role_descriptions) != num_roles:
             raise RuntimeError(
                 "Got None or insufficient information of roles.")
-
         role_descriptions_dict = {
             role_name: description
             for role_name, description in zip(role_names, role_descriptions)
@@ -366,7 +366,8 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
         response = self.step(input_message=subtasks_generation_msg)
 
         if (response.terminated):
-            raise RuntimeError("Role compatibility scoring failed.")
+            raise RuntimeError("Role compatibility scoring failed.\n" +
+                               f"Error:\n{response.info}")
         msg = response.msg  # type: BaseMessage
 
         # Distribute the output completions into subtasks
@@ -495,7 +496,8 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
         response = self.step(input_message=compatibility_scoring_msg)
 
         if response.terminated:
-            raise RuntimeError("Role compatibility scoring failed.")
+            raise RuntimeError("Role compatibility scoring failed." +
+                               f"Error:\n{response.info}")
         msg = response.msg  # type: BaseMessage
 
         # Distribute the output completions into scores
