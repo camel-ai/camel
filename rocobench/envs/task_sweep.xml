@@ -41,10 +41,15 @@
     <!--  the arm! -->
     <body name="ur5e_robotiq" pos="-0.2 -0.2 0.15" > 
       <include file="assets/ur5e/ur5e_robotiq.xml" />
+      <camera name="ur5e_camera" pos="0 0.7 1.3" euler="0 0 0"  fovy="90" />
+      <!--<camera name="ur5e_camera" pos="0.75 0 0.5" euler="1.57 0 0"  fovy="90" /> -->
     </body>
+
     <!-- the franka panda -->
     <body name="panda" pos="0.6 1.02 0.1" >
       <include file="assets/panda/panda_include.xml" />
+      <camera name="panda_camera" pos="0 -0.55 1.2" euler="0 0 3.14"  fovy="90" />
+      <!-- <camera name="panda_camera" pos="0 0 1" euler="-0.52 0 3.14"  fovy="90" /> -->
     </body> 
 
     <body name='broom' pos="0.6 0.9 0.6">

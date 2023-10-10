@@ -1,3 +1,5 @@
+#import sys
+#sys.path.append(r'~/camel/')
 import os
 import copy
 import time
@@ -12,6 +14,10 @@ from pyquaternion import Quaternion
 from rocobench.envs.base_env import MujocoSimEnv, EnvState
 from rocobench.envs.robot import SimRobot
 from rocobench.envs.constants import UR5E_ROBOTIQ_CONSTANTS, UR5E_SUCTION_CONSTANTS, PANDA_CONSTANTS
+
+#from base_env import MujocoSimEnv, EnvState
+#from robot import SimRobot
+#from constants import UR5E_ROBOTIQ_CONSTANTS, UR5E_SUCTION_CONSTANTS, PANDA_CONSTANTS
 
 SWEEP_TASK_OBJECTS=[
     "dustpan",
@@ -312,6 +318,9 @@ class SweepTask(MujocoSimEnv):
         # self.physics.step(100)
     
     def get_obs(self):
+
+        #camera_observation = sim.render(width, height, camera_name="panda_camera")
+
         contacts = self.get_contact()
         allow_objs = self.cube_names + ["broom", "dustpan"]
         contacts["ur5e_robotiq"] = [c for c in contacts["ur5e_robotiq"] if c in allow_objs]
@@ -473,6 +482,7 @@ End your response by either: 1) output PROCEED, if the plans require further dis
  
 
 if __name__ == "__main__":
+
     env = SweepTask(np_seed=10)
     obs = env.reset()
     print(env.describe_obs(obs))
