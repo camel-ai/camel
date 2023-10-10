@@ -11,10 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .role_playing import RolePlaying
-from .babyagi_playing import BabyAGI
+import streamlit as st
 
-__all__ = [
-    'RolePlaying',
-    'BabyAGI',
-]
+from camel.functions.data_io_functions import read_file
+
+st.title("📝 File Upload")
+uploaded_file = st.file_uploader("Upload an file",
+                                 type=("txt", "docx", "pdf", "json", "html"))
+
+if uploaded_file:
+    article = read_file(uploaded_file)
+    st.write(article.docs)
