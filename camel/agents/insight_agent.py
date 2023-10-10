@@ -127,7 +127,8 @@ For each identified entity or detail from the decomposition:
         response = self.step(input_message=insights_generation_msg)
 
         if response.terminated:
-            raise RuntimeError("Insights generation failed.")
+            raise RuntimeError("Insights generation failed. Error:\n" +
+                               f"{response.info}")
         msg = response.msg  # type: BaseMessage
 
         # Replace the "N/A", "None", "NONE" with None
