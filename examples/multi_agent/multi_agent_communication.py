@@ -259,7 +259,7 @@ def print_and_write_md(text, color=Fore.RESET):
     import html
     import re
 
-    MD_FILE = "multi-agent-output.md"
+    MD_FILE = "examples/multi_agent/multi-agent-output.md"
     COLOR_MAP_MD = {
         Fore.BLUE: 'blue',
         Fore.GREEN: 'darkgreen',
