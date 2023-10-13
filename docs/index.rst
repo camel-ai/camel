@@ -19,6 +19,7 @@ Welcome to CAMEL's documentation!
    get_started/text_prompt.md
    get_started/code_prompt.md
    get_started/messages.md
+   get_started/chat_agent.md
 
 .. toctree::
    :maxdepth: 1
