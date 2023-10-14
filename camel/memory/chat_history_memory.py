@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from camel.memory.base import BaseMemory, MemoryRecord
 from camel.memory.context_creator.base import BaseContextCreator, ContextRecord
@@ -55,7 +55,7 @@ class ChatHistoryMemory(BaseMemory):
         self.storage = storage or InMemoryDictStorage()
         self.window_size = window_size
 
-    def get_context(self) -> List[OpenAIMessage]:
+    def get_context(self) -> Tuple[List[OpenAIMessage], int]:
         """
         Retrieves chat messages from the memory based on the window size or
         fetches the entire chat history if no window size is specified.

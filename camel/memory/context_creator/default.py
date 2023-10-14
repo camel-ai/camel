@@ -42,8 +42,9 @@ class DefaultContextCreator(BaseContextCreator):
     def token_limit(self) -> int:
         return self._token_limit
 
-    def create_context(self,
-                       records: List[ContextRecord]) -> List[OpenAIMessage]:
+    def create_context(
+            self,
+            records: List[ContextRecord]) -> Tuple[List[OpenAIMessage], int]:
         context_units = [
             _ContextUnit(
                 idx,
