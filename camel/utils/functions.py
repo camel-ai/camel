@@ -14,6 +14,7 @@
 import inspect
 import os
 import re
+import socket
 import time
 import zipfile
 from functools import wraps
@@ -28,6 +29,7 @@ from typing import (
     TypeVar,
     cast,
 )
+from urllib.parse import urlparse
 
 import requests
 
@@ -221,3 +223,25 @@ def get_task_list(task_response: str) -> List[str]:
             if task_name.strip() and task_id.isnumeric():
                 new_tasks_list.append(task_name)
     return new_tasks_list
+
+
+def check_server_running(server_url: str) -> bool:
+    r"""Check whether the port refered by the URL to the server
+    is open.
+
+    Args:
+        server_url (str): The URL to the server running LLM inference
+            service.
+
+    Returns:
+        bool: Whether the port is open for packets (server is running).
+    """
+    parsed_url = urlparse(server_url)
+    url_tuple = (parsed_url.hostname, parsed_url.port)
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    result = sock.connect_ex(url_tuple)
+    sock.close()
+
+    # if the port is open, the result should be 0.
+    return result == 0
