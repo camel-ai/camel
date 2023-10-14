@@ -49,7 +49,6 @@ def test_deductive_reasoner_agent(mock_step, model_type):
             starting_state=starting_state, target_state=target_state)
 
     expected_dict = generate_expected_content()
-    print(f"conditions_and_quality: {conditions_and_quality}")
 
     assert conditions_and_quality == expected_dict
 
@@ -92,11 +91,11 @@ def generate_expected_content():
             "The speaker must have knowledge or awareness of the safety " +
             "risk.",
             "condition 4":
-            "The speaker must have a desire or intention to ensure Anna's" +
+            "The speaker must have a desire or intention to ensure Anna's " +
             "personal safety."
         },
         "quality":
         ("The quality of the transition can be assessed based on the " +
-         "effectiveness of the reminder in ensuring Anna's personal safety" +
+         "effectiveness of the reminder in ensuring Anna's personal safety " +
          "and the efficiency of the communication process.")
     }
