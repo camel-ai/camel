@@ -65,5 +65,5 @@ def test_context_creator():
         r.m_record.to_openai_message()
         for r in [context_records[0], context_records[2]]
     ]
-    output = context_creator.create_context(records=context_records)
+    output, _ = context_creator.create_context(records=context_records)
     assert expected_output == output

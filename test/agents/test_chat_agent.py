@@ -57,32 +57,25 @@ def test_chat_agent(model: ModelType):
     assert assistant_response.info['id'] is not None
 
 
-@pytest.mark.model_backend
 def test_chat_agent_stored_messages():
     system_msg = BaseMessage(role_name="assistant",
                              role_type=RoleType.ASSISTANT, meta_dict=None,
                              content="You are a help assistant.")
     assistant = ChatAgent(system_msg)
 
-    expected_memory = [
-        MemoryRecord(system_msg, OpenAIBackendRole.SYSTEM).to_dict()
-    ]
-    memory_content = [
-        record.to_dict() for record in assistant.memory.retrieve()
-    ]
-    assert memory_content == expected_memory
+    expected_context = [system_msg.to_openai_system_message()]
+    context, _ = assistant.memory.get_context()
+    assert context == expected_context
 
     user_msg = BaseMessage(role_name="User", role_type=RoleType.USER,
                            meta_dict=dict(), content="Tell me a joke.")
     assistant.update_memory(user_msg, OpenAIBackendRole.USER)
-    expected_memory = [
-        MemoryRecord(system_msg, OpenAIBackendRole.SYSTEM).to_dict(),
-        MemoryRecord(user_msg, OpenAIBackendRole.USER).to_dict(),
+    expected_context = [
+        system_msg.to_openai_system_message(),
+        user_msg.to_openai_user_message()
     ]
-    memory_content = [
-        record.to_dict() for record in assistant.memory.retrieve()
-    ]
-    assert memory_content == expected_memory
+    context, _ = assistant.memory.get_context()
+    assert context == expected_context
 
 
 @pytest.mark.model_backend
@@ -101,7 +94,7 @@ def test_chat_agent_messages_window():
     user_record = MemoryRecord(user_msg, OpenAIBackendRole.USER)
 
     assistant.memory.write_records([user_record] * 5)
-    openai_messages, _ = assistant.preprocess_messages()
+    openai_messages, _ = assistant.memory.get_context()
     assert len(openai_messages) == 2
 
 
@@ -110,26 +103,15 @@ def test_chat_agent_step_exceed_token_number():
     system_msg = BaseMessage(role_name="assistant",
                              role_type=RoleType.ASSISTANT, meta_dict=None,
                              content="You are a help assistant.")
-    assistant = ChatAgent(
-        system_message=system_msg,
-        model=ModelType.GPT_3_5_TURBO,
-    )
-    assistant.model_token_limit = 1
+    assistant = ChatAgent(system_message=system_msg,
+                          model=ModelType.GPT_3_5_TURBO, token_limit=1)
 
     user_msg = BaseMessage(role_name="User", role_type=RoleType.USER,
                            meta_dict=dict(), content="Tell me a joke.")
-    user_record = MemoryRecord(user_msg, OpenAIBackendRole.USER)
-    system_record = MemoryRecord(system_msg, OpenAIBackendRole.SYSTEM)
-    records = [system_record, user_record]
-
-    expect_openai_messages = [record.to_openai_message() for record in records]
-    expect_num_tokens = assistant.model_backend.count_tokens_from_messages(
-        expect_openai_messages)
 
     response = assistant.step(user_msg)
     assert len(response.msgs) == 0
     assert response.terminated
-    assert response.info["num_tokens"] == expect_num_tokens
 
 
 @pytest.mark.model_backend

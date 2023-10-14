@@ -13,25 +13,30 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 import tempfile
-from dataclasses import asdict
 from pathlib import Path
 
 import pytest
 
 from camel.memory import ChatHistoryMemory, MemoryRecord
+from camel.memory.context_creator import DefaultContextCreator
 from camel.messages import BaseMessage
 from camel.storage.dict_storage import InMemoryDictStorage, JsonStorage
-from camel.typing import OpenAIBackendRole, RoleType
+from camel.typing import ModelType, OpenAIBackendRole, RoleType
+from camel.utils.token_counting import OpenAITokenCounter
 
 
 @pytest.fixture
 def memory(request):
+    context_creator = DefaultContextCreator(
+        OpenAITokenCounter(ModelType.GPT_4), ModelType.GPT_4.token_limit)
     if request.param == "in-memory":
-        yield ChatHistoryMemory(storage=InMemoryDictStorage())
+        yield ChatHistoryMemory(context_creator=context_creator,
+                                storage=InMemoryDictStorage())
     elif request.param == "json":
         _, path = tempfile.mkstemp()
         path = Path(path)
-        yield ChatHistoryMemory(storage=JsonStorage(path))
+        yield ChatHistoryMemory(context_creator=context_creator,
+                                storage=JsonStorage(path))
         path.unlink()
 
 
@@ -59,7 +64,7 @@ def test_chat_history_memory(memory: ChatHistoryMemory):
     user_record = MemoryRecord(user_msg, OpenAIBackendRole.USER)
     assistant_record = MemoryRecord(assistant_msg, OpenAIBackendRole.ASSISTANT)
     memory.write_records([system_record, user_record, assistant_record])
-    load_msgs = memory.retrieve()
-    assert asdict(load_msgs[0]) == asdict(system_record)
-    assert asdict(load_msgs[1]) == asdict(user_record)
-    assert asdict(load_msgs[2]) == asdict(assistant_record)
+    output_messages, _ = memory.get_context()
+    assert output_messages[0] == system_msg.to_openai_system_message()
+    assert output_messages[1] == user_msg.to_openai_user_message()
+    assert output_messages[2] == assistant_msg.to_openai_assistant_message()

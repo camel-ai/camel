@@ -68,13 +68,14 @@ class DefaultContextCreator(BaseContextCreator):
         for i, unit in enumerate(context_units):
             if unit.record.importance == 1:
                 raise RuntimeError(
-                    "Cannot create context: exceed token limit.")
+                    "Cannot create context: exceed token limit.", total_tokens)
             total_tokens -= unit.token_num
             if total_tokens <= self.token_limit:
                 flag = i
                 break
         if flag is None:
-            raise RuntimeError("Cannot create context: exceed token limit.")
+            raise RuntimeError("Cannot create context: exceed token limit.",
+                               total_tokens)
         return self._create_output(context_units[flag + 1:])
 
     def _create_output(

@@ -15,7 +15,7 @@
 from typing import List, Optional
 
 from camel.memory.base import BaseMemory, MemoryRecord
-from camel.memory.context_creator.base import BaseContextCreator
+from camel.memory.context_creator.base import BaseContextCreator, ContextRecord
 from camel.messages import OpenAIMessage
 from camel.storage.dict_storage.base import BaseDictStorage
 from camel.storage.dict_storage.in_memory import InMemoryDictStorage
@@ -61,7 +61,7 @@ class ChatHistoryMemory(BaseMemory):
         fetches the entire chat history if no window size is specified.
 
         Returns:
-            List[MemoryRecord]: A list of memory records retrieved from the
+            List[OpenAIMessage]: A list of memory records retrieved from the
                 memory.
 
         Raises:
@@ -77,12 +77,18 @@ class ChatHistoryMemory(BaseMemory):
             raise ValueError(
                 "The first record in ChatHistoryMemory should contain a system"
                 " message.")
-
         chat_records: List[MemoryRecord] = []
         truncate_idx = 1 if self.window_size is None else -self.window_size
         for record_dict in record_dicts[truncate_idx:]:
             chat_records.append(MemoryRecord.from_dict(record_dict))
-        output_records = [system_record] + chat_records
+
+        output_records = []
+        importance = 1.0
+        for record in reversed(chat_records):
+            importance *= 0.99
+            output_records.append(ContextRecord(record, importance))
+        output_records.append(ContextRecord(system_record, 1.0))
+        output_records.reverse()
         return self.context_creator.create_context(output_records)
 
     def write_records(self, records: List[MemoryRecord]) -> None:

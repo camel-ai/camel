@@ -110,6 +110,7 @@ class ChatAgent(BaseAgent):
         model_config: Optional[BaseConfig] = None,
         memory: Optional[BaseMemory] = None,
         message_window_size: Optional[int] = None,
+        token_limit: Optional[int] = None,
         output_language: Optional[str] = None,
         function_list: Optional[List[OpenAIFunction]] = None,
     ) -> None:
@@ -133,10 +134,9 @@ class ChatAgent(BaseAgent):
 
         self.model_backend: BaseModelBackend = ModelFactory.create(
             self.model, self.model_config.__dict__)
-        self.model_token_limit: int = self.model_backend.token_limit
         context_creator = DefaultContextCreator(
             self.model_backend.token_counter,
-            self.model_backend.token_limit,
+            token_limit or self.model_backend.token_limit,
         )
         self.memory: BaseMemory = memory or ChatHistoryMemory(
             context_creator, window_size=message_window_size)
@@ -289,7 +289,10 @@ class ChatAgent(BaseAgent):
         while True:
             # Format messages and get the token number
             openai_messages: Optional[List[OpenAIMessage]]
-            openai_messages, num_tokens = self.memory.get_context()
+            try:
+                openai_messages, num_tokens = self.memory.get_context()
+            except RuntimeError as e:
+                return self.step_token_exceed(e.args[1], called_funcs)
 
             # Obtain LLM's response and validate it
             response = self.model_backend.run(openai_messages)
