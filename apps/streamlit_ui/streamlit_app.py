@@ -11,14 +11,42 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import os
+
 import streamlit as st
 
+from apps.streamlit_ui.multi_agent_communication_ui import (
+    context_content_supply_chain,
+    main,
+    taks_prompt_supply_chain,
+)
 from camel.functions.data_io_functions import read_file
 
-st.title("📝 File Upload")
-uploaded_file = st.file_uploader("Upload an file",
-                                 type=("txt", "docx", "pdf", "json", "html"))
+st.title("🐫 CAMEL Multi-Agent")
 
-if uploaded_file:
+with st.sidebar:
+    with st.form(key='form1'):
+        openai_api_key = st.text_input(
+            "OpenAI API Key",
+            "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",
+            key="api_key_openai", type="password")
+        os.environ["OPENAI_API_KEY"] = openai_api_key
+
+        uploaded_file = st.file_uploader(
+            "Upload an file", type=("txt", "docx", "pdf", "json", "html"))
+
+        task_prompt = st.text_input("Insert your task prompt here",
+                                    taks_prompt_supply_chain)
+        context_content = st.text_input("Insert your context content here",
+                                        context_content_supply_chain)
+
+        submit_button = st.form_submit_button(label='Submit')
+
+if uploaded_file and submit_button:
     article = read_file(uploaded_file)
-    st.write(article.docs)
+    normal_string = article.docs[0]['page_content']
+    print(normal_string)
+    print(type(normal_string))
+    main(normal_string, normal_string)
+elif task_prompt and context_content and submit_button:
+    main(task_prompt, context_content)
