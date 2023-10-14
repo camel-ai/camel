@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Tuple
 
 from camel.memory.memory_record import ContextRecord
 from camel.messages import OpenAIMessage
@@ -32,6 +32,7 @@ class BaseContextCreator(ABC):
         ...
 
     @abstractmethod
-    def create_context(self,
-                       records: List[ContextRecord]) -> List[OpenAIMessage]:
+    def create_context(
+            self,
+            records: List[ContextRecord]) -> Tuple[List[OpenAIMessage], int]:
         ...

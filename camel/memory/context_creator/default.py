@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from dataclasses import dataclass
-from typing import List
+from typing import List, Tuple
 
 from camel.memory.context_creator.base import BaseContextCreator
 from camel.memory.memory_record import ContextRecord
@@ -78,8 +78,9 @@ class DefaultContextCreator(BaseContextCreator):
         return self._create_output(context_units[flag + 1:])
 
     def _create_output(
-            self, context_units: List[_ContextUnit]) -> List[OpenAIMessage]:
+            self, context_units: List[_ContextUnit]
+    ) -> Tuple[List[OpenAIMessage], int]:
         context_units = sorted(context_units, key=lambda unit: unit.idx)
         return [
             unit.record.m_record.to_openai_message() for unit in context_units
-        ]
+        ], sum([unit.token_num for unit in context_units])

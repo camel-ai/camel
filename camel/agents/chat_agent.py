@@ -191,7 +191,7 @@ class ChatAgent(BaseAgent):
                 messages.
             role (OpenAIBackendRole): The backend role type.
         """
-        self.memory.write_records([MemoryRecord(message, role)])
+        self.memory.write_record(MemoryRecord(message, role))
 
     def set_output_language(self, output_language: str) -> BaseMessage:
         r"""Sets the output language for the system message. This method
@@ -246,7 +246,7 @@ class ChatAgent(BaseAgent):
         system_record = MemoryRecord(self.system_message,
                                      OpenAIBackendRole.SYSTEM)
         self.memory.clear()
-        self.memory.write_records([system_record])
+        self.memory.write_record(system_record)
 
     def submit_message(self, message: BaseMessage) -> None:
         r"""Submits the externally provided message as if it were an answer of
@@ -258,7 +258,7 @@ class ChatAgent(BaseAgent):
                 assistant response.
         """
         record = MemoryRecord(message, OpenAIBackendRole.ASSISTANT)
-        self.memory.write_records([record])
+        self.memory.write_record(record)
 
     @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     @openai_api_key_required
@@ -281,7 +281,7 @@ class ChatAgent(BaseAgent):
                 and information about the chat session.
         """
         record = MemoryRecord(input_message, OpenAIBackendRole.USER)
-        self.memory.write_records([record])
+        self.memory.write_record(record)
 
         output_messages: List[BaseMessage]
         info: Dict[str, Any]
@@ -289,12 +289,7 @@ class ChatAgent(BaseAgent):
         while True:
             # Format messages and get the token number
             openai_messages: Optional[List[OpenAIMessage]]
-            num_tokens: int
-            openai_messages, num_tokens = self.preprocess_messages()
-
-            # Terminate when number of tokens exceeds the limit
-            if num_tokens >= self.model_token_limit:
-                return self.step_token_exceed(num_tokens, called_funcs)
+            openai_messages, num_tokens = self.memory.get_context()
 
             # Obtain LLM's response and validate it
             response = self.model_backend.run(openai_messages)
@@ -337,22 +332,6 @@ class ChatAgent(BaseAgent):
                 break
 
         return ChatAgentResponse(output_messages, self.terminated, info)
-
-    def preprocess_messages(self) -> Tuple[List[OpenAIMessage], int]:
-        r""" Convert the messages in the agent memory to OpenAI's input format
-        and calculate the number of tokens.
-
-        Returns:
-            tuple: A tuple containing the truncated list of messages in
-                OpenAI's input format and the number of tokens.
-        """
-        records = self.memory.retrieve()
-        openai_messages: List[OpenAIMessage] = [
-            record.to_openai_message() for record in records
-        ]
-        num_tokens = self.model_backend.count_tokens_from_messages(
-            openai_messages)
-        return openai_messages, num_tokens
 
     def validate_model_response(self, response: Any) -> None:
         r"""Validate the type of the response returned by the model.

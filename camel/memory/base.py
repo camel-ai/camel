@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Tuple
 
 from camel.memory.memory_record import MemoryRecord
 from camel.messages import OpenAIMessage
@@ -43,7 +43,7 @@ class BaseMemory(ABC):
     """
 
     @abstractmethod
-    def get_context(self) -> List[OpenAIMessage]:
+    def get_context(self) -> Tuple[List[OpenAIMessage], int]:
         """
         TODO
 
