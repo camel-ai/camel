@@ -23,7 +23,7 @@ from camel.typing import OpenAIBackendRole
 
 
 class ChatHistoryMemory(BaseMemory):
-    """
+    r"""
     An implementation of the :obj:`BaseMemory` abstract base class for
     maintaining a record of chat histories.
 
@@ -58,16 +58,14 @@ class ChatHistoryMemory(BaseMemory):
         self.window_size = window_size
 
     def get_context(self) -> Tuple[List[OpenAIMessage], int]:
-        """
+        r"""
         Gets chat context with proper size for a LLM from the memory based on
         the window size or fetches the entire chat history if no window size is
         specified.
 
         Returns:
-            (List[OpenAIMessage], int): A tuple with pruned OpenAI-style
-                messages that fits into corresponding model and its token
-                number.
-
+            (List[OpenAIMessage], int): A tuple containing the constructed
+                context in OpenAIMessage format and the total token count.
         Raises:
             ValueError: If the memory is empty or if the first message in the
                 memory is not a system message.
@@ -96,7 +94,7 @@ class ChatHistoryMemory(BaseMemory):
         return self.context_creator.create_context(output_records)
 
     def write_records(self, records: List[MemoryRecord]) -> None:
-        """
+        r"""
         Writes memory records to the memory. Additionally, performs validation
         checks on the messages.
 
@@ -110,7 +108,7 @@ class ChatHistoryMemory(BaseMemory):
         self.storage.save(stored_records)
 
     def clear(self) -> None:
-        """
+        r"""
             Clears all chat messages from the memory.
         """
         self.storage.clear()

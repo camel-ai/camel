@@ -28,6 +28,21 @@ class _ContextUnit():
 
 
 class DefaultContextCreator(BaseContextCreator):
+    r"""
+    A default implementation of context creation strategy, which inherits from
+    :obj:`BaseContextCreator`.
+
+    This class provides a strategy to generate a conversational context from
+    a list of chat history records while ensuring the total token count of
+    the context does not exceed a specified limit. It prunes messages based
+    on their importance if the total token count exceeds the limit.
+
+    Args:
+        token_counter (BaseTokenCounter): An instance responsible for counting
+            tokens in a message.
+        token_limit (int): The maximum number of tokens allowed in the
+            generated context.
+    """
 
     def __init__(self, token_counter: BaseTokenCounter,
                  token_limit: int) -> None:
@@ -45,6 +60,26 @@ class DefaultContextCreator(BaseContextCreator):
     def create_context(
             self,
             records: List[ContextRecord]) -> Tuple[List[OpenAIMessage], int]:
+        r"""
+        Creates conversational context from chat history while respecting token
+        limits.
+
+        Constructs the context from provided records and ensures that the total
+        token count does not exceed the specified limit by pruning the least
+        important messages if necessary.
+
+        Args:
+            records (List[ContextRecord]): A list of message records from which
+                to generate the context.
+
+        Returns:
+            Tuple[List[OpenAIMessage], int]: A tuple containing the constructed
+                context in OpenAIMessage format and the total token count.
+
+        Raises:
+            RuntimeError: If it's impossible to create a valid context without
+                exceeding the token limit.
+        """
         context_units = [
             _ContextUnit(
                 idx,
@@ -82,6 +117,13 @@ class DefaultContextCreator(BaseContextCreator):
     def _create_output(
             self, context_units: List[_ContextUnit]
     ) -> Tuple[List[OpenAIMessage], int]:
+        r"""
+        Helper method to generate output from context units.
+
+        This method converts the provided context units into a format suitable
+        for output, specifically a list of OpenAIMessages and an integer
+        representing the total token count.
+        """
         context_units = sorted(context_units, key=lambda unit: unit.idx)
         return [
             unit.record.m_record.to_openai_message() for unit in context_units
