@@ -26,10 +26,8 @@ st.title("🐫 CAMEL Multi-Agent")
 
 with st.sidebar:
     with st.form(key='form1'):
-        openai_api_key = st.text_input(
-            "OpenAI API Key",
-            "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",
-            key="api_key_openai", type="password")
+        openai_api_key = st.text_input("OpenAI API Key", key="api_key_openai",
+                                       type="password")
         os.environ["OPENAI_API_KEY"] = openai_api_key
 
         uploaded_file = st.file_uploader(
@@ -45,8 +43,6 @@ with st.sidebar:
 if uploaded_file and submit_button:
     article = read_file(uploaded_file)
     normal_string = article.docs[0]['page_content']
-    print(normal_string)
-    print(type(normal_string))
     main(normal_string, normal_string)
 elif task_prompt and context_content and submit_button:
     main(task_prompt, context_content)
