@@ -43,9 +43,21 @@ def main(model_type=None, task_prompt=None, context_text=None) -> None:
             task_prompt=task_prompt,
             role_descriptions_dict=role_descriptions_dict,
             context_text=context_text)
-
-    st.write("Dependencies among subtasks: ")
-    st.write(subtasks_with_dependencies_dict)
+    with st.expander("Dependencies among subtasks:"):
+        for i in subtasks_with_dependencies_dict:
+            with st.container():
+                st.write(i)
+                st.write(
+                    'description:',
+                    str(subtasks_with_dependencies_dict[i]['description']))
+                st.write(
+                    'dependencies:',
+                    str(subtasks_with_dependencies_dict[i]['dependencies']))
+                st.write('input:',
+                         str(subtasks_with_dependencies_dict[i]['input']))
+                st.write(
+                    'output_standard:',
+                    str(subtasks_with_dependencies_dict[i]['output_standard']))
 
     # print_and_write_md(
     #     "Dependencies among subtasks: " +
@@ -66,14 +78,15 @@ def main(model_type=None, task_prompt=None, context_text=None) -> None:
         for ID_subtask in subtasks_with_dependencies_dict.keys()
     }
 
-    st.write(f"List of {len(role_descriptions_dict)} roles with description:")
     # print_and_write_md(
     #     f"List of {len(role_descriptions_dict)} roles with " +
     #  "description:",
     #     color=Fore.GREEN)
-    for role_name in role_descriptions_dict.keys():
-        st.write(f"{role_name}:\n"
-                 f"{role_descriptions_dict[role_name]}\n")
+    with st.expander(
+            f"List of {len(role_descriptions_dict)} roles with description:"):
+        for role_name in role_descriptions_dict.keys():
+            st.write(f"{role_name}:\n"
+                     f"{role_descriptions_dict[role_name]}\n")
 
         # print_and_write_md(
         #     f"{role_name}:\n" + f"{role_descriptions_dict[role_name]}\n",
@@ -81,17 +94,17 @@ def main(model_type=None, task_prompt=None, context_text=None) -> None:
     # st.write(Fore.YELLOW + f"Original task prompt:\n{task_prompt}")
     # print_and_write_md(f"Original task prompt:\n{task_prompt}",
     #                    color=Fore.YELLOW)
-    st.write(f"List of {len(subtasks)} subtasks:")
-    # print_and_write_md(f"List of {len(subtasks)} subtasks:",
-    # color=Fore.YELLOW)
-    for i, subtask in enumerate(subtasks):
-        st.write(f"Subtask {i + 1}:\n{subtask}")
-        # print_and_write_md(f"Subtask {i + 1}:\n{subtask}", color=Fore.YELLOW)
-    for idx, subtask_group in enumerate(parallel_subtask_pipelines, 1):
-        st.write(f"Pipeline {idx}: {', '.join(subtask_group)}")
-        # print_and_write_md(f"Pipeline {idx}: {', '.join(subtask_group)}",
-        #                    color=Fore.YELLOW)
-    st.write("==========================================")
+    with st.expander(f"List of {len(subtasks)} subtasks:"):
+        # print_and_write_md(f"List of {len(subtasks)} subtasks:",
+        # color=Fore.YELLOW)
+        for i, subtask in enumerate(subtasks):
+            st.write(f"Subtask {i + 1}:\n{subtask}")
+            # print_and_write_md(f"Subtask {i + 1}:\n{subtask}",
+            #  color=Fore.YELLOW)
+        for idx, subtask_group in enumerate(parallel_subtask_pipelines, 1):
+            st.write(f"Pipeline {idx}: {', '.join(subtask_group)}")
+            # print_and_write_md(f"Pipeline {idx}: {', '.join(subtask_group)}",
+            #                    color=Fore.YELLOW)
     # print_and_write_md("==========================================",
     #                    color=Fore.WHITE)
 
@@ -139,7 +152,6 @@ def main(model_type=None, task_prompt=None, context_text=None) -> None:
         ai_assistant_description = role_descriptions_dict[ai_assistant_role]
         ai_user_description = role_descriptions_dict[ai_user_role]
 
-        st.write("==========================================")
         # print_and_write_md("==========================================",
         #                    color=Fore.WHITE)
         st.write(f"Subtask: \n{one_subtask}\n")
