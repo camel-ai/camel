@@ -37,7 +37,8 @@ bs4 = "^0"
 protobuf = "^4"
 docx2txt = "^0.8" 
 PyMuPDF = "^1.22.5"  
-pathlib = "^1.0.1"   
+pathlib = "^1.0.1"  
+matplotlib =  "^3.7.3"
 
 transformers = { version = "^4", optional = true }
 diffusers = { version = "^0", optional = true }
@@ -141,6 +142,7 @@ module = [
     "bs4.*",
     "docx2txt",
     "PyMuPDF",
-    "fitz"
+    "fitz",
+    "matplotlib"
 ]
 ignore_missing_imports = true
