@@ -38,11 +38,13 @@ class ChatHistoryMemory(BaseMemory):
     the chat history.
 
     Args:
-        storage (BaseDictStorage): A storage mechanism for storing chat
-            history.
+        context_creator (BaseContextCreator): A context creator contianing
+            the context limit and the message pruning strategy.
+        storage (BaseDictStorage, optional): A storage mechanism for storing
+            chat history. (default: :obj:`InMemoryDictStorage()`)
         window_size (int, optional): Specifies the number of recent chat
             messages to retrieve. If not provided, the entire chat history
-            will be retrieved.
+            will be retrieved. (default: :obj:`None`)
     """
 
     def __init__(
@@ -57,12 +59,14 @@ class ChatHistoryMemory(BaseMemory):
 
     def get_context(self) -> Tuple[List[OpenAIMessage], int]:
         """
-        Retrieves chat messages from the memory based on the window size or
-        fetches the entire chat history if no window size is specified.
+        Gets chat context with proper size for a LLM from the memory based on
+        the window size or fetches the entire chat history if no window size is
+        specified.
 
         Returns:
-            List[OpenAIMessage]: A list of memory records retrieved from the
-                memory.
+            (List[OpenAIMessage], int): A tuple with pruned OpenAI-style
+                messages that fits into corresponding model and its token
+                number.
 
         Raises:
             ValueError: If the memory is empty or if the first message in the

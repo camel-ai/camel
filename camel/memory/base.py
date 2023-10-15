@@ -64,10 +64,10 @@ class BaseMemory(ABC):
 
     def write_record(self, record: MemoryRecord) -> None:
         """
-        Writes a record to the memory, appending them to existing ones.
+        Writes a record to the memory, appending it to existing ones.
 
         Args:
-            record (List[MemoryRecord]): Record to be added to the memory.
+            record (MemoryRecord): Record to be added to the memory.
         """
         self.write_records([record])
 
