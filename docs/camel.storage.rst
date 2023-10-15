@@ -1,10 +1,10 @@
-camel.memory package
+camel.storage package
 ======================
 
 Module contents
 ---------------
 
-.. automodule:: camel.memory
+.. automodule:: camel.storage
    :members:
    :undoc-members:
    :show-inheritancek

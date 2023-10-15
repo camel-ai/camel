@@ -10,6 +10,7 @@ Subpackages
    camel.agents
    camel.prompts
    camel.memory
+   camel.storage
 
 Submodules
 ----------
