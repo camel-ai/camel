@@ -338,7 +338,7 @@ files = [
 name = "cffi"
 version = "1.16.0"
 description = "Foreign Function Interface for Python calling C code."
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "cffi-1.16.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:6b3d6606d369fc1da4fd8c357d026317fbb9c9b75d36dc16e90e84c26854b088"},
@@ -1868,6 +1868,17 @@ files = [
 ]
 
 [[package]]
+name = "networkx"
+version = "0.99"
+description = "Python package for creating and manipulating graphs and networks"
+optional = false
+python-versions = "*"
+files = [
+    {file = "networkx-0.99.tar.gz", hash = "sha256:8b65557c6048a2bc4d5fb0fe539139d3656d9c86367c89297ad40e12e90766ad"},
+    {file = "networkx-0.99.zip", hash = "sha256:404a73789222a58293529263ff11dd982141ba9324ef18f418c6aabd61f568f4"},
+]
+
+[[package]]
 name = "nodeenv"
 version = "1.8.0"
 description = "Node.js virtual environment builder"
@@ -2407,7 +2418,7 @@ files = [
 name = "pycparser"
 version = "2.21"
 description = "C parser in Python"
-optional = true
+optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 files = [
     {file = "pycparser-2.21-py2.py3-none-any.whl", hash = "sha256:8ee45429555515e1f6b185e78100aea234072576aa43ab53aefcae078162fca9"},
@@ -4319,4 +4330,4 @@ huggingface-agent = ["accelerate", "datasets", "diffusers", "opencv-python", "se
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8.1"
-content-hash = "e4623eb92b9d507aca01d5ca7c563458cfd8f39d3ecca42757c9ec219e85cc1d"
+content-hash = "8a2d1d1ca9645e314d7c8e5d47d87c1bee856fad90be735633bd0aaa28ca3537"
