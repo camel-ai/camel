@@ -154,15 +154,15 @@ def main(model_type=None, task_prompt=None, context_text=None) -> None:
 
         # print_and_write_md("==========================================",
         #                    color=Fore.WHITE)
-        st.write(f"Subtask: \n{one_subtask}\n")
+        # st.write(f"Subtask: \n{one_subtask}\n")
         # print_and_write_md(f"Subtask: \n{one_subtask}\n", color=Fore.YELLOW)
-        st.write(f"AI Assistant Role: {ai_assistant_role}\n"
-                 f"{ai_assistant_description}\n")
+        # st.write(f"AI Assistant Role: {ai_assistant_role}\n"
+        #          f"{ai_assistant_description}\n")
         # print_and_write_md(
         #     f"AI Assistant Role: {ai_assistant_role}\n" +
         #     f"{ai_assistant_description}\n", color=Fore.GREEN)
-        st.write(f"AI User Role: {ai_user_role}\n"
-                 f"{ai_user_description}\n")
+        # st.write(f"AI User Role: {ai_user_role}\n"
+        #          f"{ai_user_description}\n")
         # print_and_write_md(
         #     f"AI User Role: {ai_user_role}\n" + f"{ai_user_description}\n",
         #     color=Fore.BLUE)
@@ -198,51 +198,56 @@ def main(model_type=None, task_prompt=None, context_text=None) -> None:
 
         chat_turn_limit, n = 50, 0
         input_assistant_msg, _ = role_play_session.init_chat()
-        while n < chat_turn_limit:
-            n += 1
-            assistant_response, user_response = role_play_session.step(
-                input_assistant_msg)
+        with st.expander(f"Subtask: \n{one_subtask}\n"):
+            while n < chat_turn_limit:
+                n += 1
+                assistant_response, user_response = role_play_session.step(
+                    input_assistant_msg)
 
-            if assistant_response.terminated:
-                st.write(
-                    (f"{ai_assistant_role} terminated. Reason: "
-                     f"{assistant_response.info['termination_reasons']}."))
-                break
-            if user_response.terminated:
-                st.write(
-                    (f"{ai_user_role} terminated. "
-                     f"Reason: {user_response.info['termination_reasons']}."))
-                break
+                if assistant_response.terminated:
+                    st.write(
+                        (f"{ai_assistant_role} terminated. Reason: "
+                         f"{assistant_response.info['termination_reasons']}."))
+                    break
+                if user_response.terminated:
+                    st.write((
+                        f"{ai_user_role} terminated. "
+                        f"Reason: {user_response.info['termination_reasons']}."
+                    ))
+                    break
 
-            # print_text_animated(
-            #     Fore.BLUE +
-            #     f"AI User: {ai_user_role}\n\n{user_response.msg.content}\n")
-            # print_text_animated(Fore.GREEN +
-            #                     f"AI Assistant: {ai_assistant_role}\n\n" +
-            #                     f"{assistant_response.msg.content}\n")
-            # print_text_animated()
-            with st.chat_message("user"):
-                st.write(f"AI User: {ai_user_role}\n\n" +
-                         f"{user_response.msg.content}\n")
-            # print_and_write_md(
-            #     f"AI User: {ai_user_role}\n\n" +
-            #     f"{user_response.msg.content}\n", color=Fore.BLUE)
-            with st.chat_message("assistant"):
-                st.write(f"AI Assistant: {ai_assistant_role}\n\n" +
-                         f"{assistant_response.msg.content}\n")
-            # print_and_write_md(
-            #     f"AI Assistant: {ai_assistant_role}\n\n" +
-            #     f"{assistant_response.msg.content}\n", color=Fore.GREEN)
+                # print_text_animated(
+                #     Fore.BLUE +
+                #     f"AI User:
+                # {ai_user_role}\n\n{user_response.msg.content}\n")
+                # print_text_animated(Fore.GREEN +
+                #                     f"AI Assistant:
+                # {ai_assistant_role}\n\n" +
+                #                     f"{assistant_response.msg.content}\n")
+                # print_text_animated()
+                with st.chat_message("user"):
+                    st.write(f"AI User: {ai_user_role}\n\n" +
+                             f"{user_response.msg.content}\n")
+                # print_and_write_md(
+                #     f"AI User: {ai_user_role}\n\n" +
+                #     f"{user_response.msg.content}\n", color=Fore.BLUE)
+                with st.chat_message("assistant"):
+                    st.write(f"AI Assistant: {ai_assistant_role}\n\n" +
+                             f"{assistant_response.msg.content}\n")
+                # print_and_write_md(
+                #     f"AI Assistant: {ai_assistant_role}\n\n" +
+                #     f"{assistant_response.msg.content}\n", color=Fore.GREEN)
 
-            if "CAMEL_TASK_DONE" in user_response.msg.content:
-                break
+                if "CAMEL_TASK_DONE" in user_response.msg.content:
+                    break
 
-            # Generate the insights from the chat history
-            chat_history_assistant += (f"===== [{n}] ===== \n"
-                                       f"{user_response.msg.content}\n"
-                                       f"{assistant_response.msg.content}\n")
+                # Generate the insights from the chat history
+                chat_history_assistant += (
+                    f"===== [{n}] ===== \n"
+                    f"{user_response.msg.content}\n"
+                    f"{assistant_response.msg.content}\n")
 
-            input_assistant_msg = assistant_response.msg
+                input_assistant_msg = assistant_response.msg
 
         # TODO: Generate insights from the chat history
         # insights_instruction = ("The CONTEXT TEXT is related to code " +
