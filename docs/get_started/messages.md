@@ -129,4 +129,4 @@ The `BaseMessage` class offers several methods:
 
 These methods allow you to convert a `BaseMessage` instance into different message types depending on your needs.
 
-In this session, we introduced various message types and classes related to the `BaseMessage` class. These components play essential roles in the CAMEL chat system, facilitating the creation, management, and interpretation of messages with clarity.
+In this session, we introduced the `BaseMessage` class and its conversion to different types of messages. These components play essential roles in the CAMEL chat system, facilitating the creation, management, and interpretation of messages with clarity.
