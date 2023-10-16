@@ -329,7 +329,7 @@ class ChatAgent(BaseAgent):
                 for terminator in self.response_terminators:
                     self.terminated, termination_reason = \
                         terminator.is_terminated(output_messages)
-                    if self.terminated:
+                    if self.terminated and termination_reason is not None:
                         finish_reasons = [
                             termination_reason
                             for _ in range(len(finish_reasons))
