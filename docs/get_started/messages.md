@@ -68,7 +68,7 @@ The `BaseMessage` class has the following properties:
 - `meta_dict`: A dictionary containing additional metadata for the message, which can be optional.
 - `content`: A string containing the content of the message.
 
-In the example provided earlier, the `role_name` is `"test_user"`, the `role_type` is `RoleType.USER`, the `meta_dict` is `{"key": "value"}`, and the `content` is `"test content"`.
+In the example provided earlier, the `role_name` is `"user_name"`, the `role_type` is `RoleType.USER`, and the `content` is `"test content"`.
 
 ## Using the Methods of the `BaseMessage` Class
 
