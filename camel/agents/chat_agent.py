@@ -93,8 +93,10 @@ class ChatAgent(BaseAgent):
             is performed. (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
-        function_list (Optional[List[OpenAIFunction]]): List of available
+        function_list (List[OpenAIFunction], optional): List of available
             :obj:`OpenAIFunction`. (default: :obj:`None`)
+        response_terminators (List[ResponseTerminator], optional): List of
+            :obj:`ResponseTerminator` bind to one chat agent.
     """
 
     def __init__(
@@ -133,7 +135,7 @@ class ChatAgent(BaseAgent):
         self.terminated: bool = False
         self.token_limit_terminator = TokenLimitTerminator(
             self.model_token_limit)
-        self.response_terminators = response_terminators
+        self.response_terminators = response_terminators or []
         self.stored_messages: List[ChatRecord]
         self.init_messages()
 
@@ -147,6 +149,8 @@ class ChatAgent(BaseAgent):
         self.terminated = False
         self.init_messages()
         self.token_limit_terminator.reset()
+        for terminator in self.response_terminators:
+            terminator.reset()
 
     @property
     def system_message(self) -> BaseMessage:
@@ -292,7 +296,6 @@ class ChatAgent(BaseAgent):
             self.terminated, termination_reason = \
                 self.token_limit_terminator.is_terminated(num_tokens)
             if self.terminated:
-                assert isinstance(termination_reason, str)
                 return self.step_token_exceed(num_tokens, called_funcs,
                                               termination_reason)
 
@@ -320,6 +323,14 @@ class ChatAgent(BaseAgent):
                 called_funcs.append(func_record)
             else:
                 # Function calling disabled or chat stopped
+
+                # Loop over responses terminators
+                for terminator in self.response_terminators:
+                    self.terminated, termination_reason = \
+                        terminator.is_terminated(output_messages)
+                    finish_reasons = [
+                        termination_reason for _ in range(len(finish_reasons))
+                    ]
                 info = self.get_info(
                     response_id,
                     usage_dict,
@@ -329,15 +340,6 @@ class ChatAgent(BaseAgent):
                 )
                 break
 
-        # Loop over responses terminations
-        if self.response_terminators is not None:
-            for terminator in self.response_terminators:
-                terminated, termination_reason = terminator.is_terminated(
-                    output_messages)
-                if terminated:
-                    for i in range(len(info["termination_reasons"])):
-                        info["termination_reasons"][i] = termination_reason
-                    self.terminated = terminated
         return ChatAgentResponse(output_messages, self.terminated, info)
 
     def preprocess_messages(

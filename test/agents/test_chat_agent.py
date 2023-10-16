@@ -309,7 +309,7 @@ def test_response_words_termination():
                                  role_type=RoleType.ASSISTANT, meta_dict=None,
                                  content="You are a help assistant.")
     response_terminator = ResponseWordsTerminator(words_dict=dict(goodbye=1))
-    model_config = ChatGPTConfig(temperature=0)
+    model_config = ChatGPTConfig(temperature=0, n=2)
     agent = ChatAgent(system_message=system_message,
                       model=ModelType.GPT_3_5_TURBO, model_config=model_config,
                       response_terminators=[response_terminator])
