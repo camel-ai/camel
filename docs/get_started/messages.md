@@ -56,7 +56,6 @@ Additionally, the BaseMessage class provides class methods to easily create user
     assistant_message = BaseMessage.make_assistant_message(
         role_name="assistant_name",
         content="test content for assistant",
-        meta_dict={"key": "value"}
     )
     ```
 
