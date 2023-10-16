@@ -121,7 +121,6 @@ The `BaseMessage` class offers several methods:
     print(message_dict == {
         "role_name": "test_user",
         "role_type": "USER",
-        "key": "value",
         "content": "test content"
     })
     >>> True
