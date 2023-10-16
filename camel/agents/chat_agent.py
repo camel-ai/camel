@@ -97,6 +97,7 @@ class ChatAgent(BaseAgent):
             :obj:`OpenAIFunction`. (default: :obj:`None`)
         response_terminators (List[ResponseTerminator], optional): List of
             :obj:`ResponseTerminator` bind to one chat agent.
+            (default: :obj:`None`)
     """
 
     def __init__(
@@ -295,7 +296,7 @@ class ChatAgent(BaseAgent):
             # Terminate when number of tokens exceeds the limit
             self.terminated, termination_reason = \
                 self.token_limit_terminator.is_terminated(num_tokens)
-            if self.terminated:
+            if self.terminated and termination_reason is not None:
                 return self.step_token_exceed(num_tokens, called_funcs,
                                               termination_reason)
 
@@ -328,9 +329,11 @@ class ChatAgent(BaseAgent):
                 for terminator in self.response_terminators:
                     self.terminated, termination_reason = \
                         terminator.is_terminated(output_messages)
-                    finish_reasons = [
-                        termination_reason for _ in range(len(finish_reasons))
-                    ]
+                    if self.terminated:
+                        finish_reasons = [
+                            termination_reason
+                            for _ in range(len(finish_reasons))
+                        ]
                 info = self.get_info(
                     response_id,
                     usage_dict,
