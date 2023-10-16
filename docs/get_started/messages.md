@@ -45,7 +45,6 @@ Additionally, the BaseMessage class provides class methods to easily create user
     user_message = BaseMessage.make_user_message(
         role_name="user_name", 
         content="test content for user",
-        meta_dict={"key": "value"}
     )
     ```
 
