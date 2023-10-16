@@ -48,7 +48,7 @@ Additionally, the BaseMessage class provides class methods to easily create user
     )
     ```
 
-2. Creating an assistant message:
+2. Creating an assistant agent message:
 
     ```python
     from camel.messages import BaseMessage
