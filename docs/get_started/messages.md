@@ -23,7 +23,8 @@ To create a `BaseMessage` instance, you need to provide the following arguments:
 Here's an example of creating a `BaseMessage` instance:
 
 ```python
-from camel.messages import BaseMessage, RoleType
+from camel.messages import BaseMessage
+from camel.typing import RoleType
 
 message = BaseMessage(
     role_name="test_user",
