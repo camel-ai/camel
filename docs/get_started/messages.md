@@ -43,7 +43,7 @@ Additionally, the BaseMessage class provides class methods to easily create user
     from camel.messages import BaseMessage
 
     user_message = BaseMessage.make_user_message(
-        role_name="test_user", 
+        role_name="user_name", 
         content="test content for user",
         meta_dict={"key": "value"}
     )
