@@ -39,7 +39,7 @@ docx2txt = "^0.8"
 PyMuPDF = "^1.22.5"  
 pathlib = "^1.0.1"  
 matplotlib =  "^3.7.3"
-networkx = "^0"
+networkx = "^3.1"
 cffi = "^1.16.0"
 
 transformers = { version = "^4", optional = true }

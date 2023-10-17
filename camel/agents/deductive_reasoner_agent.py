@@ -167,6 +167,7 @@ Given the starting state $A$ and the target state $B$, assuming that a path $L$ 
                                f"{response.info}")
         msg = response.msg  # type: BaseMessage
 
+        print(msg.content)
         condistions_dict = {
             f"condition {i}":
             cdt.replace("<", "").replace(">", "").strip().strip('\n')
