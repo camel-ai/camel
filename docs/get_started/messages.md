@@ -29,12 +29,11 @@ from camel.typing import RoleType
 message = BaseMessage(
     role_name="test_user",
     role_type=RoleType.USER,
-    role="user",
     content="test content"
 )
 ```
 
-Additionally, the BaseMessage class provides class methods to easily create user and assistant messages:
+Additionally, the BaseMessage class provides class methods to easily create user and assistant agent messages:
 
 1. Creating a user agent message:
 
@@ -57,17 +56,6 @@ Additionally, the BaseMessage class provides class methods to easily create user
         content="test content for assistant",
     )
     ```
-
-## Understanding the Properties of the BaseMessage Class
-
-The `BaseMessage` class has the following properties:
-
-- `role_name`: A string representing the name of the user or assistant role.
-- `role_type`: An instance of the `RoleType` enumeration, indicating whether the role is a user or an assistant.
-- `meta_dict`: A dictionary containing additional metadata for the message, which can be optional.
-- `content`: A string containing the content of the message.
-
-In the example `message` provided earlier, the `role_name` is `"test_user"`, the `role_type` is `RoleType.USER`, and the `content` is `"test content"`.
 
 ## Using the Methods of the `BaseMessage` Class
 
