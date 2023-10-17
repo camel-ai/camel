@@ -316,7 +316,7 @@ PART III:
                 "Input of subtask <NUM>:\n<BLANK>/None\n"
                 "Task completion standard of subtask <NUM>:\n<BLANK>\n"
                 "Dependency of subtask <NUM>: [subtask <i>, subtask <j>, "
-                "subtask <k>]/[None] (include square brackets)\nEnd."
+                "subtask <k>]/[None] (include square brackets)."
                 for _ in range(1)) + "\n\n"
         else:
             answer_prompt = """===== ANSWER TEMPLATE =====
@@ -335,7 +335,7 @@ PART III:
                 f"Task completion standard of subtask {i + 1}:\n<BLANK>\n"
                 f"Dependency of subtask {i + 1}: [subtask <i>, subtask "
                 f"<j>, subtask <k>]/[None] (include square brackets)"
-                f"\nEnd." for i in range(num_subtasks)) + "\n\n"
+                for i in range(num_subtasks)) + "\n\n"
         split_task_rules_prompt = """You are a task splitter, and you're in asked to break down the main TASK into {num_subtasks} manageable subtasks suitable for a team comprising {num_roles} domain experts. The experts will contribute to the {num_subtasks} subtasks. Please follow the guidelines below to craft your answer:
     1. Action-Oriented Foundation & Building Blocks: Ensure each subtask is actionable, distinct, tapping into the expertise of the assigned roles. Recognize that not every subtask needs to directly reflect the main TASK's ultimate aim. Some subtasks serve as essential building blocks, paving the way for more central subtasks, but avoid creating subtasks that are self-dependent or overly foundational.
     2. Balanced Granularity with a Bias for Action: While each subtask should be detailed and actionable, it should not be so ambiguous that it requires the input of more than two domain experts. Prioritize tangible actions in subtask such as implementation, creation, testing, or other tangible activities over mere understanding.
