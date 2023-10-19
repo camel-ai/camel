@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import (
-    Any,Union,List,Dict
+    Any,Union,List,Dict,Callable
     )
 
 from camel.prompts import TextPrompt
@@ -74,7 +74,7 @@ class MultiModalPrompt:
         text_prompt = self.text_prompt.format(*args, **kwargs)
         return MultiModalPrompt(text_prompt, multimodal_info)
     
-    def to_model_format(self, method:callable = default_to_model_format) -> Any:
+    def to_model_format(self, method:Callable = default_to_model_format) -> Any:
         r"""
         Converts the prompt to the input format that the multimodal model can understand. Different multimodal models have different input formats.
         The default format is return the text and multimodal information in dict.
