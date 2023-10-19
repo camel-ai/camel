@@ -3,6 +3,9 @@ fig/
 openai_key.json
 claude_key.json
 .DS_Store
+*.png
+.vscode/
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

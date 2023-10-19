@@ -27,6 +27,8 @@ TASK_NAME_MAP = {
 }
 
 def main(args):
+
+    
     assert args.task in TASK_NAME_MAP.keys(), f"Task {args.task} not supported"
     env_cl = TASK_NAME_MAP[args.task]
     if args.task == 'rope':
@@ -80,11 +82,15 @@ def main(args):
     json.dump(args_dict, open(fname, "w"), indent=2)
 
     obs = env.reset()
-    #img=env.physics.render(camera_id="ur5e_camera", height=480, width=600)
-    img=env.physics.render(camera_id="panda_camera", height=480, width=600)
+    img_ur5e=env.physics.render(camera_id="ur5e_camera", height=480, width=600)
+    img_panda=env.physics.render(camera_id="panda_camera", height=480, width=600)
 
-    im = Image.fromarray(img)
-    plt.imshow(img)
+    im = Image.fromarray(img_ur5e)
+    plt.imshow(img_ur5e)
+    plt.show()
+
+    im = Image.fromarray(img_panda)
+    plt.imshow(img_panda)
     plt.show()
 
 if __name__ == "__main__":

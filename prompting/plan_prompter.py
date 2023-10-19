@@ -259,7 +259,7 @@ Re-format to strictly follow [Action Output Instruction]!
                 print('======= usage ======= \n ', usage)
                 break
             except:
-                print("API error, try again")
+                print("API error in planning, try again")
             continue
         return response, usage
 

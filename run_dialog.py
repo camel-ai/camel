@@ -134,6 +134,7 @@ class LLMRunner:
             )
 
         else:
+            print('start to define prompter')
             self.prompter = DialogPrompter(
                 env=self.env,
                 parser=self.parser,
@@ -149,6 +150,7 @@ class LLMRunner:
                 temperature=self.temperature,
                 llm_source=llm_source,
             )
+            print('defined prompter')
 
 
     def display_plan(self, plan: LLMPathPlan, save_name = "vis_plan", save_dir = None): # save_dir = None
@@ -467,12 +469,12 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_dir", "-d", type=str, default="data")
-    parser.add_argument("--temperature", "-temp", type=float, default=0)
+    parser.add_argument("--temperature", "-temp", type=float, default=1.0) # 0
     parser.add_argument("--start_id", "-sid", type=int, default=-1)
     parser.add_argument("--num_runs", '-nruns', type=int, default=1)
     parser.add_argument("--run_name", "-rn", type=str, default="test")
     parser.add_argument("--tsteps", "-t", type=int, default=10)
-    parser.add_argument("--task", type=str, default="sort_one")
+    parser.add_argument("--task", type=str, default="sweep") #sort_one
     parser.add_argument("--output_mode", type=str, default="action_only", choices=["action_only", "action_and_path"])
     parser.add_argument("--comm_mode", type=str, default="dialog", choices=["chat", "plan", "dialog"])
     parser.add_argument("--control_freq", "-cf", type=int, default=15)
@@ -480,7 +482,7 @@ if __name__ == "__main__":
     parser.add_argument("--direct_waypoints", "-dw", type=int, default=5)
     parser.add_argument("--num_replans", "-nr", type=int, default=5)
     parser.add_argument("--cont", "-c", action="store_true")
-    parser.add_argument("--load_run_name", "-lr", type=str, default="sort_task")
+    parser.add_argument("--load_run_name", "-lr", type=str, default="sweep_task") # sort_task
     parser.add_argument("--load_run_id", "-ld", type=int, default=0)
     parser.add_argument("--max_failed_waypoints", "-max", type=int, default=1)
     parser.add_argument("--debug_mode", "-i", action="store_true")
@@ -489,7 +491,7 @@ if __name__ == "__main__":
     parser.add_argument("--split_parsed_plans", "-sp", action="store_true")
     parser.add_argument("--no_history", "-nh", action="store_true")
     parser.add_argument("--no_feedback", "-nf", action="store_true")
-    parser.add_argument("--llm_source", "-llm", type=str, default="gpt-4")
+    parser.add_argument("--llm_source", "-llm", type=str, default="gpt-3.5-turbo")
     logging.basicConfig(level=logging.INFO)
 
     args = parser.parse_args()

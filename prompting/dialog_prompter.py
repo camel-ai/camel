@@ -13,9 +13,54 @@ from rocobench.envs import MujocoSimEnv, EnvState
 from .feedback import FeedbackManager
 from .parser import LLMResponseParser
 
+####################
+##### minigpt4 #####
+
+######## debug ########
+import faulthandler
+
+import argparse
+import random
+from collections import defaultdict
+
+import cv2
+import re
+
+
+from PIL import Image
+import torch
+import html
+import gradio as gr
+
+import torchvision.transforms as T
+import torch.backends.cudnn as cudnn
+
+'''
+from .minigpt4.common.config import Config
+
+from .minigpt4.common.registry import registry
+from .minigpt4.conversation.conversation import Conversation, SeparatorStyle, Chat
+
+
+#from .minigpt4.datasets.builders import *
+
+from .minigpt4.models import *
+from .minigpt4.processors import *
+from .minigpt4.runners import *
+from .minigpt4.tasks import *
+'''''''''
+
+###################################
+
 assert os.path.exists("openai_key.json"), "Please put your OpenAI API key in a string in robot-collab/openai_key.json"
-OPENAI_KEY = str(json.load(open("openai_key.json")))
-openai.api_key = OPENAI_KEY
+#OPENAI_KEY = str(json.load(open("openai_key.json")))
+#openai.api_key = OPENAI_KEY
+#print(openai.api_key)
+with open("openai_key.json") as f:
+    data = json.load(f)
+    #openai.api_key = json.load(f)
+openai.api_key = data["api_key"]
+#print(openai.api_key)
 
 PATH_PLAN_INSTRUCTION="""
 [Path Plan Instruction]
@@ -33,6 +78,10 @@ Each <coord> is a tuple (x,y,z) for gripper location, follow these steps to plan
     If a plan failed to execute, re-plan to choose more feasible steps in each PATH, or choose different actions.
 """
 
+###################
+##### minigpt4 ####
+###################
+
 class DialogPrompter:
     """
     Each round contains multiple prompts, query LLM once per each agent 
@@ -42,7 +91,7 @@ class DialogPrompter:
         env: MujocoSimEnv,
         parser: LLMResponseParser,
         feedback_manager: FeedbackManager, 
-        max_tokens: int = 512,
+        max_tokens: int = 512 * 8, # 512
         debug_mode: bool = False,
         use_waypoints: bool = False,
         robot_name_map: Dict[str, str] = {"panda": "Bob"},
@@ -70,7 +119,61 @@ class DialogPrompter:
         self.max_calls_per_round = max_calls_per_round 
         self.temperature = temperature
         self.llm_source = llm_source
-        assert llm_source in ["gpt-4", "gpt-3.5-turbo", "claude"], f"llm_source must be one of [gpt4, gpt-3.5-turbo, claude], got {llm_source}"
+
+        ##### minigpt4 #####
+        '''
+        random.seed(42)
+        np.random.seed(42)
+        torch.manual_seed(42)
+
+        cudnn.benchmark = False
+        cudnn.deterministic = True
+
+        def parse_args():
+            parser = argparse.ArgumentParser(description="Demo")
+            parser.add_argument("--cfg-path", default='prompting/eval_configs/minigptv2_eval.yaml',
+                                help="path to configuration file.")
+            parser.add_argument("--gpu-id", type=int, default=0, help="specify the gpu to load the model.")
+            parser.add_argument(
+                "--options",
+                nargs="+",
+                help="override some settings in the used config, the key-value pair "
+                    "in xxx=yyy format will be merged into config file (deprecate), "
+                    "change to --cfg-options instead.",
+            )
+            args = parser.parse_args()
+            return args
+
+        print('Initializing Chat')
+        args = parse_args()
+        cfg = Config(args)
+
+        device = 'cuda:{}'.format(args.gpu_id)
+
+        model_config = cfg.model_cfg
+        model_config.device_8bit = args.gpu_id
+        model_cls = registry.get_model_class(model_config.arch)
+        model = model_cls.from_config(model_config).to(device)
+        bounding_box_size = 100
+
+        vis_processor_cfg = cfg.datasets_cfg.cc_sbu_align.vis_processor.train
+        vis_processor = registry.get_processor_class(vis_processor_cfg.name).from_config(vis_processor_cfg)
+
+        model = model.eval()
+
+        self.CONV_VISION = Conversation(
+            system="",
+            roles=(r"<s>[INST] ", r" [/INST]"),
+            messages=[],
+            offset=2,
+            sep_style=SeparatorStyle.SINGLE,
+            sep="",
+        )
+
+        self.chat = Chat(model, vis_processor, device=device)
+        print('load model')
+        '''
+        assert llm_source in ["gpt-4", "gpt-3.5-turbo", "claude", "minigpt4", "llava"], f"llm_source must be one of [gpt4, gpt-3.5-turbo, claude], got {llm_source}"
 
     def compose_system_prompt(
         self, 
@@ -130,8 +233,8 @@ class DialogPrompter:
             curr_feedback = "None"
             if not parse_succ:  
                 curr_feedback = f"""
-This previous response from [{final_agent}] failed to parse!: '{final_response}'
-{parsed_str} Re-format to strictly follow [Action Output Instruction]!"""
+                This previous response from [{final_agent}] failed to parse!: '{final_response}'
+                {parsed_str} Re-format to strictly follow [Action Output Instruction]!"""
                 ready_to_execute = False  
             
             else:
@@ -263,6 +366,7 @@ Your response is:
         for n in range(max_query):
             print('querying {}th time'.format(n))
             try:
+                #if self.llm_source == 'gpt-4' or 'gpt-3.5-turbo':
                 response = openai.ChatCompletion.create(
                     model=self.llm_source, 
                     messages=[
@@ -272,13 +376,46 @@ Your response is:
                     max_tokens=self.max_tokens,
                     temperature=self.temperature,
                     )
+                # else
+                '''
+                if self.llm_source == 'minigpt4':
+                    text_input = 'Is there any cube within the trashbin?'
+                    img = Image.open('./Figure_1.png').convert("RGB")
+                    #img.show() 
+
+                    user_message = text_input
+
+        
+                    if isinstance(img, dict):
+                        img, mask = img['image'], img['mask']
+                    else:
+                        mask = None
+
+                    if '[identify]' in user_message:
+                        # check if user provide bbox in the text input
+                        integers = re.findall(r'-?\d+', user_message)
+                        if len(integers) != 4:  # no bbox in text
+                            bbox = self.mask2bbox(mask)
+                            user_message = user_message + bbox
+                    
+
+                    chat_state = self.CONV_VISION.copy()
+                    img_list = []
+                    llm_message = self.chat.upload_img(img, chat_state, img_list)
+                    self.chat.ask(user_message, chat_state)
+                    temperature = 1.0
+                    chat_state, ans = self.stream_answer(chat_state, img_list, temperature)
+                    print(ans)
+                '''
+                
                 usage = response['usage']
                 response = response['choices'][0]['message']["content"]
                 print('======= response ======= \n ', response)
                 print('======= usage ======= \n ', usage)
                 break
+                
             except:
-                print("API error, try again")
+                print("API error in dialog, try again")
             continue
         # breakpoint()
         return response, usage
@@ -302,3 +439,137 @@ Your response is:
         self.round_history = []
         self.failed_plans = [] 
         self.latest_chat_history = []
+
+    ###################
+    ##### minigpt4 ####
+    ###################
+
+    def extract_substrings(self, string):
+        # first check if there is no-finished bracket
+        index = string.rfind('}')
+        if index != -1:
+            string = string[:index + 1]
+
+        pattern = r'<p>(.*?)\}(?!<)'
+        matches = re.findall(pattern, string)
+        substrings = [match for match in matches]
+
+        return substrings
+
+    def save_tmp_img(self, visual_img):
+        file_name = "".join([str(random.randint(0, 9)) for _ in range(5)]) + ".jpg"
+        file_path = "/tmp/" + file_name
+        visual_img.save(file_path)
+        return file_path
+
+
+    def mask2bbox(self, mask):
+        if mask is None:
+            return ''
+        mask = mask.resize([100, 100], resample=Image.NEAREST)
+        mask = np.array(mask)[:, :, 0]
+
+        rows = np.any(mask, axis=1)
+        cols = np.any(mask, axis=0)
+
+        if rows.sum():
+            # Get the top, bottom, left, and right boundaries
+            rmin, rmax = np.where(rows)[0][[0, -1]]
+            cmin, cmax = np.where(cols)[0][[0, -1]]
+            bbox = '{{<{}><{}><{}><{}>}}'.format(cmin, rmin, cmax, rmax)
+        else:
+            bbox = ''
+
+        return bbox
+
+
+    def escape_markdown(self, text):
+        # List of Markdown special characters that need to be escaped
+        md_chars = ['<', '>']
+
+        # Escape each special character
+        for char in md_chars:
+            text = text.replace(char, '\\' + char)
+
+        return text
+
+
+    def reverse_escape(self, text):
+        md_chars = ['\\<', '\\>']
+
+        for char in md_chars:
+            text = text.replace(char, char[1:])
+
+        return text
+
+
+
+    def ask(self, user_message, chatbot, chat_state, img, img_list, upload_flag, replace_flag):
+        if isinstance(img, dict):
+            img, mask = img['image'], img['mask']
+        else:
+            mask = None
+
+        if '[identify]' in user_message:
+            # check if user provide bbox in the text input
+            integers = re.findall(r'-?\d+', user_message)
+            if len(integers) != 4:  # no bbox in text
+                bbox = mask2bbox(mask)
+                user_message = user_message + bbox
+
+        if len(user_message) == 0:
+            return gr.update(interactive=True, placeholder='Input should not be empty!'), chatbot, chat_state
+
+        if chat_state is None:
+            chat_state = CONV_VISION.copy()
+
+        '''
+        print('upload flag: {}'.format(upload_flag))
+        if upload_flag:
+            if replace_flag:
+                print('RESET!!!!!!!')
+                chat_state = CONV_VISION.copy()  # new image, reset everything
+                replace_flag = 0
+                chatbot = []
+            print('UPLOAD IMAGE!!')
+            img_list = []
+            llm_message = chat.upload_img(img, chat_state, img_list)
+            upload_flag = 0
+        '''
+
+        chat.ask(user_message, chat_state)
+
+        chatbot = chatbot + [[user_message, None]]
+        
+        '''
+        if '[identify]' in user_message:
+            visual_img, _ = visualize_all_bbox_together(gr_img, user_message)
+            if visual_img is not None:
+                print('Visualizing the input')
+                file_path = save_tmp_img(visual_img)
+                chatbot = chatbot + [[(file_path,), None]]
+        '''
+
+        return '', chatbot, chat_state, img_list, upload_flag, replace_flag
+
+
+
+    def stream_answer(self, chat_state, img_list, temperature):
+        print('chat state', chat_state.get_prompt())
+        if not isinstance(img_list[0], torch.Tensor):
+            chat.encode_img(img_list)
+        streamer = chat.stream_answer(conv=chat_state,
+                                    img_list=img_list,
+                                    temperature=temperature,
+                                    max_new_tokens=500,
+                                    max_length=2000)
+        output = ''
+        for new_output in streamer:
+            escapped = escape_markdown(new_output)
+            output += escapped
+            #chatbot[-1][1] = output
+            #yield chatbot, chat_state
+            #yield chat_state
+        #     print('message: ', chat_state.messages)
+        chat_state.messages[-1][1] = '</s>'
+        return chat_state, output

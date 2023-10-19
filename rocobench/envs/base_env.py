@@ -20,6 +20,8 @@ from dm_control.utils.transformations import mat_to_quat, quat_to_euler
 from .env_utils import AllowArbitraryTypes
 from .constants import UR5E_ROBOTIQ_CONSTANTS, UR5E_SUCTION_CONSTANTS, PANDA_CONSTANTS
 
+##### debug #####
+import traceback
 
 @dataclasses.dataclass(frozen=False)
 class MjSite:
@@ -248,6 +250,10 @@ class MujocoSimEnv:
             except Exception as e:
                 print("Got Error: ", e)
                 print("Camera {} does not exist in the xml file".format(cam))
+                #traceback.print_exc()
+                #traceback.print_exc()
+                #traceback.format_exc()
+            
             self.render_buffers[cam] = deque(maxlen=3000)
         self.render_cameras = render_cameras
         self.render_freq = render_freq

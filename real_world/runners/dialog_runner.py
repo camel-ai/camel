@@ -13,9 +13,15 @@ from real_world.prompts import LLMResponseParser, FeedbackManager, DialogPrompte
 logging.basicConfig(level=logging.INFO)
 logging.root.setLevel(logging.INFO)
 
-key_path="../openai_key.json"  # TODO: change this to your own key 
-OPENAI_KEY = json.load(open(key_path))
-openai.api_key = OPENAI_KEY 
+#key_path="../openai_key.json"  # TODO: change this to your own key 
+#OPENAI_KEY = json.load(open(key_path))
+#openai.api_key = OPENAI_KEY
+
+with open("openai_key.json") as f:
+    data = json.load(f)
+    #openai.api_key = json.load(f)
+openai.api_key = data["api_key"]
+print(openai.api_key) 
 
 WS_CROP_X = (180, -120)
 WS_CROP_Y = (300, -380)
