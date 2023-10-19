@@ -11,14 +11,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, Callable, Dict, List, Union
+from typing import (
+    Any, Union, List, Dict, Callable
+)
 
 from camel.prompts import TextPrompt
+
 
 MODALITIES = ["CAMEL_IMAGE"]
 
 
-def default_to_model_format(text_prompt,modalities_dict:Dict) -> Dict:
+def default_to_model_format(text_prompt, modalities_dict: Dict) -> Dict:
     r"""
     The default format is return the text and multimodal information in dict.
     This function should be implemented in the multimodal prompt class.
@@ -29,13 +32,14 @@ def default_to_model_format(text_prompt,modalities_dict:Dict) -> Dict:
 
     return {"text": text_prompt, "multimodal_information": modalities_dict}
 
+
 class MultiModalPrompt:
     r"""
     To enable information transfer between multimodal agents, we need a multimodal prompt class.
     It contains a text prompt and multimodal information.
     """
 
-    def __init__(self,text_prompt:TextPrompt, modalities: Union[List, Dict]):
+    def __init__(self, text_prompt: TextPrompt, modalities: Union[List, Dict]):
         r"""
         Initializes the multimodal prompt.
 
@@ -49,7 +53,7 @@ class MultiModalPrompt:
 
         self.text_prompt = text_prompt
         self.modalities = modalities
-    
+
     def format(self, *args: Any, **kwargs: Any) -> 'MultiModalPrompt':
         r"""
         Formats the text prompt and the multimodal information at the same time.
@@ -59,7 +63,7 @@ class MultiModalPrompt:
             *args (Any): Variable length argument list.
             **kwargs (Any): Arbitrary keyword arguments.
 
-        Returns:    
+        Returns:
             MultiModalPrompt: The formatted multimodal prompt.
         """
 
@@ -70,8 +74,10 @@ class MultiModalPrompt:
 
         text_prompt = self.text_prompt.format(*args, **kwargs)
         return MultiModalPrompt(text_prompt, multimodal_info)
-    
-    def to_model_format(self, method:Callable = default_to_model_format) -> Any:
+
+    def to_model_format(
+            self,
+            method: Callable = default_to_model_format) -> Any:
         r"""
         Converts the prompt to the input format that the multimodal model can understand. Different multimodal models have different input formats.
         The default format is return the text and multimodal information in dict.
@@ -82,11 +88,6 @@ class MultiModalPrompt:
         """
 
         return method(self.text_prompt, self.modalities)
-    
-
-
-        
-
 
 
 # TODO: MultiModalPromptDict
