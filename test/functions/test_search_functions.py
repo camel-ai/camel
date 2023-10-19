@@ -41,10 +41,9 @@ def test_search_wiki_not_found():
 
 
 def test_search_wiki_with_ambiguity():
-    entity = "New York (state)"
-    expected_output = wikipedia.summary(entity, sentences=5,
+    expected_output = wikipedia.summary("New York City", sentences=5,
                                         auto_suggest=False)
-    assert search_wiki(entity) == expected_output
+    assert search_wiki("New York") == expected_output
 
 
 def test_google_api():
