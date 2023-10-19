@@ -28,7 +28,8 @@ from camel.typing import RoleType, TaskType
 
 
 class BabyAGI:
-    r"""BabyAGI Agent.
+    r"""The BabyAGI Agent adapted from `"Task-driven Autonomous Agent"
+    <https://github.com/yoheinakajima/babyagi>`_.
 
     Args:
         assistant_role_name (str): The name of the role played by the
@@ -202,7 +203,7 @@ class BabyAGI:
     def step(self) -> ChatAgentResponse:
         r"""BabyAGI agent would pull the first task from the task list,
         complete the task based on the context, then creates new tasks and
-        reprioritizes the task list based on the objective and the result of
+        re-prioritizes the task list based on the objective and the result of
         the previous task. It returns assistant message.
 
         Returns:
