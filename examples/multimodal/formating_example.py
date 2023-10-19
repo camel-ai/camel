@@ -1,5 +1,6 @@
-from camel.prompts import TextPrompt, MultiModalPrompt
 from typing import List
+
+from camel.prompts import MultiModalPrompt, TextPrompt
 
 if __name__=="__main__":
     # example prompt for simple one image vqa, using default model input format
