@@ -80,11 +80,24 @@ class InsightAgent(ChatAgent):
                        "alter or modify any other part of the template.\n")
         context_text_prompt = TextPrompt(
             "===== CONTEXT TEXT =====\n{context_text}\n\n")
-        insights_prompt = """===== RULES OF INSIGHTS GENERATION =====
+        insights_prompt = """===== INSIGHTS GENERATION WITH MATHEMATICAL CONTEXT =====
+Understanding and generating insights from textual data can be represented by the model:
+``L_I: A_I -> n_I * B_I``.
+Where:
+- $A_I$: The initial CONTEXT TEXT.
+- $B_I$: The insights derived from the CONTEXT TEXT.
+- $n_I$: The number of insights generated.
+- $L_I$: The rules or methodology transforming the CONTEXT TEXT into insights.
+
+===== RULES OF INSIGHTS GENERATION =====
 According to the following rules, extract insights and details in your answer from the CONTEXT TEXT:
 1. Text/Code Decomposition (Breaking it Down):
-- Topic/Functionality Segmentation: Divide the text into main topics or themes. What is more, multiple topics or themes are possible.
-- Entity/Code Environment Recognition: Identify names, places, dates, specific technical terms or contextual parameters that might be associated with events, innovations post-2022.
+- Topic/Functionality Segmentation: Divide the CONTEXT TEXT (represented by $A_I$) into main topics or themes. What is more, multiple topics or themes are possible.
+- Entity/Label/Code Environment Recognition:
+    a. Identify and categorize entities such as the names, locations, dates, specific technical terms or contextual parameters that might be associated with events, innovations post-2022.
+    b. The output of the entities/labels will be used as tags or labels for semantic similarity searches. The entities/labels may be the words, or phrases, each of them should contain valuable, high information entropy information, and should be independent.
+    c. Ensure that the identified entities are formatted in a manner suitable for database indexing and retrieval. Organize the entities into categories, and combine the category with its instance into a continuous phrase, without using colons or other separators.
+    d. Format these entities for database indexing: output the category rather than its instance/content into a continuous phrase. For example, instead of "Jan. 02", identify it as "Event time".
 - Extract Details: Within these main topics or themes, identify key facts, statements, claims or contextual parameters. Please identify and write any detail(s) or term(s) from the CONTEXT TEXT that are either not present in your knowledge base, might be post-2022 developments, or can influence the nature of any task to be executed.
 2. Question Generation (Identifying Potential Unknowns):
 For each identified entity or detail from the decomposition:
@@ -96,25 +109,26 @@ For each identified entity or detail from the decomposition:
         iii. Historical: "When was [unknown event/code] first introduced?"
         iv. Implication-based: "What is the significance of [unknown event/code] in related domain knowledge?"
     c. Iterative Feedback: Depending on the user's responses to these questions, you can generate follow-up questions for deeper understanding.
-3. Generate as many insights as you find relevant from the CONTEXT TEXT, abhering to ANSWER TEMPLATE. In answer, use nouns and phrases to replace sentences.
+3. Insight Generation:
+- Apply the rules or methodology represented by $L_I$ to transition from the initial CONTEXT TEXT ($A_I$) to a set of insights ($n_I$ * $B_I$), where $n_I$ indicates the number of insights obtained.
+- Adhere to ANSWER TEMPLATE. In answer, use nouns and phrases to replace sentences.
 
 """  # noqa: E501
 
-        insight_template = ("Insight <NUM>:\n" +
-                            "- Topic Segmentation:\n<BLLANK or N/A>\n" +
-                            "- Entity Recognition:\n<BLANK or N/A>\n" +
-                            "- Extract Details:\n<BLANK or N/A>\n" +
-                            "- Contextual Understanding:\n<BLANK or N/A>\n" +
-                            "- Iterative Feedback:\n<BLANK or N/A>\n" +
-                            "- Formulate Questions:\n<BLANK or N/A>\n" +
-                            "- Answer to \"Formulate Questions\" using " +
-                            "CONTEXT TEXT:\n<BLANK or N/A>\nEnd.\n")
+        insight_template = (
+            "Insight <NUM>:\n" + "- Topic Segmentation:\n<BLLANK>\n" +
+            "- Entity Recognition:\n[<BLANK>, <BLANK>] " +
+            "(include square brackets)\n" + "- Extract Details:\n<BLANK>\n" +
+            "- Contextual Understanding:\n<BLANK or N/A>\n" +
+            "- Formulate Questions:\n<BLANK>\n" +
+            "- Answer to \"Formulate Questions\" using " +
+            "CONTEXT TEXT:\n<BLANK>\n" + "- Iterative Feedback:\n<BLANK>\n")
         answer_template_prompt = TextPrompt(
             "===== ANSWER TEMPLATE =====\n" +
             "You need to generate multiple insights, and the number of " +
             "insights depend on the number of Topic/Functionality " +
             "Segmentation. So the total number of insights is <NUM>.\n" +
-            "\n".join(insight_template for _ in range(2)))
+            f"{insight_template}\n")
         insights_generation_prompt = insights_instruction_prompt + \
             context_text_prompt + insights_prompt + answer_template_prompt
         insights_generation = insights_generation_prompt.format(
@@ -130,6 +144,7 @@ For each identified entity or detail from the decomposition:
             raise RuntimeError("Insights generation failed. Error:\n" +
                                f"{response.info}")
         msg = response.msg  # type: BaseMessage
+        print(f"msg:\n{msg.content}")
 
         # Replace the "N/A", "None", "NONE" with None
         def handle_none_values_in_msg(value):
@@ -138,38 +153,51 @@ For each identified entity or detail from the decomposition:
             return value.strip() if value else None
 
         # Parse the insights from the response
-        insights_pattern = (
-            r"Insight (\d+):(?:\s+- Topic Segmentation:\s*((?:.|\n)+?)"
-            r"(?=\s+- Entity Recognition|\Z))?" +
-            r"(?:\s+- Entity Recognition:\s*((?:.|\n)+?)"
-            r"(?=\s+- Extract Details|\Z))?" +
-            r"(?:\s+- Extract Details:\s*((?:.|\n)+?)"
-            r"(?=\s+- Contextual Understanding|\Z))?" +
-            r"(?:\s+- Contextual Understanding:\s*((?:.|\n)+?)"
-            r"(?=\s+- Iterative Feedback|\Z))?" +
-            r"(?:\s+- Iterative Feedback:\s*((?:.|\n)+?)"
-            r"(?=\s+- Formulate Questions|\Z))?" +
-            r"(?:\s+- Formulate Questions:\s*((?:.|\n)+?)"
-            r"(?=\s+- Answer to \"Formulate Questions\" using CONTEXT "
-            r"TEXT|\Z))?(?:\s+- Answer to \"Formulate Questions\" using "
-            r"CONTEXT TEXT:\s*((?:.|\n)+?)(?=\n*End.|\Z))?")
+        insights_pattern = (r"Insight (\d+):" +
+                            r"(?:\s+- Topic Segmentation:\s*((?:.|\n)+?)"
+                            r"(?=\s+- \w+ |\Z|Insight))?" +
+                            r"(?:\s+- Entity Recognition:\s*((?:.|\n)+?)"
+                            r"(?=\s+- \w+ |\Z|Insight))?" +
+                            r"(?:\s+- Extract Details:\s*((?:.|\n)+?)"
+                            r"(?=\s+- \w+ |\Z|Insight))?" +
+                            r"(?:\s+- Contextual Understanding:\s*((?:.|\n)+?)"
+                            r"(?=\s+- \w+ |\Z|Insight))?" +
+                            r"(?:\s+- Formulate Questions:\s*((?:.|\n)+?)"
+                            r"(?=\s+- \w+ |\Z|Insight))?" +
+                            r"(?:\s+- Answer to \"Formulate Questions\" using "
+                            r"CONTEXT TEXT:\s*((?:.|\n)+?)"
+                            r"(?=\s+- \w+ |\Z|Insight))?" +
+                            r"(?:\s+- Iterative Feedback:\s*((?:.|\n)+?)"
+                            r"(?=\s+- \w+ |\Z|Insight))?")  # noqa: E501
 
         insights_matches = re.findall(insights_pattern, msg.content, re.DOTALL)
 
         insights_json = {}
         for match in insights_matches:
-            (insight_num, topic, entity, extract, context, feedback, question,
-             answer) = match
-            insights_json[f"insight {insight_num}"] = {
+            (idx, topic, entity, extract, context, question, answer,
+             feedback) = match
+            insights_json[f"insight {idx}"] = {
                 "topic_segmentation": handle_none_values_in_msg(topic),
                 "entity_recognition": handle_none_values_in_msg(entity),
                 "extract_details": handle_none_values_in_msg(extract),
                 "contextual_understanding": handle_none_values_in_msg(context),
-                "iterative_feedback": handle_none_values_in_msg(feedback),
                 "formulate_questions": handle_none_values_in_msg(question),
                 "answer_to_formulate_questions":
-                handle_none_values_in_msg(answer)
+                handle_none_values_in_msg(answer),
+                "iterative_feedback": handle_none_values_in_msg(feedback),
             }
+
+            # Convert the value of entity_recognition from string to list
+            if insights_json[f"insight {idx}"]["entity_recognition"]:
+                entity_recognition_list = (
+                    insights_json[f"insight {idx}"]
+                    ["entity_recognition"].strip('[]').split(', '))
+                # Use list comprehension to filter out strings of digits
+                entity_recognition_list = [
+                    er for er in entity_recognition_list if not er.isdigit()
+                ]
+                insights_json[f"insight {idx}"]["entity_recognition"] = \
+                    entity_recognition_list
 
         # Remove the insight if the topic segmentation/insight is None or empty
         remove_empty_insights_list = []
@@ -180,24 +208,3 @@ For each identified entity or detail from the decomposition:
             insights_json.pop(insight_idx)
 
         return insights_json
-
-    def convert_json_to_str(self, insights_json: Dict[str, Dict[str,
-                                                                str]]) -> str:
-        r"""Convert the insights from json format to string format.
-
-        Args:
-            insights_json (Dict[str, Dict[str, str]]): The insights in json
-                format.
-
-        Returns:
-            str: The insights in string format.
-        """
-        insights_str = ""
-        for insight_idx, insight in insights_json.items():
-            insights_str += f"{insight_idx}:\n"
-            for key, value in insight.items():
-                if value is not None:
-                    insights_str += f"- {key}:\n{value}\n"
-                else:
-                    insights_str += f"- {key}:\nN/A\n"
-        return insights_str
