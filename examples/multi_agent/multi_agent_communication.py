@@ -255,7 +255,7 @@ def main(model_type=None, task_prompt=None, context_text=None) -> None:
         insights_subtasks[ID_one_subtask] = insights_str
 
 
-def print_and_write_md(text, color=Fore.RESET):
+def print_and_write_md(text="", color=Fore.RESET):
     import html
     import re
 
