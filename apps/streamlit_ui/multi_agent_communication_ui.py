@@ -301,7 +301,7 @@ def main(model_type=None, task_prompt=None, context_text=None) -> None:
 #     # Write to the markdown file
 #     with open(MD_FILE, mode='a', encoding="utf-8") as file:
 #         file.write(md_text)
-taks_prompt_supply_chain = """Ensure All Customer Orders Are Fulfilled Within the Stipulated Time Frame While Minimizing Total Operational Costs:
+task_prompt_supply_chain = """Ensure All Customer Orders Are Fulfilled Within the Stipulated Time Frame While Minimizing Total Operational Costs:
 - Ensure 200 units of Product X and 300 units of Product Y are delivered to Customer 1 within 10 days.
 - Ensure 150 units of Product X are delivered to Customer 2 within 15 days."""  # noqa: E501
 

@@ -22,7 +22,7 @@ import streamlit as st
 from apps.streamlit_ui.multi_agent_communication_ui import (
     context_content_supply_chain,
     main,
-    taks_prompt_supply_chain,
+    task_prompt_supply_chain,
 )
 from camel.configs import ChatGPTConfig
 from camel.functions.data_io_functions import read_file
@@ -112,7 +112,7 @@ with st.sidebar:
         else:
             # Set default values for task prompt and context content
             task_prompt = st.text_area("Insert your task prompt here",
-                                       value=taks_prompt_supply_chain)
+                                       value=task_prompt_supply_chain)
             context_content = st.text_area("Insert your context content here",
                                            value=context_content_supply_chain)
 

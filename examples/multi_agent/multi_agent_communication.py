@@ -301,16 +301,16 @@ def print_and_write_md(text, color=Fore.RESET):
 
 
 if __name__ == "__main__":
-    taks_prompt_trading_bot = "Develop a trading bot for the stock market."
-    taks_prompt_authentication = \
+    task_prompt_trading_bot = "Develop a trading bot for the stock market."
+    task_prompt_authentication = \
         "Implementing Authentication Middleware in a Node.js Application."
-    taks_prompt_supply_chain = """Ensure All Customer Orders Are Fulfilled Within the Stipulated Time Frame While Minimizing Total Operational Costs:
+    task_prompt_supply_chain = """Ensure All Customer Orders Are Fulfilled Within the Stipulated Time Frame While Minimizing Total Operational Costs:
     - Ensure 200 units of Product X and 300 units of Product Y are delivered to Customer 1 within 10 days.
     - Ensure 150 units of Product X are delivered to Customer 2 within 15 days."""  # noqa: E501
 
     task_prompt_list = [
-        taks_prompt_trading_bot, taks_prompt_authentication,
-        taks_prompt_supply_chain
+        task_prompt_trading_bot, task_prompt_authentication,
+        task_prompt_supply_chain
     ]
 
     context_content_trading_bot = """### **Enterprise Overview:**
