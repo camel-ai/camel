@@ -11,6 +11,53 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import streamlit as st
+from io import BytesIO
 
-st.write("hi")
+import tiktoken
+
+from camel.configs import ChatGPTConfig
+from camel.functions.data_io_functions import HtmlFile
+from camel.models.openai_model import OpenAIModel
+from camel.typing import ModelType
+
+with open("examples/multi_agent/multi-agent-output-Supply Chain-en.html",
+          "rb") as f:
+    file = BytesIO(f.read())
+    file.name = "test.html"
+    html_file = HtmlFile.from_bytes(file)
+
+normal_string = html_file.docs[0]['page_content']
+
+num_tokens = len(tiktoken.get_encoding("cl100k_base").encode(normal_string))
+print(num_tokens)
+
+# Create an instance of the OpenAI model
+my_openai_model = OpenAIModel(model_type=ModelType.GPT_3_5_TURBO_16K,
+                              model_config_dict=ChatGPTConfig().__dict__)
+
+# Create a task prompt based on the content
+messages_task_prompt = [
+    {
+        "role":
+        "system",
+        "content":
+        '''You are a helpful assistant to re-organize information
+        into a detailed instruction,
+        below is the content for you:''' + '\n' + normal_string
+    },
+    {
+        "role":
+        "user",
+        "content":
+        '''Please extract the detailed action information
+        from the provided content,
+        make it useful for a human can follow the detailed
+        instruction step by step to solve the task.'''
+    },
+]
+
+# Get a response for the task prompt
+response_task_prompt = my_openai_model.run(
+    messages=messages_task_prompt)['choices'][0]
+content_task_prompt = response_task_prompt['message']['content']
+print(content_task_prompt)
