@@ -15,15 +15,16 @@ import json
 
 from colorama import Fore
 
+from camel.agents.deductive_reasoner_agent import DeductiveReasonerAgent
 from camel.agents.insight_agent import InsightAgent
 from camel.agents.role_assignment_agent import RoleAssignmentAgent
 from camel.configs import ChatGPTConfig
 from camel.societies import RolePlaying
 from camel.typing import ModelType, TaskType
-from camel.utils import print_text_animated
 
 
-def main(model_type=None, task_prompt=None, context_text=None) -> None:
+def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
+         context_text=None) -> None:
     print(Fore.WHITE + "==========================================")
     print_and_write_md("==========================================",
                        color=Fore.WHITE)
@@ -46,9 +47,11 @@ def main(model_type=None, task_prompt=None, context_text=None) -> None:
 
     model_config_description = ChatGPTConfig()
     role_assignment_agent = RoleAssignmentAgent(
-        model=None, model_config=model_config_description)
-    insight_agent = InsightAgent(model=ModelType.GPT_3_5_TURBO_16K,
+        model=model_type, model_config=model_config_description)
+    insight_agent = InsightAgent(model=ModelType.model_type,
                                  model_config=model_config_description)
+    deductive_reasoner_agent = DeductiveReasonerAgent(
+        model=ModelType.model_type, model_config=model_config_description)
 
     # Generate role with descriptions
     role_names = None
@@ -62,6 +65,7 @@ def main(model_type=None, task_prompt=None, context_text=None) -> None:
         role_assignment_agent.split_tasks(
             task_prompt=task_prompt,
             role_descriptions_dict=role_descriptions_dict,
+            num_subtasks=2,
             context_text=context_text)
 
     print(Fore.BLUE + "Dependencies among subtasks: " +
@@ -83,6 +87,7 @@ def main(model_type=None, task_prompt=None, context_text=None) -> None:
         ID_subtask: ""
         for ID_subtask in subtasks_with_dependencies_dict.keys()
     }
+    environment_record = {}
 
     print(Fore.GREEN +
           f"List of {len(role_descriptions_dict)} roles with description:")
@@ -126,9 +131,37 @@ def main(model_type=None, task_prompt=None, context_text=None) -> None:
                 "====== CURRENT STATE =====\n" + \
                 "The snapshot and the context of the TASK is presentd in " + \
                 "the following insights which is close related to The " + \
-                "\"Insctruction\" and the \"Input\":\n" + \
-                "\n".join(insights_subtasks[pre_subtask]
-                          for pre_subtask in ID_pre_subtasks)
+                "\"Insctruction\" and the \"Input\":\n"
+            labels_sets = [
+                list(labels_set) for labels_set in environment_record.keys()
+            ]
+            conditions_and_quality_json = \
+                deductive_reasoner_agent.deduce_conditions_and_quality(
+                    starting_state="None",
+                    target_state=one_subtask)
+            target_labels = conditions_and_quality_json["labels"]
+
+            _, _, _, labels_retrieved_sets = \
+                role_assignment_agent.get_retrieval_index_from_environment(
+                    labels_sets=labels_sets,
+                    target_labels=target_labels,
+                    )
+            print(Fore.CYAN + "Retrieved labels from the environment:\n" +
+                  f"{labels_retrieved_sets}")
+            print_and_write_md(
+                "Retrieved labels from the environment:\n" +
+                f"{labels_retrieved_sets}", color=Fore.CYAN)
+            retrieved_insights = [
+                environment_record[tuple(label_set)]
+                for label_set in labels_retrieved_sets
+            ]
+            insights_pre_subtask += "\n".join(
+                [str(insight) for insight in retrieved_insights])
+            print(Fore.CYAN + "Retrieved insights from the environment:\n" +
+                  f"{insights_pre_subtask}")
+            print_and_write_md(
+                "Retrieved insights from the environment:\n" +
+                f"{insights_pre_subtask}", color=Fore.CYAN)
         else:
             insights_none_pre_subtask = insight_agent.run(
                 context_text=context_text)
@@ -224,7 +257,7 @@ def main(model_type=None, task_prompt=None, context_text=None) -> None:
             # print_text_animated(Fore.GREEN +
             #                     f"AI Assistant: {ai_assistant_role}\n\n" +
             #                     f"{assistant_response.msg.content}\n")
-            print_text_animated()
+            # print_text_animated()
             print(Fore.BLUE + f"AI User: {ai_user_role}\n\n" +
                   f"{user_response.msg.content}\n")
             print_and_write_md(
@@ -241,18 +274,29 @@ def main(model_type=None, task_prompt=None, context_text=None) -> None:
 
             # Generate the insights from the chat history
             chat_history_assistant += (f"===== [{n}] ===== \n"
-                                       f"{user_response.msg.content}\n"
                                        f"{assistant_response.msg.content}\n")
 
             input_assistant_msg = assistant_response.msg
 
-        # TODO: Generate insights from the chat history
-        # insights_instruction = ("The CONTEXT TEXT is related to code " +
-        #                         "implementation. Pay attention to the " +
-        #                         "code structure code environment.")
-        insights = insight_agent.run(context_text=chat_history_assistant)
+        insights_instruction = ("The CONTEXT TEXT is the chat history of " +
+                                f"{ai_user_role} and {ai_assistant_role}. " +
+                                "The INSIGHTs should come solely from the " +
+                                "content of the conversation, not the " +
+                                "conversation itsel.")
+        insights = insight_agent.run(context_text=chat_history_assistant,
+                                     insights_instruction=insights_instruction)
+        print(Fore.CYAN + "Insights from the chat history:\n" +
+              f"{json.dumps(insights, indent=4)}")
+        print_and_write_md(
+            "Insights from the chat history:\n" +
+            f"{json.dumps(insights, indent=4)}", color=Fore.CYAN)
         insights_str = insight_agent.convert_json_to_str(insights)
         insights_subtasks[ID_one_subtask] = insights_str
+        for insight in insights.values():
+            if insight["entity_recognition"] is None:
+                continue
+            labels_key = tuple(insight["entity_recognition"])
+            environment_record[labels_key] = insight
 
 
 def print_and_write_md(text="", color=Fore.RESET):
