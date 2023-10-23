@@ -11,15 +11,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from abc import ABC, abstractmethod
+from typing import List
 
-from .base import BaseMemory
-from .chat_history_memory import ChatHistoryMemory
-from .memory_record import MemoryRecord
-from .vectordb_memory import VectorDBMemory
 
-__all__ = [
-    'BaseMemory',
-    'ChatHistoryMemory',
-    'VectorDBMemory',
-    'MemoryRecord',
-]
+class BaseEmbedding(ABC):
+    """
+    """
+
+    @abstractmethod
+    def embed(self, text: str) -> List[float]:
+        ...
+
+    @abstractmethod
+    def get_output_dim(self) -> int:
+        ...

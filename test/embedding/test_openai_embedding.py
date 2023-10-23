@@ -12,14 +12,13 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from .base import BaseMemory
-from .chat_history_memory import ChatHistoryMemory
-from .memory_record import MemoryRecord
-from .vectordb_memory import VectorDBMemory
+import pytest
 
-__all__ = [
-    'BaseMemory',
-    'ChatHistoryMemory',
-    'VectorDBMemory',
-    'MemoryRecord',
-]
+from camel.embedding import BaseEmbedding, OpenAiEmbedding
+
+
+@pytest.mark.parametrize("embedding_model", [OpenAiEmbedding()])
+def test_embedding(embedding_model: BaseEmbedding):
+    text = "test embedding text."
+    vector = embedding_model.embed(text)
+    assert len(vector) == embedding_model.get_output_dim()
