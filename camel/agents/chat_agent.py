@@ -338,7 +338,8 @@ class ChatAgent(BaseAgent):
                      for terminated, termination_reason in termination
                      if terminated), (False, None))
                 # For now only retain the first termination reason
-                finish_reasons = [termination_reason] * len(finish_reasons)
+                if self.terminated and termination_reason is not None:
+                    finish_reasons = [termination_reason] * len(finish_reasons)
 
                 info = self.get_info(
                     response_id,
