@@ -12,16 +12,15 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from dataclasses import asdict
-from typing import List, Optional
+from typing import List, Optional, Tuple, Union
 from uuid import uuid4
 
 from camel.embedding.base import BaseEmbedding
 from camel.embedding.openai_embedding import OpenAiEmbedding
-from camel.memory.base_memory import BaseMemory
-from camel.memory.vector_storage.base import BaseVectorStorage, VectorRecord
-from camel.memory.vector_storage.qdrant import Qdrant
-from camel.messages.base import BaseMessage
+from camel.memory.base import BaseMemory, MemoryRecord
+from camel.messages.base import OpenAIMessage
+from camel.storage.vectordb_storage.base import BaseVectorStorage, VectorRecord
+from camel.storage.vectordb_storage.qdrant import Qdrant
 from camel.typing import VectorDistance
 
 
@@ -97,11 +96,13 @@ class VectorDBMemory(BaseMemory):
         if self.del_collection:
             self.storage.delete_collection(self.collection_name)
 
-    def read(
+    def get_context(self) -> Tuple[List[OpenAIMessage], int]:
+        raise RuntimeError("get context from vectordb_memory is invalid.")
+
+    def retrieve(
         self,
-        current_state: Optional[BaseMessage] = None,
-        limit: int = 3,
-    ) -> List[BaseMessage]:
+        condition: Optional[Union[Tuple[str, int], str]] = None,
+    ) -> List[MemoryRecord]:
         """
         Retrieves similar chat messages from the vector database based on the
         content of the current state message.
@@ -121,22 +122,31 @@ class VectorDBMemory(BaseMemory):
         Raises:
             ValueError: If the current state is not provided.
         """
-        if current_state is None:
+        if condition is None:
             raise ValueError(
-                "Reading vector database memeory without message input is not "
-                "allowed.")
-        query_vector = self.embedding.embed(current_state.content)
+                "Retrieving vector database memeory without input condition "
+                "is not allowed.")
+        elif type(condition) is str:
+            key = condition
+            limit = 3
+        elif type(condition) is tuple and type(condition[0]) is str and type(
+                condition[1]) is int:
+            key, limit = condition
+        else:
+            raise ValueError("Invalid input.")
+
+        query_vector = self.embedding.embed(key)
         results = self.storage.search(
             self.collection_name,
             VectorRecord(vector=query_vector),
             limit,
         )
         return [
-            BaseMessage(**res.payload) for res in results
+            MemoryRecord.from_dict(res.payload) for res in results
             if res.payload is not None
         ]
 
-    def write(self, msgs: List[BaseMessage]) -> None:
+    def write_records(self, records: List[MemoryRecord]) -> None:
         """
         Converts the provided chat messages into vector representations and
         writes them to the vector database.
@@ -145,16 +155,17 @@ class VectorDBMemory(BaseMemory):
             msgs (List[BaseMessage]): Messages to be added to the vector
                 database.
         """
-        records = [
+        v_records = [
             VectorRecord(
-                vector=self.embedding.embed(msg.content),
-                payload=asdict(msg),
-            ) for msg in msgs
+                vector=self.embedding.embed(r.message.content),
+                payload=r.to_dict(),
+                id=str(r.uuid),
+            ) for r in records
         ]
 
         self.storage.add_vectors(
             collection=self.collection_name,
-            vectors=records,
+            vectors=v_records,
         )
 
     def clear(self) -> None:

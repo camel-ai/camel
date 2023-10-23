@@ -25,7 +25,7 @@ from qdrant_client.http.models import (
     VectorParams,
 )
 
-from camel.memory.vector_storage.base import BaseVectorStorage, VectorRecord
+from camel.storage.vectordb_storage.base import BaseVectorStorage, VectorRecord
 from camel.typing import VectorDistance
 
 
@@ -79,7 +79,7 @@ class Qdrant(BaseVectorStorage):
         **kwargs,
     ) -> None:
         """
-        See :func:`~camel.memory.vector_storage.base.BaseVectorStorage.\
+        See :func:`~camel.storage.vectordb_storage.base.BaseVectorStorage.\
 create_collection`.
         """
         distance_map = {
@@ -100,14 +100,14 @@ create_collection`.
         **kwargs,
     ) -> None:
         """
-        See :func:`~camel.memory.vector_storage.base.BaseVectorStorage.\
+        See :func:`~camel.storage.vectordb_storage.base.BaseVectorStorage.\
 delete_collection`.
         """
         self.client.delete_collection(collection_name=collection, **kwargs)
 
     def check_collection(self, collection: str) -> Dict[str, Any]:
         """
-        See :func:`~camel.memory.vector_storage.base.BaseVectorStorage.\
+        See :func:`~camel.storage.vectordb_storage.base.BaseVectorStorage.\
 check_collection`.
 
         Raises:
@@ -134,7 +134,7 @@ check_collection`.
         vectors: List[VectorRecord],
     ) -> List[VectorRecord]:
         """
-        See :func:`~camel.memory.vector_storage.base.BaseVectorStorage.\
+        See :func:`~camel.storage.vectordb_storage.base.BaseVectorStorage.\
 add_vectors`.
 
         Raises:
@@ -164,7 +164,7 @@ add_vectors`.
         vectors: List[VectorRecord],
     ) -> List[VectorRecord]:
         """
-        See :func:`~camel.memory.vector_storage.base.BaseVectorStorage.\
+        See :func:`~camel.storage.vectordb_storage.base.BaseVectorStorage.\
 delete_vectors`.
 
         Raises:
@@ -204,7 +204,7 @@ delete_vectors`.
         limit: int = 3,
     ) -> List[VectorRecord]:
         """
-        See :func:`~camel.memory.vector_storage.base.BaseVectorStorage.\
+        See :func:`~camel.storage.vectordb_storage.base.BaseVectorStorage.\
 search`.
 
         Raises:

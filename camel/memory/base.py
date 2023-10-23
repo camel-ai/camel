@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from abc import ABC, abstractmethod
-from typing import List, Tuple
+from typing import Any, List, Tuple
 
 from camel.memory.memory_record import MemoryRecord
 from camel.messages import OpenAIMessage
@@ -50,6 +50,10 @@ class BaseMemory(ABC):
         Returns:
             List[RetrieveResult]: A list of messages retrieved from the memory.
         """
+        ...
+
+    @abstractmethod
+    def retrieve(self, condition: Any = None) -> List[MemoryRecord]:
         ...
 
     @abstractmethod

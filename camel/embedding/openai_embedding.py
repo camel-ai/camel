@@ -11,13 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import os
 from enum import Enum
 from typing import List
 
 import openai
 
 from camel.embedding.base import BaseEmbedding
-from camel.utils import openai_api_key_required
 
 
 class OpenAiEmbedding(BaseEmbedding):
@@ -46,9 +46,10 @@ class OpenAiEmbedding(BaseEmbedding):
         else:
             raise RuntimeError(f"Model type {model} not support")
 
-    @openai_api_key_required
     def embed(self, text: str) -> List[float]:
         # TODO: count tokens
+        if 'OPENAI_API_KEY' not in os.environ:
+            raise ValueError('OpenAI API key not found.')
         response = openai.Embedding.create(input=text, model=self.model)
         return response['data'][0]['embedding']
 

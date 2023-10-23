@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 from camel.memory.base import BaseMemory, MemoryRecord
 from camel.memory.context_creator.base import BaseContextCreator, ContextRecord
@@ -92,6 +92,20 @@ class ChatHistoryMemory(BaseMemory):
         output_records.append(ContextRecord(system_record, 1.0))
         output_records.reverse()
         return self.context_creator.create_context(output_records)
+
+    def retrieve(self, condition: Any = None) -> List[MemoryRecord]:
+        if condition is not None and condition.__class__ != list:
+            raise ValueError("condition must be None or a list of indecies")
+        record_dicts = self.storage.load()
+        output_records = []
+        if condition is None:
+            output_records = [MemoryRecord.from_dict(r) for r in record_dicts]
+        else:
+            output_records = [
+                MemoryRecord.from_dict(record_dicts[i]) for i in condition
+            ]
+
+        return output_records
 
     def write_records(self, records: List[MemoryRecord]) -> None:
         r"""

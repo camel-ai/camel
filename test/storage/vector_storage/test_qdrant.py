@@ -14,7 +14,7 @@
 
 import pytest
 
-from camel.memory.vector_storage import Qdrant, VectorRecord
+from camel.storage.vectordb_storage import Qdrant, VectorRecord
 from camel.typing import VectorDistance
 
 

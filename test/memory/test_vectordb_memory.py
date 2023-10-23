@@ -12,11 +12,10 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from dataclasses import asdict
-
+from camel.memory.base import MemoryRecord
 from camel.memory.vectordb_memory import VectorDBMemory
 from camel.messages import BaseMessage
-from camel.typing import RoleType
+from camel.typing import OpenAIBackendRole, RoleType
 
 
 # flake8: noqa :E501
@@ -31,18 +30,17 @@ def testVectorDBMemeory():
     ]
     memory = VectorDBMemory()
 
-    messages = [
-        BaseMessage(
-            "AI user",
-            role_type=RoleType.USER,
-            meta_dict={"idx": idx},
-            content=sentence,
-        ) for idx, sentence in enumerate(texts)
+    records = [
+        MemoryRecord(
+            message=BaseMessage(
+                "AI user",
+                role_type=RoleType.USER,
+                meta_dict={"idx": idx},
+                content=sentence,
+            ), role_at_backend=OpenAIBackendRole.USER)
+        for idx, sentence in enumerate(texts)
     ]
-    memory.write(messages)
 
-    query_message = BaseMessage(
-        "AI user", role_type=RoleType.USER, meta_dict=None,
-        content="How long have I been playing this game?")
-    search_results = memory.read(query_message)
-    assert asdict(search_results[0]) == asdict(messages[4])
+    memory.write_records(records)
+    search_results = memory.retrieve("How long have I been playing this game?")
+    assert search_results[0].to_dict() == records[4].to_dict()
