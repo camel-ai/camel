@@ -15,9 +15,11 @@
 from .openai_function import OpenAIFunction
 from .math_functions import MATH_FUNCS
 from .search_functions import SEARCH_FUNCS
+from .weather_functions import WEATHER_FUNCS
 
 __all__ = [
     'OpenAIFunction',
     'MATH_FUNCS',
     'SEARCH_FUNCS',
+    'WEATHER_FUNCS',
 ]
