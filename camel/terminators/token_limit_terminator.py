@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Optional, Tuple
 
-from camel.terminator import BaseTerminator
+from camel.terminators import BaseTerminator
 
 
 class TokenLimitTerminator(BaseTerminator):
