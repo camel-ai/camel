@@ -99,7 +99,7 @@ class ChatHistoryMemory(BaseMemory):
         checks on the messages.
 
         Args:
-            msgs (List[MemoryRecord]): Memory records to be added to the
+            records (List[MemoryRecord]): Memory records to be added to the
                 memory.
         """
         stored_records = []

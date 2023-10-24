@@ -44,17 +44,18 @@ class BaseMemory(ABC):
 
     @abstractmethod
     def get_context(self) -> Tuple[List[OpenAIMessage], int]:
-        """
-        TODO
+        r"""
+        Gets chat context with proper size for a LLM.
 
         Returns:
-            List[RetrieveResult]: A list of messages retrieved from the memory.
+            (List[OpenAIMessage], int): A tuple containing the constructed
+                context in OpenAIMessage format and the total token count.
         """
         ...
 
     @abstractmethod
     def write_records(self, records: List[MemoryRecord]) -> None:
-        """
+        r"""
         Writes records to the memory, appending them to existing ones.
 
         Args:
@@ -63,7 +64,7 @@ class BaseMemory(ABC):
         ...
 
     def write_record(self, record: MemoryRecord) -> None:
-        """
+        r"""
         Writes a record to the memory, appending it to existing ones.
 
         Args:
@@ -73,7 +74,7 @@ class BaseMemory(ABC):
 
     @abstractmethod
     def clear(self) -> None:
-        """
+        r"""
         Clears all messages from the memory.
         """
         ...

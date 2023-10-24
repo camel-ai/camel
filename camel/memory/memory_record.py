@@ -28,7 +28,7 @@ MESSAGE_TYPES = {
 
 @dataclass(frozen=True)
 class MemoryRecord():
-    """
+    r"""
     The basic message storing unit in the CAMEL memory system.
     """
     message: BaseMessage
@@ -38,7 +38,7 @@ class MemoryRecord():
 
     @classmethod
     def from_dict(cls, record_dict: Dict[str, Any]):
-        """
+        r"""
         Reconstruct a :obj:`MemoryRecord` from the input dict.
 
         Args:
@@ -56,7 +56,7 @@ class MemoryRecord():
         )
 
     def to_dict(self):
-        """
+        r"""
         Convert the :obj:`MemoryRecord` to a dict for serialization purpose.
         """
         return {
@@ -70,7 +70,7 @@ class MemoryRecord():
         }
 
     def to_openai_message(self):
-        """
+        r"""
         Converts the record to an :obj:`OpenAIMessage` object.
         """
         return self.message.to_openai_message(self.role_at_backend.value)
@@ -78,7 +78,7 @@ class MemoryRecord():
 
 @dataclass(frozen=True)
 class ContextRecord():
-    """
+    r"""
     The result of memory retrieving.
     """
     m_record: MemoryRecord

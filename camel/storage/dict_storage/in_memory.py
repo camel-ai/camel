@@ -19,7 +19,7 @@ from camel.storage.dict_storage.base import BaseDictStorage
 
 
 class InMemoryDictStorage(BaseDictStorage):
-    """
+    r"""
     Concrete implementation of the :obj:`BaseDictStorage` using in-memory list.
     Ideal for temporary storage purposes, as data will be lost when the program
     ends.

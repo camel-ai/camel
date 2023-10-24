@@ -17,7 +17,7 @@ from typing import Any, Dict, List
 
 
 class BaseDictStorage(ABC):
-    """
+    r"""
     Abstract base class for Dict storage systems. Provides a consistent
     interface for saving, loading, and clearing data records without any loss
     of information.
@@ -25,7 +25,7 @@ class BaseDictStorage(ABC):
 
     @abstractmethod
     def save(self, records: List[Dict[str, Any]]) -> None:
-        """
+        r"""
         Saves the given records into the storage system.
 
         Args:
@@ -36,7 +36,7 @@ class BaseDictStorage(ABC):
 
     @abstractmethod
     def load(self) -> List[Dict[str, Any]]:
-        """
+        r"""
         Loads all records from the storage system.
 
         Returns:
@@ -47,7 +47,7 @@ class BaseDictStorage(ABC):
 
     @abstractmethod
     def clear(self) -> None:
-        """
+        r"""
         Clears all records from the storage system.
         """
         ...
