@@ -239,7 +239,7 @@ class ChatAgent(BaseAgent):
         r"""Updates the stored messages list with a new message.
 
         Args:
-            role (str): Role of the agent.
+            role (str): Role of the message at the backend.
             message (BaseMessage): The new message to add to the stored
                 messages.
 
