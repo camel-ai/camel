@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import pytest
 
-from camel.terminator import TokenLimitTerminator
+from camel.terminators import TokenLimitTerminator
 
 
 @pytest.mark.parametrize('num_tokens', [5, 10])

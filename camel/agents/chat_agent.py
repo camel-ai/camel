@@ -27,7 +27,7 @@ from camel.functions import OpenAIFunction
 from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.responses import ChatAgentResponse
-from camel.terminator import ResponseTerminator, TokenLimitTerminator
+from camel.terminators import ResponseTerminator, TokenLimitTerminator
 from camel.typing import ModelType, RoleType
 from camel.utils import get_model_encoding, openai_api_key_required
 
@@ -325,15 +325,22 @@ class ChatAgent(BaseAgent):
             else:
                 # Function calling disabled or chat stopped
 
-                # Loop over responses terminators
-                for terminator in self.response_terminators:
-                    self.terminated, termination_reason = \
-                        terminator.is_terminated(output_messages)
-                    if self.terminated and termination_reason is not None:
-                        finish_reasons = [
-                            termination_reason
-                            for _ in range(len(finish_reasons))
-                        ]
+                # Loop over responses terminators, get list of termination
+                # tuples with whether the terminator terminates the agent
+                # and termination reason
+                termination = [
+                    terminator.is_terminated(output_messages)
+                    for terminator in self.response_terminators
+                ]
+                # Terminate the agent if any of the terminator terminates
+                self.terminated, termination_reason = next(
+                    ((terminated, termination_reason)
+                     for terminated, termination_reason in termination
+                     if terminated), (False, None))
+                # For now only retain the first termination reason
+                if self.terminated and termination_reason is not None:
+                    finish_reasons = [termination_reason] * len(finish_reasons)
+
                 info = self.get_info(
                     response_id,
                     usage_dict,

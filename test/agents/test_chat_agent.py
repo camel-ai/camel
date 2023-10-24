@@ -21,7 +21,7 @@ from camel.configs import ChatGPTConfig, FunctionCallingConfig
 from camel.functions import MATH_FUNCS
 from camel.generators import SystemMessageGenerator
 from camel.messages import BaseMessage
-from camel.terminator import ResponseWordsTerminator
+from camel.terminators import ResponseWordsTerminator
 from camel.typing import ModelType, RoleType, TaskType
 
 parametrize = pytest.mark.parametrize('model', [
