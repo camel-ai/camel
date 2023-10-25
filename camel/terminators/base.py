@@ -11,30 +11,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .base import BaseAgent
-from .chat_agent import ChatAgent
-from .task_agent import (
-    TaskSpecifyAgent,
-    TaskPlannerAgent,
-    TaskCreationAgent,
-    TaskPrioritizationAgent,
-)
-from .critic_agent import CriticAgent
-from .tool_agents.base import BaseToolAgent
-from .tool_agents.hugging_face_tool_agent import HuggingFaceToolAgent
-from .embodied_agent import EmbodiedAgent
-from .role_assignment_agent import RoleAssignmentAgent
+from abc import ABC, abstractmethod
+from typing import List, Optional, Tuple
 
-__all__ = [
-    'BaseAgent',
-    'ChatAgent',
-    'TaskSpecifyAgent',
-    'TaskPlannerAgent',
-    'TaskCreationAgent',
-    'TaskPrioritizationAgent',
-    'CriticAgent',
-    'BaseToolAgent',
-    'HuggingFaceToolAgent',
-    'EmbodiedAgent',
-    'RoleAssignmentAgent',
-]
+from camel.messages import BaseMessage
+
+
+class BaseTerminator(ABC):
+
+    def __init__(self, *args, **kwargs):
+        self._terminated: bool = False
+        self._termination_reason: Optional[str] = None
+
+    @abstractmethod
+    def is_terminated(self, *args, **kwargs) -> Tuple[bool, Optional[str]]:
+        pass
+
+    @abstractmethod
+    def reset(self):
+        pass
+
+
+class ResponseTerminator(BaseTerminator):
+
+    @abstractmethod
+    def is_terminated(
+            self, messages: List[BaseMessage]) -> Tuple[bool, Optional[str]]:
+        pass
+
+    @abstractmethod
+    def reset(self):
+        pass

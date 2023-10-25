@@ -125,4 +125,9 @@ class TaskType(Enum):
     DEFAULT = "default"
 
 
-__all__ = ['RoleType', 'ModelType', 'TaskType']
+class TerminationMode(Enum):
+    ANY = "any"
+    ALL = "all"
+
+
+__all__ = ['RoleType', 'ModelType', 'TaskType', 'TerminationMode']

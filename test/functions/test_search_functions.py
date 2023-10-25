@@ -47,7 +47,7 @@ def test_search_wiki_with_ambiguity():
 
 
 def test_google_api():
-    # Check the google search api
+    # Check the Google search api
 
     # https://developers.google.com/custom-search/v1/overview
     GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
