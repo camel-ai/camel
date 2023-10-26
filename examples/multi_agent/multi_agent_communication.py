@@ -48,10 +48,10 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
     model_config_description = ChatGPTConfig()
     role_assignment_agent = RoleAssignmentAgent(
         model=model_type, model_config=model_config_description)
-    insight_agent = InsightAgent(model=ModelType.model_type,
+    insight_agent = InsightAgent(model=model_type,
                                  model_config=model_config_description)
     deductive_reasoner_agent = DeductiveReasonerAgent(
-        model=ModelType.model_type, model_config=model_config_description)
+        model=model_type, model_config=model_config_description)
 
     # Generate role with descriptions
     role_names = None
@@ -65,7 +65,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
         role_assignment_agent.split_tasks(
             task_prompt=task_prompt,
             role_descriptions_dict=role_descriptions_dict,
-            num_subtasks=2,
+            num_subtasks=9,
             context_text=context_text)
 
     print(Fore.BLUE + "Dependencies among subtasks: " +
@@ -223,7 +223,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
             assistant_role_name=ai_assistant_role,
             user_role_name=ai_user_role,
             task_prompt=task_with_IO,
-            model_type=ModelType.GPT_3_5_TURBO_16K,
+            model_type=model_type,
             task_type=TaskType.
             ROLE_DESCRIPTION,  # Important for role description
             with_task_specify=False,
@@ -351,10 +351,59 @@ if __name__ == "__main__":
     task_prompt_supply_chain = """Ensure All Customer Orders Are Fulfilled Within the Stipulated Time Frame While Minimizing Total Operational Costs:
     - Ensure 200 units of Product X and 300 units of Product Y are delivered to Customer 1 within 10 days.
     - Ensure 150 units of Product X are delivered to Customer 2 within 15 days."""  # noqa: E501
+    task_prompt_endpoint_implementation = """Implement the described endpoint in the Flask microservice to retrieve invoice details using the invoice_id."""  # noqa: E501
+    task_prompt_science_fiction = """Write the content of a long science fiction in serveral chapters, from the beginning to the end of long story, based the context information.
+### 9-Chapter Structure for the Sci-Fi Novel
+
+#### Chapter 1: Dawn of the Star Chaser
+- **Setting the Scene**: Introduction to the interstellar political landscape.
+- **Character Introductions**: Meet the main crew of the "Star Chaser," including Captain Jacqueline Ross and others.
+- **Mission Briefing**: The crew receives their mission objectives, highlighting the stakes and potential challenges.
+
+#### Chapter 2: First Leap
+- **Maiden Voyage**: The "Star Chaser" initiates its first faster-than-light jump.
+- **Initial Challenges**: The crew encounters unforeseen anomalies and tests the ship's advanced systems.
+- **Early Discoveries**: Brief exploration of a nearby system, hinting at greater mysteries.
+
+#### Chapter 3: Echoes of Novada
+- **Exploration and Conflict**: Investigating the technologically advanced planet Novada.
+- **Secrets Revealed**: Unveiling some team members' hidden agendas and personal missions.
+- **Cultural and Political Intrigue**: First encounters with Novada’s complex societal and economic systems.
+
+#### Chapter 4: Shadows Over Zelin
+- **Military Might and Tension**: Exploration of Zelin’s militarized environment.
+- **Internal Strife**: Rising tensions within the crew due to contrasting beliefs and the stressful situation.
+- **Critical Decisions**: Making hard choices in navigating Zelin’s aggressive stance.
+
+#### Chapter 5: Iktar’s Enigma
+- **Mysteries Unfold**: Delving into the cultural and historical mysteries of Iktar.
+- **Archaeological Discovery**: Finding significant artifacts, offering clues to cosmic history and human origins.
+- **Moral Dilemmas**: Crew members grapple with the ethical implications of their discoveries and actions.
+
+#### Chapter 6: Crossing the Rubicon
+- **First Major Alien Encounter**: Dealing with a hostile alien species.
+- **Revelations**: More secrets of the crew come to light, impacting the mission's dynamics.
+- **Strategic Manoeuvres**: Navigating through the crisis using diplomacy, strategy, and combat.
+
+#### Chapter 7: The Heart of Darkness
+- **Intensified Conflict**: Escalating external threats from alien forces and Earth’s politics.
+- **Betrayal and Resilience**: A shocking betrayal within the team tests their resilience and trust.
+- **Pivotal Choices**: Critical decisions shape the future course of the mission.
+
+#### Chapter 8: Through the Eye of the Storm
+- **Climactic Showdown**: A major confrontation with alien forces or a sinister power.
+- **Sacrifices and Revelations**: Key characters make significant sacrifices, revealing deeper layers of the story.
+- **Turning the Tide**: The outcome of the showdown leads to a significant shift in the interstellar balance.
+
+#### Chapter 9: A New Beginning
+- **Aftermath and Reflection**: The crew reflects on the outcomes of their journey.
+- **Unresolved Mysteries and Future Directions**: Hints at continuing adventures and unresolved questions.
+- **Closing Note**: A poignant ending that sets the stage for potential sequels or ongoing narratives."""  # noqa: E501
 
     task_prompt_list = [
         task_prompt_trading_bot, task_prompt_authentication,
-        task_prompt_supply_chain
+        task_prompt_supply_chain, task_prompt_endpoint_implementation,
+        task_prompt_science_fiction
     ]
 
     context_content_trading_bot = """### **Enterprise Overview:**
@@ -479,11 +528,127 @@ The new trading bot should be able to:
       - Phone: +987-654-3210
       - Email: [jane.smith@supplierB.com](mailto:jane.smith@supplierB.com)
       - Address: 456 Elm St, CityB, CountryB"""  # noqa: E501
+    context_endpoint_implementation = """### 1. Development Environment
+At XYZ Corporation, we utilize an extensive system of microservices for our back-end infrastructure using Python's Flask framework. Recently, a new microservice was developed for handling customer invoices. However, it currently lacks an endpoint to fetch invoice details by invoice_id from a PostgreSQL table named customer_invoices. This table uses invoice_id as its primary key. The required endpoint should have the format /get-invoice/<invoice_id>, and if the invoice is found, it should return details in JSON format with a 200 status code. Conversely, if not found, a 404 status code with an appropriate message should be returned, ensuring efficient database querying without unnecessary load.
+"""  # noqa: E501
+    context_science_fiction = """### Detailed Division of the Interstellar Political Landscape
+
+- **United Earth Government (UEG)**
+  - Founding History: Formed after a global environmental crisis and resource depletion, various nations on Earth united to form the UEG.
+  - Policy Tendencies: Focuses on sustainable environmental development, ethical science, and peaceful diplomacy.
+  - Internal Conflicts: Still facing economic inequality and political factional struggles.
+
+- **Antares Alliance**
+  - Economic System: Based on free markets, heavily supporting corporate development and technological innovation in space.
+  - Cultural Traits: Encourages individualism and entrepreneurship, leading to social stratification.
+  - Diplomatic Policies: Prioritizes economic interests, preferring economic means over military force for expansion.
+
+- **Celas Empire**
+  - Political System: Strict hierarchical order with a focus on military power.
+  - Military Strategy: Aggressive expansionist policies, strong desire to control space resources.
+  - Social Conditions: Technologically and militarily powerful but limited personal freedoms for citizens.
+
+- **Interstellar Council**
+  - Functional Position: Acts as a neutral mediator and overseer for interstellar disputes and cooperation.
+  - Challenges and Issues: Often limited in power in the face of major forces, constantly seeking a balance.
+
+### Main Planets and Their Characteristics
+
+- **Earth (Terra)**
+  - Geographic Environment: Restored natural environments coexist with highly developed cities.
+  - Social Issues: Limited resources, increasing dependency on space resources.
+  - Cultural Diversity: Rich in cultural and historical diversity as humanity’s cradle.
+
+- **Novada**
+  - Economic Features: A hub of interstellar trade and a pioneer in technological innovation.
+  - Social Landscape: Bustling cities coexist with advanced scientific facilities.
+  - Technological Status: The center for the development of faster-than-light engines and quantum communicators.
+
+- **Zelin**
+  - Political Atmosphere: Militarized social structure with an emphasis on discipline and efficiency.
+  - Architectural Style: Characterized by massive monumental buildings and military bases.
+  - Diplomatic Stance: Aggressive, often resorting to military threats.
+
+- **Iktar**
+  - Cultural Heritage: Rich history and mysterious cultural traditions.
+  - Social Structure: Divided into different religious and cultural factions.
+  - Technological Mysteries: Key planet for discovering lost technologies and historical archives.
+
+### Detailed Composition of the Exploration Team
+
+- **Captain Jacqueline Ross**
+  - Skillset: Advanced diplomatic negotiations, crisis management.
+  - Background: Mediated several interstellar conflicts, sidelined due to political reasons from the UEG.
+
+- **Science Officer Arik Sevarin**
+  - Research Area: Quantum physics, reverse engineering of alien technology.
+  - Personality: Extremely curious, sometimes neglecting ethics and safety in pursuit of scientific truth.
+
+- **Security Officer Seryx Karlos**
+  - Tactical Skills: Advanced tactical planning, hand-to-hand and ranged combat expertise.
+  - Personal Secret: Silent about certain secretive operations of the Empire’s military, which could impact the mission.
+
+- **Diplomat Lena Itu**
+  - Capabilities: Advanced linguistic skills, cross-cultural communication.
+  - Secret Mission: To uncover clues about Iktar’s mysterious past, potentially altering the interstellar political landscape.
+
+- **Robotics Engineer Gil Markus**
+  - Technical Expertise: Robotics design, artificial intelligence development.
+  - Hidden Agenda: Developing advanced AI in secret, which could potentially become uncontrollable or pose threats.
+
+### Spaceship and Technological Details
+
+- **Spaceship - "Star Chaser"**
+  - Design Features: Integrates advanced technologies from various civilizations, especially in propulsion and life support systems.
+  - Weapon System: Equipped with the latest defensive weapons and tactical equipment, emphasizing defense over offense.
+  - Research Facilities: Advanced laboratories capable of multidisciplinary research and alien sample analysis.
+
+- **Technological Highlights**
+  - Faster-Than-Light Engine: Utilizes cutting-edge quantum propulsion technology for rapid interstellar travel.
+  - Holographic Navigation System: Combines AI and virtual reality for intuitive navigation and information analysis.
+  - Universal Translator: Capable of translating and learning new alien languages, crucial for diplomatic interactions.
+
+### Scientific Discoveries and Challenges
+
+- **Interstellar Phenomena**
+  - Encounters with unknown cosmic phenomena, like anomalies near black holes and unidentified dark matter structures.
+  - Discoveries pointing to ancient alien civilizations and technologies.
+
+- **Alien Life**
+  - Encounters with various intelligent life forms, some friendly, others hostile.
+  - Exploration of biological diversity, studying unknown ecosystems.
+
+- **Technological Dilemmas**
+  - Dealing with potential risks and malfunctions of the FTL engine.
+  - Deciphering alien technologies with unknown risks and ethical challenges.
+
+### Main Conflicts and Plot Twists in the Story
+
+- **Internal Conflicts**
+  - Conflicts among team members due to differences in background, beliefs, and interests.
+  - Secret missions and hidden motives gradually revealed, affecting trust and cooperation.
+
+- **External Threats**
+  - Conflicts and misunderstandings with alien civilizations.
+  - Tense relations with Earth and other political powers.
+
+- **Surprising Discoveries**
+  - Unveiling major secrets about human origins or cosmic history.
+  - Discovering advanced technologies or resources that could change the balance of interstellar politics.
+
+- **Personal Growth and Transformation**
+  - Team members grow and change through challenges and crises encountered in exploration.
+  - Faced with moral and survival choices, leading to deeper character development and story depth.
+
+This setting constructs a rich, multi-layered narrative for interstellar exploration, presenting a world that is both imaginative and deep for the readers."""  # noqa: E501
     context_content_list = [
-        context_content_trading_bot, context_content_authentication,
-        context_content_supply_chain
+        context_content_trading_bot,
+        context_content_authentication,
+        context_content_supply_chain,
+        context_endpoint_implementation,
+        context_science_fiction,
     ]
 
-    index = 2
+    index = 4
     main(task_prompt=task_prompt_list[index],
          context_text=context_content_list[index])
