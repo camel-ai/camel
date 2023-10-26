@@ -439,7 +439,7 @@ class ChatAgent(BaseAgent):
             ChatAgentResponse: The struct containing trivial outputs and
                 information about token number and called functions.
         """
-
+        self.terminated = True
         output_messages: List[BaseMessage] = []
 
         info = self.get_info(
