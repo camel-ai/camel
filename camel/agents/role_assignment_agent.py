@@ -134,14 +134,17 @@ class RoleAssignmentAgent(ChatAgent):
     def split_tasks(
         self,
         task_prompt: Union[str, TextPrompt],
+        role_descriptions_dict: Dict[str, str],
         num_subtasks: Optional[int] = None,
         role_descriptions_dict: Optional[Dict[str, str]] = None,
     ) -> List[str]:
         r"""Split the task into subtasks based on the input task prompt.
 
         Args:
-            task_prompt (Union[str, TextPrompt]): The prompt
-                for the task based on which the roles are to be generated.
+            task_prompt (Union[str, TextPrompt]): The prompt for the task
+                based on which the roles are to be generated.
+            role_descriptions_dict (Dict[str, str]): The role descriptions of
+                each role.
             num_subtasks (Optional[int], optional): The number of subtasks to
                 generate. (default: :obj:`None`)
             role_descriptions_dict (Optional[Dict[str, str]], optional): The
