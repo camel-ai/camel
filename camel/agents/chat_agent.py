@@ -278,7 +278,8 @@ class ChatAgent(BaseAgent):
             try:
                 openai_messages, num_tokens = self.memory.get_context()
             except RuntimeError as e:
-                return self.step_token_exceed(e.args[1], called_funcs)
+                return self.step_token_exceed(e.args[1], called_funcs,
+                                              "max_tokens_exceeded")
 
             # Obtain LLM's response and validate it
             response = self.model_backend.run(openai_messages)
