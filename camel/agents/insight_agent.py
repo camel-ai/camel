@@ -118,12 +118,12 @@ For each identified entity or detail from the decomposition:
 
         insight_template = (
             "Insight <NUM>:\n" + "- Topic Segmentation:\n<BLLANK>\n" +
-            "- Entity Recognition:\n[<BLANK>, <BLANK>] " +
-            "(include square brackets)\n" + "- Extract Details:\n<BLANK>\n" +
+            "- Entity Recognition:\n[<BLANK>, <BLANK>] (include square " +
+            "brackets)\n- Extract Details:\n<BLANK>\n" +
             "- Contextual Understanding:\n<BLANK or N/A>\n" +
             "- Formulate Questions:\n<BLANK>\n" +
             "- Answer to \"Formulate Questions\" using " +
-            "CONTEXT TEXT:\n<BLANK>\n" + "- Iterative Feedback:\n<BLANK>\n")
+            "CONTEXT TEXT:\n<BLANK>\n- Iterative Feedback:\n<BLANK>\n")
         answer_template_prompt = TextPrompt(
             "===== ANSWER TEMPLATE =====\n" +
             "You need to generate multiple insights, and the number of " +
