@@ -17,9 +17,10 @@ from typing import Any, Dict, Optional, Sequence
 
 from colorama import Fore
 
-from camel.agents import ChatAgent, ChatAgentResponse
+from camel.agents import ChatAgent
 from camel.memory import BaseMemory, MemoryRecord
 from camel.messages import BaseMessage
+from camel.responses import ChatAgentResponse
 from camel.typing import ModelType, OpenAIBackendRole
 from camel.utils import get_first_int, print_text_animated
 
@@ -153,7 +154,8 @@ class CriticAgent(ChatAgent):
         critic, getting the option, and parsing the choice.
 
         Args:
-            messages (Sequence[BaseMessage]): A list of BaseMessage objects.
+            input_messages (Sequence[BaseMessage]): A list of BaseMessage
+                objects.
 
         Returns:
             ChatAgentResponse: A `ChatAgentResponse` object includes the

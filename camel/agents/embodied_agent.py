@@ -15,13 +15,9 @@ from typing import Any, Dict, List, Optional
 
 from colorama import Fore
 
-from camel.agents import (
-    BaseToolAgent,
-    ChatAgent,
-    ChatAgentResponse,
-    HuggingFaceToolAgent,
-)
+from camel.agents import BaseToolAgent, ChatAgent, HuggingFaceToolAgent
 from camel.messages import BaseMessage
+from camel.responses import ChatAgentResponse
 from camel.typing import ModelType
 from camel.utils import PythonInterpreter, print_text_animated
 
