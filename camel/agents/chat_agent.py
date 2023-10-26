@@ -29,7 +29,7 @@ from camel.memory.context_creator.default import DefaultContextCreator
 from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.responses import ChatAgentResponse
-from camel.terminators import ResponseTerminator, TokenLimitTerminator
+from camel.terminators import ResponseTerminator
 from camel.typing import ModelType, OpenAIBackendRole, RoleType
 from camel.utils import get_model_encoding, openai_api_key_required
 
@@ -124,8 +124,6 @@ class ChatAgent(BaseAgent):
             context_creator, window_size=message_window_size)
 
         self.terminated: bool = False
-        self.token_limit_terminator = TokenLimitTerminator(
-            self.model_token_limit)
         self.response_terminators = response_terminators or []
         self.init_messages()
 
@@ -138,7 +136,6 @@ class ChatAgent(BaseAgent):
         """
         self.terminated = False
         self.init_messages()
-        self.token_limit_terminator.reset()
         for terminator in self.response_terminators:
             terminator.reset()
 
