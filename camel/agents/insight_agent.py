@@ -40,7 +40,7 @@ class InsightAgent(ChatAgent):
             role_name="Insight Agent",
             role_type=RoleType.ASSISTANT,
             meta_dict=None,
-            content="You assign roles based on tasks.",
+            content="You generate insights from a provided text.",
         )
         super().__init__(system_message, model, model_config)
 
