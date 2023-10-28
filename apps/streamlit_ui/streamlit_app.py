@@ -65,12 +65,14 @@ with st.sidebar:
                     "content":
                     '''You are a helpful assistant to extract and
                      re-organize information from provided information.
-                    Please create a prompt for the task to be
-                     performed described in the given information.''',
+                     below is the content for you:''' + '\n' + normal_string,
                 },
                 {
-                    "role": "user",
-                    "content": normal_string,
+                    "role":
+                    "user",
+                    "content":
+                    '''Please create a prompt for the task to be
+                     performed described in the given information.''',
                 },
             ]
 
@@ -87,12 +89,14 @@ with st.sidebar:
                     "content":
                     '''You are a helpful assistant to extract and
                      re-organize information from provided information.
-                    Please extract the context content for the task to
-                     be performed described in the given information.''',
+                     below is the content for you:''' + '\n' + normal_string,
                 },
                 {
-                    "role": "user",
-                    "content": normal_string,
+                    "role":
+                    "user",
+                    "content":
+                    '''Please extract the context content for the task to
+                     be performed described in the given information.''',
                 },
             ]
 

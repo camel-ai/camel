@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import re
 from collections import deque
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -254,17 +254,17 @@ class RoleAssignmentAgent(ChatAgent):
     def split_tasks(
         self,
         task_prompt: Union[str, TextPrompt],
-        role_descriptions_dict: [Dict[str, str]],
+        role_descriptions_dict: Dict[str, str],
         num_subtasks: Optional[int] = None,
         context_text: Optional[str] = None,
     ) -> Dict[str, Dict[str, Union[str, List[str]]]]:
         r"""Split the task into subtasks based on the input task prompt.
 
         Args:
-            task_prompt (Union[str, TextPrompt]): The prompt
-                for the task based on which the roles are to be generated.
-            role_descriptions_dict ([Dict[str, str]]): The role
-                descriptions of each role.
+            task_prompt (Union[str, TextPrompt]): The prompt for the task
+                based on which the roles are to be generated.
+            role_descriptions_dict (Dict[str, str]): The role descriptions of
+                each role.
             num_subtasks (Optional[int], optional): The number of subtasks to
                 split the task into. (default: :obj:`None`)
             context_text (Optional[str], optional): The context text to
@@ -516,3 +516,94 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
         }
 
         return role_compatibility_scores_dict
+
+    @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
+    def get_retrieval_index_from_environment(
+        self,
+        labels_sets: List[List[str]],
+        target_labels: List[str],
+    ) -> Tuple[List[int], List[int], List[str], List[List[str]]]:
+        r"""Get the retrieval index of the target labels from the environment.
+        The semantic retrieval is not used in this function.
+
+        Args:
+            labels_set (List[List[str]]): A list of lists of labels in the
+                environment.
+            target_labels (List[str]): A list of target labels to retrieve.
+
+        Returns:
+            Tuple[List[int], List[int], List[str], List[List[str]]]: A tuple
+                of the indices of the target labels, the indices of the
+                retrieved labels sets, the retrieved target labels, and the
+                retrieved labels sets.
+        """
+        self.reset()
+
+        labels_set_prompt = "===== LABELS SETS =====\n"
+        for i, labels_set in enumerate(labels_sets):
+            labels_set_prompt += f"[{i}]: "
+            for label in labels_set:
+                labels_set_prompt += f"{label}, "
+            labels_set_prompt += "\n"
+        target_labels_prompt = "===== TARGET LABELS =====\n"
+        for i, target_label in enumerate(target_labels):
+            target_labels_prompt += f"[{i}]: {target_label}\n"
+
+        similarity_criteria_prompt = """You are a retrieval index getter, and you're in asked with getting the retrieval index of the target labels from the environment.
+You are given multiple sets defined as TARGET LABELS (a List of strings) and LABELS SETS (a List of Lists of strings). You need to identify the subsets from LABELS SETS (referred to as LABELS SUBSETS) that have labels similar to those in a specific subset from TARGET LABELS (referred to as TARGET SUBSET). Your task is to return the indices from TARGET LABELS as a List of integers and the indices of the similar sets from LABELS SETS as a List of integers.
+Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill in the BLANKs, and DO NOT alter or modify any other part of the template.
+
+{target_labels_prompt}
+
+{labels_set_prompt}
+
+===== CRITERIA FOR DETERMINING SIMILARITY =====
+1. Explicit Similarity: Labels that have an exact string match should be counted as similar.
+2. Implicit Similarity: Labels that may not match word-for-word but have semantic or contextual similarities should also be considered.
+    - For example, "apple" and "fruit" may be considered similar in a context where they are being used to describe food items.
+Please ensure that you consider both explicit and implicit similarities while evaluating. The result should be a set of indices pointing to the similar labels and sets."""  # noqa: E501
+        answer_prompt = "===== ANSWER TEMPLATE =====\n"
+        for lable in target_labels:
+            answer_prompt += (
+                f"Label \"{lable}\" from TARGET LABELS has " +
+                "an explicit or implicit similarity with \"<BLANK/NONE>\" " +
+                "(or similar label) in LABELS SETS subsets " +
+                "[<m>, <n>/NONE] (include square brackets).\n")
+        answer_prompt += ("Indices of the similar labels in TARGET LABELS: " +
+                          "[<i>, <j>] (include square brackets) \n" +
+                          "Indices of the similar subset in LABELS SETS: " +
+                          "[<x>, <y>] (include square brackets)")
+
+        retrieval_index_prompt = TextPrompt(similarity_criteria_prompt +
+                                            "\n\n" + answer_prompt)
+        retrieval_index_generation = retrieval_index_prompt.format(
+            target_labels_prompt=target_labels_prompt,
+            labels_set_prompt=labels_set_prompt)
+
+        retrieval_index_msg = BaseMessage.make_user_message(
+            role_name="Retrieval Index Getter",
+            content=retrieval_index_generation)
+
+        response = self.step(input_message=retrieval_index_msg)
+
+        msg = response.msg
+
+        target_labels_indices = [
+            int(idx) for idx in re.findall(
+                r"Indices of the similar labels in TARGET LABELS: \[(.+?)\]",
+                msg.content, re.DOTALL)[0].split(",")
+        ]
+        target_retrieved_labels = [
+            target_labels[idx] for idx in target_labels_indices
+        ]
+        labels_sets_indices = [
+            int(idx) for idx in re.findall(
+                r"Indices of the similar subset in LABELS SETS: \[(.+?)\]",
+                msg.content, re.DOTALL)[0].split(",")
+        ]
+        labels_retrieved_sets = [
+            labels_sets[idx] for idx in labels_sets_indices
+        ]
+
+        return target_labels_indices, labels_sets_indices, \
+            target_retrieved_labels, labels_retrieved_sets

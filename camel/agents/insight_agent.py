@@ -69,15 +69,16 @@ class InsightAgent(ChatAgent):
         self.reset()
 
         insights_instruction_prompt = \
-            TextPrompt("{insights_instruction}\n Based on the CONTEXT TEXT " +
+            TextPrompt("Based on the CONTEXT TEXT " +
                        "provided, generate a comprehensive set of distinct " +
                        "insights following the \"RULES OF INSIGHTS " +
                        "GENERATION\" and use the \"ANSWER TEMPLATE\" to " +
                        "structure your response. Extract as many meaningful " +
-                       "insights as the context allows. Your answer MUST "
-                       "strictly adhere to the structure of ANSWER " +
-                       "TEMPLATE, ONLY fill in  the BLANKs, and DO NOT " +
-                       "alter or modify any other part of the template.\n")
+                       "insights as the context allows. " +
+                       "{insights_instruction}\nYour answer MUST strictly " +
+                       "adhere to the structure of ANSWER TEMPLATE, ONLY " +
+                       "fill in  the BLANKs, and DO NOT alter or modify any " +
+                       "other part of the template.\n")
         context_text_prompt = TextPrompt(
             "===== CONTEXT TEXT =====\n{context_text}\n\n")
         insights_prompt = """===== INSIGHTS GENERATION WITH MATHEMATICAL CONTEXT =====
@@ -117,12 +118,12 @@ For each identified entity or detail from the decomposition:
 
         insight_template = (
             "Insight <NUM>:\n" + "- Topic Segmentation:\n<BLLANK>\n" +
-            "- Entity Recognition:\n[<BLANK>, <BLANK>] " +
-            "(include square brackets)\n" + "- Extract Details:\n<BLANK>\n" +
+            "- Entity Recognition:\n[<BLANK>, <BLANK>] (include square " +
+            "brackets)\n- Extract Details:\n<BLANK>\n" +
             "- Contextual Understanding:\n<BLANK or N/A>\n" +
             "- Formulate Questions:\n<BLANK>\n" +
             "- Answer to \"Formulate Questions\" using " +
-            "CONTEXT TEXT:\n<BLANK>\n" + "- Iterative Feedback:\n<BLANK>\n")
+            "CONTEXT TEXT:\n<BLANK>\n- Iterative Feedback:\n<BLANK>\n")
         answer_template_prompt = TextPrompt(
             "===== ANSWER TEMPLATE =====\n" +
             "You need to generate multiple insights, and the number of " +
@@ -144,7 +145,6 @@ For each identified entity or detail from the decomposition:
             raise RuntimeError("Insights generation failed. Error:\n" +
                                f"{response.info}")
         msg = response.msg  # type: BaseMessage
-        print(f"msg:\n{msg.content}")
 
         # Replace the "N/A", "None", "NONE" with None
         def handle_none_values_in_msg(value):
@@ -208,3 +208,22 @@ For each identified entity or detail from the decomposition:
             insights_json.pop(insight_idx)
 
         return insights_json
+
+    def convert_json_to_str(self, insights_json: Dict[str, Dict[str,
+                                                                str]]) -> str:
+        r"""Convert the insights from json format to string format.
+        Args:
+            insights_json (Dict[str, Dict[str, str]]): The insights in json
+                format.
+        Returns:
+            str: The insights in string format.
+        """
+        insights_str = ""
+        for insight_idx, insight in insights_json.items():
+            insights_str += f"{insight_idx}:\n"
+            for key, value in insight.items():
+                if value is not None:
+                    insights_str += f"- {key}:\n{value}\n"
+                else:
+                    insights_str += f"- {key}:\nN/A\n"
+        return insights_str
