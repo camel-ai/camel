@@ -11,53 +11,79 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from io import BytesIO
-
-import tiktoken
-
+from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
-from camel.functions.data_io_functions import HtmlFile
 from camel.models.openai_model import OpenAIModel
 from camel.typing import ModelType
 
-with open("examples/multi_agent/multi-agent-output-Supply Chain-en.html",
-          "rb") as f:
-    file = BytesIO(f.read())
-    file.name = "test.html"
-    html_file = HtmlFile.from_bytes(file)
 
-normal_string = html_file.docs[0]['page_content']
+class OutputAgent(ChatAgent):
+    r"""An agent used to re-organize the chat history of multi-agent
+     into detailed instruction.
 
-num_tokens = len(tiktoken.get_encoding("cl100k_base").encode(normal_string))
-print(num_tokens)
+    Attributes:
+            SYSTEM_PROMPT (str): Prompt to explain the agent's role.
+            USER_MESSAGE (str): User message to request a detailed instruction.
 
-# Create an instance of the OpenAI model
-my_openai_model = OpenAIModel(model_type=ModelType.GPT_3_5_TURBO_16K,
-                              model_config_dict=ChatGPTConfig().__dict__)
+    Args:
+        content (str): The content to be processed.
+        model_type (ModelType): The type of the OpenAI model to use.
+    """
 
-# Create a task prompt based on the content
-messages_task_prompt = [
-    {
-        "role":
-        "system",
-        "content":
-        '''You are a helpful assistant to re-organize information
-        into a detailed instruction,
-        below is the content for you:''' + '\n' + normal_string
-    },
-    {
-        "role":
-        "user",
-        "content":
-        '''Please extract the detailed action information
-        from the provided content,
-        make it useful for a human can follow the detailed
-        instruction step by step to solve the task.'''
-    },
-]
+    SYSTEM_PROMPT = (
+        "You are a helpful assistant to re-organize information "
+        "into a detailed instruction, below is the content for you:\n{content}"
+    )
+    USER_MESSAGE = (
+        "Please extract the detailed action information "
+        "from the provided content, "
+        "make it useful for a human to follow the detailed instruction "
+        "step by step to solve the task.")
 
-# Get a response for the task prompt
-response_task_prompt = my_openai_model.run(
-    messages=messages_task_prompt)['choices'][0]
-content_task_prompt = response_task_prompt['message']['content']
-print(content_task_prompt)
+    def __init__(self, content: str,
+                 model_type: ModelType = ModelType.GPT_3_5_TURBO_16K):
+        r"""
+        Initialize the OutputAgent.
+        """
+        self.content = content
+        self.model = self._create_model(model_type)
+
+    @staticmethod
+    def _create_model(model_type: ModelType) -> OpenAIModel:
+        r"""
+        Creates and returns an OpenAI model.
+
+        Args:
+            model_type (ModelType): The type of the OpenAI model to use.
+
+        Returns:
+            OpenAIModel: The initialized model.
+        """
+        config = ChatGPTConfig()
+        return OpenAIModel(model_type=model_type,
+                           model_config_dict=config.__dict__)
+
+    def _construct_task_prompt(self) -> list:
+        r"""
+        Constructs the task prompt based on the content.
+
+        Returns:
+            list: List of messages forming the prompt.
+        """
+        return [{
+            "role": "system",
+            "content": self.SYSTEM_PROMPT.format(content=self.content)
+        }, {
+            "role": "user",
+            "content": self.USER_MESSAGE
+        }]
+
+    def generate_detailed_instruction(self) -> str:
+        r"""
+        Generate a detailed instruction based on the provided content.
+
+        Returns:
+            str: The detailed instruction.
+        """
+        response = self.model.run(messages=self._construct_task_prompt())
+        return response['choices'][0]['message']['content']
