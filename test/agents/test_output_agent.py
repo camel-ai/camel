@@ -28,16 +28,17 @@ def test_construct_task_prompt(agent):
         "role":
         "system",
         "content":
-        "You are a helpful assistant to re-organize information "
-        "into a detailed instruction, below is the content for you:"
-        "\nSample content for testing."
+        ("You are a helpful assistant to re-organize information "
+         "into a detailed instruction, below is the content for you:\n"
+         "Sample content for testing.")
     }, {
         "role":
         "user",
         "content":
-        "Please extract the detailed action information from"
-        "the provided content, "
-        "make it useful for a human to follow the detailed"
-        "instruction step by step to solve the task."
+        ("Please extract the detailed action information from the "
+         "provided content, "
+         "make it useful for a human to follow the detailed instruction "
+         "step by step "
+         "to solve the task.")
     }]
     assert messages == expected_messages
