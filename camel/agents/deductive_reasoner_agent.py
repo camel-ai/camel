@@ -169,17 +169,16 @@ Given the starting state $A$ and the target state $B$, assuming that a path $L$ 
             input_message=conditions_and_quality_generation_msg)
 
         if response.terminated:
-            raise RuntimeError("Insights generation failed. Error:\n" +
+            raise RuntimeError("Deduction failed. Error:\n" +
                                f"{response.info}")
         msg = response.msg  # type: BaseMessage
 
-        print(msg.content)
         condistions_dict = {
             f"condition {i}":
             cdt.replace("<", "").replace(">", "").strip().strip('\n')
             for i, cdt in re.findall(
-                r"condition (\d+):(.+?)(?=condition|- Entity)", msg.content,
-                re.DOTALL)
+                r"condition (\d+):\s*(.+?)(?=condition \d+|- Entity)",
+                msg.content, re.DOTALL)
         }
 
         labels_str = [
