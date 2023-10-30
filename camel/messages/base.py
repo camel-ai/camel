@@ -34,8 +34,6 @@ class BaseMessage:
             :obj:`RoleType.ASSISTANT` or :obj:`RoleType.USER`.
         meta_dict (Optional[Dict[str, str]]): Additional metadata dictionary
             for the message.
-        role (str): The role of the message in OpenAI chat system, either
-            :obj:`"system"`, :obj:`"user"`, or :obj:`"assistant"`.
         content (str): The content of the message.
     """
     role_name: str
