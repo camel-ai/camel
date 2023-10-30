@@ -1,10 +1,10 @@
-camel.memory package
+camel.memories package
 ======================
 
 Module contents
 ---------------
 
-.. automodule:: camel.memory
+.. automodule:: camel.memories
    :members:
    :undoc-members:
    :show-inheritancek

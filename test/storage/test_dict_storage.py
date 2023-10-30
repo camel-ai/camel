@@ -17,7 +17,7 @@ from pathlib import Path
 
 import pytest
 
-from camel.storage.dict_storage import (
+from camel.storages.dict_storage import (
     BaseDictStorage,
     InMemoryDictStorage,
     JsonStorage,

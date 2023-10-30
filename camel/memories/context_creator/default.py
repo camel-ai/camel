@@ -14,8 +14,8 @@
 from dataclasses import dataclass
 from typing import List, Tuple
 
-from camel.memory.context_creator.base import BaseContextCreator
-from camel.memory.memory_record import ContextRecord
+from camel.memories.context_creator.base import BaseContextCreator
+from camel.memories.memory_record import ContextRecord
 from camel.messages import OpenAIMessage
 from camel.utils.token_counting import BaseTokenCounter
 

@@ -18,7 +18,7 @@ from typing import Any, Dict, Optional, Sequence
 from colorama import Fore
 
 from camel.agents import ChatAgent
-from camel.memory import BaseMemory, MemoryRecord
+from camel.memories import BaseMemory, MemoryRecord
 from camel.messages import BaseMessage
 from camel.responses import ChatAgentResponse
 from camel.typing import ModelType, OpenAIBackendRole

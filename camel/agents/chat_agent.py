@@ -24,8 +24,8 @@ from tenacity.wait import wait_exponential
 from camel.agents import BaseAgent
 from camel.configs import BaseConfig, ChatGPTConfig
 from camel.functions import OpenAIFunction
-from camel.memory import BaseMemory, ChatHistoryMemory, MemoryRecord
-from camel.memory.context_creator.default import DefaultContextCreator
+from camel.memories import BaseMemory, ChatHistoryMemory, MemoryRecord
+from camel.memories.context_creator.default import DefaultContextCreator
 from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.responses import ChatAgentResponse

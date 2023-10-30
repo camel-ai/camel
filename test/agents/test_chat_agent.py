@@ -20,7 +20,7 @@ from camel.agents.chat_agent import FunctionCallingRecord
 from camel.configs import ChatGPTConfig, FunctionCallingConfig
 from camel.functions import MATH_FUNCS
 from camel.generators import SystemMessageGenerator
-from camel.memory import MemoryRecord
+from camel.memories import MemoryRecord
 from camel.messages import BaseMessage
 from camel.terminators import ResponseWordsTerminator
 from camel.typing import ModelType, OpenAIBackendRole, RoleType, TaskType

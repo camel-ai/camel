@@ -14,11 +14,14 @@
 
 from typing import List, Optional, Tuple
 
-from camel.memory.base import BaseMemory, MemoryRecord
-from camel.memory.context_creator.base import BaseContextCreator, ContextRecord
+from camel.memories.base import BaseMemory, MemoryRecord
+from camel.memories.context_creator.base import (
+    BaseContextCreator,
+    ContextRecord,
+)
 from camel.messages import OpenAIMessage
-from camel.storage.dict_storage.base import BaseDictStorage
-from camel.storage.dict_storage.in_memory import InMemoryDictStorage
+from camel.storages.dict_storage.base import BaseDictStorage
+from camel.storages.dict_storage.in_memory import InMemoryDictStorage
 from camel.typing import OpenAIBackendRole
 
 
