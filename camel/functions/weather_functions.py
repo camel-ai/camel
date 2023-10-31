@@ -18,6 +18,9 @@ from pyowm import OWM
 
 from camel.functions import OpenAIFunction
 
+# Define a constant for error message
+ERROR_MESSAGE = "Unexpected error occurred while fetching"
+
 
 def get_openweathermap_api_key() -> str:
     """
@@ -33,7 +36,8 @@ def get_openweathermap_api_key() -> str:
     OPENWEATHERMAP_API_KEY = os.environ.get('OPENWEATHERMAP_API_KEY')
     if not OPENWEATHERMAP_API_KEY:
         raise ValueError("OPENWEATHERMAP_API_KEY not found in environment \
-                          variables.")
+                          variables. Get OPENWEATHERMAP_API_KEY here: \
+                         https://openweathermap.org/")
     return OPENWEATHERMAP_API_KEY
 
 
@@ -99,8 +103,8 @@ def get_current_weather(city: str, units: str = 'kelvin') -> dict:
         # Catch any unexpected exceptions
         return {
             "error":
-            f"Unexpected error occurred while fetching weather \
-                for {city}. Reason: {str(e)}"
+            f"{ERROR_MESSAGE} weather for {city}. \
+                Reason: {str(e)}"
         }
 
 
@@ -148,8 +152,8 @@ def get_current_wind(city: str, units: str = 'meters_sec') -> dict:
         # Catch any unexpected exceptions
         return {
             "error":
-            f"Unexpected error occurred while fetching wind data \
-                 for {city}. Reason: {str(e)}"
+            f"{ERROR_MESSAGE} wind data for {city}. \
+                Reason: {str(e)}"
         }
 
 
@@ -197,8 +201,8 @@ def get_current_visibility_distance(city: str, units: str = 'meters') -> dict:
         # Catch any unexpected exceptions
         return {
             "error":
-            f"Unexpected error occurred while fetching \
-                visibility distance for {city}. Reason: {str(e)}"
+            f"{ERROR_MESSAGE} visibility distance for {city}. \
+                Reason: {str(e)}"
         }
 
 
@@ -243,7 +247,7 @@ def get_sunrise_sunset(city: str, units: str = 'unix') -> Dict[str, str]:
         # Handle any exceptions that may occur during the request
         return {
             "error":
-            f"Failed to fetch sunrise and sunset times for \
+            f"{ERROR_MESSAGE} sunrise and sunset times for \
                 {city}. Reason: {str(e)}"
         }
 
