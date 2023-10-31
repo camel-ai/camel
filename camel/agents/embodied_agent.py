@@ -19,7 +19,11 @@ from camel.agents import BaseToolAgent, ChatAgent, HuggingFaceToolAgent
 from camel.messages import BaseMessage
 from camel.responses import ChatAgentResponse
 from camel.typing import ModelType
-from camel.utils import PythonInterpreter, print_text_animated
+from camel.utils import (
+    SafePythonInterpreter,
+    SubprocessInterpreter,
+    print_text_animated,
+)
 
 
 class EmbodiedAgent(ChatAgent):
@@ -47,6 +51,7 @@ class EmbodiedAgent(ChatAgent):
         model: ModelType = ModelType.GPT_4,
         model_config: Optional[Any] = None,
         message_window_size: Optional[int] = None,
+        unsafe_execution: bool = False,
         action_space: Optional[List[BaseToolAgent]] = None,
         verbose: bool = False,
         logger_color: Any = Fore.MAGENTA,
@@ -58,6 +63,7 @@ class EmbodiedAgent(ChatAgent):
         action_space_prompt = self.get_action_space_prompt()
         system_message.content = system_message.content.format(
             action_space=action_space_prompt)
+        self.unsafe_execution = unsafe_execution
         self.verbose = verbose
         self.logger_color = logger_color
         super().__init__(
@@ -116,18 +122,27 @@ class EmbodiedAgent(ChatAgent):
 
         if codes is not None:
             content = "\n> Executed Results:"
-            action_space: Dict[str, Any] = {
-                action.name: action
-                for action in self.action_space
-            }
-            action_space.update({"print": print, "enumerate": enumerate})
-            interpreter = PythonInterpreter(action_space=action_space)
-            for block_idx, code in enumerate(codes):
-                executed_outputs, _ = code.execute(interpreter)
-                content += (f"Executing code block {block_idx}:\n"
-                            f"  - execution output:\n{executed_outputs}\n"
-                            f"  - Local variables:\n{interpreter.state}\n")
-                content += "*" * 50 + "\n"
+            if self.unsafe_execution:
+                interpreter = SubprocessInterpreter()
+                for block_idx, code in enumerate(codes):
+                    executed_output = interpreter.run_generated_code(
+                        code, code.code_type)
+                    content += (f"Executing code block {block_idx}:\n" +
+                                executed_output)
+                    content += "*" * 50 + "\n"
+            else:
+                action_space: Dict[str, Any] = {
+                    action.name: action
+                    for action in self.action_space
+                }
+                action_space.update({"print": print, "enumerate": enumerate})
+                interpreter = SafePythonInterpreter(action_space=action_space)
+                for block_idx, code in enumerate(codes):
+                    executed_outputs, _ = code.execute(interpreter)
+                    content += (f"Executing code block {block_idx}:\n"
+                                f"  - execution output:\n{executed_outputs}\n"
+                                f"  - Local variables:\n{interpreter.state}\n")
+                    content += "*" * 50 + "\n"
 
         # TODO: Handle errors
         content = input_message.content + (Fore.RESET +

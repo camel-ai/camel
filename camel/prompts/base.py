@@ -25,7 +25,7 @@ from typing import (
 )
 
 from camel.typing import RoleType
-from camel.utils import PythonInterpreter
+from camel.utils import SafePythonInterpreter
 
 T = TypeVar('T')
 
@@ -172,9 +172,9 @@ class CodePrompt(TextPrompt):
         self._code_type = code_type
 
     def execute(
-        self, interpreter: Optional[PythonInterpreter] = None,
+        self, interpreter: Optional[SafePythonInterpreter] = None,
         user_variable: Optional[Dict[str, Any]] = None
-    ) -> Tuple[Any, PythonInterpreter]:
+    ) -> Tuple[Any, SafePythonInterpreter]:
         r"""Executes the code string by a given python interpreter.
 
         Args:
@@ -185,7 +185,7 @@ class CodePrompt(TextPrompt):
                 or documents. (default: :obj:`None`)
 
         Returns:
-            Tuple[Any, PythonInterpreter]: A tuple containing the execution
+            Tuple[Any, SafePythonInterpreter]: A tuple containing the execution
                 result and the used interpreter. The execution result
                 represents the value of the last statement (excluding "import")
                 in the code. This value could potentially be the desired result
@@ -193,7 +193,7 @@ class CodePrompt(TextPrompt):
     """
         # NOTE: Only supports Python code for now.
         if not interpreter:
-            interpreter = PythonInterpreter(action_space=globals())
+            interpreter = SafePythonInterpreter(action_space=globals())
         execution_res = interpreter.execute(self, fuzz_state=user_variable,
                                             keep_state=True)
         return execution_res, interpreter

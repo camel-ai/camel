@@ -17,16 +17,10 @@ import importlib
 import typing
 from typing import Any, Dict, List, Optional
 
-
-class InterpreterError(ValueError):
-    r"""An error raised when the interpreter cannot evaluate a Python
-    expression, due to syntax error or unsupported operations.
-    """
-
-    pass
+from camel.utils.code_interpreter.interpreter_error import InterpreterError
 
 
-class PythonInterpreter():
+class SafePythonInterpreter():
     r"""A customized python interpreter to control the execution of
     LLM-generated codes. The interpreter makes sure the code can only execute
     functions given in action space and import white list. It also supports

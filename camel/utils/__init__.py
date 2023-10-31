@@ -11,7 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .python_interpreter import PythonInterpreter
+from .code_interpreter.safe_python_interpreter import SafePythonInterpreter
+from .code_interpreter.subprocess_interpreter import SubprocessInterpreter
 from .functions import (
     openai_api_key_required,
     print_text_animated,
@@ -36,7 +37,8 @@ __all__ = [
     'get_prompt_template_key_words',
     'get_first_int',
     'download_tasks',
-    'PythonInterpreter',
+    'SafePythonInterpreter',
+    'SubprocessInterpreter',
     'parse_doc',
     'get_task_list',
     'get_model_encoding',
