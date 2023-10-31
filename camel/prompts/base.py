@@ -171,33 +171,6 @@ class CodePrompt(TextPrompt):
         """
         self._code_type = code_type
 
-    def execute(
-        self, interpreter: Optional[SafePythonInterpreter] = None,
-        user_variable: Optional[Dict[str, Any]] = None
-    ) -> Tuple[Any, SafePythonInterpreter]:
-        r"""Executes the code string by a given python interpreter.
-
-        Args:
-            interpreter (PythonInterpreter, optional): interpreter to be used
-                during code execution. (default: :obj:`None`)
-            user_variable (Optional[Dict[str, Any]]): varibales that can be
-                used in the code, which applying fuzzy matching, such as images
-                or documents. (default: :obj:`None`)
-
-        Returns:
-            Tuple[Any, SafePythonInterpreter]: A tuple containing the execution
-                result and the used interpreter. The execution result
-                represents the value of the last statement (excluding "import")
-                in the code. This value could potentially be the desired result
-                of the LLM-generated code.        
-    """
-        # NOTE: Only supports Python code for now.
-        if not interpreter:
-            interpreter = SafePythonInterpreter(action_space=globals())
-        execution_res = interpreter.execute(self, fuzz_state=user_variable,
-                                            keep_state=True)
-        return execution_res, interpreter
-
 
 # flake8: noqa :E501
 class TextPromptDict(Dict[Any, TextPrompt]):

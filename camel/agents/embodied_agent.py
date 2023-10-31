@@ -51,7 +51,7 @@ class EmbodiedAgent(ChatAgent):
         model: ModelType = ModelType.GPT_4,
         model_config: Optional[Any] = None,
         message_window_size: Optional[int] = None,
-        unsafe_execution: bool = False,
+        unsafe_execution: bool = True,
         action_space: Optional[List[BaseToolAgent]] = None,
         verbose: bool = False,
         logger_color: Any = Fore.MAGENTA,
@@ -138,7 +138,7 @@ class EmbodiedAgent(ChatAgent):
                 action_space.update({"print": print, "enumerate": enumerate})
                 interpreter = SafePythonInterpreter(action_space=action_space)
                 for block_idx, code in enumerate(codes):
-                    executed_outputs, _ = code.execute(interpreter)
+                    executed_outputs = interpreter.execute(code)
                     content += (f"Executing code block {block_idx}:\n"
                                 f"  - execution output:\n{executed_outputs}\n"
                                 f"  - Local variables:\n{interpreter.state}\n")
