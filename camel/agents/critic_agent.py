@@ -18,7 +18,7 @@ from typing import Any, Dict, Optional, Sequence
 from colorama import Fore
 
 from camel.agents import ChatAgent
-from camel.memories import BaseMemory, MemoryRecord
+from camel.memories import BaseMemory
 from camel.messages import BaseMessage
 from camel.responses import ChatAgentResponse
 from camel.typing import ModelType, OpenAIBackendRole
@@ -108,9 +108,7 @@ class CriticAgent(ChatAgent):
                 raise RuntimeError("Critic step failed.")
 
             critic_msg = critic_response.msg
-            critic_record = MemoryRecord(critic_msg,
-                                         OpenAIBackendRole.ASSISTANT)
-            self.memory.write_records([critic_record])
+            self.update_memory(critic_msg, OpenAIBackendRole.ASSISTANT)
             if self.verbose:
                 print_text_animated(self.logger_color + "\n> Critic response: "
                                     f"\x1b[3m{critic_msg.content}\x1b[0m\n")

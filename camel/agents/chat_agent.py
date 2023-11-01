@@ -74,6 +74,10 @@ class ChatAgent(BaseAgent):
         message_window_size (int, optional): The maximum number of previous
             messages to include in the context window. If `None`, no windowing
             is performed. (default: :obj:`None`)
+        token_limit (int, optional): The maxinum number of tokens in a context.
+            The context will be automatically pruned to fulfill the limitation.
+            If `None`, it will be set according to the backend model. (default:
+            :obj:`None`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
         function_list (List[OpenAIFunction], optional): List of available
@@ -233,14 +237,14 @@ class ChatAgent(BaseAgent):
         self.memory.clear()
         self.memory.write_record(system_record)
 
-    def submit_message(self, message: BaseMessage) -> None:
-        r"""Submits the externally provided message as if it were an answer of
-        the chat LLM from the backend. Currently, the choice of the critic is
-        submitted with this method.
+    def record_message(self, message: BaseMessage) -> None:
+        r"""Records the externally provided message into the agent memory as if
+        it were an answer of the chat LLM from the backend. Currently, the
+        choice of the critic is submitted with this method.
 
         Args:
-            message (BaseMessage): An external message to be added as an
-                assistant response.
+            message (BaseMessage): An external message to be recorded in the
+                memory.
         """
         self.update_memory(message, OpenAIBackendRole.ASSISTANT)
 
@@ -297,16 +301,9 @@ class ChatAgent(BaseAgent):
                     self.step_function_call(response))
 
                 # Update the messages
-                func_assistant_record = MemoryRecord(
-                    func_assistant_msg,
-                    OpenAIBackendRole.ASSISTANT,
-                )
-                func_result_record = MemoryRecord(
-                    func_result_msg,
-                    OpenAIBackendRole.FUNCTION,
-                )
-                self.memory.write_records(
-                    [func_assistant_record, func_result_record])
+                self.update_memory(func_assistant_msg,
+                                   OpenAIBackendRole.ASSISTANT)
+                self.update_memory(func_result_msg, OpenAIBackendRole.FUNCTION)
                 called_funcs.append(func_record)
             else:
                 # Function calling disabled or chat stopped
