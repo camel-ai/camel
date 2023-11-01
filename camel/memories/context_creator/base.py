@@ -20,8 +20,7 @@ from camel.utils.token_counting import BaseTokenCounter
 
 
 class BaseContextCreator(ABC):
-    r"""
-    Abstract base class defining the interface for context creation strategies.
+    r"""An abstract base class defining the interface for context creation strategies.
 
     This class provides a foundational structure for different strategies to
     generate conversational context from a list of context records. The primary
@@ -41,19 +40,18 @@ class BaseContextCreator(ABC):
     @property
     @abstractmethod
     def token_counter(self) -> BaseTokenCounter:
-        ...
+        pass
 
     @property
     @abstractmethod
     def token_limit(self) -> int:
-        ...
+        pass
 
     @abstractmethod
     def create_context(
             self,
             records: List[ContextRecord]) -> Tuple[List[OpenAIMessage], int]:
-        r"""
-        Abstract method to create conversational context from chat history.
+        r"""An abstract method to create conversational context from the chat history.
 
         Constructs the context from provided records. The specifics of how this
         is done and how the token count is managed should be provided by
@@ -68,4 +66,4 @@ class BaseContextCreator(ABC):
             Tuple[List[OpenAIMessage], int]: A tuple containing the constructed
                 context in OpenAIMessage format and the total token count.
         """
-        ...
+        pass

@@ -28,8 +28,7 @@ class _ContextUnit():
 
 
 class DefaultContextCreator(BaseContextCreator):
-    r"""
-    A default implementation of context creation strategy, which inherits from
+    r"""A default implementation of context creation strategy, which inherits from
     :obj:`BaseContextCreator`.
 
     This class provides a strategy to generate a conversational context from
@@ -99,7 +98,7 @@ class DefaultContextCreator(BaseContextCreator):
         context_units = sorted(context_units,
                                key=lambda unit: unit.record.importance)
 
-        # Remove messages until total token number < token limit
+        # Remove least important messages until total token number < token limit
         flag = None
         for i, unit in enumerate(context_units):
             if unit.record.importance == 1:

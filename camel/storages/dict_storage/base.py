@@ -17,37 +17,33 @@ from typing import Any, Dict, List
 
 
 class BaseDictStorage(ABC):
-    r"""
-    Abstract base class for Dict storage systems. Provides a consistent
+    r"""An abstract base class for Dict storage systems. Provides a consistent
     interface for saving, loading, and clearing data records without any loss
     of information.
     """
 
     @abstractmethod
     def save(self, records: List[Dict[str, Any]]) -> None:
-        r"""
-        Saves the given records into the storage system.
+        r"""Saves the given records into the storage system.
 
         Args:
             records (List[Dict[str, Any]]): A list of dictionaries representing
                 records to be saved.
         """
-        ...
+        pass
 
     @abstractmethod
     def load(self) -> List[Dict[str, Any]]:
-        r"""
-        Loads all records from the storage system.
+        r"""Loads all records from the storage system.
 
         Returns:
             List[Dict[str, Any]]: A list of dictionaries representing the
                 stored records.
         """
-        ...
+        pass
 
     @abstractmethod
     def clear(self) -> None:
-        r"""
-        Clears all records from the storage system.
+        r"""Clears all records from the storage system.
         """
-        ...
+        pass

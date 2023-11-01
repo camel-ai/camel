@@ -27,8 +27,7 @@ from camel.typing import (
 
 
 class _CamelJSONEncoder(json.JSONEncoder):
-    r"""
-    Custom JSON encoder for serializing specific enumerated types. Ensures
+    r"""A custom JSON encoder for serializing specifically enumerated types. Ensures
     enumerated types can be stored in and retrieved from JSON format.
     """
     CAMEL_ENUMS = {
@@ -47,8 +46,7 @@ class _CamelJSONEncoder(json.JSONEncoder):
 
 
 class JsonStorage(BaseDictStorage):
-    r"""
-    Concrete implementation of the :obj:`BaseDictStorage` using JSON files.
+    r"""A concrete implementation of the :obj:`BaseDictStorage` using JSON files.
     Allows for persistent storage of records in a human-readable format.
 
     Args:

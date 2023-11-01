@@ -26,8 +26,7 @@ from camel.typing import OpenAIBackendRole
 
 
 class ChatHistoryMemory(BaseMemory):
-    r"""
-    An implementation of the :obj:`BaseMemory` abstract base class for
+    r"""An implementation of the :obj:`BaseMemory` abstract base class for
     maintaining a record of chat histories.
 
     This memory class helps manage conversation histories with a designated
@@ -61,8 +60,7 @@ class ChatHistoryMemory(BaseMemory):
         self.window_size = window_size
 
     def get_context(self) -> Tuple[List[OpenAIMessage], int]:
-        r"""
-        Gets chat context with proper size for a LLM from the memory based on
+        r"""Gets chat context with a proper size for the agent from the memory based on
         the window size or fetches the entire chat history if no window size is
         specified.
 
@@ -75,7 +73,7 @@ class ChatHistoryMemory(BaseMemory):
         """
         record_dicts = self.storage.load()
         if len(record_dicts) == 0:
-            raise ValueError("The ChatHistoryMemory is empty.")
+            raise ValueError("The `ChatHistoryMemory` is empty.")
 
         system_record = MemoryRecord.from_dict(record_dicts[0])
         if system_record.role_at_backend != OpenAIBackendRole.SYSTEM:
@@ -97,8 +95,7 @@ class ChatHistoryMemory(BaseMemory):
         return self.context_creator.create_context(output_records)
 
     def write_records(self, records: List[MemoryRecord]) -> None:
-        r"""
-        Writes memory records to the memory. Additionally, performs validation
+        r"""Writes memory records to the memory. Additionally, performs validation
         checks on the messages.
 
         Args:
@@ -111,7 +108,6 @@ class ChatHistoryMemory(BaseMemory):
         self.storage.save(stored_records)
 
     def clear(self) -> None:
-        r"""
-            Clears all chat messages from the memory.
+        r"""Clears all chat messages from the memory.
         """
         self.storage.clear()

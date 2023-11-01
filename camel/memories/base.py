@@ -20,8 +20,7 @@ from camel.messages import OpenAIMessage
 
 
 class BaseMemory(ABC):
-    """
-    An abstract base class that defines the foundational operations for a
+    r"""An abstract base class that defines the foundational operations for a
     memory component within an agent's memory system.
 
     The memory component is tasked with functions like saving chat histories,
@@ -38,34 +37,31 @@ class BaseMemory(ABC):
 
     By default, when executing the :obj:`step()` method, an agent retrieves
     messages from its designated memory and combines them with an incoming
-    message for input to a LLM. Subsequently, both the response message and the
+    message for input to the agent. Subsequently, both the response message and the
     incoming messages are archived back into the memory.
     """
 
     @abstractmethod
     def get_context(self) -> Tuple[List[OpenAIMessage], int]:
-        r"""
-        Gets chat context with proper size for a LLM.
+        r"""Gets chat context with a proper size for the agent.
 
         Returns:
             (List[OpenAIMessage], int): A tuple containing the constructed
                 context in OpenAIMessage format and the total token count.
         """
-        ...
+        pass
 
     @abstractmethod
     def write_records(self, records: List[MemoryRecord]) -> None:
-        r"""
-        Writes records to the memory, appending them to existing ones.
+        r"""Writes records to the memory, appending them to existing ones.
 
         Args:
             records (List[MemoryRecord]): Records to be added to the memory.
         """
-        ...
+        pass
 
     def write_record(self, record: MemoryRecord) -> None:
-        r"""
-        Writes a record to the memory, appending it to existing ones.
+        r"""Writes a record to the memory, appending it to existing ones.
 
         Args:
             record (MemoryRecord): Record to be added to the memory.
@@ -74,7 +70,6 @@ class BaseMemory(ABC):
 
     @abstractmethod
     def clear(self) -> None:
-        r"""
-        Clears all messages from the memory.
+        r"""Clears all messages from the memory.
         """
-        ...
+        pass

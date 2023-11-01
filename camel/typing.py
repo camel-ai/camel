@@ -144,6 +144,10 @@ class TerminationMode(Enum):
 
 
 __all__ = [
-    'RoleType', 'ModelType', 'TaskType', 'TerminationMode',
-    'OpenAIBackendRole', 'VectorDistance'
+    'RoleType',
+    'ModelType',
+    'TaskType',
+    'TerminationMode',
+    'OpenAIBackendRole',
+    'VectorDistance',
 ]
