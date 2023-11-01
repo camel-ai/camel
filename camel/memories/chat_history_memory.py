@@ -15,13 +15,13 @@
 from typing import List, Optional, Tuple
 
 from camel.memories.base import BaseMemory, MemoryRecord
-from camel.memories.context_creator.base import (
+from camel.memories.context_creators.base import (
     BaseContextCreator,
     ContextRecord,
 )
 from camel.messages import OpenAIMessage
-from camel.storages.dict_storage.base import BaseDictStorage
-from camel.storages.dict_storage.in_memory import InMemoryDictStorage
+from camel.storages.dict_storages.base import BaseDictStorage
+from camel.storages.dict_storages.in_memory import InMemoryDictStorage
 from camel.typing import OpenAIBackendRole
 
 
@@ -85,11 +85,14 @@ class ChatHistoryMemory(BaseMemory):
         for record_dict in record_dicts[truncate_idx:]:
             chat_records.append(MemoryRecord.from_dict(record_dict))
 
+        # We assume that, in the chat history memory, the closer the record is
+        # to the current message, the more important it will be.
         output_records = []
         importance = 1.0
         for record in reversed(chat_records):
             importance *= 0.99
             output_records.append(ContextRecord(record, importance))
+        # System messages are always kept.
         output_records.append(ContextRecord(system_record, 1.0))
         output_records.reverse()
         return self.context_creator.create_context(output_records)
