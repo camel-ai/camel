@@ -49,7 +49,7 @@ class MemoryRecord():
         reconstructed_message = message_cls(**kwargs)
         return cls(
             uuid=UUID(record_dict["uuid"]),
-            message= reconstructed_message,
+            message=reconstructed_message,
             role_at_backend=record_dict["role_at_backend"],
             extra_info=record_dict["extra_info"],
         )

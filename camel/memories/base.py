@@ -37,8 +37,8 @@ class BaseMemory(ABC):
 
     By default, when executing the :obj:`step()` method, an agent retrieves
     messages from its designated memory and combines them with an incoming
-    message for input to the agent. Subsequently, both the response message and the
-    incoming messages are archived back into the memory.
+    message for input to the agent. Subsequently, both the response message and
+    the incoming messages are archived back into the memory.
     """
 
     @abstractmethod

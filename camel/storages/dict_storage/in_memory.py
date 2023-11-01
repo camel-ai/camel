@@ -19,9 +19,9 @@ from camel.storages.dict_storage.base import BaseDictStorage
 
 
 class InMemoryDictStorage(BaseDictStorage):
-    r"""A concrete implementation of the :obj:`BaseDictStorage` using in-memory list.
-    Ideal for temporary storage purposes, as data will be lost when the program
-    ends.
+    r"""A concrete implementation of the :obj:`BaseDictStorage` using in-memory
+    list. Ideal for temporary storage purposes, as data will be lost when the
+    program ends.
     """
 
     def __init__(self) -> None:

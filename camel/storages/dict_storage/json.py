@@ -27,8 +27,8 @@ from camel.typing import (
 
 
 class _CamelJSONEncoder(json.JSONEncoder):
-    r"""A custom JSON encoder for serializing specifically enumerated types. Ensures
-    enumerated types can be stored in and retrieved from JSON format.
+    r"""A custom JSON encoder for serializing specifically enumerated types.
+    Ensures enumerated types can be stored in and retrieved from JSON format.
     """
     CAMEL_ENUMS = {
         "RoleType": RoleType,

@@ -24,7 +24,7 @@ from camel.utils.token_counting import BaseTokenCounter
 class _ContextUnit():
     idx: int
     record: ContextRecord
-    token_num: int
+    num_tokens: int
 
 
 class DefaultContextCreator(BaseContextCreator):
@@ -84,13 +84,13 @@ class DefaultContextCreator(BaseContextCreator):
                 idx,
                 record,
                 self.token_counter.count_tokens_from_messages(
-                    [record.m_record.to_openai_message()]),
+                    [record.memory_record.to_openai_message()]),
             ) for idx, record in enumerate(records)
         ]
         # TODO: optimize the process, may give information back to memory
 
         # If not exceed token limit, simply return
-        total_tokens = sum([unit.token_num for unit in context_units])
+        total_tokens = sum([unit.num_tokens for unit in context_units])
         if total_tokens <= self.token_limit:
             return self._create_output(context_units)
 
@@ -98,13 +98,14 @@ class DefaultContextCreator(BaseContextCreator):
         context_units = sorted(context_units,
                                key=lambda unit: unit.record.importance)
 
-        # Remove least important messages until total token number < token limit
+        # Remove least important messages until total token number is smaller
+        # than token limit
         truncate_idx = None
         for i, unit in enumerate(context_units):
             if unit.record.importance == 1:
                 raise RuntimeError(
                     "Cannot create context: exceed token limit.", total_tokens)
-            total_tokens -= unit.token_num
+            total_tokens -= unit.num_tokens
             if total_tokens <= self.token_limit:
                 truncate_idx = i
                 break
@@ -125,5 +126,6 @@ class DefaultContextCreator(BaseContextCreator):
         """
         context_units = sorted(context_units, key=lambda unit: unit.idx)
         return [
-            unit.record.m_record.to_openai_message() for unit in context_units
-        ], sum([unit.token_num for unit in context_units])
+            unit.record.memory_record.to_openai_message()
+            for unit in context_units
+        ], sum([unit.num_tokens for unit in context_units])

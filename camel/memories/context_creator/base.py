@@ -20,7 +20,8 @@ from camel.utils.token_counting import BaseTokenCounter
 
 
 class BaseContextCreator(ABC):
-    r"""An abstract base class defining the interface for context creation strategies.
+    r"""An abstract base class defining the interface for context creation
+    strategies.
 
     This class provides a foundational structure for different strategies to
     generate conversational context from a list of context records. The primary

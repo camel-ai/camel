@@ -24,7 +24,7 @@ def test_context_creator():
         OpenAITokenCounter(ModelType.GPT_4), 21)
     context_records = [
         ContextRecord(
-            m_record=MemoryRecord(
+            memory_record=MemoryRecord(
                 message=BaseMessage(
                     "test",
                     RoleType.ASSISTANT,
@@ -36,7 +36,7 @@ def test_context_creator():
             importance=0.9,
         ),
         ContextRecord(
-            m_record=MemoryRecord(
+            memory_record=MemoryRecord(
                 message=BaseMessage(
                     "test",
                     RoleType.ASSISTANT,
@@ -48,7 +48,7 @@ def test_context_creator():
             importance=0.3,
         ),
         ContextRecord(
-            m_record=MemoryRecord(
+            memory_record=MemoryRecord(
                 message=BaseMessage(
                     "test",
                     RoleType.ASSISTANT,
@@ -62,7 +62,7 @@ def test_context_creator():
     ]
 
     expected_output = [
-        r.m_record.to_openai_message()
+        r.memory_record.to_openai_message()
         for r in [context_records[0], context_records[2]]
     ]
     output, _ = context_creator.create_context(records=context_records)
