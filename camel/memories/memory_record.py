@@ -23,8 +23,20 @@ from camel.typing import OpenAIBackendRole
 
 @dataclass(frozen=True)
 class MemoryRecord():
-    r"""
-    The basic message storing unit in the CAMEL memory system.
+    r""" The basic message storing unit in the CAMEL memory system.
+
+    Attributes:
+        message (BaseMessage): The main content of the record.
+        role_at_backend (OpenAiBackendRole): An enumeration value representing
+            the role this message played at the OpenAI backend. Note that this
+            value is different from the :obj:`RoleType` used in the CAMEL role
+            playing system.
+        uuid (UUID, optional): A universally unique identifier for this record.
+            This is used to uniquely identify this record in the memory system.
+            If not given, it will be assigned with a random UUID.
+        extra_info (Dict[str, str], optional): A dictionary of additional
+            key-value pairs that provide more information. If not given, it
+            will be an empty `Dict`.
     """
     message: BaseMessage
     role_at_backend: OpenAIBackendRole
