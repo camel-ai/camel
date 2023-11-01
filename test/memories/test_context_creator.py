@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from camel.memories.context_creator.default import DefaultContextCreator
+from camel.memories.context_creators.default import DefaultContextCreator
 from camel.memories.memory_record import ContextRecord, MemoryRecord
 from camel.messages.base import BaseMessage
 from camel.typing import ModelType, OpenAIBackendRole, RoleType

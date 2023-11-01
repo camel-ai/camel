@@ -16,7 +16,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List
 
-from camel.storages.dict_storage.base import BaseDictStorage
+from camel.storages.dict_storages.base import BaseDictStorage
 from camel.typing import (
     ModelType,
     OpenAIBackendRole,
