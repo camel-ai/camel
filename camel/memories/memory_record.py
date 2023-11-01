@@ -46,10 +46,10 @@ class MemoryRecord():
         message_cls = cls._MESSAGE_TYPES[record_dict["message"]["__class__"]]
         kwargs: Dict = record_dict["message"].copy()
         kwargs.pop("__class__")
-        recons_message = message_cls(**kwargs)
+        reconstructed_message = message_cls(**kwargs)
         return cls(
             uuid=UUID(record_dict["uuid"]),
-            message=recons_message,
+            message= reconstructed_message,
             role_at_backend=record_dict["role_at_backend"],
             extra_info=record_dict["extra_info"],
         )
@@ -77,5 +77,5 @@ class MemoryRecord():
 class ContextRecord():
     r"""The result of memory retrieving.
     """
-    m_record: MemoryRecord
+    memory_record: MemoryRecord
     importance: float

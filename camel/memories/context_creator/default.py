@@ -82,10 +82,10 @@ class DefaultContextCreator(BaseContextCreator):
         context_units = [
             _ContextUnit(
                 idx,
-                r,
+                record,
                 self.token_counter.count_tokens_from_messages(
-                    [r.m_record.to_openai_message()]),
-            ) for idx, r in enumerate(records)
+                    [record.m_record.to_openai_message()]),
+            ) for idx, record in enumerate(records)
         ]
         # TODO: optimize the process, may give information back to memory
 
@@ -99,19 +99,19 @@ class DefaultContextCreator(BaseContextCreator):
                                key=lambda unit: unit.record.importance)
 
         # Remove least important messages until total token number < token limit
-        flag = None
+        truncate_idx = None
         for i, unit in enumerate(context_units):
             if unit.record.importance == 1:
                 raise RuntimeError(
                     "Cannot create context: exceed token limit.", total_tokens)
             total_tokens -= unit.token_num
             if total_tokens <= self.token_limit:
-                flag = i
+                truncate_idx = i
                 break
-        if flag is None:
+        if truncate_idx is None:
             raise RuntimeError("Cannot create context: exceed token limit.",
                                total_tokens)
-        return self._create_output(context_units[flag + 1:])
+        return self._create_output(context_units[truncate_idx + 1:])
 
     def _create_output(
             self, context_units: List[_ContextUnit]
