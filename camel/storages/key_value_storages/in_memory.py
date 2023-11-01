@@ -28,10 +28,24 @@ class InMemoryKeyValueStorage(BaseKeyValueStorage):
         self.memory_list: List[Dict] = []
 
     def save(self, records: List[Dict[str, Any]]) -> None:
+        r"""Saves a batch of records to the key-value storage system.
+
+        Args:
+            records (List[Dict[str, Any]]): A list of dictionaries, where each
+                dictionary represents a unique record to be stored.
+        """
         self.memory_list.extend(deepcopy(records))
 
     def load(self) -> List[Dict[str, Any]]:
+        r"""Loads all stored records from the key-value storage system.
+
+        Returns:
+            List[Dict[str, Any]]: A list of dictionaries, where each dictionary
+                represents a stored record.
+        """
         return deepcopy(self.memory_list)
 
     def clear(self) -> None:
+        r"""Removes all records from the key-value storage system.
+        """
         self.memory_list.clear()

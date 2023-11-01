@@ -66,11 +66,23 @@ class JsonStorage(BaseKeyValueStorage):
             return d
 
     def save(self, records: List[Dict[str, Any]]) -> None:
+        r"""Saves a batch of records to the key-value storage system.
+
+        Args:
+            records (List[Dict[str, Any]]): A list of dictionaries, where each
+                dictionary represents a unique record to be stored.
+        """
         with self.json_path.open("a") as f:
             f.writelines(
                 [json.dumps(r, cls=_CamelJSONEncoder) + "\n" for r in records])
 
     def load(self) -> List[Dict[str, Any]]:
+        r"""Loads all stored records from the key-value storage system.
+
+        Returns:
+            List[Dict[str, Any]]: A list of dictionaries, where each dictionary
+                represents a stored record.
+        """
         with self.json_path.open("r") as f:
             return [
                 json.loads(r, object_hook=self._json_object_hook)
@@ -78,5 +90,7 @@ class JsonStorage(BaseKeyValueStorage):
             ]
 
     def clear(self) -> None:
+        r"""Removes all records from the key-value storage system.
+        """
         with self.json_path.open("w"):
             pass
