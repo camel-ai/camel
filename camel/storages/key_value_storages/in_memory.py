@@ -15,11 +15,11 @@
 from copy import deepcopy
 from typing import Any, Dict, List
 
-from camel.storages.dict_storages.base import BaseDictStorage
+from camel.storages.key_value_storages.base import BaseKeyValueStorage
 
 
-class InMemoryDictStorage(BaseDictStorage):
-    r"""A concrete implementation of the :obj:`BaseDictStorage` using in-memory
+class InMemoryKeyValueStorage(BaseKeyValueStorage):
+    r"""A concrete implementation of the :obj:`BaseKeyValueStorage` using in-memory
     list. Ideal for temporary storage purposes, as data will be lost when the
     program ends.
     """

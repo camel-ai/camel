@@ -20,7 +20,10 @@ import pytest
 from camel.memories import ChatHistoryMemory, MemoryRecord
 from camel.memories.context_creators import DefaultContextCreator
 from camel.messages import BaseMessage
-from camel.storages.dict_storages import InMemoryDictStorage, JsonStorage
+from camel.storages.key_value_storages import (
+    InMemoryKeyValueStorage,
+    JsonStorage,
+)
 from camel.typing import ModelType, OpenAIBackendRole, RoleType
 from camel.utils.token_counting import OpenAITokenCounter
 
@@ -31,7 +34,7 @@ def memory(request):
         OpenAITokenCounter(ModelType.GPT_4), ModelType.GPT_4.token_limit)
     if request.param == "in-memory":
         yield ChatHistoryMemory(context_creator=context_creator,
-                                storage=InMemoryDictStorage())
+                                storage=InMemoryKeyValueStorage())
     elif request.param == "json":
         _, path = tempfile.mkstemp()
         path = Path(path)

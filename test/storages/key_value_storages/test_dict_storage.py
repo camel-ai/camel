@@ -17,9 +17,9 @@ from pathlib import Path
 
 import pytest
 
-from camel.storages.dict_storages import (
-    BaseDictStorage,
-    InMemoryDictStorage,
+from camel.storages.key_value_storages import (
+    BaseKeyValueStorage,
+    InMemoryKeyValueStorage,
     JsonStorage,
 )
 from camel.typing import RoleType
@@ -28,7 +28,7 @@ from camel.typing import RoleType
 @pytest.fixture
 def storage(request):
     if request.param == "in-memory":
-        yield InMemoryDictStorage()
+        yield InMemoryKeyValueStorage()
     elif request.param == "json":
         _, path = tempfile.mkstemp()
         path = Path(path)
@@ -37,7 +37,7 @@ def storage(request):
 
 
 @pytest.mark.parametrize("storage", ["in-memory", "json"], indirect=True)
-def test_dict_storage(storage: BaseDictStorage):
+def test_key_value_storage(storage: BaseKeyValueStorage):
     msg1 = {
         "key1": "value1",
         "role": RoleType.USER,

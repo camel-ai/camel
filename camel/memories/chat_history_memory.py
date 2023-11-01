@@ -20,8 +20,8 @@ from camel.memories.context_creators.base import (
     ContextRecord,
 )
 from camel.messages import OpenAIMessage
-from camel.storages.dict_storages.base import BaseDictStorage
-from camel.storages.dict_storages.in_memory import InMemoryDictStorage
+from camel.storages.key_value_storages.base import BaseKeyValueStorage
+from camel.storages.key_value_storages.in_memory import InMemoryKeyValueStorage
 from camel.typing import OpenAIBackendRole
 
 
@@ -42,8 +42,8 @@ class ChatHistoryMemory(BaseMemory):
     Args:
         context_creator (BaseContextCreator): A context creator contianing
             the context limit and the message pruning strategy.
-        storage (BaseDictStorage, optional): A storage mechanism for storing
-            chat history. (default: :obj:`InMemoryDictStorage()`)
+        storage (BaseKeyValueStorage, optional): A storage mechanism for
+            storing chat history. (default: :obj:`InMemoryKeyValueStorage()`)
         window_size (int, optional): Specifies the number of recent chat
             messages to retrieve. If not provided, the entire chat history
             will be retrieved. (default: :obj:`None`)
@@ -52,11 +52,11 @@ class ChatHistoryMemory(BaseMemory):
     def __init__(
         self,
         context_creator: BaseContextCreator,
-        storage: Optional[BaseDictStorage] = None,
+        storage: Optional[BaseKeyValueStorage] = None,
         window_size: Optional[int] = None,
     ) -> None:
         self.context_creator = context_creator
-        self.storage = storage or InMemoryDictStorage()
+        self.storage = storage or InMemoryKeyValueStorage()
         self.window_size = window_size
 
     def get_context(self) -> Tuple[List[OpenAIMessage], int]:

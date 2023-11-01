@@ -16,7 +16,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List
 
-from camel.storages.dict_storages.base import BaseDictStorage
+from camel.storages.key_value_storages.base import BaseKeyValueStorage
 from camel.typing import (
     ModelType,
     OpenAIBackendRole,
@@ -45,9 +45,9 @@ class _CamelJSONEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-class JsonStorage(BaseDictStorage):
-    r"""A concrete implementation of the :obj:`BaseDictStorage` using JSON files.
-    Allows for persistent storage of records in a human-readable format.
+class JsonStorage(BaseKeyValueStorage):
+    r"""A concrete implementation of the :obj:`BaseKeyValueStorage` using JSON
+    files. Allows for persistent storage of records in a human-readable format.
 
     Args:
         path (Path, optional): Path to the desired JSON file. (default:

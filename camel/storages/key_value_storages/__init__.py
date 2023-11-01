@@ -12,12 +12,12 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from .base import BaseDictStorage
-from .in_memory import InMemoryDictStorage
+from .base import BaseKeyValueStorage
+from .in_memory import InMemoryKeyValueStorage
 from .json import JsonStorage
 
 __all__ = [
-    'BaseDictStorage',
-    'InMemoryDictStorage',
+    'BaseKeyValueStorage',
+    'InMemoryKeyValueStorage',
     'JsonStorage',
 ]
