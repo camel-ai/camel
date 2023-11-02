@@ -145,6 +145,7 @@ If you're developing with VSCode, make sure to create a `.env` file in the repos
 
 ```
 OPENAI_API_KEY=sk-XXXXXXXX
+OPENAI_API_BASE_URL=https://XXXXXXXX (Should you utilize an OpenAI proxy service, kindly specify this)
 ```
 
 ## Documentation 📚
