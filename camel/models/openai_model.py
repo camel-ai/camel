@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import os, urllib
 from types import GeneratorType
 from typing import Any, Dict, List, Optional
 
@@ -65,7 +66,8 @@ class OpenAIModel(BaseModelBackend):
             Dict[str, Any]: Response in the OpenAI API format.
         """
         import openai
-        openai.api_base = DEFAULT_API_BASE
+        url = os.environ.get('OPENAI_API_BASE_URL', DEFAULT_API_BASE)
+        openai.api_base = url if all([urllib.parse.urlparse(url).scheme, urllib.parse.urlparse(url).netloc]) else DEFAULT_API_BASE
 
         messages_openai: List[OpenAIMessage] = messages
         response = openai.ChatCompletion.create(messages=messages_openai,
