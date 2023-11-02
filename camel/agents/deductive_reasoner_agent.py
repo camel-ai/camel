@@ -58,7 +58,6 @@ class DeductiveReasonerAgent(ChatAgent):
         self,
         starting_state: Union[str, TextPrompt],
         target_state: Union[str, TextPrompt],
-        task_domain: Optional[str] = None,
         role_descriptions_dict: Optional[Dict[str, str]] = None,
     ) -> Dict[str, Dict[str, Optional[str]]]:
         r"""Derives the conditions and quality from the starting state and the
@@ -70,9 +69,6 @@ class DeductiveReasonerAgent(ChatAgent):
                 task.
             target_state (Union[str, TextPrompt]): The target state of the
                 task.
-            task_domain (Optional[str], optional): The domain of the traisition
-                from the starting state to the target state. (default:
-                :obj:`None`)
             role_descriptions_dict (Optional[Dict[str, str]], optional): The
                 descriptions of the roles. (default: :obj:`None`)
 
