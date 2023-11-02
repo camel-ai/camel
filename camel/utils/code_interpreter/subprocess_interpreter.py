@@ -23,6 +23,22 @@ from camel.utils.code_interpreter.interpreter_error import InterpreterError
 
 
 class SubprocessInterpreter():
+    r""" SubprocessInterpreter is a class for executing code files or code
+    strings in a subprocess.
+
+    This class handles the execution of code in different scripting languages
+    (currently Python, Bash, and Fish) within a subprocess, capturing their
+    stdout and stderr streams, and allowing user checking before executing code
+    strings.
+
+    Args:
+        user_check (bool, optional): If True, prompt user before running code
+            strings for security. (default: :obj:`True`)
+        print_stdout (bool, optional): If True, print the standard output of
+            the executed code. (default: :obj:`False`)
+        print_stderr (bool, optional): If True, print the standard error of the
+            executed code. (default: :obj:`True`)
+    """
 
     _CODE_EXECUTE_CMD = {
         "python": "python {file_name}",
@@ -62,8 +78,23 @@ class SubprocessInterpreter():
         file: Path,
         code_type: str,
     ) -> str:
+        r"""Executes a code file in a subprocess and captures its output.
+
+        Args:
+            file (Path): The path object of the file to run.
+            code_type (str): The type of code to execute (e.g., 'python',
+                'bash').
+
+        Returns:
+            str: A string containing the captured stdout and stderr of the
+                executed code.
+
+        Raises:
+            RuntimeError: If the provided file path does not point to a file.
+            InterpreterError: If the code type provided is not supported.
+        """
         if not file.is_file():
-            return f"{file} is not a file."
+            raise RuntimeError(f"{file} is not a file.")
         code_type = self._check_code_type(code_type)
         cmd = shlex.split(
             self._CODE_EXECUTE_CMD[code_type].format(file_name=str(file)))
@@ -86,6 +117,22 @@ class SubprocessInterpreter():
         code: str,
         code_type: str,
     ) -> str:
+        r""" Generates a temporary file with the given code, executes it, and
+            deletes the file afterward.
+
+        Args:
+            code (str): The code string to execute.
+            code_type (str): The type of code to execute (e.g., 'python',
+                'bash').
+
+        Returns:
+            str: A string containing the captured stdout and stderr of the
+                executed code.
+
+        Raises:
+            InterpreterError: If the user declines to run the code or if the
+                code type is unsupported.
+        """
         code_type = self._check_code_type(code_type)
 
         # Print code for security checking

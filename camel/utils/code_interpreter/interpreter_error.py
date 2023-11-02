@@ -14,8 +14,5 @@
 
 
 class InterpreterError(ValueError):
-    r"""An error raised when the interpreter cannot evaluate a Python
-    expression, due to syntax error or unsupported operations.
-    """
-
+    r"""Exception raised for errors that can be solved by regenerating code """
     pass
