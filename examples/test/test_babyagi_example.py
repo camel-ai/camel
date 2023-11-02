@@ -24,4 +24,5 @@ parametrize = pytest.mark.parametrize('model', [
 
 @parametrize
 def test_ai_society_babyagi_playing_example(model):
-    examples.ai_society.babyagi_playing.main(model_type=model)
+    examples.ai_society.babyagi_playing.main(model_type=model,
+                                             chat_turn_limit=2)
