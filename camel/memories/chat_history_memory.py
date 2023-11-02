@@ -75,13 +75,8 @@ class ChatHistoryMemory(BaseMemory):
         if len(record_dicts) == 0:
             raise ValueError("The `ChatHistoryMemory` is empty.")
 
-        system_record = MemoryRecord.from_dict(record_dicts[0])
-        if system_record.role_at_backend != OpenAIBackendRole.SYSTEM:
-            raise ValueError(
-                "The first record in ChatHistoryMemory should contain a system"
-                " message.")
         chat_records: List[MemoryRecord] = []
-        truncate_idx = 1 if self.window_size is None else -self.window_size
+        truncate_idx = -self.window_size if self.window_size is not None else 0
         for record_dict in record_dicts[truncate_idx:]:
             chat_records.append(MemoryRecord.from_dict(record_dict))
 
@@ -90,10 +85,14 @@ class ChatHistoryMemory(BaseMemory):
         output_records = []
         importance = 1.0
         for record in reversed(chat_records):
-            importance *= 0.99
-            output_records.append(ContextRecord(record, importance))
-        # System messages are always kept.
-        output_records.append(ContextRecord(system_record, 1.0))
+            if record.role_at_backend == OpenAIBackendRole.SYSTEM:
+                # System messages are always kept.
+                output_records.append(ContextRecord(record, 1.0))
+            else:
+                # Other messages' importance drops down gradually
+                importance *= 0.99
+                output_records.append(ContextRecord(record, importance))
+
         output_records.reverse()
         return self.context_creator.create_context(output_records)
 
