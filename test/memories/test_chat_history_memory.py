@@ -18,7 +18,7 @@ from pathlib import Path
 import pytest
 
 from camel.memories import ChatHistoryMemory, MemoryRecord
-from camel.memories.context_creators import DefaultContextCreator
+from camel.memories.context_creators import ImportantBasedContextCreator
 from camel.messages import BaseMessage
 from camel.storages.key_value_storages import (
     InMemoryKeyValueStorage,
@@ -30,7 +30,7 @@ from camel.utils.token_counting import OpenAITokenCounter
 
 @pytest.fixture
 def memory(request):
-    context_creator = DefaultContextCreator(
+    context_creator = ImportantBasedContextCreator(
         OpenAITokenCounter(ModelType.GPT_4), ModelType.GPT_4.token_limit)
     if request.param == "in-memory":
         yield ChatHistoryMemory(context_creator=context_creator,

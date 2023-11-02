@@ -27,7 +27,7 @@ class _ContextUnit():
     num_tokens: int
 
 
-class DefaultContextCreator(BaseContextCreator):
+class ImportantBasedContextCreator(BaseContextCreator):
     r"""A default implementation of context creation strategy, which inherits from
     :obj:`BaseContextCreator`.
 

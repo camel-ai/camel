@@ -13,6 +13,6 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from .base import BaseContextCreator
-from .default import DefaultContextCreator
+from .important_based import ImportantBasedContextCreator
 
-__all__ = ['BaseContextCreator', 'DefaultContextCreator']
+__all__ = ['BaseContextCreator', 'ImportantBasedContextCreator']

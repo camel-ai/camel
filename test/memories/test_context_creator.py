@@ -12,7 +12,8 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from camel.memories.context_creators.default import DefaultContextCreator
+from camel.memories.context_creators.important_based import (  # isort:skip
+    ImportantBasedContextCreator, )
 from camel.memories.memory_record import ContextRecord, MemoryRecord
 from camel.messages.base import BaseMessage
 from camel.typing import ModelType, OpenAIBackendRole, RoleType
@@ -20,7 +21,7 @@ from camel.utils.token_counting import OpenAITokenCounter
 
 
 def test_context_creator():
-    context_creator = DefaultContextCreator(
+    context_creator = ImportantBasedContextCreator(
         OpenAITokenCounter(ModelType.GPT_4), 21)
     context_records = [
         ContextRecord(

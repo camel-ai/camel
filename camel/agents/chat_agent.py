@@ -25,13 +25,15 @@ from camel.agents import BaseAgent
 from camel.configs import BaseConfig, ChatGPTConfig
 from camel.functions import OpenAIFunction
 from camel.memories import BaseMemory, ChatHistoryMemory, MemoryRecord
-from camel.memories.context_creators.default import DefaultContextCreator
 from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.responses import ChatAgentResponse
 from camel.terminators import ResponseTerminator
 from camel.typing import ModelType, OpenAIBackendRole, RoleType
 from camel.utils import get_model_encoding, openai_api_key_required
+
+from camel.memories.context_creators.important_based import (  # isort:skip
+    ImportantBasedContextCreator)
 
 
 @dataclass(frozen=True)
@@ -120,7 +122,7 @@ class ChatAgent(BaseAgent):
         self.model_backend: BaseModelBackend = ModelFactory.create(
             self.model, self.model_config.__dict__)
         self.model_token_limit = token_limit or self.model_backend.token_limit
-        context_creator = DefaultContextCreator(
+        context_creator = ImportantBasedContextCreator(
             self.model_backend.token_counter,
             self.model_token_limit,
         )
