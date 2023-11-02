@@ -12,8 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from camel.memories.context_creators.important_based import (  # isort:skip
-    ImportantBasedContextCreator, )
+from camel.memories.context_creators import ScoreBasedContextCreator
 from camel.memories.memory_record import ContextRecord, MemoryRecord
 from camel.messages.base import BaseMessage
 from camel.typing import ModelType, OpenAIBackendRole, RoleType
@@ -21,7 +20,7 @@ from camel.utils.token_counting import OpenAITokenCounter
 
 
 def test_context_creator():
-    context_creator = ImportantBasedContextCreator(
+    context_creator = ScoreBasedContextCreator(
         OpenAITokenCounter(ModelType.GPT_4), 21)
     context_records = [
         ContextRecord(
@@ -34,7 +33,7 @@ def test_context_creator():
                 ),
                 role_at_backend=OpenAIBackendRole.ASSISTANT,
             ),
-            importance=0.9,
+            score=0.9,
         ),
         ContextRecord(
             memory_record=MemoryRecord(
@@ -46,7 +45,7 @@ def test_context_creator():
                 ),
                 role_at_backend=OpenAIBackendRole.ASSISTANT,
             ),
-            importance=0.3,
+            score=0.3,
         ),
         ContextRecord(
             memory_record=MemoryRecord(
@@ -58,7 +57,7 @@ def test_context_creator():
                 ),
                 role_at_backend=OpenAIBackendRole.ASSISTANT,
             ),
-            importance=0.7,
+            score=0.7,
         ),
     ]
 

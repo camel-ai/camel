@@ -32,8 +32,7 @@ from camel.terminators import ResponseTerminator
 from camel.typing import ModelType, OpenAIBackendRole, RoleType
 from camel.utils import get_model_encoding, openai_api_key_required
 
-from camel.memories.context_creators.important_based import (  # isort:skip
-    ImportantBasedContextCreator)
+from camel.memories.context_creators.score_based import ScoreBasedContextCreator  # isort:skip # noqa: E501
 
 
 @dataclass(frozen=True)
@@ -122,7 +121,7 @@ class ChatAgent(BaseAgent):
         self.model_backend: BaseModelBackend = ModelFactory.create(
             self.model, self.model_config.__dict__)
         self.model_token_limit = token_limit or self.model_backend.token_limit
-        context_creator = ImportantBasedContextCreator(
+        context_creator = ScoreBasedContextCreator(
             self.model_backend.token_counter,
             self.model_token_limit,
         )

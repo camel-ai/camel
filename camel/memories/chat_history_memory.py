@@ -81,17 +81,17 @@ class ChatHistoryMemory(BaseMemory):
             chat_records.append(MemoryRecord.from_dict(record_dict))
 
         # We assume that, in the chat history memory, the closer the record is
-        # to the current message, the more important it will be.
+        # to the current message, the more score it will be.
         output_records = []
-        importance = 1.0
+        score = 1.0
         for record in reversed(chat_records):
             if record.role_at_backend == OpenAIBackendRole.SYSTEM:
                 # System messages are always kept.
                 output_records.append(ContextRecord(record, 1.0))
             else:
-                # Other messages' importance drops down gradually
-                importance *= 0.99
-                output_records.append(ContextRecord(record, importance))
+                # Other messages' score drops down gradually
+                score *= 0.99
+                output_records.append(ContextRecord(record, score))
 
         output_records.reverse()
         return self.context_creator.create_context(output_records)

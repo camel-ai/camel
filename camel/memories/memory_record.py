@@ -90,4 +90,4 @@ class ContextRecord():
     r"""The result of memory retrieving.
     """
     memory_record: MemoryRecord
-    importance: float
+    score: float

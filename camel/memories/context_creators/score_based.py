@@ -27,14 +27,14 @@ class _ContextUnit():
     num_tokens: int
 
 
-class ImportantBasedContextCreator(BaseContextCreator):
+class ScoreBasedContextCreator(BaseContextCreator):
     r"""A default implementation of context creation strategy, which inherits from
     :obj:`BaseContextCreator`.
 
     This class provides a strategy to generate a conversational context from
     a list of chat history records while ensuring the total token count of
     the context does not exceed a specified limit. It prunes messages based
-    on their importance if the total token count exceeds the limit.
+    on their score if the total token count exceeds the limit.
 
     Args:
         token_counter (BaseTokenCounter): An instance responsible for counting
@@ -65,7 +65,7 @@ class ImportantBasedContextCreator(BaseContextCreator):
 
         Constructs the context from provided records and ensures that the total
         token count does not exceed the specified limit by pruning the least
-        important messages if necessary.
+        score messages if necessary.
 
         Args:
             records (List[ContextRecord]): A list of message records from which
@@ -94,15 +94,15 @@ class ImportantBasedContextCreator(BaseContextCreator):
         if total_tokens <= self.token_limit:
             return self._create_output(context_units)
 
-        # Sort by importance
+        # Sort by score
         context_units = sorted(context_units,
-                               key=lambda unit: unit.record.importance)
+                               key=lambda unit: unit.record.score)
 
-        # Remove least important messages until total token number is smaller
+        # Remove least score messages until total token number is smaller
         # than token limit
         truncate_idx = None
         for i, unit in enumerate(context_units):
-            if unit.record.importance == 1:
+            if unit.record.score == 1:
                 raise RuntimeError(
                     "Cannot create context: exceed token limit.", total_tokens)
             total_tokens -= unit.num_tokens
