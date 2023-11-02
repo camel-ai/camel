@@ -87,7 +87,7 @@ def test_chat_agent_messages_window():
     assistant = ChatAgent(
         system_message=system_msg,
         model=ModelType.GPT_3_5_TURBO,
-        message_window_size=1,
+        message_window_size=2,
     )
 
     user_msg = BaseMessage(role_name="User", role_type=RoleType.USER,
