@@ -38,14 +38,14 @@ def test_deductive_reasoner_agent(mock_step, model_type):
     model_config_description = ChatGPTConfig()
 
     # Construct deductive reasoner agent
-    deductivereasoneragent = \
+    deductive_reasoner_agent = \
         DeductiveReasonerAgent(model=model_type,
                                model_config=model_config_description)
 
     # Generate the conditions and quality dictionary based on the mock step
     # function
     conditions_and_quality = \
-        deductivereasoneragent.deduce_conditions_and_quality(
+        deductive_reasoner_agent.deduce_conditions_and_quality(
             starting_state=starting_state, target_state=target_state)
 
     expected_dict = generate_expected_content()
