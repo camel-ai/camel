@@ -19,7 +19,6 @@ from camel.agents import (
     TaskPlannerAgent,
     TaskSpecifyAgent,
 )
-from camel.agents.chat_agent import ChatAgentResponse
 from camel.generators import SystemMessageGenerator
 from camel.human import Human
 from camel.messages import BaseMessage
@@ -239,38 +238,11 @@ class RolePlaying:
         if (extend_sys_msg_meta_dicts is None and self.task_type in [
                 TaskType.AI_SOCIETY,
                 TaskType.MISALIGNMENT,
-                TaskType.ROLE_DESCRIPTION,
         ]):
             extend_sys_msg_meta_dicts = [
                 dict(assistant_role=assistant_role_name,
                      user_role=user_role_name) for _ in range(2)
             ]
-        elif (self.task_type == TaskType.ROLE_DESCRIPTION):
-            if (extend_sys_msg_meta_dicts is None
-                    or len(extend_sys_msg_meta_dicts) != 2):
-                # In `TaskType.ROLE_DESCRIPTION`, `extend_sys_msg_meta_dicts`
-                # should have two elements, one for assistant and one for user
-                raise ValueError("`extend_sys_msg_meta_dicts` should have two "
-                                 "elements for `TaskType.ROLE_DESCRIPTION`.")
-            # Validate `extend_sys_msg_meta_dicts` has `assistant_description`
-            # and `user_description`
-            if ("assistant_description" not in extend_sys_msg_meta_dicts[0]
-                    or "user_description" not in extend_sys_msg_meta_dicts[0]
-                    or "assistant_description"
-                    not in extend_sys_msg_meta_dicts[1]
-                    or "user_description" not in extend_sys_msg_meta_dicts[1]):
-                raise ValueError("Ensure both `assistant_description` and "
-                                 "`user_description` are not None.")
-
-            role_name_msg_meta_dicts = [
-                dict(assistant_role=assistant_role_name,
-                     user_role=user_role_name) for _ in range(2)
-            ]
-            extend_sys_msg_meta_dicts = [{
-                **role_name_msg_meta_dict,
-                **sys_msg_meta_dict
-            } for role_name_msg_meta_dict, sys_msg_meta_dict in zip(
-                role_name_msg_meta_dicts, extend_sys_msg_meta_dicts)]
 
         if extend_sys_msg_meta_dicts is not None:
             sys_msg_meta_dicts = [{
