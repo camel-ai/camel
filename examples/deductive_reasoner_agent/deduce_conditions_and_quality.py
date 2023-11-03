@@ -25,8 +25,6 @@ def main(model_type=None) -> None:
         DeductiveReasonerAgent(model=model_type,
                                model_config=model_config_description)
 
-    starting_state = "I was walking down the street in New York with a Anna."
-    target_state = "I remind Anna to pay attention to personal safety."
     starting_state = "The current empty website."
     target_state = "A website with search capabilities."
     conditions_and_quality = insight_agent.deduce_conditions_and_quality(
