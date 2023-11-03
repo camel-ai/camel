@@ -250,7 +250,7 @@ class RoleAssignmentAgent(ChatAgent):
 
         return parallel_subtask_pipelines
 
-    # @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
+    @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     def split_tasks(
         self,
         task_prompt: Union[str, TextPrompt],

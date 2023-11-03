@@ -19,8 +19,8 @@ from camel.societies import RolePlaying
 from camel.typing import TaskType
 from camel.utils import print_text_animated
 
-AI_ASSISTANT_ROLE_INDEX = 0
-AI_USER_ROLE_INDEX = 1
+AI_ASSISTANT_ROLE_INDEX = 1
+AI_USER_ROLE_INDEX = 0
 
 
 def main(model_type_for_role_generation=None, model_type=None) -> None:
@@ -96,7 +96,7 @@ def main(model_type_for_role_generation=None, model_type=None) -> None:
             Fore.BLUE +
             f"AI User: {ai_user_role}\n\n{user_response.msg.content}\n")
         print_text_animated(Fore.GREEN +
-                            f"AI Assistant:{ai_assistant_role}\n\n" +
+                            f"AI Assistant: {ai_assistant_role}\n\n" +
                             f"{assistant_response.msg.content}\n")
 
         if "CAMEL_TASK_DONE" in user_response.msg.content:
