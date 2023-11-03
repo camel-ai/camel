@@ -32,11 +32,13 @@ class RoleDescriptionPromptTemplateDict(AISocietyPromptTemplateDict):
             outlines the rules of the conversation and provides instructions
             for giving instructions to the AI assistant.
     """
-    DEFAULT_ROLE_DESCRIPTION_PROMPT = TextPrompt(
-        """===== ROLES WITH DESCRIPTION =====
-{user_role} and {assistant_role} are collaborating to complete a task: {task}.
-Competencies, characteristics, duties, and workflows of {user_role} for the task: {user_description}.
-Competencies, characteristics, duties, and workflows of {assistant_role} for the task: {assistant_description}.
+    ROLE_DESCRIPTION_PROMPT = TextPrompt("""===== ROLES WITH DESCRIPTION =====
+Before you proceed, pay close attention to the following role descriptions. It's essential that you internalize each aspect of these descriptions, as they will serve as the foundation for subsequent answers. Ensure that your responses align with and reflect the nuances of these roles. 
+{user_role} and {assistant_role} are collaborating to complete a task.
+{user_role}'s competencies, characteristics and duties:
+{user_description}
+{assistant_role}'s competencies, characteristics and duties:
+{assistant_description}
 """)
 
     ASSISTANT_PROMPT = TextPrompt(ROLE_DESCRIPTION_PROMPT +

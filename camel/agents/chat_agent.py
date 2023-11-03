@@ -95,6 +95,9 @@ class ChatAgent(BaseAgent):
             agent. (default: :obj:`None`)
         function_list (List[OpenAIFunction], optional): List of available
             :obj:`OpenAIFunction`. (default: :obj:`None`)
+        response_terminators (List[ResponseTerminator], optional): List of
+            :obj:`ResponseTerminator` bind to one chat agent.
+            (default: :obj:`None`)
     """
 
     def __init__(
@@ -105,6 +108,7 @@ class ChatAgent(BaseAgent):
         message_window_size: Optional[int] = None,
         output_language: Optional[str] = None,
         function_list: Optional[List[OpenAIFunction]] = None,
+        response_terminators: Optional[List[ResponseTerminator]] = None,
     ) -> None:
 
         self.orig_sys_message: BaseMessage = system_message
