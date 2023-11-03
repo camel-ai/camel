@@ -97,8 +97,6 @@ The Acme Program System, henceforth referred to as APS, is hosted in a state-of-
 
     expected_dict = generate_expected_content()
 
-    print(f"conditions_and_quality:\n{conditions_and_quality}")
-    print(f"expected_dict:\n{expected_dict}")
     assert conditions_and_quality == expected_dict
 
 
