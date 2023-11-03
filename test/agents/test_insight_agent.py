@@ -14,10 +14,11 @@
 import pytest
 from mock import patch
 
-from camel.agents import ChatAgent, ChatAgentResponse
+from camel.agents import ChatAgent
 from camel.agents.insight_agent import InsightAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
+from camel.responses import ChatAgentResponse
 from camel.typing import ModelType, RoleType
 
 
