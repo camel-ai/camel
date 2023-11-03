@@ -12,17 +12,12 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from .records import MemoryRecord, ContextRecord
-from .base import BaseMemory
-from .context_creators.base import BaseContextCreator
-from .context_creators.score_based import ScoreBasedContextCreator
-from .chat_history_memory import ChatHistoryMemory
+from .key_value_storages.base import BaseKeyValueStorage
+from .key_value_storages.in_memory import InMemoryKeyValueStorage
+from .key_value_storages.json import JsonStorage
 
 __all__ = [
-    'MemoryRecord',
-    'ContextRecord',
-    'BaseMemory',
-    'ChatHistoryMemory',
-    "BaseContextCreator",
-    "ScoreBasedContextCreator",
+    'BaseKeyValueStorage',
+    'InMemoryKeyValueStorage',
+    'JsonStorage',
 ]

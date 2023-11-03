@@ -19,6 +19,8 @@ import camel.prompts
 import camel.typing
 import camel.utils
 import camel.functions
+import camel.memories
+import camel.storages
 
 __version__ = '0.1.0'
 

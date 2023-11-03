@@ -16,8 +16,7 @@ from dataclasses import asdict, dataclass, field
 from typing import Any, ClassVar, Dict
 from uuid import UUID, uuid4
 
-from camel.messages.base import BaseMessage
-from camel.messages.func_message import FunctionCallingMessage
+from camel.messages import BaseMessage, FunctionCallingMessage
 from camel.typing import OpenAIBackendRole
 
 

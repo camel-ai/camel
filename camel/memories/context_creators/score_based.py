@@ -14,10 +14,10 @@
 from dataclasses import dataclass
 from typing import List, Tuple
 
-from camel.memories.context_creators.base import BaseContextCreator
-from camel.memories.memory_record import ContextRecord
+from camel.memories import ContextRecord
+from camel.memories.context_creators import BaseContextCreator
 from camel.messages import OpenAIMessage
-from camel.utils.token_counting import BaseTokenCounter
+from camel.utils import BaseTokenCounter
 
 
 @dataclass(frozen=True)
