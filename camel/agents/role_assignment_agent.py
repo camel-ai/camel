@@ -21,6 +21,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 from camel.agents import ChatAgent
 from camel.agents.insight_agent import InsightAgent
+from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
 from camel.typing import ModelType, RoleType
@@ -38,7 +39,7 @@ class RoleAssignmentAgent(ChatAgent):
     def __init__(
         self,
         model: ModelType = ModelType.GPT_3_5_TURBO,
-        model_config: Optional[Any] = None,
+        model_config: Optional[Any]  = None,
     ) -> None:
         system_message = BaseMessage(
             role_name="Role Assigner",
@@ -47,6 +48,7 @@ class RoleAssignmentAgent(ChatAgent):
             content="You assign roles based on tasks.",
         )
         super().__init__(system_message, model, model_config)
+        self.model_config = model_config or ChatGPTConfig()
 
     @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     def run_role_with_description(
@@ -159,8 +161,12 @@ class RoleAssignmentAgent(ChatAgent):
             List[List[str]]: A list of lists of subtasks that can be executed
                 concurrently.
         """
-        oriented_graph = {}
+        oriented_graph: Dict[str, List[str]] = {}
         for subtask_idx, details in subtasks_with_dependencies_dict.items():
+            assert isinstance(details, dict), \
+                f"{subtask_idx} does not map to a dictionary: {details}"
+            assert "dependencies" in details, \
+                f"{subtask_idx} does not have a 'dependencies' key: {details}"
             deps = details["dependencies"]
             oriented_graph[subtask_idx] = deps
 
@@ -170,14 +176,14 @@ class RoleAssignmentAgent(ChatAgent):
         return subtasks_execution_pipelines
 
     def draw_subtasks_graph(self, oriented_graph: Dict[str, List[str]],
-                            graph_file_path: str = None) -> str:
+                            graph_file_path: Optional[str] = None) -> str:
         r"""Draw the task dependency graph.
 
         Args:
             oriented_graph (Dict[str, List[str]]): The DAG of subtasks and
                 their dependencies.
-            graph_file_path (str, optional): The filepath to save the graph.
-                (default: :obj:`None`)
+            graph_file_path (Optional[str], optional): The filepath of the
+                saved graph. (default: :obj:`None`)
 
         Returns:
             str: The filepath of the saved graph.
@@ -204,6 +210,8 @@ class RoleAssignmentAgent(ChatAgent):
         plt.savefig(graph_file_path)
         plt.close()
 
+        return graph_file_path
+
     def sort_oriented_graph(
             self, oriented_graph: Dict[str, List[str]]) -> List[List[str]]:
         r"""Sort the subtasks in topological order and group them into
@@ -225,7 +233,7 @@ class RoleAssignmentAgent(ChatAgent):
 
         # Initialize the queue with nodes that have no incoming edges
         queue = deque(filter(lambda i: in_degree[i] == 0, in_degree))
-        parallel_subtask_pipelines = []
+        parallel_subtask_pipelines: List[List[str]] = [[]]
 
         while queue:
             # Collect nodes that can be processed concurrently in this round
@@ -280,18 +288,19 @@ class RoleAssignmentAgent(ChatAgent):
 
         # Generate insights from the context text to help split the task
         if context_text is not None:
+            model_config = self.model_config
             insight_agent = InsightAgent(model=self.model,
-                                         model_config=self.model_config)
+                                         model_config=model_config)
             task_insights_json = insight_agent.run(context_text=context_text)
-            task_context_prompt = \
-                TextPrompt("===== CONTEXT TEXT =====\n" +
-                           "The CONTEXT TEXT is related to TASK and " +
-                           "Contextual Parameters of subtask. When " +
-                           "splitting the task, ensure that each subtask " +
-                           "incorporates specific details from the " +
-                           "INSIGHTS of CONTEXT TEXT.\n")
-            task_context_prompt += insight_agent.convert_json_to_str(
-                task_insights_json)
+            task_context_prompt = (
+                "===== CONTEXT TEXT =====\n" +
+                "The CONTEXT TEXT is related to TASK and " +
+                "Contextual Parameters of subtask. When " +
+                "splitting the task, ensure that each subtask " +
+                "incorporates specific details from the " +
+                "INSIGHTS of CONTEXT TEXT.\n" + 
+                insight_agent.convert_json_to_str(
+                    task_insights_json))
         else:
             task_context_prompt = ""
 
@@ -445,7 +454,7 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
     def evaluate_role_compatibility(
         self,
         subtask_prompt: Union[str, TextPrompt],
-        role_descriptions_dict: [Dict[str, str]],
+        role_descriptions_dict: Dict[str, str],
     ) -> Dict[str, int]:
         r"""Evaluate the compatibility scores of each role in relation to the
             specified task.
@@ -453,7 +462,7 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
             Args:
                 subtask_prompt (Union[str, TextPrompt]): The prompt for the
                     subtask based on which the roles are to be evaluated.
-                role_descriptions_dict ([Dict[str, str]]): The role
+                role_descriptions_dict (Dict[str, str]): The role
                     descriptions of each role.
 
             Returns:
@@ -637,7 +646,8 @@ Please ensure that you consider both explicit and implicit similarities while ev
     @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     def transform_dialogue_into_text(self, user: str, assistant: str,
                                      task_prompt: str, user_conversation: str,
-                                     assistant_conversation: str) -> str:
+                                     assistant_conversation: str
+                                     ) -> Dict[str, Any]:
         r"""Synthesize a narrative from the chat history.
 
         Args:

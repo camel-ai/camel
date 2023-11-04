@@ -195,7 +195,7 @@ Given the starting state $A$ and the target state $B$, assuming that a path $L$ 
         ][0]
 
         # Convert them into JSON format
-        conditions_and_quality_json = {}
+        conditions_and_quality_json: Dict[str, Any] = {}
         conditions_and_quality_json["conditions"] = condistions_dict
         conditions_and_quality_json["labels"] = labels
         conditions_and_quality_json["quality"] = quality

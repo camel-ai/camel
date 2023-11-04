@@ -49,7 +49,7 @@ class InsightAgent(ChatAgent):
         self,
         context_text: Union[str, TextPrompt],
         insights_instruction: Optional[Union[str, TextPrompt]] = None,
-    ) -> Dict[str, Dict[str, Optional[str]]]:
+    ) -> Dict[str, Dict[str, str]]:
         r"""Generate role names based on the input task prompt.
 
         Args:
@@ -59,8 +59,8 @@ class InsightAgent(ChatAgent):
                 The instruction for generating insights. (default: :obj:`None`)
 
         Returns:
-            Dict[str, Dict[str, Optional[str]]]: The generated insights from
-                the input context text.
+            Dict[str, Dict[str, str]]: The generated insights from the context
+                text.
         """
         self.reset()
 
