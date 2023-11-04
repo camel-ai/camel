@@ -295,11 +295,11 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
             print_and_write_md(
                 f"AI User: {ai_user_role}\n\n" +
                 f"{user_response.msg.content}\n", color=Fore.BLUE,
-                MD_FILE=f"examples/multi_agent/{ID_one_subtask}.md")
+                MD_FILE=ID_one_subtask)
             print_and_write_md(
                 f"AI Assistant: {ai_assistant_role}\n\n" +
                 f"{assistant_response.msg.content}\n", color=Fore.GREEN,
-                MD_FILE=f"examples/multi_agent/{ID_one_subtask}.md")
+                MD_FILE=ID_one_subtask)
 
             if "CAMEL_TASK_DONE" in user_response.msg.content:
                 break
@@ -359,7 +359,11 @@ def print_and_write_md(text="", color=Fore.RESET, MD_FILE=None):
     import re
 
     if MD_FILE is None:
-        MD_FILE = "examples/multi_agent/multi-agent-output.md"
+        MD_FILE = ("examples/multi_agent/"
+                   "tmp_of_multi_agent/multi-agent-output.md")
+    else:
+        MD_FILE = ("examples/multi_agent/"
+                   f"tmp_of_multi_agent/{MD_FILE}.md")
     COLOR_MAP_MD = {
         Fore.BLUE: 'blue',
         Fore.GREEN: 'darkgreen',
