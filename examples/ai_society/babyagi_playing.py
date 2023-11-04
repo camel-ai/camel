@@ -18,7 +18,7 @@ from camel.societies import BabyAGI
 from camel.utils import print_text_animated
 
 
-def main(model_type=None) -> None:
+def main(model_type=None, chat_turn_limit=15) -> None:
 
     task_prompt = "Develop a trading bot for the stock market"
     babyagi_session = BabyAGI(
@@ -39,7 +39,7 @@ def main(model_type=None) -> None:
     print(Fore.RED +
           f"Final task prompt:\n{babyagi_session.specified_task_prompt}\n")
 
-    chat_turn_limit, n = 15, 0
+    n = 0
     while n < chat_turn_limit:
         n += 1
         assistant_response = babyagi_session.step()

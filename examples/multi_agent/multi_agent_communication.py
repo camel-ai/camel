@@ -25,8 +25,8 @@ from camel.typing import ModelType, TaskType
 
 def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
          context_text=None) -> None:
-    print(Fore.WHITE + "==========================================")
-    print_and_write_md("==========================================",
+    print(Fore.WHITE + "=========================================")
+    print_and_write_md("=========================================",
                        color=Fore.WHITE)
     print(Fore.RED + "Welcome to CAMEL-AI Society!")
     print_and_write_md("Welcome to CAMEL-AI Society!", color=Fore.RED)
@@ -41,8 +41,8 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                        color=Fore.WHITE)
     print(Fore.YELLOW + f"Context text:\n{context_text}\n")
     print_and_write_md(f"Context text:\n{context_text}\n", color=Fore.YELLOW)
-    print(Fore.WHITE + "==========================================")
-    print_and_write_md("==========================================",
+    print(Fore.WHITE + "=========================================")
+    print_and_write_md("=========================================",
                        color=Fore.WHITE)
 
     model_config_description = ChatGPTConfig()
@@ -54,11 +54,51 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
         model=model_type, model_config=model_config_description)
 
     # Generate role with descriptions
-    role_names = None
-    num_roles = 5
-    role_descriptions_dict = role_assignment_agent.run(task_prompt=task_prompt,
-                                                       num_roles=num_roles,
-                                                       role_names=role_names)
+    # role_names = None
+    # num_roles = 5
+    # role_descriptions_dict = \
+    #     role_assignment_agent.run_role_with_description(
+    #         task_prompt=task_prompt, num_roles=num_roles,
+    #         role_names=role_names)
+    role_descriptions_dict = {
+        "Science Fiction Writer":
+        ("- Strong imagination and creativity to develop a captivating "
+         "science fiction story.\n"
+         "- Proficient in world-building, creating unique and believable "
+         "settings.\n"
+         "- Ability to develop complex characters with distinct personalities "
+         "and motivations.\n"
+         "- Skilled in crafting engaging dialogue and narrative.\n"
+         "- Knowledgeable about science and technology to create plausible "
+         "futuristic elements."),
+        "Astrophysicist":
+        ("- In-depth knowledge of astrophysics and space exploration.\n"
+         "- Familiarity with theories and concepts related to interstellar "
+         "travel.\n"
+         "- Ability to provide scientific accuracy and realism to the story.\n"
+         "- Expertise in explaining complex scientific ideas in a simplified "
+         "manner.\n"
+         "- Responsible for providing scientific input and guidance "
+         "throughout the writing process."),
+        "Anthropologist":
+        ("- Expertise in studying cultures, societies, and human behavior.\n"
+         "- Knowledge of historical and archaeological research methods.\n"
+         "- Ability to develop diverse and realistic alien cultures.\n"
+         "- Understanding of cultural dynamics and intercultural "
+         "communication."),
+        "Military Strategist":
+        ("- Experience in military tactics and strategy.\n"
+         "- Knowledge of weapons systems and combat scenarios.\n"
+         "- Ability to create realistic military conflicts and engagements.\n"
+         "- Understanding of command structures and decision-making "
+         "processes."),
+        "Ethicist":
+        ("- Expertise in ethical theories and moral dilemmas.\n"
+         "- Ability to analyze the ethical implications of characters' "
+         "actions.\n"
+         "- Knowledge of the ethical considerations in scientific exploration "
+         "and discovery.\n")
+    }
 
     # Split the original task into subtasks
     subtasks_with_dependencies_dict = \
@@ -67,6 +107,11 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
             role_descriptions_dict=role_descriptions_dict,
             num_subtasks=9,
             context_text=context_text)
+    oriented_graph = {}
+    for subtask_idx, details in subtasks_with_dependencies_dict.items():
+        deps = details["dependencies"]
+        oriented_graph[subtask_idx] = deps
+    role_assignment_agent.draw_subtasks_graph(oriented_graph=oriented_graph)
 
     print(Fore.BLUE + "Dependencies among subtasks: " +
           json.dumps(subtasks_with_dependencies_dict, indent=4))
@@ -92,7 +137,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
     print(Fore.GREEN +
           f"List of {len(role_descriptions_dict)} roles with description:")
     print_and_write_md(
-        f"List of {len(role_descriptions_dict)} roles with " + "description:",
+        f"List of {len(role_descriptions_dict)} roles with description:",
         color=Fore.GREEN)
     for role_name in role_descriptions_dict.keys():
         print(Fore.BLUE + f"{role_name}:\n"
@@ -100,9 +145,6 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
         print_and_write_md(
             f"{role_name}:\n" + f"{role_descriptions_dict[role_name]}\n",
             color=Fore.BLUE)
-    print(Fore.YELLOW + f"Original task prompt:\n{task_prompt}")
-    print_and_write_md(f"Original task prompt:\n{task_prompt}",
-                       color=Fore.YELLOW)
     print(Fore.YELLOW + f"List of {len(subtasks)} subtasks:")
     print_and_write_md(f"List of {len(subtasks)} subtasks:", color=Fore.YELLOW)
     for i, subtask in enumerate(subtasks):
@@ -112,8 +154,8 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
         print(Fore.YELLOW + f"Pipeline {idx}: {', '.join(subtask_group)}")
         print_and_write_md(f"Pipeline {idx}: {', '.join(subtask_group)}",
                            color=Fore.YELLOW)
-    print(Fore.WHITE + "==========================================")
-    print_and_write_md("==========================================",
+    print(Fore.WHITE + "=========================================")
+    print_and_write_md("=========================================",
                        color=Fore.WHITE)
 
     # Resolve the subtasks in sequence based on the dependency graph
@@ -126,6 +168,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
         ID_pre_subtasks = \
             subtasks_with_dependencies_dict[ID_one_subtask]["dependencies"]
 
+        # React to the environment, and get the insights from it
         if ID_pre_subtasks is not None and len(ID_pre_subtasks) != 0:
             insights_pre_subtask = "\n" + \
                 "====== CURRENT STATE =====\n" + \
@@ -157,11 +200,6 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
             ]
             insights_pre_subtask += "\n".join(
                 [str(insight) for insight in retrieved_insights])
-            print(Fore.CYAN + "Retrieved insights from the environment:\n" +
-                  f"{insights_pre_subtask}")
-            print_and_write_md(
-                "Retrieved insights from the environment:\n" +
-                f"{insights_pre_subtask}", color=Fore.CYAN)
         else:
             insights_none_pre_subtask = insight_agent.run(
                 context_text=context_text)
@@ -170,7 +208,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                 "The snapshot and the context of the TASK is presentd in " + \
                 "the following insights which is close related to The " + \
                 "\"Insctruction\" and the \"Input\":\n" + \
-                f"{json.dumps(insights_none_pre_subtask, indent=4)}\n"
+                f"{insights_none_pre_subtask}\n"
 
         # Get the role with the highest compatibility score
         role_compatibility_scores_dict = (
@@ -188,11 +226,12 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
         ai_assistant_description = role_descriptions_dict[ai_assistant_role]
         ai_user_description = role_descriptions_dict[ai_user_role]
 
-        print(Fore.WHITE + "==========================================")
-        print_and_write_md("==========================================",
+        print(Fore.WHITE + "================ SESSION ================")
+        print_and_write_md("================ SESSION ================",
                            color=Fore.WHITE)
-        print(Fore.YELLOW + f"Subtask: \n{one_subtask}\n")
-        print_and_write_md(f"Subtask: \n{one_subtask}\n", color=Fore.YELLOW)
+        print(Fore.YELLOW + f"{ID_one_subtask}: \n{one_subtask}\n")
+        print_and_write_md(f"{ID_one_subtask}: \n{one_subtask}\n",
+                           color=Fore.YELLOW)
         print(Fore.GREEN + f"AI Assistant Role: {ai_assistant_role}\n"
               f"{ai_assistant_description}\n")
         print_and_write_md(
@@ -213,11 +252,11 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
             for _ in range(2)
         ]
 
-        task_with_IO = "Description of TASK:\n" + \
+        task_with_IO = "- Description of TASK:\n" + \
             subtasks_with_dependencies_dict[ID_one_subtask]["description"] + \
-            "\nInput of TASK:\n" + \
+            "\n- Input of TASK:\n" + \
             subtasks_with_dependencies_dict[ID_one_subtask]["input"] + \
-            "\nOutput Standard of TASK:\n" + \
+            "\n- Output Standard for the completion of TASK:\n" + \
             subtasks_with_dependencies_dict[ID_one_subtask]["output_standard"]
         role_play_session = RolePlaying(
             assistant_role_name=ai_assistant_role,
@@ -232,7 +271,9 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
 
         chat_history_assistant = ("The TASK of the context text is:\n" +
                                   f"{one_subtask}\n")
+        chat_history_two_roles = ""
 
+        # Start the role-playing to complete the subtask
         chat_turn_limit, n = 50, 0
         input_assistant_msg, _ = role_play_session.init_chat()
         while n < chat_turn_limit:
@@ -251,32 +292,42 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                     f"Reason: {user_response.info['termination_reasons']}."))
                 break
 
-            # print_text_animated(
-            #     Fore.BLUE +
-            #     f"AI User: {ai_user_role}\n\n{user_response.msg.content}\n")
-            # print_text_animated(Fore.GREEN +
-            #                     f"AI Assistant: {ai_assistant_role}\n\n" +
-            #                     f"{assistant_response.msg.content}\n")
-            # print_text_animated()
-            print(Fore.BLUE + f"AI User: {ai_user_role}\n\n" +
-                  f"{user_response.msg.content}\n")
             print_and_write_md(
                 f"AI User: {ai_user_role}\n\n" +
-                f"{user_response.msg.content}\n", color=Fore.BLUE)
-            print(Fore.GREEN + f"AI Assistant: {ai_assistant_role}\n\n" +
-                  f"{assistant_response.msg.content}\n")
+                f"{user_response.msg.content}\n", color=Fore.BLUE,
+                MD_FILE=ID_one_subtask)
             print_and_write_md(
                 f"AI Assistant: {ai_assistant_role}\n\n" +
-                f"{assistant_response.msg.content}\n", color=Fore.GREEN)
+                f"{assistant_response.msg.content}\n", color=Fore.GREEN,
+                MD_FILE=ID_one_subtask)
 
             if "CAMEL_TASK_DONE" in user_response.msg.content:
                 break
 
             # Generate the insights from the chat history
-            chat_history_assistant += (f"===== [{n}] ===== \n"
+            chat_history_assistant += (f"--- [{n}] ---\n"
                                        f"{assistant_response.msg.content}\n")
+            user_conversation = user_response.msg.content
+            assistant_conversation = assistant_response.msg.content.replace(
+                "Solution&Action:\n", "").replace("Next request.",
+                                                  "").strip("\n")
+            transformed_text_with_category = \
+                role_assignment_agent.transform_dialogue_into_text(
+                    user=ai_user_role, assistant=ai_assistant_role,
+                    task_prompt=one_subtask,
+                    user_conversation=user_conversation,
+                    assistant_conversation=assistant_conversation)
+            if "ASSISTANCE" in transformed_text_with_category["categories"]:
+                transformed_text = transformed_text_with_category["text"]
+                chat_history_two_roles += (transformed_text + "\n\n")
 
             input_assistant_msg = assistant_response.msg
+
+        print(Fore.GREEN + f"Output of the {ID_one_subtask}:\n" +
+              f"{chat_history_two_roles}\n")
+        print_and_write_md(
+            f"Output of the {ID_one_subtask}:\n" +
+            f"{chat_history_two_roles}\n", color=Fore.GREEN)
 
         insights_instruction = ("The CONTEXT TEXT is the chat history of " +
                                 f"{ai_user_role} and {ai_assistant_role}. " +
@@ -285,11 +336,6 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                                 "conversation itsel.")
         insights = insight_agent.run(context_text=chat_history_assistant,
                                      insights_instruction=insights_instruction)
-        print(Fore.CYAN + "Insights from the chat history:\n" +
-              f"{json.dumps(insights, indent=4)}")
-        print_and_write_md(
-            "Insights from the chat history:\n" +
-            f"{json.dumps(insights, indent=4)}", color=Fore.CYAN)
         insights_str = insight_agent.convert_json_to_str(insights)
         insights_subtasks[ID_one_subtask] = insights_str
         for insight in insights.values():
@@ -297,13 +343,27 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                 continue
             labels_key = tuple(insight["entity_recognition"])
             environment_record[labels_key] = insight
+        printable_environment_record = \
+            {str(label_tuple): insight_data
+             for label_tuple, insight_data in environment_record.items()}
+        print(Fore.CYAN + "Environment record:\n" +
+              f"{json.dumps(printable_environment_record, indent=4)}")
+        print_and_write_md(
+            "Environment record:\n" +
+            f"{json.dumps(printable_environment_record, indent=4)}",
+            color=Fore.CYAN)
 
 
-def print_and_write_md(text="", color=Fore.RESET):
+def print_and_write_md(text="", color=Fore.RESET, MD_FILE=None):
     import html
     import re
 
-    MD_FILE = "examples/multi_agent/multi-agent-output.md"
+    if MD_FILE is None:
+        MD_FILE = ("examples/multi_agent/"
+                   "tmp_of_multi_agent/multi-agent-output.md")
+    else:
+        MD_FILE = ("examples/multi_agent/"
+                   f"tmp_of_multi_agent/{MD_FILE}.md")
     COLOR_MAP_MD = {
         Fore.BLUE: 'blue',
         Fore.GREEN: 'darkgreen',
@@ -352,7 +412,7 @@ if __name__ == "__main__":
     - Ensure 200 units of Product X and 300 units of Product Y are delivered to Customer 1 within 10 days.
     - Ensure 150 units of Product X are delivered to Customer 2 within 15 days."""  # noqa: E501
     task_prompt_endpoint_implementation = """Implement the described endpoint in the Flask microservice to retrieve invoice details using the invoice_id."""  # noqa: E501
-    task_prompt_science_fiction = """Write the content of a long science fiction in serveral chapters, from the beginning to the end of long story, based the context information.
+    task_prompt_science_fiction = """Write 9 chapters for a long science fiction. The chapters should be structured as follows, with each chapter corresponding a subtask which begins with "Write Chapter X: ...":
 ### 9-Chapter Structure for the Sci-Fi Novel
 
 #### Chapter 1: Dawn of the Star Chaser
@@ -368,14 +428,14 @@ if __name__ == "__main__":
 #### Chapter 3: Echoes of Novada
 - **Exploration and Conflict**: Investigating the technologically advanced planet Novada.
 - **Secrets Revealed**: Unveiling some team members' hidden agendas and personal missions.
-- **Cultural and Political Intrigue**: First encounters with Novada’s complex societal and economic systems.
+- **Cultural and Political Intrigue**: First encounters with Novada's complex societal and economic systems.
 
 #### Chapter 4: Shadows Over Zelin
-- **Military Might and Tension**: Exploration of Zelin’s militarized environment.
+- **Military Might and Tension**: Exploration of Zelin's militarized environment.
 - **Internal Strife**: Rising tensions within the crew due to contrasting beliefs and the stressful situation.
-- **Critical Decisions**: Making hard choices in navigating Zelin’s aggressive stance.
+- **Critical Decisions**: Making hard choices in navigating Zelin's aggressive stance.
 
-#### Chapter 5: Iktar’s Enigma
+#### Chapter 5: Iktar's Enigma
 - **Mysteries Unfold**: Delving into the cultural and historical mysteries of Iktar.
 - **Archaeological Discovery**: Finding significant artifacts, offering clues to cosmic history and human origins.
 - **Moral Dilemmas**: Crew members grapple with the ethical implications of their discoveries and actions.
@@ -386,7 +446,7 @@ if __name__ == "__main__":
 - **Strategic Manoeuvres**: Navigating through the crisis using diplomacy, strategy, and combat.
 
 #### Chapter 7: The Heart of Darkness
-- **Intensified Conflict**: Escalating external threats from alien forces and Earth’s politics.
+- **Intensified Conflict**: Escalating external threats from alien forces and Earth's politics.
 - **Betrayal and Resilience**: A shocking betrayal within the team tests their resilience and trust.
 - **Pivotal Choices**: Critical decisions shape the future course of the mission.
 
@@ -399,7 +459,6 @@ if __name__ == "__main__":
 - **Aftermath and Reflection**: The crew reflects on the outcomes of their journey.
 - **Unresolved Mysteries and Future Directions**: Hints at continuing adventures and unresolved questions.
 - **Closing Note**: A poignant ending that sets the stage for potential sequels or ongoing narratives."""  # noqa: E501
-
     task_prompt_list = [
         task_prompt_trading_bot, task_prompt_authentication,
         task_prompt_supply_chain, task_prompt_endpoint_implementation,
@@ -586,11 +645,11 @@ At XYZ Corporation, we utilize an extensive system of microservices for our back
 
 - **Security Officer Seryx Karlos**
   - Tactical Skills: Advanced tactical planning, hand-to-hand and ranged combat expertise.
-  - Personal Secret: Silent about certain secretive operations of the Empire’s military, which could impact the mission.
+  - Personal Secret: Silent about certain secretive operations of the Empire's military, which could impact the mission.
 
 - **Diplomat Lena Itu**
   - Capabilities: Advanced linguistic skills, cross-cultural communication.
-  - Secret Mission: To uncover clues about Iktar’s mysterious past, potentially altering the interstellar political landscape.
+  - Secret Mission: To uncover clues about Iktar's mysterious past, potentially altering the interstellar political landscape.
 
 - **Robotics Engineer Gil Markus**
   - Technical Expertise: Robotics design, artificial intelligence development.

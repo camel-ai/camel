@@ -21,6 +21,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 from camel.agents import ChatAgent
 from camel.agents.insight_agent import InsightAgent
+from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
 from camel.typing import ModelType, RoleType
@@ -47,9 +48,10 @@ class RoleAssignmentAgent(ChatAgent):
             content="You assign roles based on tasks.",
         )
         super().__init__(system_message, model, model_config)
+        self.model_config = model_config or ChatGPTConfig()
 
     @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
-    def run(
+    def run_role_with_description(
         self,
         task_prompt: Union[str, TextPrompt],
         num_roles: int = 2,
@@ -159,8 +161,12 @@ class RoleAssignmentAgent(ChatAgent):
             List[List[str]]: A list of lists of subtasks that can be executed
                 concurrently.
         """
-        oriented_graph = {}
+        oriented_graph: Dict[str, List[str]] = {}
         for subtask_idx, details in subtasks_with_dependencies_dict.items():
+            assert isinstance(details, dict), \
+                f"{subtask_idx} does not map to a dictionary: {details}"
+            assert "dependencies" in details, \
+                f"{subtask_idx} does not have a 'dependencies' key: {details}"
             deps = details["dependencies"]
             oriented_graph[subtask_idx] = deps
 
@@ -170,14 +176,14 @@ class RoleAssignmentAgent(ChatAgent):
         return subtasks_execution_pipelines
 
     def draw_subtasks_graph(self, oriented_graph: Dict[str, List[str]],
-                            graph_file_path: str = None) -> str:
+                            graph_file_path: Optional[str] = None) -> str:
         r"""Draw the task dependency graph.
 
         Args:
             oriented_graph (Dict[str, List[str]]): The DAG of subtasks and
                 their dependencies.
-            graph_file_path (str, optional): The filepath to save the graph.
-                (default: :obj:`None`)
+            graph_file_path (Optional[str], optional): The filepath of the
+                saved graph. (default: :obj:`None`)
 
         Returns:
             str: The filepath of the saved graph.
@@ -204,6 +210,8 @@ class RoleAssignmentAgent(ChatAgent):
         plt.savefig(graph_file_path)
         plt.close()
 
+        return graph_file_path
+
     def sort_oriented_graph(
             self, oriented_graph: Dict[str, List[str]]) -> List[List[str]]:
         r"""Sort the subtasks in topological order and group them into
@@ -225,7 +233,7 @@ class RoleAssignmentAgent(ChatAgent):
 
         # Initialize the queue with nodes that have no incoming edges
         queue = deque(filter(lambda i: in_degree[i] == 0, in_degree))
-        parallel_subtask_pipelines = []
+        parallel_subtask_pipelines: List[List[str]] = [[]]
 
         while queue:
             # Collect nodes that can be processed concurrently in this round
@@ -280,18 +288,18 @@ class RoleAssignmentAgent(ChatAgent):
 
         # Generate insights from the context text to help split the task
         if context_text is not None:
+            model_config = self.model_config
             insight_agent = InsightAgent(model=self.model,
-                                         model_config=self.model_config)
+                                         model_config=model_config)
             task_insights_json = insight_agent.run(context_text=context_text)
-            task_context_prompt = \
-                TextPrompt("===== CONTEXT TEXT =====\n" +
-                           "The CONTEXT TEXT is related to TASK and " +
-                           "Contextual Parameters of subtask. When " +
-                           "splitting the task, ensure that each subtask " +
-                           "incorporates specific details from the " +
-                           "INSIGHTS of CONTEXT TEXT.\n")
-            task_context_prompt += insight_agent.convert_json_to_str(
-                task_insights_json)
+            task_context_prompt = (
+                "===== CONTEXT TEXT =====\n" +
+                "The CONTEXT TEXT is related to TASK and " +
+                "Contextual Parameters of subtask. When " +
+                "splitting the task, ensure that each subtask " +
+                "incorporates specific details from the " +
+                "INSIGHTS of CONTEXT TEXT.\n" +
+                insight_agent.convert_json_to_str(task_insights_json))
         else:
             task_context_prompt = ""
 
@@ -304,15 +312,23 @@ class RoleAssignmentAgent(ChatAgent):
             answer_prompt = """===== ANSWER TEMPLATE =====
 PART I:
 Details of subtask <NUM>:
-<BLANK>
-Contextual Parameters(only related to CONTEXT TEXT) of subtask <NUM>:
-<BLANK>
+- <BLANK>
+Contextual Parameters(only related to CONTEXT TEXT, without dependentcies) of subtask <NUM>:
+- <BLANK>
+Details of subtask <NUM>:
+- <BLANK>
+Contextual Parameters(only related to CONTEXT TEXT, without dependentcies) of subtask <NUM>:
+- <BLANK>
+
 PART II:
 Gantt Chart with complex dependency in MarkDown format:
 <BLANK>
+
 PART III:
-""" + "\n".join("Incorporate Contextual Parameters into Details of "
-                "subtask <NUM>:\n<BLANK>\n"
+"""  # noqa: E501
+            answer_prompt += "\n".join(
+                "Incorporate Contextual Parameters "
+                "into Details of subtask <NUM>:\n<BLANK>\n"
                 "Input of subtask <NUM>:\n<BLANK>/None\n"
                 "Task completion standard of subtask <NUM>:\n<BLANK>\n"
                 "Dependency of subtask <NUM>: [subtask <i>, subtask <j>, "
@@ -322,15 +338,23 @@ PART III:
             answer_prompt = """===== ANSWER TEMPLATE =====
 PART I:
 Details of subtask <NUM>:
-<BLANK>
-Contextual Parameters of subtask <NUM>:
-<BLANK>
+- <BLANK>
+Contextual Parameters(only related to CONTEXT TEXT, without dependentcies) of subtask <NUM>:
+- <BLANK>
+Details of subtask <NUM>:
+- <BLANK>
+Contextual Parameters(only related to CONTEXT TEXT, without dependentcies) of subtask <NUM>:
+- <BLANK>
+
 PART II:
 Gantt Chart with complex dependency in MarkDown format:
 <BLANK>
+
 PART III:
-""" + "\n".join(f"Incorporate Contextual Parameters into Details of "
-                f"subtask {i + 1}:\n<BLANK>\n"
+"""  # noqa: E501
+            answer_prompt += "\n".join(
+                f"Incorporate Contextual Parameters "
+                f"into Details of subtask {i + 1}:\n<BLANK>\n"
                 f"Input of subtask {i + 1}:\n<BLANK>/None\n"
                 f"Task completion standard of subtask {i + 1}:\n<BLANK>\n"
                 f"Dependency of subtask {i + 1}: [subtask <i>, subtask "
@@ -419,6 +443,8 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
             raise RuntimeError(
                 f"Got None or insufficient information of subtasks. "
                 f"Length of generated subtasks: {len(subtask_descriptions)}, "
+                "length of generated dependencies: "
+                f"{len(dependent_subtasks_list)}, "
                 f"length of required subtasks: {num_subtasks}")
 
         return subtasks_with_dependencies_dict
@@ -427,7 +453,7 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
     def evaluate_role_compatibility(
         self,
         subtask_prompt: Union[str, TextPrompt],
-        role_descriptions_dict: [Dict[str, str]],
+        role_descriptions_dict: Dict[str, str],
     ) -> Dict[str, int]:
         r"""Evaluate the compatibility scores of each role in relation to the
             specified task.
@@ -435,7 +461,7 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
             Args:
                 subtask_prompt (Union[str, TextPrompt]): The prompt for the
                     subtask based on which the roles are to be evaluated.
-                role_descriptions_dict ([Dict[str, str]]): The role
+                role_descriptions_dict (Dict[str, str]): The role
                     descriptions of each role.
 
             Returns:
@@ -539,6 +565,11 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
         """
         self.reset()
 
+        if labels_sets is None or len(labels_sets) == 0:
+            raise ValueError("Labels sets must be provided.")
+        if target_labels is None or len(target_labels) == 0:
+            raise ValueError("Target labels must be provided.")
+
         labels_set_prompt = "===== LABELS SETS =====\n"
         for i, labels_set in enumerate(labels_sets):
             labels_set_prompt += f"[{i}]: "
@@ -566,13 +597,13 @@ Please ensure that you consider both explicit and implicit similarities while ev
         for lable in target_labels:
             answer_prompt += (
                 f"Label \"{lable}\" from TARGET LABELS has " +
-                "an explicit or implicit similarity with \"<BLANK/NONE>\" " +
+                "an explicit or implicit similarity with \"<BLANK>/NONE\" " +
                 "(or similar label) in LABELS SETS subsets " +
-                "[<m>, <n>/NONE] (include square brackets).\n")
+                "[<m>, <n>]/NONE (include square brackets).\n")
         answer_prompt += ("Indices of the similar labels in TARGET LABELS: " +
-                          "[<i>, <j>] (include square brackets) \n" +
+                          "[<i>, <j>]/NONE (include square brackets) \n" +
                           "Indices of the similar subset in LABELS SETS: " +
-                          "[<x>, <y>] (include square brackets)")
+                          "[<x>, <y>]/NONE (include square brackets)")
 
         retrieval_index_prompt = TextPrompt(similarity_criteria_prompt +
                                             "\n\n" + answer_prompt)
@@ -588,22 +619,137 @@ Please ensure that you consider both explicit and implicit similarities while ev
 
         msg = response.msg
 
+        match_target_labels = re.findall(
+            r"Indices of the similar labels in TARGET LABELS: \[(.+?)\]",
+            msg.content, re.DOTALL)
         target_labels_indices = [
-            int(idx) for idx in re.findall(
-                r"Indices of the similar labels in TARGET LABELS: \[(.+?)\]",
-                msg.content, re.DOTALL)[0].split(",")
-        ]
-        target_retrieved_labels = [
-            target_labels[idx] for idx in target_labels_indices
-        ]
+            int(idx) for idx in match_target_labels[0].split(",")
+        ] if match_target_labels else []
+
+        target_retrieved_labels = \
+            [target_labels[idx] for idx in target_labels_indices]
+
+        match_labels_sets = re.findall(
+            r"Indices of the similar subset in LABELS SETS: \[(.+?)\]",
+            msg.content, re.DOTALL)
         labels_sets_indices = [
-            int(idx) for idx in re.findall(
-                r"Indices of the similar subset in LABELS SETS: \[(.+?)\]",
-                msg.content, re.DOTALL)[0].split(",")
-        ]
-        labels_retrieved_sets = [
-            labels_sets[idx] for idx in labels_sets_indices
-        ]
+            int(idx) for idx in match_labels_sets[0].split(",")
+        ] if match_labels_sets else []
+
+        labels_retrieved_sets = \
+            [labels_sets[idx] for idx in labels_sets_indices]
 
         return target_labels_indices, labels_sets_indices, \
             target_retrieved_labels, labels_retrieved_sets
+
+    @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
+    def transform_dialogue_into_text(
+            self, user: str, assistant: str, task_prompt: str,
+            user_conversation: str,
+            assistant_conversation: str) -> Dict[str, Any]:
+        r"""Synthesize a narrative from the chat history.
+
+        Args:
+            user (str): The name of the user.
+            assistant (str): The name of the assistant.
+            task_prompt (str): The prompt for the task.
+            user_conversation (str): The conversation of the user.
+            assistant_conversation (str): The conversation of the assistant.
+
+        Returns:
+            str: The synthesized narrative.
+        """
+        self.reset()
+
+        text_synthesis = """You are a conversation analyst, and you are asked to identify the category of the assistant's response in the PROVIDED TEXT based on the definition of CATEGORY OF RESPONSES.
+Then, retell the user's conversation in a way that corresponds to the category of response, rather than using the tone of dialogue, during the retelling you need to use as much information and expression from the assistant's response as possible to help you retell it.
+reproduce the assistant's original response into text according to the definition of CATEGORY OF RESPONSES and without losing the ability and quality to solve TASK.
+Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill in the BLANKs, and DO NOT alter or modify any other part of the template.
+
+
+===== CATEGORY OF RESPONSES =====
+1. Direct Task Assistance (noted as "ASSISTANCE")
+    a. Definition:
+        - Replies under this category provide concrete information, steps, or solutions that directly aid in completing a task. They contain the core elements and direct methods for task execution.
+    b. Relevant Information:
+        - Explicit instructions or steps to complete the task
+        - Task-specific data, code, solutions, or technical methodologies
+        - Analysis, implementation plans or text generation related to the task
+2. Substantial Analysis and Optimization (noted as "ANALYSIS")
+    a. Definition:
+        - This category includes in-depth analysis of existing information or methods, offering insights, suggestions for improvement, or optimization strategies for task completion.
+    b. Relevant Information:
+        - Evaluation of the efficiency and effectiveness of task methodologies
+        - Predictions and solutions for potential problems or challenges in the task
+        - Recommendations for improving and optimizing current methods
+3. Auxiliary Information Provision (noted as "AUXILIARY")
+    a. Definition:
+        - Answers in this category provide background knowledge or supplementary information indirectly related to the task, helping to better understand the context of the task.
+    b. Relevant Information:
+        - Background knowledge or additional information to understand the overall context or specific details of the task
+        - Fundamental concepts, terminology explanations, or background situations related to the task area
+        - Case studies or examples in relevant fields or topics
+4. Non-Substantial or Indirect Assistance (noted as "NON-SUBSTANTIAL")
+    a. Definition:
+        - These responses may offer emotional support, encouragement, or non-specific advice but do not directly contribute concrete help towards the actual completion of a task.
+    b. Relevant Information:
+        - Responses with emotional support or encouragement
+        - General advice or guidance without specific solutions for the task
+        - General insights or opinions not directly related to the task completion
+
+
+===== PROVIDED TEXT =====
+[Global TASK of Conversation]\n{task_prompt}
+[User: {user}]:\n{user_conversation}
+[Assistant: {assistant}]:\n{assistant_conversation}
+
+
+===== ANSWER TEMPLATE =====
+Category of Assistant's Response: [<BLANK>, ..., <BLANK>] (choose from "ASSISTANCE", "ANALYSIS", "AUXILIARY", "NON-SUBSTANTIAL", include square brackets, multiple choices are separated by commas)
+Retold Text:\n<BLANK>"""  # noqa: E501
+        text_synthesis_prompt = TextPrompt(text_synthesis)
+
+        text_synthesis_generation = text_synthesis_prompt.format(
+            user=user, assistant=assistant, task_prompt=task_prompt,
+            user_conversation=user_conversation,
+            assistant_conversation=assistant_conversation)
+
+        text_synthesis_generation_msg = BaseMessage.make_user_message(
+            role_name="Conversation Analyst",
+            content=text_synthesis_generation)
+
+        response = self.step(input_message=text_synthesis_generation_msg)
+
+        if response.terminated:
+            raise RuntimeError("Generating reproduced text failed." +
+                               f"Error:\n{response.info}")
+        msg = response.msg  # type: BaseMessage
+
+        # Distribute the output completions into narrative synthesis
+        category_of_responses = re.findall(
+            r"Category of Assistant's Response: \[(.+?)\]", msg.content)
+        reproduced_texts = re.findall(r"Retold Text:\n\s*(.+)", msg.content,
+                                      re.DOTALL)
+
+        if category_of_responses is None or len(category_of_responses) == 0:
+            raise RuntimeError("Got None of category of responses.")
+        categories = [
+            category.strip()
+            for category in category_of_responses[0].split(',')
+        ]
+        for category in categories:
+            if category not in [
+                    "ASSISTANCE", "ANALYSIS", "AUXILIARY", "NON-SUBSTANTIAL"
+            ]:
+                raise RuntimeError("Got invalid category of responses.")
+
+        if reproduced_texts is None or len(reproduced_texts) == 0:
+            raise RuntimeError("Got None of reproduced text.")
+        reproduced_text = reproduced_texts[0].strip('\n')
+
+        reproduced_text_with_category = {
+            "categories": categories,
+            "text": reproduced_text
+        }
+
+        return reproduced_text_with_category

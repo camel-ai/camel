@@ -40,7 +40,7 @@ class InsightAgent(ChatAgent):
             role_name="Insight Agent",
             role_type=RoleType.ASSISTANT,
             meta_dict=None,
-            content="You assign roles based on tasks.",
+            content="You generate insights from a provided text.",
         )
         super().__init__(system_message, model, model_config)
 
@@ -48,23 +48,19 @@ class InsightAgent(ChatAgent):
     def run(
         self,
         context_text: Union[str, TextPrompt],
-        reference_text: Optional[Union[str, TextPrompt]] = None,
         insights_instruction: Optional[Union[str, TextPrompt]] = None,
-    ) -> Dict[str, Dict[str, Optional[str]]]:
+    ) -> Dict[str, Dict[str, str]]:
         r"""Generate role names based on the input task prompt.
 
         Args:
             context_text (Union[str, TextPrompt]): The context text to
                 generate insights from.
-            reference_text (Optional[Union[str, TextPrompt]], optional):
-                The reference text for generating insights. (default:
-                :obj:`None`)
             insights_instruction (Optional[Union[str, TextPrompt]], optional):
                 The instruction for generating insights. (default: :obj:`None`)
 
         Returns:
-            Dict[str, Dict[str, Optional[str]]]: The generated insights from
-                the input context text.
+            Dict[str, Dict[str, str]]: The generated insights from the context
+                text.
         """
         self.reset()
 
@@ -148,7 +144,7 @@ For each identified entity or detail from the decomposition:
 
         # Replace the "N/A", "None", "NONE" with None
         def handle_none_values_in_msg(value):
-            if value in ["N/A", "None", "NONE", "null", "NULL"]:
+            if value.strip() in ["N/A", "None", "NONE", "null", "NULL"]:
                 return None
             return value.strip() if value else None
 

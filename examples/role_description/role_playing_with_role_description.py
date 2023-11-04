@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from colorama import Fore
 
-from camel.agents import RoleAssignmentAgent
+from camel.agents.role_assignment_agent import RoleAssignmentAgent
 from camel.configs import ChatGPTConfig
 from camel.societies import RolePlaying
 from camel.typing import TaskType
@@ -31,7 +31,7 @@ def main(model_type_for_role_generation=None, model_type=None) -> None:
         model=model_type_for_role_generation,
         model_config=model_config_description)
 
-    role_description_dict = (role_description_agent.run(
+    role_description_dict = (role_description_agent.run_role_with_description(
         task_prompt=task_prompt, num_roles=2))
 
     ai_assistant_role = list(
@@ -41,17 +41,16 @@ def main(model_type_for_role_generation=None, model_type=None) -> None:
     ai_user_description = role_description_dict[ai_user_role]
 
     sys_msg_meta_dicts = [
-        dict(assistant_role=ai_assistant_role, user_role=ai_user_role,
-             assistant_description=ai_assistant_description,
+        dict(assistant_description=ai_assistant_description,
              user_description=ai_user_description) for _ in range(2)
     ]
 
     role_play_session = RolePlaying(
+        model_type=model_type,
         assistant_role_name=ai_assistant_role,
         user_role_name=ai_user_role,
         task_prompt=task_prompt,
-        model_type=model_type,
-        task_type=TaskType.ROLE_DESCRIPTION,  # Important for role description
+        task_type=TaskType.ROLE_DESCRIPTION,  # important for role description
         with_task_specify=True,
         task_specify_agent_kwargs=dict(model=model_type),
         extend_sys_msg_meta_dicts=sys_msg_meta_dicts,

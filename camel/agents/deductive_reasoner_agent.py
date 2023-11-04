@@ -58,7 +58,6 @@ class DeductiveReasonerAgent(ChatAgent):
         self,
         starting_state: Union[str, TextPrompt],
         target_state: Union[str, TextPrompt],
-        task_domain: Optional[str] = None,
         role_descriptions_dict: Optional[Dict[str, str]] = None,
     ) -> Dict[str, Dict[str, Optional[str]]]:
         r"""Derives the conditions and quality from the starting state and the
@@ -70,9 +69,6 @@ class DeductiveReasonerAgent(ChatAgent):
                 task.
             target_state (Union[str, TextPrompt]): The target state of the
                 task.
-            task_domain (Optional[str], optional): The domain of the traisition
-                from the starting state to the target state. (default:
-                :obj:`None`)
             role_descriptions_dict (Optional[Dict[str, str]], optional): The
                 descriptions of the roles. (default: :obj:`None`)
 
@@ -169,17 +165,16 @@ Given the starting state $A$ and the target state $B$, assuming that a path $L$ 
             input_message=conditions_and_quality_generation_msg)
 
         if response.terminated:
-            raise RuntimeError("Insights generation failed. Error:\n" +
+            raise RuntimeError("Deduction failed. Error:\n" +
                                f"{response.info}")
         msg = response.msg  # type: BaseMessage
 
-        print(msg.content)
         condistions_dict = {
             f"condition {i}":
             cdt.replace("<", "").replace(">", "").strip().strip('\n')
             for i, cdt in re.findall(
-                r"condition (\d+):(.+?)(?=condition|- Entity)", msg.content,
-                re.DOTALL)
+                r"condition (\d+):\s*(.+?)(?=condition \d+|- Entity)",
+                msg.content, re.DOTALL)
         }
 
         labels_str = [
@@ -200,7 +195,7 @@ Given the starting state $A$ and the target state $B$, assuming that a path $L$ 
         ][0]
 
         # Convert them into JSON format
-        conditions_and_quality_json = {}
+        conditions_and_quality_json: Dict[str, Any] = {}
         conditions_and_quality_json["conditions"] = condistions_dict
         conditions_and_quality_json["labels"] = labels
         conditions_and_quality_json["quality"] = quality
