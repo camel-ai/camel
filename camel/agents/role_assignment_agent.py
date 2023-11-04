@@ -39,7 +39,7 @@ class RoleAssignmentAgent(ChatAgent):
     def __init__(
         self,
         model: ModelType = ModelType.GPT_3_5_TURBO,
-        model_config: Optional[Any]  = None,
+        model_config: Optional[Any] = None,
     ) -> None:
         system_message = BaseMessage(
             role_name="Role Assigner",
@@ -298,9 +298,8 @@ class RoleAssignmentAgent(ChatAgent):
                 "Contextual Parameters of subtask. When " +
                 "splitting the task, ensure that each subtask " +
                 "incorporates specific details from the " +
-                "INSIGHTS of CONTEXT TEXT.\n" + 
-                insight_agent.convert_json_to_str(
-                    task_insights_json))
+                "INSIGHTS of CONTEXT TEXT.\n" +
+                insight_agent.convert_json_to_str(task_insights_json))
         else:
             task_context_prompt = ""
 
@@ -644,10 +643,10 @@ Please ensure that you consider both explicit and implicit similarities while ev
             target_retrieved_labels, labels_retrieved_sets
 
     @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
-    def transform_dialogue_into_text(self, user: str, assistant: str,
-                                     task_prompt: str, user_conversation: str,
-                                     assistant_conversation: str
-                                     ) -> Dict[str, Any]:
+    def transform_dialogue_into_text(
+            self, user: str, assistant: str, task_prompt: str,
+            user_conversation: str,
+            assistant_conversation: str) -> Dict[str, Any]:
         r"""Synthesize a narrative from the chat history.
 
         Args:
