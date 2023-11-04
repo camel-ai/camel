@@ -107,8 +107,6 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
             role_descriptions_dict=role_descriptions_dict,
             num_subtasks=9,
             context_text=context_text)
-    print(
-        f"subtasks_with_dependencies_dict:\n{subtasks_with_dependencies_dict}")
     oriented_graph = {}
     for subtask_idx, details in subtasks_with_dependencies_dict.items():
         deps = details["dependencies"]
@@ -202,11 +200,6 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
             ]
             insights_pre_subtask += "\n".join(
                 [str(insight) for insight in retrieved_insights])
-            # print(Fore.CYAN + "Retrieved insights from the environment:\n" +
-            #       f"{insights_pre_subtask}")
-            # print_and_write_md(
-            #     "Retrieved insights from the environment:\n" +
-            #     f"{insights_pre_subtask}", color=Fore.CYAN)
         else:
             insights_none_pre_subtask = insight_agent.run(
                 context_text=context_text)
@@ -299,14 +292,10 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                     f"Reason: {user_response.info['termination_reasons']}."))
                 break
 
-            # print(Fore.BLUE + f"AI User: {ai_user_role}\n\n" +
-            #       f"{user_response.msg.content}\n")
             print_and_write_md(
                 f"AI User: {ai_user_role}\n\n" +
                 f"{user_response.msg.content}\n", color=Fore.BLUE,
                 MD_FILE=f"examples/multi_agent/{ID_one_subtask}.md")
-            # print(Fore.GREEN + f"AI Assistant: {ai_assistant_role}\n\n" +
-            #       f"{assistant_response.msg.content}\n")
             print_and_write_md(
                 f"AI Assistant: {ai_assistant_role}\n\n" +
                 f"{assistant_response.msg.content}\n", color=Fore.GREEN,
@@ -318,11 +307,6 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
             # Generate the insights from the chat history
             chat_history_assistant += (f"--- [{n}] ---\n"
                                        f"{assistant_response.msg.content}\n")
-            # chat_history_two_roles += (f"--- [{n}] ---\n"
-            #                            f"[{ai_assistant_role}]:\n"
-            #                            f"{assistant_response.msg.content}\n\n\n"
-            #                            f"[{ai_user_role}]:\n"
-            #                            f"{user_response.msg.content}\n\n\n")
             user_conversation = user_response.msg.content
             assistant_conversation = assistant_response.msg.content.replace(
                 "Solution&Action:\n", "").replace("Next request.",
@@ -352,11 +336,6 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                                 "conversation itsel.")
         insights = insight_agent.run(context_text=chat_history_assistant,
                                      insights_instruction=insights_instruction)
-        # print(Fore.CYAN + "Insights from the chat history:\n" +
-        #       f"{json.dumps(insights, indent=4)}")
-        # print_and_write_md(
-        #     "Insights from the chat history:\n" +
-        #     f"{json.dumps(insights, indent=4)}", color=Fore.CYAN)
         insights_str = insight_agent.convert_json_to_str(insights)
         insights_subtasks[ID_one_subtask] = insights_str
         for insight in insights.values():
@@ -364,6 +343,14 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                 continue
             labels_key = tuple(insight["entity_recognition"])
             environment_record[labels_key] = insight
+        printable_environment_record = \
+            {str(label_tuple): insight_data
+             for label_tuple, insight_data in environment_record.items()}
+        print(Fore.CYAN + "Environment record:\n" +
+              f"{json.dumps(printable_environment_record, indent=4)}")
+        print_and_write_md(
+            "Environment record:\n" +
+            f"{json.dumps(printable_environment_record, indent=4)}", color=Fore.CYAN)
 
 
 def print_and_write_md(text="", color=Fore.RESET, MD_FILE=None):
