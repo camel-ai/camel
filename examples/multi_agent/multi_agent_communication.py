@@ -350,7 +350,8 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
               f"{json.dumps(printable_environment_record, indent=4)}")
         print_and_write_md(
             "Environment record:\n" +
-            f"{json.dumps(printable_environment_record, indent=4)}", color=Fore.CYAN)
+            f"{json.dumps(printable_environment_record, indent=4)}",
+            color=Fore.CYAN)
 
 
 def print_and_write_md(text="", color=Fore.RESET, MD_FILE=None):
