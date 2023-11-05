@@ -74,14 +74,15 @@ class ChatAgent(BaseAgent):
         model_config (BaseConfig, optional): Configuration options for the
             LLM model. (default: :obj:`None`)
         memory (BaseMemory, optional): The agent memory for managing chat
-            messages. (default: :obj:`ChatHistoryMemory()`)
+            messages. If `None`, a :obj:`ChatHistoryMemory` will be used.
+            (default: :obj:`None`)
         message_window_size (int, optional): The maximum number of previous
             messages to include in the context window. If `None`, no windowing
             is performed. (default: :obj:`None`)
         token_limit (int, optional): The maxinum number of tokens in a context.
             The context will be automatically pruned to fulfill the limitation.
-            If `None`, it will be set according to the backend model. (default:
-            :obj:`None`)
+            If `None`, it will be set according to the backend model.
+            (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
         function_list (List[OpenAIFunction], optional): List of available
@@ -179,6 +180,7 @@ class ChatAgent(BaseAgent):
     def update_memory(self, message: BaseMessage,
                       role: OpenAIBackendRole) -> None:
         r"""Updates the agent memory with a new message.
+
         Args:
             message (BaseMessage): The new message to add to the stored
                 messages.
@@ -243,8 +245,8 @@ class ChatAgent(BaseAgent):
 
     def record_message(self, message: BaseMessage) -> None:
         r"""Records the externally provided message into the agent memory as if
-        it were an answer of the chat LLM from the backend. Currently, the
-        choice of the critic is submitted with this method.
+        it were an answer of the :obj:`ChatAgent` from the backend. Currently,
+        the choice of the critic is submitted with this method.
 
         Args:
             message (BaseMessage): An external message to be recorded in the
@@ -287,7 +289,7 @@ class ChatAgent(BaseAgent):
                 return self.step_token_exceed(e.args[1], called_funcs,
                                               "max_tokens_exceeded")
 
-            # Obtain LLM's response and validate it
+            # Obtain the model's response and validate it
             response = self.model_backend.run(openai_messages)
             self.validate_model_response(response)
 
@@ -308,9 +310,11 @@ class ChatAgent(BaseAgent):
                 self.update_memory(func_assistant_msg,
                                    OpenAIBackendRole.ASSISTANT)
                 self.update_memory(func_result_msg, OpenAIBackendRole.FUNCTION)
+
+                # Record the function calling
                 called_funcs.append(func_record)
             else:
-                # Function calling disabled or chat stopped
+                # Function calling disabled or not a function calling
 
                 # Loop over responses terminators, get list of termination
                 # tuples with whether the terminator terminates the agent

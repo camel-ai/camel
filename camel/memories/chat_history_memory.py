@@ -39,7 +39,8 @@ class ChatHistoryMemory(BaseMemory):
         context_creator (BaseContextCreator): A context creator contianing
             the context limit and the message pruning strategy.
         storage (BaseKeyValueStorage, optional): A storage mechanism for
-            storing chat history. (default: :obj:`InMemoryKeyValueStorage()`)
+            storing chat history. If `None`, an :obj:`InMemoryKeyValueStorage`
+            will be used. (default: :obj:`None`)
         window_size (int, optional): Specifies the number of recent chat
             messages to retrieve. If not provided, the entire chat history
             will be retrieved. (default: :obj:`None`)
@@ -56,9 +57,9 @@ class ChatHistoryMemory(BaseMemory):
         self.window_size = window_size
 
     def get_context(self) -> Tuple[List[OpenAIMessage], int]:
-        r"""Gets chat context with a proper size for the agent from the memory based on
-        the window size or fetches the entire chat history if no window size is
-        specified.
+        r"""Gets chat context with a proper size for the agent from the memory
+        based on the window size or fetches the entire chat history if no
+        window size is specified.
 
         Returns:
             (List[OpenAIMessage], int): A tuple containing the constructed
@@ -93,8 +94,8 @@ class ChatHistoryMemory(BaseMemory):
         return self.context_creator.create_context(output_records)
 
     def write_records(self, records: List[MemoryRecord]) -> None:
-        r"""Writes memory records to the memory. Additionally, performs validation
-        checks on the messages.
+        r"""Writes memory records to the memory. Additionally, performs
+        validation checks on the messages.
 
         Args:
             records (List[MemoryRecord]): Memory records to be added to the

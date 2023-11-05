@@ -24,9 +24,9 @@ class BaseContextCreator(ABC):
     strategies.
 
     This class provides a foundational structure for different strategies to
-    generate conversational context from a list of context records. The primary
-    goal is to create a context that is aligned with a specified token count
-    limit, allowing subclasses to define their specific approach.
+    generate conversational context from a list of context records. The
+    primary goal is to create a context that is aligned with a specified token
+    count limit, allowing subclasses to define their specific approach.
 
     Subclasses should implement the `token_counter`, `token_limit`, and
     `create_context` methods to provide specific context creation logic.
@@ -50,9 +50,11 @@ class BaseContextCreator(ABC):
 
     @abstractmethod
     def create_context(
-            self,
-            records: List[ContextRecord]) -> Tuple[List[OpenAIMessage], int]:
-        r"""An abstract method to create conversational context from the chat history.
+        self,
+        records: List[ContextRecord],
+    ) -> Tuple[List[OpenAIMessage], int]:
+        r"""An abstract method to create conversational context from the chat
+        history.
 
         Constructs the context from provided records. The specifics of how this
         is done and how the token count is managed should be provided by

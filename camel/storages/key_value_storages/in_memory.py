@@ -19,9 +19,9 @@ from camel.storages.key_value_storages import BaseKeyValueStorage
 
 
 class InMemoryKeyValueStorage(BaseKeyValueStorage):
-    r"""A concrete implementation of the :obj:`BaseKeyValueStorage` using in-memory
-    list. Ideal for temporary storage purposes, as data will be lost when the
-    program ends.
+    r"""A concrete implementation of the :obj:`BaseKeyValueStorage` using
+    in-memory list. Ideal for temporary storage purposes, as data will be lost
+    when the program ends.
     """
 
     def __init__(self) -> None:

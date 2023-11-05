@@ -38,7 +38,7 @@ class _CamelJSONEncoder(json.JSONEncoder):
         "VectorDistance": VectorDistance,
     }
 
-    def default(self, obj):
+    def default(self, obj) -> Any:
         if type(obj) in self.CAMEL_ENUMS.values():
             return {"__enum__": str(obj)}
         # Let the base class default method raise the TypeError
@@ -50,15 +50,16 @@ class JsonStorage(BaseKeyValueStorage):
     files. Allows for persistent storage of records in a human-readable format.
 
     Args:
-        path (Path, optional): Path to the desired JSON file. (default:
-            :obj:`Path("./chat_history")`)
+        path (Path, optional): Path to the desired JSON file. If `None`, a
+            default path `./chat_history.json` will be used.
+            (default: :obj:`None`)
     """
 
-    def __init__(self, path: Path = Path("./chat_history.json")):
-        self.json_path = path
+    def __init__(self, path: Path = None) -> None:
+        self.json_path = path or Path("./chat_history.json")
         self.json_path.touch()
 
-    def _json_object_hook(self, d):
+    def _json_object_hook(self, d) -> Any:
         if "__enum__" in d:
             name, member = d["__enum__"].split(".")
             return getattr(_CamelJSONEncoder.CAMEL_ENUMS[name], member)

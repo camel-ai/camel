@@ -16,17 +16,17 @@ from dataclasses import asdict, dataclass, field
 from typing import Any, ClassVar, Dict
 from uuid import UUID, uuid4
 
-from camel.messages import BaseMessage, FunctionCallingMessage
+from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
 from camel.typing import OpenAIBackendRole
 
 
 @dataclass(frozen=True)
 class MemoryRecord():
-    r""" The basic message storing unit in the CAMEL memory system.
+    r"""The basic message storing unit in the CAMEL memory system.
 
     Attributes:
         message (BaseMessage): The main content of the record.
-        role_at_backend (OpenAiBackendRole): An enumeration value representing
+        role_at_backend (OpenAIBackendRole): An enumeration value representing
             the role this message played at the OpenAI backend. Note that this
             value is different from the :obj:`RoleType` used in the CAMEL role
             playing system.
@@ -48,7 +48,7 @@ class MemoryRecord():
     }
 
     @classmethod
-    def from_dict(cls, record_dict: Dict[str, Any]):
+    def from_dict(cls, record_dict: Dict[str, Any]) -> "MemoryRecord":
         r"""Reconstruct a :obj:`MemoryRecord` from the input dict.
 
         Args:
@@ -65,8 +65,9 @@ class MemoryRecord():
             extra_info=record_dict["extra_info"],
         )
 
-    def to_dict(self):
-        r"""Convert the :obj:`MemoryRecord` to a dict for serialization purposes.
+    def to_dict(self) -> Dict[str, Any]:
+        r"""Convert the :obj:`MemoryRecord` to a dict for serialization
+        purposes.
         """
         return {
             "uuid": str(self.uuid),
@@ -78,7 +79,7 @@ class MemoryRecord():
             "extra_info": self.extra_info
         }
 
-    def to_openai_message(self):
+    def to_openai_message(self) -> OpenAIMessage:
         r"""Converts the record to an :obj:`OpenAIMessage` object.
         """
         return self.message.to_openai_message(self.role_at_backend.value)

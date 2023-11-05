@@ -21,7 +21,7 @@ from camel.agents import ChatAgent
 from camel.memories import BaseMemory
 from camel.messages import BaseMessage
 from camel.responses import ChatAgentResponse
-from camel.typing import ModelType, OpenAIBackendRole
+from camel.typing import ModelType
 from camel.utils import get_first_int, print_text_animated
 
 
@@ -108,7 +108,7 @@ class CriticAgent(ChatAgent):
                 raise RuntimeError("Critic step failed.")
 
             critic_msg = critic_response.msg
-            self.update_memory(critic_msg, OpenAIBackendRole.ASSISTANT)
+            self.record_message(critic_msg)
             if self.verbose:
                 print_text_animated(self.logger_color + "\n> Critic response: "
                                     f"\x1b[3m{critic_msg.content}\x1b[0m\n")

@@ -28,8 +28,8 @@ class _ContextUnit():
 
 
 class ScoreBasedContextCreator(BaseContextCreator):
-    r"""A default implementation of context creation strategy, which inherits from
-    :obj:`BaseContextCreator`.
+    r"""A default implementation of context creation strategy, which inherits
+    from :obj:`BaseContextCreator`.
 
     This class provides a strategy to generate a conversational context from
     a list of chat history records while ensuring the total token count of
@@ -57,11 +57,11 @@ class ScoreBasedContextCreator(BaseContextCreator):
         return self._token_limit
 
     def create_context(
-            self,
-            records: List[ContextRecord]) -> Tuple[List[OpenAIMessage], int]:
-        r"""
-        Creates conversational context from chat history while respecting token
-        limits.
+        self,
+        records: List[ContextRecord],
+    ) -> Tuple[List[OpenAIMessage], int]:
+        r"""Creates conversational context from chat history while respecting
+        token limits.
 
         Constructs the context from provided records and ensures that the total
         token count does not exceed the specified limit by pruning the least
@@ -117,8 +117,7 @@ class ScoreBasedContextCreator(BaseContextCreator):
     def _create_output(
             self, context_units: List[_ContextUnit]
     ) -> Tuple[List[OpenAIMessage], int]:
-        r"""
-        Helper method to generate output from context units.
+        r"""Helper method to generate output from context units.
 
         This method converts the provided context units into a format suitable
         for output, specifically a list of OpenAIMessages and an integer

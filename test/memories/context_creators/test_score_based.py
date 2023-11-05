@@ -22,7 +22,7 @@ from camel.typing import ModelType, OpenAIBackendRole, RoleType
 from camel.utils import OpenAITokenCounter
 
 
-def test_context_creator():
+def test_score_based_context_creator():
     context_creator = ScoreBasedContextCreator(
         OpenAITokenCounter(ModelType.GPT_4), 21)
     context_records = [
