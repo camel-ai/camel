@@ -84,6 +84,10 @@ To verify that everything is set up correctly, run `pytest .` This will ensure t
 
 ## Common Actions 🔄
 
+### Update dependencies
+
+Whenever you add, update, or delete any dependencies in `pyproject.toml`, please run `poetry lock` to synchronize the dependencies with the lock file.
+
 ### Linting & Formatting ✨
 
 ```bash
@@ -107,7 +111,8 @@ Code coverage measures the extent to which unit tests cover the code, helping id
 To generate a report showing the current code coverage, execute one of the following commands.
 
 To include all source files into coverage:
-```
+
+```bash
 coverage erase
 coverage run --source=. -m pytest .
 coverage html
@@ -133,13 +138,14 @@ pytest .
 
 To quickly run only local isolated unit and integration tests:
 ```bash
-pytest -m "not model_backend and not slow" .
+pytest --fast-test-mode .
 ```
 
 If you're developing with VSCode, make sure to create a `.env` file in the repository root and include your OpenAI API key:
 
 ```
 OPENAI_API_KEY=sk-XXXXXXXX
+OPENAI_API_BASE_URL=https://XXXXXXXX (Should you utilize an OpenAI proxy service, kindly specify this)
 ```
 
 ## Documentation 📚

@@ -14,6 +14,7 @@
 import binascii
 
 import pytest
+import requests
 
 from camel.agents import EmbodiedAgent, HuggingFaceToolAgent
 from camel.generators import SystemMessageGenerator
@@ -36,7 +37,7 @@ def test_get_action_space_prompt():
 
 
 @pytest.mark.model_backend
-@pytest.mark.full_test_only
+@pytest.mark.very_slow
 def test_step():
     # Create an embodied agent
     role_name = "Artist"
@@ -51,7 +52,7 @@ def test_step():
     )
     try:
         response = embodied_agent.step(user_msg)
-    except binascii.Error as ex:
+    except (binascii.Error, requests.exceptions.ConnectionError) as ex:
         print("Warning: caught an exception, ignoring it since "
               f"it is a known issue of Huggingface ({str(ex)})")
         return

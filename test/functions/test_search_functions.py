@@ -11,7 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from camel.functions.search_functions import search_wiki
+import os
+
+import requests
+import wikipedia
+
+from camel.functions.search_functions import (
+    search_google_and_summarize,
+    search_wiki,
+)
 
 
 def test_search_wiki_normal():
@@ -32,17 +40,29 @@ def test_search_wiki_not_found():
         "entity to be searched.")
 
 
-def tests_search_wiki_with_ambiguity():
-    expected_output = (
-        "New York, often called New York State, is a state in the"
-        " Northeastern United States. A Mid-Atlantic state, New York"
-        " borders New England, and has an international border with Canada."
-        " With almost 19.7 million residents, it is the fourth-most populous "
-        "state in the United States and seventh-most densely populated as of "
-        "2022. New York is the 27th-largest U.S. state by area, with a total "
-        "area of 54,556 square miles (141,300 km2).New York has a varied "
-        "geography. The southeastern part of the state, known as Downstate, "
-        "encompasses New York City (the most populous city in the United "
-        "States), Long Island (the most populous island in the United States)"
-        ", and the lower Hudson Valley.")
+def test_search_wiki_with_ambiguity():
+    expected_output = wikipedia.summary("New York City", sentences=5,
+                                        auto_suggest=False)
     assert search_wiki("New York") == expected_output
+
+
+def test_google_api():
+    # Check the Google search api
+
+    # https://developers.google.com/custom-search/v1/overview
+    GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+    # https://cse.google.com/cse/all
+    SEARCH_ENGINE_ID = os.getenv("SEARCH_ENGINE_ID")
+
+    url = f"https://www.googleapis.com/customsearch/v1?" \
+          f"key={GOOGLE_API_KEY}&cx={SEARCH_ENGINE_ID}&q=any"
+    result = requests.get(url)
+
+    assert result.status_code == 200
+
+
+def test_web_search():
+    query = "What big things are happening in 2023?"
+    answer = search_google_and_summarize(query)
+
+    assert answer is not None

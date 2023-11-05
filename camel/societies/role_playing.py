@@ -19,11 +19,11 @@ from camel.agents import (
     TaskPlannerAgent,
     TaskSpecifyAgent,
 )
-from camel.agents.chat_agent import ChatAgentResponse
 from camel.generators import SystemMessageGenerator
 from camel.human import Human
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
+from camel.responses import ChatAgentResponse
 from camel.typing import ModelType, RoleType, TaskType
 
 
@@ -115,6 +115,7 @@ class RolePlaying:
 
         sys_msg_generator = SystemMessageGenerator(
             task_type=self.task_type, **(sys_msg_generator_kwargs or {}))
+
         (init_assistant_sys_msg, init_user_sys_msg,
          sys_msg_meta_dicts) = self.get_sys_message_info(
              assistant_role_name, user_role_name, sys_msg_generator,
@@ -131,7 +132,6 @@ class RolePlaying:
             user_agent_kwargs,
             output_language,
         )
-
         self.critic: Optional[Union[CriticAgent, Human]] = None
         self.critic_sys_msg: Optional[BaseMessage] = None
         self.init_critic(critic_role_name, critic_criteria, critic_kwargs,
@@ -211,9 +211,11 @@ class RolePlaying:
             self.planned_task_prompt = None
 
     def get_sys_message_info(
-        self, assistant_role_name: str, user_role_name: str,
+        self,
+        assistant_role_name: str,
+        user_role_name: str,
         sys_msg_generator: SystemMessageGenerator,
-        extend_sys_msg_meta_dicts: Optional[List[Dict]]
+        extend_sys_msg_meta_dicts: Optional[List[Dict]] = None,
     ) -> Tuple[BaseMessage, BaseMessage, List[Dict]]:
         r"""Get initial assistant and user system message with a list of
         system message meta dicts.
@@ -233,12 +235,15 @@ class RolePlaying:
             initial system message, and a list of system message meta dicts.
         """
         sys_msg_meta_dicts = [dict(task=self.task_prompt) for _ in range(2)]
-        if (extend_sys_msg_meta_dicts is None and self.task_type
-                in [TaskType.AI_SOCIETY, TaskType.MISALIGNMENT]):
+        if (extend_sys_msg_meta_dicts is None and self.task_type in [
+                TaskType.AI_SOCIETY,
+                TaskType.MISALIGNMENT,
+        ]):
             extend_sys_msg_meta_dicts = [
                 dict(assistant_role=assistant_role_name,
                      user_role=user_role_name) for _ in range(2)
             ]
+
         if extend_sys_msg_meta_dicts is not None:
             sys_msg_meta_dicts = [{
                 **sys_msg_meta_dict,
@@ -363,7 +368,6 @@ class RolePlaying:
             content=(f"{self.user_sys_msg.content}. "
                      "Now start to give me instructions one by one. "
                      "Only reply with Instruction and Input."))
-
         user_msg = BaseMessage.make_user_message(
             role_name=self.user_sys_msg.role_name,
             content=f"{self.assistant_sys_msg.content}")
@@ -426,7 +430,6 @@ class RolePlaying:
             whether the user agent terminated the conversation, and any
             additional user information.
         """
-
         user_response = self.user_agent.step(assistant_msg)
         if user_response.terminated or user_response.msgs is None:
             return (ChatAgentResponse([], False, {}),
