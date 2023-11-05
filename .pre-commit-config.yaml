@@ -23,7 +23,7 @@ repos:
     hooks:
       - id: mypy
         name: Check mypy
-        args: [--install-types, --non-interactive, --namespace-packages]
+        args: [--namespace-packages]
 
   - repo: local
     hooks:
