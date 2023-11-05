@@ -18,6 +18,13 @@ repos:
       - id: flake8
         name: Check PEP8
 
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.5.1
+    hooks:
+      - id: mypy
+        name: Check mypy
+        args: [--install-types, --non-interactive, --namespace-packages]
+
   - repo: local
     hooks:
     - id: check-license
