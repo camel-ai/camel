@@ -104,12 +104,13 @@ class TaskSpecifyAgent(ChatAgent):
         task_msg = BaseMessage.make_user_message(role_name="Task Specifier",
                                                  content=task_specify_prompt)
         specifier_response = self.step(task_msg)
-        if len(specifier_response.msgs) == 0:
-            raise RuntimeError("Got no specification message.")
-        specified_task_msg = specifier_response.msgs[0]
 
         if specifier_response.terminated:
             raise RuntimeError("Task specification failed.")
+        if len(specifier_response.msgs) == 0:
+            raise RuntimeError("Got no specification message.")
+
+        specified_task_msg = specifier_response.msgs[0]
 
         return TextPrompt(specified_task_msg.content)
 
@@ -172,10 +173,10 @@ class TaskPlannerAgent(ChatAgent):
 
         task_response = self.step(task_msg)
 
-        if len(task_response.msgs) == 0:
-            raise RuntimeError("Got no task planning message.")
         if task_response.terminated:
             raise RuntimeError("Task planning failed.")
+        if len(task_response.msgs) == 0:
+            raise RuntimeError("Got no task planning message.")
 
         sub_tasks_msg = task_response.msgs[0]
         return TextPrompt(sub_tasks_msg.content)
@@ -281,10 +282,10 @@ Be concrete.
                                                  content=task_creation_prompt)
         task_response = self.step(task_msg)
 
-        if len(task_response.msgs) == 0:
-            raise RuntimeError("Got no task creation message.")
         if task_response.terminated:
             raise RuntimeError("Task creation failed.")
+        if len(task_response.msgs) == 0:
+            raise RuntimeError("Got no task creation message.")
 
         sub_tasks_msg = task_response.msgs[0]
         return get_task_list(sub_tasks_msg.content)
@@ -372,10 +373,10 @@ with any other output.""")
 
         task_response = self.step(task_msg)
 
-        if len(task_response.msgs) == 0:
-            raise RuntimeError("Got no task prioritization message.")
         if task_response.terminated:
             raise RuntimeError("Task prioritization failed.")
+        if len(task_response.msgs) == 0:
+            raise RuntimeError("Got no task prioritization message.")
 
         sub_tasks_msg = task_response.msgs[0]
         return get_task_list(sub_tasks_msg.content)
