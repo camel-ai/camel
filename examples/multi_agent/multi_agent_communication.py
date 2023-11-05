@@ -54,12 +54,6 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
         model=model_type, model_config=model_config_description)
 
     # Generate role with descriptions
-    # role_names = None
-    # num_roles = 5
-    # role_descriptions_dict = \
-    #     role_assignment_agent.run_role_with_description(
-    #         task_prompt=task_prompt, num_roles=num_roles,
-    #         role_names=role_names)
     role_descriptions_dict = {
         "Science Fiction Writer":
         ("- Strong imagination and creativity to develop a captivating "
@@ -99,6 +93,12 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
          "- Knowledge of the ethical considerations in scientific exploration "
          "and discovery.\n")
     }
+    role_names = None
+    num_roles = 5
+    role_descriptions_dict = \
+        role_assignment_agent.run_role_with_description(
+            task_prompt=task_prompt, num_roles=num_roles,
+            role_names=role_names)
 
     # Split the original task into subtasks
     subtasks_with_dependencies_dict = \
@@ -189,6 +189,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                     labels_sets=labels_sets,
                     target_labels=target_labels,
                     )
+            # TODO: Add the print to UI
             print(Fore.CYAN + "Retrieved labels from the environment:\n" +
                   f"{labels_retrieved_sets}")
             print_and_write_md(
@@ -708,6 +709,6 @@ This setting constructs a rich, multi-layered narrative for interstellar explora
         context_science_fiction,
     ]
 
-    index = 4
+    index = 2
     main(task_prompt=task_prompt_list[index],
          context_text=context_content_list[index])
