@@ -93,12 +93,10 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
          "- Knowledge of the ethical considerations in scientific exploration "
          "and discovery.\n")
     }
-    role_names = None
     num_roles = 5
     role_descriptions_dict = \
         role_assignment_agent.run_role_with_description(
-            task_prompt=task_prompt, num_roles=num_roles,
-            role_names=role_names)
+            task_prompt=task_prompt, num_roles=num_roles)
 
     # Split the original task into subtasks
     subtasks_with_dependencies_dict = \
