@@ -103,7 +103,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
         role_assignment_agent.split_tasks(
             task_prompt=task_prompt,
             role_descriptions_dict=role_descriptions_dict,
-            num_subtasks=9,
+            num_subtasks=None,
             context_text=context_text)
     oriented_graph = {}
     for subtask_idx, details in subtasks_with_dependencies_dict.items():
