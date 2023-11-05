@@ -21,7 +21,7 @@ from camel.utils import BaseTokenCounter
 
 
 @dataclass(frozen=True)
-class _ContextUnit():
+class _ContextUnit:
     idx: int
     record: ContextRecord
     num_tokens: int

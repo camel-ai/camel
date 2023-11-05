@@ -14,7 +14,7 @@
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from camel.storages.key_value_storages import BaseKeyValueStorage
 from camel.typing import (
@@ -55,7 +55,7 @@ class JsonStorage(BaseKeyValueStorage):
             (default: :obj:`None`)
     """
 
-    def __init__(self, path: Path = None) -> None:
+    def __init__(self, path: Optional[Path] = None) -> None:
         self.json_path = path or Path("./chat_history.json")
         self.json_path.touch()
 

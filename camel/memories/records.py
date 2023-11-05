@@ -21,7 +21,7 @@ from camel.typing import OpenAIBackendRole
 
 
 @dataclass(frozen=True)
-class MemoryRecord():
+class MemoryRecord:
     r"""The basic message storing unit in the CAMEL memory system.
 
     Attributes:
@@ -86,7 +86,7 @@ class MemoryRecord():
 
 
 @dataclass(frozen=True)
-class ContextRecord():
+class ContextRecord:
     r"""The result of memory retrieving.
     """
     memory_record: MemoryRecord
