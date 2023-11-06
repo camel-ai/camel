@@ -16,13 +16,14 @@ from typing import List
 import pytest
 
 from camel.agents import ChatAgent
-from camel.agents.chat_agent import ChatRecord, FunctionCallingRecord
+from camel.agents.chat_agent import FunctionCallingRecord
 from camel.configs import ChatGPTConfig, FunctionCallingConfig
 from camel.functions import MATH_FUNCS
 from camel.generators import SystemMessageGenerator
+from camel.memories import MemoryRecord
 from camel.messages import BaseMessage
 from camel.terminators import ResponseWordsTerminator
-from camel.typing import ModelType, RoleType, TaskType
+from camel.typing import ModelType, OpenAIBackendRole, RoleType, TaskType
 
 parametrize = pytest.mark.parametrize('model', [
     ModelType.STUB,
@@ -57,47 +58,44 @@ def test_chat_agent(model: ModelType):
     assert assistant_response.info['id'] is not None
 
 
-@pytest.mark.model_backend
 def test_chat_agent_stored_messages():
     system_msg = BaseMessage(role_name="assistant",
                              role_type=RoleType.ASSISTANT, meta_dict=None,
                              content="You are a help assistant.")
     assistant = ChatAgent(system_msg)
 
-    expected_stored_msg = [ChatRecord('system', system_msg)]
-    assert assistant.stored_messages == expected_stored_msg
+    expected_context = [system_msg.to_openai_system_message()]
+    context, _ = assistant.memory.get_context()
+    assert context == expected_context
 
     user_msg = BaseMessage(role_name="User", role_type=RoleType.USER,
                            meta_dict=dict(), content="Tell me a joke.")
-    assistant.update_messages("user", user_msg)
-    expected_stored_msg = [
-        ChatRecord('system', system_msg),
-        ChatRecord('user', user_msg)
+    assistant.update_memory(user_msg, OpenAIBackendRole.USER)
+    expected_context = [
+        system_msg.to_openai_system_message(),
+        user_msg.to_openai_user_message()
     ]
-    assert assistant.stored_messages == expected_stored_msg
-
-    illegal_role = "xxx"
-    with pytest.raises(ValueError, match=f"Unsupported role {illegal_role}"):
-        assistant.update_messages(illegal_role, user_msg)
+    context, _ = assistant.memory.get_context()
+    assert context == expected_context
 
 
 @pytest.mark.model_backend
-def test_chat_agent_preprocess_messages_window():
+def test_chat_agent_messages_window():
     system_msg = BaseMessage(role_name="assistant",
                              role_type=RoleType.ASSISTANT, meta_dict=None,
                              content="You are a help assistant.")
     assistant = ChatAgent(
         system_message=system_msg,
         model=ModelType.GPT_3_5_TURBO,
-        message_window_size=1,
+        message_window_size=2,
     )
 
     user_msg = BaseMessage(role_name="User", role_type=RoleType.USER,
                            meta_dict=dict(), content="Tell me a joke.")
-    user_msg = ChatRecord("user", user_msg)
-    system_msg = ChatRecord("system", system_msg)
+    user_record = MemoryRecord(user_msg, OpenAIBackendRole.USER)
 
-    openai_messages, _ = assistant.preprocess_messages([system_msg, user_msg])
+    assistant.memory.write_records([user_record] * 5)
+    openai_messages, _ = assistant.memory.get_context()
     assert len(openai_messages) == 2
 
 
@@ -106,27 +104,15 @@ def test_chat_agent_step_exceed_token_number():
     system_msg = BaseMessage(role_name="assistant",
                              role_type=RoleType.ASSISTANT, meta_dict=None,
                              content="You are a help assistant.")
-    assistant = ChatAgent(
-        system_message=system_msg,
-        model=ModelType.GPT_3_5_TURBO,
-    )
-    assistant.model_token_limit = 1
-    assistant.token_limit_terminator.token_limit = 1
+    assistant = ChatAgent(system_message=system_msg,
+                          model=ModelType.GPT_3_5_TURBO, token_limit=1)
 
     user_msg = BaseMessage(role_name="User", role_type=RoleType.USER,
                            meta_dict=dict(), content="Tell me a joke.")
-    user_msg_record = ChatRecord("user", user_msg)
-    system_msg = ChatRecord("system", system_msg)
-    msgs = [system_msg, user_msg_record]
-
-    expect_openai_messages = [record.to_openai_message() for record in msgs]
-    expect_num_tokens = assistant.model_backend.count_tokens_from_messages(
-        expect_openai_messages)
 
     response = assistant.step(user_msg)
     assert len(response.msgs) == 0
     assert response.terminated
-    assert response.info["num_tokens"] == expect_num_tokens
 
 
 @pytest.mark.model_backend
