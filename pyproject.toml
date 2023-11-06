@@ -38,6 +38,7 @@ protobuf = "^4"
 docx2txt = "^0.8"
 PyMuPDF = "^1.22.5"
 pathlib = "^1.0.1"
+unstructured = "^0"
 
 transformers = { version = "^4", optional = true }
 diffusers = { version = "^0", optional = true }
@@ -142,5 +143,6 @@ module = [
     "docx2txt",
     "PyMuPDF",
     "fitz",
+    "unstructured",
 ]
 ignore_missing_imports = true
