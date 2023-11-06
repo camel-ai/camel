@@ -22,9 +22,10 @@ repos:
     hooks:
       - id: mypy
         name: Check mypy
-        entry: "./scripts/run-mypy"
+        entry: mypy --namespace-packages --install-types --non-interactive -p camel -p test -p apps
         language: system
         types: [python]
+        pass_filenames: false
         require_serial: true
 
   - repo: local
