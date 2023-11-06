@@ -17,6 +17,16 @@ repos:
     hooks:
       - id: flake8
         name: Check PEP8
+  
+  - repo: local
+    hooks:
+      - id: mypy
+        name: Check mypy
+        entry: mypy --namespace-packages --install-types --non-interactive -p camel -p test -p apps
+        language: system
+        types: [python]
+        pass_filenames: false
+        require_serial: true
 
   - repo: local
     hooks:
