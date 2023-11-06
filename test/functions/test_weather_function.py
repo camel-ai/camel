@@ -11,20 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import datetime
 import os
+import re
+from datetime import datetime, timezone
 
 import pytest
 
-from camel.functions.weather_functions import (
-    get_current_visibility_distance,
-    get_current_weather,
-    get_current_wind,
-    get_sunrise_sunset,
-)
+from camel.functions.weather_functions import get_weather_data
 
 
-# Ensure the OPENWEATHERMAP_API_KEY environment variable is set
 @pytest.fixture(scope="module")
 def api_key():
     key = os.environ.get('OPENWEATHERMAP_API_KEY')
@@ -33,143 +28,106 @@ def api_key():
     return key
 
 
-def test_get_current_weather(api_key):
+def test_temperature(api_key):
+    city = "Paris, FR"
+    temp_units_options = {
+        'celsius': (-100, 60),
+        'kelvin': (173, 333),
+        'fahrenheit': (-148, 140)
+    }
+    for temp_units, (temp_min, temp_max) in temp_units_options.items():
+        report = get_weather_data(city, temp_units, 'meters_sec', 'meters',
+                                  'iso')
+        # Parse temperature
+        pattern = re.compile(
+            rf"Weather in .+: (-?\d+\.?\d*)°{temp_units.title()},")
+        match = pattern.search(report)
+        temp = float(match.group(1)) if match else None
+        # Test temperature
+        assert temp is not None, \
+            "Temperature information is missing from the report"
+        assert temp_min <= temp <= temp_max, \
+            f"Temperature {temp} not in range for {temp_units}"
+
+
+def test_wind_speed(api_key):
+    city = "Jeddah, Saudi Arabia"
+    wind_units_options = {
+        'meters_sec': (0, 200),
+        'miles_hour': (0, 447),
+        'knots': (0, 390),
+        'beaufort': (0, 12)
+    }
+    for wind_units, (wind_min, wind_max) in wind_units_options.items():
+        report = get_weather_data(city, 'celsius', wind_units, 'meters', 'iso')
+        # Parse wind speed
+        pattern = re.compile(rf"Wind: (-?\d+\.?\d*) {wind_units} at")
+        match = pattern.search(report)
+        wind_speed = float(match.group(1)) if match else None
+        # Test wind speed
+        assert wind_speed is not None, \
+            "Wind speed information is missing from the report"
+        assert wind_min <= wind_speed <= wind_max, \
+            f"Wind speed {wind_speed} not in range for {wind_units}"
+
+
+def test_visibility(api_key):
+    city = "Harbin, China"
+    visibility_units_options = {'meters': (0, 400000), 'miles': (0, 250)}
+    for visibility_units, visibility_range in visibility_units_options.items():
+        visibility_min, visibility_max = visibility_range
+        report = get_weather_data(city, 'celsius', 'meters_sec',
+                                  visibility_units, 'iso')
+        # Parse visibility
+        pattern = re.compile(
+            rf"Visibility: (-?\d+\.?\d*) {visibility_units}\.")
+        match = pattern.search(report)
+        visibility = float(match.group(1)) if match else None
+        # Test visibility
+        assert visibility is not None, \
+            "Visibility information is missing from the report"
+        assert visibility_min <= visibility <= visibility_max, \
+            f"Visibility {visibility} not in range for {visibility_units}"
+
+
+def test_sunrise_sunset(api_key):
     city = "London,GB"
+    # Test each time_units option
+    time_units_options = ['unix', 'iso', 'date']
+    for time_units in time_units_options:
+        report = get_weather_data(city, 'celsius', 'meters_sec', 'meters',
+                                  time_units)
+        # Regex to extract sunrise and sunset times based on time_units
+        pattern_map = {
+            'unix': (r"Sunrise at (\d+), Sunset at (\d+)."),
+            'iso': (r"Sunrise at ([\d-]+\s[\d:]+)\+00:00, "
+                    r"Sunset at ([\d-]+\s[\d:]+)\+00:00."),
+            'date': (r"Sunrise at ([\d-]+\s[\d:]+\+00:00), "
+                     r"Sunset at ([\d-]+\s[\d:]+\+00:00).")
+        }
+        pattern = re.compile(pattern_map[time_units])
+        match = pattern.search(report)
+        # Ensure sunrise and sunset times are found in the report
+        assert match, f"Sunrise and sunset information in {time_units} \
+            format is missing from the report."
 
-    # Test with celsius
-    units_celsius = "celsius"
-    result_celsius = get_current_weather(city, units_celsius)
-
-    # Ensure all required keys are in the result for celsius
-    assert all(key in result_celsius for key in [
-        'temp', 'temp_max', 'temp_min', 'feels_like', 'temp_kf', 'status',
-        'detailed_status'
-    ])
-    assert -100 <= result_celsius["temp"] <= 60
-    assert -100 <= result_celsius["temp_max"] <= 60
-    assert -100 <= result_celsius["temp_min"] <= 60
-    assert -100 <= result_celsius["feels_like"] <= 60
-
-    # Test with kelvin
-    units_kelvin = "kelvin"
-    result_kelvin = get_current_weather(city, units_kelvin)
-
-    # Ensure all required keys are in the result for kelvin
-    assert all(key in result_kelvin for key in [
-        'temp', 'temp_max', 'temp_min', 'feels_like', 'temp_kf', 'status',
-        'detailed_status'
-    ])
-    # Kelvin values for extreme cold and hot conditions on Earth
-    assert 173 <= result_kelvin["temp"] <= 333
-    assert 173 <= result_kelvin["temp_max"] <= 333
-    assert 173 <= result_kelvin["temp_min"] <= 333
-    assert 173 <= result_kelvin["feels_like"] <= 333
-
-    # Test with fahrenheit
-    units_fahrenheit = "fahrenheit"
-    result_fahrenheit = get_current_weather(city, units_fahrenheit)
-
-    # Ensure all required keys are in the result for fahrenheit
-    assert all(key in result_fahrenheit for key in [
-        'temp', 'temp_max', 'temp_min', 'feels_like', 'temp_kf', 'status',
-        'detailed_status'
-    ])
-    # Fahrenheit values for extreme cold and hot conditions on Earth
-    assert -148 <= result_fahrenheit["temp"] <= 140
-    assert -148 <= result_fahrenheit["temp_max"] <= 140
-    assert -148 <= result_fahrenheit["temp_min"] <= 140
-    assert -148 <= result_fahrenheit["feels_like"] <= 140
-
-    # Ensure the status fields are strings
-    assert isinstance(result_celsius["status"], str)
-    assert isinstance(result_celsius["detailed_status"], str)
-    assert isinstance(result_kelvin["status"], str)
-    assert isinstance(result_kelvin["detailed_status"], str)
-    assert isinstance(result_fahrenheit["status"], str)
-    assert isinstance(result_fahrenheit["detailed_status"], str)
-
-
-def test_get_current_wind(api_key):
-    city = "London,GB"
-
-    # Test with meters per second
-    units_mps = "meters_sec"
-    result_mps = get_current_wind(city, units_mps)
-    assert all(key in result_mps for key in ['speed', 'deg'])
-    assert 0 <= result_mps["speed"] <= 200
-    assert 0 <= result_mps["deg"] <= 360
-
-    # Test with miles per hour
-    units_mph = "miles_hour"
-    result_mph = get_current_wind(city, units_mph)
-    assert all(key in result_mph for key in ['speed', 'deg'])
-    assert 0 <= result_mph["speed"] <= 447  # Speed in mph
-
-    # Test with knots
-    units_knots = "knots"
-    result_knots = get_current_wind(city, units_knots)
-    assert all(key in result_knots for key in ['speed', 'deg'])
-    assert 0 <= result_knots["speed"] <= 390  # Speed in knots
-
-    # Test with beaufort scale
-    units_beaufort = "beaufort"
-    result_beaufort = get_current_wind(city, units_beaufort)
-    assert all(key in result_beaufort for key in ['speed', 'deg'])
-    # Beaufort scale is ordinal and goes from 0 to 12
-    assert 0 <= result_beaufort["speed"] <= 12
-    assert 0 <= result_beaufort["deg"] <= 360
-
-
-def test_get_current_visibility_distance(api_key):
-    city = "London,GB"
-
-    # Test with default units (meters)
-    result_meters = get_current_visibility_distance(city)
-    assert isinstance(result_meters, dict)
-    assert "visibility_distance" in result_meters
-    assert isinstance(result_meters["visibility_distance"], (int, float))
-    # Assuming max visibility in meters
-    assert 0 <= result_meters["visibility_distance"] <= 400000
-    # Test with miles
-    units_miles = "miles"
-    result_miles = get_current_visibility_distance(city, units_miles)
-    assert isinstance(result_miles, dict)
-    assert "visibility_distance" in result_miles
-    assert isinstance(result_miles["visibility_distance"], (int, float))
-    # Assuming max visibility in miles
-    assert 0 <= result_miles["visibility_distance"] <= 250
-
-
-def test_get_sunrise_sunset(api_key):
-    city = "London,GB"
-    units = "unix"
-    result_unix = get_sunrise_sunset(city, units)
-    assert 'sunrise_time' in result_unix
-    assert 'sunset_time' in result_unix
-
-    # Test with ISO format
-    units_iso = "iso"
-    result_iso = get_sunrise_sunset(city, units_iso)
-    assert 'sunrise_time' in result_iso
-    assert 'sunset_time' in result_iso
-
-    # Test with datetime format
-    units_datetime = "date"
-    result_datetime = get_sunrise_sunset(city, units_datetime)
-    assert 'sunrise_time' in result_datetime
-    assert 'sunset_time' in result_datetime
-
-    # Ensure sunrise time is earlier than sunset time
-    sunrise_time = result_unix['sunrise_time']
-    sunset_time = result_unix['sunset_time']
-    assert sunrise_time < sunset_time
-
-    # Ensure sunrise time is earlier than sunset time in ISO format
-    sunrise_iso = datetime.datetime.fromisoformat(result_iso['sunrise_time'])
-    sunset_iso = datetime.datetime.fromisoformat(result_iso['sunset_time'])
-    assert sunrise_iso < sunset_iso
-
-    # Ensure sunrise time is earlier than sunset time in datetime format
-    sunrise_datetime = result_datetime['sunrise_time']
-    sunset_datetime = result_datetime['sunset_time']
-    assert sunrise_datetime < sunset_datetime
+        sunrise_str, sunset_str = match.groups()
+        # Parse times according to format
+        time_format_map = {
+            'unix': '%s',
+            'iso': '%Y-%m-%d %H:%M:%S',
+            # The 'date' format includes timezone information for parsing
+            'date': '%Y-%m-%d %H:%M:%S%z'
+        }
+        if time_units == 'unix':
+            sunrise_time = datetime.fromtimestamp(int(sunrise_str),
+                                                  tz=timezone.utc)
+            sunset_time = datetime.fromtimestamp(int(sunset_str),
+                                                 tz=timezone.utc)
+        else:
+            sunrise_format = time_format_map[time_units]
+            sunrise_time = datetime.strptime(sunrise_str, sunrise_format)
+            sunset_time = datetime.strptime(sunset_str, sunrise_format)
+        # Check that sunrise occurs before sunset
+        assert sunrise_time < sunset_time, "Sunrise time is not before \
+            sunset time in the report."

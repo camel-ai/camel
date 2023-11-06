@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from typing import Dict, List
+from typing import List
 
 from pyowm import OWM
 
@@ -38,220 +38,96 @@ def get_openweathermap_api_key() -> str:
     return OPENWEATHERMAP_API_KEY
 
 
-def get_current_weather(city: str, units: str = 'kelvin') -> dict:
-    r"""
-    Fetch current weather for a given city using the OpenWeatherMap API.
-    Including details such as the current temperature, maximum temperature,
-    minimum temperature, perceived temperature, and weather status for
-    the specified city on the current day.
+def get_weather_data(city: str, temp_units: str = 'kelvin',
+                     wind_units: str = 'meters_sec',
+                     visibility_units: str = 'meters',
+                     time_units: str = 'unix') -> str:
+    """
+    Fetch and return a comprehensive weather report for a given city as a\
+    string. The report includes current weather conditions, temperature, \
+    wind details, visibility, and sunrise/sunset times, all formatted as \
+    a readable string.
+
+    The function interacts with the OpenWeatherMap API to retrieve the data.
 
     Args:
-        city (string): The city for which weather information is to be fetched.
-                    Queries work best by specifying toponyms and country
-                    2-letter names separated by comma. Eg: instead of using
-                    "seattle", try using "seattle,WA".
-        units (string): The unit system to be used. Possible values are
-                        'kelvin' (default), 'celsius', and 'fahrenheit'.
+        city (string): The name of the city for which the weather information
+                    is desired. Format "City, CountryCode" (e.g., "Paris, FR"
+                    for Paris, France). If the country code is not provided,
+                    the API will search for the city in all countries, which
+                    may yield incorrect results if multiple cities with the
+                    same name exist.
+        temp_units (string): Units for temperature. Options: 'kelvin',
+                          'celsius', 'fahrenheit'. Default is 'kelvin'.
+        wind_units (string): Units for wind speed. Options: 'meters_sec',
+                          'miles_hour', 'knots', 'beaufort'.
+                          Default is 'meters_sec'.
+        visibility_units (string): Units for visibility distance. Options:
+                          'meters', 'miles'. Default is 'meters'.
+        time_units (string): Format for sunrise and sunset times. Options:
+                          'unix', 'iso', 'date'. Default is 'unix'.
 
     Returns:
-        dict: A dictionary containing weather information including:
-            - 'temp': Current temperature.
-            - 'temp_max': Maximum temperature.
-            - 'temp_min': Minimum temperature.
-            - 'feels_like': Perceived temperature.
-            - 'temp_kf': Internal parameter.
-            - 'status': Brief weather status (e.g., "Rain").
-            - 'detailed_status': Detailed weather status (e.g., "light rain").
-            Example:
-            {
-                'temp': 291.14,
-                'temp_max': 293.9,
-                'temp_min': 288.44,
-                'feels_like': 290.86,
-                'temp_kf': None,
-                'status': 'Rain',
-                'detailed_status': 'light rain'
-            }
+        str: A string containing the fetched weather data, formatted in a
+             readable manner. If an error occurs, a message indicating the
+             error will be returned instead.
+
+    Example of return string:
+        "Weather in Paris, FR: 15°C, feels like 13°C. Max temp: 17°C, Min temp\
+            : 12°C.
+        Wind: 5 m/s at 270 degrees. Visibility: 10 kilometers.
+        Sunrise at 05:46:05 (UTC), Sunset at 18:42:20 (UTC)."
+
+    Note:
+        Please ensure that the API key is valid and has permissions to access \
+            the weather data.
     """
 
-    # Retrieve the OpenWeatherMap API key
     OPENWEATHERMAP_API_KEY = get_openweathermap_api_key()
-    # Create OWM manager
-    owm = OWM(OPENWEATHERMAP_API_KEY)
-    mgr = owm.weather_manager()
-
-    try:
-        weather = mgr.weather_at_place(city).weather
-        temperature = weather.temperature(units)
-
-        # Extract required information
-        return {
-            'temp': temperature['temp'],
-            'temp_max': temperature['temp_max'],
-            'temp_min': temperature['temp_min'],
-            'feels_like': temperature['feels_like'],
-            # temp_kf might not always be present
-            'temp_kf': temperature.get('temp_kf', None),
-            'status': weather.status,
-            'detailed_status': weather.detailed_status
-        }
-
-    except Exception as e:
-        # Catch any unexpected exceptions
-        return {
-            "error":
-            f"Unexpected error occurred while fetching weather \
-                for {city}. Reason: {str(e)}"
-        }
-
-
-def get_current_wind(city: str, units: str = 'meters_sec') -> dict:
-    r"""
-    Fetch wind information (speed and direction) for a given city using the \
-    OpenWeatherMap API.
-
-    Args:
-        city (string): The city for which wind information is to be fetched.
-                       Queries work best by specifying toponyms and country \
-                        2-letter names separated by comma.
-                       Eg: instead of using "seattle", try using "seattle,WA".
-        units (string): The unit system to be used for wind speed. Possible \
-                        values are 'meters_sec' (default),
-                        'miles_hour', 'knots', and 'beaufort'.
-
-    Returns:
-        dict: A dictionary containing wind information including:
-            - 'speed': Current wind speed.
-            - 'deg': Wind direction in degrees (meteorological).
-
-            Example:
-            {
-                'speed': 5.66,
-                'deg': 180
-            }
-    """
-
-    # Retrieve the OpenWeatherMap API key
-    OPENWEATHERMAP_API_KEY = get_openweathermap_api_key()
-
-    # Create OWM manager
-    owm = OWM(OPENWEATHERMAP_API_KEY)
-    mgr = owm.weather_manager()
-
-    try:
-        observation = mgr.weather_at_place(city)
-        wind_data = observation.weather.wind(unit=units)
-
-        # Return required wind information
-        return {'speed': wind_data['speed'], 'deg': wind_data['deg']}
-
-    except Exception as e:
-        # Catch any unexpected exceptions
-        return {
-            "error":
-            f"Unexpected error occurred while fetching wind data \
-                 for {city}. Reason: {str(e)}"
-        }
-
-
-def get_current_visibility_distance(city: str, units: str = 'meters') -> dict:
-    r"""
-    Fetch visibility distance information for a given city using the \
-    OpenWeatherMap API.
-
-    Args:
-        city (string): The city for which visibility distance information is \
-                    to be fetched. Queries work best by specifying toponyms \
-                        and country 2-letter names separated by comma.
-                    Eg: instead of using "seattle", try using "seattle,WA".
-        units (string): The unit system to be used. Possible values are \
-                    'meters' (default), and 'miles'.
-
-    Returns:
-        dict: A dictionary containing visibility distance for the given city \
-            in the specified unit.
-            Example:
-            {"visibility_distance": 10000.0}
-    """
-
-    # Retrieve the OpenWeatherMap API key
-    OPENWEATHERMAP_API_KEY = get_openweathermap_api_key()
-
-    # Create OWM manager
-    owm = OWM(OPENWEATHERMAP_API_KEY)
-    mgr = owm.weather_manager()
-
-    try:
-        observation = mgr.weather_at_place(city)
-
-        # Fetch visibility based on specified units
-        if units == 'meters':
-            visibility_distance = observation.weather.visibility_distance
-        elif units == 'miles':
-            visibility_distance = observation.weather.visibility(unit='miles')
-        else:
-            return {"error": f"Unsupported unit: {units}"}
-
-        return {"visibility_distance": visibility_distance}
-
-    except Exception as e:
-        # Catch any unexpected exceptions
-        return {
-            "error":
-            f"Unexpected error occurred while fetching \
-                visibility distance for {city}. Reason: {str(e)}"
-        }
-
-
-def get_sunrise_sunset(city: str, units: str = 'unix') -> Dict[str, str]:
-    r"""
-    Get sunrise and sunset times for a given city using the OpenWeatherMap API.
-
-    Args:
-        city (string): The city for which sunrise and sunset times are to be \
-                    fetched.
-        units (string): The unit system for time format. Supported values: \
-                    'unix' (default), 'iso', 'date'.
-
-    Returns:
-        Dict[str, str]: A dictionary containing sunrise and sunset times in \
-                    the specified format.
-
-    Example:
-    {
-        'sunrise_time': '2023-10-28 06:46:05+00:00',
-        'sunset_time': '2023-10-28 16:42:20+00:00'
-    }
-    """
-
-    # Retrieve the OpenWeatherMap API key
-    OPENWEATHERMAP_API_KEY = get_openweathermap_api_key()
-
-    # Create OWM manager
     owm = OWM(OPENWEATHERMAP_API_KEY)
     mgr = owm.weather_manager()
 
     try:
         observation = mgr.weather_at_place(city)
         weather = observation.weather
-        sunrise_time = weather.sunrise_time(timeformat=units)
-        sunset_time = weather.sunset_time(timeformat=units)
 
-        # Extract and format sunrise and sunset times
-        return {'sunrise_time': sunrise_time, 'sunset_time': sunset_time}
+        # Temperature
+        temperature = weather.temperature(temp_units)
+
+        # Wind
+        wind_data = observation.weather.wind(unit=wind_units)
+        wind_speed = wind_data.get('speed')
+        # 'N/A' if the degree is not available
+        wind_deg = wind_data.get('deg', 'N/A')
+
+        # Visibility
+        visibility_distance = observation.weather.visibility_distance
+        visibility = str(visibility_distance) if visibility_units == 'meters' \
+            else str(observation.weather.visibility(unit='miles'))
+
+        # Sunrise and Sunset
+        sunrise_time = str(weather.sunrise_time(timeformat=time_units))
+        sunset_time = str(weather.sunset_time(timeformat=time_units))
+
+        # Compile all the weather details into a report string
+        weather_report = (
+            f"Weather in {city}: {temperature['temp']}°{temp_units.title()}, \
+                feels like {temperature['feels_like']}°{temp_units.title()}. "
+            f"Max temp: {temperature['temp_max']}°{temp_units.title()}, \
+                Min temp: {temperature['temp_min']}°{temp_units.title()}. "
+            f"Wind: {wind_speed} {wind_units} at {wind_deg} degrees. "
+            f"Visibility: {visibility} {visibility_units}. "
+            f"Sunrise at {sunrise_time}, Sunset at {sunset_time}.")
+
+        return weather_report
 
     except Exception as e:
-        # Handle any exceptions that may occur during the request
-        return {
-            "error":
-            f"Failed to fetch sunrise and sunset times for \
-                {city}. Reason: {str(e)}"
-        }
+        error_message = f"An error occurred while fetching weather data for \
+            {city}: {str(e)}"
+
+        return error_message
 
 
 WEATHER_FUNCS: List[OpenAIFunction] = [
-    OpenAIFunction(func) for func in [
-        get_current_weather, get_current_wind, get_current_visibility_distance,
-        get_sunrise_sunset
-    ]
+    OpenAIFunction(func) for func in [get_weather_data]
 ]
