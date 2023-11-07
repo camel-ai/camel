@@ -18,6 +18,7 @@ from openai import Stream
 from openai.types.chat.chat_completion import ChatCompletion, Choice
 from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
+from openai.types.completion_usage import CompletionUsage
 
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
@@ -74,8 +75,11 @@ class StubModel(BaseModelBackend):
         """
         ARBITRARY_STRING = "Lorem Ipsum"
         return_value: ChatCompletion = ChatCompletion(
-            id="stub_model_id", model="stub", object="chat.completion",
-            created=int(time.time()), choices=[
+            id="stub_model_id",
+            model="stub",
+            object="chat.completion",
+            created=int(time.time()),
+            choices=[
                 Choice(
                     finish_reason="stop",
                     index=0,
@@ -84,7 +88,13 @@ class StubModel(BaseModelBackend):
                         role="assistant",
                     ),
                 )
-            ])
+            ],
+            usage=CompletionUsage(
+                completion_tokens=10,
+                prompt_tokens=10,
+                total_tokens=20,
+            ),
+        )
         return return_value
 
     def check_model_config(self):
