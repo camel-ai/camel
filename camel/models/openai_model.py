@@ -38,7 +38,7 @@ class OpenAIModel(BaseModelBackend):
                 be fed into openai.ChatCompletion.create().
         """
         super().__init__(model_type, model_config_dict)
-        self._client = OpenAI()
+        self._client = OpenAI(timeout=30, max_retries=3)
         self._token_counter: Optional[BaseTokenCounter] = None
 
     @property

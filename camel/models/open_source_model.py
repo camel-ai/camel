@@ -70,7 +70,11 @@ class OpenSourceModel(BaseModelBackend):
             raise ValueError(
                 "URL to server running open-source LLM is not provided.")
         self.server_url: str = server_url
-        self._client = OpenAI(base_url=self.server_url)
+        self._client = OpenAI(
+            base_url=self.server_url,
+            timeout=30,
+            max_retries=3,
+        )
 
         # Replace `model_config_dict` with only the params to be
         # passed to OpenAI API

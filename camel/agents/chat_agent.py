@@ -19,9 +19,6 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from openai import Stream
 from openai.types.chat.chat_completion import ChatCompletion
 from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
-from tenacity import retry
-from tenacity.stop import stop_after_attempt
-from tenacity.wait import wait_exponential
 
 from camel.agents import BaseAgent
 from camel.configs import BaseConfig, ChatGPTConfig
@@ -256,7 +253,6 @@ class ChatAgent(BaseAgent):
         """
         self.update_memory(message, OpenAIBackendRole.ASSISTANT)
 
-    @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     @openai_api_key_required
     def step(
         self,
