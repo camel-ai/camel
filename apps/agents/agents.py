@@ -24,7 +24,6 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import gradio as gr
 import openai
-import openai.error
 import tenacity
 
 from apps.agents.text_utils import split_markdown_code
@@ -196,8 +195,7 @@ def role_playing_start(
             extend_task_specify_meta_dict=meta_dict,
             output_language=language,
         )
-    except (openai.error.RateLimitError, tenacity.RetryError,
-            RuntimeError) as ex:
+    except (openai.RateLimitError, tenacity.RetryError, RuntimeError) as ex:
         print("OpenAI API exception 0 " + str(ex))
         return (state, str(ex), "", [], gr.update())
 
@@ -247,8 +245,7 @@ def role_playing_chat_init(state) -> \
     try:
         init_assistant_msg: BaseMessage
         init_assistant_msg, _ = session.init_chat()
-    except (openai.error.RateLimitError, tenacity.RetryError,
-            RuntimeError) as ex:
+    except (openai.RateLimitError, tenacity.RetryError, RuntimeError) as ex:
         print("OpenAI API exception 1 " + str(ex))
         state.session = None
         return state, state.chat, gr.update()
@@ -289,8 +286,7 @@ def role_playing_chat_cont(state) -> \
     try:
         assistant_response, user_response = session.step(
             state.saved_assistant_msg)
-    except (openai.error.RateLimitError, tenacity.RetryError,
-            RuntimeError) as ex:
+    except (openai.RateLimitError, tenacity.RetryError, RuntimeError) as ex:
         print("OpenAI API exception 2 " + str(ex))
         state.session = None
         return state, state.chat, gr.update(), gr.update()
