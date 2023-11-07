@@ -15,14 +15,17 @@ import time
 from typing import Any, Dict, List, Optional, Union
 
 from openai import Stream
-from openai.types.chat.chat_completion import ChatCompletion, Choice
-from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
-from openai.types.chat.chat_completion_message import ChatCompletionMessage
-from openai.types.completion_usage import CompletionUsage
 
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
-from camel.typing import ModelType
+from camel.typing import (
+    ChatCompletion,
+    ChatCompletionChunk,
+    ChatCompletionMessage,
+    Choice,
+    CompletionUsage,
+    ModelType,
+)
 from camel.utils import BaseTokenCounter
 
 

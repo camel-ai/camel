@@ -15,11 +15,9 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Union
 
 from openai import Stream
-from openai.types.chat.chat_completion import ChatCompletion
-from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
 
 from camel.messages import OpenAIMessage
-from camel.typing import ModelType
+from camel.typing import ChatCompletion, ChatCompletionChunk, ModelType
 from camel.utils import BaseTokenCounter
 
 

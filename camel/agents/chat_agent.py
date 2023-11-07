@@ -17,8 +17,6 @@ from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from openai import Stream
-from openai.types.chat.chat_completion import ChatCompletion
-from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
 
 from camel.agents import BaseAgent
 from camel.configs import BaseConfig, ChatGPTConfig
@@ -33,7 +31,13 @@ from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.responses import ChatAgentResponse
 from camel.terminators import ResponseTerminator
-from camel.typing import ModelType, OpenAIBackendRole, RoleType
+from camel.typing import (
+    ChatCompletion,
+    ChatCompletionChunk,
+    ModelType,
+    OpenAIBackendRole,
+    RoleType,
+)
 from camel.utils import get_model_encoding, openai_api_key_required
 
 

@@ -11,16 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from openai.types.chat.chat_completion_message_param import (
-    ChatCompletionMessageParam, )
-from openai.types.chat.chat_completion_system_message_param import (
-    ChatCompletionSystemMessageParam, )
-from openai.types.chat.chat_completion_user_message_param import (
-    ChatCompletionUserMessageParam, )
-from openai.types.chat.chat_completion_assistant_message_param import (
-    ChatCompletionAssistantMessageParam, )
-from openai.types.chat.chat_completion_function_message_param import (
-    ChatCompletionFunctionMessageParam, )
+from camel.typing import (
+    ChatCompletionSystemMessageParam,
+    ChatCompletionAssistantMessageParam,
+    ChatCompletionUserMessageParam,
+    ChatCompletionFunctionMessageParam,
+    ChatCompletionMessageParam,
+)
 
 OpenAISystemMessage = ChatCompletionSystemMessageParam
 OpenAIAssistantMessage = ChatCompletionAssistantMessageParam
@@ -39,4 +36,3 @@ __all__ = [
     'BaseMessage',
     'FunctionCallingMessage',
 ]
-0

@@ -14,13 +14,11 @@
 from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
-from openai.types.chat.chat_completion import ChatCompletion
-from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
 
 from camel.configs import OPENAI_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
-from camel.typing import ModelType
+from camel.typing import ChatCompletion, ChatCompletionChunk, ModelType
 from camel.utils import BaseTokenCounter, OpenSourceTokenCounter
 
 
