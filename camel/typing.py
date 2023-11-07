@@ -29,7 +29,8 @@ class ModelType(Enum):
     GPT_3_5_TURBO_1106 = "gpt-3.5-turbo-1106"
     GPT_4 = "gpt-4"
     GPT_4_32k = "gpt-4-32k"
-    GPT_4_1106_PREVIEW = "gpt-4-1106-preview"
+    GPT_4_0613 = "gpt-4-0613"
+    GPT_4_1106 = "gpt-4-1106"
 
     STUB = "stub"
 
@@ -54,7 +55,8 @@ class ModelType(Enum):
                 "GPT_3_5_TURBO_1106",
                 "GPT_4",
                 "GPT_4_32k",
-                "GPT_4_1106_PREVIEW",
+                "GPT_4_0613",
+                "GPT_4_1106",
         }:
             return True
         else:
@@ -83,12 +85,14 @@ class ModelType(Enum):
         elif self is ModelType.GPT_3_5_TURBO_16K:
             return 16384
         elif self is ModelType.GPT_3_5_TURBO_1106:
-            return 4096 
+            return 4096
         elif self is ModelType.GPT_4:
-            return 8192
+            return 128000
         elif self is ModelType.GPT_4_32k:
             return 32768
-        elif self is ModelType.GPT_4_1106_PREVIEW:
+        elif self is ModelType.GPT_4_0613:
+            return 8192
+        elif self is ModelType.GPT_4_1106:
             return 128000
         elif self is ModelType.STUB:
             return 4096
@@ -102,7 +106,7 @@ class ModelType(Enum):
         else:
             raise ValueError("Unknown model type")
 
-    def validate_model_name(self, model_name: str) -> bool: 
+    def validate_model_name(self, model_name: str) -> bool:
         r"""Checks whether the model type and the model name matches.
 
         Args:
