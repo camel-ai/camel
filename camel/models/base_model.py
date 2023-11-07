@@ -12,7 +12,11 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
+
+from openai import Stream
+from openai.types.chat.chat_completion import ChatCompletion
+from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
 
 from camel.messages import OpenAIMessage
 from camel.typing import ModelType
@@ -49,11 +53,14 @@ class BaseModelBackend(ABC):
         pass
 
     @abstractmethod
-    def run(self, messages: List[OpenAIMessage]) -> Dict[str, Any]:
+    def run(
+        self,
+        messages: List[OpenAIMessage],
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Runs the query to the backend model.
 
         Args:
-            messages (List[Dict]): Message list with the chat history
+            messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
 
         Raises:

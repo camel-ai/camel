@@ -14,9 +14,11 @@
 import json
 from collections import defaultdict
 from dataclasses import dataclass
-from types import GeneratorType
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
+from openai import Stream
+from openai.types.chat.chat_completion import ChatCompletion
+from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
 from tenacity import retry
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_exponential
@@ -289,11 +291,10 @@ class ChatAgent(BaseAgent):
                 return self.step_token_exceed(e.args[1], called_funcs,
                                               "max_tokens_exceeded")
 
-            # Obtain the model's response and validate it
+            # Obtain the model's response
             response = self.model_backend.run(openai_messages)
-            self.validate_model_response(response)
 
-            if not self.model_backend.stream:
+            if isinstance(response, ChatCompletion):
                 output_messages, finish_reasons, usage_dict, response_id = (
                     self.handle_batch_response(response))
             else:
@@ -301,7 +302,8 @@ class ChatAgent(BaseAgent):
                     self.handle_stream_response(response, num_tokens))
 
             if (self.is_function_calling_enabled()
-                    and finish_reasons[0] == 'function_call'):
+                    and finish_reasons[0] == 'function_call'
+                    and isinstance(response, ChatCompletion)):
                 # Do function calling
                 func_assistant_msg, func_result_msg, func_record = (
                     self.step_function_call(response))
@@ -343,21 +345,8 @@ class ChatAgent(BaseAgent):
 
         return ChatAgentResponse(output_messages, self.terminated, info)
 
-    def validate_model_response(self, response: Any) -> None:
-        r"""Validate the type of the response returned by the model.
-
-        Args:
-            response (Any): The response returned by the model.
-        """
-        if not self.model_backend.stream:
-            if not isinstance(response, dict):
-                raise RuntimeError("OpenAI returned unexpected batch struct")
-        else:
-            if not isinstance(response, GeneratorType):
-                raise RuntimeError("OpenAI returned unexpected stream struct")
-
     def handle_batch_response(
-        self, response: Dict[str, Any]
+        self, response: ChatCompletion
     ) -> Tuple[List[BaseMessage], List[str], Dict[str, int], str]:
         r"""
 
@@ -368,22 +357,23 @@ class ChatAgent(BaseAgent):
             tuple: A tuple of list of output `ChatMessage`, list of
                 finish reasons, usage dictionary, and response id.
         """
+        response_dict = response.model_dump()
         output_messages: List[BaseMessage] = []
-        for choice in response["choices"]:
+        for choice in response_dict["choices"]:
             chat_message = BaseMessage(role_name=self.role_name,
                                        role_type=self.role_type,
                                        meta_dict=dict(),
                                        content=choice["message"]['content'])
             output_messages.append(chat_message)
         finish_reasons = [
-            str(choice["finish_reason"]) for choice in response["choices"]
+            str(choice["finish_reason"]) for choice in response_dict["choices"]
         ]
         return output_messages, finish_reasons, dict(
-            response["usage"]), response["id"]
+            response_dict["usage"]), response_dict["id"]
 
     def handle_stream_response(
         self,
-        response: Any,
+        response: Stream[ChatCompletionChunk],
         prompt_tokens: int,
     ) -> Tuple[List[BaseMessage], List[str], Dict[str, int], str]:
         r"""
@@ -403,16 +393,18 @@ class ChatAgent(BaseAgent):
         # All choices in one response share one role
         role: str = ""
         for chunk in response:
-            response_id = chunk["id"]
-            for choice in chunk["choices"]:
+            chunk_dict = chunk.model_dump()
+            response_id = chunk_dict["id"]
+            for choice in chunk_dict["choices"]:
                 index: int = choice["index"]
                 delta: Dict = choice["delta"]
-                if len(delta) != 0:
+                if delta["content"] is not None:
                     # When response has not been stopped
-                    # Notice that only the first chunk has the "role"
+                    # Notice that only the first chunk_dict has the "role"
                     role = delta.get("role", role)
                     delta_content = delta.get("content", "")
-                    content_dict[index] += delta_content
+                    if delta_content is not None:
+                        content_dict[index] += delta_content
                 else:
                     finish_reasons_dict[index] = choice["finish_reason"]
                     chat_message = BaseMessage(role_name=self.role_name,
@@ -460,7 +452,8 @@ class ChatAgent(BaseAgent):
         )
 
     def step_function_call(
-        self, response: Dict[str, Any]
+        self,
+        response: ChatCompletion,
     ) -> Tuple[FunctionCallingMessage, FunctionCallingMessage,
                FunctionCallingRecord]:
         r"""Execute the function with arguments following the model's response.
@@ -475,9 +468,10 @@ class ChatAgent(BaseAgent):
                 result, and a struct for logging information about this
                 function call.
         """
+        response_dict = response.model_dump()
 
         # Note that when function calling is enabled, `n` is set to 1.
-        choice = response["choices"][0]
+        choice = response_dict["choices"][0]
 
         func_name = choice["message"]["function_call"]["name"]
         func = self.func_dict[func_name]

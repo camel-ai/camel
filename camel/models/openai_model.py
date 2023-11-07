@@ -11,9 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
-from openai import OpenAI
+from openai import OpenAI, Stream
+from openai.types.chat.chat_completion import ChatCompletion
+from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
 
 from camel.configs import OPENAI_API_PARAMS_WITH_FUNCTIONS
 from camel.messages import OpenAIMessage
@@ -54,11 +56,11 @@ class OpenAIModel(BaseModelBackend):
     def run(
         self,
         messages: List[OpenAIMessage],
-    ) -> Dict[str, Any]:
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Run inference of OpenAI chat completion.
 
         Args:
-            messages (List[Dict]): Message list with the chat history
+            messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
 
         Returns:
@@ -69,7 +71,7 @@ class OpenAIModel(BaseModelBackend):
             model=self.model_type.value,
             **self.model_config_dict,
         )
-        return response.model_dump()
+        return response
 
     def check_model_config(self):
         r"""Check whether the model configuration contains any
