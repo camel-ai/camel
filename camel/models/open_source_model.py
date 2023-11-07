@@ -70,7 +70,7 @@ class OpenSourceModel(BaseModelBackend):
         self.server_url: str = server_url
         self._client = OpenAI(
             base_url=self.server_url,
-            timeout=30,
+            timeout=60,
             max_retries=3,
         )
 
