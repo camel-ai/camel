@@ -82,3 +82,7 @@ def test_babyagi_playing_step(model: ModelType):
 
     assert len(babyagi_playing.subtasks) > 0
     assert len(babyagi_playing.solved_subtasks) == 1
+
+    assert len(babyagi_playing.assistant_agent.stored_messages) > 0
+    assert len(babyagi_playing.task_creation_agent.stored_messages) > 0
+    assert len(babyagi_playing.task_prioritization_agent.stored_messages) > 0
