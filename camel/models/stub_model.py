@@ -57,7 +57,7 @@ class StubModel(BaseModelBackend):
             self._token_counter = StubTokenCounter()
         return self._token_counter
 
-    def run(self, messages: List[Dict]) -> Dict[str, Any]:
+    def run(self, messages: List[OpenAIMessage]) -> Dict[str, Any]:
         r"""Run fake inference by returning a fixed string.
         All arguments are unused for the dummy model.
 

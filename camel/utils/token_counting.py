@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import List
 
 from camel.messages import OpenAIMessage
 from camel.typing import ModelType
@@ -44,6 +44,9 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
             role = role_map[msg["role"]]
             message = msg["content"]
             if message:
+                if not isinstance(message, str):
+                    raise ValueError("Currently multimodal context is not "
+                                     "supported by the token counter.")
                 if i == 0:
                     ret += system_prompt + message
                 else:
@@ -60,6 +63,9 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
         for i, msg in enumerate(messages[1:]):
             role = role_map[msg["role"]]
             message = msg["content"]
+            if not isinstance(message, str):
+                raise ValueError("Currently multimodal context is not "
+                                 "supported by the token counter.")
             if message:
                 ret += role + ": " + message + seps[i % 2]
             else:

@@ -80,9 +80,8 @@ class MemoryRecord:
         }
 
     def to_openai_message(self) -> OpenAIMessage:
-        r"""Converts the record to an :obj:`OpenAIMessage` object.
-        """
-        return self.message.to_openai_message(self.role_at_backend.value)
+        r"""Converts the record to an :obj:`OpenAIMessage` object."""
+        return self.message.to_openai_message(self.role_at_backend)
 
 
 @dataclass(frozen=True)

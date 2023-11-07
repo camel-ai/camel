@@ -11,13 +11,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Dict, Union
+from openai.types.chat.chat_completion_message_param import (
+    ChatCompletionMessageParam, )
+from openai.types.chat.chat_completion_system_message_param import (
+    ChatCompletionSystemMessageParam, )
+from openai.types.chat.chat_completion_user_message_param import (
+    ChatCompletionUserMessageParam, )
+from openai.types.chat.chat_completion_assistant_message_param import (
+    ChatCompletionAssistantMessageParam, )
+from openai.types.chat.chat_completion_function_message_param import (
+    ChatCompletionFunctionMessageParam, )
 
-OpenAISystemMessage = Dict[str, str]
-OpenAIAssistantMessage = Dict[str, str]
-OpenAIUserMessage = Dict[str, str]
-OpenAIChatMessage = Union[OpenAIUserMessage, OpenAIAssistantMessage]
-OpenAIMessage = Union[OpenAISystemMessage, OpenAIChatMessage]
+OpenAISystemMessage = ChatCompletionSystemMessageParam
+OpenAIAssistantMessage = ChatCompletionAssistantMessageParam
+OpenAIUserMessage = ChatCompletionUserMessageParam
+OpenAIFunctionMessage = ChatCompletionFunctionMessageParam
+OpenAIMessage = ChatCompletionMessageParam
 
 from .base import BaseMessage  # noqa: E402
 from .func_message import FunctionCallingMessage  # noqa: E402
@@ -26,8 +35,8 @@ __all__ = [
     'OpenAISystemMessage',
     'OpenAIAssistantMessage',
     'OpenAIUserMessage',
-    'OpenAIChatMessage',
     'OpenAIMessage',
     'BaseMessage',
     'FunctionCallingMessage',
 ]
+0

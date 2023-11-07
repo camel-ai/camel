@@ -11,18 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import os
-import urllib
-from types import GeneratorType
 from typing import Any, Dict, List, Optional
+
+from openai import OpenAI
 
 from camel.configs import OPENAI_API_PARAMS_WITH_FUNCTIONS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.typing import ModelType
 from camel.utils import BaseTokenCounter, OpenAITokenCounter
-
-DEFAULT_API_BASE = "https://api.openai.com/v1"
 
 
 class OpenAIModel(BaseModelBackend):
@@ -39,6 +36,7 @@ class OpenAIModel(BaseModelBackend):
                 be fed into openai.ChatCompletion.create().
         """
         super().__init__(model_type, model_config_dict)
+        self._client = OpenAI()
         self._token_counter: Optional[BaseTokenCounter] = None
 
     @property
@@ -55,7 +53,7 @@ class OpenAIModel(BaseModelBackend):
 
     def run(
         self,
-        messages: List[Dict],
+        messages: List[OpenAIMessage],
     ) -> Dict[str, Any]:
         r"""Run inference of OpenAI chat completion.
 
@@ -66,24 +64,12 @@ class OpenAIModel(BaseModelBackend):
         Returns:
             Dict[str, Any]: Response in the OpenAI API format.
         """
-        import openai
-        url = os.environ.get('OPENAI_API_BASE_URL', DEFAULT_API_BASE)
-        openai.api_base = url if all([
-            urllib.parse.urlparse(url).scheme,
-            urllib.parse.urlparse(url).netloc
-        ]) else DEFAULT_API_BASE
-
-        messages_openai: List[OpenAIMessage] = messages
-        response = openai.ChatCompletion.create(messages=messages_openai,
-                                                model=self.model_type.value,
-                                                **self.model_config_dict)
-        if not self.stream:
-            if not isinstance(response, Dict):
-                raise RuntimeError("Unexpected batch return from OpenAI API")
-        else:
-            if not isinstance(response, GeneratorType):
-                raise RuntimeError("Unexpected stream return from OpenAI API")
-        return response
+        response = self._client.chat.completions.create(
+            messages=messages,
+            model=self.model_type.value,
+            **self.model_config_dict,
+        )
+        return response.model_dump()
 
     def check_model_config(self):
         r"""Check whether the model configuration contains any

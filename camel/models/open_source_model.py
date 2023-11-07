@@ -11,8 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from types import GeneratorType
 from typing import Any, Dict, List, Optional
+
+from openai import OpenAI
 
 from camel.configs import OPENAI_API_PARAMS
 from camel.messages import OpenAIMessage
@@ -67,6 +68,7 @@ class OpenSourceModel(BaseModelBackend):
             raise ValueError(
                 "URL to server running open-source LLM is not provided.")
         self.server_url: str = server_url
+        self._client = OpenAI(base_url=self.server_url)
 
         # Replace `model_config_dict` with only the params to be
         # passed to OpenAI API
@@ -87,7 +89,7 @@ class OpenSourceModel(BaseModelBackend):
 
     def run(
         self,
-        messages: List[Dict],
+        messages: List[OpenAIMessage],
     ) -> Dict[str, Any]:
         r"""Run inference of OpenAI-API-style chat completion.
 
@@ -98,20 +100,13 @@ class OpenSourceModel(BaseModelBackend):
         Returns:
             Dict[str, Any]: Response in the OpenAI API format.
         """
-        import openai
-        openai.api_base = self.server_url
-
         messages_openai: List[OpenAIMessage] = messages
-        response = openai.ChatCompletion.create(messages=messages_openai,
-                                                model=self.model_name,
-                                                **self.model_config_dict)
-        if not self.stream:
-            if not isinstance(response, Dict):
-                raise RuntimeError("Unexpected batch return from OpenAI API")
-        else:
-            if not isinstance(response, GeneratorType):
-                raise RuntimeError("Unexpected stream return from OpenAI API")
-        return response
+        response = self._client.chat.completions.create(
+            messages=messages_openai,
+            model=self.model_name,
+            **self.model_config_dict,
+        )
+        return response.model_dump()
 
     def check_model_config(self):
         r"""Check whether the model configuration is valid for open-source

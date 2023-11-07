@@ -14,6 +14,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
+from camel.messages import OpenAIMessage
 from camel.typing import ModelType
 from camel.utils import BaseTokenCounter
 
@@ -48,7 +49,7 @@ class BaseModelBackend(ABC):
         pass
 
     @abstractmethod
-    def run(self, messages: List[Dict]) -> Dict[str, Any]:
+    def run(self, messages: List[OpenAIMessage]) -> Dict[str, Any]:
         r"""Runs the query to the backend model.
 
         Args:
@@ -75,7 +76,7 @@ class BaseModelBackend(ABC):
         """
         pass
 
-    def count_tokens_from_messages(self, messages: List[Dict]) -> int:
+    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
         r"""Count the number of tokens in the messages using the specific
         tokenizer.
 
