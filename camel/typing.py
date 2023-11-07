@@ -26,8 +26,11 @@ class RoleType(Enum):
 class ModelType(Enum):
     GPT_3_5_TURBO = "gpt-3.5-turbo"
     GPT_3_5_TURBO_16K = "gpt-3.5-turbo-16k"
+    GPT_3_5_TURBO_1106 = "gpt-3.5-turbo-1106"
     GPT_4 = "gpt-4"
     GPT_4_32k = "gpt-4-32k"
+    GPT_4_1106_PREVIEW = "gpt-4-1106-preview"
+
     STUB = "stub"
 
     LLAMA_2 = "llama-2"
@@ -48,8 +51,10 @@ class ModelType(Enum):
         if self.name in {
                 "GPT_3_5_TURBO",
                 "GPT_3_5_TURBO_16K",
+                "GPT_3_5_TURBO_1106",
                 "GPT_4",
                 "GPT_4_32k",
+                "GPT_4_1106_PREVIEW",
         }:
             return True
         else:
@@ -77,10 +82,14 @@ class ModelType(Enum):
             return 4096
         elif self is ModelType.GPT_3_5_TURBO_16K:
             return 16384
+        elif self is ModelType.GPT_3_5_TURBO_1106:
+            return 4096 
         elif self is ModelType.GPT_4:
             return 8192
         elif self is ModelType.GPT_4_32k:
             return 32768
+        elif self is ModelType.GPT_4_1106_PREVIEW:
+            return 128000
         elif self is ModelType.STUB:
             return 4096
         elif self is ModelType.LLAMA_2:
@@ -93,7 +102,7 @@ class ModelType(Enum):
         else:
             raise ValueError("Unknown model type")
 
-    def validate_model_name(self, model_name: str) -> bool:
+    def validate_model_name(self, model_name: str) -> bool: 
         r"""Checks whether the model type and the model name matches.
 
         Args:
