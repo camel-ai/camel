@@ -56,7 +56,7 @@ class FunctionCallingMessage(BaseMessage):
         """
         if role_at_backend == OpenAIBackendRole.ASSISTANT:
             return self.to_openai_assistant_message()
-        elif role_at_backend == OpenAIBackendRole.ASSISTANT:
+        elif role_at_backend == OpenAIBackendRole.FUNCTION:
             return self.to_openai_function_message()
         else:
             raise ValueError(f"Unsupported role: {role_at_backend}.")
