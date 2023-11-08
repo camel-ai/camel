@@ -357,19 +357,26 @@ class ChatAgent(BaseAgent):
             tuple: A tuple of list of output `ChatMessage`, list of
                 finish reasons, usage dictionary, and response id.
         """
-        response_dict = response.model_dump()
         output_messages: List[BaseMessage] = []
-        for choice in response_dict["choices"]:
-            chat_message = BaseMessage(role_name=self.role_name,
-                                       role_type=self.role_type,
-                                       meta_dict=dict(),
-                                       content=choice["message"]['content'])
+        for choice in response.choices:
+            chat_message = BaseMessage(
+                role_name=self.role_name,
+                role_type=self.role_type,
+                meta_dict=dict(),
+                content=choice.message.content or "",
+            )
             output_messages.append(chat_message)
         finish_reasons = [
-            str(choice["finish_reason"]) for choice in response_dict["choices"]
+            str(choice.finish_reason) for choice in response.choices
         ]
-        return output_messages, finish_reasons, dict(
-            response_dict["usage"]), response_dict["id"]
+        usage = (response.usage.model_dump()
+                 if response.usage is not None else {})
+        return (
+            output_messages,
+            finish_reasons,
+            usage,
+            response.id,
+        )
 
     def handle_stream_response(
         self,
@@ -391,22 +398,17 @@ class ChatAgent(BaseAgent):
         output_messages: List[BaseMessage] = []
         response_id: str = ""
         # All choices in one response share one role
-        role: str = ""
         for chunk in response:
-            chunk_dict = chunk.model_dump()
-            response_id = chunk_dict["id"]
-            for choice in chunk_dict["choices"]:
-                index: int = choice["index"]
-                delta: Dict = choice["delta"]
-                if delta["content"] is not None:
+            response_id = chunk.id
+            for choice in chunk.choices:
+                index = choice.index
+                delta = choice.delta
+                if delta.content is not None:
                     # When response has not been stopped
                     # Notice that only the first chunk_dict has the "role"
-                    role = delta.get("role", role)
-                    delta_content = delta.get("content", "")
-                    if delta_content is not None:
-                        content_dict[index] += delta_content
+                    content_dict[index] += delta.content
                 else:
-                    finish_reasons_dict[index] = choice["finish_reason"]
+                    finish_reasons_dict[index] = choice.finish_reason
                     chat_message = BaseMessage(role_name=self.role_name,
                                                role_type=self.role_type,
                                                meta_dict=dict(),
@@ -468,15 +470,14 @@ class ChatAgent(BaseAgent):
                 result, and a struct for logging information about this
                 function call.
         """
-        response_dict = response.model_dump()
-
         # Note that when function calling is enabled, `n` is set to 1.
-        choice = response_dict["choices"][0]
-
-        func_name = choice["message"]["function_call"]["name"]
+        choice = response.choices[0]
+        if choice.message.function_call is None:
+            raise RuntimeError("Function call is None")
+        func_name = choice.message.function_call.name
         func = self.func_dict[func_name]
 
-        args_str: str = choice["message"]["function_call"]["arguments"]
+        args_str: str = choice.message.function_call.arguments
         args = json.loads(args_str.replace("\'", "\""))
 
         # Pass the extracted arguments to the indicated function
