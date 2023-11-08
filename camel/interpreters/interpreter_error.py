@@ -13,6 +13,6 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 
-class InterpreterError(ValueError):
+class InterpreterError(Exception):
     r"""Exception raised for errors that can be solved by regenerating code """
     pass

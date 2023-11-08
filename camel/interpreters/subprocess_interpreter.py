@@ -16,13 +16,14 @@ import shlex
 import subprocess
 import tempfile
 from pathlib import Path
+from typing import Any, Dict, List
 
 from colorama import Fore
 
-from camel.utils.code_interpreter.interpreter_error import InterpreterError
+from camel.interpreters import BaseInterpreter, InterpreterError
 
 
-class SubprocessInterpreter():
+class SubprocessInterpreter(BaseInterpreter):
     r""" SubprocessInterpreter is a class for executing code files or code
     strings in a subprocess.
 
@@ -112,7 +113,7 @@ class SubprocessInterpreter():
         return (f"stdout: {stdout}\n"
                 f"stderr: {stderr}\n")
 
-    def run_generated_code(
+    def run(
         self,
         code: str,
         code_type: str,
@@ -163,6 +164,15 @@ class SubprocessInterpreter():
     def _check_code_type(self, code_type: str) -> str:
         if code_type not in self._CODE_TYPE:
             raise InterpreterError(
-                f"Unsupported code type {code_type}. Currently CAMEL can "
-                f" only execute {', '.join(self._CODE_EXTENTION.keys())}.")
+                f"Unsupported code type {code_type}. Currently "
+                f"`{self.__class__.__name__}` only supports "
+                f"{', '.join(self._CODE_EXTENTION.keys())}.")
         return self._CODE_TYPE[code_type]
+
+    def supported_code_types(self) -> List[str]:
+        return list(self._CODE_EXTENTION.keys())
+
+    def set_action_space(self, action_space: Dict[str, Any]) -> None:
+        r"""Sets action space for *python* interpreter"""
+        raise RuntimeError("SubprocessInterpreter doesn't support "
+                           "`action_space`.")

@@ -11,50 +11,44 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import binascii
-
-import pytest
-import requests
+from typing import List
 
 from camel.agents import EmbodiedAgent, HuggingFaceToolAgent
+from camel.agents.tool_agents.base import BaseToolAgent
 from camel.generators import SystemMessageGenerator
 from camel.messages import BaseMessage
-from camel.typing import RoleType
+from camel.typing import ModelType, RoleType
 
 
-@pytest.mark.model_backend
-def test_get_action_space_prompt():
-    role_name = "Artist"
-    meta_dict = dict(role=role_name, task="Drawing")
-    sys_msg = SystemMessageGenerator().from_dict(
-        meta_dict=meta_dict,
-        role_tuple=(f"{role_name}'s Embodiment", RoleType.EMBODIMENT))
-    agent = EmbodiedAgent(
-        sys_msg,
-        action_space=[HuggingFaceToolAgent('hugging_face_tool_agent')])
-    expected_prompt = "*** hugging_face_tool_agent ***:\n"
-    assert agent.get_action_space_prompt().startswith(expected_prompt)
-
-
-@pytest.mark.very_slow
-def test_step():
+def main():
     # Create an embodied agent
     role_name = "Artist"
     meta_dict = dict(role=role_name, task="Drawing")
     sys_msg = SystemMessageGenerator().from_dict(
         meta_dict=meta_dict,
         role_tuple=(f"{role_name}'s Embodiment", RoleType.EMBODIMENT))
-    embodied_agent = EmbodiedAgent(sys_msg, verbose=True)
+    action_space = [
+        HuggingFaceToolAgent(
+            'hugging_face_tool_agent',
+            model=ModelType.GPT_4.value,
+            remote=True,
+        )
+    ]
+    action_space: List[BaseToolAgent]
+    embodied_agent = EmbodiedAgent(
+        sys_msg,
+        verbose=True,
+        action_space=action_space,
+    )
     user_msg = BaseMessage.make_user_message(
         role_name=role_name,
-        content="Draw all the Camelidae species.",
+        content=("Draw all the Camelidae species, "
+                 "caption the image content, "
+                 "save the images by species name."),
     )
-    try:
-        response = embodied_agent.step(user_msg)
-    except (binascii.Error, requests.exceptions.ConnectionError) as ex:
-        print("Warning: caught an exception, ignoring it since "
-              f"it is a known issue of Huggingface ({str(ex)})")
-        return
-    assert isinstance(response.msg, BaseMessage)
-    assert not response.terminated
-    assert isinstance(response.info, dict)
+    response = embodied_agent.step(user_msg)
+    print(response.msg.content)
+
+
+if __name__ == "__main__":
+    main()

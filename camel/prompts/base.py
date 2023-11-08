@@ -12,20 +12,9 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import inspect
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    TypeVar,
-    Union,
-)
+from typing import Any, Callable, Dict, Optional, Set, TypeVar, Union
 
 from camel.typing import RoleType
-from camel.utils import SafePythonInterpreter
 
 T = TypeVar('T')
 

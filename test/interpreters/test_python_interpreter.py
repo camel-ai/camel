@@ -15,8 +15,7 @@ import numpy as np
 import pytest
 import torch
 
-from camel.utils import SafePythonInterpreter
-from camel.utils.code_interpreter.interpreter_error import InterpreterError
+from camel.interpreters import InternalPythonInterpreter, InterpreterError
 
 
 def action_function():
@@ -27,11 +26,11 @@ def action_function():
 def interpreter():
     action_space = {"action1": action_function, "str": str}
     white_list = ["torch", "numpy.array", "openai"]
-    return SafePythonInterpreter(action_space=action_space,
-                                 import_white_list=white_list)
+    return InternalPythonInterpreter(action_space=action_space,
+                                     import_white_list=white_list)
 
 
-def test_state_update(interpreter: SafePythonInterpreter):
+def test_state_update(interpreter: InternalPythonInterpreter):
     code = "x = input_variable"
     input_variable = 10
     execution_res = interpreter.execute(
@@ -39,7 +38,7 @@ def test_state_update(interpreter: SafePythonInterpreter):
     assert execution_res == input_variable
 
 
-def test_syntax_error(interpreter: SafePythonInterpreter):
+def test_syntax_error(interpreter: InternalPythonInterpreter):
     code = "x input_variable"
     with pytest.raises(InterpreterError) as e:
         interpreter.execute(code)
@@ -47,7 +46,7 @@ def test_syntax_error(interpreter: SafePythonInterpreter):
     assert "Syntax error in code: invalid syntax" in exec_msg
 
 
-def test_import_success0(interpreter: SafePythonInterpreter):
+def test_import_success0(interpreter: InternalPythonInterpreter):
     code = """import torch as pt, openai
 a = pt.tensor([[1., -1.], [1., -1.]])
 openai.__version__"""
@@ -57,21 +56,21 @@ openai.__version__"""
     assert isinstance(execution_res, str)
 
 
-def test_import_success1(interpreter: SafePythonInterpreter):
+def test_import_success1(interpreter: InternalPythonInterpreter):
     code = """from torch import tensor
 a = tensor([[1., -1.], [1., -1.]])"""
     execution_res = interpreter.execute(code)
     assert torch.equal(execution_res, torch.tensor([[1., -1.], [1., -1.]]))
 
 
-def test_import_success2(interpreter: SafePythonInterpreter):
+def test_import_success2(interpreter: InternalPythonInterpreter):
     code = """from numpy import array
 x = array([[1, 2, 3], [4, 5, 6]])"""
     execution_res = interpreter.execute(code)
     assert np.equal(execution_res, np.array([[1, 2, 3], [4, 5, 6]])).all()
 
 
-def test_import_fail0(interpreter: SafePythonInterpreter):
+def test_import_fail0(interpreter: InternalPythonInterpreter):
     code = """import os
 os.mkdir("/tmp/test")"""
     with pytest.raises(InterpreterError) as e:
@@ -82,7 +81,7 @@ os.mkdir("/tmp/test")"""
                         " white list (try to import os).")
 
 
-def test_import_fail1(interpreter: SafePythonInterpreter):
+def test_import_fail1(interpreter: InternalPythonInterpreter):
     code = """import numpy as np
 x = np.array([[1, 2, 3], [4, 5, 6]], np.int32)"""
     with pytest.raises(InterpreterError) as e:
@@ -93,13 +92,13 @@ x = np.array([[1, 2, 3], [4, 5, 6]], np.int32)"""
                         " white list (try to import numpy).")
 
 
-def test_action_space(interpreter: SafePythonInterpreter):
+def test_action_space(interpreter: InternalPythonInterpreter):
     code = "res = action1()"
     execution_res = interpreter.execute(code)
     assert execution_res == "access action function"
 
 
-def test_fuzz_space(interpreter: SafePythonInterpreter):
+def test_fuzz_space(interpreter: InternalPythonInterpreter):
     from PIL import Image
     fuzz_state = {"image": Image.new("RGB", (256, 256))}
     code = "output_image = input_image.crop((20, 20, 100, 100))"
@@ -108,7 +107,7 @@ def test_fuzz_space(interpreter: SafePythonInterpreter):
     assert execution_res.height == 80
 
 
-def test_keep_state0(interpreter: SafePythonInterpreter):
+def test_keep_state0(interpreter: InternalPythonInterpreter):
     code1 = "a = 42"
     code2 = "b = a"
     code3 = "c = b"
@@ -124,7 +123,7 @@ def test_keep_state0(interpreter: SafePythonInterpreter):
                         "The variable `b` is not defined.")
 
 
-def test_keep_state1(interpreter: SafePythonInterpreter):
+def test_keep_state1(interpreter: InternalPythonInterpreter):
     code1 = "from torch import tensor"
     code2 = "a = tensor([[1., -1.], [1., -1.]])"
     execution_res = interpreter.execute(code1, keep_state=True)
@@ -137,14 +136,14 @@ def test_keep_state1(interpreter: SafePythonInterpreter):
                         "The variable `tensor` is not defined.")
 
 
-def test_assign0(interpreter: SafePythonInterpreter):
+def test_assign0(interpreter: InternalPythonInterpreter):
     code = "a = b = 1"
     interpreter.execute(code)
     assert interpreter.state["a"] == 1
     assert interpreter.state["b"] == 1
 
 
-def test_assign1(interpreter: SafePythonInterpreter):
+def test_assign1(interpreter: InternalPythonInterpreter):
     code = "a, b = c = 2, 3"
     interpreter.execute(code)
     assert interpreter.state["a"] == 2
@@ -152,7 +151,7 @@ def test_assign1(interpreter: SafePythonInterpreter):
     assert interpreter.state["c"] == (2, 3)
 
 
-def test_assign_fail(interpreter: SafePythonInterpreter):
+def test_assign_fail(interpreter: InternalPythonInterpreter):
     code = "x = a, b, c = 2, 3"
     with pytest.raises(InterpreterError) as e:
         interpreter.execute(code, keep_state=False)
@@ -161,7 +160,7 @@ def test_assign_fail(interpreter: SafePythonInterpreter):
                         "Expected 3 values but got 2.")
 
 
-def test_if0(interpreter: SafePythonInterpreter):
+def test_if0(interpreter: InternalPythonInterpreter):
     code = """a = 0
 b = 1
 if a < b:
@@ -175,7 +174,7 @@ else:
     assert interpreter.state["b"] == 0
 
 
-def test_if1(interpreter: SafePythonInterpreter):
+def test_if1(interpreter: InternalPythonInterpreter):
     code = """a = 1
 b = 0
 if a < b:
@@ -189,7 +188,7 @@ else:
     assert interpreter.state["b"] == 1
 
 
-def test_compare(interpreter: SafePythonInterpreter):
+def test_compare(interpreter: InternalPythonInterpreter):
     assert interpreter.execute("2 > 1") is True
     assert interpreter.execute("2 >= 1") is True
     assert interpreter.execute("2 < 1") is False
@@ -202,7 +201,7 @@ def test_compare(interpreter: SafePythonInterpreter):
     assert interpreter.execute("1 not in [1, 2]") is False
 
 
-def test_oprators(interpreter: SafePythonInterpreter):
+def test_oprators(interpreter: InternalPythonInterpreter):
     assert interpreter.execute("1 + 1") == 2
     assert interpreter.execute("1 - 1") == 0
     assert interpreter.execute("1 * 1") == 1
@@ -217,7 +216,7 @@ def test_oprators(interpreter: SafePythonInterpreter):
     assert interpreter.execute("not True") is False
 
 
-def test_for(interpreter: SafePythonInterpreter):
+def test_for(interpreter: InternalPythonInterpreter):
     code = """l = [2, 3, 5, 7, 11]
 sum = 0
 for i in l:
@@ -226,14 +225,14 @@ for i in l:
     assert execution_res == 28
 
 
-def test_subscript_access(interpreter: SafePythonInterpreter):
+def test_subscript_access(interpreter: InternalPythonInterpreter):
     code = """l = [2, 3, 5, 7, 11]
 res = l[3]"""
     execution_res = interpreter.execute(code)
     assert execution_res == 7
 
 
-def test_subscript_assign(interpreter: SafePythonInterpreter):
+def test_subscript_assign(interpreter: InternalPythonInterpreter):
     code = """l = [2, 3, 5, 7, 11]
 l[3] = 1"""
     with pytest.raises(InterpreterError) as e:
@@ -244,7 +243,7 @@ l[3] = 1"""
                         "ast.Tuple, got Subscript instead.")
 
 
-def test_dict(interpreter: SafePythonInterpreter):
+def test_dict(interpreter: InternalPythonInterpreter):
     code = """x = {1: 10, 2: 20}
 y = {"number": 30, **x}
 res = y[1] + y[2] + y["numbers"]"""
@@ -252,7 +251,7 @@ res = y[1] + y[2] + y["numbers"]"""
     assert execution_res == 60
 
 
-def test_formatted_value(interpreter: SafePythonInterpreter):
+def test_formatted_value(interpreter: InternalPythonInterpreter):
     code = """x = 3
 res = f"x = {x}"
     """
@@ -260,14 +259,14 @@ res = f"x = {x}"
     assert execution_res == "x = 3"
 
 
-def test_joined_str(interpreter: SafePythonInterpreter):
+def test_joined_str(interpreter: InternalPythonInterpreter):
     code = """l = ["2", "3", "5", "7", "11"]
 res = ",".join(l)"""
     execution_res = interpreter.execute(code)
     assert execution_res == "2,3,5,7,11"
 
 
-def test_expression_not_support(interpreter: SafePythonInterpreter):
+def test_expression_not_support(interpreter: InternalPythonInterpreter):
     code = """x = 1
 x += 1"""
     with pytest.raises(InterpreterError) as e:

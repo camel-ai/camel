@@ -17,10 +17,10 @@ import importlib
 import typing
 from typing import Any, Dict, List, Optional
 
-from camel.utils.code_interpreter.interpreter_error import InterpreterError
+from camel.interpreters import BaseInterpreter, InterpreterError
 
 
-class SafePythonInterpreter():
+class InternalPythonInterpreter(BaseInterpreter):
     r"""A customized python interpreter to control the execution of
     LLM-generated codes. The interpreter makes sure the code can only execute
     functions given in action space and import white list. It also supports
@@ -58,27 +58,54 @@ class SafePythonInterpreter():
     Modifications copyright (C) 2023 CAMEL-AI.org
 
     Args:
-        action_space (Dict[str, Any]): A dictionary that maps action names to
-            their corresponding functions or objects. The interpreter can only
-            execute functions that are either directly listed in this
+        action_space (Dict[str, Any], optional): A dictionary that maps action
+            names to their corresponding functions or objects. The interpreter
+            can only execute functions that are either directly listed in this
             dictionary or are member functions of objects listed in this
             dictionary. The concept of :obj:`action_space` is derived from
             EmbodiedAgent, representing the actions that an agent is capable of
-            performing.
-        import_white_list (Optional[List[str]], optional): A list that stores
+            performing. If `None`, set to empty dict. (default: :obj:`None`)
+        import_white_list (List[str], optional): A list that stores
             the Python modules or functions that can be imported in the code.
             All submodules and functions of the modules listed in this list are
             importable. Any other import statements will be rejected. The
             module and its submodule or function name are separated by a period
             (:obj:`.`). (default: :obj:`None`)
+        unsafe_mode (bool, optional): If `True`, the interpreter runs the code
+            by `eval()` without any security check. (default: :obj:`False`)
     """
 
-    def __init__(self, action_space: Dict[str, Any],
-                 import_white_list: Optional[List[str]] = None) -> None:
-        self.action_space = action_space
+    _CODE_TYPES = ["python", "py", "python3", "python2"]
+
+    def __init__(
+        self,
+        action_space: Optional[Dict[str, Any]] = None,
+        import_white_list: Optional[List[str]] = None,
+        unsafe_mode: bool = False,
+    ) -> None:
+        self.action_space = action_space or dict()
         self.state = self.action_space.copy()
-        self.fuzz_state: Dict[str, Any] = {}
-        self.import_white_list = import_white_list or []
+        self.fuzz_state: Dict[str, Any] = dict()
+        self.import_white_list = import_white_list or list()
+        self.unsafe_mode = unsafe_mode
+
+    def run(self, code: str, code_type: str) -> str:
+        if code_type not in self._CODE_TYPES:
+            raise InterpreterError(
+                f"Unsupported code type {code_type}. "
+                f"`{self.__class__.__name__}` only supports "
+                f"{', '.join(self._CODE_TYPES)}.")
+        if not self.unsafe_mode:
+            return str(self.execute(code))
+        else:
+            return str(eval(code, self.action_space))
+
+    def set_action_space(self, action_space: Dict[str, Any]) -> None:
+        r"""Sets action space for *python* interpreter"""
+        self.action_space.update(action_space)
+
+    def supported_code_types(self) -> List[str]:
+        return self._CODE_TYPES
 
     def execute(self, code: str, state: Optional[Dict[str, Any]] = None,
                 fuzz_state: Optional[Dict[str, Any]] = None,
