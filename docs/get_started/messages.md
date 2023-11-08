@@ -72,7 +72,7 @@ The `BaseMessage` class offers several methods:
 2. Converting to an `OpenAIMessage` object:
 
     ```python
-    openai_message = message.to_openai_message(role_at_backend="user")
+    openai_message = message.to_openai_message(role_at_backend=OpenAIBackendRole.USER)
     print(openai_message == {"role": "user", "content": "test content"})
     >>> True
     ```

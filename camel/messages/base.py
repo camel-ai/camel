@@ -161,14 +161,15 @@ class BaseMessage:
 
         return text_prompts, code_prompts
 
-    def to_openai_message(self,
-                          role_at_backend: OpenAIBackendRole) -> OpenAIMessage:
+    def to_openai_message(
+        self,
+        role_at_backend: OpenAIBackendRole,
+    ) -> OpenAIMessage:
         r"""Converts the message to an :obj:`OpenAIMessage` object.
 
         Args:
-            role_at_backend (str): The role of the message in OpenAI chat
-                system, either :obj:`"system"`, :obj:`"user"`, or
-                obj:`"assistant"`.
+            role_at_backend (OpenAIBackendRole): The role of the message in
+                OpenAI chat system.
 
         Returns:
             OpenAIMessage: The converted :obj:`OpenAIMessage` object.
