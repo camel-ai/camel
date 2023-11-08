@@ -803,13 +803,13 @@ vision = ["Pillow (>=6.2.1)"]
 
 [[package]]
 name = "diffusers"
-version = "0.22.1"
+version = "0.22.3"
 description = "State-of-the-art diffusion in PyTorch and JAX."
 optional = true
 python-versions = ">=3.8.0"
 files = [
-    {file = "diffusers-0.22.1-py3-none-any.whl", hash = "sha256:bb41afd17b305aeb2347cc25dea1fba89b51c1b1cb0fc13b6c80bd6641e70276"},
-    {file = "diffusers-0.22.1.tar.gz", hash = "sha256:3c80fb04e0e97e5d72256332c3cb9710f02b838755c6c87ca024ed4c9e0d0c2c"},
+    {file = "diffusers-0.22.3-py3-none-any.whl", hash = "sha256:fdaf3a4c9c728f7d90796e0e5826286db7c7a2dce0e37c66870aee4cc10a2d75"},
+    {file = "diffusers-0.22.3.tar.gz", hash = "sha256:47a20e16649899eb302af76e9103536708d57c3acaf7d3ab68e4140af67a17cd"},
 ]
 
 [package.dependencies]
@@ -3539,20 +3539,6 @@ typing-extensions = {version = ">=3.10.0", markers = "python_version < \"3.10\""
 full = ["httpx (>=0.22.0)", "itsdangerous", "jinja2", "python-multipart", "pyyaml"]
 
 [[package]]
-name = "tenacity"
-version = "8.2.3"
-description = "Retry code until it succeeds"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "tenacity-8.2.3-py3-none-any.whl", hash = "sha256:ce510e327a630c9e1beaf17d42e6ffacc88185044ad85cf74c0a8887c6a0f88c"},
-    {file = "tenacity-8.2.3.tar.gz", hash = "sha256:5398ef0d78e63f40007c1fb4c0bff96e1911394d2fa8d194f77619c05ff6cc8a"},
-]
-
-[package.extras]
-doc = ["reno", "sphinx", "tornado (>=4.5)"]
-
-[[package]]
 name = "tiktoken"
 version = "0.5.1"
 description = "tiktoken is a fast BPE tokeniser for use with OpenAI's models"
@@ -4320,4 +4306,4 @@ huggingface-agent = ["accelerate", "datasets", "diffusers", "opencv-python", "se
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8.1"
-content-hash = "75357b42f4f9d2545d756e04124ded2939df23281607c15edcf986259d019618"
+content-hash = "7454e1f35cb77b7fde7dfe87f4956c9a12cefac2b1526aa69630db3c8169ac6d"
