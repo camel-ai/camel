@@ -77,7 +77,7 @@ class StubModel(BaseModelBackend):
             Dict[str, Any]: Response in the OpenAI API format.
         """
         ARBITRARY_STRING = "Lorem Ipsum"
-        return_value: ChatCompletion = ChatCompletion(
+        response: ChatCompletion = ChatCompletion(
             id="stub_model_id",
             model="stub",
             object="chat.completion",
@@ -98,7 +98,7 @@ class StubModel(BaseModelBackend):
                 total_tokens=20,
             ),
         )
-        return return_value
+        return response
 
     def check_model_config(self):
         r"""Directly pass the check on arguments to STUB model.
