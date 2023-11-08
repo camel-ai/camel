@@ -170,6 +170,7 @@ class SubprocessInterpreter(BaseInterpreter):
         return self._CODE_TYPE[code_type]
 
     def supported_code_types(self) -> List[str]:
+        r"""Provides supported code types by the interpreter."""
         return list(self._CODE_EXTENTION.keys())
 
     def set_action_space(self, action_space: Dict[str, Any]) -> None:

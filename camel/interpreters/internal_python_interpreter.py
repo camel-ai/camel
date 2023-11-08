@@ -105,6 +105,7 @@ class InternalPythonInterpreter(BaseInterpreter):
         self.action_space.update(action_space)
 
     def supported_code_types(self) -> List[str]:
+        r"""Provides supported code types by the interpreter."""
         return self._CODE_TYPES
 
     def execute(self, code: str, state: Optional[Dict[str, Any]] = None,
