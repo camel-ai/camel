@@ -23,13 +23,12 @@ from camel.utils import OpenAITokenCounter
 
 @pytest.mark.model_backend
 @pytest.mark.parametrize("model_type", [
-    ModelType.GPT_3_5_TURBO,
-    ModelType.GPT_3_5_TURBO_16K,
-    ModelType.GPT_3_5_TURBO_1106,
     ModelType.GPT_4,
     ModelType.GPT_4_32k,
-    ModelType.GPT_4_0613,
-    ModelType.GPT_4_1106,
+    ModelType.GPT_4_TURBO,
+    ModelType.GPT_4_TURBO_VISION,
+    ModelType.GPT_3_5_TURBO,
+    ModelType.GPT_3_5_TURBO_16k,
 ])
 def test_openai_model(model_type):
     model_config_dict = ChatGPTConfig().__dict__
