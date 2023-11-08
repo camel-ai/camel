@@ -61,12 +61,10 @@ class BaseModelBackend(ABC):
             messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
 
-        Raises:
-            RuntimeError: If the return value from OpenAI API
-                is not a dict that is expected.
-
         Returns:
-            Dict[str, Any]: All backends must return a dict in OpenAI format.
+            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+                `ChatCompletion` in the non-stream mode, or
+                `Stream[ChatCompletionChunk]` in the stream mode.
         """
         pass
 

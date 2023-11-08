@@ -57,14 +57,16 @@ class OpenAIModel(BaseModelBackend):
         self,
         messages: List[OpenAIMessage],
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        r"""Run inference of OpenAI chat completion.
+        r"""Runs inference of OpenAI chat completion.
 
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
 
         Returns:
-            Dict[str, Any]: Response in the OpenAI API format.
+            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+                `ChatCompletion` in the non-stream mode, or
+                `Stream[ChatCompletionChunk]` in the stream mode.
         """
         response = self._client.chat.completions.create(
             messages=messages,
