@@ -17,7 +17,7 @@ from typing import Any, ClassVar, Dict
 from uuid import UUID, uuid4
 
 from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
-from camel.typing import OpenAIBackendRole
+from camel.types import OpenAIBackendRole
 
 
 @dataclass(frozen=True)

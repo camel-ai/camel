@@ -31,7 +31,7 @@ from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.responses import ChatAgentResponse
 from camel.terminators import ResponseTerminator
-from camel.typing import (
+from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
     ModelType,

@@ -21,7 +21,7 @@ from camel.messages import (
     OpenAIUserMessage,
 )
 from camel.prompts import CodePrompt, TextPrompt
-from camel.typing import OpenAIBackendRole, RoleType
+from camel.types import OpenAIBackendRole, RoleType
 
 
 @dataclass

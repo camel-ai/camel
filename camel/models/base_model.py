@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Union
 from openai import Stream
 
 from camel.messages import OpenAIMessage
-from camel.typing import ChatCompletion, ChatCompletionChunk, ModelType
+from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
 from camel.utils import BaseTokenCounter
 
 

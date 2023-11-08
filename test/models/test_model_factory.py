@@ -15,7 +15,7 @@ import pytest
 
 from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
-from camel.typing import ModelType
+from camel.types import ModelType
 
 parametrize = pytest.mark.parametrize('model', [
     pytest.param(ModelType.GPT_3_5_TURBO, marks=pytest.mark.model_backend),

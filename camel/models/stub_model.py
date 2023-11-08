@@ -18,7 +18,7 @@ from openai import Stream
 
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
-from camel.typing import (
+from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
     ChatCompletionMessage,

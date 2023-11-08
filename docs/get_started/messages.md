@@ -24,7 +24,7 @@ Here's an example of creating a `BaseMessage` instance:
 
 ```python
 from camel.messages import BaseMessage
-from camel.typing import RoleType
+from camel.types import RoleType
 
 message = BaseMessage(
     role_name="test_user",

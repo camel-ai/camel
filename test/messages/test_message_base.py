@@ -15,7 +15,7 @@ import pytest
 
 from camel.messages import BaseMessage
 from camel.prompts import CodePrompt, TextPrompt
-from camel.typing import OpenAIBackendRole, RoleType
+from camel.types import OpenAIBackendRole, RoleType
 
 
 @pytest.fixture

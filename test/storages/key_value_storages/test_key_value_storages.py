@@ -22,7 +22,7 @@ from camel.storages.key_value_storages import (
     InMemoryKeyValueStorage,
     JsonStorage,
 )
-from camel.typing import RoleType
+from camel.types import RoleType
 
 
 @pytest.fixture

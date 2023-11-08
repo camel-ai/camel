@@ -19,7 +19,7 @@ import requests
 from camel.agents import EmbodiedAgent, HuggingFaceToolAgent
 from camel.generators import SystemMessageGenerator
 from camel.messages import BaseMessage
-from camel.typing import RoleType
+from camel.types import RoleType
 
 
 @pytest.mark.skip(reason="Wait huggingface to update openaiv1")

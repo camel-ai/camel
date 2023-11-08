@@ -17,7 +17,7 @@ from typing import Any, Dict, Optional, Union
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
-from camel.typing import ModelType, RoleType
+from camel.types import ModelType, RoleType
 
 
 class RoleAssignmentAgent(ChatAgent):

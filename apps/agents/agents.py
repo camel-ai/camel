@@ -29,7 +29,7 @@ from apps.agents.text_utils import split_markdown_code
 from camel.agents import TaskSpecifyAgent
 from camel.messages import BaseMessage
 from camel.societies import RolePlaying
-from camel.typing import TaskType
+from camel.types import TaskType
 
 REPO_ROOT = os.path.realpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.."))

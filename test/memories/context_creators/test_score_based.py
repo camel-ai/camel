@@ -18,7 +18,7 @@ from camel.memories import (
     ScoreBasedContextCreator,
 )
 from camel.messages import BaseMessage
-from camel.typing import ModelType, OpenAIBackendRole, RoleType
+from camel.types import ModelType, OpenAIBackendRole, RoleType
 from camel.utils import OpenAITokenCounter
 
 

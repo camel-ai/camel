@@ -20,7 +20,7 @@ from camel.messages import (
     OpenAIFunctionMessage,
     OpenAIMessage,
 )
-from camel.typing import OpenAIBackendRole
+from camel.types import OpenAIBackendRole
 
 
 @dataclass

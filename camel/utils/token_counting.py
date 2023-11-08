@@ -15,7 +15,7 @@ from abc import ABC, abstractmethod
 from typing import List
 
 from camel.messages import OpenAIMessage
-from camel.typing import ModelType
+from camel.types import ModelType
 
 
 def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:

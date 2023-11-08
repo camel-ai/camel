@@ -20,7 +20,7 @@ from camel.agents import ChatAgent, TaskSpecifyAgent
 from camel.configs import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
 from camel.messages import BaseMessage
-from camel.typing import RoleType, TaskType
+from camel.types import RoleType, TaskType
 from camel.utils import download_tasks
 
 
