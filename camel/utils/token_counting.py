@@ -42,15 +42,15 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
         ret = ""
         for i, msg in enumerate(messages[1:]):
             role = role_map[msg["role"]]
-            message = msg["content"]
-            if message:
-                if not isinstance(message, str):
+            content = msg["content"]
+            if content:
+                if not isinstance(content, str):
                     raise ValueError("Currently multimodal context is not "
                                      "supported by the token counter.")
                 if i == 0:
-                    ret += system_prompt + message
+                    ret += system_prompt + content
                 else:
-                    ret += role + " " + message + seps[i % 2]
+                    ret += role + " " + content + seps[i % 2]
             else:
                 ret += role
         return ret
@@ -62,12 +62,12 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
         ret = system_prompt + seps[0]
         for i, msg in enumerate(messages[1:]):
             role = role_map[msg["role"]]
-            message = msg["content"]
-            if not isinstance(message, str):
+            content = msg["content"]
+            if not isinstance(content, str):
                 raise ValueError("Currently multimodal context is not "
                                  "supported by the token counter.")
-            if message:
-                ret += role + ": " + message + seps[i % 2]
+            if content:
+                ret += role + ": " + content + seps[i % 2]
             else:
                 ret += role + ":"
         return ret
