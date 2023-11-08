@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import os
 from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
@@ -36,7 +37,8 @@ class OpenAIModel(BaseModelBackend):
                 be fed into openai.ChatCompletion.create().
         """
         super().__init__(model_type, model_config_dict)
-        self._client = OpenAI(timeout=60, max_retries=3)
+        url = os.environ.get('OPENAI_API_BASE_URL', None)
+        self._client = OpenAI(timeout=60, max_retries=3, base_url=url)
         self._token_counter: Optional[BaseTokenCounter] = None
 
     @property
