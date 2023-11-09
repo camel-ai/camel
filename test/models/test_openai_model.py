@@ -38,6 +38,7 @@ def test_openai_model(model_type):
     assert isinstance(model.token_counter, OpenAITokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
+    assert model.model_type.token_limit == model_type.token_limit
 
 
 @pytest.mark.model_backend
