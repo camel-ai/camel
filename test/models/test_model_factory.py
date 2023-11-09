@@ -19,7 +19,7 @@ from camel.typing import ModelType
 
 parametrize = pytest.mark.parametrize('model', [
     pytest.param(ModelType.GPT_3_5_TURBO, marks=pytest.mark.model_backend),
-    pytest.param(ModelType.GPT_4, marks=pytest.mark.model_backend),
+    pytest.param(ModelType.GPT_4_TURBO, marks=pytest.mark.model_backend),
     ModelType.STUB,
 ])
 
