@@ -26,8 +26,7 @@ documentation = "https://docs.camel-ai.org"
 [tool.poetry.dependencies]
 python = "^3.8.1"
 numpy = "^1"
-openai = "^0"
-tenacity = "^8"
+openai = "^1.1"
 tiktoken = "^0"
 colorama = "^0"
 jsonschema = "^4"
@@ -122,9 +121,6 @@ module = [
     "tiktoken",
     "openai",
     "openai.error",
-    "tenacity",
-    "tenacity.stop",
-    "tenacity.wait",
     "pytest",
     "_pytest.config",
     "_pytest.nodes",

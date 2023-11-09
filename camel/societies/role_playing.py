@@ -24,7 +24,7 @@ from camel.human import Human
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
 from camel.responses import ChatAgentResponse
-from camel.typing import ModelType, RoleType, TaskType
+from camel.types import ModelType, RoleType, TaskType
 
 
 class RolePlaying:

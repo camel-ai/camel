@@ -24,7 +24,7 @@ from camel.storages.key_value_storages import (
     InMemoryKeyValueStorage,
     JsonStorage,
 )
-from camel.typing import ModelType, OpenAIBackendRole, RoleType
+from camel.types import ModelType, OpenAIBackendRole, RoleType
 from camel.utils.token_counting import OpenAITokenCounter
 
 

@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from camel.storages.key_value_storages import BaseKeyValueStorage
-from camel.typing import (
+from camel.types import (
     ModelType,
     OpenAIBackendRole,
     RoleType,

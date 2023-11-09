@@ -21,7 +21,7 @@ from camel.agents import ChatAgent
 from camel.memories import BaseMemory
 from camel.messages import BaseMessage
 from camel.responses import ChatAgentResponse
-from camel.typing import ModelType
+from camel.types import ModelType
 from camel.utils import get_first_int, print_text_animated
 
 
