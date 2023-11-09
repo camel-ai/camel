@@ -26,8 +26,7 @@ documentation = "https://docs.camel-ai.org"
 [tool.poetry.dependencies]
 python = "^3.8.1"
 numpy = "^1"
-openai = "^0"
-tenacity = "^8"
+openai = "1.1.1"
 tiktoken = "^0"
 colorama = "^0"
 jsonschema = "^4"
@@ -101,6 +100,15 @@ pytest-cov = "^4"
 gradio = "^3"
 mock = "^5"
 
+# types
+pandas-stubs = "*"
+types-Pillow = "*"
+types-Pygments = "*"
+types-mock = "*"
+types-regex = "*"
+types-setuptools = "*"
+types-tqdm = "*"
+
 [tool.poetry.group.docs]
 optional = true
 [tool.poetry.group.docs.dependencies]
@@ -135,9 +143,6 @@ module = [
     "tiktoken",
     "openai",
     "openai.error",
-    "tenacity",
-    "tenacity.stop",
-    "tenacity.wait",
     "pytest",
     "_pytest.config",
     "_pytest.nodes",
@@ -155,6 +160,6 @@ module = [
     "bs4.*",
     "docx2txt",
     "PyMuPDF",
-    "fitz"
+    "fitz",
 ]
 ignore_missing_imports = true

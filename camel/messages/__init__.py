@@ -11,13 +11,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Dict, Union
+from camel.types import (
+    ChatCompletionSystemMessageParam,
+    ChatCompletionAssistantMessageParam,
+    ChatCompletionUserMessageParam,
+    ChatCompletionFunctionMessageParam,
+    ChatCompletionMessageParam,
+)
 
-OpenAISystemMessage = Dict[str, str]
-OpenAIAssistantMessage = Dict[str, str]
-OpenAIUserMessage = Dict[str, str]
-OpenAIChatMessage = Union[OpenAIUserMessage, OpenAIAssistantMessage]
-OpenAIMessage = Union[OpenAISystemMessage, OpenAIChatMessage]
+OpenAISystemMessage = ChatCompletionSystemMessageParam
+OpenAIAssistantMessage = ChatCompletionAssistantMessageParam
+OpenAIUserMessage = ChatCompletionUserMessageParam
+OpenAIFunctionMessage = ChatCompletionFunctionMessageParam
+OpenAIMessage = ChatCompletionMessageParam
 
 from .base import BaseMessage  # noqa: E402
 from .func_message import FunctionCallingMessage  # noqa: E402
@@ -26,7 +32,6 @@ __all__ = [
     'OpenAISystemMessage',
     'OpenAIAssistantMessage',
     'OpenAIUserMessage',
-    'OpenAIChatMessage',
     'OpenAIMessage',
     'BaseMessage',
     'FunctionCallingMessage',

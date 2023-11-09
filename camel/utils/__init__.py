@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .python_interpreter import PythonInterpreter
-from .functions import (
+from .commons import (
     openai_api_key_required,
     print_text_animated,
     get_prompt_template_key_words,

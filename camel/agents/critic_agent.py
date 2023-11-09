@@ -18,9 +18,10 @@ from typing import Any, Dict, Optional, Sequence
 from colorama import Fore
 
 from camel.agents import ChatAgent
+from camel.memories import BaseMemory
 from camel.messages import BaseMessage
 from camel.responses import ChatAgentResponse
-from camel.typing import ModelType
+from camel.types import ModelType
 from camel.utils import get_first_int, print_text_animated
 
 
@@ -49,13 +50,14 @@ class CriticAgent(ChatAgent):
         system_message: BaseMessage,
         model: ModelType = ModelType.GPT_3_5_TURBO,
         model_config: Optional[Any] = None,
+        memory: Optional[BaseMemory] = None,
         message_window_size: int = 6,
         retry_attempts: int = 2,
         verbose: bool = False,
         logger_color: Any = Fore.MAGENTA,
     ) -> None:
         super().__init__(system_message, model=model,
-                         model_config=model_config,
+                         model_config=model_config, memory=memory,
                          message_window_size=message_window_size)
         self.options_dict: Dict[str, str] = dict()
         self.retry_attempts = retry_attempts
@@ -106,7 +108,7 @@ class CriticAgent(ChatAgent):
                 raise RuntimeError("Critic step failed.")
 
             critic_msg = critic_response.msg
-            self.update_messages('assistant', critic_msg)
+            self.record_message(critic_msg)
             if self.verbose:
                 print_text_animated(self.logger_color + "\n> Critic response: "
                                     f"\x1b[3m{critic_msg.content}\x1b[0m\n")

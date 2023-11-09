@@ -14,9 +14,13 @@
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
-from camel.messages import OpenAIAssistantMessage, OpenAIMessage
-
-from .base import BaseMessage
+from camel.messages import (
+    BaseMessage,
+    OpenAIAssistantMessage,
+    OpenAIFunctionMessage,
+    OpenAIMessage,
+)
+from camel.types import OpenAIBackendRole
 
 
 @dataclass
@@ -36,25 +40,25 @@ class FunctionCallingMessage(BaseMessage):
     args: Optional[Dict] = None
     result: Optional[Any] = None
 
-    def to_openai_message(self, role_at_backend: str) -> OpenAIMessage:
+    def to_openai_message(
+        self,
+        role_at_backend: OpenAIBackendRole,
+    ) -> OpenAIMessage:
         r"""Converts the message to an :obj:`OpenAIMessage` object.
 
         Args:
-            role_at_backend (str): The role of the message in OpenAI chat
-                system, either :obj:`"system"`, :obj:`"user"`, or
-                obj:`"assistant"`.
+            role_at_backend (OpenAIBackendRole): The role of the message in
+                OpenAI chat system.
 
         Returns:
             OpenAIMessage: The converted :obj:`OpenAIMessage` object.
         """
-        if role_at_backend not in {"assistant", "function"}:
-            raise ValueError("Invalid role for function-related message: "
-                             f"{role_at_backend}.")
-
-        if role_at_backend == "assistant":
+        if role_at_backend == OpenAIBackendRole.ASSISTANT:
             return self.to_openai_assistant_message()
-        else:
+        elif role_at_backend == OpenAIBackendRole.FUNCTION:
             return self.to_openai_function_message()
+        else:
+            raise ValueError(f"Unsupported role: {role_at_backend}.")
 
     def to_openai_assistant_message(self) -> OpenAIAssistantMessage:
         r"""Converts the message to an :obj:`OpenAIAssistantMessage` object.
@@ -68,8 +72,7 @@ class FunctionCallingMessage(BaseMessage):
                 "Invalid request for converting into assistant message"
                 " due to missing function name or arguments.")
 
-        msg_dict: Dict[str, Any]
-        msg_dict = {
+        msg_dict: OpenAIAssistantMessage = {
             "role": "assistant",
             "content": self.content,
             "function_call": {
@@ -80,7 +83,7 @@ class FunctionCallingMessage(BaseMessage):
 
         return msg_dict
 
-    def to_openai_function_message(self) -> OpenAIMessage:
+    def to_openai_function_message(self) -> OpenAIFunctionMessage:
         r"""Converts the message to an :obj:`OpenAIMessage` object
         with the role being "function".
 
@@ -94,7 +97,7 @@ class FunctionCallingMessage(BaseMessage):
                 " due to missing function name or results.")
 
         result_content = {"result": {str(self.result)}}
-        msg_dict: Dict[str, str] = {
+        msg_dict: OpenAIFunctionMessage = {
             "role": "function",
             "name": self.func_name,
             "content": f'{result_content}',
