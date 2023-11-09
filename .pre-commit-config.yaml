@@ -22,7 +22,7 @@ repos:
     hooks:
       - id: mypy
         name: Check mypy
-        entry: mypy --namespace-packages --install-types --non-interactive -p camel -p test -p apps
+        entry: mypy --namespace-packages -p camel -p test -p apps
         language: system
         types: [python]
         pass_filenames: false
