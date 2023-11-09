@@ -23,7 +23,7 @@ from camel.prompts import (
     TextPromptDict,
     TranslationPromptTemplateDict,
 )
-from camel.typing import TaskType
+from camel.types import TaskType
 
 
 class TaskPromptTemplateDict(Dict[Any, TextPromptDict]):

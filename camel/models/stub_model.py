@@ -11,11 +11,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, Dict, List, Optional
+import time
+from typing import Any, Dict, List, Optional, Union
+
+from openai import Stream
 
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
-from camel.typing import ModelType
+from camel.types import (
+    ChatCompletion,
+    ChatCompletionChunk,
+    ChatCompletionMessage,
+    Choice,
+    CompletionUsage,
+    ModelType,
+)
 from camel.utils import BaseTokenCounter
 
 
@@ -57,7 +67,9 @@ class StubModel(BaseModelBackend):
             self._token_counter = StubTokenCounter()
         return self._token_counter
 
-    def run(self, messages: List[Dict]) -> Dict[str, Any]:
+    def run(
+        self, messages: List[OpenAIMessage]
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Run fake inference by returning a fixed string.
         All arguments are unused for the dummy model.
 
@@ -65,15 +77,28 @@ class StubModel(BaseModelBackend):
             Dict[str, Any]: Response in the OpenAI API format.
         """
         ARBITRARY_STRING = "Lorem Ipsum"
-
-        return dict(
+        response: ChatCompletion = ChatCompletion(
             id="stub_model_id",
-            usage=dict(),
+            model="stub",
+            object="chat.completion",
+            created=int(time.time()),
             choices=[
-                dict(finish_reason="stop",
-                     message=dict(content=ARBITRARY_STRING, role="assistant"))
+                Choice(
+                    finish_reason="stop",
+                    index=0,
+                    message=ChatCompletionMessage(
+                        content=ARBITRARY_STRING,
+                        role="assistant",
+                    ),
+                )
             ],
+            usage=CompletionUsage(
+                completion_tokens=10,
+                prompt_tokens=10,
+                total_tokens=20,
+            ),
         )
+        return response
 
     def check_model_config(self):
         r"""Directly pass the check on arguments to STUB model.

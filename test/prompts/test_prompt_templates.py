@@ -14,7 +14,7 @@
 import pytest
 
 from camel.prompts import PromptTemplateGenerator, TextPrompt
-from camel.typing import RoleType, TaskType
+from camel.types import RoleType, TaskType
 
 
 @pytest.mark.parametrize('task_role_tuple', [
