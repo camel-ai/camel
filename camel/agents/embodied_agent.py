@@ -52,7 +52,7 @@ class EmbodiedAgent(ChatAgent):
         logger_color: Any = Fore.MAGENTA,
     ) -> None:
         default_action_space = [
-            HuggingFaceToolAgent('hugging_face_tool_agent', model=model_type.value),
+            HuggingFaceToolAgent('hugging_face_tool_agent', model_type=model_type.value),
         ]
         self.action_space = action_space or default_action_space
         action_space_prompt = self.get_action_space_prompt()
@@ -62,7 +62,7 @@ class EmbodiedAgent(ChatAgent):
         self.logger_color = logger_color
         super().__init__(
             system_message=system_message,
-            model=model_type,
+            model_type=model_type,
             model_config=model_config,
             message_window_size=message_window_size,
         )

@@ -74,7 +74,7 @@ class TaskSpecifyAgent(ChatAgent):
             content="You can make a task more specific.",
         )
 
-        super().__init__(system_message, model=model_type,
+        super().__init__(system_message, model_type=model_type,
                          model_config=model_config,
                          output_language=output_language)
 
