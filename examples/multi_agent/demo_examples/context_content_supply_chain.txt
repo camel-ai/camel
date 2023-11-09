@@ -1,0 +1,37 @@
+### Environmental State Information
+1. **Inventory Information**
+   - Warehouse A: 1500 units of Product X, 1000 units of Product Y
+   - Warehouse B: 500 units of Product X, 1800 units of Product Y
+   - In-Transit Inventory: 200 units of Product X, en route from Supplier A, expected to reach Warehouse A in 7 days
+
+2. **Order Information**
+   - Customer 1: Requests delivery of 200 units of Product X and 300 units of Product Y within 10 days
+   - Customer 2: Requests delivery of 150 units of Product X within 15 days
+
+3. **Production Status**
+   - Production Line 1: Currently producing Product X, daily capacity is 100 units, with 50 units of work-in-process
+   - Production Line 2: Currently producing Product Y, daily capacity is 150 units, with 30 units of work-in-process
+
+4. **Logistics Information**
+   - Transport Path 1 (Warehouse A to Customer 1): Estimated transit time of 3 days, transport cost of $2/unit
+   - Transport Path 2 (Warehouse B to Customer 2): Estimated transit time of 5 days, transport cost of $1.5/unit
+
+5. **Market Information**
+   - Market demand for Product X: Average 1500 units per month, expected to increase by 10% next month
+   - Market demand for Product Y: Average 2000 units per month, expected to decrease by 5% next month
+
+6. **Supply Information**
+   - Supplier A: Provides raw materials for Product X, delivery cycle is 14 days, cost is $5/unit
+   - Supplier B: Provides raw materials for Product Y, delivery cycle is 10 days, cost is $4/unit
+
+7. **Supplier Contact Information**
+   - **Supplier A**:
+      - Contact Person: John Doe
+      - Phone: +123-456-7890
+      - Email: [john.doe@supplierA.com](mailto:john.doe@supplierA.com)
+      - Address: 123 Main St, CityA, CountryA
+   - **Supplier B**:
+      - Contact Person: Jane Smith
+      - Phone: +987-654-3210
+      - Email: [jane.smith@supplierB.com](mailto:jane.smith@supplierB.com)
+      - Address: 456 Elm St, CityB, CountryB

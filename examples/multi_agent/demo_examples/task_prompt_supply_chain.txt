@@ -1,0 +1,3 @@
+Ensure All Customer Orders Are Fulfilled Within the Stipulated Time Frame While Minimizing Total Operational Costs:
+    - Ensure 200 units of Product X and 300 units of Product Y are delivered to Customer 1 within 10 days.
+    - Ensure 150 units of Product X are delivered to Customer 2 within 15 days.
