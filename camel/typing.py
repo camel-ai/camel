@@ -24,12 +24,12 @@ class RoleType(Enum):
 
 
 class ModelType(Enum):
+    GPT_3_5_TURBO = "gpt-3.5-turbo-1106"
+    GPT_3_5_TURBO_16k = "gpt-3.5-turbo-1106"
     GPT_4 = "gpt-4"
     GPT_4_32k = "gpt-4-32k"
     GPT_4_TURBO = "gpt-4-1106-preview"
     GPT_4_TURBO_VISION = "gpt-4-vision-preview"
-    GPT_3_5_TURBO = "gpt-3.5-turbo-1106"
-    GPT_3_5_TURBO_16k = "gpt-3.5-turbo-1106"
 
     STUB = "stub"
 
@@ -49,12 +49,12 @@ class ModelType(Enum):
             bool: Whether this type of models belongs to OpenAI.
         """
         if self.name in {
+                "GPT_3_5_TURBO",
+                "GPT_3_5_TURBO_16k",
                 "GPT_4",
                 "GPT_4_32k",
                 "GPT_4_TURBO",
                 "GPT_4_TURBO_VISION",
-                "GPT_3_5_TURBO",
-                "GPT_3_5_TURBO_16k",
         }:
             return True
         else:
@@ -78,7 +78,11 @@ class ModelType(Enum):
         Returns:
             int: The maximum token limit for the given model.
         """
-        if self is ModelType.GPT_4:
+        if self is ModelType.GPT_3_5_TURBO:
+            return 16385
+        elif self is ModelType.GPT_3_5_TURBO_16k:
+            return 16385
+        elif self is ModelType.GPT_4:
             return 8192
         elif self is ModelType.GPT_4_32k:
             return 32768
@@ -86,10 +90,6 @@ class ModelType(Enum):
             return 128000
         elif self is ModelType.GPT_4_TURBO_VISION:
             return 128000
-        elif self is ModelType.GPT_3_5_TURBO:
-            return 16385
-        elif self is ModelType.GPT_3_5_TURBO_16k:
-            return 16385
         elif self is ModelType.STUB:
             return 4096
         elif self is ModelType.LLAMA_2:
