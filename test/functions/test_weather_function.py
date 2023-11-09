@@ -51,7 +51,7 @@ def test_weather(api_key):
             f"Temperature {temp} not in range for {temp_units}")
 
     # Test wind speed in Jeddah, Saudi Arabia.
-    city = "Jeddah, Saudi Arabia"
+    city = "Jeddah"
     wind_units_options = {
         'meters_sec': (0, 200),
         'miles_hour': (0, 447),

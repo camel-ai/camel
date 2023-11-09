@@ -14,8 +14,6 @@
 import os
 from typing import List
 
-from pyowm import OWM
-
 from camel.functions import OpenAIFunction
 
 
@@ -78,9 +76,18 @@ def get_weather_data(city: str, temp_units: str = 'kelvin',
         Please ensure that the API key is valid and has permissions to access
             the weather data.
     """
+    # NOTE: This tool may not work as expected since the input arguments like
+    # `time_units` should be enum types which are not supported yet.
+
+    try:
+        import pyowm
+    except ImportError:
+        raise ImportError(
+            "Please install `pyowm` first. You can install it by running "
+            "`pip install pyowm`.")
 
     OPENWEATHERMAP_API_KEY = get_openweathermap_api_key()
-    owm = OWM(OPENWEATHERMAP_API_KEY)
+    owm = pyowm.OWM(OPENWEATHERMAP_API_KEY)
     mgr = owm.weather_manager()
 
     try:

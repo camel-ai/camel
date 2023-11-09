@@ -25,7 +25,7 @@ from camel.utils import print_text_animated
 
 def main(model_type=ModelType.GPT_4) -> None:
     task_prompt = ("Assuming the current year is 2023, estimate KAUST's "
-                   "current age and then add 10 more years to this age."
+                   "current age and then add 10 more years to this age, "
                    "and get the current weather of the city where KAUST "
                    "is located.")
 
