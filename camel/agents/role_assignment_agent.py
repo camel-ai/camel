@@ -76,6 +76,8 @@ class RoleAssignmentAgent(ChatAgent):
         """
         self.reset()
 
+        if num_roles is None:
+            raise ValueError("Number of roles must be provided.")
         if num_roles < 1:
             raise ValueError("Number of roles must be greater than 0.")
         if role_names is not None and len(role_names) != num_roles:
@@ -96,13 +98,16 @@ class RoleAssignmentAgent(ChatAgent):
                 for i, role_name in enumerate(role_names)) + "\n\n"
         if role_descriptions_instruction is None:
             role_descriptions_instruction = ""
+        else:
+            role_descriptions_instruction = "Moreover, " + \
+                role_descriptions_instruction
         role_assignment_generation_prompt = TextPrompt(
             "You are a role assignment agent, and you're in charge of " +
             "recruiting {num_roles} experts, who may have identical roles " +
             "but different names. Identify the domain experts you'd recruit " +
             "and detail descriptions, like their associated competencies, " +
             "characteristics and duties to complete the task. " +
-            "Moreover, " + role_descriptions_instruction + "\n" +
+            role_descriptions_instruction + "\n" +
             "Your answer MUST strictly adhere to the structure of ANSWER " +
             "TEMPLATE, ONLY fill in the BLANKs, and DO NOT alter or modify " +
             "any other part of the template.\n\n" + expert_prompt +
