@@ -26,7 +26,7 @@ documentation = "https://docs.camel-ai.org"
 [tool.poetry.dependencies]
 python = "^3.8.1"
 numpy = "^1"
-openai = "^1.1"
+openai = "1.1.1"
 tiktoken = "^0"
 colorama = "^0"
 jsonschema = "^4"
@@ -86,6 +86,15 @@ pytest = "^7"
 pytest-cov = "^4"
 gradio = "^3"
 mock = "^5"
+
+# types
+pandas-stubs = "*"
+types-Pillow = "*"
+types-Pygments = "*"
+types-mock = "*"
+types-regex = "*"
+types-setuptools = "*"
+types-tqdm = "*"
 
 [tool.poetry.group.docs]
 optional = true
