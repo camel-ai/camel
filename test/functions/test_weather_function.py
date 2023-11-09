@@ -28,7 +28,8 @@ def api_key():
     return key
 
 
-def test_temperature(api_key):
+def test_weather(api_key):
+    # Test temperature in Paris, FR.
     city = "Paris, FR"
     temp_units_options = {
         'celsius': (-100, 60),
@@ -44,13 +45,12 @@ def test_temperature(api_key):
         match = pattern.search(report)
         temp = float(match.group(1)) if match else None
         # Test temperature
-        assert temp is not None, \
-            "Temperature information is missing from the report"
-        assert temp_min <= temp <= temp_max, \
-            f"Temperature {temp} not in range for {temp_units}"
+        assert temp is not None, (
+            "Temperature information is missing from the report")
+        assert temp_min <= temp <= temp_max, (
+            f"Temperature {temp} not in range for {temp_units}")
 
-
-def test_wind_speed(api_key):
+    # Test wind speed in Jeddah, Saudi Arabia.
     city = "Jeddah, Saudi Arabia"
     wind_units_options = {
         'meters_sec': (0, 200),
@@ -65,13 +65,12 @@ def test_wind_speed(api_key):
         match = pattern.search(report)
         wind_speed = float(match.group(1)) if match else None
         # Test wind speed
-        assert wind_speed is not None, \
-            "Wind speed information is missing from the report"
-        assert wind_min <= wind_speed <= wind_max, \
-            f"Wind speed {wind_speed} not in range for {wind_units}"
+        assert wind_speed is not None, (
+            "Wind speed information is missing from the report")
+        assert wind_min <= wind_speed <= wind_max, (
+            f"Wind speed {wind_speed} not in range for {wind_units}")
 
-
-def test_visibility(api_key):
+    # Test visibility distance in Harbin, China.
     city = "Harbin, China"
     visibility_units_options = {'meters': (0, 400000), 'miles': (0, 250)}
     for visibility_units, visibility_range in visibility_units_options.items():
@@ -84,13 +83,12 @@ def test_visibility(api_key):
         match = pattern.search(report)
         visibility = float(match.group(1)) if match else None
         # Test visibility
-        assert visibility is not None, \
-            "Visibility information is missing from the report"
-        assert visibility_min <= visibility <= visibility_max, \
-            f"Visibility {visibility} not in range for {visibility_units}"
+        assert visibility is not None, (
+            "Visibility information is missing from the report")
+        assert visibility_min <= visibility <= visibility_max, (
+            f"Visibility {visibility} not in range for {visibility_units}")
 
-
-def test_sunrise_sunset(api_key):
+    # Test sunrise and sunset time in London,GB.
     city = "London,GB"
     # Test each time_units option
     time_units_options = ['unix', 'iso', 'date']
@@ -108,9 +106,8 @@ def test_sunrise_sunset(api_key):
         pattern = re.compile(pattern_map[time_units])
         match = pattern.search(report)
         # Ensure sunrise and sunset times are found in the report
-        assert match, f"Sunrise and sunset information in {time_units} \
-            format is missing from the report."
-
+        assert match, ("Sunrise and sunset information in {} "
+                       "format is missing from the report.".format(time_units))
         sunrise_str, sunset_str = match.groups()
         # Parse times according to format
         time_format_map = {
@@ -129,5 +126,5 @@ def test_sunrise_sunset(api_key):
             sunrise_time = datetime.strptime(sunrise_str, sunrise_format)
             sunset_time = datetime.strptime(sunset_str, sunrise_format)
         # Check that sunrise occurs before sunset
-        assert sunrise_time < sunset_time, "Sunrise time is not before \
-            sunset time in the report."
+        assert sunrise_time < sunset_time, (
+            "Sunrise time is not before sunset time in the report.")
