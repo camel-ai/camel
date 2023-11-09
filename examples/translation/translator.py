@@ -92,7 +92,7 @@ def translate_content(args: argparse.Namespace, file_path: str,
 
         assistant_agent = ChatAgent(
             system_message=assistant_sys_msg,
-            model=ModelType.GPT_3_5_TURBO,
+            model_type=ModelType.GPT_3_5_TURBO,
             model_config=model_config,
         )
 

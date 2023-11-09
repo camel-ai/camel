@@ -28,7 +28,7 @@ def main(model_type_for_role_generation=None, model_type=None) -> None:
 
     model_config_description = ChatGPTConfig()
     role_description_agent = RoleAssignmentAgent(
-        model=model_type_for_role_generation,
+        model_type=model_type_for_role_generation,
         model_config=model_config_description)
 
     role_description_dict = (role_description_agent.run(
@@ -53,7 +53,7 @@ def main(model_type_for_role_generation=None, model_type=None) -> None:
         model_type=model_type,
         task_type=TaskType.ROLE_DESCRIPTION,  # Score for role description
         with_task_specify=True,
-        task_specify_agent_kwargs=dict(model=model_type),
+        task_specify_agent_kwargs=dict(model_type=model_type),
         extend_sys_msg_meta_dicts=sys_msg_meta_dicts,
     )
 

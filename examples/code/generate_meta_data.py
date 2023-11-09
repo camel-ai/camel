@@ -26,7 +26,7 @@ def generate_meta_data(meta_data: str, num: int = 50, model=None):
         role_name="Assistant",
         content="You are a helpful assistant.",
     )
-    agent = ChatAgent(assistant_sys_msg, model=model)
+    agent = ChatAgent(assistant_sys_msg, model_type=model)
     agent.reset()
 
     user_msg = BaseMessage.make_user_message(

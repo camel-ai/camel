@@ -29,16 +29,16 @@ def test_role_playing_init(model_type, critic_role_name,
                            with_critic_in_the_loop):
     role_playing = RolePlaying(
         assistant_role_name="assistant",
-        assistant_agent_kwargs=dict(model=ModelType.GPT_3_5_TURBO_16K),
+        assistant_agent_kwargs=dict(model_type=ModelType.GPT_3_5_TURBO_16K),
         user_role_name="user",
-        user_agent_kwargs=dict(model=ModelType.GPT_3_5_TURBO_16K),
+        user_agent_kwargs=dict(model_type=ModelType.GPT_3_5_TURBO_16K),
         model_type=model_type,
         critic_role_name=critic_role_name,
         task_prompt="Perform the task",
         with_task_specify=False,
-        task_specify_agent_kwargs=dict(model=ModelType.GPT_4),
+        task_specify_agent_kwargs=dict(model_type=ModelType.GPT_4),
         with_task_planner=False,
-        task_planner_agent_kwargs=dict(model=ModelType.GPT_4),
+        task_planner_agent_kwargs=dict(model_type=ModelType.GPT_4),
         with_critic_in_the_loop=with_critic_in_the_loop,
         task_type=TaskType.AI_SOCIETY,
     )
@@ -94,11 +94,11 @@ def test_role_playing_step(task_type, extend_sys_msg_meta_dicts,
                            extend_task_specify_meta_dict):
     role_playing = RolePlaying(
         assistant_role_name="AI Assistant",
-        assistant_agent_kwargs=dict(model=ModelType.GPT_3_5_TURBO),
+        assistant_agent_kwargs=dict(model_type=ModelType.GPT_3_5_TURBO),
         user_role_name="AI User",
-        user_agent_kwargs=dict(model=ModelType.GPT_3_5_TURBO),
+        user_agent_kwargs=dict(model_type=ModelType.GPT_3_5_TURBO),
         task_prompt="Perform the task",
-        task_specify_agent_kwargs=dict(model=ModelType.GPT_3_5_TURBO),
+        task_specify_agent_kwargs=dict(model_type=ModelType.GPT_3_5_TURBO),
         task_type=task_type,
         extend_sys_msg_meta_dicts=extend_sys_msg_meta_dicts,
         extend_task_specify_meta_dict=extend_task_specify_meta_dict,
@@ -127,13 +127,13 @@ def test_role_playing_with_function():
 
     role_playing = RolePlaying(
         assistant_role_name="AI Assistant",
-        assistant_agent_kwargs=dict(model=ModelType.GPT_3_5_TURBO,
+        assistant_agent_kwargs=dict(model_type=ModelType.GPT_3_5_TURBO,
                                     model_config=assistant_model_config,
                                     function_list=function_list),
         user_role_name="AI User",
-        user_agent_kwargs=dict(model=ModelType.GPT_3_5_TURBO),
+        user_agent_kwargs=dict(model_type=ModelType.GPT_3_5_TURBO),
         task_prompt="Perform the task",
-        task_specify_agent_kwargs=dict(model=ModelType.GPT_3_5_TURBO),
+        task_specify_agent_kwargs=dict(model_type=ModelType.GPT_3_5_TURBO),
         task_type=TaskType.AI_SOCIETY,
     )
 
@@ -152,12 +152,12 @@ def test_role_playing_role_sequence(model_type=None):
     task_prompt = "Develop a trading bot for the stock market"
     role_playing = RolePlaying(
         assistant_role_name="Python Programmer",
-        assistant_agent_kwargs=dict(model=model_type),
+        assistant_agent_kwargs=dict(model_type=model_type),
         user_role_name="Stock Trader",
-        user_agent_kwargs=dict(model=model_type),
+        user_agent_kwargs=dict(model_type=model_type),
         task_prompt=task_prompt,
         with_task_specify=True,
-        task_specify_agent_kwargs=dict(model=model_type),
+        task_specify_agent_kwargs=dict(model_type=model_type),
     )
     assistant_role_sequence = []
     user_role_sequence = []

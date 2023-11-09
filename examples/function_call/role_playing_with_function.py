@@ -41,12 +41,12 @@ def main(model_type=ModelType.GPT_4) -> None:
         assistant_role_name="Searcher",
         user_role_name="Professor",
         assistant_agent_kwargs=dict(
-            model=model_type,
+            model_type=model_type,
             model_config=assistant_model_config,
             function_list=function_list,
         ),
         user_agent_kwargs=dict(
-            model=model_type,
+            model_type=model_type,
             model_config=user_model_config,
         ),
         task_prompt=task_prompt,

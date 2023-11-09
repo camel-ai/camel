@@ -168,7 +168,7 @@ class RolePlaying:
             if self.model_type is not None:
                 if task_specify_agent_kwargs is None:
                     task_specify_agent_kwargs = {}
-                task_specify_agent_kwargs.update(dict(model=self.model_type))
+                task_specify_agent_kwargs.update(dict(model_type=self.model_type))
             task_specify_agent = TaskSpecifyAgent(
                 task_type=self.task_type,
                 output_language=output_language,
@@ -199,7 +199,7 @@ class RolePlaying:
             if self.model_type is not None:
                 if task_planner_agent_kwargs is None:
                     task_planner_agent_kwargs = {}
-                task_planner_agent_kwargs.update(dict(model=self.model_type))
+                task_planner_agent_kwargs.update(dict(model_type=self.model_type))
             task_planner_agent = TaskPlannerAgent(
                 output_language=output_language,
                 **(task_planner_agent_kwargs or {}),
@@ -286,10 +286,10 @@ class RolePlaying:
         if self.model_type is not None:
             if assistant_agent_kwargs is None:
                 assistant_agent_kwargs = {}
-            assistant_agent_kwargs.update(dict(model=self.model_type))
+            assistant_agent_kwargs.update(dict(model_type=self.model_type))
             if user_agent_kwargs is None:
                 user_agent_kwargs = {}
-            user_agent_kwargs.update(dict(model=self.model_type))
+            user_agent_kwargs.update(dict(model_type=self.model_type))
 
         self.assistant_agent = ChatAgent(
             init_assistant_sys_msg,
@@ -342,7 +342,7 @@ class RolePlaying:
                 if self.model_type is not None:
                     if critic_kwargs is None:
                         critic_kwargs = {}
-                    critic_kwargs.update(dict(model=self.model_type))
+                    critic_kwargs.update(dict(model_type=self.model_type))
                 self.critic = CriticAgent(
                     self.critic_sys_msg,
                     **(critic_kwargs or {}),

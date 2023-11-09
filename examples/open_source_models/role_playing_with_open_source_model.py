@@ -24,7 +24,7 @@ def main(model_type=None, model_path=" ", server_url=" ") -> None:
 
     agent_kwargs = {
         role: dict(
-            model=model_type,
+            model_type=model_type,
             model_config=OpenSourceConfig(
                 model_path=model_path,
                 server_url=server_url,
