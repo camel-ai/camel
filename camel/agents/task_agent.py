@@ -30,7 +30,7 @@ class TaskSpecifyAgent(ChatAgent):
         task_specify_prompt (TextPrompt): The prompt for specifying the task.
 
     Args:
-        model (ModelType, optional): The type of model to use for the agent.
+        model_type (ModelType, optional): The type of model to use for the agent.
             (default: :obj:`ModelType.GPT_3_5_TURBO`)
         task_type (TaskType, optional): The type of task for which to generate
             a prompt. (default: :obj:`TaskType.AI_SOCIETY`)
@@ -47,7 +47,7 @@ class TaskSpecifyAgent(ChatAgent):
 
     def __init__(
         self,
-        model: Optional[ModelType] = None,
+        model_type: Optional[ModelType] = None,
         task_type: TaskType = TaskType.AI_SOCIETY,
         model_config: Optional[Any] = None,
         task_specify_prompt: Optional[Union[str, TextPrompt]] = None,
@@ -74,7 +74,7 @@ class TaskSpecifyAgent(ChatAgent):
             content="You can make a task more specific.",
         )
 
-        super().__init__(system_message, model=model,
+        super().__init__(system_message, model=model_type,
                          model_config=model_config,
                          output_language=output_language)
 
@@ -124,7 +124,7 @@ class TaskPlannerAgent(ChatAgent):
             the task into subtasks.
 
     Args:
-        model (ModelType, optional): The type of model to use for the agent.
+        model_type (ModelType, optional): The type of model to use for the agent.
             (default: :obj:`ModelType.GPT_3_5_TURBO`)
         model_config (Any, optional): The configuration for the model.
             (default: :obj:`None`)
@@ -134,7 +134,7 @@ class TaskPlannerAgent(ChatAgent):
 
     def __init__(
         self,
-        model: Optional[ModelType] = None,
+        model_type: Optional[ModelType] = None,
         model_config: Optional[Any] = None,
         output_language: Optional[str] = None,
     ) -> None:
@@ -148,7 +148,7 @@ class TaskPlannerAgent(ChatAgent):
             content="You are a helpful task planner.",
         )
 
-        super().__init__(system_message, model, model_config,
+        super().__init__(system_message, model_type, model_config,
                          output_language=output_language)
 
     def run(
@@ -197,7 +197,7 @@ class TaskCreationAgent(ChatAgent):
         role_name (str): The role name of the Agent to create the task.
         objective (Union[str, TextPrompt]): The objective of the Agent to
             perform the task.
-        model (ModelType, optional): The type of model to use for the agent.
+        model_type (ModelType, optional): The type of model to use for the agent.
             (default: :obj:`ModelType.GPT_3_5_TURBO`)
         model_config (Any, optional): The configuration for the model.
             (default: :obj:`None`)
@@ -214,7 +214,7 @@ class TaskCreationAgent(ChatAgent):
         self,
         role_name: str,
         objective: Union[str, TextPrompt],
-        model: Optional[ModelType] = None,
+        model_type: Optional[ModelType] = None,
         model_config: Optional[Any] = None,
         output_language: Optional[str] = None,
         message_window_size: Optional[int] = None,
@@ -253,7 +253,7 @@ Be concrete.
             content="You are a helpful task creator.",
         )
 
-        super().__init__(system_message, model, model_config,
+        super().__init__(system_message, model_type, model_config,
                          output_language=output_language,
                          message_window_size=message_window_size)
 
@@ -303,7 +303,7 @@ class TaskPrioritizationAgent(ChatAgent):
     Args:
         objective (Union[str, TextPrompt]): The objective of the Agent to
             perform the task.
-        model (ModelType, optional): The type of model to use for the agent.
+        model_type (ModelType, optional): The type of model to use for the agent.
             (default: :obj:`ModelType.GPT_3_5_TURBO`)
         model_config (Any, optional): The configuration for the model.
             (default: :obj:`None`)
@@ -317,7 +317,7 @@ class TaskPrioritizationAgent(ChatAgent):
     def __init__(
         self,
         objective: Union[str, TextPrompt],
-        model: Optional[ModelType] = None,
+        model_type: Optional[ModelType] = None,
         model_config: Optional[Any] = None,
         output_language: Optional[str] = None,
         message_window_size: Optional[int] = None,
@@ -350,7 +350,7 @@ with any other output.""")
             content="You are a helpful task prioritizer.",
         )
 
-        super().__init__(system_message, model, model_config,
+        super().__init__(system_message, model_type, model_config,
                          output_language=output_language,
                          message_window_size=message_window_size)
 
