@@ -19,13 +19,9 @@ from hashlib import md5
 from io import BytesIO
 from typing import Any, Dict, List, Optional
 
-import docx2txt
-import fitz
-from bs4 import BeautifulSoup
-
 
 class File(ABC):
-    """Represents an uploaded file comprised of Documents"""
+    r"""Represents an uploaded file comprised of Documents"""
 
     def __init__(
         self,
@@ -34,7 +30,8 @@ class File(ABC):
         metadata: Optional[Dict[str, Any]] = None,
         docs: Optional[List[Dict[str, Any]]] = None,
     ):
-        """
+        r"""
+
         Args:
             name (str): The name of the file.
             id (str): The unique identifier of the file.
@@ -51,8 +48,7 @@ class File(ABC):
     @classmethod
     @abstractmethod
     def from_bytes(cls, file: BytesIO) -> "File":
-        """
-        Creates a File object from a BytesIO object.
+        r"""Creates a File object from a BytesIO object.
 
         Args:
             file (BytesIO):
@@ -71,7 +67,8 @@ class File(ABC):
             f"File(name={self.name}, id={self.id}, metadata={self.metadata})")
 
     def copy(self) -> "File":
-        """Create a deep copy of this File"""
+        r"""Create a deep copy of this File"""
+
         return self.__class__(
             name=self.name,
             id=self.id,
@@ -81,8 +78,7 @@ class File(ABC):
 
 
 def strip_consecutive_newlines(text: str) -> str:
-    """
-    Strips consecutive newlines from a string.
+    r"""Strips consecutive newlines from a string.
 
     Args:
         text (str): The string to strip.
@@ -97,8 +93,7 @@ class DocxFile(File):
 
     @classmethod
     def from_bytes(cls, file: BytesIO) -> "DocxFile":
-        """
-        Creates a DocxFile object from a BytesIO object.
+        r"""Creates a DocxFile object from a BytesIO object.
 
         Args:
             file (BytesIO):
@@ -108,6 +103,12 @@ class DocxFile(File):
             DocxFile: A DocxFile object.
         """
         # Use docx2txt to extract text from docx files
+        try:
+            import docx2txt
+        except ImportError:
+            raise ImportError("Please install `docx2txt` first. "
+                              "You can install it by running "
+                              "`pip install docx2txt`.")
         text = docx2txt.process(file)
         text = strip_consecutive_newlines(text)
         # Create a dictionary with the extracted text
@@ -123,8 +124,7 @@ class PdfFile(File):
 
     @classmethod
     def from_bytes(cls, file: BytesIO) -> "PdfFile":
-        """
-        Creates a PdfFile object from a BytesIO object.
+        r"""Creates a PdfFile object from a BytesIO object.
 
         Args:
             file (BytesIO):
@@ -134,6 +134,12 @@ class PdfFile(File):
             PdfFile: A PdfFile object.
         """
         # Use fitz to extract text from pdf files
+        try:
+            import fitz
+        except ImportError:
+            raise ImportError("Please install `PyMuPDF` first. "
+                              "You can install it by running "
+                              "`pip install PyMuPDF`.")
         pdf = fitz.open(stream=file.read(), filetype="pdf")
         docs = []
         for i, page in enumerate(pdf):
@@ -153,8 +159,7 @@ class TxtFile(File):
 
     @classmethod
     def from_bytes(cls, file: BytesIO) -> "TxtFile":
-        """
-        Creates a TxtFile object from a BytesIO object.
+        r"""Creates a TxtFile object from a BytesIO object.
 
         Args:
             file (BytesIO):
@@ -179,8 +184,7 @@ class JsonFile(File):
 
     @classmethod
     def from_bytes(cls, file: BytesIO) -> "JsonFile":
-        """
-        Creates a JsonFile object from a BytesIO object.
+        r"""Creates a JsonFile object from a BytesIO object.
 
         Args:
             file (BytesIO):
@@ -204,8 +208,7 @@ class HtmlFile(File):
 
     @classmethod
     def from_bytes(cls, file: BytesIO) -> "HtmlFile":
-        """
-        Creates a HtmlFile object from a BytesIO object.
+        r"""Creates a HtmlFile object from a BytesIO object.
 
         Args:
             file (BytesIO):
@@ -215,6 +218,12 @@ class HtmlFile(File):
             HtmlFile: A HtmlFile object.
         """
         # Parse the HTML data from the file
+        try:
+            from bs4 import BeautifulSoup
+        except ImportError:
+            raise ImportError("Please install `beautifulsoup4` first. "
+                              "You can install it by running "
+                              "`pip install beautifulsoup4`.")
         soup = BeautifulSoup(file, "html.parser")
         text = soup.get_text()
         text = strip_consecutive_newlines(text)
@@ -228,8 +237,7 @@ class HtmlFile(File):
 
 
 def read_file(file: BytesIO) -> File:
-    """
-    Reads an uploaded file and returns a File object.
+    r"""Reads an uploaded file and returns a File object.
 
     Args:
         file (BytesIO): A BytesIO object representing the contents of the file.

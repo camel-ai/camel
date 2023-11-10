@@ -16,7 +16,7 @@ from typing import Any, Dict
 import pytest
 
 from camel.messages import BaseMessage
-from camel.typing import RoleType
+from camel.types import RoleType
 
 
 @pytest.fixture

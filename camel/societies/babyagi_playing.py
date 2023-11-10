@@ -24,11 +24,12 @@ from camel.agents.chat_agent import ChatAgentResponse
 from camel.generators import SystemMessageGenerator
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
-from camel.typing import RoleType, TaskType
+from camel.types import RoleType, TaskType
 
 
 class BabyAGI:
-    r"""BabyAGI Agent.
+    r"""The BabyAGI Agent adapted from `"Task-driven Autonomous Agent"
+    <https://github.com/yoheinakajima/babyagi>`_.
 
     Args:
         assistant_role_name (str): The name of the role played by the
@@ -202,7 +203,7 @@ class BabyAGI:
     def step(self) -> ChatAgentResponse:
         r"""BabyAGI agent would pull the first task from the task list,
         complete the task based on the context, then creates new tasks and
-        reprioritizes the task list based on the objective and the result of
+        re-prioritizes the task list based on the objective and the result of
         the previous task. It returns assistant message.
 
         Returns:
@@ -223,9 +224,9 @@ class BabyAGI:
 
         assistant_response = self.assistant_agent.step(assistant_msg_msg)
         assistant_msg = assistant_response.msgs[0]
-        self.assistant_agent.submit_message(assistant_msg)
-        self.task_creation_agent.submit_message(assistant_msg)
-        self.task_prioritization_agent.submit_message(assistant_msg)
+        self.assistant_agent.record_message(assistant_msg)
+        self.task_creation_agent.record_message(assistant_msg)
+        self.task_prioritization_agent.record_message(assistant_msg)
 
         self.solved_subtasks.append(task_name)
         past_tasks = self.solved_subtasks + list(self.subtasks)

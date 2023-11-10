@@ -31,7 +31,13 @@ def search_wiki(entity: str) -> str:
         string: The search result. If the page corresponding to the entity
             exists, return the summary of this entity in a string.
     """
-    import wikipedia
+    try:
+        import wikipedia
+    except ImportError:
+        raise ImportError(
+            "Please install `wikipedia` first. You can install it by running "
+            "`pip install wikipedia`.")
+
     result: str
 
     try:
@@ -50,7 +56,7 @@ def search_wiki(entity: str) -> str:
 
 
 def search_google(query: str) -> List[Dict[str, Any]]:
-    r"""Use google search engine to search information for the given query.
+    r"""Use Google search engine to search information for the given query.
 
     Args:
         query (string): The query to be searched.
@@ -135,7 +141,7 @@ def search_google(query: str) -> List[Dict[str, Any]]:
             responses.append({"error": "google search failed."})
 
     except requests.RequestException:
-        responses.append({"erro": "google search failed."})
+        responses.append({"error": "google search failed."})
 
     return responses
 
@@ -266,7 +272,7 @@ def summarize_text(text: str, query: str) -> str:
 
 def search_google_and_summarize(query: str) -> str:
     r"""Search webs for information. Given a query, this function will use
-    the google search engine to search for related information from the
+    the Google search engine to search for related information from the
     internet, and then return a summarized answer.
 
     Args:
