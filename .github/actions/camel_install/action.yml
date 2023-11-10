@@ -19,11 +19,16 @@ runs:
         poetry config virtualenvs.create true --local
         poetry config virtualenvs.in-project true --local
       shell: bash
-    - uses: actions/cache@v3
-      name: Cache for the virtual environment based on poetry.lock
+    - uses: actions/cache/restore@v3
+      name: Restore caches for the virtual environment based on poetry.lock
       with:
         path: ./.venv
         key: venv-${{ hashFiles('poetry.lock') }}
     - name: Install the project dependencies
       run: poetry install --with dev,docs -E all
       shell: bash
+    - uses: actions/cache/save@v3
+      name: Save caches based on poetry.lock 
+      with:
+        path: ./.venv
+        key: venv-${{ hashFiles('poetry.lock') }}
