@@ -739,7 +739,7 @@ Retold Text:\n<BLANK>"""  # noqa: E501
         if category_of_responses is None or len(category_of_responses) == 0:
             raise RuntimeError("Got None of category of responses.")
         categories = [
-            category.strip()
+            category.strip().strip('"\'')
             for category in category_of_responses[0].split(',')
         ]
         for category in categories:
