@@ -25,9 +25,9 @@ class RoleType(Enum):
 
 class ModelType(Enum):
     GPT_3_5_TURBO = "gpt-3.5-turbo-1106"
-    GPT_3_5_TURBO_16k = "gpt-3.5-turbo-1106"
+    GPT_3_5_TURBO_16K = "gpt-3.5-turbo-1106"
     GPT_4 = "gpt-4"
-    GPT_4_32k = "gpt-4-32k"
+    GPT_4_32K = "gpt-4-32k"
     GPT_4_TURBO = "gpt-4-1106-preview"
     GPT_4_TURBO_VISION = "gpt-4-vision-preview"
 
@@ -50,9 +50,9 @@ class ModelType(Enum):
         """
         if self.name in {
                 "GPT_3_5_TURBO",
-                "GPT_3_5_TURBO_16k",
+                "GPT_3_5_TURBO_16K",
                 "GPT_4",
-                "GPT_4_32k",
+                "GPT_4_32K",
                 "GPT_4_TURBO",
                 "GPT_4_TURBO_VISION",
         }:
@@ -80,11 +80,11 @@ class ModelType(Enum):
         """
         if self is ModelType.GPT_3_5_TURBO:
             return 16385
-        elif self is ModelType.GPT_3_5_TURBO_16k:
+        elif self is ModelType.GPT_3_5_TURBO_16K:
             return 16385
         elif self is ModelType.GPT_4:
             return 8192
-        elif self is ModelType.GPT_4_32k:
+        elif self is ModelType.GPT_4_32K:
             return 32768
         elif self is ModelType.GPT_4_TURBO:
             return 128000

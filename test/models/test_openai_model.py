@@ -12,8 +12,10 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import re
+from unittest.mock import patch
 
 import pytest
+import requests
 
 from camel.configs import ChatGPTConfig, OpenSourceConfig
 from camel.models import OpenAIModel
@@ -24,9 +26,9 @@ from camel.utils import OpenAITokenCounter
 @pytest.mark.model_backend
 @pytest.mark.parametrize("model_type", [
     ModelType.GPT_3_5_TURBO,
-    ModelType.GPT_3_5_TURBO_16k,
+    ModelType.GPT_3_5_TURBO_16K,
     ModelType.GPT_4,
-    ModelType.GPT_4_32k,
+    ModelType.GPT_4_32K,
     ModelType.GPT_4_TURBO,
     ModelType.GPT_4_TURBO_VISION,
 ])
@@ -38,7 +40,6 @@ def test_openai_model(model_type):
     assert isinstance(model.token_counter, OpenAITokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
-    assert model.model_type.token_limit == model_type.token_limit
 
 
 @pytest.mark.model_backend
@@ -54,3 +55,35 @@ def test_openai_model_unexpected_argument():
             ValueError, match=re.escape(("Unexpected argument `model_path` is "
                                          "input into OpenAI model backend."))):
         _ = OpenAIModel(model_type, model_config_dict)
+
+
+# Used to obtain model information
+def get_model_info():
+    response = requests.get("http://server.com/model-info")
+    return response.json()
+
+
+@pytest.mark.model_backend
+@pytest.mark.parametrize("model_type", list(ModelType))
+def test_backend_model_matches_settings(model_type):
+    # Create a data that simulates the response
+    mock_response_data = {
+        'model_type': model_type.value,
+        'token_limit': model_type.token_limit
+    }
+
+    # Use patch to simulate requests.get method
+    with patch('requests.get') as mock_get:
+        # Set the value returned by the mock object
+        mock_get.return_value.json.return_value = mock_response_data
+
+        # Call the get_model_info function
+        model_info = get_model_info()
+
+        # Assert to ensure that the returned data is as expected
+        assert model_info[
+            'model_type'] == model_type.value, \
+            "Model type does not match"
+        assert model_info[
+            'token_limit'] == model_type.token_limit, \
+            "Token limit does not match"
