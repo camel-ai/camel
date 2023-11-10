@@ -20,7 +20,7 @@ from camel.configs import ChatGPTConfig
 from camel.typing import ModelType
 
 
-def main(model_type=ModelType.GPT_3_5_TURBO_16K) -> None:
+def main(model_type=ModelType.GPT_3_5_TURBO) -> None:
     task_prompt = "Develop a trading bot for the stock market."
 
     model_config_description = ChatGPTConfig()
