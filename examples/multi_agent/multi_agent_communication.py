@@ -25,6 +25,7 @@ from camel.typing import ModelType, TaskType
 
 def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
          context_text=None) -> None:
+    # Start the multi-agent communication
     print_and_write_md("=========================================",
                        color=Fore.WHITE)
     print_and_write_md("Welcome to CAMEL-AI Society!", color=Fore.RED)
@@ -38,6 +39,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
     print_and_write_md("=========================================",
                        color=Fore.WHITE)
 
+    # Model and agent initialization
     model_config_description = ChatGPTConfig()
     role_assignment_agent = RoleAssignmentAgent(
         model=model_type, model_config=model_config_description)
@@ -64,9 +66,6 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
         oriented_graph[subtask_idx] = deps
     role_assignment_agent.draw_subtasks_graph(oriented_graph=oriented_graph)
 
-    print_and_write_md(
-        "Dependencies among subtasks: " +
-        json.dumps(subtasks_with_dependencies_dict, indent=4), color=Fore.BLUE)
     subtasks = [
         subtasks_with_dependencies_dict[key]["description"]
         for key in sorted(subtasks_with_dependencies_dict.keys())
@@ -83,6 +82,8 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
     }
     environment_record = {}
 
+    # Print the information of the task, the subtasks and the roles with
+    # descriptions
     print_and_write_md(
         f"List of {len(role_descriptions_dict)} roles with description:",
         color=Fore.GREEN)
@@ -96,6 +97,9 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
     for idx, subtask_group in enumerate(parallel_subtask_pipelines, 1):
         print_and_write_md(f"Pipeline {idx}: {', '.join(subtask_group)}",
                            color=Fore.YELLOW)
+    print_and_write_md(
+        "Dependencies among subtasks: " +
+        json.dumps(subtasks_with_dependencies_dict, indent=4), color=Fore.BLUE)
     print_and_write_md("=========================================",
                        color=Fore.WHITE)
 
@@ -179,17 +183,6 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
             assistant_response, user_response = role_play_session.step(
                 input_assistant_msg)
 
-            if assistant_response.terminated:
-                print(Fore.GREEN +
-                      (f"{ai_assistant_role} terminated. Reason: "
-                       f"{assistant_response.info['termination_reasons']}."))
-                break
-            if user_response.terminated:
-                print(Fore.GREEN + (
-                    f"{ai_user_role} terminated. "
-                    f"Reason: {user_response.info['termination_reasons']}."))
-                break
-
             print_and_write_md(
                 f"AI User: {ai_user_role}\n\n" +
                 f"{user_response.msg.content}\n", color=Fore.BLUE,
@@ -198,9 +191,6 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                 f"AI Assistant: {ai_assistant_role}\n\n" +
                 f"{assistant_response.msg.content}\n", color=Fore.GREEN,
                 MD_FILE=ID_one_subtask)
-
-            if "CAMEL_TASK_DONE" in user_response.msg.content:
-                break
 
             # Generate the insights from the chat history
             chat_history_assistant += (f"--- [{n}] ---\n"
@@ -218,6 +208,20 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
             if "ASSISTANCE" in transformed_text_with_category["categories"]:
                 transformed_text = transformed_text_with_category["text"]
                 chat_history_two_roles += (transformed_text + "\n\n")
+
+            if assistant_response.terminated:
+                print(Fore.GREEN +
+                      (f"{ai_assistant_role} terminated. Reason: "
+                       f"{assistant_response.info['termination_reasons']}."))
+                break
+            if user_response.terminated:
+                print(Fore.GREEN + (
+                    f"{ai_user_role} terminated. "
+                    f"Reason: {user_response.info['termination_reasons']}."))
+                break
+
+            if "CAMEL_TASK_DONE" in user_response.msg.content:
+                break
 
             input_assistant_msg = assistant_response.msg
 
