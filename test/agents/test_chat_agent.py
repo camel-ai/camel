@@ -23,7 +23,7 @@ from camel.generators import SystemMessageGenerator
 from camel.memories import MemoryRecord
 from camel.messages import BaseMessage
 from camel.terminators import ResponseWordsTerminator
-from camel.typing import ModelType, OpenAIBackendRole, RoleType, TaskType
+from camel.types import ModelType, OpenAIBackendRole, RoleType, TaskType
 
 parametrize = pytest.mark.parametrize('model', [
     ModelType.STUB,

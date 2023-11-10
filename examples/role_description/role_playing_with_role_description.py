@@ -16,7 +16,7 @@ from colorama import Fore
 from camel.agents import RoleAssignmentAgent
 from camel.configs import ChatGPTConfig
 from camel.societies import RolePlaying
-from camel.typing import TaskType
+from camel.types import TaskType
 from camel.utils import print_text_animated
 
 AI_ASSISTANT_ROLE_INDEX = 0

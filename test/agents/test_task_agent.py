@@ -22,7 +22,7 @@ from camel.agents import (
     TaskSpecifyAgent,
 )
 from camel.configs import ChatGPTConfig
-from camel.typing import ModelType, TaskType
+from camel.types import ModelType, TaskType
 
 parametrize = pytest.mark.parametrize('model', [
     ModelType.STUB,

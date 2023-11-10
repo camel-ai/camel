@@ -17,7 +17,7 @@ from camel.memories import BaseMemory, ContextRecord, MemoryRecord
 from camel.memories.context_creators import BaseContextCreator
 from camel.messages import OpenAIMessage
 from camel.storages import BaseKeyValueStorage, InMemoryKeyValueStorage
-from camel.typing import OpenAIBackendRole
+from camel.types import OpenAIBackendRole
 
 
 class ChatHistoryMemory(BaseMemory):

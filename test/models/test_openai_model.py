@@ -19,7 +19,7 @@ import requests
 
 from camel.configs import ChatGPTConfig, OpenSourceConfig
 from camel.models import OpenAIModel
-from camel.typing import ModelType
+from camel.types import ModelType
 from camel.utils import OpenAITokenCounter
 
 
