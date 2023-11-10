@@ -20,6 +20,7 @@ runs:
         poetry config virtualenvs.in-project true --local
       shell: bash
     - uses: actions/cache/restore@v3
+      id: cache-restore
       name: Restore caches for the virtual environment based on poetry.lock
       with:
         path: ./.venv
@@ -29,6 +30,7 @@ runs:
       shell: bash
     - uses: actions/cache/save@v3
       name: Save caches based on poetry.lock 
+      if: ${{ !steps.cache-restore.outputs.cache-hit }}
       with:
         path: ./.venv
         key: venv-${{ hashFiles('poetry.lock') }}
