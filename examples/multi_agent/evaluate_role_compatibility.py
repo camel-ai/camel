@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import json
+
 from colorama import Fore
 
 from camel.agents.role_assignment_agent import RoleAssignmentAgent
@@ -72,8 +74,7 @@ def main(model_type=None) -> None:
         "role descriptions, as well as drawing on empirical data or "
         "established norms from the relevant domain, this evaluation offers "
         "in-depth insights into the level of compatibility between a role and "
-        "a task."
-        "\n"
+        "a task.\n"
         "Application scenarios include, but are not limited to: companies "
         "assigning appropriate team members to specific projects or tasks, HR "
         "departments matching employees with job positions, and ensuring "
@@ -88,20 +89,10 @@ def main(model_type=None) -> None:
         role_assignment_agent.evaluate_role_compatibility(
             one_subtask, role_description_dict))
 
-    if role_compatibility_scores_dict is None:
-        raise ValueError("role_compatibility_scores_dict is None.")
-    len_role_compatibility_scores_dict = len(role_compatibility_scores_dict)
-    len_role_description_dict = len(role_description_dict)
-    if (len_role_compatibility_scores_dict != len_role_description_dict):
-        raise ValueError(f"Length of role_compatibility_scores_dict "
-                         f"({len_role_compatibility_scores_dict}) "
-                         f"does not equal to length of role_description_dict "
-                         f"({len_role_description_dict}).")
-
     print(Fore.BLUE + f"{explanation}\n")
     print(Fore.YELLOW + f"One specific subtask prompt:\n{one_subtask}\n")
-    for (role_name, score) in role_compatibility_scores_dict.items():
-        print(Fore.GREEN + f"Score of {role_name}: {score}")
+    print(Fore.GREEN + "Role compatibility scores:" +
+          json.dumps(role_compatibility_scores_dict, indent=4))
 
 
 if __name__ == "__main__":

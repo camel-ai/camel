@@ -76,6 +76,8 @@ class RoleAssignmentAgent(ChatAgent):
         """
         self.reset()
 
+        if num_roles is None:
+            raise ValueError("Number of roles must be provided.")
         if num_roles < 1:
             raise ValueError("Number of roles must be greater than 0.")
         if role_names is not None and len(role_names) != num_roles:
@@ -96,13 +98,16 @@ class RoleAssignmentAgent(ChatAgent):
                 for i, role_name in enumerate(role_names)) + "\n\n"
         if role_descriptions_instruction is None:
             role_descriptions_instruction = ""
+        else:
+            role_descriptions_instruction = "Moreover, " + \
+                role_descriptions_instruction
         role_assignment_generation_prompt = TextPrompt(
             "You are a role assignment agent, and you're in charge of " +
             "recruiting {num_roles} experts, who may have identical roles " +
             "but different names. Identify the domain experts you'd recruit " +
             "and detail descriptions, like their associated competencies, " +
             "characteristics and duties to complete the task. " +
-            "Moreover, " + role_descriptions_instruction + "\n" +
+            role_descriptions_instruction + "\n" +
             "Your answer MUST strictly adhere to the structure of ANSWER " +
             "TEMPLATE, ONLY fill in the BLANKs, and DO NOT alter or modify " +
             "any other part of the template.\n\n" + expert_prompt +
@@ -454,7 +459,7 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
         self,
         subtask_prompt: Union[str, TextPrompt],
         role_descriptions_dict: Dict[str, str],
-    ) -> Dict[str, int]:
+    ) -> Dict[str, Dict[str, int]]:
         r"""Evaluate the compatibility scores of each role in relation to the
             specified task.
 
@@ -465,30 +470,22 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
                     descriptions of each role.
 
             Returns:
-                Dict[str, int]: A dictionary mapping role names to their
-                    compatibility scores.
+                Dict[str, Dict[str, int]]: A dictionary mapping role names to
+                    their compatibility scores as user and assistant.
         """
         self.reset()
 
         role_names = list(role_descriptions_dict.keys())
 
-        compatibility_instruction_prompt = TextPrompt(
-            "===== INSTRUCTIONS OF COMPATIBILITY EVALUATION =====\n" +
-            "To evaluate the compatibility scores, consider these guiding " +
-            "principles:\n" +
-            "1. Assess the alignment between the primary responsibilities " +
-            "and expertise of the role with the task requirements. Factor " +
-            "in the likelihood of the role successfully executing the task " +
-            "based on its competencies.\n" +
-            "2. Analyze the congruence between keywords or key concepts in " +
-            "the task description and those present in the role " +
-            "description. This will gauge the direct relevance of the role " +
-            "to the task.\n" +
-            "3. Drawing from a comprehensive knowledge base, ascertain the " +
-            "potential value each role brings to the table when it comes to " +
-            "accomplishing the specific task. This evaluation should be " +
-            "based on empirical data or established norms in the relevant " +
-            "domain.\n\n")
+        compatibility_instruction_prompt = """===== INSTRUCTIONS OF COMPATIBILITY EVALUATION =====
+To evaluate the compatibility scores, consider these guiding principles:
+    1. Assess the alignment between the primary responsibilities and expertise of the role with the task requirements. Factor in the likelihood of the role successfully executing the task based on its competencies.
+    2. Analyze the congruence between keywords or key concepts in the task description and those present in the role description. This will gauge the direct relevance of the role to the task.
+    3. Drawing from a comprehensive knowledge base, ascertain the potential value each role brings to the table when it comes to accomplishing the specific task. This evaluation should be based on empirical data or established norms in the relevant domain.
+Definition of USER: The user is the role that guides the entire task process. They provide instructions and direction, ensuring that the task aligns with their needs and goals. Users need to utilize their expertise and understanding of the task to propose specific subtasks, expecting the assistant to execute these tasks.
+Definition of ASSISTANT: The assistant is the role that executes instructions given by the user. They apply their professional skills and knowledge to complete specific tasks assigned by the user. Assistants must act flexibly according to the user's instructions and provide professional solutions and feedback.
+
+"""  # noqa: E501
         task_prompt = TextPrompt("===== TASK =====\n" + subtask_prompt +
                                  "\n\n")
         role_with_description_prompt = \
@@ -497,9 +494,11 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
                 for role_name in role_names) + "\n\n"
         answer_prompt = \
             "===== ANSWER TEMPLATE =====\n" + "\n".join(
-                f"Explanation for role {role_name}: <BLANK>\n"
-                f"Score of role {role_name}: <BLANK>\n"
-                for role_name in role_names) + "\n\n"
+                f"Explanation for role {role_name} as USER: <BLANK>\n"
+                f"Score of role {role_name} as USER: <BLANK>\n"
+                f"Explanation for role {role_name} as ASSISTANT: <BLANK>\n"
+                f"Score of role {role_name} as ASSISTANT: <BLANK>\n"
+                for role_name in role_names) + "\n"
         compatibility_scoring_prompt = TextPrompt(
             "You are a compatibility scorer, and you're in asked with " +
             "evaluating/calculating/generating the compatibility of each " +
@@ -514,6 +513,7 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
 
         compatibility_scoring = compatibility_scoring_prompt.format(
             num_roles=len(role_names))
+        print(f"----context----\n{compatibility_scoring}")
 
         compatibility_scoring_msg = BaseMessage.make_user_message(
             role_name="Compatibility Scorer", content=compatibility_scoring)
@@ -526,19 +526,32 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
         msg = response.msg  # type: BaseMessage
 
         # Distribute the output completions into scores
-        role_compatibility_scores = [
+        user_compatibility_scores = [
             desc.replace("<", "").replace(">", "").strip('\n')
-            for desc in re.findall(r"Score of role .+?: (.+?)(?=\n|$)",
-                                   msg.content, re.DOTALL)
+            for desc in re.findall(r"Score of role .+? as USER: (.+?)(?=\n|$)",
+                                   msg.content)
+        ]
+        assistant_compatibility_scores = [
+            desc.replace("<", "").replace(">", "").strip('\n')
+            for desc in re.findall(
+                r"Score of role .+? as ASSISTANT: (.+?)(?=\n|$)", msg.content)
         ]
 
-        if len(role_compatibility_scores) != len(role_names):
+        if len(user_compatibility_scores) != len(role_names):
             raise RuntimeError("Got None or insufficient information of " +
-                               "role compatibility scores.")
+                               "compatibility scores as USER.")
+        if len(assistant_compatibility_scores) != len(role_names):
+            raise RuntimeError("Got None or insufficient information of " +
+                               "compatibility scores as ASSISTANT.")
 
         role_compatibility_scores_dict = {
-            role_name: int(score)
-            for role_name, score in zip(role_names, role_compatibility_scores)
+            role_name: {
+                "score_user": int(user_score),
+                "score_assistant": int(assistant_score)
+            }
+            for role_name, user_score, assistant_score in zip(
+                role_names, user_compatibility_scores,
+                assistant_compatibility_scores)
         }
 
         return role_compatibility_scores_dict
@@ -734,7 +747,7 @@ Retold Text:\n<BLANK>"""  # noqa: E501
         if category_of_responses is None or len(category_of_responses) == 0:
             raise RuntimeError("Got None of category of responses.")
         categories = [
-            category.strip()
+            category.strip().strip('"\'')
             for category in category_of_responses[0].split(',')
         ]
         for category in categories:

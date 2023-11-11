@@ -1,0 +1,1 @@
+Implement the described endpoint in the Flask microservice to retrieve invoice details using the invoice_id.

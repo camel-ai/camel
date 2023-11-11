@@ -41,11 +41,11 @@ Before you proceed, pay close attention to the following role descriptions. It's
 {assistant_description}
 """)
 
-    ASSISTANT_PROMPT = TextPrompt(ROLE_DESCRIPTION_PROMPT +
-                                  AISocietyPromptTemplateDict.ASSISTANT_PROMPT)
+    ASSISTANT_PROMPT = TextPrompt(
+        AISocietyPromptTemplateDict.ASSISTANT_PROMPT + ROLE_DESCRIPTION_PROMPT)
 
-    USER_PROMPT = TextPrompt(ROLE_DESCRIPTION_PROMPT +
-                             AISocietyPromptTemplateDict.USER_PROMPT)
+    USER_PROMPT = TextPrompt(AISocietyPromptTemplateDict.USER_PROMPT +
+                             ROLE_DESCRIPTION_PROMPT)
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
