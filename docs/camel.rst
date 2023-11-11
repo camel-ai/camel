@@ -47,10 +47,10 @@ camel.messages module
    :undoc-members:
    :show-inheritance:
 
-camel.typing module
+camel.types module
 -------------------
 
-.. automodule:: camel.typing
+.. automodule:: camel.types
    :members:
    :undoc-members:
    :show-inheritance:

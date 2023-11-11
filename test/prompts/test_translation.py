@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from camel.prompts import TextPrompt, TranslationPromptTemplateDict
-from camel.typing import RoleType
+from camel.types import RoleType
 
 
 def test_translation_prompt_template_dict():

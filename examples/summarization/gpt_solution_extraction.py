@@ -24,7 +24,7 @@ import numpy as np
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.prompts import SolutionExtractionPromptTemplateDict
-from camel.typing import ModelType, RoleType
+from camel.types import ModelType, RoleType
 
 parser = argparse.ArgumentParser(
     description='Arguments for conversation summarization.')

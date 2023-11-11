@@ -14,7 +14,7 @@
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.prompts import PromptTemplateGenerator
-from camel.typing import TaskType
+from camel.types import TaskType
 
 
 def main(key: str = "generate_users", num_roles: int = 50):

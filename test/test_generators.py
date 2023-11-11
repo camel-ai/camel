@@ -16,7 +16,7 @@ from camel.generators import (
     RoleNameGenerator,
     SystemMessageGenerator,
 )
-from camel.typing import RoleType, TaskType
+from camel.types import RoleType, TaskType
 
 
 def test_system_message_generator():
