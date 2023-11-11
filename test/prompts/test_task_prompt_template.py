@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from camel.prompts import AISocietyPromptTemplateDict, TaskPromptTemplateDict
-from camel.typing import TaskType
+from camel.types import TaskType
 
 
 def test_task_prompt_template_dict_init():

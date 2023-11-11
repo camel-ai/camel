@@ -14,12 +14,9 @@
 import json
 from collections import defaultdict
 from dataclasses import dataclass
-from types import GeneratorType
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from tenacity import retry
-from tenacity.stop import stop_after_attempt
-from tenacity.wait import wait_exponential
+from openai import Stream
 
 from camel.agents import BaseAgent
 from camel.configs import BaseConfig, ChatGPTConfig
@@ -34,7 +31,13 @@ from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.responses import ChatAgentResponse
 from camel.terminators import ResponseTerminator
-from camel.typing import ModelType, OpenAIBackendRole, RoleType
+from camel.types import (
+    ChatCompletion,
+    ChatCompletionChunk,
+    ModelType,
+    OpenAIBackendRole,
+    RoleType,
+)
 from camel.utils import get_model_encoding, openai_api_key_required
 
 
@@ -254,7 +257,6 @@ class ChatAgent(BaseAgent):
         """
         self.update_memory(message, OpenAIBackendRole.ASSISTANT)
 
-    @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     @openai_api_key_required
     def step(
         self,
@@ -289,11 +291,10 @@ class ChatAgent(BaseAgent):
                 return self.step_token_exceed(e.args[1], called_funcs,
                                               "max_tokens_exceeded")
 
-            # Obtain the model's response and validate it
+            # Obtain the model's response
             response = self.model_backend.run(openai_messages)
-            self.validate_model_response(response)
 
-            if not self.model_backend.stream:
+            if isinstance(response, ChatCompletion):
                 output_messages, finish_reasons, usage_dict, response_id = (
                     self.handle_batch_response(response))
             else:
@@ -301,7 +302,8 @@ class ChatAgent(BaseAgent):
                     self.handle_stream_response(response, num_tokens))
 
             if (self.is_function_calling_enabled()
-                    and finish_reasons[0] == 'function_call'):
+                    and finish_reasons[0] == 'function_call'
+                    and isinstance(response, ChatCompletion)):
                 # Do function calling
                 func_assistant_msg, func_result_msg, func_record = (
                     self.step_function_call(response))
@@ -343,21 +345,8 @@ class ChatAgent(BaseAgent):
 
         return ChatAgentResponse(output_messages, self.terminated, info)
 
-    def validate_model_response(self, response: Any) -> None:
-        r"""Validate the type of the response returned by the model.
-
-        Args:
-            response (Any): The response returned by the model.
-        """
-        if not self.model_backend.stream:
-            if not isinstance(response, dict):
-                raise RuntimeError("OpenAI returned unexpected batch struct")
-        else:
-            if not isinstance(response, GeneratorType):
-                raise RuntimeError("OpenAI returned unexpected stream struct")
-
     def handle_batch_response(
-        self, response: Dict[str, Any]
+        self, response: ChatCompletion
     ) -> Tuple[List[BaseMessage], List[str], Dict[str, int], str]:
         r"""
 
@@ -369,21 +358,29 @@ class ChatAgent(BaseAgent):
                 finish reasons, usage dictionary, and response id.
         """
         output_messages: List[BaseMessage] = []
-        for choice in response["choices"]:
-            chat_message = BaseMessage(role_name=self.role_name,
-                                       role_type=self.role_type,
-                                       meta_dict=dict(),
-                                       content=choice["message"]['content'])
+        for choice in response.choices:
+            chat_message = BaseMessage(
+                role_name=self.role_name,
+                role_type=self.role_type,
+                meta_dict=dict(),
+                content=choice.message.content or "",
+            )
             output_messages.append(chat_message)
         finish_reasons = [
-            str(choice["finish_reason"]) for choice in response["choices"]
+            str(choice.finish_reason) for choice in response.choices
         ]
-        return output_messages, finish_reasons, dict(
-            response["usage"]), response["id"]
+        usage = (response.usage.model_dump()
+                 if response.usage is not None else {})
+        return (
+            output_messages,
+            finish_reasons,
+            usage,
+            response.id,
+        )
 
     def handle_stream_response(
         self,
-        response: Any,
+        response: Stream[ChatCompletionChunk],
         prompt_tokens: int,
     ) -> Tuple[List[BaseMessage], List[str], Dict[str, int], str]:
         r"""
@@ -401,20 +398,17 @@ class ChatAgent(BaseAgent):
         output_messages: List[BaseMessage] = []
         response_id: str = ""
         # All choices in one response share one role
-        role: str = ""
         for chunk in response:
-            response_id = chunk["id"]
-            for choice in chunk["choices"]:
-                index: int = choice["index"]
-                delta: Dict = choice["delta"]
-                if len(delta) != 0:
+            response_id = chunk.id
+            for choice in chunk.choices:
+                index = choice.index
+                delta = choice.delta
+                if delta.content is not None:
                     # When response has not been stopped
-                    # Notice that only the first chunk has the "role"
-                    role = delta.get("role", role)
-                    delta_content = delta.get("content", "")
-                    content_dict[index] += delta_content
+                    # Notice that only the first chunk_dict has the "role"
+                    content_dict[index] += delta.content
                 else:
-                    finish_reasons_dict[index] = choice["finish_reason"]
+                    finish_reasons_dict[index] = choice.finish_reason
                     chat_message = BaseMessage(role_name=self.role_name,
                                                role_type=self.role_type,
                                                meta_dict=dict(),
@@ -460,7 +454,8 @@ class ChatAgent(BaseAgent):
         )
 
     def step_function_call(
-        self, response: Dict[str, Any]
+        self,
+        response: ChatCompletion,
     ) -> Tuple[FunctionCallingMessage, FunctionCallingMessage,
                FunctionCallingRecord]:
         r"""Execute the function with arguments following the model's response.
@@ -475,14 +470,14 @@ class ChatAgent(BaseAgent):
                 result, and a struct for logging information about this
                 function call.
         """
-
         # Note that when function calling is enabled, `n` is set to 1.
-        choice = response["choices"][0]
-
-        func_name = choice["message"]["function_call"]["name"]
+        choice = response.choices[0]
+        if choice.message.function_call is None:
+            raise RuntimeError("Function call is None")
+        func_name = choice.message.function_call.name
         func = self.func_dict[func_name]
 
-        args_str: str = choice["message"]["function_call"]["arguments"]
+        args_str: str = choice.message.function_call.arguments
         args = json.loads(args_str.replace("\'", "\""))
 
         # Pass the extracted arguments to the indicated function

@@ -16,7 +16,7 @@ import camel.configs
 import camel.generators
 import camel.messages
 import camel.prompts
-import camel.typing
+import camel.types
 import camel.utils
 import camel.functions
 import camel.memories

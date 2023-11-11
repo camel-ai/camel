@@ -16,7 +16,7 @@ import pytest
 from camel.agents import ChatAgent, TaskCreationAgent, TaskPrioritizationAgent
 from camel.messages import BaseMessage
 from camel.societies import BabyAGI
-from camel.typing import ModelType, RoleType, TaskType
+from camel.types import ModelType, RoleType, TaskType
 
 parametrize = pytest.mark.parametrize('model', [
     None,

@@ -11,28 +11,42 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from camel.types import (
-    ChatCompletionSystemMessageParam,
-    ChatCompletionAssistantMessageParam,
-    ChatCompletionUserMessageParam,
-    ChatCompletionFunctionMessageParam,
+from .enums import (
+    RoleType,
+    ModelType,
+    TaskType,
+    TerminationMode,
+    OpenAIBackendRole,
+    VectorDistance,
+)
+from .openai_types import (
+    Choice,
+    ChatCompletion,
+    ChatCompletionChunk,
+    ChatCompletionMessage,
     ChatCompletionMessageParam,
+    ChatCompletionSystemMessageParam,
+    ChatCompletionUserMessageParam,
+    ChatCompletionAssistantMessageParam,
+    ChatCompletionFunctionMessageParam,
+    CompletionUsage,
 )
 
-OpenAISystemMessage = ChatCompletionSystemMessageParam
-OpenAIAssistantMessage = ChatCompletionAssistantMessageParam
-OpenAIUserMessage = ChatCompletionUserMessageParam
-OpenAIFunctionMessage = ChatCompletionFunctionMessageParam
-OpenAIMessage = ChatCompletionMessageParam
-
-from .base import BaseMessage  # noqa: E402
-from .func_message import FunctionCallingMessage  # noqa: E402
-
 __all__ = [
-    'OpenAISystemMessage',
-    'OpenAIAssistantMessage',
-    'OpenAIUserMessage',
-    'OpenAIMessage',
-    'BaseMessage',
-    'FunctionCallingMessage',
+    'RoleType',
+    'ModelType',
+    'TaskType',
+    'TerminationMode',
+    'OpenAIBackendRole',
+    'VectorDistance',
+    'Choice',
+    'ChatCompletion',
+    'ChatCompletionChunk',
+    'ChatCompletionMessage',
+    'ChatCompletionMessageParam',
+    'ChatCompletionSystemMessageParam',
+    'ChatCompletionUserMessageParam',
+    'ChatCompletionAssistantMessageParam',
+    'ChatCompletionFunctionMessageParam',
+    'CompletionUsage',
 ]
