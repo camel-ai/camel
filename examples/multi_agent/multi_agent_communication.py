@@ -124,13 +124,15 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                 one_subtask, role_descriptions_dict))
 
         # Get the top two roles with the highest compatibility scores
-        top_two_positions = \
-            sorted(role_compatibility_scores_dict.keys(),
-                   key=lambda x: role_compatibility_scores_dict[x],
-                   reverse=True)[:2]
-        ai_assistant_role = top_two_positions[1]
-        ai_user_role = top_two_positions[0]  # The user role is the one with
-        # the highest score/compatibility
+        ai_assistant_role = \
+            max(role_compatibility_scores_dict,
+                key=lambda role:
+                role_compatibility_scores_dict[role]["score_assistant"])
+        ai_user_role = \
+            max(role_compatibility_scores_dict,
+                key=lambda role:
+                role_compatibility_scores_dict[role]["score_user"])
+
         ai_assistant_description = role_descriptions_dict[ai_assistant_role]
         ai_user_description = role_descriptions_dict[ai_user_role]
 
