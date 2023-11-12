@@ -20,7 +20,7 @@ from colorama import Fore
 
 from camel.configs import ChatGPTConfig
 from camel.societies import RolePlaying
-from camel.typing import TaskType
+from camel.types import TaskType
 
 
 def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,

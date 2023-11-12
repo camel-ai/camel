@@ -17,7 +17,7 @@ import pytest
 
 from camel.messages import BaseMessage
 from camel.terminators import ResponseWordsTerminator
-from camel.typing import RoleType, TerminationMode
+from camel.types import RoleType, TerminationMode
 
 NUM_TIMES = 2
 
