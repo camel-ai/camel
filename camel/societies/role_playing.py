@@ -19,12 +19,12 @@ from camel.agents import (
     TaskPlannerAgent,
     TaskSpecifyAgent,
 )
-from camel.agents.chat_agent import ChatAgentResponse
 from camel.generators import SystemMessageGenerator
 from camel.human import Human
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
-from camel.typing import ModelType, RoleType, TaskType
+from camel.responses import ChatAgentResponse
+from camel.types import ModelType, RoleType, TaskType
 
 
 class RolePlaying:
@@ -436,7 +436,7 @@ class RolePlaying:
                     ChatAgentResponse([], user_response.terminated,
                                       user_response.info))
         user_msg = self.reduce_message_options(user_response.msgs)
-        self.user_agent.submit_message(user_msg)
+        self.user_agent.record_message(user_msg)
 
         assistant_response = self.assistant_agent.step(user_msg)
         if assistant_response.terminated or assistant_response.msgs is None:
@@ -444,7 +444,7 @@ class RolePlaying:
                                       assistant_response.info),
                     ChatAgentResponse([user_msg], False, user_response.info))
         assistant_msg = self.reduce_message_options(assistant_response.msgs)
-        self.assistant_agent.submit_message(assistant_msg)
+        self.assistant_agent.record_message(assistant_msg)
 
         return (
             ChatAgentResponse([assistant_msg], assistant_response.terminated,

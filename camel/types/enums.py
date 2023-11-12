@@ -138,6 +138,6 @@ class OpenAIBackendRole(Enum):
     FUNCTION = "function"
 
 
-__all__ = [
-    'RoleType', 'ModelType', 'TaskType', 'OpenAIBackendRole', 'VectorDistance'
-]
+class TerminationMode(Enum):
+    ANY = "any"
+    ALL = "all"

@@ -14,47 +14,31 @@
 import json
 from collections import defaultdict
 from dataclasses import dataclass
-from types import GeneratorType
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from tenacity import retry
-from tenacity.stop import stop_after_attempt
-from tenacity.wait import wait_exponential
+from openai import Stream
 
 from camel.agents import BaseAgent
 from camel.configs import BaseConfig, ChatGPTConfig
 from camel.functions import OpenAIFunction
-from camel.memory import BaseMemory, ChatHistoryMemory, MemoryRecord
-from camel.memory.context_creator.default import DefaultContextCreator
+from camel.memories import (
+    BaseMemory,
+    ChatHistoryMemory,
+    MemoryRecord,
+    ScoreBasedContextCreator,
+)
 from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
 from camel.models import BaseModelBackend, ModelFactory
-from camel.typing import ModelType, OpenAIBackendRole, RoleType
+from camel.responses import ChatAgentResponse
+from camel.terminators import ResponseTerminator
+from camel.types import (
+    ChatCompletion,
+    ChatCompletionChunk,
+    ModelType,
+    OpenAIBackendRole,
+    RoleType,
+)
 from camel.utils import get_model_encoding, openai_api_key_required
-
-
-@dataclass(frozen=True)
-class ChatAgentResponse:
-    r"""Response of a ChatAgent.
-
-    Attributes:
-        msgs (List[BaseMessage]): A list of zero, one or several messages.
-            If the list is empty, there is some error in message generation.
-            If the list has one message, this is normal mode.
-            If the list has several messages, this is the critic mode.
-        terminated (bool): A boolean indicating whether the agent decided
-            to terminate the chat session.
-        info (Dict[str, Any]): Extra information about the chat message.
-    """
-    msgs: List[BaseMessage]
-    terminated: bool
-    info: Dict[str, Any]
-
-    @property
-    def msg(self):
-        if len(self.msgs) != 1:
-            raise RuntimeError("Property msg is only available "
-                               "for a single message in msgs.")
-        return self.msgs[0]
 
 
 @dataclass(frozen=True)
@@ -93,14 +77,22 @@ class ChatAgent(BaseAgent):
         model_config (BaseConfig, optional): Configuration options for the
             LLM model. (default: :obj:`None`)
         memory (BaseMemory, optional): The agent memory for managing chat
-            messages. (default: :obj:`ChatHistoryMemory()`)
+            messages. If `None`, a :obj:`ChatHistoryMemory` will be used.
+            (default: :obj:`None`)
         message_window_size (int, optional): The maximum number of previous
             messages to include in the context window. If `None`, no windowing
             is performed. (default: :obj:`None`)
+        token_limit (int, optional): The maxinum number of tokens in a context.
+            The context will be automatically pruned to fulfill the limitation.
+            If `None`, it will be set according to the backend model.
+            (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
-        function_list (Optional[List[OpenAIFunction]]): List of available
+        function_list (List[OpenAIFunction], optional): List of available
             :obj:`OpenAIFunction`. (default: :obj:`None`)
+        response_terminators (List[ResponseTerminator], optional): List of
+            :obj:`ResponseTerminator` bind to one chat agent.
+            (default: :obj:`None`)
     """
 
     def __init__(
@@ -113,6 +105,7 @@ class ChatAgent(BaseAgent):
         token_limit: Optional[int] = None,
         output_language: Optional[str] = None,
         function_list: Optional[List[OpenAIFunction]] = None,
+        response_terminators: Optional[List[ResponseTerminator]] = None,
     ) -> None:
 
         self.orig_sys_message: BaseMessage = system_message
@@ -134,14 +127,16 @@ class ChatAgent(BaseAgent):
 
         self.model_backend: BaseModelBackend = ModelFactory.create(
             self.model, self.model_config.__dict__)
-        context_creator = DefaultContextCreator(
+        self.model_token_limit = token_limit or self.model_backend.token_limit
+        context_creator = ScoreBasedContextCreator(
             self.model_backend.token_counter,
-            token_limit or self.model_backend.token_limit,
+            self.model_token_limit,
         )
         self.memory: BaseMemory = memory or ChatHistoryMemory(
             context_creator, window_size=message_window_size)
 
         self.terminated: bool = False
+        self.response_terminators = response_terminators or []
         self.init_messages()
 
     def reset(self):
@@ -153,6 +148,8 @@ class ChatAgent(BaseAgent):
         """
         self.terminated = False
         self.init_messages()
+        for terminator in self.response_terminators:
+            terminator.reset()
 
     @property
     def system_message(self) -> BaseMessage:
@@ -186,6 +183,7 @@ class ChatAgent(BaseAgent):
     def update_memory(self, message: BaseMessage,
                       role: OpenAIBackendRole) -> None:
         r"""Updates the agent memory with a new message.
+
         Args:
             message (BaseMessage): The new message to add to the stored
                 messages.
@@ -248,19 +246,17 @@ class ChatAgent(BaseAgent):
         self.memory.clear()
         self.memory.write_record(system_record)
 
-    def submit_message(self, message: BaseMessage) -> None:
-        r"""Submits the externally provided message as if it were an answer of
-        the chat LLM from the backend. Currently, the choice of the critic is
-        submitted with this method.
+    def record_message(self, message: BaseMessage) -> None:
+        r"""Records the externally provided message into the agent memory as if
+        it were an answer of the :obj:`ChatAgent` from the backend. Currently,
+        the choice of the critic is submitted with this method.
 
         Args:
-            message (BaseMessage): An external message to be added as an
-                assistant response.
+            message (BaseMessage): An external message to be recorded in the
+                memory.
         """
-        record = MemoryRecord(message, OpenAIBackendRole.ASSISTANT)
-        self.memory.write_record(record)
+        self.update_memory(message, OpenAIBackendRole.ASSISTANT)
 
-    @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     @openai_api_key_required
     def step(
         self,
@@ -280,8 +276,7 @@ class ChatAgent(BaseAgent):
                 a boolean indicating whether the chat session has terminated,
                 and information about the chat session.
         """
-        record = MemoryRecord(input_message, OpenAIBackendRole.USER)
-        self.memory.write_record(record)
+        self.update_memory(input_message, OpenAIBackendRole.USER)
 
         output_messages: List[BaseMessage]
         info: Dict[str, Any]
@@ -289,16 +284,17 @@ class ChatAgent(BaseAgent):
         while True:
             # Format messages and get the token number
             openai_messages: Optional[List[OpenAIMessage]]
+
             try:
                 openai_messages, num_tokens = self.memory.get_context()
             except RuntimeError as e:
-                return self.step_token_exceed(e.args[1], called_funcs)
+                return self.step_token_exceed(e.args[1], called_funcs,
+                                              "max_tokens_exceeded")
 
-            # Obtain LLM's response and validate it
+            # Obtain the model's response
             response = self.model_backend.run(openai_messages)
-            self.validate_model_response(response)
 
-            if not self.model_backend.stream:
+            if isinstance(response, ChatCompletion):
                 output_messages, finish_reasons, usage_dict, response_id = (
                     self.handle_batch_response(response))
             else:
@@ -306,25 +302,38 @@ class ChatAgent(BaseAgent):
                     self.handle_stream_response(response, num_tokens))
 
             if (self.is_function_calling_enabled()
-                    and finish_reasons[0] == 'function_call'):
+                    and finish_reasons[0] == 'function_call'
+                    and isinstance(response, ChatCompletion)):
                 # Do function calling
                 func_assistant_msg, func_result_msg, func_record = (
                     self.step_function_call(response))
 
                 # Update the messages
-                func_assistant_record = MemoryRecord(
-                    func_assistant_msg,
-                    OpenAIBackendRole.ASSISTANT,
-                )
-                func_result_record = MemoryRecord(
-                    func_result_msg,
-                    OpenAIBackendRole.FUNCTION,
-                )
-                self.memory.write_records(
-                    [func_assistant_record, func_result_record])
+                self.update_memory(func_assistant_msg,
+                                   OpenAIBackendRole.ASSISTANT)
+                self.update_memory(func_result_msg, OpenAIBackendRole.FUNCTION)
+
+                # Record the function calling
                 called_funcs.append(func_record)
             else:
-                # Function calling disabled or chat stopped
+                # Function calling disabled or not a function calling
+
+                # Loop over responses terminators, get list of termination
+                # tuples with whether the terminator terminates the agent
+                # and termination reason
+                termination = [
+                    terminator.is_terminated(output_messages)
+                    for terminator in self.response_terminators
+                ]
+                # Terminate the agent if any of the terminator terminates
+                self.terminated, termination_reason = next(
+                    ((terminated, termination_reason)
+                     for terminated, termination_reason in termination
+                     if terminated), (False, None))
+                # For now only retain the first termination reason
+                if self.terminated and termination_reason is not None:
+                    finish_reasons = [termination_reason] * len(finish_reasons)
+
                 info = self.get_info(
                     response_id,
                     usage_dict,
@@ -336,21 +345,8 @@ class ChatAgent(BaseAgent):
 
         return ChatAgentResponse(output_messages, self.terminated, info)
 
-    def validate_model_response(self, response: Any) -> None:
-        r"""Validate the type of the response returned by the model.
-
-        Args:
-            response (Any): The response returned by the model.
-        """
-        if not self.model_backend.stream:
-            if not isinstance(response, dict):
-                raise RuntimeError("OpenAI returned unexpected batch struct")
-        else:
-            if not isinstance(response, GeneratorType):
-                raise RuntimeError("OpenAI returned unexpected stream struct")
-
     def handle_batch_response(
-        self, response: Dict[str, Any]
+        self, response: ChatCompletion
     ) -> Tuple[List[BaseMessage], List[str], Dict[str, int], str]:
         r"""
 
@@ -362,21 +358,29 @@ class ChatAgent(BaseAgent):
                 finish reasons, usage dictionary, and response id.
         """
         output_messages: List[BaseMessage] = []
-        for choice in response["choices"]:
-            chat_message = BaseMessage(role_name=self.role_name,
-                                       role_type=self.role_type,
-                                       meta_dict=dict(),
-                                       content=choice["message"]['content'])
+        for choice in response.choices:
+            chat_message = BaseMessage(
+                role_name=self.role_name,
+                role_type=self.role_type,
+                meta_dict=dict(),
+                content=choice.message.content or "",
+            )
             output_messages.append(chat_message)
         finish_reasons = [
-            str(choice["finish_reason"]) for choice in response["choices"]
+            str(choice.finish_reason) for choice in response.choices
         ]
-        return output_messages, finish_reasons, dict(
-            response["usage"]), response["id"]
+        usage = (response.usage.model_dump()
+                 if response.usage is not None else {})
+        return (
+            output_messages,
+            finish_reasons,
+            usage,
+            response.id,
+        )
 
     def handle_stream_response(
         self,
-        response: Any,
+        response: Stream[ChatCompletionChunk],
         prompt_tokens: int,
     ) -> Tuple[List[BaseMessage], List[str], Dict[str, int], str]:
         r"""
@@ -394,20 +398,17 @@ class ChatAgent(BaseAgent):
         output_messages: List[BaseMessage] = []
         response_id: str = ""
         # All choices in one response share one role
-        role: str = ""
         for chunk in response:
-            response_id = chunk["id"]
-            for choice in chunk["choices"]:
-                index: int = choice["index"]
-                delta: Dict = choice["delta"]
-                if len(delta) != 0:
+            response_id = chunk.id
+            for choice in chunk.choices:
+                index = choice.index
+                delta = choice.delta
+                if delta.content is not None:
                     # When response has not been stopped
-                    # Notice that only the first chunk has the "role"
-                    role = delta.get("role", role)
-                    delta_content = delta.get("content", "")
-                    content_dict[index] += delta_content
+                    # Notice that only the first chunk_dict has the "role"
+                    content_dict[index] += delta.content
                 else:
-                    finish_reasons_dict[index] = choice["finish_reason"]
+                    finish_reasons_dict[index] = choice.finish_reason
                     chat_message = BaseMessage(role_name=self.role_name,
                                                role_type=self.role_type,
                                                meta_dict=dict(),
@@ -419,9 +420,9 @@ class ChatAgent(BaseAgent):
         usage_dict = self.get_usage_dict(output_messages, prompt_tokens)
         return output_messages, finish_reasons, usage_dict, response_id
 
-    def step_token_exceed(
-            self, num_tokens: int,
-            called_funcs: List[FunctionCallingRecord]) -> ChatAgentResponse:
+    def step_token_exceed(self, num_tokens: int,
+                          called_funcs: List[FunctionCallingRecord],
+                          termination_reason: str) -> ChatAgentResponse:
         r"""Return trivial response containing number of tokens and information
         of called functions when the number of tokens exceeds.
 
@@ -429,19 +430,19 @@ class ChatAgent(BaseAgent):
             num_tokens (int): Number of tokens in the messages.
             called_funcs (List[FunctionCallingRecord]): List of information
                 objects of functions called in the current step.
+            termination_reason (str): String of termination reason.
 
         Returns:
             ChatAgentResponse: The struct containing trivial outputs and
                 information about token number and called functions.
         """
-
         self.terminated = True
         output_messages: List[BaseMessage] = []
 
         info = self.get_info(
             None,
             None,
-            ["max_tokens_exceeded"],
+            [termination_reason],
             num_tokens,
             called_funcs,
         )
@@ -453,29 +454,30 @@ class ChatAgent(BaseAgent):
         )
 
     def step_function_call(
-        self, response: Dict[str, Any]
+        self,
+        response: ChatCompletion,
     ) -> Tuple[FunctionCallingMessage, FunctionCallingMessage,
                FunctionCallingRecord]:
         r"""Execute the function with arguments following the model's response.
 
         Args:
-            response (Dict[str, Any]): the response obtained by calling the
+            response (Dict[str, Any]): The response obtained by calling the
                 model.
 
         Returns:
-            tuple: a tuple consisting of two obj:`FunctionCallingMessage`,
+            tuple: A tuple consisting of two obj:`FunctionCallingMessage`,
                 one about the arguments and the other about the execution
                 result, and a struct for logging information about this
                 function call.
         """
-
         # Note that when function calling is enabled, `n` is set to 1.
-        choice = response["choices"][0]
-
-        func_name = choice["message"]["function_call"]["name"]
+        choice = response.choices[0]
+        if choice.message.function_call is None:
+            raise RuntimeError("Function call is None")
+        func_name = choice.message.function_call.name
         func = self.func_dict[func_name]
 
-        args_str: str = choice["message"]["function_call"]["arguments"]
+        args_str: str = choice.message.function_call.arguments
         args = json.loads(args_str.replace("\'", "\""))
 
         # Pass the extracted arguments to the indicated function

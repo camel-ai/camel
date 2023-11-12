@@ -41,13 +41,13 @@ def test_search_wiki_not_found():
 
 
 def test_search_wiki_with_ambiguity():
-    expected_output = wikipedia.summary("New York City", sentences=5,
+    expected_output = wikipedia.summary("Google", sentences=5,
                                         auto_suggest=False)
-    assert search_wiki("New York") == expected_output
+    assert search_wiki("Google LLC") == expected_output
 
 
 def test_google_api():
-    # Check the google search api
+    # Check the Google search api
 
     # https://developers.google.com/custom-search/v1/overview
     GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")

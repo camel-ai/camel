@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .base import BaseAgent
-from .chat_agent import ChatAgent, ChatAgentResponse
+from .chat_agent import ChatAgent
 from .task_agent import (
     TaskSpecifyAgent,
     TaskPlannerAgent,
@@ -28,7 +28,6 @@ from .role_assignment_agent import RoleAssignmentAgent
 __all__ = [
     'BaseAgent',
     'ChatAgent',
-    'ChatAgentResponse',
     'TaskSpecifyAgent',
     'TaskPlannerAgent',
     'TaskCreationAgent',
