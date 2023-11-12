@@ -125,7 +125,7 @@ class RoleAssignmentAgent(ChatAgent):
 
         # Distribute the output completions into role names and descriptions
         role_names = [
-            desc.replace("<", "").replace(">", "").strip('\n')
+            desc.replace("<", "").replace(">", "").strip()
             for desc in re.findall(
                 r"Domain expert \d: (.+?)\nAssociated competencies,",
                 msg.content,
@@ -133,7 +133,7 @@ class RoleAssignmentAgent(ChatAgent):
             )
         ]
         role_descriptions = [
-            desc.lstrip('\n').replace("<", "").replace(">", "").strip('\n')
+            desc.lstrip('\n').replace("<", "").replace(">", "").strip()
             for desc in re.findall(
                 r"Associated competencies, characteristics, and duties:"
                 r"(?:\n)?(.+?)\nEnd.", msg.content, re.DOTALL)
@@ -315,11 +315,11 @@ class RoleAssignmentAgent(ChatAgent):
 PART I:
 Details of subtask <NUM>:
 - <BLANK>
-Contextual Parameters(only related to CONTEXT TEXT, without dependentcies) of subtask <NUM>:
+Contextual Parameters (only related to CONTEXT TEXT, without dependentcies) of subtask <NUM>:
 - <BLANK>
 Details of subtask <NUM>:
 - <BLANK>
-Contextual Parameters(only related to CONTEXT TEXT, without dependentcies) of subtask <NUM>:
+Contextual Parameters (only related to CONTEXT TEXT, without dependentcies) of subtask <NUM>:
 - <BLANK>
 
 PART II:
@@ -340,11 +340,11 @@ PART III:
 PART I:
 Details of subtask <NUM>:
 - <BLANK>
-Contextual Parameters(only related to CONTEXT TEXT, without dependentcies) of subtask <NUM>:
+Contextual Parameters (only related to CONTEXT TEXT, without dependentcies) of subtask <NUM>:
 - <BLANK>
 Details of subtask <NUM>:
 - <BLANK>
-Contextual Parameters(only related to CONTEXT TEXT, without dependentcies) of subtask <NUM>:
+Contextual Parameters (only related to CONTEXT TEXT, without dependentcies) of subtask <NUM>:
 - <BLANK>
 
 PART II:
@@ -393,6 +393,7 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
             raise RuntimeError("Role compatibility scoring failed.\n" +
                                f"Error:\n{response.info}")
         msg = response.msg  # type: BaseMessage
+        print(f"msg.content:\n{msg.content}")
 
         # Distribute the output completions into subtasks
         subtask_descriptions = [
