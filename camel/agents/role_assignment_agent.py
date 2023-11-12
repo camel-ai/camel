@@ -17,7 +17,6 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import matplotlib.pyplot as plt
 import networkx as nx
-from tenacity import retry, stop_after_attempt, wait_exponential
 
 from camel.agents import ChatAgent
 from camel.agents.insight_agent import InsightAgent
@@ -50,7 +49,6 @@ class RoleAssignmentAgent(ChatAgent):
         super().__init__(system_message, model, model_config)
         self.model_config = model_config or ChatGPTConfig()
 
-    @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     def run_role_with_description(
         self,
         task_prompt: Union[str, TextPrompt],
@@ -263,7 +261,6 @@ class RoleAssignmentAgent(ChatAgent):
 
         return parallel_subtask_pipelines
 
-    @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     def split_tasks(
         self,
         task_prompt: Union[str, TextPrompt],
@@ -454,7 +451,6 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
 
         return subtasks_with_dependencies_dict
 
-    @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     def evaluate_role_compatibility(
         self,
         subtask_prompt: Union[str, TextPrompt],
@@ -556,7 +552,6 @@ Definition of ASSISTANT: The assistant is the role that executes instructions gi
 
         return role_compatibility_scores_dict
 
-    @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     def get_retrieval_index_from_environment(
         self,
         labels_sets: List[List[str]],
@@ -655,7 +650,6 @@ Please ensure that you consider both explicit and implicit similarities while ev
         return target_labels_indices, labels_sets_indices, \
             target_retrieved_labels, labels_retrieved_sets
 
-    @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     def transform_dialogue_into_text(
             self, user: str, assistant: str, task_prompt: str,
             user_conversation: str,
