@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import json
+
 from colorama import Fore
 
 from camel.agents.role_assignment_agent import RoleAssignmentAgent
@@ -24,23 +26,17 @@ def main(model_type=None) -> None:
     role_description_agent = RoleAssignmentAgent(
         model=model_type, model_config=model_config_description)
 
-    role_description_dict = (role_description_agent.run_role_with_description(
+    role_descriptions_dict = (role_description_agent.run_role_with_description(
         task_prompt=task_prompt, num_roles=4))
 
     num_subtasks = 6
-    subtasks = role_description_agent.split_tasks(task_prompt, num_subtasks,
-                                                  role_description_dict)
+    subtasks = role_description_agent\
+        .split_tasks(task_prompt=task_prompt,
+                     role_descriptions_dict=role_descriptions_dict,
+                     num_subtasks=num_subtasks)
 
-    if subtasks is None:
-        raise ValueError("subtasks is None.")
-    if len(subtasks) != num_subtasks:
-        raise ValueError(f"Number of subtasks ({len(subtasks)}) "
-                         f"does not equal to num_subtasks ({num_subtasks}).")
-
-    for (i, subtask) in enumerate(subtasks):
-        print(Fore.BLUE + f"Subtask {i + 1}. {subtask}")
-    for (i, role_name) in enumerate(list(role_description_dict.keys())):
-        print(Fore.GREEN + f"Role {i + 1}. {role_name}")
+    print(Fore.BLUE + f"Subtasks with description and dependencies:\n"
+          f"{json.dumps(subtasks, indent=4)}")
 
 
 if __name__ == "__main__":

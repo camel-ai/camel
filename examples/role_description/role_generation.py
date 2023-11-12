@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import json
+
 from colorama import Fore
 
 from camel.agents.role_assignment_agent import RoleAssignmentAgent
@@ -37,10 +39,8 @@ def main(model_type=None, num_roles=3, role_names=None) -> None:
             f"does not equal to num_roles ({num_roles}).")
 
     print(Fore.YELLOW + f"Original task prompt:\n{task_prompt}\n")
-    print(Fore.GREEN + f"List of {num_roles} roles with description:")
-    for role_name in role_description_dict.keys():
-        print(Fore.BLUE + f"{role_name}:\n"
-              f"{role_description_dict[role_name]}\n")
+    print(Fore.BLUE + "The roles generated with description:\n"
+          f"{json.dumps(role_description_dict, indent=4)}")
 
 
 if __name__ == "__main__":
