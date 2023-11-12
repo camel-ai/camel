@@ -167,10 +167,10 @@ def test_role_playing_role_sequence(model_type=None):
     input_assistant_msg = assistant_response.msg
     assistant_response, user_response = role_playing.step(input_assistant_msg)
 
-    for record in role_playing.user_agent.stored_messages:
-        user_role_sequence.append(record.role_at_backend)
-    for record in role_playing.assistant_agent.stored_messages:
-        assistant_role_sequence.append(record.role_at_backend)
+    for record in role_playing.user_agent.memory.get_context()[0]:
+        user_role_sequence.append(record["role"])
+    for record in role_playing.assistant_agent.memory.get_context()[0]:
+        assistant_role_sequence.append(record["role"])
 
     assert user_role_sequence == \
            ['system', 'user', 'assistant', 'user', 'assistant']
