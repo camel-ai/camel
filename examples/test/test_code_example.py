@@ -14,7 +14,7 @@
 from mock import patch
 
 import examples.code.role_playing
-from camel.types import ModelType
+from camel.typing import ModelType
 
 
 def test_code_role_playing_example():

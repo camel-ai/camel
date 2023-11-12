@@ -16,7 +16,7 @@ from typing import Any, Dict
 import pytest
 
 from camel.messages import FunctionCallingMessage
-from camel.types import RoleType
+from camel.typing import RoleType
 
 
 @pytest.fixture
@@ -107,3 +107,11 @@ def test_function_func_message_to_openai_assistant_message(
             match=("Invalid request for converting into assistant message"
                    " due to missing function name or arguments.")):
         function_func_message.to_openai_assistant_message()
+
+
+def test_to_openai_message_with_user_backend(
+        assistant_func_message: FunctionCallingMessage):
+    with pytest.raises(
+            ValueError,
+            match=("Invalid role for function-related message: user")):
+        assistant_func_message.to_openai_message("user")

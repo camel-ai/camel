@@ -15,7 +15,7 @@ import pytest
 
 from camel.agents import CriticAgent
 from camel.messages import BaseMessage
-from camel.types import RoleType
+from camel.typing import RoleType
 
 
 @pytest.fixture

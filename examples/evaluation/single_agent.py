@@ -19,7 +19,7 @@ from typing import Any, Dict, List
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.prompts import PromptTemplateGenerator
-from camel.types import TaskType
+from camel.typing import TaskType
 
 
 def parse_question_string(question_string: str,

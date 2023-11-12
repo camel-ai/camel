@@ -23,7 +23,7 @@ from camel.generators import (
 )
 from camel.messages import BaseMessage
 from camel.prompts import PromptTemplateGenerator
-from camel.types import ModelType, RoleType, TaskType
+from camel.typing import ModelType, RoleType, TaskType
 
 
 def generate_tasks(role_names: str, task_generator_prompt: str,

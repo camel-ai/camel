@@ -21,7 +21,7 @@ from camel.messages import (
     OpenAIUserMessage,
 )
 from camel.prompts import CodePrompt, TextPrompt
-from camel.types import OpenAIBackendRole, RoleType
+from camel.typing import RoleType
 
 
 @dataclass
@@ -161,27 +161,20 @@ class BaseMessage:
 
         return text_prompts, code_prompts
 
-    def to_openai_message(
-        self,
-        role_at_backend: OpenAIBackendRole,
-    ) -> OpenAIMessage:
+    def to_openai_message(self, role_at_backend: str) -> OpenAIMessage:
         r"""Converts the message to an :obj:`OpenAIMessage` object.
 
         Args:
-            role_at_backend (OpenAIBackendRole): The role of the message in
-                OpenAI chat system.
+            role_at_backend (str): The role of the message in OpenAI chat
+                system, either :obj:`"system"`, :obj:`"user"`, or
+                obj:`"assistant"`.
 
         Returns:
             OpenAIMessage: The converted :obj:`OpenAIMessage` object.
         """
-        if role_at_backend == OpenAIBackendRole.SYSTEM:
-            return self.to_openai_system_message()
-        elif role_at_backend == OpenAIBackendRole.USER:
-            return self.to_openai_user_message()
-        elif role_at_backend == OpenAIBackendRole.ASSISTANT:
-            return self.to_openai_assistant_message()
-        else:
-            raise ValueError(f"Unsupported role: {role_at_backend}.")
+        if role_at_backend not in {"system", "user", "assistant"}:
+            raise ValueError(f"Unrecognized role: {role_at_backend}")
+        return {"role": role_at_backend, "content": self.content}
 
     def to_openai_system_message(self) -> OpenAISystemMessage:
         r"""Converts the message to an :obj:`OpenAISystemMessage` object.

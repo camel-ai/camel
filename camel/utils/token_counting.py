@@ -12,10 +12,10 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from abc import ABC, abstractmethod
-from typing import List
+from typing import Any, Dict, List
 
 from camel.messages import OpenAIMessage
-from camel.types import ModelType
+from camel.typing import ModelType
 
 
 def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
@@ -42,15 +42,12 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
         ret = ""
         for i, msg in enumerate(messages[1:]):
             role = role_map[msg["role"]]
-            content = msg["content"]
-            if content:
-                if not isinstance(content, str):
-                    raise ValueError("Currently multimodal context is not "
-                                     "supported by the token counter.")
+            message = msg["content"]
+            if message:
                 if i == 0:
-                    ret += system_prompt + content
+                    ret += system_prompt + message
                 else:
-                    ret += role + " " + content + seps[i % 2]
+                    ret += role + " " + message + seps[i % 2]
             else:
                 ret += role
         return ret
@@ -62,12 +59,9 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
         ret = system_prompt + seps[0]
         for i, msg in enumerate(messages[1:]):
             role = role_map[msg["role"]]
-            content = msg["content"]
-            if not isinstance(content, str):
-                raise ValueError("Currently multimodal context is not "
-                                 "supported by the token counter.")
-            if content:
-                ret += role + ": " + content + seps[i % 2]
+            message = msg["content"]
+            if message:
+                ret += role + ": " + message + seps[i % 2]
             else:
                 ret += role + ":"
         return ret

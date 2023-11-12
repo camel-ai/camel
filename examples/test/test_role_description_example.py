@@ -15,7 +15,7 @@ from mock import patch
 
 import examples.role_description.role_generation
 import examples.role_description.role_playing_with_role_description
-from camel.types import ModelType
+from camel.typing import ModelType
 
 
 def test_role_generation_example():

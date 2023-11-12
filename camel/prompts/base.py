@@ -24,7 +24,7 @@ from typing import (
     Union,
 )
 
-from camel.types import RoleType
+from camel.typing import RoleType
 from camel.utils import PythonInterpreter
 
 T = TypeVar('T')

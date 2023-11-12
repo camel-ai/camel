@@ -18,7 +18,7 @@ import examples.code.task_generation
 import examples.evaluation.single_agent
 import examples.misalignment.single_agent
 import examples.single_agent
-from camel.types import ModelType
+from camel.typing import ModelType
 
 parametrize = pytest.mark.parametrize('model', [
     ModelType.STUB,

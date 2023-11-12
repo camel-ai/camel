@@ -19,7 +19,7 @@ from camel.functions import MATH_FUNCS
 from camel.human import Human
 from camel.messages import BaseMessage
 from camel.societies import RolePlaying
-from camel.types import ModelType, RoleType, TaskType
+from camel.typing import ModelType, RoleType, TaskType
 
 
 @pytest.mark.parametrize("model_type", [None, ModelType.GPT_4])

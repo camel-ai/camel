@@ -17,21 +17,19 @@ from colorama import Fore
 
 from camel.agents.chat_agent import FunctionCallingRecord
 from camel.configs import ChatGPTConfig, FunctionCallingConfig
-from camel.functions import MATH_FUNCS, SEARCH_FUNCS, WEATHER_FUNCS
+from camel.functions import MATH_FUNCS, SEARCH_FUNCS
 from camel.societies import RolePlaying
-from camel.types import ModelType
+from camel.typing import ModelType
 from camel.utils import print_text_animated
 
 
 def main(model_type=ModelType.GPT_4) -> None:
     task_prompt = ("Assuming the current year is 2023, estimate KAUST's "
-                   "current age and then add 10 more years to this age, "
-                   "and get the current weather of the city where KAUST "
-                   "is located.")
+                   "current age and then add 10 more years to this age.")
 
     user_model_config = ChatGPTConfig(temperature=0.0)
 
-    function_list = [*MATH_FUNCS, *SEARCH_FUNCS, *WEATHER_FUNCS]
+    function_list = [*MATH_FUNCS, *SEARCH_FUNCS]
     assistant_model_config = FunctionCallingConfig.from_openai_function_list(
         function_list=function_list,
         kwargs=dict(temperature=0.0),

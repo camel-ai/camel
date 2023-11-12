@@ -17,7 +17,7 @@ from camel.agents import EmbodiedAgent, HuggingFaceToolAgent
 from camel.agents.tool_agents.base import BaseToolAgent
 from camel.generators import SystemMessageGenerator
 from camel.messages import BaseMessage
-from camel.types import ModelType, RoleType
+from camel.typing import ModelType, RoleType
 
 
 def main():

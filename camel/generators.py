@@ -15,7 +15,7 @@ from typing import Dict, Generator, List, Optional, Set, Tuple
 
 from camel.messages import BaseMessage
 from camel.prompts import PromptTemplateGenerator, TextPrompt
-from camel.types import RoleType, TaskType
+from camel.typing import RoleType, TaskType
 
 
 class SystemMessageGenerator:

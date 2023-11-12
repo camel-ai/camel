@@ -15,7 +15,7 @@ from colorama import Fore
 
 from camel.configs import ChatGPTConfig, OpenSourceConfig
 from camel.societies import RolePlaying
-from camel.types import ModelType
+from camel.typing import ModelType
 from camel.utils import print_text_animated
 
 

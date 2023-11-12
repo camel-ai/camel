@@ -13,12 +13,12 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import camel.agents
 import camel.configs
-import camel.functions
 import camel.generators
 import camel.messages
 import camel.prompts
-import camel.types
+import camel.typing
 import camel.utils
+import camel.functions
 
 __version__ = '0.1.0'
 

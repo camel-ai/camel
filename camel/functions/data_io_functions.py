@@ -19,6 +19,10 @@ from hashlib import md5
 from io import BytesIO
 from typing import Any, Dict, List, Optional
 
+import docx2txt
+import fitz
+from bs4 import BeautifulSoup
+
 
 class File(ABC):
     r"""Represents an uploaded file comprised of Documents"""
@@ -103,12 +107,6 @@ class DocxFile(File):
             DocxFile: A DocxFile object.
         """
         # Use docx2txt to extract text from docx files
-        try:
-            import docx2txt
-        except ImportError:
-            raise ImportError("Please install `docx2txt` first. "
-                              "You can install it by running "
-                              "`pip install docx2txt`.")
         text = docx2txt.process(file)
         text = strip_consecutive_newlines(text)
         # Create a dictionary with the extracted text
@@ -134,12 +132,6 @@ class PdfFile(File):
             PdfFile: A PdfFile object.
         """
         # Use fitz to extract text from pdf files
-        try:
-            import fitz
-        except ImportError:
-            raise ImportError("Please install `PyMuPDF` first. "
-                              "You can install it by running "
-                              "`pip install PyMuPDF`.")
         pdf = fitz.open(stream=file.read(), filetype="pdf")
         docs = []
         for i, page in enumerate(pdf):
@@ -218,12 +210,6 @@ class HtmlFile(File):
             HtmlFile: A HtmlFile object.
         """
         # Parse the HTML data from the file
-        try:
-            from bs4 import BeautifulSoup
-        except ImportError:
-            raise ImportError("Please install `beautifulsoup4` first. "
-                              "You can install it by running "
-                              "`pip install beautifulsoup4`.")
         soup = BeautifulSoup(file, "html.parser")
         text = soup.get_text()
         text = strip_consecutive_newlines(text)

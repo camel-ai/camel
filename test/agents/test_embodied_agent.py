@@ -19,10 +19,9 @@ import requests
 from camel.agents import EmbodiedAgent, HuggingFaceToolAgent
 from camel.generators import SystemMessageGenerator
 from camel.messages import BaseMessage
-from camel.types import RoleType
+from camel.typing import RoleType
 
 
-@pytest.mark.skip(reason="Wait huggingface to update openaiv1")
 @pytest.mark.model_backend
 def test_get_action_space_prompt():
     role_name = "Artist"
@@ -37,7 +36,6 @@ def test_get_action_space_prompt():
     assert agent.get_action_space_prompt().startswith(expected_prompt)
 
 
-@pytest.mark.skip(reason="Wait huggingface to update openaiv1")
 @pytest.mark.model_backend
 @pytest.mark.very_slow
 def test_step():

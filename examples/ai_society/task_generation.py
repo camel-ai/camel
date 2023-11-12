@@ -20,7 +20,7 @@ from camel.generators import (
     SystemMessageGenerator,
 )
 from camel.messages import BaseMessage
-from camel.types import RoleType, TaskType
+from camel.typing import RoleType, TaskType
 
 
 def generate_tasks(role_names: str, task_generator_prompt: str,

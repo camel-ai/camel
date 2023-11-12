@@ -17,7 +17,7 @@ from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.prompts import PromptTemplateGenerator, TextPrompt
-from camel.types import ModelType, RoleType, TaskType
+from camel.typing import ModelType, RoleType, TaskType
 from camel.utils import get_task_list
 
 

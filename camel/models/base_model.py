@@ -12,12 +12,9 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
 
-from openai import Stream
-
-from camel.messages import OpenAIMessage
-from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
+from camel.typing import ModelType
 from camel.utils import BaseTokenCounter
 
 
@@ -51,20 +48,19 @@ class BaseModelBackend(ABC):
         pass
 
     @abstractmethod
-    def run(
-        self,
-        messages: List[OpenAIMessage],
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+    def run(self, messages: List[Dict]) -> Dict[str, Any]:
         r"""Runs the query to the backend model.
 
         Args:
-            messages (List[OpenAIMessage]): Message list with the chat history
+            messages (List[Dict]): Message list with the chat history
                 in OpenAI API format.
 
+        Raises:
+            RuntimeError: If the return value from OpenAI API
+                is not a dict that is expected.
+
         Returns:
-            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-                `ChatCompletion` in the non-stream mode, or
-                `Stream[ChatCompletionChunk]` in the stream mode.
+            Dict[str, Any]: All backends must return a dict in OpenAI format.
         """
         pass
 
@@ -79,7 +75,7 @@ class BaseModelBackend(ABC):
         """
         pass
 
-    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
+    def count_tokens_from_messages(self, messages: List[Dict]) -> int:
         r"""Count the number of tokens in the messages using the specific
         tokenizer.
 

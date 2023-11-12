@@ -33,7 +33,7 @@ from urllib.parse import urlparse
 
 import requests
 
-from camel.types import ModelType, TaskType
+from camel.typing import ModelType, TaskType
 
 F = TypeVar('F', bound=Callable[..., Any])
 

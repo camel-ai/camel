@@ -15,7 +15,7 @@ from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 
 from camel.messages import BaseMessage
-from camel.types import TerminationMode
+from camel.typing import TerminationMode
 
 from .base import ResponseTerminator
 

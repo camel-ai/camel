@@ -24,7 +24,7 @@ Here's an example of creating a `BaseMessage` instance:
 
 ```python
 from camel.messages import BaseMessage
-from camel.types import RoleType
+from camel.typing import RoleType
 
 message = BaseMessage(
     role_name="test_user",
@@ -72,7 +72,7 @@ The `BaseMessage` class offers several methods:
 2. Converting to an `OpenAIMessage` object:
 
     ```python
-    openai_message = message.to_openai_message(role_at_backend=OpenAIBackendRole.USER)
+    openai_message = message.to_openai_message(role_at_backend="user")
     print(openai_message == {"role": "user", "content": "test content"})
     >>> True
     ```

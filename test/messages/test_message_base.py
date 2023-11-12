@@ -15,7 +15,7 @@ import pytest
 
 from camel.messages import BaseMessage
 from camel.prompts import CodePrompt, TextPrompt
-from camel.types import OpenAIBackendRole, RoleType
+from camel.typing import RoleType
 
 
 @pytest.fixture
@@ -85,7 +85,7 @@ def test_base_message():
     role_name = "test_role_name"
     role_type = RoleType.USER
     meta_dict = {"key": "value"}
-    backend_role = OpenAIBackendRole.USER
+    role = "user"
     content = "test_content"
 
     message = BaseMessage(role_name=role_name, role_type=role_type,
@@ -96,8 +96,8 @@ def test_base_message():
     assert message.meta_dict == meta_dict
     assert message.content == content
 
-    openai_message = message.to_openai_message(backend_role)
-    assert openai_message == {"role": backend_role.value, "content": content}
+    openai_message = message.to_openai_message(role)
+    assert openai_message == {"role": role, "content": content}
 
     openai_system_message = message.to_openai_system_message()
     assert openai_system_message == {"role": "system", "content": content}

@@ -17,7 +17,7 @@ import os
 from camel.agents import ChatAgent
 from camel.generators import CodeTaskPromptGenerator, SystemMessageGenerator
 from camel.messages import BaseMessage
-from camel.types import RoleType, TaskType
+from camel.typing import RoleType, TaskType
 
 
 def generate_tasks(task_generator_prompt: str, language: str, domain: str,

@@ -14,7 +14,7 @@
 import pytest
 
 import examples.ai_society.babyagi_playing
-from camel.types import ModelType
+from camel.typing import ModelType
 
 parametrize = pytest.mark.parametrize('model', [
     ModelType.STUB,

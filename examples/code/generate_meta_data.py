@@ -14,7 +14,7 @@
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.prompts import PromptTemplateGenerator
-from camel.types import TaskType
+from camel.typing import TaskType
 
 
 def generate_meta_data(meta_data: str, num: int = 50, model=None):
