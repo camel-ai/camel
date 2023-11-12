@@ -19,7 +19,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
-from camel.typing import ModelType, RoleType
+from camel.types import ModelType, RoleType
 
 
 class DeductiveReasonerAgent(ChatAgent):

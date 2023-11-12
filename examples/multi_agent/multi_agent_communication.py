@@ -20,7 +20,7 @@ from camel.agents.insight_agent import InsightAgent
 from camel.agents.role_assignment_agent import RoleAssignmentAgent
 from camel.configs import ChatGPTConfig
 from camel.societies import RolePlaying
-from camel.typing import ModelType, TaskType
+from camel.types import ModelType, TaskType
 
 
 def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
