@@ -14,8 +14,6 @@
 import re
 from typing import Any, Dict, Optional, Union
 
-from tenacity import retry, stop_after_attempt, wait_exponential
-
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
@@ -44,7 +42,6 @@ class InsightAgent(ChatAgent):
         )
         super().__init__(system_message, model, model_config)
 
-    @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     def run(
         self,
         context_text: Union[str, TextPrompt],

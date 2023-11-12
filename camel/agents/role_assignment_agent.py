@@ -334,8 +334,7 @@ PART III:
                 "Input of subtask <NUM>:\n<BLANK>/None\n"
                 "Task completion standard of subtask <NUM>:\n<BLANK>\n"
                 "Dependency of subtask <NUM>: [subtask <i>, subtask <j>, "
-                "subtask <k>]/[None] (include square brackets)."
-                for _ in range(1)) + "\n\n"
+                "subtask <k>]/[None] (include square brackets).") + "\n\n"
         else:
             answer_prompt = """===== ANSWER TEMPLATE =====
 PART I:
@@ -509,7 +508,6 @@ Definition of ASSISTANT: The assistant is the role that executes instructions gi
 
         compatibility_scoring = compatibility_scoring_prompt.format(
             num_roles=len(role_names))
-        print(f"----context----\n{compatibility_scoring}")
 
         compatibility_scoring_msg = BaseMessage.make_user_message(
             role_name="Compatibility Scorer", content=compatibility_scoring)
