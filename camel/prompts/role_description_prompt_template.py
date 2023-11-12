@@ -14,7 +14,7 @@
 from typing import Any
 
 from camel.prompts import AISocietyPromptTemplateDict, TextPrompt
-from camel.typing import RoleType
+from camel.types import RoleType
 
 
 # flake8: noqa :E501

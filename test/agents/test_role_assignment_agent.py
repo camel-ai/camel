@@ -18,7 +18,7 @@ from camel.agents.chat_agent import ChatAgent, ChatAgentResponse
 from camel.agents.role_assignment_agent import RoleAssignmentAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
-from camel.typing import ModelType, RoleType
+from camel.types import ModelType, RoleType
 
 
 @patch.object(ChatAgent, 'step')

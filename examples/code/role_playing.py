@@ -14,7 +14,7 @@
 from colorama import Fore
 
 from camel.societies import RolePlaying
-from camel.typing import TaskType
+from camel.types import TaskType
 from camel.utils import print_text_animated
 
 

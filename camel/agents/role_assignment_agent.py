@@ -23,7 +23,7 @@ from camel.agents.insight_agent import InsightAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
-from camel.typing import ModelType, RoleType
+from camel.types import ModelType, RoleType
 
 
 class RoleAssignmentAgent(ChatAgent):

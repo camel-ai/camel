@@ -24,7 +24,7 @@ from camel.agents.chat_agent import ChatAgentResponse
 from camel.generators import SystemMessageGenerator
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
-from camel.typing import RoleType, TaskType
+from camel.types import RoleType, TaskType
 
 
 class BabyAGI:
