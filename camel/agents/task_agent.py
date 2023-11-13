@@ -30,8 +30,8 @@ class TaskSpecifyAgent(ChatAgent):
         task_specify_prompt (TextPrompt): The prompt for specifying the task.
 
     Args:
-        model_type (ModelType, optional): The type of model to use for the agent.
-            (default: :obj:`ModelType.GPT_3_5_TURBO`)
+        model_type (ModelType, optional): The type of model to use for the
+            agent. (default: :obj:`ModelType.GPT_3_5_TURBO`)
         task_type (TaskType, optional): The type of task for which to generate
             a prompt. (default: :obj:`TaskType.AI_SOCIETY`)
         model_config (Any, optional): The configuration for the model.
@@ -124,8 +124,8 @@ class TaskPlannerAgent(ChatAgent):
             the task into subtasks.
 
     Args:
-        model_type (ModelType, optional): The type of model to use for the agent.
-            (default: :obj:`ModelType.GPT_3_5_TURBO`)
+        model_type (ModelType, optional): The type of model to use for the
+            agent. (default: :obj:`ModelType.GPT_3_5_TURBO`)
         model_config (Any, optional): The configuration for the model.
             (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
@@ -197,8 +197,8 @@ class TaskCreationAgent(ChatAgent):
         role_name (str): The role name of the Agent to create the task.
         objective (Union[str, TextPrompt]): The objective of the Agent to
             perform the task.
-        model_type (ModelType, optional): The type of model to use for the agent.
-            (default: :obj:`ModelType.GPT_3_5_TURBO`)
+        model_type (ModelType, optional): The type of model to use for the
+            agent. (default: :obj:`ModelType.GPT_3_5_TURBO`)
         model_config (Any, optional): The configuration for the model.
             (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
@@ -303,8 +303,8 @@ class TaskPrioritizationAgent(ChatAgent):
     Args:
         objective (Union[str, TextPrompt]): The objective of the Agent to
             perform the task.
-        model_type (ModelType, optional): The type of model to use for the agent.
-            (default: :obj:`ModelType.GPT_3_5_TURBO`)
+        model_type (ModelType, optional): The type of model to use for the
+            agent. (default: :obj:`ModelType.GPT_3_5_TURBO`)
         model_config (Any, optional): The configuration for the model.
             (default: :obj:`None`)
         output_language (str, optional): The language to be output by the

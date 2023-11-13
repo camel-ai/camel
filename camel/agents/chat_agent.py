@@ -117,7 +117,7 @@ class ChatAgent(BaseAgent):
             self.set_output_language(self.output_language)
 
         self.model_type: ModelType = (model_type if model_type is not None else
-                                 ModelType.GPT_3_5_TURBO)
+                                      ModelType.GPT_3_5_TURBO)
 
         self.func_dict: Dict[str, Callable] = {}
         if function_list is not None:
@@ -535,4 +535,6 @@ class ChatAgent(BaseAgent):
         Returns:
             str: The string representation of the :obj:`ChatAgent`.
         """
-        return f"ChatAgent({self.role_name}, {self.role_type}, {self.model_type})"
+        return (
+            f"ChatAgent({self.role_name}, {self.role_type}, {self.model_type})"
+        )
