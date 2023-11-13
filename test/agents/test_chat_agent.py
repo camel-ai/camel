@@ -40,7 +40,8 @@ def test_chat_agent(model: ModelType):
             dict(assistant_role="doctor"),
             role_tuple=("doctor", RoleType.ASSISTANT),
         )
-    assistant = ChatAgent(system_msg, model_type=model, model_config=model_config)
+    assistant = ChatAgent(system_msg, model_type=model,
+                          model_config=model_config)
 
     assert str(assistant) == ("ChatAgent(doctor, "
                               f"RoleType.ASSISTANT, {str(model)})")
@@ -246,7 +247,8 @@ def test_function_enabled():
     model_config = FunctionCallingConfig(
         functions=[func.as_dict() for func in MATH_FUNCS])
     agent_no_func = ChatAgent(system_message=system_message,
-                              model_config=model_config, model_type=ModelType.GPT_4)
+                              model_config=model_config,
+                              model_type=ModelType.GPT_4)
     agent_with_funcs = ChatAgent(system_message=system_message,
                                  model_config=model_config,
                                  model_type=ModelType.GPT_4,
@@ -297,7 +299,8 @@ def test_response_words_termination():
     response_terminator = ResponseWordsTerminator(words_dict=dict(goodbye=1))
     model_config = ChatGPTConfig(temperature=0, n=2)
     agent = ChatAgent(system_message=system_message,
-                      model_type=ModelType.GPT_3_5_TURBO, model_config=model_config,
+                      model_type=ModelType.GPT_3_5_TURBO,
+                      model_config=model_config,
                       response_terminators=[response_terminator])
     user_msg = BaseMessage(role_name="User", role_type=RoleType.USER,
                            meta_dict=dict(),

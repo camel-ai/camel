@@ -168,7 +168,8 @@ class RolePlaying:
             if self.model_type is not None:
                 if task_specify_agent_kwargs is None:
                     task_specify_agent_kwargs = {}
-                task_specify_agent_kwargs.update(dict(model_type=self.model_type))
+                task_specify_agent_kwargs.update(
+                    dict(model_type=self.model_type))
             task_specify_agent = TaskSpecifyAgent(
                 task_type=self.task_type,
                 output_language=output_language,
@@ -199,7 +200,8 @@ class RolePlaying:
             if self.model_type is not None:
                 if task_planner_agent_kwargs is None:
                     task_planner_agent_kwargs = {}
-                task_planner_agent_kwargs.update(dict(model_type=self.model_type))
+                task_planner_agent_kwargs.update(
+                    dict(model_type=self.model_type))
             task_planner_agent = TaskPlannerAgent(
                 output_language=output_language,
                 **(task_planner_agent_kwargs or {}),
