@@ -88,14 +88,14 @@ According to the following rules, extract insights and details in your answer fr
 1. Text/Code Decomposition (Breaking it Down):
 - Topic/Functionality Segmentation: Divide the CONTEXT TEXT (represented by $A_I$) into main topics or themes. What is more, multiple topics or themes are possible.
 - Entity/Label/Code Environment Recognition:
-    a. Identify and categorize entities such as the names, locations, dates, specific technical terms or contextual parameters that might be associated with events, innovations post-2022.
+    a. Identify and categorize entities such as the names, locations, dates, specific technical terms or contextual parameters that might be associated with events, innovations post-2023.
     b. The output of the entities/labels will be used as tags or labels for semantic similarity searches. The entities/labels may be the words, or phrases, each of them should contain valuable, high information entropy information, and should be independent.
     c. Ensure that the identified entities are formatted in a manner suitable for database indexing and retrieval. Organize the entities into categories, and combine the category with its instance into a continuous phrase, without using colons or other separators.
     d. Format these entities for database indexing: output the category rather than its instance/content into a continuous phrase. For example, instead of "Jan. 02", identify it as "Event time".
-- Extract Details: Within these main topics or themes, identify key facts, statements, claims or contextual parameters. Please identify and write any detail(s) or term(s) from the CONTEXT TEXT that are either not present in your knowledge base, might be post-2022 developments, or can influence the nature of any task to be executed.
+- Extract Details: Within these main topics or themes, identify facts, statements, claims, contextual parameters, numbers, etc.. Please identify and write any detail(s) or term(s) from the CONTEXT TEXT that are either not present in your knowledge base, might be post-2023 developments, or can influence the nature of any task to be executed.
 2. Question Generation (Identifying Potential Unknowns):
 For each identified entity or detail from the decomposition:
-- Cross-Referencing: Check against your knowledge base up to 2022. If it's a known entity or detail, move on. If not:
+- Cross-Referencing: Check against your knowledge base up to 2023. If it's a known entity or detail, move on. If not:
     a. Contextual Understanding: Even if the entity is unknown, understanding the context can be vital. For instance, even if I don't know a specific person named in 2023, if the text mentions they are an astronaut, I can craft my questions based on that role.
     b. Formulate/Code Questions: Generate specific questions targeting the unfamiliar or context-specific information. Questions can vary in nature:
         i. Factual: "Who/What is [unknown entity/infomation/code]?"
