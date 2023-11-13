@@ -295,11 +295,11 @@ class RoleAssignmentAgent(ChatAgent):
                                          model_config=model_config)
             task_insights_json = insight_agent.run(context_text=context_text)
             task_context_prompt = (
-                "===== CONTEXT TEXT =====\n" +
-                "The CONTEXT TEXT is related to TASK and " +
-                "Contextual Parameters of subtask. When " +
-                "splitting the task, ensure that each subtask " +
-                "incorporates specific details from the " +
+                "===== CONTEXT TEXT =====\n"
+                "The CONTEXT TEXT is related to TASK and "
+                "Contextual Parameters of subtask. When "
+                "splitting the task, ensure that each subtask "
+                "incorporates specific details from the "
                 "INSIGHTS of CONTEXT TEXT.\n" +
                 insight_agent.convert_json_to_str(task_insights_json))
         else:
@@ -326,15 +326,15 @@ PART II:
 Gantt Chart with complex dependency in MarkDown format:
 <BLANK>
 
-PART III:
+PART III (all subtasks):
 """  # noqa: E501
-            answer_prompt += "\n".join(
+            answer_prompt += (
                 "Incorporate Contextual Parameters "
                 "into Details of subtask <NUM>:\n<BLANK>\n"
                 "Input of subtask <NUM>:\n<BLANK>/None\n"
                 "Task completion standard of subtask <NUM>:\n<BLANK>\n"
                 "Dependency of subtask <NUM>: [subtask <i>, subtask <j>, "
-                "subtask <k>]/[None] (include square brackets).") + "\n\n"
+                "subtask <k>]/[None] (include square brackets).\n\n")
         else:
             answer_prompt = """===== ANSWER TEMPLATE =====
 PART I:
@@ -351,7 +351,7 @@ PART II:
 Gantt Chart with complex dependency in MarkDown format:
 <BLANK>
 
-PART III:
+PART III (all subtasks):
 """  # noqa: E501
             answer_prompt += "\n".join(
                 f"Incorporate Contextual Parameters "
@@ -359,7 +359,7 @@ PART III:
                 f"Input of subtask {i + 1}:\n<BLANK>/None\n"
                 f"Task completion standard of subtask {i + 1}:\n<BLANK>\n"
                 f"Dependency of subtask {i + 1}: [subtask <i>, subtask "
-                f"<j>, subtask <k>]/[None] (include square brackets)"
+                f"<j>, subtask <k>]/[None] (include square brackets)."
                 for i in range(num_subtasks)) + "\n\n"
         split_task_rules_prompt = """You are a task splitter, and you're in asked to break down the main TASK into {num_subtasks} manageable subtasks suitable for a team comprising {num_roles} domain experts. The experts will contribute to the {num_subtasks} subtasks. Please follow the guidelines below to craft your answer:
     1. Action-Oriented Foundation & Building Blocks: Ensure each subtask is actionable, distinct, tapping into the expertise of the assigned roles. Recognize that not every subtask needs to directly reflect the main TASK's ultimate aim. Some subtasks serve as essential building blocks, paving the way for more central subtasks, but avoid creating subtasks that are self-dependent or overly foundational.
@@ -393,7 +393,6 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
             raise RuntimeError("Role compatibility scoring failed.\n" +
                                f"Error:\n{response.info}")
         msg = response.msg  # type: BaseMessage
-        print(f"msg.content:\n{msg.content}")
 
         # Distribute the output completions into subtasks
         subtask_descriptions = [
@@ -416,7 +415,7 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
         ]
         subtask_dependencies = [[
             dep.strip() for dep in re.findall(r"\[(.+?)\]", dep)[0].split(",")
-        ] for dep in re.findall(r"Dependency of subtask \d: \[.+?\]",
+        ] for dep in re.findall(r"Dependency of subtask \d:[\s\n]*\[.+?\]",
                                 msg.content, re.DOTALL)]
 
         # Extracting dependencies and creating a dictionary
@@ -603,13 +602,13 @@ Please ensure that you consider both explicit and implicit similarities while ev
         answer_prompt = "===== ANSWER TEMPLATE =====\n"
         for lable in target_labels:
             answer_prompt += (
-                f"Label \"{lable}\" from TARGET LABELS has " +
-                "an explicit or implicit similarity with \"<BLANK>/NONE\" " +
-                "(or similar label) in LABELS SETS subsets " +
+                f"Label \"{lable}\" from TARGET LABELS has "
+                "an explicit or implicit similarity with \"<BLANK>/NONE\" "
+                "(or similar label) in LABELS SETS subsets "
                 "[<m>, <n>]/NONE (include square brackets).\n")
-        answer_prompt += ("Indices of the similar labels in TARGET LABELS: " +
-                          "[<i>, <j>]/NONE (include square brackets) \n" +
-                          "Indices of the similar subset in LABELS SETS: " +
+        answer_prompt += ("Indices of the similar labels in TARGET LABELS: "
+                          "[<i>, <j>]/NONE (include square brackets) \n"
+                          "Indices of the similar subset in LABELS SETS: "
                           "[<x>, <y>]/NONE (include square brackets)")
 
         retrieval_index_prompt = TextPrompt(similarity_criteria_prompt +
