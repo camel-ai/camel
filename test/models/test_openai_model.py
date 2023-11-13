@@ -55,35 +55,3 @@ def test_openai_model_unexpected_argument():
             ValueError, match=re.escape(("Unexpected argument `model_path` is "
                                          "input into OpenAI model backend."))):
         _ = OpenAIModel(model_type, model_config_dict)
-
-
-# Used to obtain model information
-def get_model_info():
-    response = requests.get("http://server.com/model-info")
-    return response.json()
-
-
-@pytest.mark.model_backend
-@pytest.mark.parametrize("model_type", list(ModelType))
-def test_backend_model_matches_settings(model_type):
-    # Create a data that simulates the response
-    mock_response_data = {
-        'model_type': model_type.value,
-        'token_limit': model_type.token_limit
-    }
-
-    # Use patch to simulate requests.get method
-    with patch('requests.get') as mock_get:
-        # Set the value returned by the mock object
-        mock_get.return_value.json.return_value = mock_response_data
-
-        # Call the get_model_info function
-        model_info = get_model_info()
-
-        # Assert to ensure that the returned data is as expected
-        assert model_info[
-            'model_type'] == model_type.value, \
-            "Model type does not match"
-        assert model_info[
-            'token_limit'] == model_type.token_limit, \
-            "Token limit does not match"
