@@ -18,7 +18,7 @@ from camel.types import TaskType
 from camel.utils import print_text_animated
 
 
-def main(model_type=None) -> None:
+def main(model_type=None, chat_turn_limit=50) -> None:
     task_prompt = "Develop a poll app"
     language = "JavaScript"
     domain = "Sociology"
@@ -48,7 +48,7 @@ def main(model_type=None) -> None:
         f"Specified task prompt:\n{role_play_session.specified_task_prompt}\n")
     print(Fore.RED + f"Final task prompt:\n{role_play_session.task_prompt}\n")
 
-    chat_turn_limit, n = 50, 0
+    n = 0
     input_assistant_msg, _ = role_play_session.init_chat()
     while n < chat_turn_limit:
         n += 1

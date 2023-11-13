@@ -23,7 +23,7 @@ from camel.types import ModelType
 from camel.utils import print_text_animated
 
 
-def main(model_type=ModelType.GPT_4) -> None:
+def main(model_type=ModelType.GPT_4, chat_turn_limit=10) -> None:
     task_prompt = ("Assuming the current year is 2023, estimate KAUST's "
                    "current age and then add 10 more years to this age, "
                    "and get the current weather of the city where KAUST "
@@ -65,7 +65,7 @@ def main(model_type=ModelType.GPT_4) -> None:
         f"Specified task prompt:\n{role_play_session.specified_task_prompt}\n")
     print(Fore.RED + f"Final task prompt:\n{role_play_session.task_prompt}\n")
 
-    chat_turn_limit, n = 10, 0
+    n = 0
     input_assistant_msg, _ = role_play_session.init_chat()
     while n < chat_turn_limit:
         n += 1

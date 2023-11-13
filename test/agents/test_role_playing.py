@@ -62,11 +62,11 @@ def test_role_playing_init(model_type, critic_role_name,
     assert isinstance(assistant_agent, ChatAgent)
     assert isinstance(user_agent, ChatAgent)
     if model_type is None:
-        assert assistant_agent.model == ModelType.GPT_3_5_TURBO_16K
-        assert user_agent.model == ModelType.GPT_3_5_TURBO_16K
+        assert assistant_agent.model_type == ModelType.GPT_3_5_TURBO_16K
+        assert user_agent.model_type == ModelType.GPT_3_5_TURBO_16K
     else:
-        assert assistant_agent.model == ModelType.GPT_4
-        assert user_agent.model == ModelType.GPT_4
+        assert assistant_agent.model_type == ModelType.GPT_4
+        assert user_agent.model_type == ModelType.GPT_4
 
     if not with_critic_in_the_loop:
         assert critic is None
@@ -78,9 +78,9 @@ def test_role_playing_init(model_type, critic_role_name,
             assert isinstance(critic, CriticAgent)
             assert role_playing.critic_sys_msg is not None
             if model_type is None:
-                assert critic.model == ModelType.GPT_3_5_TURBO
+                assert critic.model_type == ModelType.GPT_3_5_TURBO
             else:
-                assert critic.model == ModelType.GPT_4
+                assert critic.model_type == ModelType.GPT_4
 
 
 @pytest.mark.model_backend
@@ -172,7 +172,9 @@ def test_role_playing_role_sequence(model_type=None):
     for record in role_playing.assistant_agent.memory.get_context()[0]:
         assistant_role_sequence.append(record["role"])
 
-    assert user_role_sequence == \
-           ['system', 'user', 'assistant', 'user', 'assistant']
-    assert assistant_role_sequence == \
-           ['system', 'user', 'user', 'assistant', 'user', 'assistant']
+    assert user_role_sequence == [
+        'system', 'user', 'assistant', 'user', 'assistant'
+    ]
+    assert assistant_role_sequence == [
+        'system', 'user', 'user', 'assistant', 'user', 'assistant'
+    ]
