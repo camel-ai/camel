@@ -17,7 +17,7 @@ from colorama import Fore
 
 from camel.agents.role_assignment_agent import RoleAssignmentAgent
 from camel.configs import ChatGPTConfig
-from camel.typing import ModelType
+from camel.types import ModelType
 
 
 def main(model_type=ModelType.GPT_3_5_TURBO) -> None:

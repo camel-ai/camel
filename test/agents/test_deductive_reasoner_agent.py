@@ -19,7 +19,7 @@ from camel.agents.deductive_reasoner_agent import DeductiveReasonerAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.responses import ChatAgentResponse
-from camel.typing import ModelType, RoleType
+from camel.types import ModelType, RoleType
 
 
 @patch.object(ChatAgent, 'step')
