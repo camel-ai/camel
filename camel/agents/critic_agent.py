@@ -31,7 +31,7 @@ class CriticAgent(ChatAgent):
     Args:
         system_message (BaseMessage): The system message for the critic
             agent.
-        model (ModelType, optional): The LLM model to use for generating
+        model_type (ModelType, optional): The LLM model to use for generating
             responses. (default :obj:`ModelType.GPT_3_5_TURBO`)
         model_config (Any, optional): Configuration options for the LLM model.
             (default: :obj:`None`)
@@ -48,7 +48,7 @@ class CriticAgent(ChatAgent):
     def __init__(
         self,
         system_message: BaseMessage,
-        model: ModelType = ModelType.GPT_3_5_TURBO,
+        model_type: ModelType = ModelType.GPT_3_5_TURBO,
         model_config: Optional[Any] = None,
         memory: Optional[BaseMemory] = None,
         message_window_size: int = 6,
@@ -56,7 +56,7 @@ class CriticAgent(ChatAgent):
         verbose: bool = False,
         logger_color: Any = Fore.MAGENTA,
     ) -> None:
-        super().__init__(system_message, model=model,
+        super().__init__(system_message, model_type=model_type,
                          model_config=model_config, memory=memory,
                          message_window_size=message_window_size)
         self.options_dict: Dict[str, str] = dict()

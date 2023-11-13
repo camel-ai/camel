@@ -26,4 +26,4 @@ def test_role_generation_example():
 def test_role_playing_with_role_description_example():
     with patch('time.sleep', return_value=None):
         examples.role_description.role_playing_with_role_description.main(
-            ModelType.GPT_3_5_TURBO, ModelType.STUB)
+            ModelType.GPT_3_5_TURBO, ModelType.STUB, chat_turn_limit=2)

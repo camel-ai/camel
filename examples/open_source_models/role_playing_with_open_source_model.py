@@ -19,12 +19,13 @@ from camel.types import ModelType
 from camel.utils import print_text_animated
 
 
-def main(model_type=None, model_path=" ", server_url=" ") -> None:
+def main(model_type=None, chat_turn_limit=50, model_path=" ",
+         server_url=" ") -> None:
     task_prompt = "Develop a trading bot for the stock market"
 
     agent_kwargs = {
         role: dict(
-            model=model_type,
+            model_type=model_type,
             model_config=OpenSourceConfig(
                 model_path=model_path,
                 server_url=server_url,
@@ -56,7 +57,7 @@ def main(model_type=None, model_path=" ", server_url=" ") -> None:
         f"Specified task prompt:\n{role_play_session.specified_task_prompt}\n")
     print(Fore.RED + f"Final task prompt:\n{role_play_session.task_prompt}\n")
 
-    chat_turn_limit, n = 50, 0
+    n = 0
     input_assistant_msg, _ = role_play_session.init_chat()
     while n < chat_turn_limit:
         n += 1
