@@ -24,7 +24,7 @@ from camel.types import ModelType, RoleType
 
 @patch.object(ChatAgent, 'step')
 @pytest.mark.parametrize("model_type", [None, ModelType.GPT_3_5_TURBO])
-def test_deductive_reasoner_agent(mock_step, model_type):
+def test_insight_agent(mock_step, model_type):
     mock_content = generate_mock_content()
     mock_msg = BaseMessage(role_name="Insight Agent",
                            role_type=RoleType.ASSISTANT, meta_dict=None,
