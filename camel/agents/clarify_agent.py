@@ -76,6 +76,7 @@ class TaskClarifyAgent(ChatAgent):
             "Please remember you only interact with " +
             "the user with one question at a time following Q: <BLANK>\n" +
             "And you don't need provide any answer to the user.\n" +
+            "i.e, A: <BLANK> should not show up in the question" +
             "The previous question and answer pairs you can refer to:\n")
 
         print(f"The input task prompt is: {task_prompt}\n")
