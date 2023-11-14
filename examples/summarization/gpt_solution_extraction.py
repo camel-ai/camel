@@ -118,7 +118,7 @@ def solution_extraction(conversation: Dict, flattened_conversation: str,
         role_name="Solution Extractor", content=assistant_sys_msg_prompt)
 
     # We use GPT4 because it has a longer context length
-    agent = ChatAgent(assistant_sys_msg, model=ModelType.GPT_4)
+    agent = ChatAgent(assistant_sys_msg, model_type=ModelType.GPT_4)
     agent.reset()
 
     prompt = "Here is the conversation:" + flattened_conversation

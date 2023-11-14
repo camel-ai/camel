@@ -22,7 +22,7 @@ def main(model_type=None, num_roles=3) -> None:
 
     model_config_description = ChatGPTConfig()
     role_description_agent = RoleAssignmentAgent(
-        model=model_type, model_config=model_config_description)
+        model_type=model_type, model_config=model_config_description)
 
     role_description_dict = role_description_agent.run(task_prompt=task_prompt,
                                                        num_roles=num_roles)

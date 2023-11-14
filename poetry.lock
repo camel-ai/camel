@@ -2106,13 +2106,13 @@ wheel = "*"
 
 [[package]]
 name = "openai"
-version = "1.1.1"
-description = "Client library for the openai API"
+version = "1.2.4"
+description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "openai-1.1.1-py3-none-any.whl", hash = "sha256:1496418b132c88352bcfffa8c24e83a69f0e01b1484cbb7bb48f722aad8fd6e1"},
-    {file = "openai-1.1.1.tar.gz", hash = "sha256:80e49cb21d8445f6d51339b8af7376fc83302c78ab78578b78133ef89634869d"},
+    {file = "openai-1.2.4-py3-none-any.whl", hash = "sha256:53927a2ca276eec0a0efdc1ae829f74a51f49b7d3e14cc6f820aeafb0abfd802"},
+    {file = "openai-1.2.4.tar.gz", hash = "sha256:d99a474049376be431d9b4dec3a5c895dd76e19165748c5944e80b7905d1b1ff"},
 ]
 
 [package.dependencies]
@@ -4628,4 +4628,4 @@ tools = ["PyMuPDF", "beautifulsoup4", "docx2txt", "pyowm", "wikipedia"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<3.12"
-content-hash = "b802771c342dd0486d5f1d4f1fb63501bee1581d29edaa976bfec06b18baf33b"
+content-hash = "196160d8c961f6c7e2e5e33eeaf1a26efd3e635ea9ea889bf2e7ca9761569b34"
