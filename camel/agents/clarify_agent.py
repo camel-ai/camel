@@ -43,7 +43,7 @@ class TaskClarifyAgent(ChatAgent):
         )
         super().__init__(system_message, model, model_config)
 
-    # @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
+    @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     def run(
         self,
         task_prompt: Union[str, TextPrompt],
