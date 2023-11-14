@@ -13,8 +13,6 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Optional, Union
 
-from tenacity import retry, stop_after_attempt, wait_exponential
-
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
@@ -23,6 +21,7 @@ from camel.types import ModelType, RoleType
 
 class TaskClarifyAgent(ChatAgent):
     r"""An agent that specify the initial task by interacting with the user.
+
     Args:
         model (ModelType, optional): The type of model to use for the agent.
             (default: :obj:`ModelType.GPT_3_5_TURBO`)
@@ -43,27 +42,20 @@ class TaskClarifyAgent(ChatAgent):
         )
         super().__init__(system_message, model, model_config)
 
-    @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     def run(
         self,
         task_prompt: Union[str, TextPrompt],
-        model: ModelType = ModelType.GPT_3_5_TURBO,
-        model_config: Optional[Any] = None,
-    ) -> str:
+    ) -> Union[str, TextPrompt]:
         r"""Initiate multi rounds of interaction
         with the user to clarify the task.
+
         Args:
             task_prompt (Union[str, TextPrompt]):
                 The prompt that needs to be clarified.
-            model (ModelType, optional):
-                The type of model to use for the agent.
-                (default: :obj:`ModelType.GPT_3_5_TURBO`)
-            model_config (Any, optional): The configuration for the model.
-                (default: :obj:`None`)
-        Returns:
-            str: The clarified prompt.
-        """
 
+        Returns:
+            Union[str, TextPrompt]: The clarified task prompt.
+        """
         question_answer_pairs = {}
 
         clarify_prompt_base = TextPrompt(
@@ -74,32 +66,42 @@ class TaskClarifyAgent(ChatAgent):
             f"{task_prompt}.\n" +
             "Your interaction with the user should be limited to one " +
             "question at a time. This should follow the format: " +
-            "Q: <Your Question Here>\n" +
+            "Q:\n<Your Question Here>\n" +
             "Remember, you are not required to provide answers to the user, " +
             "so avoid including any response or answer in your question. " +
             "Your focus should be solely on crafting a clarifying " +
             "question based on the task prompt.\n" +
             "Refer to previous question and answer pairs for context, " +
-            "but do not include any answers in your output.\n")
+            "but do not include any answers in your output.\n" +
+            "If you are not satisfied with the user's answer, you can " +
+            "'follow up' with the user, but the number of times you can " +
+            "'follow up' is limited. The limit depends on the user's answer " +
+            "and their intention. If you are satisfied, proceed to the next " +
+            "question.\n")
 
         print(f"The input task prompt is: {task_prompt}\n")
 
         while True:
             # Concatenate the base prompt with the formatted Q&A pairs
-            qa_pairs_formatted = "\n".join(f"Q: {q}\nA: {a}" for q, a
-                                           in question_answer_pairs.items())
+            qa_pairs_formatted = "\n".join(
+                f"Q: {q}\nA: {a}" for q, a in question_answer_pairs.items())
             clarify_prompt = clarify_prompt_base + qa_pairs_formatted
 
             task_msg = BaseMessage.make_user_message(
                 role_name="Task Clarifier", content=clarify_prompt)
 
-            task_response = self.step(task_msg)
+            response = self.step(task_msg)
 
-            if "Nothing more to clarify." in task_response.msgs[0].content:
+            if response.terminated:
+                raise RuntimeError("The clarification of the task failed.\n" +
+                                   f"Error:\n{response.info}")
+            msg = response.msg
+
+            if "Nothing more to clarify." in msg.content:
                 print("Nothing more to clarify.")
                 break
+            question = msg.content
 
-            question = task_response.msgs[-1].content
             print(f"\n{question}")
             print('(answer in text and press Enter, or "c" to move on)\n')
             print("Answer: ")
