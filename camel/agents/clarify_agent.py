@@ -67,17 +67,20 @@ class TaskClarifyAgent(ChatAgent):
         question_answer_pairs = {}
 
         clarify_prompt_base = TextPrompt(
-            "You are a task clarifier agent, and you are going to clarify " +
-            "the task with the user by interacting with users " +
-            "for multiple rounds.\n" +
-            "You can generate context aware questions that " +
-            "target the ambiguities or generalities in the task prompt: " +
-            f"{task_prompt}\n." +
-            "Please remember you only interact with " +
-            "the user with one question at a time following Q: <BLANK>\n" +
-            "And you don't need provide any answer to the user.\n" +
-            "i.e, A: <BLANK> should not show up in the question" +
-            "The previous question and answer pairs you can refer to:\n")
+            "You are a task clarifier agent, and your role is to clarify " +
+            "the task by interacting with users over multiple rounds. " +
+            "You will generate context-aware questions that target " +
+            "ambiguities or generalities in the user's task prompt: " +
+            f"{task_prompt}.\n" +
+            "Your interaction with the user should be limited to one " +
+            "question at a time. This should follow the format: " +
+            "Q: <Your Question Here>\n" +
+            "Remember, you are not required to provide answers to the user, " +
+            "so avoid including any response or answer in your question. " +
+            "Your focus should be solely on crafting a clarifying " +
+            "question based on the task prompt.\n" +
+            "Refer to previous question and answer pairs for context, " +
+            "but do not include any answers in your output.\n")
 
         print(f"The input task prompt is: {task_prompt}\n")
 
