@@ -15,13 +15,11 @@
 from typing import List, Optional, Tuple, Union
 from uuid import uuid4
 
-from camel.embedding.base import BaseEmbedding
-from camel.embedding.openai_embedding import OpenAiEmbedding
-from camel.memory.base import BaseMemory, MemoryRecord
-from camel.messages.base import OpenAIMessage
-from camel.storage.vectordb_storage.base import BaseVectorStorage, VectorRecord
-from camel.storage.vectordb_storage.qdrant import Qdrant
-from camel.typing import VectorDistance
+from camel.embeddings import BaseEmbedding, OpenAiEmbedding
+from camel.memories import BaseMemory, MemoryRecord
+from camel.messages import OpenAIMessage
+from camel.storages import BaseVectorStorage, QdrantStorage, VectorRecord
+from camel.types import VectorDistance
 
 
 class VectorDBMemory(BaseMemory):
@@ -62,7 +60,7 @@ class VectorDBMemory(BaseMemory):
         del_collection: bool = False,
         **kwargs,
     ) -> None:
-        self.storage = storage or Qdrant()
+        self.storage = storage or QdrantStorage()
         self.embedding = embedding or OpenAiEmbedding()
         self.vector_dim = self.embedding.get_output_dim()
         self.del_collection = del_collection

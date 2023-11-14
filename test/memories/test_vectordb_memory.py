@@ -12,10 +12,9 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from camel.memory.base import MemoryRecord
-from camel.memory.vectordb_memory import VectorDBMemory
+from camel.memories import MemoryRecord, VectorDBMemory
 from camel.messages import BaseMessage
-from camel.typing import OpenAIBackendRole, RoleType
+from camel.types import OpenAIBackendRole, RoleType
 
 
 # flake8: noqa :E501

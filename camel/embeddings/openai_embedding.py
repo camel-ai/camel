@@ -15,16 +15,16 @@ import os
 from enum import Enum
 from typing import List
 
-import openai
+from openai import OpenAI
 
-from camel.embedding.base import BaseEmbedding
+from camel.embeddings import BaseEmbedding
 
 
 class OpenAiEmbedding(BaseEmbedding):
     """
     """
 
-    class ModelType(str, Enum):
+    class ModelType(Enum):
         ADA2 = "text-embedding-ada-002"
         ADA1 = "text-embedding-ada-001"
         BABBAGE1 = "text-embedding-babbage-001"
@@ -46,12 +46,16 @@ class OpenAiEmbedding(BaseEmbedding):
         else:
             raise RuntimeError(f"Model type {model} not support")
 
+        self.client = OpenAI()
+
     def embed(self, text: str) -> List[float]:
         # TODO: count tokens
         if 'OPENAI_API_KEY' not in os.environ:
             raise ValueError('OpenAI API key not found.')
-        response = openai.Embedding.create(input=text, model=self.model)
-        return response['data'][0]['embedding']
+
+        response = self.client.embeddings.create(input=text,
+                                                 model=self.model.value)
+        return response.data[0].embedding
 
     def get_output_dim(self) -> int:
         return self.output_dim

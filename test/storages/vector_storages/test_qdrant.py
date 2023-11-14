@@ -14,25 +14,25 @@
 
 import pytest
 
-from camel.storage.vectordb_storage import Qdrant, VectorRecord
-from camel.typing import VectorDistance
+from camel.storages import QdrantStorage, VectorRecord
+from camel.types import VectorDistance
 
 
 @pytest.fixture()
 def server(request):
     if request.param == "built-in":
-        return Qdrant()
+        return QdrantStorage()
 
 
 @pytest.mark.parametrize("server", ["built-in"], indirect=True)
-def test_create_delete_collection(server: Qdrant):
+def test_create_delete_collection(server: QdrantStorage):
     collection_name = "test_collection"
     server.create_collection(collection=collection_name, size=4)
     server.delete_collection(collection=collection_name)
 
 
 @pytest.mark.parametrize("server", ["built-in"], indirect=True)
-def test_add_delete_vector(server: Qdrant):
+def test_add_delete_vector(server: QdrantStorage):
     vectors = [
         VectorRecord(id=1, vector=[0.1, 0.1, 0.1, 0.1]),
         VectorRecord(id=2, vector=[0.1, -0.1, -0.1, 0.1]),
@@ -85,7 +85,7 @@ def test_add_delete_vector(server: Qdrant):
 
 
 @pytest.mark.parametrize("server", ["built-in"], indirect=True)
-def test_add_delete_vector_without_id(server: Qdrant):
+def test_add_delete_vector_without_id(server: QdrantStorage):
     vectors = [
         VectorRecord(vector=[0.1, 0.1, 0.1, 0.1]),
         VectorRecord(vector=[0.1, -0.1, -0.1, 0.1]),

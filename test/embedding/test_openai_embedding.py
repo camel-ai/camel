@@ -14,7 +14,7 @@
 
 import pytest
 
-from camel.embedding import BaseEmbedding, OpenAiEmbedding
+from camel.embeddings import BaseEmbedding, OpenAiEmbedding
 
 
 @pytest.mark.parametrize("embedding_model", [OpenAiEmbedding()])

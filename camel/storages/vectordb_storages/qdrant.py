@@ -25,11 +25,11 @@ from qdrant_client.http.models import (
     VectorParams,
 )
 
-from camel.storage.vectordb_storage.base import BaseVectorStorage, VectorRecord
-from camel.typing import VectorDistance
+from camel.storages.vectordb_storages import BaseVectorStorage, VectorRecord
+from camel.types import VectorDistance
 
 
-class Qdrant(BaseVectorStorage):
+class QdrantStorage(BaseVectorStorage):
     """
     An implementation of the `BaseVectorStorage` abstract base class tailored
     for Qdrant, a vector search engine.
