@@ -20,28 +20,39 @@ from openai import OpenAI
 from camel.embeddings import BaseEmbedding
 
 
+class OpenAiEmbeddingModel(Enum):
+    ADA2 = "text-embedding-ada-002"
+    ADA1 = "text-embedding-ada-001"
+    BABBAGE1 = "text-embedding-babbage-001"
+    CURIE1 = "text-embedding-curie-001"
+    DAVINCI1 = "text-embedding-davinci-001"
+
+
 class OpenAiEmbedding(BaseEmbedding):
-    """
+    r"""Provides text embedding functionalities using OpenAI's models.
+
+    Args:
+        model (OpenAiEmbeddingModel, optional): The model type to be used for
+            generating embeddings. (default: :obj:`ModelType.ADA2`)
+
+    Raises:
+        RuntimeError: If an unsupported model type is specified.
     """
 
-    class ModelType(Enum):
-        ADA2 = "text-embedding-ada-002"
-        ADA1 = "text-embedding-ada-001"
-        BABBAGE1 = "text-embedding-babbage-001"
-        CURIE1 = "text-embedding-curie-001"
-        DAVINCI1 = "text-embedding-davinci-001"
-
-    def __init__(self, model: ModelType = ModelType.ADA2) -> None:
+    def __init__(
+        self,
+        model: OpenAiEmbeddingModel = OpenAiEmbeddingModel.ADA2,
+    ) -> None:
         self.model = model
-        if self.model == self.ModelType.ADA2:
+        if self.model == OpenAiEmbeddingModel.ADA2:
             self.output_dim = 1536
-        elif self.model == self.ModelType.ADA1:
+        elif self.model == OpenAiEmbeddingModel.ADA1:
             self.output_dim = 1024
-        elif self.model == self.ModelType.BABBAGE1:
+        elif self.model == OpenAiEmbeddingModel.BABBAGE1:
             self.output_dim = 2048
-        elif self.model == self.ModelType.CURIE1:
+        elif self.model == OpenAiEmbeddingModel.CURIE1:
             self.output_dim = 4096
-        elif self.model == self.ModelType.DAVINCI1:
+        elif self.model == OpenAiEmbeddingModel.DAVINCI1:
             self.output_dim = 12288
         else:
             raise RuntimeError(f"Model type {model} not support")
@@ -49,6 +60,15 @@ class OpenAiEmbedding(BaseEmbedding):
         self.client = OpenAI()
 
     def embed(self, text: str) -> List[float]:
+        r"""Generates an embedding for the given text.
+
+        Args:
+            text (str): The text for which to generate the embedding.
+
+        Returns:
+            List[float]: A list of floating-point numbers representing the
+                generated embedding.
+        """
         # TODO: count tokens
         if 'OPENAI_API_KEY' not in os.environ:
             raise ValueError('OpenAI API key not found.')
@@ -58,4 +78,9 @@ class OpenAiEmbedding(BaseEmbedding):
         return response.data[0].embedding
 
     def get_output_dim(self) -> int:
+        r"""Returns the output dimension of the embeddings.
+
+        Returns:
+            int: The dimensionality of the embedding for the current model.
+        """
         return self.output_dim

@@ -16,13 +16,26 @@ from typing import List
 
 
 class BaseEmbedding(ABC):
-    """
-    """
+    r"""Abstract base class for text embedding functionalities.  """
 
     @abstractmethod
     def embed(self, text: str) -> List[float]:
-        ...
+        r"""Generates an embedding for the given text.
+
+        Args:
+            text (str): The text for which to generate the embedding.
+
+        Returns:
+            List[float]: A list of floating-point numbers representing the
+                generated embedding.
+        """
+        pass
 
     @abstractmethod
     def get_output_dim(self) -> int:
-        ...
+        r"""Returns the output dimension of the embeddings.
+
+        Returns:
+            int: The dimensionality of the embedding for the current model.
+        """
+        pass
