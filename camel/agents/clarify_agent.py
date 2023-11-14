@@ -78,9 +78,7 @@ class TaskClarifyAgent(ChatAgent):
         # specified_agent = TaskSpecifyAgent()
         question_answer_pairs = {}
 
-        finished = False
-
-        while not finished:
+        while True:
             task_msg = BaseMessage.make_user_message(
                 role_name="Task Clarifier", content=clarify_prompt)
 
@@ -88,7 +86,6 @@ class TaskClarifyAgent(ChatAgent):
 
             if "Nothing more to clarify." in task_response.msgs[0].content:
                 print("Nothing more to clarify.")
-                finished = True
                 break
 
             question = task_response.msgs[-1].content
@@ -109,7 +106,6 @@ class TaskClarifyAgent(ChatAgent):
                 # clarified_prompt = specified_agent.run(question_answer_pairs,
                 #                                        task_prompt)
                 # print(f"Clarified task prompt: {clarified_prompt}")
-                finished = True
                 return question_answer_pairs
 
             question_msg = BaseMessage.make_user_message(
