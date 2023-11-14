@@ -74,8 +74,9 @@ class TaskClarifyAgent(ChatAgent):
             "target the ambiguities or generalities in the task prompt: " +
             f"{task_prompt}\n." +
             "Please remember you only interact with " +
-            "the user with one question at a time.\n" +
-            "The previous question and answer pairs are:\n")
+            "the user with one question at a time following Q: <BLANK>\n" +
+            "And you don't need provide any answer to the user.\n" +
+            "The previous question and answer pairs you can refer to:\n")
 
         print(f"The input task prompt is: {task_prompt}\n")
 
@@ -88,16 +89,11 @@ class TaskClarifyAgent(ChatAgent):
             task_msg = BaseMessage.make_user_message(
                 role_name="Task Clarifier", content=clarify_prompt)
 
-            # print(f"Clarify task prompt: {task_msg}\n")
-
             task_response = self.step(task_msg)
-            # print(f"Clarify task response: {task_response}\n")
 
             if "Nothing more to clarify." in task_response.msgs[0].content:
                 print("Nothing more to clarify.")
                 break
-
-            # print(f"Clarify task response: {task_response}\n")
 
             question = task_response.msgs[-1].content
             print(f"\n{question}")
@@ -109,17 +105,8 @@ class TaskClarifyAgent(ChatAgent):
 
             if not answer or answer == "c":
                 print("Nothing more to clarify.\n")
-                # print(f"Clarified task prompt:{clarify_messages}")
                 return question_answer_pairs
 
-            # question_msg = BaseMessage.make_user_message(
-            #     role_name="Task Classifier", content=f"{question}")
-
-            # clarify_messages.append(question_msg)
-
-            # answer_msg = BaseMessage.make_user_message(
-            #     role_name="Human Explainer", content=f"{answer}")
-            # clarify_messages.append(answer_msg)
         return question_answer_pairs
 
 
