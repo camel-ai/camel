@@ -43,7 +43,7 @@ class TaskClarifyAgent(ChatAgent):
         )
         super().__init__(system_message, model, model_config)
 
-    @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
+    # @retry(wait=wait_exponential(min=5, max=60), stop=stop_after_attempt(5))
     def run(
         self,
         task_prompt: Union[str, TextPrompt],
@@ -64,68 +64,62 @@ class TaskClarifyAgent(ChatAgent):
             str: The clarified prompt.
         """
 
-        clarify_prompt = TextPrompt(
+        question_answer_pairs = {}
+
+        clarify_prompt_base = TextPrompt(
             "You are a task clarifier agent, and you are going to clarify " +
             "the task with the user by interacting with users " +
             "for multiple rounds.\n" +
             "You can generate context aware questions that " +
             "target the ambiguities or generalities in the task prompt: " +
-            f"{task_prompt}\n. Please remember you only interact with " +
-            "the user with one question at a time.\n")
+            f"{task_prompt}\n." +
+            "Please remember you only interact with " +
+            "the user with one question at a time.\n" +
+            "The previous question and answer pairs are:\n")
 
-        clarify_messages = []
         print(f"The input task prompt is: {task_prompt}\n")
-        # specified_agent = TaskSpecifyAgent()
-        question_answer_pairs = {}
 
         while True:
+            # Concatenate the base prompt with the formatted Q&A pairs
+            qa_pairs_formatted = "\n".join(f"Q: {q}\nA: {a}" for q, a
+                                           in question_answer_pairs.items())
+            clarify_prompt = clarify_prompt_base + qa_pairs_formatted
+
             task_msg = BaseMessage.make_user_message(
                 role_name="Task Clarifier", content=clarify_prompt)
 
+            # print(f"Clarify task prompt: {task_msg}\n")
+
             task_response = self.step(task_msg)
+            # print(f"Clarify task response: {task_response}\n")
 
             if "Nothing more to clarify." in task_response.msgs[0].content:
                 print("Nothing more to clarify.")
                 break
+
+            # print(f"Clarify task response: {task_response}\n")
 
             question = task_response.msgs[-1].content
             print(f"\n{question}")
             print('(answer in text and press Enter, or "c" to move on)\n')
             print("Answer: ")
             answer = input()
+
+            question_answer_pairs[question] = answer
+
             if not answer or answer == "c":
                 print("Nothing more to clarify.\n")
                 # print(f"Clarified task prompt:{clarify_messages}")
-
-                for i in range(0, len(clarify_messages), 2):
-                    question = clarify_messages[i].content
-                    answer = clarify_messages[i + 1].content
-                    question_answer_pairs[question] = answer
-
-                # print(f"Question-answer pairs: {question_answer_pairs}")
-                # clarified_prompt = specified_agent.run(question_answer_pairs,
-                #                                        task_prompt)
-                # print(f"Clarified task prompt: {clarified_prompt}")
                 return question_answer_pairs
 
-            question_msg = BaseMessage.make_user_message(
-                role_name="Task Classifier", content=f"{question}")
-            self.submit_message(question_msg)
-            clarify_messages.append(question_msg)
+            # question_msg = BaseMessage.make_user_message(
+            #     role_name="Task Classifier", content=f"{question}")
 
-            answer_msg = BaseMessage.make_user_message(
-                role_name="Human Explainer", content=f"{answer}")
-            self.submit_message(answer_msg)
-            clarify_messages.append(answer_msg)
+            # clarify_messages.append(question_msg)
 
-        for i in range(0, len(clarify_messages), 2):
-            question = clarify_messages[i].content
-            answer = clarify_messages[i + 1].content
-            question_answer_pairs[question] = answer
-
-        # clarified_prompt = specified_agent.run(question_answer_pairs,
-        #                                        task_prompt)
-        # print(f"Clarified task prompt: {clarified_prompt}")
+            # answer_msg = BaseMessage.make_user_message(
+            #     role_name="Human Explainer", content=f"{answer}")
+            # clarify_messages.append(answer_msg)
         return question_answer_pairs
 
 
