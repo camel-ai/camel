@@ -62,13 +62,21 @@ class TaskSpecifyAgent(ChatAgent):
         # For Specification #
 
         specify_prompt = TextPrompt(
-            "You are a task specifier agent, and you are going to specify " +
-            f"the initial task {task_prompt} using the " +
-            f"generated question answer pairs: {question_answer_pairs}\n" +
-            "Please give a specification of the initial task." +
-            "The specified task should be concise and clear," +
-            "and it should intergrate the user needs.\n"
-        )  # TODO: The output should include more specific information, like
+            "As a task specifier agent, your objective is to refine " +
+            f"the initial task '{task_prompt}' by incorporating " +
+            "details from the generated question-answer pairs: " +
+            f" {question_answer_pairs}.\n" +
+            "Your task specification should be succinct yet comprehensive, " +
+            "clearly integrating the user's requirements. Focus on " +
+            "including specific details such as quantities, values, " +
+            "key entities, and any critical parameters highlighted " +
+            "in the question-answer pairs. " +
+            "The goal is to create a well-defined" +
+            "task that is aligned with the user's needs " +
+            "and provides clear guidance for execution.\n"
+        )
+
+        # TODO: The output should include more specific information, like
         # the number, the values, the entities, etc.
 
         specify_msg = BaseMessage.make_user_message(role_name="Task Specifier",
