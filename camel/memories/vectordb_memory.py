@@ -17,7 +17,6 @@ from uuid import uuid4
 
 from camel.embeddings import BaseEmbedding, OpenAiEmbedding
 from camel.memories import BaseMemory, MemoryRecord
-from camel.messages import OpenAIMessage
 from camel.storages import BaseVectorStorage, QdrantStorage, VectorRecord
 from camel.types import VectorDistance
 
@@ -93,9 +92,6 @@ class VectorDBMemory(BaseMemory):
         """
         if self.del_collection:
             self.storage.delete_collection(self.collection_name)
-
-    def get_context(self) -> Tuple[List[OpenAIMessage], int]:
-        raise RuntimeError("get context from vectordb_memory is invalid.")
 
     def retrieve(
         self,

@@ -22,7 +22,7 @@ from camel.agents import BaseAgent
 from camel.configs import BaseConfig, ChatGPTConfig
 from camel.functions import OpenAIFunction
 from camel.memories import (
-    BaseMemory,
+    AgentMemory,
     ChatHistoryMemory,
     MemoryRecord,
     ScoreBasedContextCreator,
@@ -100,7 +100,7 @@ class ChatAgent(BaseAgent):
         system_message: BaseMessage,
         model_type: Optional[ModelType] = None,
         model_config: Optional[BaseConfig] = None,
-        memory: Optional[BaseMemory] = None,
+        memory: Optional[AgentMemory] = None,
         message_window_size: Optional[int] = None,
         token_limit: Optional[int] = None,
         output_language: Optional[str] = None,
@@ -132,7 +132,7 @@ class ChatAgent(BaseAgent):
             self.model_backend.token_counter,
             self.model_token_limit,
         )
-        self.memory: BaseMemory = memory or ChatHistoryMemory(
+        self.memory: AgentMemory = memory or ChatHistoryMemory(
             context_creator, window_size=message_window_size)
 
         self.terminated: bool = False

@@ -11,16 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
-from camel.memories import BaseMemory, ContextRecord, MemoryRecord
+from camel.memories import AgentMemory, ContextRecord, MemoryRecord
 from camel.memories.context_creators import BaseContextCreator
-from camel.messages import OpenAIMessage
 from camel.storages import BaseKeyValueStorage, InMemoryKeyValueStorage
 from camel.types import OpenAIBackendRole
 
 
-class ChatHistoryMemory(BaseMemory):
+class ChatHistoryMemory(AgentMemory):
     r"""An implementation of the :obj:`BaseMemory` abstract base class for
     maintaining a record of chat histories.
 
@@ -51,21 +50,23 @@ class ChatHistoryMemory(BaseMemory):
         storage: Optional[BaseKeyValueStorage] = None,
         window_size: Optional[int] = None,
     ) -> None:
-        self.context_creator = context_creator
+        self._context_creator = context_creator
         self.storage = storage or InMemoryKeyValueStorage()
         self.window_size = window_size
 
-    def get_context(self) -> Tuple[List[OpenAIMessage], int]:
-        r"""Gets chat context with a proper size for the agent from the memory
+    def get_context_creator(self) -> BaseContextCreator:
+        return self._context_creator
+
+    def retrieve(self) -> List[ContextRecord]:
+        r"""Retrieves records with a proper size for the agent from the memory
         based on the window size or fetches the entire chat history if no
         window size is specified.
 
         Returns:
-            (List[OpenAIMessage], int): A tuple containing the constructed
-                context in OpenAIMessage format and the total token count.
+            List[ContextRecord]: A list of retrieved records.
+
         Raises:
-            ValueError: If the memory is empty or if the first message in the
-                memory is not a system message.
+            ValueError: If the memory is empty.
         """
         record_dicts = self.storage.load()
         if len(record_dicts) == 0:
@@ -90,7 +91,7 @@ class ChatHistoryMemory(BaseMemory):
                 output_records.append(ContextRecord(record, score))
 
         output_records.reverse()
-        return self.context_creator.create_context(output_records)
+        return output_records
 
     def write_records(self, records: List[MemoryRecord]) -> None:
         r"""Writes memory records to the memory. Additionally, performs

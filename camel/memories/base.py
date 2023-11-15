@@ -13,10 +13,9 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from abc import ABC, abstractmethod
-from typing import List, Tuple
+from typing import List
 
 from camel.memories import MemoryRecord
-from camel.messages import OpenAIMessage
 
 
 class BaseMemory(ABC):
@@ -40,16 +39,6 @@ class BaseMemory(ABC):
     message for input to the agent. Subsequently, both the response message and
     the incoming messages are archived back into the memory.
     """
-
-    @abstractmethod
-    def get_context(self) -> Tuple[List[OpenAIMessage], int]:
-        r"""Gets chat context with a proper size for the agent.
-
-        Returns:
-            (List[OpenAIMessage], int): A tuple containing the constructed
-                context in OpenAIMessage format and the total token count.
-        """
-        pass
 
     @abstractmethod
     def write_records(self, records: List[MemoryRecord]) -> None:

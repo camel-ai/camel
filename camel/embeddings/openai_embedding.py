@@ -55,7 +55,7 @@ class OpenAiEmbedding(BaseEmbedding):
         elif self.model == OpenAiEmbeddingModel.DAVINCI1:
             self.output_dim = 12288
         else:
-            raise RuntimeError(f"Model type {model} not support")
+            raise RuntimeError(f"Model type {model} is invalid.")
 
         self.client = OpenAI()
 

@@ -15,4 +15,7 @@
 from .base import BaseContextCreator
 from .score_based import ScoreBasedContextCreator
 
-__all__ = ['BaseContextCreator', 'ScoreBasedContextCreator']
+__all__ = [
+    'BaseContextCreator',
+    'ScoreBasedContextCreator',
+]

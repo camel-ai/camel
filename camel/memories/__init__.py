@@ -16,6 +16,7 @@ from .records import MemoryRecord, ContextRecord
 from .base import BaseMemory
 from .context_creators.base import BaseContextCreator
 from .context_creators.score_based import ScoreBasedContextCreator
+from .agent_memory import AgentMemory
 from .chat_history_memory import ChatHistoryMemory
 from .vectordb_memory import VectorDBMemory
 
@@ -27,4 +28,5 @@ __all__ = [
     "BaseContextCreator",
     "ScoreBasedContextCreator",
     "VectorDBMemory",
+    "AgentMemory",
 ]
