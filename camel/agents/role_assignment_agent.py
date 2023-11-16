@@ -268,7 +268,7 @@ class RoleAssignmentAgent(ChatAgent):
         num_subtasks: Optional[int] = None,
         context_text: Optional[str] = None,
     ) -> Dict[str, Dict[str, Union[str, List[str]]]]:
-        r"""Split the task into subtasks based on the input task prompt.
+        r"""Decompose the task into subtasks based on the input task prompt.
 
         Args:
             task_prompt (Union[str, TextPrompt]): The prompt for the task
@@ -276,7 +276,7 @@ class RoleAssignmentAgent(ChatAgent):
             role_descriptions_dict (Dict[str, str]): The role descriptions of
                 each role.
             num_subtasks (Optional[int], optional): The number of subtasks to
-                split the task into. (default: :obj:`None`)
+                decompose the task into. (default: :obj:`None`)
             context_text (Optional[str], optional): The context text to
                 generate insights from. (default: :obj:`None`)
 
@@ -288,7 +288,7 @@ class RoleAssignmentAgent(ChatAgent):
 
         role_names = list(role_descriptions_dict.keys())
 
-        # Generate insights from the context text to help split the task
+        # Generate insights from the context text to help decompose the task
         if context_text is not None:
             model_config = self.model_config
             insight_agent = InsightAgent(model=self.model,
@@ -298,7 +298,7 @@ class RoleAssignmentAgent(ChatAgent):
                 "===== CONTEXT TEXT =====\n"
                 "The CONTEXT TEXT is related to TASK and "
                 "Contextual Parameters of subtask. When "
-                "splitting the task, ensure that each subtask "
+                "decomposing the task, ensure that each subtask "
                 "incorporates specific details from the "
                 "INSIGHTS of CONTEXT TEXT.\n" +
                 insight_agent.convert_json_to_str(task_insights_json))
@@ -361,7 +361,7 @@ PART III (all subtasks):
                 f"Dependency of subtask {i + 1}: [subtask <i>, subtask "
                 f"<j>, subtask <k>]/[None] (include square brackets)."
                 for i in range(num_subtasks)) + "\n\n"
-        split_task_rules_prompt = """You are a task splitter, and you're in asked to break down the main TASK into {num_subtasks} manageable subtasks suitable for a team comprising {num_roles} domain experts. The experts will contribute to the {num_subtasks} subtasks. Please follow the guidelines below to craft your answer:
+        split_task_rules_prompt = """You are a task decomposer, and you're in asked to break down the main TASK into {num_subtasks} manageable subtasks suitable for a team comprising {num_roles} domain experts. The experts will contribute to the {num_subtasks} subtasks. Please follow the guidelines below to craft your answer:
     1. Action-Oriented Foundation & Building Blocks: Ensure each subtask is actionable, distinct, tapping into the expertise of the assigned roles. Recognize that not every subtask needs to directly reflect the main TASK's ultimate aim. Some subtasks serve as essential building blocks, paving the way for more central subtasks, but avoid creating subtasks that are self-dependent or overly foundational.
     2. Balanced Granularity with a Bias for Action: While each subtask should be detailed and actionable, it should not be so ambiguous that it requires the input of more than two domain experts. Prioritize tangible actions in subtask such as implementation, creation, testing, or other tangible activities over mere understanding.
     3. Dependencies & Gantt Chart: Identify and account for the dependencies within the subtasks. Ensure that each subtask logically flows from one to the next, or can run concurrently where no subtask is dependent on itself, in a manner that could be efficiently represented on a Gantt chart.
@@ -385,7 +385,7 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
             num_roles=len(role_names))
 
         subtasks_generation_msg = BaseMessage.make_user_message(
-            role_name="Task Splitter", content=subtasks_generation)
+            role_name="Task Decomposer", content=subtasks_generation)
 
         response = self.step(input_message=subtasks_generation_msg)
 
@@ -437,7 +437,7 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
         }
 
         if len(subtasks_with_dependencies_dict) == 0:
-            raise RuntimeError("The task is not split into subtasks.")
+            raise RuntimeError("The task is not decomposed into subtasks.")
         if (num_subtasks is not None
                 and (len(subtask_descriptions) != num_subtasks
                      or len(dependent_subtasks_list) != num_subtasks)):
