@@ -24,60 +24,66 @@ class BaseOpenAIAPIClient:
 
     def _get_api_key(self) -> str:
         """
-        Get the API key.
-
         Returns:
             The API key.
-
         Example:
             api_key = client.get_api_key()
         """
-        return self.client.api_key
+        try:
+            return self.client.api_key
+        except Exception as e:
+            self.logger.error(f"Failed to get api key: {e}")
+            raise
     
     def _set_api_key(self, api_key: str) -> None:
         """
-        Set the API key.
-
         Args:
             api_key: The API key.
-
         Example:
             client.set_api_key('my-api-key')
         """
-        self.client.api_key = api_key
+        try:
+            self.client.api_key = api_key
+        except Exception as e:
+            self.logger.error(f"Failed to set api key: {e}")
+            raise
 
     def get_api_base(self) -> str:
         """
-        Get the API base URL.
-
         Returns:
             The API base URL.
-
         Example:
             api_base = client.get_api_base()
         """
-        return self.client.api_base
+        try:
+            return self.client.api_base
+        except Exception as e:
+            self.logger.error(f"Failed to get api base: {e}")
+            raise
 
     def set_api_base(self, api_base: str) -> None:
         """
-        Set the API base URL.
-
         Args:
             api_base: The API base URL.
-
         Example:
             client.set_api_base('my-api-base')
         """
-        self.client.api_base = api_base
+        try:
+            self.client.api_base = api_base
+        except Exception as e:
+            self.logger.error(f"Failed to set api base: {e}")
+            raise
+        
 
     def get_organization(self) -> str:
         """
-        Get the organization.
-
         Returns:
             The organization.
-
         Example:
             organization = client.get_organization()
         """
-        return self.client.organization
+        try:
+            return self.client.organization
+        except Exception as e:
+            self.logger.error(f"Failed to get organization: {e}")
+            raise
