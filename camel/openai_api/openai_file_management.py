@@ -12,22 +12,12 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-import logging
-from openai_client_init import client
+from camel.openai_api.base_openai_api_client import BaseOpenAIAPIClient
 from typing import Any, Dict, List, Optional
 
-class OpenAIFilesManager:
-
-    def __init__(self) -> None:
-        """
-        Initialize the OpenAIFilesManager with an OpenAI client.
-
-        Args:
-            client: An instance of the OpenAI client.
-        """
-        self.client = client
-        self.logger = logging.getLogger(__name__)
-
+class OpenAIFileManagement(BaseOpenAIAPIClient):
+    # A wrapper class for the OpenAI file management API.
+    
     def list_files(self,
                    purpose: Optional[str] = None) -> List[Dict[str, Any]]:
         """
@@ -137,79 +127,7 @@ class OpenAIFilesManager:
             file_content = manager.retrieve_file_content('file-id')
         """
         try:
-            return self.client.files.retrieve_content(file_id)
+            return self.client.files.content(file_id)
         except Exception as e:
             self.logger.error(f"Failed to retrieve file content: {e}")
-            raise
-
-
-class AssistantFile:
-
-    def __init__(self, assistant_id: str,
-                 client: Optional[OpenAI] = None) -> None:
-        """
-        Initialize the AssistantFile with an assistant ID and
-        an optional OpenAI client.
-
-        Args:
-            assistant_id: The ID of the assistant.
-            client: An instance of the OpenAI client. Optional.
-
-        Example:
-            assistant_file = AssistantFile(assistant_id='my-assistant-id')
-        """
-        self.assistant_id = assistant_id
-        self.client = client or OpenAI()
-        self.logger = logging.getLogger(__name__)
-
-    def create_file(self, file_id: str) -> Dict[str, Any]:
-        """
-        Create an assistant file.
-
-        Args:
-            file_id: The ID of the file to attach to the assistant.
-
-        Returns:
-            The assistant file object.
-
-        Raises:
-            Exception: If creating the assistant file fails.
-
-        Example:
-            assistant_file_obj = assistant_file.create_file('file-id')
-        """
-        try:
-            return self.client.beta.assistants.files.create(
-                assistant_id=self.assistant_id, file_id=file_id)
-        except Exception as e:
-            self.logger.error(f"Failed to create file: {e}")
-            raise
-
-    def list_files(self, limit: int = 20, order: str = 'desc',
-                   after: Optional[str] = None,
-                   before: Optional[str] = None) -> Dict[str, Any]:
-        """
-        List assistant files with various filtering and sorting options.
-
-        Args:
-            limit: The number of objects to be returned. Default is 20.
-            order: Sort order ('asc' or 'desc'). Default is 'desc'.
-            after: Pagination cursor for the next page. Optional.
-            before: Pagination cursor for the previous page. Optional.
-
-        Returns:
-            A list of assistant file objects.
-
-        Raises:
-            Exception: If listing the assistant files fails.
-
-        Example:
-            files = assistant_file.list_files(limit=10, order='asc')
-        """
-        try:
-            return self.client.beta.assistants.files.list(
-                assistant_id=self.assistant_id, limit=limit, order=order,
-                after=after, before=before)
-        except Exception as e:
-            self.logger.error(f"Failed to list files: {e}")
             raise

@@ -11,9 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from camel.openai_api.openai_file_management import OpenAIFileManagement
 
+class OpenAIManager(OpenAIFileManagement):
+# A wrapper class for the openai assistants api
+    
 
-# Import and instantiate the openAI client ONCE. Reimport this file's client and use it everywhere else.
-from openai import OpenAI
-# OpenAI() automatically takes key from OPENAI_API_KEY environment variable, but can be overridden with key= argument.
-client = OpenAI()
