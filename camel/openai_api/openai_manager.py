@@ -14,6 +14,7 @@
 from typing import List, Optional
 
 from openai.types.beta import Assistant, AssistantDeleted, assistant_create_params
+from openai.types.beta.assistants import AssistantFile, FileDeleteResponse, file_list_params, file_create_params
 from openai.pagination import SyncCursorPage
 
 from camel.openai_api.openai_file_management import OpenAIFileManagement
@@ -22,7 +23,7 @@ from camel.types.enums import ModelType
 class OpenAIManager(OpenAIFileManagement):
 # A wrapper class for the overall openAI API, including file, assistant, and thread management
 
-    def create_assistant(self, name: str, model: ModelType, file_ids: Optional[List[str]], instructions: Optional[str], tools: List[assistant_create_params.Tool], description: Optional[str]) -> Assistant:
+    def create_assistant(self, name: str, model: str, file_ids: Optional[List[str]], instructions: Optional[str], tools: List[assistant_create_params.Tool], description: Optional[str]) -> Assistant:
         """
         Args:
             name: The name of the assistant. The maximum length is 256 characters.
@@ -55,7 +56,7 @@ class OpenAIManager(OpenAIFileManagement):
             self.logger.error(f"Failed to create assistant: {e}")
             raise
 
-    def update_assistant(self, assistant_id: str, name: Optional[str], description: Optional[str], instructions: Optional[str], file_ids: Optional[List[str]], tools: Optional[List[assistant_create_params.Tool]]) -> Assistant:
+    def update_assistant(self, name: str, assistant_id: str, description: Optional[str], instructions: Optional[str], file_ids: Optional[List[str]], tools: Optional[List[assistant_create_params.Tool]]) -> Assistant:
         """
         Args: See create_assistant above for details
         Returns:
@@ -67,7 +68,7 @@ class OpenAIManager(OpenAIFileManagement):
             self.logger.error(f"Failed to update assistant: {e}")
             raise
 
-    def list_assistant(self) -> SyncCursorPage[Assistant]:
+    def list_assistants(self) -> SyncCursorPage[Assistant]:
         """
         Returns:
             A list of assistant objects.
@@ -102,4 +103,63 @@ class OpenAIManager(OpenAIFileManagement):
             return self.client.beta.assistants.delete(assistant_id=assistant_id)
         except Exception as e:
             self.logger.error(f"Failed to delete assistant: {e}")
+            raise
+
+############################################################################################################
+# Assistant File Management
+############################################################################################################
+
+    def create_assistant_file(self, file_id: str, assistant_id: str) -> AssistantFile:
+        """
+        Args:
+            file: The ID of the file to attach to the assistant
+            assistant_id: The ID of the assistant to attach the file to
+        Returns:
+            The assistant object.
+        """
+        try:
+            return self.client.beta.assistants.files.create(assistant_id=assistant_id, file_id=file_id)
+        except Exception as e:
+            self.logger.error(f"Failed to create assistant file: {e}")
+            raise
+
+    def retrieve_assistant_file(self, file_id: str, assistant_id: str) -> AssistantFile:
+        """
+        Args:
+            file_id: The ID of the file to retrieve
+            assistant_id: The ID of the assistant to retrieve the file from
+        Returns:
+            The assistant file object.
+        """
+        try:
+            return self.client.beta.assistants.files.retrieve(assistant_id=assistant_id, file_id=file_id)
+        except Exception as e:
+            self.logger.error(f"Failed to retrieve assistant file: {e}")
+            raise
+    
+    def list_assistant_files(self, assistant_id: str) -> SyncCursorPage[AssistantFile]:
+        """
+        Args:
+            assistant_id: The ID of the assistant to list files from
+        Returns:
+            A list of files attached to the assistant
+        """
+        try:
+            return self.client.beta.assistants.files.list(assistant_id=assistant_id)
+        except Exception as e:
+            self.logger.error(f"Failed to list assistant files: {e}")
+            raise
+
+    def delete_assistant_file(self, file_id: str, assistant_id: str) -> FileDeleteResponse:
+        """
+        Args:
+            file_id: The ID of the file to delete
+            assistant_id: The ID of the assistant to delete the file from
+        Returns:
+            The assistant file object.
+        """
+        try:
+            return self.client.beta.assistants.files.delete(assistant_id=assistant_id, file_id=file_id)
+        except Exception as e:
+            self.logger.error(f"Failed to delete assistant file: {e}")
             raise
