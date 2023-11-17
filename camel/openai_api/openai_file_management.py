@@ -17,20 +17,17 @@ from typing import Any, Dict, List, Optional
 
 class OpenAIFileManagement(BaseOpenAIAPIClient):
     # A wrapper class for the OpenAI file management API.
-    
+
     def list_files(self,
                    purpose: Optional[str] = None) -> List[Dict[str, Any]]:
         """
         List files with an optional filter by purpose.
 
         Args:
-            purpose: The purpose of the files to list. Optional.
+            purpose: The purpose of the files to list(fine-tune or assistant). Optional.
 
         Returns:
             A list of file information dictionaries.
-
-        Raises:
-            Exception: If the file listing fails.
 
         Example:
             files = manager.list_files(purpose='fine-tune')
@@ -43,17 +40,12 @@ class OpenAIFileManagement(BaseOpenAIAPIClient):
 
     def upload_file(self, file_path: str, purpose: str) -> Dict[str, Any]:
         """
-        Upload a file for a specific purpose.
-
         Args:
             file_path: The path to the file to upload.
             purpose: The purpose of the file.
 
         Returns:
             The uploaded file information.
-
-        Raises:
-            Exception: If the file upload fails.
 
         Example:
             uploaded_file_info = manager.upload_file('/path/to/file.txt',
@@ -76,9 +68,6 @@ class OpenAIFileManagement(BaseOpenAIAPIClient):
         Returns:
             Deletion status.
 
-        Raises:
-            Exception: If the file deletion fails.
-
         Example:
             deletion_status = manager.delete_file('file-id')
         """
@@ -98,9 +87,6 @@ class OpenAIFileManagement(BaseOpenAIAPIClient):
         Returns:
             The file information.
 
-        Raises:
-            Exception: If the file retrieval fails.
-
         Example:
             file_info = manager.retrieve_file('file-id')
         """
@@ -119,9 +105,6 @@ class OpenAIFileManagement(BaseOpenAIAPIClient):
 
         Returns:
             The file content.
-
-        Raises:
-            Exception: If the file content retrieval fails.
 
         Example:
             file_content = manager.retrieve_file_content('file-id')

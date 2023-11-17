@@ -11,17 +11,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from camel.openai_api.openai_file_management import OpenAIFileManagement
+from typing import List, Optional
+
 from openai.types.beta import Assistant, AssistantDeleted, assistant_create_params
-from typing import Any, Dict, List, Optional
+from openai.pagination import SyncCursorPage
+
+from camel.openai_api.openai_file_management import OpenAIFileManagement
 from camel.types.enums import ModelType
 
 class OpenAIManager(OpenAIFileManagement):
 # A wrapper class for the overall openAI API, including file, assistant, and thread management
+
     def create_assistant(self, name: str, model: ModelType, file_ids: Optional[List[str]], instructions: Optional[str], tools: List[assistant_create_params.Tool], description: Optional[str]) -> Assistant:
         """
-        Create an assistant with a model and instructions.
-
         Args:
             name: The name of the assistant. The maximum length is 256 characters.
 
@@ -45,13 +47,59 @@ class OpenAIManager(OpenAIFileManagement):
 
         Returns:
             The assistant object.
-
-        Raises:
-            Exception: If creating the assistant fails.
-        """
+            """
         try:
             return self.client.beta.assistants.create(
                 name=name, description=description, file_ids=file_ids, instructions=instructions, model=model.value, tools=tools)
         except Exception as e:
             self.logger.error(f"Failed to create assistant: {e}")
+            raise
+
+    def update_assistant(self, assistant_id: str, name: Optional[str], description: Optional[str], instructions: Optional[str], file_ids: Optional[List[str]], tools: Optional[List[assistant_create_params.Tool]]) -> Assistant:
+        """
+        Args: See create_assistant above for details
+        Returns:
+            The assistant object.
+        """
+        try:
+            return self.client.beta.assistants.update(assistant_id=assistant_id, name=name, description=description, instructions=instructions, file_ids=file_ids, tools=tools)
+        except Exception as e:
+            self.logger.error(f"Failed to update assistant: {e}")
+            raise
+
+    def list_assistant(self) -> SyncCursorPage[Assistant]:
+        """
+        Returns:
+            A list of assistant objects.
+        """
+        try:
+            return self.client.beta.assistants.list()
+        except Exception as e:
+            self.logger.error(f"Failed to list assistants: {e}")
+            raise
+
+    def retrieve_assitant(self, assistant_id: str) -> Assistant:
+        """
+        Args:
+            assistant_id: The ID of the assistant to retrieve
+        Returns:
+            The assistant object.
+        """
+        try:
+            return self.client.beta.assistants.retrieve(assistant_id=assistant_id)
+        except Exception as e:
+            self.logger.error(f"Failed to retrieve assistant: {e}")
+            raise
+
+    def delete_assistant(self, assistant_id: str) -> AssistantDeleted:
+        """
+        Args:
+            assistant_id: The ID of the assistant to delete
+        Returns:
+            The assistant object.
+        """
+        try:
+            return self.client.beta.assistants.delete(assistant_id=assistant_id)
+        except Exception as e:
+            self.logger.error(f"Failed to delete assistant: {e}")
             raise
