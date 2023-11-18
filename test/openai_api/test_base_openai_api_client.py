@@ -12,7 +12,6 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from typing import Union
 from camel.openai_api.base_openai_api_client import BaseOpenAIAPIClient
 
 def test_get_api_key():
