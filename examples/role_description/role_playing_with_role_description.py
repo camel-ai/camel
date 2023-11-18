@@ -23,12 +23,13 @@ AI_ASSISTANT_ROLE_INDEX = 0
 AI_USER_ROLE_INDEX = 1
 
 
-def main(model_type_for_role_generation=None, model_type=None) -> None:
+def main(model_type_for_role_generation=None, model_type=None,
+         chat_turn_limit=50) -> None:
     task_prompt = "Develop a trading bot for the stock market."
 
     model_config_description = ChatGPTConfig()
     role_description_agent = RoleAssignmentAgent(
-        model=model_type_for_role_generation,
+        model_type=model_type_for_role_generation,
         model_config=model_config_description)
 
     role_description_dict = (role_description_agent.run(
@@ -53,7 +54,7 @@ def main(model_type_for_role_generation=None, model_type=None) -> None:
         model_type=model_type,
         task_type=TaskType.ROLE_DESCRIPTION,  # Score for role description
         with_task_specify=True,
-        task_specify_agent_kwargs=dict(model=model_type),
+        task_specify_agent_kwargs=dict(model_type=model_type),
         extend_sys_msg_meta_dicts=sys_msg_meta_dicts,
     )
 
@@ -75,7 +76,7 @@ def main(model_type_for_role_generation=None, model_type=None) -> None:
         f"Specified task prompt:\n{role_play_session.specified_task_prompt}\n")
     print(Fore.RED + f"Final task prompt:\n{role_play_session.task_prompt}\n")
 
-    chat_turn_limit, n = 50, 0
+    n = 0
     input_assistant_msg, _ = role_play_session.init_chat()
     while n < chat_turn_limit:
         n += 1

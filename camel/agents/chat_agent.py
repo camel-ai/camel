@@ -72,7 +72,7 @@ class ChatAgent(BaseAgent):
 
     Args:
         system_message (BaseMessage): The system message for the chat agent.
-        model (ModelType, optional): The LLM model to use for generating
+        model_type (ModelType, optional): The LLM model to use for generating
             responses. (default :obj:`ModelType.GPT_3_5_TURBO`)
         model_config (BaseConfig, optional): Configuration options for the
             LLM model. (default: :obj:`None`)
@@ -98,7 +98,7 @@ class ChatAgent(BaseAgent):
     def __init__(
         self,
         system_message: BaseMessage,
-        model: Optional[ModelType] = None,
+        model_type: Optional[ModelType] = None,
         model_config: Optional[BaseConfig] = None,
         memory: Optional[BaseMemory] = None,
         message_window_size: Optional[int] = None,
@@ -116,8 +116,8 @@ class ChatAgent(BaseAgent):
         if self.output_language is not None:
             self.set_output_language(self.output_language)
 
-        self.model: ModelType = (model if model is not None else
-                                 ModelType.GPT_3_5_TURBO)
+        self.model_type: ModelType = (model_type if model_type is not None else
+                                      ModelType.GPT_3_5_TURBO)
 
         self.func_dict: Dict[str, Callable] = {}
         if function_list is not None:
@@ -126,7 +126,7 @@ class ChatAgent(BaseAgent):
         self.model_config = model_config or ChatGPTConfig()
 
         self.model_backend: BaseModelBackend = ModelFactory.create(
-            self.model, self.model_config.__dict__)
+            self.model_type, self.model_config.__dict__)
         self.model_token_limit = token_limit or self.model_backend.token_limit
         context_creator = ScoreBasedContextCreator(
             self.model_backend.token_counter,
@@ -520,7 +520,7 @@ class ChatAgent(BaseAgent):
         Returns:
             dict: Usage dictionary.
         """
-        encoding = get_model_encoding(self.model.value_for_tiktoken)
+        encoding = get_model_encoding(self.model_type.value_for_tiktoken)
         completion_tokens = 0
         for message in output_messages:
             completion_tokens += len(encoding.encode(message.content))
@@ -535,4 +535,6 @@ class ChatAgent(BaseAgent):
         Returns:
             str: The string representation of the :obj:`ChatAgent`.
         """
-        return f"ChatAgent({self.role_name}, {self.role_type}, {self.model})"
+        return (
+            f"ChatAgent({self.role_name}, {self.role_type}, {self.model_type})"
+        )

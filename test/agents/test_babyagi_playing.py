@@ -32,10 +32,10 @@ def test_babyagi_playing_init(model: ModelType):
 
     babyagi_playing = BabyAGI(
         assistant_role_name="Python Programmer",
-        assistant_agent_kwargs=dict(model=model),
+        assistant_agent_kwargs=dict(model_type=model),
         user_role_name="Stock Trader",
         task_prompt=task_prompt,
-        task_specify_agent_kwargs=dict(model=model),
+        task_specify_agent_kwargs=dict(model_type=model),
         message_window_size=5,
     )
 
@@ -60,10 +60,10 @@ def test_babyagi_playing_step(model: ModelType):
 
     babyagi_playing = BabyAGI(
         assistant_role_name="Python Programmer",
-        assistant_agent_kwargs=dict(model=model),
+        assistant_agent_kwargs=dict(model_type=model),
         user_role_name="Stock Trader",
         task_prompt=task_prompt,
-        task_specify_agent_kwargs=dict(model=model),
+        task_specify_agent_kwargs=dict(model_type=model),
         message_window_size=5,
     )
 
