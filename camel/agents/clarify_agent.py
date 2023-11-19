@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Optional, Union
 
-from camel.agents import ChatAgent
+from camel.agents import ChatAgent, insight_agent
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
 from camel.types import ModelType, RoleType
@@ -120,4 +120,7 @@ if __name__ == "__main__":
     task_prompt = "Develop a trading bot for stock market"
     task_clarify_agent = TaskClarifyAgent()
     clarify_dict = task_clarify_agent.run(task_prompt=task_prompt)
-    print(f"Clarified question answer pairs: {clarify_dict}")
+    print(f"Clarified question answer pairs: {clarify_dict}\n")
+    insight_agent = insight_agent.InsightAgent()
+    insights_str = insight_agent.run(clarify_dict)
+    print(f"Insights: {insights_str}")
