@@ -92,10 +92,8 @@ class TaskSpecifyAgent(ChatAgent):
 if __name__ == "__main__":
     task_prompt = "Develop a trading bot for stock market"
     task_clarify_agent = clarify_agent.TaskClarifyAgent()
-    question_answer_pairs = task_clarify_agent.run(task_prompt=task_prompt)
+    insights = task_clarify_agent.run(task_prompt=task_prompt)
     task_specify_agent = TaskSpecifyAgent()
-    insight_agent = insight_agent.InsightAgent()
-    insights = insight_agent.run(question_answer_pairs)
     specified_task = \
         task_specify_agent.run(task_prompt=task_prompt,
                                question_answer_pairs=insights)
