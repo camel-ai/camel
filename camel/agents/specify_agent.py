@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Optional, Union
 
-from camel.agents import ChatAgent, clarify_agent
+from camel.agents import ChatAgent, clarify_agent, insight_agent
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
 from camel.types import ModelType, RoleType
@@ -76,9 +76,6 @@ class TaskSpecifyAgent(ChatAgent):
             "and provides clear guidance for execution.\n"
         )
 
-        # TODO: The output should include more specific information, like
-        # the number, the values, the entities, etc.
-
         specify_msg = BaseMessage.make_user_message(role_name="Task Specifier",
                                                     content=specify_prompt)
 
@@ -97,7 +94,9 @@ if __name__ == "__main__":
     task_clarify_agent = clarify_agent.TaskClarifyAgent()
     question_answer_pairs = task_clarify_agent.run(task_prompt=task_prompt)
     task_specify_agent = TaskSpecifyAgent()
+    insight_agent = insight_agent.InsightAgent()
+    insights = insight_agent.run(question_answer_pairs)
     specified_task = \
         task_specify_agent.run(task_prompt=task_prompt,
-                               question_answer_pairs=question_answer_pairs)
+                               question_answer_pairs=insights)
     print(f"The specified task is: {specified_task}")
