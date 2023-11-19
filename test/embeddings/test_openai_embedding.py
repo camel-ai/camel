@@ -19,5 +19,5 @@ from camel.embeddings import BaseEmbedding, OpenAIEmbedding
 @pytest.mark.parametrize("embedding_model", [OpenAIEmbedding()])
 def test_embedding(embedding_model: BaseEmbedding):
     text = "test embedding text."
-    vector = embedding_model.embed(text)
+    vector = embedding_model.embed_text(text)
     assert len(vector) == embedding_model.get_output_dim()

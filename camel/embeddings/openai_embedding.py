@@ -59,23 +59,25 @@ class OpenAIEmbedding(BaseEmbedding):
 
         self.client = OpenAI()
 
-    def embed(self, text: str) -> List[float]:
-        r"""Generates an embedding for the given text.
+    def embed_texts(self, texts: List[str]) -> List[List[float]]:
+        r"""Generates embeddings for the given texts.
 
         Args:
-            text (str): The text for which to generate the embedding.
+            texts (List[str]): The texts for which to generate the embeddings.
 
         Returns:
-            List[float]: A list of floating-point numbers representing the
-                generated embedding.
+            List[List[float]]: A list that represents the generated embedding
+                as a list of floating-point numbers.
         """
         # TODO: count tokens
         if 'OPENAI_API_KEY' not in os.environ:
             raise ValueError('OpenAI API key not found.')
 
-        response = self.client.embeddings.create(input=text,
-                                                 model=self.model.value)
-        return response.data[0].embedding
+        response = self.client.embeddings.create(
+            input=texts,
+            model=self.model.value,
+        )
+        return [data.embedding for data in response.data]
 
     def get_output_dim(self) -> int:
         r"""Returns the output dimension of the embeddings.
