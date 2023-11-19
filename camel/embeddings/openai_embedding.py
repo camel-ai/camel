@@ -20,7 +20,7 @@ from openai import OpenAI
 from camel.embeddings import BaseEmbedding
 
 
-class OpenAiEmbeddingModel(Enum):
+class OpenAIEmbeddingModel(Enum):
     ADA2 = "text-embedding-ada-002"
     ADA1 = "text-embedding-ada-001"
     BABBAGE1 = "text-embedding-babbage-001"
@@ -28,7 +28,7 @@ class OpenAiEmbeddingModel(Enum):
     DAVINCI1 = "text-embedding-davinci-001"
 
 
-class OpenAiEmbedding(BaseEmbedding):
+class OpenAIEmbedding(BaseEmbedding):
     r"""Provides text embedding functionalities using OpenAI's models.
 
     Args:
