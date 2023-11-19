@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Optional, Union
 
-from camel.agents import ChatAgent, clarify_agent, insight_agent
+from camel.agents import ChatAgent, clarify_agent
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
 from camel.types import ModelType, RoleType
