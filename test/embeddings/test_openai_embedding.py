@@ -13,10 +13,10 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import pytest
 
-from camel.embeddings import BaseEmbedding, OpenAiEmbedding
+from camel.embeddings import BaseEmbedding, OpenAIEmbedding
 
 
-@pytest.mark.parametrize("embedding_model", [OpenAiEmbedding()])
+@pytest.mark.parametrize("embedding_model", [OpenAIEmbedding()])
 def test_embedding(embedding_model: BaseEmbedding):
     text = "test embedding text."
     vector = embedding_model.embed(text)

@@ -12,9 +12,9 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .base import BaseEmbedding
-from .openai_embedding import OpenAiEmbedding
+from .openai_embedding import OpenAIEmbedding
 
 __all__ = [
     "BaseEmbedding",
-    "OpenAiEmbedding",
+    "OpenAIEmbedding",
 ]

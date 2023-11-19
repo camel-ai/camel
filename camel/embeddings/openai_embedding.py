@@ -41,18 +41,18 @@ class OpenAIEmbedding(BaseEmbedding):
 
     def __init__(
         self,
-        model: OpenAiEmbeddingModel = OpenAiEmbeddingModel.ADA2,
+        model: OpenAIEmbeddingModel = OpenAIEmbeddingModel.ADA2,
     ) -> None:
         self.model = model
-        if self.model == OpenAiEmbeddingModel.ADA2:
+        if self.model == OpenAIEmbeddingModel.ADA2:
             self.output_dim = 1536
-        elif self.model == OpenAiEmbeddingModel.ADA1:
+        elif self.model == OpenAIEmbeddingModel.ADA1:
             self.output_dim = 1024
-        elif self.model == OpenAiEmbeddingModel.BABBAGE1:
+        elif self.model == OpenAIEmbeddingModel.BABBAGE1:
             self.output_dim = 2048
-        elif self.model == OpenAiEmbeddingModel.CURIE1:
+        elif self.model == OpenAIEmbeddingModel.CURIE1:
             self.output_dim = 4096
-        elif self.model == OpenAiEmbeddingModel.DAVINCI1:
+        elif self.model == OpenAIEmbeddingModel.DAVINCI1:
             self.output_dim = 12288
         else:
             raise RuntimeError(f"Model type {model} is invalid.")
