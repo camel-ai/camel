@@ -113,7 +113,10 @@ class TaskClarifyAgent(ChatAgent):
                 print("Nothing more to clarify.\n")
                 return question_answer_pairs
 
-        return question_answer_pairs
+        insight = insight_agent.InsightAgent()
+        insights_str = insight.run(clarify_dict)
+
+        return insights_str
 
 
 if __name__ == "__main__":
@@ -121,6 +124,3 @@ if __name__ == "__main__":
     task_clarify_agent = TaskClarifyAgent()
     clarify_dict = task_clarify_agent.run(task_prompt=task_prompt)
     print(f"Clarified question answer pairs: {clarify_dict}\n")
-    insight_agent = insight_agent.InsightAgent()
-    insights_str = insight_agent.run(clarify_dict)
-    print(f"Insights: {insights_str}")
