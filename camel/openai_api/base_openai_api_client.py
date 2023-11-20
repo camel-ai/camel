@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
+from typing import Optional
 from openai import OpenAI
 import logging
 
@@ -48,19 +49,6 @@ class BaseOpenAIAPIClient:
             self.logger.error(f"Failed to set api key: {e}")
             raise
 
-    def get_api_base(self) -> str:
-        """
-        Returns:
-            The API base URL.
-        Example:
-            api_base = client.get_api_base()
-        """
-        try:
-            return self.client.api_base
-        except Exception as e:
-            self.logger.error(f"Failed to get api base: {e}")
-            raise
-
     def set_api_base(self, api_base: str) -> None:
         """
         Args:
@@ -73,9 +61,34 @@ class BaseOpenAIAPIClient:
         except Exception as e:
             self.logger.error(f"Failed to set api base: {e}")
             raise
-        
 
-    def get_organization(self) -> str:
+    def get_api_base(self) -> Optional[str]:
+        """
+        Returns:
+            The API base URL.
+        Example:
+            api_base = client.get_api_base()
+        """
+        try:
+            return self.client.api_base
+        except Exception as e:
+            self.logger.error(f"Failed to get api base: {e}")
+            raise 
+
+    def set_organization(self, organization: str) -> None:
+        """
+        Args:
+            organization: The organization.
+        Example:
+            client.set_organization('my-organization')
+        """
+        try:
+            self.client.organization = organization
+        except Exception as e:
+            self.logger.error(f"Failed to set organization: {e}")
+            raise
+
+    def get_organization(self) -> Optional[str]:
         """
         Returns:
             The organization.
@@ -83,6 +96,7 @@ class BaseOpenAIAPIClient:
             organization = client.get_organization()
         """
         try:
+            print(self.client.organization)
             return self.client.organization
         except Exception as e:
             self.logger.error(f"Failed to get organization: {e}")
