@@ -18,6 +18,7 @@ import pandas as pd
 
 
 class UnstructuredModules:
+    UNSTRUCTURED_MIN_VERSION = "0.10.30"  # Define the minimum version
 
     def ensure_unstructured_version(self, min_version: str) -> None:
         r"""Validates that the installed 'Unstructured' library version
@@ -42,18 +43,18 @@ class UnstructuredModules:
         from packaging import version
 
         try:
-            from unstructured.__version__ import \
-                __version__ as installed_version
+            from unstructured.__version__ import __version__
+
         except ImportError as e:
             raise ImportError("unstructured package is not installed.") from e
 
         # Use packaging.version to compare versions
         min_ver = version.parse(min_version)
-        installed_ver = version.parse(installed_version)
+        installed_ver = version.parse(__version__)
 
         if installed_ver < min_ver:
             raise ValueError(f"unstructured>={min_version} required, "
-                             f"you have {installed_version}.")
+                             f"you have {__version__}.")
 
     def parse_file_or_url(self, input_path: str) -> Any:
         r"""Loads a file or a URL and parses its contents as unstructured data.
@@ -68,12 +69,15 @@ class UnstructuredModules:
             FileNotFoundError: If the file does not exist
             at the path specified.
             Exception: For any other issues during file or URL parsing.
+
+        References:
+            https://unstructured-io.github.io/unstructured/
         """
         import os
         from urllib.parse import urlparse
 
         # Check installed unstructured version
-        self.ensure_unstructured_version("0.10.30")
+        self.ensure_unstructured_version(self.UNSTRUCTURED_MIN_VERSION)
 
         # Check if the input is a URL
         parsed_url = urlparse(input_path)
@@ -107,7 +111,7 @@ class UnstructuredModules:
                 raise Exception(
                     "Failed to parse the unstructured file.") from e
 
-    def clean_text_data(self, text: str, options: dict) -> str:
+    def clean_text_data(self, text: str, options: Dict[str, Any]) -> str:
         r"""Cleans text data using a variety of cleaning functions provided by
         the 'unstructured' library.
 
@@ -138,9 +142,12 @@ class UnstructuredModules:
             brick names from the 'unstructured' library.
             Each brick's parameters must be provided in a nested dictionary
             as the value for the key.
+
+        References:
+            https://unstructured-io.github.io/unstructured/
         """
         # Check installed unstructured version
-        self.ensure_unstructured_version("0.10.30")
+        self.ensure_unstructured_version(self.UNSTRUCTURED_MIN_VERSION)
 
         from unstructured.cleaners.core import (
             bytes_string_to_string,
@@ -201,9 +208,12 @@ class UnstructuredModules:
 
         Returns:
             Any: The extracted data, type depends on extract_type.
+
+        References:
+            https://unstructured-io.github.io/unstructured/
         """
         # Check installed unstructured version
-        self.ensure_unstructured_version("0.10.30")
+        self.ensure_unstructured_version(self.UNSTRUCTURED_MIN_VERSION)
 
         from unstructured.cleaners.extract import (
             extract_datetimetz,
@@ -261,9 +271,11 @@ class UnstructuredModules:
         Raises:
             ValueError: If the staging type is not supported or
             a required argument is missing.
+        References:
+            https://unstructured-io.github.io/unstructured/
         """
         # Check installed unstructured version
-        self.ensure_unstructured_version("0.10.30")
+        self.ensure_unstructured_version(self.UNSTRUCTURED_MIN_VERSION)
 
         from unstructured.staging import (
             argilla,
@@ -275,6 +287,7 @@ class UnstructuredModules:
             prodigy,
             weaviate,
         )
+
         staging_functions = {
             "convert_to_csv":
             base.convert_to_csv,
@@ -320,9 +333,13 @@ class UnstructuredModules:
 
         Returns:
             List[Dict]: List of chunked sections.
+
+        References:
+            https://unstructured-io.github.io/unstructured/
         """
         # Check installed unstructured version
-        self.ensure_unstructured_version("0.10.30")
+        self.ensure_unstructured_version(self.UNSTRUCTURED_MIN_VERSION)
+
         from unstructured.chunking.title import chunk_by_title
 
         chunking_functions = {

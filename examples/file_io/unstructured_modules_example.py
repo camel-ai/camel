@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from camel.retrieval.unstructured_io import UnstructuredModules
+from camel.file_io.unstructured_io import UnstructuredModules
 
 unstructured_modules = UnstructuredModules()
 
@@ -49,15 +49,21 @@ def extract_data_example():
 
 
 def stage_data_example():
-    isd = [{
-        "text": "My Title",
-        "type": "Title"
-    }, {
-        "text": "My Narrative",
-        "type": "NarrativeText"
-    }]
-    elements = unstructured_modules.stage_elements("dict_to_elements", isd)
-    return unstructured_modules.stage_elements('convert_to_dict', elements)
+    from unstructured.documents.elements import (
+        ElementMetadata,
+        NarrativeText,
+        Title,
+    )
+    metadata = ElementMetadata(filename="fox.epub")
+    elements = [
+        Title("A Wonderful Story About A Fox", metadata=metadata),
+        NarrativeText(
+            "A fox ran into the chicken coop and the chickens flew off!",
+            metadata=metadata,
+        ),
+    ]
+    rows = unstructured_modules.stage_elements("stage_for_baseplate", elements)
+    return rows
 
 
 def chunk_url_content_example():

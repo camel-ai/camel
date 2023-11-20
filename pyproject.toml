@@ -164,6 +164,6 @@ module = [
     "docx2txt",
     "PyMuPDF",
     "fitz",
-    "unstructured",
+    "unstructured.*",
 ]
 ignore_missing_imports = true
