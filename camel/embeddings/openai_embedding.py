@@ -62,11 +62,12 @@ class OpenAIEmbedding(BaseEmbedding):
         self.output_dim = model_type.output_dim
         self.client = OpenAI()
 
-    def embed_texts(self, texts: List[str]) -> List[List[float]]:
+    def embed_texts(self, texts: List[str], **kwargs) -> List[List[float]]:
         r"""Generates embeddings for the given texts.
 
         Args:
             texts (List[str]): The texts for which to generate the embeddings.
+            kwargs (Dict[str, Any]): Extra kwargs passed to the API.
 
         Returns:
             List[List[float]]: A list that represents the generated embedding
@@ -79,6 +80,7 @@ class OpenAIEmbedding(BaseEmbedding):
         response = self.client.embeddings.create(
             input=texts,
             model=self.model_type.value,
+            **kwargs,
         )
         return [data.embedding for data in response.data]
 
