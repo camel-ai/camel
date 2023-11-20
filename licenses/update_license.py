@@ -14,8 +14,8 @@
 import os
 import re
 import sys
-from typing import List
 from pathlib import Path
+from typing import List
 
 
 # The license template file is hard-coded with specific start and end lines
@@ -88,7 +88,9 @@ def update_license_in_directory(
 
     file_count = 0
     for py_files in Path(directory_path).rglob("*.py"):
-        if py_files.name.startswith('.') or any(part.startswith('.') for part in py_files.parts):
+        if py_files.name.startswith('.'):
+            continue
+        if any(part.startswith('.') for part in py_files.parts):
             continue
         if update_license_in_file(
                 py_files,
