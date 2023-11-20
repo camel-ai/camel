@@ -20,12 +20,27 @@ from openai import OpenAI
 from camel.embeddings import BaseEmbedding
 
 
-class OpenAIEmbeddingModel(Enum):
+class OpenAIEmbeddingModelType(Enum):
     ADA2 = "text-embedding-ada-002"
     ADA1 = "text-embedding-ada-001"
     BABBAGE1 = "text-embedding-babbage-001"
     CURIE1 = "text-embedding-curie-001"
     DAVINCI1 = "text-embedding-davinci-001"
+
+    @property
+    def output_dim(self) -> int:
+        if self is OpenAIEmbeddingModelType.ADA2:
+            return 1536
+        elif self is OpenAIEmbeddingModelType.ADA1:
+            return 1024
+        elif self is OpenAIEmbeddingModelType.BABBAGE1:
+            return 2048
+        elif self is OpenAIEmbeddingModelType.CURIE1:
+            return 4096
+        elif self is OpenAIEmbeddingModelType.DAVINCI1:
+            return 12288
+        else:
+            raise ValueError(f"Unknown model type {self}.")
 
 
 class OpenAIEmbedding(BaseEmbedding):
@@ -41,22 +56,10 @@ class OpenAIEmbedding(BaseEmbedding):
 
     def __init__(
         self,
-        model: OpenAIEmbeddingModel = OpenAIEmbeddingModel.ADA2,
+        model_type: OpenAIEmbeddingModelType = OpenAIEmbeddingModelType.ADA2,
     ) -> None:
-        self.model = model
-        if self.model == OpenAIEmbeddingModel.ADA2:
-            self.output_dim = 1536
-        elif self.model == OpenAIEmbeddingModel.ADA1:
-            self.output_dim = 1024
-        elif self.model == OpenAIEmbeddingModel.BABBAGE1:
-            self.output_dim = 2048
-        elif self.model == OpenAIEmbeddingModel.CURIE1:
-            self.output_dim = 4096
-        elif self.model == OpenAIEmbeddingModel.DAVINCI1:
-            self.output_dim = 12288
-        else:
-            raise RuntimeError(f"Model type {model} is invalid.")
-
+        self.model_type = model_type
+        self.output_dim = model_type.output_dim
         self.client = OpenAI()
 
     def embed_texts(self, texts: List[str]) -> List[List[float]]:
@@ -75,7 +78,7 @@ class OpenAIEmbedding(BaseEmbedding):
 
         response = self.client.embeddings.create(
             input=texts,
-            model=self.model.value,
+            model=self.model_type.value,
         )
         return [data.embedding for data in response.data]
 

@@ -16,7 +16,7 @@ from typing import List
 
 
 class BaseEmbedding(ABC):
-    r"""Abstract base class for text embedding functionalities.  """
+    r"""Abstract base class for text embedding functionalities."""
 
     @abstractmethod
     def embed_texts(self, texts: List[str]) -> List[List[float]]:
