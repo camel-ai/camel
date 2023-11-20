@@ -68,6 +68,7 @@ We share a common interest in collaborating to successfully complete the task by
 
 You must write a specific Solution&Action that appropriately solves the requested instruction and explain your solutions. Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE.
     - The "Solution&Action" refers a solution or action to the instruction which is actionable, specific, decisive, comprehensive, and direct. And it is sovled step by step with your chain of thoughts.
+    - At the last part of your answer, you should perform your action in straightforward manner.
     - You must decline my instruction honestly if you cannot perform the instruction due to physical, moral, legal reasons or your capability and explain the reasons.
 
 ===== TASK =====
