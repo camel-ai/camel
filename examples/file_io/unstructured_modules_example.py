@@ -18,7 +18,7 @@ unstructured_modules = UnstructuredModules()
 
 
 def parse_file_example():
-    # take our CONTRIBUTING.md as example
+    # take our user_roles.txt as example
     path = 'data/ai_society/user_roles.txt'
     elements = unstructured_modules.parse_file_or_url(path)
     return [" ".join(str(el).split()) for el in elements]
