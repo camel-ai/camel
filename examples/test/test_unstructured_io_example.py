@@ -26,7 +26,7 @@ from examples.file_io.unstructured_modules_example import (
 # Define fixtures if needed
 @pytest.fixture
 def sample_file_path():
-    return 'CONTRIBUTING.md'
+    return 'data/ai_society/user_roles.txt'
 
 
 @pytest.fixture

@@ -19,7 +19,7 @@ unstructured_modules = UnstructuredModules()
 
 def parse_file_example():
     # take our CONTRIBUTING.md as example
-    path = 'CONTRIBUTING.md'
+    path = 'data/ai_society/user_roles.txt'
     elements = unstructured_modules.parse_file_or_url(path)
     return [" ".join(str(el).split()) for el in elements]
 
@@ -88,7 +88,7 @@ def main():
     if choice == '1':
         print("Parsing file example:")
         print(parse_file_example())
-        print("\n You have parsed CONTRIBUTING.md!")
+        print("\n You have parsed data/ai_society/user_roles.txt!")
 
     elif choice == '2':
         print("Parsing URL example:")
