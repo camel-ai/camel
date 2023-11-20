@@ -29,15 +29,15 @@ from camel.types import ModelType, RoleType
 class RoleAssignmentAgent(ChatAgent):
     r"""An agent that generates role names based on the task prompt.
     Args:
-        model (ModelType, optional): The type of model to use for the agent.
-            (default: :obj:`ModelType.GPT_3_5_TURBO`)
+        model_type (ModelType, optional): The type of model to use for the
+            agent. (default: :obj:`ModelType.GPT_3_5_TURBO`)
         model_config (Any, optional): The configuration for the model.
             (default: :obj:`None`)
     """
 
     def __init__(
         self,
-        model: ModelType = ModelType.GPT_3_5_TURBO,
+        model_type: ModelType = ModelType.GPT_3_5_TURBO,
         model_config: Optional[Any] = None,
     ) -> None:
         system_message = BaseMessage(
@@ -46,7 +46,7 @@ class RoleAssignmentAgent(ChatAgent):
             meta_dict=None,
             content="You assign roles based on tasks.",
         )
-        super().__init__(system_message, model, model_config)
+        super().__init__(system_message, model_type, model_config)
         self.model_config = model_config or ChatGPTConfig()
 
     def run_role_with_description(

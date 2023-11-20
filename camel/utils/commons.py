@@ -55,9 +55,9 @@ def openai_api_key_required(func: F) -> F:
 
     @wraps(func)
     def wrapper(self, *args, **kwargs):
-        if hasattr(self, "model") and self.model == ModelType.STUB:
+        if hasattr(self, "model") and self.model_type == ModelType.STUB:
             return func(self, *args, **kwargs)
-        elif self.model.is_open_source:
+        elif self.model_type.is_open_source:
             return func(self, *args, **kwargs)
         elif 'OPENAI_API_KEY' in os.environ:
             return func(self, *args, **kwargs)

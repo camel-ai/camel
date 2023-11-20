@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import pytest
+from mock import patch
 
 import examples.ai_society.babyagi_playing
 from camel.types import ModelType
@@ -24,5 +25,6 @@ parametrize = pytest.mark.parametrize('model', [
 
 @parametrize
 def test_ai_society_babyagi_playing_example(model):
-    examples.ai_society.babyagi_playing.main(model_type=model,
-                                             chat_turn_limit=2)
+    with patch('time.sleep', return_value=None):
+        examples.ai_society.babyagi_playing.main(model_type=model,
+                                                 chat_turn_limit=2)
