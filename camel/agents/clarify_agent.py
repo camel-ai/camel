@@ -58,7 +58,8 @@ class TaskClarifyAgent(ChatAgent):
         """
         question_answer_pairs = {}
 
-        clarify_prompt_base = """You are a task clarifier agent, and you should obey the RULES OF TASK CLARIFICATION.
+        clarify_prompt_base = """
+You are a task clarifier agent, and you should obey the RULES OF TASK CLARIFICATION.
 ==== RULES OF TASK CLARIFICATION ====
 1. Contextual Interaction: Engage with the user over multiple rounds, focusing each interaction on clarifying ambiguities or generalities in the user's TASK.
 2. Ask context aware question based on the initial TASK and the user's previous response.
