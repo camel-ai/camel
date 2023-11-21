@@ -16,7 +16,7 @@ from typing import Optional
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.models.openai_model import OpenAIModel
-from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
+from camel.types import ChatCompletion, ModelType
 
 
 class OutputAgent(ChatAgent):
@@ -46,10 +46,10 @@ class OutputAgent(ChatAgent):
         Initialize the OutputAgent.
         """
         self.content = content
-        self.model = self._create_model(model_type)
+        self.model = self.create_model(model_type)
 
     @staticmethod
-    def _create_model(model_type: ModelType) -> OpenAIModel:
+    def create_model(model_type: ModelType) -> OpenAIModel:
         r"""
         Creates and returns an OpenAI model.
         Args:
@@ -61,7 +61,7 @@ class OutputAgent(ChatAgent):
         return OpenAIModel(model_type=model_type,
                            model_config_dict=config.__dict__)
 
-    def _construct_task_prompt(self) -> list:
+    def construct_task_prompt(self) -> list:
         r"""
         Constructs the task prompt based on the content.
         Returns:
@@ -81,17 +81,10 @@ class OutputAgent(ChatAgent):
         Returns:
             str: The detailed instruction.
         """
-        response = self.model.run(messages=self._construct_task_prompt())
+        response = self.model.run(messages=self.construct_task_prompt())
 
         # Check if response is of type ChatCompletion
         if isinstance(response, ChatCompletion):
             if response.choices:
                 return response.choices[0].message.content
-        # Check if response is a Stream of ChatCompletionChunk
-        elif isinstance(response, ChatCompletionChunk):
-            # Handle the Stream[ChatCompletionChunk] case
-            # and aggregate the results or handle them differently.
-            for chunk in response:
-                # Process each chunk as needed
-                pass
         return None

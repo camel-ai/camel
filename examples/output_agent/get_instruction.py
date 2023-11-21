@@ -17,7 +17,7 @@ from camel.agents.output_agent import OutputAgent
 from camel.functions.data_io_functions import HtmlFile
 
 
-def main(model_type=None) -> None:
+def main() -> None:
     # Use one html file output from mulit agent as example
     with open("examples/output_agent/multi_agent_output_Supply_Chain_en.html",
               "rb") as f:

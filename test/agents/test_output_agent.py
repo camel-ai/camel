@@ -23,7 +23,7 @@ def agent():
 
 
 def test_construct_task_prompt(agent):
-    messages = agent._construct_task_prompt()
+    messages = agent.construct_task_prompt()
     expected_messages = [{
         "role":
         "system",
