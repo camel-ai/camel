@@ -15,6 +15,7 @@ import re
 from typing import Any, Dict, Optional, Union
 
 from camel.agents import ChatAgent
+from camel.configs import BaseConfig
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
 from camel.types import ModelType, RoleType
@@ -32,16 +33,16 @@ class DeductiveReasonerAgent(ChatAgent):
         - L represents the path or process from A to B.
 
     Args:
-        model (ModelType, optional): The type of model to use for the agent.
-            (default: :obj:`ModelType.GPT_3_5_TURBO`)
-        model_config (Any, optional): The configuration for the model.
+        model_type (ModelType, optional): The type of model to use for the
+            agent. (default: :obj: `None`)
+        model_config (BaseConfig, optional): The configuration for the model.
             (default: :obj:`None`)
     """
 
     def __init__(
         self,
-        model: ModelType = ModelType.GPT_3_5_TURBO,
-        model_config: Optional[Any] = None,
+        model_type: Optional[ModelType] = None,
+        model_config: Optional[BaseConfig] = None,
     ) -> None:
         system_message = BaseMessage(
             role_name="Insight Agent",
@@ -49,7 +50,7 @@ class DeductiveReasonerAgent(ChatAgent):
             meta_dict=None,
             content="You assign roles based on tasks.",
         )
-        super().__init__(system_message, model, model_config)
+        super().__init__(system_message, model_type, model_config)
 
     def deduce_conditions_and_quality(
         self,
@@ -143,7 +144,7 @@ Given the starting state $A$ and the target state $B$, assuming that a path $L$ 
         if role_descriptions_dict is not None:
             role_names = role_descriptions_dict.keys()
             role_with_description_prompt = \
-                "===== ROLES WITH DESCRIPTION =====\n" + "\n".join(
+                "===== ROLES WITH DESCRIPTIONS =====\n" + "\n".join(
                     f"{role_name}:\n{role_descriptions_dict[role_name]}\n"
                     for role_name in role_names) + "\n\n"
         else:
@@ -164,7 +165,7 @@ Given the starting state $A$ and the target state $B$, assuming that a path $L$ 
         if response.terminated:
             raise RuntimeError("Deduction failed. Error:\n" +
                                f"{response.info}")
-        msg = response.msg  # type: BaseMessage
+        msg: BaseMessage = response.msg
 
         condistions_dict = {
             f"condition {i}":

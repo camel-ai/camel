@@ -40,7 +40,7 @@ def test_deductive_reasoner_agent(mock_step, model_type):
 
     # Construct deductive reasoner agent
     deductive_reasoner_agent = \
-        DeductiveReasonerAgent(model=model_type,
+        DeductiveReasonerAgent(model_type=model_type,
                                model_config=model_config_description)
 
     # Generate the conditions and quality dictionary based on the mock step
