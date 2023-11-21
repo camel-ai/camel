@@ -60,13 +60,23 @@ class DeductiveReasonerAgent(ChatAgent):
     ) -> Dict[str, Union[List[str], Dict[str, str]]]:
         r"""Derives the conditions and quality from the starting state and the
         target state based on the model of the deductive reasoning and the
-        knowledge base.
+        knowledge base. It can optionally consider the roles involved in the
+        scenario, which allows tailoring the output more closely to the AI
+        agent's environment.
 
         Args:
-            starting_state (str): The starting state of the task.
+            starting_state (str): The initial or starting state from which
+                conditions are deduced.
             target_state (str): The target state of the task.
             role_descriptions_dict (Optional[Dict[str, str]], optional): The
                 descriptions of the roles. (default: :obj:`None`)
+            role_descriptions_dict (Optional[Dict[str, str]], optional): A
+                dictionary describing the roles involved in the scenario. This
+                is optional and can be used to provide a context for the
+                CAMEL's role-playing, enabling the generation of more relevant
+                and tailored conditions and quality assessments. This could be
+                generated using a `RoleAssignmentAgent()` or defined manually
+                by the user.
 
         Returns:
             Dict[str, Union[List[str], Dict[str, str]]]: A dictionary
