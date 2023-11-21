@@ -117,22 +117,20 @@ Q:\n<BLANK, your question>"""  # noqa: E501
             print("Answer: ")
             answer = input()
 
-            question_answer_pairs[question] = answer
-
             if not answer or answer == "c":
                 print("Nothing more to clarify.\n")
-                return question_answer_pairs[:-1]
+                return question_answer_pairs
 
-        insight = insight_agent.InsightAgent()
-        insights_str = insight.run(question_answer_pairs)
-        print("ingishts_str: ", insights_str)
-        print("\n")
+            question_answer_pairs[question] = answer
 
-        return insights_str
+        return question_answer_pairs
 
 
 if __name__ == "__main__":
     task_prompt = "Develop a trading bot for stock market"
     task_clarify_agent = TaskClarifyAgent()
-    insights = task_clarify_agent.run(task_prompt=task_prompt)
-    print(f"Insights from clarification: {insights}\n")
+    question_answer_pairs = task_clarify_agent.run(task_prompt=task_prompt)
+    print(f"QA from clarification: {question_answer_pairs}\n")
+    insights = insight_agent.InsightAgent()
+    insights_from_QA = insights.run(question_answer_pairs)
+    print(f"Insights from QA: {insights_from_QA}")
