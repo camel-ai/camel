@@ -11,13 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from dataclasses import asdict, replace
-from typing import Any, Dict, List, Optional
-from uuid import uuid4
+from dataclasses import asdict
+from datetime import datetime
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import (
-    CollectionStatus,
     Distance,
     PointIdsList,
     PointStruct,
@@ -25,100 +24,147 @@ from qdrant_client.http.models import (
     VectorParams,
 )
 
-from camel.storages.vectordb_storages import BaseVectorStorage, VectorRecord
-from camel.types import VectorDistance
+from camel.storages.vectordb_storages import (
+    BaseVectorStorage,
+    VectorDBQuery,
+    VectorDBQueryResult,
+    VectorDistance,
+    VectorRecord,
+)
 
 
 class QdrantStorage(BaseVectorStorage):
-    """
-    An implementation of the `BaseVectorStorage` abstract base class tailored
-    for Qdrant, a vector search engine.
-
-    This class allows users to interact with Qdrant for operations like
-    creating and deleting collections, adding and removing vectors, and
-    searching for vectors based on similarity.
+    r"""An implementation of the `BaseVectorStorage` for interacting with
+    Qdrant, a vector search engine.
 
     Args:
-        path (Optional[str], optional): Local path for the Qdrant database.
-            This is used for initializing the client if `url` is not provided.
-        url (Optional[str], optional): URL endpoint for a remote Qdrant
-            instance. If provided, this takes precedence over the `path`
-            parameter.
-        api_key (Optional[str], optional): API key for the Qdrant instance, if
-            required.
-        **kwargs: Additional keyword arguments for QdrantClient.
+        vector_dim (int): The dimenstion of storing vectors.
+        collection (Optional[str]): Name for the collection. If not provided,
+            a unique identifier is generated.
+        url_and_api_key (Optional[Tuple[str, str]]): Tuple containing the URL
+            and API key for connecting to a remote Qdrant instance.
+        path (Optional[str]): Path for initializing a local Qdrant client.
+        distance (VectorDistance): The distance metric for vector comparison
+            (default: `VectorDistance.DOT`).
+        del_collection (bool): Flag to determine if the collection should be
+            deleted upon object destruction (default: `False`).
+        **kwargs: Additional keyword arguments for initializing QdrantClient.
 
     Notes:
-        - If `url` is provided, it takes priority and the client will attempt
-          to connect to the remote Qdrant instance using the URL endpoint.
-        - If `url` is not provided and `path` is given, the client will use the
-          local path to initialize Qdrant.
-        - If neither `url` nor `path` is provided, the client will be
-          initialized with an in-memory storage (`":memory:"`).
+        - If `url_and_api_key` is provided, it takes priority and the client
+          will attempt to connect to the remote Qdrant instance using the URL
+          endpoint.
+        - If `url_and_api_key` is not provided and `path` is given, the client
+          will use the local path to initialize Qdrant.
+        - If neither `url_and_api_key` nor `path` is provided, the client will
+          be initialized with an in-memory storage (`":memory:"`).
     """
 
     def __init__(
         self,
+        vector_dim: int,
+        collection: Optional[str] = None,
+        url_and_api_key: Optional[Tuple[str, str]] = None,
         path: Optional[str] = None,
-        url: Optional[str] = None,
-        api_key: Optional[str] = None,
+        distance: VectorDistance = VectorDistance.DOT,
+        del_collection: bool = False,
         **kwargs,
     ) -> None:
-        if url is not None:
-            self.client = QdrantClient(url=url, api_key=api_key, **kwargs)
+        self.vector_dim = vector_dim
+        if url_and_api_key is not None:
+            self._client = QdrantClient(url=url_and_api_key[0],
+                                        api_key=url_and_api_key[1], **kwargs)
         elif path is not None:
-            self.client = QdrantClient(path=path, **kwargs)
+            self._client = QdrantClient(path=path, **kwargs)
         else:
-            self.client = QdrantClient(":memory:", **kwargs)
+            self._client = QdrantClient(":memory:", **kwargs)
 
-    def create_collection(
+        if collection is not None:
+            try:
+                info = self._check_collection(collection)
+                if info["vector_dim"] != self.vector_dim:
+                    raise RuntimeError(
+                        "Vector dimension of the existing collection "
+                        f"{collection} ({info['vector_dim']}) "
+                        "is different from the embedding dim "
+                        f"({self.vector_dim}).")
+                return
+            except ValueError:
+                pass
+        self.collection = collection or datetime.now().isoformat()
+        self._create_collection(
+            collection=self.collection,
+            size=self.vector_dim,
+            distance=distance,
+        )
+        self.distance = distance
+        self.del_collection = del_collection
+
+    def __del__(self):
+        r"""Deletes the collection if :obj:`del_collection` is set to
+        :obj:`True`.
+        """
+        if self.del_collection:
+            self.storage.delete_collection(self.collection_name)
+
+    def _create_collection(
         self,
         collection: str,
         size: int,
         distance: VectorDistance = VectorDistance.DOT,
         **kwargs,
     ) -> None:
-        """
-        See :func:`~camel.storage.vectordb_storage.base.BaseVectorStorage.\
-create_collection`.
+        r"""Creates a new collection in the database.
+
+        Args:
+            collection (str): Name of the collection to be created.
+            size (int): Dimensionality of vectors to be stored in this
+                collection.
+            distance (VectorDistance, optional): The distance metric to be used
+                for vector similarity. (default: :obj:`VectorDistance.DOT`)
+            **kwargs: Additional keyword arguments.
         """
         distance_map = {
             VectorDistance.DOT: Distance.DOT,
             VectorDistance.COSINE: Distance.COSINE,
             VectorDistance.EUCLIDEAN: Distance.EUCLID,
         }
-        self.client.recreate_collection(
+        self._client.recreate_collection(
             collection_name=collection,
-            vectors_config=VectorParams(size=size,
-                                        distance=distance_map[distance]),
+            vectors_config=VectorParams(
+                size=size,
+                distance=distance_map[distance],
+            ),
             **kwargs,
         )
 
-    def delete_collection(
+    def _delete_collection(
         self,
         collection: str,
         **kwargs,
     ) -> None:
-        """
-        See :func:`~camel.storage.vectordb_storage.base.BaseVectorStorage.\
-delete_collection`.
-        """
-        self.client.delete_collection(collection_name=collection, **kwargs)
+        r"""Deletes an existing collection from the database.
 
-    def check_collection(self, collection: str) -> Dict[str, Any]:
+        Args:
+            collection (str): Name of the collection to be deleted.
+            **kwargs: Additional keyword arguments.
         """
-        See :func:`~camel.storage.vectordb_storage.base.BaseVectorStorage.\
-check_collection`.
+        self._client.delete_collection(collection_name=collection, **kwargs)
 
-        Raises:
-            RuntimeWarning: If the collection's status is not GREEN.
+    def _check_collection(self, collection: str) -> Dict[str, Any]:
+        r"""
+        Retrieves details of an existing collection.
+
+        Args:
+            collection (str): Name of the collection to be checked.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing details about the
+                collection.
         """
         # TODO: check more information
-        collection_info = self.client.get_collection(
+        collection_info = self._client.get_collection(
             collection_name=collection)
-        if collection_info.status != CollectionStatus.GREEN:
-            raise RuntimeWarning(f"Qdrant collection \"{collection}\" status: "
-                                 f"{collection_info.status}")
         vector_config = collection_info.config.params.vectors
         return {
             "vector_dim":
@@ -128,104 +174,95 @@ check_collection`.
             collection_info.vectors_count,
         }
 
-    def add_vectors(
+    def add(
         self,
-        collection: str,
-        vectors: List[VectorRecord],
-    ) -> List[VectorRecord]:
-        """
-        See :func:`~camel.storage.vectordb_storage.base.BaseVectorStorage.\
-add_vectors`.
+        records: List[VectorRecord],
+        **kwargs,
+    ) -> None:
+        r"""Adds a list of vectors to the specified collection.
+
+        Args:
+            vectors (List[VectorRecord]): List of vectors to be added. If a
+                vector does not have an 'id', a new unique ID will be generated
+                for it.
 
         Raises:
             RuntimeError: If there was an error in the addition process.
         """
-        processed_vectors = [replace(v) for v in vectors]
-        for v in processed_vectors:
-            if v.id is None:
-                v.id = str(uuid4())
-
-        qdrant_points = [PointStruct(**asdict(p)) for p in processed_vectors]
-        op_info = self.client.upsert(
-            collection_name=collection,
-            points=qdrant_points,
-            wait=True,
-        )
+        qdrant_points = [PointStruct(**asdict(p)) for p in records]
+        op_info = self._client.upsert(collection_name=self.collection,
+                                      points=qdrant_points, wait=True,
+                                      **kwargs)
         if op_info.status != UpdateStatus.COMPLETED:
             raise RuntimeError(
                 "Failed to add vectors in Qdrant, operation info: "
                 f"{op_info}")
 
-        return processed_vectors
-
-    def delete_vectors(
+    def delete(
         self,
-        collection: str,
-        vectors: List[VectorRecord],
-    ) -> List[VectorRecord]:
-        """
-        See :func:`~camel.storage.vectordb_storage.base.BaseVectorStorage.\
-delete_vectors`.
+        ids: List[str],
+        **kwargs,
+    ) -> None:
+        r"""
+        Deletes a list of vectors from the storage.
+
+        Args:
+            vectors (List[str]): List of vector ids to be deleted.
 
         Raises:
-            RuntimeError: If there was an error in the deletion process or if a
-                provided vector record lacks both an ID and a vector for
-                deletion.
+            RuntimeError: If there was an error in the deletion process.
         """
-        processed_vectors = [replace(v) for v in vectors]
-        for v in processed_vectors:
-            if v.id is None:
-                if v.vector is None:
-                    raise RuntimeError("Deleting vector records should "
-                                       "contains either id or vector.")
-                search_result = self.client.search(
-                    collection_name=collection,
-                    query_vector=v.vector,
-                    with_payload=False,
-                    limit=1,
-                )
-                v.id = search_result[0].id
-        delete_points = [v.id for v in processed_vectors if v.id is not None]
-        op_info = self.client.delete(
-            collection_name=collection,
-            points_selector=PointIdsList(points=delete_points),
+        points = cast(List[Union[str, int]], ids)
+        op_info = self._client.delete(
+            collection_name=self.collection,
+            points_selector=PointIdsList(points=points),
             wait=True,
+            **kwargs,
         )
         if op_info.status != UpdateStatus.COMPLETED:
             raise RuntimeError(
                 "Failed to delete vectors in Qdrant, operation info: "
                 f"{op_info}")
-        return processed_vectors
 
-    def search(
+    def query(
         self,
-        collection: str,
-        query_vector: VectorRecord,
-        limit: int = 3,
-    ) -> List[VectorRecord]:
+        query: VectorDBQuery,
+        **kwargs,
+    ) -> List[VectorDBQueryResult]:
         """
-        See :func:`~camel.storage.vectordb_storage.base.BaseVectorStorage.\
-search`.
-
         Raises:
             RuntimeError: If the provided search vector is :obj:`None`.
         """
         # TODO: filter
-        if query_vector.vector is None:
-            raise RuntimeError("Searching vector cannot be None")
-        search_result = self.client.search(
-            collection_name=collection,
-            query_vector=query_vector.vector,
+        search_result = self._client.search(
+            collection_name=self.collection,
+            query_vector=query.query_vector,
             with_payload=True,
-            limit=limit,
+            with_vectors=True,
+            limit=query.top_k,
+            **kwargs,
         )
-        # TODO: including score?
-        result_records = []
-        for res in search_result:
-            result_records.append(
-                VectorRecord(
-                    id=res.id,
-                    payload=res.payload,
+        query_results = []
+        for point in search_result:
+            query_results.append(
+                VectorDBQueryResult.contruct(
+                    similarity=point.score,
+                    id=str(point.id),
+                    payload=point.payload,
+                    vector=point.vector,  # type: ignore
                 ))
 
-        return result_records
+        return query_results
+
+    def clear(self) -> None:
+        if self.del_collection:
+            self._delete_collection(self.collection)
+        self._create_collection(
+            collection=datetime.now().isoformat(),
+            size=self.vector_dim,
+            distance=self.distance,
+        )
+
+    @property
+    def client(self) -> QdrantClient:
+        return self._client

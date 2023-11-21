@@ -13,162 +13,126 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Union
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import Any, Dict, List, Optional
+from uuid import uuid4
 
-from camel.types import VectorDistance
+
+class VectorDistance(Enum):
+    DOT = 1
+    COSINE = 2
+    EUCLIDEAN = 3
 
 
 @dataclass
-class VectorRecord():
+class VectorRecord:
     """
     Encapsulates information about a vector's unique identifier and its
-    payload, which is primarily used as a data transfer object when interacting
-    with vector storage operations.
+    payload, which is primarily used as a data transfer object when saving
+    to vector storage.
 
     Attributes:
-        id (Optional[str]): A unique identifier for the vector. If not
-            provided, an ID will be generated during storage.
         vector (List[float]): The numerical representation of the vector.
+        id (Optional[str]): A unique identifier for the vector. If not
+            provided, an random uuid will be assigned.
         payload (Optional[Dict[str, Any]]): Any additional metadata or
             information related to the vector.
     """
-    id: Optional[Union[int, str]] = None
-    vector: Optional[List[float]] = None
+    vector: List[float]
+    id: str = field(default_factory=lambda: str(uuid4()))
     payload: Optional[Dict[str, Any]] = None
 
 
+@dataclass
+class VectorDBQuery:
+    r""""""
+    query_vector: List[float]
+    top_k: int = 1
+
+
+@dataclass
+class VectorDBQueryResult:
+    r""""""
+    record: VectorRecord
+    similarity: float
+
+    @classmethod
+    def contruct(
+        cls,
+        similarity: float,
+        vector: List[float],
+        id: str,
+        payload: Optional[Dict[str, Any]] = None,
+    ) -> "VectorDBQueryResult":
+        return cls(
+            record=VectorRecord(vector, id, payload),
+            similarity=similarity,
+        )
+
+
 class BaseVectorStorage(ABC):
-    """
-    An abstract base class representing a vector storage system.
-    Implementations of this class will define how vectors are stored,
-    retrieved, and managed in various vector databases or storage systems.
-
-    The class provides abstract methods for common operations like creating
-    collections, adding vectors, deleting vectors, and searching for similar
-    vectors.
-
-    Note:
-        Implementations of this class are expected to provide concrete
-        implementations for all the abstract methods. The methods defined are
-        common operations one would perform on a vector storage system.
-    """
+    r"""An abstract base class for vector storage systems."""
 
     @abstractmethod
-    def create_collection(
+    def add(
         self,
-        collection: str,
-        size: int,
-        distance: VectorDistance = VectorDistance.DOT,
-        **kwargs,
-    ):
-        """
-        Creates a new collection in the database.
-
-        Args:
-            collection (str): Name of the collection to be created.
-            size (int): Dimensionality of vectors to be stored in this
-                collection.
-            distance (VectorDistance, optional): The distance metric to be used
-                for vector similarity. (default: :obj:`VectorDistance.DOT`)
-            **kwargs: Additional keyword arguments.
-        """
-        ...
-
-    @abstractmethod
-    def check_collection(self, collection: str) -> Dict[str, Any]:
-        """
-        Retrieves details of an existing collection.
-
-        Args:
-            collection (str): Name of the collection to be checked.
-
-        Returns:
-            Dict[str, Any]: A dictionary containing details about the
-                collection.
-        """
-        ...
-
-    @abstractmethod
-    def add_vectors(
-        self,
-        collection: str,
-        vectors: List[VectorRecord],
-    ) -> List[VectorRecord]:
-        """
-        Adds a list of vectors to the specified collection.
-
-        Args:
-            collection (str): Name of the collection.
-            vectors (List[VectorRecord]): List of vectors to be added. If a
-                vector does not have an 'id', a new unique ID will be generated
-                for it.
-
-        Returns:
-            List[VectorRecord]: The list of vectors that were successfully
-                added. Vectors in this list will have an 'id' attribute, even
-                if it was not provided in the original input.
-        """
-        ...
-
-    @abstractmethod
-    def delete_collection(
-        self,
-        collection: str,
+        records: List[VectorRecord],
         **kwargs,
     ) -> None:
-        """
-        Deletes an existing collection from the database.
+        r"""Saves a list of vector records to the storage.
 
         Args:
-            collection (str): Name of the collection to be deleted.
-            **kwargs: Additional keyword arguments.
+            records (List[VectorRecord]): List of vector records to be saved.
+
+        Raises:
+            RuntimeError: If there is an error during the saving process.
         """
-        ...
+        pass
 
     @abstractmethod
-    def delete_vectors(
+    def delete(
         self,
-        collection: str,
-        vectors: List[VectorRecord],
-    ) -> List[VectorRecord]:
-        """
-        Deletes a list of vectors from the specified collection.
+        ids: List[str],
+        **kwargs,
+    ) -> None:
+        r"""Deletes a list of vectors identified by their IDs from the storage.
 
         Args:
-            collection (str): Name of the collection.
-            vectors (List[VectorRecord]): List of vectors to be deleted. If a
-                vector does not have an 'id', the method will attempt to find
-                the closest matching vector in the collection and delete it.
+            ids (List[str]): List of unique identifiers for the vectors to be
+                deleted.
 
-        Returns:
-            List[VectorRecord]: The list of vectors that were successfully
-                deleted. Vectors in this list will always have an 'id'
-                attribute, representing either the original ID provided or the
-                ID of the closest matching vector that was found and deleted.
+        Raises:
+            RuntimeError: If there is an error during the deletion process.
         """
-        ...
+        pass
 
     @abstractmethod
-    def search(
+    def query(
         self,
-        collection: str,
-        query_vector: VectorRecord,
-        limit: int = 3,
-    ) -> List[VectorRecord]:
-        """
-        Searches for similar vectors in the specified collection based on a
-        query vector.
+        query: VectorDBQuery,
+        **kwargs,
+    ) -> List[VectorDBQueryResult]:
+        r"""Searches for similar vectors in the storage based on the provided query.
 
         Args:
-            collection (str): Name of the collection.
-            query_vector (VectorRecord): The vector to be used as the search
-                query.
-            limit (int, optional): The maximum number of similar vectors to
-                retrieve. (default: :obj:`3`)
+            query (VectorDBQuery): The query object containing the search
+                vector and the number of top similar vectors to retrieve.
 
         Returns:
-            List[VectorRecord]: A list of vectors retrieved from the collection
-                based on similarity to :obj:`query_vector`.
+            List[VectorDBQueryResult]: A list of vectors retrieved from the
+                storage based on similarity to the query vector.
         """
-        ...
+        pass
+
+    @abstractmethod
+    def clear(self) -> None:
+        pass
+
+    @property
+    @abstractmethod
+    def client(self) -> Any:
+        r"""Provides access to the underlying client used for interacting with
+        the vector storage system.
+        """
+        pass

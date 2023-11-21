@@ -12,25 +12,29 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from typing import List, Optional, Tuple, Union
-from uuid import uuid4
+from typing import List, Optional
 
 from camel.embeddings import BaseEmbedding, OpenAiEmbedding
-from camel.memories import BaseMemory, MemoryRecord
-from camel.storages import BaseVectorStorage, QdrantStorage, VectorRecord
-from camel.types import VectorDistance
+from camel.memories import (
+    AgentMemory,
+    BaseMemory,
+    ChatHistoryMemory,
+    ContextRecord,
+    MemoryRecord,
+)
+from camel.memories.context_creators import BaseContextCreator
+from camel.storages.vectordb_storages import (
+    BaseVectorStorage,
+    QdrantStorage,
+    VectorDBQuery,
+    VectorRecord,
+)
 
 
 class VectorDBMemory(BaseMemory):
-    """
-    An implementation of the :obj:`BaseMemory` abstract base class for
+    r"""An implementation of the :obj:`BaseMemory` abstract base class for
     maintaining and retrieving information using vector embeddings within a
     vector database.
-
-    This memory class leverages embeddings to convert chat messages
-    into vector representations, which are then stored in a vector database.
-    This mechanism facilitates efficient searches based on content similarity,
-    enabling functionalities like context retrieval, recommendation, etc.
 
     Args:
         storage (Optional[BaseVectorStorage], optional): The storage mechanism
@@ -39,105 +43,42 @@ class VectorDBMemory(BaseMemory):
         embedding (Optional[BaseEmbedding], optional): Embedding mechanism to
             convert chat messages into vector representations. Defaults to
             :obj:`OpenAiEmbedding` if not provided. (default: :obj:`None`)
-        distance (VectorDistance, optional): The distance metric used in the
-            vector database. (default: :obj:`VectorDistance.DOT`)
-        collection_name (Optional[str], optional): Desired name for the
-            collection within the vector database. If not provided, a unique
-            identifier is generated. (default: :obj:`None`)
-        del_collection (bool, optional): Determines whether to delete the
-            collection upon object destruction. (default: :obj:`False`)
-        **kwargs: Additional keyword arguments passing to
-            :obj:`create_collection`.
     """
 
     def __init__(
         self,
         storage: Optional[BaseVectorStorage] = None,
         embedding: Optional[BaseEmbedding] = None,
-        distance: VectorDistance = VectorDistance.DOT,
-        collection_name: Optional[str] = None,
-        del_collection: bool = False,
-        **kwargs,
     ) -> None:
-        self.storage = storage or QdrantStorage()
         self.embedding = embedding or OpenAiEmbedding()
         self.vector_dim = self.embedding.get_output_dim()
-        self.del_collection = del_collection
-        self.distance = distance
-
-        if collection_name is not None:
-            try:
-                info = self.storage.check_collection(collection_name)
-                if info["vector_dim"] != self.vector_dim:
-                    raise RuntimeError(
-                        "Vector dimension of the existing collection "
-                        f"{collection_name} ({info['vector_dim']}) "
-                        "is different from the embedding dim "
-                        f"({self.vector_dim}).")
-                return
-            except ValueError:
-                pass
-        self.collection_name = collection_name or str(uuid4())
-        self.storage.create_collection(
-            collection=self.collection_name,
-            size=self.vector_dim,
-            distance=distance,
-            **kwargs,
-        )
-
-    def __del__(self):
-        """
-        Destructor that deletes the collection if :obj:`del_collection` is set
-        to :obj:`True`.
-        """
-        if self.del_collection:
-            self.storage.delete_collection(self.collection_name)
+        self.storage = storage or QdrantStorage(vector_dim=self.vector_dim)
 
     def retrieve(
         self,
-        condition: Optional[Union[Tuple[str, int], str]] = None,
-    ) -> List[MemoryRecord]:
-        """
-        Retrieves similar chat messages from the vector database based on the
-        content of the current state message.
+        keyword: str,
+        limit: int = 3,
+    ) -> List[ContextRecord]:
+        r"""Retrieves similar records from the vector database based on the
+        content of the keyword.
 
         Args:
-            current_state (Optional[BaseMessage], optional): **Mandatory.** An
-                incoming message representing the current state. This message's
-                content will be converted into a vector representation to query
-                the database. (default: :obj:`None`)
+            keyword (str): This string will be converted into a vector
+                representation to query the database.
             limit (int, optional): The maximum number of similar messages to
                 retrieve. (default: :obj:`3`).
 
         Returns:
-            List[BaseMessage]: A list of chat messages retrieved from the
+            List[MemoryRecord]: A list of memory records retrieved from the
                 vector database based on similarity to :obj:`current_state`.
-
-        Raises:
-            ValueError: If the current state is not provided.
         """
-        if condition is None:
-            raise ValueError(
-                "Retrieving vector database memeory without input condition "
-                "is not allowed.")
-        elif type(condition) is str:
-            key = condition
-            limit = 3
-        elif type(condition) is tuple and type(condition[0]) is str and type(
-                condition[1]) is int:
-            key, limit = condition
-        else:
-            raise ValueError("Invalid input.")
-
-        query_vector = self.embedding.embed(key)
-        results = self.storage.search(
-            self.collection_name,
-            VectorRecord(vector=query_vector),
-            limit,
-        )
+        query_vector = self.embedding.embed(keyword)
+        results = self.storage.query(VectorDBQuery(query_vector, top_k=limit))
         return [
-            MemoryRecord.from_dict(res.payload) for res in results
-            if res.payload is not None
+            ContextRecord(
+                memory_record=MemoryRecord.from_dict(result.record.payload),
+                score=result.similarity,
+            ) for result in results if result.record.payload is not None
         ]
 
     def write_records(self, records: List[MemoryRecord]) -> None:
@@ -151,25 +92,41 @@ class VectorDBMemory(BaseMemory):
         """
         v_records = [
             VectorRecord(
-                vector=self.embedding.embed(r.message.content),
-                payload=r.to_dict(),
-                id=str(r.uuid),
-            ) for r in records
+                vector=self.embedding.embed(record.message.content),
+                payload=record.to_dict(),
+                id=str(record.uuid),
+            ) for record in records
         ]
-
-        self.storage.add_vectors(
-            collection=self.collection_name,
-            vectors=v_records,
-        )
+        self.storage.add(v_records)
 
     def clear(self) -> None:
-        """
-        Clears all vector representations and chat messages from the collection
-        and reinitializes the collection in the vector database.
-        """
-        self.storage.delete_collection(self.collection_name)
-        self.storage.create_collection(
-            self.collection_name,
-            size=self.vector_dim,
-            distance=self.distance,
+        r"""Removes all records from the vector database memory."""
+        self.storage.clear()
+
+
+class VectorDBAgentMemory(AgentMemory):
+    r"""
+    An implementation of the :obj:`AgentMemory` abstract base class for
+    augumenting ChatHistoryMemory with VectorDBMemory.
+    """
+
+    def __init__(
+        self,
+        context_creator: BaseContextCreator,
+        chat_history_memory: Optional[ChatHistoryMemory] = None,
+        vector_db_memory: Optional[VectorDBMemory] = None,
+    ) -> None:
+        self.chat_history_memory = chat_history_memory or ChatHistoryMemory(
+            context_creator,
+            window_size=20,
         )
+        self.vector_db_memory = vector_db_memory or VectorDBMemory()
+        self._context_creator = context_creator
+
+    def get_context_creator(self) -> BaseContextCreator:
+        return self._context_creator
+
+    def retrieve(self) -> List[ContextRecord]:
+        # TODO
+        return (self.vector_db_memory.retrieve("TODO") +
+                self.chat_history_memory.retrieve())

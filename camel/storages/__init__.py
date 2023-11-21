@@ -15,7 +15,13 @@
 from .key_value_storages.base import BaseKeyValueStorage
 from .key_value_storages.in_memory import InMemoryKeyValueStorage
 from .key_value_storages.json import JsonStorage
-from .vectordb_storages.base import BaseVectorStorage, VectorRecord
+from .vectordb_storages.base import (
+    BaseVectorStorage,
+    VectorRecord,
+    VectorDistance,
+    VectorDBQuery,
+    VectorDBQueryResult,
+)
 from .vectordb_storages.qdrant import QdrantStorage
 
 __all__ = [
@@ -24,5 +30,8 @@ __all__ = [
     'JsonStorage',
     'VectorRecord',
     'BaseVectorStorage',
+    'VectorDistance',
+    'VectorDBQuery',
+    'VectorDBQueryResult',
     'QdrantStorage',
 ]
