@@ -21,7 +21,7 @@ from camel.societies import RolePlaying
 from camel.types import ModelType, TaskType
 
 
-def main(model_type=ModelType.GPT_4, task_prompt=None,
+def main(model_type=ModelType.GPT_4_TURBO, task_prompt=None,
          context_text=None) -> None:
     # Start the multi-agent communication
     print_and_write_md("=========================================",
@@ -40,11 +40,11 @@ def main(model_type=ModelType.GPT_4, task_prompt=None,
     # Model and agent initialization
     model_config_description = ChatGPTConfig()
     role_assignment_agent = RoleAssignmentAgent(
-        model=model_type, model_config=model_config_description)
-    insight_agent = InsightAgent(model=model_type,
+        model_type=model_type, model_config=model_config_description)
+    insight_agent = InsightAgent(model_type=model_type,
                                  model_config=model_config_description)
     deductive_reasoner_agent = DeductiveReasonerAgent(
-        model=model_type, model_config=model_config_description)
+        model_type=model_type, model_config=model_config_description)
 
     # Generate role with descriptions
     role_descriptions_dict = \

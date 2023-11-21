@@ -291,7 +291,7 @@ class RoleAssignmentAgent(ChatAgent):
         # Generate insights from the context text to help decompose the task
         if context_text is not None:
             model_config = self.model_config
-            insight_agent = InsightAgent(model=self.model,
+            insight_agent = InsightAgent(model_type=self.model_type,
                                          model_config=model_config)
             task_insights_json = insight_agent.run(context_text=context_text)
             task_context_prompt = (
