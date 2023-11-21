@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import re
-from typing import Any, Dict, Optional, Union
+from typing import Dict, List, Optional, Union
 
 from camel.agents import ChatAgent
 from camel.configs import BaseConfig
@@ -54,25 +54,23 @@ class DeductiveReasonerAgent(ChatAgent):
 
     def deduce_conditions_and_quality(
         self,
-        starting_state: Union[str, TextPrompt],
-        target_state: Union[str, TextPrompt],
+        starting_state: str,
+        target_state: str,
         role_descriptions_dict: Optional[Dict[str, str]] = None,
-    ) -> Dict[str, Dict[str, Optional[str]]]:
+    ) -> Dict[str, Union[List[str], Dict[str, str]]]:
         r"""Derives the conditions and quality from the starting state and the
         target state based on the model of the deductive reasoning and the
         knowledge base.
 
         Args:
-            starting_state (Union[str, TextPrompt]): The starting state of the
-                task.
-            target_state (Union[str, TextPrompt]): The target state of the
-                task.
+            starting_state (str): The starting state of the task.
+            target_state (str): The target state of the task.
             role_descriptions_dict (Optional[Dict[str, str]], optional): The
                 descriptions of the roles. (default: :obj:`None`)
 
         Returns:
-            Dict[str, Dict[str, Optional[str]]]: The generated insights from
-                the input context text.
+            Dict[str, Union[List[str], Dict[str, str]]]: A dictionary
+                containing the conditions and quality.
         """
         self.reset()
 
@@ -193,7 +191,8 @@ Given the starting state $A$ and the target state $B$, assuming that a path $L$ 
         ][0]
 
         # Convert them into JSON format
-        conditions_and_quality_json: Dict[str, Any] = {}
+        conditions_and_quality_json: \
+            Dict[str, Union[List[str], Dict[str, str]]] = {}
         conditions_and_quality_json["conditions"] = condistions_dict
         conditions_and_quality_json["labels"] = labels
         conditions_and_quality_json["quality"] = quality
