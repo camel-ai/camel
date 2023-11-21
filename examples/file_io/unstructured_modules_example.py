@@ -49,21 +49,13 @@ def extract_data_example():
 
 
 def stage_data_example():
-    from unstructured.documents.elements import (
-        ElementMetadata,
-        NarrativeText,
-        Title,
-    )
-    metadata = ElementMetadata(filename="fox.epub")
-    elements = [
-        Title("A Wonderful Story About A Fox", metadata=metadata),
-        NarrativeText(
-            "A fox ran into the chicken coop and the chickens flew off!",
-            metadata=metadata,
-        ),
-    ]
-    rows = unstructured_modules.stage_elements("stage_for_baseplate", elements)
-    return rows
+    url = ("https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
+           "philadelphia-eagles-spt-intl/index.html")
+    elements = unstructured_modules.parse_file_or_url(url)
+
+    staged_element = unstructured_modules.stage_elements(
+        "stage_for_baseplate", elements)
+    return staged_element
 
 
 def chunk_url_content_example():

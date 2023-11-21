@@ -165,7 +165,6 @@ class UnstructuredModules:
         )
         from unstructured.cleaners.translate import translate_text
 
-        # Map of available cleaning functions for dynamic access
         cleaning_functions = {
             "clean_extra_whitespace": clean_extra_whitespace,
             "clean_bullets": clean_bullets,
@@ -188,7 +187,7 @@ class UnstructuredModules:
                 cleaned_text = cleaning_functions[func_name](cleaned_text,
                                                              **params)
             else:
-                raise AttributeError(
+                raise ValueError(
                     f"'{func_name}' is not a valid function in 'unstructured'."
                 )
 
@@ -227,7 +226,6 @@ class UnstructuredModules:
             extract_us_phone_number,
         )
 
-        # Map of available extracting functions for dynamic access
         extraction_functions = {
             "extract_datetimetz": extract_datetimetz,
             "extract_email_address": extract_email_address,

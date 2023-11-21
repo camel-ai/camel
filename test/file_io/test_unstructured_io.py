@@ -55,9 +55,9 @@ def test_clean_text_data(unstructured_instance):
         "  Hello  World  ", options)
     assert cleaned_text == "Hello World"  # Check the expected cleaned text
 
-    # Test with an invalid cleaning option (should raise AttributeError)
+    # Test with an invalid cleaning option (should raise ValueError)
     options = {"invalid_cleaning_option": {}}
-    with pytest.raises(AttributeError):
+    with pytest.raises(ValueError):
         unstructured_instance.clean_text_data("Test Text", options)
 
 
@@ -69,13 +69,58 @@ def test_extract_data_from_text(unstructured_instance):
         "extract_email_address", email_text)
     assert extracted_email == ["example@email.com"]
 
+    # Test with an invalid extract option (should raise ValueError)
+    options = {"invalid_extracting_option": {}}
+    with pytest.raises(ValueError):
+        unstructured_instance.extract_data_from_text("Test Text", options)
+
+
+# Test the stage_elements method
+def test_stage_elements_for_csv(unstructured_instance):
+    # Test staging for baseplate
+    url = ("https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
+           "philadelphia-eagles-spt-intl/index.html")
+    elements = unstructured_instance.parse_file_or_url(url)
+    staged_element = unstructured_instance.stage_elements(
+        "stage_for_baseplate", elements)
+    assert staged_element['rows'][0] == {
+        'data': {
+            'type': 'UncategorizedText',
+            'element_id': 'e78902d05b0cb1e4c38fc7a79db450d5',
+            'text': 'CNN\n        \xa0—'
+        },
+        'metadata': {
+            'filetype':
+            'text/html',
+            'languages': ['eng'],
+            'page_number':
+            1,
+            'url':
+            'https://www.cnn.com/2023/01/30/sport/'
+            'empire-state-building-green-philadelphia-eagles-spt-'
+            'intl/index.html',
+            'emphasized_text_contents': ['CNN'],
+            'emphasized_text_tags': ['span']
+        }
+    }
+
+    # Test with an invalid stage option (should raise ValueError)
+    options = {"invalid_stageing_option": {}}
+    with pytest.raises(ValueError):
+        unstructured_instance.stage_elements("Test Text", options)
+
 
 # Test the chunk_elements method
 def test_chunk_elements(unstructured_instance):
-
+    # Test chunking content from a url
     url = ("https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
            "philadelphia-eagles-spt-intl/index.html")
     elements = unstructured_instance.parse_file_or_url(url)
     chunked_sections = unstructured_instance.chunk_elements(
         "chunk_by_title", elements)
+
     assert len(chunked_sections) == 7  # Check the number of chunks
+    # Test with an invalid chunk option (should raise ValueError)
+    with pytest.raises(ValueError):
+        unstructured_instance.chunk_elements("chunk_by_invalid_option",
+                                             elements)
