@@ -23,10 +23,10 @@ def main(model_type=None, chat_turn_limit=15) -> None:
     task_prompt = "Develop a trading bot for the stock market"
     babyagi_session = BabyAGI(
         assistant_role_name="Python Programmer",
-        assistant_agent_kwargs=dict(model=model_type),
+        assistant_agent_kwargs=dict(model_type=model_type),
         user_role_name="Stock Trader",
         task_prompt=task_prompt,
-        task_specify_agent_kwargs=dict(model=model_type),
+        task_specify_agent_kwargs=dict(model_type=model_type),
         message_window_size=5,
     )
 
