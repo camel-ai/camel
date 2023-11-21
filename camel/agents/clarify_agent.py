@@ -61,21 +61,25 @@ class TaskClarifyAgent(ChatAgent):
         clarify_prompt_base = """You are a task clarifier agent, and you should obey the RULES OF TASK CLARIFICATION.
 ==== RULES OF TASK CLARIFICATION ====
 1. Contextual Interaction: Engage with the user over multiple rounds, focusing each interaction on clarifying ambiguities or generalities in the user's TASK.
-2. Single-Question Focus: Generate context-aware questions that address specific uncertainties in the TASK. And limit your interaction to one clarifying question at a time, ensuring it is directly related to the TASK and tailored to the user's previous response.
-3. Non-Answer Handling: If the user's response does not provide the required clarification (like responding with 'null'), your follow-up question should:
-- Acknowledge the user's previous response (or lack of it) and give the user one main reason you follow up the question.
-- If you ask too many same questions, the user may get annoyed and stop responding. So, you should limit the number of follow-up questions to at most 2 and move on to the next question.
-- Reframe or simplify the original question, or ask a related but simpler question that might indirectly lead to the necessary clarification.
+2. Ask context aware question based on the initial TASK and the user's previous response.
+3. Single-Question Focus: Generate context-aware questions that address specific uncertainties in the TASK. And limit your interaction to one clarifying question at a time, ensuring it is directly related to the TASK and tailored to the user's previous response. And the question should be open-ended, rather than a yes/no question. And the question must have something that user can answer.
+4. When user assign a specific issue that want to clarify, you should ask a question that can help you to clarify the issue.
+5. Non-Answer Handling: If the user's response does not provide the required clarification (like responding with 'null'), your follow-up question should:
+- Acknowledge the user's previous response and give the user one main reason you follow up the question.
+- If you don't understand the user's response, ask for clarification, rather than asking the same question again.
+- Limit the number of follow-up questions to at most 2 and move on to the next question with a response "We will skip this question since no clarification is provided".
+- When ask follow up question, please reframe or simplify the original question, or ask a related but simpler question that might indirectly lead to the necessary clarification.
 - Maintain focus on the TASK's ambiguities or generalities.
-4. Avoid Providing Answers: Your role is not to provide answers or solutions but to facilitate clarity through your questions.
-5. Template Adherence with Flexibility: Follow the structured "ANSWER TEMPLATE" for your responses, filling in the blanks appropriately based on the user's input. This template allows for acknowledgment of non-informative responses and rephrasing of follow-up questions to stay on track with the task clarification.
-6. Use Reference Material Wisely: Refer to the "QUESTION_ANSWER PAIR" for guidance, but ensure your questions are unique and not repetitive.
+6. Avoid Providing Answers: Your role is not to provide answers or solutions but to facilitate clarity through your questions.
+7. Template Adherence with Flexibility: Follow the structured "ANSWER TEMPLATE" for your responses, filling in the blanks appropriately based on the user's clarification. This template allows for asking clarification question only, no answer is needed.
+8. Use Reference Material Wisely: Refer to the "QUESTION_ANSWER PAIRS" for guidance, but ensure your questions are unique and not repetitive from the QUESTION_ANSWER PAIR.
 
 ===== TASK =====
 {task_prompt}
 
 ===== ANSWER TEMPLATE =====
 Q:\n<BLANK, your question>"""  # noqa: E501
+
         clarify_prompt_base = TextPrompt(clarify_prompt_base)
         clarify_prompt_base = clarify_prompt_base.format(
             task_prompt=task_prompt)
@@ -116,10 +120,12 @@ Q:\n<BLANK, your question>"""  # noqa: E501
 
             if not answer or answer == "c":
                 print("Nothing more to clarify.\n")
-                return question_answer_pairs
+                return question_answer_pairs[:-1]
 
         insight = insight_agent.InsightAgent()
-        insights_str = insight.run(clarify_dict)
+        insights_str = insight.run(question_answer_pairs)
+        print("ingishts_str: ", insights_str)
+        print("\n")
 
         return insights_str
 
@@ -127,5 +133,5 @@ Q:\n<BLANK, your question>"""  # noqa: E501
 if __name__ == "__main__":
     task_prompt = "Develop a trading bot for stock market"
     task_clarify_agent = TaskClarifyAgent()
-    clarify_dict = task_clarify_agent.run(task_prompt=task_prompt)
-    print(f"Clarified question answer pairs: {clarify_dict}\n")
+    insights = task_clarify_agent.run(task_prompt=task_prompt)
+    print(f"Insights from clarification: {insights}\n")
