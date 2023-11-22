@@ -43,34 +43,20 @@ class ModelType(Enum):
 
     @property
     def is_openai(self) -> bool:
-        r"""Returns whether this type of models is an OpenAI-released model.
-
-        Returns:
-            bool: Whether this type of models belongs to OpenAI.
-        """
-        if self.name in {
-                "GPT_3_5_TURBO",
-                "GPT_3_5_TURBO_16K",
-                "GPT_4",
-                "GPT_4_32K",
-                "GPT_4_TURBO",
-                "GPT_4_TURBO_VISION",
-        }:
-            return True
-        else:
-            return False
+        r"""Returns whether this type of models is an OpenAI-released model."""
+        return self.name in {
+            "GPT_3_5_TURBO",
+            "GPT_3_5_TURBO_16K",
+            "GPT_4",
+            "GPT_4_32K",
+            "GPT_4_TURBO",
+            "GPT_4_TURBO_VISION",
+        }
 
     @property
     def is_open_source(self) -> bool:
-        r"""Returns whether this type of models is open-source.
-
-        Returns:
-            bool: Whether this type of models is open-source.
-        """
-        if self.name in {"LLAMA_2", "VICUNA", "VICUNA_16K"}:
-            return True
-        else:
-            return False
+        r"""Returns whether this type of models is open-source."""
+        return self.name in {"LLAMA_2", "VICUNA", "VICUNA_16K"}
 
     @property
     def token_limit(self) -> int:
@@ -121,6 +107,40 @@ class ModelType(Enum):
                     or "llama2" in model_name.lower())
         else:
             return self.value in model_name.lower()
+
+
+class EmbeddingModelType(Enum):
+    ADA2 = "text-embedding-ada-002"
+    ADA1 = "text-embedding-ada-001"
+    BABBAGE1 = "text-embedding-babbage-001"
+    CURIE1 = "text-embedding-curie-001"
+    DAVINCI1 = "text-embedding-davinci-001"
+
+    @property
+    def is_openai(self) -> bool:
+        r"""Returns whether this type of models is an OpenAI-released model."""
+        return self in {
+            EmbeddingModelType.ADA1,
+            EmbeddingModelType.ADA2,
+            EmbeddingModelType.BABBAGE1,
+            EmbeddingModelType.CURIE1,
+            EmbeddingModelType.DAVINCI1,
+        }
+
+    @property
+    def output_dim(self) -> int:
+        if self is EmbeddingModelType.ADA2:
+            return 1536
+        elif self is EmbeddingModelType.ADA1:
+            return 1024
+        elif self is EmbeddingModelType.BABBAGE1:
+            return 2048
+        elif self is EmbeddingModelType.CURIE1:
+            return 4096
+        elif self is EmbeddingModelType.DAVINCI1:
+            return 12288
+        else:
+            raise ValueError(f"Unknown model type {self}.")
 
 
 class TaskType(Enum):

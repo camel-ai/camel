@@ -12,36 +12,39 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from abc import ABC, abstractmethod
-from typing import List
+from typing import Any, List
 
 
 class BaseEmbedding(ABC):
     r"""Abstract base class for text embedding functionalities."""
 
     @abstractmethod
-    def embed_texts(self, texts: List[str]) -> List[List[float]]:
+    def embed_texts(self, texts: List[str],
+                    **kwargs: Any) -> List[List[float]]:
         r"""Generates embeddings for the given texts.
 
         Args:
             texts (List[str]): The texts for which to generate the embeddings.
+            **kwargs (Any): Extra kwargs passed to the embedding API.
 
         Returns:
             List[List[float]]: A list that represents the generated embedding
-            as a list of floating-point numbers.
+                as a list of floating-point numbers.
         """
         pass
 
-    def embed_text(self, text: str) -> List[float]:
+    def embed_text(self, text: str, **kwargs: Any) -> List[float]:
         r"""Generates an embedding for the given text.
 
         Args:
             text (str): The text for which to generate the embedding.
+            **kwargs (Any): Extra kwargs passed to the embedding API.
 
         Returns:
             List[float]: A list of floating-point numbers representing the
                 generated embedding.
         """
-        return self.embed_texts([text])[0]
+        return self.embed_texts([text], **kwargs)[0]
 
     @abstractmethod
     def get_output_dim(self) -> int:

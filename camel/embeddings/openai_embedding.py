@@ -12,35 +12,12 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from enum import Enum
-from typing import List
+from typing import Any, List
 
 from openai import OpenAI
 
 from camel.embeddings import BaseEmbedding
-
-
-class OpenAIEmbeddingModelType(Enum):
-    ADA2 = "text-embedding-ada-002"
-    ADA1 = "text-embedding-ada-001"
-    BABBAGE1 = "text-embedding-babbage-001"
-    CURIE1 = "text-embedding-curie-001"
-    DAVINCI1 = "text-embedding-davinci-001"
-
-    @property
-    def output_dim(self) -> int:
-        if self is OpenAIEmbeddingModelType.ADA2:
-            return 1536
-        elif self is OpenAIEmbeddingModelType.ADA1:
-            return 1024
-        elif self is OpenAIEmbeddingModelType.BABBAGE1:
-            return 2048
-        elif self is OpenAIEmbeddingModelType.CURIE1:
-            return 4096
-        elif self is OpenAIEmbeddingModelType.DAVINCI1:
-            return 12288
-        else:
-            raise ValueError(f"Unknown model type {self}.")
+from camel.types import EmbeddingModelType
 
 
 class OpenAIEmbedding(BaseEmbedding):
@@ -56,18 +33,21 @@ class OpenAIEmbedding(BaseEmbedding):
 
     def __init__(
         self,
-        model_type: OpenAIEmbeddingModelType = OpenAIEmbeddingModelType.ADA2,
+        model_type: EmbeddingModelType = EmbeddingModelType.ADA2,
     ) -> None:
+        if not model_type.is_openai:
+            raise ValueError("Invalid OpenAI embedding model type.")
         self.model_type = model_type
         self.output_dim = model_type.output_dim
         self.client = OpenAI()
 
-    def embed_texts(self, texts: List[str], **kwargs) -> List[List[float]]:
+    def embed_texts(self, texts: List[str],
+                    **kwargs: Any) -> List[List[float]]:
         r"""Generates embeddings for the given texts.
 
         Args:
             texts (List[str]): The texts for which to generate the embeddings.
-            kwargs (Dict[str, Any]): Extra kwargs passed to the API.
+            **kwargs (Any): Extra kwargs passed to the embedding API.
 
         Returns:
             List[List[float]]: A list that represents the generated embedding
