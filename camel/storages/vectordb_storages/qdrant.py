@@ -39,17 +39,20 @@ class QdrantStorage(BaseVectorStorage):
 
     Args:
         vector_dim (int): The dimenstion of storing vectors.
-        collection (Optional[str]): Name for the collection. If not provided,
-            a unique identifier is generated.
+        collection (Optional[str]): Name for the collection in the Qdrant. If
+            not provided, a unique identifier is generated.
+            (default: :obj:`None`)
         url_and_api_key (Optional[Tuple[str, str]]): Tuple containing the URL
             and API key for connecting to a remote Qdrant instance.
+            (default: :obj:`None`)
         path (Optional[str]): Path to a directory for initializing a local
-            Qdrant client.
+            Qdrant client. (default: :obj:`None`)
         distance (VectorDistance): The distance metric for vector comparison
-            (default: `VectorDistance.DOT`).
+            (default: :obj:`VectorDistance.DOT`).
         del_collection (bool): Flag to determine if the collection should be
-            deleted upon object destruction (default: `False`).
-        **kwargs: Additional keyword arguments for initializing QdrantClient.
+            deleted upon object destruction (default: :obj:`False`).
+        **kwargs (Any): Additional keyword arguments for initializing
+            `QdrantClient`.
 
     Notes:
         - If `url_and_api_key` is provided, it takes priority and the client
@@ -73,8 +76,11 @@ class QdrantStorage(BaseVectorStorage):
     ) -> None:
         self.vector_dim = vector_dim
         if url_and_api_key is not None:
-            self._client = QdrantClient(url=url_and_api_key[0],
-                                        api_key=url_and_api_key[1], **kwargs)
+            self._client = QdrantClient(
+                url=url_and_api_key[0],
+                api_key=url_and_api_key[1],
+                **kwargs,
+            )
         elif path is not None:
             self._client = QdrantClient(path=path, **kwargs)
         else:
@@ -153,8 +159,7 @@ class QdrantStorage(BaseVectorStorage):
         self._client.delete_collection(collection_name=collection, **kwargs)
 
     def _check_collection(self, collection: str) -> Dict[str, Any]:
-        r"""
-        Retrieves details of an existing collection.
+        r"""Retrieves details of an existing collection.
 
         Args:
             collection (str): Name of the collection to be checked.
@@ -183,9 +188,7 @@ class QdrantStorage(BaseVectorStorage):
         r"""Adds a list of vectors to the specified collection.
 
         Args:
-            vectors (List[VectorRecord]): List of vectors to be added. If a
-                vector does not have an 'id', a new unique ID will be generated
-                for it.
+            vectors (List[VectorRecord]): List of vectors to be added.
 
         Raises:
             RuntimeError: If there was an error in the addition process.
@@ -204,14 +207,15 @@ class QdrantStorage(BaseVectorStorage):
         ids: List[str],
         **kwargs,
     ) -> None:
-        r"""
-        Deletes a list of vectors from the storage.
+        r"""Deletes a list of vectors identified by their IDs from the storage.
 
         Args:
-            vectors (List[str]): List of vector ids to be deleted.
+            ids (List[str]): List of unique identifiers for the vectors to be
+                deleted.
+            **kwargs (Any): Additional keyword arguments.
 
         Raises:
-            RuntimeError: If there was an error in the deletion process.
+            RuntimeError: If there is an error during the deletion process.
         """
         points = cast(List[Union[str, int]], ids)
         op_info = self._client.delete(
@@ -230,9 +234,16 @@ class QdrantStorage(BaseVectorStorage):
         query: VectorDBQuery,
         **kwargs,
     ) -> List[VectorDBQueryResult]:
-        """
-        Raises:
-            RuntimeError: If the provided search vector is :obj:`None`.
+        r"""Searches for similar vectors in the storage based on the provided query.
+
+        Args:
+            query (VectorDBQuery): The query object containing the search
+                vector and the number of top similar vectors to retrieve.
+            **kwargs (Any): Additional keyword arguments.
+
+        Returns:
+            List[VectorDBQueryResult]: A list of vectors retrieved from the
+                storage based on similarity to the query vector.
         """
         # TODO: filter
         search_result = self._client.search(
@@ -256,6 +267,7 @@ class QdrantStorage(BaseVectorStorage):
         return query_results
 
     def clear(self) -> None:
+        r"""Remove all vectors from the storage."""
         if self.del_collection:
             self._delete_collection(self.collection)
         self._create_collection(

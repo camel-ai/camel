@@ -27,17 +27,16 @@ class VectorDistance(Enum):
 
 @dataclass
 class VectorRecord:
-    """
-    Encapsulates information about a vector's unique identifier and its
+    R"""Encapsulates information about a vector's unique identifier and its
     payload, which is primarily used as a data transfer object when saving
     to vector storage.
 
     Attributes:
         vector (List[float]): The numerical representation of the vector.
-        id (Optional[str]): A unique identifier for the vector. If not
+        id (str, optional): A unique identifier for the vector. If not
             provided, an random uuid will be assigned.
-        payload (Optional[Dict[str, Any]]): Any additional metadata or
-            information related to the vector.
+        payload (Optional[Dict[str, Any]], optional): Any additional metadata
+            or information related to the vector. (default: :obj:`None`)
     """
     vector: List[float]
     id: str = field(default_factory=lambda: str(uuid4()))
@@ -46,14 +45,27 @@ class VectorRecord:
 
 @dataclass
 class VectorDBQuery:
-    r""""""
+    r"""Represents a query to a vector database.
+
+    Attributes:
+        query_vector (List[float]): The numerical representation of the query
+            vector.
+        top_k (int, optional): The number of top similar vectors to retrieve
+            from the database. (default: `1`)
+    """
     query_vector: List[float]
     top_k: int = 1
 
 
 @dataclass
 class VectorDBQueryResult:
-    r""""""
+    r"""Encapsulates the result of a query against a vector database.
+
+    Attributes:
+        record (VectorRecord): The target vector record.
+        similarity (float): The similarity score between the query vector and
+            the record.
+    """
     record: VectorRecord
     similarity: float
 
@@ -65,6 +77,7 @@ class VectorDBQueryResult:
         id: str,
         payload: Optional[Dict[str, Any]] = None,
     ) -> "VectorDBQueryResult":
+        r"""A class method to construct a `VectorDBQueryResult` instance."""
         return cls(
             record=VectorRecord(vector, id, payload),
             similarity=similarity,
@@ -78,12 +91,13 @@ class BaseVectorStorage(ABC):
     def add(
         self,
         records: List[VectorRecord],
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         r"""Saves a list of vector records to the storage.
 
         Args:
             records (List[VectorRecord]): List of vector records to be saved.
+            **kwargs (Any): Additional keyword arguments.
 
         Raises:
             RuntimeError: If there is an error during the saving process.
@@ -94,13 +108,14 @@ class BaseVectorStorage(ABC):
     def delete(
         self,
         ids: List[str],
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         r"""Deletes a list of vectors identified by their IDs from the storage.
 
         Args:
             ids (List[str]): List of unique identifiers for the vectors to be
                 deleted.
+            **kwargs (Any): Additional keyword arguments.
 
         Raises:
             RuntimeError: If there is an error during the deletion process.
@@ -111,13 +126,14 @@ class BaseVectorStorage(ABC):
     def query(
         self,
         query: VectorDBQuery,
-        **kwargs,
+        **kwargs: Any,
     ) -> List[VectorDBQueryResult]:
         r"""Searches for similar vectors in the storage based on the provided query.
 
         Args:
             query (VectorDBQuery): The query object containing the search
                 vector and the number of top similar vectors to retrieve.
+            **kwargs (Any): Additional keyword arguments.
 
         Returns:
             List[VectorDBQueryResult]: A list of vectors retrieved from the
@@ -127,6 +143,7 @@ class BaseVectorStorage(ABC):
 
     @abstractmethod
     def clear(self) -> None:
+        r"""Remove all vectors from the storage."""
         pass
 
     @property
