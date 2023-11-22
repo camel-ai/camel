@@ -11,13 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import os
 from typing import Any, List
 
 from openai import OpenAI
 
 from camel.embeddings import BaseEmbedding
 from camel.types import EmbeddingModelType
+from camel.utils import openai_api_key_required
 
 
 class OpenAIEmbedding(BaseEmbedding):
@@ -41,8 +41,12 @@ class OpenAIEmbedding(BaseEmbedding):
         self.output_dim = model_type.output_dim
         self.client = OpenAI()
 
-    def embed_texts(self, texts: List[str],
-                    **kwargs: Any) -> List[List[float]]:
+    @openai_api_key_required
+    def embed_texts(
+        self,
+        texts: List[str],
+        **kwargs: Any,
+    ) -> List[List[float]]:
         r"""Generates embeddings for the given texts.
 
         Args:
@@ -54,9 +58,6 @@ class OpenAIEmbedding(BaseEmbedding):
                 as a list of floating-point numbers.
         """
         # TODO: count tokens
-        if 'OPENAI_API_KEY' not in os.environ:
-            raise ValueError('OpenAI API key not found.')
-
         response = self.client.embeddings.create(
             input=texts,
             model=self.model_type.value,

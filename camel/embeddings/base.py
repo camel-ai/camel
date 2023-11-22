@@ -19,8 +19,11 @@ class BaseEmbedding(ABC):
     r"""Abstract base class for text embedding functionalities."""
 
     @abstractmethod
-    def embed_texts(self, texts: List[str],
-                    **kwargs: Any) -> List[List[float]]:
+    def embed_texts(
+        self,
+        texts: List[str],
+        **kwargs: Any,
+    ) -> List[List[float]]:
         r"""Generates embeddings for the given texts.
 
         Args:
@@ -33,7 +36,11 @@ class BaseEmbedding(ABC):
         """
         pass
 
-    def embed_text(self, text: str, **kwargs: Any) -> List[float]:
+    def embed_text(
+        self,
+        text: str,
+        **kwargs: Any,
+    ) -> List[float]:
         r"""Generates an embedding for the given text.
 
         Args:
