@@ -12,82 +12,32 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
+import shutil
+import tempfile
+
 import pytest
 
-from camel.storages import QdrantStorage, VectorDistance, VectorRecord
+from camel.storages import QdrantStorage, VectorDBQuery, VectorRecord
 
-# mypy: ignore-errors
-# TODO: Teporary ignore for commit
+parametrize = pytest.mark.parametrize(
+    "server",
+    ["built-in", "local"],
+    indirect=True,
+)
 
 
 @pytest.fixture()
 def server(request):
     if request.param == "built-in":
-        return QdrantStorage()
+        yield QdrantStorage(vector_dim=4)
+    elif request.param == "local":
+        tmpdir = tempfile.mkdtemp()
+        yield QdrantStorage(vector_dim=4, path=tmpdir)
+        shutil.rmtree(tmpdir)
 
 
-@pytest.mark.parametrize("server", ["built-in"], indirect=True)
-def test_create_delete_collection(server: QdrantStorage):
-    collection_name = "test_collection"
-    server.create_collection(collection=collection_name, size=4)
-    server.delete_collection(collection=collection_name)
-
-
-@pytest.mark.parametrize("server", ["built-in"], indirect=True)
-def test_add_delete_vector(server: QdrantStorage):
-    vectors = [
-        VectorRecord(id=1, vector=[0.1, 0.1, 0.1, 0.1]),
-        VectorRecord(id=2, vector=[0.1, -0.1, -0.1, 0.1]),
-        VectorRecord(
-            id=3,
-            vector=[-0.1, 0.1, -0.1, 0.1],
-            payload={"message": "text"},
-        ),
-        VectorRecord(
-            id=4,
-            vector=[-0.1, 0.1, 0.1, 0.1],
-            payload={
-                "message": "text",
-                "number": 1,
-            },
-        ),
-    ]
-    collection_name = "test_collection"
-    server.create_collection(
-        collection=collection_name,
-        size=4,
-        distance=VectorDistance.DOT,
-    )
-    server.add_vectors(collection=collection_name, vectors=vectors)
-
-    query_vector = VectorRecord(vector=[1, 1, 1, 1])
-    result = server.search(
-        collection=collection_name,
-        query_vector=query_vector,
-        limit=2,
-    )
-    assert result[0].id == 1
-    assert result[1].id == 4
-    assert result[1].payload == {"message": "text", "number": 1}
-
-    server.delete_vectors(
-        collection=collection_name,
-        vectors=[vectors[1], vectors[3]],
-    )
-    result = server.search(
-        collection=collection_name,
-        query_vector=query_vector,
-        limit=2,
-    )
-    assert result[0].id == 1
-    assert result[1].id == 3
-    assert result[1].payload == {"message": "text"}
-
-    server.delete_collection(collection=collection_name)
-
-
-@pytest.mark.parametrize("server", ["built-in"], indirect=True)
-def test_add_delete_vector_without_id(server: QdrantStorage):
+@parametrize
+def test_qdrant_storage(server: QdrantStorage) -> None:
     vectors = [
         VectorRecord(vector=[0.1, 0.1, 0.1, 0.1]),
         VectorRecord(vector=[0.1, -0.1, -0.1, 0.1]),
@@ -99,43 +49,22 @@ def test_add_delete_vector_without_id(server: QdrantStorage):
             vector=[-0.1, 0.1, 0.1, 0.1],
             payload={
                 "message": "text",
-                "number": 1
+                "number": 1,
             },
         ),
     ]
-    collection_name = "test_collection"
-    server.create_collection(
-        collection=collection_name,
-        size=4,
-        distance=VectorDistance.DOT,
-    )
-    add_vectors_rnt = server.add_vectors(
-        collection=collection_name,
-        vectors=vectors,
-    )
-    assert len(add_vectors_rnt) == 4
-    for v in add_vectors_rnt:
-        assert v.id is not None
+    server.add(records=vectors)
 
-    query_vector = VectorRecord(vector=[1, 1, 1, 1])
-    result = server.search(collection=collection_name,
-                           query_vector=query_vector, limit=2)
-    assert result[0].id == add_vectors_rnt[0].id
-    assert result[1].id == add_vectors_rnt[3].id
-    assert result[1].payload == {"message": "text", "number": 1}
+    query = VectorDBQuery(query_vector=[1, 1, 1, 1], top_k=2)
+    result = server.query(query)
+    assert result[0].record.id == vectors[0].id
+    assert result[1].record.id == vectors[3].id
+    assert result[1].record.payload == {"message": "text", "number": 1}
+    assert result[0].similarity > result[1].similarity
 
-    delete_vectors_rnt = server.delete_vectors(
-        collection=collection_name,
-        vectors=[vectors[1], vectors[3]],
-    )
-    assert len(delete_vectors_rnt) == 2
-    for v in delete_vectors_rnt:
-        assert v.id is not None
-
-    result = server.search(collection=collection_name,
-                           query_vector=query_vector, limit=2)
-    assert result[0].id == add_vectors_rnt[0].id
-    assert result[1].id == add_vectors_rnt[2].id
-    assert result[1].payload == {"message": "text"}
-
-    server.delete_collection(collection=collection_name)
+    server.delete(ids=[vectors[1].id, vectors[3].id])
+    result = server.query(query)
+    assert result[0].record.id == vectors[0].id
+    assert result[1].record.id == vectors[2].id
+    assert result[1].record.payload == {"message": "text"}
+    assert result[0].similarity > result[1].similarity

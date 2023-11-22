@@ -43,7 +43,8 @@ class QdrantStorage(BaseVectorStorage):
             a unique identifier is generated.
         url_and_api_key (Optional[Tuple[str, str]]): Tuple containing the URL
             and API key for connecting to a remote Qdrant instance.
-        path (Optional[str]): Path for initializing a local Qdrant client.
+        path (Optional[str]): Path to a directory for initializing a local
+            Qdrant client.
         distance (VectorDistance): The distance metric for vector comparison
             (default: `VectorDistance.DOT`).
         del_collection (bool): Flag to determine if the collection should be
@@ -105,7 +106,7 @@ class QdrantStorage(BaseVectorStorage):
         :obj:`True`.
         """
         if self.del_collection:
-            self.storage.delete_collection(self.collection_name)
+            self._delete_collection(self.collection)
 
     def _create_collection(
         self,

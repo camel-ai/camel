@@ -18,7 +18,7 @@ from camel.types import OpenAIBackendRole, RoleType
 
 
 # flake8: noqa :E501
-def testVectorDBMemeory():
+def test_VectorDBMemeory():
     texts = [
         "Every once in a long while, a game comes along that is so memorable, exciting, fresh, and well-written that it sets a new high-water mark for an entire genre.",
         "Baldur's Gate 3 is such an achievement for the tabletop roleplaying-inspired, swords and sorcery adventuring that its BioWare-made CRPG predecessors helped popularize decades ago.",
@@ -41,5 +41,7 @@ def testVectorDBMemeory():
     ]
 
     memory.write_records(records)
-    search_results = memory.retrieve("How long have I been playing this game?")
-    assert search_results[0].to_dict() == records[4].to_dict()
+    search_results = memory.retrieve("How long have I been playing this game?",
+                                     1)
+    assert search_results[0].memory_record.to_dict() == records[4].to_dict()
+    assert search_results[0].score > 0
