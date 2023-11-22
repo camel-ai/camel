@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Optional, Union
 
-from camel.agents import ChatAgent, clarify_agent, insight_agent
+from camel.agents import ChatAgent, clarify_agent
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
 from camel.types import ModelType, RoleType
@@ -46,7 +46,7 @@ class TaskSpecifyAgent(ChatAgent):
     def run(
         self,
         task_prompt: Union[str, TextPrompt],
-        insights: dict[str, dict[str, str]],
+        clarify_QA: dict[str, str],
     ) -> Union[str, TextPrompt]:
         r"""Generate specified task from clarifications.
         Args:
@@ -76,7 +76,7 @@ You are a task specifier agent, and you should obey the RULES OF TASK SPECIFICAT
 {task_prompt}
 
 ===== INSIGHTS =====
-{insights}
+{clarify_QA}
 
 ===== ANSWER TEMPLATE =====
 {{
@@ -86,14 +86,14 @@ You are a task specifier agent, and you should obey the RULES OF TASK SPECIFICAT
 """  # noqa: E501
 
         specify_prompt = TextPrompt(specify_prompt)
-        print("specify_prompt: ", specify_prompt)
+        # print("specify_prompt: ", specify_prompt)
 
         specify_prompt = specify_prompt.format(
             task_prompt=task_prompt,
-            insights=insights,
+            clarify_QA=clarify_QA,
         )
 
-        print("specify_prompt: ", specify_prompt)
+        # print("specify_prompt: ", specify_prompt)
 
         specify_msg = BaseMessage.make_user_message(role_name="Task Specifier",
                                                     content=specify_prompt)
@@ -114,12 +114,12 @@ if __name__ == "__main__":
     task_clarify_agent = clarify_agent.TaskClarifyAgent()
     clarify_QA = task_clarify_agent.run(task_prompt=task_prompt)
 
-    insight_agent = insight_agent.InsightAgent()
-    insights = insight_agent.run(clarify_QA)
+    # insight_agent = insight_agent.InsightAgent()
+    # insights = insight_agent.run(clarify_QA)
 
     task_specify_agent = TaskSpecifyAgent()
     specified_content = \
         task_specify_agent.run(task_prompt=task_prompt,
-                               insights=insights)
+                               clarify_QA=clarify_QA)
 
     print(f"The specified content is: {specified_content}")

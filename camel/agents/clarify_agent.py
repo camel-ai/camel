@@ -65,7 +65,7 @@ You are a task clarifier agent, and you should obey the RULES OF TASK CLARIFICAT
 2. Ask context aware question based on the initial TASK and the user's previous response.
 3. Single-Question Focus: Generate context-aware questions that address specific uncertainties in the TASK. And limit your interaction to one clarifying question at a time, ensuring it is directly related to the TASK and tailored to the user's previous response. And the question should be open-ended, rather than a yes/no question. And the question must have something that user can answer.
 4. When user assign a specific issue that want to clarify, you should ask a question that can help you to clarify the issue.
-5. Non-Answer Handling: If the user's response does not provide the required clarification (like responding with 'null'), your follow-up question should:
+5. Non-Answer Handling: If the user's response does not provide the required clarification, your follow-up question should:
 - Acknowledge the user's previous response and give the user one main reason you follow up the question.
 - If you don't understand the user's response, ask for clarification, rather than asking the same question again.
 - Limit the number of follow-up questions to at most 2 and move on to the next question with a response "We will skip this question since no clarification is provided".
@@ -85,7 +85,7 @@ Q:\n<BLANK, your question>"""  # noqa: E501
         clarify_prompt_base = clarify_prompt_base.format(
             task_prompt=task_prompt)
 
-        print("clarify_prompt_base: ", clarify_prompt_base)
+        # print("clarify_prompt_base: ", clarify_prompt_base)
 
         print(f"The input task prompt is: {task_prompt}\n")
 
