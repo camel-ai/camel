@@ -14,6 +14,7 @@
 import os
 import re
 import sys
+from pathlib import Path
 from typing import List
 
 
@@ -86,19 +87,20 @@ def update_license_in_directory(
         raise FileNotFoundError(f'{license_template_path} not found')
 
     file_count = 0
-    for root, _, files in os.walk(directory_path):
-        for file_name in files:
-            if file_name.endswith('.py'):
-                file_path = os.path.join(root, file_name)
-                if update_license_in_file(
-                        file_path,
-                        license_template_path,
-                        start_line_start_with,
-                        end_line_start_with,
-                ):
-                    file_count += 1
+    for py_files in Path(directory_path).rglob("*.py"):
+        if py_files.name.startswith('.'):
+            continue
+        if any(part.startswith('.') for part in py_files.parts):
+            continue
+        if update_license_in_file(
+                py_files,
+                license_template_path,
+                start_line_start_with,
+                end_line_start_with,
+        ):
+            file_count += 1
 
-    print(f'Licensed update in {file_count} files')
+    print(f'License updated in {file_count} files')
 
 
 if __name__ == '__main__':
