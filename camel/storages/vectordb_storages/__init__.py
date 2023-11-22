@@ -12,26 +12,20 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from .key_value_storages.base import BaseKeyValueStorage
-from .key_value_storages.in_memory import InMemoryKeyValueStorage
-from .key_value_storages.json import JsonStorage
-from .vectordb_storages.base import (
+from .base import (
     BaseVectorStorage,
     VectorRecord,
-    VectorDistance,
     VectorDBQuery,
     VectorDBQueryResult,
+    VectorDistance,
 )
-from .vectordb_storages.qdrant import QdrantStorage
+from .qdrant import QdrantStorage
 
 __all__ = [
-    'BaseKeyValueStorage',
-    'InMemoryKeyValueStorage',
-    'JsonStorage',
-    'VectorRecord',
     'BaseVectorStorage',
-    'VectorDistance',
     'VectorDBQuery',
     'VectorDBQueryResult',
+    'VectorDistance',
     'QdrantStorage',
+    'VectorRecord',
 ]

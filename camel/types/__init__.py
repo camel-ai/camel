@@ -17,7 +17,6 @@ from .enums import (
     TaskType,
     TerminationMode,
     OpenAIBackendRole,
-    VectorDistance,
 )
 from .openai_types import (
     Choice,
@@ -38,7 +37,6 @@ __all__ = [
     'TaskType',
     'TerminationMode',
     'OpenAIBackendRole',
-    'VectorDistance',
     'Choice',
     'ChatCompletion',
     'ChatCompletionChunk',

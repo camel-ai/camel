@@ -134,12 +134,6 @@ class TaskType(Enum):
     DEFAULT = "default"
 
 
-class VectorDistance(Enum):
-    DOT = 1
-    COSINE = 2
-    EUCLIDEAN = 3
-
-
 class OpenAIBackendRole(Enum):
     ASSISTANT = "assistant"
     SYSTEM = "system"
