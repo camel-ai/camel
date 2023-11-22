@@ -72,7 +72,7 @@ class QdrantStorage(BaseVectorStorage):
         path: Optional[str] = None,
         distance: VectorDistance = VectorDistance.DOT,
         del_collection: bool = False,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         self.vector_dim = vector_dim
         if url_and_api_key is not None:
@@ -119,7 +119,7 @@ class QdrantStorage(BaseVectorStorage):
         collection: str,
         size: int,
         distance: VectorDistance = VectorDistance.DOT,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         r"""Creates a new collection in the database.
 
@@ -129,7 +129,7 @@ class QdrantStorage(BaseVectorStorage):
                 collection.
             distance (VectorDistance, optional): The distance metric to be used
                 for vector similarity. (default: :obj:`VectorDistance.DOT`)
-            **kwargs: Additional keyword arguments.
+            **kwargs (Any): Additional keyword arguments.
         """
         distance_map = {
             VectorDistance.DOT: Distance.DOT,
@@ -148,13 +148,13 @@ class QdrantStorage(BaseVectorStorage):
     def _delete_collection(
         self,
         collection: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         r"""Deletes an existing collection from the database.
 
         Args:
             collection (str): Name of the collection to be deleted.
-            **kwargs: Additional keyword arguments.
+            **kwargs (Any): Additional keyword arguments.
         """
         self._client.delete_collection(collection_name=collection, **kwargs)
 
@@ -189,6 +189,7 @@ class QdrantStorage(BaseVectorStorage):
 
         Args:
             vectors (List[VectorRecord]): List of vectors to be added.
+            **kwargs (Any): Additional keyword arguments.
 
         Raises:
             RuntimeError: If there was an error in the addition process.
@@ -205,7 +206,7 @@ class QdrantStorage(BaseVectorStorage):
     def delete(
         self,
         ids: List[str],
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         r"""Deletes a list of vectors identified by their IDs from the storage.
 
@@ -232,7 +233,7 @@ class QdrantStorage(BaseVectorStorage):
     def query(
         self,
         query: VectorDBQuery,
-        **kwargs,
+        **kwargs: Any,
     ) -> List[VectorDBQueryResult]:
         r"""Searches for similar vectors in the storage based on the provided query.
 
