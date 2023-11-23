@@ -25,7 +25,7 @@ class OpenAIEmbedding(BaseEmbedding[str]):
 
     Args:
         model (OpenAiEmbeddingModel, optional): The model type to be used for
-            generating embeddings. (default: :obj:`ModelType.ADA2`)
+            generating embeddings. (default: :obj:`ModelType.ADA_2`)
 
     Raises:
         RuntimeError: If an unsupported model type is specified.
@@ -33,7 +33,7 @@ class OpenAIEmbedding(BaseEmbedding[str]):
 
     def __init__(
         self,
-        model_type: EmbeddingModelType = EmbeddingModelType.ADA2,
+        model_type: EmbeddingModelType = EmbeddingModelType.ADA_2,
     ) -> None:
         if not model_type.is_openai:
             raise ValueError("Invalid OpenAI embedding model type.")

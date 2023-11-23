@@ -114,34 +114,34 @@ class ModelType(Enum):
 
 
 class EmbeddingModelType(Enum):
-    ADA2 = "text-embedding-ada-002"
-    ADA1 = "text-embedding-ada-001"
-    BABBAGE1 = "text-embedding-babbage-001"
-    CURIE1 = "text-embedding-curie-001"
-    DAVINCI1 = "text-embedding-davinci-001"
+    ADA_2 = "text-embedding-ada-002"
+    ADA_1 = "text-embedding-ada-001"
+    BABBAGE_1 = "text-embedding-babbage-001"
+    CURIE_1 = "text-embedding-curie-001"
+    DAVINCI_1 = "text-embedding-davinci-001"
 
     @property
     def is_openai(self) -> bool:
         r"""Returns whether this type of models is an OpenAI-released model."""
         return self in {
-            EmbeddingModelType.ADA1,
-            EmbeddingModelType.ADA2,
-            EmbeddingModelType.BABBAGE1,
-            EmbeddingModelType.CURIE1,
-            EmbeddingModelType.DAVINCI1,
+            EmbeddingModelType.ADA_1,
+            EmbeddingModelType.ADA_2,
+            EmbeddingModelType.BABBAGE_1,
+            EmbeddingModelType.CURIE_1,
+            EmbeddingModelType.DAVINCI_1,
         }
 
     @property
     def output_dim(self) -> int:
-        if self is EmbeddingModelType.ADA2:
+        if self is EmbeddingModelType.ADA_2:
             return 1536
-        elif self is EmbeddingModelType.ADA1:
+        elif self is EmbeddingModelType.ADA_1:
             return 1024
-        elif self is EmbeddingModelType.BABBAGE1:
+        elif self is EmbeddingModelType.BABBAGE_1:
             return 2048
-        elif self is EmbeddingModelType.CURIE1:
+        elif self is EmbeddingModelType.CURIE_1:
             return 4096
-        elif self is EmbeddingModelType.DAVINCI1:
+        elif self is EmbeddingModelType.DAVINCI_1:
             return 12288
         else:
             raise ValueError(f"Unknown model type {self}.")
