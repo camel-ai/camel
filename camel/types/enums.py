@@ -124,8 +124,8 @@ class EmbeddingModelType(Enum):
     def is_openai(self) -> bool:
         r"""Returns whether this type of models is an OpenAI-released model."""
         return self in {
-            EmbeddingModelType.ADA_1,
             EmbeddingModelType.ADA_2,
+            EmbeddingModelType.ADA_1,
             EmbeddingModelType.BABBAGE_1,
             EmbeddingModelType.CURIE_1,
             EmbeddingModelType.DAVINCI_1,
