@@ -33,7 +33,7 @@ from urllib.parse import urlparse
 
 import requests
 
-from camel.types import ModelType, TaskType
+from camel.types import TaskType
 
 F = TypeVar('F', bound=Callable[..., Any])
 
@@ -55,11 +55,7 @@ def openai_api_key_required(func: F) -> F:
 
     @wraps(func)
     def wrapper(self, *args, **kwargs):
-        if hasattr(self, "model") and self.model_type == ModelType.STUB:
-            return func(self, *args, **kwargs)
-        elif self.model_type.is_open_source:
-            return func(self, *args, **kwargs)
-        elif 'OPENAI_API_KEY' in os.environ:
+        if 'OPENAI_API_KEY' in os.environ:
             return func(self, *args, **kwargs)
         else:
             raise ValueError('OpenAI API key not found.')
