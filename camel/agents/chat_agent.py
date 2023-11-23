@@ -38,7 +38,7 @@ from camel.types import (
     OpenAIBackendRole,
     RoleType,
 )
-from camel.utils import get_model_encoding, openai_api_key_required
+from camel.utils import get_model_encoding
 
 
 @dataclass(frozen=True)
@@ -257,7 +257,6 @@ class ChatAgent(BaseAgent):
         """
         self.update_memory(message, OpenAIBackendRole.ASSISTANT)
 
-    @openai_api_key_required
     def step(
         self,
         input_message: BaseMessage,
