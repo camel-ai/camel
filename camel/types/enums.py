@@ -39,7 +39,7 @@ class ModelType(Enum):
 
     @property
     def value_for_tiktoken(self) -> str:
-        return self.value if self.name != "STUB" else "gpt-3.5-turbo"
+        return self.value if self is ModelType.STUB else "gpt-3.5-turbo"
 
     @property
     def is_openai(self) -> bool:
@@ -56,7 +56,11 @@ class ModelType(Enum):
     @property
     def is_open_source(self) -> bool:
         r"""Returns whether this type of models is open-source."""
-        return self.name in {"LLAMA_2", "VICUNA", "VICUNA_16K"}
+        return self in {
+            ModelType.LLAMA_2,
+            ModelType.VICUNA,
+            ModelType.VICUNA_16K,
+        }
 
     @property
     def token_limit(self) -> int:
