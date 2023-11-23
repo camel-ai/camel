@@ -20,12 +20,12 @@ from camel.types import EmbeddingModelType
 from camel.utils import openai_api_key_required
 
 
-class OpenAIEmbedding(BaseEmbedding):
+class OpenAIEmbedding(BaseEmbedding[str]):
     r"""Provides text embedding functionalities using OpenAI's models.
 
     Args:
         model (OpenAiEmbeddingModel, optional): The model type to be used for
-            generating embeddings. (default: :obj:`ModelType.ADA2`)
+            generating embeddings. (default: :obj:`ModelType.ADA_2`)
 
     Raises:
         RuntimeError: If an unsupported model type is specified.
@@ -33,7 +33,7 @@ class OpenAIEmbedding(BaseEmbedding):
 
     def __init__(
         self,
-        model_type: EmbeddingModelType = EmbeddingModelType.ADA2,
+        model_type: EmbeddingModelType = EmbeddingModelType.ADA_2,
     ) -> None:
         if not model_type.is_openai:
             raise ValueError("Invalid OpenAI embedding model type.")
@@ -42,15 +42,15 @@ class OpenAIEmbedding(BaseEmbedding):
         self.client = OpenAI()
 
     @openai_api_key_required
-    def embed_texts(
+    def embed_list(
         self,
-        texts: List[str],
+        objs: List[str],
         **kwargs: Any,
     ) -> List[List[float]]:
         r"""Generates embeddings for the given texts.
 
         Args:
-            texts (List[str]): The texts for which to generate the embeddings.
+            objs (List[str]): The texts for which to generate the embeddings.
             **kwargs (Any): Extra kwargs passed to the embedding API.
 
         Returns:
@@ -59,7 +59,7 @@ class OpenAIEmbedding(BaseEmbedding):
         """
         # TODO: count tokens
         response = self.client.embeddings.create(
-            input=texts,
+            input=objs,
             model=self.model_type.value,
             **kwargs,
         )
