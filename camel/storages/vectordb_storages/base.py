@@ -27,7 +27,7 @@ class VectorDistance(Enum):
 
 @dataclass
 class VectorRecord:
-    R"""Encapsulates information about a vector's unique identifier and its
+    r"""Encapsulates information about a vector's unique identifier and its
     payload, which is primarily used as a data transfer object when saving
     to vector storage.
 
@@ -70,7 +70,7 @@ class VectorDBQueryResult:
     similarity: float
 
     @classmethod
-    def contruct(
+    def construct(
         cls,
         similarity: float,
         vector: List[float],

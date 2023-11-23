@@ -258,7 +258,7 @@ class QdrantStorage(BaseVectorStorage):
         query_results = []
         for point in search_result:
             query_results.append(
-                VectorDBQueryResult.contruct(
+                VectorDBQueryResult.construct(
                     similarity=point.score,
                     id=str(point.id),
                     payload=point.payload,
