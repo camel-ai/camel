@@ -20,11 +20,14 @@ from camel.types import ChatCompletion, ModelType
 
 
 class OutputAgent(ChatAgent):
-    r"""An agent used to re-organize the chat history of multi-agent
-     into detailed instruction.
+    r"""
+    An agent used to re-organize the chat history of multi-agent
+    into detailed instruction.
+
     Attributes:
             SYSTEM_PROMPT (str): Prompt to explain the agent's role.
             USER_MESSAGE (str): User message to request a detailed instruction.
+
     Args:
         content (str): The content to be processed.
         model_type (ModelType): The type of the OpenAI model to use.
@@ -52,8 +55,10 @@ class OutputAgent(ChatAgent):
     def create_model(model_type: ModelType) -> OpenAIModel:
         r"""
         Creates and returns an OpenAI model.
+
         Args:
             model_type (ModelType): The type of the OpenAI model to use.
+
         Returns:
             OpenAIModel: The initialized model.
         """
@@ -64,6 +69,7 @@ class OutputAgent(ChatAgent):
     def construct_task_prompt(self) -> list:
         r"""
         Constructs the task prompt based on the content.
+
         Returns:
             list: List of messages forming the prompt.
         """
@@ -78,6 +84,7 @@ class OutputAgent(ChatAgent):
     def generate_detailed_instruction(self) -> Optional[str]:
         r"""
         Generate a detailed instruction based on the provided content.
+
         Returns:
             str: The detailed instruction.
         """
