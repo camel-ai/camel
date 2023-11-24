@@ -14,7 +14,7 @@
 import os
 
 import requests
+from camel.functions import GitHubFunction
 
-from camel.functions.search_functions import (
-    github_test,
-)
+def test_github_function():
+    pass

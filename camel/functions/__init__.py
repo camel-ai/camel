@@ -14,11 +14,13 @@
 
 from .math_functions import MATH_FUNCS
 from .openai_function import OpenAIFunction
+from .github_function import GitHubFunction
 from .search_functions import SEARCH_FUNCS
 from .weather_functions import WEATHER_FUNCS
 
 __all__ = [
     'OpenAIFunction',
+    'GitHubFunction',
     'MATH_FUNCS',
     'SEARCH_FUNCS',
     'WEATHER_FUNCS',
