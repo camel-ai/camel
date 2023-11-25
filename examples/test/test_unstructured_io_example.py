@@ -47,8 +47,8 @@ def sample_email_text():
 
 def test_parse_file_example():
     # Setup: ensure any pre-existing 'mydoc.docx' is removed
-    if os.path.exists("mydoc.docx"):
-        os.remove("mydoc.docx")
+    if os.path.exists("mydoc.txt"):
+        os.remove("mydoc.txt")
 
     # Execution: call the function
     result = parse_file_example()
@@ -61,8 +61,8 @@ def test_parse_file_example():
     assert result == expected, f"Expected {expected}, got {result}"
 
     # Cleanup: remove the created file after the test
-    if os.path.exists("mydoc.docx"):
-        os.remove("mydoc.docx")
+    if os.path.exists("mydoc.txt"):
+        os.remove("mydoc.txt")
 
 
 def test_parse_url_example(sample_url):

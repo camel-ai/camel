@@ -14,23 +14,24 @@
 
 import os
 
-import docx
-
 from camel.file_io.unstructured_io import UnstructuredModules
 
 unstructured_modules = UnstructuredModules()
 
 
 def parse_file_example():
-    document = docx.Document()
-    document.add_paragraph("Important Analysis", style="Heading 1")
-    document.add_paragraph("Here is my first thought.", style="Body Text")
-    document.add_paragraph("Here is my second thought.", style="Normal")
-    document.save("mydoc.docx")
-    elements = unstructured_modules.parse_file_or_url("mydoc.docx")
+    with open("mydoc.txt", "w") as file:
+        # Writing content to the file
+        file.write("Important Analysis\n")
+        file.write("\n")
+        file.write("Here is my first thought.\n")
+        file.write("\n")
+        file.write("Here is my second thought.\n")
+
+    elements = unstructured_modules.parse_file_or_url("mydoc.txt")
     # Cleanup: remove the created file after the example
-    if os.path.exists("mydoc.docx"):
-        os.remove("mydoc.docx")
+    if os.path.exists("mydoc.txt"):
+        os.remove("mydoc.txt")
     return [" ".join(str(el).split()) for el in elements]
 
 
