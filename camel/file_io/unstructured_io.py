@@ -70,6 +70,15 @@ class UnstructuredModules:
             at the path specified.
             Exception: For any other issues during file or URL parsing.
 
+        Notes:
+            By default we use the basic "unstructured" library,
+            If you are processing document types beyond the basics,
+            you can install the necessary extras like:
+            pip install "unstructured[docx,pptx]"
+            Available document types:
+            "csv", "doc", "docx", "epub", "image", "md", "msg", "odt",
+            "org", "pdf", "ppt", "pptx", "rtf", "rst", "tsv", "xlsx"
+
         References:
             https://unstructured-io.github.io/unstructured/
         """
