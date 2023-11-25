@@ -88,6 +88,23 @@ class BaseVectorStorage(ABC):
     r"""An abstract base class for vector storage systems."""
 
     @abstractmethod
+    def validate_vector_dimensions(
+        self,
+        records: List[VectorRecord],
+    ) -> None:
+        r"""Validates that all vectors in the given list have the same
+        dimensionality as the collection.
+
+        Args:
+            records (List[VectorRecord]): A list of vector records to validate.
+
+        Raises:
+            ValueError: If any vector has a different dimensionality than
+            the collection.
+        """
+        pass
+
+    @abstractmethod
     def add(
         self,
         records: List[VectorRecord],

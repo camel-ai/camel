@@ -180,7 +180,7 @@ class QdrantStorage(BaseVectorStorage):
             collection_info.vectors_count,
         }
 
-    def _validate_vector_dimensions(self, records: List[VectorRecord]) -> None:
+    def validate_vector_dimensions(self, records: List[VectorRecord]) -> None:
         r"""Validates that all vectors in the given list have the same
         dimensionality as the collection.
 
@@ -211,7 +211,7 @@ class QdrantStorage(BaseVectorStorage):
         Raises:
             RuntimeError: If there was an error in the addition process.
         """
-        self._validate_vector_dimensions(records)
+        self.validate_vector_dimensions(records)
         qdrant_points = [PointStruct(**asdict(p)) for p in records]
         op_info = self._client.upsert(collection_name=self.collection,
                                       points=qdrant_points, wait=True,
