@@ -81,9 +81,9 @@ def qdrant_storage():
 def test_validate_vector_dimensions(qdrant_storage):
     # Test with valid dimensions
     vectors = [VectorRecord(vector=[0.1, 0.1, 0.1, 0.1])]
-    qdrant_storage._validate_vector_dimensions(vectors)  # Should not raise
+    qdrant_storage.validate_vector_dimensions(vectors)  # Should not raise
 
     # Test with invalid dimensions
     with pytest.raises(ValueError):
         invalid_vectors = [VectorRecord(vector=[0.1, 0.1])]
-        qdrant_storage._validate_vector_dimensions(invalid_vectors)
+        qdrant_storage.validate_vector_dimensions(invalid_vectors)
