@@ -72,7 +72,7 @@ The Acme Program System, henceforth referred to as APS, is hosted in a state-of-
         "The INSIGHT will be used as retrieve index in database.")
 
     model_config_description = ChatGPTConfig()
-    insight_agent = InsightAgent(model=model_type,
+    insight_agent = InsightAgent(model_type=model_type,
                                  model_config=model_config_description)
 
     insights_json = insight_agent.run(

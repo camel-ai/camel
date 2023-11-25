@@ -26,7 +26,7 @@ def main(model_type=None) -> None:
     # Construct deductive reasoner agent
     model_config_description = ChatGPTConfig()
     insight_agent = \
-        DeductiveReasonerAgent(model=model_type,
+        DeductiveReasonerAgent(model_type=model_type,
                                model_config=model_config_description)
 
     starting_state = "The current empty website."
