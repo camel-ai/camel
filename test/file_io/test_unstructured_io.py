@@ -50,39 +50,42 @@ def test_parse_file_or_url(unstructured_instance):
 # Test the clean_text_data method
 def test_clean_text_data(unstructured_instance):
     # Test with a valid cleaning option
-    options = {"clean_extra_whitespace": {}}
+    test_options = {"clean_extra_whitespace": {}}
     cleaned_text = unstructured_instance.clean_text_data(
-        options, "  Hello  World  ")
+        clean_options=test_options, text="  Hello  World  ")
     assert cleaned_text == "Hello World"  # Check the expected cleaned text
 
     # Test with an invalid cleaning option (should raise ValueError)
-    options = {"invalid_cleaning_option": {}}
+    test_options = {"invalid_cleaning_option": {}}
     with pytest.raises(ValueError):
-        unstructured_instance.clean_text_data(options, "Test Text")
+        unstructured_instance.clean_text_data(clean_options=test_options,
+                                              text="Test Text")
 
 
 # Test the extract_data_from_text method
 def test_extract_data_from_text(unstructured_instance):
     # Test extracting an email address
-    email_text = "Contact me at example@email.com."
+    test_email_text = "Contact me at example@email.com."
     extracted_email = unstructured_instance.extract_data_from_text(
-        "extract_email_address", email_text)
+        extract_type="extract_email_address", text=test_email_text)
     assert extracted_email == ["example@email.com"]
 
     # Test with an invalid extract option (should raise ValueError)
-    options = {"invalid_extracting_option": {}}
+    test_extract_type = "invalid_extracting_option"
     with pytest.raises(ValueError):
-        unstructured_instance.extract_data_from_text("Test Text", options)
+        unstructured_instance.extract_data_from_text(
+            extract_type=test_extract_type, text=test_email_text)
 
 
 # Test the stage_elements method
 def test_stage_elements_for_csv(unstructured_instance):
     # Test staging for baseplate
-    url = ("https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
-           "philadelphia-eagles-spt-intl/index.html")
-    elements = unstructured_instance.parse_file_or_url(url)
+    test_url = (
+        "https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
+        "philadelphia-eagles-spt-intl/index.html")
+    test_elements = unstructured_instance.parse_file_or_url(test_url)
     staged_element = unstructured_instance.stage_elements(
-        "stage_for_baseplate", elements)
+        stage_type="stage_for_baseplate", elements=test_elements)
     assert staged_element['rows'][0] == {
         'data': {
             'type': 'UncategorizedText',
@@ -105,22 +108,25 @@ def test_stage_elements_for_csv(unstructured_instance):
     }
 
     # Test with an invalid stage option (should raise ValueError)
-    options = {"invalid_stageing_option": {}}
+    test_stage_type = "invalid_stageing_option"
     with pytest.raises(ValueError):
-        unstructured_instance.stage_elements("Test Text", options)
+        unstructured_instance.stage_elements(stage_type=test_stage_type,
+                                             elements=test_elements)
 
 
 # Test the chunk_elements method
 def test_chunk_elements(unstructured_instance):
     # Test chunking content from a url
-    url = ("https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
-           "philadelphia-eagles-spt-intl/index.html")
-    elements = unstructured_instance.parse_file_or_url(url)
+    test_url = (
+        "https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
+        "philadelphia-eagles-spt-intl/index.html")
+    test_elements = unstructured_instance.parse_file_or_url(test_url)
     chunked_sections = unstructured_instance.chunk_elements(
-        "chunk_by_title", elements)
+        chunk_type="chunk_by_title", elements=test_elements)
 
     assert len(chunked_sections) == 7  # Check the number of chunks
     # Test with an invalid chunk option (should raise ValueError)
+    test_chunk_type = "chunk_by_invalid_option"
     with pytest.raises(ValueError):
-        unstructured_instance.chunk_elements("chunk_by_invalid_option",
-                                             elements)
+        unstructured_instance.chunk_elements(chunk_type=test_chunk_type,
+                                             elements=test_elements)

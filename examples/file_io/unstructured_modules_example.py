@@ -42,37 +42,41 @@ def parse_url_example():
 
 
 def clean_text_example():
-    text = "Some dirty text â€™ with extra spaces and – dashes."
-    options = {
+    example_text = "Some dirty text â€™ with extra spaces and – dashes."
+    example_options = {
         'replace_unicode_quotes': {},
         'clean_extra_whitespace': {},
         'clean_dashes': {},
         'clean_non_ascii_chars': {}
     }
-    return unstructured_modules.clean_text_data(options, text)
+    return unstructured_modules.clean_text_data(clean_options=example_options,
+                                                text=example_text)
 
 
 def extract_data_example():
-    email_text = "Contact me at example@email.com."
-    return unstructured_modules.extract_data_from_text("extract_email_address",
-                                                       email_text)
+    example_email_text = "Contact me at example@email.com."
+    return unstructured_modules.extract_data_from_text(
+        extract_type="extract_email_address", text=example_email_text)
 
 
 def stage_data_example():
-    url = ("https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
-           "philadelphia-eagles-spt-intl/index.html")
-    elements = unstructured_modules.parse_file_or_url(url)
+    example_url = (
+        "https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
+        "philadelphia-eagles-spt-intl/index.html")
+    example_elements = unstructured_modules.parse_file_or_url(example_url)
 
     staged_element = unstructured_modules.stage_elements(
-        "stage_for_baseplate", elements)
+        stage_type="stage_for_baseplate", elements=example_elements)
     return staged_element
 
 
 def chunk_url_content_example():
-    url = ("https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
-           "philadelphia-eagles-spt-intl/index.html")
-    elements = unstructured_modules.parse_file_or_url(url)
-    chunks = unstructured_modules.chunk_elements("chunk_by_title", elements)
+    exampe_url = (
+        "https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
+        "philadelphia-eagles-spt-intl/index.html")
+    example_elements = unstructured_modules.parse_file_or_url(exampe_url)
+    chunks = unstructured_modules.chunk_elements(chunk_type="chunk_by_title",
+                                                 elements=example_elements)
     return chunks
 
 

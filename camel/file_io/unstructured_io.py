@@ -120,24 +120,23 @@ class UnstructuredModules:
                 raise Exception(
                     "Failed to parse the unstructured file.") from e
 
-    def clean_text_data(self, options: Dict[str, Any], text: str) -> str:
+    def clean_text_data(self, clean_options: Dict[str, Any], text: str) -> str:
         r"""Cleans text data using a variety of cleaning functions provided by
         the 'unstructured' library.
 
         This function applies multiple text cleaning
-        utilities to sanitize and prepare text data
-        for NLP tasks. It uses the 'unstructured'
+        utilities by calling the 'unstructured'
         library's cleaning bricks for operations like
         replacing unicode quotes, removing extra whitespace,
         dashes, non-ascii characters, and more.
 
         Args:
-            text (str): The text to be cleaned.
-            options (dict): A dictionary specifying which
+            clean_options (dict): A dictionary specifying which
             cleaning options to apply. The keys should match
             the names of the cleaning functions, and the
             values should be dictionaries containing the
             parameters for each function.
+            text (str): The text to be cleaned.
 
         Returns:
             str: The cleaned text.
@@ -191,7 +190,7 @@ class UnstructuredModules:
         }
 
         cleaned_text = text
-        for func_name, params in options.items():
+        for func_name, params in clean_options.items():
             if func_name in cleaning_functions:
                 cleaned_text = cleaning_functions[func_name](cleaned_text,
                                                              **params)
@@ -208,9 +207,9 @@ class UnstructuredModules:
         unstructured.cleaners.extract.
 
         Args:
-            text (str): Text to extract data from.
             extract_type (str): Type of data to extract
             (e.g., 'datetime', 'email', 'ip', etc.).
+            text (str): Text to extract data from.
             **kwargs: Additional keyword arguments for specific
             extraction functions.
 
@@ -335,6 +334,7 @@ class UnstructuredModules:
         r"""Chunks elements by titles.
 
         Args:
+            chunk_type (str): Type chunk going to apply.
             elements (List[Any]): List of Element objects to be chunked.
             **kwargs: Additional keyword arguments for chunking.
 
