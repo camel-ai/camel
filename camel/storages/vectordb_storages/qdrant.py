@@ -17,8 +17,6 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import (
-    CreateAlias,
-    DeleteAlias,
     Distance,
     PointIdsList,
     PointStruct,
@@ -249,41 +247,6 @@ class QdrantStorage(BaseVectorStorage):
             raise RuntimeError(
                 "Failed to delete vectors in Qdrant, operation info: "
                 f"{op_info}")
-
-    def update_collection_status(
-        self,
-        collection_name: str,
-        **kwargs: Any,
-    ) -> None:
-        r"""Dynamically updates the status of a specific collection.
-
-        Args:
-            collection_name (str): The name of the collection to update.
-            **kwargs (Any): Additional keyword arguments.
-        """
-        # Update the collection parameters
-        self._client.update_collection(collection_name=collection_name,
-                                       **kwargs)
-
-    def create_alias(self, collection_name: str, alias_name: str) -> None:
-        r"""Creates an alias for a collection in Qdrant.
-
-        Args:
-            collection_name (str): The name of the collection.
-            alias_name (str): The alias name for the collection.
-        """
-        self._client.update_collection_aliases(change_aliases_operations=[
-            CreateAlias(collection_name=collection_name, alias_name=alias_name)
-        ])
-
-    def delete_alias(self, alias_name: str) -> None:
-        r"""Deletes an alias for a collection in Qdrant.
-
-        Args:
-            alias_name (str): The alias name to be deleted.
-        """
-        self._client.update_collection_aliases(
-            change_aliases_operations=[DeleteAlias(alias_name=alias_name)])
 
     def query(
         self,

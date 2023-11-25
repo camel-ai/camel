@@ -87,20 +87,3 @@ def test_validate_vector_dimensions(qdrant_storage):
     with pytest.raises(ValueError):
         invalid_vectors = [VectorRecord(vector=[0.1, 0.1])]
         qdrant_storage._validate_vector_dimensions(invalid_vectors)
-
-
-def test_update_collection_status(qdrant_storage):
-    qdrant_storage.update_collection_status("test_collection",
-                                            some_param="value")
-    qdrant_storage._client.update_collection.assert_called_with(
-        collection_name="test_collection", some_param="value")
-
-
-def test_create_alias(qdrant_storage):
-    qdrant_storage.create_alias("test_collection", "test_alias")
-    qdrant_storage._client.update_collection_aliases.assert_called()
-
-
-def test_delete_alias(qdrant_storage):
-    qdrant_storage.delete_alias("test_alias")
-    qdrant_storage._client.update_collection_aliases.assert_called()
