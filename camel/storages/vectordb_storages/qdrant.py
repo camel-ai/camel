@@ -17,6 +17,8 @@ from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import (
+    CreateAlias,
+    DeleteAlias,
     Distance,
     PointIdsList,
     PointStruct,
@@ -180,6 +182,23 @@ class QdrantStorage(BaseVectorStorage):
             collection_info.vectors_count,
         }
 
+    def _validate_vector_dimensions(self, records: List[VectorRecord]) -> None:
+        r"""Validates that all vectors in the given list have the same
+        dimensionality as the collection.
+
+        Args:
+            records (List[VectorRecord]): A list of vector records to validate.
+
+        Raises:
+            ValueError: If any vector has a different dimensionality than
+            the collection.
+        """
+        if not all(
+                len(record.vector) == self.vector_dim for record in records):
+            raise ValueError(
+                "All vectors must have the same dimensionality as defined"
+                "in the collection.")
+
     def add(
         self,
         records: List[VectorRecord],
@@ -194,6 +213,7 @@ class QdrantStorage(BaseVectorStorage):
         Raises:
             RuntimeError: If there was an error in the addition process.
         """
+        self._validate_vector_dimensions(records)
         qdrant_points = [PointStruct(**asdict(p)) for p in records]
         op_info = self._client.upsert(collection_name=self.collection,
                                       points=qdrant_points, wait=True,
@@ -229,6 +249,41 @@ class QdrantStorage(BaseVectorStorage):
             raise RuntimeError(
                 "Failed to delete vectors in Qdrant, operation info: "
                 f"{op_info}")
+
+    def update_collection_status(
+        self,
+        collection_name: str,
+        **kwargs: Any,
+    ) -> None:
+        r"""Dynamically updates the status of a specific collection.
+
+        Args:
+            collection_name (str): The name of the collection to update.
+            **kwargs (Any): Additional keyword arguments.
+        """
+        # Update the collection parameters
+        self._client.update_collection(collection_name=collection_name,
+                                       **kwargs)
+
+    def create_alias(self, collection_name: str, alias_name: str) -> None:
+        r"""Creates an alias for a collection in Qdrant.
+
+        Args:
+            collection_name (str): The name of the collection.
+            alias_name (str): The alias name for the collection.
+        """
+        self._client.update_collection_aliases(change_aliases_operations=[
+            CreateAlias(collection_name=collection_name, alias_name=alias_name)
+        ])
+
+    def delete_alias(self, alias_name: str) -> None:
+        r"""Deletes an alias for a collection in Qdrant.
+
+        Args:
+            alias_name (str): The alias name to be deleted.
+        """
+        self._client.update_collection_aliases(
+            change_aliases_operations=[DeleteAlias(alias_name=alias_name)])
 
     def query(
         self,
