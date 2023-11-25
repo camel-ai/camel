@@ -149,6 +149,205 @@ class RoleAssignmentAgent(ChatAgent):
 
         return role_descriptions_dict
 
+    def split_tasks(
+        self,
+        task_prompt: Union[str, TextPrompt],
+        role_descriptions_dict: Dict[str, str],
+        num_subtasks: Optional[int] = None,
+        context_text: Optional[str] = None,
+    ) -> Dict[str, Dict[str, Union[str, List[str]]]]:
+        r"""Decompose the task into subtasks based on the input task prompt.
+
+        Args:
+            task_prompt (Union[str, TextPrompt]): The prompt for the task
+                based on which the roles are to be generated.
+            role_descriptions_dict (Dict[str, str]): The role descriptions of
+                each role.
+            num_subtasks (Optional[int], optional): The number of subtasks to
+                decompose the task into. (default: :obj:`None`)
+            context_text (Optional[str], optional): The context text to
+                generate insights from. (default: :obj:`None`)
+
+        Returns:
+            Dict[str, Dict[str, Union[str, List[str]]]]: A dictionary mapping
+                subtask names to their descriptions and dependencies.
+        """
+        self.reset()
+
+        role_names = list(role_descriptions_dict.keys())
+
+        # Generate insights from the context text to help decompose the task
+        if context_text is not None:
+            model_config = self.model_config
+            insight_agent = InsightAgent(model_type=self.model_type,
+                                         model_config=model_config)
+            task_insights_json = insight_agent.run(context_text=context_text)
+            task_context_prompt = (
+                "===== CONTEXT TEXT =====\n"
+                "The CONTEXT TEXT is related to TASK and "
+                "Contextual Parameters of subtask. When "
+                "decomposing the task, ensure that each subtask "
+                "incorporates specific details from the "
+                "INSIGHTS of CONTEXT TEXT.\n" +
+                insight_agent.convert_json_to_str(task_insights_json) + "\n\n")
+        else:
+            task_context_prompt = ""
+
+        task_prompt = TextPrompt("===== TASK =====\n" + task_prompt + "\n\n")
+        role_with_description_prompt = \
+            "===== ROLES WITH DESCRIPTION =====\n" + "\n".join(
+                f"{role_name}:\n{role_descriptions_dict[role_name]}\n"
+                for role_name in role_names) + "\n\n"
+        if num_subtasks is None:
+            answer_prompt = """===== ANSWER TEMPLATE =====
+PART I:
+Details of subtask <NUM>:
+- <BLANK>
+Contextual Parameters (only related to CONTEXT TEXT, without dependentcies) of subtask <NUM>:
+- <BLANK>
+Details of subtask <NUM>:
+- <BLANK>
+Contextual Parameters (only related to CONTEXT TEXT, without dependentcies) of subtask <NUM>:
+- <BLANK>
+
+PART II:
+Gantt Chart with complex dependency in MarkDown format:
+<BLANK>
+
+PART III (all subtasks):
+"""  # noqa: E501
+            answer_prompt += (
+                "Incorporate Contextual Parameters "
+                "into Details of subtask <NUM>:\n- <BLANK>\n"
+                "Content of the Input of subtask <NUM>:\n- <BLANK>\n"
+                "Input tags of subtask <NUM>: [<BLANK>, ..., <BLANK>]/[None] "
+                "(include square brackets)\n"
+                "Task completion standard of subtask <NUM>:\n- <BLANK>\n"
+                "Dependency of subtask <NUM>: [subtask <i>, subtask <j>, "
+                "subtask <k>]/[None] (include square brackets).\n\n")
+        else:
+            answer_prompt = """===== ANSWER TEMPLATE =====
+PART I:
+Details of subtask <NUM>:
+- <BLANK>
+Contextual Parameters (only related to CONTEXT TEXT, without dependentcies) of subtask <NUM>:
+- <BLANK>
+Details of subtask <NUM>:
+- <BLANK>
+Contextual Parameters (only related to CONTEXT TEXT, without dependentcies) of subtask <NUM>:
+- <BLANK>
+
+PART II:
+Gantt Chart with complex dependency in MarkDown format:
+<BLANK>
+
+PART III (all subtasks):
+"""  # noqa: E501
+            answer_prompt += "\n".join(
+                f"Incorporate Contextual Parameters "
+                f"into Details of subtask {i + 1}:\n- <BLANK>\n"
+                f"Content of the Input of subtask {i + 1}:\n- <BLANK>\n"
+                f"Input tags of subtask {i + 1}: "
+                "[<BLANK>, ..., <BLANK>]/[None] (include square brackets)\n"
+                f"Task completion standard of subtask {i + 1}:\n- <BLANK>\n"
+                f"Dependency of subtask {i + 1}: [subtask <i>, subtask "
+                f"<j>, subtask <k>]/[None] (include square brackets)."
+                for i in range(num_subtasks)) + "\n\n"
+        split_task_rules_prompt = """You are a task decomposer, and you're in asked to break down the main TASK into {num_subtasks} manageable subtasks suitable for a team comprising {num_roles} domain experts. The experts will contribute to the {num_subtasks} subtasks. Please follow the guidelines below to craft your answer:
+    1. Action-Oriented Foundation & Building Blocks: Ensure each subtask is actionable, distinct, tapping into the expertise of the assigned roles. Recognize that not every subtask needs to directly reflect the main TASK's ultimate aim. Some subtasks serve as essential building blocks, paving the way for more central subtasks, but avoid creating subtasks that are self-dependent or overly foundational.
+    2. Balanced Granularity with a Bias for Action: While each subtask should be detailed and actionable, it should not be so ambiguous that it requires the input of more than two domain experts. Prioritize tangible actions in subtask such as implementation, creation, testing, or other tangible activities over mere understanding.
+    3. Dependencies & Gantt Chart: Identify and account for the dependencies within the subtasks. Ensure that each subtask logically flows from one to the next, or can run concurrently where no subtask is dependent on itself, in a manner that could be efficiently represented on a Gantt chart.
+    4. I define the Input of subtask:
+        - Interlinking of Inputs: Ensure that the inputs are not siloed and can be interlinked within privous subtasks if necessary, providing a holistic view of what is required for the subtask.
+        - Hierarchy and Prioritization: Identify and clearly state the priority and hierarchy (if applicable) among the inputs, ensuring the most critical elements are addressed promptly.
+        - Accessibility and Clarity: Ensure that all provided inputs are accessible, clear, and understandable to the relevant team members.
+        - Adjustability: Consider that inputs may need to be adjusted as the project progresses and ensure a mechanism for the same.
+    5. I define the Task Completion Standard in order to implement a feature in the software that can identify and mark a task as completed:
+        - A task is considered completed when its intended output is produced.
+        - If possible, the completion standard should be quantifiable to facilitate automatic detection by the software or tool feature.
+        - The completion standard should be applicable to common project management scenarios and adaptable to various types of tasks, such as development, testing, and review tasks.
+    6. Refrain from mentioning specific titles or roles within the content of subtasks.
+Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill in the BLANKs, and DO NOT alter or modify any other part of the template.\n\n"""  # noqa: E501
+        split_task_prompt = TextPrompt(split_task_rules_prompt +
+                                       answer_prompt + task_prompt +
+                                       task_context_prompt +
+                                       role_with_description_prompt)
+        subtasks_generation = split_task_prompt.format(
+            num_subtasks=num_subtasks or "SEVERAL/ENOUGH",
+            num_roles=len(role_names))
+
+        subtasks_generation_msg = BaseMessage.make_user_message(
+            role_name="Task Decomposer", content=subtasks_generation)
+
+        response = self.step(input_message=subtasks_generation_msg)
+
+        if (response.terminated):
+            raise RuntimeError("Role compatibility scoring failed.\n" +
+                               f"Error:\n{response.info}")
+        msg = response.msg  # type: BaseMessage
+
+        # Distribute the output completions into subtasks
+        subtask_descriptions = [
+            desc.replace("<", "").replace(">", "").strip('\n')
+            for desc in re.findall(
+                r"Incorporate Contextual Parameters into Details "
+                r"of subtask \d:\n(.+?)Content of ", msg.content, re.DOTALL)
+        ]
+        subtask_inputs_content = [
+            ipt.replace("<", "").replace(">", "").strip('\n')
+            for ipt in re.findall(
+                r"Content of the Input of subtask \d:\n(.+?)Input tags of ",
+                msg.content, re.DOTALL)
+        ]
+        subtask_inputs_tags = [[
+            tag.strip() for tag in re.findall(r"\[(.+?)\]", tag)[0].split(",")
+        ] for tag in re.findall(r"Input tags of subtask \d:[\s\n]*\[.+?\]",
+                                msg.content, re.DOTALL)]
+        subtask_outputs_standard = [
+            opt_std.replace("<", "").replace(">", "").strip('\n')
+            for opt_std in re.findall(
+                r"Task completion standard of subtask \d:\n(.+?)Dependency "
+                r"of subtask", msg.content, re.DOTALL)
+        ]
+        subtask_dependencies = [[
+            dep.strip() for dep in re.findall(r"\[(.+?)\]", dep)[0].split(",")
+        ] for dep in re.findall(r"Dependency of subtask \d:[\s\n]*\[.+?\]",
+                                msg.content, re.DOTALL)]
+        # Extracting dependencies and creating a dictionary
+        dependent_subtasks_list = [[
+            f"subtask {int(dep.split()[1])}" for dep in deps
+            if "subtask" in dep.lower()
+        ] for deps in subtask_dependencies]
+
+        # Creating a dictionary of subtasks with dependencies
+        subtasks_with_dependencies_dict = {
+            f"subtask {index+1}": {
+                "description": desp,
+                "dependencies": deps,
+                "input_tags": tags,
+                "input_content": ipt,
+                "output_standard": opt_std
+            }
+            for index, (desp, deps, tags, ipt, opt_std) in enumerate(
+                zip(subtask_descriptions, dependent_subtasks_list,
+                    subtask_inputs_tags, subtask_inputs_content,
+                    subtask_outputs_standard))
+        }
+
+        if len(subtasks_with_dependencies_dict) == 0:
+            raise RuntimeError("The task is not decomposed into subtasks.")
+        if (num_subtasks is not None
+                and (len(subtask_descriptions) != num_subtasks
+                     or len(dependent_subtasks_list) != num_subtasks)):
+            raise RuntimeError(
+                f"Got None or insufficient information of subtasks. "
+                f"Length of generated subtasks: {len(subtask_descriptions)}, "
+                "length of generated dependencies: "
+                f"{len(dependent_subtasks_list)}, "
+                f"length of required subtasks: {num_subtasks}")
+
+        return subtasks_with_dependencies_dict
+
     def get_task_execution_order(
         self,
         subtasks_with_dependencies_dict: Dict[str, List[str]],
@@ -177,43 +376,6 @@ class RoleAssignmentAgent(ChatAgent):
             self.sort_oriented_graph(oriented_graph)
 
         return subtasks_execution_pipelines
-
-    def draw_subtasks_graph(self, oriented_graph: Dict[str, List[str]],
-                            graph_file_path: Optional[str] = None) -> str:
-        r"""Draw the task dependency graph.
-
-        Args:
-            oriented_graph (Dict[str, List[str]]): The DAG of subtasks and
-                their dependencies.
-            graph_file_path (Optional[str], optional): The filepath of the
-                saved graph. (default: :obj:`None`)
-
-        Returns:
-            str: The filepath of the saved graph.
-        """
-
-        # Initialize the graph
-        G = nx.DiGraph()
-        for subtask, details in oriented_graph.items():
-            for dep in details:
-                G.add_edge(dep, subtask)
-        pos = nx.spring_layout(G, k=0.5)
-        plt.figure(figsize=(10, 6))
-        plt.title("Task Dependency Graph")
-
-        # Draw the graph
-        nx.draw(G, pos, with_labels=True, node_size=2000, node_color='skyblue',
-                alpha=0.5, font_size=15, width=2, edge_color='gray',
-                font_weight='bold')
-
-        # Save the figure locally
-        if graph_file_path is None:
-            graph_file_path = \
-                "examples/multi_agent/task_dependency_graph.png"
-        plt.savefig(graph_file_path)
-        plt.close()
-
-        return graph_file_path
 
     def sort_oriented_graph(
             self, oriented_graph: Dict[str, List[str]]) -> List[List[str]]:
@@ -261,194 +423,42 @@ class RoleAssignmentAgent(ChatAgent):
 
         return parallel_subtask_pipelines
 
-    def split_tasks(
-        self,
-        task_prompt: Union[str, TextPrompt],
-        role_descriptions_dict: Dict[str, str],
-        num_subtasks: Optional[int] = None,
-        context_text: Optional[str] = None,
-    ) -> Dict[str, Dict[str, Union[str, List[str]]]]:
-        r"""Decompose the task into subtasks based on the input task prompt.
+    def draw_subtasks_graph(self, oriented_graph: Dict[str, List[str]],
+                            graph_file_path: Optional[str] = None) -> str:
+        r"""Draw the task dependency graph.
 
         Args:
-            task_prompt (Union[str, TextPrompt]): The prompt for the task
-                based on which the roles are to be generated.
-            role_descriptions_dict (Dict[str, str]): The role descriptions of
-                each role.
-            num_subtasks (Optional[int], optional): The number of subtasks to
-                decompose the task into. (default: :obj:`None`)
-            context_text (Optional[str], optional): The context text to
-                generate insights from. (default: :obj:`None`)
+            oriented_graph (Dict[str, List[str]]): The DAG of subtasks and
+                their dependencies.
+            graph_file_path (Optional[str], optional): The filepath of the
+                saved graph. (default: :obj:`None`)
 
         Returns:
-            Dict[str, Dict[str, Union[str, List[str]]]]: A dictionary mapping
-                subtask names to their descriptions and dependencies.
+            str: The filepath of the saved graph.
         """
-        self.reset()
 
-        role_names = list(role_descriptions_dict.keys())
+        # Initialize the graph
+        G = nx.DiGraph()
+        for subtask, details in oriented_graph.items():
+            for dep in details:
+                G.add_edge(dep, subtask)
+        pos = nx.spring_layout(G, k=0.5)
+        plt.figure(figsize=(10, 6))
+        plt.title("Task Dependency Graph")
 
-        # Generate insights from the context text to help decompose the task
-        if context_text is not None:
-            model_config = self.model_config
-            insight_agent = InsightAgent(model_type=self.model_type,
-                                         model_config=model_config)
-            task_insights_json = insight_agent.run(context_text=context_text)
-            task_context_prompt = (
-                "===== CONTEXT TEXT =====\n"
-                "The CONTEXT TEXT is related to TASK and "
-                "Contextual Parameters of subtask. When "
-                "decomposing the task, ensure that each subtask "
-                "incorporates specific details from the "
-                "INSIGHTS of CONTEXT TEXT.\n" +
-                insight_agent.convert_json_to_str(task_insights_json))
-        else:
-            task_context_prompt = ""
+        # Draw the graph
+        nx.draw(G, pos, with_labels=True, node_size=2000, node_color='skyblue',
+                alpha=0.5, font_size=15, width=2, edge_color='gray',
+                font_weight='bold')
 
-        task_prompt = TextPrompt("===== TASK =====\n" + task_prompt + "\n\n")
-        role_with_description_prompt = \
-            "===== ROLES WITH DESCRIPTION =====\n" + "\n".join(
-                f"{role_name}:\n{role_descriptions_dict[role_name]}\n"
-                for role_name in role_names) + "\n\n"
-        if num_subtasks is None:
-            answer_prompt = """===== ANSWER TEMPLATE =====
-PART I:
-Details of subtask <NUM>:
-- <BLANK>
-Contextual Parameters (only related to CONTEXT TEXT, without dependentcies) of subtask <NUM>:
-- <BLANK>
-Details of subtask <NUM>:
-- <BLANK>
-Contextual Parameters (only related to CONTEXT TEXT, without dependentcies) of subtask <NUM>:
-- <BLANK>
+        # Save the figure locally
+        if graph_file_path is None:
+            graph_file_path = \
+                "examples/multi_agent/task_dependency_graph.png"
+        plt.savefig(graph_file_path)
+        plt.close()
 
-PART II:
-Gantt Chart with complex dependency in MarkDown format:
-<BLANK>
-
-PART III (all subtasks):
-"""  # noqa: E501
-            answer_prompt += (
-                "Incorporate Contextual Parameters "
-                "into Details of subtask <NUM>:\n<BLANK>\n"
-                "Input of subtask <NUM>:\n<BLANK>/None\n"
-                "Task completion standard of subtask <NUM>:\n<BLANK>\n"
-                "Dependency of subtask <NUM>: [subtask <i>, subtask <j>, "
-                "subtask <k>]/[None] (include square brackets).\n\n")
-        else:
-            answer_prompt = """===== ANSWER TEMPLATE =====
-PART I:
-Details of subtask <NUM>:
-- <BLANK>
-Contextual Parameters (only related to CONTEXT TEXT, without dependentcies) of subtask <NUM>:
-- <BLANK>
-Details of subtask <NUM>:
-- <BLANK>
-Contextual Parameters (only related to CONTEXT TEXT, without dependentcies) of subtask <NUM>:
-- <BLANK>
-
-PART II:
-Gantt Chart with complex dependency in MarkDown format:
-<BLANK>
-
-PART III (all subtasks):
-"""  # noqa: E501
-            answer_prompt += "\n".join(
-                f"Incorporate Contextual Parameters "
-                f"into Details of subtask {i + 1}:\n<BLANK>\n"
-                f"Input of subtask {i + 1}:\n<BLANK>/None\n"
-                f"Task completion standard of subtask {i + 1}:\n<BLANK>\n"
-                f"Dependency of subtask {i + 1}: [subtask <i>, subtask "
-                f"<j>, subtask <k>]/[None] (include square brackets)."
-                for i in range(num_subtasks)) + "\n\n"
-        split_task_rules_prompt = """You are a task decomposer, and you're in asked to break down the main TASK into {num_subtasks} manageable subtasks suitable for a team comprising {num_roles} domain experts. The experts will contribute to the {num_subtasks} subtasks. Please follow the guidelines below to craft your answer:
-    1. Action-Oriented Foundation & Building Blocks: Ensure each subtask is actionable, distinct, tapping into the expertise of the assigned roles. Recognize that not every subtask needs to directly reflect the main TASK's ultimate aim. Some subtasks serve as essential building blocks, paving the way for more central subtasks, but avoid creating subtasks that are self-dependent or overly foundational.
-    2. Balanced Granularity with a Bias for Action: While each subtask should be detailed and actionable, it should not be so ambiguous that it requires the input of more than two domain experts. Prioritize tangible actions in subtask such as implementation, creation, testing, or other tangible activities over mere understanding.
-    3. Dependencies & Gantt Chart: Identify and account for the dependencies within the subtasks. Ensure that each subtask logically flows from one to the next, or can run concurrently where no subtask is dependent on itself, in a manner that could be efficiently represented on a Gantt chart.
-    4. I define the tags of the Input of subtask:
-        - Interlinking of Inputs: Ensure that the inputs are not siloed and can be interlinked within privous subtasks if necessary, providing a holistic view of what is required for the subtask.
-        - Hierarchy and Prioritization: Identify and clearly state the priority and hierarchy (if applicable) among the inputs, ensuring the most critical elements are addressed promptly.
-        - Accessibility and Clarity: Ensure that all provided inputs are accessible, clear, and understandable to the relevant team members.
-        - Adjustability: Consider that inputs may need to be adjusted as the project progresses and ensure a mechanism for the same.
-    5. I define the Task Completion Standard in order to implement a feature in the software that can identify and mark a task as completed:
-        - A task is considered completed when its intended output is produced.
-        - If possible, the completion standard should be quantifiable to facilitate automatic detection by the software or tool feature.
-        - The completion standard should be applicable to common project management scenarios and adaptable to various types of tasks, such as development, testing, and review tasks.
-    6. Refrain from mentioning specific titles or roles within the content of subtasks.
-Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill in the BLANKs, and DO NOT alter or modify any other part of the template.\n\n"""  # noqa: E501
-        split_task_prompt = TextPrompt(split_task_rules_prompt +
-                                       answer_prompt + task_prompt +
-                                       task_context_prompt +
-                                       role_with_description_prompt)
-        subtasks_generation = split_task_prompt.format(
-            num_subtasks=num_subtasks or "SEVERAL/ENOUGH",
-            num_roles=len(role_names))
-
-        subtasks_generation_msg = BaseMessage.make_user_message(
-            role_name="Task Decomposer", content=subtasks_generation)
-
-        response = self.step(input_message=subtasks_generation_msg)
-
-        if (response.terminated):
-            raise RuntimeError("Role compatibility scoring failed.\n" +
-                               f"Error:\n{response.info}")
-        msg = response.msg  # type: BaseMessage
-
-        # Distribute the output completions into subtasks
-        subtask_descriptions = [
-            desc.replace("<", "").replace(">", "").strip('\n')
-            for desc in re.findall(
-                r"Incorporate Contextual Parameters into Details "
-                r"of subtask \d:\n(.+?)Input of ", msg.content, re.DOTALL)
-        ]
-        subtask_inputs = [
-            ipt.replace("<", "").replace(">", "").strip('\n')
-            for ipt in re.findall(
-                r"Input of subtask \d:\n(.+?)Task completion standard",
-                msg.content, re.DOTALL)
-        ]
-        subtask_outputs_standard = [
-            opt_std.replace("<", "").replace(">", "").strip('\n')
-            for opt_std in re.findall(
-                r"Task completion standard of subtask \d:\n(.+?)Dependency "
-                r"of subtask", msg.content, re.DOTALL)
-        ]
-        subtask_dependencies = [[
-            dep.strip() for dep in re.findall(r"\[(.+?)\]", dep)[0].split(",")
-        ] for dep in re.findall(r"Dependency of subtask \d:[\s\n]*\[.+?\]",
-                                msg.content, re.DOTALL)]
-
-        # Extracting dependencies and creating a dictionary
-        dependent_subtasks_list = [[
-            f"subtask {int(dep.split()[1])}" for dep in deps
-            if "subtask" in dep.lower()
-        ] for deps in subtask_dependencies]
-        # Creating a dictionary of subtasks with dependencies
-        subtasks_with_dependencies_dict = {
-            f"subtask {index+1}": {
-                "description": desp,
-                "dependencies": deps,
-                "input": ipt,
-                "output_standard": opt_std
-            }
-            for index, (desp, deps, ipt, opt_std) in enumerate(
-                zip(subtask_descriptions, dependent_subtasks_list,
-                    subtask_inputs, subtask_outputs_standard))
-        }
-
-        if len(subtasks_with_dependencies_dict) == 0:
-            raise RuntimeError("The task is not decomposed into subtasks.")
-        if (num_subtasks is not None
-                and (len(subtask_descriptions) != num_subtasks
-                     or len(dependent_subtasks_list) != num_subtasks)):
-            raise RuntimeError(
-                f"Got None or insufficient information of subtasks. "
-                f"Length of generated subtasks: {len(subtask_descriptions)}, "
-                "length of generated dependencies: "
-                f"{len(dependent_subtasks_list)}, "
-                f"length of required subtasks: {num_subtasks}")
-
-        return subtasks_with_dependencies_dict
+        return graph_file_path
 
     def evaluate_role_compatibility(
         self,

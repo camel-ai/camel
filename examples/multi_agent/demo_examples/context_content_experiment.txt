@@ -1,5 +1,27 @@
-Assume the population is constant and closed (no births, deaths, or migration).
-Develop a set of differential equations using the SIR (Susceptible, Infected, Recovered) model framework but modify it to account for the immediate possibility of reinfection.
-Include parameters for the rate of infection, the rate of recovery, and the rate of losing immunity (which in this case would be instantaneous).
-Discuss the stability of the equilibrium points and interpret their epidemiological implications.
-Perform a basic sensitivity analysis on one of your parameters to show how it affects the dynamics of the model.
+The unique characteristic of this virus is that individuals who recover from it gain no lasting immunity and can be immediately reinfected. This scenario modifies the traditional SIR (Susceptible, Infected, Recovered) model to reflect the immediate loss of immunity.
+
+1. **Total Population (N)**: 10,000 individuals.
+
+2. **Initial Conditions**:
+   - Susceptible population at start (\(S_0\)): 9,950 individuals.
+   - Infected population at start (\(I_0\)): 50 individuals.
+   - Recovered population at start (\(R_0\)): 0 individuals.
+
+3. **Model Parameters**:
+   - **Rate of Infection (\(\beta\))**: 0.0005 per individual per day. This implies that each infected individual makes enough contact to potentially infect 0.05% of the susceptible population per day.
+   - **Rate of Recovery (\(\gamma\))**: 0.1 per day, indicating that infected individuals have a 10% chance of recovering each day.
+   - **Rate of Losing Immunity (\(\sigma\))**: Set as 0.1 per day, implying that recovered individuals immediately become susceptible again.
+
+4. **Differential Equations**:
+   - \(\frac{dS}{dt} = -\beta \cdot S \cdot I + \sigma \cdot R\)
+   - \(\frac{dI}{dt} = \beta \cdot S \cdot I - \gamma \cdot I\)
+   - \(\frac{dR}{dt} = \gamma \cdot I - \sigma \cdot R\)
+
+5. **Stability Analysis**:
+   - Analyze the equilibrium points (\(S^*, I^*, R^*\)) for their stability. Since this model includes immediate loss of immunity, the dynamics might be different from standard SIR models.
+
+6. **Sensitivity Analysis**:
+   - Perform this on the rate of infection (\(\beta\)). Vary \(\beta\) within a practical range, e.g., 0.0001 to 0.001, and observe the impact on the peak infection rate and the duration of the epidemic.
+
+7. **Epidemiological Implications**:
+   - Discuss how these parameters and the resulting dynamics can inform public health strategies, such as the importance of reducing contact rates or the challenges posed by quick loss of immunity.

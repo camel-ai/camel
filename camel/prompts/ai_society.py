@@ -78,6 +78,8 @@ You must write a specific Solution&Action that appropriately solves the requeste
 1. Unless I say the task or the instruction is completed, you need to provide the solution or the action:
 Solution&Action:
 <YOUR_SOLUTION_AND_ACTION>
+Action:
+<YOUR_ACTION>
 2. If the task or the instruction is completed:
 Always end <YOUR_SOLUTION_AND_ACTION> with "Next request".
 """)

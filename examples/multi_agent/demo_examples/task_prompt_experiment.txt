@@ -1,1 +1,1 @@
-Model the spread of a hypothetical virus in a closed population using differential equations. The virus has a unique characteristic: individuals who recover from it gain no immunity and can be immediately reinfected.
+Model the spread of a hypothetical virus in a closed population of 10,000 individuals using a set of differential equations and calculate the time to reach the epidemic peak and the maximum number of infected individuals at this peak.

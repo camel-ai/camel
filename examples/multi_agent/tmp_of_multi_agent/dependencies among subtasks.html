@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title></title>
+        <style>
+/* From extension vscode.github */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+.vscode-dark img[src$=\#gh-light-mode-only],
+.vscode-light img[src$=\#gh-dark-mode-only] {
+	display: none;
+}
+
+</style>
+        
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/markdown.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/highlight.css">
+<style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, 'Ubuntu', 'Droid Sans', sans-serif;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+        </style>
+        <style>
+.task-list-item {
+    list-style-type: none;
+}
+
+.task-list-item-checkbox {
+    margin-left: -20px;
+    vertical-align: middle;
+    pointer-events: none;
+}
+</style>
+        
+    </head>
+    <body class="vscode-body vscode-light">
+        <p><span style='color: blue;'>Dependencies among subtasks: {</span></p>
+<p><span style='color: blue;'>    &quot;subtask 1&quot;: {</span></p>
+<p><span style='color: blue;'>        &quot;description&quot;: &quot;- Write Chapter 1: Dawn of the Star Chaser, setting the interstellar political scene and introducing the crew.&quot;,</span></p>
+<p><span style='color: blue;'>        &quot;dependencies&quot;: [],</span></p>
+<p><span style='color: blue;'>        &quot;input_tags&quot;: [</span></p>
+<p><span style='color: blue;'>            &quot;'Interstellar Political Landscape'&quot;,</span></p>
+<p><span style='color: blue;'>            &quot;'Character Profiles'&quot;,</span></p>
+<p><span style='color: blue;'>            &quot;'Mission Objectives'&quot;</span></p>
+<p><span style='color: blue;'>        ],</span></p>
+<p><span style='color: blue;'>        &quot;input_content&quot;: &quot;- Information on interstellar political entities, character profiles, and mission objectives.&quot;,</span></p>
+<p><span style='color: blue;'>        &quot;output_standard&quot;: &quot;- Chapter 1 is completed when it introduces the political landscape, main characters, and mission briefing.&quot;</span></p>
+<p><span style='color: blue;'>    },</span></p>
+<p><span style='color: blue;'>    &quot;subtask 2&quot;: {</span></p>
+<p><span style='color: blue;'>        &quot;description&quot;: &quot;- Write Chapter 2: First Leap, capturing the ship's first FTL jump and the crew's reactions to anomalies.&quot;,</span></p>
+<p><span style='color: blue;'>        &quot;dependencies&quot;: [</span></p>
+<p><span style='color: blue;'>            &quot;subtask 1&quot;</span></p>
+<p><span style='color: blue;'>        ],</span></p>
+<p><span style='color: blue;'>        &quot;input_tags&quot;: [</span></p>
+<p><span style='color: blue;'>            &quot;'Spaceship Technology'&quot;,</span></p>
+<p><span style='color: blue;'>            &quot;'Initial Challenges'&quot;,</span></p>
+<p><span style='color: blue;'>            &quot;'Early Discoveries'&quot;</span></p>
+<p><span style='color: blue;'>        ],</span></p>
+<p><span style='color: blue;'>        &quot;input_content&quot;: &quot;- Details on spaceship technology and descriptions of initial challenges and discoveries.&quot;,</span></p>
+<p><span style='color: blue;'>        &quot;output_standard&quot;: &quot;- Chapter 2 is completed when the maiden voyage and initial challenges are vividly described.&quot;</span></p>
+<p><span style='color: blue;'>    },</span></p>
+<p><span style='color: blue;'>    &quot;subtask 3&quot;: {</span></p>
+<p><span style='color: blue;'>        &quot;description&quot;: &quot;- Write Chapter 3: Echoes of Novada, exploring the planet's society and the crew's secret agendas.&quot;,</span></p>
+<p><span style='color: blue;'>        &quot;dependencies&quot;: [</span></p>
+<p><span style='color: blue;'>            &quot;subtask 2&quot;</span></p>
+<p><span style='color: blue;'>        ],</span></p>
+<p><span style='color: blue;'>        &quot;input_tags&quot;: [</span></p>
+<p><span style='color: blue;'>            &quot;'Novada Society'&quot;,</span></p>
+<p><span style='color: blue;'>            &quot;'Crew's Secret Agendas'&quot;</span></p>
+<p><span style='color: blue;'>        ],</span></p>
+<p><span style='color: blue;'>        &quot;input_content&quot;: &quot;- Cultural and societal information of Novada and insights into crew members' personal missions.&quot;,</span></p>
+<p><span style='color: blue;'>        &quot;output_standard&quot;: &quot;- Chapter 3 is completed when it provides a detailed exploration of Novada and reveals crew secrets.&quot;</span></p>
+<p><span style='color: blue;'>    },</span></p>
+<p><span style='color: blue;'>    &quot;subtask 4&quot;: {</span></p>
+<p><span style='color: blue;'>        &quot;description&quot;: &quot;- Write Chapter 4: Shadows Over Zelin, depicting the tension within the crew and Zelin's military environment.&quot;,</span></p>
+<p><span style='color: blue;'>        &quot;dependencies&quot;: [</span></p>
+<p><span style='color: blue;'>            &quot;subtask 3&quot;</span></p>
+<p><span style='color: blue;'>        ],</span></p>
+<p><span style='color: blue;'>        &quot;input_tags&quot;: [</span></p>
+<p><span style='color: blue;'>            &quot;'Zelin's Military Society'&quot;,</span></p>
+<p><span style='color: blue;'>            &quot;'Crew's Ideological Conflicts'&quot;</span></p>
+<p><span style='color: blue;'>        ],</span></p>
+<p><span style='color: blue;'>        &quot;input_content&quot;: &quot;- Information on Zelin's military society and the crew's conflicting ideologies.&quot;,</span></p>
+<p><span style='color: blue;'>        &quot;output_standard&quot;: &quot;- Chapter 4 is completed when it portrays the military environment of Zelin and the crew's internal strife.&quot;</span></p>
+<p><span style='color: blue;'>    },</span></p>
+<p><span style='color: blue;'>    &quot;subtask 5&quot;: {</span></p>
+<p><span style='color: blue;'>        &quot;description&quot;: &quot;- Write Chapter 5: Through the Eye of the Storm, leading to the climactic confrontation.&quot;,</span></p>
+<p><span style='color: blue;'>        &quot;dependencies&quot;: [</span></p>
+<p><span style='color: blue;'>            &quot;subtask 4&quot;</span></p>
+<p><span style='color: blue;'>        ],</span></p>
+<p><span style='color: blue;'>        &quot;input_tags&quot;: [</span></p>
+<p><span style='color: blue;'>            &quot;'Climactic Showdown'&quot;,</span></p>
+<p><span style='color: blue;'>            &quot;'Character Sacrifices'&quot;,</span></p>
+<p><span style='color: blue;'>            &quot;'Interstellar Dynamics'&quot;</span></p>
+<p><span style='color: blue;'>        ],</span></p>
+<p><span style='color: blue;'>        &quot;input_content&quot;: &quot;- Descriptions of the showdown, character sacrifices, and the resulting shift in interstellar dynamics.&quot;,</span></p>
+<p><span style='color: blue;'>        &quot;output_standard&quot;: &quot;- Chapter 5 is completed when the showdown and its consequences are compellingly presented.&quot;</span></p>
+<p><span style='color: blue;'>    },</span></p>
+<p><span style='color: blue;'>    &quot;subtask 6&quot;: {</span></p>
+<p><span style='color: blue;'>        &quot;description&quot;: &quot;- Write Chapter 6: A New Beginning, reflecting on the journey and hinting at future adventures.&quot;,</span></p>
+<p><span style='color: blue;'>        &quot;dependencies&quot;: [</span></p>
+<p><span style='color: blue;'>            &quot;subtask 5&quot;</span></p>
+<p><span style='color: blue;'>        ],</span></p>
+<p><span style='color: blue;'>        &quot;input_tags&quot;: [</span></p>
+<p><span style='color: blue;'>            &quot;'Journey Reflections'&quot;,</span></p>
+<p><span style='color: blue;'>            &quot;'Unresolved Mysteries'&quot;,</span></p>
+<p><span style='color: blue;'>            &quot;'Closing Note'&quot;</span></p>
+<p><span style='color: blue;'>        ],</span></p>
+<p><span style='color: blue;'>        &quot;input_content&quot;: &quot;- Reflections on the journey's outcomes, unresolved mysteries, and a closing note for future narratives.&quot;,</span></p>
+<p><span style='color: blue;'>        &quot;output_standard&quot;: &quot;- Chapter 6 is completed when it provides a reflective conclusion and teases future directions.&quot;</span></p>
+<p><span style='color: blue;'>    }</span></p>
+<p><span style='color: blue;'>}</span></p>
+
+        
+        
+    </body>
+    </html>
