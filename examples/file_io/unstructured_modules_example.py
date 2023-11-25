@@ -49,7 +49,7 @@ def clean_text_example():
         'clean_dashes': {},
         'clean_non_ascii_chars': {}
     }
-    return unstructured_modules.clean_text_data(text, options)
+    return unstructured_modules.clean_text_data(options, text)
 
 
 def extract_data_example():

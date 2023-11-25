@@ -52,13 +52,13 @@ def test_clean_text_data(unstructured_instance):
     # Test with a valid cleaning option
     options = {"clean_extra_whitespace": {}}
     cleaned_text = unstructured_instance.clean_text_data(
-        "  Hello  World  ", options)
+        options, "  Hello  World  ")
     assert cleaned_text == "Hello World"  # Check the expected cleaned text
 
     # Test with an invalid cleaning option (should raise ValueError)
     options = {"invalid_cleaning_option": {}}
     with pytest.raises(ValueError):
-        unstructured_instance.clean_text_data("Test Text", options)
+        unstructured_instance.clean_text_data(options, "Test Text")
 
 
 # Test the extract_data_from_text method

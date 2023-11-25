@@ -120,7 +120,7 @@ class UnstructuredModules:
                 raise Exception(
                     "Failed to parse the unstructured file.") from e
 
-    def clean_text_data(self, text: str, options: Dict[str, Any]) -> str:
+    def clean_text_data(self, options: Dict[str, Any], text: str) -> str:
         r"""Cleans text data using a variety of cleaning functions provided by
         the 'unstructured' library.
 
