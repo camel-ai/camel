@@ -12,6 +12,8 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
+import os
+
 import pytest
 
 from examples.file_io.unstructured_modules_example import (
@@ -22,12 +24,6 @@ from examples.file_io.unstructured_modules_example import (
     parse_url_example,
     stage_data_example,
 )
-
-
-# Define fixtures if needed
-@pytest.fixture
-def sample_file_path():
-    return 'data/ai_society/user_roles.txt'
 
 
 @pytest.fixture
@@ -47,10 +43,26 @@ def sample_email_text():
 
 
 # Define test cases
-def test_parse_file_example(sample_file_path):
-    elements = parse_file_example()
-    assert isinstance(elements, list)
-    assert len(elements) > 0
+
+
+def test_parse_file_example():
+    # Setup: ensure any pre-existing 'mydoc.docx' is removed
+    if os.path.exists("mydoc.docx"):
+        os.remove("mydoc.docx")
+
+    # Execution: call the function
+    result = parse_file_example()
+
+    # Assertion: check if the result is as expected
+    expected = [
+        "Important Analysis", "Here is my first thought.",
+        "Here is my second thought."
+    ]
+    assert result == expected, f"Expected {expected}, got {result}"
+
+    # Cleanup: remove the created file after the test
+    if os.path.exists("mydoc.docx"):
+        os.remove("mydoc.docx")
 
 
 def test_parse_url_example(sample_url):

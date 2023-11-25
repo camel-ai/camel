@@ -12,15 +12,25 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
+import os
+
+import docx
+
 from camel.file_io.unstructured_io import UnstructuredModules
 
 unstructured_modules = UnstructuredModules()
 
 
 def parse_file_example():
-    # take user_roles.txt as example
-    path = 'data/ai_society/user_roles.txt'
-    elements = unstructured_modules.parse_file_or_url(path)
+    document = docx.Document()
+    document.add_paragraph("Important Analysis", style="Heading 1")
+    document.add_paragraph("Here is my first thought.", style="Body Text")
+    document.add_paragraph("Here is my second thought.", style="Normal")
+    document.save("mydoc.docx")
+    elements = unstructured_modules.parse_file_or_url("mydoc.docx")
+    # Cleanup: remove the created file after the example
+    if os.path.exists("mydoc.docx"):
+        os.remove("mydoc.docx")
     return [" ".join(str(el).split()) for el in elements]
 
 
@@ -80,7 +90,6 @@ def main():
     if choice == '1':
         print("Parsing file example:")
         print(parse_file_example())
-        print("\n You have parsed data/ai_society/user_roles.txt!")
 
     elif choice == '2':
         print("Parsing URL example:")
