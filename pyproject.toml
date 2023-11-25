@@ -164,6 +164,6 @@ module = [
     "docx2txt",
     "PyMuPDF",
     "fitz",
-    "sentence-transformers.*",
+    "sentence_transformers.*",
 ]
 ignore_missing_imports = true
