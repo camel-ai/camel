@@ -132,10 +132,24 @@ class UnstructuredModules:
 
         Args:
             clean_options (dict): A dictionary specifying which
-            cleaning options to apply. The keys should match
-            the names of the cleaning functions, and the
-            values should be dictionaries containing the
-            parameters for each function.
+                                cleaning options to apply. The keys should
+                                match the names of the cleaning functions,
+                                and the values should be dictionaries
+                                containing the parameters for each
+                                function. Supported types:
+                                'clean_extra_whitespace',
+                                'clean_bullets',
+                                'clean_ordered_bullets',
+                                'clean_postfix',
+                                'clean_prefix',
+                                'clean_dashes',
+                                'clean_trailing_punctuation',
+                                'clean_non_ascii_chars',
+                                'group_broken_paragraphs',
+                                'remove_punctuation',
+                                'replace_unicode_quotes',
+                                'bytes_string_to_string',
+                                'translate_text'.
             text (str): The text to be cleaned.
 
         Returns:
@@ -207,8 +221,16 @@ class UnstructuredModules:
         unstructured.cleaners.extract.
 
         Args:
-            extract_type (str): Type of data to extract
-            (e.g., 'datetime', 'email', 'ip', etc.).
+            extract_type (str): Type of data to extract. Supported types:
+                                'extract_datetimetz',
+                                'extract_email_address',
+                                'extract_ip_address',
+                                'extract_ip_address_name',
+                                'extract_mapi_id',
+                                'extract_ordered_bullets',
+                                'extract_text_after',
+                                'extract_text_before',
+                                'extract_us_phone_number'.
             text (str): Text to extract data from.
             **kwargs: Additional keyword arguments for specific
             extraction functions.
@@ -264,8 +286,18 @@ class UnstructuredModules:
 
         Args:
             stage_type (str): Type of staging to perform. Supported types:
-                            'csv', 'dataframe', 'dict', 'prodigy',
-                            'baseplate', 'datasaur', 'label_box', 'weaviate'.
+                            'convert_to_csv',
+                            'convert_to_dataframe',
+                            'convert_to_dict',
+                            'dict_to_elements',
+                            'stage_csv_for_prodigy',
+                            'stage_for_prodigy',
+                            'stage_for_argilla',
+                            'stage_for_baseplate',
+                            'stage_for_datasaur',
+                            'stage_for_label_box',
+                            'stage_for_label_studio',
+                            'stage_for_weaviate'.
             elements (List[Any]): List of Element objects to be staged.
             **kwargs: Additional keyword arguments specific to
             the staging type.
@@ -334,7 +366,8 @@ class UnstructuredModules:
         r"""Chunks elements by titles.
 
         Args:
-            chunk_type (str): Type chunk going to apply.
+            chunk_type (str): Type chunk going to apply. Supported types:
+                            'chunk_by_title'.
             elements (List[Any]): List of Element objects to be chunked.
             **kwargs: Additional keyword arguments for chunking.
 
