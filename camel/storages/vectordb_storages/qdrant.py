@@ -50,7 +50,7 @@ class QdrantStorage(BaseVectorStorage):
         path (Optional[str]): Path to a directory for initializing a local
             Qdrant client. (default: :obj:`None`)
         distance (VectorDistance): The distance metric for vector comparison
-            (default: :obj:`VectorDistance.Cosine`).
+            (default: :obj:`VectorDistance.COSINE`).
         del_collection (bool): Flag to determine if the collection should be
             deleted upon object destruction (default: :obj:`False`).
         **kwargs (Any): Additional keyword arguments for initializing
@@ -72,7 +72,7 @@ class QdrantStorage(BaseVectorStorage):
         collection: Optional[str] = None,
         url_and_api_key: Optional[Tuple[str, str]] = None,
         path: Optional[str] = None,
-        distance: VectorDistance = VectorDistance.Cosine,
+        distance: VectorDistance = VectorDistance.COSINE,
         del_collection: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -120,7 +120,7 @@ class QdrantStorage(BaseVectorStorage):
         self,
         collection: str,
         size: int,
-        distance: VectorDistance = VectorDistance.Cosine,
+        distance: VectorDistance = VectorDistance.COSINE,
         **kwargs: Any,
     ) -> None:
         r"""Creates a new collection in the database.
@@ -130,7 +130,7 @@ class QdrantStorage(BaseVectorStorage):
             size (int): Dimensionality of vectors to be stored in this
                 collection.
             distance (VectorDistance, optional): The distance metric to be used
-                for vector similarity. (default: :obj:`VectorDistance.Cosine`)
+                for vector similarity. (default: :obj:`VectorDistance.COSINE`)
             **kwargs (Any): Additional keyword arguments.
         """
         distance_map = {
