@@ -37,6 +37,8 @@ class QdrantStorage(BaseVectorStorage):
     r"""An implementation of the `BaseVectorStorage` for interacting with
     Qdrant, a vector search engine.
 
+    The detailed information about Qdrant is available at https://qdrant.tech/.
+
     Args:
         vector_dim (int): The dimenstion of storing vectors.
         collection (Optional[str]): Name for the collection in the Qdrant. If
