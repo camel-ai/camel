@@ -239,7 +239,7 @@ We implemented amazing research ideas from other works for you to build, compare
 ## Citation
 ```
 @inproceedings{li2023camel,
-  title={CAMEL: Communicative agents for" mind" exploration of large language model society},
+  title={CAMEL: Communicative Agents for "Mind" Exploration of Large Language Model Society},
   author={Li, Guohao and Hammoud, Hasan Abed Al Kader and Itani, Hani and Khizbullin, Dmitrii and Ghanem, Bernard},
   booktitle={Thirty-seventh Conference on Neural Information Processing Systems},
   year={2023}
