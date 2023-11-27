@@ -46,7 +46,7 @@ class UnstructuredModules:
             from unstructured.__version__ import __version__
 
         except ImportError as e:
-            raise ImportError("unstructured package is not installed.") from e
+            raise ImportError("Package `unstructured` is not installed.") from e
 
         # Use packaging.version to compare versions
         min_ver = version.parse(min_version)
