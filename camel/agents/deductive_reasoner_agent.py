@@ -180,6 +180,7 @@ Given the starting state $A$ and the target state $B$, assuming that a path $L$ 
             raise RuntimeError("Deduction failed. Error:\n" +
                                f"{response.info}")
         msg: BaseMessage = response.msg
+        print(f"Message content:\n{msg.content}")
 
         # Extract the conditions from the message
         condistions_dict = {
@@ -191,20 +192,16 @@ Given the starting state $A$ and the target state $B$, assuming that a path $L$ 
         }
 
         # Extract the labels from the message
-        labels_str = [
-            label.replace("<", "").replace(">", "").strip().strip('\n')
-            for label in re.findall(
+        labels = [
+            label.strip().strip('\n').strip("\"\'") for label in re.findall(
                 r"Entity/Label Recognition of Conditions:\n\[(.+?)\]",
                 msg.content, re.DOTALL)[0].split(",")
-        ][0]
-        labels = [
-            label.strip().strip('\"\'') for label in labels_str.split(", ")
         ]
+        print(f"Labels string:\n{labels}")
 
         # Extract the quality from the message
         quality = [
-            q.replace("<", "").replace(">", "").strip().strip('\n')
-            for q in re.findall(
+            q.strip().strip('\n') for q in re.findall(
                 r"Quality Assessment \(\$Q\$\) \(do not use symbols\):"
                 r"\n(.+?)- Iterative", msg.content, re.DOTALL)
         ][0]

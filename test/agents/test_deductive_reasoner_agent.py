@@ -103,8 +103,12 @@ def generate_expected_content():
             ("The website needs to have a backend system that processes "
              "search queries and retrieves relevant results.")
         },
-        "labels": ["Website search bar"],
-        "quality":
+        "labels": [
+            "Website search bar", "Indexed content database",
+            "Search algorithm/function", "User interface for search queries",
+            "Backend system for query processing"
+        ],
+        "evaluate_quality":
         ("The transition from $A$ to $B$ would be considered efficient if "
          "the search capabilities are implemented with minimal resource "
          "usage.\n    The transition would be considered effective if the "
