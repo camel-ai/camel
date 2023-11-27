@@ -52,14 +52,14 @@ def test_clean_text_data(unstructured_instance):
     # Test with a valid cleaning option
     test_options = {"clean_extra_whitespace": {}}
     cleaned_text = unstructured_instance.clean_text_data(
-        clean_options=test_options, text="  Hello  World  ")
+        text="  Hello  World  ", clean_options=test_options)
     assert cleaned_text == "Hello World"  # Check the expected cleaned text
 
     # Test with an invalid cleaning option (should raise ValueError)
     test_options = {"invalid_cleaning_option": {}}
     with pytest.raises(ValueError):
-        unstructured_instance.clean_text_data(clean_options=test_options,
-                                              text="Test Text")
+        unstructured_instance.clean_text_data(text="Test Text",
+                                              clean_options=test_options)
 
 
 # Test the extract_data_from_text method
@@ -67,14 +67,14 @@ def test_extract_data_from_text(unstructured_instance):
     # Test extracting an email address
     test_email_text = "Contact me at example@email.com."
     extracted_email = unstructured_instance.extract_data_from_text(
-        extract_type="extract_email_address", text=test_email_text)
+        text=test_email_text, extract_type="extract_email_address")
     assert extracted_email == ["example@email.com"]
 
     # Test with an invalid extract option (should raise ValueError)
     test_extract_type = "invalid_extracting_option"
     with pytest.raises(ValueError):
         unstructured_instance.extract_data_from_text(
-            extract_type=test_extract_type, text=test_email_text)
+            text=test_email_text, extract_type=test_extract_type)
 
 
 # Test the stage_elements method
@@ -85,7 +85,7 @@ def test_stage_elements_for_csv(unstructured_instance):
         "philadelphia-eagles-spt-intl/index.html")
     test_elements = unstructured_instance.parse_file_or_url(test_url)
     staged_element = unstructured_instance.stage_elements(
-        stage_type="stage_for_baseplate", elements=test_elements)
+        elements=test_elements, stage_type="stage_for_baseplate")
     assert staged_element['rows'][0] == {
         'data': {
             'type': 'UncategorizedText',
@@ -110,8 +110,8 @@ def test_stage_elements_for_csv(unstructured_instance):
     # Test with an invalid stage option (should raise ValueError)
     test_stage_type = "invalid_stageing_option"
     with pytest.raises(ValueError):
-        unstructured_instance.stage_elements(stage_type=test_stage_type,
-                                             elements=test_elements)
+        unstructured_instance.stage_elements(elements=test_elements,
+                                             stage_type=test_stage_type)
 
 
 # Test the chunk_elements method
@@ -122,11 +122,11 @@ def test_chunk_elements(unstructured_instance):
         "philadelphia-eagles-spt-intl/index.html")
     test_elements = unstructured_instance.parse_file_or_url(test_url)
     chunked_sections = unstructured_instance.chunk_elements(
-        chunk_type="chunk_by_title", elements=test_elements)
+        elements=test_elements, chunk_type="chunk_by_title")
 
     assert len(chunked_sections) == 7  # Check the number of chunks
     # Test with an invalid chunk option (should raise ValueError)
     test_chunk_type = "chunk_by_invalid_option"
     with pytest.raises(ValueError):
-        unstructured_instance.chunk_elements(chunk_type=test_chunk_type,
-                                             elements=test_elements)
+        unstructured_instance.chunk_elements(elements=test_elements,
+                                             chunk_type=test_chunk_type)

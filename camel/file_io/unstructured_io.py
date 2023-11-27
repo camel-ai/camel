@@ -46,7 +46,7 @@ class UnstructuredModules:
             from unstructured.__version__ import __version__
 
         except ImportError as e:
-            raise ImportError("Package `unstructured` is not installed.") from e
+            raise ImportError("Package `unstructured` not installed.") from e
 
         # Use packaging.version to compare versions
         min_ver = version.parse(min_version)
@@ -120,7 +120,7 @@ class UnstructuredModules:
                 raise Exception(
                     "Failed to parse the unstructured file.") from e
 
-    def clean_text_data(self, clean_options: Dict[str, Any], text: str) -> str:
+    def clean_text_data(self, text: str, clean_options: Dict[str, Any]) -> str:
         r"""Cleans text data using a variety of cleaning functions provided by
         the 'unstructured' library.
 
@@ -131,6 +131,7 @@ class UnstructuredModules:
         dashes, non-ascii characters, and more.
 
         Args:
+            text (str): The text to be cleaned.
             clean_options (dict): A dictionary specifying which
                                 cleaning options to apply. The keys should
                                 match the names of the cleaning functions,
@@ -150,7 +151,6 @@ class UnstructuredModules:
                                 'replace_unicode_quotes',
                                 'bytes_string_to_string',
                                 'translate_text'.
-            text (str): The text to be cleaned.
 
         Returns:
             str: The cleaned text.
@@ -215,12 +215,13 @@ class UnstructuredModules:
 
         return cleaned_text
 
-    def extract_data_from_text(self, extract_type: str, text: str,
+    def extract_data_from_text(self, text: str, extract_type: str,
                                **kwargs) -> Any:
         r"""Extracts various types of data from text using functions from
         unstructured.cleaners.extract.
 
         Args:
+            text (str): Text to extract data from.
             extract_type (str): Type of data to extract. Supported types:
                                 'extract_datetimetz',
                                 'extract_email_address',
@@ -231,7 +232,6 @@ class UnstructuredModules:
                                 'extract_text_after',
                                 'extract_text_before',
                                 'extract_us_phone_number'.
-            text (str): Text to extract data from.
             **kwargs: Additional keyword arguments for specific
             extraction functions.
 
@@ -273,7 +273,7 @@ class UnstructuredModules:
 
         return extraction_functions[extract_type](text, **kwargs)
 
-    def stage_elements(self, stage_type: str, elements: List[Any],
+    def stage_elements(self, elements: List[Any], stage_type: str,
                        **kwargs) -> Union[str, List[Dict], pd.DataFrame]:
         r"""Stages elements for various platforms based on the
         specified staging type.
@@ -285,6 +285,7 @@ class UnstructuredModules:
         specific platforms like Prodigy, etc.
 
         Args:
+            elements (List[Any]): List of Element objects to be staged.
             stage_type (str): Type of staging to perform. Supported types:
                             'convert_to_csv',
                             'convert_to_dataframe',
@@ -298,7 +299,6 @@ class UnstructuredModules:
                             'stage_for_label_box',
                             'stage_for_label_studio',
                             'stage_for_weaviate'.
-            elements (List[Any]): List of Element objects to be staged.
             **kwargs: Additional keyword arguments specific to
             the staging type.
 
@@ -361,14 +361,14 @@ class UnstructuredModules:
 
         return staging_functions[stage_type](elements, **kwargs)
 
-    def chunk_elements(self, chunk_type: str, elements: List[Any],
+    def chunk_elements(self, elements: List[Any], chunk_type: str,
                        **kwargs) -> List[Dict]:
         r"""Chunks elements by titles.
 
         Args:
+            elements (List[Any]): List of Element objects to be chunked.
             chunk_type (str): Type chunk going to apply. Supported types:
                             'chunk_by_title'.
-            elements (List[Any]): List of Element objects to be chunked.
             **kwargs: Additional keyword arguments for chunking.
 
         Returns:

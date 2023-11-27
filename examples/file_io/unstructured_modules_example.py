@@ -47,27 +47,27 @@ def clean_text_example(text):
         'clean_dashes': {},
         'clean_non_ascii_chars': {}
     }
-    return unstructured_modules.clean_text_data(clean_options=options,
-                                                text=text)
+    return unstructured_modules.clean_text_data(text=text,
+                                                clean_options=options)
 
 
 def extract_data_example(text):
     return unstructured_modules.extract_data_from_text(
-        extract_type="extract_email_address", text=text)
+        text=text, extract_type="extract_email_address")
 
 
 def stage_data_example(url):
     elements = unstructured_modules.parse_file_or_url(url)
 
     staged_element = unstructured_modules.stage_elements(
-        stage_type="stage_for_baseplate", elements=elements)
+        elements=elements, stage_type="stage_for_baseplate")
     return staged_element
 
 
 def chunk_url_content_example(url):
     elements = unstructured_modules.parse_file_or_url(url)
-    chunks = unstructured_modules.chunk_elements(chunk_type="chunk_by_title",
-                                                 elements=elements)
+    chunks = unstructured_modules.chunk_elements(elements=elements,
+                                                 chunk_type="chunk_by_title")
     return chunks
 
 
