@@ -338,8 +338,7 @@ def get_insights(pre_subtasks, one_subtask, one_subtask_tags,
             [str(insight) for insight in retrieved_insights])
 
     print_and_write_md(
-        "Insights from the context text:\n"
-        f"{insight_agent.convert_json_to_str(insights_pre_subtask)}",
+        f"Insights from the context text:\n{insights_pre_subtask}",
         color=Fore.GREEN, MD_FILE="insights from context text"
         f" of {pre_subtasks}")
     return insights_pre_subtask
@@ -406,6 +405,7 @@ if __name__ == "__main__":
         "task_prompt_supply_chain.txt",
         "task_prompt_endpoint_implementation.txt",
         "task_prompt_science_fiction.txt",
+        "task_prompt_business_novel.txt",
         "task_prompt_experiment.txt",
     ]
     file_names_context = [
@@ -414,10 +414,11 @@ if __name__ == "__main__":
         "context_content_supply_chain.txt",
         "context_content_endpoint_implementation.txt",
         "context_content_science_fiction.txt",
+        "context_content_business_novel.txt",
         "context_content_experiment.txt",
     ]
 
-    index = 4
+    index = 5
     with open(root_path + file_names_task_prompt[index], mode='r',
               encoding="utf-8") as file:
         task_prompt = file.read()
