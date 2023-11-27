@@ -88,7 +88,7 @@ The Acme Program System, henceforth referred to as APS, is hosted in a state-of-
     model_config_description = ChatGPTConfig()
 
     # Construct insight agent
-    insight_agent = InsightAgent(model=model_type,
+    insight_agent = InsightAgent(model_type=model_type,
                                  model_config=model_config_description)
 
     # Generate the insights dictionary based on the mock step function
