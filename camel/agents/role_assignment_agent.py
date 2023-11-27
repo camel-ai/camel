@@ -176,6 +176,23 @@ class RoleAssignmentAgent(ChatAgent):
 
         role_names = list(role_descriptions_dict.keys())
 
+        split_task_rules_prompt = """You are a task decomposer, and you're in asked to break down the main TASK into {num_subtasks} manageable subtasks suitable for a team comprising {num_roles} domain experts. The experts will contribute to the {num_subtasks} subtasks. Please follow the guidelines below to craft your answer:
+    1. Action-Oriented Foundation & Building Blocks: Ensure each subtask is actionable, distinct, tapping into the expertise of the assigned roles. Recognize that not every subtask needs to directly reflect the main TASK's ultimate aim. Some subtasks serve as essential building blocks, paving the way for more central subtasks, but avoid creating subtasks that are self-dependent or overly foundational.
+    2. Balanced Granularity with a Bias for Action: While each subtask should be detailed and actionable, it should not be so ambiguous that it requires the input of more than two domain experts. Prioritize tangible actions in subtask such as implementation, creation, testing, or other tangible activities over mere understanding.
+    3. Contextual Parameters: Please ensure that each subtask has the relevant context information from the TASK to avoid missing or contradicting the context information of the TASK. And try to provide as much information from CONTEXT TEXT as possible here.
+    3. Dependencies & Gantt Chart: Identify and account for the dependencies within the subtasks. Ensure that each subtask logically flows from one to the next, or can run concurrently where no subtask is dependent on itself, in a manner that could be efficiently represented on a Gantt chart.
+    4. Definitions of the Input of subtask:
+        - Interlinking of Inputs: Ensure that the inputs are not siloed and can be interlinked within privous subtasks if necessary, providing a holistic view of what is required for the subtask.
+        - Hierarchy and Prioritization: Identify and clearly state the priority and hierarchy (if applicable) among the inputs, ensuring the most critical elements are addressed promptly.
+        - Accessibility and Clarity: Ensure that all provided inputs are accessible, clear, and understandable to the relevant team members.
+        - Adjustability: Consider that inputs may need to be adjusted as the project progresses and ensure a mechanism for the same.
+    5. Definitions of the Task Completion Standard in order to implement a feature in the software that can identify and mark a task as completed:
+        - A task is considered completed when its intended output is produced.
+        - If possible, the completion standard should be quantifiable to facilitate automatic detection by the software or tool feature.
+        - The completion standard should be applicable to common project management scenarios and adaptable to various types of tasks, such as development, testing, and review tasks.
+    6. Refrain from mentioning specific titles or roles (who are mentioned in the section of ROLES WITH DESCRIPTION) within the content of subtasks, unless the titles and personal names are mentioned in the TASK.
+Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill in the BLANKs, and DO NOT alter or modify any other part of the template.\n\n\n"""  # noqa: E501
+
         # Generate insights from the context text to help decompose the task
         if context_text is not None:
             model_config = self.model_config
@@ -199,77 +216,36 @@ class RoleAssignmentAgent(ChatAgent):
                 f"{role_name}:\n{role_descriptions_dict[role_name]}\n"
                 for role_name in role_names) + "\n\n"
         if num_subtasks is None:
-            answer_prompt = """===== ANSWER TEMPLATE =====
-PART I:
-Details of subtask <NUM>:
-- <BLANK>
-Contextual Parameters (only related to CONTEXT TEXT, without dependentcies) of subtask <NUM>:
-- <BLANK>
-Details of subtask <NUM>:
-- <BLANK>
-Contextual Parameters (only related to CONTEXT TEXT, without dependentcies) of subtask <NUM>:
-- <BLANK>
-
-PART II:
-Gantt Chart with complex dependency in MarkDown format:
-<BLANK>
-
-PART III (all subtasks):
-"""  # noqa: E501
-            answer_prompt += (
-                "Incorporate Contextual Parameters "
-                "into Details of subtask <NUM>:\n- <BLANK>\n"
-                "Content of the Input of subtask <NUM>:\n- <BLANK>\n"
+            answer_prompt = (
+                "===== ANSWER TEMPLATE =====\n"
+                "PART I (all subtasks):\n"
+                "Details of subtask <NUM>:\n<BLANK>\n"
+                "Contextual Parameters of subtask <NUM>:\n<BLANK>\n"
+                "Content of the Input of subtask <NUM>:\n<BLANK>\n"
                 "Input tags of subtask <NUM>: [<BLANK>, ..., <BLANK>]/[None] "
                 "(include square brackets)\n"
-                "Task completion standard of subtask <NUM>:\n- <BLANK>\n"
+                "Task completion standard of subtask <NUM>:\n<BLANK>\n"
                 "Dependency of subtask <NUM>: [subtask <i>, subtask <j>, "
-                "subtask <k>]/[None] (include square brackets).\n\n")
+                "subtask <k>]/[None] (include square brackets).\n"
+                "PART II:\nGantt Chart with complex dependency in MarkDown "
+                "format:\n<BLANK>\n\n\n")
         else:
-            answer_prompt = """===== ANSWER TEMPLATE =====
-PART I:
-Details of subtask <NUM>:
-- <BLANK>
-Contextual Parameters (only related to CONTEXT TEXT, without dependentcies) of subtask <NUM>:
-- <BLANK>
-Details of subtask <NUM>:
-- <BLANK>
-Contextual Parameters (only related to CONTEXT TEXT, without dependentcies) of subtask <NUM>:
-- <BLANK>
-
-PART II:
-Gantt Chart with complex dependency in MarkDown format:
-<BLANK>
-
-PART III (all subtasks):
-"""  # noqa: E501
-            answer_prompt += "\n".join(
-                f"Incorporate Contextual Parameters "
-                f"into Details of subtask {i + 1}:\n- <BLANK>\n"
-                f"Content of the Input of subtask {i + 1}:\n- <BLANK>\n"
-                f"Input tags of subtask {i + 1}: "
-                "[<BLANK>, ..., <BLANK>]/[None] (include square brackets)\n"
-                f"Task completion standard of subtask {i + 1}:\n- <BLANK>\n"
-                f"Dependency of subtask {i + 1}: [subtask <i>, subtask "
-                f"<j>, subtask <k>]/[None] (include square brackets)."
-                for i in range(num_subtasks)) + "\n\n"
-        split_task_rules_prompt = """You are a task decomposer, and you're in asked to break down the main TASK into {num_subtasks} manageable subtasks suitable for a team comprising {num_roles} domain experts. The experts will contribute to the {num_subtasks} subtasks. Please follow the guidelines below to craft your answer:
-    1. Action-Oriented Foundation & Building Blocks: Ensure each subtask is actionable, distinct, tapping into the expertise of the assigned roles. Recognize that not every subtask needs to directly reflect the main TASK's ultimate aim. Some subtasks serve as essential building blocks, paving the way for more central subtasks, but avoid creating subtasks that are self-dependent or overly foundational.
-    2. Balanced Granularity with a Bias for Action: While each subtask should be detailed and actionable, it should not be so ambiguous that it requires the input of more than two domain experts. Prioritize tangible actions in subtask such as implementation, creation, testing, or other tangible activities over mere understanding.
-    3. Dependencies & Gantt Chart: Identify and account for the dependencies within the subtasks. Ensure that each subtask logically flows from one to the next, or can run concurrently where no subtask is dependent on itself, in a manner that could be efficiently represented on a Gantt chart.
-    4. I define the Input of subtask:
-        - Interlinking of Inputs: Ensure that the inputs are not siloed and can be interlinked within privous subtasks if necessary, providing a holistic view of what is required for the subtask.
-        - Hierarchy and Prioritization: Identify and clearly state the priority and hierarchy (if applicable) among the inputs, ensuring the most critical elements are addressed promptly.
-        - Accessibility and Clarity: Ensure that all provided inputs are accessible, clear, and understandable to the relevant team members.
-        - Adjustability: Consider that inputs may need to be adjusted as the project progresses and ensure a mechanism for the same.
-    5. I define the Task Completion Standard in order to implement a feature in the software that can identify and mark a task as completed:
-        - A task is considered completed when its intended output is produced.
-        - If possible, the completion standard should be quantifiable to facilitate automatic detection by the software or tool feature.
-        - The completion standard should be applicable to common project management scenarios and adaptable to various types of tasks, such as development, testing, and review tasks.
-    6. Refrain from mentioning specific titles or roles within the content of subtasks.
-Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill in the BLANKs, and DO NOT alter or modify any other part of the template.\n\n"""  # noqa: E501
+            answer_prompt = "===== ANSWER TEMPLATE =====\n" + \
+                "PART I (all subtasks):\n" + \
+                "\n".join(
+                    f"Details of subtask {i + 1}:\n<BLANK>\n"
+                    f"Contextual Parameters of subtask {i + 1}:\n<BLANK>\n"
+                    f"Content of the Input of subtask {i + 1}:\n<BLANK>\n"
+                    f"Input tags of subtask {i + 1}: [<BLANK>, ..., "
+                    "<BLANK>]/[None] (include square brackets)\n"
+                    f"Task completion standard of subtask {i + 1}:\n<BLANK>\n"
+                    f"Dependency of subtask {i + 1}: [subtask <i>, subtask "
+                    f"<j>, subtask <k>]/[None] (include square brackets)."
+                    for i in range(num_subtasks)) + \
+                "PART II:\nGantt Chart with complex dependency in " + \
+                "MarkDown format:\n<BLANK>\n\n\n"
         split_task_prompt = TextPrompt(split_task_rules_prompt +
-                                       answer_prompt + task_prompt +
+                                       answer_prompt + task_prompt + "\n\n" +
                                        task_context_prompt +
                                        role_with_description_prompt)
         subtasks_generation = split_task_prompt.format(
@@ -290,14 +266,24 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
         subtask_descriptions = [
             desc.replace("<", "").replace(">", "").strip('\n')
             for desc in re.findall(
-                r"Incorporate Contextual Parameters into Details "
-                r"of subtask \d:\n(.+?)Content of ", msg.content, re.DOTALL)
+                r"Details of subtask \d:[\s\n](.+?)Contextual Parameters of ",
+                msg.content, re.DOTALL)
+        ]
+        subtask_contexts = [
+            context.replace("<", "").replace(">", "").strip('\n')
+            for context in re.findall(
+                r"Contextual Parameters of subtask \d:[\s\n](.+?)Content of "
+                r"the Input of subtask ", msg.content, re.DOTALL)
+        ]
+        subtask_descriptions = [
+            desc + context
+            for desc, context in zip(subtask_descriptions, subtask_contexts)
         ]
         subtask_inputs_content = [
             ipt.replace("<", "").replace(">", "").strip('\n')
             for ipt in re.findall(
-                r"Content of the Input of subtask \d:\n(.+?)Input tags of ",
-                msg.content, re.DOTALL)
+                r"Content of the Input of subtask \d:[\s\n](.+?)"
+                r"Input tags of ", msg.content, re.DOTALL)
         ]
         subtask_inputs_tags = [[
             tag.strip() for tag in re.findall(r"\[(.+?)\]", tag)[0].split(",")
@@ -306,8 +292,8 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
         subtask_outputs_standard = [
             opt_std.replace("<", "").replace(">", "").strip('\n')
             for opt_std in re.findall(
-                r"Task completion standard of subtask \d:\n(.+?)Dependency "
-                r"of subtask", msg.content, re.DOTALL)
+                r"Task completion standard of subtask \d:[\s\n]"
+                r"(.+?)Dependency of subtask", msg.content, re.DOTALL)
         ]
         subtask_dependencies = [[
             dep.strip() for dep in re.findall(r"\[(.+?)\]", dep)[0].split(",")
