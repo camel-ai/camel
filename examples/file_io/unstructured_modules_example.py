@@ -35,53 +35,49 @@ def parse_file_example():
     return [" ".join(str(el).split()) for el in elements]
 
 
-def parse_url_example():
-    url = ("https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
-           "philadelphia-eagles-spt-intl/index.html")
+def parse_url_example(url):
     elements = unstructured_modules.parse_file_or_url(url)
     return "\n\n".join([str(el) for el in elements])
 
 
-def clean_text_example():
-    example_text = "Some dirty text â€™ with extra spaces and – dashes."
-    example_options = {
+def clean_text_example(text):
+    options = {
         'replace_unicode_quotes': {},
         'clean_extra_whitespace': {},
         'clean_dashes': {},
         'clean_non_ascii_chars': {}
     }
-    return unstructured_modules.clean_text_data(clean_options=example_options,
-                                                text=example_text)
+    return unstructured_modules.clean_text_data(clean_options=options,
+                                                text=text)
 
 
-def extract_data_example():
-    example_email_text = "Contact me at example@email.com."
+def extract_data_example(text):
     return unstructured_modules.extract_data_from_text(
-        extract_type="extract_email_address", text=example_email_text)
+        extract_type="extract_email_address", text=text)
 
 
-def stage_data_example():
-    example_url = (
-        "https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
-        "philadelphia-eagles-spt-intl/index.html")
-    example_elements = unstructured_modules.parse_file_or_url(example_url)
+def stage_data_example(url):
+    elements = unstructured_modules.parse_file_or_url(url)
 
     staged_element = unstructured_modules.stage_elements(
-        stage_type="stage_for_baseplate", elements=example_elements)
+        stage_type="stage_for_baseplate", elements=elements)
     return staged_element
 
 
-def chunk_url_content_example():
-    exampe_url = (
-        "https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
-        "philadelphia-eagles-spt-intl/index.html")
-    example_elements = unstructured_modules.parse_file_or_url(exampe_url)
+def chunk_url_content_example(url):
+    elements = unstructured_modules.parse_file_or_url(url)
     chunks = unstructured_modules.chunk_elements(chunk_type="chunk_by_title",
-                                                 elements=example_elements)
+                                                 elements=elements)
     return chunks
 
 
 def main():
+
+    example_url = (
+        "https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
+        "philadelphia-eagles-spt-intl/index.html")
+    example_dirty_text = "Some dirty text â€™ with extra spaces and – dashes."
+    example_email_text = "Contact me at example@email.com."
 
     print("Choose an example to run:")
     print("1. Parse File")
@@ -98,30 +94,27 @@ def main():
 
     elif choice == '2':
         print("Parsing URL example:")
-        print(parse_url_example())
-        print("\n You have parsed https://www.cnn.com/2023/01/30/sport/"
-              "empire-state-building-green-philadelphia-eagles-spt-"
-              "intl/index.html")
+        print(parse_url_example(example_url))
+        print(f"\n You have parsed {example_url}")
 
     elif choice == '3':
         print("Cleaning text example:")
-        print("\n Some dirty text â€™ with extra spaces and – dashes."
-              "\n \n into \n")
-        print(clean_text_example())
+        print(example_dirty_text)
+        print(clean_text_example(example_dirty_text))
 
     elif choice == '4':
         print("Extracting email example:")
-        print(extract_data_example())
+        print(extract_data_example(example_email_text))
         print("extracted from")
-        print("Contact me at example@email.com.")
+        print(example_email_text)
 
     elif choice == '5':
         print("Staging data example:")
-        print(stage_data_example())
+        print(stage_data_example(example_url))
 
     elif choice == '6':
         print("Chunking URL content example:")
-        for chunk in chunk_url_content_example():
+        for chunk in chunk_url_content_example(example_url):
             print(chunk)
             print("\n" + "-" * 80)
 

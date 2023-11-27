@@ -33,7 +33,7 @@ def sample_url():
 
 
 @pytest.fixture
-def sample_text():
+def sample_dirty_text():
     return "Some dirty text â€™ with extra spaces and – dashes."
 
 
@@ -66,25 +66,25 @@ def test_parse_file_example():
 
 
 def test_parse_url_example(sample_url):
-    content = parse_url_example()
+    content = parse_url_example(sample_url)
     assert isinstance(content, str)
     assert len(content) > 0
 
 
-def test_clean_text_example(sample_text):
-    cleaned_text = clean_text_example()
+def test_clean_text_example(sample_dirty_text):
+    cleaned_text = clean_text_example(sample_dirty_text)
     assert isinstance(cleaned_text, str)
     assert cleaned_text == "Some dirty text  with extra spaces and   dashes."
 
 
 def test_extract_data_example(sample_email_text):
-    extracted_data = extract_data_example()
+    extracted_data = extract_data_example(sample_email_text)
     assert isinstance(extracted_data, list)
     assert extracted_data == ["example@email.com"]
 
 
 def test_stage_data_example(sample_url):
-    staged_data = stage_data_example()
+    staged_data = stage_data_example(sample_url)
     assert isinstance(staged_data, dict)
     assert staged_data['rows'][0] == {
         'data': {
@@ -109,5 +109,5 @@ def test_stage_data_example(sample_url):
 
 
 def test_chunk_url_content_example(sample_url):
-    chunked_sections = chunk_url_content_example()
+    chunked_sections = chunk_url_content_example(sample_url)
     assert len(chunked_sections) == 7
