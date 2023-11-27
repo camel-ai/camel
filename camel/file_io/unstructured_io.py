@@ -53,7 +53,7 @@ class UnstructuredModules:
         installed_ver = version.parse(__version__)
 
         if installed_ver < min_ver:
-            raise ValueError(f"unstructured>={min_version} required, "
+            raise ValueError(f"Require `unstructured>={min_version}`, "
                              f"you have {__version__}.")
 
     def parse_file_or_url(self, input_path: str) -> Any:
