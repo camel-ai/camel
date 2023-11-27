@@ -238,13 +238,11 @@ We implemented amazing research ideas from other works for you to build, compare
 
 ## Citation
 ```
-@misc{li2023camel,
-    title={CAMEL: Communicative Agents for "Mind" Exploration of Large Scale Language Model Society},
-    author={Guohao Li and Hasan Abed Al Kader Hammoud and Hani Itani and Dmitrii Khizbullin and Bernard Ghanem},
-    year={2023},
-    eprint={2303.17760},
-    archivePrefix={arXiv},
-    primaryClass={cs.AI}
+@inproceedings{li2023camel,
+  title={CAMEL: Communicative agents for" mind" exploration of large language model society},
+  author={Li, Guohao and Hammoud, Hasan Abed Al Kader and Itani, Hani and Khizbullin, Dmitrii and Ghanem, Bernard},
+  booktitle={Thirty-seventh Conference on Neural Information Processing Systems},
+  year={2023}
 }
 ```
 ## Acknowledgement
