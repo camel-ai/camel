@@ -174,14 +174,10 @@ Given the starting state $A$ and the target state $B$, assuming that a path $L$ 
                 msg.content, re.DOTALL)
         }
 
-        labels_str = [
-            label.replace("<", "").replace(">", "").strip().strip('\n')
-            for label in re.findall(
+        labels = [
+            label.strip().strip('\n').strip("\"\'") for label in re.findall(
                 r"Entity/Label Recognition of Conditions:\n\[(.+?)\]",
                 msg.content, re.DOTALL)[0].split(",")
-        ][0]
-        labels = [
-            label.strip().strip('\"\'') for label in labels_str.split(", ")
         ]
 
         quality = [
