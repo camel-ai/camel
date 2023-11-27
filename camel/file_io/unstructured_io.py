@@ -74,7 +74,8 @@ class UnstructuredModules:
             By default we use the basic "unstructured" library,
             If you are processing document types beyond the basics,
             you can install the necessary extras like:
-            pip install "unstructured[docx,pptx]"
+            `pip install "unstructured[docx,pptx]"` or
+            `pip install "unstructured[all-docs]"`
             Available document types:
             "csv", "doc", "docx", "epub", "image", "md", "msg", "odt",
             "org", "pdf", "ppt", "pptx", "rtf", "rst", "tsv", "xlsx"
