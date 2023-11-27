@@ -79,8 +79,14 @@ class DeductiveReasonerAgent(ChatAgent):
                 by the user.
 
         Returns:
-            Dict[str, Union[List[str], Dict[str, str]]]: A dictionary
-                containing the conditions and quality.
+            Dict[str, Union[List[str], Dict[str, str]]]: A dictionary with the
+                extracted data from the message. The dictionary contains three
+                keys:
+                - 'conditions': A list where each key is a condition ID and
+                    each value is the corresponding condition text.
+                - 'labels': A list of label strings extracted from the message.
+                - 'quality': A string of quality assessment strings extracted
+                    from the message.
         """
         self.reset()
 
@@ -175,6 +181,7 @@ Given the starting state $A$ and the target state $B$, assuming that a path $L$ 
                                f"{response.info}")
         msg: BaseMessage = response.msg
 
+        # Extract the conditions from the message
         condistions_dict = {
             f"condition {i}":
             cdt.replace("<", "").replace(">", "").strip().strip('\n')
@@ -183,6 +190,7 @@ Given the starting state $A$ and the target state $B$, assuming that a path $L$ 
                 msg.content, re.DOTALL)
         }
 
+        # Extract the labels from the message
         labels_str = [
             label.replace("<", "").replace(">", "").strip().strip('\n')
             for label in re.findall(
@@ -193,6 +201,7 @@ Given the starting state $A$ and the target state $B$, assuming that a path $L$ 
             label.strip().strip('\"\'') for label in labels_str.split(", ")
         ]
 
+        # Extract the quality from the message
         quality = [
             q.replace("<", "").replace(">", "").strip().strip('\n')
             for q in re.findall(
@@ -205,6 +214,6 @@ Given the starting state $A$ and the target state $B$, assuming that a path $L$ 
             Dict[str, Union[List[str], Dict[str, str]]] = {}
         conditions_and_quality_json["conditions"] = condistions_dict
         conditions_and_quality_json["labels"] = labels
-        conditions_and_quality_json["quality"] = quality
+        conditions_and_quality_json["evaluate_quality"] = quality
 
         return conditions_and_quality_json
