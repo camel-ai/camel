@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import pandas as pd
 
@@ -121,7 +121,9 @@ class UnstructuredModules:
                 raise Exception(
                     "Failed to parse the unstructured file.") from e
 
-    def clean_text_data(self, text: str, clean_options: Dict[str, Any]) -> str:
+    def clean_text_data(
+            self, text: str,
+            clean_options: List[Tuple[str, Dict[str, Any]]]) -> str:
         r"""Cleans text data using a variety of cleaning functions provided by
         the 'unstructured' library.
 
@@ -205,7 +207,7 @@ class UnstructuredModules:
         }
 
         cleaned_text = text
-        for func_name, params in clean_options.items():
+        for func_name, params in clean_options:
             if func_name in cleaning_functions:
                 cleaned_text = cleaning_functions[func_name](cleaned_text,
                                                              **params)

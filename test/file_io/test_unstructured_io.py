@@ -50,13 +50,13 @@ def test_parse_file_or_url(unstructured_instance):
 # Test the clean_text_data method
 def test_clean_text_data(unstructured_instance):
     # Test with a valid cleaning option
-    test_options = {"clean_extra_whitespace": {}}
+    test_options = [("clean_extra_whitespace", {})]
     cleaned_text = unstructured_instance.clean_text_data(
         text="  Hello  World  ", clean_options=test_options)
     assert cleaned_text == "Hello World"  # Check the expected cleaned text
 
     # Test with an invalid cleaning option (should raise ValueError)
-    test_options = {"invalid_cleaning_option": {}}
+    test_options = [("invalid_cleaning_option", {})]
     with pytest.raises(ValueError):
         unstructured_instance.clean_text_data(text="Test Text",
                                               clean_options=test_options)

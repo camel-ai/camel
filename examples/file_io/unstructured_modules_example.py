@@ -41,12 +41,12 @@ def parse_url_example(url):
 
 
 def clean_text_example(text):
-    options = {
-        'replace_unicode_quotes': {},
-        'clean_extra_whitespace': {},
-        'clean_dashes': {},
-        'clean_non_ascii_chars': {}
-    }
+    options = [
+        ('replace_unicode_quotes', {}),
+        ('clean_dashes', {}),
+        ('clean_non_ascii_chars', {}),
+        ('clean_extra_whitespace', {}),
+    ]
     return unstructured_modules.clean_text_data(text=text,
                                                 clean_options=options)
 
@@ -76,7 +76,8 @@ def main():
     example_url = (
         "https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
         "philadelphia-eagles-spt-intl/index.html")
-    example_dirty_text = "Some dirty text â€™ with extra spaces and – dashes."
+    example_dirty_text = (
+        "\x93Some dirty text â€™ with extra spaces and – dashes.")
     example_email_text = "Contact me at example@email.com."
 
     print("Choose an example to run:")

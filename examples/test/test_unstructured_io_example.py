@@ -74,7 +74,7 @@ def test_parse_url_example(sample_url):
 def test_clean_text_example(sample_dirty_text):
     cleaned_text = clean_text_example(sample_dirty_text)
     assert isinstance(cleaned_text, str)
-    assert cleaned_text == "Some dirty text  with extra spaces and   dashes."
+    assert cleaned_text == "Some dirty text with extra spaces and dashes."
 
 
 def test_extract_data_example(sample_email_text):
