@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import pandas as pd
 
@@ -122,8 +122,9 @@ class UnstructuredModules:
                     "Failed to parse the unstructured file.") from e
 
     def clean_text_data(
-            self, text: str,
-            clean_options: List[Tuple[str, Dict[str, Any]]]) -> str:
+        self, text: str,
+        clean_options: Optional[List[Tuple[str, Dict[str,
+                                                     Any]]]] = None) -> str:
         r"""Cleans text data using a variety of cleaning functions provided by
         the 'unstructured' library.
 
@@ -132,6 +133,11 @@ class UnstructuredModules:
         library's cleaning bricks for operations like
         replacing unicode quotes, removing extra whitespace,
         dashes, non-ascii characters, and more.
+
+        If no cleaning options are provided, a default set of cleaning
+        operations is applied. These defaults including operations
+        "replace_unicode_quotes", "clean_non_ascii_chars",
+        "group_broken_paragraphs", and "clean_extra_whitespace".
 
         Args:
             text (str): The text to be cleaned.
@@ -205,6 +211,15 @@ class UnstructuredModules:
             "bytes_string_to_string": bytes_string_to_string,
             "translate_text": translate_text,
         }
+
+        # Define default clean options if none are provided
+        if clean_options is None:
+            clean_options = [
+                ("replace_unicode_quotes", {}),
+                ("clean_non_ascii_chars", {}),
+                ("group_broken_paragraphs", {}),
+                ("clean_extra_whitespace", {}),
+            ]
 
         cleaned_text = text
         for func_name, params in clean_options:

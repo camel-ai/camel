@@ -53,7 +53,12 @@ def test_clean_text_data(unstructured_instance):
     test_options = [("clean_extra_whitespace", {})]
     cleaned_text = unstructured_instance.clean_text_data(
         text="  Hello  World  ", clean_options=test_options)
-    assert cleaned_text == "Hello World"  # Check the expected cleaned text
+    assert cleaned_text == "Hello World"
+
+    # Test with default cleaning options (no options provided)
+    default_cleaned_text = unstructured_instance.clean_text_data(
+        text="\x88  Hello  World  ")
+    assert default_cleaned_text == "Hello World"
 
     # Test with an invalid cleaning option (should raise ValueError)
     test_options = [("invalid_cleaning_option", {})]
