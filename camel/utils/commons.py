@@ -184,10 +184,10 @@ def check_server_running(server_url: str) -> bool:
     return result == 0
 
 
-def get_openai_function_schema(func):
+def get_openai_function_schema(func: Callable) -> Dict[str, any]:
 
     def _remove_a_key(d, remove_key) -> None:
-        """Remove a key from a dictionary recursively"""
+        r"""Remove a key from a dictionary recursively"""
         if isinstance(d, dict):
             for key in list(d.keys()):
                 if key == remove_key and "type" in d.keys():
@@ -245,17 +245,15 @@ def get_openai_function_schema(func):
         "name":
         func.__name__,
         "description":
-        "{0}{1}".format((docstring.short_description
-                         if docstring.short_description else ""),
-                        (docstring.long_description
-                         if docstring.long_description else "")),
+        (docstring.short_description if docstring.short_description else "") +
+        (docstring.long_description if docstring.long_description else ""),
         "parameters":
         parameters,
     }
     return openai_function_schema
 
 
-def get_openai_tool_schema(func):
+def get_openai_tool_schema(func: Callable) -> Dict[str, Any]:
     openai_function_schema = get_openai_function_schema(func)
     openai_tool_schema = {
         "type": "function",

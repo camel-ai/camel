@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, Optional
 
 from jsonschema.exceptions import SchemaError
 from jsonschema.validators import Draft202012Validator as JSONValidator
@@ -21,29 +21,33 @@ from camel.utils.commons import get_openai_tool_schema
 
 class OpenAIFunction:
     r"""An abstraction of a function that OpenAI chat models can call. See
-    https://platform.openai.com/docs/api-reference/chat/create
-    By default, the tool schema will be parsed from the func,
-    or you can provide a user-defined tool schema to override.
-    Args:
-        func (Callable): The function to call.The tool schema
-            is parsed from the signature and docstring by default.
-        openai_tool_schema: user-defined openai tool schema
-            to override the default result. The format can be referd to
-            https://platform.openai.com/docs/api-reference/chat/create
+    https://platform.openai.com/docs/api-reference/chat/create.
 
+    By default, the tool schema will be parsed from the func, or you can
+    provide a user-defined tool schema to override.
+
+    Args:
+        func (Callable): The function to call.The tool schema is parsed from
+            the signature and docstring by default.
+        openai_tool_schema (Optional[Dict[str, Any]], optional): user-defined
+            openai tool schema to override the default result.
+            (default: :obj:`None`)
     """
 
-    def __init__(self, func: Callable, openai_tool_schema=None):
+    def __init__(
+        self,
+        func: Callable,
+        openai_tool_schema: Optional[Dict[str, Any]] = None,
+    ):
         self.func = func
-        self.openai_tool_schema: Dict[str,
-                                      Any] = (openai_tool_schema
-                                              or get_openai_tool_schema(func))
+        self.openai_tool_schema = (openai_tool_schema
+                                   or get_openai_tool_schema(func))
         self.properties = self.openai_tool_schema
 
     @staticmethod
     def validate_openai_tool_schema(openai_tool_schema):
-        r'''
-            {
+        r"""
+        {
             "type": "function",
             "function": {
                 "name": "function_name",
@@ -62,50 +66,51 @@ class OpenAIFunction:
                     },
                     "required": ["param1", "param1"],
                 },
-            }
+            },
         }
-        '''
+        """
         # 1. check the basic format
         # 1.1 top-level: "type","function",
         # the value of "type" should be "function"
         for key in ["type", "function"]:
             if key not in openai_tool_schema.keys():
-                raise Exception(f"\"{key}\" is not defined")
+                raise ValueError(f'"{key}" is not defined')
         if openai_tool_schema["type"] != "function":
-            raise Exception("You should define "
-                            "\"type\"==\"function\" in top level")
+            raise ValueError(
+                'You should define "type"=="function" in top level')
+
         # 1.2 second-level: "name","description","parameters",
         # the value of "description" shouldn't be None
         for key in ["name", "description", "parameters"]:
             if key not in openai_tool_schema["function"].keys():
-                raise Exception(f"\"{key}\" is not defined")
+                raise ValueError(f'"{key}" is not defined')
         if not openai_tool_schema["function"]["description"]:
-            raise Exception("miss function description")
+            raise ValueError("miss function description")
+
         # 1.3 third-level: "type","properties","required",
         # the value of "type" should be "object"
+        parameters = openai_tool_schema["function"]["parameters"]
         for key in ["type", "properties", "required"]:
-            if key not in openai_tool_schema["function"]["parameters"].keys():
-                raise Exception(f"\"{key}\" is not defined")
-        if openai_tool_schema["function"]["parameters"]["type"] != "object":
-            raise Exception("You should "
-                            "define \"type\"==\"object\" in \"parameters\"")
+            if key not in parameters.keys():
+                raise ValueError(f'"{key}" is not defined')
+        if parameters["type"] != "object":
+            raise ValueError(
+                'You should define "type"=="object" in "parameters"')
 
         # 2. validate the json schema of
         # openai_tool_schema["function"]["parameters"]
         try:
-            JSONValidator.check_schema(
-                openai_tool_schema["function"]["parameters"])
+            JSONValidator.check_schema(parameters)
         except SchemaError as e:
             raise e
 
         # 3. check the parameter description
-        for param_name in (openai_tool_schema["function"]["parameters"]
-                           ["properties"].keys()):
-            param_dict = openai_tool_schema["function"]["parameters"][
-                "properties"][param_name]
+        properties = openai_tool_schema["function"]["parameters"]["properties"]
+        for param_name in properties.keys():
+            param_dict = properties[param_name]
             if "description" not in param_dict:
-                raise Exception(f"miss description "
-                                f"of parameter \"{param_name}\"")
+                raise ValueError(
+                    f'miss description of parameter "{param_name}"')
 
     def get_openai_tool_schema(self):
         self.validate_openai_tool_schema(self.openai_tool_schema)

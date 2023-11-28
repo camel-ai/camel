@@ -35,8 +35,10 @@ def add_without_doc(a: int, b: int) -> int:
 
 def add_with_wrong_doc(a: int, b: int) -> int:
     r"""Adds two numbers.
+
     Args:
         a (integer): The first number to be added.
+
     Returns:
         integer: The sum of the two numbers.
     """

@@ -15,7 +15,7 @@ import json
 from datetime import datetime
 from typing import List
 
-import openai
+from openai import OpenAI
 
 from camel.types import RoleType
 from camel.utils import get_openai_function_schema, get_openai_tool_schema
@@ -102,9 +102,7 @@ def test_get_openai_tool_schema():
     openai_tool_schema = get_openai_tool_schema(test_all_parameters)
 
     assert openai_tool_schema == expect_res
-    print(openai.__version__)
 
-    from openai import OpenAI
     client = OpenAI()
     expect_res = json.loads("""{
       "str_para": "hello",
