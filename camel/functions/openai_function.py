@@ -104,7 +104,7 @@ class OpenAIFunction:
             param_dict = openai_tool_schema["function"]["parameters"][
                 "properties"][param_name]
             if "description" not in param_dict:
-                raise Exception(f"Missing description "
+                raise Exception(f"miss description "
                                 f"of parameter \"{param_name}\"")
 
     def get_openai_tool_schema(self):
