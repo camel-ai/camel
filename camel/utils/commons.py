@@ -11,18 +11,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import inspect
 import os
 import re
 import socket
 import time
 import zipfile
 from functools import wraps
+from inspect import Parameter, signature
 from typing import (
     Any,
     Callable,
     Dict,
     List,
+    Mapping,
     Optional,
     Set,
     Tuple,
@@ -32,6 +33,10 @@ from typing import (
 from urllib.parse import urlparse
 
 import requests
+from docstring_parser import parse
+from pydantic import create_model
+from pydantic._internal import _typing_extra
+from pydantic.alias_generators import to_pascal
 
 from camel.types import TaskType
 
@@ -134,70 +139,6 @@ def download_tasks(task: TaskType, folder_path: str) -> None:
     os.remove(zip_file_path)
 
 
-def parse_doc(func: Callable) -> Dict[str, Any]:
-    r"""Parse the docstrings of a function to extract the function name,
-    description and parameters.
-
-    Args:
-        func (Callable): The function to be parsed.
-    Returns:
-        Dict[str, Any]: A dictionary with the function's name,
-            description, and parameters.
-    """
-
-    doc = inspect.getdoc(func)
-    if not doc:
-        raise ValueError(
-            f"Invalid function {func.__name__}: no docstring provided.")
-
-    properties = {}
-    required = []
-
-    parts = re.split(r'\n\s*\n', doc)
-    func_desc = parts[0].strip()
-
-    args_section = next((p for p in parts if 'Args:' in p), None)
-    if args_section:
-        args_descs: List[Tuple[str, str, str, ]] = re.findall(
-            r'(\w+)\s*\((\w+)\):\s*(.*)', args_section)
-        properties = {
-            name.strip(): {
-                'type': type,
-                'description': desc
-            }
-            for name, type, desc in args_descs
-        }
-        for name in properties:
-            required.append(name)
-
-    # Parameters from the function signature
-    sign_params = list(inspect.signature(func).parameters.keys())
-    if len(sign_params) != len(required):
-        raise ValueError(
-            f"Number of parameters in function signature ({len(sign_params)})"
-            f" does not match that in docstring ({len(required)}).")
-
-    for param in sign_params:
-        if param not in required:
-            raise ValueError(f"Parameter '{param}' in function signature"
-                             " is missing in the docstring.")
-
-    parameters = {
-        "type": "object",
-        "properties": properties,
-        "required": required,
-    }
-
-    # Construct the function dictionary
-    function_dict = {
-        "name": func.__name__,
-        "description": func_desc,
-        "parameters": parameters,
-    }
-
-    return function_dict
-
-
 def get_task_list(task_response: str) -> List[str]:
     r"""Parse the response of the Agent and return task list.
 
@@ -241,3 +182,83 @@ def check_server_running(server_url: str) -> bool:
 
     # if the port is open, the result should be 0.
     return result == 0
+
+
+def get_openai_function_schema(func):
+
+    def _remove_a_key(d, remove_key) -> None:
+        """Remove a key from a dictionary recursively"""
+        if isinstance(d, dict):
+            for key in list(d.keys()):
+                if key == remove_key and "type" in d.keys():
+                    del d[key]
+                else:
+                    _remove_a_key(d[key], remove_key)
+
+    parameters: Mapping[str, Parameter] = signature(func).parameters
+    raw_function = func
+    arg_mapping: Dict[int, str] = {}
+    positional_only_args: Set[str] = set()
+    type_hints = _typing_extra.get_type_hints(func, include_extras=True)
+    fields: Dict[str, Tuple[Any, Any]] = {}
+    for i, (name, p) in enumerate(parameters.items()):
+        if p.annotation is p.empty:
+            annotation = Any
+        else:
+            annotation = type_hints[name]
+
+        default = ... if p.default is p.empty else p.default
+        if p.kind == Parameter.POSITIONAL_ONLY:
+            arg_mapping[i] = name
+            fields[name] = annotation, default
+            positional_only_args.add(name)
+        elif p.kind == Parameter.POSITIONAL_OR_KEYWORD:
+            arg_mapping[i] = name
+            fields[name] = annotation, default
+
+        elif p.kind == Parameter.KEYWORD_ONLY:
+            fields[name] = annotation, default
+        elif p.kind == Parameter.VAR_POSITIONAL:
+            fields[name] = Tuple[annotation, ...], None
+        else:
+            assert p.kind == Parameter.VAR_KEYWORD, p.kind
+            fields[name] = Dict[str, annotation], None
+    model = create_model(to_pascal(raw_function.__name__), **fields)
+
+    parameters = model.model_json_schema()
+
+    parameters["properties"] = {
+        k: v
+        for k, v in parameters["properties"].items()
+        if k not in ("args", "kwargs")
+    }
+    _remove_a_key(parameters, "additionalProperties")
+    _remove_a_key(parameters, "title")
+
+    docstring = parse(func.__doc__ or "")
+    for param in docstring.params:
+        if ((name := param.arg_name) in parameters["properties"]
+                and (description := param.description)):
+            parameters["properties"][name]["description"] = description
+
+    openai_function_schema = {
+        "name":
+        func.__name__,
+        "description":
+        "{0}{1}".format((docstring.short_description
+                         if docstring.short_description else ""),
+                        (docstring.long_description
+                         if docstring.long_description else "")),
+        "parameters":
+        parameters,
+    }
+    return openai_function_schema
+
+
+def get_openai_tool_schema(func):
+    openai_function_schema = get_openai_function_schema(func)
+    openai_tool_schema = {
+        "type": "function",
+        "function": openai_function_schema
+    }
+    return openai_tool_schema

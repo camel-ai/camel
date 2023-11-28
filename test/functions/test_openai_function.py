@@ -35,48 +35,54 @@ def add_without_doc(a: int, b: int) -> int:
 
 def add_with_wrong_doc(a: int, b: int) -> int:
     r"""Adds two numbers.
-
     Args:
         a (integer): The first number to be added.
-
     Returns:
         integer: The sum of the two numbers.
     """
     return a + b
 
 
-def test_correct_function():
-    add = OpenAIFunction(add_with_doc, name="add")
-    assert add.as_dict() == {
-        "name": "add",
-        "description": "Adds two numbers.",
-        "parameters": {
-            'type': 'object',
-            'properties': {
-                'a': {
-                    'type': 'integer',
-                    'description': 'The first number to be added.'
-                },
-                'b': {
-                    'type': 'integer',
-                    'description': 'The second number to be added.'
-                }
+function_schema = {
+    "name": "add",
+    "description": "Adds two numbers.",
+    "parameters": {
+        'type': 'object',
+        'properties': {
+            'a': {
+                'type': 'integer',
+                'description': 'The first number to be added.'
             },
-            'required': ['a', 'b']
-        }
+            'b': {
+                'type': 'integer',
+                'description': 'The second number to be added.'
+            }
+        },
+        'required': ['a', 'b']
     }
+}
+
+
+def test_correct_function():
+    add = OpenAIFunction(add_with_doc)
+    add.set_function_name("add")
+    assert add.get_openai_function_schema() == function_schema
 
 
 def test_function_without_doc():
-    with pytest.raises(
-            ValueError,
-            match="Invalid function add_without_doc: no docstring provided."):
-        _ = OpenAIFunction(add_without_doc, name="add")
+    add = OpenAIFunction(add_without_doc)
+    add.set_function_name("add")
+    with pytest.raises(Exception, match="miss function description"):
+        _ = add.get_openai_function_schema()
+    add.set_openai_function_schema(function_schema)
+    assert add.get_openai_function_schema() == function_schema
 
 
 def test_function_with_wrong_doc():
-    with pytest.raises(
-            ValueError,
-            match=(r"Number of parameters in function signature \(2\)"
-                   r" does not match that in docstring \(1\)")):
-        _ = OpenAIFunction(add_with_wrong_doc, name="add")
+    add = OpenAIFunction(add_with_wrong_doc)
+    add.set_function_name("add")
+    with pytest.raises(Exception, match="miss description of parameter \"b\""):
+        _ = add.get_openai_function_schema()
+
+    add.set_parameter("b", function_schema["parameters"]["properties"]["b"])
+    assert add.get_openai_function_schema() == function_schema

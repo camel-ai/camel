@@ -245,7 +245,7 @@ def test_function_enabled():
                                  role_type=RoleType.ASSISTANT, meta_dict=None,
                                  content="You are a help assistant.")
     model_config = FunctionCallingConfig(
-        functions=[func.as_dict() for func in MATH_FUNCS])
+        functions=[func.get_openai_function_schema() for func in MATH_FUNCS])
     agent_no_func = ChatAgent(system_message=system_message,
                               model_config=model_config,
                               model_type=ModelType.GPT_4)
@@ -264,7 +264,7 @@ def test_function_calling():
                                  role_type=RoleType.ASSISTANT, meta_dict=None,
                                  content="You are a help assistant.")
     model_config = FunctionCallingConfig(
-        functions=[func.as_dict() for func in MATH_FUNCS])
+        functions=[func.get_openai_function_schema() for func in MATH_FUNCS])
     agent = ChatAgent(system_message=system_message, model_config=model_config,
                       model_type=ModelType.GPT_4, function_list=MATH_FUNCS)
 
