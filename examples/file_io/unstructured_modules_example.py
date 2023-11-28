@@ -78,7 +78,7 @@ def main():
         "philadelphia-eagles-spt-intl/index.html")
     example_dirty_text = (
         "\x93Some dirty text â€™ with extra spaces and – dashes.")
-    example_email_text = "Contact me at example@email.com."
+    example_email_text = ("Contact me at example@email.com.")
 
     print("Choose an example to run:")
     print("1. Parse File")
