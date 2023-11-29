@@ -9,193 +9,164 @@ In this tutorial, we will explore the `ChatAgent` class designed for managing co
 
 ## Introduction
 
-The `ChatAgent` class is a central component in the CAMEL chat system. It inherits from the `BaseAgent` class and provides functionality to manage and generate chat conversations using different models.
+The `ChatAgent` class is an advanced component of the CAMEL chat system, designed to facilitate interactive conversations. As a subclass of `BaseAgent`, it integrates a language model with optional configurations and memory management to produce dynamic, context-aware chat interactions.
 
 ## Creating a `ChatAgent` Instance
 
-To create a `ChatAgent` instance, you need to provide the following arguments:
+When initializing a `ChatAgent`, the following parameters can be configured:
 
-- `system_message`: The system message for the chat agent.
-- `model`: (optional) The LLM model to use for generating responses.
-- `model_config`: (optional) Configuration options for the LLM model.
-- `message_window_size`: (optional) The maximum number of previous messages to include in the context window.
-- `output_language`: (optional) The language to be output by the agent.
-- `function_list`: (optional) List of available `OpenAIFunction`.
+- `system_message`: A mandatory message object that initiates the chat agent's conversation flow.
+- `model_type` (optional): Selects the LLM model type for response generation, with a default set to `ModelType.GPT_3_5_TURBO`.
+- `model_config` (optional): Defines custom configurations for the chosen LLM model.
+- `memory` (optional): Manages the state and history of conversations. Defaults to `ChatHistoryMemory` if not specified.
+- `message_window_size` (optional): Controls the number of past messages to consider for context.
+- `token_limit` (optional): Sets a cap on the number of tokens to include in the context, with auto-pruning for over-limit scenarios.
+- `output_language` (optional): Specifies the desired output language for the agent's responses.
+- `function_list` (optional): Lists the `OpenAIFunction` functions available for the chat agent to use.
+- `response_terminators` (optional): Provides a list of `ResponseTerminator` objects that determine the end of a chat agent's response.
+
 
 Here's an example of creating a `ChatAgent` instance:
 
 ```python
-from camel.agent import ChatAgent, BaseMessage, ModelType
+from camel.agent import ChatAgent, BaseMessage, ModelType, ChatHistoryMemory, ChatGPTConfig
 
 agent = ChatAgent(
     system_message=BaseMessage(...),
-    model=ModelType.GPT_3_5_TURBO,
+    model_type=ModelType.GPT_3_5_TURBO,  # Corrected from `model` to `model_type`
     message_window_size=5,
-    output_language="en"
+    output_language="en",
+    memory=ChatHistoryMemory(...),  # Assuming you want to show an example of passing a memory
+    model_config=ChatGPTConfig(...)  # Assuming you want to show an example of passing a model config
+    # You can also include examples of function_list and response_terminators if needed
 )
 ```
 
-## Understanding the Properties of the `ChatAgent` Class
-
-The `ChatAgent` class, designed for managing conversations of CAMEL Chat Agents, encompasses the following properties:
-
-- `orig_sys_message`: An instance of `BaseMessage` representing the original system message for the chat agent.
-- `system_message`: An instance of `BaseMessage` denoting the current system message for the chat agent.
-- `role_name`: A string that captures the role name extracted from the system message.
-- `role_type`: An instance of the `RoleType` enumeration, which identifies the type of role extracted from the system message.
-- `output_language`: An optional string that specifies the desired output language for the agent.
-- `model`: An instance of `ModelType` representing the LLM model used for generating responses.
-- `message_window_size`: An optional integer that dictates the maximum number of previous messages to be included in the context.
-- `func_dict`: A dictionary, with keys being strings and values being callable functions, that lists available OpenAIFunctions mapped by their names.
-- `model_config`: An instance of `BaseConfig` or its subclass, providing configuration options for the LLM model.
-- `model_backend`: An instance of `BaseModelBackend` which is the backend used for the LLM model.
-- `model_token_limit`: An integer indicating the token limit for the LLM model.
-- `terminated`: A boolean flag that indicates whether the chat session has been terminated.
-- `stored_messages`: A list of `ChatRecord` objects representing the stored messages in the chat session.
-
-For instance, after initializing a `ChatAgent` instance, the `role_name` and `role_type` are derived from the provided `system_message`. If no model is explicitly set, the `model` defaults to `ModelType.GPT_3_5_TURBO`.
-
 ## Using the Methods of the `ChatAgent` Class
 
-The `ChatAgent` class provides a suite of methods that enable the agent to manage conversations, generate responses, and perform various operations related to chat interactions. Here's an exploration of some key methods:
+The `ChatAgent` class offers a variety of methods for comprehensive conversation management within the CAMEL Chat framework. Below, we delve into the functionalities of several essential methods:
 
-1. **Performing a Chat Session Step**:
-    The `step` method lets you generate a response for a given input message and provides details of the chat session. 
+1. **Conducting a Chat Step**:
+    The `step` method progresses the chat by responding to an input message, returning a structured response that includes any output messages, a termination flag, and session details.
     ```python
     input_msg = BaseMessage(...)
-    response = agent.step(input_message=input_msg)
-    print(response.output_messages)
-    >>> [<BaseMessage content="Generated response">]
+    chat_response = agent.step(input_message=input_msg)
+    print(chat_response.output_messages)
+    if chat_response.terminated:
+        print("Chat session has ended.")
+    print(chat_response.info)
     ```
 
-2. **Setting and Getting the System Message**:
-    Use the setter and getter methods to update and retrieve the system message of the agent.
+2. **Accessing and Modifying the System Message**:
+    Utilize the getter and setter methods for the `system_message` to manage the agent's current system message.
     ```python
-    # Setting the system message
-    agent.system_message = new_system_message
+    # Updating the system message
+    agent.system_message = BaseMessage(...)
 
-    # Getting the system message
+    # Retrieving the system message
     current_system_message = agent.system_message
     print(current_system_message)
-    >>> <BaseMessage content="Your system message">
+    >>> <BaseMessage content="Current system message">
     ```
 
-3. **Checking Function Calling Capability**:
-    The method `is_function_calling_enabled` informs if the OpenAI function calling is enabled for the agent.
+3. **Updating Agent Memory**:
+    The `update_memory` method incorporates new messages into the agent's memory.
     ```python
-    is_enabled = agent.is_function_calling_enabled()
-    print(is_enabled)
-    >>> True
+    agent.update_memory(BaseMessage(...), OpenAIBackendRole.USER)
     ```
 
-4. **Setting Output Language**:
-    The `set_output_language` method allows you to specify the language for the generated output and retrieve the updated system message.
+4. **Getting Session Information**:
+    The `get_info` method compiles information about the chat session into a dictionary.
     ```python
-    updated_message = agent.set_output_language("en")
-    print(updated_message)
-    >>> <BaseMessage content="Your updated system message">
+    session_info = agent.get_info(
+        id="session123",
+        usage={"calls": 10, "tokens": 500},
+        termination_reasons=["max_turns_reached"],
+        num_tokens=500,
+        called_funcs=[FunctionCallingRecord(...)]
+    )
+    print(session_info)
+    >>> {"id": "session123", "usage": {...}, "termination_reasons": [...], "num_tokens": 500, "called_functions": [...]}
     ```
 
-5. **Retrieving Chat Session Information**:
-    Use the `get_info` method to obtain information about the chat session, including ID, usage, termination reasons, and more.
-    ```python
-    info = agent.get_info(id="12345", usage={}, termination_reasons=[], num_tokens=100, called_funcs=[])
-    print(info)
-    >>> {"id": "12345", "usage": {}, ...}
-    ```
-
-6. **Initializing Stored Messages**:
-    The `init_messages` method initializes the stored messages list with the initial system message.
+5. **Initializing Stored Messages**:
+    The `init_messages` method sets up the initial state of the agent's memory with the system message.
     ```python
     agent.init_messages()
-    print(agent.stored_messages)
-    >>> [<BaseMessage object>, ...]
     ```
 
-7. **Updating Stored Messages**:
-    The `update_messages` method allows you to add a new message to the stored messages and retrieve the updated list.
+6. **Recording a Message**:
+    With the `record_message` method, an external message can be added to the agent's memory, simulating a response from the agent.
     ```python
-    updated_messages = agent.update_messages(role="user", message=new_message)
-    print(updated_messages)
-    >>> [<BaseMessage object>, ...]
+    external_msg = BaseMessage(...)
+    agent.record_message(external_msg)
     ```
 
-8. **Submitting an External Message as an Assistant Response**:
-    The `submit_message` method allows you to provide an external message as if it were a response from the chat LLM.
+7. **Setting the Output Language**:
+    The `set_output_language` method adjusts the language for the system message output.
     ```python
-    external_message = BaseMessage(...)
-    agent.submit_message(external_message)
+    updated_message = agent.set_output_language("es")
+    print(updated_message)
+    >>> <BaseMessage content="Your system message in Spanish">
     ```
 
-9. **Resetting the Agent**:
-    The `reset` method allows you to reset the `ChatAgent` to its initial state and also retrieve the stored messages.
+8. **Resetting the Agent**:
+   The `reset` method restores the `ChatAgent` to its initial state and retrieves stored messages.
+   ```python
+   stored_messages = agent.reset()
+   print(stored_messages)
+   >>> [<BaseMessage content="Previous messages">]
+   ```
+
+9. **Handling Batch Responses**:
+    The `handle_batch_response` method processes responses from the model that are received in batch format.
     ```python
-    stored_messages = agent.reset()
-    print(stored_messages)
-    >>> [<BaseMessage object>, ...]
+    response = ChatCompletion(...)
+    output_messages, finish_reasons, usage, response_id = agent.handle_batch_response(response)
     ```
 
-10. **Preprocessing Messages for OpenAI Input**:
-    The `preprocess_messages` method truncates the list of messages if needed, converts them to OpenAI's input format, and calculates the token count.
+10. **Handling Stream Responses**:
+    The `handle_stream_response` method deals with responses from the model that are received in a streaming manner.
     ```python
-    chat_records = [...]
-    openai_msgs, tokens = agent.preprocess_messages(messages=chat_records)
-    print(tokens)
-    >>> 150
+    response = Stream(...)
+    prompt_tokens = 100  # Example token count for the input prompt
+    output_messages, finish_reasons, usage_dict, response_id = agent.handle_stream_response(response, prompt_tokens)
     ```
 
-11. **Validating Model's Response**:
-    The `validate_model_response` method ensures that the response from the model is in the expected format.
+11. **Handling Token Exceeding Scenario**:
+    The `step_token_exceed` method provides a way to handle scenarios where the token limit is exceeded during response generation.
     ```python
-    model_response = {...}
-    agent.validate_model_response(response=model_response)
+    num_tokens = 1500  # Example token count that exceeded the limit
+    termination_reason = "max_tokens_exceeded"
+    chat_response = agent.step_token_exceed(num_tokens, [], termination_reason)
+    if chat_response.terminated:
+        print("Chat session terminated due to token limit.")
+    print(chat_response.info)
     ```
 
-12. **Handling Batch Response from Model**:
-    The `handle_batch_response` method processes the batch response from the model and returns the chat messages, finish reasons, and other relevant details.
+12. **Executing Function Calls**:
+    The `step_function_call` method is invoked to perform function calls based on the model's response.
     ```python
-    batch_response = {...}
-    messages, reasons, usage, response_id = agent.handle_batch_response(response=batch_response)
-    print(messages)
-    >>> [<BaseMessage content="Message 1">, <BaseMessage content="Message 2">]
+    response = ChatCompletion(...)
+    assistant_message, function_result_message, function_record = agent.step_function_call(response)
     ```
 
-13. **Handling Stream Response from Model**:
-    The `handle_stream_response` method processes the stream response from the model and returns the chat messages, finish reasons, and other relevant details.
+13. **Calculating Usage Metrics**:
+    The `get_usage_dict` method compiles usage statistics, particularly useful when streaming responses from the model.
     ```python
-    stream_response = {...}
-    prompt_tokens_count = 100
-    messages, reasons, usage, response_id = agent.handle_stream_response(response=stream_response, prompt_tokens=prompt_tokens_count)
-    print(messages)
-    >>> [<BaseMessage content="Streamed Message 1">, <BaseMessage content="Streamed Message 2">]
+    output_messages = [...]  # Assume a list of BaseMessage instances
+    prompt_tokens = 100  # Example token count for the input prompt
+    usage_metrics = agent.get_usage_dict(output_messages, prompt_tokens)
+    print(usage_metrics)
     ```
 
-14. **Executing Function Calls Post Model's Response**:
-    The `step_function_call` method allows you to execute a specific function using the arguments provided in the model's response.
-    ```python
-    model_response = {...}
-    assist_msg, func_msg, func_record = agent.step_function_call(response=model_response)
-    print(assist_msg.func_name)
-    >>> "function_name_from_response"
-    ```
-
-15. **Getting Token Usage in Stream Mode**:
-    The `get_usage_dict` method provides a dictionary detailing the token usage in streaming mode.
-    ```python
-    output_msgs = [...]
-    prompt_tokens_count = 100
-    usage = agent.get_usage_dict(output_messages=output_msgs, prompt_tokens=prompt_tokens_count)
-    print(usage["total_tokens"])
-    >>> 200
-    ```
-
-16. **String Representation of ChatAgent**:
-    The `__repr__` method returns a string representation of the `ChatAgent` instance.
+14. **String Representation of the Agent**:
+    The `__repr__` method provides a human-readable representation of the `ChatAgent` instance, useful for debugging and logging.
     ```python
     print(agent)
-    >>> ChatAgent(role_name_value, RoleType.VALUE, ModelType.VALUE)
+    >>> ChatAgent(role_name, role_type, model_type)
     ```
 
-The `ChatAgent` class is equipped with a suite of 17 methods designed to facilitate smooth interactions in a chat environment. From basic functions like resetting the agent (`reset`) and updating stored messages (`update_messages`), to more complex operations like handling streamed responses from the model (`handle_stream_response`) and executing function calls post model's response (`step_function_call`), the `ChatAgent` ensures comprehensive control over chat sessions. This versatility ensures the `ChatAgent` can effectively manage various scenarios, be it changing the output language (`set_output_language`), validating model responses (`validate_model_response`), or even offering a clear string representation of itself (`__repr__`).
+The `ChatAgent` class, integral to the CAMEL library, is a sophisticated tool designed for orchestrating and managing conversational interactions. It incorporates a variety of methods, extending from fundamental functionalities like resetting the agent's state (`reset`) and updating memory (`update_memory`), to handling advanced scenarios such as processing streamed responses (`handle_stream_response`) and executing function calls after receiving model responses (`step_function_call`).
 
-The `ChatAgent` class, part of the CAMEL library, is a robust tool designed for facilitating and managing chat interactions. It leverages an assortment of classes, such as `BaseMessage`, to standardize messages and handle them efficiently. With a plethora of properties like `role_name`, `role_type`, and methods ranging from message handling to complex operations, it stands as a comprehensive solution for chat-based systems. The class not only ensures that messages are processed and stored efficiently but also offers seamless integration with OpenAI's models. With capabilities like function execution based on model responses and built-in validation mechanisms, `ChatAgent` stands out as an indispensable tool for developers venturing into chatbot development and similar applications.
+Equipped with 14 distinct methods, the `ChatAgent` offers comprehensive control over chat sessions. It is adept at managing various scenarios, including changing the output language (`set_output_language`), and providing a clear representation of its state (`__repr__`). Leveraging classes like `BaseMessage` for message standardization, the `ChatAgent` not only processes and stores messages efficiently but also seamlessly integrates with advanced models. With its capability to execute functions based on model responses and in-built mechanisms for session management, `ChatAgent` is an indispensable asset for developers in the realm of chatbot development and similar applications.
