@@ -14,7 +14,7 @@
 
 import os
 
-from camel.file_io.unstructured_io import UnstructuredModules
+from camel.functions.unstructured_io_fuctions import UnstructuredModules
 
 unstructured_modules = UnstructuredModules()
 

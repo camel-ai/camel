@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import pytest
 
-from camel.file_io.unstructured_io import UnstructuredModules
+from camel.functions.unstructured_io_fuctions import UnstructuredModules
 
 
 # Create a fixture to initialize the UnstructuredModules instance

@@ -21,7 +21,6 @@ import camel.utils
 import camel.functions
 import camel.memories
 import camel.storages
-import camel.file_io
 
 __version__ = '0.1.0'
 
