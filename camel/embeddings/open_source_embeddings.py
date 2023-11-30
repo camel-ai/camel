@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, List
+from typing import Any, List, Union
 
 from numpy import ndarray
 
@@ -39,7 +39,7 @@ class SentenceTransformerEmbedding(BaseEmbedding[str]):
 
     def embed_list(
         self,
-        objs: str | List[str],
+        objs: Union[str, List[str]],
         **kwargs: Any,
     ) -> ndarray:
         r"""Generates embeddings for the given texts using the model.
