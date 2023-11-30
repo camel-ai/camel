@@ -19,6 +19,9 @@ from camel.embeddings import BaseEmbedding
 class SentenceTransformerEmbedding(BaseEmbedding[str]):
     r"""This class provides functionalities to generate embeddings
     using a specified model from Sentence Transformers.
+
+    References:
+        https://www.sbert.net/
     """
 
     def __init__(self, model_name: str = 'intfloat/e5-large-v2'):
@@ -37,7 +40,7 @@ class SentenceTransformerEmbedding(BaseEmbedding[str]):
         objs: List[str],
         **kwargs: Any,
     ) -> List[List[float]]:
-        r"""Generates embeddings for the given texts using the E5-Large-V2 model.
+        r"""Generates embeddings for the given texts using the  model.
 
         Args:
             objs (List[str]): The texts for which to generate the embeddings.
@@ -50,9 +53,9 @@ class SentenceTransformerEmbedding(BaseEmbedding[str]):
         return self.model.encode(objs, normalize_embeddings=True, **kwargs)
 
     def get_output_dim(self) -> int:
-        r"""Returns the output dimension of the E5-Large-V2 embeddings.
+        r"""Returns the output dimension of the embeddings.
 
         Returns:
-            int: The dimensionality of the embedding for the E5-Large-V2 model.
+            int: The dimensionality of the embedding for the model.
         """
         return self.model.get_sentence_embedding_dimension()
