@@ -15,17 +15,17 @@ import numpy as np
 import pytest
 from sentence_transformers import SentenceTransformer  # type: ignore
 
-from camel.embeddings import E5LargeV2Embedding
+from camel.embeddings import SentenceTransformerEmbedding
 
 
 def test_e5_large_v2_embedding_initialization():
-    embedding = E5LargeV2Embedding()
+    embedding = SentenceTransformerEmbedding()
     assert embedding is not None
     assert isinstance(embedding.model, SentenceTransformer)
 
 
 def test_embed_list_with_valid_input():
-    embedding = E5LargeV2Embedding()
+    embedding = SentenceTransformerEmbedding()
     test_texts = ['Hello world', 'Testing sentence embeddings']
     embeddings = embedding.embed_list(test_texts)
     assert isinstance(embeddings, np.ndarray)
@@ -35,13 +35,13 @@ def test_embed_list_with_valid_input():
 
 
 def test_embed_list_with_empty_input():
-    embedding = E5LargeV2Embedding()
+    embedding = SentenceTransformerEmbedding()
     with pytest.raises(ValueError):
         embedding.embed_list([])
 
 
 def test_get_output_dim():
-    embedding = E5LargeV2Embedding()
+    embedding = SentenceTransformerEmbedding()
     output_dim = embedding.get_output_dim()
     assert isinstance(output_dim, int)
     assert output_dim > 0

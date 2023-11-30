@@ -13,10 +13,10 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .base import BaseEmbedding
 from .openai_embedding import OpenAIEmbedding
-from .open_source_embeddings import E5LargeV2Embedding
+from .open_source_embeddings import SentenceTransformerEmbedding
 
 __all__ = [
     "BaseEmbedding",
     "OpenAIEmbedding",
-    "E5LargeV2Embedding",
+    "SentenceTransformerEmbedding",
 ]

@@ -18,16 +18,20 @@ from sentence_transformers import SentenceTransformer
 from camel.embeddings import BaseEmbedding
 
 
-class E5LargeV2Embedding(BaseEmbedding[str]):
+class SentenceTransformerEmbedding(BaseEmbedding[str]):
     r"""This class provides functionalities to generate embeddings
-    using the E5-Large-V2 model from Sentence Transformers.
+    using a specified model from Sentence Transformers.
     """
 
-    def __init__(self):
-        r"""Initializes the E5LargeV2Embedding class with the
-        specified transformer model.
+    def __init__(self, model_name: str = 'intfloat/e5-large-v2'):
+        r"""Initializes the: obj: `SentenceTransformerEmbedding` class
+        with the specified transformer model.
+
+        Args:
+            model_name (str, optional): The name of the model to use.
+                                        Defaults to `intfloat/e5-large-v2`.
         """
-        self.model = SentenceTransformer('intfloat/e5-large-v2')
+        self.model = SentenceTransformer(model_name)
 
     def embed_list(
         self,
