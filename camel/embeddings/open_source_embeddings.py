@@ -13,8 +13,6 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, List
 
-from sentence_transformers import SentenceTransformer
-
 from camel.embeddings import BaseEmbedding
 
 
@@ -31,6 +29,7 @@ class SentenceTransformerEmbedding(BaseEmbedding[str]):
             model_name (str, optional): The name of the model to use.
                                         Defaults to `intfloat/e5-large-v2`.
         """
+        from sentence_transformers import SentenceTransformer
         self.model = SentenceTransformer(model_name)
 
     def embed_list(
