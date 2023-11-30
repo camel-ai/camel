@@ -28,16 +28,16 @@ def parse_file_example():
         file.write("\n")
         file.write("Here is my second thought.\n")
 
-    elements = unstructured_modules.parse_file_or_url("mydoc.txt")
+    response = unstructured_modules.parse_file_or_url("mydoc.txt")
     # Cleanup: remove the created file after the example
     if os.path.exists("mydoc.txt"):
         os.remove("mydoc.txt")
-    return [" ".join(str(el).split()) for el in elements]
+    return response
 
 
 def parse_url_example(url):
-    elements = unstructured_modules.parse_file_or_url(url)
-    return "\n\n".join([str(el) for el in elements])
+    response = unstructured_modules.parse_file_or_url(url)
+    return response
 
 
 def clean_text_example(text):
@@ -57,7 +57,7 @@ def extract_data_example(text):
 
 
 def stage_data_example(url):
-    elements = unstructured_modules.parse_file_or_url(url)
+    elements = unstructured_modules.parse_file_or_url(url)[1]
 
     staged_element = unstructured_modules.stage_elements(
         elements=elements, stage_type="stage_for_baseplate")
@@ -65,7 +65,7 @@ def stage_data_example(url):
 
 
 def chunk_url_content_example(url):
-    elements = unstructured_modules.parse_file_or_url(url)
+    elements = unstructured_modules.parse_file_or_url(url)[1]
     chunks = unstructured_modules.chunk_elements(elements=elements,
                                                  chunk_type="chunk_by_title")
     return chunks
@@ -96,7 +96,6 @@ def main():
     elif choice == '2':
         print("Parsing URL example:")
         print(parse_url_example(example_url))
-        print(f"\n You have parsed {example_url}")
 
     elif choice == '3':
         print("Cleaning text example:")

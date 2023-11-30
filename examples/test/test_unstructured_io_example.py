@@ -54,11 +54,9 @@ def test_parse_file_example():
     result = parse_file_example()
 
     # Assertion: check if the result is as expected
-    expected = [
-        "Important Analysis", "Here is my first thought.",
-        "Here is my second thought."
-    ]
-    assert result == expected, f"Expected {expected}, got {result}"
+    expected_normal_string = ("Important Analysis\n\nHere is my first "
+                              "thought.\n\nHere is my second thought.")
+    assert result[0] == expected_normal_string
 
     # Cleanup: remove the created file after the test
     if os.path.exists("mydoc.txt"):
@@ -67,7 +65,7 @@ def test_parse_file_example():
 
 def test_parse_url_example(sample_url):
     content = parse_url_example(sample_url)
-    assert isinstance(content, str)
+    assert isinstance(content, tuple)
     assert len(content) > 0
 
 

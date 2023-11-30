@@ -40,7 +40,7 @@ def test_parse_file_or_url(unstructured_instance):
     result = unstructured_instance.parse_file_or_url(
         "https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
         "philadelphia-eagles-spt-intl/index.html")
-    assert isinstance(result, list)
+    assert isinstance(result, tuple)
 
     # Test parsing a non-existent file (should raise FileNotFoundError)
     with pytest.raises(FileNotFoundError):
@@ -88,7 +88,7 @@ def test_stage_elements_for_csv(unstructured_instance):
     test_url = (
         "https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
         "philadelphia-eagles-spt-intl/index.html")
-    test_elements = unstructured_instance.parse_file_or_url(test_url)
+    test_elements = unstructured_instance.parse_file_or_url(test_url)[1]
     staged_element = unstructured_instance.stage_elements(
         elements=test_elements, stage_type="stage_for_baseplate")
     assert staged_element['rows'][0] == {
@@ -125,7 +125,7 @@ def test_chunk_elements(unstructured_instance):
     test_url = (
         "https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
         "philadelphia-eagles-spt-intl/index.html")
-    test_elements = unstructured_instance.parse_file_or_url(test_url)
+    test_elements = unstructured_instance.parse_file_or_url(test_url)[1]
     chunked_sections = unstructured_instance.chunk_elements(
         elements=test_elements, chunk_type="chunk_by_title")
 

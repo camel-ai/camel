@@ -56,14 +56,22 @@ class UnstructuredModules:
             raise ValueError(f"Require `unstructured>={min_version}`, "
                              f"you have {__version__}.")
 
-    def parse_file_or_url(self, input_path: str) -> Any:
+    def parse_file_or_url(
+        self,
+        input_path: str,
+        return_str: bool = True,
+    ) -> Any:
         r"""Loads a file or a URL and parses its contents as unstructured data.
 
         Args:
             input_path (str): Path to the file or URL to be parsed.
+            return_str (bool, optional): If True, returns the parsed
+            contents as a string. Defaults to True.
         Returns:
-            Any: The result of parsing the file or URL, could be a dict,
-            list, etc., depending on the content.
+            Any: The elements after parsing the file or URL, could be a
+            dict, list, etc., depending on the content. If return_str is
+            True, returns a tuple with a string representation of the
+            elements and the elements themselves.
 
         Raises:
             FileNotFoundError: If the file does not exist
@@ -99,7 +107,8 @@ class UnstructuredModules:
 
             try:
                 elements = partition_html(url=input_path)
-                return elements
+                normal_string = ("\n\n".join([str(el) for el in elements]))
+                return normal_string, elements if return_str else elements
             except Exception as e:
                 raise Exception("Failed to parse the URL.") from e
 
@@ -116,7 +125,8 @@ class UnstructuredModules:
             try:
                 with open(input_path, "rb") as f:
                     elements = partition(file=f)
-                    return elements  # Returning the parsed elements
+                    normal_string = ("\n\n".join([str(el) for el in elements]))
+                    return normal_string, elements if return_str else elements
             except Exception as e:
                 raise Exception(
                     "Failed to parse the unstructured file.") from e
