@@ -122,9 +122,10 @@ class UnstructuredModules:
                     "Failed to parse the unstructured file.") from e
 
     def clean_text_data(
-        self, text: str,
-        clean_options: Optional[List[Tuple[str, Dict[str,
-                                                     Any]]]] = None) -> str:
+        self,
+        text: str,
+        clean_options: Optional[List[Tuple[str, Dict[str, Any]]]] = None,
+    ) -> str:
         r"""Cleans text data using a variety of cleaning functions provided by
         the 'unstructured' library.
 
