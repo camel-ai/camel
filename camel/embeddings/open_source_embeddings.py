@@ -13,12 +13,14 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, List
 
+from numpy import ndarray
+
 from camel.embeddings import BaseEmbedding
 
 
 class SentenceTransformerEmbedding(BaseEmbedding[str]):
     r"""This class provides functionalities to generate embeddings
-    using a specified model from Sentence Transformers.
+    using a specified model from `Sentence Transformers`.
 
     References:
         https://www.sbert.net/
@@ -37,16 +39,17 @@ class SentenceTransformerEmbedding(BaseEmbedding[str]):
 
     def embed_list(
         self,
-        objs: List[str],
+        objs: str | List[str],
         **kwargs: Any,
-    ) -> List[List[float]]:
-        r"""Generates embeddings for the given texts using the  model.
+    ) -> ndarray:
+        r"""Generates embeddings for the given texts using the model.
 
         Args:
-            objs (List[str]): The texts for which to generate the embeddings.
+            objs (str | List[str]): The texts for which to generate the
+            embeddings.
 
         Returns:
-            List[List[float]]: A list of embedding vectors.
+            ndarray: A numpy matrix with embeddings.
         """
         if not objs:
             raise ValueError("Input text list is empty")
@@ -56,6 +59,6 @@ class SentenceTransformerEmbedding(BaseEmbedding[str]):
         r"""Returns the output dimension of the embeddings.
 
         Returns:
-            int: The dimensionality of the embedding for the model.
+            int: The dimensionality of the embeddings.
         """
         return self.model.get_sentence_embedding_dimension()

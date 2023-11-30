@@ -18,7 +18,7 @@ from sentence_transformers import SentenceTransformer
 from camel.embeddings import SentenceTransformerEmbedding
 
 
-def test_e5_large_v2_embedding_initialization():
+def test_SentenceTransformerEmbedding_initialization():
     embedding = SentenceTransformerEmbedding()
     assert embedding is not None
     assert isinstance(embedding.model, SentenceTransformer)

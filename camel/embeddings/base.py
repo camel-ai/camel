@@ -14,6 +14,8 @@
 from abc import ABC, abstractmethod
 from typing import Any, Generic, List, TypeVar
 
+from numpy import ndarray
+
 T = TypeVar('T')
 
 
@@ -25,7 +27,7 @@ class BaseEmbedding(ABC, Generic[T]):
         self,
         objs: List[T],
         **kwargs: Any,
-    ) -> List[List[float]]:
+    ) -> List[List[float]] | ndarray:
         r"""Generates embeddings for the given texts.
 
         Args:
@@ -33,8 +35,9 @@ class BaseEmbedding(ABC, Generic[T]):
             **kwargs (Any): Extra kwargs passed to the embedding API.
 
         Returns:
-            List[List[float]]: A list that represents the generated embedding
-                as a list of floating-point numbers.
+            List[List[float]] | ndarray: A list that represents the
+            generated embedding as a list of floating-point numbers or a
+            numpy matrix with embeddings.
         """
         pass
 
