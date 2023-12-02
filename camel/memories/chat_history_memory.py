@@ -11,11 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
-from camel.memories import BaseMemory, ContextRecord, MemoryRecord
+from camel.memories import AgentMemory, BaseMemory, ContextRecord, MemoryRecord
 from camel.memories.context_creators import BaseContextCreator
-from camel.messages import OpenAIMessage
 from camel.storages import BaseKeyValueStorage, InMemoryKeyValueStorage
 from camel.types import OpenAIBackendRole
 
@@ -40,39 +39,42 @@ class ChatHistoryMemory(BaseMemory):
         storage (BaseKeyValueStorage, optional): A storage mechanism for
             storing chat history. If `None`, an :obj:`InMemoryKeyValueStorage`
             will be used. (default: :obj:`None`)
-        window_size (int, optional): Specifies the number of recent chat
-            messages to retrieve. If not provided, the entire chat history
-            will be retrieved. (default: :obj:`None`)
     """
 
     def __init__(
         self,
-        context_creator: BaseContextCreator,
         storage: Optional[BaseKeyValueStorage] = None,
-        window_size: Optional[int] = None,
     ) -> None:
-        self.context_creator = context_creator
         self.storage = storage or InMemoryKeyValueStorage()
-        self.window_size = window_size
 
-    def get_context(self) -> Tuple[List[OpenAIMessage], int]:
-        r"""Gets chat context with a proper size for the agent from the memory
+    def get_context_creator(self) -> BaseContextCreator:
+        return self._context_creator
+
+    def retrieve(
+        self,
+        window_size: Optional[int] = None,
+    ) -> List[ContextRecord]:
+        r"""Retrieves records with a proper size for the agent from the memory
         based on the window size or fetches the entire chat history if no
         window size is specified.
 
+        Args:
+            window_size (int, optional): Specifies the number of recent chat
+                messages to retrieve. If not provided, the entire chat history
+                will be retrieved. (default: :obj:`None`)
+
         Returns:
-            (List[OpenAIMessage], int): A tuple containing the constructed
-                context in OpenAIMessage format and the total token count.
+            List[ContextRecord]: A list of retrieved records.
+
         Raises:
-            ValueError: If the memory is empty or if the first message in the
-                memory is not a system message.
+            ValueError: If the memory is empty.
         """
         record_dicts = self.storage.load()
         if len(record_dicts) == 0:
             raise ValueError("The `ChatHistoryMemory` is empty.")
 
         chat_records: List[MemoryRecord] = []
-        truncate_idx = -self.window_size if self.window_size is not None else 0
+        truncate_idx = -window_size if window_size is not None else 0
         for record_dict in record_dicts[truncate_idx:]:
             chat_records.append(MemoryRecord.from_dict(record_dict))
 
@@ -86,11 +88,11 @@ class ChatHistoryMemory(BaseMemory):
                 output_records.append(ContextRecord(record, 1.0))
             else:
                 # Other messages' score drops down gradually
-                score *= 0.99
+                score *= 0.9
                 output_records.append(ContextRecord(record, score))
 
         output_records.reverse()
-        return self.context_creator.create_context(output_records)
+        return output_records
 
     def write_records(self, records: List[MemoryRecord]) -> None:
         r"""Writes memory records to the memory. Additionally, performs
@@ -109,3 +111,23 @@ class ChatHistoryMemory(BaseMemory):
         r"""Clears all chat messages from the memory.
         """
         self.storage.clear()
+
+
+class ChatHistoryAgentMemory(ChatHistoryMemory, AgentMemory):
+    r""""""
+
+    def __init__(
+        self,
+        context_creator: BaseContextCreator,
+        storage: Optional[BaseKeyValueStorage] = None,
+        window_size: Optional[int] = None,
+    ) -> None:
+        self._context_creator = context_creator
+        self.window_size = window_size
+        super().__init__(storage=storage)
+
+    def retrieve(self) -> List[ContextRecord]:
+        return super().retrieve(self.window_size)
+
+    def get_context_creator(self) -> BaseContextCreator:
+        return self._context_creator

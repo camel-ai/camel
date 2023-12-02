@@ -79,14 +79,20 @@ class ScoreBasedContextCreator(BaseContextCreator):
             RuntimeError: If it's impossible to create a valid context without
                 exceeding the token limit.
         """
-        context_units = [
-            _ContextUnit(
-                idx,
-                record,
-                self.token_counter.count_tokens_from_messages(
-                    [record.memory_record.to_openai_message()]),
-            ) for idx, record in enumerate(records)
-        ]
+        # Create unique context units list
+        uuid_set = set()
+        context_units = []
+        for idx, record in enumerate(records):
+            if not record.memory_record.uuid in uuid_set:
+                uuid_set.add(record.memory_record.uuid)
+                context_units.append(
+                    _ContextUnit(
+                        idx,
+                        record,
+                        self.token_counter.count_tokens_from_messages(
+                            [record.memory_record.to_openai_message()]),
+                    ))
+
         # TODO: optimize the process, may give information back to memory
 
         # If not exceed token limit, simply return
