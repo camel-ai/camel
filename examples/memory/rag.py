@@ -51,9 +51,13 @@ def agent_rag(paths: List[str]) -> None:
     memory = RAGmemory(
         context_creator,
         ChatHistoryMemory(),
-        QdrantStorage(embedding.get_output_dim(), path="./ragdb",
-                      create_collection=True, collection="kaust_handbook_DOT",
-                      distance=VectorDistance.DOT),
+        QdrantStorage(
+            embedding.get_output_dim(),
+            path="./ragdb",
+            create_collection=True,
+            collection="kaust_handbook",
+            distance=VectorDistance.COSINE,
+        ),
         embedding=embedding,
         files=files,
     )
