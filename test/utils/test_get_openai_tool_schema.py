@@ -15,22 +15,22 @@ import json
 from datetime import datetime
 from typing import List
 
-from openai import OpenAI
-
 from camel.types import RoleType
-from camel.utils import get_openai_function_schema, get_openai_tool_schema
+from camel.utils import get_openai_tool_schema
 
 
 def test_get_openai_tool_schema():
 
-    def test_all_parameters(str_para: str, int_para: int, list_para: List[int],
-                            float_para: float, datatime_para: datetime, *args,
+    def test_all_parameters(any_para, str_para: str, int_para: int,
+                            list_para: List[int], float_para: float,
+                            datatime_para: datetime, *args,
                             default_enum_para: RoleType = RoleType.CRITIC,
                             **kwargs):
         """
         A function to test all parameter type.
         The parameters will be provided by user.
         Args:
+            any_para: any_para desc. Type defaults to 'Any' if not specified.
             str_para (str) : str_para desc
             int_para (int): int_para desc
             list_para (List): list_para desc
@@ -57,6 +57,11 @@ def test_get_openai_tool_schema():
                     }
                 },
                 'properties': {
+                    'any_para': {
+                        'description':
+                        "any_para desc. "
+                        "Type defaults to 'Any' if not specified."
+                    },
                     'str_para': {
                         'type': 'string',
                         'description': 'str_para desc'
@@ -90,8 +95,8 @@ def test_get_openai_tool_schema():
                     }
                 },
                 'required': [
-                    'str_para', 'int_para', 'list_para', 'float_para',
-                    'datatime_para'
+                    'any_para', 'str_para', 'int_para', 'list_para',
+                    'float_para', 'datatime_para'
                 ],
                 'type':
                 'object'
@@ -102,51 +107,6 @@ def test_get_openai_tool_schema():
     openai_tool_schema = get_openai_tool_schema(test_all_parameters)
 
     assert openai_tool_schema == expect_res
-
-    client = OpenAI()
-    expect_res = json.loads("""{
-      "str_para": "hello",
-      "int_para": 1,
-      "list_para": [1, 2],
-      "float_para": 0.1,
-      "datatime_para": "2023-11-21T15:28:12.041872",
-      "default_enum_para": "critic"
-    }""")
-    tool_response = client.chat.completions.create(
-        model="gpt-3.5-turbo", messages=[{
-            "role":
-            "user",
-            "content":
-            "Call the function "
-            "test_all_parameter with: "
-            "str_para:hello,int_para:1,list_para:[1,2],"
-            "float_para:0.1,"
-            "datatime_para:2023-11-21T15:28:12.041872,"
-            "default_enum_para:RoleType.CRITIC"
-        }], tools=[get_openai_tool_schema(test_all_parameters)])
-    assert (tool_response.choices[0].finish_reason == "tool_calls")
-    tool_params = json.loads(
-        tool_response.choices[0].message.tool_calls[0].function.arguments)
-    assert tool_params == expect_res
-    function_response = client.chat.completions.create(
-        model="gpt-3.5-turbo", messages=[{
-            "role":
-            "user",
-            "content":
-            "Call the function test_all_parameter with:"
-            " str_para:hello,"
-            "int_para:1,"
-            "list_para:[1,2],"
-            "float_para:0.1,"
-            "datatime_para:2023-11-21T15:28:12.041872,"
-            "default_enum_para:RoleType.CRITIC"
-        }], functions=[get_openai_function_schema(test_all_parameters)])
-    assert function_response.choices[0].finish_reason == "function_call"
-
-    func_params = json.loads(
-        function_response.choices[0].message.function_call.arguments)
-
-    assert func_params == expect_res
 
 
 def test_different_docstring_style():

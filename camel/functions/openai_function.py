@@ -15,6 +15,8 @@ from typing import Any, Callable, Dict, Optional
 
 from jsonschema.exceptions import SchemaError
 from jsonschema.validators import Draft202012Validator as JSONValidator
+from openai.types.beta.threads.run import ToolAssistantToolsFunction
+from pydantic import ValidationError
 
 from camel.utils.commons import get_openai_tool_schema
 
@@ -46,66 +48,28 @@ class OpenAIFunction:
 
     @staticmethod
     def validate_openai_tool_schema(openai_tool_schema):
-        r"""
-        {
-            "type": "function",
-            "function": {
-                "name": "function_name",
-                "description": "xxx",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "param1": {
-                            "type": "string",
-                            "description": "xxx",
-                        },
-                        "param2": {
-                            "type": "string",
-                            "description": "xxx",
-                        },
-                    },
-                    "required": ["param1", "param1"],
-                },
-            },
-        }
-        """
-        # 1. check the basic format
-        # 1.1 top-level: "type","function",
-        # the value of "type" should be "function"
-        for key in ["type", "function"]:
-            if key not in openai_tool_schema.keys():
-                raise ValueError(f'"{key}" is not defined')
-        if openai_tool_schema["type"] != "function":
-            raise ValueError(
-                'You should define "type"=="function" in top level')
-
-        # 1.2 second-level: "name","description","parameters",
-        # the value of "description" shouldn't be None
-        for key in ["name", "description", "parameters"]:
-            if key not in openai_tool_schema["function"].keys():
-                raise ValueError(f'"{key}" is not defined')
+        # Automatically validates whether the openai_tool_schema passed
+        # complies with the specifications of the ToolAssistantToolsFunction.
+        try:
+            ToolAssistantToolsFunction.model_validate(openai_tool_schema)
+        except ValidationError as e:
+            raise e
+        # check the function description
         if not openai_tool_schema["function"]["description"]:
             raise ValueError("miss function description")
-
-        # 1.3 third-level: "type","properties","required",
-        # the value of "type" should be "object"
+        # Validate whether parameters
+        # meet the JSON Schema reference specifications.
+        # See https://platform.openai.com/docs/guides/gpt/function-calling
+        # for examples, and the
+        # https://json-schema.org/understanding-json-schema/ for
+        # documentation about the format.
         parameters = openai_tool_schema["function"]["parameters"]
-        for key in ["type", "properties", "required"]:
-            if key not in parameters.keys():
-                raise ValueError(f'"{key}" is not defined')
-        if parameters["type"] != "object":
-            raise ValueError(
-                'You should define "type"=="object" in "parameters"')
-
-        # 2. validate the json schema of
-        # openai_tool_schema["function"]["parameters"]
         try:
             JSONValidator.check_schema(parameters)
         except SchemaError as e:
             raise e
-
-        # 3. check the parameter description
-        properties = openai_tool_schema["function"]["parameters"]["properties"]
+        # check the parameter description
+        properties = parameters["properties"]
         for param_name in properties.keys():
             param_dict = properties[param_name]
             if "description" not in param_dict:
