@@ -158,6 +158,27 @@ class BaseVectorStorage(ABC):
         """
         pass
 
+    def simple_query(
+        self,
+        vector: List[float],
+        top_k: int,
+    ) -> List[Dict[str, Any]]:
+        r"""A simple interface for vector query
+
+        Args:
+            vector (List[float]): The search vector.
+            top_k (int): The number of top similer vectors.
+
+        Returns:
+            List[List[Dict[str, Any]]]: A list of vector payloads retrieved
+                from the storage based on similarity to the query vector.
+        """
+        results = self.query(VectorDBQuery(vector, top_k))
+        return [
+            result.record.payload for result in results
+            if result.record.payload is not None
+        ]
+
     @abstractmethod
     def clear(self) -> None:
         r"""Remove all vectors from the storage."""

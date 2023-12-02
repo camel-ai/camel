@@ -41,18 +41,22 @@ class QdrantStorage(BaseVectorStorage):
 
     Args:
         vector_dim (int): The dimenstion of storing vectors.
-        collection (Optional[str]): Name for the collection in the Qdrant. If
-            not provided, a unique identifier is generated.
+        collection (Optional[str], optional): Name for the collection in the
+            Qdrant. If not provided, a unique identifier is generated.
             (default: :obj:`None`)
-        url_and_api_key (Optional[Tuple[str, str]]): Tuple containing the URL
-            and API key for connecting to a remote Qdrant instance.
+        url_and_api_key (Optional[Tuple[str, str]], optional): Tuple containing
+            the URL and API key for connecting to a remote Qdrant instance.
             (default: :obj:`None`)
-        path (Optional[str]): Path to a directory for initializing a local
-            Qdrant client. (default: :obj:`None`)
-        distance (VectorDistance): The distance metric for vector comparison
-            (default: :obj:`VectorDistance.COSINE`).
-        del_collection (bool): Flag to determine if the collection should be
-            deleted upon object destruction (default: :obj:`False`).
+        path (Optional[str], optional): Path to a directory for initializing a
+            local Qdrant client. (default: :obj:`None`)
+        distance (VectorDistance, optional): The distance metric for vector
+            comparison (default: :obj:`VectorDistance.COSINE`)
+        del_collection (bool, optional): Flag to determine if the collection
+            should be deleted upon object destruction (default: :obj:`False`)
+        create_collection (bool, optional): Flag to determine if the collection
+            should be created during initialization. Caution that enabling this
+            option will remove all vectors in the collection if the collection
+            already exists. (default: :obj:`False`)
         **kwargs (Any): Additional keyword arguments for initializing
             `QdrantClient`.
 
@@ -73,7 +77,8 @@ class QdrantStorage(BaseVectorStorage):
         url_and_api_key: Optional[Tuple[str, str]] = None,
         path: Optional[str] = None,
         distance: VectorDistance = VectorDistance.COSINE,
-        del_collection: bool = False,
+        create_collection: bool = False,
+        delete_collection: bool = False,
         **kwargs: Any,
     ) -> None:
         self.vector_dim = vector_dim
@@ -97,23 +102,23 @@ class QdrantStorage(BaseVectorStorage):
                         f"{collection} ({info['vector_dim']}) "
                         "is different from the embedding dim "
                         f"({self.vector_dim}).")
-                return
             except ValueError:
                 pass
         self.collection = collection or datetime.now().isoformat()
-        self._create_collection(
-            collection=self.collection,
-            size=self.vector_dim,
-            distance=distance,
-        )
+        if create_collection:
+            self._create_collection(
+                collection=self.collection,
+                size=self.vector_dim,
+                distance=distance,
+            )
         self.distance = distance
-        self.del_collection = del_collection
+        self.delete_collection = delete_collection
 
     def __del__(self):
         r"""Deletes the collection if :obj:`del_collection` is set to
         :obj:`True`.
         """
-        if self.del_collection:
+        if self.delete_collection:
             self._delete_collection(self.collection)
 
     def _create_collection(
@@ -295,10 +300,9 @@ class QdrantStorage(BaseVectorStorage):
 
     def clear(self) -> None:
         r"""Remove all vectors from the storage."""
-        if self.del_collection:
-            self._delete_collection(self.collection)
+        self._delete_collection(self.collection)
         self._create_collection(
-            collection=datetime.now().isoformat(),
+            collection=self.collection,
             size=self.vector_dim,
             distance=self.distance,
         )
