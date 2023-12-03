@@ -21,24 +21,24 @@ import pytest
 from camel.storages import QdrantStorage, VectorDBQuery, VectorRecord
 
 parametrize = pytest.mark.parametrize(
-    "server",
+    "storage",
     ["built-in", "local"],
     indirect=True,
 )
 
 
 @pytest.fixture()
-def server(request):
+def storage(request):
     if request.param == "built-in":
-        yield QdrantStorage(vector_dim=4)
+        yield QdrantStorage(vector_dim=4, create_collection=True)
     elif request.param == "local":
         tmpdir = tempfile.mkdtemp()
-        yield QdrantStorage(vector_dim=4, path=tmpdir)
+        yield QdrantStorage(vector_dim=4, path=tmpdir, create_collection=True)
         shutil.rmtree(tmpdir)
 
 
 @parametrize
-def test_qdrant_storage(server: QdrantStorage) -> None:
+def test_qdrant_storage(storage: QdrantStorage) -> None:
     vectors = [
         VectorRecord(vector=[0.1, 0.1, 0.1, 0.1]),
         VectorRecord(vector=[0.1, -0.1, -0.1, 0.1]),
@@ -54,17 +54,17 @@ def test_qdrant_storage(server: QdrantStorage) -> None:
             },
         ),
     ]
-    server.add(records=vectors)
+    storage.add(records=vectors)
 
     query = VectorDBQuery(query_vector=[1, 1, 1, 1], top_k=2)
-    result = server.query(query)
+    result = storage.query(query)
     assert result[0].record.id == vectors[0].id
     assert result[1].record.id == vectors[3].id
     assert result[1].record.payload == {"message": "text", "number": 1}
     assert result[0].similarity > result[1].similarity
 
-    server.delete(ids=[vectors[1].id, vectors[3].id])
-    result = server.query(query)
+    storage.delete(ids=[vectors[1].id, vectors[3].id])
+    result = storage.query(query)
     assert result[0].record.id == vectors[0].id
     assert result[1].record.id == vectors[2].id
     assert result[1].record.payload == {"message": "text"}

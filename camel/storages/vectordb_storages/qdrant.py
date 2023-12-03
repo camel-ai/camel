@@ -226,9 +226,12 @@ class QdrantStorage(BaseVectorStorage):
         """
         self.validate_vector_dimensions(records)
         qdrant_points = [PointStruct(**asdict(p)) for p in records]
-        op_info = self._client.upsert(collection_name=self.collection,
-                                      points=qdrant_points, wait=True,
-                                      **kwargs)
+        op_info = self._client.upsert(
+            collection_name=self.collection,
+            points=qdrant_points,
+            wait=True,
+            **kwargs,
+        )
         if op_info.status != UpdateStatus.COMPLETED:
             raise RuntimeError(
                 "Failed to add vectors in Qdrant, operation info: "
