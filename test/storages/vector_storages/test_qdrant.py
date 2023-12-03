@@ -56,6 +56,10 @@ def test_qdrant_storage(storage: QdrantStorage) -> None:
     ]
     storage.add(records=vectors)
 
+    status = storage.status()
+    assert status.vector_count == 4
+    assert status.vector_dim == 4
+
     query = VectorDBQuery(query_vector=[1, 1, 1, 1], top_k=2)
     result = storage.query(query)
     assert result[0].record.id == vectors[0].id
@@ -69,6 +73,16 @@ def test_qdrant_storage(storage: QdrantStorage) -> None:
     assert result[1].record.id == vectors[2].id
     assert result[1].record.payload == {"message": "text"}
     assert result[0].similarity > result[1].similarity
+
+    status = storage.status()
+    assert status.vector_count == 2
+    assert status.vector_dim == 4
+
+    storage.clear()
+
+    status = storage.status()
+    assert status.vector_count == 0
+    assert status.vector_dim == 4
 
 
 @pytest.fixture

@@ -28,6 +28,7 @@ from camel.storages.vectordb_storages import (
     BaseVectorStorage,
     VectorDBQuery,
     VectorDBQueryResult,
+    VectorDBStatus,
     VectorDistance,
     VectorRecord,
 )
@@ -263,6 +264,13 @@ class QdrantStorage(BaseVectorStorage):
             raise RuntimeError(
                 "Failed to delete vectors in Qdrant, operation info: "
                 f"{op_info}")
+
+    def status(self) -> VectorDBStatus:
+        status = self._check_collection(self.collection)
+        return VectorDBStatus(
+            vector_dim=status["vector_dim"],
+            vector_count=status["vector_count"],
+        )
 
     def query(
         self,

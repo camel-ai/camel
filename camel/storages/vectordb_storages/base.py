@@ -84,6 +84,19 @@ class VectorDBQueryResult:
         )
 
 
+@dataclass
+class VectorDBStatus:
+    r"""Vector database status.
+
+    Attributes:
+        vector_dim (int): The dimention of stored vectors.
+        vector_count (int): The number of stored vectors.
+
+    """
+    vector_dim: int
+    vector_count: int
+
+
 class BaseVectorStorage(ABC):
     r"""An abstract base class for vector storage systems."""
 
@@ -136,6 +149,15 @@ class BaseVectorStorage(ABC):
 
         Raises:
             RuntimeError: If there is an error during the deletion process.
+        """
+        pass
+
+    @abstractmethod
+    def status(self) -> VectorDBStatus:
+        r"""Returns status of the vector database.
+
+        Returns:
+            VectorDBStatus: The vector database status.
         """
         pass
 
