@@ -20,7 +20,7 @@ from camel.configs import ChatGPTConfig
 def main(model_type=None) -> None:
     model_config_description = ChatGPTConfig()
     role_assignment_agent = RoleAssignmentAgent(
-        model=model_type, model_config=model_config_description)
+        model_type=model_type, model_config=model_config_description)
 
     target_labels = [
         "apple", "computer", "car", "python", "ocean", "piano", "science",
