@@ -20,6 +20,9 @@ import pandas as pd
 class UnstructuredModules:
     UNSTRUCTURED_MIN_VERSION = "0.10.30"  # Define the minimum version
 
+    def __init__(self):
+        self.ensure_unstructured_version(self.UNSTRUCTURED_MIN_VERSION)
+
     def ensure_unstructured_version(self, min_version: str) -> None:
         r"""Validates that the installed 'Unstructured' library version
         satisfies the specified minimum version requirement. This function is
@@ -93,9 +96,6 @@ class UnstructuredModules:
         """
         import os
         from urllib.parse import urlparse
-
-        # Check installed unstructured version
-        self.ensure_unstructured_version(self.UNSTRUCTURED_MIN_VERSION)
 
         # Check if the input is a URL
         parsed_url = urlparse(input_path)
@@ -188,8 +188,6 @@ class UnstructuredModules:
         References:
             https://unstructured-io.github.io/unstructured/
         """
-        # Check installed unstructured version
-        self.ensure_unstructured_version(self.UNSTRUCTURED_MIN_VERSION)
 
         from unstructured.cleaners.core import (
             bytes_string_to_string,
@@ -270,8 +268,6 @@ class UnstructuredModules:
         References:
             https://unstructured-io.github.io/unstructured/
         """
-        # Check installed unstructured version
-        self.ensure_unstructured_version(self.UNSTRUCTURED_MIN_VERSION)
 
         from unstructured.cleaners.extract import (
             extract_datetimetz,
@@ -341,8 +337,6 @@ class UnstructuredModules:
         References:
             https://unstructured-io.github.io/unstructured/
         """
-        # Check installed unstructured version
-        self.ensure_unstructured_version(self.UNSTRUCTURED_MIN_VERSION)
 
         from unstructured.staging import (
             argilla,
@@ -406,8 +400,6 @@ class UnstructuredModules:
         References:
             https://unstructured-io.github.io/unstructured/
         """
-        # Check installed unstructured version
-        self.ensure_unstructured_version(self.UNSTRUCTURED_MIN_VERSION)
 
         from unstructured.chunking.title import chunk_by_title
 
