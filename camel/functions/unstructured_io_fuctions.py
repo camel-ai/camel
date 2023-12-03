@@ -25,7 +25,7 @@ class UnstructuredModules:
 
     Attributes:
         UNSTRUCTURED_MIN_VERSION (str): The minimum required version of
-        the Unstructured library.
+            the Unstructured library.
     """
 
     UNSTRUCTURED_MIN_VERSION = "0.10.30"  # Define the minimum version
@@ -44,18 +44,18 @@ class UnstructuredModules:
         certain version of the 'Unstructured' package.
 
         Args:
-            min_version (str): The minimum version required,
-                specified in 'major.minor.patch' format.
+            min_version (str): The minimum version required, specified in
+                `'major.minor.patch'` format.
 
         Raises:
-            ImportError: If the 'Unstructured' package
-                is not available in the environment.
-            ValueError: If the current 'Unstructured'
-                version is older than the required minimum version.
+            ImportError: If the 'Unstructured' package is not available in the
+                environment.
+            ValueError: If the current `'Unstructured'` version is older than
+                the required minimum version.
 
         Notes:
-            Uses the 'packaging.version' module to parse
-            and compare version strings.
+            Uses the 'packaging.version' module to parse and compare version
+                strings.
         """
         from packaging import version
 
@@ -76,13 +76,13 @@ class UnstructuredModules:
     def parse_file_or_url(
         self,
         input_path: str,
-    ) -> List[Any]:
+    ) -> Union[Any, List[Any]]:
         r"""Loads a file or a URL and parses its contents as unstructured data.
 
         Args:
             input_path (str): Path to the file or URL to be parsed.
         Returns:
-            Any: The elements after parsing the file or URL, could be a
+            List[Any]: The elements after parsing the file or URL, could be a
                 dict, list, etc., depending on the content. If return_str is
                 True, returns a tuple with a string representation of the
                 elements and the elements themselves.
@@ -94,13 +94,13 @@ class UnstructuredModules:
 
         Notes:
             By default we use the basic "unstructured" library,
-            If you are processing document types beyond the basics,
+            if you are processing document types beyond the basics,
             you can install the necessary extras like:
-            `pip install "unstructured[docx,pptx]"` or
-            `pip install "unstructured[all-docs]"`
+                `pip install "unstructured[docx,pptx]"` or
+                `pip install "unstructured[all-docs]"`.
             Available document types:
-            "csv", "doc", "docx", "epub", "image", "md", "msg", "odt",
-            "org", "pdf", "ppt", "pptx", "rtf", "rst", "tsv", "xlsx"
+                "csv", "doc", "docx", "epub", "image", "md", "msg", "odt",
+                "org", "pdf", "ppt", "pptx", "rtf", "rst", "tsv", "xlsx".
 
         References:
             https://unstructured-io.github.io/unstructured/
@@ -146,13 +146,12 @@ class UnstructuredModules:
         clean_options: Optional[List[Tuple[str, Dict[str, Any]]]] = None,
     ) -> str:
         r"""Cleans text data using a variety of cleaning functions provided by
-        the 'unstructured' library.
+        the `'unstructured'` library.
 
-        This function applies multiple text cleaning
-        utilities by calling the 'unstructured'
-        library's cleaning bricks for operations like
-        replacing unicode quotes, removing extra whitespace,
-        dashes, non-ascii characters, and more.
+        This function applies multiple text cleaning utilities by calling the
+        `'unstructured'` library's cleaning bricks for operations like
+        replacing unicode quotes, removing extra whitespace, dashes, non-ascii
+        characters, and more.
 
         If no cleaning options are provided, a default set of cleaning
         operations is applied. These defaults including operations
@@ -341,8 +340,8 @@ class UnstructuredModules:
                 format appropriate for the specified staging type.
 
         Raises:
-            ValueError: If the staging type is not supported or
-                a required argument is missing.
+            ValueError: If the staging type is not supported or a required
+                argument is missing.
         References:
             https://unstructured-io.github.io/unstructured/
         """
@@ -429,8 +428,7 @@ class UnstructuredModules:
 
         Args:
             s3_url (str): The URL of the S3 bucket.
-            output_dir (str): Local directory to store the processed
-                outputs.
+            output_dir (str): Local directory to store the processed outputs.
             num_processes (int, optional): Number of processes to use.
                 (default: :obj:`2`)
             anonymous (bool, optional): Flag to run anonymously if
@@ -438,7 +436,7 @@ class UnstructuredModules:
 
         Notes:
             You need to install the necessary extras by using:
-            `pip install "unstructured[s3]"`
+            `pip install "unstructured[s3]"`.
 
         References:
             https://unstructured-io.github.io/unstructured/
@@ -472,16 +470,14 @@ class UnstructuredModules:
 
         Args:
             azure_url (str): The URL of the Azure storage container.
-            output_dir (str): Local directory to store the processed
-                outputs.
-            account_name (str): Azure account name for accessing the
-                container.
+            output_dir (str): Local directory to store the processed outputs.
+            account_name (str): Azure account name for accessing the container.
             num_processes (int, optional): Number of processes to use.
                 (default: :obj:`2`)
 
         Notes:
             You need to install the necessary extras by using:
-            `pip install "unstructured[azure]"`
+            `pip install "unstructured[azure]"`.
 
         References:
             https://unstructured-io.github.io/unstructured/
@@ -514,14 +510,13 @@ class UnstructuredModules:
         Args:
             repo_url (str): URL of the GitHub repository.
             git_branch (str): Git branch name to process.
-            output_dir (str): Local directory to store the processed
-                outputs.
+            output_dir (str): Local directory to store the processed outputs.
             num_processes (int, optional): Number of processes to use.
                 (default: :obj:`2`)
 
         Notes:
             You need to install the necessary extras by using:
-            `pip install "unstructured[github]"`
+            `pip install "unstructured[github]"`.
 
         References:
             https://unstructured-io.github.io/unstructured/
@@ -555,14 +550,13 @@ class UnstructuredModules:
             token (str): Slack API token.
             start_date (str): Start date for fetching data.
             end_date (str): End date for fetching data.
-            output_dir (str): Local directory to store the processed
-                outputs.
+            output_dir (str): Local directory to store the processed outputs.
             num_processes (int, optional): Number of processes to use.
                 (default: :obj:`2`)
 
         Notes:
             You need to install the necessary extras by using:
-            `pip install "unstructured[slack]"`
+            `pip install "unstructured[slack]"`.
 
         References:
             https://unstructured-io.github.io/unstructured/
@@ -594,14 +588,13 @@ class UnstructuredModules:
         Args:
             channels (List[str]): List of Discord channel IDs.
             token (str): Discord bot token.
-            output_dir (str): Local directory to store the processed
-                outputs.
+            output_dir (str): Local directory to store the processed outputs.
             num_processes (int, optional): Number of processes to use.
                 (default: :obj:`2`)
 
         Notes:
             You need to install the necessary extras by using:
-            `pip install "unstructured[discord]"`
+            `pip install "unstructured[discord]"`.
 
         References:
             https://unstructured-io.github.io/unstructured/
