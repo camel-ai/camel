@@ -62,7 +62,6 @@ huggingface-agent = [
     "soundfile",
     "sentencepiece",
     "opencv-python",
-    "sentence-transformers",
 ]
 
 embeddings = [
