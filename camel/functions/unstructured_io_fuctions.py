@@ -18,9 +18,23 @@ import pandas as pd
 
 
 class UnstructuredModules:
+    r"""A class to handle various functionalities provided by the
+    Unstructured library, including version checking, parsing, cleaning,
+    extracting, staging, chunking data, and integrating with cloud
+    services like S3 and Azure for data connection.
+
+    Attributes:
+        UNSTRUCTURED_MIN_VERSION (str): The minimum required version of
+        the Unstructured library.
+    """
+
     UNSTRUCTURED_MIN_VERSION = "0.10.30"  # Define the minimum version
 
     def __init__(self):
+        r"""Initializes the UnstructuredModules class and ensures the
+        installed version of Unstructured library meets the minimum
+        requirements.
+        """
         self.ensure_unstructured_version(self.UNSTRUCTURED_MIN_VERSION)
 
     def ensure_unstructured_version(self, min_version: str) -> None:
@@ -412,3 +426,205 @@ class UnstructuredModules:
 
         # Format chunks into a list of dictionaries (or your preferred format)
         return chunking_functions[chunk_type](elements, **kwargs)
+
+    def run_s3_ingest(self, s3_url: str, output_dir: str,
+                      num_processes: int = 2, anonymous: bool = True):
+        r"""Processes documents from an S3 bucket and stores structured
+        outputs locally.
+
+        Args:
+            s3_url (str): The URL of the S3 bucket.
+            output_dir (str): Local directory to store the processed
+            outputs.
+            num_processes (int, optional): Number of processes to use.
+            Defaults to 2.
+            anonymous (bool, optional): Flag to run anonymously if
+            required. Defaults to True.
+
+        Notes:
+            You need to install the necessary extras by using:
+            `pip install "unstructured[s3]"`
+
+        References:
+            https://unstructured-io.github.io/unstructured/
+        """
+
+        from unstructured.ingest.interfaces import (
+            FsspecConfig,
+            PartitionConfig,
+            ProcessorConfig,
+            ReadConfig,
+        )
+        from unstructured.ingest.runner import S3Runner
+
+        runner = S3Runner(
+            processor_config=ProcessorConfig(
+                verbose=True,
+                output_dir=output_dir,
+                num_processes=num_processes,
+            ),
+            read_config=ReadConfig(),
+            partition_config=PartitionConfig(),
+            fsspec_config=FsspecConfig(remote_url=s3_url),
+        )
+        runner.run(anonymous=anonymous)
+
+    def run_azure_ingest(self, azure_url: str, output_dir: str,
+                         account_name: str, num_processes: int = 2):
+        """
+        Processes documents from an Azure storage container and stores
+        structured outputs locally.
+
+        Args:
+            azure_url (str): The URL of the Azure storage container.
+            output_dir (str): Local directory to store the processed
+            outputs.
+            account_name (str): Azure account name for accessing the
+            container.
+            num_processes (int, optional): Number of processes to use.
+            Defaults to 2.
+
+        Notes:
+            You need to install the necessary extras by using:
+            `pip install "unstructured[azure]"`
+
+        References:
+            https://unstructured-io.github.io/unstructured/
+        """
+        from unstructured.ingest.interfaces import (
+            FsspecConfig,
+            PartitionConfig,
+            ProcessorConfig,
+            ReadConfig,
+        )
+        from unstructured.ingest.runner import AzureRunner
+
+        runner = AzureRunner(
+            processor_config=ProcessorConfig(
+                verbose=True,
+                output_dir=output_dir,
+                num_processes=num_processes,
+            ),
+            read_config=ReadConfig(),
+            partition_config=PartitionConfig(),
+            fsspec_config=FsspecConfig(remote_url=azure_url),
+        )
+        runner.run(account_name=account_name)
+
+    def run_github_ingest(self, repo_url: str, git_branch: str,
+                          output_dir: str, num_processes: int = 2):
+        r"""Processes documents from a GitHub repository and stores
+        structured outputs locally.
+
+        Args:
+            repo_url (str): URL of the GitHub repository.
+            git_branch (str): Git branch name to process.
+            output_dir (str): Local directory to store the processed
+            outputs.
+            num_processes (int, optional): Number of processes to use.
+            Defaults to 2.
+
+        Notes:
+            You need to install the necessary extras by using:
+            `pip install "unstructured[github]"`
+
+        References:
+            https://unstructured-io.github.io/unstructured/
+        """
+        from unstructured.ingest.interfaces import (
+            PartitionConfig,
+            ProcessorConfig,
+            ReadConfig,
+        )
+        from unstructured.ingest.runner import GithubRunner
+
+        runner = GithubRunner(
+            processor_config=ProcessorConfig(
+                verbose=True,
+                output_dir=output_dir,
+                num_processes=num_processes,
+            ),
+            read_config=ReadConfig(),
+            partition_config=PartitionConfig(),
+        )
+        runner.run(url=repo_url, git_branch=git_branch)
+
+    def run_slack_ingest(self, channels: List[str], token: str,
+                         start_date: str, end_date: str, output_dir: str,
+                         num_processes: int = 2):
+        r"""Processes documents from specified Slack channels and stores
+        structured outputs locally.
+
+        Args:
+            channels (List[str]): List of Slack channel IDs.
+            token (str): Slack API token.
+            start_date (str): Start date for fetching data.
+            end_date (str): End date for fetching data.
+            output_dir (str): Local directory to store the processed
+            outputs.
+            num_processes (int, optional): Number of processes to use.
+            Defaults to 2.
+
+        Notes:
+            You need to install the necessary extras by using:
+            `pip install "unstructured[slack]"`
+
+        References:
+            https://unstructured-io.github.io/unstructured/
+        """
+        from unstructured.ingest.interfaces import (
+            PartitionConfig,
+            ProcessorConfig,
+            ReadConfig,
+        )
+        from unstructured.ingest.runner import SlackRunner
+
+        runner = SlackRunner(
+            processor_config=ProcessorConfig(
+                verbose=True,
+                output_dir=output_dir,
+                num_processes=num_processes,
+            ),
+            read_config=ReadConfig(),
+            partition_config=PartitionConfig(),
+        )
+        runner.run(channels=channels, token=token, start_date=start_date,
+                   end_date=end_date)
+
+    def run_discord_ingest(self, channels: List[str], token: str,
+                           output_dir: str, num_processes: int = 2):
+        r"""Processes messages from specified Discord channels and stores
+        structured outputs locally.
+
+        Args:
+            channels (List[str]): List of Discord channel IDs.
+            token (str): Discord bot token.
+            output_dir (str): Local directory to store the processed
+            outputs.
+            num_processes (int, optional): Number of processes to use.
+            Defaults to 2.
+
+        Notes:
+            You need to install the necessary extras by using:
+            `pip install "unstructured[discord]"`
+
+        References:
+            https://unstructured-io.github.io/unstructured/
+        """
+        from unstructured.ingest.interfaces import (
+            PartitionConfig,
+            ProcessorConfig,
+            ReadConfig,
+        )
+        from unstructured.ingest.runner import DiscordRunner
+
+        runner = DiscordRunner(
+            processor_config=ProcessorConfig(
+                verbose=True,
+                output_dir=output_dir,
+                num_processes=num_processes,
+            ),
+            read_config=ReadConfig(),
+            partition_config=PartitionConfig(),
+        )
+        runner.run(channels=channels, token=token)
