@@ -5113,10 +5113,10 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [extras]
 all = ["PyMuPDF", "accelerate", "argilla", "beautifulsoup4", "datasets", "diffusers", "docx2txt", "opencv-python", "pyowm", "sentence-transformers", "sentencepiece", "soundfile", "torch", "transformers", "unstructured", "wikipedia"]
 embeddings = ["sentence-transformers"]
-huggingface-agent = ["accelerate", "datasets", "diffusers", "opencv-python", "sentence-transformers", "sentencepiece", "soundfile", "torch", "transformers"]
+huggingface-agent = ["accelerate", "datasets", "diffusers", "opencv-python", "sentencepiece", "soundfile", "torch", "transformers"]
 tools = ["PyMuPDF", "argilla", "beautifulsoup4", "docx2txt", "pyowm", "unstructured", "wikipedia"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<3.12"
-content-hash = "7a131e0cd9e20cc15af73414ddbb4045458bdf25934eca9a61d758dc0d262105"
+content-hash = "fd60e724790bf20d1a37c3a561892870fae5b18e2c73910ae133e19455cfd88e"
