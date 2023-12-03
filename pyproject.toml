@@ -65,7 +65,7 @@ huggingface-agent = [
 ]
 
 embeddings = [
-    "sentence-transformers"
+    "sentence-transformers",
 ]
 
 tools = [
