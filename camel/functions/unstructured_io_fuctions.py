@@ -587,7 +587,7 @@ class UnstructuredModules:
                    end_date=end_date)
 
     def run_discord_ingest(self, channels: List[str], token: str,
-                           output_dir: str, num_processes: int = 2):
+                           output_dir: str, num_processes: int = 2) -> None:
         r"""Processes messages from specified Discord channels and stores
         structured outputs locally.
 
