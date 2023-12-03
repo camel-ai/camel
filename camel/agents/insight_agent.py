@@ -161,7 +161,7 @@ For each identified entity or detail from the decomposition:
                             r"CONTEXT TEXT:\s*((?:.|\n)+?)"
                             r"(?=\s+- \w+ |\Z|Insight))?" +
                             r"(?:\s+- Iterative Feedback:\s*((?:.|\n)+?)"
-                            r"(?=\s+- \w+ |\Z|Insight))?")  # noqa: E501
+                            r"(?=\s+- \w+ |\Z|Insight))?")
 
         insights_matches = re.findall(insights_pattern, msg.content, re.DOTALL)
 
