@@ -14,17 +14,17 @@
 import pytest
 from sentence_transformers import SentenceTransformer
 
-from camel.embeddings import SentenceTransformerEmbedding
+from camel.embeddings import SentenceTransformerEncoder
 
 
 def test_SentenceTransformerEmbedding_initialization():
-    embedding = SentenceTransformerEmbedding()
+    embedding = SentenceTransformerEncoder()
     assert embedding is not None
     assert isinstance(embedding.model, SentenceTransformer)
 
 
 def test_embed_list_with_valid_input():
-    embedding = SentenceTransformerEmbedding()
+    embedding = SentenceTransformerEncoder()
     test_texts = ['Hello world', 'Testing sentence embeddings']
     embeddings = embedding.embed_list(test_texts)
     assert isinstance(embeddings, list)
@@ -34,13 +34,13 @@ def test_embed_list_with_valid_input():
 
 
 def test_embed_list_with_empty_input():
-    embedding = SentenceTransformerEmbedding()
+    embedding = SentenceTransformerEncoder()
     with pytest.raises(ValueError):
         embedding.embed_list([])
 
 
 def test_get_output_dim():
-    embedding = SentenceTransformerEmbedding()
+    embedding = SentenceTransformerEncoder()
     output_dim = embedding.get_output_dim()
     assert isinstance(output_dim, int)
     assert output_dim > 0

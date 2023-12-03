@@ -16,7 +16,7 @@ from typing import Any, List, Union
 from camel.embeddings import BaseEmbedding
 
 
-class SentenceTransformerEmbedding(BaseEmbedding[str]):
+class SentenceTransformerEncoder(BaseEmbedding[str]):
     r"""This class provides functionalities to generate embeddings
     using a specified model from `Sentence Transformers`.
 
