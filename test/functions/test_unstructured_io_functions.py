@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from typing import Any, Dict, List, Tuple
+
 import pytest
 
 from camel.functions.unstructured_io_fuctions import UnstructuredModules
@@ -18,12 +20,13 @@ from camel.functions.unstructured_io_fuctions import UnstructuredModules
 
 # Create a fixture to initialize the UnstructuredModules instance
 @pytest.fixture
-def unstructured_instance():
+def unstructured_instance() -> UnstructuredModules:
     return UnstructuredModules()
 
 
 # Test the ensure_unstructured_version method
-def test_ensure_unstructured_version(unstructured_instance):
+def test_ensure_unstructured_version(
+        unstructured_instance: UnstructuredModules):
     # Test with a valid version
     unstructured_instance.ensure_unstructured_version("0.10.30")
 
@@ -33,14 +36,14 @@ def test_ensure_unstructured_version(unstructured_instance):
 
 
 # Test the parse_file_or_url method
-def test_parse_file_or_url(unstructured_instance):
+def test_parse_file_or_url(unstructured_instance: UnstructuredModules):
     # You can mock the required dependencies and test different scenarios here
 
     # Test parsing a valid URL (mock the necessary dependencies)
     result = unstructured_instance.parse_file_or_url(
         "https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
         "philadelphia-eagles-spt-intl/index.html")
-    assert isinstance(result, tuple)
+    assert isinstance(result, list)
 
     # Test parsing a non-existent file (should raise FileNotFoundError)
     with pytest.raises(FileNotFoundError):
@@ -48,9 +51,11 @@ def test_parse_file_or_url(unstructured_instance):
 
 
 # Test the clean_text_data method
-def test_clean_text_data(unstructured_instance):
+def test_clean_text_data(unstructured_instance: UnstructuredModules):
     # Test with a valid cleaning option
-    test_options = [("clean_extra_whitespace", {})]
+    test_options: List[Tuple[str,
+                             Dict[str,
+                                  Any]]] = [("clean_extra_whitespace", {})]
     cleaned_text = unstructured_instance.clean_text_data(
         text="  Hello  World  ", clean_options=test_options)
     assert cleaned_text == "Hello World"
@@ -68,7 +73,7 @@ def test_clean_text_data(unstructured_instance):
 
 
 # Test the extract_data_from_text method
-def test_extract_data_from_text(unstructured_instance):
+def test_extract_data_from_text(unstructured_instance: UnstructuredModules):
     # Test extracting an email address
     test_email_text = "Contact me at example@email.com."
     extracted_email = unstructured_instance.extract_data_from_text(
@@ -83,13 +88,13 @@ def test_extract_data_from_text(unstructured_instance):
 
 
 # Test the stage_elements method
-def test_stage_elements_for_csv(unstructured_instance):
+def test_stage_elements_for_csv(unstructured_instance: UnstructuredModules):
     # Test staging for baseplate
     test_url = (
         "https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
         "philadelphia-eagles-spt-intl/index.html")
-    test_elements = unstructured_instance.parse_file_or_url(test_url)[1]
-    staged_element = unstructured_instance.stage_elements(
+    test_elements = unstructured_instance.parse_file_or_url(test_url)
+    staged_element: Any = unstructured_instance.stage_elements(
         elements=test_elements, stage_type="stage_for_baseplate")
     assert staged_element['rows'][0] == {
         'data': {
@@ -120,12 +125,12 @@ def test_stage_elements_for_csv(unstructured_instance):
 
 
 # Test the chunk_elements method
-def test_chunk_elements(unstructured_instance):
+def test_chunk_elements(unstructured_instance: UnstructuredModules):
     # Test chunking content from a url
     test_url = (
         "https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
         "philadelphia-eagles-spt-intl/index.html")
-    test_elements = unstructured_instance.parse_file_or_url(test_url)[1]
+    test_elements = unstructured_instance.parse_file_or_url(test_url)
     chunked_sections = unstructured_instance.chunk_elements(
         elements=test_elements, chunk_type="chunk_by_title")
 

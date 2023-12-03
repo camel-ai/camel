@@ -16,7 +16,7 @@ import os
 
 import pytest
 
-from examples.file_io.unstructured_modules_example import (
+from examples.io.unstructured_modules_example import (
     chunk_url_content_example,
     clean_text_example,
     extract_data_example,
@@ -51,12 +51,12 @@ def test_parse_file_example():
         os.remove("mydoc.txt")
 
     # Execution: call the function
-    result = parse_file_example()
+    content = parse_file_example()
 
     # Assertion: check if the result is as expected
-    expected_normal_string = ("Important Analysis\n\nHere is my first "
-                              "thought.\n\nHere is my second thought.")
-    assert result[0] == expected_normal_string
+    expected_string = ("Important Analysis\n\nHere is my first "
+                       "thought.\n\nHere is my second thought.")
+    assert content == expected_string
 
     # Cleanup: remove the created file after the test
     if os.path.exists("mydoc.txt"):
@@ -65,7 +65,7 @@ def test_parse_file_example():
 
 def test_parse_url_example(sample_url):
     content = parse_url_example(sample_url)
-    assert isinstance(content, tuple)
+    assert isinstance(content, str)
     assert len(content) > 0
 
 

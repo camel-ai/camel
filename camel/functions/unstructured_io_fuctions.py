@@ -45,13 +45,13 @@ class UnstructuredModules:
 
         Args:
             min_version (str): The minimum version required,
-            specified in 'major.minor.patch' format.
+                specified in 'major.minor.patch' format.
 
         Raises:
             ImportError: If the 'Unstructured' package
-            is not available in the environment.
+                is not available in the environment.
             ValueError: If the current 'Unstructured'
-            version is older than the required minimum version.
+                version is older than the required minimum version.
 
         Notes:
             Uses the 'packaging.version' module to parse
@@ -76,23 +76,20 @@ class UnstructuredModules:
     def parse_file_or_url(
         self,
         input_path: str,
-        return_str: bool = True,
-    ) -> Any:
+    ) -> List[Any]:
         r"""Loads a file or a URL and parses its contents as unstructured data.
 
         Args:
             input_path (str): Path to the file or URL to be parsed.
-            return_str (bool, optional): If True, returns the parsed
-            contents as a string. Defaults to True.
         Returns:
             Any: The elements after parsing the file or URL, could be a
-            dict, list, etc., depending on the content. If return_str is
-            True, returns a tuple with a string representation of the
-            elements and the elements themselves.
+                dict, list, etc., depending on the content. If return_str is
+                True, returns a tuple with a string representation of the
+                elements and the elements themselves.
 
         Raises:
             FileNotFoundError: If the file does not exist
-            at the path specified.
+                at the path specified.
             Exception: For any other issues during file or URL parsing.
 
         Notes:
@@ -121,8 +118,7 @@ class UnstructuredModules:
 
             try:
                 elements = partition_html(url=input_path)
-                normal_string = ("\n\n".join([str(el) for el in elements]))
-                return normal_string, elements if return_str else elements
+                return elements
             except Exception as e:
                 raise Exception("Failed to parse the URL.") from e
 
@@ -139,8 +135,7 @@ class UnstructuredModules:
             try:
                 with open(input_path, "rb") as f:
                     elements = partition(file=f)
-                    normal_string = ("\n\n".join([str(el) for el in elements]))
-                    return normal_string, elements if return_str else elements
+                    return elements
             except Exception as e:
                 raise Exception(
                     "Failed to parse the unstructured file.") from e
@@ -191,7 +186,7 @@ class UnstructuredModules:
 
         Raises:
             AttributeError: If a cleaning option does not correspond to a
-            valid cleaning function in 'unstructured'.
+                valid cleaning function in 'unstructured'.
 
         Notes:
             The 'options' dictionary keys must correspond to valid cleaning
@@ -274,7 +269,7 @@ class UnstructuredModules:
                                 'extract_text_before',
                                 'extract_us_phone_number'.
             **kwargs: Additional keyword arguments for specific
-            extraction functions.
+                extraction functions.
 
         Returns:
             Any: The extracted data, type depends on extract_type.
@@ -313,7 +308,7 @@ class UnstructuredModules:
         return extraction_functions[extract_type](text, **kwargs)
 
     def stage_elements(self, elements: List[Any], stage_type: str,
-                       **kwargs) -> Union[str, List[Dict], pd.DataFrame]:
+                       **kwargs) -> Union[str, List[Dict], pd.DataFrame, Any]:
         r"""Stages elements for various platforms based on the
         specified staging type.
 
@@ -339,15 +334,15 @@ class UnstructuredModules:
                             'stage_for_label_studio',
                             'stage_for_weaviate'.
             **kwargs: Additional keyword arguments specific to
-            the staging type.
+                the staging type.
 
         Returns:
             Union[str, List[Dict], pd.DataFrame]: Staged data in the
-            format appropriate for the specified staging type.
+                format appropriate for the specified staging type.
 
         Raises:
             ValueError: If the staging type is not supported or
-            a required argument is missing.
+                a required argument is missing.
         References:
             https://unstructured-io.github.io/unstructured/
         """
@@ -399,7 +394,7 @@ class UnstructuredModules:
         return staging_functions[stage_type](elements, **kwargs)
 
     def chunk_elements(self, elements: List[Any], chunk_type: str,
-                       **kwargs) -> List[Dict]:
+                       **kwargs) -> List[Any]:
         r"""Chunks elements by titles.
 
         Args:
@@ -428,18 +423,18 @@ class UnstructuredModules:
         return chunking_functions[chunk_type](elements, **kwargs)
 
     def run_s3_ingest(self, s3_url: str, output_dir: str,
-                      num_processes: int = 2, anonymous: bool = True):
+                      num_processes: int = 2, anonymous: bool = True) -> None:
         r"""Processes documents from an S3 bucket and stores structured
         outputs locally.
 
         Args:
             s3_url (str): The URL of the S3 bucket.
             output_dir (str): Local directory to store the processed
-            outputs.
+                outputs.
             num_processes (int, optional): Number of processes to use.
-            Defaults to 2.
+                (default: :obj:`2`)
             anonymous (bool, optional): Flag to run anonymously if
-            required. Defaults to True.
+                required. (default: :obj:`True`)
 
         Notes:
             You need to install the necessary extras by using:
@@ -470,7 +465,7 @@ class UnstructuredModules:
         runner.run(anonymous=anonymous)
 
     def run_azure_ingest(self, azure_url: str, output_dir: str,
-                         account_name: str, num_processes: int = 2):
+                         account_name: str, num_processes: int = 2) -> None:
         """
         Processes documents from an Azure storage container and stores
         structured outputs locally.
@@ -478,11 +473,11 @@ class UnstructuredModules:
         Args:
             azure_url (str): The URL of the Azure storage container.
             output_dir (str): Local directory to store the processed
-            outputs.
+                outputs.
             account_name (str): Azure account name for accessing the
-            container.
+                container.
             num_processes (int, optional): Number of processes to use.
-            Defaults to 2.
+                (default: :obj:`2`)
 
         Notes:
             You need to install the necessary extras by using:
@@ -512,7 +507,7 @@ class UnstructuredModules:
         runner.run(account_name=account_name)
 
     def run_github_ingest(self, repo_url: str, git_branch: str,
-                          output_dir: str, num_processes: int = 2):
+                          output_dir: str, num_processes: int = 2) -> None:
         r"""Processes documents from a GitHub repository and stores
         structured outputs locally.
 
@@ -520,9 +515,9 @@ class UnstructuredModules:
             repo_url (str): URL of the GitHub repository.
             git_branch (str): Git branch name to process.
             output_dir (str): Local directory to store the processed
-            outputs.
+                outputs.
             num_processes (int, optional): Number of processes to use.
-            Defaults to 2.
+                (default: :obj:`2`)
 
         Notes:
             You need to install the necessary extras by using:
@@ -551,7 +546,7 @@ class UnstructuredModules:
 
     def run_slack_ingest(self, channels: List[str], token: str,
                          start_date: str, end_date: str, output_dir: str,
-                         num_processes: int = 2):
+                         num_processes: int = 2) -> None:
         r"""Processes documents from specified Slack channels and stores
         structured outputs locally.
 
@@ -561,9 +556,9 @@ class UnstructuredModules:
             start_date (str): Start date for fetching data.
             end_date (str): End date for fetching data.
             output_dir (str): Local directory to store the processed
-            outputs.
+                outputs.
             num_processes (int, optional): Number of processes to use.
-            Defaults to 2.
+                (default: :obj:`2`)
 
         Notes:
             You need to install the necessary extras by using:
@@ -600,9 +595,9 @@ class UnstructuredModules:
             channels (List[str]): List of Discord channel IDs.
             token (str): Discord bot token.
             output_dir (str): Local directory to store the processed
-            outputs.
+                outputs.
             num_processes (int, optional): Number of processes to use.
-            Defaults to 2.
+                (default: :obj:`2`)
 
         Notes:
             You need to install the necessary extras by using:

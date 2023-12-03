@@ -11,11 +11,3 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from camel.embeddings import OpenAIEmbedding
-
-
-def test_openai_embedding():
-    text = "test embedding text."
-    embedding_model = OpenAIEmbedding()
-    vector = embedding_model.embed(text)
-    assert len(vector) == embedding_model.get_output_dim()
