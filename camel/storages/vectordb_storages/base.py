@@ -20,9 +20,16 @@ from uuid import uuid4
 
 
 class VectorDistance(Enum):
-    DOT = 1
-    COSINE = 2
-    EUCLIDEAN = 3
+    r"""Distance metrics used in a vector database."""
+
+    DOT = "dot"
+    r"""Dot product. https://en.wikipedia.org/wiki/Dot_product"""
+
+    COSINE = "cosine"
+    r"""Cosine similarity. https://en.wikipedia.org/wiki/Cosine_similarity"""
+
+    EUCLIDEAN = "euclidean"
+    r"""Euclidean distance. https://en.wikipedia.org/wiki/Euclidean_distance"""
 
 
 @dataclass
