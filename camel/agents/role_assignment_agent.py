@@ -178,7 +178,7 @@ class RoleAssignmentAgent(ChatAgent):
 
         split_task_rules_prompt = """You are a task decomposer, and you're in asked to break down the main TASK into {num_subtasks} manageable subtasks suitable for a team comprising {num_roles} domain experts. The experts will contribute to the {num_subtasks} subtasks. Please follow the guidelines below to craft your answer:
     1. Action-Oriented Foundation & Building Blocks: Ensure each subtask is actionable, distinct, tapping into the expertise of the assigned roles. Recognize that not every subtask needs to directly reflect the main TASK's ultimate aim. Some subtasks serve as essential building blocks, paving the way for more central subtasks, but avoid creating subtasks that are self-dependent or overly foundational.
-    2. Balanced Granularity with a Bias for Action: While each subtask should be detailed and actionable, it should not be so ambiguous that it requires the input of more than two domain experts. Prioritize tangible actions in subtask such as implementation, creation, testing, or other tangible activities over mere understanding.
+    2. Balanced Granularity with a Bias for Action: Details of subtask should be detailed, actionable, and not be ambiguous. Prioritize tangible actions in subtask such as implementation, creation, testing, or other tangible activities over mere understanding.
     3. Contextual Parameters: Please ensure that each subtask has the relevant context information from the TASK to avoid missing or contradicting the context information of the TASK. And try to provide as much information from CONTEXT TEXT as possible here.
     3. Dependencies & Gantt Chart: Identify and account for the dependencies within the subtasks. Ensure that each subtask logically flows from one to the next, or can run concurrently where no subtask is dependent on itself, in a manner that could be efficiently represented on a Gantt chart.
     4. Definitions of the Input of subtask:
@@ -186,6 +186,7 @@ class RoleAssignmentAgent(ChatAgent):
         - Hierarchy and Prioritization: Identify and clearly state the priority and hierarchy (if applicable) among the inputs, ensuring the most critical elements are addressed promptly.
         - Accessibility and Clarity: Ensure that all provided inputs are accessible, clear, and understandable to the relevant team members.
         - Adjustability: Consider that inputs may need to be adjusted as the project progresses and ensure a mechanism for the same.
+        - Subtask Dependency: Take into account the dependencies between different subtasks, ensuring that inputs for one subtask are aligned and coordinated with the needs and outputs of other related subtasks.jjj
     5. Definitions of the Task Completion Standard in order to implement a feature in the software that can identify and mark a task as completed:
         - A task is considered completed when its intended output is produced.
         - If possible, the completion standard should be quantifiable to facilitate automatic detection by the software or tool feature.
@@ -242,7 +243,7 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
                     f"Dependency of subtask {i + 1}: [subtask <i>, subtask "
                     f"<j>, subtask <k>]/[None] (include square brackets)."
                     for i in range(num_subtasks)) + \
-                "PART II:\nGantt Chart with complex dependency in " + \
+                "\nPART II:\nGantt Chart with complex dependency in " + \
                 "MarkDown format:\n<BLANK>\n\n\n"
         split_task_prompt = TextPrompt(split_task_rules_prompt +
                                        answer_prompt + task_prompt + "\n\n" +
