@@ -13,8 +13,6 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, List, Union
 
-from numpy import ndarray
-
 from camel.embeddings import BaseEmbedding
 
 
@@ -41,7 +39,7 @@ class SentenceTransformerEmbedding(BaseEmbedding[str]):
         self,
         objs: Union[str, List[str]],
         **kwargs: Any,
-    ) -> ndarray:
+    ) -> list:
         r"""Generates embeddings for the given texts using the model.
 
         Args:
@@ -49,11 +47,12 @@ class SentenceTransformerEmbedding(BaseEmbedding[str]):
             embeddings.
 
         Returns:
-            ndarray: A numpy matrix with embeddings.
+            list: A list of float representing embeddings.
         """
         if not objs:
             raise ValueError("Input text list is empty")
-        return self.model.encode(objs, normalize_embeddings=True, **kwargs)
+        return self.model.encode(objs, normalize_embeddings=True,
+                                 **kwargs).tolist()
 
     def get_output_dim(self) -> int:
         r"""Returns the output dimension of the embeddings.

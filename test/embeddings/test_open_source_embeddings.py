@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import numpy as np
 import pytest
 from sentence_transformers import SentenceTransformer
 
@@ -28,7 +27,7 @@ def test_embed_list_with_valid_input():
     embedding = SentenceTransformerEmbedding()
     test_texts = ['Hello world', 'Testing sentence embeddings']
     embeddings = embedding.embed_list(test_texts)
-    assert isinstance(embeddings, np.ndarray)
+    assert isinstance(embeddings, list)
     assert len(embeddings) == 2
     for e in embeddings:
         assert len(e) == embedding.get_output_dim()
