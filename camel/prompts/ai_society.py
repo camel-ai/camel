@@ -75,6 +75,12 @@ You must write a specific Solution&Action that appropriately solves the requeste
             <YOUR_CODE_SNIPPET>
         assistant end=code_interpreter
         ```
+    - If you think you need to surf the web page by Google Search to aid in get Internet information, use the following command format in <YOUR_ACTION>:
+        ``` COMMAND TO PERFORM GOOGLE SEARCH
+        assistant to=google_search
+            <YOUR_SEARCH_QUERY>
+        assistant end=google_search
+        ```
     - You must decline my instruction honestly if you cannot perform the instruction due to physical, moral, legal reasons or your capability and explain the reasons.
 
 ===== TASK =====
