@@ -68,6 +68,13 @@ We share a common interest in collaborating to successfully complete the task by
 
 You must write a specific Solution&Action that appropriately solves the requested instruction and explain your solutions. Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE.
     - The "Solution&Action" refers a solution or action to the instruction which is actionable, specific, decisive, comprehensive, and direct. And it is sovled step by step with your chain of thoughts.
+    - At the last part of your answer, you should perform your action in straightforward manner.
+    - If you think you can perform the action and get the specific result, use the following command format in <YOUR_ACTION> to call the code interpreter or compiler:
+        ``` COMMAND TO CALL CODE INTERPRETER OR COMPILER
+        assistant to=code_interpreter, <LANGUAGE>
+            <YOUR_CODE_SNIPPET>
+        assistant end=code_interpreter
+        ```
     - You must decline my instruction honestly if you cannot perform the instruction due to physical, moral, legal reasons or your capability and explain the reasons.
 
 ===== TASK =====
@@ -77,6 +84,8 @@ You must write a specific Solution&Action that appropriately solves the requeste
 1. Unless I say the task or the instruction is completed, you need to provide the solution or the action:
 Solution&Action:
 <YOUR_SOLUTION_AND_ACTION>
+Action:
+<YOUR_ACTION>
 2. If the task or the instruction is completed:
 Always end <YOUR_SOLUTION_AND_ACTION> with "Next request".
 """)

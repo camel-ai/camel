@@ -23,15 +23,15 @@ from camel.types import ModelType, RoleType
 class InsightAgent(ChatAgent):
     r"""An agent that aims to generate insights from a provided text.
     Args:
-        model (ModelType, optional): The type of model to use for the agent.
-            (default: :obj:`ModelType.GPT_3_5_TURBO`)
+        model_type (ModelType, optional): The type of model to use for the
+            agent. (default: :obj:`ModelType.GPT_3_5_TURBO`)
         model_config (Any, optional): The configuration for the model.
             (default: :obj:`None`)
     """
 
     def __init__(
         self,
-        model: ModelType = ModelType.GPT_3_5_TURBO,
+        model_type: ModelType = ModelType.GPT_3_5_TURBO,
         model_config: Optional[Any] = None,
     ) -> None:
         system_message = BaseMessage(
@@ -40,7 +40,7 @@ class InsightAgent(ChatAgent):
             meta_dict=None,
             content="You generate insights from a provided text.",
         )
-        super().__init__(system_message, model, model_config)
+        super().__init__(system_message, model_type, model_config)
 
     def run(
         self,
@@ -161,7 +161,7 @@ For each identified entity or detail from the decomposition:
                             r"CONTEXT TEXT:\s*((?:.|\n)+?)"
                             r"(?=\s+- \w+ |\Z|Insight))?" +
                             r"(?:\s+- Iterative Feedback:\s*((?:.|\n)+?)"
-                            r"(?=\s+- \w+ |\Z|Insight))?")  # noqa: E501
+                            r"(?=\s+- \w+ |\Z|Insight))?")
 
         insights_matches = re.findall(insights_pattern, msg.content, re.DOTALL)
 

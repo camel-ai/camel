@@ -32,15 +32,15 @@ class DeductiveReasonerAgent(ChatAgent):
         - L represents the path or process from A to B.
 
     Args:
-        model (ModelType, optional): The type of model to use for the agent.
-            (default: :obj:`ModelType.GPT_3_5_TURBO`)
+        model_type (ModelType, optional): The type of model to use for the
+            agent. (default: :obj:`ModelType.GPT_3_5_TURBO`)
         model_config (Any, optional): The configuration for the model.
             (default: :obj:`None`)
     """
 
     def __init__(
         self,
-        model: ModelType = ModelType.GPT_3_5_TURBO,
+        model_type: ModelType = ModelType.GPT_3_5_TURBO,
         model_config: Optional[Any] = None,
     ) -> None:
         system_message = BaseMessage(
@@ -49,7 +49,7 @@ class DeductiveReasonerAgent(ChatAgent):
             meta_dict=None,
             content="You assign roles based on tasks.",
         )
-        super().__init__(system_message, model, model_config)
+        super().__init__(system_message, model_type, model_config)
 
     def deduce_conditions_and_quality(
         self,
@@ -174,14 +174,10 @@ Given the starting state $A$ and the target state $B$, assuming that a path $L$ 
                 msg.content, re.DOTALL)
         }
 
-        labels_str = [
-            label.replace("<", "").replace(">", "").strip().strip('\n')
-            for label in re.findall(
+        labels = [
+            label.strip().strip('\n').strip("\"\'") for label in re.findall(
                 r"Entity/Label Recognition of Conditions:\n\[(.+?)\]",
                 msg.content, re.DOTALL)[0].split(",")
-        ][0]
-        labels = [
-            label.strip().strip('\"\'') for label in labels_str.split(", ")
         ]
 
         quality = [

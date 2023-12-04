@@ -55,7 +55,7 @@ def generate_questions(examples: str, category: str, save_file_name: str,
         role_name="Assistant",
         content="You are a helpful assistant.",
     )
-    agent = ChatAgent(assistant_sys_msg, model=model)
+    agent = ChatAgent(assistant_sys_msg, model_type=model)
     agent.reset()
 
     user_msg = BaseMessage.make_user_message(role_name="User", content=prompt)

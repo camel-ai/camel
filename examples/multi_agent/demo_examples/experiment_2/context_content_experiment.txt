@@ -1,0 +1,35 @@
+### Commercial Real Estate Investment Analysis
+
+#### Context
+- **Investor Profile:** An investor owns a commercial property in a city with fluctuating real estate demands due to seasonal tourism and business events.
+- **Property Details:** A multi-use building in a downtown area, suitable for both retail and office spaces.
+- **Goal:** Maximize returns by strategically choosing between weekly and monthly rental agreements.
+
+#### Prerequisites and Dependencies
+1. **Data Collection:**
+   - **Market Data:** Historical rental rates, occupancy rates, seasonal variations, and local events impacting real estate demand.
+   - **Property Specific Data:** Maintenance costs, property taxes, and historical income data for the property.
+
+2. **Technological Requirements:**
+   - **Python Environment:** Setting up a Python programming environment with necessary libraries like `pandas` for data handling, `numpy` for numerical operations, `scikit-learn` for decision trees, and `matplotlib` for data visualization.
+   - **Monte Carlo Simulation Tools:** Libraries like `PyMC3` or custom algorithms for Monte Carlo simulations.
+
+3. **Analytical Model Development:**
+   - **Decision Tree Construction:** Building a model to evaluate different rental strategies (weekly vs. monthly) under varying market conditions.
+   - **Monte Carlo Simulation:** Simulating various market trend scenarios over a year to assess risk and potential returns for each rental strategy.
+
+4. **Market Trend Analysis:**
+   - **Seasonal Variations:** Understanding how tourism and local business events affect rental demand.
+   - **Economic Indicators:** Monitoring broader economic indicators that influence real estate markets.
+
+5. **Legal and Regulatory Compliance:**
+   - **Rental Laws:** Complying with local regulations regarding short-term and long-term rentals.
+   - **Tax Implications:** Understanding tax implications of different rental strategies.
+
+6. **Stakeholder Engagement:**
+   - **Property Managers:** Coordinating with property managers for operational feasibility of different rental strategies.
+   - **Financial Advisors:** Consulting with financial advisors for aligning the rental strategy with the investor’s overall financial goals.
+
+7. **Testing and Iteration:**
+   - **Backtesting:** Using historical data to test the model’s effectiveness.
+   - **Continuous Monitoring:** Adjusting strategies based on ongoing market trend analysis and model performance.

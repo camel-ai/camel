@@ -83,7 +83,7 @@ def main(model_type=None) -> None:
 
     model_config_description = ChatGPTConfig()
     role_assignment_agent = RoleAssignmentAgent(
-        model=model_type, model_config=model_config_description)
+        model_type=model_type, model_config=model_config_description)
 
     role_compatibility_scores_dict = (
         role_assignment_agent.evaluate_role_compatibility(

@@ -30,7 +30,7 @@ def main():
     action_space = [
         HuggingFaceToolAgent(
             'hugging_face_tool_agent',
-            model=ModelType.GPT_4.value,
+            model_type=ModelType.GPT_4.value,
             remote=True,
         )
     ]
