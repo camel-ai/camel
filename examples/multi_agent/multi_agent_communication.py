@@ -226,6 +226,16 @@ def main(model_type=ModelType.GPT_4_TURBO, task_prompt=None,
                 transformed_text = transformed_text_with_category["text"]
                 chat_history_two_roles += (transformed_text + "\n\n")
 
+            code_snippet = re.findall(
+                r"assistant to=code_interpreter,"
+                r"\s*(\w+)\n(.*?)\n"
+                r"assistant end=code_interpreter",
+                assistant_response.msg.content, re.DOTALL)
+            # Print the code snippet
+            for language, code_snippet in code_snippet:
+                print(f"Programming language: {language}")
+                print(f"code_snippet:\n{code_snippet}\n")
+
             if assistant_response.terminated:
                 print(Fore.GREEN +
                       (f"{ai_assistant_role} terminated. Reason: "
@@ -422,7 +432,7 @@ if __name__ == "__main__":
         "context_content_experiment.txt",
     ]
 
-    index = 5
+    index = 3
     with open(root_path + file_names_task_prompt[index], mode='r',
               encoding="utf-8") as file:
         task_prompt = file.read()
