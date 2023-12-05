@@ -15,14 +15,10 @@ from typing import Any, Dict, List, Optional
 
 from colorama import Fore
 
-from camel.agents import (
-    BaseToolAgent,
-    ChatAgent,
-    ChatAgentResponse,
-    HuggingFaceToolAgent,
-)
+from camel.agents import BaseToolAgent, ChatAgent, HuggingFaceToolAgent
 from camel.messages import BaseMessage
-from camel.typing import ModelType
+from camel.responses import ChatAgentResponse
+from camel.types import ModelType
 from camel.utils import PythonInterpreter, print_text_animated
 
 
@@ -31,7 +27,7 @@ class EmbodiedAgent(ChatAgent):
 
     Args:
         system_message (BaseMessage): The system message for the chat agent.
-        model (ModelType, optional): The LLM model to use for generating
+        model_type (ModelType, optional): The LLM model to use for generating
             responses. (default :obj:`ModelType.GPT_4`)
         model_config (Any, optional): Configuration options for the LLM model.
             (default: :obj:`None`)
@@ -48,7 +44,7 @@ class EmbodiedAgent(ChatAgent):
     def __init__(
         self,
         system_message: BaseMessage,
-        model: ModelType = ModelType.GPT_4,
+        model_type: ModelType = ModelType.GPT_4,
         model_config: Optional[Any] = None,
         message_window_size: Optional[int] = None,
         action_space: Optional[List[BaseToolAgent]] = None,
@@ -56,7 +52,8 @@ class EmbodiedAgent(ChatAgent):
         logger_color: Any = Fore.MAGENTA,
     ) -> None:
         default_action_space = [
-            HuggingFaceToolAgent('hugging_face_tool_agent', model=model.value),
+            HuggingFaceToolAgent('hugging_face_tool_agent',
+                                 model_type=model_type.value),
         ]
         self.action_space = action_space or default_action_space
         action_space_prompt = self.get_action_space_prompt()
@@ -66,7 +63,7 @@ class EmbodiedAgent(ChatAgent):
         self.logger_color = logger_color
         super().__init__(
             system_message=system_message,
-            model=model,
+            model_type=model_type,
             model_config=model_config,
             message_window_size=message_window_size,
         )

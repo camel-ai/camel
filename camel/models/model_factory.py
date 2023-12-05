@@ -20,7 +20,7 @@ from camel.models import (
     OpenSourceModel,
     StubModel,
 )
-from camel.typing import ModelType
+from camel.types import ModelType
 
 
 class ModelFactory:

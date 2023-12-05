@@ -20,7 +20,7 @@ from camel.agents import ChatAgent, TaskSpecifyAgent
 from camel.configs import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
 from camel.messages import BaseMessage
-from camel.typing import RoleType, TaskType
+from camel.types import RoleType, TaskType
 from camel.utils import download_tasks
 
 
@@ -130,7 +130,7 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
                 f"{user_response.info['termination_reasons'][0]}")
             break
 
-        user_agent.submit_message(user_response.msg)
+        user_agent.record_message(user_response.msg)
         print(f"User:\n{user_response.msg.content}\n")
 
         assistant_response = assistant_agent.step(user_response.msg)
@@ -142,7 +142,7 @@ def generate_data(language_idx: int, language_name: str, domain_idx: int,
                 f"{assistant_response.info['termination_reasons'][0]}")
             break
 
-        assistant_agent.submit_message(assistant_response.msg)
+        assistant_agent.record_message(assistant_response.msg)
         print(f"Assistant:\n{assistant_response.msg.content}\n")
 
         # Condition 3: Break if user does not give instruction

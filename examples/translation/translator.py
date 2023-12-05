@@ -23,7 +23,7 @@ from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
 from camel.messages import BaseMessage
-from camel.typing import ModelType, RoleType, TaskType
+from camel.types import ModelType, RoleType, TaskType
 
 warnings.filterwarnings("ignore")
 
@@ -92,7 +92,7 @@ def translate_content(args: argparse.Namespace, file_path: str,
 
         assistant_agent = ChatAgent(
             system_message=assistant_sys_msg,
-            model=ModelType.GPT_3_5_TURBO,
+            model_type=ModelType.GPT_3_5_TURBO,
             model_config=model_config,
         )
 

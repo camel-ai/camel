@@ -14,6 +14,7 @@
 import inspect
 import os
 import re
+import socket
 import time
 import zipfile
 from functools import wraps
@@ -28,17 +29,18 @@ from typing import (
     TypeVar,
     cast,
 )
+from urllib.parse import urlparse
 
 import requests
 
-from camel.typing import ModelType, TaskType
+from camel.types import TaskType
 
 F = TypeVar('F', bound=Callable[..., Any])
 
 
-def api_key_required(func: F) -> F:
-    r"""Decorator that checks if the OpenAI/Anthropic API key is available in
-     the environment variables.
+def openai_api_key_required(func: F) -> F:
+    r"""Decorator that checks if the OpenAI API key is available in the
+    environment variables.
 
     Args:
         func (callable): The function to be wrapped.
@@ -53,23 +55,8 @@ def api_key_required(func: F) -> F:
 
     @wraps(func)
     def wrapper(self, *args, **kwargs):
-        from camel.agents.chat_agent import ChatAgent
-        if not isinstance(self, ChatAgent):
-            raise ValueError("Expected ChatAgent")
-        if self.model == ModelType.STUB:
+        if 'OPENAI_API_KEY' in os.environ:
             return func(self, *args, **kwargs)
-        elif self.model.is_open_source:
-            return func(self, *args, **kwargs)
-        elif self.model.is_anthropic:
-            if 'ANTHROPIC_API_KEY' in os.environ:
-                return func(self, *args, **kwargs)
-            else:
-                raise ValueError('Anthropic API key not found.')
-        elif self.model.is_openai:
-            if 'OPENAI_API_KEY' in os.environ:
-                return func(self, *args, **kwargs)
-            else:
-                raise ValueError('OpenAI API key not found.')
         else:
             raise ValueError('OpenAI API key not found.')
 
@@ -232,3 +219,25 @@ def get_task_list(task_response: str) -> List[str]:
             if task_name.strip() and task_id.isnumeric():
                 new_tasks_list.append(task_name)
     return new_tasks_list
+
+
+def check_server_running(server_url: str) -> bool:
+    r"""Check whether the port refered by the URL to the server
+    is open.
+
+    Args:
+        server_url (str): The URL to the server running LLM inference
+            service.
+
+    Returns:
+        bool: Whether the port is open for packets (server is running).
+    """
+    parsed_url = urlparse(server_url)
+    url_tuple = (parsed_url.hostname, parsed_url.port)
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    result = sock.connect_ex(url_tuple)
+    sock.close()
+
+    # if the port is open, the result should be 0.
+    return result == 0

@@ -11,16 +11,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from types import GeneratorType
-from typing import Any, Dict, List, Optional
+import os
+from typing import Any, Dict, List, Optional, Union
+
+from openai import OpenAI, Stream
 
 from camel.configs import OPENAI_API_PARAMS_WITH_FUNCTIONS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
-from camel.typing import ModelType
-from camel.utils import BaseTokenCounter, OpenAITokenCounter
-
-DEFAULT_API_BASE = "https://api.openai.com/v1"
+from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
+from camel.utils import (
+    BaseTokenCounter,
+    OpenAITokenCounter,
+    openai_api_key_required,
+)
 
 
 class OpenAIModel(BaseModelBackend):
@@ -37,6 +41,8 @@ class OpenAIModel(BaseModelBackend):
                 be fed into openai.ChatCompletion.create().
         """
         super().__init__(model_type, model_config_dict)
+        url = os.environ.get('OPENAI_API_BASE_URL', None)
+        self._client = OpenAI(timeout=60, max_retries=3, base_url=url)
         self._token_counter: Optional[BaseTokenCounter] = None
 
     @property
@@ -51,32 +57,27 @@ class OpenAIModel(BaseModelBackend):
             self._token_counter = OpenAITokenCounter(self.model_type)
         return self._token_counter
 
+    @openai_api_key_required
     def run(
         self,
-        messages: List[Dict],
-    ) -> Dict[str, Any]:
-        r"""Run inference of OpenAI chat completion.
+        messages: List[OpenAIMessage],
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+        r"""Runs inference of OpenAI chat completion.
 
         Args:
-            messages (List[Dict]): Message list with the chat history
+            messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
 
         Returns:
-            Dict[str, Any]: Response in the OpenAI API format.
+            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+                `ChatCompletion` in the non-stream mode, or
+                `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        import openai
-        openai.api_base = DEFAULT_API_BASE
-
-        messages_openai: List[OpenAIMessage] = messages
-        response = openai.ChatCompletion.create(messages=messages_openai,
-                                                model=self.model_type.value,
-                                                **self.model_config_dict)
-        if not self.stream:
-            if not isinstance(response, Dict):
-                raise RuntimeError("Unexpected batch return from OpenAI API")
-        else:
-            if not isinstance(response, GeneratorType):
-                raise RuntimeError("Unexpected stream return from OpenAI API")
+        response = self._client.chat.completions.create(
+            messages=messages,
+            model=self.model_type.value,
+            **self.model_config_dict,
+        )
         return response
 
     def check_model_config(self):

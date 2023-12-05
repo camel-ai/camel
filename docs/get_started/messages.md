@@ -1,12 +1,11 @@
 # Working with the `BaseMessage` Class
 
-In this tutorial, we will explore the `BaseMessage`, `SystemMessage`, `AssistantSystemMessage`, `UserSystemMessage`, `ChatMessage`, `AssistantChatMessage`, and `UserChatMessage` class. The topics covered include:
+In this tutorial, we will explore the `BaseMessage` class. The topics covered include:
 
-1. Introduction to the `BaseMessage` class
-2. Creating a `BaseMessage` instance
-3. Understanding the properties of the `BaseMessage` class
-4. Using the methods of the `BaseMessage` class`BaseMessage`
-5. Subclasses of `BaseMessage`
+1. Introduction to the `BaseMessage` class.
+2. Creating a `BaseMessage` instance.
+3. Understanding the properties of the `BaseMessage` class.
+4. Using the methods of the `BaseMessage` class.
 
 ## Introduction
 
@@ -19,97 +18,102 @@ To create a `BaseMessage` instance, you need to provide the following arguments:
 - `role_name`: The name of the user or assistant role.
 - `role_type`: The type of role, either `RoleType.ASSISTANT` or `RoleType.USER`.
 - `meta_dict`: An optional metadata dictionary for the message.
-- `role`: The role of the message in the OpenAI chat system, either `"system"`, `"user"`, or `"assistant"`.
 - `content`: The content of the message.
 
 Here's an example of creating a `BaseMessage` instance:
 
 ```python
-from camel.messages import BaseMessage, RoleType
+from camel.messages import BaseMessage
+from camel.types import RoleType
 
 message = BaseMessage(
     role_name="test_user",
     role_type=RoleType.USER,
-    meta_dict={"key": "value"},
-    role="user",
     content="test content"
 )
 ```
 
-## Understanding the Properties of the BaseMessage Class
+Additionally, the BaseMessage class provides class methods to easily create user and assistant agent messages:
 
-The `BaseMessage` class has the following properties:
+1. Creating a user agent message:
 
-- `role_name`: A string representing the name of the user or assistant role.
-- `role_type`: An instance of the `RoleType` enumeration, indicating whether the role is a user or an assistant.
-- `meta_dict`: A dictionary containing additional metadata for the message.
-- `role`: A string representing the role of the message in the OpenAI chat system.
-- `content`: A string containing the content of the message.
+    ```python
+    from camel.messages import BaseMessage
 
-In the example provided earlier, the `role_name` is `"test_user"`, the `role_type` is `RoleType.USER`, the `meta_dict` is `{"key": "value"}`, the `role` is `"user"`, and the `content` is `"test content"`.
+    user_message = BaseMessage.make_user_message(
+        role_name="user_name", 
+        content="test content for user",
+    )
+    ```
+
+2. Creating an assistant agent message:
+
+    ```python
+    from camel.messages import BaseMessage
+    
+    assistant_message = BaseMessage.make_assistant_message(
+        role_name="assistant_name",
+        content="test content for assistant",
+    )
+    ```
 
 ## Using the Methods of the `BaseMessage` Class
 
-The `BaseMessage` class provides methods for converting the message to different message types, such as `UserChatMessage`, `AssistantChatMessage`, and various OpenAI message types. Here are some examples:
+The `BaseMessage` class offers several methods:
 
-1. Converting to a `UserChatMessage` object:
+1. Creating a new instance with updated content:
 
-```python
-from camel.messages import UserChatMessage
+    ```python
+    new_message = message.create_new_instance("new test content")
+    print(isinstance(new_message, BaseMessage))
+    >>> True
+    ```
 
-user_chat_message = message.to_user_chat_message()
-print(isinstance(user_chat_message, UserChatMessage))
->>> True
-```
+2. Converting to an `OpenAIMessage` object:
 
-2. Converting to an `AssistantChatMessage` object:
+    ```python
+    openai_message = message.to_openai_message(role_at_backend=OpenAIBackendRole.USER)
+    print(openai_message == {"role": "user", "content": "test content"})
+    >>> True
+    ```
 
-```python
-from camel.messages import AssistantChatMessage
+3. Converting to an `OpenAISystemMessage` object:
 
-assistant_chat_message = message.to_assistant_chat_message()
-print(isinstance(assistant_chat_message, AssistantChatMessage))
->>> True
-```
+    ```python
+    openai_system_message = message.to_openai_system_message()
+    print(openai_system_message == {"role": "system", "content": "test content"})
+    >>> True
+    ```
 
-3. Converting to an `OpenAIMessage` object:
+4. Converting to an `OpenAIUserMessage` object:
 
-```python
-openai_message = message.to_openai_message()
-print(openai_message == {"role": "user", "content": "test content"})
->>> True
-```
+    ```python
+    openai_user_message = message.to_openai_user_message()
+    print(openai_user_message == {"role": "user", "content": "test content"})
+    >>> True
+    ```
 
-4. Converting to a dictionary:
+5. Converting to an `OpenAIAssistantMessage` object:
 
-```python
-message_dict = message.to_dict()
-print(message_dict == {
-    "role_name": "test_user",
-    "role_type": "USER",
-    "key": "value",
-    "role": "user",
-    "content": "test content"
-})
->>> True
-```
+    ```python
+    openai_assistant_message = message.to_openai_assistant_message()
+    print(openai_assistant_message == {"role": "assistant", "content": "test content"})
+    >>> True
+    ```
+
+6. Converting to a dictionary:
+
+    ```python
+    message_dict = message.to_dict()
+    print(message_dict == {
+        "role_name": "test_user",
+        "role_type": "USER",
+        "content": "test content"
+    })
+    >>> True
+    ```
+
 
 These methods allow you to convert a `BaseMessage` instance into different message types depending on your needs.
 
-## Subclasses of `BaseMessage`
-
-In this session, we will introduce the subclasses of the `BaseMessage` class. Each of these subclasses has some default properties pre-defined, making it convenient to create message instances of specific types.
-
-* `SystemMessage` is a class for system messages used in the CAMEL chat system. By default, the `role` is set to `"system"` and the `content` is an empty string `""`
-
-* `AssistantSystemMessage` is a class for system messages from the assistant role used in the CAMEL chat system. By default, the `role_type` is set to `RoleType.ASSISTANT`, the `role` is set to `"system"`, and the `content` is an empty string `""`.
-
-* `UserSystemMessage` is a class for system messages from the user role used in the CAMEL chat system. By default, the `role_type` is set to `RoleType.USER`, the `role` is set to `"system"`, and the `content` is an empty string `""`.
-
-* `ChatMessage` is a base class for chat messages used in the CAMEL chat system. By default, the `content` is an empty string `""`.
-
-* `AssistantChatMessage` is a class for chat messages from the assistant role used in the CAMEL chat system. By default, the `role_type` is set to `RoleType.ASSISTANT`, the `role` is set to `"assistant"`, and the `content` is an empty string `""`.
-
-* `UserChatMessage` is a class for chat messages from the user role used in the CAMEL chat system. By default, the `role_type` is set to `RoleType.USER`, the `role` is set to `"user"`, and the `content` is an empty string `""`.
-
-These subclasses allow you to create message instances with specific roles and types easily. You can use them to create, manage, and manipulate messages in the CAMEL chat system with more context and clarity.
+In this session, we introduced the `BaseMessage` class and its conversion to different types of messages. These components play essential roles in the CAMEL chat system, facilitating the creation, management, and interpretation of messages with clarity.

@@ -17,7 +17,7 @@ from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.prompts import PromptTemplateGenerator, TextPrompt
-from camel.typing import ModelType, RoleType, TaskType
+from camel.types import ModelType, RoleType, TaskType
 from camel.utils import get_task_list
 
 
@@ -30,8 +30,8 @@ class TaskSpecifyAgent(ChatAgent):
         task_specify_prompt (TextPrompt): The prompt for specifying the task.
 
     Args:
-        model (ModelType, optional): The type of model to use for the agent.
-            (default: :obj:`ModelType.GPT_3_5_TURBO`)
+        model_type (ModelType, optional): The type of model to use for the
+            agent. (default: :obj:`ModelType.GPT_3_5_TURBO`)
         task_type (TaskType, optional): The type of task for which to generate
             a prompt. (default: :obj:`TaskType.AI_SOCIETY`)
         model_config (Any, optional): The configuration for the model.
@@ -47,7 +47,7 @@ class TaskSpecifyAgent(ChatAgent):
 
     def __init__(
         self,
-        model: Optional[ModelType] = None,
+        model_type: Optional[ModelType] = None,
         task_type: TaskType = TaskType.AI_SOCIETY,
         model_config: Optional[Any] = None,
         task_specify_prompt: Optional[Union[str, TextPrompt]] = None,
@@ -74,7 +74,7 @@ class TaskSpecifyAgent(ChatAgent):
             content="You can make a task more specific.",
         )
 
-        super().__init__(system_message, model=model,
+        super().__init__(system_message, model_type=model_type,
                          model_config=model_config,
                          output_language=output_language)
 
@@ -104,12 +104,13 @@ class TaskSpecifyAgent(ChatAgent):
         task_msg = BaseMessage.make_user_message(role_name="Task Specifier",
                                                  content=task_specify_prompt)
         specifier_response = self.step(task_msg)
-        if len(specifier_response.msgs) == 0:
-            raise RuntimeError("Got no specification message.")
-        specified_task_msg = specifier_response.msgs[0]
 
         if specifier_response.terminated:
             raise RuntimeError("Task specification failed.")
+        if len(specifier_response.msgs) == 0:
+            raise RuntimeError("Got no specification message.")
+
+        specified_task_msg = specifier_response.msgs[0]
 
         return TextPrompt(specified_task_msg.content)
 
@@ -123,8 +124,8 @@ class TaskPlannerAgent(ChatAgent):
             the task into subtasks.
 
     Args:
-        model (ModelType, optional): The type of model to use for the agent.
-            (default: :obj:`ModelType.GPT_3_5_TURBO`)
+        model_type (ModelType, optional): The type of model to use for the
+            agent. (default: :obj:`ModelType.GPT_3_5_TURBO`)
         model_config (Any, optional): The configuration for the model.
             (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
@@ -133,7 +134,7 @@ class TaskPlannerAgent(ChatAgent):
 
     def __init__(
         self,
-        model: Optional[ModelType] = None,
+        model_type: Optional[ModelType] = None,
         model_config: Optional[Any] = None,
         output_language: Optional[str] = None,
     ) -> None:
@@ -147,7 +148,7 @@ class TaskPlannerAgent(ChatAgent):
             content="You are a helpful task planner.",
         )
 
-        super().__init__(system_message, model, model_config,
+        super().__init__(system_message, model_type, model_config,
                          output_language=output_language)
 
     def run(
@@ -172,10 +173,10 @@ class TaskPlannerAgent(ChatAgent):
 
         task_response = self.step(task_msg)
 
-        if len(task_response.msgs) == 0:
-            raise RuntimeError("Got no task planning message.")
         if task_response.terminated:
             raise RuntimeError("Task planning failed.")
+        if len(task_response.msgs) == 0:
+            raise RuntimeError("Got no task planning message.")
 
         sub_tasks_msg = task_response.msgs[0]
         return TextPrompt(sub_tasks_msg.content)
@@ -189,48 +190,60 @@ class TaskCreationAgent(ChatAgent):
     `BabyAGI <https://github.com/yoheinakajima/babyagi>`_.
 
     Attributes:
-        task_creation_prompt (TextPrompt): A prompt for the agent to create
-            new tasks.
+        task_creation_prompt (TextPrompt): A prompt for the agent to
+            create new tasks.
 
     Args:
+        role_name (str): The role name of the Agent to create the task.
         objective (Union[str, TextPrompt]): The objective of the Agent to
             perform the task.
-        model (ModelType, optional): The type of model to use for the agent.
-            (default: :obj:`ModelType.GPT_3_5_TURBO`)
+        model_type (ModelType, optional): The type of model to use for the
+            agent. (default: :obj:`ModelType.GPT_3_5_TURBO`)
         model_config (Any, optional): The configuration for the model.
             (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
+        message_window_size (int, optional): The maximum number of previous
+            messages to include in the context window. If `None`, no windowing
+            is performed. (default: :obj:`None`)
+        max_task_num (int, optional): The maximum number of planned
+            tasks in one round. (default: :obj:3)
     """
 
     def __init__(
         self,
+        role_name: str,
         objective: Union[str, TextPrompt],
-        model: Optional[ModelType] = None,
+        model_type: Optional[ModelType] = None,
         model_config: Optional[Any] = None,
         output_language: Optional[str] = None,
+        message_window_size: Optional[int] = None,
+        max_task_num: Optional[int] = 3,
     ) -> None:
 
         task_creation_prompt = TextPrompt(
-            """Create new tasks with the following objective: {objective}.
-The last completed task has the result:
-{task_result}.
-This result was based on this task: {task}.
-Based on the result, return a list of tasks to be completed in order to meet \
-the objective.
-
-{unsolved_tasks}
-
-Return one task per line in your response.
+            """Create new a task with the following objective: {objective}.
+Never forget you are a Task Creator of {role_name}.
+You must instruct me based on my expertise and your needs to solve the task.
+You should consider past solved tasks and in-progress tasks: {task_list}.
+The new created tasks must not overlap with these past tasks.
 The result must be a numbered list in the format:
 
-1. First task
-2. Second task
+    #. First Task
+    #. Second Task
+    #. Third Task
 
-The number of each entry must be followed by a period. Be concise.""")
+You can only give me up to {max_task_num} tasks at a time. \
+Each task shoud be concise, concrete and doable for a {role_name}.
+You should make task plan and not ask me questions.
+If you think no new tasks are needed right now, write "No tasks to add."
+Now start to give me new tasks one by one. No more than three tasks.
+Be concrete.
+""")
 
         self.task_creation_prompt = task_creation_prompt.format(
-            objective=objective)
+            objective=objective, role_name=role_name,
+            max_task_num=max_task_num)
         self.objective = objective
 
         system_message = BaseMessage(
@@ -240,52 +253,39 @@ The number of each entry must be followed by a period. Be concise.""")
             content="You are a helpful task creator.",
         )
 
-        super().__init__(system_message, model, model_config,
-                         output_language=output_language)
+        super().__init__(system_message, model_type, model_config,
+                         output_language=output_language,
+                         message_window_size=message_window_size)
 
     def run(
         self,
-        previous_task: Union[str, TextPrompt],
-        task_result: Union[str, TextPrompt],
-        task_list: Optional[List[str]] = None,
+        task_list: List[str],
     ) -> List[str]:
         r"""Generate subtasks based on the previous task results and
         incomplete task list.
 
         Args:
-            previous_task (Union[str, TextPrompt]): The last completed task to
-                be used to create future plans.
-            task_result (Union[str, TextPrompt]): The result of last completed
-                task to be used to create future plans.
-            task_list (List[str], optional): The incomplete task list
-                which should not overlap with new created tasks.
-                (default: :obj:`None`)
+            task_list (List[str]): The completed or in-progress
+                tasks which should not overlap with new created tasks.
         Returns:
             List[str]: The new task list generated by the Agent.
         """
-        self.reset()
-        task_creation_prompt = self.task_creation_prompt.format(
-            task=previous_task, task_result=task_result)
-        if task_list is not None:
-            unsolved = (
-                f"These are unsolved tasks: {task_list}.\n"
-                "These new tasks must not overlap with incomplete tasks.")
 
-            task_creation_prompt = task_creation_prompt.format(
-                unsolved_tasks=unsolved)
+        if len(task_list) > 0:
+            task_creation_prompt = self.task_creation_prompt.format(
+                task_list=task_list)
         else:
-            task_creation_prompt = task_creation_prompt.format(
-                unsolved_tasks="")
+            task_creation_prompt = self.task_creation_prompt.format(
+                task_list="")
 
         task_msg = BaseMessage.make_user_message(role_name="Task Creator",
                                                  content=task_creation_prompt)
-
         task_response = self.step(task_msg)
 
-        if len(task_response.msgs) == 0:
-            raise RuntimeError("Got no task creation message.")
         if task_response.terminated:
             raise RuntimeError("Task creation failed.")
+        if len(task_response.msgs) == 0:
+            raise RuntimeError("Got no task creation message.")
 
         sub_tasks_msg = task_response.msgs[0]
         return get_task_list(sub_tasks_msg.content)
@@ -303,37 +303,41 @@ class TaskPrioritizationAgent(ChatAgent):
     Args:
         objective (Union[str, TextPrompt]): The objective of the Agent to
             perform the task.
-        model (ModelType, optional): The type of model to use for the agent.
-            (default: :obj:`ModelType.GPT_3_5_TURBO`)
+        model_type (ModelType, optional): The type of model to use for the
+            agent. (default: :obj:`ModelType.GPT_3_5_TURBO`)
         model_config (Any, optional): The configuration for the model.
             (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
+        message_window_size (int, optional): The maximum number of previous
+            messages to include in the context window. If `None`, no windowing
+            is performed. (default: :obj:`None`)
     """
 
     def __init__(
         self,
         objective: Union[str, TextPrompt],
-        model: Optional[ModelType] = None,
+        model_type: Optional[ModelType] = None,
         model_config: Optional[Any] = None,
         output_language: Optional[str] = None,
+        message_window_size: Optional[int] = None,
     ) -> None:
-
         task_prioritization_prompt = TextPrompt(
             """Prioritize the following tasks : {task_list}.
 Consider the ultimate objective of you: {objective}.
-Tasks should be sorted from highest to lowest priority,
-where higher-priority tasks are those that act as pre-requisites \
-or are more essential for meeting the objective.
-Return one task per line in your response. Do not remove any tasks.
+Tasks should be sorted from highest to lowest priority, where higher-priority \
+tasks are those that act as pre-requisites or are more essential for meeting \
+the objective. Return one task per line in your response.
+Do not remove or modify any tasks.
 The result must be a numbered list in the format:
 
-1. First task
-2. Second task
+    #. First task
+    #. Second task
 
 The entries must be consecutively numbered, starting with 1.
 The number of each entry must be followed by a period.
-Be concise.""")
+Do not include any headers before your ranked list or follow your list \
+with any other output.""")
 
         self.task_prioritization_prompt = task_prioritization_prompt.format(
             objective=objective)
@@ -346,8 +350,9 @@ Be concise.""")
             content="You are a helpful task prioritizer.",
         )
 
-        super().__init__(system_message, model, model_config,
-                         output_language=output_language)
+        super().__init__(system_message, model_type, model_config,
+                         output_language=output_language,
+                         message_window_size=message_window_size)
 
     def run(
         self,
@@ -356,11 +361,10 @@ Be concise.""")
         r"""Prioritize the task list given the agent objective.
 
         Args:
-            task_list (List[str]): The un-prioritized task list of agent.
+            task_list (List[str]): The unprioritized tasks of agent.
         Returns:
             List[str]: The new prioritized task list generated by the Agent.
         """
-        self.reset()
         task_prioritization_prompt = self.task_prioritization_prompt.format(
             task_list=task_list)
 
@@ -369,10 +373,10 @@ Be concise.""")
 
         task_response = self.step(task_msg)
 
-        if len(task_response.msgs) == 0:
-            raise RuntimeError("Got no task prioritization message.")
         if task_response.terminated:
             raise RuntimeError("Task prioritization failed.")
+        if len(task_response.msgs) == 0:
+            raise RuntimeError("Got no task prioritization message.")
 
         sub_tasks_msg = task_response.msgs[0]
         return get_task_list(sub_tasks_msg.content)

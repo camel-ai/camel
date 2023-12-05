@@ -14,9 +14,9 @@
 from mock import patch
 
 import examples.code.role_playing
-from camel.typing import ModelType
+from camel.types import ModelType
 
 
 def test_code_role_playing_example():
     with patch('time.sleep', return_value=None):
-        examples.code.role_playing.main(ModelType.STUB)
+        examples.code.role_playing.main(ModelType.STUB, chat_turn_limit=2)

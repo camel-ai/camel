@@ -15,12 +15,11 @@ import pytest
 
 from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
-from camel.typing import ModelType
+from camel.types import ModelType
 
 parametrize = pytest.mark.parametrize('model', [
     pytest.param(ModelType.GPT_3_5_TURBO, marks=pytest.mark.model_backend),
-    pytest.param(ModelType.GPT_3_5_TURBO_16K, marks=pytest.mark.model_backend),
-    pytest.param(ModelType.GPT_4, marks=pytest.mark.model_backend),
+    pytest.param(ModelType.GPT_4_TURBO, marks=pytest.mark.model_backend),
     ModelType.STUB,
 ])
 
@@ -39,7 +38,7 @@ def test_model_factory(model):
             "content": "Hello",
         },
     ]
-    response = model_inst.run(messages)
+    response = model_inst.run(messages).model_dump()
     assert isinstance(response, dict)
     assert 'id' in response
     assert isinstance(response['id'], str)
