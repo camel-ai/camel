@@ -28,7 +28,7 @@ from .token_counting import (get_model_encoding, BaseTokenCounter,
 
 __all__ = [
     'count_tokens_openai_chat_models',
-    'openai_api_key_required',
+    'api_key_required',
     'print_text_animated',
     'get_prompt_template_key_words',
     'get_first_int',

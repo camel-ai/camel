@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from abc import ABC, abstractmethod
 from typing import List
-
+from anthropic import Anthropic, AI_PROMPT, HUMAN_PROMPT
 from camel.messages import OpenAIMessage
 from camel.types import ModelType
 
@@ -72,7 +72,6 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
                 ret += role + ":"
         return ret
     elif model.is_anthropic:
-        from anthropic import AI_PROMPT, HUMAN_PROMPT
 
         # use XML tag to decorate prompt
         # https://docs.anthropic.com/claude/docs/constructing-a-prompt#mark-different-parts-of-the-prompt
@@ -250,7 +249,6 @@ class AnthropicTokenCounter(BaseTokenCounter):
             model_type (ModelType): Model type for which tokens will be
                 counted.
         """
-        from anthropic import Anthropic
 
         self.model_type = model_type
         self.client = Anthropic()

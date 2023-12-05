@@ -16,12 +16,12 @@ from typing import Any, Dict, List, Optional
 
 from anthropic import AI_PROMPT, HUMAN_PROMPT, Anthropic
 from anthropic.types import Completion
-from openai.openai_object import OpenAIObject
+from openai.types.chat.chat_completion import ChatCompletion
 
-from camel.configs import ANTHROPIC_API_PARAMS_WITH_FUNCTIONS
+from camel.configs import ANTHROPIC_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
-from camel.typing import ModelType
+from camel.types import ModelType
 from camel.utils import AnthropicTokenCounter, BaseTokenCounter
 from camel.utils.token_counting import messages_to_prompt
 
@@ -42,17 +42,20 @@ class AnthropicModel(BaseModelBackend):
         return messages_to_prompt(messages, self.model_type)
 
     def _convert_response_from_anthropic_to_openai(self, response: Completion):
-        obj = OpenAIObject.construct_from(
-            dict(
-                id=None, object="chat.completion", created=0,
-                model=response.model, choices=[
+        # openai ^1.0.0 format, reference openai/types/chat/chat_completion.py
+        obj = ChatCompletion.construct(
+                id=None, 
+                choices=[
                     dict(
                         index=0, message={
                             "role": "assistant",
                             "content": response.completion
                         }, finish_reason=response.stop_reason)
-                ], usage=dict(completion_tokens=self.count_tokens_from_prompt(
-                    response.completion))))
+                ], 
+                created=None,
+                model=response.model, 
+                object="chat.completion"
+                )
         return obj
 
     @property
@@ -89,11 +92,8 @@ class AnthropicModel(BaseModelBackend):
             prompt=f"{HUMAN_PROMPT} {prompt} {AI_PROMPT}",
             **self.model_config_dict)
 
-        # format response to openai object
+        # format response to openai format
         response = self._convert_response_from_anthropic_to_openai(response)
-        response["usage"]["prompt_tokens"] = prompt_tokens
-        completion_tokens = response["usage"]["completion_tokens"]
-        response["usage"]["total_tokens"] = prompt_tokens + completion_tokens
 
         return response
 
@@ -107,7 +107,7 @@ class AnthropicModel(BaseModelBackend):
                 :obj:`model_path` or :obj:`server_url`.
         """
         for param in self.model_config_dict:
-            if param not in ANTHROPIC_API_PARAMS_WITH_FUNCTIONS:
+            if param not in ANTHROPIC_API_PARAMS:
                 raise ValueError(f"Unexpected argument `{param}` is "
                                  "input into Anthropic model backend.")
 

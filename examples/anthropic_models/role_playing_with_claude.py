@@ -16,14 +16,14 @@ from colorama import Fore
 from camel.configs import AnthropicConfig
 from camel.societies import RolePlaying
 from camel.utils import print_text_animated
-
+from camel.types import ModelType
 
 def main(model_type=None) -> None:
     task_prompt = "Develop a trading bot for the stock market"
 
     agent_kwargs = {
         role: dict(
-            model=model_type,
+            model_type=model_type,
             model_config=AnthropicConfig(),
         )
         for role in ["assistant", "user", "task-specify"]
@@ -81,6 +81,5 @@ def main(model_type=None) -> None:
 
 
 if __name__ == "__main__":
-    from camel.typing import ModelType
 
-    main(ModelType.CLAUDE_2)
+    main(model_type=ModelType.CLAUDE_2)
