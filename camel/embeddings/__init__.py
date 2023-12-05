@@ -11,17 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-
-from .math_functions import MATH_FUNCS
-from .openai_function import OpenAIFunction
-from .search_functions import SEARCH_FUNCS
-from .weather_functions import WEATHER_FUNCS
-from .unstructured_io_fuctions import UnstructuredModules
+from .base import BaseEmbedding
+from .openai_embedding import OpenAIEmbedding
 
 __all__ = [
-    'OpenAIFunction',
-    'MATH_FUNCS',
-    'SEARCH_FUNCS',
-    'WEATHER_FUNCS',
-    'UnstructuredModules',
+    "BaseEmbedding",
+    "OpenAIEmbedding",
 ]

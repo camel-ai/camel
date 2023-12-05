@@ -11,17 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from camel.embeddings import OpenAIEmbedding
 
-from .math_functions import MATH_FUNCS
-from .openai_function import OpenAIFunction
-from .search_functions import SEARCH_FUNCS
-from .weather_functions import WEATHER_FUNCS
-from .unstructured_io_fuctions import UnstructuredModules
 
-__all__ = [
-    'OpenAIFunction',
-    'MATH_FUNCS',
-    'SEARCH_FUNCS',
-    'WEATHER_FUNCS',
-    'UnstructuredModules',
-]
+def test_openai_embedding():
+    text = "test embedding text."
+    embedding_model = OpenAIEmbedding()
+    vector = embedding_model.embed(text)
+    assert len(vector) == embedding_model.get_output_dim()

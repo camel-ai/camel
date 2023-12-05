@@ -39,38 +39,28 @@ class ModelType(Enum):
 
     @property
     def value_for_tiktoken(self) -> str:
-        return self.value if self.name != "STUB" else "gpt-3.5-turbo"
+        return self.value if self is not ModelType.STUB else "gpt-3.5-turbo"
 
     @property
     def is_openai(self) -> bool:
-        r"""Returns whether this type of models is an OpenAI-released model.
-
-        Returns:
-            bool: Whether this type of models belongs to OpenAI.
-        """
-        if self.name in {
-                "GPT_3_5_TURBO",
-                "GPT_3_5_TURBO_16K",
-                "GPT_4",
-                "GPT_4_32K",
-                "GPT_4_TURBO",
-                "GPT_4_TURBO_VISION",
-        }:
-            return True
-        else:
-            return False
+        r"""Returns whether this type of models is an OpenAI-released model."""
+        return self in {
+            ModelType.GPT_3_5_TURBO,
+            ModelType.GPT_3_5_TURBO_16K,
+            ModelType.GPT_4,
+            ModelType.GPT_4_32K,
+            ModelType.GPT_4_TURBO,
+            ModelType.GPT_4_TURBO_VISION,
+        }
 
     @property
     def is_open_source(self) -> bool:
-        r"""Returns whether this type of models is open-source.
-
-        Returns:
-            bool: Whether this type of models is open-source.
-        """
-        if self.name in {"LLAMA_2", "VICUNA", "VICUNA_16K"}:
-            return True
-        else:
-            return False
+        r"""Returns whether this type of models is open-source."""
+        return self in {
+            ModelType.LLAMA_2,
+            ModelType.VICUNA,
+            ModelType.VICUNA_16K,
+        }
 
     @property
     def token_limit(self) -> int:
@@ -121,6 +111,40 @@ class ModelType(Enum):
                     or "llama2" in model_name.lower())
         else:
             return self.value in model_name.lower()
+
+
+class EmbeddingModelType(Enum):
+    ADA_2 = "text-embedding-ada-002"
+    ADA_1 = "text-embedding-ada-001"
+    BABBAGE_1 = "text-embedding-babbage-001"
+    CURIE_1 = "text-embedding-curie-001"
+    DAVINCI_1 = "text-embedding-davinci-001"
+
+    @property
+    def is_openai(self) -> bool:
+        r"""Returns whether this type of models is an OpenAI-released model."""
+        return self in {
+            EmbeddingModelType.ADA_2,
+            EmbeddingModelType.ADA_1,
+            EmbeddingModelType.BABBAGE_1,
+            EmbeddingModelType.CURIE_1,
+            EmbeddingModelType.DAVINCI_1,
+        }
+
+    @property
+    def output_dim(self) -> int:
+        if self is EmbeddingModelType.ADA_2:
+            return 1536
+        elif self is EmbeddingModelType.ADA_1:
+            return 1024
+        elif self is EmbeddingModelType.BABBAGE_1:
+            return 2048
+        elif self is EmbeddingModelType.CURIE_1:
+            return 4096
+        elif self is EmbeddingModelType.DAVINCI_1:
+            return 12288
+        else:
+            raise ValueError(f"Unknown model type {self}.")
 
 
 class TaskType(Enum):

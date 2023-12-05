@@ -65,8 +65,8 @@ poetry shell
 # It takes about 75s to resolve dependencies and 10s to install them, depending on your hardware and network,
 poetry install --with dev,docs
 
-# Or if you want to use "huggingface agent"
-poetry install --with dev,docs -E huggingface-agent # (Optional)
+# Or if you want to use all other extra packages
+poetry install --with dev,docs -E all  # (Optional)
 
 # The following command installs a pre-commit hook into the local git repo,
 $ so every commit gets auto-formatted and linted.
