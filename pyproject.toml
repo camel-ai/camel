@@ -50,7 +50,6 @@ wikipedia = { version = "^1", optional = true }
 pyowm = { version = "^3.3.0", optional = true }
 unstructured = { version = "^0.10.30", optional = true }
 argilla = { version = "^1.19.0", optional = true }
-qdrant-client = { version = "^1.6.4", optional = true }
 
 [tool.poetry.extras]
 huggingface-agent = [
@@ -62,7 +61,6 @@ huggingface-agent = [
     "soundfile",
     "sentencepiece",
     "opencv-python",
-    "qdrant-client",
 ]
 
 tools = [
@@ -169,5 +167,7 @@ module = [
     "docx2txt",
     "PyMuPDF",
     "fitz",
+    "unstructured.*",
+    "argilla.*",
 ]
 ignore_missing_imports = true

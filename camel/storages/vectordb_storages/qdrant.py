@@ -20,9 +20,9 @@ from camel.storages.vectordb_storages import (
     VectorDBQuery,
     VectorDBQueryResult,
     VectorDBStatus,
-    VectorDistance,
     VectorRecord,
 )
+from camel.types import VectorDistance
 
 
 class QdrantStorage(BaseVectorStorage):
