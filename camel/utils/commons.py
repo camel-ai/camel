@@ -44,7 +44,7 @@ def client():
         """
         Uses .env file to load OPENAI_API_KEY
         but is overridden by export OPENAI_API_KEY=...
-        
+
         This client should be called once and
         reimported everywhere else to instantiate the openai client
         """
