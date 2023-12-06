@@ -15,7 +15,7 @@ from typing import Any, List
 
 from camel.embeddings import BaseEmbedding
 from camel.types import EmbeddingModelType
-from camel.utils import openai_api_key_required, client
+from camel.utils import client, openai_api_key_required
 
 
 class OpenAIEmbedding(BaseEmbedding[str]):

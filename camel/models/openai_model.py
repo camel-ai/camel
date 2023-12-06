@@ -22,8 +22,8 @@ from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
+    client,
     openai_api_key_required,
-    client
 )
 
 

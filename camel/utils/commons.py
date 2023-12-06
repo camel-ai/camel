@@ -17,11 +17,7 @@ import re
 import socket
 import time
 import zipfile
-import requests
-
-
 from functools import wraps
-from openai import OpenAI
 from typing import (
     Any,
     Callable,
@@ -34,27 +30,32 @@ from typing import (
     cast,
 )
 from urllib.parse import urlparse
+
+import requests
 from dotenv import load_dotenv
+from openai import OpenAI
 
 from camel.types import TaskType
 
 F = TypeVar('F', bound=Callable[..., Any])
 
+
 def client():
-        """
+    """
         Uses .env file to load OPENAI_API_KEY
         but is overridden by export OPENAI_API_KEY=...
 
         This client should be called once and
         reimported everywhere else to instantiate the openai client
         """
-        load_dotenv()
-        url = os.environ.get('OPENAI_API_BASE_URL', None)
-        return OpenAI(
-            base_url=url,
-            timeout=60,
-            max_retries=3,
-        )
+    load_dotenv()
+    url = os.environ.get('OPENAI_API_BASE_URL', None)
+    return OpenAI(
+        base_url=url,
+        timeout=60,
+        max_retries=3,
+    )
+
 
 def openai_api_key_required(func: F) -> F:
     r"""Decorator that checks if the OpenAI API key is available in the
