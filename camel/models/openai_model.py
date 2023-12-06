@@ -11,10 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import os
 from typing import Any, Dict, List, Optional, Union
 
-from openai import OpenAI, Stream
+from openai import Stream
 
 from camel.configs import OPENAI_API_PARAMS_WITH_FUNCTIONS
 from camel.messages import OpenAIMessage

@@ -13,8 +13,6 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, List
 
-from openai import OpenAI
-
 from camel.embeddings import BaseEmbedding
 from camel.types import EmbeddingModelType
 from camel.utils import openai_api_key_required, client

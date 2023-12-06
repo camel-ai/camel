@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Dict, List, Optional, Union
 
-from openai import OpenAI, Stream
+from openai import Stream
 
 from camel.configs import OPENAI_API_PARAMS
 from camel.messages import OpenAIMessage
