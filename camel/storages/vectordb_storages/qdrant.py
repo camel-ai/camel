@@ -15,15 +15,6 @@ from dataclasses import asdict
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
-from qdrant_client import QdrantClient
-from qdrant_client.http.models import (
-    Distance,
-    PointIdsList,
-    PointStruct,
-    UpdateStatus,
-    VectorParams,
-)
-
 from camel.storages.vectordb_storages import (
     BaseVectorStorage,
     VectorDBQuery,
@@ -82,6 +73,13 @@ class QdrantStorage(BaseVectorStorage):
         delete_collection: bool = False,
         **kwargs: Any,
     ) -> None:
+        try:
+            from qdrant_client import QdrantClient
+        except ImportError:
+            raise ImportError(
+                "Please install `qdrant-client` first. You can install it by "
+                "running `pip install qdrant-client`.")
+
         self.vector_dim = vector_dim
         if url_and_api_key is not None:
             self._client = QdrantClient(
@@ -139,6 +137,7 @@ class QdrantStorage(BaseVectorStorage):
                 for vector similarity. (default: :obj:`VectorDistance.COSINE`)
             **kwargs (Any): Additional keyword arguments.
         """
+        from qdrant_client.http.models import Distance, VectorParams
         distance_map = {
             VectorDistance.DOT: Distance.DOT,
             VectorDistance.COSINE: Distance.COSINE,
@@ -176,6 +175,8 @@ class QdrantStorage(BaseVectorStorage):
             Dict[str, Any]: A dictionary containing details about the
                 collection.
         """
+        from qdrant_client.http.models import VectorParams
+
         # TODO: check more information
         collection_info = self._client.get_collection(
             collection_name=collection)
@@ -225,6 +226,7 @@ class QdrantStorage(BaseVectorStorage):
         Raises:
             RuntimeError: If there was an error in the addition process.
         """
+        from qdrant_client.http.models import PointStruct, UpdateStatus
         self.validate_vector_dimensions(records)
         qdrant_points = [PointStruct(**asdict(p)) for p in records]
         op_info = self._client.upsert(
@@ -236,7 +238,7 @@ class QdrantStorage(BaseVectorStorage):
         if op_info.status != UpdateStatus.COMPLETED:
             raise RuntimeError(
                 "Failed to add vectors in Qdrant, operation info: "
-                f"{op_info}")
+                f"{op_info}.")
 
     def delete(
         self,
@@ -253,6 +255,7 @@ class QdrantStorage(BaseVectorStorage):
         Raises:
             RuntimeError: If there is an error during the deletion process.
         """
+        from qdrant_client.http.models import PointIdsList, UpdateStatus
         points = cast(List[Union[str, int]], ids)
         op_info = self._client.delete(
             collection_name=self.collection,
@@ -319,5 +322,6 @@ class QdrantStorage(BaseVectorStorage):
         )
 
     @property
-    def client(self) -> QdrantClient:
+    def client(self) -> Any:
+        r"""Provides access to the underlying vector database client."""
         return self._client

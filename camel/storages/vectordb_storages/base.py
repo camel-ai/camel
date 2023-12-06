@@ -58,7 +58,7 @@ class VectorDBQuery:
         query_vector (List[float]): The numerical representation of the query
             vector.
         top_k (int, optional): The number of top similar vectors to retrieve
-            from the database. (default: `1`)
+            from the database. (default: :obj:`1`)
     """
     query_vector: List[float]
     top_k: int = 1
@@ -216,7 +216,5 @@ class BaseVectorStorage(ABC):
     @property
     @abstractmethod
     def client(self) -> Any:
-        r"""Provides access to the underlying client used for interacting with
-        the vector storage system.
-        """
+        r"""Provides access to the underlying vector database client."""
         pass
