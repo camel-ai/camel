@@ -43,8 +43,8 @@ class EmbodiedAgent(ChatAgent):
             the emboied agent. (default: :obj:`None`)
         code_interpreter (BaseInterpreter, optional): The code interpreter to
             execute codes. If `code_interpreter` and `tool_agent` are both
-            `None`, default to `SubProcessInterpreter`. If
-            `code_interpreter=None` and `tool_agents!=None`, default to
+            `None`, default to `SubProcessInterpreter`. If `code_interpreter`
+            is `None` and `tool_agents` is not `None`, default to
             `InternalPythonInterpreter`.  (default: :obj:`None`)
         verbose (bool, optional): Whether to print the critic's messages.
         logger_color (Any): The color of the logger displayed to the user.
