@@ -176,6 +176,33 @@ python examples/ai_society/role_playing.py
 Please note that the environment variable is session-specific. If you open a new terminal window or tab, you will need to set the API key again in that new session.
 
 
+**For Azure OpenAI API**
+
+First, you need to add USE_AZURE_API environment variable to enable Azure OpenAI API. Then add your Azure OpenAI API infos to system environment variables. The method to do this depends on your operating system and the shell you're using. Take Bash shell as an example:
+
+```bash
+export USE_AZURE_API
+# Export your Azure OpenAI API infos
+export OPENAI_API_BASE_URL=<inert your Azure OpenAI API Endpoint>,
+export AZURE_OPENAI_API_KEY= <insert your Azure OpenAI API key>,
+export AZURE_MODEL_DEPLOYMENT_NAME=<insert your Azure OpenAI model's deployment name>
+```
+
+Replace `<insert your OpenAI API Endpoint>` with your actual Azure OpenAI API endpoint in each case. Make sure there are no spaces around the `=` sign.
+Replace `<insert your Azure OpenAI API key>` with your actual Azure OpenAI API key in each case. Make sure there are no spaces around the `=` sign.
+Replace `<insert your Azure OpenAI model's deployment name>` with your actual Azure OpenAI API model deployment name in each case. Make sure there are no spaces around the `=` sign.
+After setting the OpenAI API key, you can run the script:
+
+```bash
+# You can change the role pair and initial prompt in role_playing.py
+python examples/ai_society/role_playing.py --model-type <Model type of the deployed model>
+```
+
+Replace `<Model type of the deployed model>` with the Azure OpenAI API model type of the deployed model. (This model type should match the corresponding name of ModelType in camel/types/enums.py. e.g. GPT_4)
+
+Please note that the environment variable is session-specific. If you open a new terminal window or tab, you will need to set the API key again in that new session.
+
+
 ## Use Open-Source Models as Backends
 
 The basic workflow of using an open-sourced model as the backend is based on an external server running LLM inference service, e.g. during the development we chose [FastChat](https://github.com/lm-sys/FastChat) to run the service. 
