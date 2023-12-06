@@ -13,6 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .python_interpreter import PythonInterpreter
 from .commons import (
+    client,
     openai_api_key_required,
     print_text_animated,
     get_prompt_template_key_words,
@@ -30,6 +31,7 @@ from .token_counting import (
 )
 
 __all__ = [
+    'client',
     'count_tokens_openai_chat_models',
     'openai_api_key_required',
     'print_text_animated',

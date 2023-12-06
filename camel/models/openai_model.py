@@ -24,6 +24,7 @@ from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
     openai_api_key_required,
+    client
 )
 
 
@@ -41,8 +42,7 @@ class OpenAIModel(BaseModelBackend):
                 be fed into openai.ChatCompletion.create().
         """
         super().__init__(model_type, model_config_dict)
-        url = os.environ.get('OPENAI_API_BASE_URL', None)
-        self._client = OpenAI(timeout=60, max_retries=3, base_url=url)
+        self._client = client()
         self._token_counter: Optional[BaseTokenCounter] = None
 
     @property
