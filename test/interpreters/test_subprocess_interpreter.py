@@ -82,34 +82,6 @@ echo $(undefined_command)
     assert "undefined_command: command not found" in result
 
 
-def test_run_fish_code(subprocess_interpreter):
-    fish_code = """
-function add
-    echo (math $argv[1] + $argv[2])
-end
-
-set result (add 10 20)
-echo $result
-"""
-    result = subprocess_interpreter.run(fish_code, "fish")
-    assert "stdout: 30\n" in result
-    assert "stderr: " in result
-
-
-def test_fish_stderr(subprocess_interpreter):
-    fish_code = """
-function main
-    undefined_function
-end
-
-main
-"""
-    result = subprocess_interpreter.run(fish_code, "fish")
-    assert "stdout: " in result
-    assert "stderr: " in result
-    assert "fish: Unknown command: undefined_function" in result
-
-
 def test_run_file_not_found(subprocess_interpreter):
     result = subprocess_interpreter.run_file(Path("/path/to/nonexistent/file"),
                                              "python")

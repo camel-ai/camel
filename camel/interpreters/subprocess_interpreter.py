@@ -28,7 +28,7 @@ class SubprocessInterpreter(BaseInterpreter):
     strings in a subprocess.
 
     This class handles the execution of code in different scripting languages
-    (currently Python, Bash, and Fish) within a subprocess, capturing their
+    (currently Python and Bash) within a subprocess, capturing their
     stdout and stderr streams, and allowing user checking before executing code
     strings.
 
@@ -44,13 +44,11 @@ class SubprocessInterpreter(BaseInterpreter):
     _CODE_EXECUTE_CMD = {
         "python": "python {file_name}",
         "bash": "bash {file_name}",
-        "fish": "fish {file_name}",
     }
 
     _CODE_EXTENTION = {
         "python": "py",
         "bash": "sh",
-        "fish": "fish",
     }
 
     _CODE_TYPE = {
@@ -61,7 +59,6 @@ class SubprocessInterpreter(BaseInterpreter):
         "shell": "bash",
         "bash": "bash",
         "sh": "bash",
-        "fish": "fish"
     }
 
     def __init__(
