@@ -144,12 +144,12 @@ class EmbodiedAgent(ChatAgent):
 
         if codes is not None:
             try:
-                content = "\n> Executed Results:"
+                content = "\n> Executed Results:\n"
                 for block_idx, code in enumerate(codes):
                     executed_output = self.code_interpreter.run(
                         code, code.code_type)
-                    content += (f"Executing code block {block_idx}:\n" +
-                                executed_output + "\n")
+                    content += (f"Executing code block {block_idx}: {{\n" +
+                                executed_output + "}\n")
             except InterruptedError as e:
                 content = (f"\n> Running code fail: {e}\n"
                            "Please regenerate the code.")
