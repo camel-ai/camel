@@ -50,6 +50,7 @@ wikipedia = { version = "^1", optional = true }
 pyowm = { version = "^3.3.0", optional = true }
 unstructured = { version = "^0.10.30", optional = true }
 argilla = { version = "^1.19.0", optional = true }
+qdrant-client = { version = "^1.6.4", optional = true }
 
 [tool.poetry.extras]
 huggingface-agent = [
@@ -73,8 +74,13 @@ tools = [
     "argilla",
 ]
 
+vector-database = [
+    "qdrant-client",
+]
+
 
 all = [
+    # huggingface-agent
     "transformers",
     "diffusers",
     "accelerate",
@@ -83,6 +89,7 @@ all = [
     "soundfile",
     "sentencepiece",
     "opencv-python",
+    # tools
     "beautifulsoup4",
     "docx2txt",
     "PyMuPDF",
@@ -90,6 +97,8 @@ all = [
     "pyowm",
     "unstructured",
     "argilla",
+    # vector-database
+    "qdrant-client",
 ]
 
 [tool.poetry.group.dev]
