@@ -31,7 +31,13 @@ def search_wiki(entity: str) -> str:
         string: The search result. If the page corresponding to the entity
             exists, return the summary of this entity in a string.
     """
-    import wikipedia
+    try:
+        import wikipedia
+    except ImportError:
+        raise ImportError(
+            "Please install `wikipedia` first. You can install it by running "
+            "`pip install wikipedia`.")
+
     result: str
 
     try:

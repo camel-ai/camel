@@ -14,23 +14,23 @@
 from colorama import Fore
 
 from camel.societies import RolePlaying
-from camel.typing import TaskType
+from camel.types import TaskType
 from camel.utils import print_text_animated
 
 
-def main(model_type=None) -> None:
+def main(model_type=None, chat_turn_limit=50) -> None:
     task_prompt = "Develop a poll app"
     language = "JavaScript"
     domain = "Sociology"
     meta_dict = {"language": language, "domain": domain}
     role_play_session = RolePlaying(
         assistant_role_name=f"{language} Programmer",
-        assistant_agent_kwargs=dict(model=model_type),
+        assistant_agent_kwargs=dict(model_type=model_type),
         user_role_name=f"Person working in {domain}",
-        user_agent_kwargs=dict(model=model_type),
+        user_agent_kwargs=dict(model_type=model_type),
         task_prompt=task_prompt,
         with_task_specify=True,
-        task_specify_agent_kwargs=dict(model=model_type),
+        task_specify_agent_kwargs=dict(model_type=model_type),
         task_type=TaskType.CODE,
         extend_sys_msg_meta_dicts=[meta_dict, meta_dict],
         extend_task_specify_meta_dict=meta_dict,
@@ -48,7 +48,7 @@ def main(model_type=None) -> None:
         f"Specified task prompt:\n{role_play_session.specified_task_prompt}\n")
     print(Fore.RED + f"Final task prompt:\n{role_play_session.task_prompt}\n")
 
-    chat_turn_limit, n = 50, 0
+    n = 0
     input_assistant_msg, _ = role_play_session.init_chat()
     while n < chat_turn_limit:
         n += 1

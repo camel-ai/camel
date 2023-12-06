@@ -19,7 +19,7 @@ from camel.messages import BaseMessage
 
 class BaseTerminator(ABC):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         self._terminated: bool = False
         self._termination_reason: Optional[str] = None
 

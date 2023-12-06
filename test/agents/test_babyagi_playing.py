@@ -16,7 +16,7 @@ import pytest
 from camel.agents import ChatAgent, TaskCreationAgent, TaskPrioritizationAgent
 from camel.messages import BaseMessage
 from camel.societies import BabyAGI
-from camel.typing import ModelType, RoleType, TaskType
+from camel.types import ModelType, RoleType, TaskType
 
 parametrize = pytest.mark.parametrize('model', [
     None,
@@ -32,10 +32,10 @@ def test_babyagi_playing_init(model: ModelType):
 
     babyagi_playing = BabyAGI(
         assistant_role_name="Python Programmer",
-        assistant_agent_kwargs=dict(model=model),
+        assistant_agent_kwargs=dict(model_type=model),
         user_role_name="Stock Trader",
         task_prompt=task_prompt,
-        task_specify_agent_kwargs=dict(model=model),
+        task_specify_agent_kwargs=dict(model_type=model),
         message_window_size=5,
     )
 
@@ -60,10 +60,10 @@ def test_babyagi_playing_step(model: ModelType):
 
     babyagi_playing = BabyAGI(
         assistant_role_name="Python Programmer",
-        assistant_agent_kwargs=dict(model=model),
+        assistant_agent_kwargs=dict(model_type=model),
         user_role_name="Stock Trader",
         task_prompt=task_prompt,
-        task_specify_agent_kwargs=dict(model=model),
+        task_specify_agent_kwargs=dict(model_type=model),
         message_window_size=5,
     )
 
@@ -82,7 +82,3 @@ def test_babyagi_playing_step(model: ModelType):
 
     assert len(babyagi_playing.subtasks) > 0
     assert len(babyagi_playing.solved_subtasks) == 1
-
-    assert len(babyagi_playing.assistant_agent.stored_messages) > 0
-    assert len(babyagi_playing.task_creation_agent.stored_messages) > 0
-    assert len(babyagi_playing.task_prioritization_agent.stored_messages) > 0

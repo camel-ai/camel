@@ -18,7 +18,7 @@ from camel.prompts import (
     TextPrompt,
     TextPromptDict,
 )
-from camel.typing import RoleType
+from camel.types import RoleType
 
 
 # flake8: noqa :E501

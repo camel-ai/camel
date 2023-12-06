@@ -129,6 +129,7 @@ First, you need to add your OpenAI API key to system environment variables. The 
 ```bash
 # Export your OpenAI API key
 export OPENAI_API_KEY=<insert your OpenAI API key>
+OPENAI_API_BASE_URL=<inert your OpenAI API BASE URL>  #(Should you utilize an OpenAI proxy service, kindly specify this)
 ```
 
 **For Windows Command Prompt:**
@@ -136,6 +137,7 @@ export OPENAI_API_KEY=<insert your OpenAI API key>
 ```cmd
 REM export your OpenAI API key
 set OPENAI_API_KEY=<insert your OpenAI API key>
+set OPENAI_API_BASE_URL=<inert your OpenAI API BASE URL>  #(Should you utilize an OpenAI proxy service, kindly specify this)
 ```
 
 **For Windows PowerShell:**
@@ -143,6 +145,8 @@ set OPENAI_API_KEY=<insert your OpenAI API key>
 ```powershell
 # Export your OpenAI API key
 $env:OPENAI_API_KEY="<insert your OpenAI API key>"
+$env:OPENAI_API_BASE_URL="<inert your OpenAI API BASE URL>"  #(Should you utilize an OpenAI proxy service, kindly specify this)
+
 ```
 
 Replace `<insert your OpenAI API key>` with your actual OpenAI API key in each case. Make sure there are no spaces around the `=` sign.
@@ -234,13 +238,11 @@ We implemented amazing research ideas from other works for you to build, compare
 
 ## Citation
 ```
-@misc{li2023camel,
-    title={CAMEL: Communicative Agents for "Mind" Exploration of Large Scale Language Model Society},
-    author={Guohao Li and Hasan Abed Al Kader Hammoud and Hani Itani and Dmitrii Khizbullin and Bernard Ghanem},
-    year={2023},
-    eprint={2303.17760},
-    archivePrefix={arXiv},
-    primaryClass={cs.AI}
+@inproceedings{li2023camel,
+  title={CAMEL: Communicative Agents for "Mind" Exploration of Large Language Model Society},
+  author={Li, Guohao and Hammoud, Hasan Abed Al Kader and Itani, Hani and Khizbullin, Dmitrii and Ghanem, Bernard},
+  booktitle={Thirty-seventh Conference on Neural Information Processing Systems},
+  year={2023}
 }
 ```
 ## Acknowledgement

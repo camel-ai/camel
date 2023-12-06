@@ -24,10 +24,13 @@ class RoleType(Enum):
 
 
 class ModelType(Enum):
-    GPT_3_5_TURBO = "gpt-3.5-turbo"
-    GPT_3_5_TURBO_16K = "gpt-3.5-turbo-16k"
+    GPT_3_5_TURBO = "gpt-3.5-turbo-1106"
+    GPT_3_5_TURBO_16K = "gpt-3.5-turbo-1106"
     GPT_4 = "gpt-4"
-    GPT_4_32k = "gpt-4-32k"
+    GPT_4_32K = "gpt-4-32k"
+    GPT_4_TURBO = "gpt-4-1106-preview"
+    GPT_4_TURBO_VISION = "gpt-4-vision-preview"
+
     STUB = "stub"
 
     LLAMA_2 = "llama-2"
@@ -36,36 +39,28 @@ class ModelType(Enum):
 
     @property
     def value_for_tiktoken(self) -> str:
-        return self.value if self.name != "STUB" else "gpt-3.5-turbo"
+        return self.value if self is not ModelType.STUB else "gpt-3.5-turbo"
 
     @property
     def is_openai(self) -> bool:
-        r"""Returns whether this type of models is an OpenAI-released model.
-
-        Returns:
-            bool: Whether this type of models belongs to OpenAI.
-        """
-        if self.name in {
-                "GPT_3_5_TURBO",
-                "GPT_3_5_TURBO_16K",
-                "GPT_4",
-                "GPT_4_32k",
-        }:
-            return True
-        else:
-            return False
+        r"""Returns whether this type of models is an OpenAI-released model."""
+        return self in {
+            ModelType.GPT_3_5_TURBO,
+            ModelType.GPT_3_5_TURBO_16K,
+            ModelType.GPT_4,
+            ModelType.GPT_4_32K,
+            ModelType.GPT_4_TURBO,
+            ModelType.GPT_4_TURBO_VISION,
+        }
 
     @property
     def is_open_source(self) -> bool:
-        r"""Returns whether this type of models is open-source.
-
-        Returns:
-            bool: Whether this type of models is open-source.
-        """
-        if self.name in {"LLAMA_2", "VICUNA", "VICUNA_16K"}:
-            return True
-        else:
-            return False
+        r"""Returns whether this type of models is open-source."""
+        return self in {
+            ModelType.LLAMA_2,
+            ModelType.VICUNA,
+            ModelType.VICUNA_16K,
+        }
 
     @property
     def token_limit(self) -> int:
@@ -74,13 +69,17 @@ class ModelType(Enum):
             int: The maximum token limit for the given model.
         """
         if self is ModelType.GPT_3_5_TURBO:
-            return 4096
+            return 16385
         elif self is ModelType.GPT_3_5_TURBO_16K:
-            return 16384
+            return 16385
         elif self is ModelType.GPT_4:
             return 8192
-        elif self is ModelType.GPT_4_32k:
+        elif self is ModelType.GPT_4_32K:
             return 32768
+        elif self is ModelType.GPT_4_TURBO:
+            return 128000
+        elif self is ModelType.GPT_4_TURBO_VISION:
+            return 128000
         elif self is ModelType.STUB:
             return 4096
         elif self is ModelType.LLAMA_2:
@@ -114,6 +113,40 @@ class ModelType(Enum):
             return self.value in model_name.lower()
 
 
+class EmbeddingModelType(Enum):
+    ADA_2 = "text-embedding-ada-002"
+    ADA_1 = "text-embedding-ada-001"
+    BABBAGE_1 = "text-embedding-babbage-001"
+    CURIE_1 = "text-embedding-curie-001"
+    DAVINCI_1 = "text-embedding-davinci-001"
+
+    @property
+    def is_openai(self) -> bool:
+        r"""Returns whether this type of models is an OpenAI-released model."""
+        return self in {
+            EmbeddingModelType.ADA_2,
+            EmbeddingModelType.ADA_1,
+            EmbeddingModelType.BABBAGE_1,
+            EmbeddingModelType.CURIE_1,
+            EmbeddingModelType.DAVINCI_1,
+        }
+
+    @property
+    def output_dim(self) -> int:
+        if self is EmbeddingModelType.ADA_2:
+            return 1536
+        elif self is EmbeddingModelType.ADA_1:
+            return 1024
+        elif self is EmbeddingModelType.BABBAGE_1:
+            return 2048
+        elif self is EmbeddingModelType.CURIE_1:
+            return 4096
+        elif self is EmbeddingModelType.DAVINCI_1:
+            return 12288
+        else:
+            raise ValueError(f"Unknown model type {self}.")
+
+
 class TaskType(Enum):
     AI_SOCIETY = "ai_society"
     CODE = "code"
@@ -125,9 +158,19 @@ class TaskType(Enum):
     DEFAULT = "default"
 
 
+class VectorDistance(Enum):
+    DOT = 1
+    COSINE = 2
+    EUCLIDEAN = 3
+
+
+class OpenAIBackendRole(Enum):
+    ASSISTANT = "assistant"
+    SYSTEM = "system"
+    USER = "user"
+    FUNCTION = "function"
+
+
 class TerminationMode(Enum):
     ANY = "any"
     ALL = "all"
-
-
-__all__ = ['RoleType', 'ModelType', 'TaskType', 'TerminationMode']

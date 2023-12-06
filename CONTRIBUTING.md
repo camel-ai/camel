@@ -65,8 +65,8 @@ poetry shell
 # It takes about 75s to resolve dependencies and 10s to install them, depending on your hardware and network,
 poetry install --with dev,docs
 
-# Or if you want to use "huggingface agent"
-poetry install --with dev,docs -E huggingface-agent # (Optional)
+# Or if you want to use all other extra packages
+poetry install --with dev,docs -E all  # (Optional)
 
 # The following command installs a pre-commit hook into the local git repo,
 $ so every commit gets auto-formatted and linted.
@@ -145,6 +145,7 @@ If you're developing with VSCode, make sure to create a `.env` file in the repos
 
 ```
 OPENAI_API_KEY=sk-XXXXXXXX
+OPENAI_API_BASE_URL=https://XXXXXXXX (Should you utilize an OpenAI proxy service, kindly specify this)
 ```
 
 ## Documentation 📚

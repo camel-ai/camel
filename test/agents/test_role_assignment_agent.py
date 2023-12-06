@@ -18,7 +18,7 @@ from camel.agents import ChatAgent, RoleAssignmentAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.responses import ChatAgentResponse
-from camel.typing import ModelType, RoleType
+from camel.types import ModelType, RoleType
 
 
 @patch.object(ChatAgent, 'step')
@@ -39,7 +39,7 @@ def test_role_assignment_agent(mock_step, model_type, num_roles):
 
     # Construct role assignment agent
     role_description_agent = RoleAssignmentAgent(
-        model=model_type, model_config=model_config_description)
+        model_type=model_type, model_config=model_config_description)
 
     # Generate the role description dictionary based on the mock step function
     role_description_dict = role_description_agent.run(task_prompt, num_roles)

@@ -33,7 +33,7 @@ from urllib.parse import urlparse
 
 import requests
 
-from camel.typing import ModelType, TaskType
+from camel.types import TaskType
 
 F = TypeVar('F', bound=Callable[..., Any])
 
@@ -55,14 +55,7 @@ def openai_api_key_required(func: F) -> F:
 
     @wraps(func)
     def wrapper(self, *args, **kwargs):
-        from camel.agents.chat_agent import ChatAgent
-        if not isinstance(self, ChatAgent):
-            raise ValueError("Expected ChatAgent")
-        if self.model == ModelType.STUB:
-            return func(self, *args, **kwargs)
-        elif self.model.is_open_source:
-            return func(self, *args, **kwargs)
-        elif 'OPENAI_API_KEY' in os.environ:
+        if 'OPENAI_API_KEY' in os.environ:
             return func(self, *args, **kwargs)
         else:
             raise ValueError('OpenAI API key not found.')

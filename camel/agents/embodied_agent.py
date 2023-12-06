@@ -23,7 +23,7 @@ from camel.interpreters import (
 )
 from camel.messages import BaseMessage
 from camel.responses import ChatAgentResponse
-from camel.typing import ModelType
+from camel.types import ModelType
 from camel.utils import print_text_animated
 
 
@@ -32,7 +32,7 @@ class EmbodiedAgent(ChatAgent):
 
     Args:
         system_message (BaseMessage): The system message for the chat agent.
-        model (ModelType, optional): The LLM model to use for generating
+        model_type (ModelType, optional): The LLM model to use for generating
             responses. (default :obj:`ModelType.GPT_4`)
         model_config (Any, optional): Configuration options for the LLM model.
             (default: :obj:`None`)
@@ -42,10 +42,10 @@ class EmbodiedAgent(ChatAgent):
         tool_agents (List[BaseToolAgent], optinal): The tools agents to use in
             the emboied agent. (default: :obj:`None`)
         code_interpreter (BaseInterpreter, optional): The code interpreter to
-            execute codes. If `code_interpreter` and `tool_agent` are both None,
-            default to `SubProcessInterpreter`. If `code_interpreter=None` and
-            `tool_agents!=None`, default to `InternalPythonInterpreter`.
-            (default: :obj:`None`)
+            execute codes. If `code_interpreter` and `tool_agent` are both
+            `None`, default to `SubProcessInterpreter`. If
+            `code_interpreter=None` and `tool_agents!=None`, default to
+            `InternalPythonInterpreter`.  (default: :obj:`None`)
         verbose (bool, optional): Whether to print the critic's messages.
         logger_color (Any): The color of the logger displayed to the user.
             (default: :obj:`Fore.MAGENTA`)
@@ -54,7 +54,7 @@ class EmbodiedAgent(ChatAgent):
     def __init__(
         self,
         system_message: BaseMessage,
-        model: ModelType = ModelType.GPT_4,
+        model_type: ModelType = ModelType.GPT_4,
         model_config: Optional[Any] = None,
         message_window_size: Optional[int] = None,
         tool_agents: Optional[List[BaseToolAgent]] = None,
@@ -77,7 +77,7 @@ class EmbodiedAgent(ChatAgent):
         self.logger_color = logger_color
         super().__init__(
             system_message=system_message,
-            model=model,
+            model_type=model_type,
             model_config=model_config,
             message_window_size=message_window_size,
         )

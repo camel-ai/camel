@@ -21,12 +21,12 @@ def main(model_type=None) -> None:
     task_prompt = "Develop a trading bot for the stock market"
     role_play_session = RolePlaying(
         assistant_role_name="Python Programmer",
-        assistant_agent_kwargs=dict(model=model_type),
+        assistant_agent_kwargs=dict(model_type=model_type),
         user_role_name="Stock Trader",
-        user_agent_kwargs=dict(model=ModelType.GPT_3_5_TURBO),
+        user_agent_kwargs=dict(model_type=ModelType.GPT_3_5_TURBO),
         task_prompt=task_prompt,
         with_task_specify=True,
-        task_specify_agent_kwargs=dict(model=model_type),
+        task_specify_agent_kwargs=dict(model_type=model_type),
         output_language="Chinese",  # Arabic, French, Spanish, ...
     )
 
@@ -72,6 +72,6 @@ def main(model_type=None) -> None:
 
 
 if __name__ == "__main__":
-    from camel.typing import ModelType
+    from camel.types import ModelType
 
     main(ModelType.GPT_4)

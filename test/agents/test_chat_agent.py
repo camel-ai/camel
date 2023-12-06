@@ -16,13 +16,14 @@ from typing import List
 import pytest
 
 from camel.agents import ChatAgent
-from camel.agents.chat_agent import ChatRecord, FunctionCallingRecord
+from camel.agents.chat_agent import FunctionCallingRecord
 from camel.configs import ChatGPTConfig, FunctionCallingConfig
 from camel.functions import MATH_FUNCS
 from camel.generators import SystemMessageGenerator
+from camel.memories import MemoryRecord
 from camel.messages import BaseMessage
 from camel.terminators import ResponseWordsTerminator
-from camel.typing import ModelType, RoleType, TaskType
+from camel.types import ModelType, OpenAIBackendRole, RoleType, TaskType
 
 parametrize = pytest.mark.parametrize('model', [
     ModelType.STUB,
@@ -39,7 +40,8 @@ def test_chat_agent(model: ModelType):
             dict(assistant_role="doctor"),
             role_tuple=("doctor", RoleType.ASSISTANT),
         )
-    assistant = ChatAgent(system_msg, model=model, model_config=model_config)
+    assistant = ChatAgent(system_msg, model_type=model,
+                          model_config=model_config)
 
     assert str(assistant) == ("ChatAgent(doctor, "
                               f"RoleType.ASSISTANT, {str(model)})")
@@ -57,47 +59,44 @@ def test_chat_agent(model: ModelType):
     assert assistant_response.info['id'] is not None
 
 
-@pytest.mark.model_backend
 def test_chat_agent_stored_messages():
     system_msg = BaseMessage(role_name="assistant",
                              role_type=RoleType.ASSISTANT, meta_dict=None,
                              content="You are a help assistant.")
     assistant = ChatAgent(system_msg)
 
-    expected_stored_msg = [ChatRecord('system', system_msg)]
-    assert assistant.stored_messages == expected_stored_msg
+    expected_context = [system_msg.to_openai_system_message()]
+    context, _ = assistant.memory.get_context()
+    assert context == expected_context
 
     user_msg = BaseMessage(role_name="User", role_type=RoleType.USER,
                            meta_dict=dict(), content="Tell me a joke.")
-    assistant.update_messages("user", user_msg)
-    expected_stored_msg = [
-        ChatRecord('system', system_msg),
-        ChatRecord('user', user_msg)
+    assistant.update_memory(user_msg, OpenAIBackendRole.USER)
+    expected_context = [
+        system_msg.to_openai_system_message(),
+        user_msg.to_openai_user_message()
     ]
-    assert assistant.stored_messages == expected_stored_msg
-
-    illegal_role = "xxx"
-    with pytest.raises(ValueError, match=f"Unsupported role {illegal_role}"):
-        assistant.update_messages(illegal_role, user_msg)
+    context, _ = assistant.memory.get_context()
+    assert context == expected_context
 
 
 @pytest.mark.model_backend
-def test_chat_agent_preprocess_messages_window():
+def test_chat_agent_messages_window():
     system_msg = BaseMessage(role_name="assistant",
                              role_type=RoleType.ASSISTANT, meta_dict=None,
                              content="You are a help assistant.")
     assistant = ChatAgent(
         system_message=system_msg,
-        model=ModelType.GPT_3_5_TURBO,
-        message_window_size=1,
+        model_type=ModelType.GPT_3_5_TURBO,
+        message_window_size=2,
     )
 
     user_msg = BaseMessage(role_name="User", role_type=RoleType.USER,
                            meta_dict=dict(), content="Tell me a joke.")
-    user_msg = ChatRecord("user", user_msg)
-    system_msg = ChatRecord("system", system_msg)
+    user_record = MemoryRecord(user_msg, OpenAIBackendRole.USER)
 
-    openai_messages, _ = assistant.preprocess_messages([system_msg, user_msg])
+    assistant.memory.write_records([user_record] * 5)
+    openai_messages, _ = assistant.memory.get_context()
     assert len(openai_messages) == 2
 
 
@@ -106,27 +105,15 @@ def test_chat_agent_step_exceed_token_number():
     system_msg = BaseMessage(role_name="assistant",
                              role_type=RoleType.ASSISTANT, meta_dict=None,
                              content="You are a help assistant.")
-    assistant = ChatAgent(
-        system_message=system_msg,
-        model=ModelType.GPT_3_5_TURBO,
-    )
-    assistant.model_token_limit = 1
-    assistant.token_limit_terminator.token_limit = 1
+    assistant = ChatAgent(system_message=system_msg,
+                          model_type=ModelType.GPT_3_5_TURBO, token_limit=1)
 
     user_msg = BaseMessage(role_name="User", role_type=RoleType.USER,
                            meta_dict=dict(), content="Tell me a joke.")
-    user_msg_record = ChatRecord("user", user_msg)
-    system_msg = ChatRecord("system", system_msg)
-    msgs = [system_msg, user_msg_record]
-
-    expect_openai_messages = [record.to_openai_message() for record in msgs]
-    expect_num_tokens = assistant.model_backend.count_tokens_from_messages(
-        expect_openai_messages)
 
     response = assistant.step(user_msg)
     assert len(response.msgs) == 0
     assert response.terminated
-    assert response.info["num_tokens"] == expect_num_tokens
 
 
 @pytest.mark.model_backend
@@ -192,7 +179,7 @@ def test_set_output_language():
                                  role_type=RoleType.ASSISTANT, meta_dict=None,
                                  content="You are a help assistant.")
     agent = ChatAgent(system_message=system_message,
-                      model=ModelType.GPT_3_5_TURBO)
+                      model_type=ModelType.GPT_3_5_TURBO)
     assert agent.output_language is None
 
     # Set the output language to "Arabic"
@@ -216,7 +203,7 @@ def test_set_multiple_output_language():
                                  role_type=RoleType.ASSISTANT, meta_dict=None,
                                  content="You are a help assistant.")
     agent = ChatAgent(system_message=system_message,
-                      model=ModelType.GPT_3_5_TURBO)
+                      model_type=ModelType.GPT_3_5_TURBO)
 
     # Verify that the length of the system message is kept constant even when
     # multiple set_output_language operations are called
@@ -236,7 +223,7 @@ def test_token_exceed_return():
                                  role_type=RoleType.ASSISTANT, meta_dict=None,
                                  content="You are a help assistant.")
     agent = ChatAgent(system_message=system_message,
-                      model=ModelType.GPT_3_5_TURBO)
+                      model_type=ModelType.GPT_3_5_TURBO)
 
     expect_info = {
         "id": None,
@@ -260,10 +247,11 @@ def test_function_enabled():
     model_config = FunctionCallingConfig(
         functions=[func.as_dict() for func in MATH_FUNCS])
     agent_no_func = ChatAgent(system_message=system_message,
-                              model_config=model_config, model=ModelType.GPT_4)
+                              model_config=model_config,
+                              model_type=ModelType.GPT_4)
     agent_with_funcs = ChatAgent(system_message=system_message,
                                  model_config=model_config,
-                                 model=ModelType.GPT_4,
+                                 model_type=ModelType.GPT_4,
                                  function_list=MATH_FUNCS)
 
     assert not agent_no_func.is_function_calling_enabled()
@@ -278,7 +266,7 @@ def test_function_calling():
     model_config = FunctionCallingConfig(
         functions=[func.as_dict() for func in MATH_FUNCS])
     agent = ChatAgent(system_message=system_message, model_config=model_config,
-                      model=ModelType.GPT_4, function_list=MATH_FUNCS)
+                      model_type=ModelType.GPT_4, function_list=MATH_FUNCS)
 
     ref_funcs = MATH_FUNCS
 
@@ -311,7 +299,8 @@ def test_response_words_termination():
     response_terminator = ResponseWordsTerminator(words_dict=dict(goodbye=1))
     model_config = ChatGPTConfig(temperature=0, n=2)
     agent = ChatAgent(system_message=system_message,
-                      model=ModelType.GPT_3_5_TURBO, model_config=model_config,
+                      model_type=ModelType.GPT_3_5_TURBO,
+                      model_config=model_config,
                       response_terminators=[response_terminator])
     user_msg = BaseMessage(role_name="User", role_type=RoleType.USER,
                            meta_dict=dict(),

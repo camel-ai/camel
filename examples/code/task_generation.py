@@ -17,7 +17,7 @@ import os
 from camel.agents import ChatAgent
 from camel.generators import CodeTaskPromptGenerator, SystemMessageGenerator
 from camel.messages import BaseMessage
-from camel.typing import RoleType, TaskType
+from camel.types import RoleType, TaskType
 
 
 def generate_tasks(task_generator_prompt: str, language: str, domain: str,
@@ -26,7 +26,7 @@ def generate_tasks(task_generator_prompt: str, language: str, domain: str,
     sys_msg_generator = SystemMessageGenerator(task_type=TaskType.DEFAULT)
     assistant_sys_msg = sys_msg_generator.from_dict(
         dict(), role_tuple=("Task Generator", RoleType.DEFAULT))
-    assistant_agent = ChatAgent(assistant_sys_msg, model=model)
+    assistant_agent = ChatAgent(assistant_sys_msg, model_type=model)
 
     user_msg = BaseMessage.make_user_message(role_name="Task Generator",
                                              content=task_generator_prompt)

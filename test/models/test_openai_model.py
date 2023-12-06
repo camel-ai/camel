@@ -17,7 +17,7 @@ import pytest
 
 from camel.configs import ChatGPTConfig, OpenSourceConfig
 from camel.models import OpenAIModel
-from camel.typing import ModelType
+from camel.types import ModelType
 from camel.utils import OpenAITokenCounter
 
 
@@ -26,6 +26,9 @@ from camel.utils import OpenAITokenCounter
     ModelType.GPT_3_5_TURBO,
     ModelType.GPT_3_5_TURBO_16K,
     ModelType.GPT_4,
+    ModelType.GPT_4_32K,
+    ModelType.GPT_4_TURBO,
+    ModelType.GPT_4_TURBO_VISION,
 ])
 def test_openai_model(model_type):
     model_config_dict = ChatGPTConfig().__dict__
