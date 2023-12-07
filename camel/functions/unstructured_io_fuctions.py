@@ -14,8 +14,6 @@
 
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-import pandas as pd
-
 
 class UnstructuredModules:
     r"""A class to handle various functionalities provided by the
@@ -307,7 +305,7 @@ class UnstructuredModules:
         return extraction_functions[extract_type](text, **kwargs)
 
     def stage_elements(self, elements: List[Any], stage_type: str,
-                       **kwargs) -> Union[str, List[Dict], pd.DataFrame, Any]:
+                       **kwargs) -> Union[str, List[Dict], Any]:
         r"""Stages elements for various platforms based on the
         specified staging type.
 
@@ -336,7 +334,7 @@ class UnstructuredModules:
                 the staging type.
 
         Returns:
-            Union[str, List[Dict], pd.DataFrame]: Staged data in the
+            Union[str, List[Dict], Any]: Staged data in the
                 format appropriate for the specified staging type.
 
         Raises:
