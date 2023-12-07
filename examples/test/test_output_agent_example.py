@@ -64,7 +64,8 @@ class TestMainFunction(unittest.TestCase):
                              b"<html>Test Content</html>")
 
             # Ensure OutputAgent was called with the correct content
-            self.mock_output_agent.assert_called_with('Test Content')
+            self.mock_output_agent.assert_called_with(model_type=None,
+                                                      model_config=None)
 
             # Ensure generate_detailed_instruction was called on
             # the OutputAgent instance
