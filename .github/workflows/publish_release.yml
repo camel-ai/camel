@@ -1,4 +1,4 @@
-name: Publish llama-index to PyPI / GitHub
+name: Publish camel to PyPI / GitHub
 
 on:
   push:

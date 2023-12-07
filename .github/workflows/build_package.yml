@@ -3,8 +3,6 @@ name: Build Package
 on:
   push:
     branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
 
 jobs:
   build:
@@ -24,7 +22,8 @@ jobs:
           source venv/bin/activate
       - name: Install the package
         run: |
-          pip install dist/*.whl[all,test]
+          WHEEL_FILE=$(ls dist/*.whl)
+          pip install "${WHEEL_FILE}[all,test]"
       - name: Test import
         shell: bash
         run: python -c "import camel"
