@@ -33,7 +33,6 @@ jsonschema = "^4"
 types-colorama = "^0"
 types-requests = "^2"
 protobuf = "^4"
-pathlib = "^1.0.1"   
 
 transformers = { version = "^4", optional = true }
 diffusers = { version = "^0", optional = true }
@@ -107,7 +106,6 @@ gradio = "^3"
 mock = "^5"
 
 # types
-pandas-stubs = "*"
 types-Pillow = "*"
 types-Pygments = "*"
 types-mock = "*"
