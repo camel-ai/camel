@@ -77,8 +77,12 @@ The Acme Program System, henceforth referred to as APS, is hosted in a state-of-
 
     insights_json = insight_agent.run(
         context_text=context_text, insights_instruction=insights_instruction)
+    text_of_insights = insight_agent.transform_into_text(
+        insights=insights_json)
+
     print(Fore.GREEN + f"Insights from the context text:\n"
           f"{json.dumps(insights_json, indent=4)}")
+    print(Fore.YELLOW + f"Text of insights:\n{text_of_insights}")
 
 
 if __name__ == "__main__":
