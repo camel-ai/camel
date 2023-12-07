@@ -11,12 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Optional
+from typing import Any, Optional
 
 from camel.agents import ChatAgent
-from camel.configs import ChatGPTConfig
-from camel.models.openai_model import OpenAIModel
-from camel.types import ChatCompletion, ModelType
+from camel.messages import BaseMessage
+from camel.prompts import TextPrompt
+from camel.types import ModelType, RoleType
 
 
 class OutputAgent(ChatAgent):
@@ -32,60 +32,49 @@ class OutputAgent(ChatAgent):
         model_type (ModelType): The type of the OpenAI model to use.
     """
 
-    SYSTEM_PROMPT = (
-        "You are a helpful assistant to re-organize information "
-        "into a detailed instruction, below is the content for you:\n{content}"
-    )
-    USER_MESSAGE = (
-        "Please extract the detailed action information "
-        "from the provided content, "
-        "make it useful for a human to follow the detailed instruction "
-        "step by step to solve the task.")
+    def __init__(
+        self,
+        model_type: ModelType = ModelType.GPT_3_5_TURBO,
+        model_config: Optional[Any] = None,
+    ) -> None:
+        system_message = BaseMessage(
+            role_name="Output Agent",
+            role_type=RoleType.ASSISTANT,
+            meta_dict=None,
+            content="The assistant is an output agent.",
+        )
+        super().__init__(system_message, model_type, model_config)
 
-    def __init__(self, content: str,
-                 model_type: ModelType = ModelType.GPT_3_5_TURBO_16K):
-        r"""Initialize the OutputAgent."""
-        self.content = content
-        self.model = self.create_model(model_type)
-
-    @staticmethod
-    def create_model(model_type: ModelType) -> OpenAIModel:
-        r"""Creates and returns an OpenAI model.
+    def generate_detailed_instruction(self, text: str) -> Optional[str]:
+        r"""Generate a detailed instruction based on the provided content.
 
         Args:
-            model_type (ModelType): The type of the OpenAI model to use.
-
-        Returns:
-            OpenAIModel: The initialized model.
-        """
-        config = ChatGPTConfig()
-        return OpenAIModel(model_type=model_type,
-                           model_config_dict=config.__dict__)
-
-    def construct_task_prompt(self) -> list:
-        r"""Constructs the task prompt based on the content.
-
-        Returns:
-            list: List of messages forming the prompt.
-        """
-        return [{
-            "role": "system",
-            "content": self.SYSTEM_PROMPT.format(content=self.content)
-        }, {
-            "role": "user",
-            "content": self.USER_MESSAGE
-        }]
-
-    def generate_detailed_instruction(self) -> Optional[str]:
-        r"""Generate a detailed instruction based on the provided content.
+            text (str): The content to be processed by the AI agent.
 
         Returns:
             str: The detailed instruction.
         """
-        response = self.model.run(messages=self.construct_task_prompt())
+        self.reset()
 
-        # Check if response is of type ChatCompletion
-        if isinstance(response, ChatCompletion):
-            if response.choices:
-                return response.choices[0].message.content
-        return None
+        text_generation_prompt = TextPrompt(
+            "You are a helpful assistant to re-organize information "
+            "into a detailed instruction, below is the CONTENT for you:\n"
+            "===== CONTENT =====\n{content}\n===== CONTENT END =====\n\n"
+            "Please extract the detailed action information "
+            "from the provided content, "
+            "make it useful for a human to follow the detailed instruction "
+            "step by step to solve the task.")
+        text_generation = text_generation_prompt.format(content=text)
+
+        text_generation_msg = BaseMessage.make_user_message(
+            role_name="Output Agent", content=text_generation)
+
+        response = self.step(input_message=text_generation_msg)
+
+        if response.terminated:
+            raise RuntimeError("The agent was unexpectedly terminated.\n"
+                               f"Error:\n{response.info}")
+
+        msg: BaseMessage = response.msg
+
+        return msg.content

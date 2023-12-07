@@ -27,10 +27,11 @@ def main() -> None:
     normal_string = html_file.docs[0]['page_content']
 
     # Initialize the OutputAgent
-    output_agent = OutputAgent(normal_string)
+    output_agent = OutputAgent(model_type=None, model_config=None)
 
     # Generate the detailed instruction
-    instruction = output_agent.generate_detailed_instruction()
+    instruction = output_agent.generate_detailed_instruction(
+        text=normal_string)
     print(instruction)
 
 
