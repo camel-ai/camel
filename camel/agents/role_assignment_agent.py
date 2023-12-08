@@ -224,10 +224,10 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
                 "Contextual Parameters of subtask <NUM>:\n<BLANK>\n"
                 "Content of the Input of subtask <NUM>:\n<BLANK>\n"
                 "Input tags of subtask <NUM>: [<BLANK>, ..., <BLANK>]/[None] "
-                "(include square brackets)\n"
+                "(must include square brackets)\n"
                 "Task completion standard of subtask <NUM>:\n<BLANK>\n"
                 "Dependency of subtask <NUM>: [subtask <i>, subtask <j>, "
-                "subtask <k>]/[None] (include square brackets).\n"
+                "subtask <k>]/[None] (must include square brackets).\n"
                 "PART II:\nGantt Chart with complex dependency in MarkDown "
                 "format:\n<BLANK>\n\n\n")
         else:
@@ -238,10 +238,10 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
                     f"Contextual Parameters of subtask {i + 1}:\n<BLANK>\n"
                     f"Content of the Input of subtask {i + 1}:\n<BLANK>\n"
                     f"Input tags of subtask {i + 1}: [<BLANK>, ..., "
-                    "<BLANK>]/[None] (include square brackets)\n"
+                    "<BLANK>]/[None] (must include square brackets)\n"
                     f"Task completion standard of subtask {i + 1}:\n<BLANK>\n"
                     f"Dependency of subtask {i + 1}: [subtask <i>, subtask "
-                    f"<j>, subtask <k>]/[None] (include square brackets)."
+                    f"<j>, subtask <k>]/[None] (must include square brackets)."
                     for i in range(num_subtasks)) + \
                 "\nPART II:\nGantt Chart with complex dependency in " + \
                 "MarkDown format:\n<BLANK>\n\n\n"
@@ -602,11 +602,11 @@ Please ensure that you consider both explicit and implicit similarities while ev
                 f"Label \"{lable}\" from TARGET LABELS has "
                 "an explicit or implicit similarity with \"<BLANK>/NONE\" "
                 "(or similar label) in LABELS SETS subsets "
-                "[<m>, <n>]/NONE (include square brackets).\n")
+                "[<m>, <n>]/NONE (must include square brackets).\n")
         answer_prompt += ("Indices of the similar labels in TARGET LABELS: "
-                          "[<i>, <j>]/NONE (include square brackets) \n"
+                          "[<i>, <j>]/[NONE] (must include square brackets) \n"
                           "Indices of the similar subset in LABELS SETS: "
-                          "[<x>, <y>]/NONE (include square brackets)")
+                          "[<x>, <y>]/[NONE] (must include square brackets)")
 
         retrieval_index_prompt = TextPrompt(similarity_criteria_prompt +
                                             "\n\n" + answer_prompt)
@@ -707,7 +707,7 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
 
 
 ===== ANSWER TEMPLATE =====
-Category of Assistant's Response: [<BLANK>, ..., <BLANK>] (choose from "ASSISTANCE", "ANALYSIS", "AUXILIARY", "NON-SUBSTANTIAL", include square brackets, multiple choices are separated by commas)
+Category of Assistant's Response: [<BLANK>, ..., <BLANK>] (choose from "ASSISTANCE", "ANALYSIS", "AUXILIARY", "NON-SUBSTANTIAL", must include square brackets, multiple choices are separated by commas)
 Retold Text:\n<BLANK>"""  # noqa: E501
         text_synthesis_prompt = TextPrompt(text_synthesis)
 
