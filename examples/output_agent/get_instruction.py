@@ -14,7 +14,7 @@
 from io import BytesIO
 
 from camel.agents.output_agent import OutputAgent
-from camel.functions.data_io_functions import HtmlFile
+from camel.functions.base_io_functions import HtmlFile
 
 
 def main() -> None:
