@@ -12,9 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from abc import ABC, abstractmethod
-from typing import Any, Generic, List, TypeVar, Union
-
-from numpy import ndarray
+from typing import Any, Generic, List, TypeVar
 
 T = TypeVar('T')
 
@@ -27,7 +25,7 @@ class BaseEmbedding(ABC, Generic[T]):
         self,
         objs: List[T],
         **kwargs: Any,
-    ) -> Union[List[List[float]], ndarray]:
+    ) -> List[List[float]]:
         r"""Generates embeddings for the given texts.
 
         Args:
@@ -35,7 +33,7 @@ class BaseEmbedding(ABC, Generic[T]):
             **kwargs (Any): Extra kwargs passed to the embedding API.
 
         Returns:
-            Union[List[List[float]], ndarray]: A list that represents the
+            List[List[float]]: A list that represents the
             generated embedding as a list of floating-point numbers or a
             numpy matrix with embeddings.
         """
