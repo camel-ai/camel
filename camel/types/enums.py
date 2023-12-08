@@ -39,7 +39,7 @@ class ModelType(Enum):
 
     @property
     def value_for_tiktoken(self) -> str:
-        return self.value if self is ModelType.STUB else "gpt-3.5-turbo"
+        return self.value if self is not ModelType.STUB else "gpt-3.5-turbo"
 
     @property
     def is_openai(self) -> bool:
