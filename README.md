@@ -82,8 +82,8 @@ To install with all dependencies, run `pip install camel-ai[all]`
 
 Install `CAMEL` from source with poetry (Recommended):
 ```sh
-# Make sure your current python environment has a version later than 3.9
-# You can use pyenv to create multiple python verisons in your sytstem
+# Make sure your python version is later than 3.9
+# You can use pyenv to manage multiple python verisons in your sytstem
 
 # Clone github repo
 git clone https://github.com/camel-ai/camel.git
