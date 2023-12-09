@@ -158,11 +158,8 @@ def parse_doc(func: Callable) -> Dict[str, Any]:
 
     args_section = next((p for p in parts if 'Args:' in p), None)
     if args_section:
-        args_descs: List[Tuple[
-            str,
-            str,
-            str,
-        ]] = re.findall(r'(\w+)\s*\((\w+)\):\s*(.*)', args_section)
+        args_descs: List[Tuple[str, str, str, ]] = re.findall(
+            r'(\w+)\s*\((\w+)\):\s*(.*)', args_section)
         properties = {
             name.strip(): {
                 'type': type,
