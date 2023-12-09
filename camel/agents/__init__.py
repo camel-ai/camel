@@ -22,12 +22,16 @@ from .task_agent import (
 from .critic_agent import CriticAgent
 from .tool_agents.base import BaseToolAgent
 from .tool_agents.hugging_face_tool_agent import HuggingFaceToolAgent
+from .deductive_reasoner_agent import DeductiveReasonerAgent
 from .embodied_agent import EmbodiedAgent
+from .insight_agent import InsightAgent
 from .role_assignment_agent import RoleAssignmentAgent
 
 __all__ = [
     'BaseAgent',
     'ChatAgent',
+    'DeductiveReasonerAgent',
+    'InsightAgent',
     'TaskSpecifyAgent',
     'TaskPlannerAgent',
     'TaskCreationAgent',
