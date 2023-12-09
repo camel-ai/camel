@@ -12,7 +12,6 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import json
-import re
 
 from colorama import Fore
 
@@ -68,11 +67,14 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
         oriented_graph[subtask_idx] = deps
     role_assignment_agent.draw_subtasks_graph(oriented_graph=oriented_graph)
 
+    # Get the list of subtasks
     subtasks = [
         subtasks_with_dependencies_dict[key]["description"]
         for key in sorted(subtasks_with_dependencies_dict.keys())
     ]
 
+    # Calculate the execution order of the subtasks, based on their
+    # dependencies
     parallel_subtask_pipelines = \
         role_assignment_agent.get_task_execution_order(
             subtasks_with_dependencies_dict)
@@ -91,8 +93,8 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
             labels_key = tuple(insight["entity_recognition"])
             environment_record[labels_key] = insight
 
-    # Print the information of the task, the subtasks and the roles with
-    # descriptions
+    # Print a part of the configurations of the multi-agent communication
+    # to specific markdown files
     print_and_write_md(
         f"List of {len(role_descriptions_dict)} roles with description:",
         color=Fore.GREEN)
@@ -113,7 +115,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
     print_and_write_md("========================================",
                        color=Fore.WHITE)
 
-    # Resolve the subtasks in sequence based on the dependency graph
+    # Resolve the subtasks in sequence of the pipelines
     for ID_one_subtask in (subtask for pipeline in parallel_subtask_pipelines
                            for subtask in pipeline):
         # Get the description of the subtask
@@ -159,16 +161,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
             f"AI User Role: {ai_user_role}\n" + f"{ai_user_description}\n",
             color=Fore.BLUE)
 
-        # You can use the following code to play the role-playing game
-        sys_msg_meta_dicts = [
-            dict(
-                assistant_role=ai_assistant_role, user_role=ai_user_role,
-                assistant_description=ai_assistant_description +
-                insights_pre_subtask, user_description=ai_user_description)
-            for _ in range(2)
-        ]
-
-        task_with_IO = (
+        subtask_content = (
             "- Description of TASK:\n" +
             subtasks_with_dependencies_dict[ID_one_subtask]["description"] +
             "\n- Input of TASK:\n" +
@@ -177,18 +170,26 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
             subtasks_with_dependencies_dict[ID_one_subtask]["output_standard"])
         print_and_write_md(
             f"Task of the role-playing ({ID_one_subtask}):\n"
-            f"{task_with_IO}\n\n", color=Fore.RED, MD_FILE=ID_one_subtask)
+            f"{subtask_content}\n\n", color=Fore.RED, MD_FILE=ID_one_subtask)
 
+        # You can use the following code to play the role-playing game
+        sys_msg_meta_dicts = [
+            dict(
+                assistant_role=ai_assistant_role, user_role=ai_user_role,
+                assistant_description=ai_assistant_description +
+                insights_pre_subtask, user_description=ai_user_description)
+            for _ in range(2)
+        ]  # System message meta data dicts
         function_list = [*MATH_FUNCS, *SEARCH_FUNCS]
         assistant_model_config = \
             FunctionCallingConfig.from_openai_function_list(
                 function_list=function_list,
                 kwargs=dict(temperature=0.0),
-            )
+            )  # Assistant model config
         user_model_config = FunctionCallingConfig.from_openai_function_list(
             function_list=function_list,
             kwargs=dict(temperature=0.0),
-        )
+        )  # User model config
 
         role_play_session = RolePlaying(
             assistant_role_name=ai_assistant_role,
@@ -203,7 +204,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                 model_config=user_model_config,
                 function_list=function_list,
             ),
-            task_prompt=task_with_IO,
+            task_prompt=subtask_content,
             model_type=model_type,
             task_type=TaskType.
             ROLE_DESCRIPTION,  # Important for role description
@@ -232,10 +233,6 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                 f"{assistant_response.msg.content}\n", color=Fore.GREEN,
                 MD_FILE=ID_one_subtask)
 
-            # Generate the insights from the chat history
-            # action_content = re.findall(r'Action:\s*(.*)',
-            #                             assistant_response.msg.content,
-            #                             re.DOTALL)
             actions_record += (f"--- [{n}] ---\n"
                                f"{assistant_response.msg.content}\n")
             user_conversation = user_response.msg.content
@@ -248,19 +245,11 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                     task_prompt=one_subtask,
                     user_conversation=user_conversation,
                     assistant_conversation=assistant_conversation)
-            if "ASSISTANCE" in transformed_text_with_category["categories"]:
+            if ("ASSISTANCE" in transformed_text_with_category["categories"]
+                    or "ANALYSIS"
+                    in transformed_text_with_category["categories"]):
                 transformed_text = transformed_text_with_category["text"]
                 chat_history_two_roles += (transformed_text + "\n\n")
-
-            code_snippet = re.findall(
-                r"assistant to=code_interpreter,"
-                r"\s*(\w+)\n(.*?)\n"
-                r"assistant end=code_interpreter",
-                assistant_response.msg.content, re.DOTALL)
-            # Print the code snippet
-            for language, code_snippet in code_snippet:
-                print(f"Programming language: {language}")
-                print(f"code_snippet:\n{code_snippet}\n")
 
             print(Fore.BLUE + "AI User:\n"
                   f"{user_response.msg.content}\n")
@@ -346,11 +335,11 @@ def get_insights(pre_subtasks, one_subtask, one_subtask_tags,
             for label_set in labels_retrieved_sets
         ]
 
-        insights_pre_subtask = "\n" + \
-            "====== CURRENT STATE =====\n" + \
-            "The snapshot and the context of the TASK is presentd in " + \
-            "the following insights which is close related to The " + \
-            "\"Insctruction\" and the \"Input\":\n"
+        insights_pre_subtask = (
+            "\n====== CURRENT STATE =====\n"
+            "The snapshot and the context of the TASK is presentd in "
+            "the following insights which is close related to The "
+            "\"Insctruction\" and the \"Input\":\n")
         insights_pre_subtask += "\n".join(
             [str(insight) for insight in retrieved_insights])
     else:
@@ -374,12 +363,12 @@ def get_insights(pre_subtasks, one_subtask, one_subtask_tags,
 
         insights_none_pre_subtask = insight_agent.run(
             context_text=context_text)
-        insights_pre_subtask = "\n" + \
-            "====== CURRENT STATE =====\n" + \
-            "The snapshot and the context of the TASK is presentd in " + \
-            "the following insights which is close related to The " + \
-            "\"Insctruction\" and the \"Input\":\n" + \
-            f"{insights_none_pre_subtask}\n"
+        insights_pre_subtask = (
+            "\n====== CURRENT STATE =====\n"
+            "The snapshot and the context of the TASK is presentd in "
+            "the following insights which is close related to The "
+            "\"Insctruction\" and the \"Input\":\n" +
+            f"{insights_none_pre_subtask}\n")
         insights_pre_subtask += "\n".join(
             [str(insight) for insight in retrieved_insights])
 
