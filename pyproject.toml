@@ -3,7 +3,7 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
-name = "camel"
+name = "camel-ai"
 version = "0.1.1"
 authors = ["CAMEL-AI.org"]
 description = "Communicative Agents for AI Society Study"
@@ -17,6 +17,9 @@ keywords = [
     "cooperative-ai",
     "natural-language-processing",
     "large-language-models",
+]
+packages = [
+    { include = "camel" },
 ]
 license = "Apache License 2.0"
 homepage = "https://www.camel-ai.org/"
