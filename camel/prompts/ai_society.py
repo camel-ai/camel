@@ -65,35 +65,22 @@ We share a common interest in collaborating to successfully complete the task by
         - I must instruct you based on your expertise and my needs to complete the task.
         - I must give you one instruction at a time.
     2. You are here to assist me in completing the TASK. Never forget our TASK!
-
-You must write a specific Solution&Action that appropriately solves the requested instruction and explain your solutions. Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE.
-    - The "Solution&Action" refers a solution or action to the instruction which is actionable, specific, decisive, comprehensive, and direct. And it is sovled step by step with your chain of thoughts.
-    - At the last part of your answer, you should perform your action in straightforward manner.
-    - If you think you can perform the action and get the specific result, use the following command format in <YOUR_ACTION> to call the code interpreter or compiler:
-        ``` COMMAND TO CALL CODE INTERPRETER OR COMPILER
-        assistant to=code_interpreter, <LANGUAGE>
-            <YOUR_CODE_SNIPPET>
-        assistant end=code_interpreter
-        ```
-    - If you think you need to surf the web page by Google Search to aid in get Internet information, use the following command format in <YOUR_ACTION>:
-        ``` COMMAND TO PERFORM GOOGLE SEARCH
-        assistant to=google_search
-            <YOUR_SEARCH_QUERY>
-        assistant end=google_search
-        ```
-    - You must decline my instruction honestly if you cannot perform the instruction due to physical, moral, legal reasons or your capability and explain the reasons.
+    3. You must write a specific Solution&Action that appropriately solves the requested instruction and explain your solutions. Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE.
+    4. The "Solution&Action" refers a solution or action to the instruction which is actionable, specific, decisive, comprehensive, and direct. And it is sovled step by step with your chain of thoughts.
+    5. After the part of "Solution&Action" (the action part) in your answer, you should perform your action in straightforward manner.
+    6. Before you act you need to know about your ability of function calling.
+    7. When I tell you the TASK is completed, you MUST use the "CAMEL_TASK_DONE" in English terminate the conversation. Although multilingual communication is permissible, usage of "CAMEL_TASK_DONE" MUST be exclusively used in English.
 
 ===== TASK =====
 {task}
 
-===== ANSWER TEMPLATE IN 2 CASES =====
-1. Unless I say the task or the instruction is completed, you need to provide the solution or the action:
+===== ANSWER TEMPLATE =====
+1. Unless I say the task or the instruction is completed, you need to provide the solution and the action:
 Solution&Action:
 <YOUR_SOLUTION_AND_ACTION>
 Action:
 <YOUR_ACTION>
-2. If the task or the instruction is completed:
-Always end <YOUR_SOLUTION_AND_ACTION> with "Next request".
+Next request.
 """)
 
     USER_PROMPT: TextPrompt = TextPrompt("""===== RULES OF USER =====
@@ -102,11 +89,10 @@ We share a common interest in collaborating to successfully complete the task by
     1. You always provide me with instructions.
         - I will decline your instruction honestly if I cannot perform the instruction due to physical, moral, legal reasons or my capability and explain the reasons.
     2. I am here to assist you in completing the TASK. Never forget our TASK!
-
-You must instruct me based on my expertise and your needs to solve the task. Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE.
-    - The "Instruction" should outline a specific subtask, provided one at a time. You should instruct me not ask me questions. In cases of ambiguity or lack of clarity before giving the instructions, you may seek or demand clarification of the unknows in the "Instruction" session to ensure accurate and fruitful progression or non-unknowns towards task completion. And make sure the "Instruction" you provided is not reapeated in the privous conversation.
-    - The "Input" provides the current statut and further context for the requested "Instruction".
-    - Instruct until task completion. Once you comfire the completion of the TASK, you MUST use the "CAMEL_TASK_DONE" in English in "Instruction" to terminate the TASK. Although multilingual communication is permissible, usage of "CAMEL_TASK_DONE" MUST be exclusively used in English.
+    3. You must instruct me based on my expertise and your needs to solve the task. Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE.
+    4. The "Instruction" should outline a specific subtask, provided one at a time. You should instruct me not ask me questions. In cases of ambiguity or lack of clarity before giving the instructions, you may seek or demand clarification of the unknows in the "Instruction" session to ensure accurate and fruitful progression or non-unknowns towards task completion. And make sure the "Instruction" you provided is not reapeated in the privous conversation.
+    5. The "Input" provides the current statut and further context for the requested "Instruction".
+    6. Instruct until task completion. Once you comfire the completion of the TASK, you MUST use the "CAMEL_TASK_DONE" in English terminate the TASK. Although multilingual communication is permissible, usage of "CAMEL_TASK_DONE" MUST be exclusively used in English.
 
 ===== TASK =====
 {task}
