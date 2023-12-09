@@ -19,12 +19,13 @@ from colorama import Fore
 from camel.agents.deductive_reasoner_agent import DeductiveReasonerAgent
 from camel.agents.insight_agent import InsightAgent
 from camel.agents.role_assignment_agent import RoleAssignmentAgent
-from camel.configs import ChatGPTConfig
+from camel.configs import ChatGPTConfig, FunctionCallingConfig
+from camel.functions import MATH_FUNCS, SEARCH_FUNCS
 from camel.societies import RolePlaying
 from camel.types import ModelType, TaskType
 
 
-def main(model_type=ModelType.GPT_4_TURBO, task_prompt=None,
+def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
          context_text=None) -> None:
     # Start the multi-agent communication
     print_and_write_md("========================================",
@@ -174,9 +175,34 @@ def main(model_type=ModelType.GPT_4_TURBO, task_prompt=None,
             subtasks_with_dependencies_dict[ID_one_subtask]["input_content"] +
             "\n- Output Standard for the completion of TASK:\n" +
             subtasks_with_dependencies_dict[ID_one_subtask]["output_standard"])
+        print_and_write_md(
+            f"Task of the role-playing ({ID_one_subtask}):\n"
+            f"{task_with_IO}\n\n", color=Fore.RED, MD_FILE=ID_one_subtask)
+
+        function_list = [*MATH_FUNCS, *SEARCH_FUNCS]
+        assistant_model_config = \
+            FunctionCallingConfig.from_openai_function_list(
+                function_list=function_list,
+                kwargs=dict(temperature=0.0),
+            )
+        user_model_config = FunctionCallingConfig.from_openai_function_list(
+            function_list=function_list,
+            kwargs=dict(temperature=0.0),
+        )
+
         role_play_session = RolePlaying(
             assistant_role_name=ai_assistant_role,
             user_role_name=ai_user_role,
+            assistant_agent_kwargs=dict(
+                model_type=ModelType.GPT_4_TURBO,
+                model_config=assistant_model_config,
+                function_list=function_list,
+            ),
+            user_agent_kwargs=dict(
+                model_type=ModelType.GPT_4_TURBO,
+                model_config=user_model_config,
+                function_list=function_list,
+            ),
             task_prompt=task_with_IO,
             model_type=model_type,
             task_type=TaskType.
@@ -207,11 +233,11 @@ def main(model_type=ModelType.GPT_4_TURBO, task_prompt=None,
                 MD_FILE=ID_one_subtask)
 
             # Generate the insights from the chat history
-            action_content = re.findall(r'Action:\s*(.*)',
-                                        assistant_response.msg.content,
-                                        re.DOTALL)
+            # action_content = re.findall(r'Action:\s*(.*)',
+            #                             assistant_response.msg.content,
+            #                             re.DOTALL)
             actions_record += (f"--- [{n}] ---\n"
-                               f"{action_content}\n")
+                               f"{assistant_response.msg.content}\n")
             user_conversation = user_response.msg.content
             assistant_conversation = assistant_response.msg.content.replace(
                 "Solution&Action:\n", "").replace("Next request.",
@@ -236,6 +262,11 @@ def main(model_type=ModelType.GPT_4_TURBO, task_prompt=None,
                 print(f"Programming language: {language}")
                 print(f"code_snippet:\n{code_snippet}\n")
 
+            print(Fore.BLUE + "AI User:\n"
+                  f"{user_response.msg.content}\n")
+            print(Fore.GREEN + "AI Assistant:\n"
+                  f"{assistant_response.msg.content}\n")
+
             if assistant_response.terminated:
                 print(Fore.GREEN +
                       (f"{ai_assistant_role} terminated. Reason: "
@@ -247,7 +278,8 @@ def main(model_type=ModelType.GPT_4_TURBO, task_prompt=None,
                     f"Reason: {user_response.info['termination_reasons']}."))
                 break
 
-            if "CAMEL_TASK_DONE" in user_response.msg.content:
+            if "CAMEL_TASK_DONE" in user_response.msg.content or \
+                    "CAMEL_TASK_DONE" in assistant_response.msg.content:
                 break
 
             input_assistant_msg = assistant_response.msg
@@ -439,5 +471,11 @@ if __name__ == "__main__":
     with open(root_path + file_names_context[index], mode='r',
               encoding="utf-8") as file:
         context_text = file.read()
+    task_prompt = ("Identify the current trending technologies in the"
+                   "software industry as of the latest year (2023) "
+                   "and based on that predict the next innovation.")
+    context_text = ("Identify the current trending technologies in the"
+                    "software industry as of the latest year (2023) "
+                    "and based on that predict the next innovation.")
 
     main(task_prompt=task_prompt, context_text=context_text)
