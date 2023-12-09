@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import importlib
 import inspect
 import os
 import re
@@ -241,3 +242,93 @@ def check_server_running(server_url: str) -> bool:
 
     # if the port is open, the result should be 0.
     return result == 0
+
+
+def dependencies_required(*required_modules: str) -> Callable[[F], F]:
+    r"""A decorator to ensure that specified Python modules
+    are available before a function executes.
+
+    Parameters:
+    required_modules (str): The required modules to be checked for
+    availability.
+
+    Returns:
+    Callable[[F], F]: The original function with the added check for
+    required module dependencies.
+
+    Raises:
+    ImportError: If any of the required modules are not available.
+
+    Example:
+    @dependencies_required('numpy', 'pandas')
+    def data_processing_function():
+        # Function implementation...
+    """
+
+    def decorator(func: F) -> F:
+
+        @wraps(func)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            missing_modules = [
+                m for m in required_modules if not is_module_available(m)
+            ]
+            if missing_modules:
+                raise ImportError(
+                    f"Missing required modules: {', '.join(missing_modules)}")
+            return func(*args, **kwargs)
+
+        return cast(F, wrapper)
+
+    return decorator
+
+
+def is_module_available(module_name: str) -> bool:
+    r"""Check if a module is available for import.
+
+    Parameters:
+    module_name (str): The name of the module to check for availability.
+
+    Returns:
+    bool: True if the module can be imported, False otherwise.
+    """
+    try:
+        importlib.import_module(module_name)
+        return True
+    except ImportError:
+        return False
+
+
+def api_keys_required(*required_keys: str) -> Callable[[F], F]:
+    r"""A decorator to check if the required API keys are
+    present in the environment variables.
+
+    Parameters:
+    required_keys (str): The required API keys to be checked.
+
+    Returns:
+    Callable[[F], F]: The original function with the added check
+    for required API keys.
+
+    Raises:
+    ValueError: If any of the required API keys are missing in the
+    environment variables.
+
+    Example:
+    @api_keys_required('API_KEY_1', 'API_KEY_2')
+    def some_api_function():
+        # Function implementation...
+    """
+
+    def decorator(func: F) -> F:
+
+        @wraps(func)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            missing_keys = [k for k in required_keys if k not in os.environ]
+            if missing_keys:
+                raise ValueError(
+                    f"Missing API keys: {', '.join(missing_keys)}")
+            return func(*args, **kwargs)
+
+        return cast(F, wrapper)
+
+    return decorator
