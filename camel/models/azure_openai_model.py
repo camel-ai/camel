@@ -46,9 +46,8 @@ class AzureOpenAIModel(BaseModelBackend):
         """
         super().__init__(model_type, model_config_dict)
         url = os.environ.get('OPENAI_API_BASE_URL', '')
-        api_version = os.environ.get(
-            'AZURE_OPENAI_API_VERSION', '2023-10-01-preview'
-        )
+        api_version = os.environ.get('AZURE_OPENAI_API_VERSION',
+                                     '2023-10-01-preview')
         self._client = AzureOpenAI(
             timeout=60,
             max_retries=3,
@@ -57,9 +56,8 @@ class AzureOpenAIModel(BaseModelBackend):
         )
         self._token_counter: Optional[BaseTokenCounter] = None
 
-        self.deployment_name = os.environ.get(
-            'AZURE_MODEL_DEPLOYMENT_NAME', 'gpt-3.5-turbo-1106'
-        )
+        self.deployment_name = os.environ.get('AZURE_MODEL_DEPLOYMENT_NAME',
+                                              'gpt-3.5-turbo-1106')
         assert self.deployment_name is not None, \
             "Azure model deployment name is not provided."
 
