@@ -61,7 +61,7 @@ class AzureOpenAIModel(BaseModelBackend):
         self._token_counter: Optional[BaseTokenCounter] = None
 
         self.deployment_name = os.environ.get(
-            'AZURE_MODEL_DEPLOYMENT_NAME', None
+            'AZURE_MODEL_DEPLOYMENT_NAME', 'gpt-3.5-turbo-1106'
         )
         assert self.deployment_name is not None, \
             "Azure model deployment name is not provided."

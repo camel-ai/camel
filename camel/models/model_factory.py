@@ -17,6 +17,7 @@ from typing import Any, Dict
 from camel.models import (
     BaseModelBackend,
     OpenAIModel,
+    AzureOpenAIModel,
     OpenSourceModel,
     StubModel,
 )
@@ -50,7 +51,6 @@ class ModelFactory:
         if model_type.is_openai:
             use_azure_api = 'USE_AZURE_API' in os.environ
             if use_azure_api:
-                from camel.models.azure_openai_model import AzureOpenAIModel
                 model_class = AzureOpenAIModel
             else:
                 model_class = OpenAIModel
