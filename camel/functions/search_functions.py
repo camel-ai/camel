@@ -18,6 +18,7 @@ import camel.agents
 from camel.functions import OpenAIFunction
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
+from camel.types import ModelType
 
 
 def search_wiki(entity: str) -> str:
@@ -271,9 +272,34 @@ def summarize_text(text: str, query: str) -> str:
 
 
 def search_google_and_summarize(query: str) -> str:
-    r"""Search webs for information. Given a query, this function will use
-    the Google search engine to search for related information from the
-    internet, and then return a summarized answer.
+    r"""Comprehensive Web Search and Information Synthesis. This function
+    serves as a gateway to the vast universe of information available on the
+    internet. By inputting a query, you are leveraging the powerful Google
+    search engine to scan the web for relevant data, articles, studies, and
+    discussions pertaining to your topic of interest.
+
+    Here's what happens when you invoke this function:
+    - Search Execution: Your query is used as the criterion for an extensive
+        online search,
+      executed through Google's sophisticated algorithms that prioritize
+        relevance and credibility.
+    - Data Aggregation: From the search results, a diverse array of sources
+        is accessed,
+      compiling insights, facts, and perspectives across various mediums and
+        platforms.
+    - Intelligent Summarization: The gathered information undergoes a
+        process of condensation, where the essence of the content is
+        distilled into a concise and informative summary. This involves
+        filtering out the noise and focusing on the core material that is
+        most informative and relevant to your query.
+    - Answer Delivery: The end product is a synthesized, concise summary
+        that encapsulates the key information you need, saving you the time
+        and effort of sifting through countless web pages.
+    Whether you're looking for a quick factual answer, an overview of a
+        complex topic, or diverse viewpoints on a controversial subject,
+        this function is your streamlined conduit to knowledge. Just type in
+        your question, and let the tool do the rest, bringing you a clear,
+        distilled answer drawn from the breadth of the internet.
 
     Args:
         query (string): Question you want to be answered.
@@ -289,7 +315,14 @@ def search_google_and_summarize(query: str) -> str:
             # Extract text
             text = text_extract_from_web(str(url))
             # Using chatgpt summarise text
-            answer = summarize_text(text, query)
+            # answer = summarize_text(text, query)
+            insight_agent = camel.agents.InsightAgent(
+                model_type=ModelType.GPT_3_5_TURBO_16K)
+            insights = insight_agent.run(
+                context_text=text, insights_instruction=(
+                    "The CONTEXT CONTENT is the content of the web page, "
+                    f"and the Google Search query is \"{query}\"."))
+            answer = insight_agent.transform_into_text(insights=insights)
 
             # Let chatgpt decide whether to continue search or not
             prompt = TextPrompt(
