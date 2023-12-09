@@ -183,7 +183,7 @@ First, you need to add USE_AZURE_API environment variable to enable Azure OpenAI
 ```bash
 export USE_AZURE_API
 # Export your Azure OpenAI API infos
-export OPENAI_API_BASE_URL=<inert your Azure OpenAI API Endpoint>,
+export OPENAI_API_ENDPOINT=<inert your Azure OpenAI API Endpoint>,
 export AZURE_OPENAI_API_KEY= <insert your Azure OpenAI API key>,
 export AZURE_MODEL_DEPLOYMENT_NAME=<insert your Azure OpenAI model's deployment name>
 ```

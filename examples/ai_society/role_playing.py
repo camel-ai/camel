@@ -11,41 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import argparse
-
 from colorama import Fore
 
 from camel.societies import RolePlaying
-from camel.types.enums import ModelType
 from camel.utils import print_text_animated
 
 
-def parse_arguments():
-    """ Get command line arguments. """
-
-    parser = argparse.ArgumentParser("Camel role playing example.")
-    parser.add_argument('--model-type', type=str, default=None,
-                        help='OpenAI API model type string.')
-    parser.add_argument('--chat-turn-limit', type=int, default=50,
-                        help='The limit of chat turns')
-
-    args, unknown = parser.parse_known_args()
-    if len(unknown) > 0:
-        print("Unknown args: ", unknown)
-
-    return args
-
-
 def main(model_type=None, chat_turn_limit=50) -> None:
-
-    args = parse_arguments()
-
-    assert args.model_type in ModelType.__members__, \
-        f"Invalid model type: {args.model_type}."
-
-    model_type = ModelType[args.model_type]
-    chat_turn_limit = args.chat_turn_limit
-
     task_prompt = "Develop a trading bot for the stock market"
     role_play_session = RolePlaying(
         assistant_role_name="Python Programmer",
