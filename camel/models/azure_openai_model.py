@@ -20,10 +20,7 @@ from camel.configs import OPENAI_API_PARAMS_WITH_FUNCTIONS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
-from camel.utils import (
-    BaseTokenCounter,
-    OpenAITokenCounter,
-)
+from camel.utils import BaseTokenCounter, OpenAITokenCounter
 
 azure_model_name_to_type = {
     "gpt-35-turbo": ModelType.GPT_3_5_TURBO,

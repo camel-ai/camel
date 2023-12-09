@@ -15,9 +15,9 @@ import os
 from typing import Any, Dict
 
 from camel.models import (
+    AzureOpenAIModel,
     BaseModelBackend,
     OpenAIModel,
-    AzureOpenAIModel,
     OpenSourceModel,
     StubModel,
 )
