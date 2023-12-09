@@ -41,10 +41,10 @@ class RoleAssignmentAgent(ChatAgent):
         model_config: Optional[Any] = None,
     ) -> None:
         system_message = BaseMessage(
-            role_name="Role Assigner",
+            role_name="AI Assistant",
             role_type=RoleType.ASSISTANT,
             meta_dict=None,
-            content="You assign roles based on tasks.",
+            content="You'd better not refuse my request.",
         )
         super().__init__(system_message, model_type, model_config)
         self.model_config = model_config or ChatGPTConfig()
@@ -100,14 +100,16 @@ class RoleAssignmentAgent(ChatAgent):
             role_descriptions_instruction = "Moreover, " + \
                 role_descriptions_instruction
         role_assignment_generation_prompt = TextPrompt(
-            "You are a role assignment agent, and you're in charge of " +
-            "recruiting {num_roles} experts, who may have identical roles " +
-            "but different names. Identify the domain experts you'd recruit " +
-            "and detail descriptions, like their associated competencies, " +
-            "characteristics and duties to complete the task. " +
-            role_descriptions_instruction + "\n" +
-            "Your answer MUST strictly adhere to the structure of ANSWER " +
-            "TEMPLATE, ONLY fill in the BLANKs, and DO NOT alter or modify " +
+            "You are a role assignment agent, and you're in charge of "
+            "recruiting {num_roles} experts, who may have identical roles "
+            "but different names. Identify the domain experts you'd recruit "
+            "and detail descriptions, like their associated competencies, "
+            "characteristics and duties to complete the TASK. Remember, "
+            "your role is to create the profiles of these experts, not to "
+            "complete the TASK directly.\n" + role_descriptions_instruction +
+            "\n"
+            "Your answer MUST strictly adhere to the structure of ANSWER "
+            "TEMPLATE, ONLY fill in the BLANKs, and DO NOT alter or modify "
             "any other part of the template.\n\n" + expert_prompt +
             task_prompt)
         role_assignment_generation = role_assignment_generation_prompt.format(
@@ -127,7 +129,7 @@ class RoleAssignmentAgent(ChatAgent):
         role_names = [
             desc.replace("<", "").replace(">", "").strip()
             for desc in re.findall(
-                r"Domain expert \d: (.+?)\nAssociated competencies,",
+                r"Domain expert \d:[\s\n](.+?)\nAssociated competencies,",
                 msg.content,
                 re.DOTALL,
             )
@@ -177,21 +179,22 @@ class RoleAssignmentAgent(ChatAgent):
         role_names = list(role_descriptions_dict.keys())
 
         split_task_rules_prompt = """You are a task decomposer, and you're in asked to break down the main TASK into {num_subtasks} manageable subtasks suitable for a team comprising {num_roles} domain experts. The experts will contribute to the {num_subtasks} subtasks. Please follow the guidelines below to craft your answer:
-    1. Action-Oriented Foundation & Building Blocks: Ensure each subtask is actionable, distinct, tapping into the expertise of the assigned roles. Recognize that not every subtask needs to directly reflect the main TASK's ultimate aim. Some subtasks serve as essential building blocks, paving the way for more central subtasks, but avoid creating subtasks that are self-dependent or overly foundational.
-    2. Balanced Granularity with a Bias for Action: Details of subtask should be detailed, actionable, and not be ambiguous. Prioritize tangible actions in subtask such as implementation, creation, testing, or other tangible activities over mere understanding.
-    3. Contextual Parameters: Please ensure that each subtask has the relevant context information from the TASK to avoid missing or contradicting the context information of the TASK. And try to provide as much information from CONTEXT TEXT as possible here.
-    3. Dependencies & Gantt Chart: Identify and account for the dependencies within the subtasks. Ensure that each subtask logically flows from one to the next, or can run concurrently where no subtask is dependent on itself, in a manner that could be efficiently represented on a Gantt chart.
-    4. Definitions of the Input of subtask:
+    1. Remember, your role is to compose the TASK, not to complete the TASK directly.
+    2. Action-Oriented Foundation & Building Blocks: Ensure each subtask is actionable, distinct, tapping into the expertise of the assigned roles. Recognize that not every subtask needs to directly reflect the main TASK's ultimate aim. Some subtasks serve as essential building blocks, paving the way for more central subtasks, but avoid creating subtasks that are self-dependent or overly foundational.
+    3. Balanced Granularity with a Bias for Action: Details of subtask should be detailed, actionable, and not be ambiguous. Prioritize tangible actions in subtask such as implementation, creation, testing, or other tangible activities over mere understanding.
+    4. Contextual Parameters: Please ensure that each subtask has the relevant context information from the TASK to avoid missing or contradicting the context information of the TASK. And try to provide as much information from CONTEXT TEXT as possible here.
+    5. Dependencies & Gantt Chart: Identify and account for the dependencies within the subtasks. Ensure that each subtask logically flows from one to the next, or can run concurrently where no subtask is dependent on itself, in a manner that could be efficiently represented on a Gantt chart.
+    6. Definitions of the Input of subtask:
         - Interlinking of Inputs: Ensure that the inputs are not siloed and can be interlinked within privous subtasks if necessary, providing a holistic view of what is required for the subtask.
         - Hierarchy and Prioritization: Identify and clearly state the priority and hierarchy (if applicable) among the inputs, ensuring the most critical elements are addressed promptly.
         - Accessibility and Clarity: Ensure that all provided inputs are accessible, clear, and understandable to the relevant team members.
         - Adjustability: Consider that inputs may need to be adjusted as the project progresses and ensure a mechanism for the same.
         - Subtask Dependency: Take into account the dependencies between different subtasks, ensuring that inputs for one subtask are aligned and coordinated with the needs and outputs of other related subtasks.jjj
-    5. Definitions of the Task Completion Standard in order to implement a feature in the software that can identify and mark a task as completed:
+    7. Definitions of the Task Completion Standard in order to implement a feature in the software that can identify and mark a task as completed:
         - A task is considered completed when its intended output is produced.
         - If possible, the completion standard should be quantifiable to facilitate automatic detection by the software or tool feature.
         - The completion standard should be applicable to common project management scenarios and adaptable to various types of tasks, such as development, testing, and review tasks.
-    6. Refrain from mentioning specific titles or roles (who are mentioned in the section of ROLES WITH DESCRIPTION) within the content of subtasks, unless the titles and personal names are mentioned in the TASK.
+    8. Refrain from mentioning specific titles or roles (who are mentioned in the section of ROLES WITH DESCRIPTION) within the content of subtasks, unless the titles and personal names are mentioned in the TASK.
 Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill in the BLANKs, and DO NOT alter or modify any other part of the template.\n\n\n"""  # noqa: E501
 
         # Generate insights from the context text to help decompose the task
@@ -256,7 +259,10 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
         subtasks_generation_msg = BaseMessage.make_user_message(
             role_name="Task Decomposer", content=subtasks_generation)
 
+        model_type = self.model_type
+        self.model_type = ModelType.GPT_4_TURBO
         response = self.step(input_message=subtasks_generation_msg)
+        self.model_type = model_type
 
         if (response.terminated):
             raise RuntimeError("Role compatibility scoring failed.\n" +
@@ -271,14 +277,14 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
                 msg.content, re.DOTALL)
         ]
         subtask_contexts = [
-            context.replace("<", "").replace(">", "").strip('\n')
-            for context in re.findall(
+            ctx.replace("<", "").replace(">", "").strip('\n')
+            for ctx in re.findall(
                 r"Contextual Parameters of subtask \d:[\s\n](.+?)Content of "
                 r"the Input of subtask ", msg.content, re.DOTALL)
         ]
         subtask_descriptions = [
-            desc + context
-            for desc, context in zip(subtask_descriptions, subtask_contexts)
+            desc + " " + ctx
+            for desc, ctx in zip(subtask_descriptions, subtask_contexts)
         ]
         subtask_inputs_content = [
             ipt.replace("<", "").replace(">", "").strip('\n')
@@ -471,9 +477,10 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
 
         compatibility_instruction_prompt = """===== INSTRUCTIONS OF COMPATIBILITY EVALUATION =====
 To evaluate the compatibility scores, consider these guiding principles:
-    1. Assess the alignment between the primary responsibilities and expertise of the role with the task requirements. Factor in the likelihood of the role successfully executing the task based on its competencies.
-    2. Analyze the congruence between keywords or key concepts in the task description and those present in the role description. This will gauge the direct relevance of the role to the task.
-    3. Drawing from a comprehensive knowledge base, ascertain the potential value each role brings to the table when it comes to accomplishing the specific task. This evaluation should be based on empirical data or established norms in the relevant domain.
+    1. Remember, your role is to evaluate the compatibility of each role, not to complete the TASK directly.
+    2. Assess the alignment between the primary responsibilities and expertise of the role with the task requirements. Factor in the likelihood of the role successfully executing the task based on its competencies.
+    3. Analyze the congruence between keywords or key concepts in the task description and those present in the role description. This will gauge the direct relevance of the role to the task.
+    4. Drawing from a comprehensive knowledge base, ascertain the potential value each role brings to the table when it comes to accomplishing the specific task. This evaluation should be based on empirical data or established norms in the relevant domain.
 Definition of USER: The user is the role that guides the entire task process. They provide instructions and direction, ensuring that the task aligns with their needs and goals. Users need to utilize their expertise and understanding of the task to propose specific subtasks, expecting the assistant to execute these tasks.
 Definition of ASSISTANT: The assistant is the role that executes instructions given by the user. They apply their professional skills and knowledge to complete specific tasks assigned by the user. Assistants must act flexibly according to the user's instructions and provide professional solutions and feedback.
 
@@ -594,19 +601,21 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
 ===== CRITERIA FOR DETERMINING SIMILARITY =====
 1. Explicit Similarity: Labels that have an exact string match should be counted as similar.
 2. Implicit Similarity: Labels that may not match word-for-word but have semantic or contextual similarities should also be considered.
-    - For example, "apple" and "fruit" may be considered similar in a context where they are being used to describe food items.
+3. If the content of the square brackets is "NONE", meaning that there is no similar label or subset, you should fill in "NONE" in the BLANKs.
+4. For example, "apple" and "fruit" may be considered similar in a context where they are being used to describe food items.
 Please ensure that you consider both explicit and implicit similarities while evaluating. The result should be a set of indices pointing to the similar labels and sets."""  # noqa: E501
         answer_prompt = "===== ANSWER TEMPLATE =====\n"
         for lable in target_labels:
             answer_prompt += (
                 f"Label \"{lable}\" from TARGET LABELS has "
                 "an explicit or implicit similarity with \"<BLANK>/NONE\" "
-                "(or similar label) in LABELS SETS subsets "
-                "[<m>, <n>]/NONE (must include square brackets).\n")
-        answer_prompt += ("Indices of the similar labels in TARGET LABELS: "
-                          "[<i>, <j>]/[NONE] (must include square brackets) \n"
-                          "Indices of the similar subset in LABELS SETS: "
-                          "[<x>, <y>]/[NONE] (must include square brackets)")
+                "(or similar label) in LABELS SETS subsets [<m>, <n>] "
+                "(must include square brackets even if it is none).\n")
+        answer_prompt += (
+            "Indices of the similar labels in TARGET LABELS: "
+            "[<i>, <j>] (must include square brackets even if it is none) \n"
+            "Indices of the similar subset in LABELS SETS: "
+            "[<x>, <y>] (must include square brackets even if it is none)")
 
         retrieval_index_prompt = TextPrompt(similarity_criteria_prompt +
                                             "\n\n" + answer_prompt)
@@ -627,6 +636,7 @@ Please ensure that you consider both explicit and implicit similarities while ev
             msg.content, re.DOTALL)
         target_labels_indices = [
             int(idx) for idx in match_target_labels[0].split(",")
+            if idx.isdigit()
         ] if match_target_labels else []
 
         target_retrieved_labels = \
@@ -637,6 +647,7 @@ Please ensure that you consider both explicit and implicit similarities while ev
             msg.content, re.DOTALL)
         labels_sets_indices = [
             int(idx) for idx in match_labels_sets[0].split(",")
+            if idx.isdigit()
         ] if match_labels_sets else []
 
         labels_retrieved_sets = \
