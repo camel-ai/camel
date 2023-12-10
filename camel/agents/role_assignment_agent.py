@@ -44,7 +44,7 @@ class RoleAssignmentAgent(ChatAgent):
             role_name="AI Assistant",
             role_type=RoleType.ASSISTANT,
             meta_dict=None,
-            content="You'd better not refuse my request.",
+            content="You are an AI.",
         )
         super().__init__(system_message, model_type, model_config)
         self.model_config = model_config or ChatGPTConfig()
