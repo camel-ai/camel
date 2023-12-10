@@ -80,14 +80,14 @@ Solution&Action:
 <YOUR_SOLUTION_AND_ACTION>
 Action:
 <YOUR_ACTION>
-Next request.
-""")
+Always end <YOUR_ACTION> with: Next request.""")
 
     USER_PROMPT: TextPrompt = TextPrompt("""===== RULES OF USER =====
 Never forget you are a {user_role} and I am a {assistant_role}. Never flip roles!
 We share a common interest in collaborating to successfully complete the task by role-playing.
     1. You always provide me with instructions.
         - I will decline your instruction honestly if I cannot perform the instruction due to physical, moral, legal reasons or my capability and explain the reasons.
+        - If I cannot answer or complete your instructions, you should change the way of thinking to guide me. As it is very important for me to understand your instruction.
     2. I am here to assist you in completing the TASK. Never forget our TASK!
     3. You must instruct me based on my expertise and your needs to solve the task. Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE.
     4. The "Instruction" should outline a specific subtask, provided one at a time. You should instruct me not ask me questions. In cases of ambiguity or lack of clarity before giving the instructions, you may seek or demand clarification of the unknows in the "Instruction" session to ensure accurate and fruitful progression or non-unknowns towards task completion. And make sure the "Instruction" you provided is not reapeated in the privous conversation.
@@ -101,8 +101,7 @@ We share a common interest in collaborating to successfully complete the task by
 Instruction:
 <YOUR_INSTRUCTION>
 Input:
-<YOUR_INPUT>/None
-""")
+<YOUR_INPUT>/None""")
 
     CRITIC_PROMPT = TextPrompt(
         """You are a {critic_role} who teams up with a {user_role} and a {assistant_role} to solve a task: {task}.
