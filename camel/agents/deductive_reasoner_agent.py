@@ -175,8 +175,8 @@ Given the starting state $A$ and the target state $B$, assuming that a path $L$ 
         }
 
         labels = [
-            label.strip().strip('\n').strip("\"\'") for label in re.findall(
-                r"Entity/Label Recognition of Conditions:\n\[(.+?)\]",
+            label.strip().strip("\"\'") for label in re.findall(
+                r"Entity/Label Recognition of Conditions:[\s\n]*\[(.+?)\]",
                 msg.content, re.DOTALL)[0].split(",")
         ]
 
