@@ -61,6 +61,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
             role_descriptions_dict=role_descriptions_dict,
             num_subtasks=None,
             context_text=context_text)
+
     oriented_graph = {}
     for subtask_idx, details in subtasks_with_dependencies_dict.items():
         deps = details["dependencies"]
@@ -79,19 +80,15 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
         role_assignment_agent.get_task_execution_order(
             subtasks_with_dependencies_dict)
 
-    # Record the insights from chat history of the assistant
-    insights_subtasks = {
-        ID_subtask: ""
-        for ID_subtask in subtasks_with_dependencies_dict.keys()
-    }
-    environment_record = {}
+    # Initialize the environment record
+    environment_record = {}  # The cache of the system
     if context_text is not None:
         insights = insight_agent.run(context_text=context_text)
         for insight in insights.values():
             if insight["entity_recognition"] is None:
                 continue
-            labels_key = tuple(insight["entity_recognition"])
-            environment_record[labels_key] = insight
+            tags = tuple(insight["entity_recognition"])
+            environment_record[tags] = insight
 
     # Print a part of the configurations of the multi-agent communication
     # to specific markdown files
@@ -111,26 +108,23 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
     print_and_write_md(
         "Dependencies among subtasks: " +
         json.dumps(subtasks_with_dependencies_dict, indent=4), color=Fore.BLUE,
-        MD_FILE="dependencies among subtasks")
+        file_path="dependencies among subtasks")
     print_and_write_md("========================================",
                        color=Fore.WHITE)
 
     # Resolve the subtasks in sequence of the pipelines
-    for ID_one_subtask in (subtask for pipeline in parallel_subtask_pipelines
-                           for subtask in pipeline):
+    for subtask_id in (subtask for pipeline in parallel_subtask_pipelines
+                       for subtask in pipeline):
         # Get the description of the subtask
         one_subtask = \
-            subtasks_with_dependencies_dict[ID_one_subtask]["description"]
-        one_subtask_tags = \
-            subtasks_with_dependencies_dict[ID_one_subtask]["input_tags"]
-        # Get the insights from the chat history of based on the dependencies
-        pre_subtasks = \
-            subtasks_with_dependencies_dict[ID_one_subtask]["dependencies"]
-
-        insights_pre_subtask = \
-            get_insights(pre_subtasks, one_subtask, one_subtask_tags,
-                         environment_record, deductive_reasoner_agent,
-                         role_assignment_agent, insight_agent, context_text)
+            subtasks_with_dependencies_dict[subtask_id]["description"]
+        one_subtask_labels = \
+            subtasks_with_dependencies_dict[subtask_id]["input_tags"]
+        # Get the insights from the environment for the subtask
+        insights_for_subtask = get_insights_from_environment(
+            subtask_id, one_subtask, one_subtask_labels, environment_record,
+            deductive_reasoner_agent, role_assignment_agent, insight_agent,
+            context_text)
 
         # Get the role with the highest compatibility score
         role_compatibility_scores_dict = (
@@ -152,7 +146,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
 
         print_and_write_md("================ SESSION ================",
                            color=Fore.WHITE)
-        print_and_write_md(f"{ID_one_subtask}: \n{one_subtask}\n",
+        print_and_write_md(f"{subtask_id}: \n{one_subtask}\n",
                            color=Fore.YELLOW)
         print_and_write_md(
             f"AI Assistant Role: {ai_assistant_role}\n" +
@@ -163,32 +157,32 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
 
         subtask_content = (
             "- Description of TASK:\n" +
-            subtasks_with_dependencies_dict[ID_one_subtask]["description"] +
+            subtasks_with_dependencies_dict[subtask_id]["description"] +
             "\n- Input of TASK:\n" +
-            subtasks_with_dependencies_dict[ID_one_subtask]["input_content"] +
+            subtasks_with_dependencies_dict[subtask_id]["input_content"] +
             "\n- Output Standard for the completion of TASK:\n" +
-            subtasks_with_dependencies_dict[ID_one_subtask]["output_standard"])
+            subtasks_with_dependencies_dict[subtask_id]["output_standard"])
         print_and_write_md(
-            f"Task of the role-playing ({ID_one_subtask}):\n"
-            f"{subtask_content}\n\n", color=Fore.RED, MD_FILE=ID_one_subtask)
+            f"Task of the role-playing ({subtask_id}):\n"
+            f"{subtask_content}\n\n", color=Fore.RED, file_path=subtask_id)
 
         # You can use the following code to play the role-playing game
         sys_msg_meta_dicts = [
             dict(
                 assistant_role=ai_assistant_role, user_role=ai_user_role,
-                assistant_description=ai_assistant_description +
-                insights_pre_subtask, user_description=ai_user_description)
-            for _ in range(2)
+                assistant_description=ai_assistant_description + "\n" +
+                insights_for_subtask, user_description=ai_user_description +
+                "\n" + insights_for_subtask) for _ in range(2)
         ]  # System message meta data dicts
         function_list = [*MATH_FUNCS, *SEARCH_FUNCS]
         assistant_model_config = \
             FunctionCallingConfig.from_openai_function_list(
                 function_list=function_list,
-                kwargs=dict(temperature=0.0),
+                kwargs=dict(temperature=0.7),
             )  # Assistant model config
         user_model_config = FunctionCallingConfig.from_openai_function_list(
             function_list=function_list,
-            kwargs=dict(temperature=0.0),
+            kwargs=dict(temperature=0.7),
         )  # User model config
 
         role_play_session = RolePlaying(
@@ -205,7 +199,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                 function_list=function_list,
             ),
             task_prompt=subtask_content,
-            model_type=model_type,
+            model_type=ModelType.GPT_4_TURBO,
             task_type=TaskType.
             ROLE_DESCRIPTION,  # Important for role description
             with_task_specify=False,
@@ -227,11 +221,11 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
             print_and_write_md(
                 f"AI User: {ai_user_role}\n\n" +
                 f"{user_response.msg.content}\n", color=Fore.BLUE,
-                MD_FILE=ID_one_subtask)
+                file_path=subtask_id)
             print_and_write_md(
                 f"AI Assistant: {ai_assistant_role}\n\n" +
                 f"{assistant_response.msg.content}\n", color=Fore.GREEN,
-                MD_FILE=ID_one_subtask)
+                file_path=subtask_id)
 
             actions_record += (f"--- [{n}] ---\n"
                                f"{assistant_response.msg.content}\n")
@@ -251,10 +245,10 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                 transformed_text = transformed_text_with_category["text"]
                 chat_history_two_roles += (transformed_text + "\n\n")
 
-            print(Fore.BLUE + "AI User:\n"
-                  f"{user_response.msg.content}\n")
-            print(Fore.GREEN + "AI Assistant:\n"
-                  f"{assistant_response.msg.content}\n")
+            # print(Fore.BLUE + "AI User:\n"
+            #       f"{user_response.msg.content}\n")
+            # print(Fore.GREEN + "AI Assistant:\n"
+            #       f"{assistant_response.msg.content}\n")
 
             if assistant_response.terminated:
                 print(Fore.GREEN +
@@ -272,126 +266,96 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                 break
 
             input_assistant_msg = assistant_response.msg
-        print(f"actions_record of {ID_one_subtask}:\n{actions_record}\n")
 
         print_and_write_md(
-            f"Output of the {ID_one_subtask}:\n" +
-            f"{chat_history_two_roles}\n", color=Fore.GREEN)
+            f"Output of the {subtask_id}:\n" + f"{chat_history_two_roles}\n",
+            color=Fore.GREEN)
 
         insights_instruction = ("The CONTEXT TEXT is the steps to resolve " +
                                 "the TASK. The INSIGHTs should come solely" +
                                 "from the actions/steps.")
         insights = insight_agent.run(context_text=actions_record,
                                      insights_instruction=insights_instruction)
-        insights_str = insight_agent.convert_json_to_str(insights)
-        print(f"insights of {ID_one_subtask}:\n{insights_str}\n")
-        insights_subtasks[ID_one_subtask] = insights_str
         for insight in insights.values():
             if insight["entity_recognition"] is None:
                 continue
             labels_key = tuple(insight["entity_recognition"])
             environment_record[labels_key] = insight
         printable_environment_record = \
-            {str(label_tuple): insight_data
-             for label_tuple, insight_data in environment_record.items()}
+            [insight_data for _, insight_data in environment_record.items()]
         print_and_write_md(
             "Environment record:\n" +
             f"{json.dumps(printable_environment_record, indent=4)}",
-            color=Fore.CYAN, MD_FILE=f"environment record of {ID_one_subtask}")
+            color=Fore.CYAN, file_path=f"environment record of {subtask_id}")
 
 
-def get_insights(pre_subtasks, one_subtask, one_subtask_tags,
-                 environment_record, deductive_reasoner_agent,
-                 role_assignment_agent, insight_agent, context_text):
+def get_insights_from_environment(subtask_id, one_subtask, one_subtask_labels,
+                                  environment_record, deductive_reasoner_agent,
+                                  role_assignment_agent, insight_agent,
+                                  context_text):
     # React to the environment, and get the insights from it
-    if pre_subtasks is not None and len(pre_subtasks) != 0:
-        conditions_and_quality_json = \
-            deductive_reasoner_agent.deduce_conditions_and_quality(
-                starting_state="None",
-                target_state=one_subtask)
+    conditions_and_quality_json = \
+        deductive_reasoner_agent.deduce_conditions_and_quality(
+            starting_state="None",
+            target_state=one_subtask)
 
-        def merge_lists(a, b):
-            # Union of two lists without duplicates
-            return list(set(a) | set(b))
+    target_labels = list(
+        set(conditions_and_quality_json["labels"]) | set(one_subtask_labels))
 
-        target_labels = merge_lists(conditions_and_quality_json["labels"],
-                                    one_subtask_tags)
+    labels_sets = [
+        list(labels_set) for labels_set in environment_record.keys()
+    ]
+    _, _, _, labels_retrieved_sets = \
+        role_assignment_agent.get_retrieval_index_from_environment(
+            labels_sets=labels_sets,
+            target_labels=target_labels,
+            )
+    print_and_write_md(
+        "Retrieved labels from the environment:\n" +
+        f"{labels_retrieved_sets}", color=Fore.CYAN,
+        file_path=f"retrieved labels for {subtask_id}")
 
-        labels_sets = [
-            list(labels_set) for labels_set in environment_record.keys()
-        ]
-        _, _, _, labels_retrieved_sets = \
-            role_assignment_agent.get_retrieval_index_from_environment(
-                labels_sets=labels_sets,
-                target_labels=target_labels,
-                )
-        # TODO: Add the print to UI
-        print_and_write_md(
-            "Retrieved labels from the environment:\n" +
-            f"{labels_retrieved_sets}", color=Fore.CYAN,
-            MD_FILE=f"retrieved labels for {pre_subtasks}")
-        retrieved_insights = [
-            environment_record[tuple(label_set)]
-            for label_set in labels_retrieved_sets
-        ]
+    # Retrive the necessaray insights from the environment
+    retrieved_insights = [
+        environment_record[tuple(label_set)]
+        for label_set in labels_retrieved_sets
+    ]
+    print("Retrieved insights from the environment for "
+          f"{subtask_id}:\n"
+          f"{json.dumps(retrieved_insights, indent=4)}")
 
-        insights_pre_subtask = (
-            "\n====== CURRENT STATE =====\n"
-            "The snapshot and the context of the TASK is presentd in "
-            "the following insights which is close related to The "
-            "\"Insctruction\" and the \"Input\":\n")
-        insights_pre_subtask += "\n".join(
-            [str(insight) for insight in retrieved_insights])
-    else:
-        target_labels = one_subtask_tags
-        labels_sets = [
-            list(labels_set) for labels_set in environment_record.keys()
-        ]
-        _, _, _, labels_retrieved_sets = \
-            role_assignment_agent.get_retrieval_index_from_environment(
-                labels_sets=labels_sets,
-                target_labels=target_labels,
-                )
-        print_and_write_md(
-            "Retrieved labels from the environment:\n" +
-            f"{labels_retrieved_sets}", color=Fore.CYAN,
-            MD_FILE=f"retrieved labels for {pre_subtasks}")
-        retrieved_insights = [
-            environment_record[tuple(label_set)]
-            for label_set in labels_retrieved_sets
-        ]
+    insights_none_pre_subtask = insight_agent.run(context_text=context_text)
+    insights_for_subtask = (
+        "\n====== CURRENT STATE =====\n"
+        "The snapshot and the context of the TASK is presentd in "
+        "the following insights which is close related to The "
+        "\"Insctruction\" and the \"Input\":\n" +
+        f"{json.dumps(insights_none_pre_subtask, indent=4)}\n")
 
-        insights_none_pre_subtask = insight_agent.run(
-            context_text=context_text)
-        insights_pre_subtask = (
-            "\n====== CURRENT STATE =====\n"
-            "The snapshot and the context of the TASK is presentd in "
-            "the following insights which is close related to The "
-            "\"Insctruction\" and the \"Input\":\n" +
-            f"{insights_none_pre_subtask}\n")
-        insights_pre_subtask += "\n".join(
-            [str(insight) for insight in retrieved_insights])
+    insights_for_subtask += "\n".join(
+        [json.dumps(insight, indent=4) for insight in retrieved_insights])
 
     print_and_write_md(
-        f"Insights from the context text:\n{insights_pre_subtask}",
-        color=Fore.GREEN, MD_FILE="insights from context text"
-        f" of {pre_subtasks}")
-    return insights_pre_subtask
+        f"Insights from the context text:\n{insights_for_subtask}",
+        color=Fore.GREEN, file_path="insights of context text for "
+        f"{subtask_id}")
+
+    return insights_for_subtask
 
 
-def print_and_write_md(text="", color=Fore.RESET, MD_FILE=None):
+def print_and_write_md(text="", color=Fore.RESET, file_path=None):
     # Print the text in the terminal
     # print(color + text)
 
     import html
     import re
 
-    if MD_FILE is None:
-        MD_FILE = ("examples/multi_agent/"
-                   "tmp_of_multi_agent/multi-agent-output.md")
+    if file_path is None:
+        file_path = ("examples/multi_agent/"
+                     "tmp_of_multi_agent/multi-agent-output.md")
     else:
-        MD_FILE = ("examples/multi_agent/"
-                   f"tmp_of_multi_agent/{MD_FILE}.md")
+        file_path = ("examples/multi_agent/"
+                     f"tmp_of_multi_agent/{file_path}.md")
     COLOR_MAP_MD = {
         Fore.BLUE: 'blue',
         Fore.GREEN: 'darkgreen',
@@ -428,7 +392,7 @@ def print_and_write_md(text="", color=Fore.RESET, MD_FILE=None):
     md_text = replace_outside_code_blocks(escaped_text, color)
 
     # Write to the markdown file
-    with open(MD_FILE, mode='a', encoding="utf-8") as file:
+    with open(file_path, mode='a', encoding="utf-8") as file:
         file.write(md_text)
 
 
@@ -460,11 +424,53 @@ if __name__ == "__main__":
     with open(root_path + file_names_context[index], mode='r',
               encoding="utf-8") as file:
         context_text = file.read()
-    task_prompt = ("Identify the current trending technologies in the"
-                   "software industry as of the latest year (2023) "
-                   "and based on that predict the next innovation.")
-    context_text = ("Identify the current trending technologies in the"
-                    "software industry as of the latest year (2023) "
-                    "and based on that predict the next innovation.")
+    context_text = ("The context of the task is used to assist in knowledge "
+                    "retrieval and collection. Given a or some specific query "
+                    "requirement(s) or research topic(s), we will show its "
+                    "intelligence to find the answer. For example, we are "
+                    "inquired about the latest research on a specific "
+                    "scientific question or explore the historical "
+                    "development of a particular field.")
+    task_prompt = (context_text + "\nNow, the query requirement "
+                   "is: every important event in Generative AI in "
+                   "2023, and predict the future of Generative AI "
+                   "in 2024 through rigorous and mathematical "
+                   "reasoning.")
+    task_prompt = ("Create a detailed travel plan for a trip to "
+                   "France, including itinerary, places to visit, "
+                   "attractions, accommodations, and "
+                   "transportation.")
+    context_text = """Destination Overview:
+Main Destination: France
+Key Cities to Visit: Paris, Nice, Lyon, Bordeaux, Marseille
+Special Interest Areas: French Riviera, Loire Valley (for castles and vineyards), Normandy (for historical sites)
+
+Travel Dates and Duration:
+Duration: 2 Weeks
+Proposed Travel Dates: June 10, 2024, to June 24, 2024
+
+Attractions and Activities:
+Must-Visit Attractions: Eiffel Tower, Louvre Museum, Palace of Versailles, Mont Saint-Michel, Côte d'Azur beaches
+Activities of Interest: Wine tasting in Bordeaux, culinary tours in Lyon, river cruising on the Seine, exploring the lavender fields in Provence
+
+Accommodation and Transportation Preferences:
+Accommodation Type: Mix of hotels and boutique guesthouses, preferably centrally located or with scenic views
+
+Transportation: Domestic flights for longer distances, train travel for intercity connections, car rental for exploring countryside areas
+
+Budget Considerations:
+Total Budget: 2000 euros
+Preferential Budget Allocation: Accommodations, experiences, dining
+
+Cultural Experiences:
+Interest in local cultural experiences, such as cooking classes, art workshops, and attending a live performance (e.g., cabaret show in Paris)
+Dining Preferences:
+
+Explore renowned French cuisine; include recommendations for bistros, brasseries, and Michelin-starred restaurants
+Dietary Restrictions: no-pork
+
+Language and Communication:
+French language proficiency: entry level
+Desire for English-speaking guides or information resources"""  # noqa: E501
 
     main(task_prompt=task_prompt, context_text=context_text)
