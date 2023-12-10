@@ -14,22 +14,8 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from enum import Enum
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
-
-
-class VectorDistance(Enum):
-    r"""Distance metrics used in a vector database."""
-
-    DOT = "dot"
-    r"""Dot product. https://en.wikipedia.org/wiki/Dot_product"""
-
-    COSINE = "cosine"
-    r"""Cosine similarity. https://en.wikipedia.org/wiki/Cosine_similarity"""
-
-    EUCLIDEAN = "euclidean"
-    r"""Euclidean distance. https://en.wikipedia.org/wiki/Euclidean_distance"""
 
 
 @dataclass

@@ -17,7 +17,6 @@ from .base import (
     VectorRecord,
     VectorDBQuery,
     VectorDBQueryResult,
-    VectorDistance,
     VectorDBStatus,
 )
 from .qdrant import QdrantStorage
@@ -26,7 +25,6 @@ __all__ = [
     'BaseVectorStorage',
     'VectorDBQuery',
     'VectorDBQueryResult',
-    'VectorDistance',
     'QdrantStorage',
     'VectorRecord',
     'VectorDBStatus',
