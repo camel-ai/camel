@@ -175,6 +175,8 @@ class BaseVectorStorage(ABC):
         r"""Returns payloads of top k vector records that closest to the given
         vector.
 
+        This function is a wrapper of `BaseVectorStorage.query`.
+
         Args:
             vector (List[float]): The search vector.
             top_k (int): The number of top similer vectors.
