@@ -87,3 +87,25 @@ def test_vector_storage(storage: BaseVectorStorage) -> None:
     status = storage.status()
     assert status.vector_count == 2
     assert status.vector_dim == 4
+
+
+@parametrize
+def test_get_payload_by_vector(storage: BaseVectorStorage):
+    vectors = [
+        VectorRecord(
+            vector=[-0.1, 0.1, -0.1, 0.1],
+            payload={"order": 1},
+        ),
+        VectorRecord(
+            vector=[-0.1, 0.1, 0.1, 0.1],
+            payload={"order": 2},
+        ),
+        VectorRecord(
+            vector=[0.1, 0.1, 0.1, 0.1],
+            payload={"order": 3},
+        ),
+    ]
+    storage.add(vectors)
+    payloads = storage.get_payloads_by_vector([1, 1, 1, 1], top_k=2)
+    assert payloads[0] == {"order": 3}
+    assert payloads[1] == {"order": 2}
