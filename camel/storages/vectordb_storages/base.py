@@ -108,23 +108,6 @@ class BaseVectorStorage(ABC):
     r"""An abstract base class for vector storage systems."""
 
     @abstractmethod
-    def validate_vector_dimensions(
-        self,
-        records: List[VectorRecord],
-    ) -> None:
-        r"""Validates that all vectors in the given list have the same
-        dimensionality as the collection.
-
-        Args:
-            records (List[VectorRecord]): A list of vector records to validate.
-
-        Raises:
-            ValueError: If any vector has a different dimensionality than
-            the collection.
-        """
-        pass
-
-    @abstractmethod
     def add(
         self,
         records: List[VectorRecord],
@@ -187,12 +170,24 @@ class BaseVectorStorage(ABC):
         """
         pass
 
-    def simple_query(
+    @abstractmethod
+    def clear(self) -> None:
+        r"""Remove all vectors from the storage."""
+        pass
+
+    @property
+    @abstractmethod
+    def client(self) -> Any:
+        r"""Provides access to the underlying vector database client."""
+        pass
+
+    def get_payloads_by_vector(
         self,
         vector: List[float],
         top_k: int,
     ) -> List[Dict[str, Any]]:
-        r"""A simple interface for vector query
+        r"""Returns payloads of top k vector records that closest to the given
+        vector.
 
         Args:
             vector (List[float]): The search vector.
@@ -207,14 +202,3 @@ class BaseVectorStorage(ABC):
             result.record.payload for result in results
             if result.record.payload is not None
         ]
-
-    @abstractmethod
-    def clear(self) -> None:
-        r"""Remove all vectors from the storage."""
-        pass
-
-    @property
-    @abstractmethod
-    def client(self) -> Any:
-        r"""Provides access to the underlying vector database client."""
-        pass

@@ -24,6 +24,8 @@ from camel.storages.vectordb_storages import (
 )
 from camel.types import VectorDistance
 
+_qdrant_local_client_map: Dict[str, Tuple[Any, int]] = {}
+
 
 class QdrantStorage(BaseVectorStorage):
     r"""An implementation of the `BaseVectorStorage` for interacting with
@@ -81,6 +83,8 @@ class QdrantStorage(BaseVectorStorage):
                 "running `pip install qdrant-client`.")
 
         self.vector_dim = vector_dim
+        self._local_path: Optional[str] = None
+
         if url_and_api_key is not None:
             self._client = QdrantClient(
                 url=url_and_api_key[0],
@@ -88,7 +92,16 @@ class QdrantStorage(BaseVectorStorage):
                 **kwargs,
             )
         elif path is not None:
-            self._client = QdrantClient(path=path, **kwargs)
+            # Avoid creating a local client multiple times,
+            # which is prohibited by Qdrant
+            self._local_path = path
+            if path in _qdrant_local_client_map:
+                # Store client instance in the map and maintain counts
+                self._client, count = _qdrant_local_client_map[path]
+                _qdrant_local_client_map[path] = (self._client, count + 1)
+            else:
+                self._client = QdrantClient(path=path, **kwargs)
+                _qdrant_local_client_map[path] = (self._client, 1)
         else:
             self._client = QdrantClient(":memory:", **kwargs)
 
@@ -117,8 +130,22 @@ class QdrantStorage(BaseVectorStorage):
         r"""Deletes the collection if :obj:`del_collection` is set to
         :obj:`True`.
         """
-        if self.delete_collection:
-            self._delete_collection(self.collection)
+        # If the client is a local client, decrease count by 1
+        if self._local_path is not None:
+            # if count decrease to 0, remove it from the map
+            _client, _count = _qdrant_local_client_map.pop(self._local_path)
+            if _count > 1:
+                _qdrant_local_client_map[self._local_path] = (
+                    _client,
+                    _count - 1,
+                )
+
+        # try to delete collection
+        try:
+            if self.delete_collection:
+                self._delete_collection(self.collection)
+        except AttributeError as e:
+            print(f"Delete collection failed: {str(e)}")
 
     def _create_collection(
         self,
@@ -195,23 +222,6 @@ class QdrantStorage(BaseVectorStorage):
             collection_info.config,
         }
 
-    def validate_vector_dimensions(self, records: List[VectorRecord]) -> None:
-        r"""Validates that all vectors in the given list have the same
-        dimensionality as the collection.
-
-        Args:
-            records (List[VectorRecord]): A list of vector records to validate.
-
-        Raises:
-            ValueError: If any vector has a different dimensionality than
-            the collection.
-        """
-        if not all(
-                len(record.vector) == self.vector_dim for record in records):
-            raise ValueError(
-                "All vectors must have the same dimensionality as defined"
-                "in the collection.")
-
     def add(
         self,
         records: List[VectorRecord],
@@ -227,7 +237,6 @@ class QdrantStorage(BaseVectorStorage):
             RuntimeError: If there was an error in the addition process.
         """
         from qdrant_client.http.models import PointStruct, UpdateStatus
-        self.validate_vector_dimensions(records)
         qdrant_points = [PointStruct(**asdict(p)) for p in records]
         op_info = self._client.upsert(
             collection_name=self.collection,
