@@ -105,17 +105,20 @@ class QdrantStorage(BaseVectorStorage):
         else:
             self._client = QdrantClient(":memory:", **kwargs)
 
-        if collection is not None:
-            try:
-                info = self._check_collection(collection)
-                if info["vector_dim"] != self.vector_dim:
-                    raise RuntimeError(
-                        "Vector dimension of the existing collection "
-                        f"{collection} ({info['vector_dim']}) "
-                        "is different from the embedding dim "
-                        f"({self.vector_dim}).")
-            except ValueError:
-                pass
+        if collection is not None and not create_collection:
+            info = self._check_collection(collection)
+            if info["vector_dim"] != self.vector_dim:
+                # Create a new collection with a new collection name if vector
+                # dimension of the given collection isn't valid.
+                new_collection = collection + datetime.now().isoformat()
+                # TODO: replace with logger
+                print("Vector dimension of the existing collection "
+                      f"\"{collection}\" ({info['vector_dim']}) "
+                      "is different from the embedding dim "
+                      f"({self.vector_dim}). Create a new collecton: "
+                      f"\"{new_collection}\"")
+                collection = new_collection
+                create_collection = True
         self.collection = collection or datetime.now().isoformat()
         if create_collection:
             self._create_collection(
