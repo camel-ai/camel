@@ -42,13 +42,13 @@ class RetrievalFunction:
     def __init__(self, 
                  embedding_model: Optional[BaseEmbedding] = None, 
                  vector_storage: Optional[BaseVectorStorage] = None,
-                 top_k: Optional[int] = 1) -> None:
+                 top_k: int = 1) -> None:
         r"""Initializes the retrieval class with an optional embedding model and vector storage, and sets the number of top results for retrieval.
 
         Args:
             embedding_model (Optional[BaseEmbedding]): The embedding model instance. Defaults to OpenAIEmbedding if not provided.
             vector_storage (Optional[BaseVectorStorage]): The vector storage instance. Defaults to QdrantStorage if not provided.
-            top_k Optional[int]: The number of top results to return during retrieval. Must be a positive integer. Defaults to 1.
+            top_k (int, optional): The number of top results to return during retrieval. Must be a positive integer. Defaults to 1.
 
         Raises:
             ValueError: If 'top_k' is less than or equal to 0.
