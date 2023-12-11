@@ -46,7 +46,7 @@ class SubprocessInterpreter(BaseInterpreter):
         "bash": "bash {file_name}",
     }
 
-    _CODE_EXTENTION = {
+    _CODE_EXTENSION = {
         "python": "py",
         "bash": "sh",
     }
