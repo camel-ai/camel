@@ -18,6 +18,8 @@ from openai import OpenAI
 from camel.embeddings import BaseEmbedding
 from camel.types import EmbeddingModelType
 from camel.utils import openai_api_key_required
+import numpy as np
+import pandas as pd
 
 
 class OpenAIEmbedding(BaseEmbedding[str]):
@@ -32,8 +34,8 @@ class OpenAIEmbedding(BaseEmbedding[str]):
     """
 
     def __init__(
-        self,
-        model_type: EmbeddingModelType = EmbeddingModelType.ADA_2,
+            self,
+            model_type: EmbeddingModelType = EmbeddingModelType.ADA_2,
     ) -> None:
         if not model_type.is_openai:
             raise ValueError("Invalid OpenAI embedding model type.")
@@ -43,9 +45,9 @@ class OpenAIEmbedding(BaseEmbedding[str]):
 
     @openai_api_key_required
     def embed_list(
-        self,
-        objs: List[str],
-        **kwargs: Any,
+            self,
+            objs: List[str],
+            **kwargs: Any,
     ) -> List[List[float]]:
         r"""Generates embeddings for the given texts.
 

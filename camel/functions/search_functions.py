@@ -12,12 +12,17 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
+import time
 from typing import Any, Dict, List
 
+from torch import cosine_similarity
+
 import camel.agents
+from camel.embeddings import OpenAIEmbedding
 from camel.functions import OpenAIFunction
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
+import pandas as pd
 
 
 def search_wiki(entity: str) -> str:
@@ -233,6 +238,23 @@ def prompt_single_step_agent(prompt: str) -> str:
     return ""
 
 
+def search_using_cosine_similarity(df, query):
+    Embedding = OpenAIEmbedding()
+    query_embedding = Embedding.embed(obj=query)
+    df["similarity"] = df['embeddings'].apply(lambda x: cosine_similarity(x, query_embedding))
+
+    results = df.sort_values("similarity", ascending=False, ignore_index=True)
+
+    k = 5
+    results = results.head(k)
+    global sources
+    sources = []
+    for i in range(k):
+        sources.append({'Page ' + str(results.iloc[i]['page']): results.iloc[i]['text'][:150] + '...'})
+    print(sources)
+    return results.head(k)
+
+
 def summarize_text(text: str, query: str) -> str:
     r"""Summarize the information from the text, base on the query if query is
     given.
@@ -244,28 +266,19 @@ def summarize_text(text: str, query: str) -> str:
     Returns:
         string: Strings with information.
     """
-    summary_prompt = TextPrompt(
-        '''Gather information from this text that relative to the question, but
-         do not directly answer the question.\nquestion: {query}\ntext ''')
-    summary_prompt = summary_prompt.format(query=query)
     # Max length of each chunk
     max_len = 3000
     results = ""
     chunks = create_chunks(text, max_len)
     # Summarize
-    for i, chunk in enumerate(chunks, start=1):
-        prompt = summary_prompt + str(i) + ": " + chunk
-        result = prompt_single_step_agent(prompt)
-        results += result + "\n"
+    embeddings = []
+    Embedding = OpenAIEmbedding()
+    for chunk in chunks:
+        response = Embedding.embed(obj=chunk)
+        embeddings += response
+    text_df = pd.DataFrame({'embeddings': embeddings})
 
-    # Final summarise
-    final_prompt = TextPrompt(
-        '''Here are some summarized texts which split from one text, Using the
-        information to answer the question: {query}.\n\nText: ''')
-    final_prompt = final_prompt.format(query=query)
-    prompt = final_prompt + results
-
-    response = prompt_single_step_agent(prompt)
+    response = search_using_cosine_similarity(text_df, query)
 
     return response
 
@@ -305,5 +318,5 @@ def search_google_and_summarize(query: str) -> str:
 
 SEARCH_FUNCS: List[OpenAIFunction] = [
     OpenAIFunction(func)
-    for func in [search_wiki, search_google_and_summarize]
+    for func in [search_google_and_summarize]
 ]
