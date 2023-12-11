@@ -11,11 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import os
 from abc import ABC
 from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Optional, Sequence, Union
 
 from camel.functions import OpenAIFunction
+from camel.types.enums import ModelType
 
 
 @dataclass(frozen=True)
@@ -82,6 +84,23 @@ class ChatGPTConfig(BaseConfig):
     frequency_penalty: float = 0.0
     logit_bias: Dict = field(default_factory=dict)
     user: str = ""
+
+
+@dataclass(frozen=True)
+class AzureConfig(ChatGPTConfig):
+    r"""Defines parameters for setting up Azure models and includes parameters
+    to be passed to chat completion function of OpenAI API.
+
+    Args:
+        model_type (str): The name of the model to be loaded.
+        azure_endpoint (str): The URL to the Azure endpoint.
+        api_params (ChatGPTConfig): An instance of :obj:ChatGPTConfig to
+            contain the arguments to be passed to OpenAI API.
+    """
+    model_type: Optional[ModelType] = None
+    deployment_name: str = os.environ.get('AZURE_DEPLOYMENT_NAME', '')
+    azure_endpoint: str = os.environ.get('AZURE_ENDPOINT', '')
+    api_version: str = '2023-10-01-preview'
 
 
 @dataclass(frozen=True)

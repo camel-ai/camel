@@ -15,7 +15,7 @@ import re
 
 import pytest
 
-from camel.configs import ChatGPTConfig, OpenSourceConfig
+from camel.configs import AzureConfig, OpenSourceConfig
 from camel.models import AzureOpenAIModel
 from camel.types import ModelType
 from camel.utils import OpenAITokenCounter
@@ -23,13 +23,13 @@ from camel.utils import OpenAITokenCounter
 
 @pytest.mark.model_backend
 @pytest.mark.parametrize("model_type", [
-    ModelType.GPT_4,
+    ModelType.AZURE,
 ])
 def test_azure_openai_model(model_type):
-    model_config_dict = ChatGPTConfig().__dict__
+    model_config = AzureConfig(model_type=ModelType.GPT_3_5_TURBO)
+    model_config_dict = model_config.__dict__
     model = AzureOpenAIModel(model_type, model_config_dict)
-    assert model.model_type == model_type
-    assert model.model_config_dict == model_config_dict
+    assert model.model_type == model_config.model_type
     assert isinstance(model.token_counter, OpenAITokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
@@ -45,6 +45,7 @@ def test_azure_openai_model_unexpected_argument():
     model_config_dict = model_config.__dict__
 
     with pytest.raises(
-            ValueError, match=re.escape(("Unexpected argument `model_path` is "
-                                         "input into OpenAI model backend."))):
+            AssertionError, match=re.escape((
+                "Azure model backend is not initialized with AZURE model type."
+                ))):
         _ = AzureOpenAIModel(model_type, model_config_dict)

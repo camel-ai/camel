@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import os
 from typing import Any, Dict, List, Optional, Union
 
 from openai import AzureOpenAI, Stream
@@ -44,24 +43,32 @@ class AzureOpenAIModel(BaseModelBackend):
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into openai.ChatCompletion.create().
         """
+        assert model_type == ModelType.AZURE, \
+            "Azure model backend is not initialized with AZURE model type."
+
+        model_config_dict = model_config_dict.copy()
+
+        model_type = model_config_dict.pop('model_type', None)
+        self.deployment_name = model_config_dict.pop('deployment_name', '')
+        self.azure_endpoint = model_config_dict.pop('azure_endpoint', '')
+        self.api_version = model_config_dict.pop('api_version', '')
+
+        assert model_type is not None, \
+            "Azure model type is not provided."
+        assert self.deployment_name != '', \
+            "Azure model deployment name is not provided."
+        assert self.azure_endpoint != '', \
+            "Azure endpoint is not provided."
+
         super().__init__(model_type, model_config_dict)
-        url = os.environ.get('OPENAI_API_BASE_URL', '')
-        api_version = os.environ.get('AZURE_OPENAI_API_VERSION',
-                                     '2023-10-01-preview')
+
         self._client = AzureOpenAI(
             timeout=60,
             max_retries=3,
-            api_version=api_version,
-            azure_endpoint=url,
+            api_version=self.api_version,
+            azure_endpoint=self.azure_endpoint,
         )
         self._token_counter: Optional[BaseTokenCounter] = None
-
-        self.deployment_name = os.environ.get('AZURE_MODEL_DEPLOYMENT_NAME',
-                                              'gpt-3.5-turbo-1106')
-        assert self.deployment_name is not None, \
-            "Azure model deployment name is not provided."
-
-        self.model_name = os.environ.get('AZURE_MODEL_TOKEN_LIMIT', 8192)
 
     @property
     def token_counter(self) -> BaseTokenCounter:

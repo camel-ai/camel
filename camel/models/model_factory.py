@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import os
 from typing import Any, Dict
 
 from camel.models import (
@@ -49,11 +48,9 @@ class ModelFactory:
         """
         model_class: Any
         if model_type.is_openai:
-            use_azure_api = 'USE_AZURE_API' in os.environ
-            if use_azure_api:
-                model_class = AzureOpenAIModel
-            else:
-                model_class = OpenAIModel
+            model_class = OpenAIModel
+        elif model_type.is_azure:
+            model_class = AzureOpenAIModel
         elif model_type == ModelType.STUB:
             model_class = StubModel
         elif model_type.is_open_source:

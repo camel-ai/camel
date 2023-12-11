@@ -31,6 +31,8 @@ class ModelType(Enum):
     GPT_4_TURBO = "gpt-4-1106-preview"
     GPT_4_TURBO_VISION = "gpt-4-vision-preview"
 
+    AZURE = "azure"
+
     STUB = "stub"
 
     LLAMA_2 = "llama-2"
@@ -51,6 +53,13 @@ class ModelType(Enum):
             ModelType.GPT_4_32K,
             ModelType.GPT_4_TURBO,
             ModelType.GPT_4_TURBO_VISION,
+        }
+
+    @property
+    def is_azure(self) -> bool:
+        r"""Returns whether this type of models is an azure model."""
+        return self in {
+            ModelType.AZURE,
         }
 
     @property
