@@ -26,15 +26,15 @@ def main(model_type=None, chat_turn_limit=50) -> None:
     role_play_session = RolePlaying(
         model_type=model_type,
         assistant_role_name="Python Programmer",
-        assistant_agent_kwargs=dict(
-            model_type=model_type, model_config=model_config),
+        assistant_agent_kwargs=dict(model_type=model_type,
+                                    model_config=model_config),
         user_role_name="Stock Trader",
-        user_agent_kwargs=dict(
-            model_type=model_type, model_config=model_config),
+        user_agent_kwargs=dict(model_type=model_type,
+                               model_config=model_config),
         task_prompt=task_prompt,
         with_task_specify=True,
-        task_specify_agent_kwargs=dict(
-            model_type=model_type, model_config=model_config),
+        task_specify_agent_kwargs=dict(model_type=model_type,
+                                       model_config=model_config),
     )
 
     print(

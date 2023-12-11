@@ -47,5 +47,5 @@ def test_azure_openai_model_unexpected_argument():
     with pytest.raises(
             AssertionError, match=re.escape((
                 "Azure model backend is not initialized with AZURE model type."
-                ))):
+            ))):
         _ = AzureOpenAIModel(model_type, model_config_dict)
