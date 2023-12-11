@@ -21,14 +21,6 @@ from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
 from camel.utils import BaseTokenCounter, OpenAITokenCounter
 
-azure_model_name_to_type = {
-    "gpt-35-turbo": ModelType.GPT_3_5_TURBO,
-    "gpt-35-turbo-16k": ModelType.GPT_3_5_TURBO_16K,
-    "gpt-4": ModelType.GPT_4,
-    "gpt-4-32k": ModelType.GPT_4_32K,
-    "gpt-4-1106-preview": ModelType.GPT_4_TURBO,
-}
-
 
 class AzureOpenAIModel(BaseModelBackend):
     r"""Azure OpenAI API in a unified BaseModelBackend interface."""
