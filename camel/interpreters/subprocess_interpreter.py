@@ -135,7 +135,7 @@ class SubprocessInterpreter(BaseInterpreter):
 
         # Print code for security checking
         if self.user_check:
-            print(f"The following {code_type} code will run in your computer:")
+            print(f"The following {code_type} code will run on your computer:")
             print(Fore.CYAN + code + Fore.RESET)
             while True:
                 choice = input("Running code? [Y/n]:").lower()
