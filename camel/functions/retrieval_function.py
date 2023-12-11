@@ -63,22 +63,21 @@ class RetrievalFunction:
 
     def _set_vector_storage(
         self,
-        vector_storage: Optional[BaseVectorStorage] = None,
+        storage_type: str,
         collection_name: Optional[str] = None,
         collection_accessable: Optional[bool] = None,
-        vector_path: Optional[str] = None,
+        vector_storage_local_path: Optional[str] = None,
         url_and_api_key: Optional[Tuple[str, str]] = None,
-        storage_type: str = 'local') -> BaseVectorStorage:
+        vector_storage: Optional[BaseVectorStorage] = None) -> BaseVectorStorage:
         r"""Sets up and returns a vector storage instance (either local or remote) with specified parameters.
 
         Args:
-            vector_storage (Optional[BaseVectorStorage]): An existing vector storage instance.
+            storage_type (str): Type of storage ('local' or 'remote').
             collection_name (Optional[str]): Name of the collection in the vector storage.
             collection_accessable (Optional[bool]): Flag indicating if the collection already exists.
-            vector_path (Optional[str]): Filesystem path for local vector storage (used when storage_type is 'local').
+            vector_storage_local_path (Optional[str]): Filesystem path for local vector storage (used when storage_type is 'local').
             url_and_api_key (Optional[Tuple[str, str]]): URL and API key for remote storage access (used when storage_type is 'remote').
-            storage_type (str): Type of storage ('local' or 'remote').
-            **kwargs (Any): Additional keyword arguments.
+            vector_storage (Optional[BaseVectorStorage]): An existing vector storage instance.
 
         Returns:
             BaseVectorStorage: Configured vector storage instance.
@@ -88,8 +87,8 @@ class RetrievalFunction:
         """
 
         if storage_type == 'local':
-            if vector_path is None:
-                raise ValueError("For local storage, 'vector_path' must be provided.")
+            if vector_storage_local_path is None:
+                raise ValueError("For local storage, 'vector_storage_local_path' must be provided.")
             if url_and_api_key is not None:
                 raise ValueError("For local storage, 'url_and_api_key' must not be provided.")
 
@@ -97,13 +96,13 @@ class RetrievalFunction:
                 vector_dim=self.vector_dim,
                 collection=collection_name,
                 create_collection=not collection_accessable,
-                path=vector_path)
+                path=vector_storage_local_path)
 
         elif storage_type == 'remote':
             if url_and_api_key is None:
                 raise ValueError("For remote storage, 'url_and_api_key' must be provided.")
-            if vector_path is not None:
-                raise ValueError("For remote storage, 'vector_path' must not be provided.")
+            if vector_storage_local_path is not None:
+                raise ValueError("For remote storage, 'vector_storage_local_path' must not be provided.")
 
             return vector_storage or QdrantStorage(
                 vector_dim=self.vector_dim,
@@ -118,18 +117,18 @@ class RetrievalFunction:
 
     def _check_collection_status(self,
                                 collection_name: str,
-                                vector_storage: Optional[BaseVectorStorage] = None,
+                                storage_type: str,
                                 vector_storage_local_path: Optional[str] = None,
                                 url_and_api_key: Optional[Tuple[str, str]] = None,
-                                storage_type: str = 'local') -> bool:
+                                vector_storage: Optional[BaseVectorStorage] = None) -> bool:
         r"""Checks and returns the status of the specified collection in the vector storage.
 
         Args:
             collection_name (str): Name of the collection to check.
-            vector_storage (Optional[BaseVectorStorage]): Vector storage instance.
+            storage_type (str): Type of storage ('local' or 'remote').
             vector_storage_local_path (Optional[str]): Filesystem path for local vector storage (used when storage_type is 'local').
             url_and_api_key (Optional[Tuple[str, str]]): URL and API key for remote storage access (used when storage_type is 'remote').
-            storage_type (str): Type of storage ('local' or 'remote').
+            vector_storage (Optional[BaseVectorStorage]): Vector storage instance.
 
         Returns:
             bool: True if the collection exists and is accessible, False otherwise.
@@ -181,9 +180,6 @@ class RetrievalFunction:
             content_input_path (str): File path or URL of the content to be processed.
             vector_storage (BaseVectorStorage): Vector storage to store the embeddings.
             **kwargs (Any): Additional keyword arguments.
-
-        Note:
-            This method is a preparatory step for subsequent information retrieval.
         """
         unstructured_modules = UnstructuredModules()
         elements = unstructured_modules.parse_file_or_url(content_input_path)
@@ -252,11 +248,14 @@ class RetrievalFunction:
             raise ValueError("Invalid storage type specified. Please choose 'local' or 'remote'.")
 
         content_input_paths = [content_input_paths] if isinstance(content_input_paths, str) else content_input_paths
+
         retrieved_infos = ""
 
         for content_input_path in content_input_paths:
+            # Check path type
             parsed_url = urlparse(content_input_path)
             is_url = all([parsed_url.scheme, parsed_url.netloc])
+            # Convert given path into collection name
             collection_name = (content_input_path.replace("https://", "").replace("/", "_").strip("_")
                             if is_url else Path(content_input_path).stem.replace(' ', '_'))
 
@@ -271,7 +270,7 @@ class RetrievalFunction:
                     storage_type=storage_type,
                     collection_name=collection_name,
                     collection_accessable=collection_accessable,
-                    vector_path=vector_storage_local_path if storage_type == 'local' else None,
+                    vector_storage_local_path=vector_storage_local_path if storage_type == 'local' else None,
                     url_and_api_key=url_and_api_key if storage_type == 'remote' else None)
 
                 if not collection_accessable:
