@@ -19,7 +19,6 @@ from .weather_functions import WEATHER_FUNCS
 from .unstructured_io_fuctions import UnstructuredModules
 from .retrieval_function import RetrievalFunction
 
-
 __all__ = [
     'OpenAIFunction',
     'MATH_FUNCS',

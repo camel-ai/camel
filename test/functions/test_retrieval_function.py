@@ -68,105 +68,113 @@ def test_retrieval_function_initialization():
         RetrievalFunction(top_k=0)
 
 
-def test_set_vector_storage_local_without_vector_path(retrieval_function_instance):
+def test_set_vector_storage_local_without_vector_path(
+        retrieval_function_instance):
     # Test setting local storage without providing 'vector_path'
     with pytest.raises(ValueError):
-        retrieval_function_instance._set_vector_storage(
-            storage_type='local'
-        )
+        retrieval_function_instance._set_vector_storage(storage_type='local')
 
-def test_set_vector_storage_local_with_url_and_api_key(retrieval_function_instance):
+
+def test_set_vector_storage_local_with_url_and_api_key(
+        retrieval_function_instance):
     # Test setting local storage with 'url_and_api_key' which should not be
     # provided
     with pytest.raises(ValueError):
         retrieval_function_instance._set_vector_storage(
             vector_storage_local_path='examples/rag/',
             url_and_api_key=('http://example.com', 'api_key'),
-            storage_type='local'
-        )
+            storage_type='local')
 
-def test_set_vector_storage_local_with_valid_path(retrieval_function_instance, temp_storage_path):
+
+def test_set_vector_storage_local_with_valid_path(retrieval_function_instance,
+                                                  temp_storage_path):
     storage = retrieval_function_instance._set_vector_storage(
-        storage_type='local',
-        collection_name='test_collection',
-        vector_storage_local_path=temp_storage_path
-    )
+        storage_type='local', collection_name='test_collection',
+        vector_storage_local_path=temp_storage_path)
     assert isinstance(storage, QdrantStorage)
 
 
 def test_set_vector_storage_local_without_path(retrieval_function_instance):
     with pytest.raises(ValueError):
         retrieval_function_instance._set_vector_storage(
-            storage_type='local',
-            vector_storage_local_path=None
-        )
+            storage_type='local', vector_storage_local_path=None)
 
 
-def test_set_vector_storage_remote_without_api_key(retrieval_function_instance):
+def test_set_vector_storage_remote_without_api_key(
+        retrieval_function_instance):
     with pytest.raises(ValueError):
         retrieval_function_instance._set_vector_storage(
-            storage_type='remote',
-            url_and_api_key=None
-        )
+            storage_type='remote', url_and_api_key=None)
+
 
 def test_set_vector_storage_invalid_type(retrieval_function_instance):
     with pytest.raises(ValueError):
         retrieval_function_instance._set_vector_storage(
-            storage_type='invalid_type'
-        )
+            storage_type='invalid_type')
 
-def test_check_collection_status_local_valid(retrieval_function_instance, temp_storage_path):
+
+def test_check_collection_status_local_valid(retrieval_function_instance,
+                                             temp_storage_path):
 
     retrieval_function_instance._set_vector_storage(
-        storage_type='local',
-        collection_name='test_collection',
-        vector_storage_local_path=temp_storage_path
-    )
+        storage_type='local', collection_name='test_collection',
+        vector_storage_local_path=temp_storage_path)
     assert retrieval_function_instance._check_collection_status(
-        storage_type='local',
-        collection_name='test_collection',
-        vector_storage_local_path=temp_storage_path
-    ) is True
+        storage_type='local', collection_name='test_collection',
+        vector_storage_local_path=temp_storage_path) is True
 
 
 def test_check_collection_status_local_invalid(retrieval_function_instance):
 
     assert retrieval_function_instance._check_collection_status(
-            storage_type='local',
-            collection_name='test_collection',
-            url_and_api_key=('http://example.com', 'api_key')
-        )is False
+        storage_type='local', collection_name='test_collection',
+        url_and_api_key=('http://example.com', 'api_key')) is False
+
 
 def test_check_collection_status_remote_valid(retrieval_function_instance):
-        
-    assert retrieval_function_instance._check_collection_status(
-        storage_type='remote',
-        collection_name='latest',
-        url_and_api_key=("https://c7ac871b-0dca-4586-8b03-9ffb4e40363e.us-east4-0.gcp.cloud.qdrant.io:6333",
-            "axny37nzYHwg8jxbW-TnC90p8MibC1Tl4ypSwM87boZhSqvedvW_7w")
-    ) is True
 
-def test_check_collection_status_remote_valid(retrieval_function_instance):
- 
     assert retrieval_function_instance._check_collection_status(
-        storage_type='remote',
-        collection_name='not_existing_collection_name',
-        url_and_api_key=("https://c7ac871b-0dca-4586-8b03-9ffb4e40363e.us-east4-0.gcp.cloud.qdrant.io:6333",
-            "axny37nzYHwg8jxbW-TnC90p8MibC1Tl4ypSwM87boZhSqvedvW_7w")
-    ) is False
+        storage_type='remote', collection_name='latest', url_and_api_key=(
+            "https://c7ac871b-0dca-4586-8b03-9ffb4e40363e.us-east4-0.gcp."
+            "cloud.qdrant.io:6333",
+            "axny37nzYHwg8jxbW-TnC90p8MibC1Tl4ypSwM87boZhSqvedvW_7w")) is True
+
+
+def test_check_collection_status_remote_invalid(retrieval_function_instance):
+
+    assert retrieval_function_instance._check_collection_status(
+        storage_type='remote', collection_name='not_existing_collection_name',
+        url_and_api_key=(
+            "https://c7ac871b-0dca-4586-8b03-9ffb4e40363e.us-east4-0.gcp."
+            "cloud.qdrant.io:6333",
+            "axny37nzYHwg8jxbW-TnC90p8MibC1Tl4ypSwM87boZhSqvedvW_7w")) is False
+
 
 def test_embed_and_store_chunks(mock_openai_embedding, mock_qdrant_storage):
-    rf = RetrievalFunction(embedding_model=mock_openai_embedding, vector_storage=mock_qdrant_storage)
-    with patch('camel.functions.unstructured_io_fuctions.UnstructuredModules') as mock_unstructured:
+    rf = RetrievalFunction(embedding_model=mock_openai_embedding,
+                           vector_storage=mock_qdrant_storage)
+    with patch('camel.functions.unstructured_io_fuctions.UnstructuredModules'
+               ) as mock_unstructured:
         # Mock the return value of parse_file_or_url and chunk_elements
-        mock_unstructured.return_value.parse_file_or_url.return_value = ["mocked content"]
-        mock_unstructured.return_value.chunk_elements.return_value = ["chunk1", "chunk2"]
-        rf._embed_and_store_chunks("examples/rag/example_database/camel paper.pdf", mock_qdrant_storage)
+        mock_unstructured.return_value.parse_file_or_url.return_value = [
+            "mocked content"
+        ]
+        mock_unstructured.return_value.chunk_elements.return_value = [
+            "chunk1", "chunk2"
+        ]
+        rf._embed_and_store_chunks(
+            "examples/rag/example_database/camel paper.pdf",
+            mock_qdrant_storage)
         mock_openai_embedding.embed.assert_called()
         mock_qdrant_storage.add.assert_called()
 
+
 def test_query_and_compile_results(mock_openai_embedding, mock_qdrant_storage):
-    rf = RetrievalFunction(embedding_model=mock_openai_embedding, vector_storage=mock_qdrant_storage)
-    mock_qdrant_storage.query.return_value = [Mock(record=Mock(payload="result1")), Mock(record=Mock(payload="result2"))]
+    rf = RetrievalFunction(embedding_model=mock_openai_embedding,
+                           vector_storage=mock_qdrant_storage)
+    mock_qdrant_storage.query.return_value = [
+        Mock(record=Mock(payload="result1")),
+        Mock(record=Mock(payload="result2"))
+    ]
     result = rf._query_and_compile_results("query", mock_qdrant_storage)
     assert "result1" in result and "result2" in result

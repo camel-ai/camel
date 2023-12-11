@@ -16,40 +16,38 @@ from camel.functions.retrieval_function import RetrievalFunction
 # Initialize the RetrievalFunction instance
 retrieval_instance = RetrievalFunction()
 
+
 def local_retrieval():
     r"""Performs local retrieval of information."""
     retrieved_info = retrieval_instance.run_retrieval(
-        storage_type='local',
-        content_input_paths=[
+        storage_type='local', content_input_paths=[
             "examples/rag/example_database/camel paper.pdf",
             "https://docs.vllm.ai/en/latest/"
-        ],
-        vector_storage_local_path="examples/rag/",
-        query="Who do you want to say a big THANK YOU to?"
-    )
+        ], vector_storage_local_path="examples/rag/",
+        query="Who do you want to say a big THANK YOU to?")
     print(retrieved_info)
+
 
 def remote_retrieval():
     r"""Performs remote retrieval of information."""
     retrieved_info = retrieval_instance.run_retrieval(
-        storage_type='remote',
-        content_input_paths=[
+        storage_type='remote', content_input_paths=[
             "examples/rag/example_database/camel paper.pdf",
             "https://docs.vllm.ai/en/latest/"
-        ],
-        url_and_api_key=[
-            ("https://c7ac871b-0dca-4586-8b03-9ffb4e40363e.us-east4-0.gcp.cloud.qdrant.io:6333",
+        ], url_and_api_key=[
+            ("https://c7ac871b-0dca-4586-8b03-9ffb4e40363e.us-east4-0.gcp."
+             "cloud.qdrant.io:6333",
              "axny37nzYHwg8jxbW-TnC90p8MibC1Tl4ypSwM87boZhSqvedvW_7w")
-        ],
-        query="Who do you want to say a big THANK YOU to?"
-    )
+        ], query="Who do you want to say a big THANK YOU to?")
     print(retrieved_info)
+
 
 def main():
     print("Result from local retrieval:")
     local_retrieval()
     print("Result from remote retrieval:")
     remote_retrieval()
+
 
 if __name__ == "__main__":
     main()
