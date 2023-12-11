@@ -116,16 +116,16 @@ class RetrievalFunction:
 
 
     def _check_collection_status(self,
-                                collection_name: str,
                                 storage_type: str,
+                                collection_name: str,
                                 vector_storage_local_path: Optional[str] = None,
                                 url_and_api_key: Optional[Tuple[str, str]] = None,
                                 vector_storage: Optional[BaseVectorStorage] = None) -> bool:
         r"""Checks and returns the status of the specified collection in the vector storage.
 
         Args:
-            collection_name (str): Name of the collection to check.
             storage_type (str): Type of storage ('local' or 'remote').
+            collection_name (str): Name of the collection to check.
             vector_storage_local_path (Optional[str]): Filesystem path for local vector storage (used when storage_type is 'local').
             url_and_api_key (Optional[Tuple[str, str]]): URL and API key for remote storage access (used when storage_type is 'remote').
             vector_storage (Optional[BaseVectorStorage]): Vector storage instance.
