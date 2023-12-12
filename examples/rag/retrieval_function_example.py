@@ -18,7 +18,12 @@ retrieval_instance = RetrievalFunction()
 
 
 def local_retrieval():
-    r"""Performs local retrieval of information."""
+    r"""Performs a local retrieval example. This process involves generating
+    vector storage on the local path during the first run, followed by the
+    retrieval operation. Once the vector storage is created, subsequent runs
+    will only involve retrieval, bypassing the initial generation step. If
+    desired, the vector storage can be manually deleted after running the
+    example."""
     retrieved_info = retrieval_instance.run_retrieval(
         storage_type='local', content_input_paths=[
             "examples/rag/example_database/camel paper.pdf",
@@ -29,15 +34,19 @@ def local_retrieval():
 
 
 def remote_retrieval():
-    r"""Performs remote retrieval of information."""
+    r"""Performs a remote retrieval example. This process involves generating
+    vector storage on the remote cloud service during the first run, followed
+    by the retrieval operation. Once the vector storage is created, subsequent
+    runs will only involve retrieval, bypassing the initial generation step.
+    """
     retrieved_info = retrieval_instance.run_retrieval(
         storage_type='remote', content_input_paths=[
             "examples/rag/example_database/camel paper.pdf",
             "https://docs.vllm.ai/en/latest/"
         ], url_and_api_key=[
-            ("https://c7ac871b-0dca-4586-8b03-9ffb4e40363e.us-east4-0.gcp."
-             "cloud.qdrant.io:6333",
-             "axny37nzYHwg8jxbW-TnC90p8MibC1Tl4ypSwM87boZhSqvedvW_7w")
+            "https://c7ac871b-0dca-4586-8b03-9ffb4e40363e."
+            "us-east4-0.gcp.cloud.qdrant.io:6333",
+            "axny37nzYHwg8jxbW-TnC90p8MibC1Tl4ypSwM87boZhSqvedvW_7w"
         ], query="Who do you want to say a big THANK YOU to?")
     print(retrieved_info)
 
