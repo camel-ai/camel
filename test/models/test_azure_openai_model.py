@@ -11,11 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import os
 import re
 
 import pytest
 
-from camel.configs import AzureConfig, OpenSourceConfig
+from camel.configs import ChatGPTConfig, OpenSourceConfig
 from camel.models import AzureOpenAIModel
 from camel.types import ModelType
 from camel.utils import OpenAITokenCounter
@@ -26,10 +27,16 @@ from camel.utils import OpenAITokenCounter
     ModelType.AZURE,
 ])
 def test_azure_openai_model(model_type):
-    model_config = AzureConfig(model_type=ModelType.GPT_3_5_TURBO)
-    model_config_dict = model_config.__dict__
-    model = AzureOpenAIModel(model_type, model_config_dict)
-    assert model.model_type == model_config.model_type
+
+    model_config_dict = ChatGPTConfig().__dict__
+    backend_config_dict = dict(
+        model_type=ModelType.GPT_3_5_TURBO,
+        deployment_name=os.environ.get('AZURE_DEPLOYMENT_NAME', ''),
+        azure_endpoint=os.environ.get('AZURE_ENDPOINT', ''),
+    )
+    model = AzureOpenAIModel(model_type, model_config_dict,
+                             backend_config_dict)
+    assert model.model_type == backend_config_dict['model_type']
     assert isinstance(model.token_counter, OpenAITokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
@@ -43,9 +50,10 @@ def test_azure_openai_model_unexpected_argument():
         server_url="http://localhost:8000/v1",
     )
     model_config_dict = model_config.__dict__
+    backend_config_dict = dict()
 
     with pytest.raises(
-            AssertionError, match=re.escape((
-                "Azure model backend is not initialized with AZURE model type."
-            ))):
-        _ = AzureOpenAIModel(model_type, model_config_dict)
+            ValueError, match=re.escape(("Unexpected argument `model_path` is "
+                                         "input into OpenAI model backend."))):
+        _ = AzureOpenAIModel(model_type, model_config_dict,
+                             backend_config_dict)

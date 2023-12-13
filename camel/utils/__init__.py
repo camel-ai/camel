@@ -14,6 +14,7 @@
 from .python_interpreter import PythonInterpreter
 from .commons import (
     openai_api_key_required,
+    azure_openai_api_key_required,
     print_text_animated,
     get_prompt_template_key_words,
     get_first_int,
@@ -32,6 +33,7 @@ from .token_counting import (
 __all__ = [
     'count_tokens_openai_chat_models',
     'openai_api_key_required',
+    'azure_openai_api_key_required',
     'print_text_animated',
     'get_prompt_template_key_words',
     'get_first_int',

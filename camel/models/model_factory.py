@@ -31,14 +31,16 @@ class ModelFactory:
     """
 
     @staticmethod
-    def create(model_type: ModelType,
-               model_config_dict: Dict) -> BaseModelBackend:
+    def create(model_type: ModelType, model_config_dict: Dict,
+               backend_config_dict: Dict) -> BaseModelBackend:
         r"""Creates an instance of `BaseModelBackend` of the specified type.
 
         Args:
             model_type (ModelType): Model for which a backend is created.
             model_config_dict (Dict): A dictionary that will be fed into
                 the backend constructor.
+            backend_config_dict (Dict): A dictionary that contains the
+                backend configs.
 
         Raises:
             ValueError: If there is not backend for the model.
@@ -58,5 +60,5 @@ class ModelFactory:
         else:
             raise ValueError(f"Unknown model type `{model_type}` is input")
 
-        inst = model_class(model_type, model_config_dict)
+        inst = model_class(model_type, model_config_dict, backend_config_dict)
         return inst

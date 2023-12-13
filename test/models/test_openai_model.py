@@ -32,7 +32,8 @@ from camel.utils import OpenAITokenCounter
 ])
 def test_openai_model(model_type):
     model_config_dict = ChatGPTConfig().__dict__
-    model = OpenAIModel(model_type, model_config_dict)
+    backend_config_dict = dict()
+    model = OpenAIModel(model_type, model_config_dict, backend_config_dict)
     assert model.model_type == model_type
     assert model.model_config_dict == model_config_dict
     assert isinstance(model.token_counter, OpenAITokenCounter)
@@ -48,8 +49,9 @@ def test_openai_model_unexpected_argument():
         server_url="http://localhost:8000/v1",
     )
     model_config_dict = model_config.__dict__
+    backend_config_dict = dict()
 
     with pytest.raises(
             ValueError, match=re.escape(("Unexpected argument `model_path` is "
                                          "input into OpenAI model backend."))):
-        _ = OpenAIModel(model_type, model_config_dict)
+        _ = OpenAIModel(model_type, model_config_dict, backend_config_dict)

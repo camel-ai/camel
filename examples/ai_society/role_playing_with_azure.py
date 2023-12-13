@@ -11,30 +11,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import os
+
 from colorama import Fore
 
-from camel.configs import AzureConfig
 from camel.societies import RolePlaying
 from camel.types.enums import ModelType
 from camel.utils import print_text_animated
 
 
 def main(model_type=None, chat_turn_limit=50) -> None:
-    model_config = AzureConfig(model_type=ModelType.GPT_4_TURBO)
+    backend_config_dict = dict(
+        model_type=ModelType.GPT_4_TURBO,
+        deployment_name=os.environ.get("AZURE_DEPLOYMENT_NAME", ""),
+        azure_endpoint=os.environ.get("AZURE_ENDPOINT", ""),
+    )
 
     task_prompt = "Develop a trading bot for the stock market"
     role_play_session = RolePlaying(
         model_type=model_type,
         assistant_role_name="Python Programmer",
         assistant_agent_kwargs=dict(model_type=model_type,
-                                    model_config=model_config),
+                                    backend_config_dict=backend_config_dict),
         user_role_name="Stock Trader",
         user_agent_kwargs=dict(model_type=model_type,
-                               model_config=model_config),
+                               backend_config_dict=backend_config_dict),
         task_prompt=task_prompt,
         with_task_specify=True,
-        task_specify_agent_kwargs=dict(model_type=model_type,
-                                       model_config=model_config),
+        task_specify_agent_kwargs=dict(
+            model_type=model_type, backend_config_dict=backend_config_dict),
     )
 
     print(

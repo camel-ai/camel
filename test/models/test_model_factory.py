@@ -27,7 +27,9 @@ parametrize = pytest.mark.parametrize('model', [
 @parametrize
 def test_model_factory(model):
     model_config_dict = ChatGPTConfig().__dict__
-    model_inst = ModelFactory.create(model, model_config_dict)
+    backend_config_dict = dict()
+    model_inst = ModelFactory.create(model, model_config_dict,
+                                     backend_config_dict)
     messages = [
         {
             "role": "system",

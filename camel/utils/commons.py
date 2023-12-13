@@ -63,6 +63,31 @@ def openai_api_key_required(func: F) -> F:
     return cast(F, wrapper)
 
 
+def azure_openai_api_key_required(func: F) -> F:
+    r"""Decorator that checks if the Azure OpenAI API key is available in the
+    environment variables.
+
+    Args:
+        func (callable): The function to be wrapped.
+
+    Returns:
+        callable: The decorated function.
+
+    Raises:
+        ValueError: If the Azure OpenAI API key is not found in the environment
+            variables.
+    """
+
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if 'AZURE_OPENAI_API_KEY' in os.environ:
+            return func(self, *args, **kwargs)
+        else:
+            raise ValueError('Azure OpenAI API key not found.')
+
+    return cast(F, wrapper)
+
+
 def print_text_animated(text, delay: float = 0.02, end: str = ""):
     r"""Prints the given text with an animated effect.
 

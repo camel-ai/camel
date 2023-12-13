@@ -19,14 +19,19 @@ from camel.configs import OPENAI_API_PARAMS_WITH_FUNCTIONS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
-from camel.utils import BaseTokenCounter, OpenAITokenCounter
+from camel.utils import (
+    BaseTokenCounter,
+    OpenAITokenCounter,
+    azure_openai_api_key_required,
+)
 
 
 class AzureOpenAIModel(BaseModelBackend):
     r"""Azure OpenAI API in a unified BaseModelBackend interface."""
 
-    def __init__(self, model_type: ModelType,
-                 model_config_dict: Dict[str, Any]) -> None:
+    def __init__(self, model_type: ModelType, model_config_dict: Dict[str,
+                                                                      Any],
+                 backend_config_dict: Dict[str, Any]) -> None:
         r"""Constructor for Azure OpenAI backend.
 
         Args:
@@ -34,16 +39,16 @@ class AzureOpenAIModel(BaseModelBackend):
                 one of AZURE series.
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into openai.ChatCompletion.create().
+            backend_config_dict (Dict[str, Any]): A dictionary that contains
+                the backend configs.
         """
-        assert model_type == ModelType.AZURE, \
-            "Azure model backend is not initialized with AZURE model type."
+        super().__init__(model_type, model_config_dict, backend_config_dict)
 
-        model_config_dict = model_config_dict.copy()
-
-        model_type = model_config_dict.pop('model_type', None)
-        self.deployment_name = model_config_dict.pop('deployment_name', '')
-        self.azure_endpoint = model_config_dict.pop('azure_endpoint', '')
-        self.api_version = model_config_dict.pop('api_version', '')
+        self.model_type = backend_config_dict.get('model_type', None)
+        self.deployment_name = backend_config_dict.get('deployment_name', '')
+        self.azure_endpoint = backend_config_dict.get('azure_endpoint', '')
+        self.api_version = backend_config_dict.get('api_version',
+                                                   '2023-10-01-preview')
 
         assert model_type is not None, \
             "Azure model type is not provided."
@@ -51,8 +56,6 @@ class AzureOpenAIModel(BaseModelBackend):
             "Azure model deployment name is not provided."
         assert self.azure_endpoint != '', \
             "Azure endpoint is not provided."
-
-        super().__init__(model_type, model_config_dict)
 
         self._client = AzureOpenAI(
             timeout=60,
@@ -74,6 +77,7 @@ class AzureOpenAIModel(BaseModelBackend):
             self._token_counter = OpenAITokenCounter(self.model_type)
         return self._token_counter
 
+    @azure_openai_api_key_required
     def run(
         self,
         messages: List[OpenAIMessage],

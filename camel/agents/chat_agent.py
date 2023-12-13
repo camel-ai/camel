@@ -76,6 +76,8 @@ class ChatAgent(BaseAgent):
             responses. (default :obj:`ModelType.GPT_3_5_TURBO`)
         model_config (BaseConfig, optional): Configuration options for the
             LLM model. (default: :obj:`None`)
+        backend_config_dict (Dict[str, Any], optional): Configuration options
+            for the backend. (default: :obj:`None`)
         memory (BaseMemory, optional): The agent memory for managing chat
             messages. If `None`, a :obj:`ChatHistoryMemory` will be used.
             (default: :obj:`None`)
@@ -100,6 +102,7 @@ class ChatAgent(BaseAgent):
         system_message: BaseMessage,
         model_type: Optional[ModelType] = None,
         model_config: Optional[BaseConfig] = None,
+        backend_config_dict: Optional[Dict[str, Any]] = None,
         memory: Optional[BaseMemory] = None,
         message_window_size: Optional[int] = None,
         token_limit: Optional[int] = None,
@@ -124,9 +127,11 @@ class ChatAgent(BaseAgent):
             for func in function_list:
                 self.func_dict[func.name] = func.func
         self.model_config = model_config or ChatGPTConfig()
+        self.backend_config_dict = backend_config_dict or {}
 
         self.model_backend: BaseModelBackend = ModelFactory.create(
-            self.model_type, self.model_config.__dict__)
+            self.model_type, self.model_config.__dict__,
+            self.backend_config_dict)
         self.model_token_limit = token_limit or self.model_backend.token_limit
         context_creator = ScoreBasedContextCreator(
             self.model_backend.token_counter,

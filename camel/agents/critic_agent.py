@@ -35,6 +35,8 @@ class CriticAgent(ChatAgent):
             responses. (default :obj:`ModelType.GPT_3_5_TURBO`)
         model_config (Any, optional): Configuration options for the LLM model.
             (default: :obj:`None`)
+        backend_config_dict (Dict[str, Any], optional): Configuration options
+            for the backend. (default: :obj:`None`)
         message_window_size (int, optional): The maximum number of previous
             messages to include in the context window. If `None`, no windowing
             is performed. (default: :obj:`6`)
@@ -50,6 +52,7 @@ class CriticAgent(ChatAgent):
         system_message: BaseMessage,
         model_type: ModelType = ModelType.GPT_3_5_TURBO,
         model_config: Optional[Any] = None,
+        backend_config_dict: Optional[Dict[str, Any]] = None,
         memory: Optional[BaseMemory] = None,
         message_window_size: int = 6,
         retry_attempts: int = 2,
@@ -57,7 +60,9 @@ class CriticAgent(ChatAgent):
         logger_color: Any = Fore.MAGENTA,
     ) -> None:
         super().__init__(system_message, model_type=model_type,
-                         model_config=model_config, memory=memory,
+                         model_config=model_config,
+                         backend_config_dict=backend_config_dict,
+                         memory=memory,
                          message_window_size=message_window_size)
         self.options_dict: Dict[str, str] = dict()
         self.retry_attempts = retry_attempts

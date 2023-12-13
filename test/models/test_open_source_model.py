@@ -44,7 +44,8 @@ def test_open_source_model(model_type):
         server_url=DEFAULT_SERVER_URL,
     )
     model_config_dict = model_config.__dict__
-    model = OpenSourceModel(model_type, model_config_dict)
+    backend_config_dict = dict()
+    model = OpenSourceModel(model_type, model_config_dict, backend_config_dict)
 
     assert model.model_type == model_type
     assert model.model_name == model_name
@@ -67,7 +68,8 @@ def test_open_source_model_run(model_type):
         server_url=DEFAULT_SERVER_URL,
     )
     model_config_dict = model_config.__dict__
-    model = OpenSourceModel(model_type, model_config_dict)
+    backend_config_dict = dict()
+    model = OpenSourceModel(model_type, model_config_dict, backend_config_dict)
 
     messages = [{"role": "user", "content": "Tell me a joke."}]
     response = model.run(messages)
@@ -84,12 +86,13 @@ def test_open_source_model_close_source_model_type():
         server_url=DEFAULT_SERVER_URL,
     )
     model_config_dict = model_config.__dict__
+    backend_config_dict = dict()
 
     with pytest.raises(
             ValueError, match=re.escape(
                 ("Model `ModelType.GPT_3_5_TURBO` is not a supported"
                  " open-source model."))):
-        _ = OpenSourceModel(model_type, model_config_dict)
+        _ = OpenSourceModel(model_type, model_config_dict, backend_config_dict)
 
 
 @pytest.mark.model_backend
@@ -97,12 +100,13 @@ def test_open_source_model_mismatched_model_config():
     model_type = ModelType.VICUNA
     model_config = ChatGPTConfig()
     model_config_dict = model_config.__dict__
+    backend_config_dict = dict()
 
     with pytest.raises(
             ValueError, match=re.escape(
                 ("Invalid configuration for open-source model backend with "
                  ":obj:`model_path` or :obj:`server_url` missing."))):
-        _ = OpenSourceModel(model_type, model_config_dict)
+        _ = OpenSourceModel(model_type, model_config_dict, backend_config_dict)
 
 
 @pytest.mark.model_backend
@@ -115,12 +119,13 @@ def test_open_source_model_unexpected_argument():
         api_params=FunctionCallingConfig(),
     )
     model_config_dict = model_config.__dict__
+    backend_config_dict = dict()
 
     with pytest.raises(
             ValueError, match=re.escape(
                 ("Unexpected argument `functions` is "
                  "input into open-source model backend."))):
-        _ = OpenSourceModel(model_type, model_config_dict)
+        _ = OpenSourceModel(model_type, model_config_dict, backend_config_dict)
 
 
 @pytest.mark.model_backend
@@ -132,12 +137,14 @@ def test_open_source_model_invalid_model_path():
         server_url=DEFAULT_SERVER_URL,
     )
     model_config_dict = model_config.__dict__
+    backend_config_dict = dict()
 
     with pytest.raises(
             ValueError, match=re.escape(
                 ("Invalid `model_path` (vicuna-7b-v1.5) is provided. "
                  "Tokenizer loading failed."))):
-        model = OpenSourceModel(model_type, model_config_dict)
+        model = OpenSourceModel(model_type, model_config_dict,
+                                backend_config_dict)
         _ = model.token_counter
 
 
@@ -150,12 +157,13 @@ def test_open_source_model_unmatched_model_path():
         server_url=DEFAULT_SERVER_URL,
     )
     model_config_dict = model_config.__dict__
+    backend_config_dict = dict()
 
     with pytest.raises(
             ValueError,
             match=(f"Model name `vicuna-7b-v1.5` does not match model type "
                    f"`{model_type.value}`.")):
-        _ = OpenSourceModel(model_type, model_config_dict)
+        _ = OpenSourceModel(model_type, model_config_dict, backend_config_dict)
 
 
 @pytest.mark.model_backend
@@ -166,10 +174,11 @@ def test_open_source_model_missing_model_path():
         server_url=DEFAULT_SERVER_URL,
     )
     model_config_dict = model_config.__dict__
+    backend_config_dict = dict()
 
     with pytest.raises(ValueError,
                        match=("Path to open-source model is not provided.")):
-        _ = OpenSourceModel(model_type, model_config_dict)
+        _ = OpenSourceModel(model_type, model_config_dict, backend_config_dict)
 
 
 @pytest.mark.model_backend
@@ -178,8 +187,9 @@ def test_open_source_model_missing_server_url():
     model_path = MODEL_PATH_MAP[ModelType.VICUNA]
     model_config = OpenSourceConfig(model_path=model_path, server_url=None)
     model_config_dict = model_config.__dict__
+    backend_config_dict = dict()
 
     with pytest.raises(
             ValueError,
             match=("URL to server running open-source LLM is not provided.")):
-        _ = OpenSourceModel(model_type, model_config_dict)
+        _ = OpenSourceModel(model_type, model_config_dict, backend_config_dict)

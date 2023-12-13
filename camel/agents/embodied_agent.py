@@ -31,6 +31,8 @@ class EmbodiedAgent(ChatAgent):
             responses. (default :obj:`ModelType.GPT_4`)
         model_config (Any, optional): Configuration options for the LLM model.
             (default: :obj:`None`)
+        backend_config_dict (Dict[str, Any], optional): Configuration options
+            for the backend. (default: :obj:`None`)
         message_window_size (int, optional): The maximum number of previous
             messages to include in the context window. If `None`, no windowing
             is performed. (default: :obj:`None`)
@@ -46,6 +48,7 @@ class EmbodiedAgent(ChatAgent):
         system_message: BaseMessage,
         model_type: ModelType = ModelType.GPT_4,
         model_config: Optional[Any] = None,
+        backend_config_dict: Optional[Dict[str, Any]] = None,
         message_window_size: Optional[int] = None,
         action_space: Optional[List[BaseToolAgent]] = None,
         verbose: bool = False,
@@ -65,6 +68,7 @@ class EmbodiedAgent(ChatAgent):
             system_message=system_message,
             model_type=model_type,
             model_config=model_config,
+            backend_config_dict=backend_config_dict,
             message_window_size=message_window_size,
         )
 

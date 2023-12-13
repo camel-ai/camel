@@ -30,8 +30,9 @@ from camel.utils import (
 class OpenAIModel(BaseModelBackend):
     r"""OpenAI API in a unified BaseModelBackend interface."""
 
-    def __init__(self, model_type: ModelType,
-                 model_config_dict: Dict[str, Any]) -> None:
+    def __init__(self, model_type: ModelType, model_config_dict: Dict[str,
+                                                                      Any],
+                 backend_config_dict: Dict[str, Any]) -> None:
         r"""Constructor for OpenAI backend.
 
         Args:
@@ -39,8 +40,10 @@ class OpenAIModel(BaseModelBackend):
                 one of GPT_* series.
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into openai.ChatCompletion.create().
+            backend_config_dict (Dict[str, Any]): A dictionary that contains
+                the backend configs.
         """
-        super().__init__(model_type, model_config_dict)
+        super().__init__(model_type, model_config_dict, backend_config_dict)
         url = os.environ.get('OPENAI_API_BASE_URL', None)
         self._client = OpenAI(timeout=60, max_retries=3, base_url=url)
         self._token_counter: Optional[BaseTokenCounter] = None
