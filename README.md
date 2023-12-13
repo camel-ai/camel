@@ -46,7 +46,7 @@
 </p>
 
 <p align="center">
-  <img src='./misc/logo.png' width=800>
+  <img src='https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo.png' width=800>
 </p>
 
 ## Overview
@@ -61,22 +61,32 @@ Join us ([*Slack*](https://join.slack.com/t/camel-kwr1314/shared_invite/zt-1vy8u
 We provide a [![Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1AzP33O8rnMW__7ocWJhVBXjKziJXPtim?usp=sharing) demo showcasing a conversation between two ChatGPT agents playing roles as a python programmer and a stock trader collaborating on developing a trading bot for stock market.
 
 <p align="center">
-  <img src='./misc/framework.png' width=800>
+  <img src='https://raw.githubusercontent.com/camel-ai/camel/master/misc/framework.png' width=800>
 </p>
-
-## Documentation
-
-[CAMEL package documentation pages](https://camel-ai.github.io/camel/)
 
 ## Installation
 
+### From PyPI
+
+To install the base camel library, simply run `pip install camel-ai`
+
+Some features reuqire extra dependencies.
+
+To use hugging-face agent, run `pip install camel-ai[huggingface-agent]`
+
+To enable RAG or use agent memory, run `pip install camel-ai[tools]`
+
+To install with all dependencies, run `pip install camel-ai[all]`
+
+### From Source
+
 Install `CAMEL` from source with poetry (Recommended):
 ```sh
+# Make sure your python version is later than 3.9
+# You can use pyenv to manage multiple python verisons in your sytstem
+
 # Clone github repo
-# For the latest code:
 git clone https://github.com/camel-ai/camel.git
-# Or for the stable code:
-git clone -b v0.1.0 https://github.com/camel-ai/camel.git
 
 # Change directory into project directory
 cd camel
@@ -117,6 +127,11 @@ pip install -e .
 # Or if you want to use "huggingface agent"
 pip install -e .[huggingface-agent] # (Optional)
 ```
+
+## Documentation
+
+[CAMEL package documentation pages](https://camel-ai.github.io/camel/)
+
 ## Example
 You can find a list of tasks for different set of assistant and user role pairs [here](https://drive.google.com/file/d/194PPaSTBR07m-PzjS-Ty6KlPLdFIPQDd/view?usp=share_link)
 
