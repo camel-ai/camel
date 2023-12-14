@@ -327,7 +327,6 @@ class UnstructuredModules:
                             'dict_to_elements',
                             'stage_csv_for_prodigy',
                             'stage_for_prodigy',
-                            'stage_for_argilla',
                             'stage_for_baseplate',
                             'stage_for_datasaur',
                             'stage_for_label_box',
@@ -348,7 +347,6 @@ class UnstructuredModules:
         """
 
         from unstructured.staging import (
-            argilla,
             base,
             baseplate,
             datasaur,
@@ -373,8 +371,6 @@ class UnstructuredModules:
             "stage_for_prodigy":
             lambda els, **kw: prodigy.stage_for_prodigy(
                 els, kw.get('metadata', [])),
-            "stage_for_argilla":
-            lambda els, **kw: argilla.stage_for_argilla(els, **kw),
             "stage_for_baseplate":
             baseplate.stage_for_baseplate,
             "stage_for_datasaur":
