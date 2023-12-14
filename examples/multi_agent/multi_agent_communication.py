@@ -245,10 +245,10 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                 transformed_text = transformed_text_with_category["text"]
                 chat_history_two_roles += (transformed_text + "\n\n")
 
-            # print(Fore.BLUE + "AI User:\n"
-            #       f"{user_response.msg.content}\n")
-            # print(Fore.GREEN + "AI Assistant:\n"
-            #       f"{assistant_response.msg.content}\n")
+            print(Fore.BLUE + "AI User:\n"
+                  f"{user_response.msg.content}\n")
+            print(Fore.GREEN + "AI Assistant:\n"
+                  f"{assistant_response.msg.content}\n")
 
             if assistant_response.terminated:
                 print(Fore.GREEN +
@@ -301,15 +301,17 @@ def get_insights_from_environment(subtask_id, one_subtask, one_subtask_labels,
 
     target_labels = list(
         set(conditions_and_quality_json["labels"]) | set(one_subtask_labels))
+    print(f"Target labels for {subtask_id}:\n{target_labels}")
 
     labels_sets = [
         list(labels_set) for labels_set in environment_record.keys()
     ]
+    print(f"Labels sets for {subtask_id}:\n{labels_sets}")
+
     _, _, _, labels_retrieved_sets = \
         role_assignment_agent.get_retrieval_index_from_environment(
             labels_sets=labels_sets,
-            target_labels=target_labels,
-            )
+            target_labels=target_labels)
     print_and_write_md(
         "Retrieved labels from the environment:\n" +
         f"{labels_retrieved_sets}", color=Fore.CYAN,
