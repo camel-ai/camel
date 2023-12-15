@@ -12,17 +12,10 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-import time
 from typing import Any, Dict, List
 
-from torch import cosine_similarity
-
-import camel.agents
-from camel.embeddings import OpenAIEmbedding
+from camel.embeddings import Chromadb
 from camel.functions import OpenAIFunction
-from camel.messages import BaseMessage
-from camel.prompts import TextPrompt
-import pandas as pd
 
 
 def search_wiki(entity: str) -> str:
@@ -186,103 +179,6 @@ def text_extract_from_web(url: str) -> str:
     return text
 
 
-# Split a text into smaller chunks of size n
-def create_chunks(text: str, n: int) -> List[str]:
-    r"""Returns successive n-sized chunks from provided text."
-
-    Args:
-        text (string): The text to be split.
-        n (int): The max length of a single chunk.
-
-    Returns:
-        List[str]: A list of splited texts.
-    """
-
-    chunks = []
-    i = 0
-    while i < len(text):
-        # Find the nearest end of sentence within a range of 0.5 * n
-        # and 1.5 * n tokens
-        j = min(i + int(1.2 * n), len(text))
-        while j > i + int(0.8 * n):
-            # Decode the tokens and check for full stop or newline
-            chunk = text[i:j]
-            if chunk.endswith(".") or chunk.endswith("\n"):
-                break
-            j -= 1
-        # If no end of sentence found, use n tokens as the chunk size
-        if j == i + int(0.8 * n):
-            j = min(i + n, len(text))
-        chunks.append(text[i:j])
-        i = j
-    return chunks
-
-
-def prompt_single_step_agent(prompt: str) -> str:
-    """Prompt a single-step agent to summarize texts or answer a question."""
-
-    assistant_sys_msg = BaseMessage.make_assistant_message(
-        role_name="Assistant",
-        content="You are a helpful assistant.",
-    )
-    agent = camel.agents.ChatAgent(assistant_sys_msg)
-    agent.reset()
-
-    user_msg = BaseMessage.make_user_message(
-        role_name="User",
-        content=prompt,
-    )
-    assistant_response = agent.step(user_msg)
-    if assistant_response.msgs is not None:
-        return assistant_response.msg.content
-    return ""
-
-
-def search_using_cosine_similarity(df, query):
-    Embedding = OpenAIEmbedding()
-    query_embedding = Embedding.embed(obj=query)
-    df["similarity"] = df['embeddings'].apply(lambda x: cosine_similarity(x, query_embedding))
-
-    results = df.sort_values("similarity", ascending=False, ignore_index=True)
-
-    k = 5
-    results = results.head(k)
-    global sources
-    sources = []
-    for i in range(k):
-        sources.append({'Page ' + str(results.iloc[i]['page']): results.iloc[i]['text'][:150] + '...'})
-    print(sources)
-    return results.head(k)
-
-
-def summarize_text(text: str, query: str) -> str:
-    r"""Summarize the information from the text, base on the query if query is
-    given.
-
-    Args:
-        text (string): Text to summarise.
-        query (string): What information you want.
-
-    Returns:
-        string: Strings with information.
-    """
-    # Max length of each chunk
-    max_len = 3000
-    results = ""
-    chunks = create_chunks(text, max_len)
-    # Summarize
-    embeddings = []
-    Embedding = OpenAIEmbedding()
-    for chunk in chunks:
-        response = Embedding.embed(obj=chunk)
-        embeddings += response
-    text_df = pd.DataFrame({'embeddings': embeddings})
-
-    response = search_using_cosine_similarity(text_df, query)
-
-    return response
-
-
 def search_google_and_summarize(query: str) -> str:
     r"""Search webs for information. Given a query, this function will use
     the Google search engine to search for related information from the
@@ -296,24 +192,20 @@ def search_google_and_summarize(query: str) -> str:
     """
     # Google search will return a list of urls
     responses = search_google(query)
+    # Using database store the information, in-memory chroma by default
+    db = Chromadb()
     for item in responses:
         if "url" in item:
             url = item.get("url")
             # Extract text
             text = text_extract_from_web(str(url))
-            # Using chatgpt summarise text
-            answer = summarize_text(text, query)
+            # store the text
+            db.add_text(text)
+    # Retrive the reletive information about the query
+    # Each result contains about 512 words
+    answer = db.query_texts(query, n_results=5)
 
-            # Let chatgpt decide whether to continue search or not
-            prompt = TextPrompt(
-                '''Do you think the answer: {answer} can answer the query:
-                {query}. Use only 'yes' or 'no' to answer.''')
-            prompt = prompt.format(answer=answer, query=query)
-            reply = prompt_single_step_agent(prompt)
-            if "yes" in str(reply).lower():
-                return answer
-
-    return "Failed to find the answer from google search."
+    return answer['documents']
 
 
 SEARCH_FUNCS: List[OpenAIFunction] = [
