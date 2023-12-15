@@ -1,19 +1,13 @@
-Write 6 chapters for a long detective novel. The chapters should be structured as follows, with each chapter corresponding a subtask whose section "Incorporate Contextual Parameters into Details" begins with "Write Chapter X: ...":
+Write a detective novel with a total of 4 chapters and a word limit of 5,000 words. The chapters should be structured as follows, with each chapter corresponding a subtask whose section "Incorporate Contextual Parameters into Details" begins with "Write Chapter X: ...":
 
 Chapter 1: "Shadows of the Past"
-- **Content**: The story opens on the night before the disappearance. Alex Reynold, a seasoned detective with a military and psychology background, is called to investigate the case. He starts by examining the unusual activities noted by the neighbors – a mysterious visitor and a suspicious car. 
+Content: The story opens with Alex Reynold, a seasoned detective, called to investigate the disappearance on the night before it happens. He examines unusual activities, including a mysterious visitor and a suspicious car, noted by the neighbors. He also discovers the missing journalist, Elena's diary, revealing her anxiety about being followed and her investigative work against powerful entities, suggesting a connection to her latest journalistic investigation.
 
-Chapter 2: "Echoes in the Diary"
-- **Content**: Alex discovers the missing person's diary, which reveals her anxiety about being followed and hints at her investigative work against powerful entities. The diary's entries suggest that her disappearance might be connected to her latest journalistic investigation.
+Chapter 2: "Clues and Echoes"
+Content: Alex finds a partially burnt photograph of Elena with an unidentified figure, hinting at a significant scandal possibly involving political or corporate power. The investigation deepens as he deciphers strange symbols found at the crime scene, linking them to a secret society or coded message. His interviews with various residents, including an elderly painter, a young programmer, and a newly moved couple, uncover conflicting testimonies and hidden agendas.
 
-Chapter 3: "Clues in the Ashes"
-- **Content**: Among the evidence, Alex finds a partially burnt photograph showing the missing journalist, Elena, with an unidentified figure. The photograph leads Alex to suspect that Elena might have been close to uncovering a significant scandal, possibly involving political or corporate power.
+Chapter 3: "The Web of Secrets"
+Content: The climax unfolds as Alex pieces together the puzzle, realizing that Elena's disappearance is part of a larger conspiracy. His life becomes endangered as he gets closer to the truth, but his resolve only strengthens. He unravels the conspiracy, implicating high-level figures in corruption.
 
-Chapter 4: "The Web of Secrets"
-- **Content**: The investigation deepens as Alex deciphers the strange symbols found at the crime scene, linking them to a secret society or coded message. He interviews various residents, including the elderly painter, the young programmer, and the newly moved couple, uncovering conflicting testimonies and hidden agendas.
-
-Chapter 5: "Unraveling the Conspiracy"
-- **Content**: The climax of the story unfolds as Alex pieces together the puzzle. He realizes that Elena's disappearance is the tip of an iceberg, exposing a larger conspiracy. His life is endangered as he gets closer to the truth, but his resolve only strengthens.
-
-Chapter 6: "Revelation and Reflection"
-- **Content**: In a dramatic turn, Alex reveals the truth behind Elena's disappearance, implicating high-level figures and unmasking corruption. The story ends with Alex reflecting on the case's implications for justice and society. Unresolved elements hint at future challenges, leaving room for a sequel.
+Chapter 4: "Revelation and Reflection"
+Content: In a dramatic turn, Alex reveals the truth behind Elena's disappearance. The story ends with him reflecting on the case's implications for justice and society. Unresolved elements hint at future challenges, leaving room for a sequel.
