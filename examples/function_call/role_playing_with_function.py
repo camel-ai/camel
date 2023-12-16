@@ -29,9 +29,11 @@ def main(model_type=ModelType.GPT_4, chat_turn_limit=10) -> None:
                    "and get the current weather of the city where KAUST "
                    "is located.")
 
-    user_model_config = ChatGPTConfig(temperature=0.0)
-
     function_list = [*MATH_FUNCS, *SEARCH_FUNCS, *WEATHER_FUNCS]
+    user_model_config = FunctionCallingConfig.from_openai_function_list(
+        function_list=function_list,
+        kwargs=dict(temperature=0.0),
+    )
     assistant_model_config = FunctionCallingConfig.from_openai_function_list(
         function_list=function_list,
         kwargs=dict(temperature=0.0),
