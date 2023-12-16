@@ -36,8 +36,8 @@ class QdrantStorage(BaseVectorStorage):
     Args:
         vector_dim (int): The dimenstion of storing vectors.
         collection (Optional[str], optional): Name for the collection in the
-            Qdrant. If not provided, set it to the current time with iso
-            format. (default: :obj:`None`)
+            Qdrant. If not provided, a unique identifier is generated.
+            (default: :obj:`None`)
         url_and_api_key (Optional[Tuple[str, str]], optional): Tuple containing
             the URL and API key for connecting to a remote Qdrant instance.
             (default: :obj:`None`)
@@ -45,9 +45,12 @@ class QdrantStorage(BaseVectorStorage):
             local Qdrant client. (default: :obj:`None`)
         distance (VectorDistance, optional): The distance metric for vector
             comparison (default: :obj:`VectorDistance.COSINE`)
-        delete_collection_on_del (bool, optional): Flag to determine if the
-            collection should be deleted upon object destruction.
-            (default: :obj:`False`)
+        del_collection (bool, optional): Flag to determine if the collection
+            should be deleted upon object destruction (default: :obj:`False`)
+        create_collection (bool, optional): Flag to determine if the collection
+            should be created during initialization. Caution that enabling this
+            option will remove all vectors in the collection if the collection
+            already exists. (default: :obj:`False`)
         **kwargs (Any): Additional keyword arguments for initializing
             `QdrantClient`.
 
@@ -68,7 +71,8 @@ class QdrantStorage(BaseVectorStorage):
         url_and_api_key: Optional[Tuple[str, str]] = None,
         path: Optional[str] = None,
         distance: VectorDistance = VectorDistance.COSINE,
-        delete_collection_on_del: bool = False,
+        create_collection: bool = False,
+        delete_collection: bool = False,
         **kwargs: Any,
     ) -> None:
         try:
@@ -78,42 +82,9 @@ class QdrantStorage(BaseVectorStorage):
                 "Please install `qdrant-client` first. You can install it by "
                 "running `pip install qdrant-client`.")
 
-        self._client: QdrantClient
-        self._local_path: Optional[str] = None
-        self._create_client(url_and_api_key, path, **kwargs)
-
         self.vector_dim = vector_dim
-        self.distance = distance
-        self.collection = collection or self._generate_collection_name()
-        self._assign_collection()
+        self._local_path: Optional[str] = None
 
-        self.delete_collection_on_del = delete_collection_on_del
-
-    def __del__(self):
-        r"""Deletes the collection if :obj:`del_collection` is set to
-        :obj:`True`.
-        """
-        # If the client is a local client, decrease count by 1
-        if self._local_path is not None:
-            # if count decrease to 0, remove it from the map
-            _client, _count = _qdrant_local_client_map.pop(self._local_path)
-            if _count > 1:
-                _qdrant_local_client_map[self._local_path] = (
-                    _client,
-                    _count - 1,
-                )
-
-        if (hasattr(self, "delete_collection_on_del")
-                and self.delete_collection_on_del):
-            self._delete_collection(self.collection)
-
-    def _create_client(
-        self,
-        url_and_api_key: Optional[Tuple[str, str]],
-        path: Optional[str],
-        **kwargs: Any,
-    ) -> None:
-        from qdrant_client import QdrantClient
         if url_and_api_key is not None:
             self._client = QdrantClient(
                 url=url_and_api_key[0],
@@ -134,21 +105,50 @@ class QdrantStorage(BaseVectorStorage):
         else:
             self._client = QdrantClient(":memory:", **kwargs)
 
-    def _assign_collection(self) -> None:
-        if self._collection_exists(self.collection):
-            in_dim = self._get_collection_info(self.collection)["vector_dim"]
-            if in_dim != self.vector_dim:
-                # The name of collection has to be comfirmed by the user
-                raise ValueError(
-                    "Vector dimension of the existing collection "
-                    f"\"{self.collection}\" ({in_dim}) is different from "
-                    f"the given embedding dim ({self.vector_dim}).")
-        else:
+        if collection is not None and not create_collection:
+            info = self._check_collection(collection)
+            if info["vector_dim"] != self.vector_dim:
+                # Create a new collection with a new collection name if vector
+                # dimension of the given collection isn't valid.
+                new_collection = collection + datetime.now().isoformat()
+                # TODO: replace with logger
+                print("Vector dimension of the existing collection "
+                      f"\"{collection}\" ({info['vector_dim']}) "
+                      "is different from the embedding dim "
+                      f"({self.vector_dim}). Create a new collecton: "
+                      f"\"{new_collection}\"")
+                collection = new_collection
+                create_collection = True
+        self.collection = collection or datetime.now().isoformat()
+        if create_collection:
             self._create_collection(
                 collection=self.collection,
                 size=self.vector_dim,
-                distance=self.distance,
+                distance=distance,
             )
+        self.distance = distance
+        self.delete_collection = delete_collection
+
+    def __del__(self):
+        r"""Deletes the collection if :obj:`del_collection` is set to
+        :obj:`True`.
+        """
+        # If the client is a local client, decrease count by 1
+        if self._local_path is not None:
+            # if count decrease to 0, remove it from the map
+            _client, _count = _qdrant_local_client_map.pop(self._local_path)
+            if _count > 1:
+                _qdrant_local_client_map[self._local_path] = (
+                    _client,
+                    _count - 1,
+                )
+
+        # try to delete collection
+        try:
+            if self.delete_collection:
+                self._delete_collection(self.collection)
+        except AttributeError as e:
+            print(f"Delete collection failed: {str(e)}")
 
     def _create_collection(
         self,
@@ -195,18 +195,7 @@ class QdrantStorage(BaseVectorStorage):
         """
         self._client.delete_collection(collection_name=collection, **kwargs)
 
-    def _collection_exists(self, collection: str) -> bool:
-        r"""Returns wether the collection exists in the database"""
-        for c in self._client.get_collections().collections:
-            if collection == c.name:
-                return True
-        return False
-
-    def _generate_collection_name(self) -> str:
-        r"""Generates a collection name if user doesn't provide"""
-        return datetime.now().isoformat()
-
-    def _get_collection_info(self, collection: str) -> Dict[str, Any]:
+    def _check_collection(self, collection: str) -> Dict[str, Any]:
         r"""Retrieves details of an existing collection.
 
         Args:
@@ -292,7 +281,7 @@ class QdrantStorage(BaseVectorStorage):
                 f"{op_info}")
 
     def status(self) -> VectorDBStatus:
-        status = self._get_collection_info(self.collection)
+        status = self._check_collection(self.collection)
         return VectorDBStatus(
             vector_dim=status["vector_dim"],
             vector_count=status["vector_count"],

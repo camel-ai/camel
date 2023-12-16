@@ -24,13 +24,15 @@ def test_multiple_local_clients() -> None:
         vector_dim=4,
         path=tmpdir,
         collection="collection1",
-        delete_collection_on_del=True,
+        create_collection=True,
+        delete_collection=True,
     )
     storage2 = QdrantStorage(
         vector_dim=4,
         path=tmpdir,
         collection="collection2",
-        delete_collection_on_del=True,
+        create_collection=True,
+        delete_collection=True,
     )
 
     # Add vectors to storage1
@@ -77,25 +79,3 @@ def test_multiple_local_clients() -> None:
     assert status2.vector_count == 0
 
     shutil.rmtree(tmpdir)
-
-
-def test_existing_collection():
-    tmpdir = tempfile.mkdtemp()
-    storage = QdrantStorage(
-        vector_dim=4,
-        path=tmpdir,
-        collection="collection",
-    )
-    vectors = [
-        VectorRecord(vector=[0.1, 0.1, 0.1, 0.1]),
-        VectorRecord(vector=[0.1, -0.1, -0.1, 0.1]),
-    ]
-    storage.add(records=vectors)
-    assert storage.status().vector_count == 2
-
-    storage2 = QdrantStorage(
-        vector_dim=4,
-        path=tmpdir,
-        collection="collection",
-    )
-    assert storage2.status().vector_count == 2
