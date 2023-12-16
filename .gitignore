@@ -421,4 +421,3 @@ logs/
 datasets_test/
 evaluation_data/
 camel_data/
-*.csv
