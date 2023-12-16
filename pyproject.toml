@@ -52,9 +52,12 @@ unstructured = { version = "^0.10.30", optional = true }
 argilla = { version = "^1.19.0", optional = true }
 pandas = { version = "^2", optional = true }
 chromadb = { version = "^0", optional = true }
-
+pytest = { version = "^7", optional = true}
+mock = { version = "^5", optional = true}
 
 [tool.poetry.extras]
+test = ["pytest", "mock"]
+
 huggingface-agent = [
     "transformers",
     "diffusers",
