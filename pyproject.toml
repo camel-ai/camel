@@ -96,6 +96,8 @@ all = [
     "pyowm",
     "unstructured",
     "argilla",
+    'pandas',
+    'chromadb',
 ]
 
 [tool.poetry.group.dev]
@@ -175,5 +177,7 @@ module = [
     "fitz",
     "unstructured.*",
     "argilla.*",
+    "pandas",
+    "chromadb",
 ]
 ignore_missing_imports = true
