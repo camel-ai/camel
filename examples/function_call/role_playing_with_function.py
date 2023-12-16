@@ -16,7 +16,7 @@ from typing import List
 from colorama import Fore
 
 from camel.agents.chat_agent import FunctionCallingRecord
-from camel.configs import FunctionCallingConfig
+from camel.configs import ChatGPTConfig, FunctionCallingConfig
 from camel.functions import MATH_FUNCS, SEARCH_FUNCS, WEATHER_FUNCS
 from camel.societies import RolePlaying
 from camel.types import ModelType
@@ -30,11 +30,7 @@ def main(model_type=ModelType.GPT_4, chat_turn_limit=10) -> None:
                    "is located.")
 
     function_list = [*MATH_FUNCS, *SEARCH_FUNCS, *WEATHER_FUNCS]
-    # Give user agent function information
-    user_model_config = FunctionCallingConfig.from_openai_function_list(
-        function_list=function_list,
-        kwargs=dict(temperature=0.0),
-    )
+    user_model_config = ChatGPTConfig(temperature=0.0)
 
     assistant_model_config = FunctionCallingConfig.from_openai_function_list(
         function_list=function_list,

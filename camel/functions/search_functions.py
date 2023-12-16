@@ -14,7 +14,7 @@
 import os
 from typing import Any, Dict, List
 
-from camel.embeddings import Chromadb
+from camel.utils import Chromadb
 from camel.functions import OpenAIFunction
 
 

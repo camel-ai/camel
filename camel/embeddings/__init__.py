@@ -13,10 +13,8 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .base import BaseEmbedding
 from .openai_embedding import OpenAIEmbedding
-from .chromadb_embedding import Chromadb
 
 __all__ = [
     "BaseEmbedding",
     "OpenAIEmbedding",
-    "Chromadb",
 ]

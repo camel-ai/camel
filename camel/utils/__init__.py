@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .python_interpreter import PythonInterpreter
+from .chroma import Chromadb
 from .commons import (
     openai_api_key_required,
     print_text_animated,
@@ -44,4 +45,5 @@ __all__ = [
     'BaseTokenCounter',
     'OpenAITokenCounter',
     'OpenSourceTokenCounter',
+    'Chromadb',
 ]

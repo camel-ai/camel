@@ -17,15 +17,8 @@ import chromadb
 import pandas as pd
 from camel.utils.commons import create_chunks
 from chromadb.utils import embedding_functions
-# from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
-
 
 default_ef = embedding_functions.DefaultEmbeddingFunction()
-# sentence_transformer_ef = embedding_functions.SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
-# openai_ef = embedding_functions.OpenAIEmbeddingFunction(
-#                 api_key="YOUR_API_KEY",
-#                 model_name="text-embedding-ada-002"
-#             )
 
 class Chromadb:
     """
@@ -69,7 +62,7 @@ class Chromadb:
                 embedding_function=self.embedding_function,
                 metadata={"hnsw:space": distance})
 
-    def add_text(self, texts: str, max_len: int = 512, metadata: Dict = None):
+    def add_text(self, texts: str, max_len: int = 512, metadata=None):
         """
         If Chroma is passed a list of documents, it will automatically tokenize
         and embed them with the collection's embedding function (the default
@@ -100,8 +93,8 @@ class Chromadb:
     def query_texts(self,
                     query_texts: [str | List[str]],
                     n_results: int = 10,
-                    where: Dict = None,
-                    where_document: Dict = None):
+                    where=None,
+                    where_document=None):
         """
         The query will return the n_results closest matches to each
         query_embedding, in order. An optional where filter dictionary can be
@@ -130,89 +123,3 @@ class Chromadb:
             where=where,
             where_document=where_document
         )
-
-    def query_texts_named_collection(self, collection_name: str, query_texts: str,
-                                     n_results: int = 10, where: Dict = None,
-                                     where_document: Dict = None):
-        """
-        query a named collection.
-        args:
-            query_texts: You can also query by a set of query_texts. Chroma will
-                first embed each query_text with the collection's embedding
-                function, and then perform the query with the generated embedding.
-            n_results: how many result you want. Each result contains about 512
-                words.
-            where: filter by the metadata associated with each document.
-            where_document: filter by contents of the document.
-
-        """
-        collection = self.client.get_collection(collection_name)
-        return collection.query(
-            query_texts=query_texts,
-            n_results=n_results,
-            where=where,
-            where_document=where_document
-        )
-
-    def create_collection(self, collection_name: str,
-                          embedding_function=default_ef, metadata: Dict = None):
-        """
-        Chroma collections are created with a name and an optional embedding function.
-        """
-        collection = self.client.create_collection(
-            name=collection_name,
-            embedding_function=embedding_function,
-            metadata=metadata)
-        return collection
-
-    def list_collection_name(self):
-        """
-        list all collections' name.
-        """
-        names = []
-        for collection in self.client.list_collections():
-            names.append(collection.name)
-        return names
-
-    def update(self, ids: List[str], documents: List[str], embediings=None,
-               metadatas: Dict = None):
-        """
-        Any property of items in a collection can be updated using .update.
-        If an id is not found in the collection, an error will be logged and the
-        update will be ignored. If documents are supplied without corresponding
-        embeddings, the embeddings will be recomupted with the collection's
-        embedding function. If the supplied embeddings are not the same dimension
-        as the collection, an exception will be raised.
-
-        example:
-            ids=["id1", "id2", "id3", ...],
-            embeddings=[[1.1, 2.3, 3.2], [4.5, 6.9, 4.4], [1.1, 2.3, 3.2], ...],
-            metadatas=[{"chapter": "3", "verse": "16"},
-                       {"chapter": "3", "verse": "5"},
-                       {"chapter": "29", "verse": "11"}, ...],
-            documents=["doc1", "doc2", "doc3", ...],
-        """
-        if ids:
-            self.collection.update(
-                ids=ids,
-                embeddings=embediings,
-                metadatas=metadatas,
-                documents=documents,
-            )
-
-    def delete_ids(self, ids: List[str], where: Dict = None):
-        """
-        Chroma supports deleting items from a collection by id using .delete.
-        The embeddings, documents, and metadata associated with each item will
-        be deleted.
-        Naturally, this is a destructive operation, and cannot be undone.
-
-        example:
-            ids=["id1", "id2", "id3", ...],
-            where={"chapter": "20"}
-        """
-        if ids:
-            self.collection.delete(
-                ids=ids,
-                where=where
-            )
