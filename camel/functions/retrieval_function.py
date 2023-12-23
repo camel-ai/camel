@@ -327,9 +327,10 @@ class RetrievalFunction:
                 retrieved_info = self._query_and_compile_results(
                     query, vector_storage_instance)
                 retrieved_infos += "\n" + retrieved_info
-
+                output = ("Original Query:" + "\n" + "{" + query + "}" + "\n" +
+                          "Retrieved Context:" + "\n" + retrieved_info)
             except Exception as e:
                 raise RuntimeError(
                     f"Error in retrieval processing: {str(e)}") from e
 
-        return retrieved_infos
+        return output

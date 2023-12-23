@@ -14,7 +14,7 @@
 from camel.functions.retrieval_function import RetrievalFunction
 
 # Initialize the RetrievalFunction instance
-retrieval_instance = RetrievalFunction()
+retrieval_instance = RetrievalFunction(top_k=2)
 
 
 def local_retrieval():
@@ -53,8 +53,11 @@ def remote_retrieval():
 
 def main():
     print("Result from local retrieval:")
+    print("\n")
     local_retrieval()
+    print("\n")
     print("Result from remote retrieval:")
+    print("\n")
     remote_retrieval()
 
 
