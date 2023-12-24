@@ -133,7 +133,6 @@ The tool descriptions are the context information of the potential competencies 
             expert_prompt + task_prompt)
         role_assignment_generation = role_assignment_generation_prompt.format(
             num_roles=num_roles, task=task_prompt)
-        print(f"role_assignment_generation:\n{role_assignment_generation}")
 
         role_assignment_generation_msg = BaseMessage.make_user_message(
             role_name="Role Assigner", content=role_assignment_generation)
