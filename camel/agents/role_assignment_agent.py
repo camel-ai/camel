@@ -21,6 +21,7 @@ import networkx as nx
 from camel.agents import ChatAgent
 from camel.agents.insight_agent import InsightAgent
 from camel.configs import ChatGPTConfig
+from camel.functions import OpenAIFunction
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
 from camel.types import ModelType, RoleType
@@ -55,6 +56,7 @@ class RoleAssignmentAgent(ChatAgent):
         num_roles: int = 2,
         role_names: Optional[List[str]] = None,
         role_descriptions_instruction: Optional[Union[str, TextPrompt]] = None,
+        function_list: list[OpenAIFunction] = None,
     ) -> Dict[str, Dict[str, List[str]]]:
         r"""Generate role names based on the input task prompt.
 
@@ -67,6 +69,9 @@ class RoleAssignmentAgent(ChatAgent):
                 to generate. (default: :obj:`None`)
             role_descriptions_instruction (Optional[Union[str, TextPrompt]],
                 optional): The instruction for the role descriptions.
+                (default: :obj:`None`)
+            function_list (list[OpenAIFunction], optional): The list of
+                OpenAIFunctions to use. (default: :obj:`None`)
 
         Returns:
             Dict[str, Dict[str, List[str]]]: A dictionary mapping role names
@@ -99,6 +104,20 @@ class RoleAssignmentAgent(ChatAgent):
         else:
             role_descriptions_instruction = "Moreover, " + \
                 role_descriptions_instruction
+        if function_list is not None and len(function_list) > 0:
+            function_docstring = """===== FUNCTION LIST (CONTEXT) =====
+You have been provided with a list of tools for work. Each tool description explains the purpose and usage of a specific tool for work.
+The tool descriptions are the context information of the potential competencies of the domain experts (for example, some experts may have the ability of Google searching).
+"""  # noqa: E501
+            for i, function in enumerate(function_list):
+                description_lines = function.description.split('\n')
+                indented_description = '\n'.join('\t' + line
+                                                 for line in description_lines)
+                function_docstring += (f"{i + 1}. Ability or tool of "
+                                       f"{function.name}:\n"
+                                       f"{indented_description}\n\n")
+        else:
+            function_docstring = ""
         role_assignment_generation_prompt = TextPrompt(
             "You are a role assignment agent, and you're in charge of "
             "recruiting {num_roles} experts, who may have identical roles "
@@ -110,10 +129,11 @@ class RoleAssignmentAgent(ChatAgent):
             "\n"
             "Your answer MUST strictly adhere to the structure of ANSWER "
             "TEMPLATE, ONLY fill in the BLANKs, and DO NOT alter or modify "
-            "any other part of the template.\n\n" + expert_prompt +
-            task_prompt)
+            "any other part of the template.\n\n" + function_docstring +
+            expert_prompt + task_prompt)
         role_assignment_generation = role_assignment_generation_prompt.format(
             num_roles=num_roles, task=task_prompt)
+        print(f"role_assignment_generation:\n{role_assignment_generation}")
 
         role_assignment_generation_msg = BaseMessage.make_user_message(
             role_name="Role Assigner", content=role_assignment_generation)
