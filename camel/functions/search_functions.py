@@ -309,6 +309,7 @@ def search_google_and_summarize(query: str) -> str:
     """
     # Google search will return a list of urls
     responses = search_google(query)
+    top_answer = None
     for item in responses:
         if "url" in item:
             url = item.get("url")
@@ -325,15 +326,21 @@ def search_google_and_summarize(query: str) -> str:
             answer = insight_agent.transform_into_text(insights=insights)
 
             # Let chatgpt decide whether to continue search or not
-            prompt = TextPrompt(
-                '''Do you think the answer: {answer} can answer the query:
-                {query}. Use only 'yes' or 'no' to answer.''')
+            prompt_tamplate = """Do you think the SEARCH_ANSWER can answer the SEARCH_QUERY. Use only 'yes' or 'no' to answer it.
+===== SEARCH_ANSWER =====
+{answer}
+===== SEARCH_QUERY =====
+{query}"""  # noqa: E501
+            prompt = TextPrompt(prompt_tamplate)
             prompt = prompt.format(answer=answer, query=query)
             reply = prompt_single_step_agent(prompt)
             if "yes" in str(reply).lower():
                 return answer
+            elif top_answer is None:
+                top_answer = answer
 
-    return "Failed to find the answer from google search."
+    return ("Failed to find the answer from google search, but only found "
+            "the following information:\n" + top_answer)
 
 
 SEARCH_FUNCS: List[OpenAIFunction] = [
