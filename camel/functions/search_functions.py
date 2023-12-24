@@ -276,9 +276,8 @@ def search_google_and_summarize(query: str) -> str:
     serves as a gateway to the vast universe of information available on the
     internet. By inputting a query, you are leveraging the powerful Google
     search engine to scan the web for relevant data, articles, studies, and
-    discussions pertaining to your topic of interest.
-
-    Here's what happens when you invoke this function:
+    discussions pertaining to your topic of interest. Here's what happens
+    when you invoke this function:
     - Search Execution: Your query is used as the criterion for an extensive
         online search,
       executed through Google's sophisticated algorithms that prioritize
