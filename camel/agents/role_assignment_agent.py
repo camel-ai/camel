@@ -21,6 +21,7 @@ import networkx as nx
 from camel.agents import ChatAgent
 from camel.agents.insight_agent import InsightAgent
 from camel.configs import ChatGPTConfig
+from camel.functions import OpenAIFunction
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
 from camel.types import ModelType, RoleType
@@ -55,6 +56,7 @@ class RoleAssignmentAgent(ChatAgent):
         num_roles: int = 2,
         role_names: Optional[List[str]] = None,
         role_descriptions_instruction: Optional[Union[str, TextPrompt]] = None,
+        function_list: list[OpenAIFunction] = None,
     ) -> Dict[str, Dict[str, List[str]]]:
         r"""Generate role names based on the input task prompt.
 
@@ -67,6 +69,9 @@ class RoleAssignmentAgent(ChatAgent):
                 to generate. (default: :obj:`None`)
             role_descriptions_instruction (Optional[Union[str, TextPrompt]],
                 optional): The instruction for the role descriptions.
+                (default: :obj:`None`)
+            function_list (list[OpenAIFunction], optional): The list of
+                OpenAIFunctions to use. (default: :obj:`None`)
 
         Returns:
             Dict[str, Dict[str, List[str]]]: A dictionary mapping role names
@@ -99,19 +104,35 @@ class RoleAssignmentAgent(ChatAgent):
         else:
             role_descriptions_instruction = "Moreover, " + \
                 role_descriptions_instruction
+        if function_list is not None and len(function_list) > 0:
+            function_docstring = """===== FUNCTION LIST (CONTEXT) =====
+You have been provided with a list of tools for work. Each tool description explains the purpose and usage of a specific tool for work.
+The tool descriptions are the context information of the potential competencies of the domain experts (for example, some experts may have the ability of Google searching).
+"""  # noqa: E501
+            for i, function in enumerate(function_list):
+                description_lines = function.description.split('\n')
+                indented_description = '\n'.join('\t' + line
+                                                 for line in description_lines)
+                function_docstring += (f"{i + 1}. Ability or tool of "
+                                       f"{function.name}:\n"
+                                       f"{indented_description}\n\n")
+        else:
+            function_docstring = ""
         role_assignment_generation_prompt = TextPrompt(
             "You are a role assignment agent, and you're in charge of "
-            "recruiting {num_roles} experts, who may have identical roles "
-            "but different names. Identify the domain experts you'd recruit "
-            "and detail descriptions, like their associated competencies, "
-            "characteristics and duties to complete the TASK. Remember, "
-            "your role is to create the profiles of these experts, not to "
-            "complete the TASK directly.\n" + role_descriptions_instruction +
-            "\n"
+            "recruiting {num_roles} experts, who are conceptualized as "
+            "the super advanced, abstract or specific facets of the Large "
+            "Language Model (LLM), but they act or work as real roles. "
+            "Identify these domain experts you'd recruit and detail "
+            "descriptions, like their competencies, characteristics, "
+            "and duties to complete the TASK. "
+            "Remember, your role is to create the profiles of these "
+            "experts, not to complete the TASK directly.\n" +
+            role_descriptions_instruction + "\n"
             "Your answer MUST strictly adhere to the structure of ANSWER "
             "TEMPLATE, ONLY fill in the BLANKs, and DO NOT alter or modify "
-            "any other part of the template.\n\n" + expert_prompt +
-            task_prompt)
+            "any other part of the template.\n\n" + function_docstring +
+            expert_prompt + task_prompt)
         role_assignment_generation = role_assignment_generation_prompt.format(
             num_roles=num_roles, task=task_prompt)
 
@@ -180,21 +201,22 @@ class RoleAssignmentAgent(ChatAgent):
 
         split_task_rules_prompt = """You are a task decomposer, and you're in asked to break down the main TASK into {num_subtasks} manageable subtasks suitable for a team comprising {num_roles} domain experts. The experts will contribute to the {num_subtasks} subtasks. Please follow the guidelines below to craft your answer:
     1. Remember, your role is to compose the TASK, not to complete the TASK directly.
-    2. Action-Oriented Foundation & Building Blocks: Ensure each subtask is actionable, distinct, tapping into the expertise of the assigned roles. Recognize that not every subtask needs to directly reflect the main TASK's ultimate aim. Some subtasks serve as essential building blocks, paving the way for more central subtasks, but avoid creating subtasks that are self-dependent or overly foundational.
-    3. Balanced Granularity with a Bias for Action: Details of subtask should be detailed, actionable, and not be ambiguous. Prioritize tangible actions in subtask such as implementation, creation, testing, or other tangible activities over mere understanding.
-    4. Contextual Parameters: Please ensure that each subtask has the relevant context information from the TASK to avoid missing or contradicting the context information of the TASK. And try to provide as much information from CONTEXT TEXT as possible here.
-    5. Dependencies & Gantt Chart: Identify and account for the dependencies within the subtasks. Ensure that each subtask logically flows from one to the next, or can run concurrently where no subtask is dependent on itself, in a manner that could be efficiently represented on a Gantt chart.
-    6. Definitions of the Input of subtask:
+    2. Focus on LLM Capabilities: Each subtask should leverage the strengths of a large language model (LLM), such as data processing, writing code, content generation, and etc.. Avoid assigning tasks that require physical actions or direct interaction with software/hardware systems, which are outside the LLM's capabilities.
+    3. Define clear LLM-Appropriate Actions: Ensure each subtask is actionable, distinct, tapping into the expertise of the assigned roles and aligning with LLM capabilities. The subtasks should be designed considering that the LLM can handle complex tasks typically managed by domain experts. Recognize that not every subtask needs to directly reflect the main TASK's ultimate aim. Some subtasks serve as essential building blocks, paving the way for more central subtasks, but avoid creating subtasks that are self-dependent or overly foundational.
+    4. Balanced Granularity with a Bias for Action: Details of subtask should be detailed, actionable, and not be ambiguous. Prioritize tangible actions in subtask such as implementation, creation, testing, or other tangible activities over mere understanding.
+    5. Contextual Parameters: Please ensure that each subtask has the relevant context information from the TASK to avoid missing or contradicting the context information of the TASK. And try to provide as much information from CONTEXT TEXT as possible here.
+    6. Dependencies & Gantt Chart: Identify and account for the dependencies within the subtasks. Ensure that each subtask logically flows from one to the next, or can run concurrently where no subtask is dependent on itself, in a manner that could be efficiently represented on a Gantt chart.
+    7. Definitions of the Input of subtask:
         - Interlinking of Inputs: Ensure that the inputs are not siloed and can be interlinked within privous subtasks if necessary, providing a holistic view of what is required for the subtask.
         - Hierarchy and Prioritization: Identify and clearly state the priority and hierarchy (if applicable) among the inputs, ensuring the most critical elements are addressed promptly.
         - Accessibility and Clarity: Ensure that all provided inputs are accessible, clear, and understandable to the relevant team members.
         - Adjustability: Consider that inputs may need to be adjusted as the project progresses and ensure a mechanism for the same.
-        - Subtask Dependency: Take into account the dependencies between different subtasks, ensuring that inputs for one subtask are aligned and coordinated with the needs and outputs of other related subtasks.jjj
-    7. Definitions of the Task Completion Standard in order to implement a feature in the software that can identify and mark a task as completed:
+        - Subtask Dependency: Take into account the dependencies between different subtasks, ensuring that inputs for one subtask are aligned and coordinated with the needs and outputs of other related subtasks.
+    8. Definitions of the Task Completion Standard in order to implement a feature in the software that can identify and mark a task as completed:
         - A task is considered completed when its intended output is produced.
         - If possible, the completion standard should be quantifiable to facilitate automatic detection by the software or tool feature.
         - The completion standard should be applicable to common project management scenarios and adaptable to various types of tasks, such as development, testing, and review tasks.
-    8. Refrain from mentioning specific titles or roles (who are mentioned in the section of ROLES WITH DESCRIPTION) within the content of subtasks, unless the titles and personal names are mentioned in the TASK.
+    9. Refrain from mentioning specific titles or roles (who are mentioned in the section of ROLES WITH DESCRIPTION) within the content of subtasks, unless the titles and personal names are mentioned in the TASK.
 Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill in the BLANKs, and DO NOT alter or modify any other part of the template.\n\n\n"""  # noqa: E501
 
         # Generate insights from the context text to help decompose the task
