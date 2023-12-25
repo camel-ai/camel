@@ -276,24 +276,7 @@ def search_google_and_summarize(query: str) -> str:
     serves as a gateway to the vast universe of information available on the
     internet. By inputting a query, you are leveraging the powerful Google
     search engine to scan the web for relevant data, articles, studies, and
-    discussions pertaining to your topic of interest. Here's what happens
-    when you invoke this function:
-    - Search Execution: Your query is used as the criterion for an extensive
-        online search,
-      executed through Google's sophisticated algorithms that prioritize
-        relevance and credibility.
-    - Data Aggregation: From the search results, a diverse array of sources
-        is accessed,
-      compiling insights, facts, and perspectives across various mediums and
-        platforms.
-    - Intelligent Summarization: The gathered information undergoes a
-        process of condensation, where the essence of the content is
-        distilled into a concise and informative summary. This involves
-        filtering out the noise and focusing on the core material that is
-        most informative and relevant to your query.
-    - Answer Delivery: The end product is a synthesized, concise summary
-        that encapsulates the key information you need, saving you the time
-        and effort of sifting through countless web pages.
+    discussions pertaining to your topic of interest.
     Whether you're looking for a quick factual answer, an overview of a
         complex topic, or diverse viewpoints on a controversial subject,
         this function is your streamlined conduit to knowledge. Just type in
