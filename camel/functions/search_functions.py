@@ -322,7 +322,8 @@ def search_google_and_summarize(query: str) -> str:
                 top_answer = answer
 
     return ("Failed to find the answer from google search, but only " +
-            "found the following information:\n" + top_answer)
+            "found the following information:\n" + top_answer
+            if top_answer else "Failed to find the answer from google search.")
 
 
 SEARCH_FUNCS: List[OpenAIFunction] = [
