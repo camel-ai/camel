@@ -308,11 +308,13 @@ def search_google_and_summarize(query: str) -> str:
             answer = insight_agent.transform_into_text(insights=insights)
 
             # Let chatgpt decide whether to continue search or not
-            prompt_tamplate = """Do you think the SEARCH_ANSWER can answer the SEARCH_QUERY. Use only 'yes' or 'no' to answer it.
+            prompt_tamplate = """Do you think the SEARCH_ANSWER can answer the SEARCH_QUERY? Use only 'yes' or 'no' to answer it.
 ===== SEARCH_ANSWER =====
 {answer}
 ===== SEARCH_QUERY =====
-{query}"""  # noqa: E501
+{query}
+===== ANSWER TEMPLATE =====
+[yes/no]"""  # noqa: E501
             prompt = TextPrompt(prompt_tamplate)
             prompt = prompt.format(answer=answer, query=query)
             reply = prompt_single_step_agent(prompt)
