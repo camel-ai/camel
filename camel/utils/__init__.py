@@ -38,6 +38,7 @@ __all__ = [
     'get_task_list',
     'get_model_encoding',
     'check_server_running',
+    'AnthropicTokenCounter',
     'BaseTokenCounter',
     'OpenAITokenCounter',
     'OpenSourceTokenCounter',

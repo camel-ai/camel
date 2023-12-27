@@ -116,7 +116,6 @@ types-mock = "*"
 types-regex = "*"
 types-setuptools = "*"
 types-tqdm = "*"
-ipykernel = "^6.27.1"
 
 [tool.poetry.group.docs]
 optional = true
