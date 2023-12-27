@@ -67,6 +67,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
     for subtask_idx, details in subtasks_with_dependencies_dict.items():
         deps = details["dependencies"]
         oriented_graph[subtask_idx] = deps
+    # sometimes, the graph is not drawn correctly
     role_assignment_agent.draw_subtasks_graph(oriented_graph=oriented_graph)
 
     # Get the list of subtasks
@@ -117,20 +118,20 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
     for subtask_id in (subtask for pipeline in parallel_subtask_pipelines
                        for subtask in pipeline):
         # Get the description of the subtask
-        one_subtask = \
+        subtask = \
             subtasks_with_dependencies_dict[subtask_id]["description"]
-        one_subtask_labels = \
+        subtask_labels = \
             subtasks_with_dependencies_dict[subtask_id]["input_tags"]
         # Get the insights from the environment for the subtask
         insights_for_subtask = get_insights_from_environment(
-            subtask_id, one_subtask, one_subtask_labels, environment_record,
+            subtask_id, subtask, subtask_labels, environment_record,
             deductive_reasoner_agent, role_assignment_agent, insight_agent,
             context_text)
 
         # Get the role with the highest compatibility score
         role_compatibility_scores_dict = (
             role_assignment_agent.evaluate_role_compatibility(
-                one_subtask, role_descriptions_dict))
+                subtask, role_descriptions_dict))
 
         # Get the top two roles with the highest compatibility scores
         ai_assistant_role = \
@@ -147,7 +148,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
 
         print_and_write_md("================ SESSION ================",
                            color=Fore.WHITE)
-        print_and_write_md(f"{subtask_id}: \n{one_subtask}\n",
+        print_and_write_md(f"{subtask_id}: \n{subtask}\n",
                            color=Fore.YELLOW)
         print_and_write_md(
             f"AI Assistant Role: {ai_assistant_role}\n" +
@@ -186,19 +187,23 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
             kwargs=dict(temperature=0.7),
         )  # User model config
 
+        assistant_agent_kwargs = dict(
+            model_type=ModelType.GPT_4_TURBO,
+            model_config=assistant_model_config,
+            function_list=function_list,
+        )
+
+        user_agent_kwargs = dict(
+            model_type=ModelType.GPT_4_TURBO,
+            model_config=user_model_config,
+            function_list=function_list,
+        )
+
         role_play_session = RolePlaying(
             assistant_role_name=ai_assistant_role,
             user_role_name=ai_user_role,
-            assistant_agent_kwargs=dict(
-                model_type=ModelType.GPT_4_TURBO,
-                model_config=assistant_model_config,
-                function_list=function_list,
-            ),
-            user_agent_kwargs=dict(
-                model_type=ModelType.GPT_4_TURBO,
-                model_config=user_model_config,
-                function_list=function_list,
-            ),
+            assistant_agent_kwargs=assistant_agent_kwargs,
+            user_agent_kwargs=user_agent_kwargs,
             task_prompt=subtask_content,
             model_type=ModelType.GPT_4_TURBO,
             task_type=TaskType.
@@ -208,7 +213,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
         )
 
         actions_record = ("The TASK of the context text is:\n" +
-                          f"{one_subtask}\n")
+                          f"{subtask}\n")
         chat_history_two_roles = ""
 
         # Start the role-playing to complete the subtask
@@ -232,12 +237,11 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                                f"{assistant_response.msg.content}\n")
             user_conversation = user_response.msg.content
             assistant_conversation = assistant_response.msg.content.replace(
-                "Solution&Action:\n", "").replace("Next request.",
-                                                  "").strip("\n")
+                "Solution&Action:\n", "").replace("Next request.", "").strip("\n") # noqa
             transformed_text_with_category = \
                 role_assignment_agent.transform_dialogue_into_text(
                     user=ai_user_role, assistant=ai_assistant_role,
-                    task_prompt=one_subtask,
+                    task_prompt=subtask,
                     user_conversation=user_conversation,
                     assistant_conversation=assistant_conversation)
             if ("ASSISTANCE" in transformed_text_with_category["categories"]
@@ -290,7 +294,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
             color=Fore.CYAN, file_path=f"environment record of {subtask_id}")
 
 
-def get_insights_from_environment(subtask_id, one_subtask, one_subtask_labels,
+def get_insights_from_environment(subtask_id, subtask, subtask_labels,
                                   environment_record, deductive_reasoner_agent,
                                   role_assignment_agent, insight_agent,
                                   context_text):
@@ -298,10 +302,10 @@ def get_insights_from_environment(subtask_id, one_subtask, one_subtask_labels,
     conditions_and_quality_json = \
         deductive_reasoner_agent.deduce_conditions_and_quality(
             starting_state="None",
-            target_state=one_subtask)
+            target_state=subtask)
 
     target_labels = list(
-        set(conditions_and_quality_json["labels"]) | set(one_subtask_labels))
+        set(conditions_and_quality_json["labels"]) | set(subtask_labels))
     print(f"Target labels for {subtask_id}:\n{target_labels}")
 
     labels_sets = [
