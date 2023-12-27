@@ -74,7 +74,7 @@ def main(model_type=None) -> None:
                        "enlightenment", "cold war", "contemporary"
                    ]]
 
-    target_labels_indices, labels_sets_indices, target_retrieved_labels,\
+    target_labels_indices, labels_sets_indices, target_retrieved_labels, \
         labels_retrieved_sets = (
             role_assignment_agent.get_retrieval_index_from_environment(
                 labels_sets=labels_sets,
