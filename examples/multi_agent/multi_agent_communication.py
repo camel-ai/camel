@@ -113,6 +113,18 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
     print_and_write_md("========================================",
                        color=Fore.WHITE)
 
+    # structured output for user request
+    print_and_write_md("================= TASK =======================",
+                       color=Fore.RED, file_path="Solution")
+    print_and_write_md(f"\n{task_prompt}\n", color=Fore.WHITE,
+                       file_path="Solution")
+    print_and_write_md("================= REQUIREMENT =======================",
+                       color=Fore.RED, file_path="Solution")
+    print_and_write_md(f"\n{context_text}\n",
+                       color=Fore.WHITE, file_path="Solution")
+    print_and_write_md("================= TRAVEL BOOKLET ====================",
+                       color=Fore.RED, file_path="Solution")
+
     # Resolve the subtasks in sequence of the pipelines
     for subtask_id in (subtask for pipeline in parallel_subtask_pipelines
                        for subtask in pipeline):
@@ -223,10 +235,24 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                 f"AI User: {ai_user_role}\n\n" +
                 f"{user_response.msg.content}\n", color=Fore.BLUE,
                 file_path=subtask_id)
+
+            # Summarize the user guidance
+            instructions = user_response.msg.content.split("Instruction:")[-1]
+            instruction = instructions.split("Input:")[0]
+            print_and_write_md(f"\n{instruction}\n", color=Fore.RED,
+                               file_path="Solution")
+            
             print_and_write_md(
                 f"AI Assistant: {ai_assistant_role}\n\n" +
                 f"{assistant_response.msg.content}\n", color=Fore.GREEN,
                 file_path=subtask_id)
+
+            # Extract the action from the assistant's response
+            actions = assistant_response.msg.content.split("Action:")[-1]
+            action = actions.split("Next request.")[0]
+            if action != "CAMEL_TASK_DONE":
+                print_and_write_md(f"\n{action}\n",
+                                   color=Fore.WHITE, file_path="Solution")
 
             actions_record += (f"--- [{n}] ---\n"
                                f"{assistant_response.msg.content}\n")
@@ -426,7 +452,7 @@ if __name__ == "__main__":
         "context_content_trip_planning.txt",
     ]
 
-    index = 9
+    index = -1
     with open(root_path + file_names_task_prompt[index], mode='r',
               encoding="utf-8") as file:
         task_prompt = file.read()
