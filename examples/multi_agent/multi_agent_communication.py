@@ -409,6 +409,9 @@ if __name__ == "__main__":
         "task_prompt_science_fiction.txt",
         "task_prompt_business_novel.txt",
         "task_prompt_experiment.txt",
+        "task_prompt_GPT_prediction.txt",
+        "task_prompt_event_query.txt",
+        "task_prompt_trip_planning.txt",
     ]
     file_names_context = [
         "context_content_trading_bot.txt",
@@ -418,62 +421,17 @@ if __name__ == "__main__":
         "context_content_science_fiction.txt",
         "context_content_business_novel.txt",
         "context_content_experiment.txt",
+        "context_content_GPT_prediction.txt",
+        "context_content_event_query.txt",
+        "context_content_trip_planning.txt",
     ]
 
-    index = 3
+    index = 9
     with open(root_path + file_names_task_prompt[index], mode='r',
               encoding="utf-8") as file:
         task_prompt = file.read()
     with open(root_path + file_names_context[index], mode='r',
               encoding="utf-8") as file:
         context_text = file.read()
-    context_text = ("The context of the task is used to assist in knowledge "
-                    "retrieval and collection. Given a or some specific query "
-                    "requirement(s) or research topic(s), we will show its "
-                    "intelligence to find the answer. For example, we are "
-                    "inquired about the latest research on a specific "
-                    "scientific question or explore the historical "
-                    "development of a particular field.")
-    task_prompt = (context_text + "\nNow, the query requirement "
-                   "is: every important event in Generative AI in "
-                   "2023, and predict the future of Generative AI "
-                   "in 2024 through rigorous and mathematical "
-                   "reasoning.")
-    task_prompt = ("Create a detailed travel plan for a trip to "
-                   "France, including itinerary, places to visit, "
-                   "attractions, accommodations, and "
-                   "transportation.")
-    context_text = """Destination Overview:
-Main Destination: France
-Key Cities to Visit: Paris, Nice, Lyon, Bordeaux, Marseille
-Special Interest Areas: French Riviera, Loire Valley (for castles and vineyards), Normandy (for historical sites)
-
-Travel Dates and Duration:
-Duration: 2 Weeks
-Proposed Travel Dates: June 10, 2024, to June 24, 2024
-
-Attractions and Activities:
-Must-Visit Attractions: Eiffel Tower, Louvre Museum, Palace of Versailles, Mont Saint-Michel, Côte d'Azur beaches
-Activities of Interest: Wine tasting in Bordeaux, culinary tours in Lyon, river cruising on the Seine, exploring the lavender fields in Provence
-
-Accommodation and Transportation Preferences:
-Accommodation Type: Mix of hotels and boutique guesthouses, preferably centrally located or with scenic views
-
-Transportation: Domestic flights for longer distances, train travel for intercity connections, car rental for exploring countryside areas
-
-Budget Considerations:
-Total Budget: 2000 euros
-Preferential Budget Allocation: Accommodations, experiences, dining
-
-Cultural Experiences:
-Interest in local cultural experiences, such as cooking classes, art workshops, and attending a live performance (e.g., cabaret show in Paris)
-Dining Preferences:
-
-Explore renowned French cuisine; include recommendations for bistros, brasseries, and Michelin-starred restaurants
-Dietary Restrictions: no-pork
-
-Language and Communication:
-French language proficiency: entry level
-Desire for English-speaking guides or information resources"""  # noqa: E501
 
     main(task_prompt=task_prompt, context_text=context_text)
