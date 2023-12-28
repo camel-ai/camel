@@ -28,7 +28,7 @@ def interpreter():
     action_space = {"action1": action_function, "str": str}
     white_list = ["torch", "numpy.array", "openai"]
     return PythonInterpreter(action_space=action_space,
-                             import_white_list=white_list)
+                             import_white_list=white_list, raise_error=True)
 
 
 def test_state_update(interpreter: PythonInterpreter):

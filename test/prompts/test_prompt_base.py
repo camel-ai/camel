@@ -152,7 +152,8 @@ def test_code_prompt_execute(capsys):
 
 def test_code_prompt_execute_error():
     code_prompt = CodePrompt("print('Hello, World!'", code_type="python")
-    interpreter = PythonInterpreter(action_space={"print": print})
+    interpreter = PythonInterpreter(action_space={"print": print},
+                                    raise_error=True)
     with pytest.raises(InterpreterError) as e:
         _, _ = code_prompt.execute(interpreter=interpreter)
     assert e.value.args[0].startswith("Syntax error in code:")
