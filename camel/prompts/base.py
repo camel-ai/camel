@@ -193,7 +193,9 @@ class CodePrompt(TextPrompt):
     """
         # NOTE: Only supports Python code for now.
         if not interpreter:
-            interpreter = PythonInterpreter(action_space=globals())
+            action_space = globals()
+            action_space.update({"print": print, "enumerate": enumerate})
+            interpreter = PythonInterpreter(action_space=action_space)
         execution_res = interpreter.execute(self, fuzz_state=user_variable,
                                             keep_state=True)
         return execution_res, interpreter
