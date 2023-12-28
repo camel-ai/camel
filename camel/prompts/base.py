@@ -180,7 +180,7 @@ class CodePrompt(TextPrompt):
         Args:
             interpreter (PythonInterpreter, optional): interpreter to be used
                 during code execution. (default: :obj:`None`)
-            user_variable (Optional[Dict[str, Any]]): varibales that can be
+            user_variable (Optional[Dict[str, Any]]): variables that can be
                 used in the code, which applying fuzzy matching, such as images
                 or documents. (default: :obj:`None`)
 
@@ -193,7 +193,7 @@ class CodePrompt(TextPrompt):
     """
         # NOTE: Only supports Python code for now.
         if not interpreter:
-            action_space = globals()
+            action_space = {}
             action_space.update({"print": print, "enumerate": enumerate})
             interpreter = PythonInterpreter(action_space=action_space)
         execution_res = interpreter.execute(self, fuzz_state=user_variable,
