@@ -74,11 +74,14 @@ class UnstructuredModules:
     def parse_file_or_url(
         self,
         input_path: str,
+        **kwargs: Any,
     ) -> Union[Any, List[Any]]:
         r"""Loads a file or a URL and parses its contents as unstructured data.
 
         Args:
             input_path (str): Path to the file or URL to be parsed.
+             **kwargs Extra kwargs passed to the partition function
+
         Returns:
             List[Any]: The elements after parsing the file or URL, could be a
                 dict, list, etc., depending on the content. If return_str is
@@ -115,7 +118,7 @@ class UnstructuredModules:
             from unstructured.partition.html import partition_html
 
             try:
-                elements = partition_html(url=input_path)
+                elements = partition_html(url=input_path, **kwargs)
                 return elements
             except Exception as e:
                 raise Exception("Failed to parse the URL.") from e
@@ -132,7 +135,7 @@ class UnstructuredModules:
             # Read the file
             try:
                 with open(input_path, "rb") as f:
-                    elements = partition(file=f)
+                    elements = partition(file=f, **kwargs)
                     return elements
             except Exception as e:
                 raise Exception(
@@ -324,7 +327,6 @@ class UnstructuredModules:
                             'dict_to_elements',
                             'stage_csv_for_prodigy',
                             'stage_for_prodigy',
-                            'stage_for_argilla',
                             'stage_for_baseplate',
                             'stage_for_datasaur',
                             'stage_for_label_box',
@@ -345,7 +347,6 @@ class UnstructuredModules:
         """
 
         from unstructured.staging import (
-            argilla,
             base,
             baseplate,
             datasaur,
@@ -370,8 +371,6 @@ class UnstructuredModules:
             "stage_for_prodigy":
             lambda els, **kw: prodigy.stage_for_prodigy(
                 els, kw.get('metadata', [])),
-            "stage_for_argilla":
-            lambda els, **kw: argilla.stage_for_argilla(els, **kw),
             "stage_for_baseplate":
             baseplate.stage_for_baseplate,
             "stage_for_datasaur":
