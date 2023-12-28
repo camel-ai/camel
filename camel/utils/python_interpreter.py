@@ -124,7 +124,7 @@ class PythonInterpreter():
             expression = ast.parse(code)
         except SyntaxError as e:
             if self.raise_error:
-                raise InterpreterError(f"SyntaxError in code: {e}")
+                raise InterpreterError(f"Syntax error in code: {e}")
             else:
                 import traceback
                 return traceback.format_exc()
@@ -141,7 +141,7 @@ class PythonInterpreter():
                 # More information can be provided by `ast.unparse()`,
                 # which is new in python 3.9.
                 if self.raise_error:
-                    return InterpreterError(msg)
+                    raise InterpreterError(msg)
                 else:
                     import traceback
                     return traceback.format_exc()
