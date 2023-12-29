@@ -119,6 +119,18 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
     print_and_write_md("========================================",
                        color=Fore.BLACK)
 
+    # structured output for user request
+    print_and_write_md("================= TASK =======================",
+                       color=Fore.RED, file_path="Solution")
+    print_and_write_md(f"\n{task_prompt}\n", color=Fore.BLACK,
+                       file_path="Solution")
+    print_and_write_md("================= REQUIREMENT =======================",
+                       color=Fore.RED, file_path="Solution")
+    print_and_write_md(f"\n{context_text}\n",
+                       color=Fore.BLACK, file_path="Solution")
+    print_and_write_md("================= 小说内容 ====================",
+                       color=Fore.RED, file_path="Solution")
+
     # Resolve the subtasks in sequence of the pipelines
     for subtask_id in (subtask for pipeline in parallel_subtask_pipelines
                        for subtask in pipeline):
@@ -243,6 +255,13 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                 f"AI Assistant: {ai_assistant_role}\n\n" +
                 f"{assistant_response.msg.content}\n", color=Fore.GREEN,
                 file_path=subtask_id)
+            
+            # Extract the action from the assistant's response
+            actions = assistant_response.msg.content.split("Action:")[-1]
+            action = actions.split("Next request.")[0]
+            if action != "CAMEL_TASK_DONE":
+                print_and_write_md(f"\n{action}\n",
+                                   color=Fore.BLACK, file_path="Solution")
 
             actions_record += (f"--- [{n}] ---\n"
                                f"{assistant_response.msg.content}\n")
@@ -424,6 +443,7 @@ if __name__ == "__main__":
         "task_prompt_GPT_prediction.txt",
         "task_prompt_event_query.txt",
         "task_prompt_trip_planning.txt",
+        "task_prompt_book.txt",
     ]
     file_names_context = [
         "context_content_trading_bot.txt",
@@ -436,9 +456,10 @@ if __name__ == "__main__":
         "context_content_GPT_prediction.txt",
         "context_content_event_query.txt",
         "context_content_trip_planning.txt",
+        "context_content_book.txt"
     ]
 
-    index = 9
+    index = -1
     with open(root_path + file_names_task_prompt[index], mode='r',
               encoding="utf-8") as file:
         task_prompt = file.read()
