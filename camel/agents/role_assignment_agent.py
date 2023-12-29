@@ -146,6 +146,11 @@ The tool descriptions are the context information of the potential competencies 
                                f"Error:\n{response.info}")
         msg = response.msg  # type: BaseMessage
 
+        content = msg.content
+        print(content)
+        if content.strip() == " I'm sorry, but I cannot fulfill your request.":
+            raise RuntimeError("May violate the guidelines of ChatGPT.")
+
         # Distribute the output completions into role names and descriptions
         role_names = [
             desc.replace("<", "").replace(">", "").strip()
@@ -545,6 +550,11 @@ Definition of ASSISTANT: The assistant is the role that executes instructions gi
                                f"Error:\n{response.info}")
         msg = response.msg  # type: BaseMessage
 
+        content = msg.content
+        print(content)
+        if content.strip() == " I'm sorry, but I cannot fulfill your request.":
+            raise RuntimeError("May violate the guidelines of ChatGPT.")
+
         # Distribute the output completions into scores
         user_compatibility_scores = [
             desc.replace("<", "").replace(">", "").strip('\n')
@@ -558,9 +568,11 @@ Definition of ASSISTANT: The assistant is the role that executes instructions gi
         ]
 
         if len(user_compatibility_scores) != len(role_names):
+            print("user_compatibility_scores: ", user_compatibility_scores)
             raise RuntimeError("Got None or insufficient information of " +
                                "compatibility scores as USER.")
         if len(assistant_compatibility_scores) != len(role_names):
+            print("assistant_compatibility_scores: ", assistant_compatibility_scores)  # noqa: E501")
             raise RuntimeError("Got None or insufficient information of " +
                                "compatibility scores as ASSISTANT.")
 
