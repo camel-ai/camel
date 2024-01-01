@@ -52,8 +52,10 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
         model_type=model_type, model_config=model_config)
 
     # Generate role with descriptions
-    print("Please enter the number of roles you want to generate (default number is 4): ") # noqa
+    print("Please enter the number of roles you want to generate (#roles >= 3, default number is 4): ") # noqa
     num_roles = int(input())
+    while num_roles < 3:
+        print("The number of roles should be larger or equal to 3, please enter again: ") # noqa
     role_descriptions_dict = \
         role_assignment_agent.run_role_with_description(
             task_prompt=task_prompt, num_roles=num_roles, role_names=None,
@@ -444,6 +446,7 @@ if __name__ == "__main__":
         "task_prompt_event_query.txt",
         "task_prompt_trip_planning.txt",
         "task_prompt_book.txt",
+        "task_prompt_character.txt",
     ]
     file_names_context = [
         "context_content_trading_bot.txt",
@@ -456,7 +459,8 @@ if __name__ == "__main__":
         "context_content_GPT_prediction.txt",
         "context_content_event_query.txt",
         "context_content_trip_planning.txt",
-        "context_content_book.txt"
+        "context_content_book.txt",
+        "context_content_character.txt",
     ]
 
     index = -1
