@@ -55,10 +55,11 @@ def api_key_required(func: F) -> F:
 
     @wraps(func)
     def wrapper(self, *args, **kwargs):
-        if self.model.is_openai:
+        print(self)
+        if self.model_type.is_openai:
             if 'OPENAI_API_KEY' in os.environ:
                 return func(self, *args, **kwargs)
-        elif self.model.is_anthropic:
+        elif self.model_type.is_anthropic:
             if 'ANTHROPIC_API_KEY' in os.environ:
                 return func(self, *args, **kwargs)
             else:
