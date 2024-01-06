@@ -13,10 +13,11 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from pathlib import Path
-from typing import Any, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 from urllib.parse import urlparse
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
+from camel.functions import OpenAIFunction
 from camel.functions.unstructured_io_fuctions import UnstructuredModules
 from camel.storages.vectordb_storages import (
     BaseVectorStorage,
@@ -24,176 +25,86 @@ from camel.storages.vectordb_storages import (
     VectorDBQuery,
     VectorRecord,
 )
-from camel.types import VectorDistance
+
+DEFAULT_TOP_K_RESULTS = 1
+DEFAULT_SIMILARITY_THRESTOLD = 0.75
 
 
-class RetrievalFunction:
+class RetrievalModule:
     r"""Implements retrieval by combining vector storage with an embedding model.
 
     This class facilitates the retrieval of relevant information using a
-    query-based approach, backed by vector embeddings. It is useful for
-    information retrieval.
+    query-based approach, backed by vector embeddings.
 
     Attributes:
         embedding_model (BaseEmbedding): Embedding model used to generate
         vector embeddings.
-        vector_storage: (BaseVectorStorage): Vector store used to retrieve
-        information.
-        top_k (int): Number of top-ranked results returned in queries.
-        vector_dim (int): Dimensionality of the vector embeddings used.
     """
 
-    def __init__(self, embedding_model: Optional[BaseEmbedding] = None,
-                 vector_storage: Optional[BaseVectorStorage] = None,
-                 top_k: int = 1) -> None:
+    def __init__(self,
+                 embedding_model: Optional[BaseEmbedding] = None) -> None:
         r"""Initializes the retrieval class with an optional embedding model
         and vector storage, and sets the number of top results for retrieval.
 
         Args:
             embedding_model (Optional[BaseEmbedding]): The embedding model
-            instance. Defaults to OpenAIEmbedding if not provided.
-            vector_storage (Optional[BaseVectorStorage]): The vector storage
-            instance. Defaults to QdrantStorage if not provided.
-            top_k (int, optional): The number of top results to return during
-            retrieval. Must be a positive integer. Defaults to 1.
-
-        Raises:
-            ValueError: If 'top_k' is less than or equal to 0.
+            instance. Defaults to `OpenAIEmbedding` if not provided.
         """
-        if top_k <= 0:
-            raise ValueError("top_k must be a positive integer")
-
         self.embedding_model = embedding_model or OpenAIEmbedding()
         self.vector_dim = self.embedding_model.get_output_dim()
-        self.vector_storage = vector_storage or QdrantStorage(
-            vector_dim=self.vector_dim)
-        self.top_k = top_k
 
-    def _set_vector_storage(
-        self, storage_type: str, collection_name: Optional[str] = None,
-        collection_accessable: Optional[bool] = None,
+    def _initialize_qdrant_storage(
+        self,
+        collection_name: Optional[str] = None,
+        is_collection_accessible: Optional[bool] = None,
         vector_storage_local_path: Optional[str] = None,
         url_and_api_key: Optional[Tuple[str, str]] = None,
-        vector_storage: Optional[BaseVectorStorage] = None
-    ) -> BaseVectorStorage:
-        r"""Sets up and returns a vector storage instance (either local or
-        remote) with specified parameters.
+    ) -> QdrantStorage:
+        r"""Sets up and returns a `Qdrant` storage instance with specified parameters.
 
         Args:
-            storage_type (str): Type of storage ('local' or 'remote').
             collection_name (Optional[str]): Name of the collection in the
             vector storage.
-            collection_accessable (Optional[bool]): Flag indicating if the
+            is_collection_accessible (Optional[bool]): Flag indicating if the
             collection already exists.
             vector_storage_local_path (Optional[str]): Filesystem path for
-            local vector storage (used when storage_type is 'local').
+            local vector storage.
             url_and_api_key (Optional[Tuple[str, str]]): URL and API key for
-            remote storage access (used when storage_type is 'remote').
-            vector_storage (Optional[BaseVectorStorage]): An existing vector
-            storage instance.
+            remote storage access.
 
         Returns:
-            BaseVectorStorage: Configured vector storage instance.
-
-        Raises:
-            ValueError: If the necessary parameters for the specified storage
-            type are not provided or if incompatible parameters are provided.
+            QdrantStorage: Configured Qdrant storage instance.
         """
 
-        if storage_type == 'local':
-            if vector_storage_local_path is None:
-                raise ValueError(
-                    "For local storage, 'vector_storage_local_path' must be "
-                    "provided.")
-            if url_and_api_key is not None:
-                raise ValueError(
-                    "For local storage, 'url_and_api_key' must not "
-                    "be provided.")
+        return QdrantStorage(vector_dim=self.vector_dim,
+                             collection=collection_name,
+                             create_collection=not is_collection_accessible,
+                             path=vector_storage_local_path,
+                             url_and_api_key=url_and_api_key)
 
-            return vector_storage or QdrantStorage(
-                vector_dim=self.vector_dim, collection=collection_name,
-                create_collection=not collection_accessable,
-                path=vector_storage_local_path)
-
-        elif storage_type == 'remote':
-            if url_and_api_key is None:
-                raise ValueError(
-                    "For remote storage, 'url_and_api_key' must be provided.")
-            if vector_storage_local_path is not None:
-                raise ValueError(
-                    "For remote storage, 'vector_storage_local_path' must "
-                    "not be provided.")
-
-            return vector_storage or QdrantStorage(
-                vector_dim=self.vector_dim, collection=collection_name,
-                url_and_api_key=url_and_api_key,
-                create_collection=not collection_accessable,
-                distance=VectorDistance.COSINE)
-
-        else:
-            raise ValueError(
-                "Invalid storage type specified. Please choose 'local' "
-                "or 'remote'.")
-
-    def _check_collection_status(
-            self, storage_type: str, collection_name: str,
+    def _check_qdrant_collection_status(
+            self, collection_name: str,
             vector_storage_local_path: Optional[str] = None,
-            url_and_api_key: Optional[Tuple[str, str]] = None,
-            vector_storage: Optional[BaseVectorStorage] = None) -> bool:
+            url_and_api_key: Optional[Tuple[str, str]] = None) -> bool:
         r"""Checks and returns the status of the specified collection in the
-        vector storage.
+        `Qdrant` storage.
 
         Args:
-            storage_type (str): Type of storage ('local' or 'remote').
             collection_name (str): Name of the collection to check.
             vector_storage_local_path (Optional[str]): Filesystem path for
             local vector storage (used when storage_type is 'local').
             url_and_api_key (Optional[Tuple[str, str]]): URL and API key for
             remote storage access (used when storage_type is 'remote').
-            vector_storage (Optional[BaseVectorStorage]): Vector storage
-            instance.
 
         Returns:
             bool: True if the collection exists and is accessible, False
             otherwise.
-
-        Raises:
-            ValueError: If the necessary parameters for the specified storage
-            type are not provided or if incompatible parameters are provided.
         """
         try:
-            if storage_type == 'local':
-                if vector_storage_local_path is None:
-                    raise ValueError(
-                        "For local storage, 'vector_storage_local_path' "
-                        "must be provided.")
-                if url_and_api_key is not None:
-                    raise ValueError(
-                        "For local storage, 'url_and_api_key' must not "
-                        "be provided.")
-
-                storage = vector_storage or QdrantStorage(
-                    vector_dim=self.vector_dim, collection=collection_name,
-                    path=vector_storage_local_path)
-
-            elif storage_type == 'remote':
-                if url_and_api_key is None:
-                    raise ValueError(
-                        "For remote storage, 'url_and_api_key' must "
-                        "be provided.")
-                if vector_storage_local_path is not None:
-                    raise ValueError(
-                        "For remote storage, 'vector_storage_local_path' "
-                        "must not be provided.")
-
-                storage = vector_storage or QdrantStorage(
-                    vector_dim=self.vector_dim, collection=collection_name,
-                    url_and_api_key=url_and_api_key)
-
-            else:
-                raise ValueError(
-                    "Invalid storage type specified. Please choose 'local' "
-                    "or 'remote'.")
+            storage = QdrantStorage(vector_dim=self.vector_dim,
+                                    collection=collection_name,
+                                    path=vector_storage_local_path,
+                                    url_and_api_key=url_and_api_key)
 
             storage.status
             return True
@@ -201,18 +112,19 @@ class RetrievalFunction:
         except Exception:
             return False
 
-    def _embed_and_store_chunks(self, content_input_path: str,
-                                vector_storage: BaseVectorStorage,
-                                **kwargs: Any) -> None:
-        r""" Processes content from a file or URL, divides it into chunks, and
-        stores their embeddings in the specified vector storage.
+    def embed_and_store_chunks(self, content_input_path: str,
+                               vector_storage: BaseVectorStorage,
+                               **kwargs: Any) -> None:
+        r""" Processes content from a file or URL, divides it into chunks by
+        using `Unstructured IO`, and stores their embeddings in the specified
+        vector storage.
 
         Args:
             content_input_path (str): File path or URL of the content to be
             processed.
             vector_storage (BaseVectorStorage): Vector storage to store the
             embeddings.
-            **kwargs (Any): Additional keyword arguments.
+            **kwargs (Any): Additional keyword arguments for elements chunking.
         """
         unstructured_modules = UnstructuredModules()
         elements = unstructured_modules.parse_file_or_url(content_input_path)
@@ -220,75 +132,91 @@ class RetrievalFunction:
             chunk_type="chunk_by_title", elements=elements, **kwargs)
 
         for chunk in chunks:
+            # Get vector from chunk string
             vector = self.embedding_model.embed(obj=str(chunk))
-            payload_dict = {"text": str(chunk)}
+            # Get content path, metadata, text
+            content_path_info = {"content path": content_input_path}
+            chunk_metadata = {"metadata": chunk.metadata.to_dict()}
+            chunk_text = {"text": str(chunk)}
+            # Combine the information into one dict as payload
+            combined_dict = {
+                **content_path_info,
+                **chunk_metadata,
+                **chunk_text
+            }
             vector_storage.add(
-                records=[VectorRecord(vector=vector, payload=payload_dict)])
+                records=[VectorRecord(vector=vector, payload=combined_dict)])
 
-    def _query_and_compile_results(self, query: str,
-                                   vector_storage: BaseVectorStorage,
-                                   **kwargs: Any) -> str:
+    def query_and_compile_results(
+            self, query: str, vector_storage: BaseVectorStorage,
+            top_k: int = DEFAULT_TOP_K_RESULTS,
+            similarity_throthold: float = DEFAULT_SIMILARITY_THRESTOLD,
+            **kwargs: Any) -> str:
         r"""Executes a query in vector storage and compiles the retrieved
         results into a string.
 
         Args:
             query (str): Query string for information retrieval.
             vector_storage (BaseVectorStorage): Vector storage to query.
+            top_k (int, optional): The number of top results to return during
+            retrieval. Must be a positive integer. Defaults to 1.
+            similarity_threshold (float, optional): The similarity threshold
+            for filtering results. Defaults to 0.75.
             **kwargs (Any): Additional keyword arguments.
 
         Returns:
             str: Concatenated string of the query results.
-        """
-        query_vector = self.embedding_model.embed(obj=query)
-        db_query = VectorDBQuery(query_vector=query_vector, top_k=self.top_k)
-        query_results = vector_storage.query(query=db_query, **kwargs)
-        return "".join(str(i.record.payload) for i in query_results)
 
-    def run_retrieval(
+        Raises:
+            ValueError: If 'top_k' is less than or equal to 0.
+        """
+        if top_k <= 0:
+            raise ValueError("top_k must be a positive integer")
+        query_vector = self.embedding_model.embed(obj=query)
+        db_query = VectorDBQuery(query_vector=query_vector, top_k=top_k)
+        query_results = vector_storage.query(query=db_query, **kwargs)
+        # format the results
+        formatted_results = []
+        for result in query_results:
+            if (result.similarity >= similarity_throthold
+                    and result.record.payload is not None):
+                result_dict = {
+                    'similarity score': str(result.similarity),
+                    'content path':
+                    result.record.payload.get('content path', ''),
+                    'metadata': result.record.payload.get('metadata', {}),
+                    'text': result.record.payload.get('text', '')
+                }
+                formatted_results.append(str(result_dict))
+
+        if (not formatted_results
+                and query_results[0].record.payload is not None):
+            return f"""No suitable information retrieved from
+            {query_results[0].record.payload.get('content path','')} with
+            similarity_throthold = {similarity_throthold}."""
+        return "\n".join(formatted_results)
+
+    def run_default_retrieval(
             self, query: str, content_input_paths: Union[str, list[str]],
-            storage_type: str, vector_storage_local_path: Optional[str] = None,
+            vector_storage_local_path: Optional[str] = None,
             url_and_api_key: Optional[Tuple[str, str]] = None) -> str:
-        r"""Executes the retrieval process using specified storage type.
+        r"""Executes the default retrieval process using `Qdrant` storage.
 
         Args:
             query (str): Query string for information retrieval.
             content_input_paths (Union[str, list[str]]): Paths to content
             files or URLs.
-            storage_type (str): Type of storage ('local' or 'remote').
-            vector_storage_local_path (Optional[str]): Local path for vector
-            storage (used when storage_type is 'local').
+            vector_storage_local_path (Optional[str]): Local path for `Qdrant`
+            storage.
             url_and_api_key (Optional[Tuple[str, str]]): URL and API key for
-            remote storage access (used when storage_type is 'remote').
+            `Qddrant` storage remote access.
 
         Returns:
             str: Aggregated information retrieved in response to the query.
 
         Raises:
-            ValueError: If the necessary parameters for the specified storage
-            type are not provided or if incompatible parameters are provided.
             RuntimeError: If any errors occur during the retrieval process.
         """
-        if storage_type == 'local':
-            if not vector_storage_local_path:
-                raise ValueError(
-                    "For local storage, 'vector_storage_local_path' must "
-                    "be provided.")
-            if url_and_api_key is not None:
-                raise ValueError(
-                    "For local storage, 'url_and_api_key' must not be "
-                    "provided.")
-        elif storage_type == 'remote':
-            if not url_and_api_key:
-                raise ValueError(
-                    "For remote storage, 'url_and_api_key' must be provided.")
-            if vector_storage_local_path is not None:
-                raise ValueError(
-                    "For remote storage, 'vector_storage_local_path' must "
-                    "not be provided.")
-        else:
-            raise ValueError(
-                "Invalid storage type specified. Please choose 'local' "
-                "or 'remote'.")
 
         content_input_paths = [content_input_paths] if isinstance(
             content_input_paths, str) else content_input_paths
@@ -304,33 +232,80 @@ class RetrievalFunction:
                 "https://", "").replace("/", "_").strip("_") if is_url else
                                Path(content_input_path).stem.replace(' ', '_'))
 
-            collection_accessable = self._check_collection_status(
-                storage_type=storage_type,
-                vector_storage_local_path=vector_storage_local_path
-                if storage_type == 'local' else None,
-                url_and_api_key=url_and_api_key if storage_type == 'remote'
-                else None, collection_name=collection_name)
+            is_collection_accessible = self._check_qdrant_collection_status(
+                vector_storage_local_path=vector_storage_local_path,
+                url_and_api_key=url_and_api_key,
+                collection_name=collection_name)
 
             try:
-                vector_storage_instance = self._set_vector_storage(
-                    storage_type=storage_type, collection_name=collection_name,
-                    collection_accessable=collection_accessable,
-                    vector_storage_local_path=vector_storage_local_path
-                    if storage_type == 'local' else None,
-                    url_and_api_key=url_and_api_key
-                    if storage_type == 'remote' else None)
+                vector_storage_instance = self._initialize_qdrant_storage(
+                    collection_name=collection_name,
+                    is_collection_accessible=is_collection_accessible,
+                    vector_storage_local_path=vector_storage_local_path,
+                    url_and_api_key=url_and_api_key)
 
-                if not collection_accessable:
-                    self._embed_and_store_chunks(content_input_path,
-                                                 vector_storage_instance)
+                if not is_collection_accessible:
+                    self.embed_and_store_chunks(content_input_path,
+                                                vector_storage_instance)
 
-                retrieved_info = self._query_and_compile_results(
+                retrieved_info = self.query_and_compile_results(
                     query, vector_storage_instance)
                 retrieved_infos += "\n" + retrieved_info
                 output = ("Original Query:" + "\n" + "{" + query + "}" + "\n" +
-                          "Retrieved Context:" + "\n" + retrieved_info)
+                          "Retrieved Context:" + retrieved_infos)
             except Exception as e:
                 raise RuntimeError(
                     f"Error in retrieval processing: {str(e)}") from e
 
         return output
+
+
+def local_retrieval(query: str) -> str:
+    r"""Performs a default local retrieval for information. Given a query,
+    this function will retrieve the information from the local vector storage,
+    and return the retrieved information back. It is useful for information
+    retrieval.
+
+    Args:
+        query (string): Question you want to be answered.
+
+    Returns:
+        str: Aggregated information retrieved in response to the query.
+    """
+    retrieval_instance = RetrievalModule()
+    retrieved_info = retrieval_instance.run_default_retrieval(
+        content_input_paths=[
+            "examples/rag/example_database/camel paper.pdf",
+            "https://www.camel-ai.org/",
+        ], vector_storage_local_path="examples/rag/", query=query)
+    return retrieved_info
+
+
+def remote_retrieval(query: str) -> str:
+    r"""Performs a default remote retrieval for information. Given a query,
+    this function will retrieve the information from the remote vector
+    storage, and return the retrieved information back. It is useful for
+    information retrieval.
+
+    Args:
+        query (string): Question you want to be answered.
+
+    Returns:
+        str: Aggregated information retrieved in response to the query.
+    """
+    retrieval_instance = RetrievalModule()
+    retrieved_info = retrieval_instance.run_default_retrieval(
+        content_input_paths=[
+            "examples/rag/example_database/camel paper.pdf",
+            "https://www.camel-ai.org/",
+        ], url_and_api_key=(
+            "https://c7ac871b-0dca-4586-8b03-9ffb4e40363e."
+            "us-east4-0.gcp.cloud.qdrant.io:6333",
+            "axny37nzYHwg8jxbW-TnC90p8MibC1Tl4ypSwM87boZhSqvedvW_7w"),
+        query=query)
+    return retrieved_info
+
+
+RETRIEVAL_FUNCS: List[OpenAIFunction] = [
+    OpenAIFunction(func) for func in [local_retrieval, remote_retrieval]
+]
