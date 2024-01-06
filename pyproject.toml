@@ -60,6 +60,7 @@ qdrant-client = { version = "^1.6.4", optional = true }
 # test
 pytest = { version = "^7", optional = true}
 mock = { version = "^5", optional = true}
+ipykernel = "^6.28.0"
 
 [tool.poetry.extras]
 test = ["pytest", "mock"]
@@ -134,6 +135,7 @@ types-setuptools = "*"
 types-tqdm = "*"
 types-colorama = "^0"
 types-requests = "^2"
+ipykernel = "^6.28.0"
 
 [tool.poetry.group.docs]
 optional = true
