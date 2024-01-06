@@ -13,8 +13,10 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .role_playing import RolePlaying
 from .babyagi_playing import BabyAGI
+from .role_playing_with_functions import role_playing_with_function
 
 __all__ = [
     'RolePlaying',
     'BabyAGI',
+    'role_playing_with_function',
 ]
