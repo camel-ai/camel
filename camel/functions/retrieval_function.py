@@ -150,7 +150,7 @@ class RetrievalModule:
     def query_and_compile_results(
             self, query: str, vector_storage: BaseVectorStorage,
             top_k: int = DEFAULT_TOP_K_RESULTS,
-            similarity_throthold: float = DEFAULT_SIMILARITY_THRESTOLD,
+            similarity_threshold: float = DEFAULT_SIMILARITY_THRESTOLD,
             **kwargs: Any) -> str:
         r"""Executes a query in vector storage and compiles the retrieved
         results into a string.
@@ -178,7 +178,7 @@ class RetrievalModule:
         # format the results
         formatted_results = []
         for result in query_results:
-            if (result.similarity >= similarity_throthold
+            if (result.similarity >= similarity_threshold
                     and result.record.payload is not None):
                 result_dict = {
                     'similarity score': str(result.similarity),
@@ -193,7 +193,7 @@ class RetrievalModule:
                 and query_results[0].record.payload is not None):
             return f"""No suitable information retrieved from
             {query_results[0].record.payload.get('content path','')} with
-            similarity_throthold = {similarity_throthold}."""
+            similarity_threshold = {similarity_threshold}."""
         return "\n".join(formatted_results)
 
     def run_default_retrieval(
@@ -275,7 +275,6 @@ def local_retrieval(query: str) -> str:
     retrieval_instance = RetrievalModule()
     retrieved_info = retrieval_instance.run_default_retrieval(
         content_input_paths=[
-            "examples/rag/example_database/camel paper.pdf",
             "https://www.camel-ai.org/",
         ], vector_storage_local_path="examples/rag/", query=query)
     return retrieved_info
@@ -296,7 +295,6 @@ def remote_retrieval(query: str) -> str:
     retrieval_instance = RetrievalModule()
     retrieved_info = retrieval_instance.run_default_retrieval(
         content_input_paths=[
-            "examples/rag/example_database/camel paper.pdf",
             "https://www.camel-ai.org/",
         ], url_and_api_key=(
             "https://c7ac871b-0dca-4586-8b03-9ffb4e40363e."
