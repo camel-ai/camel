@@ -23,20 +23,22 @@ from camel.types import ModelType
 from camel.utils import print_text_animated
 
 TASK_PROMPT = ("Assuming the current year is 2023, estimate KAUST's "
-                   "current age and then add 10 more years to this age, "
-                   "and get the current weather of the city where KAUST "
-                   "is located.")
+               "current age and then add 10 more years to this age, "
+               "and get the current weather of the city where KAUST "
+               "is located.")
 FUNCTION_LIST = [*MATH_FUNCS, *SEARCH_FUNCS, *WEATHER_FUNCS]
 ASSISTANT_ROLE_NAME = "Searcher"
 USER_ROLE_NAME = "Professor"
 
-def role_playing_with_function(task_prompt:str=TASK_PROMPT,
-                               function_list:list=FUNCTION_LIST,
-                               model_type=ModelType.GPT_4_TURBO, 
-                               chat_turn_limit=10,
-                               assistant_role_name:str=ASSISTANT_ROLE_NAME,
-                               user_role_name:str=USER_ROLE_NAME,
-                               ) -> None:
+
+def role_playing_with_function(
+    task_prompt: str = TASK_PROMPT,
+    function_list: list = FUNCTION_LIST,
+    model_type=ModelType.GPT_4_TURBO,
+    chat_turn_limit=10,
+    assistant_role_name: str = ASSISTANT_ROLE_NAME,
+    user_role_name: str = USER_ROLE_NAME,
+) -> None:
     task_prompt = task_prompt
     user_model_config = ChatGPTConfig(temperature=0.0)
 
