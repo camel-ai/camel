@@ -12,6 +12,8 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
+import datetime
+import os
 from pathlib import Path
 from typing import Any, List, Optional, Tuple, Union
 from urllib.parse import urlparse
@@ -111,6 +113,23 @@ class RetrievalModule:
 
         except Exception:
             return False
+
+    def _get_file_modified_date(self, content_input_path: str) -> str:
+        r"""Retrieves the last modified date and time of a given file. This
+        function takes a file path as input and returns the last modified date
+        and time of that file.
+
+        Args:
+            content_input_path (str): The file path of the content whose
+            modified date is to be retrieved.
+
+        Returns:
+            str: The last modified date and time of the file.
+        """
+        mod_time = os.path.getmtime(content_input_path)
+        readable_mod_time = datetime.datetime.fromtimestamp(
+            mod_time).isoformat(timespec='seconds')
+        return readable_mod_time
 
     def embed_and_store_chunks(self, content_input_path: str,
                                vector_storage: BaseVectorStorage,
@@ -244,7 +263,37 @@ class RetrievalModule:
                     vector_storage_local_path=vector_storage_local_path,
                     url_and_api_key=url_and_api_key)
 
-                if not is_collection_accessible:
+                # Check the modified time of the input file path, no standard
+                # way for remote url
+                if is_collection_accessible and not is_url:
+                    # Get original modified date from file
+                    file_modified_date = self._get_file_modified_date(
+                        content_input_path)
+
+                    # Insert any query to get modified date from vector db
+                    # NOTE: Can be optimized when CAMEL Qdrant support direct
+                    # chunk payload extraction
+                    query_vector_any = self.embedding_model.embed(
+                        obj="any_query")
+                    query_any = VectorDBQuery(query_vector_any, top_k=1)
+                    result_any = vector_storage_instance.query(query_any)
+
+                    # Extract the file's last modified date from the metadata
+                    # in the query result
+                    if result_any[0].record.payload is not None:
+                        file_modified_date_from_meta = (
+                            result_any[0].record.payload['metadata']
+                            ['last_modified'])
+                    else:
+                        raise ValueError(
+                            "The payload is None, please check the collection")
+
+                    # Determine if the file has been modified since the last
+                    # check
+                    file_was_modified = (file_modified_date !=
+                                         file_modified_date_from_meta)
+
+                if not is_collection_accessible or file_was_modified:
                     self.embed_and_store_chunks(content_input_path,
                                                 vector_storage_instance)
 
