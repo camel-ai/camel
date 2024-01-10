@@ -1,19 +1,19 @@
 name: Pre Commit Check
 
 on:
-    push:
-      branches: [ "master" ]
-    pull_request:
-      branches: [ "master" ]
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
 
 jobs:
-    pre-commit:
-      runs-on: ubuntu-latest
-      steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python environment and install dependencies
-        uses: ./.github/actions/camel_install
-        with:
-          python-version: "3.8"
-      - name: Run pre-commit
-        run: poetry run pre-commit run --all-files
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python environment and install dependencies
+      uses: ./.github/actions/camel_install
+      with:
+        python-version: "3.8"
+    - name: Run pre-commit
+      run: poetry run pre-commit run --all-files

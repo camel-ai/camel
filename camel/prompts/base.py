@@ -134,7 +134,7 @@ class CodePrompt(TextPrompt):
         Args:
             *args (Any): Positional arguments.
             **kwargs (Any): Keyword arguments.
-
+(default: :obj:`False`)
         Returns:
             CodePrompt: The created :obj:`CodePrompt` instance.
         """

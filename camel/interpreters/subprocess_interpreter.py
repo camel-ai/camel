@@ -144,7 +144,7 @@ class SubprocessInterpreter(BaseInterpreter):
                 elif choice in ["no", "n"]:
                     raise InterpreterError("User does not run the code")
         temp_file_path = self._create_temp_file(
-            code=code, extension=self._CODE_EXTENTION[code_type])
+            code=code, extension=self._CODE_EXTENSION[code_type])
 
         result = self.run_file(temp_file_path, code_type)
 
@@ -163,12 +163,12 @@ class SubprocessInterpreter(BaseInterpreter):
             raise InterpreterError(
                 f"Unsupported code type {code_type}. Currently "
                 f"`{self.__class__.__name__}` only supports "
-                f"{', '.join(self._CODE_EXTENTION.keys())}.")
+                f"{', '.join(self._CODE_EXTENSION.keys())}.")
         return self._CODE_TYPE[code_type]
 
     def supported_code_types(self) -> List[str]:
         r"""Provides supported code types by the interpreter."""
-        return list(self._CODE_EXTENTION.keys())
+        return list(self._CODE_EXTENSION.keys())
 
     def set_action_space(self, action_space: Dict[str, Any]) -> None:
         r"""Sets action space for *python* interpreter"""

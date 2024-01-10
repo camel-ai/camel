@@ -73,6 +73,8 @@ class InternalPythonInterpreter(BaseInterpreter):
             (:obj:`.`). (default: :obj:`None`)
         unsafe_mode (bool, optional): If `True`, the interpreter runs the code
             by `eval()` without any security check. (default: :obj:`False`)
+        raise_error (bool, optional): Raise error if the interpreter fails.
+            (default: :obj:`False`)
     """
 
     _CODE_TYPES = ["python", "py", "python3", "python2"]
@@ -82,11 +84,13 @@ class InternalPythonInterpreter(BaseInterpreter):
         action_space: Optional[Dict[str, Any]] = None,
         import_white_list: Optional[List[str]] = None,
         unsafe_mode: bool = False,
+        raise_error: bool = False,
     ) -> None:
         self.action_space = action_space or dict()
         self.state = self.action_space.copy()
         self.fuzz_state: Dict[str, Any] = dict()
         self.import_white_list = import_white_list or list()
+        self.raise_error = raise_error
         self.unsafe_mode = unsafe_mode
 
     def run(self, code: str, code_type: str) -> str:
@@ -117,9 +121,9 @@ class InternalPythonInterpreter(BaseInterpreter):
             code (str): Generated python code to be executed.
             state (Optional[Dict[str, Any]], optional): External variables that
                 may be used in the generated code. (default: :obj:`None`)
-            fuzz_state (Optional[Dict[str, Any]], optional): External varibles
-                that do not have certain varible names. The interpreter will
-                use fuzzy matching to access these varibales. For example, if
+            fuzz_state (Optional[Dict[str, Any]], optional): External variables
+                that do not have certain variable names. The interpreter will
+                use fuzzy matching to access these variables. For example, if
                 :obj:`fuzz_state` has a variable :obj:`image`, the generated
                 code can use :obj:`input_image` to access it. (default:
                 :obj:`None`)
@@ -142,7 +146,11 @@ class InternalPythonInterpreter(BaseInterpreter):
         try:
             expression = ast.parse(code)
         except SyntaxError as e:
-            raise InterpreterError(f"Syntax error in code: {e}")
+            if self.raise_error:
+                raise InterpreterError(f"Syntax error in code: {e}")
+            else:
+                import traceback
+                return traceback.format_exc()
 
         result = None
         for idx, node in enumerate(expression.body):
@@ -155,7 +163,11 @@ class InternalPythonInterpreter(BaseInterpreter):
                        f"See:\n{e}")
                 # More information can be provided by `ast.unparse()`,
                 # which is new in python 3.9.
-                raise InterpreterError(msg)
+                if self.raise_error:
+                    raise InterpreterError(msg)
+                else:
+                    import traceback
+                    return traceback.format_exc()
             if line_result is not None:
                 result = line_result
 
