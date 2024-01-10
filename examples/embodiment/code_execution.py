@@ -33,7 +33,7 @@ def main():
         role_name=role_name,
         content=("Write a bash script to install numpy, "
                  "then write a python script to compute "
-                 "dot produce of [2,3] and [4,5] and print the result."),
+                 "the dot product of [2,3] and [4,5] and print the result."),
     )
     response = embodied_agent.step(user_msg)
     print(response.msg.content)
