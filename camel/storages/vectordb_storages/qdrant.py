@@ -31,12 +31,13 @@ class QdrantStorage(BaseVectorStorage):
     r"""An implementation of the `BaseVectorStorage` for interacting with
     Qdrant, a vector search engine.
 
-    The detailed information about Qdrant is available at https://qdrant.tech/.
+    The detailed information about Qdrant is available at:
+    `Qdrant <https://qdrant.tech/>`_
 
     Args:
         vector_dim (int): The dimenstion of storing vectors.
-        collection (Optional[str], optional): Name for the collection in the
-            Qdrant. If not provided, set it to the current time with iso
+        collection_name (Optional[str], optional): Name for the collection in
+            the Qdrant. If not provided, set it to the current time with iso
             format. (default: :obj:`None`)
         url_and_api_key (Optional[Tuple[str, str]], optional): Tuple containing
             the URL and API key for connecting to a remote Qdrant instance.
@@ -64,7 +65,7 @@ class QdrantStorage(BaseVectorStorage):
     def __init__(
         self,
         vector_dim: int,
-        collection: Optional[str] = None,
+        collection_name: Optional[str] = None,
         url_and_api_key: Optional[Tuple[str, str]] = None,
         path: Optional[str] = None,
         distance: VectorDistance = VectorDistance.COSINE,
@@ -73,10 +74,10 @@ class QdrantStorage(BaseVectorStorage):
     ) -> None:
         try:
             from qdrant_client import QdrantClient
-        except ImportError:
+        except ImportError as exc:
             raise ImportError(
                 "Please install `qdrant-client` first. You can install it by "
-                "running `pip install qdrant-client`.")
+                "running `pip install qdrant-client`.") from exc
 
         self._client: QdrantClient
         self._local_path: Optional[str] = None
@@ -84,8 +85,10 @@ class QdrantStorage(BaseVectorStorage):
 
         self.vector_dim = vector_dim
         self.distance = distance
-        self.collection = collection or self._generate_collection_name()
-        self._assign_collection()
+        self.collection_name = (collection_name
+                                or self._generate_collection_name())
+
+        self._check_and_create_collection()
 
         self.delete_collection_on_del = delete_collection_on_del
 
@@ -103,9 +106,10 @@ class QdrantStorage(BaseVectorStorage):
                     _count - 1,
                 )
 
-        if (hasattr(self, "delete_collection_on_del")
-                and self.delete_collection_on_del):
-            self._delete_collection(self.collection)
+        if hasattr(
+                self,
+                "delete_collection_on_del") and self.delete_collection_on_del:
+            self._delete_collection(self.collection_name)
 
     def _create_client(
         self,
@@ -114,6 +118,7 @@ class QdrantStorage(BaseVectorStorage):
         **kwargs: Any,
     ) -> None:
         from qdrant_client import QdrantClient
+
         if url_and_api_key is not None:
             self._client = QdrantClient(
                 url=url_and_api_key[0],
@@ -134,25 +139,26 @@ class QdrantStorage(BaseVectorStorage):
         else:
             self._client = QdrantClient(":memory:", **kwargs)
 
-    def _assign_collection(self) -> None:
-        if self._collection_exists(self.collection):
-            in_dim = self._get_collection_info(self.collection)["vector_dim"]
+    def _check_and_create_collection(self) -> None:
+        if self._collection_exists(self.collection_name):
+            in_dim = self._get_collection_info(
+                self.collection_name)["vector_dim"]
             if in_dim != self.vector_dim:
-                # The name of collection has to be comfirmed by the user
+                # The name of collection has to be confirmed by the user
                 raise ValueError(
                     "Vector dimension of the existing collection "
-                    f"\"{self.collection}\" ({in_dim}) is different from "
+                    f'"{self.collection_name}" ({in_dim}) is different from '
                     f"the given embedding dim ({self.vector_dim}).")
         else:
             self._create_collection(
-                collection=self.collection,
+                collection_name=self.collection_name,
                 size=self.vector_dim,
                 distance=self.distance,
             )
 
     def _create_collection(
         self,
-        collection: str,
+        collection_name: str,
         size: int,
         distance: VectorDistance = VectorDistance.COSINE,
         **kwargs: Any,
@@ -160,7 +166,7 @@ class QdrantStorage(BaseVectorStorage):
         r"""Creates a new collection in the database.
 
         Args:
-            collection (str): Name of the collection to be created.
+            collection_name (str): Name of the collection to be created.
             size (int): Dimensionality of vectors to be stored in this
                 collection.
             distance (VectorDistance, optional): The distance metric to be used
@@ -168,13 +174,14 @@ class QdrantStorage(BaseVectorStorage):
             **kwargs (Any): Additional keyword arguments.
         """
         from qdrant_client.http.models import Distance, VectorParams
+
         distance_map = {
             VectorDistance.DOT: Distance.DOT,
             VectorDistance.COSINE: Distance.COSINE,
             VectorDistance.EUCLIDEAN: Distance.EUCLID,
         }
         self._client.recreate_collection(
-            collection_name=collection,
+            collection_name=collection_name,
             vectors_config=VectorParams(
                 size=size,
                 distance=distance_map[distance],
@@ -184,7 +191,7 @@ class QdrantStorage(BaseVectorStorage):
 
     def _delete_collection(
         self,
-        collection: str,
+        collection_name: str,
         **kwargs: Any,
     ) -> None:
         r"""Deletes an existing collection from the database.
@@ -193,12 +200,13 @@ class QdrantStorage(BaseVectorStorage):
             collection (str): Name of the collection to be deleted.
             **kwargs (Any): Additional keyword arguments.
         """
-        self._client.delete_collection(collection_name=collection, **kwargs)
+        self._client.delete_collection(collection_name=collection_name,
+                                       **kwargs)
 
-    def _collection_exists(self, collection: str) -> bool:
+    def _collection_exists(self, collection_name: str) -> bool:
         r"""Returns wether the collection exists in the database"""
         for c in self._client.get_collections().collections:
-            if collection == c.name:
+            if collection_name == c.name:
                 return True
         return False
 
@@ -206,11 +214,11 @@ class QdrantStorage(BaseVectorStorage):
         r"""Generates a collection name if user doesn't provide"""
         return datetime.now().isoformat()
 
-    def _get_collection_info(self, collection: str) -> Dict[str, Any]:
+    def _get_collection_info(self, collection_name: str) -> Dict[str, Any]:
         r"""Retrieves details of an existing collection.
 
         Args:
-            collection (str): Name of the collection to be checked.
+            collection_name (str): Name of the collection to be checked.
 
         Returns:
             Dict[str, Any]: A dictionary containing details about the
@@ -220,7 +228,7 @@ class QdrantStorage(BaseVectorStorage):
 
         # TODO: check more information
         collection_info = self._client.get_collection(
-            collection_name=collection)
+            collection_name=collection_name)
         vector_config = collection_info.config.params.vectors
         return {
             "vector_dim":
@@ -251,9 +259,10 @@ class QdrantStorage(BaseVectorStorage):
             RuntimeError: If there was an error in the addition process.
         """
         from qdrant_client.http.models import PointStruct, UpdateStatus
+
         qdrant_points = [PointStruct(**asdict(p)) for p in records]
         op_info = self._client.upsert(
-            collection_name=self.collection,
+            collection_name=self.collection_name,
             points=qdrant_points,
             wait=True,
             **kwargs,
@@ -279,9 +288,10 @@ class QdrantStorage(BaseVectorStorage):
             RuntimeError: If there is an error during the deletion process.
         """
         from qdrant_client.http.models import PointIdsList, UpdateStatus
+
         points = cast(List[Union[str, int]], ids)
         op_info = self._client.delete(
-            collection_name=self.collection,
+            collection_name=self.collection_name,
             points_selector=PointIdsList(points=points),
             wait=True,
             **kwargs,
@@ -292,7 +302,7 @@ class QdrantStorage(BaseVectorStorage):
                 f"{op_info}")
 
     def status(self) -> VectorDBStatus:
-        status = self._get_collection_info(self.collection)
+        status = self._get_collection_info(self.collection_name)
         return VectorDBStatus(
             vector_dim=status["vector_dim"],
             vector_count=status["vector_count"],
@@ -303,7 +313,8 @@ class QdrantStorage(BaseVectorStorage):
         query: VectorDBQuery,
         **kwargs: Any,
     ) -> List[VectorDBQueryResult]:
-        r"""Searches for similar vectors in the storage based on the provided query.
+        r"""Searches for similar vectors in the storage based on the provided
+        query.
 
         Args:
             query (VectorDBQuery): The query object containing the search
@@ -316,7 +327,7 @@ class QdrantStorage(BaseVectorStorage):
         """
         # TODO: filter
         search_result = self._client.search(
-            collection_name=self.collection,
+            collection_name=self.collection_name,
             query_vector=query.query_vector,
             with_payload=True,
             with_vectors=True,
@@ -337,9 +348,9 @@ class QdrantStorage(BaseVectorStorage):
 
     def clear(self) -> None:
         r"""Remove all vectors from the storage."""
-        self._delete_collection(self.collection)
+        self._delete_collection(self.collection_name)
         self._create_collection(
-            collection=self.collection,
+            collection_name=self.collection_name,
             size=self.vector_dim,
             distance=self.distance,
         )

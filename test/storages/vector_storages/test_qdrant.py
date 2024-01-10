@@ -23,13 +23,13 @@ def test_multiple_local_clients() -> None:
     storage1 = QdrantStorage(
         vector_dim=4,
         path=tmpdir,
-        collection="collection1",
+        collection_name="collection1",
         delete_collection_on_del=True,
     )
     storage2 = QdrantStorage(
         vector_dim=4,
         path=tmpdir,
-        collection="collection2",
+        collection_name="collection2",
         delete_collection_on_del=True,
     )
 
@@ -84,7 +84,7 @@ def test_existing_collection():
     storage = QdrantStorage(
         vector_dim=4,
         path=tmpdir,
-        collection="collection",
+        collection_name="test_collection",
     )
     vectors = [
         VectorRecord(vector=[0.1, 0.1, 0.1, 0.1]),
@@ -96,6 +96,6 @@ def test_existing_collection():
     storage2 = QdrantStorage(
         vector_dim=4,
         path=tmpdir,
-        collection="collection",
+        collection_name="test_collection",
     )
     assert storage2.status().vector_count == 2

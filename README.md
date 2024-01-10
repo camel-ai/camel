@@ -98,10 +98,8 @@ poetry shell
 # It takes about 90 seconds to resolve dependencies
 poetry install
 
-# Or if you want to use "huggingface agent"
-poetry install -E huggingface-agent # (Optional)
-
-# do something with camel
+# Or if you want to use all other extra packages
+poetry install -E all  # (Optional)
 
 # Exit the virtual environment
 exit
@@ -124,8 +122,8 @@ cd camel
 # Install camel from source
 pip install -e .
 
-# Or if you want to use "huggingface agent"
-pip install -e .[huggingface-agent] # (Optional)
+# Or if you want to use all other extra packages
+pip install -e .[all] # (Optional)
 ```
 
 ## Documentation
