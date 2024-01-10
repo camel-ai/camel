@@ -17,13 +17,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from camel.storages.key_value_storages import BaseKeyValueStorage
-from camel.types import (
-    ModelType,
-    OpenAIBackendRole,
-    RoleType,
-    TaskType,
-    VectorDistance,
-)
+from camel.types import ModelType, OpenAIBackendRole, RoleType, TaskType
 
 
 class _CamelJSONEncoder(json.JSONEncoder):
@@ -35,7 +29,6 @@ class _CamelJSONEncoder(json.JSONEncoder):
         "TaskType": TaskType,
         "ModelType": ModelType,
         "OpenAIBackendRole": OpenAIBackendRole,
-        "VectorDistance": VectorDistance,
     }
 
     def default(self, obj) -> Any:
