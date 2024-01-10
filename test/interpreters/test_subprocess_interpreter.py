@@ -21,7 +21,7 @@ from camel.interpreters import InterpreterError, SubprocessInterpreter
 @pytest.fixture
 def subprocess_interpreter():
     return SubprocessInterpreter(
-        user_check=False,
+        require_confirm=False,
         print_stdout=True,
         print_stderr=True,
     )
@@ -98,8 +98,8 @@ def test_run_unsupported_code_type(subprocess_interpreter):
         exc_info.value)
 
 
-def test_user_check(subprocess_interpreter, monkeypatch):
-    subprocess_interpreter.user_check = True
+def test_require_confirm(subprocess_interpreter, monkeypatch):
+    subprocess_interpreter.require_confirm = True
     python_code = "print('Hello')"
 
     # Simulate user input 'n' for no

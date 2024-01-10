@@ -33,8 +33,8 @@ class SubprocessInterpreter(BaseInterpreter):
     strings.
 
     Args:
-        user_check (bool, optional): If True, prompt user before running code
-            strings for security. (default: :obj:`True`)
+        require_confirm (bool, optional): If True, prompt user before running
+            code strings for security. (default: :obj:`True`)
         print_stdout (bool, optional): If True, print the standard output of
             the executed code. (default: :obj:`False`)
         print_stderr (bool, optional): If True, print the standard error of the
@@ -63,11 +63,11 @@ class SubprocessInterpreter(BaseInterpreter):
 
     def __init__(
         self,
-        user_check: bool = True,
+        require_confirm: bool = True,
         print_stdout: bool = False,
         print_stderr: bool = True,
     ) -> None:
-        self.user_check = user_check
+        self.require_confirm = require_confirm
         self.print_stdout = print_stdout
         self.print_stderr = print_stderr
 
@@ -134,7 +134,7 @@ class SubprocessInterpreter(BaseInterpreter):
         code_type = self._check_code_type(code_type)
 
         # Print code for security checking
-        if self.user_check:
+        if self.require_confirm:
             print(f"The following {code_type} code will run on your computer:")
             print(Fore.CYAN + code + Fore.RESET)
             while True:
