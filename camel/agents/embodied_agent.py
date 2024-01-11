@@ -87,7 +87,7 @@ class EmbodiedAgent(ChatAgent):
         system_message.content = system_message.content.format(
             action_space=action_space_prompt)
         if self.tool_agents is not None:
-            self.code_interpreter.set_action_space(
+            self.code_interpreter.update_action_space(
                 {tool.name: tool
                  for tool in self.tool_agents})
         return system_message

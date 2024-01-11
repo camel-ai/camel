@@ -170,7 +170,7 @@ class SubprocessInterpreter(BaseInterpreter):
         r"""Provides supported code types by the interpreter."""
         return list(self._CODE_EXTENSION.keys())
 
-    def set_action_space(self, action_space: Dict[str, Any]) -> None:
-        r"""Sets action space for *python* interpreter"""
+    def update_action_space(self, action_space: Dict[str, Any]) -> None:
+        r"""Updates action space for *python* interpreter"""
         raise RuntimeError("SubprocessInterpreter doesn't support "
                            "`action_space`.")
