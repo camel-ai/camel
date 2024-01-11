@@ -39,8 +39,8 @@ class EmbodiedAgent(ChatAgent):
         message_window_size (int, optional): The maximum number of previous
             messages to include in the context window. If `None`, no windowing
             is performed. (default: :obj:`None`)
-        tool_agents (List[BaseToolAgent], optinal): The tools agents to use in
-            the emboied agent. (default: :obj:`None`)
+        tool_agents (List[BaseToolAgent], optional): The tools agents to use in
+            the embodied agent. (default: :obj:`None`)
         code_interpreter (BaseInterpreter, optional): The code interpreter to
             execute codes. If `code_interpreter` and `tool_agent` are both
             `None`, default to `SubProcessInterpreter`. If `code_interpreter`
@@ -138,7 +138,7 @@ class EmbodiedAgent(ChatAgent):
 
             if len(explanations) > len(codes):
                 print_text_animated(self.logger_color +
-                                    f"> Explanation:\n{explanations}")
+                                    f"> Explanation:\n{explanations[-1]}")
 
         content = response.msg.content
 
