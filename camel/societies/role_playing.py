@@ -350,7 +350,7 @@ class RolePlaying:
                     **(critic_kwargs or {}),
                 )
 
-    def init_chat(self, first_msg: str=None) -> Tuple[BaseMessage, List[BaseMessage]]:
+    def init_chat(self, first_msg: Union[str | None] = None) -> BaseMessage:
         r"""Initializes the chat by resetting both of the assistant and user
         agents. Returns the assistant's introductory message and the
         user's response messages.
@@ -368,8 +368,7 @@ class RolePlaying:
             first_msg = default_msg
         # Send the system messages again to the agents using chat messages
         assistant_msg = BaseMessage.make_assistant_message(
-            role_name=self.assistant_sys_msg.role_name,
-            content=first_msg)
+            role_name=self.assistant_sys_msg.role_name, content=first_msg)
         user_msg = BaseMessage.make_user_message(
             role_name=self.user_sys_msg.role_name,
             content=f"{self.assistant_sys_msg.content}")
