@@ -11,20 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import camel.agents
-import camel.configs
-import camel.generators
-import camel.messages
-import camel.prompts
-import camel.types
-import camel.utils
-import camel.functions
-import camel.memories
-import camel.storages
+from camel.embeddings import OpenAIEmbedding
 
-__version__ = '0.1.1'
 
-__all__ = [
-    '__version__',
-    'camel',
-]
+def test_openai_embedding():
+    text = "test embedding text."
+    embedding_model = OpenAIEmbedding()
+    vector = embedding_model.embed(text)
+    assert len(vector) == embedding_model.get_output_dim()
