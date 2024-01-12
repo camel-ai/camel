@@ -14,5 +14,10 @@
 
 from camel.utils import role_playing_with_function
 
-if __name__ == "__main__":
+
+def main() -> None:
     role_playing_with_function()
+
+
+if __name__ == "__main__":
+    main()
