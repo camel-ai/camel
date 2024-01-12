@@ -195,7 +195,7 @@ class RetrievalModule:
         return "\n".join(formatted_results)
 
     def run_default_retrieval(
-            self, query: str, content_input_paths: Union[str, list[str]],
+            self, query: str, content_input_paths: Union[str, List[str]],
             vector_storage_local_path: Optional[str] = None,
             url_and_api_key: Optional[Tuple[str, str]] = None) -> str:
         r"""Executes the default retrieval process using `Qdrant` storage.
