@@ -21,6 +21,8 @@ from .commons import (
     parse_doc,
     get_task_list,
     check_server_running,
+    dependencies_required,
+    api_keys_required,
 )
 from .token_counting import (
     get_model_encoding,
@@ -44,4 +46,6 @@ __all__ = [
     'BaseTokenCounter',
     'OpenAITokenCounter',
     'OpenSourceTokenCounter',
+    'dependencies_required',
+    'api_keys_required',
 ]
