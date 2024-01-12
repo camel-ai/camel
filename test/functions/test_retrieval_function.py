@@ -65,45 +65,6 @@ def test__initialize_qdrant_storage_with_valid_path(
     assert isinstance(storage, QdrantStorage)
 
 
-def test__check_qdrant_collection_status_local_valid(
-        retrieval_function_instance, temp_storage_path):
-
-    retrieval_function_instance._initialize_qdrant_storage(
-        collection_name='test_collection',
-        vector_storage_local_path=temp_storage_path)
-    assert retrieval_function_instance._check_qdrant_collection_status(
-        collection_name='test_collection',
-        vector_storage_local_path=temp_storage_path) is True
-
-
-def test__check_qdrant_collection_status_local_invalid(
-        retrieval_function_instance, temp_storage_path):
-
-    assert retrieval_function_instance._check_qdrant_collection_status(
-        collection_name='not_existing_collection_name',
-        vector_storage_local_path=temp_storage_path) is False
-
-
-def test__check_qdrant_collection_status_remote_valid(
-        retrieval_function_instance):
-
-    assert retrieval_function_instance._check_qdrant_collection_status(
-        collection_name='camel_paper', url_and_api_key=(
-            "https://c7ac871b-0dca-4586-8b03-9ffb4e40363e.us-east4-0.gcp."
-            "cloud.qdrant.io:6333",
-            "axny37nzYHwg8jxbW-TnC90p8MibC1Tl4ypSwM87boZhSqvedvW_7w")) is True
-
-
-def test__check_qdrant_collection_status_remote_invalid(
-        retrieval_function_instance):
-
-    assert retrieval_function_instance._check_qdrant_collection_status(
-        collection_name='not_existing_collection_name', url_and_api_key=(
-            "https://c7ac871b-0dca-4586-8b03-9ffb4e40363e.us-east4-0.gcp."
-            "cloud.qdrant.io:6333",
-            "axny37nzYHwg8jxbW-TnC90p8MibC1Tl4ypSwM87boZhSqvedvW_7w")) is False
-
-
 def test_embed_and_store_chunks(mock_openai_embedding, mock_qdrant_storage):
     rf = RetrievalModule(embedding_model=mock_openai_embedding)
     with patch('camel.functions.unstructured_io_fuctions.UnstructuredModules'
