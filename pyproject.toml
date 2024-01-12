@@ -36,6 +36,7 @@ jsonschema = "^4"
 protobuf = "^4"
 
 # huggingface-agent
+# huggingface-agent
 transformers = { version = "^4", optional = true }
 diffusers = { version = "^0", optional = true }
 accelerate = { version = "^0", optional = true }
@@ -44,6 +45,8 @@ torch = { version = "^1", optional = true }
 soundfile = { version = "^0", optional = true }
 sentencepiece = { version = "^0", optional = true }
 opencv-python = { version = "^4", optional = true }
+
+# tools
 
 # tools
 beautifulsoup4 = { version = "^4", optional = true }
@@ -83,7 +86,10 @@ tools = [
     "wikipedia",
     "pyowm",
     "unstructured",
-    "argilla",
+]
+
+vector-databases = [
+    "qdrant-client",
 ]
 
 vector-databases = [
@@ -91,6 +97,7 @@ vector-databases = [
 ]
 
 all = [
+    # huggingface-agent
     # huggingface-agent
     "transformers",
     "diffusers",
@@ -101,12 +108,15 @@ all = [
     "sentencepiece",
     "opencv-python",
     # tools
+    # tools
     "beautifulsoup4",
     "docx2txt",
     "PyMuPDF",
     "wikipedia",
     "pyowm",
     "unstructured",
+    # vector-database
+    "qdrant-client",
     "argilla",
     # vector-database
     "qdrant-client",
@@ -190,6 +200,5 @@ module = [
     "PyMuPDF",
     "fitz",
     "unstructured.*",
-    "argilla.*",
 ]
 ignore_missing_imports = true
