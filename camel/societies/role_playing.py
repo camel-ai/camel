@@ -350,7 +350,7 @@ class RolePlaying:
                     **(critic_kwargs or {}),
                 )
 
-    def init_chat(self, first_msg: Union[str | None] = None) -> BaseMessage:
+    def init_chat(self, first_msg: Union[str, None] = None) -> BaseMessage:
         r"""Initializes the chat by resetting both of the assistant and user
         agents. Returns the assistant's introductory message and the
         user's response messages.
