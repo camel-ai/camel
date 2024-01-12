@@ -137,7 +137,7 @@ def test_role_playing_with_function():
         task_type=TaskType.AI_SOCIETY,
     )
 
-    init_assistant_msg, _ = role_playing.init_chat()
+    init_assistant_msg = role_playing.init_chat()
     assistant_response, user_response = role_playing.step(init_assistant_msg)
     for response in (assistant_response, user_response):
         assert isinstance(response.msgs, list)
@@ -162,7 +162,7 @@ def test_role_playing_role_sequence(model_type=None):
     assistant_role_sequence = []
     user_role_sequence = []
 
-    input_assistant_msg, _ = role_playing.init_chat()
+    input_assistant_msg = role_playing.init_chat()
     assistant_response, user_response = role_playing.step(input_assistant_msg)
     input_assistant_msg = assistant_response.msg
     assistant_response, user_response = role_playing.step(input_assistant_msg)

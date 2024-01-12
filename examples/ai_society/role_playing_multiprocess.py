@@ -43,7 +43,7 @@ def generate_data(assistant_idx: int, assistant_role_name: str, user_idx: int,
             temperature=1.4)),
     )
 
-    input_assistant_msg, _ = role_play_session.init_chat()
+    input_assistant_msg = role_play_session.init_chat()
 
     if verbose:
         print(Fore.GREEN + "AI Assistant sys message:\n"

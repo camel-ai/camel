@@ -243,7 +243,7 @@ def role_playing_chat_init(state) -> \
 
     try:
         init_assistant_msg: BaseMessage
-        init_assistant_msg, _ = session.init_chat()
+        init_assistant_msg = session.init_chat()
     except (openai.RateLimitError, RuntimeError) as ex:
         print("OpenAI API exception 1 " + str(ex))
         state.session = None
