@@ -146,6 +146,11 @@ The tool descriptions are the context information of the potential competencies 
                                f"Error:\n{response.info}")
         msg = response.msg  # type: BaseMessage
 
+        content = msg.content
+        print(content)
+        if content.strip() == " I'm sorry, but I cannot fulfill your request.":
+            raise RuntimeError("May violate the guidelines of ChatGPT.")
+
         # Distribute the output completions into role names and descriptions
         role_names = [
             desc.replace("<", "").replace(">", "").strip()
@@ -205,7 +210,7 @@ The tool descriptions are the context information of the potential competencies 
     3. Define clear LLM-Appropriate Actions: Ensure each subtask is actionable, distinct, tapping into the expertise of the assigned roles and aligning with LLM capabilities. The subtasks should be designed considering that the LLM can handle complex tasks typically managed by domain experts. Recognize that not every subtask needs to directly reflect the main TASK's ultimate aim. Some subtasks serve as essential building blocks, paving the way for more central subtasks, but avoid creating subtasks that are self-dependent or overly foundational.
     4. Balanced Granularity with a Bias for Action: Details of subtask should be detailed, actionable, and not be ambiguous. Prioritize tangible actions in subtask such as implementation, creation, testing, or other tangible activities over mere understanding.
     5. Contextual Parameters: Please ensure that each subtask has the relevant context information from the TASK to avoid missing or contradicting the context information of the TASK. And try to provide as much information from CONTEXT TEXT as possible here.
-    6. Dependencies & Gantt Chart: Identify and account for the dependencies within the subtasks. Ensure that each subtask logically flows from one to the next, or can run concurrently where no subtask is dependent on itself, in a manner that could be efficiently represented on a Gantt chart.
+    6. Dependencies & Gantt Chart: Identify and account for the dependencies within the subtasks. Ensure that each subtask logically flows from one to the next, or can run concurrently where no subtask is dependent on itself and with no subtask being dependent on the completion of another in a way that creates a cycle., in a manner that could be efficiently represented on a Gantt chart.
     7. Definitions of the Input of subtask:
         - Interlinking of Inputs: Ensure that the inputs are not siloed and can be interlinked within privous subtasks if necessary, providing a holistic view of what is required for the subtask.
         - Hierarchy and Prioritization: Identify and clearly state the priority and hierarchy (if applicable) among the inputs, ensuring the most critical elements are addressed promptly.
@@ -216,7 +221,8 @@ The tool descriptions are the context information of the potential competencies 
         - A task is considered completed when its intended output is produced.
         - If possible, the completion standard should be quantifiable to facilitate automatic detection by the software or tool feature.
         - The completion standard should be applicable to common project management scenarios and adaptable to various types of tasks, such as development, testing, and review tasks.
-    9. Refrain from mentioning specific titles or roles (who are mentioned in the section of ROLES WITH DESCRIPTION) within the content of subtasks, unless the titles and personal names are mentioned in the TASK.
+    9. Don't generate subtasks that might violate OpenAI's guidelines, which triggers the following error message: "I'm sorry, but I cannot fulfill your request." or "I'm sorry, I cannot assist with that request.
+    10. Refrain from mentioning specific titles or roles (who are mentioned in the section of ROLES WITH DESCRIPTION) within the content of subtasks, unless the titles and personal names are mentioned in the TASK.
 Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill in the BLANKs, and DO NOT alter or modify any other part of the template.\n\n\n"""  # noqa: E501
 
         # Generate insights from the context text to help decompose the task
@@ -454,6 +460,9 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
 
         # Initialize the graph
         G = nx.DiGraph()
+        if len(oriented_graph) == 0:
+            raise RuntimeError("The graph is empty.")
+
         for subtask, details in oriented_graph.items():
             for dep in details:
                 G.add_edge(dep, subtask)
@@ -471,7 +480,6 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
             graph_file_path = \
                 "examples/multi_agent/task_dependency_graph.png"
         plt.savefig(graph_file_path)
-        plt.close()
 
         return graph_file_path
 
@@ -545,6 +553,11 @@ Definition of ASSISTANT: The assistant is the role that executes instructions gi
                                f"Error:\n{response.info}")
         msg = response.msg  # type: BaseMessage
 
+        content = msg.content
+        print(content)
+        if content.strip() == " I'm sorry, but I cannot fulfill your request.":
+            raise RuntimeError("May violate the guidelines of ChatGPT.")
+
         # Distribute the output completions into scores
         user_compatibility_scores = [
             desc.replace("<", "").replace(">", "").strip('\n')
@@ -558,9 +571,11 @@ Definition of ASSISTANT: The assistant is the role that executes instructions gi
         ]
 
         if len(user_compatibility_scores) != len(role_names):
+            print("user_compatibility_scores: ", user_compatibility_scores)
             raise RuntimeError("Got None or insufficient information of " +
                                "compatibility scores as USER.")
         if len(assistant_compatibility_scores) != len(role_names):
+            print("assistant_compatibility_scores: ", assistant_compatibility_scores)  # noqa: E501")
             raise RuntimeError("Got None or insufficient information of " +
                                "compatibility scores as ASSISTANT.")
 

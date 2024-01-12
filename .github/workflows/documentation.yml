@@ -1,15 +1,12 @@
-name: Docs
+name: Build and deploy camel documents
 on:
   push:
-    branches: [ "master" ]
-  pull_request:
     branches: [ "master" ]
   workflow_dispatch:
 permissions:
     contents: write
 jobs:
   docs:
-
     runs-on: ubuntu-latest
 
     steps:

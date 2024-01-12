@@ -16,7 +16,7 @@ from pathlib import Path
 
 import pytest
 
-from camel.functions.data_io_functions import (
+from camel.functions.base_io_functions import (
     DocxFile,
     File,
     HtmlFile,
