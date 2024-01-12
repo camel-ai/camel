@@ -19,7 +19,6 @@ from typing import Any, List, Optional, Tuple, Union
 from urllib.parse import urlparse
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
-from camel.functions import OpenAIFunction
 from camel.functions.unstructured_io_fuctions import UnstructuredModules
 from camel.storages.vectordb_storages import (
     BaseVectorStorage,
@@ -283,28 +282,3 @@ class RetrievalModule:
                     f"Error in default retrieval processing: {str(e)}") from e
 
         return output
-
-
-def local_retrieval(query: str) -> str:
-    r"""Performs a default local retrieval for information. Given a query,
-    this function will retrieve the information from the local vector storage,
-    and return the retrieved information back. It is useful for information
-    retrieval.
-
-    Args:
-        query (string): Question you want to be answered.
-
-    Returns:
-        str: Aggregated information retrieved in response to the query.
-    """
-    retrieval_instance = RetrievalModule()
-    retrieved_info = retrieval_instance.run_default_retrieval(
-        content_input_paths=[
-            "https://www.camel-ai.org/",
-        ], vector_storage_local_path="examples/rag/", query=query)
-    return retrieved_info
-
-
-RETRIEVAL_FUNCS: List[OpenAIFunction] = [
-    OpenAIFunction(func) for func in [local_retrieval]
-]

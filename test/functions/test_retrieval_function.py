@@ -19,7 +19,7 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 
 from camel.embeddings import OpenAIEmbedding
-from camel.functions.retrieval_function import RetrievalModule
+from camel.retrievers.retrieval_module import RetrievalModule
 from camel.storages.vectordb_storages import QdrantStorage
 
 
