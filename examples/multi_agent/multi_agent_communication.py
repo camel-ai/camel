@@ -11,8 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import json
 import html
+import json
 import re
 
 from colorama import Fore
@@ -44,18 +44,20 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
 
     # Model and agent initialization
     model_config = ChatGPTConfig()
-    role_assignment_agent = RoleAssignmentAgent(
-        model_type=model_type, model_config=model_config)
+    role_assignment_agent = RoleAssignmentAgent(model_type=model_type,
+                                                model_config=model_config)
     insight_agent = InsightAgent(model_type=model_type,
                                  model_config=model_config)
     deductive_reasoner_agent = DeductiveReasonerAgent(
         model_type=model_type, model_config=model_config)
 
     # Generate role with descriptions
-    print("Please enter the number of roles you want to generate (#roles >= 3, default number is 4): ") # noqa
+    print("Please enter the number of roles you want to generate (#roles >= "
+          "3, default number is 4): ")
     num_roles = int(input())
     while num_roles < 3:
-        print("The number of roles should be larger or equal to 3, please enter again: ") # noqa
+        print("The number of roles should be larger or equal to 3, please "
+              "enter again: ")
     role_descriptions_dict = \
         role_assignment_agent.run_role_with_description(
             task_prompt=task_prompt, num_roles=num_roles, role_names=None,
@@ -128,8 +130,8 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                        file_path="Solution")
     print_and_write_md("================= REQUIREMENT =======================",
                        color=Fore.RED, file_path="Solution")
-    print_and_write_md(f"\n{context_text}\n",
-                       color=Fore.BLACK, file_path="Solution")
+    print_and_write_md(f"\n{context_text}\n", color=Fore.BLACK,
+                       file_path="Solution")
     print_and_write_md("================= 小说内容 ====================",
                        color=Fore.RED, file_path="Solution")
 
@@ -168,8 +170,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
 
         print_and_write_md("================ SESSION ================",
                            color=Fore.BLACK)
-        print_and_write_md(f"{subtask_id}: \n{subtask}\n",
-                           color=Fore.YELLOW)
+        print_and_write_md(f"{subtask_id}: \n{subtask}\n", color=Fore.YELLOW)
         print_and_write_md(
             f"AI Assistant Role: {ai_assistant_role}\n" +
             f"{ai_assistant_description}\n", color=Fore.GREEN)
@@ -231,8 +232,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
             user_agent_kwargs=user_agent_kwargs,
             task_prompt=subtask_content,
             model_type=ModelType.GPT_4_TURBO,
-            task_type=TaskType.
-            ROLE_DESCRIPTION,
+            task_type=TaskType.ROLE_DESCRIPTION,
             with_task_specify=False,
             extend_sys_msg_meta_dicts=sys_msg_meta_dicts,
         )
@@ -257,19 +257,20 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                 f"AI Assistant: {ai_assistant_role}\n\n" +
                 f"{assistant_response.msg.content}\n", color=Fore.GREEN,
                 file_path=subtask_id)
-            
+
             # Extract the action from the assistant's response
             actions = assistant_response.msg.content.split("Action:")[-1]
             action = actions.split("Next request.")[0]
             if action != "CAMEL_TASK_DONE":
-                print_and_write_md(f"\n{action}\n",
-                                   color=Fore.BLACK, file_path="Solution")
+                print_and_write_md(f"\n{action}\n", color=Fore.BLACK,
+                                   file_path="Solution")
 
             actions_record += (f"--- [{n}] ---\n"
                                f"{assistant_response.msg.content}\n")
             user_conversation = user_response.msg.content
             assistant_conversation = assistant_response.msg.content.replace(
-                "Solution&Action:\n", "").replace("Next request.", "").strip("\n") # noqa
+                "Solution&Action:\n", "").replace("Next request.",
+                                                  "").strip("\n")  # noqa
             transformed_text_with_category = \
                 role_assignment_agent.transform_dialogue_into_text(
                     user=ai_user_role, assistant=ai_assistant_role,
