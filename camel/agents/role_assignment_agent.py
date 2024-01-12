@@ -575,7 +575,8 @@ Definition of ASSISTANT: The assistant is the role that executes instructions gi
             raise RuntimeError("Got None or insufficient information of " +
                                "compatibility scores as USER.")
         if len(assistant_compatibility_scores) != len(role_names):
-            print("assistant_compatibility_scores: ", assistant_compatibility_scores)  # noqa: E501")
+            print("assistant_compatibility_scores: ",
+                  assistant_compatibility_scores)
             raise RuntimeError("Got None or insufficient information of " +
                                "compatibility scores as ASSISTANT.")
 
