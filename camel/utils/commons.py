@@ -294,10 +294,14 @@ def get_openai_tool_schema(func: Callable) -> Dict[str, Any]:
 
     short_description = docstring.short_description or ""
     long_description = docstring.long_description or ""
+    if long_description:
+        func_description = f"{short_description}\n{long_description}"
+    else:
+        func_description = short_description
 
     openai_function_schema = {
         "name": func.__name__,
-        "description": f"{short_description}\n{long_description}",
+        "description": func_description,
         "parameters": parameters_dict,
     }
 
