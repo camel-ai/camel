@@ -1,3 +1,3 @@
-recommonmark
+sphinx==6
 sphinx_book_theme
-sphinx
+recommonmark==0.7.1
