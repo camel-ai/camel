@@ -11,7 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import html
 import json
+import re
 
 from colorama import Fore
 
@@ -28,31 +30,37 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
          context_text=None) -> None:
     # Start the multi-agent communication
     print_and_write_md("========================================",
-                       color=Fore.WHITE)
+                       color=Fore.BLACK)
     print_and_write_md("Welcome to CAMEL-AI Society!", color=Fore.RED)
     print_and_write_md("================ INPUT TASK ================",
-                       color=Fore.WHITE)
+                       color=Fore.BLACK)
     print_and_write_md(f"Original task prompt:\n{task_prompt}\n",
                        color=Fore.YELLOW)
     print_and_write_md("============== INPUT CONTEXT ==============",
-                       color=Fore.WHITE)
+                       color=Fore.BLACK)
     print_and_write_md(f"Context text:\n{context_text}\n", color=Fore.YELLOW)
     print_and_write_md("========================================",
-                       color=Fore.WHITE)
+                       color=Fore.BLACK)
 
     # Model and agent initialization
-    model_config_description = ChatGPTConfig()
-    role_assignment_agent = RoleAssignmentAgent(
-        model_type=model_type, model_config=model_config_description)
+    model_config = ChatGPTConfig()
+    role_assignment_agent = RoleAssignmentAgent(model_type=model_type,
+                                                model_config=model_config)
     insight_agent = InsightAgent(model_type=model_type,
-                                 model_config=model_config_description)
+                                 model_config=model_config)
     deductive_reasoner_agent = DeductiveReasonerAgent(
-        model_type=model_type, model_config=model_config_description)
+        model_type=model_type, model_config=model_config)
 
     # Generate role with descriptions
+    print("Please enter the number of roles you want to generate (#roles >= "
+          "3, default number is 4): ")
+    num_roles = int(input())
+    while num_roles < 3:
+        print("The number of roles should be larger or equal to 3, please "
+              "enter again: ")
     role_descriptions_dict = \
         role_assignment_agent.run_role_with_description(
-            task_prompt=task_prompt, num_roles=4, role_names=None,
+            task_prompt=task_prompt, num_roles=num_roles, role_names=None,
             function_list=[*SEARCH_FUNCS])
 
     # Split the original task into subtasks
@@ -63,10 +71,12 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
             num_subtasks=None,
             context_text=context_text)
 
+    # Draw the graph of the subtasks
     oriented_graph = {}
     for subtask_idx, details in subtasks_with_dependencies_dict.items():
         deps = details["dependencies"]
         oriented_graph[subtask_idx] = deps
+    # TODO: cycle detection and handling
     role_assignment_agent.draw_subtasks_graph(oriented_graph=oriented_graph)
 
     # Get the list of subtasks
@@ -111,7 +121,19 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
         json.dumps(subtasks_with_dependencies_dict, indent=4), color=Fore.BLUE,
         file_path="dependencies among subtasks")
     print_and_write_md("========================================",
-                       color=Fore.WHITE)
+                       color=Fore.BLACK)
+
+    # structured output for user request
+    print_and_write_md("================= TASK =======================",
+                       color=Fore.RED, file_path="Solution")
+    print_and_write_md(f"\n{task_prompt}\n", color=Fore.BLACK,
+                       file_path="Solution")
+    print_and_write_md("================= REQUIREMENT =======================",
+                       color=Fore.RED, file_path="Solution")
+    print_and_write_md(f"\n{context_text}\n", color=Fore.BLACK,
+                       file_path="Solution")
+    print_and_write_md("================= 小说内容 ====================",
+                       color=Fore.RED, file_path="Solution")
 
     # structured output for user request
     print_and_write_md("================= TASK =======================",
@@ -120,8 +142,8 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                        file_path="Solution")
     print_and_write_md("================= REQUIREMENT =======================",
                        color=Fore.RED, file_path="Solution")
-    print_and_write_md(f"\n{context_text}\n",
-                       color=Fore.WHITE, file_path="Solution")
+    print_and_write_md(f"\n{context_text}\n", color=Fore.WHITE,
+                       file_path="Solution")
     print_and_write_md("================= TRAVEL BOOKLET ====================",
                        color=Fore.RED, file_path="Solution")
 
@@ -129,20 +151,21 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
     for subtask_id in (subtask for pipeline in parallel_subtask_pipelines
                        for subtask in pipeline):
         # Get the description of the subtask
-        one_subtask = \
+        subtask = \
             subtasks_with_dependencies_dict[subtask_id]["description"]
-        one_subtask_labels = \
+        subtask_labels = \
             subtasks_with_dependencies_dict[subtask_id]["input_tags"]
         # Get the insights from the environment for the subtask
         insights_for_subtask = get_insights_from_environment(
-            subtask_id, one_subtask, one_subtask_labels, environment_record,
+            subtask_id, subtask, subtask_labels, environment_record,
             deductive_reasoner_agent, role_assignment_agent, insight_agent,
             context_text)
 
         # Get the role with the highest compatibility score
+        # TODO: fix the bug of not enough scores for user/assistant role
         role_compatibility_scores_dict = (
             role_assignment_agent.evaluate_role_compatibility(
-                one_subtask, role_descriptions_dict))
+                subtask, role_descriptions_dict))
 
         # Get the top two roles with the highest compatibility scores
         ai_assistant_role = \
@@ -158,9 +181,8 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
         ai_user_description = role_descriptions_dict[ai_user_role]
 
         print_and_write_md("================ SESSION ================",
-                           color=Fore.WHITE)
-        print_and_write_md(f"{subtask_id}: \n{one_subtask}\n",
-                           color=Fore.YELLOW)
+                           color=Fore.BLACK)
+        print_and_write_md(f"{subtask_id}: \n{subtask}\n", color=Fore.YELLOW)
         print_and_write_md(
             f"AI Assistant Role: {ai_assistant_role}\n" +
             f"{ai_assistant_description}\n", color=Fore.GREEN)
@@ -187,41 +209,49 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                 insights_for_subtask, user_description=ai_user_description +
                 "\n" + insights_for_subtask) for _ in range(2)
         ]  # System message meta data dicts
+
         function_list = [*MATH_FUNCS, *SEARCH_FUNCS]
-        assistant_model_config = \
+
+        # Assistant model config
+        assistant_config = \
             FunctionCallingConfig.from_openai_function_list(
                 function_list=function_list,
                 kwargs=dict(temperature=0.7),
-            )  # Assistant model config
-        user_model_config = FunctionCallingConfig.from_openai_function_list(
+            )
+
+        # User model config
+        user_config = FunctionCallingConfig.from_openai_function_list(
             function_list=function_list,
             kwargs=dict(temperature=0.7),
-        )  # User model config
+        )
+
+        assistant_agent_kwargs = dict(
+            model_type=ModelType.GPT_4_TURBO,
+            model_config=assistant_config,
+            function_list=function_list,
+        )
+
+        user_agent_kwargs = dict(
+            model_type=ModelType.GPT_4_TURBO,
+            model_config=user_config,
+            function_list=function_list,
+        )
 
         role_play_session = RolePlaying(
             assistant_role_name=ai_assistant_role,
             user_role_name=ai_user_role,
-            assistant_agent_kwargs=dict(
-                model_type=ModelType.GPT_4_TURBO,
-                model_config=assistant_model_config,
-                function_list=function_list,
-            ),
-            user_agent_kwargs=dict(
-                model_type=ModelType.GPT_4_TURBO,
-                model_config=user_model_config,
-                function_list=function_list,
-            ),
+            assistant_agent_kwargs=assistant_agent_kwargs,
+            user_agent_kwargs=user_agent_kwargs,
             task_prompt=subtask_content,
             model_type=ModelType.GPT_4_TURBO,
-            task_type=TaskType.
-            ROLE_DESCRIPTION,  # Important for role description
+            task_type=TaskType.ROLE_DESCRIPTION,
             with_task_specify=False,
             extend_sys_msg_meta_dicts=sys_msg_meta_dicts,
         )
 
         actions_record = ("The TASK of the context text is:\n" +
-                          f"{one_subtask}\n")
-        chat_history_two_roles = ""
+                          f"{subtask}\n")
+        chat_history = ""
 
         # Start the role-playing to complete the subtask
         chat_turn_limit, n = 50, 0
@@ -241,7 +271,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
             instruction = instructions.split("Input:")[0]
             print_and_write_md(f"\n{instruction}\n", color=Fore.RED,
                                file_path="Solution")
-            
+
             print_and_write_md(
                 f"AI Assistant: {ai_assistant_role}\n\n" +
                 f"{assistant_response.msg.content}\n", color=Fore.GREEN,
@@ -251,26 +281,26 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
             actions = assistant_response.msg.content.split("Action:")[-1]
             action = actions.split("Next request.")[0]
             if action != "CAMEL_TASK_DONE":
-                print_and_write_md(f"\n{action}\n",
-                                   color=Fore.WHITE, file_path="Solution")
+                print_and_write_md(f"\n{action}\n", color=Fore.BLACK,
+                                   file_path="Solution")
 
             actions_record += (f"--- [{n}] ---\n"
                                f"{assistant_response.msg.content}\n")
             user_conversation = user_response.msg.content
             assistant_conversation = assistant_response.msg.content.replace(
                 "Solution&Action:\n", "").replace("Next request.",
-                                                  "").strip("\n")
+                                                  "").strip("\n")  # noqa
             transformed_text_with_category = \
                 role_assignment_agent.transform_dialogue_into_text(
                     user=ai_user_role, assistant=ai_assistant_role,
-                    task_prompt=one_subtask,
+                    task_prompt=subtask,
                     user_conversation=user_conversation,
                     assistant_conversation=assistant_conversation)
             if ("ASSISTANCE" in transformed_text_with_category["categories"]
                     or "ANALYSIS"
                     in transformed_text_with_category["categories"]):
                 transformed_text = transformed_text_with_category["text"]
-                chat_history_two_roles += (transformed_text + "\n\n")
+                chat_history += (transformed_text + "\n\n")
 
             print(Fore.BLUE + "AI User:\n"
                   f"{user_response.msg.content}\n")
@@ -295,7 +325,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
             input_assistant_msg = assistant_response.msg
 
         print_and_write_md(
-            f"Output of the {subtask_id}:\n" + f"{chat_history_two_roles}\n",
+            f"Output of the {subtask_id}:\n" + f"{chat_history}\n",
             color=Fore.GREEN)
 
         insights_instruction = ("The CONTEXT TEXT is the steps to resolve " +
@@ -316,7 +346,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
             color=Fore.CYAN, file_path=f"environment record of {subtask_id}")
 
 
-def get_insights_from_environment(subtask_id, one_subtask, one_subtask_labels,
+def get_insights_from_environment(subtask_id, subtask, subtask_labels,
                                   environment_record, deductive_reasoner_agent,
                                   role_assignment_agent, insight_agent,
                                   context_text):
@@ -324,10 +354,10 @@ def get_insights_from_environment(subtask_id, one_subtask, one_subtask_labels,
     conditions_and_quality_json = \
         deductive_reasoner_agent.deduce_conditions_and_quality(
             starting_state="None",
-            target_state=one_subtask)
+            target_state=subtask)
 
     target_labels = list(
-        set(conditions_and_quality_json["labels"]) | set(one_subtask_labels))
+        set(conditions_and_quality_json["labels"]) | set(subtask_labels))
     print(f"Target labels for {subtask_id}:\n{target_labels}")
 
     labels_sets = [
@@ -376,9 +406,6 @@ def print_and_write_md(text="", color=Fore.RESET, file_path=None):
     # Print the text in the terminal
     # print(color + text)
 
-    import html
-    import re
-
     if file_path is None:
         file_path = ("examples/multi_agent/"
                      "tmp_of_multi_agent/multi-agent-output.md")
@@ -390,7 +417,7 @@ def print_and_write_md(text="", color=Fore.RESET, file_path=None):
         Fore.GREEN: 'darkgreen',
         Fore.YELLOW: 'darkorange',
         Fore.RED: 'darkred',
-        Fore.WHITE: 'black',
+        Fore.BLACK: 'black',
         Fore.RESET: 'reset',
         Fore.CYAN: 'darkcyan',
     }
@@ -438,6 +465,8 @@ if __name__ == "__main__":
         "task_prompt_GPT_prediction.txt",
         "task_prompt_event_query.txt",
         "task_prompt_trip_planning.txt",
+        "task_prompt_book.txt",
+        "task_prompt_character.txt",
     ]
     file_names_context = [
         "context_content_trading_bot.txt",
@@ -450,6 +479,8 @@ if __name__ == "__main__":
         "context_content_GPT_prediction.txt",
         "context_content_event_query.txt",
         "context_content_trip_planning.txt",
+        "context_content_book.txt",
+        "context_content_character.txt",
     ]
 
     index = -1

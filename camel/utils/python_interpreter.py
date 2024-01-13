@@ -77,14 +77,17 @@ class PythonInterpreter():
             importable. Any other import statements will be rejected. The
             module and its submodule or function name are separated by a period
             (:obj:`.`). (default: :obj:`None`)
+        raise_error (bool, optional): Raise error if the interpreter fails.
     """
 
     def __init__(self, action_space: Dict[str, Any],
-                 import_white_list: Optional[List[str]] = None) -> None:
+                 import_white_list: Optional[List[str]] = None,
+                 raise_error: bool = False) -> None:
         self.action_space = action_space
         self.state = self.action_space.copy()
         self.fuzz_state: Dict[str, Any] = {}
         self.import_white_list = import_white_list or []
+        self.raise_error = raise_error
 
     def execute(self, code: str, state: Optional[Dict[str, Any]] = None,
                 fuzz_state: Optional[Dict[str, Any]] = None,
@@ -95,9 +98,9 @@ class PythonInterpreter():
             code (str): Generated python code to be executed.
             state (Optional[Dict[str, Any]], optional): External variables that
                 may be used in the generated code. (default: :obj:`None`)
-            fuzz_state (Optional[Dict[str, Any]], optional): External varibles
-                that do not have certain varible names. The interpreter will
-                use fuzzy matching to access these varibales. For example, if
+            fuzz_state (Optional[Dict[str, Any]], optional): External variables
+                that do not have certain variable names. The interpreter will
+                use fuzzy matching to access these variables. For example, if
                 :obj:`fuzz_state` has a variable :obj:`image`, the generated
                 code can use :obj:`input_image` to access it. (default:
                 :obj:`None`)
@@ -120,7 +123,11 @@ class PythonInterpreter():
         try:
             expression = ast.parse(code)
         except SyntaxError as e:
-            raise InterpreterError(f"Syntax error in code: {e}")
+            if self.raise_error:
+                raise InterpreterError(f"Syntax error in code: {e}")
+            else:
+                import traceback
+                return traceback.format_exc()
 
         result = None
         for idx, node in enumerate(expression.body):
@@ -133,7 +140,11 @@ class PythonInterpreter():
                        f"See:\n{e}")
                 # More information can be provided by `ast.unparse()`,
                 # which is new in python 3.9.
-                raise InterpreterError(msg)
+                if self.raise_error:
+                    raise InterpreterError(msg)
+                else:
+                    import traceback
+                    return traceback.format_exc()
             if line_result is not None:
                 result = line_result
 
