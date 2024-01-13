@@ -40,7 +40,11 @@ def update_license_in_file(
     end_line_start_with: str,
 ) -> bool:
     with open(file_path, 'r') as f:
-        content = f.read()
+        try:
+            content = f.read()
+        except UnicodeDecodeError:
+            print(f'UnicodeDecodeError in {file_path}\n{UnicodeDecodeError}')
+            return False
 
     with open(license_template_path, 'r') as f:
         new_license = f.read().strip()

@@ -94,7 +94,7 @@ def generate_expected_content():
             "condition 1":
             "The website needs to have a search bar.",
             "condition 2":
-            ("The website needs to have a database of indexed content."),
+            "The website needs to have a database of indexed content.",
             "condition 3":
             ("The website needs to have a search algorithm or function "
              "implemented."),
@@ -105,7 +105,11 @@ def generate_expected_content():
             ("The website needs to have a backend system that processes "
              "search queries and retrieves relevant results.")
         },
-        "labels": ["Website search bar"],
+        "labels": [
+            "Website search bar", "Indexed content database",
+            "Search algorithm/function", "User interface for search queries",
+            "Backend system for query processing"
+        ],
         "quality":
         ("The transition from $A$ to $B$ would be considered efficient if "
          "the search capabilities are implemented with minimal resource "
