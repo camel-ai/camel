@@ -12,7 +12,6 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import pytest
-from pydantic import ValidationError
 
 from camel.functions import OpenAIFunction
 
@@ -82,6 +81,7 @@ def test_function_without_doc():
 
 
 def test_function_with_wrong_doc():
+    from pydantic import ValidationError
     add = OpenAIFunction(add_with_wrong_doc)
     add.set_function_name("add")
     with pytest.raises(Exception, match="miss description of parameter \"b\""):
