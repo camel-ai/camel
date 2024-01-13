@@ -43,8 +43,7 @@ def update_license_in_file(
         try:
             content = f.read()
         except UnicodeDecodeError:
-            print(f'UnicodeDecodeError in {file_path}\n{UnicodeDecodeError}')
-            return False
+            raise Exception(f'Cannot read {file_path}, please check encoding')
 
     with open(license_template_path, 'r') as f:
         new_license = f.read().strip()
