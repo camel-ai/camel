@@ -44,7 +44,7 @@ def test_get_openai_tool_schema():
         'function': {
             'name': 'test_all_parameters',
             'description': 'A function to test all parameter type.'
-            'The parameters will be provided by user.',
+            '\nThe parameters will be provided by user.',
             'parameters': {
                 '$defs': {
                     'RoleType': {
