@@ -84,13 +84,14 @@ class EmbodiedAgent(ChatAgent):
 
     def _set_tool_agents(self, system_message: BaseMessage) -> BaseMessage:
         action_space_prompt = self._get_tool_agents_prompt()
-        system_message.content = system_message.content.format(
-            action_space=action_space_prompt)
+        result_message = system_message.create_new_instance(
+            content=system_message.content.format(
+                action_space=action_space_prompt))
         if self.tool_agents is not None:
             self.code_interpreter.update_action_space(
                 {tool.name: tool
                  for tool in self.tool_agents})
-        return system_message
+        return result_message
 
     def _get_tool_agents_prompt(self) -> str:
         r"""Returns the action space prompt.
