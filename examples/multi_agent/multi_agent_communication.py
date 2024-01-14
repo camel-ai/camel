@@ -81,6 +81,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
 
     # Calculate the execution order of the subtasks, based on their
     # dependencies
+    # TODO: fix the bug of having an empty parallel pipeline
     parallel_subtask_pipelines = \
         role_assignment_agent.get_task_execution_order(
             subtasks_with_dependencies_dict)
