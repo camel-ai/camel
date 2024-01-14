@@ -100,13 +100,13 @@ class SubprocessInterpreter(BaseInterpreter):
                                 stderr=subprocess.PIPE, text=True)
         stdout, stderr = proc.communicate()
         if self.print_stdout and stdout:
-            print("======stdout======\n")
-            print(Fore.GREEN + stdout + Fore.RESET + "\n")
-            print("==================\n")
+            print("======stdout======")
+            print(Fore.GREEN + stdout + Fore.RESET)
+            print("==================")
         if self.print_stderr and stderr:
-            print("======stderr======\n")
-            print(Fore.RED + stderr + Fore.RESET + "\n")
-            print("==================\n")
+            print("======stderr======")
+            print(Fore.RED + stderr + Fore.RESET)
+            print("==================")
         exec_result = f"{stdout}"
         exec_result += f"(stderr: {stderr})" if stderr else ""
         return exec_result
