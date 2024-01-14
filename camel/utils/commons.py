@@ -192,10 +192,11 @@ def check_server_running(server_url: str) -> bool:
 
 
 def role_playing_with_function(
-    task_prompt: str = ("Assuming the current year is 2023, estimate KAUST's "
-                        "current age and then add 10 more years to this age, "
-                        "and get the current weather of the city where KAUST "
-                        "is located."),
+    task_prompt: str = ("Assume now is 2024 in the Gregorian calendar, "
+                        "estimate the current age of University of Oxford "
+                        "and then add 10 more years to this age, "
+                        "and get the current weather of the city where "
+                        "the University is located."),
     function_list: Optional[List] = None,
     model_type=None,
     chat_turn_limit=10,

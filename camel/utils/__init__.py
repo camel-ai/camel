@@ -12,10 +12,16 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .python_interpreter import PythonInterpreter
-from .commons import (openai_api_key_required, print_text_animated,
-                      get_prompt_template_key_words, get_first_int,
-                      download_tasks, parse_doc, get_task_list,
-                      check_server_running, role_playing_with_function)
+from .commons import (
+    openai_api_key_required,
+    print_text_animated,
+    get_prompt_template_key_words,
+    get_first_int,
+    download_tasks,
+    get_task_list,
+    check_server_running,
+    role_playing_with_function,
+)
 from .token_counting import (
     get_model_encoding,
     BaseTokenCounter,
