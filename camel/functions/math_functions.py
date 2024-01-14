@@ -21,8 +21,8 @@ def add(a: int, b: int) -> int:
     r"""Adds two numbers.
 
     Args:
-        a (integer): The first number to be added.
-        b (integer): The second number to be added.
+        a (int): The first number to be added.
+        b (int): The second number to be added.
 
     Returns:
         integer: The sum of the two numbers.
@@ -34,8 +34,8 @@ def sub(a: int, b: int) -> int:
     r"""Do subtraction between two numbers.
 
     Args:
-        a (integer): The minuend in subtraction.
-        b (integer): The subtrahend in subtraction.
+        a (int): The minuend in subtraction.
+        b (int): The subtrahend in subtraction.
 
     Returns:
         integer: The result of subtracting :obj:`b` from :obj:`a`.
@@ -47,8 +47,8 @@ def mul(a: int, b: int) -> int:
     r"""Multiplies two integers.
 
     Args:
-        a (integer): The multiplier in the multiplication.
-        b (integer): The multiplicand in the multiplication.
+        a (int): The multiplier in the multiplication.
+        b (int): The multiplicand in the multiplication.
 
     Returns:
         integer: The product of the two numbers.

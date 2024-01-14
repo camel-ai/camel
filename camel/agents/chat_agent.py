@@ -125,7 +125,7 @@ class ChatAgent(BaseAgent):
         self.func_dict: Dict[str, Callable] = {}
         if function_list is not None:
             for func in function_list:
-                self.func_dict[func.name] = func.func
+                self.func_dict[func.get_function_name()] = func.func
         self.model_config = model_config or ChatGPTConfig()
         self.backend_config_dict = backend_config_dict or {}
 
