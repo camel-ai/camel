@@ -117,18 +117,6 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
     print_and_write_md("========================================",
                        color=Fore.BLACK)
 
-    # structured output for user request
-    print_and_write_md("================= TASK =======================",
-                       color=Fore.RED, file_path="Solution")
-    print_and_write_md(f"\n{task_prompt}\n", color=Fore.BLACK,
-                       file_path="Solution")
-    print_and_write_md("================= REQUIREMENT =======================",
-                       color=Fore.RED, file_path="Solution")
-    print_and_write_md(f"\n{context_text}\n", color=Fore.BLACK,
-                       file_path="Solution")
-    print_and_write_md("================= 小说内容 ====================",
-                       color=Fore.RED, file_path="Solution")
-
     # Resolve the subtasks in sequence of the pipelines
     for subtask_id in (subtask for pipeline in parallel_subtask_pipelines
                        for subtask in pipeline):
@@ -219,6 +207,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
             function_list=function_list,
         )
 
+        # Initialize the role-playing session
         role_play_session = RolePlaying(
             assistant_role_name=ai_assistant_role,
             user_role_name=ai_user_role,
@@ -231,9 +220,8 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
             extend_sys_msg_meta_dicts=sys_msg_meta_dicts,
         )
 
-        actions_record = ("The TASK of the context text is:\n" +
-                          f"{subtask}\n")
-        chat_history = ""
+        assistant_msg_record = ("The TASK of the context text is:\n"
+                                f"{subtask}\n")
 
         # Start the role-playing to complete the subtask
         chat_turn_limit, n = 50, 0
@@ -251,36 +239,33 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                 f"AI Assistant: {ai_assistant_role}\n\n" +
                 f"{assistant_response.msg.content}\n", color=Fore.GREEN,
                 file_path=subtask_id)
+            print(Fore.BLUE + f"AI User: {ai_user_role}\n"
+                  f"{user_response.msg.content}\n")
+            print(Fore.GREEN + f"AI Assistant: {ai_assistant_role}\n"
+                  f"{assistant_response.msg.content}\n")
 
             # Extract the action from the assistant's response
-            actions = assistant_response.msg.content.split("Action:")[-1]
-            action = actions.split("Next request.")[0]
-            if action != "CAMEL_TASK_DONE":
-                print_and_write_md(f"\n{action}\n", color=Fore.BLACK,
-                                   file_path="Solution")
-
-            actions_record += (f"--- [{n}] ---\n"
-                               f"{assistant_response.msg.content}\n")
-            user_conversation = user_response.msg.content
-            assistant_conversation = assistant_response.msg.content.replace(
-                "Solution&Action:\n", "").replace("Next request.",
-                                                  "").strip("\n")  # noqa
-            transformed_text_with_category = \
-                role_assignment_agent.transform_dialogue_into_text(
-                    user=ai_user_role, assistant=ai_assistant_role,
-                    task_prompt=subtask,
-                    user_conversation=user_conversation,
-                    assistant_conversation=assistant_conversation)
-            if ("ASSISTANCE" in transformed_text_with_category["categories"]
-                    or "ANALYSIS"
-                    in transformed_text_with_category["categories"]):
-                transformed_text = transformed_text_with_category["text"]
-                chat_history += (transformed_text + "\n\n")
-
-            print(Fore.BLUE + "AI User:\n"
-                  f"{user_response.msg.content}\n")
-            print(Fore.GREEN + "AI Assistant:\n"
-                  f"{assistant_response.msg.content}\n")
+            # actions_record += (f"--- [{n}] ---\n"
+            #                    f"{assistant_response.msg.content}\n")
+            assistant_msg_record += (f"--- [{n}] ---\n" +
+                                     assistant_response.msg.content.replace(
+                                         "Next request.", "").strip("\n") +
+                                     "\n")
+            # user_conversation = user_response.msg.content
+            # assistant_conversation = assistant_response.msg.content.replace(
+            #     "Solution:\n", "").replace("Next request.", "").strip("\n")
+            # chat_history += assistant_conversation + "\n\n"
+            # transformed_text_with_category = \
+            #     role_assignment_agent.transform_dialogue_into_text(
+            #         user_name=ai_user_role, assistant_name=ai_assistant_role,
+            #         task_prompt=subtask,
+            #         user_conversation=user_conversation,
+            #         assistant_conversation=assistant_conversation)
+            # if ("ASSISTANCE" in transformed_text_with_category["categories"]
+            #         or "ANALYSIS"
+            #         in transformed_text_with_category["categories"]):
+            #     transformed_text = transformed_text_with_category["text"]
+            #     chat_history += (transformed_text + "\n\n")
 
             if assistant_response.terminated:
                 print(Fore.GREEN +
@@ -288,9 +273,9 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                        f"{assistant_response.info['termination_reasons']}."))
                 break
             if user_response.terminated:
-                print(Fore.GREEN + (
-                    f"{ai_user_role} terminated. "
-                    f"Reason: {user_response.info['termination_reasons']}."))
+                print(Fore.GREEN +
+                      (f"{ai_user_role} terminated. Reason: "
+                       f"{user_response.info['termination_reasons']}."))
                 break
 
             if "CAMEL_TASK_DONE" in user_response.msg.content or \
@@ -299,14 +284,10 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
 
             input_assistant_msg = assistant_response.msg
 
-        print_and_write_md(
-            f"Output of the {subtask_id}:\n" + f"{chat_history}\n",
-            color=Fore.GREEN)
-
         insights_instruction = ("The CONTEXT TEXT is the steps to resolve " +
                                 "the TASK. The INSIGHTs should come solely" +
                                 "from the actions/steps.")
-        insights = insight_agent.run(context_text=actions_record,
+        insights = insight_agent.run(context_text=assistant_msg_record,
                                      insights_instruction=insights_instruction)
         for insight in insights.values():
             if insight["entity_recognition"] is None:
