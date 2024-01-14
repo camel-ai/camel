@@ -34,12 +34,11 @@ __all__ = [
     'get_prompt_template_key_words',
     'get_first_int',
     'download_tasks',
-    'parse_doc',
     'get_task_list',
     'check_server_running',
+    'get_system_information',
     'get_model_encoding',
     'BaseTokenCounter',
     'OpenAITokenCounter',
     'OpenSourceTokenCounter',
-    'get_system_information',
 ]
