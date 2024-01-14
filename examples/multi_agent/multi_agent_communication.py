@@ -228,8 +228,13 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
         input_assistant_msg, _ = role_play_session.init_chat()
         while n < chat_turn_limit:
             n += 1
-            assistant_response, user_response = role_play_session.step(
-                input_assistant_msg)
+            try:
+                assistant_response, user_response = \
+                    role_play_session.step(input_assistant_msg)
+            except Exception as e:
+                # output a warning message and continue
+                print(Fore.RED + f"Warning: {e}")
+                continue
 
             print_and_write_md(
                 f"AI User: {ai_user_role}\n\n" +
