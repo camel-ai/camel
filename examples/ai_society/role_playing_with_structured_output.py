@@ -18,8 +18,11 @@ from camel.societies import RolePlaying
 from camel.types import ModelType
 
 
-def main(model_type=ModelType.GPT_4_TURBO, chat_turn_limit=50) -> None:
-    role_playing_output_tamplate = """Lemma <NUM_1>:
+def main(model_type=None,
+         model_type_for_structure_output=ModelType.GPT_4_TURBO,
+         chat_turn_limit=50, role_playing_output_tamplate=None) -> None:
+    if role_playing_output_tamplate is None:
+        role_playing_output_tamplate = """Lemma <NUM_1>:
     <PROOF>
 Lemma <NUM_2>:
     <PROOF>
@@ -42,7 +45,7 @@ Proof by Lemmas:
         task_specify_agent_kwargs=dict(model_type=model_type),
     )
 
-    insight_agent = InsightAgent(model_type=model_type)
+    insight_agent = InsightAgent(model_type=model_type_for_structure_output)
 
     print(
         Fore.GREEN +
@@ -83,8 +86,6 @@ Proof by Lemmas:
 
         if ("CAMEL_TASK_DONE" in user_response.msg.content
                 or "CAMEL_TASK_DONE" in assistant_response.msg.content):
-            print(Fore.YELLOW + "The assistant msg record is:\n" +
-                  f"{assistant_msg_record}\n")
             insights_instruction = (
                 "The CONTEXT TEXT is the steps to resolve " +
                 "the TASK. The INSIGHTs should come solely" +
