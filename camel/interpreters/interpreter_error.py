@@ -11,34 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .commons import (
-    openai_api_key_required,
-    print_text_animated,
-    get_prompt_template_key_words,
-    get_first_int,
-    download_tasks,
-    get_task_list,
-    check_server_running,
-    get_system_information,
-)
-from .token_counting import (
-    get_model_encoding,
-    BaseTokenCounter,
-    OpenAITokenCounter,
-    OpenSourceTokenCounter,
-)
 
-__all__ = [
-    'openai_api_key_required',
-    'print_text_animated',
-    'get_prompt_template_key_words',
-    'get_first_int',
-    'download_tasks',
-    'get_task_list',
-    'check_server_running',
-    'get_system_information',
-    'get_model_encoding',
-    'BaseTokenCounter',
-    'OpenAITokenCounter',
-    'OpenSourceTokenCounter',
-]
+
+class InterpreterError(Exception):
+    r"""Exception raised for errors that can be solved by regenerating code """
+    pass

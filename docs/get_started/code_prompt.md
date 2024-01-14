@@ -53,34 +53,13 @@ In this example, we change the code type of the `CodePrompt` instance from `None
 
 ## Executing the Code
 
-The `CodePrompt` class provides a method called `execute` that allows you to execute the code string associated with the prompt. It returns a tuple containing the value of the last statement in the code and the interpreter.
+The `CodePrompt` class provides a method called `execute` that allows you to execute the code string associated with the prompt. It returns a string containing the stdout and stderr.
 
 ```python
-code_prompt = CodePrompt("a = 1 + 1\nb = a + 1", code_type="python")
-output, interpreter = code_prompt.execute()
+code_prompt = CodePrompt("a = 1 + 1\nb = a + 1\nprint(a,b)", code_type="python")
+output = code_prompt.execute()
+# Running code? [Y/n]: y
 print(output)
-# >>> 3
+# >>> 2 3
 
-print(interpreter.state['a'])
-# >>> 2
-
-print(interpreter.state['b'])
-# >>> 3
 ```
-
-In this example, we execute the code prompt and inspect the state of variables `a` and `b`.
-
-## Handling Execution Errors
-
-If there is an error during the code execution, the `execute` method catches the error and returns the traceback.
-
-```python
-code_prompt = CodePrompt("print('Hello, World!'")
-traceback, _ = code_prompt.execute()
-assert "SyntaxError" in traceback
-# >>> True
-```
-
-In this example, the code string has a syntax error where a right bracket `)` is missing, and the `execute` method returns the traceback indicating the error.
-
-That's it! You have went through the basics of using the `CodePrompt` class. You can now create code prompts, access the code and code type, modify the code type if needed, and execute the code.
