@@ -24,10 +24,11 @@ from camel.utils import print_text_animated
 
 
 def main(model_type=ModelType.GPT_4, chat_turn_limit=10) -> None:
-    task_prompt = ("Assuming the current year is 2023, estimate KAUST's "
-                   "current age and then add 10 more years to this age, "
-                   "and get the current weather of the city where KAUST "
-                   "is located.")
+    task_prompt = ("Assume now is 2024 in the Gregorian calendar, "
+                   "estimate the current age of University of Oxford "
+                   "and then add 10 more years to this age, "
+                   "and get the current weather of the city where "
+                   "the University is located.")
 
     user_model_config = ChatGPTConfig(temperature=0.0)
 
