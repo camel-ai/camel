@@ -135,6 +135,18 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
     print_and_write_md("================= 小说内容 ====================",
                        color=Fore.RED, file_path="Solution")
 
+    # structured output for user request
+    print_and_write_md("================= TASK =======================",
+                       color=Fore.RED, file_path="Solution")
+    print_and_write_md(f"\n{task_prompt}\n", color=Fore.WHITE,
+                       file_path="Solution")
+    print_and_write_md("================= REQUIREMENT =======================",
+                       color=Fore.RED, file_path="Solution")
+    print_and_write_md(f"\n{context_text}\n", color=Fore.WHITE,
+                       file_path="Solution")
+    print_and_write_md("================= TRAVEL BOOKLET ====================",
+                       color=Fore.RED, file_path="Solution")
+
     # Resolve the subtasks in sequence of the pipelines
     for subtask_id in (subtask for pipeline in parallel_subtask_pipelines
                        for subtask in pipeline):
@@ -253,6 +265,13 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                 f"AI User: {ai_user_role}\n\n" +
                 f"{user_response.msg.content}\n", color=Fore.BLUE,
                 file_path=subtask_id)
+
+            # Summarize the user guidance
+            instructions = user_response.msg.content.split("Instruction:")[-1]
+            instruction = instructions.split("Input:")[0]
+            print_and_write_md(f"\n{instruction}\n", color=Fore.RED,
+                               file_path="Solution")
+
             print_and_write_md(
                 f"AI Assistant: {ai_assistant_role}\n\n" +
                 f"{assistant_response.msg.content}\n", color=Fore.GREEN,
