@@ -24,7 +24,7 @@ class InternalPythonInterpreter(BaseInterpreter):
     r"""A customized python interpreter to control the execution of
     LLM-generated codes. The interpreter makes sure the code can only execute
     functions given in action space and import white list. It also supports
-    fuzzy variable matching to reveive uncertain input variable name.
+    fuzzy variable matching to retrieve uncertain input variable name.
 
     .. highlight:: none
 
@@ -94,6 +94,30 @@ class InternalPythonInterpreter(BaseInterpreter):
         self.unsafe_mode = unsafe_mode
 
     def run(self, code: str, code_type: str) -> str:
+        r"""Executes the given code with specified code type in the
+        interpreter.
+
+        This method takes a string of code and its type, checks if the code
+        type is supported, and then executes the code. If `unsafe_mode` is
+        set to `False`, the code is executed in a controlled environment using
+        the `execute` method. If `unsafe_mode` is `True`, the code is executed
+        using `eval()` with the action space as the global context. An
+        `InterpreterError` is raised if the code type is unsupported or if any
+        runtime error occurs during execution.
+
+        Args:
+            code (str): The python code to be executed.
+            code_type (str): The type of the code, which should be one of the
+            supported code types (`python`, `py`, `python3`, `python2`).
+
+
+        Returns:
+            str: The string representation of the output of the executed code.
+
+        Raises:
+            InterpreterError: If the `code_type` is not supported or if any
+                runtime error occurs during the execution of the code.
+    """
         if code_type not in self._CODE_TYPES:
             raise InterpreterError(
                 f"Unsupported code type {code_type}. "
@@ -105,7 +129,7 @@ class InternalPythonInterpreter(BaseInterpreter):
             return str(eval(code, self.action_space))
 
     def update_action_space(self, action_space: Dict[str, Any]) -> None:
-        r"""Updates action space for *python* interpreter"""
+        r"""Updates action space for *python* interpreter."""
         self.action_space.update(action_space)
 
     def supported_code_types(self) -> List[str]:
@@ -115,7 +139,7 @@ class InternalPythonInterpreter(BaseInterpreter):
     def execute(self, code: str, state: Optional[Dict[str, Any]] = None,
                 fuzz_state: Optional[Dict[str, Any]] = None,
                 keep_state: bool = True) -> Any:
-        r""" Execute the input python codes in a security environment.
+        r"""Execute the input python codes in a security environment.
 
         Args:
             code (str): Generated python code to be executed.
@@ -177,7 +201,7 @@ class InternalPythonInterpreter(BaseInterpreter):
         return result
 
     def clear_state(self) -> None:
-        r"""Initialize :obj:`state` and :obj:`fuzz_state`"""
+        r"""Initialize :obj:`state` and :obj:`fuzz_state`."""
         self.state = self.action_space.copy()
         self.fuzz_state = {}
 
