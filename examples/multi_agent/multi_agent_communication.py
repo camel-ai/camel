@@ -27,7 +27,7 @@ from camel.types import ModelType, TaskType
 
 
 def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
-         context_text=None) -> None:
+         context_text=None, num_roles=None) -> None:
     # Start the multi-agent communication
     print_and_write_md("========================================",
                        color=Fore.BLACK)
@@ -52,12 +52,6 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
         model_type=model_type, model_config=model_config)
 
     # Generate role with descriptions
-    print("Please enter the number of roles you want to generate (#roles >= "
-          "3, default number is 4): ")
-    num_roles = int(input())
-    while num_roles < 3:
-        print("The number of roles should be larger or equal to 3, please "
-              "enter again: ")
     role_descriptions_dict = \
         role_assignment_agent.run_role_with_description(
             task_prompt=task_prompt, num_roles=num_roles, role_names=None,
@@ -122,30 +116,6 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
         file_path="dependencies among subtasks")
     print_and_write_md("========================================",
                        color=Fore.BLACK)
-
-    # structured output for user request
-    print_and_write_md("================= TASK =======================",
-                       color=Fore.RED, file_path="Solution")
-    print_and_write_md(f"\n{task_prompt}\n", color=Fore.BLACK,
-                       file_path="Solution")
-    print_and_write_md("================= REQUIREMENT =======================",
-                       color=Fore.RED, file_path="Solution")
-    print_and_write_md(f"\n{context_text}\n", color=Fore.BLACK,
-                       file_path="Solution")
-    print_and_write_md("================= 小说内容 ====================",
-                       color=Fore.RED, file_path="Solution")
-
-    # structured output for user request
-    print_and_write_md("================= TASK =======================",
-                       color=Fore.RED, file_path="Solution")
-    print_and_write_md(f"\n{task_prompt}\n", color=Fore.WHITE,
-                       file_path="Solution")
-    print_and_write_md("================= REQUIREMENT =======================",
-                       color=Fore.RED, file_path="Solution")
-    print_and_write_md(f"\n{context_text}\n", color=Fore.WHITE,
-                       file_path="Solution")
-    print_and_write_md("================= TRAVEL BOOKLET ====================",
-                       color=Fore.RED, file_path="Solution")
 
     # Resolve the subtasks in sequence of the pipelines
     for subtask_id in (subtask for pipeline in parallel_subtask_pipelines
@@ -237,6 +207,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
             function_list=function_list,
         )
 
+        # Initialize the role-playing session
         role_play_session = RolePlaying(
             assistant_role_name=ai_assistant_role,
             user_role_name=ai_user_role,
@@ -249,17 +220,21 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
             extend_sys_msg_meta_dicts=sys_msg_meta_dicts,
         )
 
-        actions_record = ("The TASK of the context text is:\n" +
-                          f"{subtask}\n")
-        chat_history = ""
+        assistant_msg_record = ("The TASK of the context text is:\n"
+                                f"{subtask}\n")
 
         # Start the role-playing to complete the subtask
         chat_turn_limit, n = 50, 0
         input_assistant_msg, _ = role_play_session.init_chat()
         while n < chat_turn_limit:
             n += 1
-            assistant_response, user_response = role_play_session.step(
-                input_assistant_msg)
+            try:
+                assistant_response, user_response = \
+                    role_play_session.step(input_assistant_msg)
+            except Exception as e:
+                # output a warning message and continue
+                print(Fore.RED + f"Warning: {e}")
+                continue
 
             print_and_write_md(
                 f"AI User: {ai_user_role}\n\n" +
@@ -276,36 +251,33 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                 f"AI Assistant: {ai_assistant_role}\n\n" +
                 f"{assistant_response.msg.content}\n", color=Fore.GREEN,
                 file_path=subtask_id)
+            print(Fore.BLUE + f"AI User: {ai_user_role}\n"
+                  f"{user_response.msg.content}\n")
+            print(Fore.GREEN + f"AI Assistant: {ai_assistant_role}\n"
+                  f"{assistant_response.msg.content}\n")
 
             # Extract the action from the assistant's response
-            actions = assistant_response.msg.content.split("Action:")[-1]
-            action = actions.split("Next request.")[0]
-            if action != "CAMEL_TASK_DONE":
-                print_and_write_md(f"\n{action}\n", color=Fore.BLACK,
-                                   file_path="Solution")
-
-            actions_record += (f"--- [{n}] ---\n"
-                               f"{assistant_response.msg.content}\n")
-            user_conversation = user_response.msg.content
-            assistant_conversation = assistant_response.msg.content.replace(
-                "Solution&Action:\n", "").replace("Next request.",
-                                                  "").strip("\n")  # noqa
-            transformed_text_with_category = \
-                role_assignment_agent.transform_dialogue_into_text(
-                    user=ai_user_role, assistant=ai_assistant_role,
-                    task_prompt=subtask,
-                    user_conversation=user_conversation,
-                    assistant_conversation=assistant_conversation)
-            if ("ASSISTANCE" in transformed_text_with_category["categories"]
-                    or "ANALYSIS"
-                    in transformed_text_with_category["categories"]):
-                transformed_text = transformed_text_with_category["text"]
-                chat_history += (transformed_text + "\n\n")
-
-            print(Fore.BLUE + "AI User:\n"
-                  f"{user_response.msg.content}\n")
-            print(Fore.GREEN + "AI Assistant:\n"
-                  f"{assistant_response.msg.content}\n")
+            # actions_record += (f"--- [{n}] ---\n"
+            #                    f"{assistant_response.msg.content}\n")
+            assistant_msg_record += (f"--- [{n}] ---\n" +
+                                     assistant_response.msg.content.replace(
+                                         "Next request.", "").strip("\n") +
+                                     "\n")
+            # user_conversation = user_response.msg.content
+            # assistant_conversation = assistant_response.msg.content.replace(
+            #     "Solution:\n", "").replace("Next request.", "").strip("\n")
+            # chat_history += assistant_conversation + "\n\n"
+            # transformed_text_with_category = \
+            #     role_assignment_agent.transform_dialogue_into_text(
+            #         user_name=ai_user_role, assistant_name=ai_assistant_role,
+            #         task_prompt=subtask,
+            #         user_conversation=user_conversation,
+            #         assistant_conversation=assistant_conversation)
+            # if ("ASSISTANCE" in transformed_text_with_category["categories"]
+            #         or "ANALYSIS"
+            #         in transformed_text_with_category["categories"]):
+            #     transformed_text = transformed_text_with_category["text"]
+            #     chat_history += (transformed_text + "\n\n")
 
             if assistant_response.terminated:
                 print(Fore.GREEN +
@@ -313,9 +285,9 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                        f"{assistant_response.info['termination_reasons']}."))
                 break
             if user_response.terminated:
-                print(Fore.GREEN + (
-                    f"{ai_user_role} terminated. "
-                    f"Reason: {user_response.info['termination_reasons']}."))
+                print(Fore.GREEN +
+                      (f"{ai_user_role} terminated. Reason: "
+                       f"{user_response.info['termination_reasons']}."))
                 break
 
             if "CAMEL_TASK_DONE" in user_response.msg.content or \
@@ -324,14 +296,10 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
 
             input_assistant_msg = assistant_response.msg
 
-        print_and_write_md(
-            f"Output of the {subtask_id}:\n" + f"{chat_history}\n",
-            color=Fore.GREEN)
-
         insights_instruction = ("The CONTEXT TEXT is the steps to resolve " +
                                 "the TASK. The INSIGHTs should come solely" +
                                 "from the actions/steps.")
-        insights = insight_agent.run(context_text=actions_record,
+        insights = insight_agent.run(context_text=assistant_msg_record,
                                      insights_instruction=insights_instruction)
         for insight in insights.values():
             if insight["entity_recognition"] is None:
@@ -403,9 +371,6 @@ def get_insights_from_environment(subtask_id, subtask, subtask_labels,
 
 
 def print_and_write_md(text="", color=Fore.RESET, file_path=None):
-    # Print the text in the terminal
-    # print(color + text)
-
     if file_path is None:
         file_path = ("examples/multi_agent/"
                      "tmp_of_multi_agent/multi-agent-output.md")
@@ -465,8 +430,6 @@ if __name__ == "__main__":
         "task_prompt_GPT_prediction.txt",
         "task_prompt_event_query.txt",
         "task_prompt_trip_planning.txt",
-        "task_prompt_book.txt",
-        "task_prompt_character.txt",
     ]
     file_names_context = [
         "context_content_trading_bot.txt",
@@ -479,8 +442,6 @@ if __name__ == "__main__":
         "context_content_GPT_prediction.txt",
         "context_content_event_query.txt",
         "context_content_trip_planning.txt",
-        "context_content_book.txt",
-        "context_content_character.txt",
     ]
 
     index = -1
@@ -491,4 +452,9 @@ if __name__ == "__main__":
               encoding="utf-8") as file:
         context_text = file.read()
 
-    main(task_prompt=task_prompt, context_text=context_text)
+    # Number of roles in the society (multi-agent communication),
+    # which is supposed to be greater than 4
+    num_roles = 5
+
+    main(task_prompt=task_prompt, context_text=context_text,
+         num_roles=num_roles)

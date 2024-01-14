@@ -147,7 +147,6 @@ The tool descriptions are the context information of the potential competencies 
         msg = response.msg  # type: BaseMessage
 
         content = msg.content
-        print(content)
         if content.strip() == " I'm sorry, but I cannot fulfill your request.":
             raise RuntimeError("May violate the guidelines of ChatGPT.")
 
@@ -221,7 +220,7 @@ The tool descriptions are the context information of the potential competencies 
         - A task is considered completed when its intended output is produced.
         - If possible, the completion standard should be quantifiable to facilitate automatic detection by the software or tool feature.
         - The completion standard should be applicable to common project management scenarios and adaptable to various types of tasks, such as development, testing, and review tasks.
-    9. Don't generate subtasks that might violate OpenAI's guidelines, which triggers the following error message: "I'm sorry, but I cannot fulfill your request." or "I'm sorry, I cannot assist with that request.
+    9. Don't generate subtasks that might violate OpenAI's guidelines, which triggers the following error message: "I'm sorry, but I cannot fulfill your request.".
     10. Refrain from mentioning specific titles or roles (who are mentioned in the section of ROLES WITH DESCRIPTION) within the content of subtasks, unless the titles and personal names are mentioned in the TASK.
 Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill in the BLANKs, and DO NOT alter or modify any other part of the template.\n\n\n"""  # noqa: E501
 
@@ -554,9 +553,10 @@ Definition of ASSISTANT: The assistant is the role that executes instructions gi
         msg = response.msg  # type: BaseMessage
 
         content = msg.content
-        print(content)
-        if content.strip() == " I'm sorry, but I cannot fulfill your request.":
-            raise RuntimeError("May violate the guidelines of ChatGPT.")
+        if content.strip() == "I'm sorry, but I cannot fulfill your request.":
+            raise RuntimeError(
+                "May violate the guidelines of the large language "
+                "model.")
 
         # Distribute the output completions into scores
         user_compatibility_scores = [
@@ -695,20 +695,22 @@ Please ensure that you consider both explicit and implicit similarities while ev
             target_retrieved_labels, labels_retrieved_sets
 
     def transform_dialogue_into_text(
-            self, user: str, assistant: str, task_prompt: str,
+            self, user_name: str, assistant_name: str, task_prompt: str,
             user_conversation: str,
             assistant_conversation: str) -> Dict[str, Any]:
         r"""Synthesize a narrative from the chat history.
 
         Args:
-            user (str): The name of the user.
-            assistant (str): The name of the assistant.
+            user_name (str): The name of the user.
+            assistant_name (str): The name of the assistant.
             task_prompt (str): The prompt for the task.
             user_conversation (str): The conversation of the user.
             assistant_conversation (str): The conversation of the assistant.
 
         Returns:
-            str: The synthesized narrative.
+            Dict[str, Any]: A dictionary with two keys: `categories`: a list
+                of cleaned and validated category names; `text`: a single
+                string of cleaned reproduced text.
         """
         self.reset()
 
@@ -751,8 +753,8 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
 
 ===== PROVIDED TEXT =====
 [Global TASK of Conversation]\n{task_prompt}
-[User: {user}]:\n{user_conversation}
-[Assistant: {assistant}]:\n{assistant_conversation}
+[User: {user_name}]:\n{user_conversation}
+[Assistant: {assistant_name}]:\n{assistant_conversation}
 
 
 ===== ANSWER TEMPLATE =====
@@ -761,8 +763,8 @@ Retold Text:\n<BLANK>"""  # noqa: E501
         text_synthesis_prompt = TextPrompt(text_synthesis)
 
         text_synthesis_generation = text_synthesis_prompt.format(
-            user=user, assistant=assistant, task_prompt=task_prompt,
-            user_conversation=user_conversation,
+            user_name=user_name, assistant_name=assistant_name,
+            task_prompt=task_prompt, user_conversation=user_conversation,
             assistant_conversation=assistant_conversation)
 
         text_synthesis_generation_msg = BaseMessage.make_user_message(

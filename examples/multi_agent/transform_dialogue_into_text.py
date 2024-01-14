@@ -55,7 +55,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO) -> None:
             "assistant":
             "Literature Professor",
             "task_prompt":
-            ("Provide an analysis of the novel '1984' by George Orwell."),
+            "Provide an analysis of the novel '1984' by George Orwell.",
             "user_conversation":
             ("I'm struggling to understand the main themes in '1984'. "
              "Can you help me analyze them?"),
@@ -95,7 +95,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO) -> None:
             "assistant":
             "Culinary Expert",
             "task_prompt":
-            ("Engage in a light, casual conversation about favorite foods."),
+            "Engage in a light, casual conversation about favorite foods.",
             "user_conversation":
             ("I absolutely love sushi! What about you, what's your favorite "
              "food?"),
