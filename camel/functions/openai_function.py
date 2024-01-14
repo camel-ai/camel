@@ -91,7 +91,7 @@ class OpenAIFunction:
         except SchemaError as e:
             raise e
         # Check the parameter description
-        properties = parameters["properties"]
+        properties: Dict[str, Any] = parameters["properties"]
         for param_name in properties.keys():
             param_dict = properties[param_name]
             if "description" not in param_dict:
@@ -232,6 +232,10 @@ class OpenAIFunction:
             param_name (str): The name of the parameter to set the schema for.
             value (Dict[str, Any]): The schema to set for the parameter.
         """
+        try:
+            JSONValidator.check_schema(value)
+        except SchemaError as e:
+            raise e
         self.openai_tool_schema["function"]["parameters"]["properties"][
             param_name] = value
 
@@ -256,4 +260,8 @@ class OpenAIFunction:
             value (Dict[str, Any]): the new dictionary value for the
                 function's parameters.
         """
+        try:
+            JSONValidator.check_schema(value)
+        except SchemaError as e:
+            raise e
         self.openai_tool_schema["function"]["parameters"]["properties"] = value

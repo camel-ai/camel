@@ -14,6 +14,7 @@
 import copy
 
 import pytest
+from jsonschema.exceptions import SchemaError
 
 from camel.functions import OpenAIFunction
 
@@ -156,3 +157,50 @@ def test_get_set_function_name():
 
     add.set_function_name("new_add")
     assert add.get_function_name() == "new_add"
+
+
+def test_get_set_function_description():
+    add = OpenAIFunction(add_with_doc)
+    initial_description = add.get_function_description()
+    assert initial_description is not None
+
+    new_description = "New description for adding numbers."
+    add.set_function_description(new_description)
+    assert add.get_function_description() == new_description
+
+
+def test_get_set_parameter():
+    add = OpenAIFunction(add_with_doc)
+    initial_param_schema = add.get_parameter("a")
+    assert initial_param_schema is not None
+
+    new_param_schema = {"type": "integer", "description": "New first number"}
+    add.set_parameter("a", new_param_schema)
+    assert add.get_parameter("a") == new_param_schema
+
+    with pytest.raises(KeyError):
+        add.get_parameter("non_existing_param")
+
+
+def test_parameters_getter_setter():
+    add = OpenAIFunction(add_with_doc)
+    initial_params = add.parameters
+    assert initial_params is not None
+
+    new_params = {
+        "a": {
+            "type": "integer",
+            "description": "New first number"
+        },
+        "b": {
+            "type": "integer",
+            "description": "New second number"
+        }
+    }
+    add.parameters = new_params
+    assert add.parameters == new_params
+
+    # Test setting invalid parameter schema
+    with pytest.raises(SchemaError):
+        invalid_params = {1, 2, 3}
+        add.parameters = invalid_params
