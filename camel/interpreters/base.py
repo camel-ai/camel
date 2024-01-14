@@ -20,8 +20,7 @@ class BaseInterpreter(ABC):
 
     @abstractmethod
     def run(self, code: str, code_type: str) -> str:
-        r"""
-        Executes the given code based on its type.
+        r"""Executes the given code based on its type.
 
         Args:
             code (str): The code to be executed.
