@@ -14,7 +14,7 @@
 import inspect
 from typing import Any, Callable, Dict, Optional, Set, TypeVar, Union
 
-from camel.interpreters import SubprocessInterpreter
+from camel.interpreters import BaseInterpreter, SubprocessInterpreter
 from camel.types import RoleType
 from camel.utils import get_system_information
 
@@ -164,12 +164,21 @@ class CodePrompt(TextPrompt):
 
     def execute(
         self,
-        require_confirm: bool = True,
+        interpreter: Optional[BaseInterpreter] = None,
+        **kwargs: Any,
     ) -> str:
-        r"""Executes the code string by a given python interpreter.
+        r"""Executes the code string using the provided interpreter.
+
+        This method runs a code string through either a specified interpreter
+        or a default one. It supports additional keyword arguments for
+        flexibility.
+
         Args:
-            require_confirm (bool, optional): If True, prompt user before
-                running code strings for security. (default: :obj:`True`)
+            interpreter (Optional[BaseInterpreter]): The interpreter instance
+                to use for execution. If `None`, a default interpreter is used.
+                (default: :obj:`None`)
+            **kwargs: Additional keyword arguments passed to the interpreter to
+                run the code.
 
         Returns:
             str: The result of the code execution. If the execution fails, this
@@ -180,8 +189,11 @@ class CodePrompt(TextPrompt):
             InterpreterError: If the code execution encounters errors that
                 could be resolved by modifying or regenerating the code.
     """
-        execution_res = SubprocessInterpreter(
-            require_confirm=require_confirm).run(self, self._code_type)
+        if interpreter is None:
+            execution_res = SubprocessInterpreter().run(
+                self, self._code_type, **kwargs)
+        else:
+            execution_res = interpreter.run(self, self._code_type, **kwargs)
         return execution_res
 
 

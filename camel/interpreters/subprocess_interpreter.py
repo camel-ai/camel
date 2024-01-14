@@ -99,11 +99,11 @@ class SubprocessInterpreter(BaseInterpreter):
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE, text=True)
         stdout, stderr = proc.communicate()
-        if self.print_stdout:
+        if self.print_stdout and stdout:
             print("======stdout======\n")
             print(Fore.GREEN + stdout + Fore.RESET + "\n")
             print("==================\n")
-        if self.print_stderr:
+        if self.print_stderr and stderr:
             print("======stderr======\n")
             print(Fore.RED + stderr + Fore.RESET + "\n")
             print("==================\n")

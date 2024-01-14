@@ -136,14 +136,16 @@ def test_code_prompt_set_code_type():
     assert code_prompt.code_type == "python"
 
 
-def test_code_prompt_execute(capsys):
+def test_code_prompt_execute(monkeypatch):
+    monkeypatch.setattr('builtins.input', lambda _: 'Y')
     code_prompt = CodePrompt("a = 1\nprint('Hello, World!')",
                              code_type="python")
-    result = code_prompt.execute(require_confirm=False)
+    result = code_prompt.execute()
     assert result == "Hello, World!\n"
 
 
-def test_code_prompt_execute_error():
+def test_code_prompt_execute_error(monkeypatch):
+    monkeypatch.setattr('builtins.input', lambda _: "Y")
     code_prompt = CodePrompt("print('Hello, World!'", code_type="python")
-    result = code_prompt.execute(require_confirm=False)
+    result = code_prompt.execute()
     assert "SyntaxError:" in result
