@@ -21,11 +21,17 @@ from camel.utils import get_openai_tool_schema
 
 def test_get_openai_tool_schema():
 
-    def test_all_parameters(any_para, str_para: str, int_para: int,
-                            list_para: List[int], float_para: float,
-                            datatime_para: datetime, *args,
-                            default_enum_para: RoleType = RoleType.CRITIC,
-                            **kwargs):
+    def test_all_parameters(
+        any_para,
+        str_para: str,
+        int_para: int,
+        list_para: List[int],
+        float_para: float,
+        datatime_para: datetime,
+        *args,
+        default_enum_para: RoleType = RoleType.CRITIC,
+        **kwargs,
+    ):
         """
         A function to test all parameter type.
         The parameters will be provided by user.
@@ -166,15 +172,28 @@ def test_different_docstring_style():
         """
         return a * b
 
-    expect_res = json.loads("""{"type": "function",
-    "function": {"name": "mul",
-    "description": "Multiply two integers.",
-     "parameters": {"properties":
-     {"a": {"type": "integer",
-     "description": "The multiplier in the multiplication."},
-     "b": {"type": "integer",
-     "description": "The multiplicand in the multiplication."}},
-     "required": ["a", "b"], "type": "object"}}}""")
+    expect_res = json.loads("""{
+        "type": "function",
+        "function": {
+            "name": "mul",
+            "description": "Multiply two integers.",
+            "parameters": {
+                "properties": {
+                    "a": {
+                        "type": "integer",
+                        "description": "The multiplier in the multiplication."
+                    },
+                    "b": {
+                        "type": "integer",
+                        "description":
+                        "The multiplicand in the multiplication."
+                    }
+                },
+                "required": ["a", "b"],
+                "type": "object"
+            }
+        }
+    }""")
     rest_style_schema = get_openai_tool_schema(rest_style)
     rest_style_schema["function"]["name"] = "mul"
     google_style_schema = get_openai_tool_schema(google_style)
