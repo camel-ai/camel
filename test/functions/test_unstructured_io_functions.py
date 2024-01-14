@@ -84,7 +84,8 @@ def test_extract_data_from_text(unstructured_instance: UnstructuredModules):
     test_extract_type = "invalid_extracting_option"
     with pytest.raises(ValueError):
         unstructured_instance.extract_data_from_text(
-            text=test_email_text, extract_type=test_extract_type)
+            text=test_email_text,
+            extract_type=test_extract_type)  # type: ignore
 
 
 # Test the stage_elements method
@@ -120,8 +121,8 @@ def test_stage_elements_for_csv(unstructured_instance: UnstructuredModules):
     # Test with an invalid stage option (should raise ValueError)
     test_stage_type = "invalid_stageing_option"
     with pytest.raises(ValueError):
-        unstructured_instance.stage_elements(elements=test_elements,
-                                             stage_type=test_stage_type)
+        unstructured_instance.stage_elements(
+            elements=test_elements, stage_type=test_stage_type)  # type: ignore
 
 
 # Test the chunk_elements method
