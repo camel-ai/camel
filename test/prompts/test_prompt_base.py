@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+
 from camel.prompts.base import (
     CodePrompt,
     TextPrompt,
@@ -133,3 +134,16 @@ def test_code_prompt_set_code_type():
     code_prompt = CodePrompt("print('Hello, World!')")
     code_prompt.set_code_type("python")
     assert code_prompt.code_type == "python"
+
+
+def test_code_prompt_execute(capsys):
+    code_prompt = CodePrompt("a = 1\nprint('Hello, World!')",
+                             code_type="python")
+    result = code_prompt.execute(require_confirm=False)
+    assert result == "Hello, World!\n"
+
+
+def test_code_prompt_execute_error():
+    code_prompt = CodePrompt("print('Hello, World!'", code_type="python")
+    result = code_prompt.execute(require_confirm=False)
+    assert "SyntaxError:" in result

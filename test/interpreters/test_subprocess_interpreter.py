@@ -36,8 +36,7 @@ result = add(10, 20)
 print(result)
 """
     result = subprocess_interpreter.run(python_code, "python")
-    assert "stdout: 30\n" in result
-    assert "stderr: " in result
+    assert "30\n" in result
 
 
 def test_python_stderr(subprocess_interpreter):
@@ -49,9 +48,7 @@ result = divide(10, 0)
 print(result)
 """
     result = subprocess_interpreter.run(python_code, "python")
-    assert "stdout: " in result
     assert "ZeroDivisionError: division by zero" in result
-    assert "stderr: " in result
 
 
 def test_run_bash_code(subprocess_interpreter):
@@ -66,8 +63,7 @@ result=$(add 10 20)
 echo $result
 """
     result = subprocess_interpreter.run(bash_code, "bash")
-    assert "stdout: 30\n" in result
-    assert "stderr: " in result
+    assert "30\n" in result
 
 
 def test_bash_stderr(subprocess_interpreter):
@@ -77,7 +73,6 @@ def test_bash_stderr(subprocess_interpreter):
 echo $(undefined_command)
 """
     result = subprocess_interpreter.run(bash_code, "bash")
-    assert "stdout: " in result
     assert "stderr: " in result
     assert "undefined_command: command not found" in result
 
@@ -114,5 +109,4 @@ def test_require_confirm(subprocess_interpreter, monkeypatch):
 
     # No error should be raised when user inputs 'y'
     result = subprocess_interpreter.run(python_code, "python")
-    assert "stdout: Hello\n" in result
-    assert "stderr: " in result
+    assert "Hello\n" in result

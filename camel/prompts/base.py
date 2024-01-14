@@ -14,6 +14,7 @@
 import inspect
 from typing import Any, Callable, Dict, Optional, Set, TypeVar, Union
 
+from camel.interpreters import SubprocessInterpreter
 from camel.types import RoleType
 
 T = TypeVar('T')
@@ -159,6 +160,28 @@ class CodePrompt(TextPrompt):
             code_type (str): The type of code.
         """
         self._code_type = code_type
+
+    def execute(
+        self,
+        require_confirm: bool = True,
+    ) -> str:
+        r"""Executes the code string by a given python interpreter.
+        Args:
+            require_confirm (bool, optional): If True, prompt user before
+                running code strings for security. (default: :obj:`True`)
+
+        Returns:
+            str: The result of the code execution. If the execution fails, this
+                should include sufficient information to diagnose and correct
+                the issue.
+
+        Raises:
+            InterpreterError: If the code execution encounters errors that
+                could be resolved by modifying or regenerating the code.
+    """
+        execution_res = SubprocessInterpreter(
+            require_confirm=require_confirm).run(self, self._code_type)
+        return execution_res
 
 
 # flake8: noqa :E501
