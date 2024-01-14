@@ -16,6 +16,7 @@ from typing import Any, Callable, Dict, Optional, Set, TypeVar, Union
 
 from camel.interpreters import SubprocessInterpreter
 from camel.types import RoleType
+from camel.utils import get_system_information
 
 T = TypeVar('T')
 
@@ -189,22 +190,24 @@ class TextPromptDict(Dict[Any, TextPrompt]):
     r"""A dictionary class that maps from key to :obj:`TextPrompt` object.
     """
     EMBODIMENT_PROMPT = TextPrompt(
+        "System information :" +
+        "\n".join(f"{key}: {value}"
+                  for key, value in get_system_information().items()) + "\n" +
         """You are the physical embodiment of the {role} who is working on solving a task: {task}.
 You can do things in the physical world including browsing the Internet, reading documents, drawing images, creating videos, executing code and so on.
 Your job is to perform the physical actions necessary to interact with the physical world.
 You will receive thoughts from the {role} and you will need to perform the actions described in the thoughts.
-You can write a series of simple commands in Python to act.
-You can perform a set of actions by calling the available Python functions.
+You can write a series of simple commands in to act.
+You can perform a set of actions by calling the available functions.
 You should perform actions based on the descriptions of the functions.
 
-Here is your action space:
+Here is your action space but it is not limited:
 {action_space}
 
-You should only perform actions in the action space.
 You can perform multiple actions.
 You can perform actions in any order.
-First, explain the actions you will perform and your reasons, then write Python code to implement your actions.
-If you decide to perform actions, you must write Python code to implement the actions.
+First, explain the actions you will perform and your reasons, then write code to implement your actions.
+If you decide to perform actions, you must write code to implement the actions.
 You may print intermediate results if necessary.""")
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:

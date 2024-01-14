@@ -41,17 +41,17 @@ class SubprocessInterpreter(BaseInterpreter):
             executed code. (default: :obj:`True`)
     """
 
-    _CODE_EXECUTE_CMD = {
+    _CODE_EXECUTE_CMD_MAPPING = {
         "python": "python {file_name}",
         "bash": "bash {file_name}",
     }
 
-    _CODE_EXTENSION = {
+    _CODE_EXTENSION_MAPPING = {
         "python": "py",
         "bash": "sh",
     }
 
-    _CODE_TYPE = {
+    _CODE_TYPE_MAPPING = {
         "python": "python",
         "py3": "python",
         "python3": "python",
@@ -94,8 +94,8 @@ class SubprocessInterpreter(BaseInterpreter):
         if not file.is_file():
             raise RuntimeError(f"{file} is not a file.")
         code_type = self._check_code_type(code_type)
-        cmd = shlex.split(
-            self._CODE_EXECUTE_CMD[code_type].format(file_name=str(file)))
+        cmd = shlex.split(self._CODE_EXECUTE_CMD_MAPPING[code_type].format(
+            file_name=str(file)))
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE, text=True)
         stdout, stderr = proc.communicate()
@@ -143,9 +143,12 @@ class SubprocessInterpreter(BaseInterpreter):
                 if choice in ["y", "yes", "ye", ""]:
                     break
                 elif choice in ["no", "n"]:
-                    raise InterpreterError("User does not run the code")
+                    raise InterpreterError(
+                        "Execution halted: User opted not to run the code. "
+                        "This choice stops the current operation and any "
+                        "further code execution.")
         temp_file_path = self._create_temp_file(
-            code=code, extension=self._CODE_EXTENSION[code_type])
+            code=code, extension=self._CODE_EXTENSION_MAPPING[code_type])
 
         result = self.run_file(temp_file_path, code_type)
 
@@ -160,16 +163,16 @@ class SubprocessInterpreter(BaseInterpreter):
         return Path(name)
 
     def _check_code_type(self, code_type: str) -> str:
-        if code_type not in self._CODE_TYPE:
+        if code_type not in self._CODE_TYPE_MAPPING:
             raise InterpreterError(
                 f"Unsupported code type {code_type}. Currently "
                 f"`{self.__class__.__name__}` only supports "
-                f"{', '.join(self._CODE_EXTENSION.keys())}.")
-        return self._CODE_TYPE[code_type]
+                f"{', '.join(self._CODE_EXTENSION_MAPPING.keys())}.")
+        return self._CODE_TYPE_MAPPING[code_type]
 
     def supported_code_types(self) -> List[str]:
         r"""Provides supported code types by the interpreter."""
-        return list(self._CODE_EXTENSION.keys())
+        return list(self._CODE_EXTENSION_MAPPING.keys())
 
     def update_action_space(self, action_space: Dict[str, Any]) -> None:
         r"""Updates action space for *python* interpreter"""

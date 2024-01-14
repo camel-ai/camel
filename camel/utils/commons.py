@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
+import platform
 import re
 import socket
 import time
@@ -178,3 +179,22 @@ def check_server_running(server_url: str) -> bool:
 
     # if the port is open, the result should be 0.
     return result == 0
+
+
+def get_system_information():
+    r"""Gathers information about the operating system.
+
+    Returns:
+        dict: A dictionary containing various pieces of OS information.
+    """
+    sys_info = {
+        "OS Name": os.name,
+        "System": platform.system(),
+        "Release": platform.release(),
+        "Version": platform.version(),
+        "Machine": platform.machine(),
+        "Processor": platform.processor(),
+        "Platform": platform.platform(),
+    }
+
+    return sys_info

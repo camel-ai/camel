@@ -23,17 +23,21 @@ def main():
     meta_dict = dict(role=role_name, task="Programming")
     sys_msg = SystemMessageGenerator().from_dict(
         meta_dict=meta_dict,
-        role_tuple=(role_name, RoleType.ASSISTANT),
+        role_tuple=(role_name, RoleType.EMBODIMENT),
     )
     embodied_agent = EmbodiedAgent(
         sys_msg,
         verbose=True,
     )
+    print(embodied_agent.system_message.content)
     user_msg = BaseMessage.make_user_message(
         role_name=role_name,
-        content=("Write a bash script to install numpy, "
-                 "then write a python script to compute "
-                 "the dot product of [2,3] and [4,5] and print the result."),
+        content=(
+            "Write a bash script to install numpy, "
+            "then write a python script to compute "
+            "the dot product of [6.75,3] and [4,5] and print the result, "
+            "then write a script to open a browser and search today's weather."
+        ),
     )
     response = embodied_agent.step(user_msg)
     print(response.msg.content)

@@ -27,18 +27,18 @@ def main():
     sys_msg = SystemMessageGenerator().from_dict(
         meta_dict=meta_dict,
         role_tuple=(f"{role_name}'s Embodiment", RoleType.EMBODIMENT))
-    action_space = [
+    tool_agents = [
         HuggingFaceToolAgent(
             'hugging_face_tool_agent',
             model_type=ModelType.GPT_4.value,
             remote=True,
         )
     ]
-    action_space: List[BaseToolAgent]
+    tool_agents: List[BaseToolAgent]
     embodied_agent = EmbodiedAgent(
         sys_msg,
         verbose=True,
-        action_space=action_space,
+        tool_agents=tool_agents,
     )
     user_msg = BaseMessage.make_user_message(
         role_name=role_name,

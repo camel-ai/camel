@@ -107,6 +107,17 @@ class EmbodiedAgent(ChatAgent):
         else:
             return ""
 
+    def get_tool_agent_names(self) -> List[str]:
+        r"""Returns the names of tool agents.
+
+        Returns:
+            List[str]: The names of tool agents.
+        """
+        if self.tool_agents is not None:
+            return [tool.name for tool in self.tool_agents]
+        else:
+            return []
+
     def step(
         self,
         input_message: BaseMessage,

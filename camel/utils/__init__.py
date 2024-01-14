@@ -19,6 +19,7 @@ from .commons import (
     download_tasks,
     get_task_list,
     check_server_running,
+    get_system_information,
 )
 from .token_counting import (
     get_model_encoding,
@@ -40,4 +41,5 @@ __all__ = [
     'BaseTokenCounter',
     'OpenAITokenCounter',
     'OpenSourceTokenCounter',
+    'get_system_information',
 ]
