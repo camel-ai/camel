@@ -19,7 +19,7 @@ from camel.types import ModelType
 
 
 def main(model_type=None,
-         model_type_for_structure_output=ModelType.GPT_4_TURBO,
+         model_type_for_structure_output=ModelType.GPT_3_5_TURBO,
          chat_turn_limit=50, role_playing_output_tamplate=None) -> None:
     if role_playing_output_tamplate is None:
         role_playing_output_tamplate = """Lemma <NUM_1>:
