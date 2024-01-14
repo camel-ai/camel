@@ -88,8 +88,8 @@ Proof by Lemmas:
                 or "CAMEL_TASK_DONE" in assistant_response.msg.content):
             insights_instruction = (
                 "The CONTEXT TEXT is the steps to resolve " +
-                "the TASK. The INSIGHTs should come solely" +
-                "from the actions/steps.")
+                "the TASK. The INSIGHTS should come solely " +
+                "from the assistant's solutions and actions.")
             insights = \
                 insight_agent.run(context_text=assistant_msg_record,
                                   insights_instruction=insights_instruction)
