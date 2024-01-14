@@ -102,7 +102,7 @@ def test_require_confirm(subprocess_interpreter, monkeypatch):
 
     with pytest.raises(InterpreterError) as exc_info:
         subprocess_interpreter.run(python_code, "python")
-    assert "User does not run the code" in str(exc_info.value)
+    assert "Execution halted" in str(exc_info.value)
 
     # Simulate user input 'y' for yes
     monkeypatch.setattr('builtins.input', lambda _: 'y')
