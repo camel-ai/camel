@@ -46,19 +46,19 @@ def get_weather_data(city: str, temp_units: str = 'kelvin',
     The function interacts with the OpenWeatherMap API to retrieve the data.
 
     Args:
-        city (string): The name of the city for which the weather information
+        city (str): The name of the city for which the weather information
             is desired. Format "City, CountryCode" (e.g., "Paris, FR"
             for Paris, France). If the country code is not provided,
             the API will search for the city in all countries, which
             may yield incorrect results if multiple cities with the
             same name exist.
-        temp_units (string): Units for temperature. Options: 'kelvin',
+        temp_units (str): Units for temperature. Options: 'kelvin',
             'celsius', 'fahrenheit'. (default: :obj:`kelvin`)
-        wind_units (string): Units for wind speed. Options: 'meters_sec',
+        wind_units (str): Units for wind speed. Options: 'meters_sec',
             'miles_hour', 'knots', 'beaufort'. (default: :obj:`meters_sec`)
-        visibility_units (string): Units for visibility distance. Options:
+        visibility_units (str): Units for visibility distance. Options:
             'meters', 'miles'. (default: :obj:`meters`)
-        time_units (string): Format for sunrise and sunset times. Options:
+        time_units (str): Format for sunrise and sunset times. Options:
             'unix', 'iso', 'date'. (default: :obj:`unix`)
 
     Returns:
