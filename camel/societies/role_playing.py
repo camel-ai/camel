@@ -352,13 +352,15 @@ class RolePlaying:
 
     def init_chat(self, first_msg: Union[str, None] = None) -> BaseMessage:
         r"""Initializes the chat by resetting both of the assistant and user
-        agents. Returns the assistant's introductory message and the
-        user's response messages.
+        agents. Returns the assistant's introductory message.
+
+        Args:
+            first_msg: User designed assistant introductory message. Will
+            be sent to user agent as the first message.
 
         Returns:
-            A tuple containing a `BaseMessage` representing the assistant's
-            introductory message, and a list of `BaseMessage` representing
-            the user's response messages.
+            A single `BaseMessage` representing the assistant's
+            introductory message.
         """
         self.assistant_agent.reset()
         self.user_agent.reset()
@@ -369,13 +371,6 @@ class RolePlaying:
         # Send the system messages again to the agents using chat messages
         assistant_msg = BaseMessage.make_assistant_message(
             role_name=self.assistant_sys_msg.role_name, content=first_msg)
-        user_msg = BaseMessage.make_user_message(
-            role_name=self.user_sys_msg.role_name,
-            content=f"{self.assistant_sys_msg.content}")
-        assistant_response = self.assistant_agent.step(user_msg)
-        if assistant_response.terminated or assistant_response.msgs is None:
-            raise ValueError(f"Assistant agent terminated unexpectedly. "
-                             f"Error info: {assistant_response.info}")
 
         return assistant_msg
 
