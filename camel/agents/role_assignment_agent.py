@@ -554,7 +554,9 @@ Definition of ASSISTANT: The assistant is the role that executes instructions gi
 
         content = msg.content
         if content.strip() == "I'm sorry, but I cannot fulfill your request.":
-            raise RuntimeError("May violate the guidelines of ChatGPT.")
+            raise RuntimeError(
+                "May violate the guidelines of the large language "
+                "model.")
 
         # Distribute the output completions into scores
         user_compatibility_scores = [
