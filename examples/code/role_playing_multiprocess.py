@@ -42,9 +42,9 @@ def init_chat(
 
     user_msg = BaseMessage.make_user_message(
         role_name=user_agent.role_name, content=f"{assistant_sys_msg.content}")
-    assistant_response = assistant_agent.step(user_msg)
+    assistant_agent.step(user_msg)
 
-    return assistant_msg, assistant_response.msgs
+    return assistant_msg
 
 
 def generate_data(language_idx: int, language_name: str, domain_idx: int,
