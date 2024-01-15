@@ -137,8 +137,8 @@ def test_role_playing_with_function():
         task_type=TaskType.AI_SOCIETY,
     )
 
-    init_assistant_msg, _ = role_playing.init_chat()
-    assistant_response, user_response = role_playing.step(init_assistant_msg)
+    input_msg = role_playing.init_chat()
+    assistant_response, user_response = role_playing.step(input_msg)
     for response in (assistant_response, user_response):
         assert isinstance(response.msgs, list)
         assert len(response.msgs) == 1
@@ -162,10 +162,10 @@ def test_role_playing_role_sequence(model_type=None):
     assistant_role_sequence = []
     user_role_sequence = []
 
-    input_assistant_msg, _ = role_playing.init_chat()
-    assistant_response, user_response = role_playing.step(input_assistant_msg)
-    input_assistant_msg = assistant_response.msg
-    assistant_response, user_response = role_playing.step(input_assistant_msg)
+    input_msg = role_playing.init_chat()
+    assistant_response, user_response = role_playing.step(input_msg)
+    input_msg = assistant_response.msg
+    assistant_response, user_response = role_playing.step(input_msg)
 
     for record in role_playing.user_agent.memory.get_context()[0]:
         user_role_sequence.append(record["role"])
@@ -176,5 +176,5 @@ def test_role_playing_role_sequence(model_type=None):
         'system', 'user', 'assistant', 'user', 'assistant'
     ]
     assert assistant_role_sequence == [
-        'system', 'user', 'user', 'assistant', 'user', 'assistant'
+        'system', 'user', 'assistant', 'user', 'assistant'
     ]

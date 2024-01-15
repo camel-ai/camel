@@ -43,11 +43,10 @@ def main(model_type=None) -> None:
     print(Fore.RED + f"Final task prompt:\n{role_play_session.task_prompt}\n")
 
     chat_turn_limit, n = 50, 0
-    input_assistant_msg, _ = role_play_session.init_chat()
+    input_msg = role_play_session.init_chat()
     while n < chat_turn_limit:
         n += 1
-        assistant_response, user_response = role_play_session.step(
-            input_assistant_msg)
+        assistant_response, user_response = role_play_session.step(input_msg)
 
         if assistant_response.terminated:
             print(Fore.GREEN +
@@ -68,7 +67,7 @@ def main(model_type=None) -> None:
         if "CAMEL_TASK_DONE" in user_response.msg.content:
             break
 
-        input_assistant_msg = assistant_response.msg
+        input_msg = assistant_response.msg
 
 
 if __name__ == "__main__":
