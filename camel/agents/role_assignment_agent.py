@@ -146,9 +146,10 @@ The tool descriptions are the context information of the potential competencies 
                                f"Error:\n{response.info}")
         msg = response.msg  # type: BaseMessage
 
-        content = msg.content
-        if content.strip() == " I'm sorry, but I cannot fulfill your request.":
-            raise RuntimeError("May violate the guidelines of ChatGPT.")
+        if "I'm sorry" in msg.content.strip():
+            raise RuntimeError("May violate the guidelines of the large "
+                               "language model."
+                               f"Response of the AI:\n{msg.content}")
 
         # Distribute the output completions into role names and descriptions
         role_names = [
@@ -168,7 +169,10 @@ The tool descriptions are the context information of the potential competencies 
 
         if len(role_names) != num_roles or len(role_descriptions) != num_roles:
             raise RuntimeError(
-                "Got None or insufficient information of roles.")
+                "Got None or insufficient information of roles.\n"
+                f"Response of the AI:\n{msg.content}\n"
+                f"Role names:{str(role_names)}\n"
+                f"Role descriptions:\n{str(role_descriptions)}")
         role_descriptions_dict = {
             role_name: description
             for role_name, description in zip(role_names, role_descriptions)
@@ -291,7 +295,7 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
         response = self.step(input_message=subtasks_generation_msg)
         self.model_type = model_type
 
-        if (response.terminated):
+        if response.terminated:
             raise RuntimeError("Role compatibility scoring failed.\n" +
                                f"Error:\n{response.info}")
         msg = response.msg  # type: BaseMessage
@@ -361,10 +365,11 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
                      or len(dependent_subtasks_list) != num_subtasks)):
             raise RuntimeError(
                 f"Got None or insufficient information of subtasks. "
+                f"Response of the AI:\n{msg.content}\n"
                 f"Length of generated subtasks: {len(subtask_descriptions)}, "
-                "length of generated dependencies: "
+                "Length of generated dependencies: "
                 f"{len(dependent_subtasks_list)}, "
-                f"length of required subtasks: {num_subtasks}")
+                f"Length of required subtasks: {num_subtasks}")
 
         return subtasks_with_dependencies_dict
 
@@ -460,7 +465,9 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
         # Initialize the graph
         G = nx.DiGraph()
         if len(oriented_graph) == 0:
-            raise RuntimeError("The graph is empty.")
+            raise RuntimeError("The graph is empty since there are no "
+                               "subtasks to be executed in the oriented "
+                               "graph.")
 
         for subtask, details in oriented_graph.items():
             for dep in details:
@@ -571,14 +578,13 @@ Definition of ASSISTANT: The assistant is the role that executes instructions gi
         ]
 
         if len(user_compatibility_scores) != len(role_names):
-            print("user_compatibility_scores: ", user_compatibility_scores)
-            raise RuntimeError("Got None or insufficient information of " +
-                               "compatibility scores as USER.")
+            raise RuntimeError("Got None or insufficient information of "
+                               "compatibility scores as USER.\n"
+                               f"Response of the AI:\n{msg.content}\n")
         if len(assistant_compatibility_scores) != len(role_names):
-            print("assistant_compatibility_scores: ",
-                  assistant_compatibility_scores)
             raise RuntimeError("Got None or insufficient information of " +
-                               "compatibility scores as ASSISTANT.")
+                               "compatibility scores as ASSISTANT."
+                               f"Response of the AI:\n{msg.content}\n")
 
         role_compatibility_scores_dict = {
             role_name: {
@@ -785,7 +791,8 @@ Retold Text:\n<BLANK>"""  # noqa: E501
                                       re.DOTALL)
 
         if category_of_responses is None or len(category_of_responses) == 0:
-            raise RuntimeError("Got None of category of responses.")
+            raise RuntimeError("Got None of category of responses."
+                               f"Response of the AI:\n{msg.content}\n")
         categories = [
             category.strip().strip('"\'')
             for category in category_of_responses[0].split(',')
@@ -794,10 +801,12 @@ Retold Text:\n<BLANK>"""  # noqa: E501
             if category not in [
                     "ASSISTANCE", "ANALYSIS", "AUXILIARY", "NON-SUBSTANTIAL"
             ]:
-                raise RuntimeError("Got invalid category of responses.")
+                raise RuntimeError("Got invalid category of responses."
+                                   f"Response of the AI:\n{msg.content}\n")
 
         if reproduced_texts is None or len(reproduced_texts) == 0:
-            raise RuntimeError("Got None of reproduced text.")
+            raise RuntimeError("Got None of reproduced text."
+                               f"Response of the AI:\n{msg.content}\n")
         reproduced_text = reproduced_texts[0].strip('\n')
 
         reproduced_text_with_category = {
