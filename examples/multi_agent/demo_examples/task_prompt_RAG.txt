@@ -1,0 +1,1 @@
+Learn the Fundamentals of Retrieval-Augmented Generation (RAG) for Industrial Applications. The subtasks begin with "Write the text ..."

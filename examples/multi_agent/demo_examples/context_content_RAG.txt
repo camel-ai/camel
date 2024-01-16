@@ -1,0 +1,26 @@
+### Task Description:
+**Learn the Fundamentals of Retrieval-Augmented Generation (RAG) for Industrial Applications**
+
+#### Context:
+- **Programming Background**: You have one year of experience in Python and machine learning.
+- **Current Knowledge of RAG**: You have heard of RAG but lack detailed understanding.
+- **Learning Objective**: Your goal is to understand RAG systems as they are used in industry, and develop the capability to innovate and improve upon them.
+- **Preferred Learning Resources**: You prefer reading documents, blogs, and written tutorials.
+
+#### Detailed Task:
+1. **Conceptual Understanding**: Start by researching the basic concepts of RAG. Look for introductory articles or blog posts that explain how RAG integrates retrieval into the generative process. Focus on understanding the key differences between RAG and traditional generative models.
+
+2. **Study Industrial Applications**: Investigate how RAG is being applied in industry. Search for case studies, white papers, or technical blog posts from companies that have implemented RAG systems. Understand the challenges they faced and the solutions they implemented.
+
+3. **Technical Deep Dive**: Delve into more technical aspects by reading official documentation or in-depth technical articles. Pay special attention to architecture, data flow, and how the retrieval component is integrated with the generative model.
+
+4. **Hands-On Practice**: Find open-source RAG projects or tutorials where you can see the code and possibly run experiments. Reproduce a basic RAG system using Python, and experiment with modifying certain aspects to better understand its workings.
+
+5. **Innovation and Improvement**: After gaining a solid understanding, brainstorm potential innovations or improvements. This could involve enhancing the retrieval mechanism, optimizing the generative process, or applying RAG to a novel domain.
+
+6. **Stay Updated**: RAG is an evolving field. Regularly check for new research papers, articles, or blog posts to stay updated with the latest advancements and discussions in the community.
+
+#### Expected Outcome:
+- A comprehensive understanding of RAG, its principles, and its industrial applications.
+- Practical experience in implementing and experimenting with RAG models.
+- The ability to conceptualize improvements or innovations in RAG systems.
