@@ -14,6 +14,7 @@
 import html
 import json
 import re
+import time
 
 from colorama import Fore
 
@@ -53,18 +54,32 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
         model_type=model_type, model_config=model_config)
 
     # Generate role with descriptions
+    time_role_with_description_0 = time.time()
     role_descriptions_dict = \
         role_assignment_agent.run_role_with_description(
             task_prompt=task_prompt, num_roles=num_roles, role_names=None,
             function_list=[])
+    time_role_with_description_1 = time.time()
+    run_time_role_with_description = int(time_role_with_description_1 -
+                                         time_role_with_description_0)
+    print_and_write_md(
+        f"Time cost of roles generation: {run_time_role_with_description} "
+        f"seconds", color=Fore.BLACK, file_path="time cost")
 
     # Split the original task into subtasks
+    time_tasks_decomposition_0 = time.time()
     subtasks_with_dependencies_dict = \
         role_assignment_agent.split_tasks(
             task_prompt=task_prompt,
             role_descriptions_dict=role_descriptions_dict,
             num_subtasks=None,
             context_text=context_text)
+    time_tasks_decomposition_1 = time.time()
+    run_time_tasks_decomposition = int(time_tasks_decomposition_1 -
+                                       time_tasks_decomposition_0)
+    print_and_write_md(
+        f"Time cost of decomposing tasks: {run_time_tasks_decomposition} "
+        f"seconds", color=Fore.BLACK, file_path="time cost")
 
     # Draw the graph of the subtasks
     oriented_graph = {}
@@ -172,6 +187,8 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
         print_and_write_md(
             f"Task of the role-playing ({subtask_id}):\n"
             f"{subtask_content}\n\n", color=Fore.RED, file_path=subtask_id)
+        print_and_write_md(f"\n{subtask_id}:\n", color=Fore.GREEN,
+                           file_path="time cost")
 
         # You can use the following code to play the role-playing game
         sys_msg_meta_dicts = [
@@ -232,6 +249,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
         input_assistant_msg, _ = role_play_session.init_chat()
         while n < chat_turn_limit:
             n += 1
+            start_time_conversation = time.time()
             try:
                 assistant_response, user_response = \
                     role_play_session.step(input_assistant_msg)
@@ -255,6 +273,12 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                     "CAMEL_TASK_DONE" in assistant_response.msg.content:
                 break
 
+            end_time_conversation = time.time()
+            run_time_conversation = int(end_time_conversation -
+                                        start_time_conversation)
+            print_and_write_md(
+                f"Time cost of conversation {n}: {run_time_conversation} "
+                f"seconds", color=Fore.BLACK, file_path="time cost")
             input_assistant_msg = assistant_response.msg
 
             assistant_msg_record += (f"--- [{n}] ---\n" +
