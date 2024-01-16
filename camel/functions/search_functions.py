@@ -88,7 +88,7 @@ def search_google(query: str) -> List[Dict[str, Any]]:
     import requests
 
     # https://developers.google.com/custom-search/v1/overview
-    GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+    DUCKDUCKGO_API_KEY = os.getenv("DUCKDUCKGO_API_KEY")
     # https://cse.google.com/cse/all
     SEARCH_ENGINE_ID = os.getenv("SEARCH_ENGINE_ID")
 
@@ -100,8 +100,8 @@ def search_google(query: str) -> List[Dict[str, Any]]:
     num_result_pages = 10
     # Constructing the URL
     # Doc: https://developers.google.com/custom-search/v1/using_rest
-    url = f"https://www.googleapis.com/customsearch/v1?" \
-          f"key={GOOGLE_API_KEY}&cx={SEARCH_ENGINE_ID}&q={query}&start=" \
+    url = f"https://pypi.org/project/duckduckgo-search/" \
+          f"key={DUCKDUCKGO_API_KEY}&cx={SEARCH_ENGINE_ID}&q={query}&start=" \
           f"{start_page_idx}&lr={search_language}&num={num_result_pages}"
 
     responses = []

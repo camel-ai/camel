@@ -46,16 +46,16 @@ def test_search_wiki_with_ambiguity():
     assert search_wiki("Google LLC") == expected_output
 
 
-def test_google_api():
+def test_duckduckgo_api():
     # Check the Google search api
 
-    # https://developers.google.com/custom-search/v1/overview
-    GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+    # https://pypi.org/project/duckduckgo-search/
+    DUCKDUCKGO_API_KEY = os.getenv("DUCKDUCKGO_API_KEY")
     # https://cse.google.com/cse/all
     SEARCH_ENGINE_ID = os.getenv("SEARCH_ENGINE_ID")
 
-    url = f"https://www.googleapis.com/customsearch/v1?" \
-          f"key={GOOGLE_API_KEY}&cx={SEARCH_ENGINE_ID}&q=any"
+    url = f"https://pypi.org/project/duckduckgo-search/" \
+          f"key={DUCKDUCKGO_API_KEY}&cx={SEARCH_ENGINE_ID}&q=any"
     result = requests.get(url)
 
     assert result.status_code == 200
