@@ -367,6 +367,7 @@ def get_insights_from_environment(subtask_id, subtask, subtask_labels,
           f"{json.dumps(retrieved_insights, indent=4)}")
 
     insights_none_pre_subtask = insight_agent.run(context_text=context_text)
+    # TODO: add the prompt for the logic chains rather than the insights
     insights_for_subtask = (
         "\n====== CURRENT STATE =====\n"
         "The snapshot and the context of the TASK is presentd in "
