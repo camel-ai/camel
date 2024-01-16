@@ -255,6 +255,8 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                     "CAMEL_TASK_DONE" in assistant_response.msg.content:
                 break
 
+            input_assistant_msg = assistant_response.msg
+
             assistant_msg_record += (f"--- [{n}] ---\n" +
                                      assistant_response.msg.content.replace(
                                          "Next request.", "").strip("\n") +
@@ -272,12 +274,16 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                   f"{user_response.msg.content}\n")
             print(Fore.GREEN + f"AI Assistant: {ai_assistant_role}\n"
                   f"{assistant_response.msg.content}\n")
-            assistant_action = \
+            reproduced_assistant_msg_with_category = \
                 role_assignment_agent.transform_dialogue_into_text(
-                    assistant_response.msg.content)["text"]
-            print_and_write_md(assistant_action, color=Fore.BLACK)
-
-            input_assistant_msg = assistant_response.msg
+                    user_name=ai_user_role,
+                    assistant_name=ai_assistant_role,
+                    task_prompt=subtask,
+                    user_conversation=user_response.msg.content,
+                    assistant_conversation=assistant_response.msg.content)
+            reproduced_assistant_msg = \
+                reproduced_assistant_msg_with_category["text"]
+            print_and_write_md(reproduced_assistant_msg, color=Fore.BLACK)
 
         insights_instruction = ("The CONTEXT TEXT is the steps to resolve " +
                                 "the TASK. The INSIGHTs should come solely" +
