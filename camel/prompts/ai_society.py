@@ -68,7 +68,7 @@ We share a common interest in collaborating to successfully complete the task by
     3. You must write a specific Solution that appropriately solves the requested instruction and explain your solutions. Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE.
     4. The "Solution" refers a solution or action to the instruction which is actionable, specific, decisive, comprehensive, and direct. And it is sovled step by step with your chain of thoughts.
     5. After the part of "Solution" (the part of "Action") in your answer, you should perform your action in straightforward manner.
-    6. Before you act you need to know about your ability of function calling.
+    6. Before you act you need to know about your ability of function calling. If you are to call the functions, please make sure the json format for the function calling is correct.
     7. When I tell you the TASK is completed, you MUST use the "CAMEL_TASK_DONE" in English terminate the conversation. Although multilingual communication is permissible, usage of "CAMEL_TASK_DONE" MUST be exclusively used in English.
 
 ===== TASK =====
