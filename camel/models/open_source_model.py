@@ -13,6 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Dict, List, Optional, Union
 
+from dotenv import load_dotenv
 from openai import OpenAI, Stream
 
 from camel.configs import OPENAI_API_PARAMS
@@ -39,6 +40,9 @@ class OpenSourceModel(BaseModelBackend):
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into :obj:`openai.ChatCompletion.create()`.
         """
+        # Load env vars from .env file, such as OPENAI_API_KEY
+        load_dotenv()
+
         super().__init__(model_type, model_config_dict)
         self._token_counter: Optional[BaseTokenCounter] = None
 

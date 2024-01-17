@@ -13,6 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, List
 
+from dotenv import load_dotenv
 from openai import OpenAI
 
 from camel.embeddings import BaseEmbedding
@@ -35,6 +36,10 @@ class OpenAIEmbedding(BaseEmbedding[str]):
         self,
         model_type: EmbeddingModelType = EmbeddingModelType.ADA_2,
     ) -> None:
+
+        # Load env vars from .env file, such as OPENAI_API_KEY
+        load_dotenv()
+
         if not model_type.is_openai:
             raise ValueError("Invalid OpenAI embedding model type.")
         self.model_type = model_type
