@@ -37,6 +37,7 @@ protobuf = "^4"
 pathlib = "^1.0.1"   
 docstring-parser = "^0.15"
 pydantic = ">=1,<3"
+python-dotenv = "^1.0.0"
 
 # huggingface-agent
 transformers = { version = "^4", optional = true }
