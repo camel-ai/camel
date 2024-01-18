@@ -148,7 +148,7 @@ The tool descriptions are the context information of the potential competencies 
 
         if "I'm sorry" in msg.content.strip():
             raise RuntimeError("May violate the guidelines of the large "
-                               "language model."
+                               "language model.\n"
                                f"Response of the AI:\n{msg.content}")
 
         # Distribute the output completions into role names and descriptions
@@ -313,10 +313,6 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
                 r"Contextual Parameters of subtask \d:[\s\n](.+?)Content of "
                 r"the Input of subtask ", msg.content, re.DOTALL)
         ]
-        subtask_descriptions = [
-            desc + " " + ctx
-            for desc, ctx in zip(subtask_descriptions, subtask_contexts)
-        ]
         subtask_inputs_content = [
             ipt.replace("<", "").replace(">", "").strip('\n')
             for ipt in re.findall(
@@ -347,15 +343,16 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
         subtasks_with_dependencies_dict = {
             f"subtask {index+1}": {
                 "description": desp,
+                "context": ctx,
                 "dependencies": deps,
                 "input_tags": tags,
                 "input_content": ipt,
                 "output_standard": opt_std
             }
-            for index, (desp, deps, tags, ipt, opt_std) in enumerate(
-                zip(subtask_descriptions, dependent_subtasks_list,
-                    subtask_inputs_tags, subtask_inputs_content,
-                    subtask_outputs_standard))
+            for index, (desp, ctx, deps, tags, ipt, opt_std) in enumerate(
+                zip(subtask_descriptions, subtask_contexts,
+                    dependent_subtasks_list, subtask_inputs_tags,
+                    subtask_inputs_content, subtask_outputs_standard))
         }
 
         if len(subtasks_with_dependencies_dict) == 0:
@@ -559,11 +556,11 @@ Definition of ASSISTANT: The assistant is the role that executes instructions gi
                                f"Error:\n{response.info}")
         msg = response.msg  # type: BaseMessage
 
-        content = msg.content
-        if content.strip() == "I'm sorry, but I cannot fulfill your request.":
+        if "I'm sorry" in msg.content.strip():
             raise RuntimeError(
                 "May violate the guidelines of the large language "
-                "model.")
+                "model.\n"
+                f"Response of the AI:\n{msg.content}\n")
 
         # Distribute the output completions into scores
         user_compatibility_scores = [
