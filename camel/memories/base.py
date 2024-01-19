@@ -105,15 +105,28 @@ class BaseContextCreator(ABC):
 
 
 class AgentMemory(MemoryBlock, ABC):
+    r"""Represents a specialized form of `MemoryBlock`, uniquely designed for
+    direct integration with an agent. Two key abstract functions, "retrieve"
+    and "get_context_creator", are used for generating model context based on
+    the memory records stored within the AgentMemory.
+    """
 
     @abstractmethod
     def retrieve(self) -> List[ContextRecord]:
-        r""""""
+        r"""Get a record list from the memory for creating model context.
+
+        Returns:
+            List[ContextRecord]: A record list for creating model context.
+        """
         pass
 
     @abstractmethod
     def get_context_creator(self) -> BaseContextCreator:
-        r"""Gets context creator"""
+        r"""Gets context creator.
+
+        Returns:
+            BaseContextCreator: A model context creator.
+        """
         pass
 
     def get_context(self) -> Tuple[List[OpenAIMessage], int]:

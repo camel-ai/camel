@@ -26,9 +26,7 @@ from camel.types import OpenAIBackendRole
 
 
 class ChatHistoryMemory(AgentMemory):
-    r"""Every agent memory should incorporate at least one instance of
-    a subclass derived from :obj:`MemoryBlock`.
-    """
+    r""""""
 
     def __init__(
         self,
