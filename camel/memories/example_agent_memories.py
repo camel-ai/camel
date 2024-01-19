@@ -14,21 +14,14 @@
 
 from typing import List, Optional
 
-from colorama import Fore
-from unstructured.chunking.title import chunk_by_title
-from unstructured.partition.pdf import partition_pdf
-
-from camel.embeddings import BaseEmbedding
 from camel.memories import (
     AgentMemory,
+    BaseContextCreator,
     ContextRecord,
     MemoryRecord,
-    BaseContextCreator,
 )
-from camel.memories.blocks.chat_history_block import ChatHistoryBlock
-from camel.memories.blocks.vectordb_block import VectorDBBlock
-from camel.storages import BaseKeyValueStorage, BaseVectorStorage, VectorRecord
-from camel.storages.vectordb_storages import BaseVectorStorage, VectorRecord
+from camel.memories.blocks import ChatHistoryBlock, VectorDBBlock
+from camel.storages import BaseKeyValueStorage, BaseVectorStorage
 from camel.types import OpenAIBackendRole
 
 
@@ -90,77 +83,3 @@ class VectorDBMemory(AgentMemory):
 
     def get_context_creator(self) -> BaseContextCreator:
         return self._context_creator
-
-
-# flake8: noqa :E501
-_RAG_PROMPT = """Given context about the subject, answer the question based on the context provided to the best of your ability.
-Context: {context}
-Question:
-{question}
-Answer:"""
-
-
-class RAGmemory(AgentMemory):
-
-    def __init__(
-        self,
-        context_creator: BaseContextCreator,
-        chat_hisoty_memory: ChatHistoryMemory,
-        vector_storage: BaseVectorStorage,
-        embedding: BaseEmbedding[str],
-        files,
-    ) -> None:
-        self._context_creator = context_creator
-        self.chat_history_memory = chat_hisoty_memory
-        self.vector_storage = vector_storage
-        self.embedding = embedding
-        if files is not None:
-            self.load_files(files)
-        self._question_topic = ""
-
-    def get_context_creator(self) -> BaseContextCreator:
-        return self._context_creator
-
-    def load_files(self, files: List[str]) -> None:
-        for file in files:
-            elements = partition_pdf(file)
-            chunks = chunk_by_title(
-                elements,
-                new_after_n_chars=1000,
-                max_characters=2000,
-            )
-            texts = [chunk.text for chunk in chunks]
-            embeddings = self.embedding.embed_list(texts)
-            records = [
-                VectorRecord(vector=embeddings[i], payload={"text": texts[i]})
-                for i in range(len(texts))
-            ]
-
-            self.vector_storage.add(records)
-
-    def write_records(self, records: List[MemoryRecord]) -> None:
-        for i in range(len(records)):
-            record = records[i]
-            if record.role_at_backend == OpenAIBackendRole.USER:
-                self._question_topic += "\n" + record.message.content
-                dict_record = record.to_dict()
-                dict_record["message"]["content"] = self._formulate_context(
-                    record.message.content)
-                records[i] = MemoryRecord.from_dict(dict_record)
-                print(Fore.RED + records[i].message.content + Fore.RESET)
-        self.chat_history_memory.write_records(records)
-
-    def _formulate_context(self, question) -> str:
-        query_embedding = self.embedding.embed(self._question_topic)
-        results = self.vector_storage.simple_query(query_embedding, 5)
-        content = [result["text"] for result in results]
-        for c in content:
-            print(Fore.BLUE + c + Fore.RESET)
-            print("====================")
-        return _RAG_PROMPT.format(context=content, question=question)
-
-    def retrieve(self) -> List[ContextRecord]:
-        return self.chat_history_memory.retrieve()
-
-    def clear(self) -> None:
-        self.chat_history_memory.clear()
