@@ -17,7 +17,7 @@ from typing import List, Optional
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
 from camel.memories import (
     AgentMemory,
-    BaseMemory,
+    MemoryBlock,
     ChatHistoryMemory,
     ContextRecord,
     MemoryRecord,
@@ -32,8 +32,8 @@ from camel.storages.vectordb_storages import (
 from camel.types import OpenAIBackendRole, ModelType
 
 
-class VectorDBMemory(BaseMemory):
-    r"""An implementation of the :obj:`BaseMemory` abstract base class for
+class VectorDBMemory(MemoryBlock):
+    r"""An implementation of the :obj:`MemoryBlock` abstract base class for
     maintaining and retrieving information using vector embeddings within a
     vector database.
 

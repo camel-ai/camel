@@ -20,14 +20,14 @@ from camel.memories.context_creators import BaseContextCreator
 from camel.messages import OpenAIMessage
 
 
-class BaseMemory(ABC):
+class MemoryBlock(ABC):
     r"""An abstract base class that defines the foundational operations for a
     memory component within an agent's memory system.
 
     The memory component is tasked with functions like saving chat histories,
     fetching or storing information in vector databases, and other related
     operations. Every memory system should incorporate at least one instance of
-    a subclass derived from :obj:`BaseMemory`.
+    a subclass derived from :obj:`MemoryBlock`.
 
     These instances, known as "memories", typically communicate using the
     :obj:`MemoryRecord` object. Usually, a memory has at least one "storage"
@@ -66,7 +66,7 @@ class BaseMemory(ABC):
         pass
 
 
-class AgentMemory(BaseMemory, ABC):
+class AgentMemory(MemoryBlock, ABC):
 
     @abstractmethod
     def retrieve(self) -> List[ContextRecord]:

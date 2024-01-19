@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from .records import MemoryRecord, ContextRecord
-from .base import BaseMemory, AgentMemory
+from .base import MemoryBlock, AgentMemory
 from .context_creators.base import BaseContextCreator
 from .context_creators.score_based import ScoreBasedContextCreator
 from .chat_history_memory import ChatHistoryMemory, ChatHistoryAgentMemory
@@ -22,7 +22,7 @@ from .vectordb_memory import VectorDBMemory, VectorDBAgentMemory
 __all__ = [
     'MemoryRecord',
     'ContextRecord',
-    'BaseMemory',
+    'MemoryBlock',
     "AgentMemory",
     "BaseContextCreator",
     "ScoreBasedContextCreator",

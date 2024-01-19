@@ -13,14 +13,14 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import List, Optional
 
-from camel.memories import AgentMemory, BaseMemory, ContextRecord, MemoryRecord
+from camel.memories import AgentMemory, MemoryBlock, ContextRecord, MemoryRecord
 from camel.memories.context_creators import BaseContextCreator
 from camel.storages import BaseKeyValueStorage, InMemoryKeyValueStorage
 from camel.types import OpenAIBackendRole
 
 
-class ChatHistoryMemory(BaseMemory):
-    r"""An implementation of the :obj:`BaseMemory` abstract base class for
+class ChatHistoryMemory(MemoryBlock):
+    r"""An implementation of the :obj:`MemoryBlock` abstract base class for
     maintaining a record of chat histories.
 
     This memory class helps manage conversation histories with a designated
