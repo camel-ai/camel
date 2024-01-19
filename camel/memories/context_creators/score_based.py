@@ -14,8 +14,7 @@
 from dataclasses import dataclass
 from typing import List, Tuple
 
-from camel.memories import ContextRecord
-from camel.memories.context_creators import BaseContextCreator
+from camel.memories import BaseContextCreator, ContextRecord
 from camel.messages import OpenAIMessage
 from camel.utils import BaseTokenCounter
 
@@ -83,7 +82,7 @@ class ScoreBasedContextCreator(BaseContextCreator):
         uuid_set = set()
         context_units = []
         for idx, record in enumerate(records):
-            if not record.memory_record.uuid in uuid_set:
+            if record.memory_record.uuid not in uuid_set:
                 uuid_set.add(record.memory_record.uuid)
                 context_units.append(
                     _ContextUnit(

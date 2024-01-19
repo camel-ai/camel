@@ -11,7 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import List
+
+from typing import List, Optional
 
 from colorama import Fore
 from unstructured.chunking.title import chunk_by_title
@@ -20,16 +21,79 @@ from unstructured.partition.pdf import partition_pdf
 from camel.embeddings import BaseEmbedding
 from camel.memories import (
     AgentMemory,
-    ChatHistoryMemory,
     ContextRecord,
     MemoryRecord,
-    VectorDBMemory,
+    BaseContextCreator,
 )
-from camel.memories.context_creators import BaseContextCreator
-from camel.storages import BaseVectorStorage, VectorRecord
+from camel.memories.blocks.chat_history_block import ChatHistoryBlock
+from camel.memories.blocks.vectordb_block import VectorDBBlock
+from camel.storages import BaseKeyValueStorage, BaseVectorStorage, VectorRecord
+from camel.storages.vectordb_storages import BaseVectorStorage, VectorRecord
 from camel.types import OpenAIBackendRole
 
-RAG_PROMPT = """Given context about the subject, answer the question based on the context provided to the best of your ability.
+
+class ChatHistoryMemory(AgentMemory):
+    r"""Every agent memory should incorporate at least one instance of
+    a subclass derived from :obj:`MemoryBlock`.
+    """
+
+    def __init__(
+        self,
+        context_creator: BaseContextCreator,
+        storage: Optional[BaseKeyValueStorage] = None,
+        window_size: Optional[int] = None,
+    ) -> None:
+        self._context_creator = context_creator
+        self._window_size = window_size
+        self._chat_history_block = ChatHistoryBlock(storage=storage)
+
+    def retrieve(self) -> List[ContextRecord]:
+        return self._chat_history_block.retrieve(self._window_size)
+
+    def write_records(self, records: List[MemoryRecord]) -> None:
+        self._chat_history_block.write_records(records)
+
+    def get_context_creator(self) -> BaseContextCreator:
+        return self._context_creator
+
+    def clear(self) -> None:
+        return self._chat_history_block.clear()
+
+
+class VectorDBMemory(AgentMemory):
+    r""""""
+
+    def __init__(
+        self,
+        context_creator: BaseContextCreator,
+        storage: Optional[BaseVectorStorage] = None,
+        retrieve_limit=3,
+    ) -> None:
+        self._context_creator = context_creator
+        self._retrieve_limit = retrieve_limit
+        self._vectordb_block = VectorDBBlock(storage=storage)
+
+        self._current_topic: str = ""
+
+    def retrieve(self) -> List[ContextRecord]:
+        return self._vectordb_block.retrieve(
+            self._current_topic,
+            limit=self._retrieve_limit,
+        )
+
+    def write_records(self, records: List[MemoryRecord]) -> None:
+        # Assume the last user input is the current topic.
+        for record in records:
+            if record.role_at_backend == OpenAIBackendRole.USER:
+                self._current_topic = record.message.content
+        self._vectordb_block.write_records(records)
+
+    def get_context_creator(self) -> BaseContextCreator:
+        return self._context_creator
+
+
+# flake8: noqa :E501
+_RAG_PROMPT = """Given context about the subject, answer the question based on the context provided to the best of your ability.
 Context: {context}
 Question:
 {question}
@@ -93,7 +157,7 @@ class RAGmemory(AgentMemory):
         for c in content:
             print(Fore.BLUE + c + Fore.RESET)
             print("====================")
-        return RAG_PROMPT.format(context=content, question=question)
+        return _RAG_PROMPT.format(context=content, question=question)
 
     def retrieve(self) -> List[ContextRecord]:
         return self.chat_history_memory.retrieve()

@@ -11,25 +11,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import warnings
 from typing import List, Optional
 
-from camel.memories import (
-    AgentMemory,
-    ContextRecord,
-    MemoryBlock,
-    MemoryRecord,
-)
-from camel.memories.context_creators import BaseContextCreator
+from camel.memories import ContextRecord, MemoryBlock, MemoryRecord
 from camel.storages import BaseKeyValueStorage, InMemoryKeyValueStorage
 from camel.types import OpenAIBackendRole
 
 
-class ChatHistoryMemory(MemoryBlock):
+class ChatHistoryBlock(MemoryBlock):
     r"""An implementation of the :obj:`MemoryBlock` abstract base class for
     maintaining a record of chat histories.
 
-    This memory class helps manage conversation histories with a designated
-    storage mechanism, either provided by the user or using a default
+    This memory block helps manage conversation histories with a key-value
+    storage backend, either provided by the user or using a default
     in-memory storage. It offers a windowed approach to retrieving chat
     histories, allowing users to specify how many recent messages they'd
     like to fetch.
@@ -39,8 +34,6 @@ class ChatHistoryMemory(MemoryBlock):
     the chat history.
 
     Args:
-        context_creator (BaseContextCreator): A context creator contianing
-            the context limit and the message pruning strategy.
         storage (BaseKeyValueStorage, optional): A storage mechanism for
             storing chat history. If `None`, an :obj:`InMemoryKeyValueStorage`
             will be used. (default: :obj:`None`)
@@ -51,9 +44,6 @@ class ChatHistoryMemory(MemoryBlock):
         storage: Optional[BaseKeyValueStorage] = None,
     ) -> None:
         self.storage = storage or InMemoryKeyValueStorage()
-
-    def get_context_creator(self) -> BaseContextCreator:
-        return self._context_creator
 
     def retrieve(
         self,
@@ -76,7 +66,8 @@ class ChatHistoryMemory(MemoryBlock):
         """
         record_dicts = self.storage.load()
         if len(record_dicts) == 0:
-            raise ValueError("The `ChatHistoryMemory` is empty.")
+            warnings.warn("The `ChatHistoryMemory` is empty.")
+            return list()
 
         chat_records: List[MemoryRecord] = []
         truncate_idx = -window_size if window_size is not None else 0
@@ -116,23 +107,3 @@ class ChatHistoryMemory(MemoryBlock):
         r"""Clears all chat messages from the memory.
         """
         self.storage.clear()
-
-
-class ChatHistoryAgentMemory(ChatHistoryMemory, AgentMemory):
-    r""""""
-
-    def __init__(
-        self,
-        context_creator: BaseContextCreator,
-        storage: Optional[BaseKeyValueStorage] = None,
-        window_size: Optional[int] = None,
-    ) -> None:
-        self._context_creator = context_creator
-        self.window_size = window_size
-        super().__init__(storage=storage)
-
-    def retrieve(self) -> List[ContextRecord]:
-        return super().retrieve(self.window_size)
-
-    def get_context_creator(self) -> BaseContextCreator:
-        return self._context_creator

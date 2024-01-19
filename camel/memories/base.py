@@ -16,30 +16,16 @@ from abc import ABC, abstractmethod
 from typing import List, Tuple
 
 from camel.memories import ContextRecord, MemoryRecord
-from camel.memories.context_creators import BaseContextCreator
 from camel.messages import OpenAIMessage
+from camel.utils import BaseTokenCounter
 
 
 class MemoryBlock(ABC):
-    r"""An abstract base class that defines the foundational operations for a
-    memory component within an agent's memory system.
-
-    The memory component is tasked with functions like saving chat histories,
-    fetching or storing information in vector databases, and other related
-    operations. Every memory system should incorporate at least one instance of
-    a subclass derived from :obj:`MemoryBlock`.
-
-    These instances, known as "memories", typically communicate using the
-    :obj:`MemoryRecord` object. Usually, a memory has at least one "storage"
-    mechanism, allowing it to interface with various storage systems, such as
-    disks or vector databases. Additionally, some memories might embed other
-    memory instances, enabling them to function as a high-level controller
-    within the broader memory system.
-
-    By default, when executing the :obj:`step()` method, an agent retrieves
-    messages from its designated memory and combines them with an incoming
-    message for input to the agent. Subsequently, both the response message and
-    the incoming messages are archived back into the memory.
+    r"""An abstract class serves as the fundamental component within the agent
+    memory system. This class is equipped with "write" and "clear" functions.
+    However, it intentionally does not define a retrieval interface, as the
+    structure of the data to be retrieved may vary in diffrent types of
+    memory blocks.
     """
 
     @abstractmethod
@@ -61,7 +47,59 @@ class MemoryBlock(ABC):
 
     @abstractmethod
     def clear(self) -> None:
-        r"""Clears all messages from the memory.
+        r"""Clears all messages from the memory."""
+        pass
+
+
+class BaseContextCreator(ABC):
+    r"""An abstract base class defining the interface for context creation
+    strategies.
+
+    This class provides a foundational structure for different strategies to
+    generate conversational context from a list of context records. The
+    primary goal is to create a context that is aligned with a specified token
+    count limit, allowing subclasses to define their specific approach.
+
+    Subclasses should implement the `token_counter`, `token_limit`, and
+    `create_context` methods to provide specific context creation logic.
+
+    Attributes:
+        token_counter (BaseTokenCounter): A token counter instance responsible
+            for counting tokens in a message.
+        token_limit (int): The maximum number of tokens allowed in the
+            generated context.
+    """
+
+    @property
+    @abstractmethod
+    def token_counter(self) -> BaseTokenCounter:
+        pass
+
+    @property
+    @abstractmethod
+    def token_limit(self) -> int:
+        pass
+
+    @abstractmethod
+    def create_context(
+        self,
+        records: List[ContextRecord],
+    ) -> Tuple[List[OpenAIMessage], int]:
+        r"""An abstract method to create conversational context from the chat
+        history.
+
+        Constructs the context from provided records. The specifics of how this
+        is done and how the token count is managed should be provided by
+        subclasses implementing this method. The the output messages order
+        should keep same as the input order.
+
+        Args:
+            records (List[ContextRecord]): A list of context records from
+                which to generate the context.
+
+        Returns:
+            Tuple[List[OpenAIMessage], int]: A tuple containing the constructed
+                context in OpenAIMessage format and the total token count.
         """
         pass
 
@@ -70,10 +108,12 @@ class AgentMemory(MemoryBlock, ABC):
 
     @abstractmethod
     def retrieve(self) -> List[ContextRecord]:
+        r""""""
         pass
 
     @abstractmethod
     def get_context_creator(self) -> BaseContextCreator:
+        r"""Gets context creator"""
         pass
 
     def get_context(self) -> Tuple[List[OpenAIMessage], int]:

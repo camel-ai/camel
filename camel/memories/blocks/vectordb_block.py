@@ -15,27 +15,16 @@
 from typing import List, Optional
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
-from camel.memories import (
-    AgentMemory,
-    ChatHistoryMemory,
-    ContextRecord,
-    MemoryBlock,
-    MemoryRecord,
-)
-from camel.memories.context_creators import (
-    BaseContextCreator,
-    ScoreBasedContextCreator,
-)
+from camel.memories import ContextRecord, MemoryBlock, MemoryRecord
 from camel.storages.vectordb_storages import (
     BaseVectorStorage,
     QdrantStorage,
     VectorDBQuery,
     VectorRecord,
 )
-from camel.types import ModelType, OpenAIBackendRole
 
 
-class VectorDBMemory(MemoryBlock):
+class VectorDBBlock(MemoryBlock):
     r"""An implementation of the :obj:`MemoryBlock` abstract base class for
     maintaining and retrieving information using vector embeddings within a
     vector database.
@@ -106,28 +95,3 @@ class VectorDBMemory(MemoryBlock):
     def clear(self) -> None:
         r"""Removes all records from the vector database memory."""
         self.storage.clear()
-
-
-class VectorDBAgentMemory(VectorDBMemory, AgentMemory):
-    r""""""
-
-    def __init__(
-        self,
-        context_creator: BaseContextCreator,
-        storage: Optional[BaseVectorStorage] = None,
-    ) -> None:
-        self._context_creator = context_creator
-        self._current_topic: Optional[str] = None
-        super().__init__(storage=storage)
-
-    def retrieve(self) -> List[ContextRecord]:
-        return super().retrieve(self._current_topic, limit=3)
-
-    def write_records(self, records: List[MemoryRecord]) -> None:
-        for record in records:
-            if record.role_at_backend == OpenAIBackendRole.USER:
-                self._current_topic = record.message.content
-        super().write_records(records)
-
-    def get_context_creator(self) -> BaseContextCreator:
-        return self._context_creator

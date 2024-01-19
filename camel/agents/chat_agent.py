@@ -22,8 +22,8 @@ from camel.agents import BaseAgent
 from camel.configs import BaseConfig, ChatGPTConfig
 from camel.functions import OpenAIFunction
 from camel.memories import (
+    AgentMemory,
     ChatHistoryMemory,
-    MemoryBlock,
     MemoryRecord,
     ScoreBasedContextCreator,
 )
@@ -76,7 +76,7 @@ class ChatAgent(BaseAgent):
             responses. (default :obj:`ModelType.GPT_3_5_TURBO`)
         model_config (BaseConfig, optional): Configuration options for the
             LLM model. (default: :obj:`None`)
-        memory (MemoryBlock, optional): The agent memory for managing chat
+        memory (AgentMemory, optional): The agent memory for managing chat
             messages. If `None`, a :obj:`ChatHistoryMemory` will be used.
             (default: :obj:`None`)
         message_window_size (int, optional): The maximum number of previous
@@ -100,7 +100,7 @@ class ChatAgent(BaseAgent):
         system_message: BaseMessage,
         model_type: Optional[ModelType] = None,
         model_config: Optional[BaseConfig] = None,
-        memory: Optional[MemoryBlock] = None,
+        memory: Optional[AgentMemory] = None,
         message_window_size: Optional[int] = None,
         token_limit: Optional[int] = None,
         output_language: Optional[str] = None,
@@ -132,7 +132,7 @@ class ChatAgent(BaseAgent):
             self.model_backend.token_counter,
             self.model_token_limit,
         )
-        self.memory: MemoryBlock = memory or ChatHistoryMemory(
+        self.memory: AgentMemory = memory or ChatHistoryMemory(
             context_creator, window_size=message_window_size)
 
         self.terminated: bool = False
