@@ -21,6 +21,7 @@ from functools import wraps
 from typing import Any, Callable, List, Optional, Set, TypeVar, cast
 from urllib.parse import urlparse
 
+import pydantic
 import requests
 
 from camel.types import TaskType
@@ -198,3 +199,21 @@ def get_system_information():
     }
 
     return sys_info
+
+
+def to_pascal(snake: str) -> str:
+    """Convert a snake_case string to PascalCase.
+
+    Args:
+        snake: The string to convert.
+
+    Returns:
+        The PascalCase string.
+    """
+    # This function is identical with pydantic.alias_generator.to_pascal
+    # from pydantic V2. Provide here for V1 user.
+    camel = snake.title()
+    return re.sub('([0-9A-Za-z])_(?=[0-9A-Z])', lambda m: m.group(1), camel)
+
+
+PYDANTIC_V2 = pydantic.VERSION.startswith("2.")
