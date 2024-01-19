@@ -22,8 +22,8 @@ from camel.agents import BaseAgent
 from camel.configs import BaseConfig, ChatGPTConfig
 from camel.functions import OpenAIFunction
 from camel.memories import (
-    MemoryBlock,
     ChatHistoryMemory,
+    MemoryBlock,
     MemoryRecord,
     ScoreBasedContextCreator,
 )

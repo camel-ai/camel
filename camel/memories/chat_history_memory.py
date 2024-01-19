@@ -13,7 +13,12 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import List, Optional
 
-from camel.memories import AgentMemory, MemoryBlock, ContextRecord, MemoryRecord
+from camel.memories import (
+    AgentMemory,
+    ContextRecord,
+    MemoryBlock,
+    MemoryRecord,
+)
 from camel.memories.context_creators import BaseContextCreator
 from camel.storages import BaseKeyValueStorage, InMemoryKeyValueStorage
 from camel.types import OpenAIBackendRole

@@ -17,19 +17,22 @@ from typing import List, Optional
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
 from camel.memories import (
     AgentMemory,
-    MemoryBlock,
     ChatHistoryMemory,
     ContextRecord,
+    MemoryBlock,
     MemoryRecord,
 )
-from camel.memories.context_creators import BaseContextCreator, ScoreBasedContextCreator
+from camel.memories.context_creators import (
+    BaseContextCreator,
+    ScoreBasedContextCreator,
+)
 from camel.storages.vectordb_storages import (
     BaseVectorStorage,
     QdrantStorage,
     VectorDBQuery,
     VectorRecord,
 )
-from camel.types import OpenAIBackendRole, ModelType
+from camel.types import ModelType, OpenAIBackendRole
 
 
 class VectorDBMemory(MemoryBlock):
