@@ -17,7 +17,7 @@ from .base import MemoryBlock, AgentMemory, BaseContextCreator
 from .context_creators.score_based import ScoreBasedContextCreator
 from .blocks.chat_history_block import ChatHistoryBlock
 from .blocks.vectordb_block import VectorDBBlock
-from .example_agent_memories import VectorDBMemory, ChatHistoryMemory
+from .agent_memories import VectorDBMemory, ChatHistoryMemory
 
 __all__ = [
     'MemoryRecord',
