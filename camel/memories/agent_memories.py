@@ -102,3 +102,49 @@ class VectorDBMemory(AgentMemory):
 
     def get_context_creator(self) -> BaseContextCreator:
         return self._context_creator
+
+
+class LongtermAgentMemory(AgentMemory):
+    r"""An implementation of the :obj:`AgentMemory` abstract base class for
+    augumenting ChatHistoryMemory with VectorDBMemory.
+    """
+
+    def __init__(
+        self,
+        context_creator: BaseContextCreator,
+        chat_history_block: Optional[ChatHistoryBlock] = None,
+        vector_db_block: Optional[VectorDBBlock] = None,
+    ) -> None:
+        self.chat_history_block = chat_history_block or ChatHistoryBlock()
+        self.vector_db_block = vector_db_block or VectorDBBlock()
+        self._context_creator = context_creator
+        self._current_topic: str = ""
+
+    def get_context_creator(self) -> BaseContextCreator:
+        return self._context_creator
+
+    def retrieve(self) -> List[ContextRecord]:
+        chat_history = self.chat_history_block.retrieve()
+        vector_db_retrieve = self.vector_db_block.retrieve(
+            self._current_topic, limit=5)
+        return chat_history[:1] + vector_db_retrieve + chat_history[1:]
+
+    def write_records(self, records: List[MemoryRecord]) -> None:
+        r"""Converts the provided chat messages into vector representations and
+        writes them to the vector database.
+
+        Args:
+            records (List[MemoryRecord]): Messages to be added to the vector
+                database.
+        """
+        self.vector_db_block.write_records(records)
+        self.chat_history_block.write_records(records)
+
+        for record in records:
+            if record.role_at_backend == OpenAIBackendRole.USER:
+                self._current_topic = record.message.content
+
+    def clear(self) -> None:
+        r"""Removes all records from the memory."""
+        self.chat_history_block.clear()
+        self.vector_db_block.clear()
