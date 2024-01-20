@@ -26,7 +26,17 @@ from camel.types import OpenAIBackendRole
 
 
 class ChatHistoryMemory(AgentMemory):
-    r""""""
+    r"""An agent memory wrapper of :obj:`ChatHistoryBlock`.
+
+    Args:
+        context_creator (BaseContextCreator): A model context creator.
+        storage (BaseKeyValueStorage, optional): A storage backend for storing
+            chat history. If `None`, an :obj:`InMemoryKeyValueStorage`
+            will be used. (default: :obj:`None`)
+        window_size (int, optional): The number of recent chat messages to
+            retrieve. If not provided, the entire chat history will be
+            retrieved.  (default: :obj:`None`)
+    """
 
     def __init__(
         self,
@@ -52,7 +62,18 @@ class ChatHistoryMemory(AgentMemory):
 
 
 class VectorDBMemory(AgentMemory):
-    r""""""
+    r"""An agent memory wrapper of :obj:`VectorDBBlock`. This memory queries
+    messages stored in the vector database. Notice that the most recent
+    messages will not be added to the context.
+
+    Args:
+        context_creator (BaseContextCreator): A model context creator.
+        storage (BaseVectorStorage, optional): A vector storage storage. If
+            `None`, an :obj:`QdrantStorage` will be used.
+            (default: :obj:`None`)
+        retrieve_limit (int, optional): The maximum number of messages
+            to be added into the context.  (default: :obj:`3`)
+    """
 
     def __init__(
         self,
