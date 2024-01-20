@@ -149,7 +149,7 @@ The tool descriptions are the context information of the potential competencies 
         if "I'm sorry" in msg.content.strip():
             raise RuntimeError("May violate the guidelines of the large "
                                "language model.\n"
-                               f"Response of the AI:\n{msg.content}")
+                               f"Response of the LLM:\n{msg.content}")
 
         # Distribute the output completions into role names and descriptions
         role_names = [
@@ -170,7 +170,7 @@ The tool descriptions are the context information of the potential competencies 
         if len(role_names) != num_roles or len(role_descriptions) != num_roles:
             raise RuntimeError(
                 "Got None or insufficient information of roles.\n"
-                f"Response of the AI:\n{msg.content}\n"
+                f"Response of the LLM:\n{msg.content}\n"
                 f"Role names:{str(role_names)}\n"
                 f"Role descriptions:\n{str(role_descriptions)}")
         role_descriptions_dict = {
@@ -362,7 +362,7 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
                      or len(dependent_subtasks_list) != num_subtasks)):
             raise RuntimeError(
                 f"Got None or insufficient information of subtasks. "
-                f"Response of the AI:\n{msg.content}\n"
+                f"Response of the LLM:\n{msg.content}\n"
                 f"Length of generated subtasks: {len(subtask_descriptions)}, "
                 "Length of generated dependencies: "
                 f"{len(dependent_subtasks_list)}, "
@@ -560,7 +560,7 @@ Definition of ASSISTANT: The assistant is the role that executes instructions gi
             raise RuntimeError(
                 "May violate the guidelines of the large language "
                 "model.\n"
-                f"Response of the AI:\n{msg.content}\n")
+                f"Response of the LLM:\n{msg.content}\n")
 
         # Distribute the output completions into scores
         user_compatibility_scores = [
@@ -577,11 +577,11 @@ Definition of ASSISTANT: The assistant is the role that executes instructions gi
         if len(user_compatibility_scores) != len(role_names):
             raise RuntimeError("Got None or insufficient information of "
                                "compatibility scores as USER.\n"
-                               f"Response of the AI:\n{msg.content}\n")
+                               f"Response of the LLM:\n{msg.content}\n")
         if len(assistant_compatibility_scores) != len(role_names):
             raise RuntimeError("Got None or insufficient information of " +
                                "compatibility scores as ASSISTANT."
-                               f"Response of the AI:\n{msg.content}\n")
+                               f"Response of the LLM:\n{msg.content}\n")
 
         role_compatibility_scores_dict = {
             role_name: {
@@ -789,7 +789,7 @@ Retold Text:\n<BLANK>"""  # noqa: E501
 
         if category_of_responses is None or len(category_of_responses) == 0:
             raise RuntimeError("Got None of category of responses."
-                               f"Response of the AI:\n{msg.content}\n")
+                               f"Response of the LLM:\n{msg.content}\n")
         categories = [
             category.strip().strip('"\'')
             for category in category_of_responses[0].split(',')
@@ -799,11 +799,11 @@ Retold Text:\n<BLANK>"""  # noqa: E501
                     "ASSISTANCE", "ANALYSIS", "AUXILIARY", "NON-SUBSTANTIAL"
             ]:
                 raise RuntimeError("Got invalid category of responses."
-                                   f"Response of the AI:\n{msg.content}\n")
+                                   f"Response of the LLM:\n{msg.content}\n")
 
         if reproduced_texts is None or len(reproduced_texts) == 0:
             raise RuntimeError("Got None of reproduced text."
-                               f"Response of the AI:\n{msg.content}\n")
+                               f"Response of the LLM:\n{msg.content}\n")
         reproduced_text = reproduced_texts[0].strip('\n')
 
         reproduced_text_with_category = {
