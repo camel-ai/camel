@@ -205,10 +205,10 @@ def to_pascal(snake: str) -> str:
     """Convert a snake_case string to PascalCase.
 
     Args:
-        snake: The string to convert.
+        snake (str): The string to convert.
 
     Returns:
-        The PascalCase string.
+        str: The PascalCase string.
     """
     # This function is identical with pydantic.alias_generator.to_pascal
     # from pydantic V2. Provide here for V1 user.
