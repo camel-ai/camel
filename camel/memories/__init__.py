@@ -17,7 +17,11 @@ from .base import MemoryBlock, AgentMemory, BaseContextCreator
 from .context_creators.score_based import ScoreBasedContextCreator
 from .blocks.chat_history_block import ChatHistoryBlock
 from .blocks.vectordb_block import VectorDBBlock
-from .agent_memories import VectorDBMemory, ChatHistoryMemory
+from .agent_memories import (
+    VectorDBMemory,
+    ChatHistoryMemory,
+    LongtermAgentMemory,
+)
 
 __all__ = [
     'MemoryRecord',
@@ -30,4 +34,5 @@ __all__ = [
     'VectorDBMemory',
     'ChatHistoryBlock',
     'VectorDBBlock',
+    'LongtermAgentMemory',
 ]
