@@ -14,15 +14,8 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from enum import Enum
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
-
-
-class VectorDistance(Enum):
-    DOT = 1
-    COSINE = 2
-    EUCLIDEAN = 3
 
 
 @dataclass
@@ -51,7 +44,7 @@ class VectorDBQuery:
         query_vector (List[float]): The numerical representation of the query
             vector.
         top_k (int, optional): The number of top similar vectors to retrieve
-            from the database. (default: `1`)
+            from the database. (default: :obj:`1`)
     """
     query_vector: List[float]
     top_k: int = 1
@@ -84,25 +77,21 @@ class VectorDBQueryResult:
         )
 
 
+@dataclass
+class VectorDBStatus:
+    r"""Vector database status.
+
+    Attributes:
+        vector_dim (int): The dimention of stored vectors.
+        vector_count (int): The number of stored vectors.
+
+    """
+    vector_dim: int
+    vector_count: int
+
+
 class BaseVectorStorage(ABC):
     r"""An abstract base class for vector storage systems."""
-
-    @abstractmethod
-    def validate_vector_dimensions(
-        self,
-        records: List[VectorRecord],
-    ) -> None:
-        r"""Validates that all vectors in the given list have the same
-        dimensionality as the collection.
-
-        Args:
-            records (List[VectorRecord]): A list of vector records to validate.
-
-        Raises:
-            ValueError: If any vector has a different dimensionality than
-            the collection.
-        """
-        pass
 
     @abstractmethod
     def add(
@@ -140,6 +129,15 @@ class BaseVectorStorage(ABC):
         pass
 
     @abstractmethod
+    def status(self) -> VectorDBStatus:
+        r"""Returns status of the vector database.
+
+        Returns:
+            VectorDBStatus: The vector database status.
+        """
+        pass
+
+    @abstractmethod
     def query(
         self,
         query: VectorDBQuery,
@@ -158,12 +156,26 @@ class BaseVectorStorage(ABC):
         """
         pass
 
-    def simple_query(
+    @abstractmethod
+    def clear(self) -> None:
+        r"""Remove all vectors from the storage."""
+        pass
+
+    @property
+    @abstractmethod
+    def client(self) -> Any:
+        r"""Provides access to the underlying vector database client."""
+        pass
+
+    def get_payloads_by_vector(
         self,
         vector: List[float],
         top_k: int,
     ) -> List[Dict[str, Any]]:
-        r"""A simple interface for vector query
+        r"""Returns payloads of top k vector records that closest to the given
+        vector.
+
+        This function is a wrapper of `BaseVectorStorage.query`.
 
         Args:
             vector (List[float]): The search vector.
@@ -178,16 +190,3 @@ class BaseVectorStorage(ABC):
             result.record.payload for result in results
             if result.record.payload is not None
         ]
-
-    @abstractmethod
-    def clear(self) -> None:
-        r"""Remove all vectors from the storage."""
-        pass
-
-    @property
-    @abstractmethod
-    def client(self) -> Any:
-        r"""Provides access to the underlying client used for interacting with
-        the vector storage system.
-        """
-        pass

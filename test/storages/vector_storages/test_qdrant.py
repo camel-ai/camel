@@ -14,34 +14,34 @@
 
 import shutil
 import tempfile
-from unittest.mock import MagicMock
-
-import pytest
 
 from camel.storages import QdrantStorage, VectorDBQuery, VectorRecord
 
-parametrize = pytest.mark.parametrize(
-    "server",
-    ["built-in", "local"],
-    indirect=True,
-)
 
+def test_multiple_local_clients() -> None:
+    tmpdir = tempfile.mkdtemp()
+    storage1 = QdrantStorage(
+        vector_dim=4,
+        path=tmpdir,
+        collection_name="collection1",
+        delete_collection_on_del=True,
+    )
+    storage2 = QdrantStorage(
+        vector_dim=4,
+        path=tmpdir,
+        collection_name="collection2",
+        delete_collection_on_del=True,
+    )
 
-@pytest.fixture()
-def server(request):
-    if request.param == "built-in":
-        yield QdrantStorage(vector_dim=4)
-    elif request.param == "local":
-        tmpdir = tempfile.mkdtemp()
-        yield QdrantStorage(vector_dim=4, path=tmpdir)
-        shutil.rmtree(tmpdir)
-
-
-@parametrize
-def test_qdrant_storage(server: QdrantStorage) -> None:
-    vectors = [
+    # Add vectors to storage1
+    vectors1 = [
         VectorRecord(vector=[0.1, 0.1, 0.1, 0.1]),
         VectorRecord(vector=[0.1, -0.1, -0.1, 0.1]),
+    ]
+    storage1.add(records=vectors1)
+
+    # Add vectors to storage2
+    vectors2 = [
         VectorRecord(
             vector=[-0.1, 0.1, -0.1, 0.1],
             payload={"message": "text"},
@@ -50,40 +50,52 @@ def test_qdrant_storage(server: QdrantStorage) -> None:
             vector=[-0.1, 0.1, 0.1, 0.1],
             payload={
                 "message": "text",
-                "number": 1,
+                "number": 1
             },
         ),
     ]
-    server.add(records=vectors)
+    storage2.add(records=vectors2)
 
-    query = VectorDBQuery(query_vector=[1, 1, 1, 1], top_k=2)
-    result = server.query(query)
-    assert result[0].record.id == vectors[0].id
-    assert result[1].record.id == vectors[3].id
-    assert result[1].record.payload == {"message": "text", "number": 1}
-    assert result[0].similarity > result[1].similarity
+    # Query and check results from storage1
+    query1 = VectorDBQuery(query_vector=[1, 1, 1, 1], top_k=1)
+    result1 = storage1.query(query1)
+    assert result1[0].record.id == vectors1[0].id
 
-    server.delete(ids=[vectors[1].id, vectors[3].id])
-    result = server.query(query)
-    assert result[0].record.id == vectors[0].id
-    assert result[1].record.id == vectors[2].id
-    assert result[1].record.payload == {"message": "text"}
-    assert result[0].similarity > result[1].similarity
+    # Query and check results from storage2
+    query2 = VectorDBQuery(query_vector=[-1, 1, -1, 1], top_k=1)
+    result2 = storage2.query(query2)
+    assert result2[0].record.id == vectors2[0].id
+    assert result2[0].record.payload == {"message": "text"}
+
+    # Clear and check status for each storage
+    storage1.clear()
+    status1 = storage1.status()
+    assert status1.vector_count == 0
+
+    storage2.clear()
+    status2 = storage2.status()
+    assert status2.vector_count == 0
+
+    shutil.rmtree(tmpdir)
 
 
-@pytest.fixture
-def qdrant_storage():
-    storage = QdrantStorage(vector_dim=4)
-    storage._client = MagicMock()  # Mock the client
-    return storage
+def test_existing_collection():
+    tmpdir = tempfile.mkdtemp()
+    storage = QdrantStorage(
+        vector_dim=4,
+        path=tmpdir,
+        collection_name="test_collection",
+    )
+    vectors = [
+        VectorRecord(vector=[0.1, 0.1, 0.1, 0.1]),
+        VectorRecord(vector=[0.1, -0.1, -0.1, 0.1]),
+    ]
+    storage.add(records=vectors)
+    assert storage.status().vector_count == 2
 
-
-def test_validate_vector_dimensions(qdrant_storage):
-    # Test with valid dimensions
-    vectors = [VectorRecord(vector=[0.1, 0.1, 0.1, 0.1])]
-    qdrant_storage.validate_vector_dimensions(vectors)  # Should not raise
-
-    # Test with invalid dimensions
-    with pytest.raises(ValueError):
-        invalid_vectors = [VectorRecord(vector=[0.1, 0.1])]
-        qdrant_storage.validate_vector_dimensions(invalid_vectors)
+    storage2 = QdrantStorage(
+        vector_dim=4,
+        path=tmpdir,
+        collection_name="test_collection",
+    )
+    assert storage2.status().vector_count == 2

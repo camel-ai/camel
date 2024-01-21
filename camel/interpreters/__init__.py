@@ -11,11 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from camel.embeddings import OpenAIEmbedding
 
+from .base import BaseInterpreter
+from .interpreter_error import InterpreterError
+from .internal_python_interpreter import InternalPythonInterpreter
+from .subprocess_interpreter import SubprocessInterpreter
 
-def test_openai_embedding():
-    text = "test embedding text."
-    embedding_model = OpenAIEmbedding()
-    vector = embedding_model.embed(text)
-    assert len(vector) == embedding_model.get_output_dim()
+__all__ = [
+    'BaseInterpreter',
+    'InterpreterError',
+    'InternalPythonInterpreter',
+    'SubprocessInterpreter',
+]

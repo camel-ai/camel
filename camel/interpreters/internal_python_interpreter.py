@@ -17,20 +17,14 @@ import importlib
 import typing
 from typing import Any, Dict, List, Optional
 
-
-class InterpreterError(ValueError):
-    r"""An error raised when the interpreter cannot evaluate a Python
-    expression, due to syntax error or unsupported operations.
-    """
-
-    pass
+from camel.interpreters import BaseInterpreter, InterpreterError
 
 
-class PythonInterpreter():
+class InternalPythonInterpreter(BaseInterpreter):
     r"""A customized python interpreter to control the execution of
     LLM-generated codes. The interpreter makes sure the code can only execute
     functions given in action space and import white list. It also supports
-    fuzzy variable matching to reveive uncertain input variable name.
+    fuzzy variable matching to retrieve uncertain input variable name.
 
     .. highlight:: none
 
@@ -64,40 +58,96 @@ class PythonInterpreter():
     Modifications copyright (C) 2023 CAMEL-AI.org
 
     Args:
-        action_space (Dict[str, Any]): A dictionary that maps action names to
-            their corresponding functions or objects. The interpreter can only
-            execute functions that are either directly listed in this
+        action_space (Dict[str, Any], optional): A dictionary that maps action
+            names to their corresponding functions or objects. The interpreter
+            can only execute functions that are either directly listed in this
             dictionary or are member functions of objects listed in this
             dictionary. The concept of :obj:`action_space` is derived from
             EmbodiedAgent, representing the actions that an agent is capable of
-            performing.
-        import_white_list (Optional[List[str]], optional): A list that stores
+            performing. If `None`, set to empty dict. (default: :obj:`None`)
+        import_white_list (List[str], optional): A list that stores
             the Python modules or functions that can be imported in the code.
             All submodules and functions of the modules listed in this list are
             importable. Any other import statements will be rejected. The
             module and its submodule or function name are separated by a period
             (:obj:`.`). (default: :obj:`None`)
+        unsafe_mode (bool, optional): If `True`, the interpreter runs the code
+            by `eval()` without any security check. (default: :obj:`False`)
+        raise_error (bool, optional): Raise error if the interpreter fails.
+            (default: :obj:`False`)
     """
 
-    def __init__(self, action_space: Dict[str, Any],
-                 import_white_list: Optional[List[str]] = None) -> None:
-        self.action_space = action_space
+    _CODE_TYPES = ["python", "py", "python3", "python2"]
+
+    def __init__(
+        self,
+        action_space: Optional[Dict[str, Any]] = None,
+        import_white_list: Optional[List[str]] = None,
+        unsafe_mode: bool = False,
+        raise_error: bool = False,
+    ) -> None:
+        self.action_space = action_space or dict()
         self.state = self.action_space.copy()
-        self.fuzz_state: Dict[str, Any] = {}
-        self.import_white_list = import_white_list or []
+        self.fuzz_state: Dict[str, Any] = dict()
+        self.import_white_list = import_white_list or list()
+        self.raise_error = raise_error
+        self.unsafe_mode = unsafe_mode
+
+    def run(self, code: str, code_type: str) -> str:
+        r"""Executes the given code with specified code type in the
+        interpreter.
+
+        This method takes a string of code and its type, checks if the code
+        type is supported, and then executes the code. If `unsafe_mode` is
+        set to `False`, the code is executed in a controlled environment using
+        the `execute` method. If `unsafe_mode` is `True`, the code is executed
+        using `eval()` with the action space as the global context. An
+        `InterpreterError` is raised if the code type is unsupported or if any
+        runtime error occurs during execution.
+
+        Args:
+            code (str): The python code to be executed.
+            code_type (str): The type of the code, which should be one of the
+            supported code types (`python`, `py`, `python3`, `python2`).
+
+
+        Returns:
+            str: The string representation of the output of the executed code.
+
+        Raises:
+            InterpreterError: If the `code_type` is not supported or if any
+                runtime error occurs during the execution of the code.
+    """
+        if code_type not in self._CODE_TYPES:
+            raise InterpreterError(
+                f"Unsupported code type {code_type}. "
+                f"`{self.__class__.__name__}` only supports "
+                f"{', '.join(self._CODE_TYPES)}.")
+        if not self.unsafe_mode:
+            return str(self.execute(code))
+        else:
+            return str(eval(code, self.action_space))
+
+    def update_action_space(self, action_space: Dict[str, Any]) -> None:
+        r"""Updates action space for *python* interpreter."""
+        self.action_space.update(action_space)
+
+    def supported_code_types(self) -> List[str]:
+        r"""Provides supported code types by the interpreter."""
+        return self._CODE_TYPES
 
     def execute(self, code: str, state: Optional[Dict[str, Any]] = None,
                 fuzz_state: Optional[Dict[str, Any]] = None,
                 keep_state: bool = True) -> Any:
-        r""" Execute the input python codes in a security environment.
+        r"""Execute the input python codes in a security environment.
 
         Args:
             code (str): Generated python code to be executed.
             state (Optional[Dict[str, Any]], optional): External variables that
                 may be used in the generated code. (default: :obj:`None`)
-            fuzz_state (Optional[Dict[str, Any]], optional): External varibles
-                that do not have certain varible names. The interpreter will
-                use fuzzy matching to access these varibales. For example, if
+            fuzz_state (Optional[Dict[str, Any]], optional): External variables
+                that do not have certain variable names. The interpreter will
+                use fuzzy matching to access these variables. For example, if
                 :obj:`fuzz_state` has a variable :obj:`image`, the generated
                 code can use :obj:`input_image` to access it. (default:
                 :obj:`None`)
@@ -120,7 +170,11 @@ class PythonInterpreter():
         try:
             expression = ast.parse(code)
         except SyntaxError as e:
-            raise InterpreterError(f"Syntax error in code: {e}")
+            if self.raise_error:
+                raise InterpreterError(f"Syntax error in code: {e}")
+            else:
+                import traceback
+                return traceback.format_exc()
 
         result = None
         for idx, node in enumerate(expression.body):
@@ -133,7 +187,11 @@ class PythonInterpreter():
                        f"See:\n{e}")
                 # More information can be provided by `ast.unparse()`,
                 # which is new in python 3.9.
-                raise InterpreterError(msg)
+                if self.raise_error:
+                    raise InterpreterError(msg)
+                else:
+                    import traceback
+                    return traceback.format_exc()
             if line_result is not None:
                 result = line_result
 
@@ -143,7 +201,7 @@ class PythonInterpreter():
         return result
 
     def clear_state(self) -> None:
-        r"""Initialize :obj:`state` and :obj:`fuzz_state`"""
+        r"""Initialize :obj:`state` and :obj:`fuzz_state`."""
         self.state = self.action_space.copy()
         self.fuzz_state = {}
 

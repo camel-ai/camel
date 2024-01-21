@@ -18,7 +18,6 @@ from .key_value_storages.json import JsonStorage
 from .vectordb_storages.base import (
     BaseVectorStorage,
     VectorRecord,
-    VectorDistance,
     VectorDBQuery,
     VectorDBQueryResult,
 )
@@ -30,7 +29,6 @@ __all__ = [
     'JsonStorage',
     'VectorRecord',
     'BaseVectorStorage',
-    'VectorDistance',
     'VectorDBQuery',
     'VectorDBQueryResult',
     'QdrantStorage',

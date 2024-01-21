@@ -242,14 +242,14 @@ def role_playing_chat_init(state) -> \
     session: RolePlaying = state.session
 
     try:
-        init_assistant_msg: BaseMessage
-        init_assistant_msg, _ = session.init_chat()
+        input_msg: BaseMessage
+        input_msg = session.init_chat()
     except (openai.RateLimitError, RuntimeError) as ex:
         print("OpenAI API exception 1 " + str(ex))
         state.session = None
         return state, state.chat, gr.update()
 
-    state.saved_assistant_msg = init_assistant_msg
+    state.saved_assistant_msg = input_msg
 
     progress_update = gr.update(maximum=state.max_messages, value=1,
                                 visible=True)

@@ -39,7 +39,7 @@ class ModelType(Enum):
 
     @property
     def value_for_tiktoken(self) -> str:
-        return self.value if self is ModelType.STUB else "gpt-3.5-turbo"
+        return self.value if self is not ModelType.STUB else "gpt-3.5-turbo"
 
     @property
     def is_openai(self) -> bool:
@@ -159,9 +159,16 @@ class TaskType(Enum):
 
 
 class VectorDistance(Enum):
-    DOT = 1
-    COSINE = 2
-    EUCLIDEAN = 3
+    r"""Distance metrics used in a vector database."""
+
+    DOT = "dot"
+    r"""Dot product. https://en.wikipedia.org/wiki/Dot_product"""
+
+    COSINE = "cosine"
+    r"""Cosine similarity. https://en.wikipedia.org/wiki/Cosine_similarity"""
+
+    EUCLIDEAN = "euclidean"
+    r"""Euclidean distance. https://en.wikipedia.org/wiki/Euclidean_distance"""
 
 
 class OpenAIBackendRole(Enum):
