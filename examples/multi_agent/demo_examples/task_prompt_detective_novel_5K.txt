@@ -1,0 +1,13 @@
+Write a short detective story consisting of four chapters, trying to complete the story in as few words as possible. Make sure the narrative is logically progressive and continuous from chapter to chapter. The chapters should be structured as follows, with each chapter corresponding to a subtask, with the "Incorporating contextual parameters into details" section beginning with "Writing Chapter X:...":
+
+Chapter 1: "Mystery Unfolds"
+
+Detective Alex Reynolds investigates the disappearance of journalist Elena. Searching Elena's home, Alex finds her diary, revealing her investigations into a major scandal and fears of being followed.
+
+Chapter 2: "Unraveling the Web"
+
+Through interviews with local residents, including a painter and a programmer, Alex encounters conflicting stories and hidden agendas. His investigation reveals a network of corruption, leading him to believe Elena's disappearance is a cover-up for something larger.
+
+Chapter 3: "The Truth Revealed"
+
+The truth surfaces: Elena staged her disappearance to expose a corruption scandal. The story concludes with the case resolved and Alex's resolve to continue fighting corruption, hinting at future challenges.

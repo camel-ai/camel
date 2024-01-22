@@ -1,0 +1,1 @@
+Create a Python script that parses source code from GitHub repositories and outputs an organized HTML documentation about the functions that the code implements under each module subdirectory. Extensions to indicate encoding format and/or structural diversity on code headers must be flagged separately.

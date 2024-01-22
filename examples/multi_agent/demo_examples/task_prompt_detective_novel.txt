@@ -1,0 +1,13 @@
+Write a detective novel with a total of 4 chapters and a word limit of 4,000 words, ensuring that the content is logically progressive and continuous. The chapters should be structured as follows, with each chapter corresponding a subtask whose section "Incorporate Contextual Parameters into Details" begins with "Write Chapter X: ...":
+
+Chapter 1: "Shadows of the Past"
+Content: Senior detective Alex Reynold is called in to investigate a disappearance that occurred the night before. He noticed some unusual activity, including mysterious visitors and suspicious vehicles mentioned by neighbors. He also discovers missing journalist Elena's diary, revealing her anxieties about being stalked and her investigative work on powerful entities, hinting that this is related to her latest investigative reporting.
+
+Chapter 2: "Clues and Echoes"
+Content: Alex discovers a partially burned photo of Elena and an unknown figure, hinting at a major scandal that may involve political or corporate power. He interprets strange symbols found at crime scenes, linking them to secret societies or coded messages. His interviews with an elderly painter, a young programmer and a newly arrived couple reveal conflicting testimonies and hidden motives.
+
+Chapter 3: "Web of Secrets"
+What: As Alex pieces the puzzle together, he realizes that Elena's disappearance is part of a larger conspiracy. As he gets closer to the truth, his own life is put in danger, but his determination only strengthens. He uncovered corrupt conspiracies involving high-ranking figures.
+
+Chapter 4: "Revelation and Reflection"
+Content: Alex reveals the truth behind Elena's disappearance: she directed and acted in her disappearance in order to expose corruption. The operation exposed high-level corruption, triggering arrests and public outrage. Elena emerges from hiding, and her story becomes the catalyst for widespread change. Alex and Elena discuss the importance and cost of revealing the truth. Although the case is solved, Alex's ongoing fight against corruption and personal sacrifice are thought-provoking and set the stage for future stories.

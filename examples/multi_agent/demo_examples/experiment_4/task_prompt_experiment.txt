@@ -1,0 +1,1 @@
+Model the spread of a hypothetical virus in a closed population using differential equations. The virus has a unique characteristic: individuals who recover from it gain no immunity and can be immediately reinfected.

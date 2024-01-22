@@ -1,0 +1,1 @@
+Creating a Python program that uses decision trees and Monte Carlo simulations to help an investor in real estate choose between renting a commercial property monthly or weekly based on market trends over a year, improving decision-making and increasing returns.

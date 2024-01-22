@@ -1,0 +1,4 @@
+1. This is a first-order non-linear ordinary differential equation.
+2. Use separation of variables to find the general solution.
+3. Apply the initial condition to find the specific solution.
+4. Present the solution in an explicit form if possible, or otherwise indicate the implicit solution.

@@ -1,0 +1,2 @@
+The context of the task is used to assist in knowledge retrieval and collection. Given a or some specific query requirement(s) or research topic(s), we will show its intelligence to find the answer.
+For example, we are inquired about the latest research on a specific scientific question or explore the historical development of a particular field.
