@@ -57,13 +57,12 @@ Proof by Lemmas:
     print(Fore.RED + f"Final task prompt:\n{role_play_session.task_prompt}\n")
 
     n = 0
-    input_assistant_msg, _ = role_play_session.init_chat()
+    input_msg = role_play_session.init_chat()
     assistant_msg_record = ("The TASK of the context text is:\n"
                             f"{role_play_session.task_prompt}\n")
     while n < chat_turn_limit:
         n += 1
-        assistant_response, user_response = role_play_session.step(
-            input_assistant_msg)
+        assistant_response, user_response = role_play_session.step(input_msg)
 
         if assistant_response.terminated:
             print(Fore.GREEN +
@@ -104,7 +103,7 @@ Proof by Lemmas:
 
             break
 
-        input_assistant_msg = assistant_response.msg
+        input_msg = assistant_response.msg
 
     # Clean up the color of the terminal
     print(Fore.RESET)
