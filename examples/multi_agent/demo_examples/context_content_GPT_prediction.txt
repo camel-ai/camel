@@ -1,6 +1,6 @@
 #### Current State of Technology:
 1. **Current Performance Indicators for GPT-4**:
-   - Model size: Approximately 175 billion parameters.
+   - Model size: Approximately 1.7 trillion parameters.
    - Response time: Average about 250-300ms/response.
    - Data processing capability: Processes thousands of words per second.
 
@@ -21,14 +21,9 @@
 
 #### Economic Factors:
 1. **R&D Investment Estimates**:
-    - Based on historical investment growth rates from companies like OpenAI, R&D investments are expected to grow by about 20-30% annually.
-    This will directly affect the availability of resources for model development and training.
+   - Based on historical investment growth rates from companies like OpenAI, R&D investments are expected to grow by about 20-30% annually.
+   This will directly affect the availability of resources for model development and training.
+2. **Global AI Market Trends**:
+   - The global AI market size is projected to grow substantially. Estimates suggest that by 2024, the market could be valued at over $500 billion, up from approximately $327 billion in 2021.
 
-#### Social and Ethical Factors:
-
-1. **Changes in Regulations and Ethical Policies**:
-
-    Considering current concerns over AI ethics and privacy, stricter regulations are expected to emerge which may impact methods of data collection and usage.
-
-
-Combining these specific figures and trends above, I will conduct a detailed analysis and reasoning to predict the potential performance and development of GPT models in the year 2024. These predictions will be based on a comprehensive consideration of hardware advancements, algorithmic innovations, data growths economic inputs as well as social legal factors
+Combining these specific figures and trends above, they/we will conduct a detailed analysis and reasoning to predict the potential performance and development of GPT models in the year 2024. These predictions will be based on a comprehensive consideration of hardware advancements, algorithmic innovations, data growths economic inputs as well as social legal factors

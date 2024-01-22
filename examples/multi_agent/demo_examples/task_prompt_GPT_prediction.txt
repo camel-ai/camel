@@ -1,2 +1,1 @@
 Predict the relevant figures for OpenAI's GPT model in 2024. This includes estimating its performance parameters (such as processing speed, model size, capabilities, etc.). The task will be completed through logical reasoning and numerical estimation; for example, considering the impact of computing power on model performance, estimating the production capacity of next-generation GPUs to infer OpenAI's resource capabilities and thereby estimate the potential performance of GPT-5.
-Each subtask must start with "Complete the logical reasoning and numerical estimation for ..."
