@@ -241,13 +241,13 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
 
         # Start the role-playing to complete the subtask
         chat_turn_limit, n = 50, 0
-        input_assistant_msg, _ = role_play_session.init_chat()
+        input_msg = role_play_session.init_chat()
         while n < chat_turn_limit:
             n += 1
             start_time_conversation = time.time()
             try:
                 assistant_response, user_response = \
-                    role_play_session.step(input_assistant_msg)
+                    role_play_session.step(input_msg)
             except Exception as e:
                 # output a warning message and continue
                 print(Fore.RED + f"Warning: {e}")
@@ -274,7 +274,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
             print_and_write_md(
                 f"Time cost of conversation {n}: {run_time_conversation} "
                 f"seconds", color=Fore.BLACK, file_path="time cost")
-            input_assistant_msg = assistant_response.msg
+            input_msg = assistant_response.msg
 
             assistant_msg_record += (f"--- [{n}] ---\n" +
                                      assistant_response.msg.content.replace(
