@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from colorama import Fore
 
-from camel.agents.role_assignment_agent import RoleAssignmentAgent
+from camel.agents.multi_agent import MultiAgent
 from camel.configs import ChatGPTConfig
 from camel.societies import RolePlaying
 from camel.types import TaskType
@@ -28,7 +28,7 @@ def main(model_type_for_role_generation=None, model_type=None,
     task_prompt = "Develop a trading bot for the stock market."
 
     model_config_description = ChatGPTConfig()
-    role_description_agent = RoleAssignmentAgent(
+    role_description_agent = MultiAgent(
         model_type=model_type_for_role_generation,
         model_config=model_config_description)
 

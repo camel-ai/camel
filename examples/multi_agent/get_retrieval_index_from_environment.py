@@ -13,14 +13,14 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from colorama import Fore
 
-from camel.agents.role_assignment_agent import RoleAssignmentAgent
+from camel.agents.multi_agent import MultiAgent
 from camel.configs import ChatGPTConfig
 
 
 def main(model_type=None) -> None:
     model_config_description = ChatGPTConfig()
-    role_assignment_agent = RoleAssignmentAgent(
-        model_type=model_type, model_config=model_config_description)
+    multi_agent = MultiAgent(model_type=model_type,
+                             model_config=model_config_description)
 
     target_labels = [
         "apple", "computer", "car", "python", "ocean", "piano", "science",
@@ -76,7 +76,7 @@ def main(model_type=None) -> None:
 
     target_labels_indices, labels_sets_indices, target_retrieved_labels, \
         labels_retrieved_sets = (
-            role_assignment_agent.get_retrieval_index_from_environment(
+            multi_agent.get_retrieval_index_from_environment(
                 labels_sets=labels_sets,
                 target_labels=target_labels))
 

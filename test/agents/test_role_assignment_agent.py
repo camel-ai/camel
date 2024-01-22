@@ -15,7 +15,7 @@ import pytest
 from mock import patch
 
 from camel.agents.chat_agent import ChatAgent, ChatAgentResponse
-from camel.agents.role_assignment_agent import RoleAssignmentAgent
+from camel.agents.multi_agent import MultiAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.types import ModelType, RoleType
@@ -30,7 +30,7 @@ from camel.types import ModelType, RoleType
         ["Trading Strategist"],
     ), (2, ["Trading Strategist", "Data Scientist"]),
      (3, ["Trading Strategist", "Data Scientist", "Software Developer"])])
-def test_role_assignment_agent(mock_step, model_type, num_roles, role_names):
+def test_multi_agent(mock_step, model_type, num_roles, role_names):
     mock_content = generate_mock_content(num_roles, role_names)
     mock_msg = BaseMessage(role_name="Role Assigner",
                            role_type=RoleType.ASSISTANT, meta_dict=None,
@@ -44,8 +44,8 @@ def test_role_assignment_agent(mock_step, model_type, num_roles, role_names):
     model_config_description = ChatGPTConfig()
 
     # Construct role assignment agent
-    role_description_agent = RoleAssignmentAgent(
-        model_type=model_type, model_config=model_config_description)
+    role_description_agent = MultiAgent(model_type=model_type,
+                                        model_config=model_config_description)
 
     # Generate the role description dictionary based on the mock step function
     role_description_dict = role_description_agent.run_role_with_description(

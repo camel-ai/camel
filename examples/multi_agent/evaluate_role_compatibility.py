@@ -15,7 +15,7 @@ import json
 
 from colorama import Fore
 
-from camel.agents.role_assignment_agent import RoleAssignmentAgent
+from camel.agents.multi_agent import MultiAgent
 from camel.configs import ChatGPTConfig
 
 
@@ -82,12 +82,11 @@ def main(model_type=None) -> None:
         "collaborative environments.")
 
     model_config_description = ChatGPTConfig()
-    role_assignment_agent = RoleAssignmentAgent(
-        model_type=model_type, model_config=model_config_description)
+    multi_agent = MultiAgent(model_type=model_type,
+                             model_config=model_config_description)
 
-    role_compatibility_scores_dict = (
-        role_assignment_agent.evaluate_role_compatibility(
-            one_subtask, role_description_dict))
+    role_compatibility_scores_dict = (multi_agent.evaluate_role_compatibility(
+        one_subtask, role_description_dict))
 
     print(Fore.BLUE + f"{explanation}\n")
     print(Fore.YELLOW + f"One specific subtask prompt:\n{one_subtask}\n")

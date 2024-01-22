@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from colorama import Fore
 
-from camel.agents.role_assignment_agent import RoleAssignmentAgent
+from camel.agents.multi_agent import MultiAgent
 from camel.configs import ChatGPTConfig
 
 
@@ -22,21 +22,21 @@ def main(model_type=None) -> None:
     task_prompt = "Develop a trading bot for the stock market."
 
     model_config_description = ChatGPTConfig()
-    role_assignment_agent = RoleAssignmentAgent(
-        model=model_type, model_config=model_config_description)
+    multi_agent = MultiAgent(model=model_type,
+                             model_config=model_config_description)
 
-    role_description_dict = role_assignment_agent.run(task_prompt=task_prompt,
-                                                      num_roles=4)
+    role_description_dict = multi_agent.run(task_prompt=task_prompt,
+                                            num_roles=4)
 
     num_subtasks = 9
 
     subtasks_with_dependencies_dict = \
-        role_assignment_agent.split_tasks(task_prompt, role_description_dict,
-                                          num_subtasks)
+        multi_agent.split_tasks(task_prompt, role_description_dict,
+                                num_subtasks)
 
     # Run task assignment to generate dependencies among subtasks
     subtasks_execution_pipelines = \
-        role_assignment_agent.get_task_execution_order(
+        multi_agent.get_task_execution_order(
             subtasks_with_dependencies_dict)
 
     if not subtasks_execution_pipelines:

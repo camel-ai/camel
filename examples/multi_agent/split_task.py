@@ -15,7 +15,7 @@ import json
 
 from colorama import Fore
 
-from camel.agents.role_assignment_agent import RoleAssignmentAgent
+from camel.agents.multi_agent import MultiAgent
 from camel.configs import ChatGPTConfig
 
 
@@ -23,17 +23,16 @@ def main(model_type=None) -> None:
     task_prompt = "Develop a trading bot for the stock market."
 
     model_config_description = ChatGPTConfig()
-    role_description_agent = RoleAssignmentAgent(
-        model_type=model_type, model_config=model_config_description)
+    role_description_agent = MultiAgent(model_type=model_type,
+                                        model_config=model_config_description)
 
     role_descriptions_dict = (role_description_agent.run_role_with_description(
         task_prompt=task_prompt, num_roles=4))
 
     num_subtasks = 6
-    subtasks = role_description_agent\
-        .split_tasks(task_prompt=task_prompt,
-                     role_descriptions_dict=role_descriptions_dict,
-                     num_subtasks=num_subtasks)
+    subtasks = role_description_agent.split_tasks(
+        task_prompt=task_prompt, role_descriptions_dict=role_descriptions_dict,
+        num_subtasks=num_subtasks)
 
     print(Fore.BLUE + f"Subtasks with description and dependencies:\n"
           f"{json.dumps(subtasks, indent=4)}")

@@ -15,7 +15,7 @@ import json
 
 from colorama import Fore
 
-from camel.agents.role_assignment_agent import RoleAssignmentAgent
+from camel.agents.multi_agent import MultiAgent
 from camel.configs import ChatGPTConfig
 from camel.types import ModelType
 
@@ -24,8 +24,8 @@ def main(model_type=ModelType.GPT_3_5_TURBO) -> None:
     task_prompt = "Develop a trading bot for the stock market."
 
     model_config_description = ChatGPTConfig()
-    role_assignment_agent = RoleAssignmentAgent(
-        model=model_type, model_config=model_config_description)
+    multi_agent = MultiAgent(model=model_type,
+                             model_config=model_config_description)
 
     # Possible categories: "ASSISTANCE", "ANALYSIS", "AUXILIARY",
     # "NON-SUBSTANTIAL"
@@ -117,7 +117,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO) -> None:
         assistant_conversation = dialogue["assistant_conversation"]
 
         transformed_text_with_category = \
-            role_assignment_agent.transform_dialogue_into_text(
+            multi_agent.transform_dialogue_into_text(
                 user=user, assistant=assistant, task_prompt=task_prompt,
                 user_conversation=user_conversation,
                 assistant_conversation=assistant_conversation

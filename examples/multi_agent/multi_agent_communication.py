@@ -20,7 +20,7 @@ from colorama import Fore
 
 from camel.agents.deductive_reasoner_agent import DeductiveReasonerAgent
 from camel.agents.insight_agent import InsightAgent
-from camel.agents.role_assignment_agent import RoleAssignmentAgent
+from camel.agents.multi_agent import MultiAgent
 from camel.configs import ChatGPTConfig, FunctionCallingConfig
 from camel.functions import MATH_FUNCS, SEARCH_FUNCS
 from camel.societies import RolePlaying
@@ -45,9 +45,8 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
 
     # Model and agent initialization
     model_config = ChatGPTConfig()
-    role_assignment_agent = \
-        RoleAssignmentAgent(model_type=ModelType.GPT_4_TURBO,
-                            model_config=model_config)
+    multi_agent = MultiAgent(model_type=ModelType.GPT_4_TURBO,
+                             model_config=model_config)
     insight_agent = InsightAgent(model_type=model_type,
                                  model_config=model_config)
     deductive_reasoner_agent = DeductiveReasonerAgent(
@@ -56,9 +55,10 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
     # Generate role with descriptions
     time_role_with_description_0 = time.time()
     role_descriptions_dict = \
-        role_assignment_agent.run_role_with_description(
-            task_prompt=task_prompt, num_roles=num_roles, role_names=None,
-            function_list=[])
+        multi_agent.run_role_with_description(task_prompt=task_prompt,
+                                              num_roles=num_roles,
+                                              role_names=None,
+                                              function_list=[])
     time_role_with_description_1 = time.time()
     run_time_role_with_description = int(time_role_with_description_1 -
                                          time_role_with_description_0)
@@ -68,12 +68,9 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
 
     # Split the original task into subtasks
     time_tasks_decomposition_0 = time.time()
-    subtasks_with_dependencies_dict = \
-        role_assignment_agent.split_tasks(
-            task_prompt=task_prompt,
-            role_descriptions_dict=role_descriptions_dict,
-            num_subtasks=None,
-            context_text=context_text)
+    subtasks_with_dependencies_dict = multi_agent.split_tasks(
+        task_prompt=task_prompt, role_descriptions_dict=role_descriptions_dict,
+        num_subtasks=None, context_text=context_text)
     time_tasks_decomposition_1 = time.time()
     run_time_tasks_decomposition = int(time_tasks_decomposition_1 -
                                        time_tasks_decomposition_0)
@@ -87,7 +84,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
         deps = details["dependencies"]
         oriented_graph[subtask_idx] = deps
     # TODO: cycle detection and handling
-    role_assignment_agent.draw_subtasks_graph(oriented_graph=oriented_graph)
+    multi_agent.draw_subtasks_graph(oriented_graph=oriented_graph)
 
     # Get the list of subtasks
     subtasks = [
@@ -98,9 +95,8 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
     # Calculate the execution order of the subtasks, based on their
     # dependencies
     # TODO: fix the bug of having an empty parallel pipeline
-    parallel_subtask_pipelines = \
-        role_assignment_agent.get_task_execution_order(
-            subtasks_with_dependencies_dict)
+    parallel_subtask_pipelines = multi_agent.get_task_execution_order(
+        subtasks_with_dependencies_dict)
 
     # Initialize the environment record
     environment_record = {}  # The cache of the system
@@ -145,14 +141,13 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
         # Get the insights from the environment for the subtask
         insights_for_subtask = get_insights_from_environment(
             subtask_id, subtask, subtask_labels, environment_record,
-            deductive_reasoner_agent, role_assignment_agent, insight_agent,
-            context_text)
+            deductive_reasoner_agent, multi_agent, insight_agent, context_text)
 
         # Get the role with the highest compatibility score
         # TODO: fix the bug of not enough scores for user/assistant role
         role_compatibility_scores_dict = (
-            role_assignment_agent.evaluate_role_compatibility(
-                subtask, role_descriptions_dict))
+            multi_agent.evaluate_role_compatibility(subtask,
+                                                    role_descriptions_dict))
 
         # Get the top two roles with the highest compatibility scores
         ai_assistant_role = \
@@ -299,7 +294,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
             print(Fore.GREEN + f"AI Assistant: {ai_assistant_role}\n"
                   f"{assistant_response.msg.content}\n")
             reproduced_assistant_msg_with_category = \
-                role_assignment_agent.transform_dialogue_into_text(
+                multi_agent.transform_dialogue_into_text(
                     user_name=ai_user_role,
                     assistant_name=ai_assistant_role,
                     task_prompt=subtask,
@@ -331,8 +326,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
 
 def get_insights_from_environment(subtask_id, subtask, subtask_labels,
                                   environment_record, deductive_reasoner_agent,
-                                  role_assignment_agent, insight_agent,
-                                  context_text):
+                                  multi_agent, insight_agent, context_text):
     # React to the environment, and get the insights from it
     conditions_and_quality_json = \
         deductive_reasoner_agent.deduce_conditions_and_quality(
@@ -349,7 +343,7 @@ def get_insights_from_environment(subtask_id, subtask, subtask_labels,
     print(f"Labels sets for {subtask_id}:\n{labels_sets}")
 
     _, _, _, labels_retrieved_sets = \
-        role_assignment_agent.get_retrieval_index_from_environment(
+        multi_agent.get_retrieval_index_from_environment(
             labels_sets=labels_sets,
             target_labels=target_labels)
     print_and_write_md(

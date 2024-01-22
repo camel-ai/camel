@@ -15,7 +15,7 @@ import json
 
 from colorama import Fore
 
-from camel.agents.role_assignment_agent import RoleAssignmentAgent
+from camel.agents.multi_agent import MultiAgent
 from camel.configs import ChatGPTConfig
 
 
@@ -27,8 +27,8 @@ def main(model_type=None, num_roles=3, role_names=None) -> None:
     task_prompt = "Develop a trading bot for the stock market."
 
     model_config_description = ChatGPTConfig()
-    role_description_agent = RoleAssignmentAgent(
-        model_type=model_type, model_config=model_config_description)
+    role_description_agent = MultiAgent(model_type=model_type,
+                                        model_config=model_config_description)
 
     role_description_dict = role_description_agent.run_role_with_description(
         task_prompt=task_prompt, num_roles=num_roles)

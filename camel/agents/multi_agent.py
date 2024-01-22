@@ -27,8 +27,8 @@ from camel.prompts import TextPrompt
 from camel.types import ModelType, RoleType
 
 
-class RoleAssignmentAgent(ChatAgent):
-    r"""An agent that generates role names based on the task prompt.
+class MultiAgent(ChatAgent):
+    r"""The multi-agent framework based on the role-playing session.
     Args:
         model_type (ModelType, optional): The type of model to use for the
             agent. (default: :obj:`ModelType.GPT_3_5_TURBO`)
