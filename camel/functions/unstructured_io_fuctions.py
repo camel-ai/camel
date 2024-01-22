@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 
 class UnstructuredModules:
@@ -251,23 +251,31 @@ class UnstructuredModules:
 
         return cleaned_text
 
-    def extract_data_from_text(self, text: str, extract_type: str,
-                               **kwargs) -> Any:
+    def extract_data_from_text(
+        self,
+        text: str,
+        extract_type: Literal['extract_datetimetz', 'extract_email_address',
+                              'extract_ip_address', 'extract_ip_address_name',
+                              'extract_mapi_id', 'extract_ordered_bullets',
+                              'extract_text_after', 'extract_text_before',
+                              'extract_us_phone_number'],
+        **kwargs,
+    ) -> Any:
         r"""Extracts various types of data from text using functions from
         unstructured.cleaners.extract.
 
         Args:
             text (str): Text to extract data from.
-            extract_type (str): Type of data to extract. Supported types:
-                                'extract_datetimetz',
-                                'extract_email_address',
-                                'extract_ip_address',
-                                'extract_ip_address_name',
-                                'extract_mapi_id',
-                                'extract_ordered_bullets',
-                                'extract_text_after',
-                                'extract_text_before',
-                                'extract_us_phone_number'.
+            extract_type (Literal['extract_datetimetz',
+                                  'extract_email_address',
+                                  'extract_ip_address',
+                                  'extract_ip_address_name',
+                                  'extract_mapi_id',
+                                  'extract_ordered_bullets',
+                                  'extract_text_after',
+                                  'extract_text_before',
+                                  'extract_us_phone_number']):
+                                Type of data to extract.
             **kwargs: Additional keyword arguments for specific
                 extraction functions.
 
@@ -307,8 +315,17 @@ class UnstructuredModules:
 
         return extraction_functions[extract_type](text, **kwargs)
 
-    def stage_elements(self, elements: List[Any], stage_type: str,
-                       **kwargs) -> Union[str, List[Dict], Any]:
+    def stage_elements(
+        self,
+        elements: List[Any],
+        stage_type: Literal['convert_to_csv', 'convert_to_dataframe',
+                            'convert_to_dict', 'dict_to_elements',
+                            'stage_csv_for_prodigy', 'stage_for_prodigy',
+                            'stage_for_baseplate', 'stage_for_datasaur',
+                            'stage_for_label_box', 'stage_for_label_studio',
+                            'stage_for_weaviate'],
+        **kwargs,
+    ) -> Union[str, List[Dict], Any]:
         r"""Stages elements for various platforms based on the
         specified staging type.
 
@@ -320,18 +337,18 @@ class UnstructuredModules:
 
         Args:
             elements (List[Any]): List of Element objects to be staged.
-            stage_type (str): Type of staging to perform. Supported types:
-                            'convert_to_csv',
-                            'convert_to_dataframe',
-                            'convert_to_dict',
-                            'dict_to_elements',
-                            'stage_csv_for_prodigy',
-                            'stage_for_prodigy',
-                            'stage_for_baseplate',
-                            'stage_for_datasaur',
-                            'stage_for_label_box',
-                            'stage_for_label_studio',
-                            'stage_for_weaviate'.
+            stage_type (Literal['convert_to_csv',
+                                'convert_to_dataframe',
+                                'convert_to_dict',
+                                'dict_to_elements',
+                                'stage_csv_for_prodigy',
+                                'stage_for_prodigy',
+                                'stage_for_baseplate',
+                                'stage_for_datasaur',
+                                'stage_for_label_box',
+                                'stage_for_label_studio',
+                                'stage_for_weaviate']):
+                Type of staging to perform.
             **kwargs: Additional keyword arguments specific to
                 the staging type.
 

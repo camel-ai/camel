@@ -34,6 +34,9 @@ tiktoken = "^0"
 colorama = "^0"
 jsonschema = "^4"
 protobuf = "^4"
+pathlib = "^1.0.1"   
+docstring-parser = "^0.15"
+pydantic = ">=2,<3"
 networkx = "^2.8.8"
 
 # huggingface-agent
