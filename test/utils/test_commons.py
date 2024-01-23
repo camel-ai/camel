@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from camel.utils import get_system_information, get_task_list
+from camel.utils import get_system_information, get_task_list, to_pascal
 
 
 def test_get_task_list():
@@ -62,3 +62,40 @@ def test_get_system_information():
 
     # Check if all values are non-empty strings
     assert all(isinstance(value, str) and value for value in sys_info.values())
+
+
+def test_to_pascal_standard_case():
+    assert to_pascal("snake_case") == "SnakeCase"
+
+
+def test_to_pascal_with_numbers():
+    assert to_pascal("snake2_case") == "Snake2Case"
+
+
+def test_to_pascal_single_word():
+    assert to_pascal("snake") == "Snake"
+
+
+def test_to_pascal_empty_string():
+    assert to_pascal("") == ""
+
+
+def test_to_pascal_already_pascal_case():
+    assert to_pascal("PascalCase") == "PascalCase"
+
+
+def test_to_pascal_mixed_case():
+    assert to_pascal("sNake_cAse") == "SnakeCase"
+
+
+def test_to_pascal_with_special_characters():
+    assert to_pascal("snake_case_with_special_characters!@#"
+                     ) == "SnakeCaseWithSpecialCharacters!@#"
+
+
+def test_to_pascal_with_multiple_underscores():
+    assert to_pascal("snake__case") == "SnakeCase"
+
+
+def test_to_pascal_with_trailing_underscore():
+    assert to_pascal("snake_case_") == "SnakeCase"
