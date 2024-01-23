@@ -205,15 +205,21 @@ def to_pascal(snake: str) -> str:
     """Convert a snake_case string to PascalCase.
 
     Args:
-        snake (str): The string to convert.
+        snake (str): The snake_case string to be converted.
 
     Returns:
-        str: The PascalCase string.
+        str: The converted PascalCase string.
     """
-    # This function is identical with pydantic.alias_generator.to_pascal
-    # from pydantic V2. Provide here for V1 user.
+    # Check if the string is already in PascalCase
+    if re.match(r'^[A-Z][a-zA-Z0-9]*([A-Z][a-zA-Z0-9]*)*$', snake):
+        return snake
+    # Remove leading and trailing underscores
+    snake = snake.strip('_')
+    # Replace multiple underscores with a single one
+    snake = re.sub('_+', '_', snake)
+    # Convert to PascalCase
     camel = snake.title()
-    return re.sub('([0-9A-Za-z])_(?=[0-9A-Z])', lambda m: m.group(1), camel)
+    return re.sub('_([0-9A-Za-z])', lambda m: m.group(1).upper(), camel)
 
 
 PYDANTIC_V2 = pydantic.VERSION.startswith("2.")

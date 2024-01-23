@@ -22,7 +22,7 @@ from pydantic import ValidationError
 
 from camel.functions import OpenAIFunction, get_openai_tool_schema
 from camel.types import RoleType
-from camel.utils.commons import PYDANTIC_V2
+from camel.utils import PYDANTIC_V2
 
 
 def test_get_openai_tool_schema():
