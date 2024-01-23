@@ -57,12 +57,12 @@ def test_multiple_local_clients() -> None:
     storage2.add(records=vectors2)
 
     # Query and check results from storage1
-    query1 = VectorDBQuery(query_vector=[1, 1, 1, 1], top_k=1)
+    query1 = VectorDBQuery(query_vector=[1.0, 1.0, 1.0, 1.0], top_k=1)
     result1 = storage1.query(query1)
     assert result1[0].record.id == vectors1[0].id
 
     # Query and check results from storage2
-    query2 = VectorDBQuery(query_vector=[-1, 1, -1, 1], top_k=1)
+    query2 = VectorDBQuery(query_vector=[-1.0, 1.0, -1.0, 1.0], top_k=1)
     result2 = storage2.query(query2)
     assert result2[0].record.id == vectors2[0].id
     assert result2[0].record.payload == {"message": "text"}
