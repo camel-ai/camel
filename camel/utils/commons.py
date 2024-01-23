@@ -218,8 +218,11 @@ def to_pascal(snake: str) -> str:
     # Replace multiple underscores with a single one
     snake = re.sub('_+', '_', snake)
     # Convert to PascalCase
-    camel = snake.title()
-    return re.sub('_([0-9A-Za-z])', lambda m: m.group(1).upper(), camel)
+    return re.sub(
+        '_([0-9A-Za-z])',
+        lambda m: m.group(1).upper(),
+        snake.title(),
+    )
 
 
 PYDANTIC_V2 = pydantic.VERSION.startswith("2.")
