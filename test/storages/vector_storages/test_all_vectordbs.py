@@ -70,7 +70,7 @@ def test_vector_storage(storage: BaseVectorStorage) -> None:
     assert status.vector_count == 4
     assert status.vector_dim == 4
 
-    query = VectorDBQuery(query_vector=[1, 1, 1, 1], top_k=2)
+    query = VectorDBQuery(query_vector=[1.0, 1.0, 1.0, 1.0], top_k=2)
     result = storage.query(query)
     assert result[0].record.id == vectors[0].id
     assert result[1].record.id == vectors[3].id
@@ -106,6 +106,6 @@ def test_get_payload_by_vector(storage: BaseVectorStorage):
         ),
     ]
     storage.add(vectors)
-    payloads = storage.get_payloads_by_vector([1, 1, 1, 1], top_k=2)
+    payloads = storage.get_payloads_by_vector([1.0, 1.0, 1.0, 1.0], top_k=2)
     assert payloads[0] == {"order": 3}
     assert payloads[1] == {"order": 2}
