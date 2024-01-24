@@ -69,8 +69,7 @@ def test_duckduckgo_api():
     params = {"q": "test", "format": "json"}
     result = requests.get(url, params=params)
 
-    error_message = "DuckDuckGo API did not return a 200 status code"
-    assert result.status_code == 200, error_message
+    assert result.status_code == 200
 
 
 def test_web_search():
