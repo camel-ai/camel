@@ -338,6 +338,25 @@ def summarize_text(text: str, query: str) -> str:
     return response
 
 
+def continue_search(query: str) -> bool:
+    r"""Ask LLM whether to continue search or not.
+
+    Args:
+        query (str): Question you want to be answered.
+
+    Returns:
+        bool: True if the user want to continue search, False otherwise.
+    """
+    prompt = TextPrompt(
+        '''Do you want to continue search for the question: {query}. Use only
+        'yes' or 'no' to answer.''')
+    prompt = prompt.format(query=query)
+    reply = prompt_single_step_agent(prompt)
+    if "yes" in str(reply).lower():
+        return True
+    return False
+
+
 def search_google_and_summarize(query: str) -> str:
     r"""Search webs for information. Given a query, this function will use
     the Google search engine to search for related information from the
@@ -354,29 +373,25 @@ def search_google_and_summarize(query: str) -> str:
     for item in responses:
         if "url" in item:
             url = item.get("url")
-            # Extract text
-            text = text_extract_from_web(str(url))
+            # Extract text from the web page
+            extracted_text = text_extract_from_web(str(url))
             # Using chatgpt summarise text
-            answer = summarize_text(text, query)
+            answer = summarize_text(extracted_text, query)
 
             # Let chatgpt decide whether to continue search or not
-            prompt = TextPrompt(
-                '''Do you think the answer: {answer} can answer the query:
-                {query}. Use only 'yes' or 'no' to answer.''')
-            prompt = prompt.format(answer=answer, query=query)
-            reply = prompt_single_step_agent(prompt)
-            if "yes" in str(reply).lower():
+            if continue_search(query):
+                continue
+            else:
                 return answer
 
-    return "Failed to find the answer from search."
+    return "Failed to find the answer from the Google search."
 
 
 def search_duckduckgo_and_summarize(query: str) -> str:
-    r"""Search webs for information using DuckDuckGo and summarize the results.
-
-    Given a query, this function will search for related information from the
-    internet using DuckDuckGo, extract text from the results, and then return a
-    summarized answer.
+    r"""Search webs for information using DuckDuckGo Search and summarize the
+        results. Given a query, this function will search for related
+        information from the internet using DuckDuckGo, extract text from the
+        results, and then return a summarized answer.
 
     Args:
         query (str): Question you want to be answered.
@@ -386,24 +401,25 @@ def search_duckduckgo_and_summarize(query: str) -> str:
     """
     # DuckDuckGo search will return a list of results
     responses = search_duckduckgo(query)
-    all_extracted_text = ""
 
     for item in responses:
         if "url" in item:
             url = item.get("url")
             # Extract text from the web page
             extracted_text = text_extract_from_web(str(url))
-            all_extracted_text += extracted_text + "\n\n"
+            print(f"extracted_text:\n{extracted_text}")
+            # Using chatgpt summarise text
+            answer = summarize_text(extracted_text, query)
 
-    # Summarize the extracted text
-    summarized_answer = summarize_text(all_extracted_text, query)
+            # Let chatgpt decide whether to continue search or not
+            if continue_search(query):
+                continue
+            else:
+                return answer
 
-    return summarized_answer
+    return "Failed to find the answer from the DuckDuckGo serach."
 
 
 SEARCH_FUNCS: List[OpenAIFunction] = [
-    OpenAIFunction(func) for func in [
-        search_wiki, search_google_and_summarize,
-        search_duckduckgo_and_summarize
-    ]
+    OpenAIFunction(func) for func in [search_duckduckgo_and_summarize]
 ]
