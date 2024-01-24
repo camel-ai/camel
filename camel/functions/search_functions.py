@@ -54,6 +54,69 @@ def search_wiki(entity: str) -> str:
 
     return result
 
+def search_duckduckgo(query: str) -> List[Dict[str, Any]]:
+    r"""Use DuckDuckGo search engine to search information for the given query.
+
+    This function queries the DuckDuckGo API for related topics to the given search term.
+    The results are formatted into a list of dictionaries, each representing a search result.
+
+    Args:
+        query (str): The query to be searched.
+
+    Returns:
+        List[Dict[str, Any]]: A list of dictionaries where each dictionary represents a search result.
+            Each dictionary contains the following keys:
+            - 'result_id': A sequential number starting from 1.
+            - 'title': The title or main text of the search result.
+            - 'description': A brief description of the result, often similar to the title.
+            - 'long_description': More detail of the result, often the same as the description.
+            - 'url': The URL of the result.
+
+            Example:
+            {
+                'result_id': 1,
+                'title': 'DuckDuckGo',
+                'description': 'DuckDuckGo is an Internet search engine that emphasizes protecting searchers' privacy.',
+                'long_description': 'DuckDuckGo is an Internet search engine that emphasizes protecting searchers' privacy.',
+                'url': 'https://www.duckduckgo.com'
+            }
+        title, description, url of a search result.
+    """
+
+    import requests
+    url = "https://api.duckduckgo.com/"
+    params = {
+        "q": query,
+        "format": "json",
+        "no_redirect": 1,
+        "no_html": 1
+    }
+
+    responses = []
+
+    try:
+        result = requests.get(url, params=params)
+        data = result.json()
+
+        # Check for related topics in the response
+        if 'RelatedTopics' in data:
+            for i, topic in enumerate(data['RelatedTopics']):
+                if 'Text' in topic and 'FirstURL' in topic:
+                    response = {
+                        "result_id": i + 1,
+                        "title": topic['Text'],
+                        "description": topic.get('Text', ''),
+                        "long_description": topic.get('Text', ''),
+                        "url": topic['FirstURL']
+                    }
+                    responses.append(response)
+        else:
+            responses.append({"error": "DuckDuckGo search did not return results."})
+
+    except requests.RequestException:
+        responses.append({"error": "DuckDuckGo search failed."})
+
+    return responses
 
 def search_google(query: str) -> List[Dict[str, Any]]:
     r"""Use Google search engine to search information for the given query.
@@ -145,7 +208,26 @@ def search_google(query: str) -> List[Dict[str, Any]]:
 
     return responses
 
+def search(query: str) -> List[Dict[str, Any]]:
+    r"""Perform a web search using either Google or DuckDuckGo.
 
+    This function first checks for the availability of Google API credentials.
+    If available, it uses the Google search engine. Otherwise, it defaults to DuckDuckGo.
+
+    Args:
+        query (str): The query to be searched.
+
+    Returns:
+        List[Dict[str, Any]]: A list of dictionaries representing search results.
+    """
+    GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+    SEARCH_ENGINE_ID = os.getenv("SEARCH_ENGINE_ID")
+
+    if GOOGLE_API_KEY and SEARCH_ENGINE_ID:
+        return search_google(query)
+    else:
+        return search_duckduckgo(query)
+    
 def text_extract_from_web(url: str) -> str:
     r"""Get the text information from given url.
 
@@ -270,9 +352,9 @@ def summarize_text(text: str, query: str) -> str:
     return response
 
 
-def search_google_and_summarize(query: str) -> str:
+def search_and_summarize(query: str) -> str:
     r"""Search webs for information. Given a query, this function will use
-    the Google search engine to search for related information from the
+    the Google search engine or Duckduckgo search(default) to search for related information from the
     internet, and then return a summarized answer.
 
     Args:
@@ -282,7 +364,7 @@ def search_google_and_summarize(query: str) -> str:
         str: Summarized information from webs.
     """
     # Google search will return a list of urls
-    responses = search_google(query)
+    responses = search(query)
     for item in responses:
         if "url" in item:
             url = item.get("url")
@@ -300,10 +382,10 @@ def search_google_and_summarize(query: str) -> str:
             if "yes" in str(reply).lower():
                 return answer
 
-    return "Failed to find the answer from google search."
+    return "Failed to find the answer from search."
 
 
 SEARCH_FUNCS: List[OpenAIFunction] = [
     OpenAIFunction(func)
-    for func in [search_wiki, search_google_and_summarize]
+    for func in [search_wiki, search_and_summarize]
 ]

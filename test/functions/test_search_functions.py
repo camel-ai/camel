@@ -59,6 +59,17 @@ def test_google_api():
 
     assert result.status_code == 200
 
+def test_duckduckgo_api():
+    # Test DuckDuckGo Instant Answer API
+
+    url = "https://api.duckduckgo.com/"
+    params = {
+        "q": "test",
+        "format": "json"
+    }
+    result = requests.get(url, params=params)
+
+    assert result.status_code == 200, "DuckDuckGo API did not return a 200 status code"
 
 def test_web_search():
     query = "What big things are happening in 2023?"
