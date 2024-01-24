@@ -14,8 +14,6 @@
 import os
 from typing import Any, Dict, List
 
-from duckduckgo_search import DDGS
-
 import camel.agents
 from camel.functions import OpenAIFunction
 from camel.messages import BaseMessage
@@ -91,6 +89,8 @@ def search_duckduckgo(query: str) -> List[Dict[str, Any]]:
             }
         title, description, url of a search result.
     """
+    from duckduckgo_search import DDGS
+
     ddgs = DDGS()
     max_results = 10
     results = [r for r in ddgs.text(keywords=query, max_results=max_results)]
@@ -218,24 +218,14 @@ def text_extract_from_web(url: str) -> str:
         str: All texts extract from the web.
     """
     import requests
-    from bs4 import BeautifulSoup
+    from newspaper import Article
 
     try:
         # Request the target page
-        response_text = requests.get(url).text
-
-        # Parse the obtained page
-        soup = BeautifulSoup(response_text, features="html.parser")
-
-        for script in soup(["script", "style"]):
-            script.extract()
-
-        text = soup.get_text()
-        # Strip text
-        lines = (line.strip() for line in text.splitlines())
-        chunks = (phrase.strip() for line in lines
-                  for phrase in line.split("  "))
-        text = ".".join(chunk for chunk in chunks if chunk)
+        article = Article(url)
+        article.download()
+        article.parse()
+        text = article.text
 
     except requests.RequestException:
         text = f"can't access {url}"
@@ -368,7 +358,10 @@ def search_google_and_summarize(query: str) -> str:
         if "url" in item:
             url = item.get("url")
             # Extract text from the web page
-            extracted_text = text_extract_from_web(str(url))
+            try:
+                extracted_text = text_extract_from_web(str(url))
+            except Exception:
+                continue
             # Using chatgpt summarise text
             answer = summarize_text(extracted_text, query)
 
@@ -400,7 +393,10 @@ def search_duckduckgo_and_summarize(query: str) -> str:
         if "url" in item:
             url = item.get("url")
             # Extract text from the web page
-            extracted_text = text_extract_from_web(str(url))
+            try:
+                extracted_text = text_extract_from_web(str(url))
+            except Exception:
+                continue
             # Using chatgpt summarise text
             answer = summarize_text(extracted_text, query)
 
@@ -414,5 +410,8 @@ def search_duckduckgo_and_summarize(query: str) -> str:
 
 
 SEARCH_FUNCS: List[OpenAIFunction] = [
-    OpenAIFunction(func) for func in [search_duckduckgo_and_summarize]
+    OpenAIFunction(func) for func in [
+        search_wiki, search_google_and_summarize,
+        search_duckduckgo_and_summarize
+    ]
 ]
