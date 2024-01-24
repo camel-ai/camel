@@ -14,6 +14,8 @@
 import os
 from typing import Any, Dict, List
 
+from duckduckgo_search import DDGS
+
 import camel.agents
 from camel.functions import OpenAIFunction
 from camel.messages import BaseMessage
@@ -21,8 +23,8 @@ from camel.prompts import TextPrompt
 
 
 def search_wiki(entity: str) -> str:
-    r"""Search the entity in WikiPedia and return the summary of the
-    required page, containing factual information about the given entity.
+    r"""Search the entity in WikiPedia and return the summary of the required
+        page, containing factual information about the given entity.
 
     Args:
         entity (str): The entity to be searched.
@@ -89,36 +91,28 @@ def search_duckduckgo(query: str) -> List[Dict[str, Any]]:
             }
         title, description, url of a search result.
     """
-
-    import requests
-    url = "https://api.duckduckgo.com/"
-    params = {"q": query, "format": "json", "no_redirect": "1", "no_html": "1"}
+    ddgs = DDGS()
+    max_results = 10
+    results = [r for r in ddgs.text(keywords=query, max_results=max_results)]
 
     responses = []
 
-    try:
-        result = requests.get(url, params=params)
-        data = result.json()
+    # Iterate over 10 results found
+    for i, result in enumerate(results, start=1):
+        # Extracting data from each result
+        title = result["title"]
+        body = result["body"]
+        url = result["href"]
 
-        # Check for related topics in the response
-        if 'RelatedTopics' in data:
-            for i, topic in enumerate(data['RelatedTopics']):
-                if 'Text' in topic and 'FirstURL' in topic:
-                    response = {
-                        "result_id": i + 1,
-                        "title": topic['Text'],
-                        "description": topic.get('Text', ''),
-                        "long_description": topic.get('Text', ''),
-                        "url": topic['FirstURL']
-                    }
-                    responses.append(response)
-        else:
-            responses.append(
-                {"error": "DuckDuckGo search did not return "
-                 "results."})
-
-    except requests.RequestException:
-        responses.append({"error": "DuckDuckGo search failed."})
+        # Creating a response object with a similar structure
+        response = {
+            "result_id": i,
+            "title": title,
+            "description": body,
+            "long_description": body,
+            "url": url
+        }
+        responses.append(response)
 
     return responses
 
@@ -303,7 +297,7 @@ def prompt_single_step_agent(prompt: str) -> str:
 
 def summarize_text(text: str, query: str) -> str:
     r"""Summarize the information from the text, base on the query if query is
-    given.
+        given.
 
     Args:
         text (str): Text to summarise.
@@ -359,8 +353,8 @@ def continue_search(query: str) -> bool:
 
 def search_google_and_summarize(query: str) -> str:
     r"""Search webs for information. Given a query, this function will use
-    the Google search engine to search for related information from the
-    internet, and then return a summarized answer.
+        the Google search engine to search for related information from the
+        internet, and then return a summarized answer.
 
     Args:
         query (str): Question you want to be answered.
@@ -407,7 +401,6 @@ def search_duckduckgo_and_summarize(query: str) -> str:
             url = item.get("url")
             # Extract text from the web page
             extracted_text = text_extract_from_web(str(url))
-            print(f"extracted_text:\n{extracted_text}")
             # Using chatgpt summarise text
             answer = summarize_text(extracted_text, query)
 
