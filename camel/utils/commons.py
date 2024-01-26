@@ -248,21 +248,23 @@ def dependencies_required(*required_modules: str) -> Callable[[F], F]:
     r"""A decorator to ensure that specified Python modules
     are available before a function executes.
 
-    Parameters:
-    required_modules (str): The required modules to be checked for
-    availability.
+    Args:
+        required_modules (str): The required modules to be checked for
+            availability.
 
     Returns:
-    Callable[[F], F]: The original function with the added check for
-    required module dependencies.
+        Callable[[F], F]: The original function with the added check for
+            required module dependencies.
 
     Raises:
-    ImportError: If any of the required modules are not available.
+        ImportError: If any of the required modules are not available.
 
     Example:
-    @dependencies_required('numpy', 'pandas')
-    def data_processing_function():
-        # Function implementation...
+        ::
+
+            @dependencies_required('numpy', 'pandas')
+            def data_processing_function():
+                # Function implementation...
     """
 
     def decorator(func: F) -> F:
@@ -285,11 +287,11 @@ def dependencies_required(*required_modules: str) -> Callable[[F], F]:
 def is_module_available(module_name: str) -> bool:
     r"""Check if a module is available for import.
 
-    Parameters:
-    module_name (str): The name of the module to check for availability.
+    Args:
+        module_name (str): The name of the module to check for availability.
 
     Returns:
-    bool: True if the module can be imported, False otherwise.
+        bool: True if the module can be imported, False otherwise.
     """
     try:
         importlib.import_module(module_name)
@@ -302,21 +304,23 @@ def api_keys_required(*required_keys: str) -> Callable[[F], F]:
     r"""A decorator to check if the required API keys are
     present in the environment variables.
 
-    Parameters:
-    required_keys (str): The required API keys to be checked.
+    Args:
+        required_keys (str): The required API keys to be checked.
 
     Returns:
-    Callable[[F], F]: The original function with the added check
-    for required API keys.
+        Callable[[F], F]: The original function with the added check
+            for required API keys.
 
     Raises:
-    ValueError: If any of the required API keys are missing in the
-    environment variables.
+        ValueError: If any of the required API keys are missing in the
+            environment variables.
 
     Example:
-    @api_keys_required('API_KEY_1', 'API_KEY_2')
-    def some_api_function():
-        # Function implementation...
+        ::
+
+            @api_keys_required('API_KEY_1', 'API_KEY_2')
+            def some_api_function():
+                # Function implementation...
     """
 
     def decorator(func: F) -> F:
