@@ -7,7 +7,7 @@
 
 ______________________________________________________________________
 
-# CAMEL: Communicative Agents for “Mind” Exploration of Large Scale Language Model Society
+# CAMEL: Communicative Agents for “Mind” Exploration of Large Language Model Society
 
 [![Python Version][python-image]][python-url]
 [![PyTest Status][pytest-image]][pytest-url]
@@ -28,7 +28,7 @@ ______________________________________________________________________
 </p>
 
 <p align="center">
-  <img src='https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo.png' width=800>
+  <img src='https://raw.githubusercontent.com/camel-ai/camel/master/misc/primary_logo.png' width=800>
 </p>
 
 ## Overview
@@ -243,11 +243,9 @@ We implemented amazing research ideas from other works for you to build, compare
 ## Acknowledgement
 Special thanks to [Nomic AI](https://home.nomic.ai/) for giving us extended access to their data set exploration tool (Atlas).
 
-We would also like to thank Haya Hammoud for designing the logo of our project.
+We would also like to thank Haya Hammoud for designing the initial logo of our project.
 
 ## License
-
-The intended purpose and licensing of CAMEL is solely for research use.
 
 The source code is licensed under Apache 2.0.
 
