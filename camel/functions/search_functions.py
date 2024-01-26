@@ -18,7 +18,7 @@ import camel.agents
 from camel.functions import OpenAIFunction
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
-
+ 
 
 def search_wiki(entity: str) -> str:
     r"""Search the entity in WikiPedia and return the summary of the required
