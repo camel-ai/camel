@@ -28,15 +28,13 @@ def temp_storage_path():
     # Define the path to the temporary storage
     path = 'test/functions/tempory_storage'
 
-    # Setup phase: yield the path for use in tests
     yield path
 
-    # Teardown phase: remove the files created in the temporary storage
+    # Remove the files created in the temporary storage
     if os.path.exists(path):
         shutil.rmtree(path)
 
 
-# Fixtures for common mock objects
 @pytest.fixture
 def mock_openai_embedding():
     return Mock(spec=OpenAIEmbedding)
@@ -55,6 +53,14 @@ def retrieval_function_instance():
 def test_retrieval_function_initialization():
     retrieval_func = RetrievalModule()
     assert isinstance(retrieval_func.embedding_model, OpenAIEmbedding)
+
+
+@patch('os.path.getmtime')
+def test_get_file_modified_date(mock_getmtime, retrieval_function_instance):
+    mock_getmtime.return_value = 123456789
+    mod_date = retrieval_function_instance._get_file_modified_date(
+        'some_file_path')
+    assert mod_date is not None
 
 
 def test__initialize_qdrant_storage_with_valid_path(
