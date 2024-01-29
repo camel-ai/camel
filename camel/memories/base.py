@@ -60,8 +60,9 @@ class BaseContextCreator(ABC):
     primary goal is to create a context that is aligned with a specified token
     count limit, allowing subclasses to define their specific approach.
 
-    Subclasses should implement the `token_counter`, `token_limit`, and
-    `create_context` methods to provide specific context creation logic.
+    Subclasses should implement the :obj:`token_counter`,:obj: `token_limit`,
+    and :obj:`create_context` methods to provide specific context creation
+    logic.
 
     Attributes:
         token_counter (BaseTokenCounter): A token counter instance responsible
