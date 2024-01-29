@@ -22,6 +22,7 @@ from pydantic import ValidationError
 
 from camel.functions import OpenAIFunction, get_openai_tool_schema
 from camel.types import RoleType
+from camel.utils import PYDANTIC_V2
 
 
 def test_get_openai_tool_schema():
@@ -50,7 +51,73 @@ def test_get_openai_tool_schema():
             default_enum_para (RoleType): default_enum_para desc
         """
 
-    expect_res = {
+    # pydantic v1 follows JSON Schema Draft-07 and v2 now pin to 2020-12
+    # ref: https://github.com/pydantic/pydantic/issues/4666
+    expect_res_v1 = {
+        'type': 'function',
+        'function': {
+            'name': 'test_all_parameters',
+            'description': 'A function to test all parameter type.'
+            '\nThe parameters will be provided by user.',
+            'parameters': {
+                'type':
+                'object',
+                'properties': {
+                    'any_para': {
+                        'description':
+                        "any_para desc. "
+                        "Type defaults to 'Any' if not specified."
+                    },
+                    'str_para': {
+                        'type': 'string',
+                        'description': 'str_para desc'
+                    },
+                    'int_para': {
+                        'type': 'integer',
+                        'description': 'int_para desc'
+                    },
+                    'list_para': {
+                        'type': 'array',
+                        'items': {
+                            'type': 'integer'
+                        },
+                        'description': 'list_para desc'
+                    },
+                    'float_para': {
+                        'type': 'number',
+                        'description': 'float_para desc'
+                    },
+                    'datatime_para': {
+                        'type': 'string',
+                        'format': 'date-time',
+                        'description': 'datatime_para desc'
+                    },
+                    'default_enum_para': {
+                        'default': 'critic',
+                        'allOf': [{
+                            '$ref': '#/definitions/RoleType'
+                        }],
+                        'description': 'default_enum_para desc'
+                    }
+                },
+                'required': [
+                    'str_para', 'int_para', 'list_para', 'float_para',
+                    'datatime_para'
+                ],
+                'definitions': {
+                    'RoleType': {
+                        'description':
+                        'An enumeration.',
+                        'enum': [
+                            'assistant', 'user', 'critic', 'embodiment',
+                            'default'
+                        ]
+                    }
+                }
+            }
+        }
+    }
+    expect_res_v2 = {
         'type': 'function',
         'function': {
             'name': 'test_all_parameters',
@@ -117,7 +184,10 @@ def test_get_openai_tool_schema():
 
     openai_tool_schema = get_openai_tool_schema(test_all_parameters)
 
-    assert openai_tool_schema == expect_res
+    if PYDANTIC_V2:
+        assert openai_tool_schema == expect_res_v2
+    else:
+        assert openai_tool_schema == expect_res_v1
 
 
 def test_different_docstring_style():

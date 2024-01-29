@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
+import platform
 import re
 import socket
 import time
@@ -20,6 +21,7 @@ from functools import wraps
 from typing import Any, Callable, List, Optional, Set, TypeVar, cast
 from urllib.parse import urlparse
 
+import pydantic
 import requests
 
 from camel.types import TaskType
@@ -191,6 +193,52 @@ def check_server_running(server_url: str) -> bool:
     return result == 0
 
 
+def get_system_information():
+    r"""Gathers information about the operating system.
+
+    Returns:
+        dict: A dictionary containing various pieces of OS information.
+    """
+    sys_info = {
+        "OS Name": os.name,
+        "System": platform.system(),
+        "Release": platform.release(),
+        "Version": platform.version(),
+        "Machine": platform.machine(),
+        "Processor": platform.processor(),
+        "Platform": platform.platform(),
+    }
+
+    return sys_info
+
+
+def to_pascal(snake: str) -> str:
+    """Convert a snake_case string to PascalCase.
+
+    Args:
+        snake (str): The snake_case string to be converted.
+
+    Returns:
+        str: The converted PascalCase string.
+    """
+    # Check if the string is already in PascalCase
+    if re.match(r'^[A-Z][a-zA-Z0-9]*([A-Z][a-zA-Z0-9]*)*$', snake):
+        return snake
+    # Remove leading and trailing underscores
+    snake = snake.strip('_')
+    # Replace multiple underscores with a single one
+    snake = re.sub('_+', '_', snake)
+    # Convert to PascalCase
+    return re.sub(
+        '_([0-9A-Za-z])',
+        lambda m: m.group(1).upper(),
+        snake.title(),
+    )
+
+
+PYDANTIC_V2 = pydantic.VERSION.startswith("2.")
+
+
 def role_playing_with_function(
     task_prompt: str = ("Assume now is 2024 in the Gregorian calendar, "
                         "estimate the current age of University of Oxford "
@@ -281,11 +329,10 @@ def role_playing_with_function(
     print(Fore.RED + f"Final task prompt:\n{role_play_session.task_prompt}\n")
 
     n = 0
-    input_assistant_msg, _ = role_play_session.init_chat()
+    input_msg = role_play_session.init_chat()
     while n < chat_turn_limit:
         n += 1
-        assistant_response, user_response = role_play_session.step(
-            input_assistant_msg)
+        assistant_response, user_response = role_play_session.step(input_msg)
 
         if assistant_response.terminated:
             print(Fore.GREEN +
@@ -315,4 +362,4 @@ def role_playing_with_function(
         if "CAMEL_TASK_DONE" in user_response.msg.content:
             break
 
-        input_assistant_msg = assistant_response.msg
+        input_msg = assistant_response.msg
