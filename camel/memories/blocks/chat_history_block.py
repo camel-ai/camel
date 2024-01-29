@@ -29,7 +29,7 @@ class ChatHistoryBlock(MemoryBlock):
     histories, allowing users to specify how many recent messages they'd
     like to fetch.
 
-    `ChatHistoryBlock` requires messages to be stored with certain
+    :class:`ChatHistoryBlock` requires messages to be stored with certain
     metadata (e.g., `role_at_backend`) to maintain consistency and validate
     the chat history.
 

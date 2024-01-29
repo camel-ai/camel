@@ -79,7 +79,7 @@ class VectorDBMemory(AgentMemory):
         self,
         context_creator: BaseContextCreator,
         storage: Optional[BaseVectorStorage] = None,
-        retrieve_limit=3,
+        retrieve_limit: int = 3,
     ) -> None:
         self._context_creator = context_creator
         self._retrieve_limit = retrieve_limit
