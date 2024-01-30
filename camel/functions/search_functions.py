@@ -225,7 +225,7 @@ def text_extract_from_web(url: str) -> str:
         article = Article(url)
         article.download()
         article.parse()
-        text = article.text
+        text = article.text.replace("\n", "")
 
     except requests.RequestException:
         text = f"can't access {url}"
@@ -322,19 +322,21 @@ def summarize_text(text: str, query: str) -> str:
     return response
 
 
-def continue_search(query: str) -> bool:
+def continue_search(query: str, answer: str) -> bool:
     r"""Ask LLM whether to continue search or not.
 
     Args:
         query (str): Question you want to be answered.
+        answer (str): Answer to the query.
 
     Returns:
         bool: True if the user want to continue search, False otherwise.
     """
-    prompt = TextPrompt(
-        '''Do you want to continue search for the question: {query}. Use only
-        'yes' or 'no' to answer.''')
-    prompt = prompt.format(query=query)
+    prompt = TextPrompt("Do you think the ANSWER can answer the QUERY? "
+                        "Use only 'yes' or 'no' to answer\n"
+                        "===== QUERY ====={query}\n\n"
+                        "===== ANSWER ====={answer}")
+    prompt = prompt.format(query=query, answer=answer)
     reply = prompt_single_step_agent(prompt)
     if "yes" in str(reply).lower():
         return True
@@ -366,7 +368,7 @@ def search_google_and_summarize(query: str) -> str:
             answer = summarize_text(extracted_text, query)
 
             # Let chatgpt decide whether to continue search or not
-            if continue_search(query):
+            if continue_search(query=query, answer=answer):
                 continue
             else:
                 return answer
@@ -401,7 +403,7 @@ def search_duckduckgo_and_summarize(query: str) -> str:
             answer = summarize_text(extracted_text, query)
 
             # Let chatgpt decide whether to continue search or not
-            if continue_search(query):
+            if continue_search(query=query, answer=answer):
                 continue
             else:
                 return answer
