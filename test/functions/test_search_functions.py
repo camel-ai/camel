@@ -33,8 +33,7 @@ def test_search_wiki_normal():
 
 
 def test_search_wiki_not_found():
-    search_output = search_output = search_wiki(
-        "South Africa Women Football Team")
+    search_output = search_wiki("South Africa Women Football Team")
     assert search_output.startswith(
         "There is no page in Wikipedia corresponding to entity South Africa "
         "Women Football Team, please specify another word to describe the "

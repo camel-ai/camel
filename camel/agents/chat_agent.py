@@ -82,7 +82,7 @@ class ChatAgent(BaseAgent):
         message_window_size (int, optional): The maximum number of previous
             messages to include in the context window. If `None`, no windowing
             is performed. (default: :obj:`None`)
-        token_limit (int, optional): The maxinum number of tokens in a context.
+        token_limit (int, optional): The maximum number of tokens in a context.
             The context will be automatically pruned to fulfill the limitation.
             If `None`, it will be set according to the backend model.
             (default: :obj:`None`)

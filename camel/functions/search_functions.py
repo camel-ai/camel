@@ -145,7 +145,7 @@ def search_google(query: str) -> List[Dict[str, Any]]:
                 as a whole',
                 'url': 'https://www.openai.com'
             }
-        title, descrption, url of a website.
+        title, description, url of a website.
     """
     import requests
 
@@ -212,7 +212,7 @@ def text_extract_from_web(url: str) -> str:
     r"""Get the text information from given url.
 
     Args:
-        url (str): The web site you want to search.
+        url (str): The website you want to search.
 
     Returns:
         str: All texts extract from the web.
@@ -242,7 +242,7 @@ def create_chunks(text: str, n: int) -> List[str]:
         n (int): The max length of a single chunk.
 
     Returns:
-        List[str]: A list of splitted texts.
+        List[str]: A list of split texts.
     """
 
     chunks = []
@@ -290,7 +290,7 @@ def summarize_text(text: str, query: str) -> str:
         given.
 
     Args:
-        text (str): Text to summarise.
+        text (str): Text to summarize.
         query (str): What information you want.
 
     Returns:
