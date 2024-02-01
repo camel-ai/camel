@@ -14,9 +14,11 @@
 from .base import BaseEmbedding
 from .openai_embedding import OpenAIEmbedding
 from .open_source_embeddings import SentenceTransformerEncoder
+from .clip_embedding import CLIPEmbedding
 
 __all__ = [
     "BaseEmbedding",
     "OpenAIEmbedding",
     "SentenceTransformerEncoder",
+    "CLIPEmbedding",
 ]

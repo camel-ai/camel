@@ -39,10 +39,10 @@ def update_license_in_file(
     start_line_start_with: str,
     end_line_start_with: str,
 ) -> bool:
-    with open(file_path, 'r') as f:
+    with open(file_path, 'r', encoding='utf-8') as f:
         content = f.read()
 
-    with open(license_template_path, 'r') as f:
+    with open(license_template_path, 'r', encoding='utf-8') as f:
         new_license = f.read().strip()
 
     maybe_existing_licenses = re.findall(r'^#.*?(?=\n)', content,
