@@ -51,7 +51,8 @@ def test_get_file_modified_date(auto_retriever):
     with patch('os.path.getmtime') as mocked_getmtime:
         mocked_getmtime.return_value = 1234567890
         mod_date = auto_retriever._get_file_modified_date("/path/to/file")
-        expected_date = datetime.fromtimestamp(1234567890).strftime('%Y-%m-%dT%H:%M:%S')
+        expected_date = datetime.fromtimestamp(1234567890).strftime(
+            '%Y-%m-%dT%H:%M:%S')
         assert mod_date == expected_date
 
     with pytest.raises(FileNotFoundError):
