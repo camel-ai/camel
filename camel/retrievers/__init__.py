@@ -11,8 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .retrieval_module import RetrievalModule
+from .base import BaseRetriever
+from .vector_retriever import VectorRetriever
+from .auto_retriever import AutoRetriever
 
 __all__ = [
-    'RetrievalModule',
+    'BaseRetriever',
+    'VectorRetriever',
+    'AutoRetriever',
 ]

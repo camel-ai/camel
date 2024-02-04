@@ -1,0 +1,148 @@
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# Licensed under the Apache License, Version 2.0 (the “License”);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an “AS IS” BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from typing import Any, Optional
+
+from camel.embeddings import BaseEmbedding, OpenAIEmbedding
+from camel.functions.unstructured_io_fuctions import UnstructuredModules
+from camel.retrievers import BaseRetriever
+from camel.storages.vectordb_storages import (
+    BaseVectorStorage,
+    VectorDBQuery,
+    VectorRecord,
+)
+
+DEFAULT_TOP_K_RESULTS = 1
+DEFAULT_SIMILARITY_THRESTOLD = 0.75
+
+
+class VectorRetriever(BaseRetriever):
+    r"""An implementation of the `BaseRetriever` by using vector storage and
+    embedding model.
+
+    This class facilitates the retriever of relevant information using a
+    query-based approach, backed by vector embeddings.
+
+    Attributes:
+        embedding_model (BaseEmbedding): Embedding model used to generate
+            vector embeddings.
+        vector_dim: Dimensionality of the embedding model.
+    """
+
+    def __init__(self,
+                 embedding_model: Optional[BaseEmbedding] = None) -> None:
+        r"""Initializes the retriever class with an optional embedding model
+        and vector storage, and sets the number of top results for retriever.
+
+        Args:
+            embedding_model (Optional[BaseEmbedding]): The embedding model
+                instance. Defaults to `OpenAIEmbedding` if not provided.
+        """
+        self.embedding_model = embedding_model or OpenAIEmbedding()
+        self.vector_dim = self.embedding_model.get_output_dim()
+
+    def process_and_store(self, content_input_path: str,
+                          storage: BaseVectorStorage, **kwargs: Any) -> None:
+        r""" Processes content from a file or URL, divides it into chunks by
+        using `Unstructured IO`, and stores their embeddings in the specified
+        vector storage.
+
+        Args:
+            content_input_path (str): File path or URL of the content to be
+                processed.
+            storage (BaseVectorStorage): Vector storage to store the
+                embeddings.
+            **kwargs (Any): Additional keyword arguments for elements chunking.
+        """
+        unstructured_modules = UnstructuredModules()
+        elements = unstructured_modules.parse_file_or_url(content_input_path)
+        chunks = unstructured_modules.chunk_elements(
+            chunk_type="chunk_by_title", elements=elements, **kwargs)
+
+        for chunk in chunks:
+            # Get vector from chunk string
+            vector = self.embedding_model.embed(obj=str(chunk))
+            # Get content path, metadata, text
+            content_path_info = {"content path": content_input_path}
+            chunk_metadata = {"metadata": chunk.metadata.to_dict()}
+            chunk_text = {"text": str(chunk)}
+            # Combine the information into one dict as payload
+            combined_dict = {
+                **content_path_info,
+                **chunk_metadata,
+                **chunk_text
+            }
+            # Add vector and payload to vector storage
+            storage.add(
+                records=[VectorRecord(vector=vector, payload=combined_dict)])
+
+    def query_and_compile_results(
+            self, query: str, storage: BaseVectorStorage,
+            top_k: int = DEFAULT_TOP_K_RESULTS,
+            similarity_threshold: float = DEFAULT_SIMILARITY_THRESTOLD,
+            **kwargs: Any) -> str:
+        r"""Executes a query in vector storage and compiles the retrieved
+        results into a string.
+
+        Args:
+            query (str): Query string for information retriever.
+            storage (BaseVectorStorage): Vector storage to query.
+            top_k (int, optional): The number of top results to return during
+                retriever. Must be a positive integer. Defaults to 1.
+            similarity_threshold (float, optional): The similarity threshold
+                for filtering results. Defaults to 0.75.
+            **kwargs (Any): Additional keyword arguments for vector storage
+                query.
+
+        Returns:
+            str: Concatenated string of the query results.
+
+        Raises:
+            ValueError: If 'top_k' is less than or equal to 0, if vector
+                storage is empty, if payload of vector storage is None.
+        """
+
+        if top_k <= 0:
+            raise ValueError("top_k must be a positive integer.")
+
+        if storage.status().vector_count == 0:
+            raise ValueError("Vector storage is empty, please check"
+                             "the collection.")
+
+        query_vector = self.embedding_model.embed(obj=query)
+        db_query = VectorDBQuery(query_vector=query_vector, top_k=top_k)
+        query_results = storage.query(query=db_query, **kwargs)
+
+        if query_results[0].record.payload is None:
+            raise ValueError("Payload of vector storage is None, please check"
+                             " the collection.")
+
+        # format the results
+        formatted_results = []
+        for result in query_results:
+            if (result.similarity >= similarity_threshold
+                    and result.record.payload is not None):
+                result_dict = {
+                    'similarity score': str(result.similarity),
+                    'content path':
+                    result.record.payload.get('content path', ''),
+                    'metadata': result.record.payload.get('metadata', {}),
+                    'text': result.record.payload.get('text', '')
+                }
+                formatted_results.append(str(result_dict))
+
+        if not formatted_results:
+            return f"""No suitable information retrieved from
+            {query_results[0].record.payload.get('content path','')} with
+            similarity_threshold = {similarity_threshold}."""
+        return "\n".join(formatted_results)
