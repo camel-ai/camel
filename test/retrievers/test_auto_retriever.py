@@ -14,6 +14,7 @@
 import os
 import shutil
 import tempfile
+from datetime import datetime
 from unittest.mock import patch
 
 import pytest
@@ -50,7 +51,8 @@ def test_get_file_modified_date(auto_retriever):
     with patch('os.path.getmtime') as mocked_getmtime:
         mocked_getmtime.return_value = 1234567890
         mod_date = auto_retriever._get_file_modified_date("/path/to/file")
-        assert mod_date == "2009-02-14T07:31:30"
+        expected_date = datetime.fromtimestamp(1234567890).strftime('%Y-%m-%dT%H:%M:%S')
+        assert mod_date == expected_date
 
     with pytest.raises(FileNotFoundError):
         auto_retriever._get_file_modified_date("/path/to/nonexistent/file")
