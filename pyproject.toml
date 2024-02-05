@@ -56,12 +56,8 @@ wikipedia = { version = "^1", optional = true }
 pyowm = { version = "^3.3.0", optional = true }
 unstructured = { version = "^0.10.30", optional = true }
 
-sentence-transformers = { version = "^2.2.2", optional = true }
-
 # vector-databases
 qdrant-client = { version = "^1.6.4", optional = true }
-
-pillow = { version = "^10.2.0", optional = true }
 
 # test
 pytest = { version = "^7", optional = true}
@@ -80,10 +76,6 @@ huggingface-agent = [
     "soundfile",
     "sentencepiece",
     "opencv-python",
-]
-
-embeddings = [
-    "sentence-transformers",
 ]
 
 tools = [
@@ -118,8 +110,6 @@ all = [
     "unstructured",
     # vector-database
     "qdrant-client",
-
-    "sentence-transformers",
 ]
 
 [tool.poetry.group.dev]
@@ -199,6 +189,5 @@ module = [
     "PyMuPDF",
     "fitz",
     "unstructured.*",
-    "sentence_transformers.*",
 ]
 ignore_missing_imports = true

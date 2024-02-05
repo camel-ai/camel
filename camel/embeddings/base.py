@@ -33,9 +33,8 @@ class BaseEmbedding(ABC, Generic[T]):
             **kwargs (Any): Extra kwargs passed to the embedding API.
 
         Returns:
-            List[List[float]]: A list that represents the
-            generated embedding as a list of floating-point numbers or a
-            numpy matrix with embeddings.
+            List[List[float]]: A list that represents the generated embedding
+                as a list of floating-point numbers.
         """
         pass
 
