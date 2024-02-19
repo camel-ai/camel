@@ -150,7 +150,7 @@ def search_google(query: str) -> List[Dict[str, Any]]:
                 'description': 'An organization focused on ensuring that
                 artificial general intelligence benefits all of humanity.',
                 'long_description': 'OpenAI is a non-profit artificial
-                 intelligence research company. Our goal is to advance digital
+                intelligence research company. Our goal is to advance digital
                 intelligence in the way that is most likely to benefit humanity
                 as a whole',
                 'url': 'https://www.openai.com'
