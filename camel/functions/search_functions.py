@@ -90,29 +90,37 @@ def search_duckduckgo(query: str) -> List[Dict[str, Any]]:
         title, description, url of a search result.
     """
     from duckduckgo_search import DDGS
+    from requests.exceptions import RequestException
 
     ddgs = DDGS()
     max_results = 10
-    results = [r for r in ddgs.text(keywords=query, max_results=max_results)]
-
     responses = []
 
-    # Iterate over 10 results found
-    for i, result in enumerate(results, start=1):
-        # Extracting data from each result
-        title = result["title"]
-        body = result["body"]
-        url = result["href"]
+    try:
+        results = [r for r in ddgs.text(keywords=query, max_results=max_results)]
 
-        # Creating a response object with a similar structure
-        response = {
-            "result_id": i,
-            "title": title,
-            "description": body,
-            "long_description": body,
-            "url": url
-        }
-        responses.append(response)
+        # Iterate over results found
+        for i, result in enumerate(results, start=1):
+            # Extracting data from each result
+            title = result["title"]
+            body = result["body"]
+            url = result["href"]
+
+            # Creating a response object with a similar structure
+            response = {
+                "result_id": i,
+                "title": title,
+                "description": body,
+                "url": url
+            }
+            responses.append(response)
+
+    except RequestException as e:
+        # Handle specific exceptions or general request exceptions
+        responses.append({"error": f"DuckDuckGo search failed: {str(e)}"})
+    except Exception as e:
+        # Catch-all for any other exceptions that were not anticipated
+        responses.append({"error": f"An unexpected error occurred: {str(e)}"})
 
     return responses
 
