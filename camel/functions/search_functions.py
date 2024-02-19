@@ -97,7 +97,9 @@ def search_duckduckgo(query: str) -> List[Dict[str, Any]]:
     responses = []
 
     try:
-        results = [r for r in ddgs.text(keywords=query, max_results=max_results)]
+        results = [
+            r for r in ddgs.text(keywords=query, max_results=max_results)
+        ]
 
         # Iterate over results found
         for i, result in enumerate(results, start=1):
