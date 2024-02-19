@@ -347,8 +347,8 @@ def continue_search(query: str, answer: str) -> bool:
     prompt = prompt.format(query=query, answer=answer)
     reply = prompt_single_step_agent(prompt)
     if "yes" in str(reply).lower():
-        return True
-    return False
+        return False
+    return True
 
 
 def search_google_and_summarize(query: str) -> str:
