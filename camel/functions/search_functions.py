@@ -353,72 +353,47 @@ def continue_search(query: str, answer: str) -> bool:
     return True
 
 
-def search_google_and_summarize(query: str) -> str:
-    r"""Search webs for information. Given a query, this function will use
-        the Google search engine to search for related information from the
-        internet, and then return a summarized answer.
+def search_and_summarize(query: str, search_func) -> str:
+    """
+    Search the web for information using a specified search function
+    and summarize the results.
 
     Args:
         query (str): Question you want to be answered.
+        search_func (Callable): A function that takes a query
+        and returns search results.
 
     Returns:
-        str: Summarized information from webs.
+        str: Summarized information from the web.
     """
-    # Google search will return a list of urls
-    responses = search_google(query)
+    responses = search_func(query)
     for item in responses:
         if "url" in item:
             url = item.get("url")
-            # Extract text from the web page
             try:
                 extracted_text = text_extract_from_web(str(url))
             except Exception:
                 continue
-            # Using chatgpt summarise text
             answer = summarize_text(extracted_text, query)
-
-            # Let chatgpt decide whether to continue search or not
-            if continue_search(query=query, answer=answer):
-                continue
-            else:
+            if not continue_search(query=query, answer=answer):
                 return answer
+    return "Failed to find an answer."
 
-    return "Failed to find the answer from the Google search."
+
+def search_google_and_summarize(query: str) -> str:
+    """
+    Search the web for information using Google search
+    and summarize the results.
+    """
+    return search_and_summarize(query, search_google)
 
 
 def search_duckduckgo_and_summarize(query: str) -> str:
-    r"""Search webs for information using DuckDuckGo Search and summarize the
-        results. Given a query, this function will search for related
-        information from the internet using DuckDuckGo, extract text from the
-        results, and then return a summarized answer.
-
-    Args:
-        query (str): Question you want to be answered.
-
-    Returns:
-        str: Summarized information from webs.
     """
-    # DuckDuckGo search will return a list of results
-    responses = search_duckduckgo(query)
-
-    for item in responses:
-        if "url" in item:
-            url = item.get("url")
-            # Extract text from the web page
-            try:
-                extracted_text = text_extract_from_web(str(url))
-            except Exception:
-                continue
-            # Using chatgpt summarise text
-            answer = summarize_text(extracted_text, query)
-
-            # Let chatgpt decide whether to continue search or not
-            if continue_search(query=query, answer=answer):
-                continue
-            else:
-                return answer
-
-    return "Failed to find the answer from the DuckDuckGo serach."
+    Search the web for information using DuckDuckGo search
+    and summarize the results.
+    """
+    return search_and_summarize(query, search_duckduckgo)
 
 
 SEARCH_FUNCS: List[OpenAIFunction] = [
