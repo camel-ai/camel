@@ -72,7 +72,8 @@ def test_run_vector_retriever(auto_retriever, temp_storage_path):
     # Test with query related to the content in mock data
     result_related = auto_retriever.run_vector_retriever(
         query_related, content_input_paths, vector_storage_local_path,
-        url_and_api_key, top_k, similarity_threshold)
+        url_and_api_key, top_k, similarity_threshold,
+        return_detailed_info=True)
 
     assert "similarity score" in result_related, \
         "result_related missing 'similarity score'"
@@ -88,9 +89,4 @@ def test_run_vector_retriever(auto_retriever, temp_storage_path):
         query_unrealted, content_input_paths, vector_storage_local_path,
         url_and_api_key, top_k, similarity_threshold)
 
-    assert result_unrelated == """Original Query:
-{unrelated query}
-Retrieved Context:
-No suitable information retrieved from
-            https://www.camel-ai.org/ with
-            similarity_threshold = 0.75."""
+    assert "No suitable information retrieved from" in result_unrelated

@@ -22,7 +22,7 @@ from camel.retrievers import VectorRetriever
 from camel.storages.vectordb_storages import QdrantStorage, VectorDBQuery
 
 DEFAULT_TOP_K_RESULTS = 1
-DEFAULT_SIMILARITY_THRESTOLD = 0.75
+DEFAULT_SIMILARITY_THRESHOLD = 0.75
 
 
 class AutoRetriever():
@@ -80,12 +80,13 @@ class AutoRetriever():
             vector_storage_local_path: Optional[str] = None,
             url_and_api_key: Optional[Tuple[str, str]] = None,
             top_k: int = DEFAULT_TOP_K_RESULTS,
-            similarity_threshold: float = DEFAULT_SIMILARITY_THRESTOLD) -> str:
+            similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
+            return_detailed_info: bool = False) -> str:
         r"""Executes the automatic vector retriever process using `Qdrant` storage.
 
         Args:
             query (str): Query string for information retriever.
-            content_input_paths (Union[str, list[str]]): Paths to local
+            content_input_paths (Union[str, List[str]]): Paths to local
                 files or remote URLs.
             vector_storage_local_path (Optional[str]): Local path for `Qdrant`
                 storage.
@@ -95,9 +96,14 @@ class AutoRetriever():
                 retrieve. Must be a positive integer. Defaults to 1.
             similarity_threshold (float, optional): The similarity threshold
                 for filtering results. Defaults to 0.75.
+            return_detailed_info (bool, optional): Whether to return detailed
+                information including similarity score, content path and
+                metadata. Defaults to False.
 
         Returns:
-            str: Aggregated information retrieved in response to the query.
+            string: By default, returns only the text information. If
+            `return_detailed_info` is True, return detailed information
+            including similarity score, content path and metadata.
 
         Raises:
             ValueError: If there's an vector storage existing with content
@@ -109,6 +115,7 @@ class AutoRetriever():
             content_input_paths, str) else content_input_paths
 
         retrieved_infos = ""
+        retrieved_infos_text = ""
 
         for content_input_path in content_input_paths:
             # Check path type
@@ -162,7 +169,7 @@ class AutoRetriever():
                 if vector_storage_instance.status(
                 ).vector_count == 0 or file_is_modified:
                     # Clear the vector storage
-                    vector_storage_instance.clear
+                    vector_storage_instance.clear()
                     # Process and store the content to the vector storage
                     vr.process_and_store(content_input_path,
                                          vector_storage_instance)
@@ -170,13 +177,20 @@ class AutoRetriever():
                 retrieved_info = vr.query_and_compile_results(
                     query, vector_storage_instance, top_k,
                     similarity_threshold)
-                # Reorganize the retrieved info with original query
-                retrieved_infos += "\n" + retrieved_info
+                for info in retrieved_info:
+                    # Reorganize the retrieved info with original query
+                    retrieved_infos += "\n" + str(info)
+                    retrieved_infos_text += "\n" + str(info['text'])
                 output = ("Original Query:" + "\n" + "{" + query + "}" + "\n" +
                           "Retrieved Context:" + retrieved_infos)
+                output_text = ("Original Query:" + "\n" + "{" + query + "}" +
+                               "\n" + "Retrieved Context:" +
+                               retrieved_infos_text)
             except Exception as e:
                 raise RuntimeError(
-                    f"Error in auto vector retrieve processing: {str(e)}"
+                    f"Error in auto vector retriever processing: {str(e)}"
                 ) from e
-
-        return output
+        if return_detailed_info:
+            return output
+        else:
+            return output_text

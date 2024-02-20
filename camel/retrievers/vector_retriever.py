@@ -14,7 +14,7 @@
 from typing import Any, Optional
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
-from camel.functions.unstructured_io_fuctions import UnstructuredModules
+from camel.functions.unstructured_io_functions import UnstructuredModules
 from camel.retrievers import BaseRetriever
 from camel.storages.vectordb_storages import (
     BaseVectorStorage,
@@ -23,7 +23,7 @@ from camel.storages.vectordb_storages import (
 )
 
 DEFAULT_TOP_K_RESULTS = 1
-DEFAULT_SIMILARITY_THRESTOLD = 0.75
+DEFAULT_SIMILARITY_THRESHOLD = 0.75
 
 
 class VectorRetriever(BaseRetriever):
@@ -36,20 +36,17 @@ class VectorRetriever(BaseRetriever):
     Attributes:
         embedding_model (BaseEmbedding): Embedding model used to generate
             vector embeddings.
-        vector_dim: Dimensionality of the embedding model.
     """
 
     def __init__(self,
                  embedding_model: Optional[BaseEmbedding] = None) -> None:
-        r"""Initializes the retriever class with an optional embedding model
-        and vector storage, and sets the number of top results for retriever.
+        r"""Initializes the retriever class with an optional embedding model.
 
         Args:
             embedding_model (Optional[BaseEmbedding]): The embedding model
                 instance. Defaults to `OpenAIEmbedding` if not provided.
         """
         self.embedding_model = embedding_model or OpenAIEmbedding()
-        self.vector_dim = self.embedding_model.get_output_dim()
 
     def process_and_store(self, content_input_path: str,
                           storage: BaseVectorStorage, **kwargs: Any) -> None:
@@ -89,8 +86,8 @@ class VectorRetriever(BaseRetriever):
     def query_and_compile_results(
             self, query: str, storage: BaseVectorStorage,
             top_k: int = DEFAULT_TOP_K_RESULTS,
-            similarity_threshold: float = DEFAULT_SIMILARITY_THRESTOLD,
-            **kwargs: Any) -> str:
+            similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
+            **kwargs: Any) -> list:
         r"""Executes a query in vector storage and compiles the retrieved
         results into a string.
 
@@ -105,7 +102,7 @@ class VectorRetriever(BaseRetriever):
                 query.
 
         Returns:
-            str: Concatenated string of the query results.
+            list: Concatenated list of the query results.
 
         Raises:
             ValueError: If 'top_k' is less than or equal to 0, if vector
@@ -139,10 +136,13 @@ class VectorRetriever(BaseRetriever):
                     'metadata': result.record.payload.get('metadata', {}),
                     'text': result.record.payload.get('text', '')
                 }
-                formatted_results.append(str(result_dict))
+                formatted_results.append(result_dict)
 
         if not formatted_results:
-            return f"""No suitable information retrieved from
-            {query_results[0].record.payload.get('content path','')} with
-            similarity_threshold = {similarity_threshold}."""
-        return "\n".join(formatted_results)
+            return [{
+                'text':
+                f"""No suitable information retrieved from \
+                {query_results[0].record.payload.get('content path','')} \
+                with similarity_threshold = {similarity_threshold}."""
+            }]
+        return formatted_results

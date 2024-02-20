@@ -86,4 +86,4 @@ def test_query_and_compile_results(vector_retriever, mock_vector_storage):
         "mock_query", mock_vector_storage)
 
     # Assert that the result is as expected
-    assert "mock_result" in result
+    assert any(d.get('text') == 'mock_result' for d in result)

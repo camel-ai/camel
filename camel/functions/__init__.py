@@ -20,7 +20,7 @@ from .openai_function import (
 from .math_functions import MATH_FUNCS
 from .search_functions import SEARCH_FUNCS
 from .weather_functions import WEATHER_FUNCS
-from .unstructured_io_fuctions import UnstructuredModules
+from .unstructured_io_functions import UnstructuredModules
 
 __all__ = [
     'OpenAIFunction',

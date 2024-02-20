@@ -17,7 +17,7 @@ from typing import Any
 from camel.storages import BaseVectorStorage
 
 DEFAULT_TOP_K_RESULTS = 1
-DEFAULT_SIMILARITY_THRESTOLD = 0.75
+DEFAULT_SIMILARITY_THRESHOLD = 0.75
 
 
 class BaseRetriever(ABC):
@@ -50,7 +50,7 @@ class BaseRetriever(ABC):
         query: str,
         storage: BaseVectorStorage,
         top_k: int = DEFAULT_TOP_K_RESULTS,
-        similarity_threshold: float = DEFAULT_SIMILARITY_THRESTOLD,
+        similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
         **kwargs: Any,
     ) -> Any:
         r"""Executes a query in storage and compiles the retrieved

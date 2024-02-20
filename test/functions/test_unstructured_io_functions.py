@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Tuple
 
 import pytest
 
-from camel.functions.unstructured_io_fuctions import UnstructuredModules
+from camel.functions.unstructured_io_functions import UnstructuredModules
 
 
 # Create a fixture to initialize the UnstructuredModules instance
