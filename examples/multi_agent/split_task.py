@@ -20,19 +20,33 @@ from camel.configs import ChatGPTConfig
 
 
 def main(model_type=None) -> None:
-    task_prompt = "Develop a trading bot for the stock market."
+    task_prompt = """Given a 2x2 matrix:
+A = \\begin{bmatrix} a & b \\ c & d \\end{bmatrix}
+where a = 1, b = 3, c = 2, d = 4
+
+Please calculate the determinant of matrix ( A ), without programming.
+
+Remember, the determinant of a 2x2 matrix is calculated as:
+\\text{det}(A) = ad - bc"""
 
     model_config_description = ChatGPTConfig()
     role_description_agent = MultiAgent(model_type=model_type,
                                         model_config=model_config_description)
 
-    role_descriptions_dict = (role_description_agent.run_role_with_description(
-        task_prompt=task_prompt, num_roles=4))
-
-    num_subtasks = 6
-    subtasks = role_description_agent.split_tasks(
-        task_prompt=task_prompt, role_descriptions_dict=role_descriptions_dict,
-        num_subtasks=num_subtasks)
+    # Optional parameter: role_descriptions_dict
+    # role_descriptions_dict = \
+    #     role_description_agent.run_role_with_description(
+    #         task_prompt=task_prompt, num_roles=4)
+    # Optional parameter: num_subtasks
+    num_subtasks = 4
+    # Optional parameter: context_text
+    context_text = (
+        "The expected solution of the task should be a calculation " +
+        "process of the matrix")
+    subtasks = role_description_agent.split_tasks(task_prompt=task_prompt,
+                                                  role_descriptions_dict=None,
+                                                  num_subtasks=num_subtasks,
+                                                  context_text=context_text)
 
     print(Fore.BLUE + f"Subtasks with description and dependencies:\n"
           f"{json.dumps(subtasks, indent=4)}")
