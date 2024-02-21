@@ -183,7 +183,7 @@ The tool descriptions are the context information of the potential competencies 
     def split_tasks(
         self,
         task_prompt: Union[str, TextPrompt],
-        role_descriptions_dict: Dict[str, str],
+        role_descriptions_dict: Optional[Dict[str, str]] = None,
         num_subtasks: Optional[int] = None,
         context_text: Optional[str] = None,
     ) -> Dict[str, Dict[str, Union[str, List[str]]]]:
@@ -192,8 +192,8 @@ The tool descriptions are the context information of the potential competencies 
         Args:
             task_prompt (Union[str, TextPrompt]): The prompt for the task
                 based on which the roles are to be generated.
-            role_descriptions_dict (Dict[str, str]): The role descriptions of
-                each role.
+            role_descriptions_dict (Optional[Dict[str, str]], optional): The
+                role descriptions of each role. (default: :obj:`None`)
             num_subtasks (Optional[int], optional): The number of subtasks to
                 decompose the task into. (default: :obj:`None`)
             context_text (Optional[str], optional): The context text to
@@ -205,14 +205,14 @@ The tool descriptions are the context information of the potential competencies 
         """
         self.reset()
 
-        role_names = list(role_descriptions_dict.keys())
-
-        split_task_rules_prompt = """You are a task decomposer, and you're in asked to break down the main TASK into {num_subtasks} manageable subtasks suitable for a team comprising {num_roles} domain experts. The experts will contribute to the {num_subtasks} subtasks. Please follow the guidelines below to craft your answer:
+        split_task_rules_prompt = """You are a task decomposer, and you're in asked to break down the main TASK into {num_subtasks} subtasks suitable for a team comprising {num_roles} domain experts. The experts will contribute to the {num_subtasks} subtasks. Please follow the guidelines below to craft your answer:
     1. Remember, your role is to compose the TASK, not to complete the TASK directly.
     2. Focus on LLM Capabilities: Each subtask should leverage the strengths of a large language model (LLM), such as data processing, writing code, content generation, and etc.. Avoid assigning tasks that require physical actions or direct interaction with software/hardware systems, which are outside the LLM's capabilities.
     3. Define clear LLM-Appropriate Actions: Ensure each subtask is actionable, distinct, tapping into the expertise of the assigned roles and aligning with LLM capabilities. The subtasks should be designed considering that the LLM can handle complex tasks typically managed by domain experts. Recognize that not every subtask needs to directly reflect the main TASK's ultimate aim. Some subtasks serve as essential building blocks, paving the way for more central subtasks, but avoid creating subtasks that are self-dependent or overly foundational.
-    4. Balanced Granularity with a Bias for Action: Details of subtask should be detailed, actionable, and not be ambiguous. Prioritize tangible actions in subtask such as implementation, creation, testing, or other tangible activities over mere understanding.
-    5. Contextual Parameters: Please ensure that each subtask has the relevant context information from the TASK to avoid missing or contradicting the context information of the TASK. And try to provide as much information from CONTEXT TEXT as possible here.
+    4. Balanced Granularity with a Bias for Action: Details of subtask should be detailed, actionable, and not be ambiguous, in addition, make sure that the subtasks should not extend beyond the original scope or boundaries of the TASK. Prioritize tangible actions in subtask such as implementation, creation, testing, or other tangible activities over mere understanding.
+    5. Contextual Parameters:
+        - You should always be aware of it, in my next response to you, I will not have access to our chat history. Which means I will know nothing about the TASK, or the CONTEXT TEXT. So, you should include all the information in your answer to me.
+        - Each subtask should have the context information from the TASK to avoid missing or contradicting the context information of the TASK. And try to provide as much information from CONTEXT TEXT as possible here.
     6. Dependencies & Gantt Chart: Identify and account for the dependencies within the subtasks. Ensure that each subtask logically flows from one to the next, or can run concurrently where no subtask is dependent on itself and with no subtask being dependent on the completion of another in a way that creates a cycle., in a manner that could be efficiently represented on a Gantt chart.
     7. Definitions of the Input of subtask:
         - Interlinking of Inputs: Ensure that the inputs are not siloed and can be interlinked within privous subtasks if necessary, providing a holistic view of what is required for the subtask.
@@ -225,7 +225,8 @@ The tool descriptions are the context information of the potential competencies 
         - If possible, the completion standard should be quantifiable to facilitate automatic detection by the software or tool feature.
         - The completion standard should be applicable to common project management scenarios and adaptable to various types of tasks, such as development, testing, and review tasks.
     9. Don't generate subtasks that might violate OpenAI's guidelines, which triggers the following error message: "I'm sorry, but I cannot fulfill your request.".
-    10. Refrain from mentioning specific titles or roles (who are mentioned in the section of ROLES WITH DESCRIPTION) within the content of subtasks, unless the titles and personal names are mentioned in the TASK.
+    10. When generating the "Details of subtask <NUM>", make sure you don't miss any information, conditions, constraints, or requirements from the TASK to avoid an incomplete or incorrect solution.
+    11. Refrain from mentioning specific titles or roles (who are mentioned in the section of ROLES WITH DESCRIPTION) within the content of subtasks, unless the titles and personal names are mentioned in the TASK.
 Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill in the BLANKs, and DO NOT alter or modify any other part of the template.\n\n\n"""  # noqa: E501
 
         # Generate insights from the context text to help decompose the task
@@ -246,10 +247,16 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
             task_context_prompt = ""
 
         task_prompt = TextPrompt("===== TASK =====\n" + task_prompt + "\n\n")
-        role_with_description_prompt = \
-            "===== ROLES WITH DESCRIPTION =====\n" + "\n".join(
-                f"{role_name}:\n{role_descriptions_dict[role_name]}\n"
-                for role_name in role_names) + "\n\n"
+
+        if role_descriptions_dict is not None:
+            role_names = list(role_descriptions_dict.keys())
+            role_with_description_prompt = \
+                "===== ROLES WITH DESCRIPTION =====\n" + "\n".join(
+                    f"{role_name}:\n{role_descriptions_dict[role_name]}\n"
+                    for role_name in role_names) + "\n\n"
+        else:
+            role_names = []
+            role_with_description_prompt = ""
         if num_subtasks is None:
             answer_prompt = (
                 "===== ANSWER TEMPLATE =====\n"
