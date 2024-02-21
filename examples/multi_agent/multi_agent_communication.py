@@ -174,7 +174,8 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
 
         subtask_content = (
             "- Description of TASK:\n" +
-            subtasks_with_dependencies_dict[subtask_id]["description"] +
+            subtasks_with_dependencies_dict[subtask_id]["description"] + " " +
+            subtasks_with_dependencies_dict[subtask_id]["context"] +
             "\n- Input of TASK:\n" +
             subtasks_with_dependencies_dict[subtask_id]["input_content"] +
             "\n- Output Standard for the completion of TASK:\n" +
