@@ -65,23 +65,29 @@ class VectorRetriever(BaseRetriever):
         elements = unstructured_modules.parse_file_or_url(content_input_path)
         chunks = unstructured_modules.chunk_elements(
             chunk_type="chunk_by_title", elements=elements, **kwargs)
+        # Iterate to process and store embeddings, set batch of 50
+        for i in range(0, len(chunks), 50):
+            batch_chunks = chunks[i:i + 50]
+            batch_vectors = self.embedding_model.embed_list(
+                objs=[str(chunk) for chunk in batch_chunks])
 
-        for chunk in chunks:
-            # Get vector from chunk string
-            vector = self.embedding_model.embed(obj=str(chunk))
-            # Get content path, metadata, text
-            content_path_info = {"content path": content_input_path}
-            chunk_metadata = {"metadata": chunk.metadata.to_dict()}
-            chunk_text = {"text": str(chunk)}
-            # Combine the information into one dict as payload
-            combined_dict = {
-                **content_path_info,
-                **chunk_metadata,
-                **chunk_text
-            }
-            # Add vector and payload to vector storage
-            storage.add(
-                records=[VectorRecord(vector=vector, payload=combined_dict)])
+            records = []
+            # Prepare the payload for each vector record, includes the content
+            # path, chunk metadata, and chunk text
+            for vector, chunk in zip(batch_vectors, batch_chunks):
+                content_path_info = {"content path": content_input_path}
+                chunk_metadata = {"metadata": chunk.metadata.to_dict()}
+                chunk_text = {"text": str(chunk)}
+                combined_dict = {
+                    **content_path_info,
+                    **chunk_metadata,
+                    **chunk_text
+                }
+
+                records.append(
+                    VectorRecord(vector=vector, payload=combined_dict))
+
+            storage.add(records=records)
 
     def query_and_compile_results(
             self, query: str, storage: BaseVectorStorage,
