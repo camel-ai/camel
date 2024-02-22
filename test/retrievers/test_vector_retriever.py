@@ -66,6 +66,10 @@ def test_process_and_store(mock_unstructured_modules, vector_retriever,
     ]
     mock_unstructured_instance.chunk_elements.return_value = [mock_chunk]
 
+    vector_retriever.embedding_model.embed_list.return_value = [[
+        0.1, 0.2, 0.3
+    ]]
+
     vector_retriever.process_and_store("mock_path", mock_vector_storage)
 
     # Assert that methods are called as expected
