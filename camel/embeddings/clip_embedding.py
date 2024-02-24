@@ -83,6 +83,6 @@ class CLIPEmbedding(BaseEmbedding):
         """
 
         text = 'dimension'
-        inputs = self.processor(text=[text])
+        inputs = self.processor(text=[text], return_tensors="pt")
         dim = self.model.get_text_features(**inputs).shape[1]
         return dim
