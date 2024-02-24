@@ -11,14 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, List
+from typing import Any, List, Union
 
 from PIL import Image
 
 from camel.embeddings import BaseEmbedding
 
 
-class CLIPEmbedding(BaseEmbedding[str]):
+class CLIPEmbedding(BaseEmbedding):
     r"""Provides image embedding functionalities using CLIP model.
 
     Args:
@@ -46,7 +46,7 @@ class CLIPEmbedding(BaseEmbedding[str]):
 
     def embed_list(
         self,
-        objs,  # to do
+        objs: List[Union[Image.Image, str]],  # to do
         **kwargs: Any,
     ) -> List[List[float]]:
         r"""Generates embeddings for the given images or texts.
@@ -82,4 +82,7 @@ class CLIPEmbedding(BaseEmbedding[str]):
             int: The dimensionality of the embedding for the current model.
         """
 
-        return 512
+        text = 'dimension'
+        inputs = self.processor(text=[text])
+        dim = self.model.get_text_features(**inputs).shape[1]
+        return dim
