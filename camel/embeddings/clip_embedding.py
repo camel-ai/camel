@@ -62,16 +62,18 @@ class CLIPEmbedding(BaseEmbedding):
         """
         if not objs:
             raise ValueError("Input text list is empty")
-        if isinstance(objs[0], Image.Image):
-            inputs = self.processor(images=objs, return_tensors="pt",
-                                    padding=True)
-            image_features = self.model.get_image_features(**inputs).tolist()
-            return image_features
-        elif isinstance(objs[0], str):
-            inputs = self.processor(text=objs, return_tensors="pt",
-                                    padding=True)
-            text_features = self.model.get_text_features(**inputs).tolist()
-            return text_features
+        result_list = []
+        for obj in objs:
+            if isinstance(obj, Image.Image):
+                input = self.processor(images=obj, return_tensors="pt",
+                                       padding=True)
+                image_feature = self.model.get_image_features(**input).tolist()
+                result_list.append(image_feature)
+            elif isinstance(obj, str):
+                input = self.processor(text=obj, return_tensors="pt",
+                                       padding=True)
+                text_feature = self.model.get_text_features(**input).tolist()
+            return text_feature
         else:
             raise ValueError("Input type is not image nor text")
 
