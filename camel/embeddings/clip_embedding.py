@@ -68,14 +68,16 @@ class CLIPEmbedding(BaseEmbedding):
                 input = self.processor(images=obj, return_tensors="pt",
                                        padding=True)
                 image_feature = self.model.get_image_features(**input).tolist()
-                result_list.append(image_feature)
+                result_list.extend(image_feature)
             elif isinstance(obj, str):
                 input = self.processor(text=obj, return_tensors="pt",
                                        padding=True)
                 text_feature = self.model.get_text_features(**input).tolist()
-            return text_feature
-        else:
-            raise ValueError("Input type is not image nor text")
+                result_list.extend(text_feature)
+
+            else:
+                raise ValueError("Input type is not image nor text")
+        return result_list
 
     def get_output_dim(self) -> int:
         r"""Returns the output dimension of the embeddings.
