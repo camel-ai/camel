@@ -14,7 +14,7 @@
 from .base import BaseRetriever
 from .vector_retriever import VectorRetriever
 from .bm25_retriever import BM25Retriever
-from .cohere_reranking_retriever import CohereRerankRetriever
+from .cohere_rerank_retriever import CohereRerankRetriever
 from .auto_retriever import AutoRetriever
 
 __all__ = [
