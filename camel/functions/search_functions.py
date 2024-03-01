@@ -384,6 +384,9 @@ def search_google_and_summarize(query: str) -> str:
     """
     Search the web for information using Google search
     and summarize the results.
+
+    Args:
+        query (str): Question you want to be answered.
     """
     return search_and_summarize(query, search_google)
 
@@ -392,6 +395,9 @@ def search_duckduckgo_and_summarize(query: str) -> str:
     """
     Search the web for information using DuckDuckGo search
     and summarize the results.
+
+    Args:
+        query (str): Question you want to be answered.
     """
     return search_and_summarize(query, search_duckduckgo)
 
