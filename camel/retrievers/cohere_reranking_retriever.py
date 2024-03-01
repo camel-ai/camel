@@ -11,15 +11,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, List, Dict, Optional
 import os
+from typing import Any, Dict, List, Optional
 
 from camel.retrievers import BaseRetriever
 
 DEFAULT_TOP_K_RESULTS = 1
 
+
 class CohereRerankRetriever(BaseRetriever):
-    r"""An implementation of the `BaseRetriever` using the `Cohere Re-ranking` model.
+    r"""An implementation of the `BaseRetriever` using the `Cohere Re-ranking`
+    model.
 
     Attributes:
         model_name (str): The model name to use for re-ranking.
@@ -29,6 +31,7 @@ class CohereRerankRetriever(BaseRetriever):
     References:
         https://txt.cohere.com/rerank/
     """
+
     def __init__(
         self,
         model_name: str = "rerank-multilingual-v2.0",
@@ -45,15 +48,17 @@ class CohereRerankRetriever(BaseRetriever):
 
         try:
             self.api_key = api_key or os.environ["COHERE_API_KEY"]
-        except ValueError:
+        except ValueError as e:
             raise ValueError(
-                "Must pass in cohere api key or specify via COHERE_API_KEY environment variable "
-            )
+                "Must pass in cohere api key or specify via COHERE_API_KEY"
+                "environment variable.") from e
 
         self.co = cohere.Client(self.api_key)
         self.model_name = model_name
 
-    def query_and_compile_result(self, query:str, retrieved_result:List[Dict[str, Any]], top_k: int = DEFAULT_TOP_K_RESULTS) ->List[Dict[str,Any]]:
+    def query_and_compile_result(
+            self, query: str, retrieved_result: List[Dict[str, Any]],
+            top_k: int = DEFAULT_TOP_K_RESULTS) -> List[Dict[str, Any]]:
         r"""Queries and compiles results using the Cohere re-ranking model.
 
         Args:
@@ -68,10 +73,13 @@ class CohereRerankRetriever(BaseRetriever):
         Returns:
             List[Dict[str, Any]]: Concatenated list of the query results.
         """
-        rerank_results = self.co.rerank(query=query, documents=retrieved_result, top_n=top_k, model=self.model_name)
+        rerank_results = self.co.rerank(query=query,
+                                        documents=retrieved_result,
+                                        top_n=top_k, model=self.model_name)
         formatted_results = []
         for i in range(0, len(rerank_results.results)):
             selected_chunk = retrieved_result[rerank_results[i].index]
-            selected_chunk['similarity score'] = rerank_results[i].relevance_score
+            selected_chunk['similarity score'] = rerank_results[
+                i].relevance_score
             formatted_results.append(selected_chunk)
         return formatted_results

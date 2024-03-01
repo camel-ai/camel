@@ -12,9 +12,12 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from camel.retrievers import BM25Retriever 
-from unittest.mock import patch, MagicMock
+
+from camel.retrievers import BM25Retriever
+
 
 def test_bm25retriever_initialization():
     retriever = BM25Retriever()
@@ -22,10 +25,15 @@ def test_bm25retriever_initialization():
     assert retriever.content_input_path == ""
     assert retriever.chunks == []
 
+
 @patch('camel.functions.unstructured_io_functions.UnstructuredModules')
 def test_process_and_store(mock_unstructured_modules):
-    mock_unstructured_modules.return_value.parse_file_or_url.return_value = ['Your parsed content']
-    mock_unstructured_modules.return_value.chunk_elements.return_value = ['Chunk 1', 'Chunk 2']
+    mock_unstructured_modules.return_value.parse_file_or_url.return_value = [
+        'Your parsed content'
+    ]
+    mock_unstructured_modules.return_value.chunk_elements.return_value = [
+        'Chunk 1', 'Chunk 2'
+    ]
 
     retriever = BM25Retriever()
     retriever.process_and_store('https://www.camel-ai.org/')
@@ -33,12 +41,13 @@ def test_process_and_store(mock_unstructured_modules):
     assert retriever.content_input_path == 'https://www.camel-ai.org/'
     assert len(retriever.chunks) == 4
 
+
 @patch('camel.retrievers.BM25Retriever')
 def test_query_and_compile_results(mock_bm25):
     # Setup the mock BM25 instance
     mock_bm25_instance = mock_bm25.return_value
     mock_bm25_instance.get_scores.return_value = [0.8, 0.5]  # Mock scores
-    
+
     # Create mock chunks with `metadata` attribute
     mock_chunk1 = MagicMock(text='Chunk 1 text')
     mock_chunk1.metadata.to_dict.return_value = {'id': 'chunk1'}
@@ -54,8 +63,8 @@ def test_query_and_compile_results(mock_bm25):
     assert results[0]['similarity score'] == 0.8
     assert 'chunk1' in results[0]['metadata']['id']
 
+
 def test_query_and_compile_results_without_initialization():
     retriever = BM25Retriever()
     with pytest.raises(ValueError, match="BM25 model is not initialized"):
         retriever.query_and_compile_results('query')
-

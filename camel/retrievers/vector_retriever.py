@@ -44,9 +44,9 @@ class VectorRetriever(BaseRetriever):
         """
         self.embedding_model = embedding_model or OpenAIEmbedding()
 
-    def process_and_store(self, content_input_path: str,
-                          storage: BaseVectorStorage,
-                          **kwargs: Any) -> None:  # type: ignore
+    def process_and_store(  # type: ignore
+            self, content_input_path: str, storage: BaseVectorStorage,
+            **kwargs: Any) -> None:
         r""" Processes content from a file or URL, divides it into chunks by
         using `Unstructured IO`, and stores their embeddings in the specified
         vector storage.
@@ -86,7 +86,7 @@ class VectorRetriever(BaseRetriever):
 
             storage.add(records=records)
 
-    def query_and_compile_results(
+    def query_and_compile_results(  # type: ignore
             self, query: str, storage: BaseVectorStorage,
             top_k: int = DEFAULT_TOP_K_RESULTS,
             similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
