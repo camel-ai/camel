@@ -11,16 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, Optional
+from typing import Any, Dict, List, Optional
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
 from camel.functions.unstructured_io_functions import UnstructuredModules
 from camel.retrievers import BaseRetriever
-from camel.storages.vectordb_storages import (
-    BaseVectorStorage,
-    VectorDBQuery,
-    VectorRecord,
-)
+from camel.storages import BaseVectorStorage, VectorDBQuery, VectorRecord
 
 DEFAULT_TOP_K_RESULTS = 1
 DEFAULT_SIMILARITY_THRESHOLD = 0.75
@@ -49,7 +45,8 @@ class VectorRetriever(BaseRetriever):
         self.embedding_model = embedding_model or OpenAIEmbedding()
 
     def process_and_store(self, content_input_path: str,
-                          storage: BaseVectorStorage, **kwargs: Any) -> None:
+                          storage: BaseVectorStorage,
+                          **kwargs: Any) -> None:  # type: ignore
         r""" Processes content from a file or URL, divides it into chunks by
         using `Unstructured IO`, and stores their embeddings in the specified
         vector storage.
@@ -93,7 +90,7 @@ class VectorRetriever(BaseRetriever):
             self, query: str, storage: BaseVectorStorage,
             top_k: int = DEFAULT_TOP_K_RESULTS,
             similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
-            **kwargs: Any) -> list:
+            **kwargs: Any) -> List[Dict[str, Any]]:  # type: ignore
         r"""Executes a query in vector storage and compiles the retrieved
         results into a string.
 
@@ -108,7 +105,7 @@ class VectorRetriever(BaseRetriever):
                 query.
 
         Returns:
-            list: Concatenated list of the query results.
+            List[Dict[str, Any]]: Concatenated list of the query results.
 
         Raises:
             ValueError: If 'top_k' is less than or equal to 0, if vector

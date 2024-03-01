@@ -12,57 +12,48 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from abc import ABC, abstractmethod
-from typing import Any
-
-from camel.storages import BaseVectorStorage
+from typing import Any, Dict, List
 
 DEFAULT_TOP_K_RESULTS = 1
-DEFAULT_SIMILARITY_THRESHOLD = 0.75
 
 
 class BaseRetriever(ABC):
-    r"""An abstract base class for information retriever.
-
-    A retriever system can return the most relevant informatiomn from source
-    with the given string query.
+    r"""Abstract base class for implementing various types of information
+    retrievers.
     """
 
     @abstractmethod
-    def process_and_store(
-        self,
-        content_input_path: str,
-        storage: BaseVectorStorage,
-        **kwargs: Any,
-    ) -> None:
-        r"""Process the content from a given path and store it to the storage.
+    def __init__(self) -> None:
+        pass
+
+    @abstractmethod
+    def process_and_store(self, content_input_path: str,
+                          **kwargs: Any) -> None:
+        r"""
+        Processes content and stores it. Subclasses should implement this
+        method according to their specific needs.
 
         Args:
-            content_input_path (str): File path or URL of the content to be
-                processed.
-            storage (BaseVectorStorage): Storage to store the information.
-            **kwargs (Any): Additional keyword arguments.
+            content_input_path (str): The path or URL of the content to
+                process.
+            **kwargs (Any): Flexible keyword arguments for additional
+                parameters.
         """
         pass
 
     @abstractmethod
-    def query_and_compile_results(
-        self,
-        query: str,
-        storage: BaseVectorStorage,
-        top_k: int = DEFAULT_TOP_K_RESULTS,
-        similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
-        **kwargs: Any,
-    ) -> Any:
-        r"""Executes a query in storage and compiles the retrieved
-        results back.
+    def query_and_compile_results(self, query: str,
+                                  top_k: int = DEFAULT_TOP_K_RESULTS,
+                                  **kwargs: Any) -> List[Dict[str, Any]]:
+        r"""Queries and compiles results. Subclasses should implement this
+        method according to their specific needs.
 
         Args:
             query (str): Query string for information retriever.
-            storage (BaseVectorStorage): Storage to store the information.
             top_k (int, optional): The number of top results to return during
-                retriever. Must be a positive integer. Defaults to 1.
-            similarity_threshold (float, optional): The similarity threshold
-                for filtering results. Defaults to 0.75.
-            **kwargs (Any): Additional keyword arguments.
+                retriever. Must be a positive integer. Defaults to
+                `DEFAULT_TOP_K_RESULTS`.
+            **kwargs (Any): Flexible keyword arguments for additional
+                parameters, like `similarity_threshold`.
         """
         pass

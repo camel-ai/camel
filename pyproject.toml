@@ -63,6 +63,10 @@ qdrant-client = { version = "^1.6.4", optional = true }
 pytest = { version = "^7", optional = true}
 mock = { version = "^5", optional = true}
 
+# retrievers
+rank-bm25 = "^0.2.2"
+cohere = "^4.51"
+
 [tool.poetry.extras]
 test = ["pytest", "mock"]
 
@@ -188,5 +192,7 @@ module = [
     "PyMuPDF",
     "fitz",
     "unstructured.*",
+    "rank_bm25",
+    "cohere",
 ]
 ignore_missing_imports = true

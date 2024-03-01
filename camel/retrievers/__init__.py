@@ -13,10 +13,14 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .base import BaseRetriever
 from .vector_retriever import VectorRetriever
+from .bm25_retriever import BM25Retriever
+from .cohere_reranking_retriever import CohereRerankRetriever
 from .auto_retriever import AutoRetriever
 
 __all__ = [
     'BaseRetriever',
     'VectorRetriever',
+    'BM25Retriever',
+    'CohereRerankRetriever',
     'AutoRetriever',
 ]
