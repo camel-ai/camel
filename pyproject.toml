@@ -54,7 +54,7 @@ docx2txt = { version = "^0.8", optional = true }
 PyMuPDF = { version = "^1.22.5", optional = true }
 wikipedia = { version = "^1", optional = true }
 pyowm = { version = "^3.3.0", optional = true }
-unstructured = { version = "^0.10.30", optional = true }
+unstructured = {extras = ["pdf"], version = "^0.11.2", optional = true }
 
 # vector-databases
 qdrant-client = { version = "^1.6.4", optional = true }
@@ -62,6 +62,10 @@ qdrant-client = { version = "^1.6.4", optional = true }
 # test
 pytest = { version = "^7", optional = true}
 mock = { version = "^5", optional = true}
+
+# retrievers
+rank-bm25 = "^0.2.2"
+cohere = "^4.51"
 
 [tool.poetry.extras]
 test = ["pytest", "mock"]
@@ -188,5 +192,7 @@ module = [
     "PyMuPDF",
     "fitz",
     "unstructured.*",
+    "rank_bm25",
+    "cohere",
 ]
 ignore_missing_imports = true
