@@ -55,7 +55,8 @@ def search_wiki(entity: str) -> str:
     return result
 
 
-def search_duckduckgo(query: str) -> List[Dict[str, Any]]:
+def search_duckduckgo(query: str,
+                      max_results: int = 10) -> List[Dict[str, Any]]:
     r"""Use DuckDuckGo search engine to search information for the given query.
 
     This function queries the DuckDuckGo API for related topics to the given
@@ -93,7 +94,6 @@ def search_duckduckgo(query: str) -> List[Dict[str, Any]]:
     from requests.exceptions import RequestException
 
     ddgs = DDGS()
-    max_results = 10
     responses = []
 
     try:
@@ -127,7 +127,8 @@ def search_duckduckgo(query: str) -> List[Dict[str, Any]]:
     return responses
 
 
-def search_google(query: str) -> List[Dict[str, Any]]:
+def search_google(query: str,
+                  num_result_pages: int = 10) -> List[Dict[str, Any]]:
     r"""Use Google search engine to search information for the given query.
 
     Args:
@@ -380,31 +381,24 @@ def search_and_summarize(query: str, search_func) -> str:
     return "Failed to find an answer."
 
 
-def search_google_and_summarize(query: str) -> str:
+def choose_search_and_summarize(query: str) -> str:
     """
-    Search the web for information using Google search
-    and summarize the results.
+    Choose between Google and DuckDuckGo search based on the availability
+    of Google API credentials, and summarize the results.
 
     Args:
         query (str): Question you want to be answered.
-    """
-    return search_and_summarize(query, search_google)
 
-
-def search_duckduckgo_and_summarize(query: str) -> str:
+    Returns:
+        str: Summarized information from the web.
     """
-    Search the web for information using DuckDuckGo search
-    and summarize the results.
-
-    Args:
-        query (str): Question you want to be answered.
-    """
-    return search_and_summarize(query, search_duckduckgo)
+    if os.getenv("GOOGLE_API_KEY") and os.getenv("SEARCH_ENGINE_ID"):
+        return search_and_summarize(query, search_google)
+    else:
+        return search_and_summarize(query, search_duckduckgo)
 
 
 SEARCH_FUNCS: List[OpenAIFunction] = [
-    OpenAIFunction(func) for func in [
-        search_wiki, search_google_and_summarize,
-        search_duckduckgo_and_summarize
-    ]
+    OpenAIFunction(func)
+    for func in [search_wiki, choose_search_and_summarize]
 ]
