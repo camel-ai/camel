@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, List, Optional
 
 
 class BaseGraphStorage(ABC):
@@ -29,6 +29,7 @@ class BaseGraphStorage(ABC):
     implementations, including, but not limited to, JSON file storage, NoSQL
     databases like MongoDB and Redis, as well as in-memory Python dictionaries.
     """
+
     @property
     @abstractmethod
     def client(self) -> Any:
@@ -47,21 +48,18 @@ class BaseGraphStorage(ABC):
         pass
 
     @abstractmethod
-    def add(
-        self, graph_documents: List[Any], include_source: bool = False
-    ) -> None:
+    def add(self, graph_documents: List[Any],
+            include_source: bool = False) -> None:
         """Take GraphDocument as input as uses it to construct a graph."""
         pass
-
 
     @abstractmethod
     def delete(self, subj: str, rel: str, obj: str) -> None:
         """Delete triplet."""
         pass
 
-    @abstractmethod   
-    def query(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:
+    @abstractmethod
+    def query(self, query: str, param_map: Optional[Dict[str,
+                                                         Any]] = {}) -> Any:
         """Query the graph store with statement and parameters."""
         pass
-
-

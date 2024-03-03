@@ -19,7 +19,7 @@ from camel.storages import BaseGraphStorage
 NODE_PROPERTIES_QUERY = """
 CALL apoc.meta.data()
 YIELD label, other, elementType, type, property
-WHERE NOT type = "RELATIONSHIP" AND elementType = "node" 
+WHERE NOT type = "RELATIONSHIP" AND elementType = "node"
   AND NOT label IN [$BASE_ENTITY_LABEL]
 WITH label AS nodeLabels, collect({property:property, type:type}) AS properties
 RETURN {labels: nodeLabels, properties: properties} AS output
@@ -42,14 +42,15 @@ UNWIND other AS other_node
 RETURN {start: label, type: property, end: toString(other_node)} AS output
 """
 
-INCLUDE_DOCS_QUERY = (
-    "CREATE (d:Document) "
-    "SET d.text = $document.page_content "
-    "SET d += $document.metadata "
-    "WITH d "
-)
+INCLUDE_DOCS_QUERY = ("CREATE (d:Document) "
+                      "SET d.text = $document.page_content "
+                      "SET d += $document.metadata "
+                      "WITH d ")
+
+MERGE_SOURCE_QUERY = """MERGE (d)-[:MENTIONS]->(source) """
 
 BASE_ENTITY_LABEL = "__Entity__"
+
 
 class Neo4jGraphStore(BaseGraphStorage):
 
@@ -69,7 +70,8 @@ class Neo4jGraphStore(BaseGraphStorage):
             raise ImportError("Package `neo4j` not installed.") from e
 
         self.node_label = node_label
-        self._driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
+        self._driver = neo4j.GraphDatabase.driver(url,
+                                                  auth=(username, password))
         self._database = database
         self.schema = ""
         self.structured_schema: Dict[str, Any] = {}
@@ -78,15 +80,12 @@ class Neo4jGraphStore(BaseGraphStorage):
         try:
             self._driver.verify_connectivity()
         except neo4j.exceptions.ServiceUnavailable:
-            raise ValueError(
-                "Could not connect to Neo4j database. "
-                "Please ensure that the url is correct"
-            )
+            raise ValueError("Could not connect to Neo4j database. "
+                             "Please ensure that the url is correct")
         except neo4j.exceptions.AuthError:
             raise ValueError(
                 "Could not connect to Neo4j database. "
-                "Please ensure that the username and password are correct"
-            )
+                "Please ensure that the username and password are correct")
 
         # Set schema
         try:
@@ -95,24 +94,19 @@ class Neo4jGraphStore(BaseGraphStorage):
             raise ValueError(
                 "Could not use APOC procedures. "
                 "Please ensure the APOC plugin is installed in Neo4j and that "
-                "'apoc.meta.data()' is allowed in Neo4j configuration "
-            )
+                "'apoc.meta.data()' is allowed in Neo4j configuration ")
 
         # Create constraint for faster insert and retrieval
         try:  # Using Neo4j 5
-            self.query(
-                """
-                CREATE CONSTRAINT IF NOT EXISTS FOR (n:%s) REQUIRE n.id IS UNIQUE;
-                """
-                % (self.node_label)
-            )
+            self.query("""
+                CREATE CONSTRAINT IF NOT EXISTS FOR (n:%s) REQUIRE n.id IS
+                       UNIQUE;
+                """ % (self.node_label))
         except Exception:  # Using Neo4j <5
-            self.query(
-                """
-                CREATE CONSTRAINT IF NOT EXISTS ON (n:%s) ASSERT n.id IS UNIQUE;
-                """
-                % (self.node_label)
-            )
+            self.query("""
+                CREATE CONSTRAINT IF NOT EXISTS ON (n:%s) ASSERT n.id IS
+                       UNIQUE;
+                """ % (self.node_label))
 
     @property
     def client(self) -> Any:
@@ -123,13 +117,16 @@ class Neo4jGraphStore(BaseGraphStorage):
         r"""Get the schema of the Neo4jGraph store."""
         return self.schema
 
-    
     def refresh_schema(self) -> None:
         r"""Refreshes the Neo4j graph schema information."""
         from neo4j.exceptions import ClientError
 
-        node_properties = [el["output"] for el in self.query(NODE_PROPERTIES_QUERY)]
-        rel_properties = [el["output"] for el in self.query(REL_PROPERTIES_QUERY)]
+        node_properties = [
+            el["output"] for el in self.query(NODE_PROPERTIES_QUERY)
+        ]
+        rel_properties = [
+            el["output"] for el in self.query(REL_PROPERTIES_QUERY)
+        ]
         relationships = [el["output"] for el in self.query(REL_QUERY)]
 
         # Get constraints & indexes
@@ -137,63 +134,70 @@ class Neo4jGraphStore(BaseGraphStorage):
             constraint = self.query("SHOW CONSTRAINTS")
             index = self.query("SHOW INDEXES YIELD *")
         except (
-            ClientError
+                ClientError
         ):  # Read-only user might not have access to schema information
             constraint = []
             index = []
 
         self.structured_schema = {
-            "node_props": {el["labels"]: el["properties"] for el in node_properties},
-            "rel_props": {el["type"]: el["properties"] for el in rel_properties},
+            "node_props":
+            {el["labels"]: el["properties"]
+             for el in node_properties},
+            "rel_props":
+            {el["type"]: el["properties"]
+             for el in rel_properties},
             "relationships": relationships,
-            "metadata": {"constraint": constraint, "index": index},
+            "metadata": {
+                "constraint": constraint,
+                "index": index
+            },
         }
 
         # Format node properties
         formatted_node_props = []
         for el in node_properties:
-            props_str = ", ".join(
-                [f"{prop['property']}: {prop['type']}" for prop in el["properties"]]
-            )
+            props_str = ", ".join([
+                f"{prop['property']}: {prop['type']}"
+                for prop in el["properties"]
+            ])
             formatted_node_props.append(f"{el['labels']} {{{props_str}}}")
 
         # Format relationship properties
         formatted_rel_props = []
         for el in rel_properties:
-            props_str = ", ".join(
-                [f"{prop['property']}: {prop['type']}" for prop in el["properties"]]
-            )
+            props_str = ", ".join([
+                f"{prop['property']}: {prop['type']}"
+                for prop in el["properties"]
+            ])
             formatted_rel_props.append(f"{el['type']} {{{props_str}}}")
 
         # Format relationships
         formatted_rels = [
-            f"(:{el['start']})-[:{el['type']}]->(:{el['end']})" for el in relationships
+            f"(:{el['start']})-[:{el['type']}]->(:{el['end']})"
+            for el in relationships
         ]
 
-        self.schema = "\n".join(
-            [
-                "Node properties are the following:",
-                ",".join(formatted_node_props),
-                "Relationship properties are the following:",
-                ",".join(formatted_rel_props),
-                "The relationships are the following:",
-                ",".join(formatted_rels),
-            ]
-        )
+        self.schema = "\n".join([
+            "Node properties are the following:",
+            ",".join(formatted_node_props),
+            "Relationship properties are the following:",
+            ",".join(formatted_rel_props),
+            "The relationships are the following:",
+            ",".join(formatted_rels),
+        ])
 
-
-    def _get_node_import_query(self, baseEntityLabel: bool, include_source: bool) -> str:
+    def _get_node_import_query(self, baseEntityLabel: bool,
+                               include_source: bool) -> str:
         if baseEntityLabel:
             return (
                 f"{INCLUDE_DOCS_QUERY if include_source else ''}"
                 "UNWIND $data AS row "
                 f"MERGE (source:`{BASE_ENTITY_LABEL}` {{id: row.id}}) "
                 "SET source += row.properties "
-                f"{'MERGE (d)-[:MENTIONS]->(source) ' if include_source else ''}"
+                f"{MERGE_SOURCE_QUERY if include_source else ''}"
                 "WITH source, row "
                 "CALL apoc.create.addLabels( source, [row.type] ) YIELD node "
-                "RETURN distinct 'done' AS result"
-            )
+                "RETURN distinct 'done' AS result")
         else:
             return (
                 f"{INCLUDE_DOCS_QUERY if include_source else ''}"
@@ -201,21 +205,17 @@ class Neo4jGraphStore(BaseGraphStorage):
                 "CALL apoc.merge.node([row.type], {id: row.id}, "
                 "row.properties, {}) YIELD node "
                 f"{'MERGE (d)-[:MENTIONS]->(node) ' if include_source else ''}"
-                "RETURN distinct 'done' AS result"
-            )
-
+                "RETURN distinct 'done' AS result")
 
     def _get_rel_import_query(self, baseEntityLabel: bool) -> str:
         if baseEntityLabel:
-            return (
-                "UNWIND $data AS row "
-                f"MERGE (source:`{BASE_ENTITY_LABEL}` {{id: row.source}}) "
-                f"MERGE (target:`{BASE_ENTITY_LABEL}` {{id: row.target}}) "
-                "WITH source, target, row "
-                "CALL apoc.merge.relationship(source, row.type, "
-                "{}, row.properties, target) YIELD rel "
-                "RETURN distinct 'done'"
-            )
+            return ("UNWIND $data AS row "
+                    f"MERGE (source:`{BASE_ENTITY_LABEL}` {{id: row.source}}) "
+                    f"MERGE (target:`{BASE_ENTITY_LABEL}` {{id: row.target}}) "
+                    "WITH source, target, row "
+                    "CALL apoc.merge.relationship(source, row.type, "
+                    "{}, row.properties, target) YIELD rel "
+                    "RETURN distinct 'done'")
         else:
             return (
                 "UNWIND $data AS row "
@@ -225,8 +225,7 @@ class Neo4jGraphStore(BaseGraphStorage):
                 "{}, {}) YIELD node as target "
                 "CALL apoc.merge.relationship(source, row.type, "
                 "{}, row.properties, target) YIELD rel "
-                "RETURN distinct 'done'"
-            )
+                "RETURN distinct 'done'")
 
     def add(
         self,
@@ -253,24 +252,21 @@ class Neo4jGraphStore(BaseGraphStorage):
             import speed and performance. Defaults to False.
         """
         if baseEntityLabel:  # Check if constraint already exists
-            constraint_exists = any(
-                [
-                    el["labelsOrTypes"] == [BASE_ENTITY_LABEL]
-                    and el["properties"] == ["id"]
-                    for el in self.structured_schema.get("metadata", {}).get(
-                        "constraint"
-                    )
-                ]
-            )
+            constraint_exists = any([
+                el["labelsOrTypes"] == [BASE_ENTITY_LABEL]
+                and el["properties"] == ["id"]
+                for el in self.structured_schema.get("metadata", {}).get(
+                    "constraint")
+            ])
             if not constraint_exists:
                 # Create constraint
-                self.query(
-                    f"CREATE CONSTRAINT IF NOT EXISTS FOR (b:{BASE_ENTITY_LABEL}) "
-                    "REQUIRE b.id IS UNIQUE;"
-                )
+                self.query(f"""CREATE CONSTRAINT IF NOT EXISTS FOR """
+                           f"""(b:{BASE_ENTITY_LABEL}) """
+                           "REQUIRE b.id IS UNIQUE;")
                 self.refresh_schema()  # Refresh constraint information
 
-        node_import_query = self._get_node_import_query(baseEntityLabel, include_source)
+        node_import_query = self._get_node_import_query(
+            baseEntityLabel, include_source)
         rel_import_query = self._get_rel_import_query(baseEntityLabel)
         for document in graph_documents:
             # Import nodes
@@ -285,22 +281,19 @@ class Neo4jGraphStore(BaseGraphStorage):
             self.query(
                 rel_import_query,
                 {
-                    "data": [
-                        {
-                            "source": el.source.id,
-                            "source_label": el.source.type,
-                            "target": el.target.id,
-                            "target_label": el.target.type,
-                            "type": el.type.replace(" ", "_").upper(),
-                            "properties": el.properties,
-                        }
-                        for el in document.relationships
-                    ]
+                    "data": [{
+                        "source": el.source.id,
+                        "source_label": el.source.type,
+                        "target": el.target.id,
+                        "target_label": el.target.type,
+                        "type": el.type.replace(" ", "_").upper(),
+                        "properties": el.properties,
+                    } for el in document.relationships]
                 },
             )
 
-
-    def query(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:
+    def query(self, query: str, param_map: Optional[Dict[str,
+                                                         Any]] = {}) -> Any:
         with self._driver.session(database=self._database) as session:
             result = session.run(query, param_map)
             return [d.data() for d in result]

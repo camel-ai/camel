@@ -14,7 +14,6 @@
 
 from .base import BaseGraphStorage
 
-
 __all__ = [
     'BaseGraphStorage',
 ]
