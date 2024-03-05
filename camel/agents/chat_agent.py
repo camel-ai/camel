@@ -14,7 +14,7 @@
 import json
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from openai import Stream
 
@@ -98,7 +98,7 @@ class ChatAgent(BaseAgent):
     def __init__(
         self,
         system_message: BaseMessage,
-        model_type: Optional[ModelType] = None,
+        model_type: Optional[Union[ModelType, str]] = None,
         model_config: Optional[BaseConfig] = None,
         memory: Optional[BaseMemory] = None,
         message_window_size: Optional[int] = None,
@@ -107,6 +107,17 @@ class ChatAgent(BaseAgent):
         function_list: Optional[List[OpenAIFunction]] = None,
         response_terminators: Optional[List[ResponseTerminator]] = None,
     ) -> None:
+        if isinstance(model_type, str):
+            try:
+                model_type_enum = next(mt for mt in ModelType if mt.value == model_type)
+            except StopIteration:
+                valid_types = ", ".join([f"'{t.value}'" for t in ModelType])
+                raise ValueError(f"Invalid model_type. Valid options are {valid_types}")
+            self.model_type = model_type_enum
+        elif isinstance(model_type, ModelType):
+            self.model_type = model_type
+        else:  # Fallback
+            self.model_type: ModelType = ModelType.GPT_3_5_TURBO
 
         self.orig_sys_message: BaseMessage = system_message
         self.system_message = system_message
@@ -115,9 +126,6 @@ class ChatAgent(BaseAgent):
         self.output_language: Optional[str] = output_language
         if self.output_language is not None:
             self.set_output_language(self.output_language)
-
-        self.model_type: ModelType = (model_type if model_type is not None else
-                                      ModelType.GPT_3_5_TURBO)
 
         self.func_dict: Dict[str, Callable] = {}
         if function_list is not None:
