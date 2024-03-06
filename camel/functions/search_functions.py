@@ -361,7 +361,7 @@ def search_and_summarize(query: str, search_func: Callable) -> str:
 
     Args:
         query (str): Question you want to be answered.
-        search_func (Callable): A function that takes a query
+        search_func (Callable): A function that takes a query.
         and returns search results.
 
     Returns:
