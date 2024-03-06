@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from typing import Any, Dict, List
+from typing import Any, Callable, Dict, List
 
 import camel.agents
 from camel.functions import OpenAIFunction
@@ -354,7 +354,7 @@ def continue_search(query: str, answer: str) -> bool:
     return True
 
 
-def search_and_summarize(query: str, search_func) -> str:
+def search_and_summarize(query: str, search_func: Callable) -> str:
     """
     Search the web for information using a specified search function
     and summarize the results.
