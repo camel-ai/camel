@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from typing import Any, Dict, List
+from typing import Any, Callable, Dict, List
 
 import camel.agents
 from camel.functions import OpenAIFunction
@@ -21,8 +21,8 @@ from camel.prompts import TextPrompt
 
 
 def search_wiki(entity: str) -> str:
-    r"""Search the entity in WikiPedia and return the summary of the
-    required page, containing factual information about the given entity.
+    r"""Search the entity in WikiPedia and return the summary of the required
+        page, containing factual information about the given entity.
 
     Args:
         entity (str): The entity to be searched.
@@ -55,7 +55,80 @@ def search_wiki(entity: str) -> str:
     return result
 
 
-def search_google(query: str) -> List[Dict[str, Any]]:
+def search_duckduckgo(query: str,
+                      max_results: int = 10) -> List[Dict[str, Any]]:
+    r"""Use DuckDuckGo search engine to search information for the given query.
+
+    This function queries the DuckDuckGo API for related topics to the given
+    search term. The results are formatted into a list of dictionaries, each
+    representing a search result.
+
+    Args:
+        query (str): The query to be searched.
+
+    Returns:
+        List[Dict[str, Any]]: A list of dictionaries where each dictionary
+        represents a search result.
+            Each dictionary contains the following keys:
+            - 'result_id': A sequential number starting from 1.
+            - 'title': The title or main text of the search result.
+            - 'description': A brief description of the result, often similar
+                to the title.
+            - 'long_description': More detail of the result, often the same as
+                the description.
+            - 'url': The URL of the result.
+
+            Example:
+            {
+                'result_id': 1,
+                'title': 'DuckDuckGo',
+                'description': 'DuckDuckGo is an Internet search engine ' + \
+                    'that emphasizes protecting searchers' privacy.',
+                'long_description': 'DuckDuckGo is an Internet search ' + \
+                    'engine that emphasizes protecting searchers' privacy.',
+                'url': 'https://www.duckduckgo.com'
+            }
+        title, description, url of a search result.
+    """
+    from duckduckgo_search import DDGS
+    from requests.exceptions import RequestException
+
+    ddgs = DDGS()
+    responses = []
+
+    try:
+        results = [
+            r for r in ddgs.text(keywords=query, max_results=max_results)
+        ]
+
+        # Iterate over results found
+        for i, result in enumerate(results, start=1):
+            # Extracting data from each result
+            title = result["title"]
+            body = result["body"]
+            url = result["href"]
+
+            # Creating a response object with a similar structure
+            response = {
+                "result_id": i,
+                "title": title,
+                "description": body,
+                "url": url
+            }
+            responses.append(response)
+
+    except RequestException as e:
+        # Handle specific exceptions or general request exceptions
+        responses.append({"error": f"DuckDuckGo search failed: {str(e)}"})
+    except Exception as e:
+        # Catch-all for any other exceptions that were not anticipated
+        responses.append({"error": f"An unexpected error occurred: {str(e)}"})
+
+    return responses
+
+
+def search_google(query: str,
+                  num_result_pages: int = 10) -> List[Dict[str, Any]]:
     r"""Use Google search engine to search information for the given query.
 
     Args:
@@ -78,7 +151,7 @@ def search_google(query: str) -> List[Dict[str, Any]]:
                 'description': 'An organization focused on ensuring that
                 artificial general intelligence benefits all of humanity.',
                 'long_description': 'OpenAI is a non-profit artificial
-                 intelligence research company. Our goal is to advance digital
+                intelligence research company. Our goal is to advance digital
                 intelligence in the way that is most likely to benefit humanity
                 as a whole',
                 'url': 'https://www.openai.com'
@@ -156,24 +229,14 @@ def text_extract_from_web(url: str) -> str:
         str: All texts extract from the web.
     """
     import requests
-    from bs4 import BeautifulSoup
+    from newspaper import Article
 
     try:
         # Request the target page
-        response_text = requests.get(url).text
-
-        # Parse the obtained page
-        soup = BeautifulSoup(response_text, features="html.parser")
-
-        for script in soup(["script", "style"]):
-            script.extract()
-
-        text = soup.get_text()
-        # Strip text
-        lines = (line.strip() for line in text.splitlines())
-        chunks = (phrase.strip() for line in lines
-                  for phrase in line.split("  "))
-        text = ".".join(chunk for chunk in chunks if chunk)
+        article = Article(url)
+        article.download()
+        article.parse()
+        text = article.text.replace("\n", "")
 
     except requests.RequestException:
         text = f"can't access {url}"
@@ -235,7 +298,7 @@ def prompt_single_step_agent(prompt: str) -> str:
 
 def summarize_text(text: str, query: str) -> str:
     r"""Summarize the information from the text, base on the query if query is
-    given.
+        given.
 
     Args:
         text (str): Text to summarize.
@@ -270,40 +333,72 @@ def summarize_text(text: str, query: str) -> str:
     return response
 
 
-def search_google_and_summarize(query: str) -> str:
-    r"""Search webs for information. Given a query, this function will use
-    the Google search engine to search for related information from the
-    internet, and then return a summarized answer.
+def continue_search(query: str, answer: str) -> bool:
+    r"""Ask LLM whether to continue search or not.
+
+    Args:
+        query (str): Question you want to be answered.
+        answer (str): Answer to the query.
+
+    Returns:
+        bool: True if the user want to continue search, False otherwise.
+    """
+    prompt = TextPrompt("Do you think the ANSWER can answer the QUERY? "
+                        "Use only 'yes' or 'no' to answer\n"
+                        "===== QUERY ====={query}\n\n"
+                        "===== ANSWER ====={answer}")
+    prompt = prompt.format(query=query, answer=answer)
+    reply = prompt_single_step_agent(prompt)
+    if "yes" in str(reply).lower():
+        return False
+    return True
+
+
+def search_and_summarize(query: str, search_func: Callable) -> str:
+    """
+    Search the web for information using a specified search function
+    and summarize the results.
+
+    Args:
+        query (str): Question you want to be answered.
+        search_func (Callable): A function that takes a query.
+        and returns search results.
+
+    Returns:
+        str: Summarized information from the web.
+    """
+    responses = search_func(query)
+    for item in responses:
+        if "url" in item:
+            url = item.get("url")
+            try:
+                extracted_text = text_extract_from_web(str(url))
+            except Exception:
+                continue
+            answer = summarize_text(extracted_text, query)
+            if not continue_search(query=query, answer=answer):
+                return answer
+    return "Failed to find an answer."
+
+
+def choose_search_and_summarize(query: str) -> str:
+    """
+    Choose between Google and DuckDuckGo search based on the availability
+    of Google API credentials, and summarize the results.
 
     Args:
         query (str): Question you want to be answered.
 
     Returns:
-        str: Summarized information from webs.
+        str: Summarized information from the web.
     """
-    # Google search will return a list of urls
-    responses = search_google(query)
-    for item in responses:
-        if "url" in item:
-            url = item.get("url")
-            # Extract text
-            text = text_extract_from_web(str(url))
-            # Using chatgpt summarise text
-            answer = summarize_text(text, query)
-
-            # Let chatgpt decide whether to continue search or not
-            prompt = TextPrompt(
-                '''Do you think the answer: {answer} can answer the query:
-                {query}. Use only 'yes' or 'no' to answer.''')
-            prompt = prompt.format(answer=answer, query=query)
-            reply = prompt_single_step_agent(prompt)
-            if "yes" in str(reply).lower():
-                return answer
-
-    return "Failed to find the answer from google search."
+    if os.getenv("GOOGLE_API_KEY") and os.getenv("SEARCH_ENGINE_ID"):
+        return search_and_summarize(query, search_google)
+    else:
+        return search_and_summarize(query, search_duckduckgo)
 
 
 SEARCH_FUNCS: List[OpenAIFunction] = [
     OpenAIFunction(func)
-    for func in [search_wiki, search_google_and_summarize]
+    for func in [search_wiki, choose_search_and_summarize]
 ]
