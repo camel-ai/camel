@@ -22,9 +22,8 @@ class CLIPEmbedding(BaseEmbedding):
     r"""Provides image embedding functionalities using CLIP model.
 
     Args:
-        model_name : The model type to be used for
-            generating embeddings.
-            Default value is :obj:`openai/clip-vit-base-patch32`
+        model_name : The model type to be used for generating embeddings.
+            And the Default value is: obj:`openai/clip-vit-base-patch32`.
 
     Raises:
         RuntimeError: If an unsupported model type is specified.
@@ -32,12 +31,11 @@ class CLIPEmbedding(BaseEmbedding):
 
     def __init__(self,
                  model_name: str = "openai/clip-vit-base-patch32") -> None:
-        r"""Initializes the: obj: `CLIPEmbedding` class with a specified model
+        r"""Initializes the: obj: `CLIPEmbedding` class with a specified model.
 
         Args:
             model_name (str, optional): The version name of the model to use.
-                                        Default value is
-                                        "openai/clip-vit-base-patch32"
+            (default: :obj:`openai/clip-vit-base-patch32`)
         """
 
         from transformers import CLIPModel, CLIPProcessor
@@ -52,8 +50,8 @@ class CLIPEmbedding(BaseEmbedding):
         r"""Generates embeddings for the given images or texts.
 
         Args:
-            objs (List[Image.Image|str]): The list of images or texts
-                                          for which to generate the embeddings.
+            objs (List[Image.Image|str]): The list of images or texts for
+                which to generate the embeddings.
             **kwargs (Any): Extra kwargs passed to the embedding API.
 
         Returns:
