@@ -23,7 +23,7 @@ class CLIPEmbedding(BaseEmbedding):
 
     Args:
         model_name : The model type to be used for generating embeddings.
-            And the Default value is: obj:`openai/clip-vit-base-patch32`.
+            And the default value is: obj:`openai/clip-vit-base-patch32`.
 
     Raises:
         RuntimeError: If an unsupported model type is specified.
