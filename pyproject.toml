@@ -64,7 +64,6 @@ qdrant-client = { version = "^1.6.4", optional = true }
 pytest = { version = "^7", optional = true}
 mock = { version = "^5", optional = true}
 
-
 [tool.poetry.extras]
 test = ["pytest", "mock"]
 
