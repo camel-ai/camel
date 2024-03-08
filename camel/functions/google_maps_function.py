@@ -39,22 +39,18 @@ def get_googlemap_api_key() -> str:
     return GOOGLEMAPS_API_KEY
 
 
-def check_googlemaps_installed(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        try:
-            import googlemaps
-            from googlemaps.exceptions import ApiError, HTTPError, Timeout, TransportError
-        except ImportError:
-            raise ImportError(
-                "Please install `googlemaps` first. You can install it by "
-                "running `pip install googlemaps`.")
-        return f(*args, **kwargs, googlemaps=googlemaps)
-    return wrapper
+def import_googlemaps_or_raise():
+    try:
+        import googlemaps
+        return googlemaps
+    except ImportError:
+        raise ImportError("Please install `googlemaps` first. You can install "
+                          "it by running `pip install googlemaps`.")
+    
 
-
-@check_googlemaps_installed
-def get_address_description(address, region_code, locality, googlemaps):   
+# @check_googlemaps_installed
+def get_address_description(address, region_code, locality):
+    googlemaps = import_googlemaps_or_raise()
     GOOGLEMAPS_API_KEY = get_googlemap_api_key()
     gmaps = googlemaps.Client(key=GOOGLEMAPS_API_KEY)
 
@@ -100,6 +96,96 @@ def get_address_description(address, region_code, locality, googlemaps):
         return f"An unexpected error occurred: {str(e)}"
 
 
+def handle_googlemaps_exceptions(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except ApiError as e:
+            return f"An exception returned by the remote API. Status: {e.status}, Message: {e.message}"
+        except HTTPError as e:
+            return f"An unexpected HTTP error occurred. Status Code: {e.status_code}"
+        except Timeout as e:
+            return "The request timed out. "
+        except TransportError as e:
+            return f"Something went wrong while trying to execute the request. Details: {e.base_exception}"
+        except Exception as e:
+            return f"An unexpected error occurred: {e}"
+    return wrapper
+
+
+@handle_googlemaps_exceptions
+def get_elevation(lat_lng):
+    googlemaps = import_googlemaps_or_raise()
+    from googlemaps.exceptions import ApiError, HTTPError, Timeout, TransportError
+    GOOGLEMAPS_API_KEY = get_googlemap_api_key()
+    gmaps = googlemaps.Client(key=GOOGLEMAPS_API_KEY)
+
+    # Assuming gmaps is a configured Google Maps client instance
+    elevation_result = gmaps.elevation(lat_lng)
+    
+    # Extract the elevation data from the first (and presumably only) result
+    if elevation_result:
+        elevation = elevation_result[0]['elevation']
+        location = elevation_result[0]['location']
+        resolution = elevation_result[0]['resolution']
+
+        # Format the elevation data into a natural language description
+        description = (f"The elevation at latitude {location['lat']}, longitude {location['lng']} "
+                       f"is approximately {elevation:.2f} meters above sea level, "
+                       f"with a data resolution of {resolution:.2f} meters.")
+    else:
+        description = "Elevation data is not available for the given location."
+
+    return description
+
+
+# Function to convert offsets to a more natural language description
+def format_offset_to_natural_language(offset):
+    hours = offset // 3600
+    minutes = (offset % 3600) // 60
+    seconds = offset % 60
+    parts = []
+    if hours or (hours == 0 and minutes == 0 and seconds == 0):
+        parts.append(f"{abs(hours)} hour{'s' if abs(hours) != 1 else ''}")
+    if minutes:
+        parts.append(f"{abs(minutes)} minute{'s' if abs(minutes) != 1 else ''}")
+    if seconds:
+        parts.append(f"{abs(seconds)} second{'s' if abs(seconds) != 1 else ''}")
+    return f"{'-' if offset < 0 else '+'}{' '.join(parts)}"
+
+
+@handle_googlemaps_exceptions
+def get_timezone(lat_lng):
+    googlemaps = import_googlemaps_or_raise()
+    from googlemaps.exceptions import ApiError, HTTPError, Timeout, TransportError
+    GOOGLEMAPS_API_KEY = get_googlemap_api_key()
+    gmaps = googlemaps.Client(key=GOOGLEMAPS_API_KEY)
+
+    # Get timezone information
+    timezone_dict = gmaps.timezone(lat_lng)
+
+    # Extract necessary information
+    dst_offset = timezone_dict['dstOffset']  # Daylight Saving Time offset in seconds
+    raw_offset = timezone_dict['rawOffset']  # Standard time offset in seconds
+    timezone_id = timezone_dict['timeZoneId']
+    timezone_name = timezone_dict['timeZoneName']
+
+    raw_offset_str = format_offset_to_natural_language(raw_offset)
+    dst_offset_str = format_offset_to_natural_language(dst_offset)
+    total_offset_seconds = dst_offset + raw_offset
+    total_offset_str = format_offset_to_natural_language(total_offset_seconds)
+    
+    # Create a natural language description
+    description = (f"Timezone ID is {timezone_id}, named {timezone_name}. "
+                   f"The standard time offset is {raw_offset_str}. "
+                   f"Daylight Saving Time offset is {dst_offset_str}. "
+                   f"The total offset from Coordinated Universal Time (UTC) is {total_offset_str}, "
+                   f"including any Daylight Saving Time adjustment if applicable. ")
+
+    return description
+
+
 MAP_FUNCS: List[OpenAIFunction] = [
-    OpenAIFunction(func) for func in [get_address_description]
+    OpenAIFunction(func) for func in [get_address_description, get_elevation, get_timezone]
 ]

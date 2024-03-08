@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from camel.functions.google_maps_function import get_address_description
+from camel.functions.google_maps_function import get_address_description, get_elevation, get_timezone
 
 
 @pytest.fixture(scope="module")
@@ -28,12 +28,28 @@ def api_key():
     return key
 
 
-def test_weather(api_key):
+def test_get_address_description(api_key):
     expected_output = (
         "Address completion status: Yes. Formatted address: 1600 Amphitheatre "
         "Parkway Pk, Mountain View, CA 94043-1351, USA. Location (latitude, "
-        "longitude): (37.4224719, -122.0842778). Metadata indicating true "
+        "longitude): (37.4224318, -122.0841787). Metadata indicating true "
         "types: business.")
     assert get_address_description('1600 Amphitheatre Pk', region_code='US',
                                    locality='Mountain View') == expected_output
     
+
+def test_get_elevation(api_key):
+    expected_output = (
+        "The elevation at latitude 40.71473, longitude -73.99867 is "
+        "approximately 10.53 meters above sea level, with a data resolution "
+        "of 76.35 meters.")
+    assert get_elevation((40.714728, -73.998672)) == expected_output
+
+
+def test_get_timezone(api_key):
+    expected_output = (
+        "Timezone ID is America/New_York, named Eastern Standard Time. The "
+        "standard time offset is -5 hours. Daylight Saving Time offset is +0 "
+        "hours. The total offset from Coordinated Universal Time (UTC) is -5 "
+        "hours, including any Daylight Saving Time adjustment if applicable. ")
+    assert get_timezone((40.714728, -73.998672)) == expected_output
