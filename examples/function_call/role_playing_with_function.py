@@ -17,7 +17,7 @@ from colorama import Fore
 
 from camel.agents.chat_agent import FunctionCallingRecord
 from camel.configs import ChatGPTConfig, FunctionCallingConfig
-from camel.functions import MATH_FUNCS, SEARCH_FUNCS, WEATHER_FUNCS
+from camel.functions import MATH_FUNCS, SEARCH_FUNCS, WEATHER_FUNCS, MAP_FUNCS
 from camel.societies import RolePlaying
 from camel.types import ModelType
 from camel.utils import print_text_animated
@@ -28,11 +28,12 @@ def main(model_type=ModelType.GPT_4, chat_turn_limit=10) -> None:
                    "estimate the current age of University of Oxford "
                    "and then add 10 more years to this age, "
                    "and get the current weather of the city where "
-                   "the University is located.")
+                   "the University is located. And tell me what time zone "
+                   "University of Oxford is in.")
 
     user_model_config = ChatGPTConfig(temperature=0.0)
 
-    function_list = [*MATH_FUNCS, *SEARCH_FUNCS, *WEATHER_FUNCS]
+    function_list = [*MATH_FUNCS, *SEARCH_FUNCS, *WEATHER_FUNCS, *MAP_FUNCS]
     assistant_model_config = FunctionCallingConfig.from_openai_function_list(
         function_list=function_list,
         kwargs=dict(temperature=0.0),

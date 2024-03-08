@@ -40,16 +40,48 @@ def get_googlemap_api_key() -> str:
 
 
 def import_googlemaps_or_raise():
+    r"""Attempts to import the `googlemaps` library and returns it.
+
+    Returns:
+        module: The `googlemaps` module if successfully imported.
+
+    Raises:
+        ImportError: If the `googlemaps` library is not installed, this error
+                     is raised with a message instructing how to install the
+                     library using pip.
+    """
     try:
         import googlemaps
         return googlemaps
     except ImportError:
         raise ImportError("Please install `googlemaps` first. You can install "
                           "it by running `pip install googlemaps`.")
-    
 
-# @check_googlemaps_installed
-def get_address_description(address, region_code, locality):
+
+def get_address_description(address, region_code=None, locality=None):
+    r"""Validates an address via Google Maps API, returns a descriptive summary.
+
+    Validates an address using Google Maps API, returning a summary that
+    includes information on address completion, formatted address, ocation
+    coordinates, and metadata types that are true for the given address.
+
+    Args:
+        address (Union[str, List[str]]): The address or components to validate.
+            Can be a single string or a list representing different parts.
+        region_code (str, optional): Country code for regional restriction,
+            helps narrowing down results. (default: :obj:`None`)
+        locality (str, optional): Restricts validation to a specific locality,
+            e.g., "Mountain View". (default: :obj:`None`)
+
+    Returns:
+        str: Summary of the address validation results, including information
+            on address completion, formatted address, geographical coordinates
+            (latitude and longitude), and metadata types true for the address.
+
+    Raises:
+        ImportError: If the `googlemaps` library is not installed.
+        Exception: For unexpected errors during the address validation.
+    """
     googlemaps = import_googlemaps_or_raise()
     GOOGLEMAPS_API_KEY = get_googlemap_api_key()
     gmaps = googlemaps.Client(key=GOOGLEMAPS_API_KEY)
@@ -97,6 +129,16 @@ def get_address_description(address, region_code, locality):
 
 
 def handle_googlemaps_exceptions(func):
+    r"""Decorator to catch and handle exceptions raised by Google Maps API
+    calls.
+
+    Args:
+        func (Callable): The function to be wrapped by the decorator.
+
+    Returns:
+        Callable: A wrapper function that calls the wrapped function and
+                  handles exceptions.
+    """
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
@@ -116,6 +158,24 @@ def handle_googlemaps_exceptions(func):
 
 @handle_googlemaps_exceptions
 def get_elevation(lat_lng):
+    r"""Retrieves elevation data for a given latitude and longitude.
+
+    Uses the Google Maps API to fetch elevation data for the specified latitude
+    and longitude. It handles exceptions gracefully and returns a description
+    of the elevation, including its value in meters and the data resolution.
+
+    Args:
+        lat_lng (Union[str, Dict, List, Tuple]): The latitude and longitude for
+            which to retrieve elevation data. This can be a single location
+            represented as a string, dict, list, or tuple, or a list of such
+            locations.
+
+    Returns:
+        str: A description of the elevation at the specified location(s),
+            including the elevation in meters and the data resolution. If
+            elevation data is not available, a message indicating this is
+            returned.
+    """
     googlemaps = import_googlemaps_or_raise()
     from googlemaps.exceptions import ApiError, HTTPError, Timeout, TransportError
     GOOGLEMAPS_API_KEY = get_googlemap_api_key()
@@ -142,6 +202,18 @@ def get_elevation(lat_lng):
 
 # Function to convert offsets to a more natural language description
 def format_offset_to_natural_language(offset):
+    r"""Converts a time offset in seconds to a more natural language
+    description.
+
+    Args:
+        offset (int): The time offset in seconds. Can be positive, negative,
+            or zero.
+
+    Returns:
+        str: A string representing the offset in a natural language format,
+            such as "+5 hours 30 minutes" or "-3 hours 45 minutes". If the
+            offset is zero, the function returns "+0 hours".
+    """
     hours = offset // 3600
     minutes = (offset % 3600) // 60
     seconds = offset % 60
@@ -157,6 +229,25 @@ def format_offset_to_natural_language(offset):
 
 @handle_googlemaps_exceptions
 def get_timezone(lat_lng):
+    r"""Retrieves timezone information for a given latitude and longitude.
+
+    This function uses the Google Maps Timezone API to fetch timezone data for
+    the specified latitude and longitude. It returns a natural language
+    description of the timezone, including the timezone ID, name, standard
+    time offset, daylight saving time offset, and the total offset from
+    Coordinated Universal Time (UTC).
+
+    Args:
+        lat_lng (Union[str, Dict, List, Tuple]): The latitude and longitude for
+            which to retrieve elevation data. This can be a single location
+            represented as a string, dict, list, or tuple, or a list of such
+            locations.
+
+    Returns:
+        str: A descriptive string of the timezone information, including the
+        timezone ID and name, standard time offset, daylight saving time
+        offset, and total offset from UTC.
+    """
     googlemaps = import_googlemaps_or_raise()
     from googlemaps.exceptions import ApiError, HTTPError, Timeout, TransportError
     GOOGLEMAPS_API_KEY = get_googlemap_api_key()
