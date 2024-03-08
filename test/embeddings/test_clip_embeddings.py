@@ -28,6 +28,7 @@ def test_CLIPEmbedding_initialization():
 
 def test_image_embed_list_with_valid_input():
     embedding = CLIPEmbedding()
+    # Test with the specific images
     url = "http://images.cocodataset.org/val2017/000000039769.jpg"
     image = Image.open(requests.get(url, stream=True).raw)
     test_images = [image, image]
@@ -46,6 +47,7 @@ def test_image_embed_list_with_empty_input():
 
 def test_text_embed_list_with_valid_input():
     embedding = CLIPEmbedding()
+    # Test with the specific texts
     test_texts = ['Hello world', 'Testing sentence embeddings']
     embeddings = embedding.embed_list(test_texts)
     assert isinstance(embeddings, list)
