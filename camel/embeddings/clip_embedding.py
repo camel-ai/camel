@@ -59,7 +59,7 @@ class CLIPEmbedding(BaseEmbedding):
                 as a list of floating-point numbers.
         """
         if not objs:
-            raise ValueError("Input text list is empty")
+            raise ValueError("Input text list is empty.")
         result_list = []
         for obj in objs:
             if isinstance(obj, Image.Image):
@@ -74,7 +74,7 @@ class CLIPEmbedding(BaseEmbedding):
                 result_list.extend(text_feature)
 
             else:
-                raise ValueError("Input type is not image nor text")
+                raise ValueError("Input type is not image nor text.")
         return result_list
 
     def get_output_dim(self) -> int:
