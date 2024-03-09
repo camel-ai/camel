@@ -18,6 +18,26 @@ from functools import wraps
 from camel.functions import OpenAIFunction
 
 
+def import_googlemaps_or_raise():
+    r"""
+    Attempts to import the `googlemaps` library and returns it.
+
+    Returns:
+        module: The `googlemaps` module if successfully imported.
+
+    Raises:
+        ImportError: If the `googlemaps` library is not installed, this error
+                     is raised with a message instructing how to install the
+                     library using pip.
+    """
+    try:
+        import googlemaps
+        return googlemaps
+    except ImportError:
+        raise ImportError("Please install `googlemaps` first. You can install "
+                          "it by running `pip install googlemaps`.")
+
+
 def get_googlemap_api_key() -> str:
     r"""Retrieve the Google Maps API key from environment variables.
 
@@ -39,23 +59,6 @@ def get_googlemap_api_key() -> str:
     return GOOGLEMAPS_API_KEY
 
 
-def import_googlemaps_or_raise():
-    r"""Attempts to import the `googlemaps` library and returns it.
-
-    Returns:
-        module: The `googlemaps` module if successfully imported.
-
-    Raises:
-        ImportError: If the `googlemaps` library is not installed, this error
-                     is raised with a message instructing how to install the
-                     library using pip.
-    """
-    try:
-        import googlemaps
-        return googlemaps
-    except ImportError:
-        raise ImportError("Please install `googlemaps` first. You can install "
-                          "it by running `pip install googlemaps`.")
 
 
 def get_address_description(address, region_code=None, locality=None):
@@ -84,7 +87,10 @@ def get_address_description(address, region_code=None, locality=None):
     """
     googlemaps = import_googlemaps_or_raise()
     GOOGLEMAPS_API_KEY = get_googlemap_api_key()
-    gmaps = googlemaps.Client(key=GOOGLEMAPS_API_KEY)
+    try:
+        gmaps = googlemaps.Client(key=GOOGLEMAPS_API_KEY)
+    except Exception as e:
+        return f"Error: {str(e)}"
 
     try:
         # Call the Google Maps address validation service with enableUspsCass set to False
@@ -137,10 +143,16 @@ def handle_googlemaps_exceptions(func):
 
     Returns:
         Callable: A wrapper function that calls the wrapped function and
-                  handles exceptions.
+                  handles exceptions.未更改
     """
     @wraps(func)
     def wrapper(*args, **kwargs):
+        try:
+            from googlemaps.exceptions import ApiError, HTTPError, Timeout, TransportError
+        except ImportError:
+            raise ImportError("Please install `googlemaps` first. You can install "
+                "it by running `pip install googlemaps`.")
+        
         try:
             return func(*args, **kwargs)
         except ApiError as e:
@@ -177,9 +189,11 @@ def get_elevation(lat_lng):
             returned.
     """
     googlemaps = import_googlemaps_or_raise()
-    from googlemaps.exceptions import ApiError, HTTPError, Timeout, TransportError
     GOOGLEMAPS_API_KEY = get_googlemap_api_key()
-    gmaps = googlemaps.Client(key=GOOGLEMAPS_API_KEY)
+    try:
+        gmaps = googlemaps.Client(key=GOOGLEMAPS_API_KEY)
+    except Exception as e:
+        return f"Error: {str(e)}"
 
     # Assuming gmaps is a configured Google Maps client instance
     elevation_result = gmaps.elevation(lat_lng)
@@ -200,7 +214,6 @@ def get_elevation(lat_lng):
     return description
 
 
-# Function to convert offsets to a more natural language description
 def format_offset_to_natural_language(offset):
     r"""Converts a time offset in seconds to a more natural language
     description.
@@ -249,7 +262,6 @@ def get_timezone(lat_lng):
         offset, and total offset from UTC.
     """
     googlemaps = import_googlemaps_or_raise()
-    from googlemaps.exceptions import ApiError, HTTPError, Timeout, TransportError
     GOOGLEMAPS_API_KEY = get_googlemap_api_key()
     gmaps = googlemaps.Client(key=GOOGLEMAPS_API_KEY)
 
