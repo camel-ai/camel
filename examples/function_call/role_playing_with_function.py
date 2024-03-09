@@ -17,7 +17,7 @@ from colorama import Fore
 
 from camel.agents.chat_agent import FunctionCallingRecord
 from camel.configs import ChatGPTConfig, FunctionCallingConfig
-from camel.functions import MATH_FUNCS, SEARCH_FUNCS, WEATHER_FUNCS, MAP_FUNCS
+from camel.functions import MAP_FUNCS, MATH_FUNCS, SEARCH_FUNCS, WEATHER_FUNCS
 from camel.societies import RolePlaying
 from camel.types import ModelType
 from camel.utils import print_text_animated

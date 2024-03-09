@@ -11,13 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import os
-import re
-from datetime import datetime, timezone
-
-import pytest
-
-from camel.functions.google_maps_function import get_address_description, get_elevation, get_timezone
+from camel.functions.google_maps_function import (
+    get_address_description,
+    get_elevation,
+    get_timezone,
+)
 
 
 def test_get_address_description():
@@ -28,7 +26,7 @@ def test_get_address_description():
         "types: business.")
     assert get_address_description('1600 Amphitheatre Pk', region_code='US',
                                    locality='Mountain View') == expected_output
-    
+
 
 def test_get_elevation():
     expected_output = (
