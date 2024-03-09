@@ -25,6 +25,7 @@ from camel.storages.vectordb_storages import (
 
 logger = logging.getLogger(__name__)
 
+
 class MilvusStorage(BaseVectorStorage):
     r"""An implementation of the `BaseVectorStorage` for interacting with
     Milvus, a vector search engine.
@@ -91,9 +92,7 @@ class MilvusStorage(BaseVectorStorage):
                     f'"{self.collection_name}" ({in_dim}) is different from '
                     f"the given embedding dim ({self.vector_dim}).")
         else:
-            self._create_collection(
-                collection_name=self.collection_name,
-            )
+            self._create_collection(collection_name=self.collection_name, )
 
     def _create_collection(
         self,
@@ -148,40 +147,30 @@ class MilvusStorage(BaseVectorStorage):
         from pymilvus import Collection
 
         collection = Collection(collection_name)
-        return{
+        return {
             # Return the schema.CollectionSchema of the collection.
-            "schema":
-            collection.schema, 
+            "schema": collection.schema,
             # Return the description of the collection.
-            "description":
-            collection.description,
+            "description": collection.description,
             # Return the name of the collection.
-            "name":
-            collection.name,
-            # Return the boolean value that indicates if the collection is empty.
-            "is_empty":
-            collection.is_empty,
+            "name": collection.name,
+            # Return the boolean value that indicates if the collection is
+            # empty.
+            "is_empty": collection.is_empty,
             # Return the number of entities in the collection.
-            "num_entities":
-            collection.num_entities,
+            "num_entities": collection.num_entities,
             # Return the schema.FieldSchema of the primary key field.
-            "primary_field":
-            collection.primary_field,
+            "primary_field": collection.primary_field,
             # Return the list[Partition] object.
-            "partitions":
-            collection.partitions,
+            "partitions": collection.partitions,
             # Return the list[Index] object.
-            "indexes":
-            collection.indexes,
+            "indexes": collection.indexes,
             # Return the number of vector.
-            "vector_count":
-            len(collection.indexes),
+            "vector_count": len(collection.indexes),
             # Return the dimension of vector.
-            "vector_dim":
-            collection.schema.fields[-1].params['dim'],
+            "vector_dim": collection.schema.fields[-1].params['dim'],
             # Return the expiration time of data in the collection.
-            "properties":
-            collection.properties,
+            "properties": collection.properties,
         }
 
     def add(
@@ -222,7 +211,8 @@ class MilvusStorage(BaseVectorStorage):
             RuntimeError: If there is an error during the deletion process.
         """
 
-        op_info = self._client.delete(collection_name=self.collection_name, pks=ids, **kwargs)
+        op_info = self._client.delete(collection_name=self.collection_name,
+                                      pks=ids, **kwargs)
         logger.debug(f"Successfully deleted vectors in Milvus: {op_info}")
 
     def status(self) -> VectorDBStatus:
@@ -258,8 +248,8 @@ class MilvusStorage(BaseVectorStorage):
         query_results = []
         for point in search_result:
             query_results.append(
-                VectorDBQueryResult.construct( # type: ignore
-                    similarity=(1-point.distance),
+                VectorDBQueryResult.construct(  # type: ignore
+                    similarity=(1 - point.distance),
                     id=str(point.id),
                 ))
 
@@ -268,9 +258,7 @@ class MilvusStorage(BaseVectorStorage):
     def clear(self) -> None:
         r"""Remove all vectors from the storage."""
         self._delete_collection(self.collection_name)
-        self._create_collection(
-            collection_name=self.collection_name
-        )
+        self._create_collection(collection_name=self.collection_name)
 
     @property
     def client(self) -> Any:
