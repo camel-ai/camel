@@ -59,7 +59,23 @@ def get_googlemap_api_key() -> str:
     return GOOGLEMAPS_API_KEY
 
 
+'''def create_google_maps_client(googlemaps, GOOGLEMAPS_API_KEY):
+    r"""Create and return a Google Maps client instance.
 
+    Args:
+        googlemaps: The googlemaps library module.
+        GOOGLEMAPS_API_KEY (str): A valid Google Maps API key.
+
+    Returns:
+        googlemaps.Client instance or str: A googlemaps.Client instance if
+        successful, or an error message string upon failure.
+    """
+    try:
+        gmaps = googlemaps.Client(key=GOOGLEMAPS_API_KEY)
+        return gmaps
+    except Exception as e:
+        return f"Error: {str(e)}"
+'''
 
 def get_address_description(address, region_code=None, locality=None):
     r"""Validates an address via Google Maps API, returns a descriptive summary.
@@ -263,7 +279,10 @@ def get_timezone(lat_lng):
     """
     googlemaps = import_googlemaps_or_raise()
     GOOGLEMAPS_API_KEY = get_googlemap_api_key()
-    gmaps = googlemaps.Client(key=GOOGLEMAPS_API_KEY)
+    try:
+        gmaps = googlemaps.Client(key=GOOGLEMAPS_API_KEY)
+    except Exception as e:
+        return f"Error: {str(e)}"
 
     # Get timezone information
     timezone_dict = gmaps.timezone(lat_lng)

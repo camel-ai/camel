@@ -47,7 +47,7 @@ def test_get_timezone():
     assert get_timezone((40.714728, -73.998672)) == expected_output
 
 
-def test_with_wrong_api_key(monkeypatch):
+def test_wrong_api_key(monkeypatch):
     monkeypatch.setenv('GOOGLEMAPS_API_KEY', 'invalid_api_key')
     expected_output = ("Error: Invalid API key provided.")
     assert get_address_description('1600 Amphitheatre Pk', region_code='US',
