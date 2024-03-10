@@ -28,21 +28,24 @@ logger = logging.getLogger(__name__)
 
 class MilvusStorage(BaseVectorStorage):
     r"""An implementation of the `BaseVectorStorage` for interacting with
-    Milvus, a vector search engine.
+    Milvus, a cloud-native vector search engine.
 
     The detailed information about Milvus is available at:
     `Milvus <https://milvus.io/docs/overview.md/>`_
 
     Args:
         vector_dim (int): The dimenstion of storing vectors.
-        collection_name (Optional[str], optional): Name for the collection in
-            the Milvus. If not provided, set it to the current time with iso
-            format. (default: :obj:`None`)
         url_and_api_key (Tuple[str, str]]): Tuple containing
             the URL and API key for connecting to a remote Milvus instance.
             (default: :obj:`None`)
+        collection_name (Optional[str], optional): Name for the collection in
+            the Milvus. If not provided, set it to the current time with iso
+            format. (default: :obj:`None`)
         **kwargs (Any): Additional keyword arguments for initializing
             `MilvusClient`.
+
+    Raises:
+        ImportError: If `pymilvus` package is not installed.
     """
 
     def __init__(
@@ -61,11 +64,9 @@ class MilvusStorage(BaseVectorStorage):
 
         self._client: MilvusClient
         self._create_client(url_and_api_key, **kwargs)
-
         self.vector_dim = vector_dim
         self.collection_name = (collection_name
                                 or self._generate_collection_name())
-
         self._check_and_create_collection()
 
     def _create_client(
@@ -73,6 +74,13 @@ class MilvusStorage(BaseVectorStorage):
         url_and_api_key: Tuple[str, str],
         **kwargs: Any,
     ) -> None:
+        r"""Initializes the Milvus client with the provided connection details.
+
+        Args:
+            url_and_api_key (Tuple[str, str]): The URL and API key for the
+                Milvus server.
+            **kwargs: Additional keyword arguments passed to the Milvus client.
+        """
         from pymilvus import MilvusClient
 
         self._client = MilvusClient(
@@ -82,6 +90,9 @@ class MilvusStorage(BaseVectorStorage):
         )
 
     def _check_and_create_collection(self) -> None:
+        r"""Checks if the specified collection exists in Milvus and creates it
+        if it doesn't, ensuring it matches the specified vector dimensionality.
+        """
         if self._collection_exists(self.collection_name):
             in_dim = self._get_collection_info(
                 self.collection_name)["vector_dim"]
@@ -105,9 +116,34 @@ class MilvusStorage(BaseVectorStorage):
             collection_name (str): Name of the collection to be created.
             **kwargs (Any): Additional keyword arguments.
         """
-        self._client.create_collection(
+        from pymilvus import CollectionSchema, DataType, FieldSchema
+
+        index_params = {
+            "metric_type": "COSINE",
+            "index_type": "AUTOINDEX",
+            "params": {},
+        }
+
+        fields = [
+            FieldSchema(name='id', dtype=DataType.VARCHAR,
+                        descrition='A unique identifier for the vector',
+                        is_primary=True, auto_id=False, max_length=65535),
+            FieldSchema(
+                name='payload', dtype=DataType.VARCHAR,
+                description=('Any additional metadata or information related'
+                             'to the vector'), max_length=65535),
+            FieldSchema(
+                name='vector', dtype=DataType.FLOAT_VECTOR,
+                description='The numerical representation of the vector',
+                dim=self.vector_dim)
+        ]
+        schema = CollectionSchema(fields=fields,
+                                  description='Collection schema')
+
+        self._client.create_collection_with_schema(
             collection_name=collection_name,
-            dimension=self.vector_dim,
+            schema=schema,
+            index_params=index_params,
             **kwargs,
         )
 
@@ -119,19 +155,31 @@ class MilvusStorage(BaseVectorStorage):
 
         Args:
             collection (str): Name of the collection to be deleted.
-            **kwargs (Any): Additional keyword arguments.
         """
         self._client.drop_collection(collection_name=collection_name)
 
     def _collection_exists(self, collection_name: str) -> bool:
-        r"""Returns wether the collection exists in the database"""
+        r"""Checks whether a collection with the specified name exists in the
+        database.
+
+        Args:
+            collection_name (str): The name of the collection to check.
+
+        Returns:
+            bool: True if the collection exists, False otherwise.
+        """
         for c in self._client.list_collections():
-            if collection_name == c.name:
+            if collection_name == c:
                 return True
         return False
 
     def _generate_collection_name(self) -> str:
-        r"""Generates a collection name if user doesn't provide"""
+        r"""Generates a unique name for a new collection based on the current
+        timestamp.
+
+        Returns:
+            str: A unique collection name.
+        """
         return datetime.now().isoformat()
 
     def _get_collection_info(self, collection_name: str) -> Dict[str, Any]:
@@ -144,34 +192,57 @@ class MilvusStorage(BaseVectorStorage):
             Dict[str, Any]: A dictionary containing details about the
                 collection.
         """
-        from pymilvus import Collection
+        vector_count = self._client.num_entities(collection_name)
 
-        collection = Collection(collection_name)
+        collection_info = self._client.describe_collection(collection_name)
+        collection_id = collection_info['collection_id']
+        dim_value = next(
+            (field['params']['dim']
+             for field in collection_info['fields'] if field['description'] ==
+             'The numerical representation of the vector'), None)
+
         return {
-            # Return the schema.CollectionSchema of the collection.
-            "schema": collection.schema,
-            # Return the description of the collection.
-            "description": collection.description,
-            # Return the name of the collection.
-            "name": collection.name,
-            # Return the boolean value that indicates if the collection is
-            # empty.
-            "is_empty": collection.is_empty,
-            # Return the number of entities in the collection.
-            "num_entities": collection.num_entities,
-            # Return the schema.FieldSchema of the primary key field.
-            "primary_field": collection.primary_field,
-            # Return the list[Partition] object.
-            "partitions": collection.partitions,
-            # Return the list[Index] object.
-            "indexes": collection.indexes,
+            # Return the id of the collection.
+            "id": collection_id,
             # Return the number of vector.
-            "vector_count": len(collection.indexes),
+            "vector_count": vector_count,
             # Return the dimension of vector.
-            "vector_dim": collection.schema.fields[-1].params['dim'],
-            # Return the expiration time of data in the collection.
-            "properties": collection.properties,
+            "vector_dim": dim_value,
         }
+
+    def _validate_and_convert_vectors(
+            self, records: List[VectorRecord]) -> List[dict]:
+        r"""
+        Validates and converts VectorRecord instances to the format expected
+        by Milvus.
+
+        Args:
+            records (List[VectorRecord]): List of vector records to validate
+            and convert.
+
+        Returns:
+            List[dict]: A list of dictionaries formatted for Milvus insertion.
+        """
+
+        validated_data = []
+
+        for record in records:
+            if record.payload is not None:
+                record_dict = {
+                    "id": record.id,
+                    "payload": record.payload['message'],
+                    "vector": record.vector,
+                }
+                validated_data.append(record_dict)
+            else:
+                record_dict = {
+                    "id": record.id,
+                    "payload": '',
+                    "vector": record.vector,
+                }
+                validated_data.append(record_dict)
+
+        return validated_data
 
     def add(
         self,
@@ -187,12 +258,14 @@ class MilvusStorage(BaseVectorStorage):
         Raises:
             RuntimeError: If there was an error in the addition process.
         """
+        validated_records = self._validate_and_convert_vectors(records)
+
         op_info = self._client.insert(
             collection_name=self.collection_name,
-            data=records,
+            data=validated_records,
             **kwargs,
         )
-        self._client.flush()
+        self._client.flush(collection_name=self.collection_name)
         logger.debug(f"Successfully added vectors in Milvus: {op_info}")
 
     def delete(
@@ -216,6 +289,14 @@ class MilvusStorage(BaseVectorStorage):
         logger.debug(f"Successfully deleted vectors in Milvus: {op_info}")
 
     def status(self) -> VectorDBStatus:
+        r"""Retrieves the current status of the Milvus collection. This method
+        provides information about the collection, including its vector
+        dimensionality and the total number of vectors stored.
+
+        Returns:
+            VectorDBStatus: An object containing information about the
+                collection's status.
+        """
         status = self._get_collection_info(self.collection_name)
         return VectorDBStatus(
             vector_dim=status["vector_dim"],
@@ -241,26 +322,37 @@ class MilvusStorage(BaseVectorStorage):
         """
         search_result = self._client.search(
             collection_name=self.collection_name,
-            data=query.query_vector,
+            data=[query.query_vector],
             limit=query.top_k,
+            output_fields=['vector', 'payload'],
             **kwargs,
         )
         query_results = []
         for point in search_result:
             query_results.append(
                 VectorDBQueryResult.construct(  # type: ignore
-                    similarity=(1 - point.distance),
-                    id=str(point.id),
-                ))
+                    similarity=(1 - point[0]['distance']),
+                    id=str(point[0]['id']),
+                    payload={'message': point[0]['entity'].get('payload')},
+                    vector=point[0]['entity'].get('vector')))
 
         return query_results
 
     def clear(self) -> None:
-        r"""Remove all vectors from the storage."""
+        r"""Removes all vectors from the Milvus collection. This method
+        deletes the existing collection and then recreates it with the same
+        schema to effectively remove all stored vectors.
+        """
         self._delete_collection(self.collection_name)
         self._create_collection(collection_name=self.collection_name)
 
     @property
     def client(self) -> Any:
-        r"""Provides access to the underlying vector database client."""
+        r"""Provides direct access to the Milvus client. This property allows
+        for direct interactions with the Milvus client for operations that are
+        not covered by the `MilvusStorage` class.
+
+        Returns:
+            Any: The Milvus client instance.
+        """
         return self._client
