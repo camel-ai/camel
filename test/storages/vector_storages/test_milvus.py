@@ -13,14 +13,15 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from camel.storages import MilvusStorage, VectorDBQuery, VectorRecord
-URL_AND_KEY = ("https://in03-971134166a4c2ec.api.gcp-us-west1.zillizcloud.com","56d29e389a93a4137dfcdfd276d2e9656ee2f91774484c9ae8b1b47cbe724c4bcaa16d0ae35e079fc5081f80c59b462e35011a52")
+
+URL_AND_KEY = ("https://in03-971134166a4c2ec.api.gcp-us-west1.zillizcloud.com",
+               "56d29e389a93a4137dfcdfd276d2e9656ee2f91774484c9ae8b1b47cbe724c"
+               "4bcaa16d0ae35e079fc5081f80c59b462e35011a52")
+
 
 def test_multiple_remote_clients() -> None:
-    storage1 = MilvusStorage(
-        vector_dim=4,
-        url_and_api_key=URL_AND_KEY,
-        collection_name="collection1"
-    )
+    storage1 = MilvusStorage(vector_dim=4, url_and_api_key=URL_AND_KEY,
+                             collection_name="collection1")
     storage2 = MilvusStorage(
         vector_dim=4,
         url_and_api_key=URL_AND_KEY,
@@ -29,8 +30,7 @@ def test_multiple_remote_clients() -> None:
 
     # Add vectors to storage1
     vectors1 = [
-        VectorRecord(vector=[0.1, 0.1, 0.1, 0.1],
-                    payload={"message": "text"} ),
+        VectorRecord(vector=[0.1, 0.1, 0.1, 0.1], payload={"message": "text"}),
         VectorRecord(vector=[0.1, -0.1, -0.1, 0.1],
                      payload={"message": "text"}),
     ]
