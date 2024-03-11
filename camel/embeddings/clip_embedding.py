@@ -31,7 +31,8 @@ class CLIPEmbedding(BaseEmbedding[Union[str, Image.Image]]):
 
     def __init__(self,
                  model_name: str = "openai/clip-vit-base-patch32") -> None:
-        r"""Initializes the: obj: `CLIPEmbedding` class with a specified model.
+        r"""Initializes the: obj: `CLIPEmbedding` class with a specified model
+                                    and return the dimension of embeddings.
 
         Args:
             model_name (str, optional): The version name of the model to use.
@@ -41,6 +42,9 @@ class CLIPEmbedding(BaseEmbedding[Union[str, Image.Image]]):
         from transformers import CLIPModel, CLIPProcessor
         self.model = CLIPModel.from_pretrained(model_name)
         self.processor = CLIPProcessor.from_pretrained(model_name)
+        text = 'dimension'
+        inputs = self.processor(text=[text], return_tensors="pt")
+        self.dim = self.model.get_text_features(**inputs).shape[1]
 
     def embed_list(
         self,
@@ -84,7 +88,4 @@ class CLIPEmbedding(BaseEmbedding[Union[str, Image.Image]]):
             int: The dimensionality of the embedding for the current model.
         """
 
-        text = 'dimension'
-        inputs = self.processor(text=[text], return_tensors="pt")
-        dim = self.model.get_text_features(**inputs).shape[1]
-        return dim
+        return self.dim
