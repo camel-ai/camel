@@ -38,7 +38,7 @@ from camel.types import (
     OpenAIBackendRole,
     RoleType,
 )
-from camel.utils import get_model_encoding, openai_api_key_required
+from camel.utils import get_model_encoding
 
 
 @dataclass(frozen=True)
@@ -122,7 +122,7 @@ class ChatAgent(BaseAgent):
         self.func_dict: Dict[str, Callable] = {}
         if function_list is not None:
             for func in function_list:
-                self.func_dict[func.name] = func.func
+                self.func_dict[func.get_function_name()] = func.func
         self.model_config = model_config or ChatGPTConfig()
 
         self.model_backend: BaseModelBackend = ModelFactory.create(
@@ -257,7 +257,6 @@ class ChatAgent(BaseAgent):
         """
         self.update_memory(message, OpenAIBackendRole.ASSISTANT)
 
-    @openai_api_key_required
     def step(
         self,
         input_message: BaseMessage,

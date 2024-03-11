@@ -72,6 +72,7 @@ class OpenSourceModel(BaseModelBackend):
             base_url=self.server_url,
             timeout=60,
             max_retries=3,
+            api_key="fake_key",
         )
 
         # Replace `model_config_dict` with only the params to be

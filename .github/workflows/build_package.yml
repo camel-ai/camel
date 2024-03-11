@@ -1,0 +1,36 @@
+name: Build Package
+
+on:
+  push:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: set up python environment and install dependencies
+        uses: ./.github/actions/camel_install
+        with:
+          python-version: "3.8"
+      - name: Build
+        shell: bash
+        run: poetry build
+      - name: Set up test environment
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+      - name: Install the package
+        run: |
+          WHEEL_FILE=$(ls dist/*.whl)
+          pip install "${WHEEL_FILE}[all,test]"
+      - name: Test import
+        shell: bash
+        run: python -c "import camel"
+      - name: Run tests with Pytest
+        env:
+          OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
+          GOOGLE_API_KEY: "${{ secrets.GOOGLE_API_KEY }}"
+          SEARCH_ENGINE_ID: "${{ secrets.SEARCH_ENGINE_ID }}"
+          OPENWEATHERMAP_API_KEY: "${{ secrets.OPENWEATHERMAP_API_KEY }}"
+        run: pytest --fast-test-mode ./test

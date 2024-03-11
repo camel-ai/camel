@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from camel.utils import get_task_list
+from camel.utils import get_system_information, get_task_list
 
 
 def test_get_task_list():
@@ -37,3 +37,28 @@ def test_get_task_list():
     assert isinstance(task_list, list)
     assert isinstance(task_list[0], str)
     assert len(task_list) == 1
+
+
+def test_get_system_information():
+    # Call the function
+    sys_info = get_system_information()
+
+    # Check if the result is a dictionary
+    assert isinstance(sys_info, dict)
+
+    # Define the expected keys
+    expected_keys = [
+        "OS Name",
+        "System",
+        "Release",
+        "Version",
+        "Machine",
+        "Processor",
+        "Platform",
+    ]
+
+    # Check if all expected keys are in the returned dictionary
+    assert all(key in sys_info for key in expected_keys)
+
+    # Check if all values are non-empty strings
+    assert all(isinstance(value, str) and value for value in sys_info.values())
