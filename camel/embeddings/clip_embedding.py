@@ -18,7 +18,7 @@ from PIL import Image
 from camel.embeddings import BaseEmbedding
 
 
-class CLIPEmbedding(BaseEmbedding):
+class CLIPEmbedding(BaseEmbedding[Union[str, Image.Image]]):
     r"""Provides image embedding functionalities using CLIP model.
 
     Args:
