@@ -20,6 +20,8 @@ from .commons import (
     get_task_list,
     check_server_running,
     get_system_information,
+    to_pascal,
+    PYDANTIC_V2,
 )
 from .token_counting import (
     get_model_encoding,
@@ -37,6 +39,8 @@ __all__ = [
     'get_task_list',
     'check_server_running',
     'get_system_information',
+    'to_pascal',
+    'PYDANTIC_V2',
     'get_model_encoding',
     'BaseTokenCounter',
     'OpenAITokenCounter',
