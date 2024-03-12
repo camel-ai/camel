@@ -13,8 +13,10 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .base import BaseEmbedding
 from .openai_embedding import OpenAIEmbedding
+from .clip_embedding import CLIPEmbedding
 
 __all__ = [
     "BaseEmbedding",
     "OpenAIEmbedding",
+    "CLIPEmbedding",
 ]

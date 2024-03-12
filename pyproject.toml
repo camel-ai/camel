@@ -55,6 +55,7 @@ PyMuPDF = { version = "^1.22.5", optional = true }
 wikipedia = { version = "^1", optional = true }
 pyowm = { version = "^3.3.0", optional = true }
 unstructured = { version = "^0.10.30", optional = true }
+pillow = { version = "^10.2.0", optional = true }
 
 # vector-databases
 qdrant-client = { version = "^1.6.4", optional = true }
