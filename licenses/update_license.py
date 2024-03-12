@@ -39,7 +39,7 @@ def update_license_in_file(
     start_line_start_with: str,
     end_line_start_with: str,
 ) -> bool:
-    with open(file_path, 'r', encoding='utf-8') as f:
+    with open(file_path, 'r', encoding='utf-8') as f: # for windows compatibility
         content = f.read()
 
     with open(license_template_path, 'r', encoding='utf-8') as f:
