@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .enums import (
+    ReasoningType,
     RoleType,
     ModelType,
     TaskType,
@@ -34,6 +35,7 @@ from .openai_types import (
 )
 
 __all__ = [
+    'ReasoningType',
     'RoleType',
     'ModelType',
     'TaskType',
