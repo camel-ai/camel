@@ -89,6 +89,7 @@ Input: <YOUR_INPUT>
 2. Instruct without any input:
 Instruction: <YOUR_INSTRUCTION>
 Input: None
+
 The "Instruction" describes a task or question. The paired "Input" provides further context or information for the requested "Instruction".
 
 You must give me one instruction at a time.
