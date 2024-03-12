@@ -24,7 +24,7 @@ from camel.human import Human
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
 from camel.responses import ChatAgentResponse
-from camel.types import ModelType, RoleType, TaskType
+from camel.types import ModelType, ReasoningType, RoleType, TaskType
 
 
 class RolePlaying:
@@ -53,6 +53,8 @@ class RolePlaying:
             agents. (default: :obj:`None`)
         task_type (TaskType, optional): The type of task to perform.
             (default: :obj:`TaskType.AI_SOCIETY`)
+        reasoning_type (str, optional): The reasoning type for the system
+            message generator. (default: :obj:`ReasoningType.DEFAULT`)
         assistant_agent_kwargs (Dict, optional): Additional arguments to pass
             to the assistant agent. (default: :obj:`None`)
         user_agent_kwargs (Dict, optional): Additional arguments to pass to
@@ -86,6 +88,7 @@ class RolePlaying:
         critic_criteria: Optional[str] = None,
         model_type: Optional[ModelType] = None,
         task_type: TaskType = TaskType.AI_SOCIETY,
+        reasoning_type: ReasoningType = ReasoningType.DEFAULT,
         assistant_agent_kwargs: Optional[Dict] = None,
         user_agent_kwargs: Optional[Dict] = None,
         task_specify_agent_kwargs: Optional[Dict] = None,
@@ -101,6 +104,7 @@ class RolePlaying:
         self.with_critic_in_the_loop = with_critic_in_the_loop
         self.model_type = model_type
         self.task_type = task_type
+        self.reasoning_type = reasoning_type
         self.task_prompt = task_prompt
 
         self.specified_task_prompt: Optional[TextPrompt] = None
@@ -113,6 +117,11 @@ class RolePlaying:
         self.init_planned_task_prompt(task_planner_agent_kwargs,
                                       output_language)
 
+        # Define the reasoning type for the system message generator
+        if self.reasoning_type != ReasoningType.DEFAULT:
+            sys_msg_generator_kwargs = sys_msg_generator_kwargs or {}
+            sys_msg_generator_kwargs.update(
+                dict(reasoning_type=self.reasoning_type))
         sys_msg_generator = SystemMessageGenerator(
             task_type=self.task_type, **(sys_msg_generator_kwargs or {}))
 
