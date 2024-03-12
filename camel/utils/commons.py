@@ -11,26 +11,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import inspect
 import os
+import platform
 import re
 import socket
 import time
 import zipfile
 from functools import wraps
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    TypeVar,
-    cast,
-)
+from typing import Any, Callable, List, Optional, Set, TypeVar, cast
 from urllib.parse import urlparse
 
+import pydantic
 import requests
 
 from camel.types import TaskType
@@ -116,6 +107,18 @@ def get_first_int(string: str) -> Optional[int]:
 
 
 def download_tasks(task: TaskType, folder_path: str) -> None:
+    r"""Downloads task-related files from a specified URL and extracts them.
+
+    This function downloads a zip file containing tasks based on the specified
+    `task` type from a predefined URL, saves it to `folder_path`, and then
+    extracts the contents of the zip file into the same folder. After
+    extraction, the zip file is deleted.
+
+    Args:
+        task (TaskType): An enum representing the type of task to download.
+        folder_path (str): The path of the folder where the zip file will be
+                           downloaded and extracted.
+    """
     # Define the path to save the zip file
     zip_file_path = os.path.join(folder_path, "tasks.zip")
 
@@ -132,70 +135,6 @@ def download_tasks(task: TaskType, folder_path: str) -> None:
 
     # Delete the zip file
     os.remove(zip_file_path)
-
-
-def parse_doc(func: Callable) -> Dict[str, Any]:
-    r"""Parse the docstrings of a function to extract the function name,
-    description and parameters.
-
-    Args:
-        func (Callable): The function to be parsed.
-    Returns:
-        Dict[str, Any]: A dictionary with the function's name,
-            description, and parameters.
-    """
-
-    doc = inspect.getdoc(func)
-    if not doc:
-        raise ValueError(
-            f"Invalid function {func.__name__}: no docstring provided.")
-
-    properties = {}
-    required = []
-
-    parts = re.split(r'\n\s*\n', doc)
-    func_desc = parts[0].strip()
-
-    args_section = next((p for p in parts if 'Args:' in p), None)
-    if args_section:
-        args_descs: List[Tuple[str, str, str, ]] = re.findall(
-            r'(\w+)\s*\((\w+)\):\s*(.*)', args_section)
-        properties = {
-            name.strip(): {
-                'type': type,
-                'description': desc
-            }
-            for name, type, desc in args_descs
-        }
-        for name in properties:
-            required.append(name)
-
-    # Parameters from the function signature
-    sign_params = list(inspect.signature(func).parameters.keys())
-    if len(sign_params) != len(required):
-        raise ValueError(
-            f"Number of parameters in function signature ({len(sign_params)})"
-            f" does not match that in docstring ({len(required)}).")
-
-    for param in sign_params:
-        if param not in required:
-            raise ValueError(f"Parameter '{param}' in function signature"
-                             " is missing in the docstring.")
-
-    parameters = {
-        "type": "object",
-        "properties": properties,
-        "required": required,
-    }
-
-    # Construct the function dictionary
-    function_dict = {
-        "name": func.__name__,
-        "description": func_desc,
-        "parameters": parameters,
-    }
-
-    return function_dict
 
 
 def get_task_list(task_response: str) -> List[str]:
@@ -241,3 +180,49 @@ def check_server_running(server_url: str) -> bool:
 
     # if the port is open, the result should be 0.
     return result == 0
+
+
+def get_system_information():
+    r"""Gathers information about the operating system.
+
+    Returns:
+        dict: A dictionary containing various pieces of OS information.
+    """
+    sys_info = {
+        "OS Name": os.name,
+        "System": platform.system(),
+        "Release": platform.release(),
+        "Version": platform.version(),
+        "Machine": platform.machine(),
+        "Processor": platform.processor(),
+        "Platform": platform.platform(),
+    }
+
+    return sys_info
+
+
+def to_pascal(snake: str) -> str:
+    """Convert a snake_case string to PascalCase.
+
+    Args:
+        snake (str): The snake_case string to be converted.
+
+    Returns:
+        str: The converted PascalCase string.
+    """
+    # Check if the string is already in PascalCase
+    if re.match(r'^[A-Z][a-zA-Z0-9]*([A-Z][a-zA-Z0-9]*)*$', snake):
+        return snake
+    # Remove leading and trailing underscores
+    snake = snake.strip('_')
+    # Replace multiple underscores with a single one
+    snake = re.sub('_+', '_', snake)
+    # Convert to PascalCase
+    return re.sub(
+        '_([0-9A-Za-z])',
+        lambda m: m.group(1).upper(),
+        snake.title(),
+    )
+
+
+PYDANTIC_V2 = pydantic.VERSION.startswith("2.")
