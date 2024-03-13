@@ -28,6 +28,7 @@ from .token_counting import (
     BaseTokenCounter,
     OpenAITokenCounter,
     OpenSourceTokenCounter,
+    messages_to_prompt,
 )
 
 __all__ = [
