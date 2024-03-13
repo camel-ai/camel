@@ -11,38 +11,122 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from camel.functions.google_maps_function import (
-    get_address_description,
-    get_elevation,
-    get_timezone,
-)
+from unittest.mock import patch, MagicMock
+
+from camel.functions.google_maps_function import get_elevation, get_address_description, get_timezone
 
 
-def test_get_address_description():
-    expected_output = (
-        "Address completion status: Yes. Formatted address: 1600 Amphitheatre "
-        "Parkway Pk, Mountain View, CA 94043-1351, USA. Location (latitude, "
-        "longitude): (37.4224318, -122.0841787). Metadata indicating true "
-        "types: business.")
-    assert get_address_description('1600 Amphitheatre Pk', region_code='US',
-                                   locality='Mountain View') == expected_output
+@patch('googlemaps.Client')
+@patch('os.environ.get')
+def test_get_address_description(mock_get, mock_client):
+    # Mock the return value of os.environ.get
+    mock_get.return_value = 'fake_api_key'
+
+    # Create a mock response for the addressvalidation method
+    mock_response = {
+        'result': {
+            'verdict': {
+                'addressComplete': True
+            },
+            'address': {
+                'formattedAddress': '1600 Amphitheatre Parkway Pk, Mountain View, CA 94043-1351, USA'
+            },
+            'geocode': {
+                'location': {
+                    'latitude': 37.4225028, 
+                    'longitude': -122.0843066
+                }
+            },
+            'metadata': {
+                'business': True, 
+                'poBox': False, 
+                'residential': False
+            }
+        }
+    }
+
+    # Configure the mock client instance to return the mock response
+    mock_instance = MagicMock()
+    mock_instance.addressvalidation.return_value = mock_response
+    mock_client.return_value = mock_instance
+
+    # Call the function with a test address
+    result = get_address_description('1600 Amphitheatre Pk', region_code='US', locality='Mountain View')
+
+    # Verify the result
+    expected_result = (
+        "Address completion status: Yes. "
+        "Formatted address: 1600 Amphitheatre Parkway Pk, Mountain View, CA 94043-1351, USA. "
+        "Location (latitude, longitude): (37.4225028, -122.0843066). "
+        "Metadata indicating true types: business."
+    )
+    assert result == expected_result
 
 
-def test_get_elevation():
-    expected_output = (
-        "The elevation at latitude 40.71473, longitude -73.99867 is "
-        "approximately 10.53 meters above sea level, with a data resolution "
-        "of 76.35 meters.")
-    assert get_elevation((40.714728, -73.998672)) == expected_output
+@patch('googlemaps.Client')
+@patch('os.environ.get')
+def test_get_elevation(mock_get, mock_client):
+    # Mock the return value of os.environ.get
+    mock_get.return_value = 'fake_api_key'
+
+    # Create a mock response for the elevation method
+    mock_response = [
+        {
+            'elevation': 10.53015995025635, 
+            'location': {'lat': 40.71473, 'lng': -73.99867}, 
+            'resolution': 76.35161590576172
+        }
+    ]
+
+    # Configure the mock client instance to return the mock response
+    mock_instance = MagicMock()
+    mock_instance.elevation.return_value = mock_response
+    mock_client.return_value = mock_instance
+
+    # Call the function with a test latitude and longitude
+    result = get_elevation((40.71473, -73.99867))
+
+    # Verify the result
+    expected_result = (
+        "The elevation at latitude 40.71473, longitude -73.99867 "
+        "is approximately 10.53 meters above sea level, "
+        "with a data resolution of 76.35 meters."
+    )
+    assert result == expected_result
 
 
-def test_get_timezone():
-    expected_output = (
-        "Timezone ID is America/New_York, named Eastern Standard Time. The "
-        "standard time offset is -5 hours. Daylight Saving Time offset is +0 "
-        "hours. The total offset from Coordinated Universal Time (UTC) is -5 "
-        "hours, including any Daylight Saving Time adjustment if applicable. ")
-    assert get_timezone((40.714728, -73.998672)) == expected_output
+@patch('googlemaps.Client')
+@patch('os.environ.get')
+def test_get_timezone(mock_get, mock_client):
+    # Mock the return value of os.environ.get
+    mock_get.return_value = 'fake_api_key'
+
+    # Create a mock response for the timezone method
+    mock_response = {
+        'dstOffset': 3600, 
+        'rawOffset': -28800, 
+        'status': 'OK', 
+        'timeZoneId': 'America/Los_Angeles', 
+        'timeZoneName': 'Pacific Daylight Time'
+    }
+
+    # Configure the mock client instance to return the mock response
+    mock_instance = MagicMock()
+    mock_instance.timezone.return_value = mock_response
+    mock_client.return_value = mock_instance
+
+    # Call the function with a test latitude and longitude
+    result = get_timezone((39.603481, -119.682251))  # Coordinates for Los Angeles
+
+    # Verify the result
+    expected_result = (
+        "Timezone ID is America/Los_Angeles, named Pacific Daylight Time. "
+        "The standard time offset is -8 hours. "
+        "Daylight Saving Time offset is +1 hour. "
+        "The total offset from Coordinated Universal Time (UTC) is "
+        "-7 hours, including any Daylight Saving Time adjustment if applicable. "
+    )
+    assert result == expected_result
 
 
 def test_wrong_api_key(monkeypatch):
