@@ -273,7 +273,9 @@ class MilvusStorage(BaseVectorStorage):
         ids: List[str],
         **kwargs: Any,
     ) -> None:
-        r"""Deletes a list of vectors identified by their IDs from the storage.
+        r"""Deletes a list of vectors identified by their IDs from the
+        storage. If unsure of ids you can first query the collection to grab
+        the corresponding data.
 
         Args:
             ids (List[str]): List of unique identifiers for the vectors to be
