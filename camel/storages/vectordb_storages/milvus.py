@@ -36,7 +36,7 @@ class MilvusStorage(BaseVectorStorage):
 
     Args:
         vector_dim (int): The dimenstion of storing vectors.
-        url_and_api_key (Tuple[str, str]]): Tuple containing
+        url_and_api_key (Tuple[str, str]): Tuple containing
             the URL and API key for connecting to a remote Milvus instance.
             (default: :obj:`None`)
         collection_name (Optional[str], optional): Name for the collection in
@@ -129,6 +129,7 @@ class MilvusStorage(BaseVectorStorage):
             FieldSchema(name='id', dtype=DataType.VARCHAR,
                         descrition='A unique identifier for the vector',
                         is_primary=True, auto_id=False, max_length=65535),
+            # limit from Milvus is 65535
             FieldSchema(
                 name='payload', dtype=DataType.VARCHAR,
                 description=('Any additional metadata or information related'
@@ -213,9 +214,8 @@ class MilvusStorage(BaseVectorStorage):
 
     def _validate_and_convert_vectors(
             self, records: List[VectorRecord]) -> List[dict]:
-        r"""
-        Validates and converts VectorRecord instances to the format expected
-        by Milvus.
+        r"""Validates and converts VectorRecord instances to the format
+        expected by Milvus.
 
         Args:
             records (List[VectorRecord]): List of vector records to validate
@@ -228,20 +228,16 @@ class MilvusStorage(BaseVectorStorage):
         validated_data = []
 
         for record in records:
-            if record.payload is not None:
-                record_dict = {
-                    "id": record.id,
-                    "payload": record.payload['message'],
-                    "vector": record.vector,
-                }
-                validated_data.append(record_dict)
-            else:
-                record_dict = {
-                    "id": record.id,
-                    "payload": '',
-                    "vector": record.vector,
-                }
-                validated_data.append(record_dict)
+            record_dict = {
+                "id":
+                record.id,
+                "payload":
+                record.payload['message']
+                if record.payload is not None else '',
+                "vector":
+                record.vector,
+            }
+            validated_data.append(record_dict)
 
         return validated_data
 
