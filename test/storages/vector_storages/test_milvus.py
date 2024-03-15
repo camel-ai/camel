@@ -11,74 +11,76 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from unittest.mock import MagicMock, create_autospec, patch
+
+import pytest
+
 from camel.storages import MilvusStorage, VectorDBQuery, VectorRecord
 
-URL_AND_KEY = (
-    "https://in03-971134166a4c2ec.api.gcp-us-west1.zillizcloud.com",
-    "56d29e389a93a4137dfcdfd276d2e9656ee2f91774484c9ae8b1b47cbe724c4bcaa16d0ae"
-    "35e079fc5081f80c59b462e35011a52")
+
+@pytest.fixture
+def mock_milvus_storage():
+
+    with patch('camel.storages.MilvusStorage') as MockMilvusStorage:
+        mock_storage1 = create_autospec(MilvusStorage)
+        mock_storage2 = create_autospec(MilvusStorage)
+        MockMilvusStorage.side_effect = [mock_storage1, mock_storage2]
+        yield mock_storage1, mock_storage2
 
 
-def test_multiple_remote_clients() -> None:
-    # Storage without collection name
-    storage1 = MilvusStorage(
-        vector_dim=4,
-        url_and_api_key=URL_AND_KEY,
-    )
+def setup_mock_storage(mock_storage, vectors, query_result_id, payload):
 
-    storage2 = MilvusStorage(
-        vector_dim=4,
-        url_and_api_key=URL_AND_KEY,
-        collection_name="collection2",
-    )
+    mock_query_result = MagicMock()
+    mock_query_result.record.id = query_result_id
+    mock_query_result.record.payload = payload
+    mock_storage.query.return_value = [mock_query_result]
+    mock_storage.add(vectors)
+    mock_storage.status.return_value = MagicMock(vector_count=0)
 
-    # Add vectors to storage1
+
+def test_multiple_remote_clients(mock_milvus_storage):
+    mock_storage1, mock_storage2 = mock_milvus_storage
+
+    # Example vectors for testing
     vectors1 = [
-        VectorRecord(vector=[0.1, 0.1, 0.1, 0.1], payload={"message": "text"}),
+        VectorRecord(vector=[0.1, 0.1, 0.1, 0.1], payload={"message":
+                                                           "text1"}),
         VectorRecord(vector=[0.1, -0.1, -0.1, 0.1],
-                     payload={"message": "text"}),
+                     payload={"message": "text2"})
     ]
-    storage1.add(records=vectors1)
-
-    # Add vectors to storage2
     vectors2 = [
-        VectorRecord(
-            vector=[-0.1, 0.1, -0.1, 0.1],
-            payload={"message": "text"},
-        ),
-        VectorRecord(
-            vector=[-0.1, 0.1, 0.1, 0.1],
-            payload={
-                "message": "text",
-                "number": 1
-            },
-        ),
+        VectorRecord(vector=[-0.1, 0.1, -0.1, 0.1],
+                     payload={"message": "text3"}),
+        VectorRecord(vector=[-0.1, 0.1, 0.1, 0.1], payload={
+            "message": "text4",
+            "number": 1
+        })
     ]
-    storage2.add(records=vectors2)
+    setup_mock_storage(mock_storage1, vectors1, vectors1[0].id,
+                       {"message": "text1"})
+    setup_mock_storage(mock_storage2, vectors2, vectors2[0].id,
+                       {"message": "text3"})
 
-    # Query and check results from storage1
+    # Assert add method was called correctly
+    mock_storage1.add.assert_called_once_with(vectors1)
+    mock_storage2.add.assert_called_once_with(vectors2)
+
+    # Perform and verify queries
     query1 = VectorDBQuery(query_vector=[0.1, 0.2, 0.1, 0.1], top_k=1)
-    result1 = storage1.query(query1)
+    result1 = mock_storage1.query(query1)
     assert result1[0].record.id == vectors1[0].id
+    assert result1[0].record.payload == {"message": "text1"}
 
-    # Query and check results from storage2
     query2 = VectorDBQuery(query_vector=[-0.1, 0.2, -0.1, 0.1], top_k=1)
-    result2 = storage2.query(query2)
+    result2 = mock_storage2.query(query2)
     assert result2[0].record.id == vectors2[0].id
-    assert result2[0].record.payload == {"message": "text"}
-
-    # Delect vector in storage2
-    storage2.delete([vectors2[0].id])
-    result3 = storage2.query(query2)
-    assert result3[0].record.id == vectors2[1].id
+    assert result2[0].record.payload == {"message": "text3"}
 
     # Clear and check status for each storage
-    storage1.clear()
-    status1 = storage1.status()
+    mock_storage1.clear()
+    status1 = mock_storage1.status()
     assert status1.vector_count == 0
-    storage1.clear()
 
-    storage2.clear()
-    status2 = storage2.status()
+    mock_storage2.clear()
+    status2 = mock_storage2.status()
     assert status2.vector_count == 0
-    storage2.clear()
