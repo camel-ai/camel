@@ -129,7 +129,7 @@ class MilvusStorage(BaseVectorStorage):
             FieldSchema(name='id', dtype=DataType.VARCHAR,
                         descrition='A unique identifier for the vector',
                         is_primary=True, auto_id=False, max_length=65535),
-            # limit from Milvus is 65535
+            # limit from Milvus is 65535 https://milvus.io/docs/limitations.md
             FieldSchema(
                 name='payload', dtype=DataType.VARCHAR,
                 description=('Any additional metadata or information related'
