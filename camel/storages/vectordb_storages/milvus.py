@@ -206,12 +206,9 @@ class MilvusStorage(BaseVectorStorage):
              'The numerical representation of the vector'), None)
 
         return {
-            # Return the id of the collection.
-            "id": collection_id,
-            # Return the number of vector.
-            "vector_count": vector_count,
-            # Return the dimension of vector.
-            "vector_dim": dim_value,
+            "id": collection_id,  # the id of the collection
+            "vector_count": vector_count,  # the number of the vector
+            "vector_dim": dim_value,  # the dimension of the vector
         }
 
     def _validate_and_convert_vectors(
