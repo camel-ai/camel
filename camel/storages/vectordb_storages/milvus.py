@@ -269,7 +269,6 @@ class MilvusStorage(BaseVectorStorage):
             data=validated_records,
             **kwargs,
         )
-        self._client.flush(collection_name=self.collection_name)
         logger.debug(f"Successfully added vectors in Milvus: {op_info}")
 
     def delete(
