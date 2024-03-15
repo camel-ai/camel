@@ -32,7 +32,7 @@ class MilvusStorage(BaseVectorStorage):
     """
 
     # Initialize the MilvusStorage class with required parameters
-    def __init__(self, vector_dim: int, url_and_api: Tuple[str, str], collection_name: Optional[str] = None, **kwargs: Any) -> None:
+    def __init__(self, vector_dim: int, url_and_api: Tuple[str, str], **kwargs: Any) -> None:
         self._client: MilvusClient
         self.vector_dim = vector_dim
         self.create_client(url_and_api, **kwargs)   
