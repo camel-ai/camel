@@ -184,7 +184,8 @@ class MilvusStorage(BaseVectorStorage):
             str: A unique, valid collection name.
         """
         timestamp = datetime.now().isoformat()
-        valid_name = re.sub(r'[^a-zA-Z0-9_]', '_', timestamp)
+        transfored_name = re.sub(r'[^a-zA-Z0-9_]', '_', timestamp)
+        valid_name = "Time" + transfored_name
         return valid_name
 
     def _get_collection_info(self, collection_name: str) -> Dict[str, Any]:
