@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import logging
+import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -175,12 +176,15 @@ class MilvusStorage(BaseVectorStorage):
 
     def _generate_collection_name(self) -> str:
         r"""Generates a unique name for a new collection based on the current
-        timestamp.
+        timestamp. Milvus collection names can only contain alphanumeric
+        characters and underscores.
 
         Returns:
-            str: A unique collection name.
+            str: A unique, valid collection name.
         """
-        return datetime.now().isoformat()
+        timestamp = datetime.now().isoformat()
+        valid_name = re.sub(r'[^a-zA-Z0-9_]', '_', timestamp)
+        return valid_name
 
     def _get_collection_info(self, collection_name: str) -> Dict[str, Any]:
         r"""Retrieves details of an existing collection.
