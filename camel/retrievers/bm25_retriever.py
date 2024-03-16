@@ -56,7 +56,7 @@ class BM25Retriever(BaseRetriever):
     def process_and_store(self, content_input_path: str,
                           **kwargs: Any) -> None:
         r"""Processes content from a file or URL, divides it into chunks by
-        using `Unstructured IO`,then stores it internally. This method must be
+        using `Unstructured IO`,then stored internally. This method must be
         called before executing queries with the retriever.
 
         Args:
