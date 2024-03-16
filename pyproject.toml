@@ -59,6 +59,9 @@ unstructured = { version = "^0.10.30", optional = true }
 # vector-databases
 qdrant-client = { version = "^1.6.4", optional = true }
 
+# retrievers
+rank-bm25 = { version = "^0.2.2", optional = true }
+
 # test
 pytest = { version = "^7", optional = true}
 mock = { version = "^5", optional = true}
@@ -90,6 +93,10 @@ vector-databases = [
     "qdrant-client",
 ]
 
+retrievers = [
+    "rank-bm25",
+]
+
 all = [
     # huggingface-agent
     "transformers",
@@ -109,6 +116,9 @@ all = [
     "unstructured",
     # vector-database
     "qdrant-client",
+    # retrievers
+    "rank-bm25",
+    
 ]
 
 [tool.poetry.group.dev]
@@ -188,5 +198,6 @@ module = [
     "PyMuPDF",
     "fitz",
     "unstructured.*",
+    "rank_bm25",
 ]
 ignore_missing_imports = true
