@@ -24,10 +24,11 @@ from camel.utils import print_text_animated
 
 
 def main(model_type=ModelType.GPT_4, chat_turn_limit=10) -> None:
-    task_prompt = ("Assuming the current year is 2023, estimate KAUST's "
-                   "current age and then add 10 more years to this age, "
-                   "and get the current weather of the city where KAUST "
-                   "is located.")
+    task_prompt = ("Assume now is 2024 in the Gregorian calendar, "
+                   "estimate the current age of University of Oxford "
+                   "and then add 10 more years to this age, "
+                   "and get the current weather of the city where "
+                   "the University is located.")
 
     function_list = [*MATH_FUNCS, *SEARCH_FUNCS, *WEATHER_FUNCS]
     user_model_config = FunctionCallingConfig.from_openai_function_list(
@@ -68,11 +69,10 @@ def main(model_type=ModelType.GPT_4, chat_turn_limit=10) -> None:
     print(Fore.RED + f"Final task prompt:\n{role_play_session.task_prompt}\n")
 
     n = 0
-    input_assistant_msg, _ = role_play_session.init_chat()
+    input_msg = role_play_session.init_chat()
     while n < chat_turn_limit:
         n += 1
-        assistant_response, user_response = role_play_session.step(
-            input_assistant_msg)
+        assistant_response, user_response = role_play_session.step(input_msg)
 
         if assistant_response.terminated:
             print(Fore.GREEN +
@@ -102,7 +102,7 @@ def main(model_type=ModelType.GPT_4, chat_turn_limit=10) -> None:
         if "CAMEL_TASK_DONE" in user_response.msg.content:
             break
 
-        input_assistant_msg = assistant_response.msg
+        input_msg = assistant_response.msg
 
 
 if __name__ == "__main__":

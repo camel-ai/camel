@@ -128,7 +128,9 @@ class FunctionCallingConfig(ChatGPTConfig):
                 :obj:`function_call` argument.
         """
         return cls(
-            functions=[func.as_dict() for func in function_list],
+            functions=[
+                func.get_openai_function_schema() for func in function_list
+            ],
             function_call=function_call,
             **(kwargs or {}),
         )

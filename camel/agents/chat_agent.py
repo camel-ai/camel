@@ -82,7 +82,7 @@ class ChatAgent(BaseAgent):
         message_window_size (int, optional): The maximum number of previous
             messages to include in the context window. If `None`, no windowing
             is performed. (default: :obj:`None`)
-        token_limit (int, optional): The maxinum number of tokens in a context.
+        token_limit (int, optional): The maximum number of tokens in a context.
             The context will be automatically pruned to fulfill the limitation.
             If `None`, it will be set according to the backend model.
             (default: :obj:`None`)
@@ -122,7 +122,7 @@ class ChatAgent(BaseAgent):
         self.func_dict: Dict[str, Callable] = {}
         if function_list is not None:
             for func in function_list:
-                self.func_dict[func.name] = func.func
+                self.func_dict[func.get_function_name()] = func.func
         self.model_config = model_config or ChatGPTConfig()
 
         self.model_backend: BaseModelBackend = ModelFactory.create(
