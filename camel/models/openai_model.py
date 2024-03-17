@@ -73,6 +73,15 @@ class OpenAIModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
+        if self.model_type == ModelType.GPT_4_TURBO_VISION:
+            # Vision model seems not support following arguments:
+            if 'stop' in self.model_config_dict:
+                self.model_config_dict.pop('stop')
+            if 'logit_bias' in self.model_config_dict:
+                self.model_config_dict.pop('logit_bias')
+            if self.model_config_dict['max_tokens'] is None:
+                raise ValueError(f'`max_tokens` is required to be '
+                                 f'specified for {self.model_type}')
         response = self._client.chat.completions.create(
             messages=messages,
             model=self.model_type.value,

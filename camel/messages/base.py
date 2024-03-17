@@ -11,8 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import base64
+import io
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union
+
+from PIL import Image
 
 from camel.messages import (
     OpenAIAssistantMessage,
@@ -40,18 +44,21 @@ class BaseMessage:
     role_type: RoleType
     meta_dict: Optional[Dict[str, str]]
     content: str
+    image: Optional[Image.Image]
 
     @classmethod
     def make_user_message(
             cls, role_name: str, content: str,
-            meta_dict: Optional[Dict[str, str]] = None) -> 'BaseMessage':
-        return cls(role_name, RoleType.USER, meta_dict, content)
+            meta_dict: Optional[Dict[str, str]] = None,
+            image: Optional[Image.Image] = None) -> 'BaseMessage':
+        return cls(role_name, RoleType.USER, meta_dict, content, image)
 
     @classmethod
     def make_assistant_message(
             cls, role_name: str, content: str,
-            meta_dict: Optional[Dict[str, str]] = None) -> 'BaseMessage':
-        return cls(role_name, RoleType.ASSISTANT, meta_dict, content)
+            meta_dict: Optional[Dict[str, str]] = None,
+            image: Optional[Image.Image] = None) -> 'BaseMessage':
+        return cls(role_name, RoleType.ASSISTANT, meta_dict, content, image)
 
     def create_new_instance(self, content: str) -> "BaseMessage":
         r"""Create a new instance of the :obj:`BaseMessage` with updated
@@ -198,7 +205,25 @@ class BaseMessage:
         Returns:
             OpenAIUserMessage: The converted :obj:`OpenAIUserMessage` object.
         """
-        return {"role": "user", "content": self.content}
+        if self.image is None:
+            return {"role": "user", "content": self.content}
+        else:
+            buffer = io.BytesIO()
+            self.image.save(buffer, format='JPEG')
+            encoded_image = base64.b64encode(buffer.getvalue()).decode("utf-8")
+            return {
+                "role":
+                "user",
+                "content": [{
+                    "type": "text",
+                    "text": self.content,
+                }, {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{encoded_image}"
+                    }
+                }],
+            }
 
     def to_openai_assistant_message(self) -> OpenAIAssistantMessage:
         r"""Converts the message to an :obj:`OpenAIAssistantMessage` object.
