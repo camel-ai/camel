@@ -11,14 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import datetime
 import os
 from functools import wraps
-from typing import List
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
 
 from camel.functions import OpenAIFunction
 
 
-def import_googlemaps_or_raise():
+def import_googlemaps_or_raise() -> Any:
     r"""
     Attempts to import the `googlemaps` library and returns it.
 
@@ -59,7 +60,9 @@ def get_googlemap_api_key() -> str:
     return GOOGLEMAPS_API_KEY
 
 
-def get_address_description(address, region_code=None, locality=None):
+def get_address_description(address: Union[str, List[str]],
+                            region_code: Optional[str] = None,
+                            locality: Optional[str] = None) -> str:
     r"""Validates an address via Google Maps API, returns a descriptive
     summary.
 
@@ -136,7 +139,8 @@ def get_address_description(address, region_code=None, locality=None):
         return f"An unexpected error occurred: {str(e)}"
 
 
-def handle_googlemaps_exceptions(func):
+def handle_googlemaps_exceptions(
+        func: Callable[..., Any]) -> Callable[..., Any]:
     r"""Decorator to catch and handle exceptions raised by Google Maps API
     calls.
 
@@ -149,7 +153,7 @@ def handle_googlemaps_exceptions(func):
     """
 
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
         try:
             from googlemaps.exceptions import ApiError  # type: ignore
             from googlemaps.exceptions import HTTPError  # type: ignore
@@ -180,7 +184,9 @@ def handle_googlemaps_exceptions(func):
 
 
 @handle_googlemaps_exceptions
-def get_elevation(lat_lng):
+def get_elevation(
+    lat_lng: Union[str, Dict[str, float], List[float], Tuple[float, float]]
+) -> str:
     r"""Retrieves elevation data for a given latitude and longitude.
 
     Uses the Google Maps API to fetch elevation data for the specified latitude
@@ -227,36 +233,30 @@ def get_elevation(lat_lng):
     return description
 
 
-def format_offset_to_natural_language(offset):
-    r"""Converts a time offset in seconds to a more natural language
-    description.
+def format_offset_to_natural_language(offset: int) -> str:
+    # Convert the absolute value of the offset to a timedelta object
+    delta = datetime.timedelta(seconds=abs(offset))
 
-    Args:
-        offset (int): The time offset in seconds. Can be positive, negative,
-            or zero.
+    # Extract the hours, minutes and seconds
+    # from the string representation of the timedelta object
+    hours, minutes, seconds = map(int, str(delta).split(':'))
 
-    Returns:
-        str: A string representing the offset in a natural language format,
-            such as "+5 hours 30 minutes" or "-3 hours 45 minutes". If the
-            offset is zero, the function returns "+0 hours".
-    """
-    hours = offset // 3600
-    minutes = (offset % 3600) // 60
-    seconds = offset % 60
     parts = []
     if hours or (hours == 0 and minutes == 0 and seconds == 0):
-        parts.append(f"{abs(hours)} hour{'s' if abs(hours) != 1 else ''}")
+        parts.append(f"{hours} hour{'s' if hours != 1 else ''}")
     if minutes:
-        parts.append(
-            f"{abs(minutes)} minute{'s' if abs(minutes) != 1 else ''}")
+        parts.append(f"{minutes} minute{'s' if minutes != 1 else ''}")
     if seconds:
-        parts.append(
-            f"{abs(seconds)} second{'s' if abs(seconds) != 1 else ''}")
+        parts.append(f"{seconds} second{'s' if seconds != 1 else ''}")
+
+    # Return the result with the appropriate sign
     return f"{'-' if offset < 0 else '+'}{' '.join(parts)}"
 
 
 @handle_googlemaps_exceptions
-def get_timezone(lat_lng):
+def get_timezone(
+    lat_lng: Union[str, Dict[str, float], List[float], Tuple[float, float]]
+) -> str:
     r"""Retrieves timezone information for a given latitude and longitude.
 
     This function uses the Google Maps Timezone API to fetch timezone data for
@@ -311,6 +311,6 @@ def get_timezone(lat_lng):
 
 
 MAP_FUNCS: List[OpenAIFunction] = [
-    OpenAIFunction(func)
+    OpenAIFunction(cast(Callable[..., Any], func))
     for func in [get_address_description, get_elevation, get_timezone]
 ]
