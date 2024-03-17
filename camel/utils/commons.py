@@ -293,6 +293,7 @@ def role_playing_with_function(
     from camel.societies import RolePlaying
 
     task_prompt = task_prompt
+
     user_model_config = ChatGPTConfig(temperature=0.0)
 
     function_list = function_list
