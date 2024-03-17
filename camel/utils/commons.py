@@ -35,6 +35,7 @@ def get_lazy_imported_functions_module():
     return [*MATH_FUNCS, *SEARCH_FUNCS, *WEATHER_FUNCS]
 
 
+# Set lazy import
 def get_lazy_imported_types_module():
     from camel.types import ModelType
     return ModelType.GPT_4_TURBO
