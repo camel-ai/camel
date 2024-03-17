@@ -12,9 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from typing import Any, Dict, List, Optional, Tuple, Union
-
-import pandas as pd
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 
 class UnstructuredModules:
@@ -76,11 +74,14 @@ class UnstructuredModules:
     def parse_file_or_url(
         self,
         input_path: str,
+        **kwargs: Any,
     ) -> Union[Any, List[Any]]:
         r"""Loads a file or a URL and parses its contents as unstructured data.
 
         Args:
             input_path (str): Path to the file or URL to be parsed.
+             **kwargs Extra kwargs passed to the partition function
+
         Returns:
             List[Any]: The elements after parsing the file or URL, could be a
                 dict, list, etc., depending on the content. If return_str is
@@ -117,7 +118,7 @@ class UnstructuredModules:
             from unstructured.partition.html import partition_html
 
             try:
-                elements = partition_html(url=input_path)
+                elements = partition_html(url=input_path, **kwargs)
                 return elements
             except Exception as e:
                 raise Exception("Failed to parse the URL.") from e
@@ -134,7 +135,7 @@ class UnstructuredModules:
             # Read the file
             try:
                 with open(input_path, "rb") as f:
-                    elements = partition(file=f)
+                    elements = partition(file=f, **kwargs)
                     return elements
             except Exception as e:
                 raise Exception(
@@ -250,23 +251,31 @@ class UnstructuredModules:
 
         return cleaned_text
 
-    def extract_data_from_text(self, text: str, extract_type: str,
-                               **kwargs) -> Any:
+    def extract_data_from_text(
+        self,
+        text: str,
+        extract_type: Literal['extract_datetimetz', 'extract_email_address',
+                              'extract_ip_address', 'extract_ip_address_name',
+                              'extract_mapi_id', 'extract_ordered_bullets',
+                              'extract_text_after', 'extract_text_before',
+                              'extract_us_phone_number'],
+        **kwargs,
+    ) -> Any:
         r"""Extracts various types of data from text using functions from
         unstructured.cleaners.extract.
 
         Args:
             text (str): Text to extract data from.
-            extract_type (str): Type of data to extract. Supported types:
-                                'extract_datetimetz',
-                                'extract_email_address',
-                                'extract_ip_address',
-                                'extract_ip_address_name',
-                                'extract_mapi_id',
-                                'extract_ordered_bullets',
-                                'extract_text_after',
-                                'extract_text_before',
-                                'extract_us_phone_number'.
+            extract_type (Literal['extract_datetimetz',
+                                  'extract_email_address',
+                                  'extract_ip_address',
+                                  'extract_ip_address_name',
+                                  'extract_mapi_id',
+                                  'extract_ordered_bullets',
+                                  'extract_text_after',
+                                  'extract_text_before',
+                                  'extract_us_phone_number']):
+                                Type of data to extract.
             **kwargs: Additional keyword arguments for specific
                 extraction functions.
 
@@ -306,8 +315,17 @@ class UnstructuredModules:
 
         return extraction_functions[extract_type](text, **kwargs)
 
-    def stage_elements(self, elements: List[Any], stage_type: str,
-                       **kwargs) -> Union[str, List[Dict], pd.DataFrame, Any]:
+    def stage_elements(
+        self,
+        elements: List[Any],
+        stage_type: Literal['convert_to_csv', 'convert_to_dataframe',
+                            'convert_to_dict', 'dict_to_elements',
+                            'stage_csv_for_prodigy', 'stage_for_prodigy',
+                            'stage_for_baseplate', 'stage_for_datasaur',
+                            'stage_for_label_box', 'stage_for_label_studio',
+                            'stage_for_weaviate'],
+        **kwargs,
+    ) -> Union[str, List[Dict], Any]:
         r"""Stages elements for various platforms based on the
         specified staging type.
 
@@ -319,24 +337,23 @@ class UnstructuredModules:
 
         Args:
             elements (List[Any]): List of Element objects to be staged.
-            stage_type (str): Type of staging to perform. Supported types:
-                            'convert_to_csv',
-                            'convert_to_dataframe',
-                            'convert_to_dict',
-                            'dict_to_elements',
-                            'stage_csv_for_prodigy',
-                            'stage_for_prodigy',
-                            'stage_for_argilla',
-                            'stage_for_baseplate',
-                            'stage_for_datasaur',
-                            'stage_for_label_box',
-                            'stage_for_label_studio',
-                            'stage_for_weaviate'.
+            stage_type (Literal['convert_to_csv',
+                                'convert_to_dataframe',
+                                'convert_to_dict',
+                                'dict_to_elements',
+                                'stage_csv_for_prodigy',
+                                'stage_for_prodigy',
+                                'stage_for_baseplate',
+                                'stage_for_datasaur',
+                                'stage_for_label_box',
+                                'stage_for_label_studio',
+                                'stage_for_weaviate']):
+                Type of staging to perform.
             **kwargs: Additional keyword arguments specific to
                 the staging type.
 
         Returns:
-            Union[str, List[Dict], pd.DataFrame]: Staged data in the
+            Union[str, List[Dict], Any]: Staged data in the
                 format appropriate for the specified staging type.
 
         Raises:
@@ -347,7 +364,6 @@ class UnstructuredModules:
         """
 
         from unstructured.staging import (
-            argilla,
             base,
             baseplate,
             datasaur,
@@ -372,8 +388,6 @@ class UnstructuredModules:
             "stage_for_prodigy":
             lambda els, **kw: prodigy.stage_for_prodigy(
                 els, kw.get('metadata', [])),
-            "stage_for_argilla":
-            lambda els, **kw: argilla.stage_for_argilla(els, **kw),
             "stage_for_baseplate":
             baseplate.stage_for_baseplate,
             "stage_for_datasaur":

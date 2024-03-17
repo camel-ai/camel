@@ -13,7 +13,6 @@ permissions:
   contents: read
 
 jobs:
-
   pytest_package_fast_test:
     runs-on: ubuntu-latest
     steps:

@@ -22,7 +22,7 @@ import camel.functions
 import camel.memories
 import camel.storages
 
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 
 __all__ = [
     '__version__',
