@@ -14,6 +14,8 @@
 from abc import ABC, abstractmethod
 from typing import List
 
+from anthropic import AI_PROMPT, HUMAN_PROMPT, Anthropic
+
 from camel.messages import OpenAIMessage
 from camel.types import ModelType
 
@@ -70,6 +72,29 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
                 ret += role + ": " + content + seps[i % 2]
             else:
                 ret += role + ":"
+        return ret
+    elif model.is_anthropic:
+
+        # use XML tag to decorate prompt
+        # https://docs.anthropic.com/claude/docs/constructing-a-prompt#mark-different-parts-of-the-prompt
+        # https://docs.anthropic.com/claude/docs/roleplay-dialogue
+        # https://docs.anthropic.com/claude/docs/human-and-assistant-formatting
+        system_message = str(system_message)
+        ret = f"\n{system_message}\n"
+        for msg in messages[1:]:
+            role, content = msg["role"], msg["content"]
+            # Claude does not perform well if the system message RULE OF USER/ASSISTANT is sent twice. (see role_playing/RolePlaying.init_chat())
+            # Here is a special treatment for Claude to remove the redundant system message.
+            if not isinstance(content, str):
+                raise ValueError("Currently multimodal context is not "
+                                 "supported by the token counter.")
+            if content.startswith(system_message):
+                ret = content
+                continue
+            if role == "user":
+                ret += f"{HUMAN_PROMPT} {content}"
+            elif role == "assisstant":
+                ret += f"{AI_PROMPT} {content}"
         return ret
     else:
         raise ValueError(f"Invalid model type: {model}")
@@ -218,3 +243,33 @@ class OpenAITokenCounter(BaseTokenCounter):
         # every reply is primed with <|start|>assistant<|message|>
         num_tokens += 3
         return num_tokens
+
+
+class AnthropicTokenCounter(BaseTokenCounter):
+
+    def __init__(self, model_type: ModelType):
+        r"""Constructor for the token counter for Anthropic models.
+
+        Args:
+            model_type (ModelType): Model type for which tokens will be
+                counted.
+        """
+
+        self.model_type = model_type
+        self.client = Anthropic()
+        self.tokenizer = self.client.get_tokenizer()
+
+    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
+        r"""Count number of tokens in the provided message list using
+        loaded tokenizer specific for this type of model.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+
+        Returns:
+            int: Number of tokens in the messages.
+        """
+        prompt = messages_to_prompt(messages, self.model_type)
+
+        return self.client.count_tokens(prompt)

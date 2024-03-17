@@ -17,7 +17,7 @@ from openai import OpenAI
 
 from camel.embeddings import BaseEmbedding
 from camel.types import EmbeddingModelType
-from camel.utils import openai_api_key_required
+from camel.utils import api_key_required
 
 
 class OpenAIEmbedding(BaseEmbedding[str]):
@@ -41,7 +41,7 @@ class OpenAIEmbedding(BaseEmbedding[str]):
         self.output_dim = model_type.output_dim
         self.client = OpenAI()
 
-    @openai_api_key_required
+    @api_key_required
     def embed_list(
         self,
         objs: List[str],
