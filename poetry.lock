@@ -2394,13 +2394,13 @@ wheel = "*"
 
 [[package]]
 name = "openai"
-version = "1.14.1"
+version = "1.13.4"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "openai-1.14.1-py3-none-any.whl", hash = "sha256:f9322b0bf3b82bbd06930fad535369a023f35a3a96d3ef0b827644a15d7aae97"},
-    {file = "openai-1.14.1.tar.gz", hash = "sha256:1fab5dd623cdc0c7c6e7da5d8d11fa6900f94191c2dfb6510d7eac33195fa175"},
+    {file = "openai-1.13.4-py3-none-any.whl", hash = "sha256:379643b24ded980948794bc8092b01ed7ef35e7915c55ef47fa628e61a96ae1a"},
+    {file = "openai-1.13.4.tar.gz", hash = "sha256:bdca99de67db0659b2b27c791f8c1d0018099dc119cd8fc712d64b108ef92ce5"},
 ]
 
 [package.dependencies]
@@ -5169,4 +5169,4 @@ vector-databases = ["qdrant-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<3.12"
-content-hash = "901a679c23012c7403cc7652f4f8a3e0ce69e8a88f16eb67b83c593514daa9b8"
+content-hash = "10369f31def3054b11952026d05a29704766d70c9501d0ac5bebe6ffecfbf45b"
