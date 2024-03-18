@@ -5149,4 +5149,4 @@ vector-databases = ["qdrant-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<3.12"
-content-hash = "659a79d33f6b4d3e0207d8db75ce00f5f913c91cc29160f2ac260c1103f87942"
+content-hash = "8c9fd0da03a0c4c90c76ea2ca8c2a566f9c90761588a454e620a2a4ea98d05fa"

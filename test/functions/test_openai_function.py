@@ -357,6 +357,10 @@ def test_function_with_wrong_doc():
     assert add.get_openai_function_schema() == function_schema
 
 
+def test_validate_openai_tool_schema_valid():
+    OpenAIFunction.validate_openai_tool_schema(tool_schema)
+
+
 def test_get_set_openai_tool_schema():
     add = OpenAIFunction(add_with_doc)
     assert add.get_openai_tool_schema() is not None
