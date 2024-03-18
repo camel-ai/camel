@@ -170,10 +170,7 @@ class MilvusStorage(BaseVectorStorage):
         Returns:
             bool: True if the collection exists, False otherwise.
         """
-        for c in self._client.list_collections():
-            if collection_name == c:
-                return True
-        return False
+        return self._client.has_collection(collection_name)
 
     def _generate_collection_name(self) -> str:
         r"""Generates a unique name for a new collection based on the current
