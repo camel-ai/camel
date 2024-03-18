@@ -17,7 +17,7 @@ from typing import Any, Callable, Dict, Mapping, Optional, Tuple
 from docstring_parser import parse
 from jsonschema.exceptions import SchemaError
 from jsonschema.validators import Draft202012Validator as JSONValidator
-from pydantic import ValidationError, create_model
+from pydantic import create_model
 from pydantic.fields import FieldInfo
 
 from camel.utils import PYDANTIC_V2, to_pascal
@@ -169,72 +169,6 @@ class OpenAIFunction:
                                    or get_openai_tool_schema(func))
         self.properties = self.openai_tool_schema
 
-    @staticmethod
-    def validate_openai_tool_schema(
-            openai_tool_schema: Dict[str, Any]) -> None:
-        r"""Validates the OpenAI tool schema against
-        :obj:`ToolAssistantToolsFunction`.
-
-        This function checks if the provided :obj:`openai_tool_schema` adheres
-        to the specifications required by OpenAI's
-        :obj:`ToolAssistantToolsFunction`. It ensures that the function
-        description and parameters are correctly formatted according to JSON
-        Schema specifications.
-
-        Args:
-            openai_tool_schema (Dict[str, Any]): The OpenAI tool schema to
-                validate.
-
-        Raises:
-            ValidationError: If the schema does not comply with the
-                specifications.
-            ValueError: If the function description or parameter descriptions
-                are missing in the schema.
-            SchemaError: If the parameters do not meet JSON Schema reference
-                specifications.
-        """
-        # Automatically validates whether the openai_tool_schema passed
-        # complies with the specifications of the ToolAssistantToolsFunction.
-        from openai.types.beta.threads.run import ToolAssistantToolsFunction
-
-        # NOTE: Pydantic v1 does not have a strict mode to check input types
-        # Below is a compromise solution.
-        # refs: https://docs.pydantic.dev/1.10/blog/pydantic-v2/#strict-mode
-        if PYDANTIC_V2:
-            try:
-                ToolAssistantToolsFunction.model_validate(  # type: ignore
-                    openai_tool_schema)
-            except ValidationError as e:
-                raise e
-        elif ToolAssistantToolsFunction(
-                **openai_tool_schema) != openai_tool_schema:
-            raise ValidationError(  # type: ignore
-                errors="Validation error for `ToolAssistantToolsFunction`."
-                "Please check the input data types.",
-                model=ToolAssistantToolsFunction,
-            )
-        # Check the function description
-        if not openai_tool_schema["function"]["description"]:
-            raise ValueError("miss function description")
-        # Validate whether parameters
-        # meet the JSON Schema reference specifications.
-        # See https://platform.openai.com/docs/guides/gpt/function-calling
-        # for examples, and the
-        # https://json-schema.org/understanding-json-schema/ for
-        # documentation about the format.
-        parameters = openai_tool_schema["function"]["parameters"]
-        try:
-            JSONValidator.check_schema(parameters)
-        except SchemaError as e:
-            raise e
-        # Check the parameter description
-        properties: Dict[str, Any] = parameters["properties"]
-        for param_name in properties.keys():
-            param_dict = properties[param_name]
-            if "description" not in param_dict:
-                raise ValueError(
-                    f'miss description of parameter "{param_name}"')
-
     def get_openai_tool_schema(self) -> Dict[str, Any]:
         r"""Gets the OpenAI tool schema for this function.
 
@@ -245,7 +179,6 @@ class OpenAIFunction:
         Returns:
             Dict[str, Any]: The OpenAI tool schema for this function.
         """
-        self.validate_openai_tool_schema(self.openai_tool_schema)
         return self.openai_tool_schema
 
     def set_openai_tool_schema(self, schema: Dict[str, Any]) -> None:
@@ -268,7 +201,6 @@ class OpenAIFunction:
             Dict[str, Any]: The schema of the function within the OpenAI tool
                 schema.
         """
-        self.validate_openai_tool_schema(self.openai_tool_schema)
         return self.openai_tool_schema["function"]
 
     def set_openai_function_schema(
@@ -289,7 +221,6 @@ class OpenAIFunction:
         Returns:
             str: The name of the function.
         """
-        self.validate_openai_tool_schema(self.openai_tool_schema)
         return self.openai_tool_schema["function"]["name"]
 
     def set_function_name(self, name: str) -> None:
@@ -307,7 +238,6 @@ class OpenAIFunction:
         Returns:
             str: The description of the function.
         """
-        self.validate_openai_tool_schema(self.openai_tool_schema)
         return self.openai_tool_schema["function"]["description"]
 
     def set_function_description(self, description: str) -> None:
@@ -329,7 +259,6 @@ class OpenAIFunction:
         Returns:
             str: The description of the specified parameter.
         """
-        self.validate_openai_tool_schema(self.openai_tool_schema)
         return self.openai_tool_schema["function"]["parameters"]["properties"][
             param_name]["description"]
 
@@ -358,7 +287,6 @@ class OpenAIFunction:
         Returns:
             Dict[str, Any]: The schema of the specified parameter.
         """
-        self.validate_openai_tool_schema(self.openai_tool_schema)
         return self.openai_tool_schema["function"]["parameters"]["properties"][
             param_name]
 
@@ -384,7 +312,6 @@ class OpenAIFunction:
             Dict[str, Any]: the dictionary containing information of
                 parameters of this function.
         """
-        self.validate_openai_tool_schema(self.openai_tool_schema)
         return self.openai_tool_schema["function"]["parameters"]["properties"]
 
     @parameters.setter
