@@ -346,6 +346,8 @@ def test_correct_function():
 def test_function_without_doc():
     add = OpenAIFunction(add_without_doc)
     add.set_function_name("add")
+    with pytest.raises(Exception, match="miss function description"):
+        _ = add.get_openai_function_schema()
     add.set_openai_function_schema(function_schema)
     assert add.get_openai_function_schema() == function_schema
 
@@ -353,6 +355,8 @@ def test_function_without_doc():
 def test_function_with_wrong_doc():
     add = OpenAIFunction(add_with_wrong_doc)
     add.set_function_name("add")
+    with pytest.raises(Exception, match="miss description of parameter \"b\""):
+        _ = add.get_openai_function_schema()
     add.set_parameter("b", function_schema["parameters"]["properties"]["b"])
     assert add.get_openai_function_schema() == function_schema
 
