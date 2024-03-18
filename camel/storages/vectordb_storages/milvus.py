@@ -37,10 +37,11 @@ class MilvusStorage(BaseVectorStorage):
     Args:
         vector_dim (int): The dimenstion of storing vectors.
         url_and_api_key (Tuple[str, str]): Tuple containing
-            the URL and API key for connecting to a remote Milvus instance.
-            URL maps to Milvus uri concepts, and it could be endpoint:port.
-            API key can be username:pwd or api token if using zilliz cloud
-            (hosted Milvus)
+           the URL and API key for connecting to a remote Milvus instance.
+           URL maps to Milvus uri concept, typically "endpoint:port".
+           API key maps to Milvus token concept, for self-hosted it's
+           "username:pwd", for Zilliz Cloud (fully-managed Milvus) it's API
+           Key.
         collection_name (Optional[str], optional): Name for the collection in
             the Milvus. If not provided, set it to the current time with iso
             format. (default: :obj:`None`)
@@ -135,7 +136,7 @@ class MilvusStorage(BaseVectorStorage):
             FieldSchema(
                 name='payload', dtype=DataType.JSON,
                 description=('Any additional metadata or information related'
-                             'to the vector'), max_length=65535),
+                             'to the vector')),
             FieldSchema(
                 name='vector', dtype=DataType.FLOAT_VECTOR,
                 description='The numerical representation of the vector',
