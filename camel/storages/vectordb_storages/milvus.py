@@ -38,7 +38,9 @@ class MilvusStorage(BaseVectorStorage):
         vector_dim (int): The dimenstion of storing vectors.
         url_and_api_key (Tuple[str, str]): Tuple containing
             the URL and API key for connecting to a remote Milvus instance.
-            (default: :obj:`None`)
+            URL maps to Milvus uri concepts, and it could be endpoint:port.
+            API key can be username:pwd or api token if using zilliz cloud
+            (hosted Milvus)
         collection_name (Optional[str], optional): Name for the collection in
             the Milvus. If not provided, set it to the current time with iso
             format. (default: :obj:`None`)
@@ -131,7 +133,7 @@ class MilvusStorage(BaseVectorStorage):
                         is_primary=True, auto_id=False, max_length=65535),
             # limit from Milvus is 65535 https://milvus.io/docs/limitations.md
             FieldSchema(
-                name='payload', dtype=DataType.VARCHAR,
+                name='payload', dtype=DataType.JSON,
                 description=('Any additional metadata or information related'
                              'to the vector'), max_length=65535),
             FieldSchema(
@@ -181,8 +183,8 @@ class MilvusStorage(BaseVectorStorage):
             str: A unique, valid collection name.
         """
         timestamp = datetime.now().isoformat()
-        transfored_name = re.sub(r'[^a-zA-Z0-9_]', '_', timestamp)
-        valid_name = "Time" + transfored_name
+        transformed_name = re.sub(r'[^a-zA-Z0-9_]', '_', timestamp)
+        valid_name = "Time" + transformed_name
         return valid_name
 
     def _get_collection_info(self, collection_name: str) -> Dict[str, Any]:
