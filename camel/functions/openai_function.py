@@ -190,6 +190,9 @@ class OpenAIFunction:
             SchemaError: If the parameters do not meet JSON Schema reference
                 specifications.
         """
+        # Check the function description
+        if not openai_tool_schema["function"]["description"]:
+            raise ValueError("miss function description")
 
         # Validate whether parameters
         # meet the JSON Schema reference specifications.
