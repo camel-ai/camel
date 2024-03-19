@@ -90,6 +90,7 @@ class StubModel(BaseModelBackend):
                         content=ARBITRARY_STRING,
                         role="assistant",
                     ),
+                    logprobs=None,
                 )
             ],
             usage=CompletionUsage(

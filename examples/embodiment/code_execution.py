@@ -11,40 +11,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import List
-
-from camel.agents import EmbodiedAgent, HuggingFaceToolAgent
-from camel.agents.tool_agents.base import BaseToolAgent
+from camel.agents import EmbodiedAgent
 from camel.generators import SystemMessageGenerator
 from camel.messages import BaseMessage
-from camel.types import ModelType, RoleType
+from camel.types import RoleType
 
 
 def main():
     # Create an embodied agent
-    role_name = "Artist"
-    meta_dict = dict(role=role_name, task="Drawing")
+    role_name = "Programmer"
+    meta_dict = dict(role=role_name, task="Programming")
     sys_msg = SystemMessageGenerator().from_dict(
         meta_dict=meta_dict,
-        role_tuple=(f"{role_name}'s Embodiment", RoleType.EMBODIMENT))
-    tool_agents = [
-        HuggingFaceToolAgent(
-            'hugging_face_tool_agent',
-            model_type=ModelType.GPT_4.value,
-            remote=True,
-        )
-    ]
-    tool_agents: List[BaseToolAgent]
+        role_tuple=(role_name, RoleType.EMBODIMENT),
+    )
     embodied_agent = EmbodiedAgent(
         sys_msg,
         verbose=True,
-        tool_agents=tool_agents,
     )
+    print(embodied_agent.system_message.content)
     user_msg = BaseMessage.make_user_message(
         role_name=role_name,
-        content=("Draw all the Camelidae species, "
-                 "caption the image content, "
-                 "save the images by species name."),
+        content=(
+            "Write a bash script to install numpy, "
+            "then write a python script to compute "
+            "the dot product of [6.75,3] and [4,5] and print the result, "
+            "then write a script to open a browser and search today's weather."
+        ),
     )
     response = embodied_agent.step(user_msg)
     print(response.msg.content)
