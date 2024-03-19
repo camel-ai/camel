@@ -14,7 +14,7 @@
 import datetime
 import os
 from functools import wraps
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from camel.functions import OpenAIFunction
 
@@ -311,6 +311,6 @@ def get_timezone(
 
 
 MAP_FUNCS: List[OpenAIFunction] = [
-    OpenAIFunction(cast(Callable[..., Any], func))
+    OpenAIFunction(func)  # type: ignore
     for func in [get_address_description, get_elevation, get_timezone]
 ]
