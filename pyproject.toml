@@ -116,6 +116,8 @@ all = [
     "unstructured",
     # vector-database
     "qdrant-client",
+    # encoders
+    "sentence-transformers",
 ]
 
 [tool.poetry.group.dev]

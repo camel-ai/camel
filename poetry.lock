@@ -5257,7 +5257,7 @@ docs = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.link
 testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-ignore-flaky", "pytest-mypy", "pytest-ruff (>=0.2.1)"]
 
 [extras]
-all = ["PyMuPDF", "accelerate", "beautifulsoup4", "datasets", "diffusers", "docx2txt", "opencv-python", "pyowm", "qdrant-client", "sentencepiece", "soundfile", "torch", "transformers", "unstructured", "wikipedia"]
+all = ["PyMuPDF", "accelerate", "beautifulsoup4", "datasets", "diffusers", "docx2txt", "opencv-python", "pyowm", "qdrant-client", "sentence-transformers", "sentencepiece", "soundfile", "torch", "transformers", "unstructured", "wikipedia"]
 encoders = ["sentence-transformers"]
 huggingface-agent = ["accelerate", "datasets", "diffusers", "opencv-python", "sentencepiece", "soundfile", "torch", "transformers"]
 test = ["mock", "pytest"]
@@ -5267,4 +5267,4 @@ vector-databases = ["qdrant-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<3.12"
-content-hash = "c491fdb53696df54ccda966795da49d997eaece6a8dc4798501624cc2356f2b3"
+content-hash = "7cb450c0988a7784949025a1dc6c3a53b76fd2c3ce9e0f94ed4e3155a782a9c6"
