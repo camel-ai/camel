@@ -201,5 +201,6 @@ module = [
     "fitz",
     "unstructured.*",
     "sentence_transformers.*",
+    "pymilvus",
 ]
 ignore_missing_imports = true
