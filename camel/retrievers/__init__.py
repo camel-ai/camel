@@ -11,15 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from .base import BaseRetriever
+from .bm25_retriever import BM25Retriever
 
-from camel.types import ModelType
-from camel.utils import role_playing_with_function
-
-
-def main(model_type=ModelType.GPT_4, chat_turn_limit=10) -> None:
-    role_playing_with_function(model_type=model_type,
-                               chat_turn_limit=chat_turn_limit)
-
-
-if __name__ == "__main__":
-    main()
+__all__ = [
+    'BaseRetriever',
+    'BM25Retriever',
+]
