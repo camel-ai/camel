@@ -13,11 +13,13 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
 from fastapi import HTTPException
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from vllm import LLM
+
 from camel.types.server_types import HFModelLoadingParam
 from camel.utils import PYDANTIC_V2
-from vllm import LLM
+
 
 def load_model(
     model: str,
@@ -31,43 +33,45 @@ def load_model(
         llm, tokenizer = load_vllm_model(model)
     else:
         # device input check
-        hf_param = hf_param.model_dump() if PYDANTIC_V2 else hf_param.dict() # type: ignore
-        device = hf_param["device_map"]
+        hf_param_json = hf_param.model_dump(
+        ) if PYDANTIC_V2 else hf_param.dict()  # type: ignore
+        device = hf_param_json["device_map"]
         if isinstance(device, str):
             if device not in {"cuda", "cpu"}:
-                raise ValueError(f"Invalid device {device}, expect one of 'cuda' and 'cpu'.")
+                raise ValueError(
+                    f"Invalid device {device}, expect one of 'cuda' and 'cpu'."
+                )
         if isinstance(device, int):
             gpu_nums = get_gpu_nums()
             if device >= gpu_nums:
-                raise ValueError(f"Invalid device number {device}, only have {tuple(range(gpu_nums))}.")
+                raise ValueError(f"Invalid device number {device}, "
+                                 f"only have {tuple(range(gpu_nums))}.")
 
-        llm, tokenizer = load_HF_model(model, hf_param)
+        llm, tokenizer = load_HF_model(model, hf_param_json)
     return llm, tokenizer
+
 
 def load_HF_model(hf_model, configs):
     """
     Load a model from Hugging Face model hub
     """
     try:
-        model = AutoModelForCausalLM.from_pretrained(
-            hf_model,
-            **configs
-        )
+        model = AutoModelForCausalLM.from_pretrained(hf_model, **configs)
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
     try:
-        tokenizer = AutoTokenizer.from_pretrained(
-            hf_model
-            )
+        tokenizer = AutoTokenizer.from_pretrained(hf_model)
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
 
     return model, tokenizer
 
+
 def load_vllm_model(model: str):
     llm = LLM(model)
     tokenizer = llm.get_tokenizer()
     return llm, tokenizer
+
 
 def get_gpu_nums() -> int:
     return torch.cuda.device_count()

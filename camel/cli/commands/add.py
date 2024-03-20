@@ -13,22 +13,15 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 import click
-from camel.utils.third_party.huggingface_utils import (
-    hf_download_config,
-    hf_download_model,
-    hf_download_generation_config,
-    hf_download_tokenizer,
-    hf_download_tokenizer_config,
-)
 
-
-
-# NOTE: Huggingface does not provide an easy way to download only necessary files like
-# their `from_pretrained()` methods. The whole procedure during "from_pretrained" is
-# too complicate and spread across several functions & files. I only keep the core
+# NOTE: Huggingface does not provide an easy way to download only necessary
+# files like their `from_pretrained()` methods. The whole procedure during
+# "from_pretrained" is too complicate and spread across several functions &
+# files. I only keep the core.
 # See transformers.modeling_utils.PreTrainedModel.from_pretrained
 
 # TODO: Not 100% sure in offline mode
+
 
 @click.command()
 @click.argument("repo_id", type=str)
@@ -36,6 +29,14 @@ def add(repo_id):
     """
     Download a pre-trained model from Hugging Face model hub
     """
+    # lazy import to avoid lag when --help flag is used
+    from camel.utils.third_party.huggingface_utils import (
+        hf_download_config,
+        hf_download_generation_config,
+        hf_download_model,
+        hf_download_tokenizer,
+        hf_download_tokenizer_config,
+    )
     hf_download_config(repo_id)
     hf_download_model(repo_id)
     hf_download_generation_config(repo_id)
