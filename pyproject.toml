@@ -61,6 +61,7 @@ sentence-transformers = { version = "^2.2.2", optional = true }
 
 # vector-databases
 qdrant-client = { version = "^1.6.4", optional = true }
+pymilvus = { version = "^2.3.7", optional = true }
 
 # test
 pytest = { version = "^7", optional = true}
@@ -95,6 +96,7 @@ tools = [
 
 vector-databases = [
     "qdrant-client",
+    "pymilvus",
 ]
 
 all = [
@@ -116,6 +118,7 @@ all = [
     "unstructured",
     # vector-database
     "qdrant-client",
+    "pymilvus",
     # encoders
     "sentence-transformers",
 ]
@@ -198,5 +201,6 @@ module = [
     "fitz",
     "unstructured.*",
     "sentence_transformers.*",
+    "pymilvus",
 ]
 ignore_missing_imports = true
