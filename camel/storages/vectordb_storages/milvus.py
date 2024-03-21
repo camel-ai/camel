@@ -118,7 +118,8 @@ class MilvusStorage(BaseVectorStorage):
 
         Args:
             collection_name (str): Name of the collection to be created.
-            **kwargs (Any): Additional keyword arguments.
+            **kwargs (Any): Additional keyword arguments pass to create
+                collection.
         """
 
         from pymilvus import DataType
@@ -139,6 +140,7 @@ class MilvusStorage(BaseVectorStorage):
             field_name="payload", datatype=DataType.JSON,
             description=('Any additional metadata or information related'
                          'to the vector'))
+
         # create collection
         self._client.create_collection(
             collection_name=collection_name,
@@ -204,9 +206,9 @@ class MilvusStorage(BaseVectorStorage):
         """
         vector_count = self._client.get_collection_stats(
             collection_name)['row_count']
-
         collection_info = self._client.describe_collection(collection_name)
         collection_id = collection_info['collection_id']
+
         dim_value = next(
             (field['params']['dim']
              for field in collection_info['fields'] if field['description'] ==
@@ -253,7 +255,7 @@ class MilvusStorage(BaseVectorStorage):
 
         Args:
             records (List[VectorRecord]): List of vectors to be added.
-            **kwargs (Any): Additional keyword arguments.
+            **kwargs (Any): Additional keyword arguments pass to insert.
 
         Raises:
             RuntimeError: If there was an error in the addition process.
@@ -279,7 +281,7 @@ class MilvusStorage(BaseVectorStorage):
         Args:
             ids (List[str]): List of unique identifiers for the vectors to be
                 deleted.
-            **kwargs (Any): Additional keyword arguments.
+            **kwargs (Any): Additional keyword arguments pass to delete.
 
         Raises:
             RuntimeError: If there is an error during the deletion process.
@@ -315,7 +317,7 @@ class MilvusStorage(BaseVectorStorage):
         Args:
             query (VectorDBQuery): The query object containing the search
                 vector and the number of top similar vectors to retrieve.
-            **kwargs (Any): Additional keyword arguments.
+            **kwargs (Any): Additional keyword arguments pass to search.
 
         Returns:
             List[VectorDBQueryResult]: A list of vectors retrieved from the
