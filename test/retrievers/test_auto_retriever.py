@@ -13,7 +13,6 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
 import shutil
-import tempfile
 from datetime import datetime
 from unittest.mock import patch
 
@@ -21,11 +20,6 @@ import pytest
 
 from camel.retrievers import AutoRetriever
 from camel.storages import QdrantStorage
-
-
-@pytest.fixture
-def auto_retriever():
-    return AutoRetriever()
 
 
 @pytest.fixture
@@ -40,11 +34,16 @@ def temp_storage_path():
         shutil.rmtree(path)
 
 
-def test_initialize_qdrant_storage(auto_retriever):
-    with tempfile.TemporaryDirectory() as tmpdir:
-        storage_custom = auto_retriever._initialize_qdrant_storage(
-            "collection", tmpdir)
-        assert isinstance(storage_custom, QdrantStorage)
+@pytest.fixture
+def auto_retriever(temp_storage_path):
+    return AutoRetriever(vector_storage_local_path=temp_storage_path,
+                         storage_type="qdrant")
+
+
+def test__initialize_vector_storage(auto_retriever):
+    # with tempfile.TemporaryDirectory() as tmpdir:
+    storage_custom = auto_retriever._initialize_vector_storage("collection")
+    assert isinstance(storage_custom, QdrantStorage)
 
 
 def test_get_file_modified_date(auto_retriever):
@@ -64,15 +63,12 @@ def test_run_vector_retriever(auto_retriever, temp_storage_path):
     query_related = "what is camel"
     query_unrealted = "unrelated query"
     content_input_paths = "https://www.camel-ai.org/"
-    vector_storage_local_path = temp_storage_path
-    url_and_api_key = None
     top_k = 1
     similarity_threshold = 0.75
 
     # Test with query related to the content in mock data
     result_related = auto_retriever.run_vector_retriever(
-        query_related, content_input_paths, vector_storage_local_path,
-        url_and_api_key, top_k, similarity_threshold,
+        query_related, content_input_paths, top_k, similarity_threshold,
         return_detailed_info=True)
 
     assert "similarity score" in result_related, \
@@ -86,7 +82,6 @@ def test_run_vector_retriever(auto_retriever, temp_storage_path):
 
     # Test with query unrelated to the content in mock data
     result_unrelated = auto_retriever.run_vector_retriever(
-        query_unrealted, content_input_paths, vector_storage_local_path,
-        url_and_api_key, top_k, similarity_threshold)
+        query_unrealted, content_input_paths, top_k, similarity_threshold)
 
     assert "No suitable information retrieved from" in result_unrelated

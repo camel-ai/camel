@@ -17,46 +17,80 @@ from pathlib import Path
 from typing import List, Optional, Tuple, Union
 from urllib.parse import urlparse
 
-from camel.embeddings import OpenAIEmbedding
+from camel.embeddings import BaseEmbedding, OpenAIEmbedding
 from camel.retrievers import VectorRetriever
-from camel.storages import QdrantStorage, VectorDBQuery
+from camel.storages import (
+    BaseVectorStorage,
+    MilvusStorage,
+    QdrantStorage,
+    VectorDBQuery,
+)
 
 DEFAULT_TOP_K_RESULTS = 1
 DEFAULT_SIMILARITY_THRESHOLD = 0.75
 
 
 class AutoRetriever():
-    r"""Implements automatic retriever.
+    r""" Facilitates the automatic retrieval of information using a
+    query-based approach with pre-defined elements.
 
-    This class facilitates the retriever of relevant information using a
-    query-based approach in an automatic way by using pre-defined retriever
-    elements.
+    Attributes:
+        url_and_api_key (Optional[Tuple[str, str]]): URL and API key for
+            accessing the vector storage remotely.
+        vector_storage_local_path (Optional[str]): Local path for vector
+            storage, if applicable.
+        storage_type (str): Type of vector storage to use (e.g., 'milvus',
+            'qdrant').
+        embedding_model (BaseEmbedding): Model used for embedding queries and
+            documents.
     """
 
-    def _initialize_qdrant_storage(
+    def __init__(
+        self,
+        url_and_api_key: Optional[Tuple[str, str]] = None,
+        vector_storage_local_path: Optional[str] = None,
+        storage_type: Optional[str] = None,
+        embedding_model: Optional[BaseEmbedding] = None,
+    ):
+
+        self.storage_type = storage_type or "milvus"
+        self.embedding_model = embedding_model or OpenAIEmbedding()
+        self.vector_storage_local_path = vector_storage_local_path
+        self.url_and_api_key = url_and_api_key
+
+    def _initialize_vector_storage(
         self,
         collection_name: Optional[str] = None,
-        vector_storage_local_path: Optional[str] = None,
-        url_and_api_key: Optional[Tuple[str, str]] = None,
-    ) -> QdrantStorage:
+    ) -> BaseVectorStorage:
         r"""Sets up and returns a `Qdrant` storage instance with specified parameters.
 
         Args:
             collection_name (Optional[str]): Name of the collection in the
                 vector storage.
-            vector_storage_local_path (Optional[str]): Filesystem path for
-                local vector storage.
-            url_and_api_key (Optional[Tuple[str, str]]): URL and API key for
-                remote storage access.
 
         Returns:
-            QdrantStorage: Configured Qdrant storage instance.
+            BaseVectorStorage: Configured vector storage instance.
         """
+        if self.storage_type.lower() == 'milvus':
+            if self.url_and_api_key is None:
+                raise ValueError(
+                    "URL and API key required for Milvus storage are not"
+                    "provided.")
+            return MilvusStorage(
+                vector_dim=self.embedding_model.get_output_dim(),
+                collection_name=collection_name,
+                url_and_api_key=self.url_and_api_key)
 
-        return QdrantStorage(vector_dim=OpenAIEmbedding().get_output_dim(),
-                             collection_name=collection_name,
-                             path=vector_storage_local_path,
-                             url_and_api_key=url_and_api_key)
+        if self.storage_type.lower() == 'qdrant':
+            return QdrantStorage(
+                vector_dim=self.embedding_model.get_output_dim(),
+                collection_name=collection_name,
+                path=self.vector_storage_local_path,
+                url_and_api_key=self.url_and_api_key)
+
+        raise ValueError(
+            f"Unsupported vector storage type: {self.storage_type}, supported"
+            "type: 'milvus', 'qdrant'")
 
     def _get_file_modified_date(self, content_input_path: str) -> str:
         r"""Retrieves the last modified date and time of a given file. This
@@ -77,8 +111,6 @@ class AutoRetriever():
 
     def run_vector_retriever(
             self, query: str, content_input_paths: Union[str, List[str]],
-            vector_storage_local_path: Optional[str] = None,
-            url_and_api_key: Optional[Tuple[str, str]] = None,
             top_k: int = DEFAULT_TOP_K_RESULTS,
             similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
             return_detailed_info: bool = False) -> str:
@@ -88,10 +120,6 @@ class AutoRetriever():
             query (str): Query string for information retriever.
             content_input_paths (Union[str, List[str]]): Paths to local
                 files or remote URLs.
-            vector_storage_local_path (Optional[str]): Local path for `Qdrant`
-                storage.
-            url_and_api_key (Optional[Tuple[str, str]]): URL and API key for
-                `Qdrant` storage remote access.
             top_k (int, optional): The number of top results to return during
                 retrieve. Must be a positive integer. Defaults to 1.
             similarity_threshold (float, optional): The similarity threshold
@@ -102,8 +130,8 @@ class AutoRetriever():
 
         Returns:
             string: By default, returns only the text information. If
-            `return_detailed_info` is True, return detailed information
-            including similarity score, content path and metadata.
+                `return_detailed_info` is True, return detailed information
+                including similarity score, content path and metadata.
 
         Raises:
             ValueError: If there's an vector storage existing with content
@@ -127,10 +155,8 @@ class AutoRetriever():
                                Path(content_input_path).stem.replace(' ', '_'))
 
             try:
-                vector_storage_instance = self._initialize_qdrant_storage(
-                    collection_name=collection_name,
-                    vector_storage_local_path=vector_storage_local_path,
-                    url_and_api_key=url_and_api_key)
+                vector_storage_instance = self._initialize_vector_storage(
+                    collection_name)
 
                 # Check the modified time of the input file path, only works
                 # for local path since no standard way for remote url
@@ -144,9 +170,10 @@ class AutoRetriever():
                         content_input_path)
 
                     # Insert any query to get modified date from vector db
-                    # NOTE: Can be optimized when CAMEL Qdrant support direct
-                    # chunk payload extraction
-                    query_vector_any = OpenAIEmbedding().embed(obj="any_query")
+                    # NOTE: Can be optimized when CAMEL vector storage support
+                    # direct chunk payload extraction
+                    query_vector_any = self.embedding_model.embed(
+                        obj="any_query")
                     query_any = VectorDBQuery(query_vector_any, top_k=1)
                     result_any = vector_storage_instance.query(query_any)
 
