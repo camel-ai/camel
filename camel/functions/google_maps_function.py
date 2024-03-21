@@ -20,8 +20,7 @@ from camel.functions import OpenAIFunction
 
 
 def import_googlemaps_or_raise() -> Any:
-    r"""
-    Attempts to import the `googlemaps` library and returns it.
+    r"""Attempts to import the `googlemaps` library and returns it.
 
     Returns:
         module: The `googlemaps` module if successfully imported.
@@ -67,7 +66,7 @@ def get_address_description(address: Union[str, List[str]],
     summary.
 
     Validates an address using Google Maps API, returning a summary that
-    includes information on address completion, formatted address, ocation
+    includes information on address completion, formatted address, location
     coordinates, and metadata types that are true for the given address.
 
     Args:
@@ -155,10 +154,12 @@ def handle_googlemaps_exceptions(
     @wraps(func)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
         try:
-            from googlemaps.exceptions import ApiError  # type: ignore
-            from googlemaps.exceptions import HTTPError  # type: ignore
-            from googlemaps.exceptions import Timeout  # type: ignore
-            from googlemaps.exceptions import TransportError  # type: ignore
+            from googlemaps.exceptions import (  # type: ignore
+                ApiError,
+                HTTPError,
+                Timeout,
+                TransportError,
+            )
         except ImportError:
             raise ImportError(
                 "Please install `googlemaps` first. You can install "
@@ -234,6 +235,18 @@ def get_elevation(
 
 
 def format_offset_to_natural_language(offset: int) -> str:
+    r"""Converts a time offset in seconds to a more natural language
+    description.
+
+    Args:
+        offset (int): The time offset in seconds. Can be positive, negative,
+            or zero.
+
+    Returns:
+        str: A string representing the offset in a natural language format,
+            such as "+5 hours 30 minutes" or "-3 hours 45 minutes". If the
+            offset is zero, the function returns "+0 hours".
+    """
     # Convert the absolute value of the offset to a timedelta object
     delta = datetime.timedelta(seconds=abs(offset))
 
