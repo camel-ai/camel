@@ -13,6 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import datetime
 import os
+import re
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
 from urllib.parse import urlparse
@@ -149,10 +150,24 @@ class AutoRetriever():
             # Check path type
             parsed_url = urlparse(content_input_path)
             is_url = all([parsed_url.scheme, parsed_url.netloc])
-            # Convert given path into collection name
-            collection_name = (content_input_path.replace(
-                "https://", "").replace("/", "_").strip("_") if is_url else
-                               Path(content_input_path).stem.replace(' ', '_'))
+
+            # Convert given path into a collection name, ensuring it only
+            # contains numbers, letters, and underscores
+            if is_url:
+                # For URLs, replace https://, /, and any characters not
+                # allowed by Milvus with _
+                collection_name = re.sub(
+                    r'[^0-9a-zA-Z]+', '_',
+                    content_input_path.replace("https://", ""))
+            else:
+                # For file paths, get the stem and replace spaces with _, also
+                # ensuring only allowed characters are present
+                collection_name = re.sub(r'[^0-9a-zA-Z]+', '_',
+                                         Path(content_input_path).stem)
+
+            # Ensure the collection name does not start or end with an
+            # underscore
+            collection_name = collection_name.strip("_")
 
             try:
                 vector_storage_instance = self._initialize_vector_storage(
@@ -181,7 +196,7 @@ class AutoRetriever():
                     # in the query result
                     if result_any[0].record.payload is not None:
                         file_modified_date_from_meta = (
-                            result_any[0].record.payload['metadata']
+                            result_any[0].record.payload["metadata"]
                             ['last_modified'])
                     else:
                         raise ValueError(
