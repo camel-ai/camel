@@ -49,10 +49,11 @@ class StubModel(BaseModelBackend):
     r"""A dummy model used for unit tests."""
     model_type = ModelType.STUB
 
-    def __init__(self, model_type: ModelType,
-                 model_config_dict: Dict[str, Any]) -> None:
+    def __init__(self, model_type: ModelType, model_config_dict: Dict[str,
+                                                                      Any],
+                 backend_config_dict: Dict[str, Any]) -> None:
         r"""All arguments are unused for the dummy model."""
-        super().__init__(model_type, model_config_dict)
+        super().__init__(model_type, model_config_dict, backend_config_dict)
         self._token_counter: Optional[BaseTokenCounter] = None
 
     @property

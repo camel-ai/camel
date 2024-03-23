@@ -27,19 +27,19 @@ class OpenSourceModel(BaseModelBackend):
     open-source models.
     """
 
-    def __init__(
-        self,
-        model_type: ModelType,
-        model_config_dict: Dict[str, Any],
-    ) -> None:
+    def __init__(self, model_type: ModelType, model_config_dict: Dict[str,
+                                                                      Any],
+                 backend_config_dict: Dict[str, Any]) -> None:
         r"""Constructor for model backends of Open-source models.
 
         Args:
             model_type (ModelType): Model for which a backend is created.
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into :obj:`openai.ChatCompletion.create()`.
+            backend_config_dict (Dict[str, Any]): A dictionary that contains
+                the backend configs.
         """
-        super().__init__(model_type, model_config_dict)
+        super().__init__(model_type, model_config_dict, backend_config_dict)
         self._token_counter: Optional[BaseTokenCounter] = None
 
         # Check whether the input model type is open-source

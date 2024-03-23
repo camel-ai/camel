@@ -26,17 +26,21 @@ class BaseModelBackend(ABC):
     May be OpenAI API, a local LLM, a stub for unit tests, etc.
     """
 
-    def __init__(self, model_type: ModelType,
-                 model_config_dict: Dict[str, Any]) -> None:
+    def __init__(self, model_type: ModelType, model_config_dict: Dict[str,
+                                                                      Any],
+                 backend_config_dict: Dict[str, Any]) -> None:
         r"""Constructor for the model backend.
 
         Args:
             model_type (ModelType): Model for which a backend is created.
             model_config_dict (Dict[str, Any]): A config dictionary.
+            backend_config_dict (Dict[str, Any]): A dictionary that contains
+                the backend configs.
         """
         self.model_type = model_type
 
         self.model_config_dict = model_config_dict
+        self.backend_config_dict = backend_config_dict
         self.check_model_config()
 
     @property

@@ -13,6 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .base_model import BaseModelBackend
 from .openai_model import OpenAIModel
+from .azure_openai_model import AzureOpenAIModel
 from .stub_model import StubModel
 from .open_source_model import OpenSourceModel
 from .model_factory import ModelFactory
@@ -20,6 +21,7 @@ from .model_factory import ModelFactory
 __all__ = [
     'BaseModelBackend',
     'OpenAIModel',
+    'AzureOpenAIModel',
     'StubModel',
     'OpenSourceModel',
     'ModelFactory',

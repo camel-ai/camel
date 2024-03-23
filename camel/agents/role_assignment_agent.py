@@ -31,12 +31,15 @@ class RoleAssignmentAgent(ChatAgent):
             agent. (default: :obj:`ModelType.GPT_3_5_TURBO`)
         model_config (Any, optional): The configuration for the model.
             (default: :obj:`None`)
+        backend_config_dict (Dict[str, Any], optional): Configuration options
+            for the backend. (default: :obj:`None`)
     """
 
     def __init__(
         self,
         model_type: ModelType = ModelType.GPT_3_5_TURBO,
         model_config: Optional[Any] = None,
+        backend_config_dict: Optional[Dict[str, Any]] = None,
     ) -> None:
         system_message = BaseMessage(
             role_name="Role Assigner",
@@ -44,7 +47,8 @@ class RoleAssignmentAgent(ChatAgent):
             meta_dict=None,
             content="You assign roles based on tasks.",
         )
-        super().__init__(system_message, model_type, model_config)
+        super().__init__(system_message, model_type, model_config,
+                         backend_config_dict)
 
     def run(
         self,

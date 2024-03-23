@@ -36,6 +36,8 @@ class TaskSpecifyAgent(ChatAgent):
             a prompt. (default: :obj:`TaskType.AI_SOCIETY`)
         model_config (Any, optional): The configuration for the model.
             (default: :obj:`None`)
+        backend_config_dict (Dict[str, Any], optional): Configuration options
+            for the backend. (default: :obj:`None`)
         task_specify_prompt (Union[str, TextPrompt], optional): The prompt for
             specifying the task. (default: :obj:`None`)
         word_limit (int, optional): The word limit for the task prompt.
@@ -50,6 +52,7 @@ class TaskSpecifyAgent(ChatAgent):
         model_type: Optional[ModelType] = None,
         task_type: TaskType = TaskType.AI_SOCIETY,
         model_config: Optional[Any] = None,
+        backend_config_dict: Optional[Dict[str, Any]] = None,
         task_specify_prompt: Optional[Union[str, TextPrompt]] = None,
         word_limit: int = DEFAULT_WORD_LIMIT,
         output_language: Optional[str] = None,
@@ -76,6 +79,7 @@ class TaskSpecifyAgent(ChatAgent):
 
         super().__init__(system_message, model_type=model_type,
                          model_config=model_config,
+                         backend_config_dict=backend_config_dict,
                          output_language=output_language)
 
     def run(
@@ -128,6 +132,8 @@ class TaskPlannerAgent(ChatAgent):
             agent. (default: :obj:`ModelType.GPT_3_5_TURBO`)
         model_config (Any, optional): The configuration for the model.
             (default: :obj:`None`)
+        backend_config_dict (Dict[str, Any], optional): Configuration options
+            for the backend. (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
         agent. (default: :obj:`None`)
     """
@@ -136,6 +142,7 @@ class TaskPlannerAgent(ChatAgent):
         self,
         model_type: Optional[ModelType] = None,
         model_config: Optional[Any] = None,
+        backend_config_dict: Optional[Dict[str, Any]] = None,
         output_language: Optional[str] = None,
     ) -> None:
 
@@ -149,6 +156,7 @@ class TaskPlannerAgent(ChatAgent):
         )
 
         super().__init__(system_message, model_type, model_config,
+                         backend_config_dict=backend_config_dict,
                          output_language=output_language)
 
     def run(
@@ -201,6 +209,8 @@ class TaskCreationAgent(ChatAgent):
             agent. (default: :obj:`ModelType.GPT_3_5_TURBO`)
         model_config (Any, optional): The configuration for the model.
             (default: :obj:`None`)
+        backend_config_dict (Dict[str, Any], optional): Configuration options
+            for the backend. (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
         message_window_size (int, optional): The maximum number of previous
@@ -216,6 +226,7 @@ class TaskCreationAgent(ChatAgent):
         objective: Union[str, TextPrompt],
         model_type: Optional[ModelType] = None,
         model_config: Optional[Any] = None,
+        backend_config_dict: Optional[Dict[str, Any]] = None,
         output_language: Optional[str] = None,
         message_window_size: Optional[int] = None,
         max_task_num: Optional[int] = 3,
@@ -254,6 +265,7 @@ Be concrete.
         )
 
         super().__init__(system_message, model_type, model_config,
+                         backend_config_dict=backend_config_dict,
                          output_language=output_language,
                          message_window_size=message_window_size)
 
@@ -307,6 +319,8 @@ class TaskPrioritizationAgent(ChatAgent):
             agent. (default: :obj:`ModelType.GPT_3_5_TURBO`)
         model_config (Any, optional): The configuration for the model.
             (default: :obj:`None`)
+        backend_config_dict (Dict[str, Any], optional): Configuration options
+            for the backend. (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
         message_window_size (int, optional): The maximum number of previous
@@ -319,6 +333,7 @@ class TaskPrioritizationAgent(ChatAgent):
         objective: Union[str, TextPrompt],
         model_type: Optional[ModelType] = None,
         model_config: Optional[Any] = None,
+        backend_config_dict: Optional[Dict[str, Any]] = None,
         output_language: Optional[str] = None,
         message_window_size: Optional[int] = None,
     ) -> None:
@@ -351,6 +366,7 @@ with any other output.""")
         )
 
         super().__init__(system_message, model_type, model_config,
+                         backend_config_dict=backend_config_dict,
                          output_language=output_language,
                          message_window_size=message_window_size)
 
