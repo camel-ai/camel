@@ -281,7 +281,7 @@ class MilvusStorage(BaseVectorStorage):
         Args:
             ids (List[str]): List of unique identifiers for the vectors to be
                 deleted.
-            **kwargs (Any): Additional keyword arguments pass to delete.
+            **kwargs (Any): Additional keyword arguments passed to delete.
 
         Raises:
             RuntimeError: If there is an error during the deletion process.
