@@ -132,6 +132,7 @@ class MilvusStorage(BaseVectorStorage):
         schema.add_field(field_name="id", datatype=DataType.VARCHAR,
                          descrition='A unique identifier for the vector',
                          is_primary=True, max_length=65535)
+        # max_length reference: https://milvus.io/docs/limitations.md
         schema.add_field(
             field_name="vector", datatype=DataType.FLOAT_VECTOR,
             description='The numerical representation of the vector',
