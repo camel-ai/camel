@@ -16,6 +16,7 @@ from typing import Any, Dict
 from camel.prompts import (
     AISocietyPromptTemplateDict,
     CodePromptTemplateDict,
+    EmbeddingPromptTemplateDict,
     EvaluationPromptTemplateDict,
     MisalignmentPromptTemplateDict,
     RoleDescriptionPromptTemplateDict,
@@ -53,4 +54,6 @@ class TaskPromptTemplateDict(Dict[Any, TextPromptDict]):
             SolutionExtractionPromptTemplateDict(),
             TaskType.ROLE_DESCRIPTION:
             RoleDescriptionPromptTemplateDict(),
+            TaskType.EMBEDDING:
+            EmbeddingPromptTemplateDict(),
         })
