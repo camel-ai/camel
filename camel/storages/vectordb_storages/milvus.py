@@ -148,7 +148,7 @@ class MilvusStorage(BaseVectorStorage):
             **kwargs,
         )
 
-        # set index
+        # Set the index of the parameters
         index_params = self._client.prepare_index_params()
 
         index_params.add_index(field_name="vector", metric_type="COSINE",
