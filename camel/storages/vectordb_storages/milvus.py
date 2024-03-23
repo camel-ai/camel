@@ -141,7 +141,7 @@ class MilvusStorage(BaseVectorStorage):
             description=('Any additional metadata or information related'
                          'to the vector'))
 
-        # create collection
+        # Create the collection
         self._client.create_collection(
             collection_name=collection_name,
             schema=schema,
