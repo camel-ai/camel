@@ -40,10 +40,12 @@ class AutoRetriever():
             accessing the vector storage remotely.
         vector_storage_local_path (Optional[str]): Local path for vector
             storage, if applicable.
-        storage_type (str): Type of vector storage to use (e.g., 'milvus',
-            'qdrant').
+        storage_type (str): Type of vector storage to use. Defaults to
+            `Milvus`.
+            Available document types:
+            "Milvus", "Qdrant".
         embedding_model (BaseEmbedding): Model used for embedding queries and
-            documents.
+            documents. Defaults to `OpenAIEmbedding()`.
     """
 
     def __init__(
@@ -63,7 +65,7 @@ class AutoRetriever():
         self,
         collection_name: Optional[str] = None,
     ) -> BaseVectorStorage:
-        r"""Sets up and returns a `Qdrant` storage instance with specified parameters.
+        r"""Sets up and returns a vector storage instance with specified parameters.
 
         Args:
             collection_name (Optional[str]): Name of the collection in the
@@ -115,16 +117,18 @@ class AutoRetriever():
             top_k: int = DEFAULT_TOP_K_RESULTS,
             similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
             return_detailed_info: bool = False) -> str:
-        r"""Executes the automatic vector retriever process using `Qdrant` storage.
+        r"""Executes the automatic vector retriever process using vector storage.
 
         Args:
             query (str): Query string for information retriever.
             content_input_paths (Union[str, List[str]]): Paths to local
                 files or remote URLs.
             top_k (int, optional): The number of top results to return during
-                retrieve. Must be a positive integer. Defaults to 1.
+                retrieve. Must be a positive integer. Defaults to
+                `DEFAULT_TOP_K_RESULTS`.
             similarity_threshold (float, optional): The similarity threshold
-                for filtering results. Defaults to 0.75.
+                for filtering results. Defaults to
+                `DEFAULT_SIMILARITY_THRESHOLD`.
             return_detailed_info (bool, optional): Whether to return detailed
                 information including similarity score, content path and
                 metadata. Defaults to False.
