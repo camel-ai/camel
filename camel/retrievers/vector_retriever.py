@@ -115,9 +115,8 @@ class VectorRetriever(BaseRetriever):
         if top_k <= 0:
             raise ValueError("top_k must be a positive integer.")
 
-        if storage.status().vector_count == 0:
-            raise ValueError("Vector storage is empty, please check"
-                             "the collection.")
+        # Load the storage incase it's hosted remote
+        storage.load()
 
         query_vector = self.embedding_model.embed(obj=query)
         db_query = VectorDBQuery(query_vector=query_vector, top_k=top_k)
