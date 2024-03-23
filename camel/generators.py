@@ -15,7 +15,7 @@ from typing import Dict, Generator, List, Optional, Set, Tuple
 
 from camel.messages import BaseMessage
 from camel.prompts import PromptTemplateGenerator, TextPrompt
-from camel.types import RoleType, TaskType
+from camel.types import ReasoningType, RoleType, TaskType
 
 
 class SystemMessageGenerator:
@@ -24,6 +24,8 @@ class SystemMessageGenerator:
     Args:
         task_type (TaskType, optional): The task type.
             (default: :obj:`TaskType.AI_SOCIETY`)
+        reasoning_type (ReasoningType, optional): The reasoning type.
+            (default: :obj:`ReasoningType.DEFAULT`)
         sys_prompts (Optional[Dict[RoleType, str]], optional): The prompts of
             the system messages for each role type. (default: :obj:`None`)
         sys_msg_meta_dict_keys (Optional[Set[str]], optional): The set of keys
@@ -34,6 +36,7 @@ class SystemMessageGenerator:
     def __init__(
         self,
         task_type: TaskType = TaskType.AI_SOCIETY,
+        reasoning_type: ReasoningType = ReasoningType.DEFAULT,
         sys_prompts: Optional[Dict[RoleType, str]] = None,
         sys_msg_meta_dict_keys: Optional[Set[str]] = None,
     ) -> None:
@@ -46,11 +49,15 @@ class SystemMessageGenerator:
             assistant_prompt_template = PromptTemplateGenerator(
             ).get_system_prompt(
                 task_type,
-                RoleType.ASSISTANT,
+                RoleType.CHAIN_OF_THOUGHT_ASSISTANT if
+                (reasoning_type
+                 == ReasoningType.CHAIN_OF_THOUGHT) else RoleType.ASSISTANT,
             )
             user_prompt_template = PromptTemplateGenerator().get_system_prompt(
                 task_type,
-                RoleType.USER,
+                RoleType.CHAIN_OF_THOUGHT_USER if
+                (reasoning_type
+                 == ReasoningType.CHAIN_OF_THOUGHT) else RoleType.USER,
             )
             critic_prompt_template = PromptTemplateGenerator(
             ).get_system_prompt(

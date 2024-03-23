@@ -109,7 +109,8 @@ def test_get_openai_tool_schema():
                         'An enumeration.',
                         'enum': [
                             'assistant', 'user', 'critic', 'embodiment',
-                            'default'
+                            'default', 'chain_of_thought_assistant',
+                            'chain_of_thought_user'
                         ]
                     }
                 }
@@ -127,7 +128,8 @@ def test_get_openai_tool_schema():
                     'RoleType': {
                         'enum': [
                             'assistant', 'user', 'critic', 'embodiment',
-                            'default'
+                            'default', 'chain_of_thought_assistant',
+                            'chain_of_thought_user'
                         ],
                         'type':
                         'string'

@@ -15,12 +15,19 @@ import re
 from enum import Enum
 
 
+class ReasoningType(Enum):
+    DEFAULT = "default"
+    CHAIN_OF_THOUGHT = "chain_of_thought"
+
+
 class RoleType(Enum):
     ASSISTANT = "assistant"
     USER = "user"
     CRITIC = "critic"
     EMBODIMENT = "embodiment"
     DEFAULT = "default"
+    CHAIN_OF_THOUGHT_ASSISTANT = "chain_of_thought_assistant"
+    CHAIN_OF_THOUGHT_USER = "chain_of_thought_user"
 
 
 class ModelType(Enum):
