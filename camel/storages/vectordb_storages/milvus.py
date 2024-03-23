@@ -124,7 +124,7 @@ class MilvusStorage(BaseVectorStorage):
 
         from pymilvus import DataType
 
-        # set schema
+        # Set the schema
         schema = self._client.create_schema(auto_id=False,
                                             enable_dynamic_field=True,
                                             description='collection schema')
