@@ -317,7 +317,7 @@ class MilvusStorage(BaseVectorStorage):
         Args:
             query (VectorDBQuery): The query object containing the search
                 vector and the number of top similar vectors to retrieve.
-            **kwargs (Any): Additional keyword arguments pass to search.
+            **kwargs (Any): Additional keyword arguments passed to search.
 
         Returns:
             List[VectorDBQueryResult]: A list of vectors retrieved from the
