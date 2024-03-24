@@ -16,7 +16,6 @@ import argparse
 from PIL import Image
 
 from camel.agents import ChatAgent
-from camel.configs import ChatGPTConfig
 from camel.generators import PromptTemplateGenerator
 from camel.messages import BaseMessage
 from camel.types import ModelType, RoleType, TaskType
@@ -29,9 +28,9 @@ parser.add_argument(
 )
 
 
-def get_assistant_agent() -> ChatAgent:
+def detect(image_path: str) -> None:
     sys_msg = PromptTemplateGenerator().get_prompt_from_key(
-        TaskType.OBJECT_DETECTION, RoleType.ASSISTANT)
+        TaskType.OBJECT_RECOGNITION, RoleType.ASSISTANT)
     print("=" * 20 + " SYS MSG " + "=" * 20)
     print(sys_msg)
     print("=" * 49)
@@ -43,16 +42,12 @@ def get_assistant_agent() -> ChatAgent:
     agent = ChatAgent(
         assistant_sys_msg,
         model_type=ModelType.GPT_4_TURBO_VISION,
-        model_config=ChatGPTConfig(max_tokens=4096),
     )
-    return agent
-
-
-def detect(agent: ChatAgent, image_path: str) -> None:
     user_msg = BaseMessage.make_user_message(
         role_name="User",
         content="Please start the object detection for following image!",
         image=Image.open(image_path),
+        image_detail="high",
     )
     assistant_response = agent.step(user_msg)
     print("=" * 20 + " RESULT " + "=" * 20)
@@ -61,8 +56,7 @@ def detect(agent: ChatAgent, image_path: str) -> None:
 
 
 def main(args: argparse.Namespace) -> None:
-    agent = get_assistant_agent()
-    detect(agent, args.image_path)
+    detect(args.image_path)
 
 
 if __name__ == "__main__":

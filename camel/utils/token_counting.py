@@ -11,11 +11,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import base64
 from abc import ABC, abstractmethod
-from typing import List
+from io import BytesIO
+from math import ceil
+from typing import List, Optional
+
+from PIL import Image
 
 from camel.messages import OpenAIMessage
-from camel.types import ModelType
+from camel.types import ModelType, OpenAIImageType
 
 
 def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
@@ -167,8 +172,7 @@ class OpenAITokenCounter(BaseTokenCounter):
         r"""Constructor for the token counter for OpenAI models.
 
         Args:
-            model_type (ModelType): Model type for which tokens will be
-                counted.
+            model (ModelType): Model type for which tokens will be counted.
         """
         self.model: str = model.value_for_tiktoken
 
@@ -211,10 +215,59 @@ class OpenAITokenCounter(BaseTokenCounter):
         for message in messages:
             num_tokens += self.tokens_per_message
             for key, value in message.items():
-                num_tokens += len(self.encoding.encode(str(value)))
+                if not isinstance(value, list):
+                    num_tokens += len(self.encoding.encode(str(value)))
+                else:
+                    for item in value:
+                        if item["type"] == "text":
+                            num_tokens += len(
+                                self.encoding.encode(str(item["text"])))
+                        elif item["type"] == "image_url":
+                            image_str: str = item["image_url"]["url"]
+                            detail = item["image_url"]["detail"]
+                            image_prefix_format = "data:image/{};base64,"
+                            image_prefix: Optional[str] = None
+                            for image_type in list(OpenAIImageType):
+                                image_prefix = image_prefix_format.format(
+                                    image_type.value)
+                                if image_prefix not in image_str:
+                                    continue
+                                else:
+                                    break
+                            assert isinstance(image_prefix, str)
+                            encoded_image = image_str.split(image_prefix)[1]
+                            image_bytes = BytesIO(
+                                base64.b64decode(encoded_image))
+                            image = Image.open(image_bytes)
+                            num_tokens += openai_count_token_from_image(
+                                image, detail)
                 if key == "name":
                     num_tokens += self.tokens_per_name
 
         # every reply is primed with <|start|>assistant<|message|>
         num_tokens += 3
         return num_tokens
+
+
+def openai_count_token_from_image(image: Image.Image, detail: str) -> int:
+    r"""Count image tokens for OpenAI vision model. An :obj:`"auto"`
+    resolution model will be treated as :obj:`"high"`.
+    """
+    # https://platform.openai.com/docs/guides/vision
+    if detail == "low":
+        return 85
+
+    width, height = image.size
+    if width > 2048 or height > 2048:
+        scaling_factor = max(width, height) / 2048
+        width = int(width / scaling_factor)
+        height = int(height / scaling_factor)
+
+    scaling_factor = min(width, height) / 768
+    scaled_width = int(width / scaling_factor)
+    scaled_height = int(height / scaling_factor)
+
+    h = ceil(scaled_height / 512)
+    w = ceil(scaled_width / 512)
+    total = 85 + 170 * h * w
+    return total

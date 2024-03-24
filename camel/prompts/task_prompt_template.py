@@ -18,7 +18,7 @@ from camel.prompts import (
     CodePromptTemplateDict,
     EvaluationPromptTemplateDict,
     MisalignmentPromptTemplateDict,
-    ObjectDetectionPromptTemplateDict,
+    ObjectRecognitionPromptTemplateDict,
     RoleDescriptionPromptTemplateDict,
     SolutionExtractionPromptTemplateDict,
     TextPromptDict,
@@ -54,6 +54,6 @@ class TaskPromptTemplateDict(Dict[Any, TextPromptDict]):
             SolutionExtractionPromptTemplateDict(),
             TaskType.ROLE_DESCRIPTION:
             RoleDescriptionPromptTemplateDict(),
-            TaskType.OBJECT_DETECTION:
-            ObjectDetectionPromptTemplateDict(),
+            TaskType.OBJECT_RECOGNITION:
+            ObjectRecognitionPromptTemplateDict(),
         })

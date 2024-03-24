@@ -16,7 +16,7 @@ from .ai_society import AISocietyPromptTemplateDict
 from .code import CodePromptTemplateDict
 from .misalignment import MisalignmentPromptTemplateDict
 from .translation import TranslationPromptTemplateDict
-from .object_detection import ObjectDetectionPromptTemplateDict
+from .object_recognition import ObjectRecognitionPromptTemplateDict
 from .solution_extraction import SolutionExtractionPromptTemplateDict
 from .evaluation import EvaluationPromptTemplateDict
 from .role_description_prompt_template import RoleDescriptionPromptTemplateDict
@@ -36,5 +36,5 @@ __all__ = [
     'TaskPromptTemplateDict',
     'PromptTemplateGenerator',
     'SolutionExtractionPromptTemplateDict',
-    'ObjectDetectionPromptTemplateDict',
+    'ObjectRecognitionPromptTemplateDict',
 ]

@@ -19,7 +19,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from openai import Stream
 
 from camel.agents import BaseAgent
-from camel.configs import BaseConfig, ChatGPTConfig
+from camel.configs import BaseConfig, ChatGPTConfig, ChatGPTVisionConfig
 from camel.functions import OpenAIFunction
 from camel.memories import (
     BaseMemory,
@@ -123,7 +123,11 @@ class ChatAgent(BaseAgent):
         if function_list is not None:
             for func in function_list:
                 self.func_dict[func.get_function_name()] = func.func
-        self.model_config = model_config or ChatGPTConfig()
+
+        if self.model_type == ModelType.GPT_4_TURBO_VISION:
+            self.model_config = model_config or ChatGPTVisionConfig()
+        else:
+            self.model_config = model_config or ChatGPTConfig()
 
         self.model_backend: BaseModelBackend = ModelFactory.create(
             self.model_type, self.model_config.__dict__)
@@ -363,7 +367,6 @@ class ChatAgent(BaseAgent):
                 role_type=self.role_type,
                 meta_dict=dict(),
                 content=choice.message.content or "",
-                image=None,
             )
             output_messages.append(chat_message)
         finish_reasons = [

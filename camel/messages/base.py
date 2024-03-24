@@ -14,7 +14,7 @@
 import base64
 import io
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 from PIL import Image
 
@@ -25,7 +25,9 @@ from camel.messages import (
     OpenAIUserMessage,
 )
 from camel.prompts import CodePrompt, TextPrompt
-from camel.types import OpenAIBackendRole, RoleType
+from camel.types import OpenAIBackendRole, OpenAIImageType, RoleType
+
+IMAGE_DETAIL = Literal["auto", "low", "high"]
 
 
 @dataclass
@@ -44,21 +46,26 @@ class BaseMessage:
     role_type: RoleType
     meta_dict: Optional[Dict[str, str]]
     content: str
-    image: Optional[Image.Image]
+    image: Optional[Image.Image] = None
+    image_detail: IMAGE_DETAIL = "auto"
 
     @classmethod
     def make_user_message(
             cls, role_name: str, content: str,
             meta_dict: Optional[Dict[str, str]] = None,
-            image: Optional[Image.Image] = None) -> 'BaseMessage':
-        return cls(role_name, RoleType.USER, meta_dict, content, image)
+            image: Optional[Image.Image] = None,
+            image_detail: IMAGE_DETAIL = "auto") -> 'BaseMessage':
+        return cls(role_name, RoleType.USER, meta_dict, content, image,
+                   image_detail)
 
     @classmethod
     def make_assistant_message(
             cls, role_name: str, content: str,
             meta_dict: Optional[Dict[str, str]] = None,
-            image: Optional[Image.Image] = None) -> 'BaseMessage':
-        return cls(role_name, RoleType.ASSISTANT, meta_dict, content, image)
+            image: Optional[Image.Image] = None,
+            image_detail: IMAGE_DETAIL = "auto") -> 'BaseMessage':
+        return cls(role_name, RoleType.ASSISTANT, meta_dict, content, image,
+                   image_detail)
 
     def create_new_instance(self, content: str) -> "BaseMessage":
         r"""Create a new instance of the :obj:`BaseMessage` with updated
@@ -208,9 +215,16 @@ class BaseMessage:
         if self.image is None:
             return {"role": "user", "content": self.content}
         else:
-            buffer = io.BytesIO()
-            self.image.save(buffer, format='JPEG')
-            encoded_image = base64.b64encode(buffer.getvalue()).decode("utf-8")
+            image_type: str = self.image.format.lower()
+            if image_type not in OpenAIImageType:
+                raise ValueError(f"Image type {self.image.format} "
+                                 f"is not supported by OpenAI vision model")
+            with io.BytesIO() as buffer:
+                self.image.save(buffer, format=self.image.format)
+                encoded_image = base64.b64encode(
+                    buffer.getvalue()).decode("utf-8")
+            image_prefix = f"data:image/{image_type};base64,"
+
             return {
                 "role":
                 "user",
@@ -220,7 +234,8 @@ class BaseMessage:
                 }, {
                     "type": "image_url",
                     "image_url": {
-                        "url": f"data:image/jpeg;base64,{encoded_image}"
+                        "url": f"{image_prefix}{encoded_image}",
+                        "detail": self.image_detail,
                     }
                 }],
             }

@@ -18,10 +18,10 @@ from camel.types import RoleType
 
 
 # flake8: noqa :E501
-class ObjectDetectionPromptTemplateDict(TextPromptDict):
+class ObjectRecognitionPromptTemplateDict(TextPromptDict):
     ASSISTANT_PROMPT = TextPrompt(
-        """You have been assigned an object detection task.
-Your mission is to list all detected objects in following image(s).
+        """You have been assigned an object recognition task.
+Your mission is to list all detected objects in following image.
 Your output should always be a list of strings starting with `1.`, `2.` etc.
 Do not explain yourself or output anything else.""")
 
