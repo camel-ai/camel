@@ -44,7 +44,7 @@ class VectorRetriever(BaseRetriever):
         """
         self.embedding_model = embedding_model or OpenAIEmbedding()
 
-    def process_and_store(  # type: ignore
+    def process(  # type: ignore
             self, content_input_path: str, storage: BaseVectorStorage,
             **kwargs: Any) -> None:
         r""" Processes content from a file or URL, divides it into chunks by
@@ -86,13 +86,13 @@ class VectorRetriever(BaseRetriever):
 
             storage.add(records=records)
 
-    def query_and_compile_results(  # type: ignore
+    def query(  # type: ignore
             self, query: str, storage: BaseVectorStorage,
             top_k: int = DEFAULT_TOP_K_RESULTS,
             similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
-            **kwargs: Any) -> List[Dict[str, Any]]:  # type: ignore
+            **kwargs: Any) -> List[Dict[str, Any]]:
         r"""Executes a query in vector storage and compiles the retrieved
-        results into a string.
+        results into a dictionary.
 
         Args:
             query (str): Query string for information retriever.
@@ -140,11 +140,12 @@ class VectorRetriever(BaseRetriever):
                 }
                 formatted_results.append(result_dict)
 
+        content_path = query_results[0].record.payload.get('content path', '')
+
         if not formatted_results:
             return [{
                 'text':
-                f"""No suitable information retrieved from \
-                {query_results[0].record.payload.get('content path','')} \
+                f"""No suitable information retrieved from {content_path} \
                 with similarity_threshold = {similarity_threshold}."""
             }]
         return formatted_results
