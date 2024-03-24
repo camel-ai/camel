@@ -121,9 +121,10 @@ class AutoRetriever():
             collection_name = re.sub(r'[^0-9a-zA-Z]+', '_',
                                      Path(content_input_path).stem)
 
-        # Ensure the collection name does not start or end with an
-        # underscore
+        # Ensure the collection name does not start or end with underscore
         collection_name = collection_name.strip("_")
+        # Limit the maximum length of the collection name to 30 characters
+        collection_name = collection_name[:30]
         return collection_name
 
     def _get_file_modified_date_from_file(self,
