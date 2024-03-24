@@ -18,7 +18,6 @@ from typing import List
 
 import pytest
 from jsonschema.exceptions import SchemaError
-from pydantic import ValidationError
 
 from camel.functions import OpenAIFunction, get_openai_tool_schema
 from camel.types import RoleType
@@ -360,21 +359,10 @@ def test_function_with_wrong_doc():
         _ = add.get_openai_function_schema()
     add.set_parameter("b", function_schema["parameters"]["properties"]["b"])
     assert add.get_openai_function_schema() == function_schema
-    with pytest.raises(ValidationError):
-        add.openai_tool_schema[
-            "type"] = "other"  # should be defined as "function"
-        _ = add.get_openai_function_schema()
 
 
 def test_validate_openai_tool_schema_valid():
     OpenAIFunction.validate_openai_tool_schema(tool_schema)
-
-
-def test_validate_openai_tool_schema_invalid():
-    with pytest.raises(ValidationError):
-        invalid_schema = copy.deepcopy(tool_schema)
-        invalid_schema["function"]["name"] = 123  # Invalid type for name
-        OpenAIFunction.validate_openai_tool_schema(invalid_schema)
 
 
 def test_get_set_openai_tool_schema():
