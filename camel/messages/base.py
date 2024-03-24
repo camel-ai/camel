@@ -215,6 +215,10 @@ class BaseMessage:
         if self.image is None:
             return {"role": "user", "content": self.content}
         else:
+            if self.image.format is None:
+                raise ValueError(f"Only support image with specified format, "
+                                 f"including {list(OpenAIImageType)}")
+
             image_type: str = self.image.format.lower()
             if image_type not in OpenAIImageType:
                 raise ValueError(f"Image type {self.image.format} "
