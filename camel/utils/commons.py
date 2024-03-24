@@ -46,17 +46,16 @@ def api_key_required(func: F) -> F:
 
     @wraps(func)
     def wrapper(self, *args, **kwargs):
-        print(self)
         if self.model_type.is_openai:
-            if 'OPENAI_API_KEY' in os.environ:
-                return func(self, *args, **kwargs)
+            if 'OPENAI_API_KEY' not in os.environ:
+                raise ValueError('OpenAI API key not found.')
+            return func(self, *args, **kwargs)
         elif self.model_type.is_anthropic:
-            if 'ANTHROPIC_API_KEY' in os.environ:
-                return func(self, *args, **kwargs)
-            else:
+            if 'ANTHROPIC_API_KEY' not in os.environ:
                 raise ValueError('Anthropic API key not found.')
+            return func(self, *args, **kwargs)
         else:
-            raise ValueError('OpenAI API key not found.')
+            raise ValueError('Unsupported model type.')
 
     return cast(F, wrapper)
 

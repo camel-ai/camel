@@ -55,15 +55,40 @@ class AnthropicModel(BaseModelBackend):
 
     @property
     def token_counter(self) -> BaseTokenCounter:
+        r"""Initialize the token counter for the model backend.
+
+        Returns:
+            BaseTokenCounter: The token counter following the model's
+                tokenization style.
+        """
         if not self._token_counter:
             self._token_counter = AnthropicTokenCounter(self.model_type)
         return self._token_counter
 
-    def count_tokens_from_messages(self, messages: List[OpenAIMessage]):
+    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
+        r"""Count the number of tokens from a user-assisstant alternating
+        message list (the OpenAI format).
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+
+        Returns:
+            int: The number of tokens in the message list after transformed
+                into Anthropic prompting format.
+        """
         prompt = self._convert_openai_messages_to_anthropic_prompt(messages)
         return self.count_tokens_from_prompt(prompt)
 
-    def count_tokens_from_prompt(self, prompt):
+    def count_tokens_from_prompt(self, prompt: str) -> int:
+        r"""Count the number of tokens from a prompt.
+
+        Args:
+            prompt (str): The prompt string.
+
+        Returns:
+            int: The number of tokens in the prompt.
+        """
         return self.client.count_tokens(prompt)
 
     def run(
