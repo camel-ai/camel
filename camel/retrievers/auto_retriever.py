@@ -96,7 +96,7 @@ class AutoRetriever():
             "type: 'milvus', 'qdrant'")
 
     def _get_file_modified_date(self, content_input_path: str) -> str:
-        r"""Retrieves the last modified date and time of a given file. This
+        r"""Retrieves the last modified time of a given file. This
         function takes a file path as input and returns the last modified date
         and time of that file.
 
