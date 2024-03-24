@@ -44,7 +44,7 @@ class VectorRetriever(BaseRetriever):
         """
         self.embedding_model = embedding_model or OpenAIEmbedding()
 
-    def process_and_store(  # type: ignore
+    def process(  # type: ignore
             self, content_input_path: str, storage: BaseVectorStorage,
             **kwargs: Any) -> None:
         r""" Processes content from a file or URL, divides it into chunks by
@@ -86,13 +86,13 @@ class VectorRetriever(BaseRetriever):
 
             storage.add(records=records)
 
-    def query_and_compile_results(  # type: ignore
+    def query(  # type: ignore
             self, query: str, storage: BaseVectorStorage,
             top_k: int = DEFAULT_TOP_K_RESULTS,
             similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
-            **kwargs: Any) -> List[Dict[str, Any]]:  # type: ignore
+            **kwargs: Any) -> List[Dict[str, Any]]:
         r"""Executes a query in vector storage and compiles the retrieved
-        results into a string.
+        results into a dictionary.
 
         Args:
             query (str): Query string for information retriever.
@@ -115,9 +115,8 @@ class VectorRetriever(BaseRetriever):
         if top_k <= 0:
             raise ValueError("top_k must be a positive integer.")
 
-        if storage.status().vector_count == 0:
-            raise ValueError("Vector storage is empty, please check"
-                             "the collection.")
+        # Load the storage incase it's hosted remote
+        storage.load()
 
         query_vector = self.embedding_model.embed(obj=query)
         db_query = VectorDBQuery(query_vector=query_vector, top_k=top_k)
@@ -141,11 +140,12 @@ class VectorRetriever(BaseRetriever):
                 }
                 formatted_results.append(result_dict)
 
+        content_path = query_results[0].record.payload.get('content path', '')
+
         if not formatted_results:
             return [{
                 'text':
-                f"""No suitable information retrieved from \
-                {query_results[0].record.payload.get('content path','')} \
+                f"""No suitable information retrieved from {content_path} \
                 with similarity_threshold = {similarity_threshold}."""
             }]
         return formatted_results

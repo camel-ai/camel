@@ -51,10 +51,10 @@ def test_initialization_with_default_embedding():
     assert isinstance(retriever.embedding_model, OpenAIEmbedding)
 
 
-# Test process_and_store method
+# Test process method
 @patch('camel.retrievers.vector_retriever.UnstructuredModules')
-def test_process_and_store(mock_unstructured_modules, vector_retriever,
-                           mock_vector_storage):
+def test_process(mock_unstructured_modules, vector_retriever,
+                 mock_vector_storage):
     # Create a mock chunk with metadata
     mock_chunk = MagicMock()
     mock_chunk.metadata.to_dict.return_value = {'mock_key': 'mock_value'}
@@ -70,7 +70,7 @@ def test_process_and_store(mock_unstructured_modules, vector_retriever,
         0.1, 0.2, 0.3
     ]]
 
-    vector_retriever.process_and_store("mock_path", mock_vector_storage)
+    vector_retriever.process("mock_path", mock_vector_storage)
 
     # Assert that methods are called as expected
     mock_unstructured_instance.parse_file_or_url.assert_called_once_with(
@@ -80,14 +80,13 @@ def test_process_and_store(mock_unstructured_modules, vector_retriever,
 
 
 # Test query_and_compile_results method
-def test_query_and_compile_results(vector_retriever, mock_vector_storage):
+def test_query(vector_retriever, mock_vector_storage):
     # Setup mock behavior for vector storage query
     mock_vector_storage.query.return_value = [
         Mock(similarity=0.8, record=Mock(payload={"text": "mock_result"}))
     ]
 
-    result = vector_retriever.query_and_compile_results(
-        "mock_query", mock_vector_storage)
+    result = vector_retriever.query("mock_query", mock_vector_storage)
 
     # Assert that the result is as expected
     assert any(d.get('text') == 'mock_result' for d in result)

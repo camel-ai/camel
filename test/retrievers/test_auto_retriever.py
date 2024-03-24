@@ -20,6 +20,7 @@ import pytest
 
 from camel.retrievers import AutoRetriever
 from camel.storages import QdrantStorage
+from camel.types import StorageType
 
 
 @pytest.fixture
@@ -37,7 +38,7 @@ def temp_storage_path():
 @pytest.fixture
 def auto_retriever(temp_storage_path):
     return AutoRetriever(vector_storage_local_path=temp_storage_path,
-                         storage_type="qdrant")
+                         storage_type=StorageType.QDRANT)
 
 
 def test__initialize_vector_storage(auto_retriever):
@@ -46,19 +47,21 @@ def test__initialize_vector_storage(auto_retriever):
     assert isinstance(storage_custom, QdrantStorage)
 
 
-def test_get_file_modified_date(auto_retriever):
+def test_get_file_modified_date_from_file(auto_retriever):
     with patch('os.path.getmtime') as mocked_getmtime:
         mocked_getmtime.return_value = 1234567890
-        mod_date = auto_retriever._get_file_modified_date("/path/to/file")
+        mod_date = auto_retriever._get_file_modified_date_from_file(
+            "/path/to/file")
         expected_date = datetime.fromtimestamp(1234567890).strftime(
             '%Y-%m-%dT%H:%M:%S')
         assert mod_date == expected_date
 
     with pytest.raises(FileNotFoundError):
-        auto_retriever._get_file_modified_date("/path/to/nonexistent/file")
+        auto_retriever._get_file_modified_date_from_file(
+            "/path/to/nonexistent/file")
 
 
-def test_run_vector_retriever(auto_retriever, temp_storage_path):
+def test_run_vector_retriever(auto_retriever):
     # Define mock data for testing
     query_related = "what is camel"
     query_unrealted = "unrelated query"
