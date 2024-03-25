@@ -58,7 +58,7 @@ class ChatHistoryMemory(AgentMemory):
         return self._context_creator
 
     def clear(self) -> None:
-        return self._chat_history_block.clear()
+        self._chat_history_block.clear()
 
 
 class VectorDBMemory(AgentMemory):

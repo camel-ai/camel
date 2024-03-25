@@ -104,6 +104,5 @@ class ChatHistoryBlock(MemoryBlock):
         self.storage.save(stored_records)
 
     def clear(self) -> None:
-        r"""Clears all chat messages from the memory.
-        """
+        r"""Clears all chat messages from the memory."""
         self.storage.clear()
