@@ -24,7 +24,7 @@ class MemoryBlock(ABC):
     r"""An abstract class serves as the fundamental component within the agent
     memory system. This class is equipped with "write" and "clear" functions.
     However, it intentionally does not define a retrieval interface, as the
-    structure of the data to be retrieved may vary in diffrent types of
+    structure of the data to be retrieved may vary in different types of
     memory blocks.
     """
 
@@ -91,7 +91,7 @@ class BaseContextCreator(ABC):
 
         Constructs the context from provided records. The specifics of how this
         is done and how the token count is managed should be provided by
-        subclasses implementing this method. The the output messages order
+        subclasses implementing this method. The output messages order
         should keep same as the input order.
 
         Args:
