@@ -114,9 +114,11 @@ class LongtermAgentMemory(AgentMemory):
         context_creator: BaseContextCreator,
         chat_history_block: Optional[ChatHistoryBlock] = None,
         vector_db_block: Optional[VectorDBBlock] = None,
+        retrieve_limit: int = 3,
     ) -> None:
         self.chat_history_block = chat_history_block or ChatHistoryBlock()
         self.vector_db_block = vector_db_block or VectorDBBlock()
+        self.retrieve_limit = retrieve_limit
         self._context_creator = context_creator
         self._current_topic: str = ""
 
@@ -126,7 +128,7 @@ class LongtermAgentMemory(AgentMemory):
     def retrieve(self) -> List[ContextRecord]:
         chat_history = self.chat_history_block.retrieve()
         vector_db_retrieve = self.vector_db_block.retrieve(
-            self._current_topic, limit=5)
+            self._current_topic, self.retrieve_limit)
         return chat_history[:1] + vector_db_retrieve + chat_history[1:]
 
     def write_records(self, records: List[MemoryRecord]) -> None:
