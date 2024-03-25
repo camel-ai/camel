@@ -62,7 +62,7 @@ class VectorDBBlock(MemoryBlock):
                 retrieve. (default: :obj:`3`).
 
         Returns:
-            List[MemoryRecord]: A list of memory records retrieved from the
+            List[ContextRecord]: A list of memory records retrieved from the
                 vector database based on similarity to :obj:`current_state`.
         """
         query_vector = self.embedding.embed(keyword)
@@ -80,8 +80,8 @@ class VectorDBBlock(MemoryBlock):
         writes them to the vector database.
 
         Args:
-            msgs (List[BaseMessage]): Messages to be added to the vector
-                database.
+            records (List[MemoryRecord]): Memory records to be added to the
+                memory.
         """
         v_records = [
             VectorRecord(

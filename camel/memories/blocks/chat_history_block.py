@@ -29,21 +29,26 @@ class ChatHistoryBlock(MemoryBlock):
     histories, allowing users to specify how many recent messages they'd
     like to fetch.
 
-    :class:`ChatHistoryBlock` requires messages to be stored with certain
-    metadata (e.g., `role_at_backend`) to maintain consistency and validate
-    the chat history.
-
     Args:
         storage (BaseKeyValueStorage, optional): A storage mechanism for
             storing chat history. If `None`, an :obj:`InMemoryKeyValueStorage`
             will be used. (default: :obj:`None`)
+        keep_rate (float, optional): In historical messages, the score of the
+            last message is 1.0, and with each step taken backward, the score
+            of the message is multiplied by the `keep_rate`. Higher `keep_rate`
+            leads to high possiblity to keep history messages during context
+            creation.
     """
 
     def __init__(
         self,
         storage: Optional[BaseKeyValueStorage] = None,
+        keep_rate: float = 0.9,
     ) -> None:
+        if keep_rate > 1 or keep_rate < 0:
+            raise ValueError("`keep_rate` should be in [0,1]")
         self.storage = storage or InMemoryKeyValueStorage()
+        self.keep_rate = keep_rate
 
     def retrieve(
         self,
@@ -60,9 +65,6 @@ class ChatHistoryBlock(MemoryBlock):
 
         Returns:
             List[ContextRecord]: A list of retrieved records.
-
-        Raises:
-            ValueError: If the memory is empty.
         """
         record_dicts = self.storage.load()
         if len(record_dicts) == 0:
@@ -84,7 +86,7 @@ class ChatHistoryBlock(MemoryBlock):
                 output_records.append(ContextRecord(record, 1.0))
             else:
                 # Other messages' score drops down gradually
-                score *= 0.9
+                score *= self.keep_rate
                 output_records.append(ContextRecord(record, score))
 
         output_records.reverse()
