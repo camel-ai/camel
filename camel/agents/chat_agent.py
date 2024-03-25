@@ -16,7 +16,7 @@ from __future__ import annotations
 import json
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
 from camel.agents import BaseAgent
 from camel.configs import ChatGPTConfig
@@ -39,8 +39,6 @@ from camel.types import (
 from camel.utils import get_model_encoding
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, Dict, List, Optional, Tuple
-
     from openai import Stream
 
     from camel.configs import BaseConfig
