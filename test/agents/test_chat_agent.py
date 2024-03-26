@@ -11,13 +11,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from io import BytesIO
 from typing import List
 
 import pytest
+from PIL import Image
 
 from camel.agents import ChatAgent
 from camel.agents.chat_agent import FunctionCallingRecord
-from camel.configs import ChatGPTConfig, FunctionCallingConfig
+from camel.configs import (
+    ChatGPTConfig,
+    ChatGPTVisionConfig,
+    FunctionCallingConfig,
+)
 from camel.functions import MATH_FUNCS
 from camel.generators import SystemMessageGenerator
 from camel.memories import MemoryRecord
@@ -310,3 +316,32 @@ def test_response_words_termination():
     assert agent.terminated
     assert agent_response.terminated
     assert "goodbye" in agent_response.info['termination_reasons'][0]
+
+
+def test_chat_agent_vision():
+    system_message = BaseMessage(role_name="assistant",
+                                 role_type=RoleType.ASSISTANT, meta_dict=None,
+                                 content="You are a help assistant.")
+    model_config = ChatGPTVisionConfig(temperature=0, max_tokens=200)
+    agent = ChatAgent(
+        system_message=system_message,
+        model_type=ModelType.GPT_4_TURBO_VISION,
+        model_config=model_config,
+    )
+
+    # Create an all blue PNG image:
+    image = Image.new("RGB", (100, 100), "blue")
+    img_byte_arr = BytesIO()
+    image.save(img_byte_arr, format='PNG')
+    image = Image.open(img_byte_arr)
+
+    user_msg = BaseMessage(
+        role_name="User",
+        role_type=RoleType.USER,
+        meta_dict=dict(),
+        content="Is this image blue? Just answer yes or no.",
+        image=image,
+        image_detail="low",
+    )
+    agent_response = agent.step(user_msg)
+    assert agent_response.msgs[0].content == "Yes."
