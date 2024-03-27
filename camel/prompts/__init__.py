@@ -21,10 +21,12 @@ from .evaluation import EvaluationPromptTemplateDict
 from .role_description_prompt_template import RoleDescriptionPromptTemplateDict
 from .task_prompt_template import TaskPromptTemplateDict
 from .prompt_templates import PromptTemplateGenerator
+from .multimodal import MultiModalPrompt
 
 __all__ = [
     'TextPrompt',
     'CodePrompt',
+    'MultiModalPrompt',
     'TextPromptDict',
     'AISocietyPromptTemplateDict',
     'CodePromptTemplateDict',
