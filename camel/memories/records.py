@@ -86,7 +86,6 @@ class MemoryRecord:
 
 @dataclass(frozen=True)
 class ContextRecord:
-    r"""The result of memory retrieving.
-    """
+    r"""The result of memory retrieving."""
     memory_record: MemoryRecord
     score: float

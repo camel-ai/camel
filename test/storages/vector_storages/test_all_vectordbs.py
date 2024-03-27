@@ -36,13 +36,12 @@ def storage(request):
     params = request.param.split(":")
     if params[0] == "qdrant":
         if params[1] == "built-in":
-            yield QdrantStorage(vector_dim=4, create_collection=True)
+            yield QdrantStorage(vector_dim=4)
         elif params[1] == "local":
             tmpdir = tempfile.mkdtemp()
             yield QdrantStorage(
                 vector_dim=4,
                 path=tmpdir,
-                create_collection=True,
             )
             shutil.rmtree(tmpdir)
 

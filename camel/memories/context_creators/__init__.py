@@ -12,7 +12,8 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from .base import BaseContextCreator
 from .score_based import ScoreBasedContextCreator
 
-__all__ = ['BaseContextCreator', 'ScoreBasedContextCreator']
+__all__ = [
+    'ScoreBasedContextCreator',
+]
