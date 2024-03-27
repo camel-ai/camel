@@ -21,7 +21,7 @@ from camel.retrievers import VectorRetriever
 # Mock classes for dependencies
 MockBaseEmbedding = Mock()
 MockBaseVectorStorage = Mock()
-MockUnstructuredModules = Mock()
+MockUnstructuredIO = Mock()
 
 
 @pytest.fixture
@@ -52,7 +52,7 @@ def test_initialization_with_default_embedding():
 
 
 # Test process method
-@patch('camel.retrievers.vector_retriever.UnstructuredModules')
+@patch('camel.retrievers.vector_retriever.UnstructuredIO')
 def test_process(mock_unstructured_modules, vector_retriever,
                  mock_vector_storage):
     # Create a mock chunk with metadata
