@@ -15,6 +15,7 @@ from io import BytesIO
 from pathlib import Path
 
 import pytest
+
 from camel.loaders.base_io import (
     DocxFile,
     File,

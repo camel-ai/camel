@@ -25,8 +25,7 @@ def unstructured_instance() -> UnstructuredIO:
 
 
 # Test the _ensure_unstructured_version method
-def test__ensure_unstructured_version(
-        unstructured_instance: UnstructuredIO):
+def test__ensure_unstructured_version(unstructured_instance: UnstructuredIO):
     # Test with a valid version
     unstructured_instance._ensure_unstructured_version("0.10.30")
 

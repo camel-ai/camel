@@ -14,6 +14,7 @@
 
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
+
 class UnstructuredIO:
     r"""A class to handle various functionalities provided by the
     Unstructured library, including version checking, parsing, cleaning,
