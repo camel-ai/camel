@@ -15,28 +15,28 @@ from typing import Any, Dict, List, Tuple
 
 import pytest
 
-from camel.functions.unstructured_io_functions import UnstructuredModules
+from camel.loaders import UnstructuredIO
 
 
-# Create a fixture to initialize the UnstructuredModules instance
+# Create a fixture to initialize the UnstructuredIO instance
 @pytest.fixture
-def unstructured_instance() -> UnstructuredModules:
-    return UnstructuredModules()
+def unstructured_instance() -> UnstructuredIO:
+    return UnstructuredIO()
 
 
-# Test the ensure_unstructured_version method
-def test_ensure_unstructured_version(
-        unstructured_instance: UnstructuredModules):
+# Test the _ensure_unstructured_version method
+def test__ensure_unstructured_version(
+        unstructured_instance: UnstructuredIO):
     # Test with a valid version
-    unstructured_instance.ensure_unstructured_version("0.10.30")
+    unstructured_instance._ensure_unstructured_version("0.10.30")
 
     # Test with an invalid version (should raise a ValueError)
     with pytest.raises(ValueError):
-        unstructured_instance.ensure_unstructured_version("1.0.0")
+        unstructured_instance._ensure_unstructured_version("1.0.0")
 
 
 # Test the parse_file_or_url method
-def test_parse_file_or_url(unstructured_instance: UnstructuredModules):
+def test_parse_file_or_url(unstructured_instance: UnstructuredIO):
     # You can mock the required dependencies and test different scenarios here
 
     # Test parsing a valid URL (mock the necessary dependencies)
@@ -51,7 +51,7 @@ def test_parse_file_or_url(unstructured_instance: UnstructuredModules):
 
 
 # Test the clean_text_data method
-def test_clean_text_data(unstructured_instance: UnstructuredModules):
+def test_clean_text_data(unstructured_instance: UnstructuredIO):
     # Test with a valid cleaning option
     test_options: List[Tuple[str,
                              Dict[str,
@@ -73,7 +73,7 @@ def test_clean_text_data(unstructured_instance: UnstructuredModules):
 
 
 # Test the extract_data_from_text method
-def test_extract_data_from_text(unstructured_instance: UnstructuredModules):
+def test_extract_data_from_text(unstructured_instance: UnstructuredIO):
     # Test extracting an email address
     test_email_text = "Contact me at example@email.com."
     extracted_email = unstructured_instance.extract_data_from_text(
@@ -89,7 +89,7 @@ def test_extract_data_from_text(unstructured_instance: UnstructuredModules):
 
 
 # Test the stage_elements method
-def test_stage_elements_for_csv(unstructured_instance: UnstructuredModules):
+def test_stage_elements_for_csv(unstructured_instance: UnstructuredIO):
     # Test staging for baseplate
     test_url = (
         "https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
@@ -126,7 +126,7 @@ def test_stage_elements_for_csv(unstructured_instance: UnstructuredModules):
 
 
 # Test the chunk_elements method
-def test_chunk_elements(unstructured_instance: UnstructuredModules):
+def test_chunk_elements(unstructured_instance: UnstructuredIO):
     # Test chunking content from a url
     test_url = (
         "https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"

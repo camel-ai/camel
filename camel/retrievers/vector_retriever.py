@@ -14,7 +14,7 @@
 from typing import Any, Dict, List, Optional
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
-from camel.functions import UnstructuredModules
+from camel.functions import UnstructuredIO
 from camel.retrievers import BaseRetriever
 from camel.storages import BaseVectorStorage, VectorDBQuery, VectorRecord
 
@@ -58,7 +58,7 @@ class VectorRetriever(BaseRetriever):
                 embeddings.
             **kwargs (Any): Additional keyword arguments for elements chunking.
         """
-        unstructured_modules = UnstructuredModules()
+        unstructured_modules = UnstructuredIO()
         elements = unstructured_modules.parse_file_or_url(content_input_path)
         chunks = unstructured_modules.chunk_elements(
             chunk_type="chunk_by_title", elements=elements, **kwargs)
