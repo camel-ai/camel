@@ -130,10 +130,10 @@ def test_get_timezone(mock_get, mock_client):
     # Verify the result
     expected_result = (
         "Timezone ID is America/Los_Angeles, named Pacific Daylight Time. "
-        "The standard time offset is -8 hours. Daylight Saving Time offset is "
-        "+1 hour. The total offset from Coordinated Universal Time (UTC) is "
-        "-7 hours, including any Daylight Saving Time adjustment if "
-        "applicable. ")
+        "The standard time offset is -8.00 hours. Daylight Saving Time offset "
+        "is +1.00 hour. The total offset from Coordinated Universal Time "
+        "(UTC) is -7.00 hours, including any Daylight Saving Time adjustment "
+        "if applicable. ")
     assert result == expected_result
 
 

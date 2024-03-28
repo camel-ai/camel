@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import datetime
 import os
 from functools import wraps
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
@@ -154,11 +153,8 @@ def handle_googlemaps_exceptions(
     @wraps(func)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
         try:
-            from googlemaps.exceptions import (  # type: ignore
-                ApiError,
-                HTTPError,
-                Timeout,
-                TransportError,
+            from googlemaps.exceptions import (  # type: ignore  # isort: skip
+                ApiError, HTTPError, Timeout, TransportError,
             )
         except ImportError:
             raise ImportError(
@@ -236,34 +232,21 @@ def get_elevation(
 
 def format_offset_to_natural_language(offset: int) -> str:
     r"""Converts a time offset in seconds to a more natural language
-    description.
+    description using hours as the unit, with decimal places to represent
+    minutes and seconds.
 
     Args:
         offset (int): The time offset in seconds. Can be positive, negative,
             or zero.
 
     Returns:
-        str: A string representing the offset in a natural language format,
-            such as "+5 hours 30 minutes" or "-3 hours 45 minutes". If the
-            offset is zero, the function returns "+0 hours".
+        str: A string representing the offset in hours, such as "+2.50 hours"
+            or "-3.75 hours".
     """
-    # Convert the absolute value of the offset to a timedelta object
-    delta = datetime.timedelta(seconds=abs(offset))
-
-    # Extract the hours, minutes and seconds
-    # from the string representation of the timedelta object
-    hours, minutes, seconds = map(int, str(delta).split(':'))
-
-    parts = []
-    if hours or (hours == 0 and minutes == 0 and seconds == 0):
-        parts.append(f"{hours} hour{'s' if hours != 1 else ''}")
-    if minutes:
-        parts.append(f"{minutes} minute{'s' if minutes != 1 else ''}")
-    if seconds:
-        parts.append(f"{seconds} second{'s' if seconds != 1 else ''}")
-
-    # Return the result with the appropriate sign
-    return f"{'-' if offset < 0 else '+'}{' '.join(parts)}"
+    # Convert the offset to hours as a float
+    hours = offset / 3600.0
+    hours_str = f"{hours:+.2f} hour{'s' if abs(hours) != 1 else ''}"
+    return hours_str
 
 
 @handle_googlemaps_exceptions
