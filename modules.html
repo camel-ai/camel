@@ -1,0 +1,704 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>camel &#8212; CAMEL 0.1.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
+<link href="_static/styles/bootstrap.css?digest=5b4479735964841361fd" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
+
+  
+  <link href="_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=5b4479735964841361fd" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" href="_static/styles/sphinx-book-theme.css?digest=14f4ca6b54d191a8c7657f6c759bf11a5fb86285" type="text/css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=5b4479735964841361fd" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd" />
+  <script src="_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=5b4479735964841361fd"></script>
+
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/scripts/sphinx-book-theme.js?digest=5a5c038af52cf7bc1a1ec88eea08e6366ee68824"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'modules';</script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Camel Package" href="camel.html" />
+    <link rel="prev" title="Working with the BaseMessage Class" href="get_started/messages.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>
+    Back to top
+  </button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">CAMEL 0.1.0 documentation</p>
+  
+</a></div>
+        <div class="sidebar-primary-item"><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Get Started:</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="get_started/text_prompt.html">Write Your Prompts with the <code class="docutils literal notranslate"><span class="pre">TextPrompt</span></code> Class</a></li>
+<li class="toctree-l1"><a class="reference internal" href="get_started/code_prompt.html">Introduction to <code class="docutils literal notranslate"><span class="pre">CodePrompt</span></code> Class</a></li>
+<li class="toctree-l1"><a class="reference internal" href="get_started/messages.html">Working with the <code class="docutils literal notranslate"><span class="pre">BaseMessage</span></code> Class</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Modules:</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active has-children"><a class="current reference internal" href="#">camel</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="camel.html">Camel Package</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-2"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="camel.agents.html">camel.agents package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="camel.prompts.html">camel.prompts package</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><label class="sidebar-toggle primary-toggle btn btn-sm" for="__primary" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</label></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="_sources/modules.rst" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.rst</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
+    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>camel</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <section id="camel">
+<h1>camel<a class="headerlink" href="#camel" title="Permalink to this heading">#</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="camel.html">Camel Package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="camel.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="camel.agents.html">camel.agents package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.agents.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.agents.html#module-camel.agents.chat_agent">camel.agents.chat_agent module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.agents.html#camel-agents-role-playing-module">camel.agents.role_playing module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.agents.html#module-camel.agents.task_agent">camel.agents.task_agent module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.agents.html#module-camel.agents">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="camel.prompts.html">camel.prompts package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.prompts.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.prompts.html#module-camel.prompts.ai_society">camel.prompts.ai_society module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.prompts.html#module-camel.prompts.base">camel.prompts.base module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.prompts.html#module-camel.prompts.code">camel.prompts.code module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.prompts.html#module-camel.prompts.misalignment">camel.prompts.misalignment module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.prompts.html#module-camel.prompts.prompt_templates">camel.prompts.prompt_templates module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.prompts.html#module-camel.prompts.task_prompt_template">camel.prompts.task_prompt_template module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.prompts.html#module-camel.prompts.translation">camel.prompts.translation module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.prompts.html#module-camel.prompts">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="camel.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="camel.html#module-camel.configs">camel.configs module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.configs.BaseConfig"><code class="docutils literal notranslate"><span class="pre">BaseConfig</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.configs.ChatGPTConfig"><code class="docutils literal notranslate"><span class="pre">ChatGPTConfig</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.configs.ChatGPTConfig.frequency_penalty"><code class="docutils literal notranslate"><span class="pre">ChatGPTConfig.frequency_penalty</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.configs.ChatGPTConfig.logit_bias"><code class="docutils literal notranslate"><span class="pre">ChatGPTConfig.logit_bias</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.configs.ChatGPTConfig.max_tokens"><code class="docutils literal notranslate"><span class="pre">ChatGPTConfig.max_tokens</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.configs.ChatGPTConfig.n"><code class="docutils literal notranslate"><span class="pre">ChatGPTConfig.n</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.configs.ChatGPTConfig.presence_penalty"><code class="docutils literal notranslate"><span class="pre">ChatGPTConfig.presence_penalty</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.configs.ChatGPTConfig.stop"><code class="docutils literal notranslate"><span class="pre">ChatGPTConfig.stop</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.configs.ChatGPTConfig.stream"><code class="docutils literal notranslate"><span class="pre">ChatGPTConfig.stream</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.configs.ChatGPTConfig.temperature"><code class="docutils literal notranslate"><span class="pre">ChatGPTConfig.temperature</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.configs.ChatGPTConfig.top_p"><code class="docutils literal notranslate"><span class="pre">ChatGPTConfig.top_p</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.configs.ChatGPTConfig.user"><code class="docutils literal notranslate"><span class="pre">ChatGPTConfig.user</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.configs.FunctionCallingConfig"><code class="docutils literal notranslate"><span class="pre">FunctionCallingConfig</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.configs.FunctionCallingConfig.from_openai_function_list"><code class="docutils literal notranslate"><span class="pre">FunctionCallingConfig.from_openai_function_list()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.configs.FunctionCallingConfig.function_call"><code class="docutils literal notranslate"><span class="pre">FunctionCallingConfig.function_call</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.configs.FunctionCallingConfig.functions"><code class="docutils literal notranslate"><span class="pre">FunctionCallingConfig.functions</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.configs.OpenSourceConfig"><code class="docutils literal notranslate"><span class="pre">OpenSourceConfig</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.configs.OpenSourceConfig.api_params"><code class="docutils literal notranslate"><span class="pre">OpenSourceConfig.api_params</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.configs.OpenSourceConfig.model_path"><code class="docutils literal notranslate"><span class="pre">OpenSourceConfig.model_path</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.configs.OpenSourceConfig.server_url"><code class="docutils literal notranslate"><span class="pre">OpenSourceConfig.server_url</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="camel.html#module-camel.generators">camel.generators module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.generators.AISocietyTaskPromptGenerator"><code class="docutils literal notranslate"><span class="pre">AISocietyTaskPromptGenerator</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.generators.AISocietyTaskPromptGenerator.from_role_files"><code class="docutils literal notranslate"><span class="pre">AISocietyTaskPromptGenerator.from_role_files()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.generators.AISocietyTaskPromptGenerator.from_role_generator"><code class="docutils literal notranslate"><span class="pre">AISocietyTaskPromptGenerator.from_role_generator()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.generators.CodeTaskPromptGenerator"><code class="docutils literal notranslate"><span class="pre">CodeTaskPromptGenerator</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.generators.CodeTaskPromptGenerator.from_role_files"><code class="docutils literal notranslate"><span class="pre">CodeTaskPromptGenerator.from_role_files()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.generators.CodeTaskPromptGenerator.from_role_generator"><code class="docutils literal notranslate"><span class="pre">CodeTaskPromptGenerator.from_role_generator()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.generators.RoleNameGenerator"><code class="docutils literal notranslate"><span class="pre">RoleNameGenerator</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.generators.RoleNameGenerator.from_role_files"><code class="docutils literal notranslate"><span class="pre">RoleNameGenerator.from_role_files()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.generators.SingleTxtGenerator"><code class="docutils literal notranslate"><span class="pre">SingleTxtGenerator</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.generators.SingleTxtGenerator.from_role_files"><code class="docutils literal notranslate"><span class="pre">SingleTxtGenerator.from_role_files()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.generators.SystemMessageGenerator"><code class="docutils literal notranslate"><span class="pre">SystemMessageGenerator</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.generators.SystemMessageGenerator.from_dict"><code class="docutils literal notranslate"><span class="pre">SystemMessageGenerator.from_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.generators.SystemMessageGenerator.from_dicts"><code class="docutils literal notranslate"><span class="pre">SystemMessageGenerator.from_dicts()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.generators.SystemMessageGenerator.validate_meta_dict_keys"><code class="docutils literal notranslate"><span class="pre">SystemMessageGenerator.validate_meta_dict_keys()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="camel.html#module-camel.human">camel.human module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.human.Human"><code class="docutils literal notranslate"><span class="pre">Human</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.human.Human.name"><code class="docutils literal notranslate"><span class="pre">Human.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.human.Human.logger_color"><code class="docutils literal notranslate"><span class="pre">Human.logger_color</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.human.Human.input_button"><code class="docutils literal notranslate"><span class="pre">Human.input_button</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.human.Human.kill_button"><code class="docutils literal notranslate"><span class="pre">Human.kill_button</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.human.Human.options_dict"><code class="docutils literal notranslate"><span class="pre">Human.options_dict</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.human.Human.display_options"><code class="docutils literal notranslate"><span class="pre">Human.display_options()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.human.Human.get_input"><code class="docutils literal notranslate"><span class="pre">Human.get_input()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.human.Human.parse_input"><code class="docutils literal notranslate"><span class="pre">Human.parse_input()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.human.Human.reduce_step"><code class="docutils literal notranslate"><span class="pre">Human.reduce_step()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="camel.html#module-camel.messages">camel.messages module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.messages.BaseMessage"><code class="docutils literal notranslate"><span class="pre">BaseMessage</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.messages.BaseMessage.content"><code class="docutils literal notranslate"><span class="pre">BaseMessage.content</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.messages.BaseMessage.create_new_instance"><code class="docutils literal notranslate"><span class="pre">BaseMessage.create_new_instance()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.messages.BaseMessage.extract_text_and_code_prompts"><code class="docutils literal notranslate"><span class="pre">BaseMessage.extract_text_and_code_prompts()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.messages.BaseMessage.make_assistant_message"><code class="docutils literal notranslate"><span class="pre">BaseMessage.make_assistant_message()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.messages.BaseMessage.make_user_message"><code class="docutils literal notranslate"><span class="pre">BaseMessage.make_user_message()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.messages.BaseMessage.meta_dict"><code class="docutils literal notranslate"><span class="pre">BaseMessage.meta_dict</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.messages.BaseMessage.role_name"><code class="docutils literal notranslate"><span class="pre">BaseMessage.role_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.messages.BaseMessage.role_type"><code class="docutils literal notranslate"><span class="pre">BaseMessage.role_type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.messages.BaseMessage.to_dict"><code class="docutils literal notranslate"><span class="pre">BaseMessage.to_dict()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.messages.BaseMessage.to_openai_assistant_message"><code class="docutils literal notranslate"><span class="pre">BaseMessage.to_openai_assistant_message()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.messages.BaseMessage.to_openai_message"><code class="docutils literal notranslate"><span class="pre">BaseMessage.to_openai_message()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.messages.BaseMessage.to_openai_system_message"><code class="docutils literal notranslate"><span class="pre">BaseMessage.to_openai_system_message()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.messages.BaseMessage.to_openai_user_message"><code class="docutils literal notranslate"><span class="pre">BaseMessage.to_openai_user_message()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.messages.FunctionCallingMessage"><code class="docutils literal notranslate"><span class="pre">FunctionCallingMessage</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.messages.FunctionCallingMessage.args"><code class="docutils literal notranslate"><span class="pre">FunctionCallingMessage.args</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.messages.FunctionCallingMessage.func_name"><code class="docutils literal notranslate"><span class="pre">FunctionCallingMessage.func_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.messages.FunctionCallingMessage.result"><code class="docutils literal notranslate"><span class="pre">FunctionCallingMessage.result</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.messages.FunctionCallingMessage.to_openai_assistant_message"><code class="docutils literal notranslate"><span class="pre">FunctionCallingMessage.to_openai_assistant_message()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.messages.FunctionCallingMessage.to_openai_function_message"><code class="docutils literal notranslate"><span class="pre">FunctionCallingMessage.to_openai_function_message()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.messages.FunctionCallingMessage.to_openai_message"><code class="docutils literal notranslate"><span class="pre">FunctionCallingMessage.to_openai_message()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.messages.OpenAIAssistantMessage"><code class="docutils literal notranslate"><span class="pre">OpenAIAssistantMessage</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.messages.OpenAISystemMessage"><code class="docutils literal notranslate"><span class="pre">OpenAISystemMessage</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.messages.OpenAIUserMessage"><code class="docutils literal notranslate"><span class="pre">OpenAIUserMessage</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="camel.html#module-camel.types">camel.types module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.types.ChatCompletion"><code class="docutils literal notranslate"><span class="pre">ChatCompletion</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletion.choices"><code class="docutils literal notranslate"><span class="pre">ChatCompletion.choices</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletion.created"><code class="docutils literal notranslate"><span class="pre">ChatCompletion.created</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletion.id"><code class="docutils literal notranslate"><span class="pre">ChatCompletion.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletion.model"><code class="docutils literal notranslate"><span class="pre">ChatCompletion.model</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletion.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">ChatCompletion.model_computed_fields</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletion.model_config"><code class="docutils literal notranslate"><span class="pre">ChatCompletion.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletion.model_fields"><code class="docutils literal notranslate"><span class="pre">ChatCompletion.model_fields</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletion.object"><code class="docutils literal notranslate"><span class="pre">ChatCompletion.object</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletion.system_fingerprint"><code class="docutils literal notranslate"><span class="pre">ChatCompletion.system_fingerprint</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletion.usage"><code class="docutils literal notranslate"><span class="pre">ChatCompletion.usage</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.types.ChatCompletionAssistantMessageParam"><code class="docutils literal notranslate"><span class="pre">ChatCompletionAssistantMessageParam</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletionAssistantMessageParam.content"><code class="docutils literal notranslate"><span class="pre">ChatCompletionAssistantMessageParam.content</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletionAssistantMessageParam.function_call"><code class="docutils literal notranslate"><span class="pre">ChatCompletionAssistantMessageParam.function_call</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletionAssistantMessageParam.name"><code class="docutils literal notranslate"><span class="pre">ChatCompletionAssistantMessageParam.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletionAssistantMessageParam.role"><code class="docutils literal notranslate"><span class="pre">ChatCompletionAssistantMessageParam.role</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletionAssistantMessageParam.tool_calls"><code class="docutils literal notranslate"><span class="pre">ChatCompletionAssistantMessageParam.tool_calls</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.types.ChatCompletionChunk"><code class="docutils literal notranslate"><span class="pre">ChatCompletionChunk</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletionChunk.choices"><code class="docutils literal notranslate"><span class="pre">ChatCompletionChunk.choices</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletionChunk.created"><code class="docutils literal notranslate"><span class="pre">ChatCompletionChunk.created</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletionChunk.id"><code class="docutils literal notranslate"><span class="pre">ChatCompletionChunk.id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletionChunk.model"><code class="docutils literal notranslate"><span class="pre">ChatCompletionChunk.model</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletionChunk.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">ChatCompletionChunk.model_computed_fields</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletionChunk.model_config"><code class="docutils literal notranslate"><span class="pre">ChatCompletionChunk.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletionChunk.model_fields"><code class="docutils literal notranslate"><span class="pre">ChatCompletionChunk.model_fields</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletionChunk.object"><code class="docutils literal notranslate"><span class="pre">ChatCompletionChunk.object</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletionChunk.system_fingerprint"><code class="docutils literal notranslate"><span class="pre">ChatCompletionChunk.system_fingerprint</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.types.ChatCompletionFunctionMessageParam"><code class="docutils literal notranslate"><span class="pre">ChatCompletionFunctionMessageParam</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletionFunctionMessageParam.content"><code class="docutils literal notranslate"><span class="pre">ChatCompletionFunctionMessageParam.content</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletionFunctionMessageParam.name"><code class="docutils literal notranslate"><span class="pre">ChatCompletionFunctionMessageParam.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletionFunctionMessageParam.role"><code class="docutils literal notranslate"><span class="pre">ChatCompletionFunctionMessageParam.role</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.types.ChatCompletionMessage"><code class="docutils literal notranslate"><span class="pre">ChatCompletionMessage</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletionMessage.content"><code class="docutils literal notranslate"><span class="pre">ChatCompletionMessage.content</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletionMessage.function_call"><code class="docutils literal notranslate"><span class="pre">ChatCompletionMessage.function_call</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletionMessage.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">ChatCompletionMessage.model_computed_fields</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletionMessage.model_config"><code class="docutils literal notranslate"><span class="pre">ChatCompletionMessage.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletionMessage.model_fields"><code class="docutils literal notranslate"><span class="pre">ChatCompletionMessage.model_fields</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletionMessage.role"><code class="docutils literal notranslate"><span class="pre">ChatCompletionMessage.role</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletionMessage.tool_calls"><code class="docutils literal notranslate"><span class="pre">ChatCompletionMessage.tool_calls</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.types.ChatCompletionSystemMessageParam"><code class="docutils literal notranslate"><span class="pre">ChatCompletionSystemMessageParam</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletionSystemMessageParam.content"><code class="docutils literal notranslate"><span class="pre">ChatCompletionSystemMessageParam.content</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletionSystemMessageParam.name"><code class="docutils literal notranslate"><span class="pre">ChatCompletionSystemMessageParam.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletionSystemMessageParam.role"><code class="docutils literal notranslate"><span class="pre">ChatCompletionSystemMessageParam.role</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.types.ChatCompletionUserMessageParam"><code class="docutils literal notranslate"><span class="pre">ChatCompletionUserMessageParam</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletionUserMessageParam.content"><code class="docutils literal notranslate"><span class="pre">ChatCompletionUserMessageParam.content</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletionUserMessageParam.name"><code class="docutils literal notranslate"><span class="pre">ChatCompletionUserMessageParam.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ChatCompletionUserMessageParam.role"><code class="docutils literal notranslate"><span class="pre">ChatCompletionUserMessageParam.role</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.types.Choice"><code class="docutils literal notranslate"><span class="pre">Choice</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.Choice.finish_reason"><code class="docutils literal notranslate"><span class="pre">Choice.finish_reason</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.Choice.index"><code class="docutils literal notranslate"><span class="pre">Choice.index</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.Choice.logprobs"><code class="docutils literal notranslate"><span class="pre">Choice.logprobs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.Choice.message"><code class="docutils literal notranslate"><span class="pre">Choice.message</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.Choice.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">Choice.model_computed_fields</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.Choice.model_config"><code class="docutils literal notranslate"><span class="pre">Choice.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.Choice.model_fields"><code class="docutils literal notranslate"><span class="pre">Choice.model_fields</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.types.CompletionUsage"><code class="docutils literal notranslate"><span class="pre">CompletionUsage</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.CompletionUsage.completion_tokens"><code class="docutils literal notranslate"><span class="pre">CompletionUsage.completion_tokens</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.CompletionUsage.model_computed_fields"><code class="docutils literal notranslate"><span class="pre">CompletionUsage.model_computed_fields</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.CompletionUsage.model_config"><code class="docutils literal notranslate"><span class="pre">CompletionUsage.model_config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.CompletionUsage.model_fields"><code class="docutils literal notranslate"><span class="pre">CompletionUsage.model_fields</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.CompletionUsage.prompt_tokens"><code class="docutils literal notranslate"><span class="pre">CompletionUsage.prompt_tokens</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.CompletionUsage.total_tokens"><code class="docutils literal notranslate"><span class="pre">CompletionUsage.total_tokens</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.types.EmbeddingModelType"><code class="docutils literal notranslate"><span class="pre">EmbeddingModelType</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.EmbeddingModelType.ADA_1"><code class="docutils literal notranslate"><span class="pre">EmbeddingModelType.ADA_1</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.EmbeddingModelType.ADA_2"><code class="docutils literal notranslate"><span class="pre">EmbeddingModelType.ADA_2</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.EmbeddingModelType.BABBAGE_1"><code class="docutils literal notranslate"><span class="pre">EmbeddingModelType.BABBAGE_1</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.EmbeddingModelType.CURIE_1"><code class="docutils literal notranslate"><span class="pre">EmbeddingModelType.CURIE_1</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.EmbeddingModelType.DAVINCI_1"><code class="docutils literal notranslate"><span class="pre">EmbeddingModelType.DAVINCI_1</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.EmbeddingModelType.is_openai"><code class="docutils literal notranslate"><span class="pre">EmbeddingModelType.is_openai</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.EmbeddingModelType.output_dim"><code class="docutils literal notranslate"><span class="pre">EmbeddingModelType.output_dim</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.types.ModelType"><code class="docutils literal notranslate"><span class="pre">ModelType</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ModelType.GPT_3_5_TURBO"><code class="docutils literal notranslate"><span class="pre">ModelType.GPT_3_5_TURBO</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ModelType.GPT_3_5_TURBO_16K"><code class="docutils literal notranslate"><span class="pre">ModelType.GPT_3_5_TURBO_16K</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ModelType.GPT_4"><code class="docutils literal notranslate"><span class="pre">ModelType.GPT_4</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ModelType.GPT_4_32K"><code class="docutils literal notranslate"><span class="pre">ModelType.GPT_4_32K</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ModelType.GPT_4_TURBO"><code class="docutils literal notranslate"><span class="pre">ModelType.GPT_4_TURBO</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ModelType.GPT_4_TURBO_VISION"><code class="docutils literal notranslate"><span class="pre">ModelType.GPT_4_TURBO_VISION</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ModelType.LLAMA_2"><code class="docutils literal notranslate"><span class="pre">ModelType.LLAMA_2</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ModelType.STUB"><code class="docutils literal notranslate"><span class="pre">ModelType.STUB</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ModelType.VICUNA"><code class="docutils literal notranslate"><span class="pre">ModelType.VICUNA</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ModelType.VICUNA_16K"><code class="docutils literal notranslate"><span class="pre">ModelType.VICUNA_16K</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ModelType.is_open_source"><code class="docutils literal notranslate"><span class="pre">ModelType.is_open_source</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ModelType.is_openai"><code class="docutils literal notranslate"><span class="pre">ModelType.is_openai</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ModelType.token_limit"><code class="docutils literal notranslate"><span class="pre">ModelType.token_limit</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ModelType.validate_model_name"><code class="docutils literal notranslate"><span class="pre">ModelType.validate_model_name()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.ModelType.value_for_tiktoken"><code class="docutils literal notranslate"><span class="pre">ModelType.value_for_tiktoken</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.types.OpenAIBackendRole"><code class="docutils literal notranslate"><span class="pre">OpenAIBackendRole</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.OpenAIBackendRole.ASSISTANT"><code class="docutils literal notranslate"><span class="pre">OpenAIBackendRole.ASSISTANT</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.OpenAIBackendRole.FUNCTION"><code class="docutils literal notranslate"><span class="pre">OpenAIBackendRole.FUNCTION</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.OpenAIBackendRole.SYSTEM"><code class="docutils literal notranslate"><span class="pre">OpenAIBackendRole.SYSTEM</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.OpenAIBackendRole.USER"><code class="docutils literal notranslate"><span class="pre">OpenAIBackendRole.USER</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.types.RoleType"><code class="docutils literal notranslate"><span class="pre">RoleType</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.RoleType.ASSISTANT"><code class="docutils literal notranslate"><span class="pre">RoleType.ASSISTANT</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.RoleType.CRITIC"><code class="docutils literal notranslate"><span class="pre">RoleType.CRITIC</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.RoleType.DEFAULT"><code class="docutils literal notranslate"><span class="pre">RoleType.DEFAULT</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.RoleType.EMBODIMENT"><code class="docutils literal notranslate"><span class="pre">RoleType.EMBODIMENT</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.RoleType.USER"><code class="docutils literal notranslate"><span class="pre">RoleType.USER</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.types.StorageType"><code class="docutils literal notranslate"><span class="pre">StorageType</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.StorageType.MILVUS"><code class="docutils literal notranslate"><span class="pre">StorageType.MILVUS</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.StorageType.QDRANT"><code class="docutils literal notranslate"><span class="pre">StorageType.QDRANT</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.types.TaskType"><code class="docutils literal notranslate"><span class="pre">TaskType</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.TaskType.AI_SOCIETY"><code class="docutils literal notranslate"><span class="pre">TaskType.AI_SOCIETY</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.TaskType.CODE"><code class="docutils literal notranslate"><span class="pre">TaskType.CODE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.TaskType.DEFAULT"><code class="docutils literal notranslate"><span class="pre">TaskType.DEFAULT</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.TaskType.EVALUATION"><code class="docutils literal notranslate"><span class="pre">TaskType.EVALUATION</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.TaskType.MISALIGNMENT"><code class="docutils literal notranslate"><span class="pre">TaskType.MISALIGNMENT</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.TaskType.ROLE_DESCRIPTION"><code class="docutils literal notranslate"><span class="pre">TaskType.ROLE_DESCRIPTION</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.TaskType.SOLUTION_EXTRACTION"><code class="docutils literal notranslate"><span class="pre">TaskType.SOLUTION_EXTRACTION</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.TaskType.TRANSLATION"><code class="docutils literal notranslate"><span class="pre">TaskType.TRANSLATION</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.types.TerminationMode"><code class="docutils literal notranslate"><span class="pre">TerminationMode</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.TerminationMode.ALL"><code class="docutils literal notranslate"><span class="pre">TerminationMode.ALL</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.TerminationMode.ANY"><code class="docutils literal notranslate"><span class="pre">TerminationMode.ANY</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.types.VectorDistance"><code class="docutils literal notranslate"><span class="pre">VectorDistance</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.VectorDistance.COSINE"><code class="docutils literal notranslate"><span class="pre">VectorDistance.COSINE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.VectorDistance.DOT"><code class="docutils literal notranslate"><span class="pre">VectorDistance.DOT</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.types.VectorDistance.EUCLIDEAN"><code class="docutils literal notranslate"><span class="pre">VectorDistance.EUCLIDEAN</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="camel.html#module-camel.utils">camel.utils module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.utils.BaseTokenCounter"><code class="docutils literal notranslate"><span class="pre">BaseTokenCounter</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.utils.BaseTokenCounter.count_tokens_from_messages"><code class="docutils literal notranslate"><span class="pre">BaseTokenCounter.count_tokens_from_messages()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.utils.OpenAITokenCounter"><code class="docutils literal notranslate"><span class="pre">OpenAITokenCounter</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.utils.OpenAITokenCounter.count_tokens_from_messages"><code class="docutils literal notranslate"><span class="pre">OpenAITokenCounter.count_tokens_from_messages()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.utils.OpenSourceTokenCounter"><code class="docutils literal notranslate"><span class="pre">OpenSourceTokenCounter</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="camel.html#camel.utils.OpenSourceTokenCounter.count_tokens_from_messages"><code class="docutils literal notranslate"><span class="pre">OpenSourceTokenCounter.count_tokens_from_messages()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.utils.check_server_running"><code class="docutils literal notranslate"><span class="pre">check_server_running()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.utils.download_tasks"><code class="docutils literal notranslate"><span class="pre">download_tasks()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.utils.get_first_int"><code class="docutils literal notranslate"><span class="pre">get_first_int()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.utils.get_model_encoding"><code class="docutils literal notranslate"><span class="pre">get_model_encoding()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.utils.get_prompt_template_key_words"><code class="docutils literal notranslate"><span class="pre">get_prompt_template_key_words()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.utils.get_system_information"><code class="docutils literal notranslate"><span class="pre">get_system_information()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.utils.get_task_list"><code class="docutils literal notranslate"><span class="pre">get_task_list()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.utils.openai_api_key_required"><code class="docutils literal notranslate"><span class="pre">openai_api_key_required()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.utils.print_text_animated"><code class="docutils literal notranslate"><span class="pre">print_text_animated()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.utils.role_playing_with_function"><code class="docutils literal notranslate"><span class="pre">role_playing_with_function()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="camel.html#camel.utils.to_pascal"><code class="docutils literal notranslate"><span class="pre">to_pascal()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="camel.html#module-camel">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="get_started/messages.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Working with the <code class="docutils literal notranslate"><span class="pre">BaseMessage</span></code> Class</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="camel.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Camel Package</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By CAMEL-AI.org
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2023, CAMEL-AI.org.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/bootstrap.js?digest=5b4479735964841361fd"></script>
+<script src="_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
