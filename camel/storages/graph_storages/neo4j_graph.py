@@ -13,7 +13,6 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import logging
 from hashlib import md5
-
 from typing import Any, Dict, List, Optional
 
 from camel.storages.graph_storages import GraphDocument
@@ -48,14 +47,13 @@ UNWIND other AS other_node
 RETURN {start: label, type: property, end: toString(other_node)} AS output
 """
 
-INCLUDE_DOCS_QUERY = (
-    "MERGE (d:Document {id:$document.metadata.id}) "
-    "SET d.text = $document.page_content "
-    "SET d += $document.metadata "
-    "WITH d "
-)
+INCLUDE_DOCS_QUERY = ("MERGE (d:Document {id:$document.metadata.id}) "
+                      "SET d.text = $document.page_content "
+                      "SET d += $document.metadata "
+                      "WITH d ")
 
 LIST_LIMIT = 128
+
 
 class Neo4jGraph():
     r"""Provides a connection to a Neo4j database for various graph operations.
@@ -70,7 +68,7 @@ class Neo4jGraph():
         username (str): The username for database authentication.
         password (str): The password for database authentication.
         database (str): The name of the database to connect to. Defaults to
-            `neo4j`. 
+            `neo4j`.
         timeout (Optional[float]): The timeout for transactions in seconds.
             Useful for terminating long-running queries. Defaults to `None`.
         sanitize (bool): A flag to indicate whether to remove lists with more
@@ -90,12 +88,11 @@ class Neo4jGraph():
         try:
             import neo4j
         except ImportError:
-            raise ValueError(
-                "Could not import neo4j python package. "
-                "Please install it with `pip install neo4j`."
-            )
+            raise ValueError("Could not import neo4j python package. "
+                             "Please install it with `pip install neo4j`.")
 
-        self.driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
+        self.driver = neo4j.GraphDatabase.driver(url,
+                                                 auth=(username, password))
         self.database = database
         self.timeout = timeout
         self.sanitize = sanitize
@@ -106,15 +103,12 @@ class Neo4jGraph():
         try:
             self.driver.verify_connectivity()
         except neo4j.exceptions.ServiceUnavailable:
-            raise ValueError(
-                "Could not connect to Neo4j database. "
-                "Please ensure that the url is correct"
-            )
+            raise ValueError("Could not connect to Neo4j database. "
+                             "Please ensure that the url is correct")
         except neo4j.exceptions.AuthError:
             raise ValueError(
                 "Could not connect to Neo4j database. "
-                "Please ensure that the username and password are correct"
-            )
+                "Please ensure that the username and password are correct")
         # Set schema
         try:
             self.refresh_schema()
@@ -122,8 +116,7 @@ class Neo4jGraph():
             raise ValueError(
                 "Could not use APOC procedures. "
                 "Please ensure the APOC plugin is installed in Neo4j and that "
-                "'apoc.meta.data()' is allowed in Neo4j configuration "
-            )
+                "'apoc.meta.data()' is allowed in Neo4j configuration ")
 
     @property
     def client(self) -> Any:
@@ -155,7 +148,7 @@ class Neo4jGraph():
             dict[str, any]: The structured schema of the graph.
         """
         return self.structured_schema
-    
+
     def _value_sanitize(self, d: Any) -> Any:
         r"""Sanitizes the input dictionary `d` by removing entries that are
         dictionaries with values resembling embeddings and lists containing
@@ -176,16 +169,14 @@ class Neo4jGraph():
             for key, value in d.items():
                 if isinstance(value, dict):
                     sanitized_value = self._value_sanitize(value)
-                    if (
-                        sanitized_value is not None
-                    ):  # Check if the sanitized value is not None
+                    # Check if the sanitized value is not None
+                    if (sanitized_value is not None):
                         new_dict[key] = sanitized_value
                 elif isinstance(value, list):
                     if len(value) < LIST_LIMIT:
                         sanitized_value = self._value_sanitize(value)
-                        if (
-                            sanitized_value is not None
-                        ):  # Check if the sanitized value is not None
+                        # Check if the sanitized value is not None
+                        if (sanitized_value is not None):
                             new_dict[key] = sanitized_value
                     # Do not include the key if the list is oversized
                 else:
@@ -194,14 +185,16 @@ class Neo4jGraph():
         elif isinstance(d, list):
             if len(d) < LIST_LIMIT:
                 return [
-                    self._value_sanitize(item) for item in d if self._value_sanitize(item) is not None
+                    self._value_sanitize(item) for item in d
+                    if self._value_sanitize(item) is not None
                 ]
             else:
                 return None
         else:
             return d
 
-    def query(self, query: str, params: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    def query(self, query: str,
+              params: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         r"""Executes a Cypher query against a Neo4j database and returns the
         results.
 
@@ -227,13 +220,15 @@ class Neo4jGraph():
 
         with self.driver.session(database=self.database) as session:
             try:
-                data = session.run(Query(text=query, timeout=self.timeout), params)
+                data = session.run(Query(text=query, timeout=self.timeout),
+                                   params)
                 json_data = [r.data() for r in data]
                 if self.sanitize:
                     json_data = [self._value_sanitize(el) for el in json_data]
                 return json_data
             except CypherSyntaxError as e:
-                raise ValueError(f"Generated Cypher Statement is not valid\n{e}")
+                raise ValueError(
+                    f"Generated Cypher Statement is not valid\n{e}")
 
     def refresh_schema(self) -> None:
         r"""Refreshes the Neo4j graph schema information by querying the
@@ -243,58 +238,79 @@ class Neo4jGraph():
         from neo4j.exceptions import ClientError
 
         # Extract schema elements from the database
-        node_properties = [el["output"] for el in self.query(NODE_PROPERTY_QUERY,params={"EXCLUDED_LABELS": EXCLUDED_LABELS + [BASE_ENTITY_LABEL]})]
-        rel_properties = [el["output"] for el in self.query(REL_PROPERTY_QUERY, params={"EXCLUDED_LABELS": EXCLUDED_RELS})]
-        relationships = [el["output"] for el in self.query(REL_QUERY,params={"EXCLUDED_LABELS": EXCLUDED_LABELS + [BASE_ENTITY_LABEL]})]
+        node_properties = [
+            el["output"] for el in self.query(
+                NODE_PROPERTY_QUERY, params={
+                    "EXCLUDED_LABELS": EXCLUDED_LABELS + [BASE_ENTITY_LABEL]
+                })
+        ]
+        rel_properties = [
+            el["output"] for el in self.query(
+                REL_PROPERTY_QUERY, params={"EXCLUDED_LABELS": EXCLUDED_RELS})
+        ]
+        relationships = [
+            el["output"] for el in self.query(
+                REL_QUERY, params={
+                    "EXCLUDED_LABELS": EXCLUDED_LABELS + [BASE_ENTITY_LABEL]
+                })
+        ]
 
         # Get constraints & indexes
         try:
             constraint = self.query("SHOW CONSTRAINTS")
             index = self.query("SHOW INDEXES YIELD *")
         except (
-            ClientError
+                ClientError
         ):  # Read-only user might not have access to schema information
             constraint = []
             index = []
 
         self.structured_schema = {
-            "node_props": {el["labels"]: el["properties"] for el in node_properties},
-            "rel_props": {el["type"]: el["properties"] for el in rel_properties},
+            "node_props":
+            {el["labels"]: el["properties"]
+             for el in node_properties},
+            "rel_props":
+            {el["type"]: el["properties"]
+             for el in rel_properties},
             "relationships": relationships,
-            "metadata": {"constraint": constraint, "index": index}
+            "metadata": {
+                "constraint": constraint,
+                "index": index
+            }
         }
 
         # Format node properties
         formatted_node_props = []
         for el in node_properties:
-            props_str = ", ".join(
-                [f"{prop['property']}: {prop['type']}" for prop in el["properties"]]
-            )
+            props_str = ", ".join([
+                f"{prop['property']}: {prop['type']}"
+                for prop in el["properties"]
+            ])
             formatted_node_props.append(f"{el['labels']} {{{props_str}}}")
 
         # Format relationship properties
         formatted_rel_props = []
         for el in rel_properties:
-            props_str = ", ".join(
-                [f"{prop['property']}: {prop['type']}" for prop in el["properties"]]
-            )
+            props_str = ", ".join([
+                f"{prop['property']}: {prop['type']}"
+                for prop in el["properties"]
+            ])
             formatted_rel_props.append(f"{el['type']} {{{props_str}}}")
 
         # Format relationships
         formatted_rels = [
-            f"(:{el['start']})-[:{el['type']}]->(:{el['end']})" for el in relationships
+            f"(:{el['start']})-[:{el['type']}]->(:{el['end']})"
+            for el in relationships
         ]
 
-        self.schema = "\n".join(
-            [
-                "Node properties are the following:",
-                ",".join(formatted_node_props),
-                "Relationship properties are the following:",
-                ",".join(formatted_rel_props),
-                "The relationships are the following:",
-                ",".join(formatted_rels),
-            ]
-        )
+        self.schema = "\n".join([
+            "Node properties are the following:",
+            ",".join(formatted_node_props),
+            "Relationship properties are the following:",
+            ",".join(formatted_rel_props),
+            "The relationships are the following:",
+            ",".join(formatted_rels),
+        ])
 
     def add_triplet(self, subj: str, obj: str, rel: str) -> None:
         r"""Adds a relationship (triplet) between two entities in the database.
@@ -332,11 +348,15 @@ class Neo4jGraph():
         """
         with self.driver.session(database=self.database) as session:
             session.run(
-                (
-                    "MATCH (n1:{})-[r:{}]->(n2:{}) WHERE n1.id = $subj AND n2.id"
-                    " = $obj DELETE r"
-                ).format(BASE_ENTITY_LABEL.replace("_", ""), rel, BASE_ENTITY_LABEL.replace("_", "")),
-                {"subj": subj, "obj": obj},
+                ("MATCH (n1:{})-[r:{}]->(n2:{}) WHERE n1.id = $subj AND n2.id"
+                 " = $obj DELETE r").format(BASE_ENTITY_LABEL.replace("_", ""),
+                                            rel,
+                                            BASE_ENTITY_LABEL.replace("_",
+                                                                      "")),
+                {
+                    "subj": subj,
+                    "obj": obj
+                },
             )
 
     def _delete_entity(self, entity: str) -> None:
@@ -348,7 +368,8 @@ class Neo4jGraph():
         """
         with self.driver.session(database=self.database) as session:
             session.run(
-                "MATCH (n:%s) WHERE n.id = $entity DELETE n" % BASE_ENTITY_LABEL.replace("_", ""),
+                "MATCH (n:%s) WHERE n.id = $entity DELETE n" %
+                BASE_ENTITY_LABEL.replace("_", ""),
                 {"entity": entity},
             )
 
@@ -365,8 +386,8 @@ class Neo4jGraph():
         """
         with self.driver.session(database=self.database) as session:
             is_exists_result = session.run(
-                "MATCH (n1:%s)--() WHERE n1.id = $entity RETURN count(*)"
-                % (BASE_ENTITY_LABEL.replace("_", "")),
+                "MATCH (n1:%s)--() WHERE n1.id = $entity RETURN count(*)" %
+                (BASE_ENTITY_LABEL.replace("_", "")),
                 {"entity": entity},
             )
             return bool(list(is_exists_result))
@@ -386,10 +407,11 @@ class Neo4jGraph():
         if not self._check_edges(obj):
             self._delete_entity(obj)
 
-    def _get_node_import_query(self, base_entity_label: bool, include_source: bool) -> str:
+    def _get_node_import_query(self, base_entity_label: bool,
+                               include_source: bool) -> str:
         r"""Constructs a Cypher query string for importing nodes into a Neo4j
         database.
-    
+
         Args:
             base_entity_label (bool): Flag indicating whether to use a base
                 entity label in the MERGE operation.
@@ -400,16 +422,19 @@ class Neo4jGraph():
             str: A Cypher query string tailored based on the provided flags.
         """
         if base_entity_label:
+            if include_source:
+                merge_line = "MERGE (d)-[:MENTIONS]->(source) "
+            else:
+                merge_line = ""
             return (
                 f"{INCLUDE_DOCS_QUERY if include_source else ''}"
                 "UNWIND $data AS row "
                 f"MERGE (source:`{BASE_ENTITY_LABEL}` {{id: row.id}}) "
                 "SET source += row.properties "
-                f"{'MERGE (d)-[:MENTIONS]->(source) ' if include_source else ''}"
+                f"{merge_line}"
                 "WITH source, row "
                 "CALL apoc.create.addLabels( source, [row.type] ) YIELD node "
-                "RETURN distinct 'done' AS result"
-            )
+                "RETURN distinct 'done' AS result")
         else:
             return (
                 f"{INCLUDE_DOCS_QUERY if include_source else ''}"
@@ -417,13 +442,12 @@ class Neo4jGraph():
                 "CALL apoc.merge.node([row.type], {id: row.id}, "
                 "row.properties, {}) YIELD node "
                 f"{'MERGE (d)-[:MENTIONS]->(node) ' if include_source else ''}"
-                "RETURN distinct 'done' AS result"
-            )
+                "RETURN distinct 'done' AS result")
 
     def _get_rel_import_query(self, base_entity_label: bool) -> str:
         r"""Constructs a Cypher query string for importing relationship into a
         Neo4j database.
-    
+
         Args:
             base_entity_label (bool): Flag indicating whether to use a base
                 entity label in the MERGE operation.
@@ -432,15 +456,13 @@ class Neo4jGraph():
             str: A Cypher query string tailored based on the provided flags.
         """
         if base_entity_label:
-            return (
-                "UNWIND $data AS row "
-                f"MERGE (source:`{BASE_ENTITY_LABEL}` {{id: row.source}}) "
-                f"MERGE (target:`{BASE_ENTITY_LABEL}` {{id: row.target}}) "
-                "WITH source, target, row "
-                "CALL apoc.merge.relationship(source, row.type, "
-                "{}, row.properties, target) YIELD rel "
-                "RETURN distinct 'done'"
-            )
+            return ("UNWIND $data AS row "
+                    f"MERGE (source:`{BASE_ENTITY_LABEL}` {{id: row.source}}) "
+                    f"MERGE (target:`{BASE_ENTITY_LABEL}` {{id: row.target}}) "
+                    "WITH source, target, row "
+                    "CALL apoc.merge.relationship(source, row.type, "
+                    "{}, row.properties, target) YIELD rel "
+                    "RETURN distinct 'done'")
         else:
             return (
                 "UNWIND $data AS row "
@@ -450,8 +472,7 @@ class Neo4jGraph():
                 "{}, {}) YIELD node as target "
                 "CALL apoc.merge.relationship(source, row.type, "
                 "{}, row.properties, target) YIELD rel "
-                "RETURN distinct 'done'"
-            )
+                "RETURN distinct 'done'")
 
     def add_graph_documents(
         self,
@@ -481,30 +502,26 @@ class Neo4jGraph():
                 False.
         """
         if base_entity_label:  # check if constraint already exists
-            constraint_exists = any(
-                [
-                    el["labelsOrTypes"] == [BASE_ENTITY_LABEL]
-                    and el["properties"] == ["id"]
-                    for el in self.structured_schema.get("metadata", {}).get(
-                        "constraint"
-                    )
-                ]
-            )
+            constraint_exists = any([
+                el["labelsOrTypes"] == [BASE_ENTITY_LABEL]
+                and el["properties"] == ["id"]
+                for el in self.structured_schema.get("metadata", {}).get(
+                    "constraint")
+            ])
             if not constraint_exists:
                 # Create constraint
-                self.query(
-                    f"CREATE CONSTRAINT IF NOT EXISTS FOR (b:{BASE_ENTITY_LABEL}) "
-                    "REQUIRE b.id IS UNIQUE;"
-                )
+                self.query("CREATE CONSTRAINT IF NOT EXISTS FOR"
+                           f"(b:{BASE_ENTITY_LABEL}) "
+                           "REQUIRE b.id IS UNIQUE;")
                 self.refresh_schema()  # refresh constraint information
 
-        node_import_query = self._get_node_import_query(base_entity_label, include_source)
+        node_import_query = self._get_node_import_query(
+            base_entity_label, include_source)
         rel_import_query = self._get_rel_import_query(base_entity_label)
         for document in graph_documents:
             if not document.source.metadata.get("id"):
                 document.source.metadata["id"] = md5(
-                    document.source.page_content.encode("utf-8")
-                ).hexdigest()
+                    document.source.page_content.encode("utf-8")).hexdigest()
 
             # Import nodes
             self.query(
@@ -518,16 +535,13 @@ class Neo4jGraph():
             self.query(
                 rel_import_query,
                 {
-                    "data": [
-                        {
-                            "source": el.source.id,
-                            "source_label": el.source.type,
-                            "target": el.target.id,
-                            "target_label": el.target.type,
-                            "type": el.type.replace(" ", "_").upper(),
-                            "properties": el.properties,
-                        }
-                        for el in document.relationships
-                    ]
+                    "data": [{
+                        "source": el.source.id,
+                        "source_label": el.source.type,
+                        "target": el.target.id,
+                        "target_label": el.target.type,
+                        "type": el.type.replace(" ", "_").upper(),
+                        "properties": el.properties,
+                    } for el in document.relationships]
                 },
             )

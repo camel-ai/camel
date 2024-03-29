@@ -14,8 +14,8 @@
 from __future__ import annotations
 
 from typing import List, Union
-from pydantic import Field, BaseModel
 
+from pydantic import BaseModel, Field
 # from camel.functions.base_io_functions import File
 from unstructured.documents.elements import Element
 
