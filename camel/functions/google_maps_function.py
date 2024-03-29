@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
 from functools import wraps
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, List, Optional, Tuple, Union
 
 from camel.functions import OpenAIFunction
 
@@ -181,9 +181,7 @@ def handle_googlemaps_exceptions(
 
 
 @handle_googlemaps_exceptions
-def get_elevation(
-    lat_lng: Union[str, Dict[str, float], List[float], Tuple[float, float]]
-) -> str:
+def get_elevation(lat_lng: Tuple) -> str:
     r"""Retrieves elevation data for a given latitude and longitude.
 
     Uses the Google Maps API to fetch elevation data for the specified latitude
@@ -191,10 +189,8 @@ def get_elevation(
     of the elevation, including its value in meters and the data resolution.
 
     Args:
-        lat_lng (Union[str, Dict, List, Tuple]): The latitude and longitude for
-            which to retrieve elevation data. This can be a single location
-            represented as a string, dict, list, or tuple, or a list of such
-            locations.
+        lat_lng (Tuple[float, float]): The latitude and longitude for
+            which to retrieve elevation data.
 
     Returns:
         str: A description of the elevation at the specified location(s),
@@ -250,9 +246,7 @@ def format_offset_to_natural_language(offset: int) -> str:
 
 
 @handle_googlemaps_exceptions
-def get_timezone(
-    lat_lng: Union[str, Dict[str, float], List[float], Tuple[float, float]]
-) -> str:
+def get_timezone(lat_lng: Tuple) -> str:
     r"""Retrieves timezone information for a given latitude and longitude.
 
     This function uses the Google Maps Timezone API to fetch timezone data for
@@ -262,10 +256,8 @@ def get_timezone(
     Coordinated Universal Time (UTC).
 
     Args:
-        lat_lng (Union[str, Dict, List, Tuple]): The latitude and longitude for
-            which to retrieve elevation data. This can be a single location
-            represented as a string, dict, list, or tuple, or a list of such
-            locations.
+        lat_lng (Tuple[float, float]): The latitude and longitude for
+            which to retrieve elevation data.
 
     Returns:
         str: A descriptive string of the timezone information, including the

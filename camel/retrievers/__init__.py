@@ -11,12 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .base import BaseEmbedding
-from .openai_embedding import OpenAIEmbedding
-from .sentence_transformers_embeddings import SentenceTransformerEncoder
+from .base import BaseRetriever
+from .vector_retriever import VectorRetriever
+from .auto_retriever import AutoRetriever
 
 __all__ = [
-    "BaseEmbedding",
-    "OpenAIEmbedding",
-    "SentenceTransformerEncoder",
+    'BaseRetriever',
+    'VectorRetriever',
+    'AutoRetriever',
 ]
