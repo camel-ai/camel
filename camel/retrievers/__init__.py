@@ -11,23 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-
-from .openai_function import (
-    OpenAIFunction,
-    get_openai_tool_schema,
-    get_openai_function_schema,
-)
-from .math_functions import MATH_FUNCS
-from .search_functions import SEARCH_FUNCS
-from .weather_functions import WEATHER_FUNCS
-from ..loaders.unstructured_io import UnstructuredIO
+from .base import BaseRetriever
+from .vector_retriever import VectorRetriever
+from .auto_retriever import AutoRetriever
 
 __all__ = [
-    'OpenAIFunction',
-    'get_openai_tool_schema',
-    'get_openai_function_schema',
-    'MATH_FUNCS',
-    'SEARCH_FUNCS',
-    'WEATHER_FUNCS',
-    'UnstructuredIO',
+    'BaseRetriever',
+    'VectorRetriever',
+    'AutoRetriever',
 ]

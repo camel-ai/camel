@@ -67,7 +67,7 @@ class FunctionCallingMessage(BaseMessage):
             OpenAIAssistantMessage: The converted :obj:`OpenAIAssistantMessage`
                 object.
         """
-        if (not self.func_name) or (not self.args):
+        if (not self.func_name) or (self.args is None):
             raise ValueError(
                 "Invalid request for converting into assistant message"
                 " due to missing function name or arguments.")

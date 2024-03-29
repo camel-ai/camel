@@ -13,7 +13,11 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from .base import BaseGraphStorage
+from .graph_document import GraphDocument
+from .neo4j_graph import Neo4jGraph
 
 __all__ = [
     'BaseGraphStorage',
+    'GraphDocument',
+    'Neo4jGraph',
 ]

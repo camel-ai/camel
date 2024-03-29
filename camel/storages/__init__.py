@@ -22,7 +22,9 @@ from .vectordb_storages.base import (
     VectorDBQueryResult,
 )
 from .vectordb_storages.qdrant import QdrantStorage
+from .vectordb_storages.milvus import MilvusStorage
 from .graph_storages.base import BaseGraphStorage
+from .graph_storages.neo4j_graph import Neo4jGraph
 
 __all__ = [
     'BaseKeyValueStorage',
@@ -33,5 +35,7 @@ __all__ = [
     'VectorDBQuery',
     'VectorDBQueryResult',
     'QdrantStorage',
+    'MilvusStorage',
     'BaseGraphStorage',
+    'Neo4jGraph',
 ]
