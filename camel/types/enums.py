@@ -23,6 +23,15 @@ class RoleType(Enum):
     DEFAULT = "default"
 
 
+# Reason type determines how the output messages/function calls from the LLM are displayed
+# Generically, the output system message
+class ReasonType(Enum):
+    DEFAULT = "default"
+    REASON = "reason"
+    ACT = "act"
+    REACT = "re_act"
+
+
 class ModelType(Enum):
     GPT_3_5_TURBO = "gpt-3.5-turbo-1106"
     GPT_3_5_TURBO_16K = "gpt-3.5-turbo-1106"
@@ -111,7 +120,6 @@ class ModelType(Enum):
                     or "llama2" in model_name.lower())
         else:
             return self.value in model_name.lower()
-
 
 class EmbeddingModelType(Enum):
     ADA_2 = "text-embedding-ada-002"

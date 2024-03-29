@@ -27,6 +27,9 @@ from openai.types.chat.chat_completion_user_message_param import (
     ChatCompletionUserMessageParam, )
 from openai.types.completion_usage import CompletionUsage
 
+from openai.types.chat.chat_completion_message_tool_call import ChatCompletionMessageToolCall
+from openai.types.chat.chat_completion_role import ChatCompletionRole
+
 Choice = Choice
 ChatCompletion = ChatCompletion
 ChatCompletionChunk = ChatCompletionChunk
@@ -37,3 +40,6 @@ ChatCompletionUserMessageParam = ChatCompletionUserMessageParam
 ChatCompletionAssistantMessageParam = ChatCompletionAssistantMessageParam
 ChatCompletionFunctionMessageParam = ChatCompletionFunctionMessageParam
 CompletionUsage = CompletionUsage
+
+ChatCompletionRole = ChatCompletionRole
+ChatCompletionMessageToolCall = ChatCompletionMessageToolCall

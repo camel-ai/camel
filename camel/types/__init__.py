@@ -14,6 +14,7 @@
 from .enums import (
     RoleType,
     ModelType,
+    ReasonType,
     TaskType,
     TerminationMode,
     OpenAIBackendRole,
@@ -31,12 +32,15 @@ from .openai_types import (
     ChatCompletionAssistantMessageParam,
     ChatCompletionFunctionMessageParam,
     CompletionUsage,
+    ChatCompletionRole,
+    ChatCompletionMessageToolCall
 )
 
 __all__ = [
     'RoleType',
     'ModelType',
     'TaskType',
+    'ReasonType',
     'TerminationMode',
     'OpenAIBackendRole',
     'EmbeddingModelType',
@@ -51,4 +55,6 @@ __all__ = [
     'ChatCompletionAssistantMessageParam',
     'ChatCompletionFunctionMessageParam',
     'CompletionUsage',
+    'ChatCompletionRole',
+    'ChatCompletionMessageToolCall'
 ]

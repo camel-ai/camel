@@ -21,7 +21,7 @@ from camel.messages import (
     OpenAIUserMessage,
 )
 from camel.prompts import CodePrompt, TextPrompt
-from camel.types import OpenAIBackendRole, RoleType
+from camel.types import OpenAIBackendRole, RoleType, ReasonType
 
 
 @dataclass
@@ -39,6 +39,7 @@ class BaseMessage:
     role_name: str
     role_type: RoleType
     meta_dict: Optional[Dict[str, str]]
+    reason_type: Optional[ReasonType]
     content: str
 
     @classmethod
@@ -50,8 +51,8 @@ class BaseMessage:
     @classmethod
     def make_assistant_message(
             cls, role_name: str, content: str,
-            meta_dict: Optional[Dict[str, str]] = None) -> 'BaseMessage':
-        return cls(role_name, RoleType.ASSISTANT, meta_dict, content)
+            meta_dict: Optional[Dict[str, str]] = None, reason_type: Optional[ReasonType] = None) -> 'BaseMessage':
+        return cls(role_name, RoleType.ASSISTANT, meta_dict, content, reason_type)
 
     def create_new_instance(self, content: str) -> "BaseMessage":
         r"""Create a new instance of the :obj:`BaseMessage` with updated

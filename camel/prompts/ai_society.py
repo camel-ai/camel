@@ -37,6 +37,9 @@ class AISocietyPromptTemplateDict(TextPromptDict):
         USER_PROMPT (TextPrompt): A system prompt for the AI user that
             outlines the rules of the conversation and provides instructions
             for giving instructions to the AI assistant.
+        ACTOR_PROMPT (TextPrompt): A system prompt for the AI actor that takes actions (usually search key words)
+            based on the outline of several key words from previous output from ASSISTANT. Then search results are
+            produced and summarized.
     """
     GENERATE_ASSISTANTS = TextPrompt(
         """You are a helpful assistant that can play many different roles.
@@ -67,13 +70,23 @@ I must instruct you based on your expertise and my needs to complete the task.
 
 I must give you one instruction at a time.
 You must write a specific solution that appropriately solves the requested instruction and explain your solutions.
+
 You must decline my instruction honestly if you cannot perform the instruction due to physical, moral, legal reasons or your capability and explain the reasons.
 Unless I say the task is completed, you should always start with:
 
 Solution: <YOUR_SOLUTION>
 
 <YOUR_SOLUTION> should be very specific, include detailed explanations and provide preferable detailed implementations and examples and lists for task-solving.
-Always end <YOUR_SOLUTION> with: Next request.""")
+<YOUR_ACTION> should be directly implementing the examples mentioned before. Always end <YOUR_SOLUTION> with: Next request.""")
+
+    ACTOR_PROMPT: TextPrompt = TextPrompt("""====RULES OF ACTOR =====
+Never forget you are a {actor_role} and I am a {user_role}. Never flip roles! Never instruct me!
+We share a common interest in collaborating to successfully complete a task.
+You must help me to complete the task.
+Here is the task: {task}. Never forget our task!
+I must instruct you based on your expertise and my needs to complete the task.
+    You must also apply tools to realize your solutions. In other words, you must take actions right after you explain. 
+    """)
 
     USER_PROMPT: TextPrompt = TextPrompt("""===== RULES OF USER =====
 Never forget you are a {user_role} and I am a {assistant_role}. Never flip roles! You will always instruct me.
@@ -118,4 +131,5 @@ You always have to choose an option from the proposals.""")
             RoleType.ASSISTANT: self.ASSISTANT_PROMPT,
             RoleType.USER: self.USER_PROMPT,
             RoleType.CRITIC: self.CRITIC_PROMPT,
+            RoleType.ACTOR: self.ACTOR_PROMPT,
         })
