@@ -27,10 +27,9 @@ class BaseRetriever(ABC):
         pass
 
     @abstractmethod
-    def process_and_store(self, content_input_path: str,
-                          **kwargs: Any) -> None:
+    def process(self, content_input_path: str, **kwargs: Any) -> None:
         r"""
-        Processes content and stores it. Subclasses should implement this
+        Processes content. Subclasses should implement this
         method according to their specific needs.
 
         Args:
@@ -42,10 +41,9 @@ class BaseRetriever(ABC):
         pass
 
     @abstractmethod
-    def query_and_compile_results(self, query: str,
-                                  top_k: int = DEFAULT_TOP_K_RESULTS,
-                                  **kwargs: Any) -> List[Dict[str, Any]]:
-        r"""Queries and compiles results. Subclasses should implement this
+    def query(self, query: str, top_k: int = DEFAULT_TOP_K_RESULTS,
+              **kwargs: Any) -> List[Dict[str, Any]]:
+        r"""Query the results. Subclasses should implement this
         method according to their specific needs.
 
         Args:

@@ -56,11 +56,11 @@ class CohereRerankRetriever(BaseRetriever):
         self.co = cohere.Client(self.api_key)
         self.model_name = model_name
 
-    def process_and_store(self):
+    def process(self):
         r"""Minimal implementation fit with `BaseRetriever`"""
         pass
 
-    def query_and_compile_results(  # type: ignore
+    def query(  # type: ignore
             self, query: str, retrieved_result: List[Dict[str, Any]],
             top_k: int = DEFAULT_TOP_K_RESULTS) -> List[Dict[str, Any]]:
         r"""Queries and compiles results using the Cohere re-ranking model.
