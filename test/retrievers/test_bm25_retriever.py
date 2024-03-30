@@ -26,8 +26,8 @@ def test_bm25retriever_initialization():
     assert retriever.chunks == []
 
 
-@patch('camel.functions.UnstructuredModules')
-def test_process_and_store(mock_unstructured_modules):
+@patch('camel.loaders.UnstructuredIO')
+def test_process(mock_unstructured_modules):
     mock_unstructured_modules.return_value.parse_file_or_url.return_value = [
         'Your parsed content'
     ]
@@ -36,14 +36,14 @@ def test_process_and_store(mock_unstructured_modules):
     ]
 
     retriever = BM25Retriever()
-    retriever.process_and_store('https://www.camel-ai.org/')
+    retriever.process('https://www.camel-ai.org/')
 
     assert retriever.content_input_path == 'https://www.camel-ai.org/'
     assert len(retriever.chunks) == 4
 
 
 @patch('camel.retrievers.BM25Retriever')
-def test_query_and_compile_results(mock_bm25):
+def test_query(mock_bm25):
     # Setup the mock BM25 instance
     mock_bm25_instance = mock_bm25.return_value
     mock_bm25_instance.get_scores.return_value = [0.8, 0.5]  # Mock scores
@@ -59,12 +59,12 @@ def test_query_and_compile_results(mock_bm25):
     retriever.content_input_path = 'dummy_path'
     retriever.chunks = [mock_chunk1, mock_chunk2]
 
-    results = retriever.query_and_compile_results('query', top_k=2)
+    results = retriever.query('query', top_k=2)
     assert results[0]['similarity score'] == 0.8
     assert 'chunk1' in results[0]['metadata']['id']
 
 
-def test_query_and_compile_results_without_initialization():
+def test_query_without_initialization():
     retriever = BM25Retriever()
     with pytest.raises(ValueError, match="BM25 model is not initialized"):
-        retriever.query_and_compile_results('query')
+        retriever.query('query')
