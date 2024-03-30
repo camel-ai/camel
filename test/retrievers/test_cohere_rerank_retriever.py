@@ -94,8 +94,9 @@ def mock_retrieved_result():
 def test_query(cohere_rerank, mock_retrieved_result):
     query = ("Developing aligned AI systems is crucial for achieving desired"
              "objectives while avoiding unintended consequences")
-    result = cohere_rerank.query(
-        query=query, retrieved_result=mock_retrieved_result, top_k=1)
+    result = cohere_rerank.query(query=query,
+                                 retrieved_result=mock_retrieved_result,
+                                 top_k=1)
     assert len(result) == 1
     assert result[0]["similarity score"] == 0.9999998
     assert 'ing unintended consequences. Research in AI align' in result[0][
