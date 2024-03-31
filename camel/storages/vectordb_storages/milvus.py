@@ -118,39 +118,46 @@ class MilvusStorage(BaseVectorStorage):
 
         Args:
             collection_name (str): Name of the collection to be created.
-            **kwargs (Any): Additional keyword arguments.
+            **kwargs (Any): Additional keyword arguments pass to create
+                collection.
         """
-        from pymilvus import CollectionSchema, DataType, FieldSchema
 
-        index_params = {
-            "metric_type": "COSINE",
-            "index_type": "AUTOINDEX",
-            "params": {},
-        }
+        from pymilvus import DataType
 
-        fields = [
-            FieldSchema(name='id', dtype=DataType.VARCHAR,
-                        descrition='A unique identifier for the vector',
-                        is_primary=True, auto_id=False, max_length=65535),
-            # limit from Milvus is 65535 https://milvus.io/docs/limitations.md
-            FieldSchema(
-                name='payload', dtype=DataType.JSON,
-                description=('Any additional metadata or information related'
-                             'to the vector')),
-            FieldSchema(
-                name='vector', dtype=DataType.FLOAT_VECTOR,
-                description='The numerical representation of the vector',
-                dim=self.vector_dim)
-        ]
-        schema = CollectionSchema(fields=fields,
-                                  description='Collection schema')
+        # Set the schema
+        schema = self._client.create_schema(auto_id=False,
+                                            enable_dynamic_field=True,
+                                            description='collection schema')
 
-        self._client.create_collection_with_schema(
+        schema.add_field(field_name="id", datatype=DataType.VARCHAR,
+                         descrition='A unique identifier for the vector',
+                         is_primary=True, max_length=65535)
+        # max_length reference: https://milvus.io/docs/limitations.md
+        schema.add_field(
+            field_name="vector", datatype=DataType.FLOAT_VECTOR,
+            description='The numerical representation of the vector',
+            dim=self.vector_dim)
+        schema.add_field(
+            field_name="payload", datatype=DataType.JSON,
+            description=('Any additional metadata or information related'
+                         'to the vector'))
+
+        # Create the collection
+        self._client.create_collection(
             collection_name=collection_name,
             schema=schema,
-            index_params=index_params,
             **kwargs,
         )
+
+        # Set the index of the parameters
+        index_params = self._client.prepare_index_params()
+
+        index_params.add_index(field_name="vector", metric_type="COSINE",
+                               index_type="AUTOINDEX",
+                               index_name="vector_index")
+
+        self._client.create_index(collection_name=collection_name,
+                                  index_params=index_params)
 
     def _delete_collection(
         self,
@@ -198,10 +205,11 @@ class MilvusStorage(BaseVectorStorage):
             Dict[str, Any]: A dictionary containing details about the
                 collection.
         """
-        vector_count = self._client.num_entities(collection_name)
-
+        vector_count = self._client.get_collection_stats(
+            collection_name)['row_count']
         collection_info = self._client.describe_collection(collection_name)
         collection_id = collection_info['collection_id']
+
         dim_value = next(
             (field['params']['dim']
              for field in collection_info['fields'] if field['description'] ==
@@ -230,13 +238,10 @@ class MilvusStorage(BaseVectorStorage):
 
         for record in records:
             record_dict = {
-                "id":
-                record.id,
+                "id": record.id,
                 "payload":
-                record.payload['message']
-                if record.payload is not None else '',
-                "vector":
-                record.vector,
+                record.payload if record.payload is not None else '',
+                "vector": record.vector,
             }
             validated_data.append(record_dict)
 
@@ -251,7 +256,7 @@ class MilvusStorage(BaseVectorStorage):
 
         Args:
             records (List[VectorRecord]): List of vectors to be added.
-            **kwargs (Any): Additional keyword arguments.
+            **kwargs (Any): Additional keyword arguments pass to insert.
 
         Raises:
             RuntimeError: If there was an error in the addition process.
@@ -277,7 +282,7 @@ class MilvusStorage(BaseVectorStorage):
         Args:
             ids (List[str]): List of unique identifiers for the vectors to be
                 deleted.
-            **kwargs (Any): Additional keyword arguments.
+            **kwargs (Any): Additional keyword arguments passed to delete.
 
         Raises:
             RuntimeError: If there is an error during the deletion process.
@@ -313,7 +318,7 @@ class MilvusStorage(BaseVectorStorage):
         Args:
             query (VectorDBQuery): The query object containing the search
                 vector and the number of top similar vectors to retrieve.
-            **kwargs (Any): Additional keyword arguments.
+            **kwargs (Any): Additional keyword arguments passed to search.
 
         Returns:
             List[VectorDBQueryResult]: A list of vectors retrieved from the
@@ -330,9 +335,8 @@ class MilvusStorage(BaseVectorStorage):
         for point in search_result:
             query_results.append(
                 VectorDBQueryResult.construct(  # type: ignore
-                    similarity=(1 - point[0]['distance']),
-                    id=str(point[0]['id']),
-                    payload={'message': point[0]['entity'].get('payload')},
+                    similarity=(point[0]['distance']), id=str(point[0]['id']),
+                    payload=(point[0]['entity'].get('payload')),
                     vector=point[0]['entity'].get('vector')))
 
         return query_results
@@ -344,6 +348,10 @@ class MilvusStorage(BaseVectorStorage):
         """
         self._delete_collection(self.collection_name)
         self._create_collection(collection_name=self.collection_name)
+
+    def load(self) -> None:
+        r"""Load the collection hosted on cloud service."""
+        self._client.load_collection(self.collection_name)
 
     @property
     def client(self) -> Any:

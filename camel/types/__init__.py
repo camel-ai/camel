@@ -20,6 +20,7 @@ from .enums import (
     OpenAIBackendRole,
     EmbeddingModelType,
     VectorDistance,
+    StorageType,
 )
 from .openai_types import (
     Choice,
@@ -45,6 +46,7 @@ __all__ = [
     'OpenAIBackendRole',
     'EmbeddingModelType',
     'VectorDistance',
+    'StorageType',
     'Choice',
     'ChatCompletion',
     'ChatCompletionChunk',
