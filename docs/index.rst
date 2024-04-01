@@ -30,8 +30,18 @@ Main Documentation
    agents/critic_agents_and_tree_search.md
 
 .. toctree::
+    :maxdepth: 1
+    :caption: Key Modules
+    :name: key_modules
+
+    key_modules/loaders.md
+    key_modules/storages.md
+    key_modules/embeddings.md
+    key_modules/retrievers.md
+
+.. toctree::
    :maxdepth: 1
-   :caption: Modules
+   :caption: API References
 
    modules
 
