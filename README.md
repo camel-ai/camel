@@ -50,15 +50,23 @@ We provide a [![Google Colab](https://colab.research.google.com/assets/colab-bad
 
 ### From PyPI
 
-To install the base camel library, simply run `pip install camel-ai`
-
-Some features require extra dependencies.
-
-To use hugging-face agent, run `pip install camel-ai[huggingface-agent]`
-
-To enable RAG or use agent memory, run `pip install camel-ai[tools]`
-
-To install with all dependencies, run `pip install camel-ai[all]`
+To install the base CAMEL library:
+```bash
+pip install camel-ai
+```
+Some features require extra dependencies:
+- To use the HuggingFace agents:
+    ```bash
+    pip install 'camel-ai[huggingface-agent]'
+    ```
+- To enable RAG or use agent memory:
+    ```bash
+    pip install 'camel-ai[tools]'
+    ```
+- To install with all dependencies:
+    ```bash
+    pip install 'camel-ai[all]'
+    ```
 
 ### From Source
 
@@ -110,12 +118,12 @@ pip install -e .[all] # (Optional)
 
 ## Documentation
 
-[CAMEL package documentation pages](https://camel-ai.github.io/camel/)
+[CAMEL package documentation pages](https://camel-ai.github.io/camel/).
 
 ## Example
-You can find a list of tasks for different set of assistant and user role pairs [here](https://drive.google.com/file/d/194PPaSTBR07m-PzjS-Ty6KlPLdFIPQDd/view?usp=share_link)
+You can find a list of tasks for different set of assistant and user role pairs [here](https://drive.google.com/file/d/194PPaSTBR07m-PzjS-Ty6KlPLdFIPQDd/view?usp=share_link).
 
-Run the `role_playing.py` script
+As an example, to run the `role_playing.py` script:
 
 First, you need to add your OpenAI API key to system environment variables. The method to do this depends on your operating system and the shell you're using.
 
@@ -141,7 +149,6 @@ set OPENAI_API_BASE_URL=<inert your OpenAI API BASE URL>  #(Should you utilize a
 # Export your OpenAI API key
 $env:OPENAI_API_KEY="<insert your OpenAI API key>"
 $env:OPENAI_API_BASE_URL="<inert your OpenAI API BASE URL>"  #(Should you utilize an OpenAI proxy service, kindly specify this)
-
 ```
 
 Replace `<insert your OpenAI API key>` with your actual OpenAI API key in each case. Make sure there are no spaces around the `=` sign.
@@ -158,7 +165,7 @@ Please note that the environment variable is session-specific. If you open a new
 
 ## Use Open-Source Models as Backends
 
-The basic workflow of using an open-sourced model as the backend is based on an external server running LLM inference service, e.g. during the development we chose [FastChat](https://github.com/lm-sys/FastChat) to run the service. 
+The basic workflow of using an open-sourced model as the backend is based on an external server running LLM inference service, e.g. during the development we chose [FastChat](https://github.com/lm-sys/FastChat) to run the service.
 
 We do not fix the choice of server to decouple the implementation of any specific LLM inference server with CAMEL (indicating the server needs to be deployed by the user himself). But the server to be deployed must satisfy that **it supports OpenAI-compatible APIs, especially the method `openai.ChatCompletion.create`**.
 
@@ -177,7 +184,7 @@ python3 -m fastchat.serve.model_worker --model-path meta-llama/Llama-2-7b-chat-h
 python3 -m fastchat.serve.openai_api_server --host localhost --port 8000
 ```
 
-2. After observing the controller successfully receiving the heart beat signal from the worker, the server should be ready for use at http://localhost:8000/v1. 
+2. After observing the controller successfully receiving the heart beat signal from the worker, the server should be ready for use at http://localhost:8000/v1.
 
 3. Then we can try on running `role_playing_with_open_source_model.py`, where each agent in this example is initialized with specifying the `model_path` and `server_url`, similar to the example code below:
 
