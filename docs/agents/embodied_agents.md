@@ -82,10 +82,3 @@ print(response.msg.content)
 >>> }
 ```
 Let's celebrate the sunny day in London with the agent! : )
-
-<!-- ## Advanced Features-->
-
-
-
-<!-- ## Remarks-->
-<!-- Awesome. Now you have made your first step in creating a single agent. In the next chapter, we will explore the creation of different types agents along with the role playing features. Stay tuned 🦖🐆🐘🦒🦘🦕! -->
