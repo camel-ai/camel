@@ -14,7 +14,7 @@
 import os
 from typing import Any, Dict, List
 
-import camel.agents
+from camel.agents import ChatAgent
 from camel.functions import OpenAIFunction
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
@@ -220,7 +220,7 @@ def prompt_single_step_agent(prompt: str) -> str:
         role_name="Assistant",
         content="You are a helpful assistant.",
     )
-    agent = camel.agents.ChatAgent(assistant_sys_msg)
+    agent = ChatAgent(assistant_sys_msg)
     agent.reset()
 
     user_msg = BaseMessage.make_user_message(

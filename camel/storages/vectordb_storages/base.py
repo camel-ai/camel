@@ -161,6 +161,11 @@ class BaseVectorStorage(ABC):
         r"""Remove all vectors from the storage."""
         pass
 
+    @abstractmethod
+    def load(self) -> None:
+        r"""Load the collection hosted on cloud service."""
+        pass
+
     @property
     @abstractmethod
     def client(self) -> Any:

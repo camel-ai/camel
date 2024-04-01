@@ -11,16 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from __future__ import annotations
+
 import json
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Tuple
-
-from openai import Stream
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
 from camel.agents import BaseAgent
-from camel.configs import BaseConfig, ChatGPTConfig
-from camel.functions import OpenAIFunction
+from camel.configs import ChatGPTConfig
 from camel.memories import (
     AgentMemory,
     ChatHistoryMemory,
@@ -30,7 +29,6 @@ from camel.memories import (
 from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.responses import ChatAgentResponse
-from camel.terminators import ResponseTerminator
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -39,6 +37,13 @@ from camel.types import (
     RoleType,
 )
 from camel.utils import get_model_encoding
+
+if TYPE_CHECKING:
+    from openai import Stream
+
+    from camel.configs import BaseConfig
+    from camel.functions import OpenAIFunction
+    from camel.terminators import ResponseTerminator
 
 
 @dataclass(frozen=True)

@@ -335,9 +335,8 @@ class MilvusStorage(BaseVectorStorage):
         for point in search_result:
             query_results.append(
                 VectorDBQueryResult.construct(  # type: ignore
-                    similarity=(1 - point[0]['distance']),
-                    id=str(point[0]['id']),
-                    payload={'message': point[0]['entity'].get('payload')},
+                    similarity=(point[0]['distance']), id=str(point[0]['id']),
+                    payload=(point[0]['entity'].get('payload')),
                     vector=point[0]['entity'].get('vector')))
 
         return query_results
@@ -349,6 +348,10 @@ class MilvusStorage(BaseVectorStorage):
         """
         self._delete_collection(self.collection_name)
         self._create_collection(collection_name=self.collection_name)
+
+    def load(self) -> None:
+        r"""Load the collection hosted on cloud service."""
+        self._client.load_collection(self.collection_name)
 
     @property
     def client(self) -> Any:
