@@ -203,6 +203,7 @@ module = [
     "docx2txt",
     "PyMuPDF",
     "fitz",
+    "qdrant_client.*",
     "unstructured.*",
     "sentence_transformers.*",
     "pymilvus",
