@@ -21,6 +21,7 @@ from camel.configs import BaseConfig
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
 from camel.types import ModelType, RoleType, ReasonType
+from camel.functions.search_functions import *
 
 
 class ReactiveReasonerAgent(ChatAgent):
@@ -52,9 +53,6 @@ class ReactiveReasonerAgent(ChatAgent):
 
     def re_act_reasoning(
         self,
-        thought: str,
-        action: str,
-        observation:str,
         role_descriptions_dict: Optional[Dict[str, str]] = None,
     ) -> Dict[str, Union[List[str], Dict[str, str]]]:
         r"""Derives the conditions and quality from the starting state and the
@@ -138,7 +136,10 @@ Here are a few examples.
         thought_action: BaseMessage = response.msg
         print(f"Message content:\n{thought_action.content}")
 
+        thought, action = thought_action.content.strip().split('\n')
+        observation = search_google_and_summarize(action)
+
         result: str = response.info
         # Leave the following part in test cases: extracting the conditions from the message and print.
 
-        return thought_action, result
+        return thought, action, observation
