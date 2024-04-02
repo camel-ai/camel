@@ -93,9 +93,12 @@ def test_chat_agent_messages_window():
 
     user_msg = BaseMessage(role_name="User", role_type=RoleType.USER,
                            meta_dict=dict(), content="Tell me a joke.")
-    user_record = MemoryRecord(user_msg, OpenAIBackendRole.USER)
 
-    assistant.memory.write_records([user_record] * 5)
+    assistant.memory.write_records(
+        [MemoryRecord(
+            user_msg,
+            OpenAIBackendRole.USER,
+        ) for _ in range(5)])
     openai_messages, _ = assistant.memory.get_context()
     assert len(openai_messages) == 2
 
