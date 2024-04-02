@@ -12,10 +12,10 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-
 import pytest
 
 from camel.utils import api_keys_required, dependencies_required, get_task_list
+from camel.utils import get_system_information, get_task_list, to_pascal
 
 
 def test_get_task_list():
@@ -79,3 +79,65 @@ def test_api_keys_required():
         mock_api_keys_not_exist()
 
     assert "Missing API keys: API_KEY_3" in str(exc.value)
+ 
+
+def test_get_system_information():
+    # Call the function
+    sys_info = get_system_information()
+
+    # Check if the result is a dictionary
+    assert isinstance(sys_info, dict)
+
+    # Define the expected keys
+    expected_keys = [
+        "OS Name",
+        "System",
+        "Release",
+        "Version",
+        "Machine",
+        "Processor",
+        "Platform",
+    ]
+
+    # Check if all expected keys are in the returned dictionary
+    assert all(key in sys_info for key in expected_keys)
+
+    # Check if all values are non-empty strings
+    assert all(isinstance(value, str) and value for value in sys_info.values())
+
+
+def test_to_pascal_standard_case():
+    assert to_pascal("snake_case") == "SnakeCase"
+
+
+def test_to_pascal_with_numbers():
+    assert to_pascal("snake2_case") == "Snake2Case"
+
+
+def test_to_pascal_single_word():
+    assert to_pascal("snake") == "Snake"
+
+
+def test_to_pascal_empty_string():
+    assert to_pascal("") == ""
+
+
+def test_to_pascal_already_pascal_case():
+    assert to_pascal("PascalCase") == "PascalCase"
+
+
+def test_to_pascal_mixed_case():
+    assert to_pascal("sNake_cAse") == "SnakeCase"
+
+
+def test_to_pascal_with_special_characters():
+    assert to_pascal("snake_case_with_special_characters!@#"
+                     ) == "SnakeCaseWithSpecialCharacters!@#"
+
+
+def test_to_pascal_with_multiple_underscores():
+    assert to_pascal("snake__case") == "SnakeCase"
+
+
+def test_to_pascal_with_trailing_underscore():
+    assert to_pascal("snake_case_") == "SnakeCase"

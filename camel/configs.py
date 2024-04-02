@@ -11,11 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from __future__ import annotations
+
 from abc import ABC
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 
-from camel.functions import OpenAIFunction
+if TYPE_CHECKING:
+    from camel.functions import OpenAIFunction
 
 
 @dataclass(frozen=True)
@@ -128,7 +131,9 @@ class FunctionCallingConfig(ChatGPTConfig):
                 :obj:`function_call` argument.
         """
         return cls(
-            functions=[func.as_dict() for func in function_list],
+            functions=[
+                func.get_openai_function_schema() for func in function_list
+            ],
             function_call=function_call,
             **(kwargs or {}),
         )

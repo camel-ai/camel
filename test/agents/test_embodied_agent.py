@@ -31,10 +31,8 @@ def test_get_action_space_prompt():
         meta_dict=meta_dict,
         role_tuple=(f"{role_name}'s Embodiment", RoleType.EMBODIMENT))
     agent = EmbodiedAgent(
-        sys_msg,
-        action_space=[HuggingFaceToolAgent('hugging_face_tool_agent')])
-    expected_prompt = "*** hugging_face_tool_agent ***:\n"
-    assert agent.get_action_space_prompt().startswith(expected_prompt)
+        sys_msg, tool_agents=[HuggingFaceToolAgent('hugging_face_tool_agent')])
+    assert 'hugging_face_tool_agent' in agent.get_tool_agent_names()
 
 
 @pytest.mark.skip(reason="Wait huggingface to update openaiv1")

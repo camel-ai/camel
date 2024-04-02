@@ -14,7 +14,7 @@
 import os
 from typing import Any, Dict, List
 
-import camel.agents
+from camel.agents import ChatAgent
 from camel.functions import OpenAIFunction
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
@@ -25,10 +25,10 @@ def search_wiki(entity: str) -> str:
     required page, containing factual information about the given entity.
 
     Args:
-        entity (string): The entity to be searched.
+        entity (str): The entity to be searched.
 
     Returns:
-        string: The search result. If the page corresponding to the entity
+        str: The search result. If the page corresponding to the entity
             exists, return the summary of this entity in a string.
     """
     try:
@@ -59,7 +59,7 @@ def search_google(query: str) -> List[Dict[str, Any]]:
     r"""Use Google search engine to search information for the given query.
 
     Args:
-        query (string): The query to be searched.
+        query (str): The query to be searched.
 
     Returns:
         List[Dict[str, Any]]: A list of dictionaries where each dictionary
@@ -83,7 +83,7 @@ def search_google(query: str) -> List[Dict[str, Any]]:
                 as a whole',
                 'url': 'https://www.openai.com'
             }
-        title, descrption, url of a website.
+        title, description, url of a website.
     """
     import requests
 
@@ -150,10 +150,10 @@ def text_extract_from_web(url: str) -> str:
     r"""Get the text information from given url.
 
     Args:
-        url (string): The web site you want to search.
+        url (str): The website you want to search.
 
     Returns:
-        string: All texts extract from the web.
+        str: All texts extract from the web.
     """
     import requests
     from bs4 import BeautifulSoup
@@ -186,11 +186,11 @@ def create_chunks(text: str, n: int) -> List[str]:
     r"""Returns successive n-sized chunks from provided text."
 
     Args:
-        text (string): The text to be split.
+        text (str): The text to be split.
         n (int): The max length of a single chunk.
 
     Returns:
-        List[str]: A list of splited texts.
+        List[str]: A list of split texts.
     """
 
     chunks = []
@@ -220,7 +220,7 @@ def prompt_single_step_agent(prompt: str) -> str:
         role_name="Assistant",
         content="You are a helpful assistant.",
     )
-    agent = camel.agents.ChatAgent(assistant_sys_msg)
+    agent = ChatAgent(assistant_sys_msg)
     agent.reset()
 
     user_msg = BaseMessage.make_user_message(
@@ -238,11 +238,11 @@ def summarize_text(text: str, query: str) -> str:
     given.
 
     Args:
-        text (string): Text to summarise.
-        query (string): What information you want.
+        text (str): Text to summarize.
+        query (str): What information you want.
 
     Returns:
-        string: Strings with information.
+        str: Strings with information.
     """
     summary_prompt = TextPrompt(
         '''Gather information from this text that relative to the question, but
@@ -276,10 +276,10 @@ def search_google_and_summarize(query: str) -> str:
     internet, and then return a summarized answer.
 
     Args:
-        query (string): Question you want to be answered.
+        query (str): Question you want to be answered.
 
     Returns:
-        string: Summarized information from webs.
+        str: Summarized information from webs.
     """
     # Google search will return a list of urls
     responses = search_google(query)

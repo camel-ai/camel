@@ -159,9 +159,16 @@ class TaskType(Enum):
 
 
 class VectorDistance(Enum):
-    DOT = 1
-    COSINE = 2
-    EUCLIDEAN = 3
+    r"""Distance metrics used in a vector database."""
+
+    DOT = "dot"
+    r"""Dot product. https://en.wikipedia.org/wiki/Dot_product"""
+
+    COSINE = "cosine"
+    r"""Cosine similarity. https://en.wikipedia.org/wiki/Cosine_similarity"""
+
+    EUCLIDEAN = "euclidean"
+    r"""Euclidean distance. https://en.wikipedia.org/wiki/Euclidean_distance"""
 
 
 class OpenAIBackendRole(Enum):
@@ -174,3 +181,8 @@ class OpenAIBackendRole(Enum):
 class TerminationMode(Enum):
     ANY = "any"
     ALL = "all"
+
+
+class StorageType(Enum):
+    MILVUS = "milvus"
+    QDRANT = "qdrant"

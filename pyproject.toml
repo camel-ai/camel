@@ -3,7 +3,7 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
-name = "camel"
+name = "camel-ai"
 version = "0.1.1"
 authors = ["CAMEL-AI.org"]
 description = "Communicative Agents for AI Society Study"
@@ -18,6 +18,9 @@ keywords = [
     "natural-language-processing",
     "large-language-models",
 ]
+packages = [
+    { include = "camel" },
+]
 license = "Apache License 2.0"
 homepage = "https://www.camel-ai.org/"
 repository = "https://github.com/camel-ai/camel"
@@ -31,7 +34,11 @@ tiktoken = "^0"
 colorama = "^0"
 jsonschema = "^4"
 protobuf = "^4"
+pathlib = "^1.0.1"   
+docstring-parser = "^0.15"
+pydantic = ">=1.9,<3"
 
+# huggingface-agent
 transformers = { version = "^4", optional = true }
 diffusers = { version = "^0", optional = true }
 accelerate = { version = "^0", optional = true }
@@ -40,13 +47,24 @@ torch = { version = "^1", optional = true }
 soundfile = { version = "^0", optional = true }
 sentencepiece = { version = "^0", optional = true }
 opencv-python = { version = "^4", optional = true }
+
+# tools
 beautifulsoup4 = { version = "^4", optional = true }
 docx2txt = { version = "^0.8", optional = true }
 PyMuPDF = { version = "^1.22.5", optional = true }
 wikipedia = { version = "^1", optional = true }
 pyowm = { version = "^3.3.0", optional = true }
-unstructured = { version = "^0.10.30", optional = true }
-argilla = { version = "^1.19.0", optional = true }
+googlemaps = { version = "^4.10.0", optional = true }
+unstructured = { extras = ["all-docs"], version = "^0.10.30", optional = true }
+
+# encoders
+sentence-transformers = { version = "^2.2.2", optional = true }
+
+# vector-databases
+qdrant-client = { version = "^1.6.4", optional = true }
+pymilvus = { version = "^2.4.0", optional = true }
+
+# test
 pytest = { version = "^7", optional = true}
 mock = { version = "^5", optional = true}
 
@@ -64,17 +82,27 @@ huggingface-agent = [
     "opencv-python",
 ]
 
+encoders = [
+    "sentence-transformers",
+]
+
 tools = [
     "beautifulsoup4",
     "docx2txt",
     "PyMuPDF",
     "wikipedia",
     "pyowm",
+    "googlemaps",
     "unstructured",
-    "argilla",
+]
+
+vector-databases = [
+    "qdrant-client",
+    "pymilvus",
 ]
 
 all = [
+    # huggingface-agent
     "transformers",
     "diffusers",
     "accelerate",
@@ -83,13 +111,19 @@ all = [
     "soundfile",
     "sentencepiece",
     "opencv-python",
+    # tools
     "beautifulsoup4",
     "docx2txt",
     "PyMuPDF",
     "wikipedia",
     "pyowm",
+    "googlemaps",
     "unstructured",
-    "argilla",
+    # vector-database
+    "qdrant-client",
+    "pymilvus",
+    # encoders
+    "sentence-transformers",
 ]
 
 [tool.poetry.group.dev]
@@ -163,12 +197,15 @@ module = [
     "huggingface_hub.utils._errors",
     "wikipedia",
     "pyowm",
+    "googlemaps",
     "jsonschema.*",
     "bs4.*",
     "docx2txt",
     "PyMuPDF",
     "fitz",
+    "qdrant_client.*",
     "unstructured.*",
-    "argilla.*",
+    "sentence_transformers.*",
+    "pymilvus",
 ]
 ignore_missing_imports = true

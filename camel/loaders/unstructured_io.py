@@ -12,10 +12,10 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 
-class UnstructuredModules:
+class UnstructuredIO:
     r"""A class to handle various functionalities provided by the
     Unstructured library, including version checking, parsing, cleaning,
     extracting, staging, chunking data, and integrating with cloud
@@ -29,13 +29,13 @@ class UnstructuredModules:
     UNSTRUCTURED_MIN_VERSION = "0.10.30"  # Define the minimum version
 
     def __init__(self):
-        r"""Initializes the UnstructuredModules class and ensures the
+        r"""Initializes the UnstructuredIO class and ensures the
         installed version of Unstructured library meets the minimum
         requirements.
         """
-        self.ensure_unstructured_version(self.UNSTRUCTURED_MIN_VERSION)
+        self._ensure_unstructured_version(self.UNSTRUCTURED_MIN_VERSION)
 
-    def ensure_unstructured_version(self, min_version: str) -> None:
+    def _ensure_unstructured_version(self, min_version: str) -> None:
         r"""Validates that the installed 'Unstructured' library version
         satisfies the specified minimum version requirement. This function is
         essential for ensuring compatibility with features that depend on a
@@ -74,11 +74,14 @@ class UnstructuredModules:
     def parse_file_or_url(
         self,
         input_path: str,
+        **kwargs: Any,
     ) -> Union[Any, List[Any]]:
         r"""Loads a file or a URL and parses its contents as unstructured data.
 
         Args:
             input_path (str): Path to the file or URL to be parsed.
+            **kwargs: Extra kwargs passed to the partition function.
+
         Returns:
             List[Any]: The elements after parsing the file or URL, could be a
                 dict, list, etc., depending on the content. If return_str is
@@ -115,7 +118,7 @@ class UnstructuredModules:
             from unstructured.partition.html import partition_html
 
             try:
-                elements = partition_html(url=input_path)
+                elements = partition_html(url=input_path, **kwargs)
                 return elements
             except Exception as e:
                 raise Exception("Failed to parse the URL.") from e
@@ -132,7 +135,7 @@ class UnstructuredModules:
             # Read the file
             try:
                 with open(input_path, "rb") as f:
-                    elements = partition(file=f)
+                    elements = partition(file=f, **kwargs)
                     return elements
             except Exception as e:
                 raise Exception(
@@ -144,10 +147,10 @@ class UnstructuredModules:
         clean_options: Optional[List[Tuple[str, Dict[str, Any]]]] = None,
     ) -> str:
         r"""Cleans text data using a variety of cleaning functions provided by
-        the `'unstructured'` library.
+        the `unstructured` library.
 
         This function applies multiple text cleaning utilities by calling the
-        `'unstructured'` library's cleaning bricks for operations like
+        `unstructured` library's cleaning bricks for operations like
         replacing unicode quotes, removing extra whitespace, dashes, non-ascii
         characters, and more.
 
@@ -158,36 +161,27 @@ class UnstructuredModules:
 
         Args:
             text (str): The text to be cleaned.
-            clean_options (dict): A dictionary specifying which
-                                cleaning options to apply. The keys should
-                                match the names of the cleaning functions,
-                                and the values should be dictionaries
-                                containing the parameters for each
-                                function. Supported types:
-                                'clean_extra_whitespace',
-                                'clean_bullets',
-                                'clean_ordered_bullets',
-                                'clean_postfix',
-                                'clean_prefix',
-                                'clean_dashes',
-                                'clean_trailing_punctuation',
-                                'clean_non_ascii_chars',
-                                'group_broken_paragraphs',
-                                'remove_punctuation',
-                                'replace_unicode_quotes',
-                                'bytes_string_to_string',
-                                'translate_text'.
+            clean_options (dict): A dictionary specifying which cleaning
+                options to apply. The keys should match the names of the
+                cleaning functions, and the values should be dictionaries
+                containing the parameters for each function. Supported types:
+                'clean_extra_whitespace', 'clean_bullets',
+                'clean_ordered_bullets', 'clean_postfix', 'clean_prefix',
+                'clean_dashes', 'clean_trailing_punctuation',
+                'clean_non_ascii_chars', 'group_broken_paragraphs',
+                'remove_punctuation', 'replace_unicode_quotes',
+                'bytes_string_to_string', 'translate_text'.
 
         Returns:
             str: The cleaned text.
 
         Raises:
             AttributeError: If a cleaning option does not correspond to a
-                valid cleaning function in 'unstructured'.
+                valid cleaning function in `unstructured`.
 
         Notes:
             The 'options' dictionary keys must correspond to valid cleaning
-            brick names from the 'unstructured' library.
+            brick names from the `unstructured` library.
             Each brick's parameters must be provided in a nested dictionary
             as the value for the key.
 
@@ -243,28 +237,32 @@ class UnstructuredModules:
                                                              **params)
             else:
                 raise ValueError(
-                    f"'{func_name}' is not a valid function in 'unstructured'."
+                    f"'{func_name}' is not a valid function in `unstructured`."
                 )
 
         return cleaned_text
 
-    def extract_data_from_text(self, text: str, extract_type: str,
-                               **kwargs) -> Any:
+    def extract_data_from_text(
+        self,
+        text: str,
+        extract_type: Literal['extract_datetimetz', 'extract_email_address',
+                              'extract_ip_address', 'extract_ip_address_name',
+                              'extract_mapi_id', 'extract_ordered_bullets',
+                              'extract_text_after', 'extract_text_before',
+                              'extract_us_phone_number'],
+        **kwargs,
+    ) -> Any:
         r"""Extracts various types of data from text using functions from
         unstructured.cleaners.extract.
 
         Args:
             text (str): Text to extract data from.
-            extract_type (str): Type of data to extract. Supported types:
-                                'extract_datetimetz',
-                                'extract_email_address',
-                                'extract_ip_address',
-                                'extract_ip_address_name',
-                                'extract_mapi_id',
-                                'extract_ordered_bullets',
-                                'extract_text_after',
-                                'extract_text_before',
-                                'extract_us_phone_number'.
+            extract_type (Literal['extract_datetimetz',
+                'extract_email_address', 'extract_ip_address',
+                'extract_ip_address_name', 'extract_mapi_id',
+                'extract_ordered_bullets', 'extract_text_after',
+                'extract_text_before', 'extract_us_phone_number']): Type of
+                data to extract.
             **kwargs: Additional keyword arguments for specific
                 extraction functions.
 
@@ -304,8 +302,17 @@ class UnstructuredModules:
 
         return extraction_functions[extract_type](text, **kwargs)
 
-    def stage_elements(self, elements: List[Any], stage_type: str,
-                       **kwargs) -> Union[str, List[Dict], Any]:
+    def stage_elements(
+        self,
+        elements: List[Any],
+        stage_type: Literal['convert_to_csv', 'convert_to_dataframe',
+                            'convert_to_dict', 'dict_to_elements',
+                            'stage_csv_for_prodigy', 'stage_for_prodigy',
+                            'stage_for_baseplate', 'stage_for_datasaur',
+                            'stage_for_label_box', 'stage_for_label_studio',
+                            'stage_for_weaviate'],
+        **kwargs,
+    ) -> Union[str, List[Dict], Any]:
         r"""Stages elements for various platforms based on the
         specified staging type.
 
@@ -317,19 +324,12 @@ class UnstructuredModules:
 
         Args:
             elements (List[Any]): List of Element objects to be staged.
-            stage_type (str): Type of staging to perform. Supported types:
-                            'convert_to_csv',
-                            'convert_to_dataframe',
-                            'convert_to_dict',
-                            'dict_to_elements',
-                            'stage_csv_for_prodigy',
-                            'stage_for_prodigy',
-                            'stage_for_argilla',
-                            'stage_for_baseplate',
-                            'stage_for_datasaur',
-                            'stage_for_label_box',
-                            'stage_for_label_studio',
-                            'stage_for_weaviate'.
+            stage_type (Literal['convert_to_csv', 'convert_to_dataframe',
+                'convert_to_dict', 'dict_to_elements',
+                'stage_csv_for_prodigy', 'stage_for_prodigy',
+                'stage_for_baseplate', 'stage_for_datasaur',
+                'stage_for_label_box', 'stage_for_label_studio',
+                'stage_for_weaviate']): Type of staging to perform.
             **kwargs: Additional keyword arguments specific to
                 the staging type.
 
@@ -345,7 +345,6 @@ class UnstructuredModules:
         """
 
         from unstructured.staging import (
-            argilla,
             base,
             baseplate,
             datasaur,
@@ -370,8 +369,6 @@ class UnstructuredModules:
             "stage_for_prodigy":
             lambda els, **kw: prodigy.stage_for_prodigy(
                 els, kw.get('metadata', [])),
-            "stage_for_argilla":
-            lambda els, **kw: argilla.stage_for_argilla(els, **kw),
             "stage_for_baseplate":
             baseplate.stage_for_baseplate,
             "stage_for_datasaur":
@@ -397,7 +394,7 @@ class UnstructuredModules:
         Args:
             elements (List[Any]): List of Element objects to be chunked.
             chunk_type (str): Type chunk going to apply. Supported types:
-                            'chunk_by_title'.
+                'chunk_by_title'.
             **kwargs: Additional keyword arguments for chunking.
 
         Returns:

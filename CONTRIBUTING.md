@@ -69,10 +69,11 @@ poetry install --with dev,docs
 poetry install --with dev,docs -E all  # (Optional)
 
 # The following command installs a pre-commit hook into the local git repo,
-$ so every commit gets auto-formatted and linted.
+# so every commit gets auto-formatted and linted.
 pre-commit install
 
-# do something with camel
+# Run camel's unit tests
+pytest test
 
 # Exit the virtual environment
 exit
