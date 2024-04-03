@@ -17,31 +17,31 @@ Main Documentation
    :name: getting_started
 
    get_started/setup.md
-   get_started/single_agent.md
-   get_started/role_playing.md
 
 .. toctree::
    :maxdepth: 1
    :caption: Agents
    :name: agents
 
-   agents/chat_agents.md
+   agents/single_agent.md
+   agents/role_playing.md
    agents/embodied_agents.md
    agents/critic_agents_and_tree_search.md
 
 .. toctree::
-    :maxdepth: 1
-    :caption: Key Modules
-    :name: key_modules
+   :maxdepth: 1
+   :caption: Key Modules
+   :name: key_modules
 
-    key_modules/loaders.md
-    key_modules/storages.md
-    key_modules/embeddings.md
-    key_modules/retrievers.md
+   key_modules/loaders.md
+   key_modules/storages.md
+   key_modules/embeddings.md
+   key_modules/retrievers.md
 
 .. toctree::
    :maxdepth: 1
    :caption: API References
+   :name: api_references
 
    modules
 

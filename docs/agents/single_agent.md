@@ -84,17 +84,12 @@ agent.is_function_calling_enabled()
 By default our agent is initialized with `ChatHistoryMemory`, allowing agents to do in-context learning, though restricted by the finite window length.
 
 Assume that you have followed the setup in [Quick Start](#quick-start). Let's first check what is inside its brain.
-```python
+<!-- ```python
 agent.memory.get_context()
 >>> ([{'role': 'system', 'content': 'you are a helpful assistant.'},
       {'role': 'user', 'content': 'what is information in your mind?'}],
       30)
-```
-By default, only the user messages are saved. You may update/alter the agent's memory with any externally provided message in the format of `BaseMessage`; for example, using the agent's own response:
-```python
-# Update the memory
-agent.record_message(response.msgs[0])
-```
+``` -->
 ```python
 # Check the current memory
 agent.memory.get_context()

@@ -1,4 +1,4 @@
-# Setup
+# Installation and Setup
 ## 🕹 Installation
 
 ### [Option 1] Install from PyPI
