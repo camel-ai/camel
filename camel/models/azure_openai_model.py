@@ -49,26 +49,21 @@ class AzureOpenAIModel(BaseModelBackend):
         super().__init__(model_type, model_config_dict)
 
         self.model_type = backend_config_dict.get(
-            "model_type", os.environ.get("AZURE_MODEL_TYPE", None)
-        )
+            "model_type", os.environ.get("AZURE_MODEL_TYPE", None))
         self.deployment_name = backend_config_dict.get(
-            "deployment_name", os.environ.get("AZURE_DEPLOYMENT_NAME", None)
-        )
+            "deployment_name", os.environ.get("AZURE_DEPLOYMENT_NAME", None))
         self.azure_endpoint = backend_config_dict.get(
-            "azure_endpoint", os.environ.get("AZURE_ENDPOINT", None)
-        )
+            "azure_endpoint", os.environ.get("AZURE_ENDPOINT", None))
         self.api_version = backend_config_dict.get(
             "api_version",
             os.environ.get("AZURE_API_VERSION", "2023-10-01-preview"),
         )
 
         assert model_type is not None, "Azure model type is not provided."
-        assert (
-            self.deployment_name is not None
-        ), "Azure model deployment name is not provided."
-        assert (
-            self.azure_endpoint is not None
-        ), "Azure endpoint is not provided."
+        assert (self.deployment_name
+                is not None), "Azure model deployment name is not provided."
+        assert (self.azure_endpoint
+                is not None), "Azure endpoint is not provided."
 
         if isinstance(self.model_type, str):
             self.model_type = ModelType[self.model_type.upper()]
@@ -126,10 +121,8 @@ class AzureOpenAIModel(BaseModelBackend):
         """
         for param in self.model_config_dict:
             if param not in OPENAI_API_PARAMS_WITH_FUNCTIONS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into OpenAI model backend."
-                )
+                raise ValueError(f"Unexpected argument `{param}` is "
+                                 "input into OpenAI model backend.")
 
     @property
     def stream(self) -> bool:

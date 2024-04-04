@@ -64,9 +64,8 @@ class ModelFactory:
             raise ValueError(f"Unknown model type `{model_type}` is input")
 
         if backend_config_dict:
-            inst = model_class(
-                model_type, model_config_dict, backend_config_dict
-            )
+            inst = model_class(model_type, model_config_dict,
+                               backend_config_dict)
         else:
             inst = model_class(model_type, model_config_dict)
 
