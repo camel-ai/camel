@@ -42,7 +42,8 @@ class ModelFactory:
             model_type (ModelType): Model for which a backend is created.
             model_config_dict (Dict): A dictionary that will be fed into
                 the backend constructor.
-            backend_config_dict (Dict): A dictionary that contains the backend settings.(default : {})
+            backend_config_dict (Dict): A dictionary that contains the backend
+                settings. (default : {})
 
         Raises:
             ValueError: If there is not backend for the model.
