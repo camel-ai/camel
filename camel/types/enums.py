@@ -37,6 +37,8 @@ class ModelType(Enum):
     VICUNA = "vicuna"
     VICUNA_16K = "vicuna-16k"
 
+    AZURE = "azure"
+
     @property
     def value_for_tiktoken(self) -> str:
         return self.value if self is not ModelType.STUB else "gpt-3.5-turbo"

@@ -156,6 +156,28 @@ python examples/ai_society/role_playing.py
 Please note that the environment variable is session-specific. If you open a new terminal window or tab, you will need to set the API key again in that new session.
 
 
+## Use Azure OpenAI API as Backends
+
+To use Azure OpenAI API as the backend, you need to set the following environment variables:
+
+```bash
+# Export your Azure OpenAI API key
+export AZURE_OPENAI_API_KEY=<insert your Azure OpenAI API key>
+# Export your Azure OpenAI API endpoint
+export AZURE_ENDPOINT=<insert your Azure OpenAI API endpoint>
+# Export your Azure OpenAI API deployment name
+export AZURE_DEPLOYMENT_NAME=<insert your Azure OpenAI API deployment name>
+# Export your Azure OpenAI API model type, which should match the model type in CAMEL
+export AZURE_MODEL_TYPE=<insert the ModelType enum name that match your Azure OpenAI API model type>
+```
+
+
+After setting these environment variables, you can run the script:
+```bash
+# You can change the role pair and initial prompt in role_playing_with_azure_openai_model.py
+python examples/azure/role_playing_with_azure_openai_model.py
+```
+
 ## Use Open-Source Models as Backends
 
 The basic workflow of using an open-sourced model as the backend is based on an external server running LLM inference service, e.g. during the development we chose [FastChat](https://github.com/lm-sys/FastChat) to run the service. 
