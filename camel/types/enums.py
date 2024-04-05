@@ -202,3 +202,8 @@ class OpenAIImageType(Enum, metaclass=OpenAIImageTypeMeta):
     JPG = "jpg"
     WEBP = "webp"
     GIF = "gif"
+
+
+class StorageType(Enum):
+    MILVUS = "milvus"
+    QDRANT = "qdrant"

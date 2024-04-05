@@ -35,10 +35,10 @@ class File(ABC):
         Args:
             name (str): The name of the file.
             id (str): The unique identifier of the file.
-            metadata (Dict[str, Any], optional):
-            Additional metadata associated with the file. Defaults to None.
-            docs (List[Dict[str, Any]], optional):
-            A list of documents contained within the file. Defaults to None.
+            metadata (Dict[str, Any], optional): Additional metadata
+                associated with the file. Defaults to None.
+            docs (List[Dict[str, Any]], optional): A list of documents
+                contained within the file. Defaults to None.
         """
         self.name = name
         self.id = id
@@ -51,8 +51,8 @@ class File(ABC):
         r"""Creates a File object from a BytesIO object.
 
         Args:
-            file (BytesIO):
-            A BytesIO object representing the contents of the file.
+            file (BytesIO): A BytesIO object representing the contents of the
+                file.
 
         Returns:
             File: A File object.
@@ -96,8 +96,8 @@ class DocxFile(File):
         r"""Creates a DocxFile object from a BytesIO object.
 
         Args:
-            file (BytesIO):
-            A BytesIO object representing the contents of the docx file.
+            file (BytesIO): A BytesIO object representing the contents of the
+                docx file.
 
         Returns:
             DocxFile: A DocxFile object.
@@ -127,8 +127,8 @@ class PdfFile(File):
         r"""Creates a PdfFile object from a BytesIO object.
 
         Args:
-            file (BytesIO):
-            A BytesIO object representing the contents of the pdf file.
+            file (BytesIO): A BytesIO object representing the contents of the
+                pdf file.
 
         Returns:
             PdfFile: A PdfFile object.
@@ -162,8 +162,8 @@ class TxtFile(File):
         r"""Creates a TxtFile object from a BytesIO object.
 
         Args:
-            file (BytesIO):
-            A BytesIO object representing the contents of the txt file.
+            file (BytesIO): A BytesIO object representing the contents of the
+                txt file.
 
         Returns:
             TxtFile: A TxtFile object.
@@ -187,8 +187,8 @@ class JsonFile(File):
         r"""Creates a JsonFile object from a BytesIO object.
 
         Args:
-            file (BytesIO):
-            A BytesIO object representing the contents of the json file.
+            file (BytesIO): A BytesIO object representing the contents of the
+                json file.
 
         Returns:
             JsonFile: A JsonFile object.
@@ -211,8 +211,8 @@ class HtmlFile(File):
         r"""Creates a HtmlFile object from a BytesIO object.
 
         Args:
-            file (BytesIO):
-            A BytesIO object representing the contents of the html file.
+            file (BytesIO): A BytesIO object representing the contents of the
+                html file.
 
         Returns:
             HtmlFile: A HtmlFile object.

@@ -11,28 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-
-from .records import MemoryRecord, ContextRecord
-from .base import MemoryBlock, AgentMemory, BaseContextCreator
-from .context_creators.score_based import ScoreBasedContextCreator
-from .blocks.chat_history_block import ChatHistoryBlock
-from .blocks.vectordb_block import VectorDBBlock
-from .agent_memories import (
-    VectorDBMemory,
-    ChatHistoryMemory,
-    LongtermAgentMemory,
-)
+from .base import BaseRetriever
+from .vector_retriever import VectorRetriever
+from .auto_retriever import AutoRetriever
 
 __all__ = [
-    'MemoryRecord',
-    'ContextRecord',
-    'MemoryBlock',
-    "AgentMemory",
-    'BaseContextCreator',
-    'ScoreBasedContextCreator',
-    'ChatHistoryMemory',
-    'VectorDBMemory',
-    'ChatHistoryBlock',
-    'VectorDBBlock',
-    'LongtermAgentMemory',
+    'BaseRetriever',
+    'VectorRetriever',
+    'AutoRetriever',
 ]

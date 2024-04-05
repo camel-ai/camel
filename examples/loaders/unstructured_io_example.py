@@ -14,9 +14,9 @@
 
 import os
 
-from camel.functions.unstructured_io_fuctions import UnstructuredModules
+from camel.loaders.unstructured_io import UnstructuredIO
 
-unstructured_modules = UnstructuredModules()
+unstructured_modules = UnstructuredIO()
 
 
 def parse_file_example():
