@@ -117,5 +117,5 @@ def test_search_wolfram_alpha(mock_get, mock_client):
                        "lim_(x->0) (sin^2(x))/x = 0\n"
                        "lim_(x->-∞) (sin^2(x))/x = 0\n"
                        "lim_(x->∞) (sin^2(x))/x = 0\n\n"
-                       "Plot:")
+                       "Plot:\nNone")
     assert result == expected_output

@@ -328,12 +328,15 @@ def search_wolfram_alpha(query: str, detail: bool) -> str:
                          "variables. Get `WOLFRAMALPHA_APP_ID` here: "
                          "`https://products.wolframalpha.com/api/`.")
 
-    client = wolframalpha.Client(WOLFRAMALPHA_APP_ID)
-
     try:
+        client = wolframalpha.Client(WOLFRAMALPHA_APP_ID)
         res = client.query(query)
-        assumption = next(res.pods).text
-        answer = next(res.results).text
+    except Exception as e:
+        error_message = (f"Wolfram Alpha wasn't able to query it"
+                         f"{str(e)}.")
+    try:
+        assumption = next(res.pods).text or "No assumption made."
+        answer = next(res.results).text or "No answer found."
     except StopIteration:
         return "Wolfram Alpha wasn't able to answer it"
     except Exception as e:
@@ -341,19 +344,15 @@ def search_wolfram_alpha(query: str, detail: bool) -> str:
                          f"{str(e)}.")
         return error_message
 
-    if answer is None or answer == "":
-        # We don't want to return the assumption alone if answer is empty
-        return "No good Wolfram Alpha Result was found"
-    else:
-        result = f"Assumption:\n{assumption}\n\nAnswer:\n{answer}"
+    result = f"Assumption:\n{assumption}\n\nAnswer:\n{answer}"
 
     if detail:
         result += '\n'
         for pod in res.pods:
             result += '\n' + pod['@title'] + ':\n'
             for sub in pod.subpods:
-                if sub.plaintext is not None and sub.plaintext != "":
-                    result += sub.plaintext + '\n'  # Indent subpods
+                result += (sub.plaintext or "None") + '\n'
+
     return result.rstrip()  # Remove trailing whitespace
 
 

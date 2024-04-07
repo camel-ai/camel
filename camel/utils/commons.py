@@ -247,10 +247,10 @@ PYDANTIC_V2 = pydantic.VERSION.startswith("2.")
 
 def role_playing_with_function(
     task_prompt: str = ("Assume now is 2024 in the Gregorian calendar, "
-                        "estimate the current age of University of Oxford "
-                        "and then add 10 more years to this age, "
-                        "and get the current weather of the city where "
-                        "the University is located. And tell me what time "
+                        "estimate the current age of University of Oxford."
+                        ""
+                        ""
+                        " and tell me what time "
                         "zone University of Oxford is in."),
     function_list: Optional[List] = None,
     model_type=None,
