@@ -15,6 +15,7 @@ import re
 from typing import Dict, List, Optional, Union
 import json
 import sys
+import os
 
 from camel.agents import ChatAgent
 from camel.configs import BaseConfig
@@ -22,9 +23,10 @@ from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
 from camel.types import ModelType, RoleType, ReasonType
 from camel.functions.search_functions import *
+from camel.envs import alfworld,bandits,gridworld,highway,metaworld,optimization,poem,reco
 
 
-class ReactiveReasonerAgent(ChatAgent):
+class ReactAgent(ChatAgent):
     r"""An agent responsible for reactive reasoning. Model of reactive reasoning:
         - Thought. The agent's explanation on how to answer the question, illustrating what tools to implement.
         - Action. The calling of functions based on the thought. This step includes what the input of the function is and what functions to call.
@@ -36,7 +38,6 @@ class ReactiveReasonerAgent(ChatAgent):
         model_config (BaseConfig, optional): The configuration for the model.
             (default: :obj:`None`)
     """
-
     def __init__(
         self,
         model_type: Optional[ModelType] = None,
@@ -84,33 +85,39 @@ class ReactiveReasonerAgent(ChatAgent):
         """
         self.reset()
 
-        react_instructions = """You are an reactive reasoner. You solve a question answering task with interleaving Thought, Action, Observation steps. Thought can reason about the current situation, and Action can be three types: 
-(1) Search{entity}, which searches the exact entity on Wikipedia and returns the first paragraph if it exists. If not, it will return some similar entities to search.
-(2) Lookup{keyword}, which returns the next sentence containing keyword in the current passage.
-(3) Finish{answer}, which returns the answer and finishes the task.
+        react_instructions = """You are an reactive reasoner. You solve a question answering task with interleaving Thought, Action, Observation steps. The Thought part can reason about the current situation, explain the thinking process, and deciding which tools to implement.
+The Action part implements the tool. The observation part collects and summarizes the output of the function called in the Action part. In summary, the response contains three parts  
+(1) Thought:\n <BLANK>. Because our thoughts contain {keywords}, we decide to implement the {entity}. 
+(2) Action: \n We implement the {entity}. We summarize the output of {entity}.
+(3) Observation:  <BLANK>
 
-===== TASK =====
-Given a specific question, find the answer through the following steps: first reasoning and finding out tools to implement; next implement the tools; finally summarizing the observation. 
-
+Here are a few examples regarding the tool of {entity}: 
 {role_with_description_prompt}
-===== ANSWER TEMPLATE =====
-- Thought:\n<BLANK>
-- Action:\n<BLANK>/None
-- Observation: <BLANK>.
-
-Here are a few examples.
-
 """  # noqa: E501
-        folder = './data/'
-        prompt_file = 'prompts_naive.json'
-        with open(folder + prompt_file, 'r') as f:
-            prompt_dict = json.load(f)
 
-        react_instructions = TextPrompt(react_instructions)
+        # write a wrapper beyond the current existing wrappers.
+        # After deciding the factor. First present corresponding prompts for llm to brush up.
 
-        react_examples = prompt_dict['webthink_simple6']
-        react_prompt = react_instructions + react_examples
+        react_prompt = react_instructions
+        # add the prompts stored in
+        idx_dict = ['reco', 'poem', 'optimization', 'bandits']
+        for i in range(4):
+            prompt_path = os.path.join('./camel/envs/', idx_dict[i], 'prompts.py')
+            f = open(prompt_path)
+            examples = f.readlines()
+            react_examples = TextPrompt(examples)
+            react_prompt = react_prompt + react_examples
 
+        # Now create some examples for each task and put them into the prompt
+        # For the moment, we only support the tool of an optimization agent. 
+        react_optimization_example = """
+        Question: Can you find the minimum point of y in terms of x, with the expression y = pow(x,2)? The initial point is 1.
+        Thought: Based on the keyword minimum of the function, we could implement the optimization tool agent. 
+        Action: We are now implementing the optimization tool agent. 
+        Observation: episode 1: x = 1, reward: 1
+        episode 2: set x = 0, reward: 0 
+        You have reached the minimum!  
+        """
         if role_descriptions_dict is not None:
             role_names = role_descriptions_dict.keys()
             role_with_description_prompt = \
@@ -137,7 +144,9 @@ Here are a few examples.
         print(f"Message content:\n{thought_action.content}")
 
         thought, action = thought_action.content.strip().split('\n')
-        observation = search_google_and_summarize(action)
+
+        # Write a wrapper
+        observation = env.step(self, action)
 
         result: str = response.info
         # Leave the following part in test cases: extracting the conditions from the message and print.
