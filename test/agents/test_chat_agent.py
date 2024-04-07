@@ -13,8 +13,12 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from io import BytesIO
 from typing import List
+from unittest.mock import Mock
 
 import pytest
+from openai.types.chat.chat_completion import Choice
+from openai.types.chat.chat_completion_message import ChatCompletionMessage
+from openai.types.completion_usage import CompletionUsage
 from PIL import Image
 
 from camel.agents import ChatAgent
@@ -29,7 +33,13 @@ from camel.generators import SystemMessageGenerator
 from camel.memories import MemoryRecord
 from camel.messages import BaseMessage
 from camel.terminators import ResponseWordsTerminator
-from camel.types import ModelType, OpenAIBackendRole, RoleType, TaskType
+from camel.types import (
+    ChatCompletion,
+    ModelType,
+    OpenAIBackendRole,
+    RoleType,
+    TaskType,
+)
 
 parametrize = pytest.mark.parametrize('model', [
     ModelType.STUB,
@@ -346,5 +356,24 @@ def test_chat_agent_vision():
         image=image,
         image_detail="low",
     )
+    # Mock the OpenAI model return value:
+    agent.model_backend = Mock()
+    agent.model_backend.run.return_value = ChatCompletion(
+        id="mock_vision_id",
+        choices=[
+            Choice(
+                finish_reason='stop', index=0, logprobs=None,
+                message=ChatCompletionMessage(content='Yes.', role='assistant',
+                                              function_call=None,
+                                              tool_calls=None))
+        ],
+        created=123456,
+        model='gpt-4-1106-vision-preview',
+        object='chat.completion',
+        system_fingerprint=None,
+        usage=CompletionUsage(completion_tokens=2, prompt_tokens=113,
+                              total_tokens=115),
+    )
+
     agent_response = agent.step(user_msg)
     assert agent_response.msgs[0].content == "Yes."
