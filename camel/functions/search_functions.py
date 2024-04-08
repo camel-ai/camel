@@ -303,14 +303,15 @@ def search_google_and_summarize(query: str) -> str:
     return "Failed to find the answer from google search."
 
 
-def search_wolfram_alpha(query: str, detail: bool) -> str:
+def search_wolfram_alpha(query: str, is_detailed: bool) -> str:
     r"""Queries Wolfram|Alpha and returns the result. Wolfram|Alpha is a
     search engine that uses algorithms, knowledgebase and AI to compute
     expert-level answers for math, science, society, everyday life and more.
 
     Args:
         query (str): The query to send to Wolfram Alpha.
-        detail (bool): Whether to include additional details in the result.
+        is_detailed (bool): Whether to include additional details in the
+            result.
 
     Returns:
         str: The result from Wolfram Alpha, formatted as a string.
@@ -332,21 +333,24 @@ def search_wolfram_alpha(query: str, detail: bool) -> str:
         client = wolframalpha.Client(WOLFRAMALPHA_APP_ID)
         res = client.query(query)
     except Exception as e:
-        error_message = (f"Wolfram Alpha wasn't able to query it"
+        error_message = (f"Wolfram Alpha wasn't able to query it. "
                          f"{str(e)}.")
+        return error_message
+
     try:
         assumption = next(res.pods).text or "No assumption made."
         answer = next(res.results).text or "No answer found."
     except StopIteration:
-        return "Wolfram Alpha wasn't able to answer it"
+        return "Wolfram Alpha wasn't able to answer it. "
     except Exception as e:
-        error_message = (f"Wolfram Alpha wasn't able to answer it"
+        error_message = (f"Wolfram Alpha wasn't able to answer it. "
                          f"{str(e)}.")
         return error_message
 
     result = f"Assumption:\n{assumption}\n\nAnswer:\n{answer}"
 
-    if detail:
+    # Add additional details in the result
+    if is_detailed:
         result += '\n'
         for pod in res.pods:
             result += '\n' + pod['@title'] + ':\n'
