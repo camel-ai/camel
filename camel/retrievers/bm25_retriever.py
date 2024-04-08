@@ -109,7 +109,7 @@ class BM25Retriever(BaseRetriever):
 
         if self.bm25 is None:
             raise ValueError(
-                "BM25 model is not initialized. Call process_and_store first.")
+                "BM25 model is not initialized. Call `process_and_store` first.")
 
         # Preprocess query similarly to how documents were processed
         processed_query = query.split(" ")
