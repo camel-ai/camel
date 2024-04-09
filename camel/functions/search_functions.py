@@ -332,20 +332,15 @@ def search_wolfram_alpha(query: str, is_detailed: bool) -> str:
     try:
         client = wolframalpha.Client(WOLFRAMALPHA_APP_ID)
         res = client.query(query)
-    except Exception as e:
-        error_message = (f"Wolfram Alpha wasn't able to query it. "
-                         f"{str(e)}.")
-        return error_message
-
-    try:
         assumption = next(res.pods).text or "No assumption made."
         answer = next(res.results).text or "No answer found."
-    except StopIteration:
-        return "Wolfram Alpha wasn't able to answer it. "
     except Exception as e:
-        error_message = (f"Wolfram Alpha wasn't able to answer it. "
-                         f"{str(e)}.")
-        return error_message
+        if isinstance(e, StopIteration):
+            return "Wolfram Alpha wasn't able to answer it"
+        else:
+            error_message = (f"Wolfram Alpha wasn't able to answer it"
+                             f"{str(e)}.")
+            return error_message
 
     result = f"Assumption:\n{assumption}\n\nAnswer:\n{answer}"
 
