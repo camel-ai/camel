@@ -18,8 +18,8 @@ from PIL import Image
 from camel.embeddings import BaseEmbedding
 
 
-class CLIPEmbedding(BaseEmbedding[Union[str, Image.Image]]):
-    r"""Provides image embedding functionalities using CLIP model.
+class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
+    r"""Provides image embedding functionalities using multimodal model.
 
     Args:
         model_name : The model type to be used for generating embeddings.
@@ -31,24 +31,22 @@ class CLIPEmbedding(BaseEmbedding[Union[str, Image.Image]]):
 
     def __init__(self,
                  model_name: str = "openai/clip-vit-base-patch32") -> None:
-        r"""Initializes the: obj: `CLIPEmbedding` class with a specified model
+        r"""Initializes the: obj: `VisionLanguageEmbedding` class
+                                    with a specified model
                                     and return the dimension of embeddings.
 
         Args:
             model_name (str, optional): The version name of the model to use.
             (default: :obj:`openai/clip-vit-base-patch32`)
         """
-
-        from transformers import CLIPModel, CLIPProcessor
-        self.model = CLIPModel.from_pretrained(model_name)
-        self.processor = CLIPProcessor.from_pretrained(model_name)
-        text = 'dimension'
-        inputs = self.processor(text=[text], return_tensors="pt")
-        self.dim = self.model.get_text_features(**inputs).shape[1]
+        from transformers import AutoModel, AutoProcessor
+        self.model = AutoModel.from_pretrained(model_name)
+        self.processor = AutoProcessor.from_pretrained(model_name)
+        self.dim = None
 
     def embed_list(
         self,
-        objs: List[Union[Image.Image, str]],  # to do
+        objs: List[Union[Image.Image, str]],
         **kwargs: Any,
     ) -> List[List[float]]:
         r"""Generates embeddings for the given images or texts.
@@ -63,13 +61,14 @@ class CLIPEmbedding(BaseEmbedding[Union[str, Image.Image]]):
                 as a list of floating-point numbers.
         """
         if not objs:
-            raise ValueError("Input text list is empty.")
+            raise ValueError("Input objs list is empty.")
         result_list = []
         for obj in objs:
             if isinstance(obj, Image.Image):
                 input = self.processor(images=obj, return_tensors="pt",
-                                       padding=True)
-                image_feature = self.model.get_image_features(**input).tolist()
+                                       padding=True, **kwargs)
+                image_feature = self.model.get_image_features(
+                    **input, **kwargs).tolist()
                 result_list.extend(image_feature)
             elif isinstance(obj, str):
                 input = self.processor(text=obj, return_tensors="pt",
@@ -79,13 +78,16 @@ class CLIPEmbedding(BaseEmbedding[Union[str, Image.Image]]):
 
             else:
                 raise ValueError("Input type is not image nor text.")
+        self.dim = result_list[0].shape[1]
         return result_list
 
-    def get_output_dim(self) -> int:
+    def get_output_dim(self):
         r"""Returns the output dimension of the embeddings.
 
         Returns:
             int: The dimensionality of the embedding for the current model.
         """
-
+        text = 'dimension'
+        inputs = self.processor(text=[text], return_tensors="pt")
+        self.dim = self.model.get_text_features(**inputs).shape[1]
         return self.dim
