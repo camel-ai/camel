@@ -16,7 +16,7 @@ import os
 
 import pytest
 
-from examples.io.unstructured_modules_example import (
+from examples.loaders.unstructured_io_example import (
     chunk_url_content_example,
     clean_text_example,
     extract_data_example,
