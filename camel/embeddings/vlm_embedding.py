@@ -70,12 +70,12 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
                 image_feature = self.model.get_image_features(
                     **input, **kwargs).tolist()
                 result_list.extend(image_feature)
+
             elif isinstance(obj, str):
                 input = self.processor(text=obj, return_tensors="pt",
                                        padding=True)
                 text_feature = self.model.get_text_features(**input).tolist()
                 result_list.extend(text_feature)
-
             else:
                 raise ValueError("Input type is not image nor text.")
         self.dim = result_list[0].shape[1]
@@ -87,7 +87,8 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
         Returns:
             int: The dimensionality of the embedding for the current model.
         """
-        text = 'dimension'
-        inputs = self.processor(text=[text], return_tensors="pt")
-        self.dim = self.model.get_text_features(**inputs).shape[1]
+        if self.dim is None:
+            text = 'dimension'
+            inputs = self.processor(text=[text], return_tensors="pt")
+            self.dim = self.model.get_text_features(**inputs).shape[1]
         return self.dim

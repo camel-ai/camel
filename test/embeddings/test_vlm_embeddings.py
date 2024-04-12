@@ -60,6 +60,18 @@ def test_text_embed_list_with_empty_input(VLM_instance):
         VLM_instance.embed_list([])
 
 
+def test_mixed_embed_list_with_valid_input(VLM_instance):
+    test_list = ['Hello world', 'Testing sentence embeddings']
+    url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+    image = Image.open(requests.get(url, stream=True).raw)
+    test_list.append(image)
+    embeddings = VLM_instance.embed_list(test_list)
+    assert isinstance(embeddings, list)
+    assert len(embeddings) == 3
+    for e in embeddings:
+        assert len(e) == VLM_instance.get_output_dim()
+
+
 def test_get_output_dim(VLM_instance):
     output_dim = VLM_instance.get_output_dim()
     assert isinstance(output_dim, int)
