@@ -73,8 +73,9 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
 
             elif isinstance(obj, str):
                 input = self.processor(text=obj, return_tensors="pt",
-                                       padding=True)
-                text_feature = self.model.get_text_features(**input).tolist()
+                                       padding=True, **kwargs)
+                text_feature = self.model.get_text_features(**input,
+                                                            **kwargs).tolist()
                 result_list.extend(text_feature)
             else:
                 raise ValueError("Input type is not image nor text.")
