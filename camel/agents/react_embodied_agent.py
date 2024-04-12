@@ -16,14 +16,15 @@ from typing import Dict, List, Optional, Union
 import json
 import sys
 import os
-
+import camel.llfbench as gym
+import random
 from camel.agents import ChatAgent
 from camel.configs import BaseConfig
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
 from camel.types import ModelType, RoleType, ReasonType
-from camel.functions.search_functions import *
-from camel.envs import alfworld,bandits,gridworld,highway,metaworld,optimization,poem,reco
+#from camel.functions.search_functions import *
+from camel.envs import bandits, optimization, poem
 
 
 class ReactAgent(ChatAgent):
@@ -100,24 +101,45 @@ Here are a few examples regarding the tool of {entity}:
 
         react_prompt = react_instructions
         # add the prompts stored in
-        idx_dict = ['reco', 'poem', 'optimization', 'bandits']
-        for i in range(4):
-            prompt_path = os.path.join('./camel/envs/', idx_dict[i], 'prompts.py')
-            f = open(prompt_path)
-            examples = f.readlines()
-            react_examples = TextPrompt(examples)
-            react_prompt = react_prompt + react_examples
+        # idx_dict = ['reco', 'poem', 'optimization', 'bandits']
+        # for i in range(4):
+        #     prompt_path = os.path.join('./camel/envs/', idx_dict[i], 'prompts.py')
+        #     f = open(prompt_path)
+        #     examples = f.readlines()
+        #     react_examples = TextPrompt(examples)
+        #     react_prompt = react_prompt + react_examples
 
         # Now create some examples for each task and put them into the prompt
-        # For the moment, we only support the tool of an optimization agent. 
+        # For the moment, we only support the tool agents included in llf-bench.
+        # We implement a two-step language model, where the first steps decide what tool agent in llf-bench to use. The second
+        # step implements the tool agent in llf-bench, noticing that it is a language-based reinforcement learning model.
         react_optimization_example = """
-        Question: Can you find the minimum point of y in terms of x, with the expression y = pow(x,2)? The initial point is 1.
-        Thought: Based on the keyword minimum of the function, we could implement the optimization tool agent. 
-        Action: We are now implementing the optimization tool agent. 
-        Observation: episode 1: x = 1, reward: 1
-        episode 2: set x = 0, reward: 0 
-        You have reached the minimum!  
+        ========Optimization Tool Agent ===============
+        Question: I would like to give you an optimization task. 
+        Thought: Based on the keyword optimization, we could implement the optimization tool agent with limited information. 
+        Question: I would like to minimize a function without knowing its the exact expression. 
+        Thought: Based on the keyword optimization, we could implement the optimization tool agent with limited information. 
+        Question: I would like to find a minimizer of a function without knowing its the exact expression. 
+        Thought: Based on the keyword optimization, we could implement the optimization tool agent with limited information. 
         """
+
+        react_bandit_example = """
+        ========Bandit Problem Tool Agent ===============
+        Question: I would like to do a bandit problem.
+        Thought: Based on the keywords in your request, we could implement the bandit tool agent.
+        Question: I want to apply a multi-armed bandit problem. 
+        Thought: Based on the keywords in your request, we could implement the bandit tool agent.
+        """
+
+        react_poem_example = """
+        ========Poem Composing Tool Agent ===============
+        Question: I would like to write a poem.
+        Thought: Based on the keywords in your request, we could implement the poem composing tool agent. 
+        Question: I would like to write something that has rhymes.
+        Thought: Based on the keywords in your request, we could implement the poem composing tool agent.
+        """
+
+        react_prompt = react_prompt + react_poem_example + react_bandit_example + react_optimization_example
         if role_descriptions_dict is not None:
             role_names = role_descriptions_dict.keys()
             role_with_description_prompt = \
@@ -142,13 +164,86 @@ Here are a few examples regarding the tool of {entity}:
                                f"{response.info}")
         thought_action: BaseMessage = response.msg
         print(f"Message content:\n{thought_action.content}")
+        ENVIRONMENTS_OPTIMIZATION = (
+            'Booth',
+            'McCormick',
+            'Rosenbrock',
+            'SixHumpCamel',
+        )
 
-        thought, action = thought_action.content.strip().split('\n')
+        ENVIRONMENTS_BANDIT = (
+            'BanditTenArmedRandomFixed-v0',
+            'BanditTenArmedRandomRandom-v0',
+            'BanditTenArmedGaussian-v0',
+            'BanditTenArmedUniformDistributedReward-v0',
+            'BanditTwoArmedDeterministicFixed-v0',
+            'BanditTwoArmedHighHighFixed-v0',
+            'BanditTwoArmedHighLowFixed-v0',
+            'BanditTwoArmedLowLowFixed-v0',
+        )
 
+        ENVIRONMENTS_POEM = (
+            'Haiku',
+            'Tanka',
+            'LineSyllableConstrainedPoem',
+            'SyllableConstrainedPoem',
+        )
+        if 'bandits' in thought_action.content:
+            name_func = 'bandits'
+            l = len(ENVIRONMENTS_BANDIT)
+            idx = random.randint(0, l)
+            name_attribute = ENVIRONMENTS_OPTIMIZATION[idx]
+        elif 'optimization' in thought_action.content:
+            name_func = 'optimization'
+            l = len(ENVIRONMENTS_OPTIMIZATION)
+            idx = random.randint(0, l)
+            name_attribute = ENVIRONMENTS_OPTIMIZATION[idx]
+        elif 'poem' in thought_action.content:
+            name_func = 'poem'
+            l = len(ENVIRONMENTS_POEM)
+            idx = random.randint(0, l)
+            name_attribute = ENVIRONMENTS_POEM[idx]
         # Write a wrapper
-        observation = env.step(self, action)
+        environment_name = 'llf-' + name_func + name_attribute + '-v0'
+        env = gym.make(environment_name)
+        done = False
+        cumulative_reward = 0.0
+        observation, info = env.reset()
+        if observation['observation'] == None:
+            observation['observation'] = ''
 
-        result: str = response.info
+        observation['feedback'] = ''
+
+        while not done:
+            # Observation is dict having 'observation', 'instruction', 'feedback'
+            # Here we print the observation and ask the user for an action
+
+            action = input(observation['observation'] + '\n' +
+                           observation['instruction'] + '\n' +
+                           observation['feedback'] + '\n' +
+                           'Action: ')
+
+            # Gridworld has a text action space, so TextWrapper is not needed
+            # to parse a valid action from the input string
+            # pdb.set_trace()
+            # action = int(action)
+            observation, reward, terminated, truncated, info = env.step(action)
+
+            if isinstance(observation['observation'], str) == False:
+                observation['observation'] = ''
+            if isinstance(observation['instruction'], str) == False:
+                observation['instruction'] = ''
+            if isinstance(observation['feedback'], str) == False:
+                observation['feedback'] = ''
+            # reward is never revealed to the agent; only used for evaluation
+
+            cumulative_reward += reward
+
+            # terminated and truncated follow the same semantics as in Gymnasium
+
+            done = terminated or truncated
+
+        print(f'Episode reward: {cumulative_reward}')
         # Leave the following part in test cases: extracting the conditions from the message and print.
 
-        return thought, action, observation
+        return observation

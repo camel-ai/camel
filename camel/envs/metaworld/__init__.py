@@ -1,7 +1,6 @@
 import gymnasium as gym
 from gymnasium.envs.registration import register
-from llfbench.utils import generate_combinations_dict
-from llfbench.envs.metaworld.wrapper import MetaworldWrapper
+from camel.llfbench.utils import generate_combinations_dict
 from collections import defaultdict
 import importlib
 import metaworld
