@@ -11,23 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-
-from .base import (
-    BaseVectorStorage,
-    VectorRecord,
-    VectorDBQuery,
-    VectorDBQueryResult,
-    VectorDBStatus,
-)
-from .qdrant import QdrantStorage
-from .milvus import MilvusStorage
+from .base import BaseRetriever
+from .vector_retriever import VectorRetriever
+from .auto_retriever import AutoRetriever
 
 __all__ = [
-    'BaseVectorStorage',
-    'VectorDBQuery',
-    'VectorDBQueryResult',
-    'QdrantStorage',
-    'MilvusStorage',
-    'VectorRecord',
-    'VectorDBStatus',
+    'BaseRetriever',
+    'VectorRetriever',
+    'AutoRetriever',
 ]

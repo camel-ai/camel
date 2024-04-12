@@ -12,22 +12,11 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from .base import (
-    BaseVectorStorage,
-    VectorRecord,
-    VectorDBQuery,
-    VectorDBQueryResult,
-    VectorDBStatus,
-)
-from .qdrant import QdrantStorage
-from .milvus import MilvusStorage
+from .base_io import File, read_file
+from .unstructured_io import UnstructuredIO
 
 __all__ = [
-    'BaseVectorStorage',
-    'VectorDBQuery',
-    'VectorDBQueryResult',
-    'QdrantStorage',
-    'MilvusStorage',
-    'VectorRecord',
-    'VectorDBStatus',
+    'File',
+    'read_file',
+    'UnstructuredIO',
 ]

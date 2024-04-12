@@ -12,22 +12,10 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from .base import (
-    BaseVectorStorage,
-    VectorRecord,
-    VectorDBQuery,
-    VectorDBQueryResult,
-    VectorDBStatus,
-)
-from .qdrant import QdrantStorage
-from .milvus import MilvusStorage
+from .chat_history_block import ChatHistoryBlock
+from .vectordb_block import VectorDBBlock
 
 __all__ = [
-    'BaseVectorStorage',
-    'VectorDBQuery',
-    'VectorDBQueryResult',
-    'QdrantStorage',
-    'MilvusStorage',
-    'VectorRecord',
-    'VectorDBStatus',
+    'ChatHistoryBlock',
+    'VectorDBBlock',
 ]
