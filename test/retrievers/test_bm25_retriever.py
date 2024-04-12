@@ -60,8 +60,10 @@ def test_query(mock_bm25):
     retriever.chunks = [mock_chunk1, mock_chunk2]
 
     results = retriever.query('query', top_k=2)
-    assert results[0]['similarity score'] == 0.8  # an example numerical value
+    assert results[0]['similarity score'] == 0.8
+    assert results[1]['similarity score'] == 0.5
     assert 'chunk1' in results[0]['metadata']['id']
+    assert 'chunk2' in results[1]['metadata']['id']
 
 
 def test_query_without_initialization():
