@@ -27,6 +27,7 @@ NODE_PROPERTY_QUERY = """
 CALL apoc.meta.data()
 YIELD label, other, elementType, type, property
 WHERE NOT type = "RELATIONSHIP" AND elementType = "node"
+AND NOT label IN $EXCLUDED_LABELS
 WITH label AS nodeLabels, collect({property:property, type:type}) AS properties
 RETURN {labels: nodeLabels, properties: properties} AS output
 """
@@ -35,6 +36,7 @@ REL_PROPERTY_QUERY = """
 CALL apoc.meta.data()
 YIELD label, other, elementType, type, property
 WHERE NOT type = "RELATIONSHIP" AND elementType = "relationship"
+AND NOT label IN $EXCLUDED_LABELS
 WITH label AS nodeLabels, collect({property:property, type:type}) AS properties
 RETURN {type: nodeLabels, properties: properties} AS output
 """
@@ -44,13 +46,16 @@ CALL apoc.meta.data()
 YIELD label, other, elementType, type, property
 WHERE type = "RELATIONSHIP" AND elementType = "node"
 UNWIND other AS other_node
+WITH * WHERE NOT label IN $EXCLUDED_LABELS
+    AND NOT other_node IN $EXCLUDED_LABELS
 RETURN {start: label, type: property, end: toString(other_node)} AS output
 """
 
-INCLUDE_DOCS_QUERY = ("MERGE (d:Document {id:$document.metadata.id}) "
+INCLUDE_DOCS_QUERY = ("MERGE (d:Element {id:$document.source['element_id']}) "
                       "SET d.text = $document.page_content "
                       "SET d += $document.metadata "
                       "WITH d ")
+
 
 LIST_LIMIT = 128
 
@@ -422,19 +427,16 @@ class Neo4jGraph():
             str: A Cypher query string tailored based on the provided flags.
         """
         if base_entity_label:
-            if include_source:
-                merge_line = "MERGE (d)-[:MENTIONS]->(source) "
-            else:
-                merge_line = ""
             return (
                 f"{INCLUDE_DOCS_QUERY if include_source else ''}"
                 "UNWIND $data AS row "
                 f"MERGE (source:`{BASE_ENTITY_LABEL}` {{id: row.id}}) "
                 "SET source += row.properties "
-                f"{merge_line}"
+                f"{'MERGE (d)-[:MENTIONS]->(source) ' if include_source else ''}"
                 "WITH source, row "
                 "CALL apoc.create.addLabels( source, [row.type] ) YIELD node "
-                "RETURN distinct 'done' AS result")
+                "RETURN distinct 'done' AS result"
+            )
         else:
             return (
                 f"{INCLUDE_DOCS_QUERY if include_source else ''}"
@@ -442,7 +444,8 @@ class Neo4jGraph():
                 "CALL apoc.merge.node([row.type], {id: row.id}, "
                 "row.properties, {}) YIELD node "
                 f"{'MERGE (d)-[:MENTIONS]->(node) ' if include_source else ''}"
-                "RETURN distinct 'done' AS result")
+                "RETURN distinct 'done' AS result"
+            )
 
     def _get_rel_import_query(self, base_entity_label: bool) -> str:
         r"""Constructs a Cypher query string for importing relationship into a
@@ -519,16 +522,16 @@ class Neo4jGraph():
             base_entity_label, include_source)
         rel_import_query = self._get_rel_import_query(base_entity_label)
         for document in graph_documents:
-            if not document.source.metadata.get("id"):
-                document.source.metadata["id"] = md5(
-                    document.source.page_content.encode("utf-8")).hexdigest()
+            if not document.source['element_id']:
+                document.source['element_id'] = md5(
+                    str(document).encode("utf-8")).hexdigest()
 
             # Import nodes
             self.query(
                 node_import_query,
                 {
                     "data": [el.__dict__ for el in document.nodes],
-                    "document": document.source.__dict__,
+                    "document": document.source,
                 },
             )
             # Import relationships

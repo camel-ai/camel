@@ -13,12 +13,10 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from typing import List, Union
+from typing import Any, List, Union
 
 from pydantic import BaseModel, Field
-# from camel.functions.base_io_functions import File
 from unstructured.documents.elements import Element
-
 
 class Node(BaseModel):
     r"""Represents a node in a graph with associated properties.
@@ -49,17 +47,14 @@ class Relationship(BaseModel):
     type: str
     properties: dict = Field(default_factory=dict)
 
+class BaseModelConfig:
+    arbitrary_types_allowed = True
 
 class GraphDocument(BaseModel):
-    r"""Represents a graph document consisting of nodes and relationships.
+    class Config(BaseModelConfig):
+        pass
 
-    Args:
-        nodes (List[Node]): A list of nodes in the graph.
-        relationships (List[Relationship]): A list of relationships in the
-            graph.
-        source (Element): The file element from which the graph information is
-            derived.
-    """
     nodes: List[Node]
     relationships: List[Relationship]
-    source: Element
+    source: Any
+
