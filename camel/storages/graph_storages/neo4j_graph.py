@@ -51,9 +51,9 @@ WITH * WHERE NOT label IN $EXCLUDED_LABELS
 RETURN {start: label, type: property, end: toString(other_node)} AS output
 """
 
-INCLUDE_DOCS_QUERY = ("MERGE (d:Element {id:$document.source['element_id']}) "
-                      "SET d.text = $document.page_content "
-                      "SET d += $document.metadata "
+INCLUDE_DOCS_QUERY = ("MERGE (d:Element {id:$document['element_id']}) "
+                      "SET d.text = $document['text'] "
+                      "SET d += $document['metadata'] "
                       "WITH d ")
 
 
