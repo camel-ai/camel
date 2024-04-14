@@ -11,19 +11,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from io import BytesIO
 from typing import List
+from unittest.mock import Mock
 
 import pytest
+from openai.types.chat.chat_completion import Choice
+from openai.types.chat.chat_completion_message import ChatCompletionMessage
+from openai.types.completion_usage import CompletionUsage
+from PIL import Image
 
 from camel.agents import ChatAgent
 from camel.agents.chat_agent import FunctionCallingRecord
-from camel.configs import ChatGPTConfig, FunctionCallingConfig
+from camel.configs import (
+    ChatGPTConfig,
+    ChatGPTVisionConfig,
+    FunctionCallingConfig,
+)
 from camel.functions import MATH_FUNCS
 from camel.generators import SystemMessageGenerator
 from camel.memories import MemoryRecord
 from camel.messages import BaseMessage
 from camel.terminators import ResponseWordsTerminator
-from camel.types import ModelType, OpenAIBackendRole, RoleType, TaskType
+from camel.types import (
+    ChatCompletion,
+    ModelType,
+    OpenAIBackendRole,
+    RoleType,
+    TaskType,
+)
 
 parametrize = pytest.mark.parametrize('model', [
     ModelType.STUB,
@@ -313,3 +329,51 @@ def test_response_words_termination():
     assert agent.terminated
     assert agent_response.terminated
     assert "goodbye" in agent_response.info['termination_reasons'][0]
+
+
+def test_chat_agent_vision():
+    system_message = BaseMessage(role_name="assistant",
+                                 role_type=RoleType.ASSISTANT, meta_dict=None,
+                                 content="You are a help assistant.")
+    model_config = ChatGPTVisionConfig(temperature=0, max_tokens=200)
+    agent = ChatAgent(
+        system_message=system_message,
+        model_type=ModelType.GPT_4_TURBO_VISION,
+        model_config=model_config,
+    )
+
+    # Create an all blue PNG image:
+    image = Image.new("RGB", (100, 100), "blue")
+    img_byte_arr = BytesIO()
+    image.save(img_byte_arr, format='PNG')
+    image = Image.open(img_byte_arr)
+
+    user_msg = BaseMessage(
+        role_name="User",
+        role_type=RoleType.USER,
+        meta_dict=dict(),
+        content="Is this image blue? Just answer yes or no.",
+        image=image,
+        image_detail="low",
+    )
+    # Mock the OpenAI model return value:
+    agent.model_backend = Mock()
+    agent.model_backend.run.return_value = ChatCompletion(
+        id="mock_vision_id",
+        choices=[
+            Choice(
+                finish_reason='stop', index=0, logprobs=None,
+                message=ChatCompletionMessage(content='Yes.', role='assistant',
+                                              function_call=None,
+                                              tool_calls=None))
+        ],
+        created=123456,
+        model='gpt-4-1106-vision-preview',
+        object='chat.completion',
+        system_fingerprint=None,
+        usage=CompletionUsage(completion_tokens=2, prompt_tokens=113,
+                              total_tokens=115),
+    )
+
+    agent_response = agent.step(user_msg)
+    assert agent_response.msgs[0].content == "Yes."
