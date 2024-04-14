@@ -188,3 +188,8 @@ class OpenAIBackendRole(Enum):
 class TerminationMode(Enum):
     ANY = "any"
     ALL = "all"
+
+
+class StorageType(Enum):
+    MILVUS = "milvus"
+    QDRANT = "qdrant"
