@@ -39,7 +39,7 @@ class BaseMessage:
     role_name: str
     role_type: RoleType
     meta_dict: Optional[Dict[str, str]]
-    reason_type: Optional[ReasonType]
+    #reason_type: Optional[ReasonType]
     content: str
 
     @classmethod

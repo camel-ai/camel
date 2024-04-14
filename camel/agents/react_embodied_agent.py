@@ -45,11 +45,11 @@ class ReactAgent(ChatAgent):
         model_config: Optional[BaseConfig] = None,
     ) -> None:
         system_message = BaseMessage(
-            role_name="Insight Agent",
+            role_name="React Agent",
             role_type=RoleType.ASSISTANT,
             meta_dict=None,
             content="You assign roles based on tasks.",
-            reason_type=ReasonType.REACT,
+            # reason_type=ReasonType.REACT,
         )
         super().__init__(system_message, model_type, model_config)
 
@@ -98,7 +98,6 @@ Here are a few examples regarding the tool of {entity}:
 
         # write a wrapper beyond the current existing wrappers.
         # After deciding the factor. First present corresponding prompts for llm to brush up.
-
         react_prompt = react_instructions
         # add the prompts stored in
         # idx_dict = ['reco', 'poem', 'optimization', 'bandits']
@@ -115,29 +114,31 @@ Here are a few examples regarding the tool of {entity}:
         # step implements the tool agent in llf-bench, noticing that it is a language-based reinforcement learning model.
         react_optimization_example = """
         ========Optimization Tool Agent ===============
-        Question: I would like to give you an optimization task. 
-        Thought: Based on the keyword optimization, we could implement the optimization tool agent with limited information. 
-        Question: I would like to minimize a function without knowing its the exact expression. 
-        Thought: Based on the keyword optimization, we could implement the optimization tool agent with limited information. 
-        Question: I would like to find a minimizer of a function without knowing its the exact expression. 
-        Thought: Based on the keyword optimization, we could implement the optimization tool agent with limited information. 
+        Question: I would like to minimize the {func_name} function. 
+        Thought: Based on the keyword optimization, we could implement the optimization tool agent concerning {func_name} with limited information. 
+        Question: I would like to minimize a Booth function without knowing its the exact expression. 
+        Thought: Based on the keyword optimization, we could implement the optimization tool agent concerning Booth with limited information. 
+        Question: I would like to find a minimizer of Booth function without knowing its the exact expression. 
+        Thought: Based on the keyword optimization, we could implement the optimization tool agent concerning Booth with limited information. 
         """
+        react_bandit_example = ""
+        #react_bandit_example = """
+        #========Bandit Problem Tool Agent ===============
+        #Question: I would like to do a bandit problem.
+        #Thought: Based on the keywords in your request, we could implement the bandit tool agent.
+        #Question: I want to apply a multi-armed bandit problem.
+        #Thought: Based on the keywords in your request, we could implement the bandit tool agent.
+        #"""
 
-        react_bandit_example = """
-        ========Bandit Problem Tool Agent ===============
-        Question: I would like to do a bandit problem.
-        Thought: Based on the keywords in your request, we could implement the bandit tool agent.
-        Question: I want to apply a multi-armed bandit problem. 
-        Thought: Based on the keywords in your request, we could implement the bandit tool agent.
-        """
+        react_poem_example = ""
 
-        react_poem_example = """
-        ========Poem Composing Tool Agent ===============
-        Question: I would like to write a poem.
-        Thought: Based on the keywords in your request, we could implement the poem composing tool agent. 
-        Question: I would like to write something that has rhymes.
-        Thought: Based on the keywords in your request, we could implement the poem composing tool agent.
-        """
+        #react_poem_example = """
+        #========Poem Composing Tool Agent ===============
+        #Question: I would like to write a poem.
+        #Thought: Based on the keywords in your request, we could implement the poem composing tool agent.
+        #Question: I would like to write something that has rhymes.
+        #Thought: Based on the keywords in your request, we could implement the poem composing tool agent.
+        #"""
 
         react_prompt = react_prompt + react_poem_example + react_bandit_example + react_optimization_example
         if role_descriptions_dict is not None:
@@ -152,12 +153,12 @@ Here are a few examples regarding the tool of {entity}:
         react_reasoning = react_prompt.format(
             role_with_description_prompt=role_with_description_prompt)
 
-        conditions_and_quality_generation_msg = \
+        react_reasoning_msg = \
             BaseMessage.make_user_message(role_name="Reactive Reasoner",
                                           content=react_reasoning)
 
         response = self.step(
-            input_message=conditions_and_quality_generation_msg)
+            input_message=react_reasoning_msg)
 
         if response.terminated:
             raise RuntimeError("Reasoning failed. Error:\n" +
@@ -170,47 +171,60 @@ Here are a few examples regarding the tool of {entity}:
             'Rosenbrock',
             'SixHumpCamel',
         )
+        name_func = 'optimization'
 
-        ENVIRONMENTS_BANDIT = (
-            'BanditTenArmedRandomFixed-v0',
-            'BanditTenArmedRandomRandom-v0',
-            'BanditTenArmedGaussian-v0',
-            'BanditTenArmedUniformDistributedReward-v0',
-            'BanditTwoArmedDeterministicFixed-v0',
-            'BanditTwoArmedHighHighFixed-v0',
-            'BanditTwoArmedHighLowFixed-v0',
-            'BanditTwoArmedLowLowFixed-v0',
-        )
+        if 'Booth' in ENVIRONMENTS_OPTIMIZATION:
+            name_attribute = 'Booth'
+        elif 'Rosenbrock'  in ENVIRONMENTS_OPTIMIZATION:
+            name_attribute = 'Rosenbrock'
+        elif 'McCormick'  in ENVIRONMENTS_OPTIMIZATION:
+            name_attribute = 'McCormick'
+        elif 'SixHumpCamel' in ENVIRONMENTS_OPTIMIZATION:
+            name_attribute = 'SixHumpCamel'
 
-        ENVIRONMENTS_POEM = (
-            'Haiku',
-            'Tanka',
-            'LineSyllableConstrainedPoem',
-            'SyllableConstrainedPoem',
-        )
-        if 'bandits' in thought_action.content:
-            name_func = 'bandits'
-            l = len(ENVIRONMENTS_BANDIT)
-            idx = random.randint(0, l)
-            name_attribute = ENVIRONMENTS_OPTIMIZATION[idx]
-        elif 'optimization' in thought_action.content:
-            name_func = 'optimization'
-            l = len(ENVIRONMENTS_OPTIMIZATION)
-            idx = random.randint(0, l)
-            name_attribute = ENVIRONMENTS_OPTIMIZATION[idx]
-        elif 'poem' in thought_action.content:
-            name_func = 'poem'
-            l = len(ENVIRONMENTS_POEM)
-            idx = random.randint(0, l)
-            name_attribute = ENVIRONMENTS_POEM[idx]
+
+        # ENVIRONMENTS_BANDIT = (
+        #     'BanditTenArmedRandomFixed-v0',
+        #     'BanditTenArmedRandomRandom-v0',
+        #     'BanditTenArmedGaussian-v0',
+        #     'BanditTenArmedUniformDistributedReward-v0',
+        #     'BanditTwoArmedDeterministicFixed-v0',
+        #     'BanditTwoArmedHighHighFixed-v0',
+        #     'BanditTwoArmedHighLowFixed-v0',
+        #     'BanditTwoArmedLowLowFixed-v0',
+        # )
+        #
+        # ENVIRONMENTS_POEM = (
+        #     'Haiku',
+        #     'Tanka',
+        #     'LineSyllableConstrainedPoem',
+        #     'SyllableConstrainedPoem',
+        # )
+        # if 'bandits' in thought_action.content:
+        #     name_func = 'bandits'
+        #     l = len(ENVIRONMENTS_BANDIT)
+        #     idx = random.randint(0, l)
+        #     name_attribute = ENVIRONMENTS_OPTIMIZATION[idx]
+        # elif 'optimization' in thought_action.content:
+        #     name_func = 'optimization'
+        #     l = len(ENVIRONMENTS_OPTIMIZATION)
+        #     idx = random.randint(0, l)
+        #     name_attribute = ENVIRONMENTS_OPTIMIZATION[idx]
+        # elif 'poem' in thought_action.content:
+        #     name_func = 'poem'
+        #     l = len(ENVIRONMENTS_POEM)
+        #     idx = random.randint(0, l)
+        #     name_attribute = ENVIRONMENTS_POEM[idx]
         # Write a wrapper
         environment_name = 'llf-' + name_func + name_attribute + '-v0'
         env = gym.make(environment_name)
+
+        # This part borrows the test program from the llf-bench repo
         done = False
         cumulative_reward = 0.0
         observation, info = env.reset()
         if observation['observation'] == None:
-            observation['observation'] = ''
+           observation['observation'] = ''
 
         observation['feedback'] = ''
 
