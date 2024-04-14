@@ -156,6 +156,7 @@ class TaskType(Enum):
     SOLUTION_EXTRACTION = "solution_extraction"
     ROLE_DESCRIPTION = "role_description"
     OBJECT_RECOGNITION = "object_recognition"
+    IMAGE_CRAFT = "image_craft"
     DEFAULT = "default"
 
 

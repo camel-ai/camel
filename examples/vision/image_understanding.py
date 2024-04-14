@@ -29,7 +29,7 @@ parser.add_argument(
 )
 
 
-def detect_image_obj(image_path: str) -> None:
+def understanding_image(image_paths: str) -> list[str]:
     sys_msg = PromptTemplateGenerator().get_prompt_from_key(TaskType.OBJECT_RECOGNITION, RoleType.ASSISTANT)
     print("=" * 20 + " SYS MSG " + "=" * 20)
     print(sys_msg)
@@ -43,8 +43,8 @@ def detect_image_obj(image_path: str) -> None:
         assistant_sys_msg,
         model_type=ModelType.GPT_4_TURBO_VISION,
     )
-    image_path_list = [r"test_0.jpg", r"test_1.jpg"]
-    image_list = [Image.open(image_path) for image_path in image_path_list]
+    # image_path_list = [r"test_0.jpg", r"test_1.jpg"]
+    image_list = [Image.open(image_path) for image_path in image_paths]
     user_msg = BaseMessage.make_user_message(
         role_name="User",
         content="Please start the object detection for following image!",
@@ -56,6 +56,11 @@ def detect_image_obj(image_path: str) -> None:
     print("=" * 20 + " RESULT " + "=" * 20)
     print(assistant_response.msgs[0].content)
     print("=" * 48)
+
+    captions = assistant_response.msgs[0].content.strip().split("\n\n")
+    captions = [captions[i][captions[i].find(".") + 2:] for i in range(len(captions))]
+
+    return captions
 
 
 def main(args: argparse.Namespace) -> None:

@@ -20,11 +20,11 @@ from camel.types import RoleType
 # flake8: noqa :E501
 class ObjectRecognitionPromptTemplateDict(TextPromptDict):
     ASSISTANT_PROMPT = TextPrompt(
-        """You have been assigned an object recognition task.
-Your mission is to list all detected objects in following images.
+        """You are tasked with creating a descriptive caption for the following image.
+Please analyze the image and provide a caption that captures the main elements and actions within it.
+Ensure your caption is concise, engaging, and accurately reflects the content of the image.
 Your output should always be a list of strings starting with `1.`, `2.` etc.
-Do not explain yourself or output anything else.""")
-
+Begin your caption with 'In the image, ...' to set the scene for the viewer.""")
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.update({
