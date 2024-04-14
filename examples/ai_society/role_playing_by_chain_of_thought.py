@@ -27,7 +27,7 @@ def main(model_type=None, chat_turn_limit=50) -> None:
         user_agent_kwargs=dict(model_type=model_type),
         task_prompt=task_prompt,
         with_task_specify=True,
-        reasoning_type=ReasoningType.CHAIN_OF_THOUGHT,
+        reasoning_type=ReasoningType.REACT,
         task_specify_agent_kwargs=dict(model_type=model_type),
     )
 

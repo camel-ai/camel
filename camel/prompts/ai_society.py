@@ -102,7 +102,7 @@ Keep giving me instructions and necessary inputs until you think the task is com
 When the task is completed, you must only reply with a single word <CAMEL_TASK_DONE>.
 Never say <CAMEL_TASK_DONE> unless my responses have solved your task.""")
 
-    CHAIN_OF_THOUGHT_ASSISTANT_PROMPT: TextPrompt = TextPrompt(
+    REACT_ASSISTANT_PROMPT: TextPrompt = TextPrompt(
         """===== RULES OF ASSISTANT =====
 Never forget you are a {assistant_role} and I am a {user_role}. Never flip roles!
 We share a common interest in collaborating to successfully complete the task by role-playing.
@@ -127,8 +127,7 @@ Action:
 <YOUR_ACTION>
 Always end <YOUR_ACTION> with: Next request.""")
 
-    CHAIN_OF_THOUGHT_USER_PROMPT: TextPrompt = TextPrompt(
-        """===== RULES OF USER =====
+    REACT_USER_PROMPT: TextPrompt = TextPrompt("""===== RULES OF USER =====
 Never forget you are a {user_role} and I am a {assistant_role}. Never flip roles!
 We share a common interest in collaborating to successfully complete the task by role-playing.
     1. You always provide me with instructions to have me complete the TASK.
@@ -158,22 +157,13 @@ You always have to choose an option from the proposals.""")
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.update({
-            "generate_assistants":
-            self.GENERATE_ASSISTANTS,
-            "generate_users":
-            self.GENERATE_USERS,
-            "generate_tasks":
-            self.GENERATE_TASKS,
-            "task_specify_prompt":
-            self.TASK_SPECIFY_PROMPT,
-            RoleType.ASSISTANT:
-            self.ASSISTANT_PROMPT,
-            RoleType.USER:
-            self.USER_PROMPT,
-            RoleType.CRITIC:
-            self.CRITIC_PROMPT,
-            RoleType.CHAIN_OF_THOUGHT_ASSISTANT:
-            self.CHAIN_OF_THOUGHT_ASSISTANT_PROMPT,
-            RoleType.CHAIN_OF_THOUGHT_USER:
-            self.CHAIN_OF_THOUGHT_USER_PROMPT
+            "generate_assistants": self.GENERATE_ASSISTANTS,
+            "generate_users": self.GENERATE_USERS,
+            "generate_tasks": self.GENERATE_TASKS,
+            "task_specify_prompt": self.TASK_SPECIFY_PROMPT,
+            RoleType.ASSISTANT: self.ASSISTANT_PROMPT,
+            RoleType.USER: self.USER_PROMPT,
+            RoleType.CRITIC: self.CRITIC_PROMPT,
+            RoleType.REACT_ASSISTANT: self.REACT_ASSISTANT_PROMPT,
+            RoleType.REACT_USER: self.REACT_USER_PROMPT
         })

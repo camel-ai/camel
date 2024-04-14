@@ -109,9 +109,13 @@ def test_get_openai_tool_schema():
                         'description':
                         'An enumeration.',
                         'enum': [
-                            'assistant', 'user', 'critic', 'embodiment',
-                            'default', 'chain_of_thought_assistant',
-                            'chain_of_thought_user'
+                            'assistant',
+                            'user',
+                            'critic',
+                            'embodiment',
+                            'default',
+                            'react_assistant',
+                            'react_user',
                         ]
                     }
                 }
