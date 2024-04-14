@@ -50,7 +50,7 @@ class Relationship(BaseModel):
 class BaseModelConfig:
     arbitrary_types_allowed = True
 
-class GraphDocument(BaseModel):
+class GraphElement(BaseModel):
     class Config(BaseModelConfig):
         pass
 

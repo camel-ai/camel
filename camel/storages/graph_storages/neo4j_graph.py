@@ -15,7 +15,7 @@ import logging
 from hashlib import md5
 from typing import Any, Dict, List, Optional
 
-from camel.storages.graph_storages import GraphDocument
+from camel.storages.graph_storages import GraphElement
 
 logger = logging.getLogger(__name__)
 
@@ -51,9 +51,9 @@ WITH * WHERE NOT label IN $EXCLUDED_LABELS
 RETURN {start: label, type: property, end: toString(other_node)} AS output
 """
 
-INCLUDE_DOCS_QUERY = ("MERGE (d:Element {id:$document['element_id']}) "
-                      "SET d.text = $document['text'] "
-                      "SET d += $document['metadata'] "
+INCLUDE_DOCS_QUERY = ("MERGE (d:Element {id:$element['element_id']}) "
+                      "SET d.text = $element['text'] "
+                      "SET d += $element['metadata'] "
                       "WITH d ")
 
 
@@ -66,7 +66,7 @@ class Neo4jGraph():
     The detailed information about Neo4j is available at:
     `Neo4j https://neo4j.com/docs/getting-started/>`
 
-    This module used the work of Langchian and Llamaindex as reference.
+    This module refered to the work of Langchian and Llamaindex.
 
     Args:
         url (str): The URL of the Neo4j database server.
@@ -421,7 +421,7 @@ class Neo4jGraph():
             base_entity_label (bool): Flag indicating whether to use a base
                 entity label in the MERGE operation.
             include_source (bool): Flag indicating whether to include source
-                document information in the query.
+                element information in the query.
 
         Returns:
             str: A Cypher query string tailored based on the provided flags.
@@ -477,26 +477,26 @@ class Neo4jGraph():
                 "{}, row.properties, target) YIELD rel "
                 "RETURN distinct 'done'")
 
-    def add_graph_documents(
+    def add_graph_elements(
         self,
-        graph_documents: List[GraphDocument],
+        graph_elements: List[GraphElement],
         include_source: bool = False,
         base_entity_label: bool = False,
     ) -> None:
-        r"""Adds nodes and relationships from a list of GraphDocument objects
+        r"""Adds nodes and relationships from a list of GraphElement objects
         to the graph database.
 
         Args:
-            graph_documents (List[GraphDocument]): A list of GraphDocument
+            graph_elements (List[GraphElement]): A list of GraphElement
                 objects that contain the nodes and relationships to be added
-                to the graph. Each GraphDocument should encapsulate the
+                to the graph. Each GraphElement should encapsulate the
                 structure of part of the graph, including nodes,
-                relationships, and the source document information.
+                relationships, and the source element information.
             include_source (bool, optional): If True, stores the source
-                document and links it to nodes in the graph using the MENTIONS
+                element and links it to nodes in the graph using the MENTIONS
                 relationship. This is useful for tracing back the origin of
-                data. Merges source documents based on the `id` property from
-                the source document metadata if available; otherwise it
+                data. Merges source elements based on the `id` property from
+                the source element metadata if available; otherwise it
                 calculates the MD5 hash of `page_content` for merging process.
                 Defaults to False.
             base_entity_label (bool, optional): If True, each newly created
@@ -521,17 +521,17 @@ class Neo4jGraph():
         node_import_query = self._get_node_import_query(
             base_entity_label, include_source)
         rel_import_query = self._get_rel_import_query(base_entity_label)
-        for document in graph_documents:
-            if not document.source['element_id']:
-                document.source['element_id'] = md5(
-                    str(document).encode("utf-8")).hexdigest()
+        for element in graph_elements:
+            if not element.source['element_id']:
+                element.source['element_id'] = md5(
+                    str(element).encode("utf-8")).hexdigest()
 
             # Import nodes
             self.query(
                 node_import_query,
                 {
-                    "data": [el.__dict__ for el in document.nodes],
-                    "document": document.source,
+                    "data": [el.__dict__ for el in element.nodes],
+                    "element": element.source,
                 },
             )
             # Import relationships
@@ -545,6 +545,6 @@ class Neo4jGraph():
                         "target_label": el.target.type,
                         "type": el.type.replace(" ", "_").upper(),
                         "properties": el.properties,
-                    } for el in document.relationships]
+                    } for el in element.relationships]
                 },
             )

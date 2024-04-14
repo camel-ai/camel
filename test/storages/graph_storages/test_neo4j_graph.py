@@ -14,7 +14,7 @@
 from unstructured.documents.elements import Element
 
 from camel.storages import Neo4jGraph
-from camel.storages.graph_storages.graph_document import GraphDocument, Node, Relationship
+from camel.storages.graph_storages.graph_element import GraphElement, Node, Relationship
 from camel.storages.graph_storages.neo4j_graph import (
     BASE_ENTITY_LABEL,
     NODE_PROPERTY_QUERY,
@@ -23,7 +23,7 @@ from camel.storages.graph_storages.neo4j_graph import (
 )
 
 test_data = [
-    GraphDocument(
+    GraphElement(
         nodes=[Node(id="foo", type="foo"), Node(id="bar", type="bar")],
         relationships=[
             Relationship(
@@ -156,7 +156,7 @@ def test_neo4j_sanitize_values() -> None:
 
 
 def test_neo4j_add_data() -> None:
-    r"""Test that neo4j correctly import graph document."""
+    r"""Test that neo4j correctly import graph element."""
     url = NEO4J_URI
     username = NEO4J_USERNAME
     password = NEO4J_PASSWORD
@@ -171,7 +171,7 @@ def test_neo4j_add_data() -> None:
     graph.query("CALL apoc.schema.assert({}, {})")
     graph.refresh_schema()
     # Create two nodes and a relationship
-    graph.add_graph_documents(test_data)
+    graph.add_graph_elements(test_data)
     output = graph.query(
         "MATCH (n) RETURN labels(n) AS label, count(*) AS count ORDER BY label"
     )
@@ -180,7 +180,7 @@ def test_neo4j_add_data() -> None:
 
 
 def test_neo4j_add_data_source() -> None:
-    """Test that neo4j correctly import graph document with source."""
+    """Test that neo4j correctly import graph element with source."""
     url = NEO4J_URI
     username = NEO4J_USERNAME
     password = NEO4J_PASSWORD
@@ -195,7 +195,7 @@ def test_neo4j_add_data_source() -> None:
     graph.query("CALL apoc.schema.assert({}, {})")
     graph.refresh_schema()
     # Create two nodes and a relationship
-    graph.add_graph_documents(test_data, include_source=True)
+    graph.add_graph_elements(test_data, include_source=True)
     output = graph.query(
         "MATCH (n) RETURN labels(n) AS label, count(*) AS count ORDER BY label"
     )
@@ -208,7 +208,7 @@ def test_neo4j_add_data_source() -> None:
 
 
 def test_neo4j_add_data_base() -> None:
-    r"""Test that neo4j correctly import graph document with base_entity."""
+    r"""Test that neo4j correctly import graph element with base_entity."""
     url = NEO4J_URI
     username = NEO4J_USERNAME
     password = NEO4J_PASSWORD
@@ -223,7 +223,7 @@ def test_neo4j_add_data_base() -> None:
     graph.query("CALL apoc.schema.assert({}, {})")
     graph.refresh_schema()
     # Create two nodes and a relationship
-    graph.add_graph_documents(test_data, base_entity_label=True)
+    graph.add_graph_elements(test_data, base_entity_label=True)
     output = graph.query(
         "MATCH (n) RETURN apoc.coll.sort(labels(n)) AS label, "
         "count(*) AS count ORDER BY label"
@@ -236,7 +236,7 @@ def test_neo4j_add_data_base() -> None:
 
 
 def test_neo4j_add_data_base_source() -> None:
-    """Test that neo4j correctly import graph document with base_entity and source."""
+    """Test that neo4j correctly import graph element with base_entity and source."""
     url = NEO4J_URI
     username = NEO4J_USERNAME
     password = NEO4J_PASSWORD
@@ -251,7 +251,7 @@ def test_neo4j_add_data_base_source() -> None:
     graph.query("CALL apoc.schema.assert({}, {})")
     graph.refresh_schema()
     # Create two nodes and a relationship
-    graph.add_graph_documents(test_data, base_entity_label=True, include_source=True)
+    graph.add_graph_elements(test_data, base_entity_label=True, include_source=True)
     output = graph.query(
         "MATCH (n) RETURN apoc.coll.sort(labels(n)) AS label, "
         "count(*) AS count ORDER BY label"
