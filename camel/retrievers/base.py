@@ -27,16 +27,18 @@ class BaseRetriever(ABC):
         pass
 
     @abstractmethod
-    def process(self, content_input_path: str, **kwargs: Any) -> None:
-        r"""
-        Processes content. Subclasses should implement this
-        method according to their specific needs.
+    def process(self, content_input_path: str,
+                chunk_type: str = "chunk_by_title", **kwargs: Any) -> None:
+        r"""Processes content from a file or URL, divides it into chunks by
+        using `Unstructured IO`,then stored internally. This method must be
+        called before executing queries with the retriever.
 
         Args:
-            content_input_path (str): The path or URL of the content to
-                process.
-            **kwargs (Any): Flexible keyword arguments for additional
-                parameters.
+            content_input_path (str): File path or URL of the content to be
+                processed.
+            chunk_type (str): Type of chunking going to apply. Defaults to
+                "chunk_by_title".
+            **kwargs (Any): Additional keyword arguments for content parsing.
         """
         pass
 

@@ -11,14 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .base import BaseRetriever
-from .vector_retriever import VectorRetriever
-from .auto_retriever import AutoRetriever
-from .bm25_retriever import BM25Retriever
+
+from .chat_history_block import ChatHistoryBlock
+from .vectordb_block import VectorDBBlock
 
 __all__ = [
-    'BaseRetriever',
-    'VectorRetriever',
-    'AutoRetriever',
-    'BM25Retriever',
+    'ChatHistoryBlock',
+    'VectorDBBlock',
 ]

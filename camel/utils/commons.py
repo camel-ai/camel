@@ -31,8 +31,13 @@ F = TypeVar('F', bound=Callable[..., Any])
 
 # Set lazy import
 def get_lazy_imported_functions_module():
-    from camel.functions import MATH_FUNCS, SEARCH_FUNCS, WEATHER_FUNCS
-    return [*MATH_FUNCS, *SEARCH_FUNCS, *WEATHER_FUNCS]
+    from camel.functions import (
+        MAP_FUNCS,
+        MATH_FUNCS,
+        SEARCH_FUNCS,
+        WEATHER_FUNCS,
+    )
+    return [*MATH_FUNCS, *SEARCH_FUNCS, *WEATHER_FUNCS, *MAP_FUNCS]
 
 
 # Set lazy import
@@ -245,7 +250,8 @@ def role_playing_with_function(
                         "estimate the current age of University of Oxford "
                         "and then add 10 more years to this age, "
                         "and get the current weather of the city where "
-                        "the University is located."),
+                        "the University is located. And tell me what time "
+                        "zone University of Oxford is in."),
     function_list: Optional[List] = None,
     model_type=None,
     chat_turn_limit=10,
@@ -293,7 +299,6 @@ def role_playing_with_function(
     from camel.societies import RolePlaying
 
     task_prompt = task_prompt
-
     user_model_config = ChatGPTConfig(temperature=0.0)
 
     function_list = function_list
@@ -354,7 +359,6 @@ def role_playing_with_function(
         # Print output from the assistant, including any function
         # execution information
         print_text_animated(Fore.GREEN + "AI Assistant:")
-
         called_functions: List[
             FunctionCallingRecord] = assistant_response.info[
                 'called_functions']

@@ -53,7 +53,9 @@ beautifulsoup4 = { version = "^4", optional = true }
 docx2txt = { version = "^0.8", optional = true }
 PyMuPDF = { version = "^1.22.5", optional = true }
 wikipedia = { version = "^1", optional = true }
+wolframalpha = { version = "^5.0.0", optional = true }
 pyowm = { version = "^3.3.0", optional = true }
+googlemaps = { version = "^4.10.0", optional = true }
 unstructured = { extras = ["all-docs"], version = "^0.10.30", optional = true }
 
 # encoders
@@ -65,6 +67,9 @@ pymilvus = { version = "^2.4.0", optional = true }
 
 # graph-storages
 neo4j = { version = "^5.18.0", optional = true }
+
+# retrievers
+rank-bm25 = { version = "^0.2.2", optional = true }
 
 # test
 pytest = { version = "^7", optional = true}
@@ -93,7 +98,9 @@ tools = [
     "docx2txt",
     "PyMuPDF",
     "wikipedia",
+    "wolframalpha",
     "pyowm",
+    "googlemaps",
     "unstructured",
 ]
 
@@ -104,6 +111,10 @@ vector-databases = [
 
 graph-storages = [
     "neo4j",
+]
+
+retrievers = [
+    "rank-bm25",
 ]
 
 all = [
@@ -121,7 +132,9 @@ all = [
     "docx2txt",
     "PyMuPDF",
     "wikipedia",
+    "wolframalpha",
     "pyowm",
+    "googlemaps",
     "unstructured",
     # vector-database
     "qdrant-client",
@@ -130,6 +143,8 @@ all = [
     "sentence-transformers",
     # graph-storages
     "neo4j",
+    # retrievers
+    "rank-bm25",
 ]
 
 [tool.poetry.group.dev]
@@ -202,13 +217,17 @@ module = [
     "huggingface_hub",
     "huggingface_hub.utils._errors",
     "wikipedia",
+    "wolframalpha",
     "pyowm",
+    "googlemaps",
     "jsonschema.*",
     "bs4.*",
     "docx2txt",
     "PyMuPDF",
     "fitz",
+    "qdrant_client.*",
     "unstructured.*",
+    "rank_bm25",
     "sentence_transformers.*",
     "pymilvus",
 ]
