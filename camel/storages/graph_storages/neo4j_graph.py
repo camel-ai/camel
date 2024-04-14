@@ -56,7 +56,6 @@ INCLUDE_DOCS_QUERY = ("MERGE (d:Element {id:$element['element_id']}) "
                       "SET d += $element['metadata'] "
                       "WITH d ")
 
-
 LIST_LIMIT = 128
 
 
@@ -426,17 +425,17 @@ class Neo4jGraph():
         Returns:
             str: A Cypher query string tailored based on the provided flags.
         """
+        REL = 'MERGE (d)-[:MENTIONS]->(source) ' if include_source else ''
         if base_entity_label:
             return (
                 f"{INCLUDE_DOCS_QUERY if include_source else ''}"
                 "UNWIND $data AS row "
                 f"MERGE (source:`{BASE_ENTITY_LABEL}` {{id: row.id}}) "
                 "SET source += row.properties "
-                f"{'MERGE (d)-[:MENTIONS]->(source) ' if include_source else ''}"
+                f"{REL}"
                 "WITH source, row "
                 "CALL apoc.create.addLabels( source, [row.type] ) YIELD node "
-                "RETURN distinct 'done' AS result"
-            )
+                "RETURN distinct 'done' AS result")
         else:
             return (
                 f"{INCLUDE_DOCS_QUERY if include_source else ''}"
@@ -444,8 +443,7 @@ class Neo4jGraph():
                 "CALL apoc.merge.node([row.type], {id: row.id}, "
                 "row.properties, {}) YIELD node "
                 f"{'MERGE (d)-[:MENTIONS]->(node) ' if include_source else ''}"
-                "RETURN distinct 'done' AS result"
-            )
+                "RETURN distinct 'done' AS result")
 
     def _get_rel_import_query(self, base_entity_label: bool) -> str:
         r"""Constructs a Cypher query string for importing relationship into a

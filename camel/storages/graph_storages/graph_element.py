@@ -16,7 +16,7 @@ from __future__ import annotations
 from typing import Any, List, Union
 
 from pydantic import BaseModel, Field
-from unstructured.documents.elements import Element
+
 
 class Node(BaseModel):
     r"""Represents a node in a graph with associated properties.
@@ -47,14 +47,16 @@ class Relationship(BaseModel):
     type: str
     properties: dict = Field(default_factory=dict)
 
+
 class BaseModelConfig:
     arbitrary_types_allowed = True
 
+
 class GraphElement(BaseModel):
+
     class Config(BaseModelConfig):
         pass
 
     nodes: List[Node]
     relationships: List[Relationship]
     source: Any
-
