@@ -139,8 +139,8 @@ class ChatAgent(BaseAgent):
             self.model_config = model_config or ChatGPTVisionConfig()
         else:
             if model_config is not None and \
-                    not isinstance(model_config, ChatGPTConfig):
-                raise ValueError("Please use `ChatGPTConfig` as "
+                    isinstance(model_config, ChatGPTVisionConfig):
+                raise ValueError("Please don't use `ChatGPTVisionConfig` as "
                                  "the `model_config` when `model_type` "
                                  "is not `GPT_4_TURBO_VISION`")
             self.model_config = model_config or ChatGPTConfig()
