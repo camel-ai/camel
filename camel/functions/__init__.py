@@ -32,6 +32,6 @@ __all__ = [
     'SEARCH_FUNCS',
     'WEATHER_FUNCS',
     'MAP_FUNCS',
-    "T2I_FUNCS"
+    "T2I_FUNCS",
     'UnstructuredIO',
 ]
