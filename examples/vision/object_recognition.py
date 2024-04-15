@@ -47,7 +47,7 @@ def detect_image_obj(image_path: str) -> None:
         role_name="User",
         content="Please start the object detection for following image!",
         image=Image.open(image_path),
-        image_detail="auto",
+        image_detail="high",
     )
     assistant_response = agent.step(user_msg)
     print("=" * 20 + " RESULT " + "=" * 20)

@@ -50,7 +50,7 @@ class BaseMessage:
     meta_dict: Optional[Dict[str, str]]
     content: str
     image: Optional[Image.Image] = None
-    image_detail: OpenAIImageDetailType = OpenAIImageDetailType.AUTO
+    image_detail: str = "auto"
 
     @classmethod
     def make_user_message(
@@ -60,7 +60,7 @@ class BaseMessage:
         image_detail: Union[OpenAIImageDetailType,
                             str] = "auto") -> 'BaseMessage':
         return cls(role_name, RoleType.USER, meta_dict, content, image,
-                   OpenAIImageDetailType(image_detail))
+                   OpenAIImageDetailType(image_detail).value)
 
     @classmethod
     def make_assistant_message(
@@ -70,7 +70,7 @@ class BaseMessage:
         image_detail: Union[OpenAIImageDetailType,
                             str] = "auto") -> 'BaseMessage':
         return cls(role_name, RoleType.ASSISTANT, meta_dict, content, image,
-                   OpenAIImageDetailType(image_detail))
+                   OpenAIImageDetailType(image_detail).value)
 
     def create_new_instance(self, content: str) -> "BaseMessage":
         r"""Create a new instance of the :obj:`BaseMessage` with updated
@@ -247,7 +247,7 @@ class BaseMessage:
                     "type": "image_url",
                     "image_url": {
                         "url": f"{image_prefix}{encoded_image}",
-                        "detail": self.image_detail.value,
+                        "detail": self.image_detail,
                     }
                 }],
             }

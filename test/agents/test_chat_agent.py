@@ -37,7 +37,6 @@ from camel.types import (
     ChatCompletion,
     ModelType,
     OpenAIBackendRole,
-    OpenAIImageDetailType,
     RoleType,
     TaskType,
 )
@@ -355,7 +354,7 @@ def test_chat_agent_vision():
         meta_dict=dict(),
         content="Is this image blue? Just answer yes or no.",
         image=image,
-        image_detail=OpenAIImageDetailType.LOW,
+        image_detail="low",
     )
     # Mock the OpenAI model return value:
     agent.model_backend = Mock()
