@@ -14,7 +14,7 @@
 import base64
 import io
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 from PIL import Image
 
@@ -50,7 +50,7 @@ class BaseMessage:
     meta_dict: Optional[Dict[str, str]]
     content: str
     image: Optional[Image.Image] = None
-    image_detail: str = "auto"
+    image_detail: Literal["auto", "low", "high"] = "auto"
 
     @classmethod
     def make_user_message(

@@ -129,7 +129,7 @@ class ChatAgent(BaseAgent):
             for func in function_list:
                 self.func_dict[func.get_function_name()] = func.func
 
-        self.model_config: ChatGPTConfig | ChatGPTVisionConfig
+        self.model_config: BaseConfig
         if self.model_type == ModelType.GPT_4_TURBO_VISION:
             if model_config is not None and \
                     not isinstance(model_config, ChatGPTVisionConfig):
