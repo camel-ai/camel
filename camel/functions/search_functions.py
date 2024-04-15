@@ -303,7 +303,60 @@ def search_google_and_summarize(query: str) -> str:
     return "Failed to find the answer from google search."
 
 
+def search_wolfram_alpha(query: str, is_detailed: bool) -> str:
+    r"""Queries Wolfram|Alpha and returns the result. Wolfram|Alpha is a
+    search engine that uses algorithms, knowledgebase and AI to compute
+    expert-level answers for math, science, society, everyday life and more.
+
+    Args:
+        query (str): The query to send to Wolfram Alpha.
+        is_detailed (bool): Whether to include additional details in the
+            result.
+
+    Returns:
+        str: The result from Wolfram Alpha, formatted as a string.
+    """
+    try:
+        import wolframalpha
+    except ImportError:
+        raise ImportError(
+            "Please install `wolframalpha` first. You can install it by "
+            "running `pip install wolframalpha`.")
+
+    WOLFRAMALPHA_APP_ID = os.environ.get('WOLFRAMALPHA_APP_ID')
+    if not WOLFRAMALPHA_APP_ID:
+        raise ValueError("`WOLFRAMALPHA_APP_ID` not found in environment "
+                         "variables. Get `WOLFRAMALPHA_APP_ID` here: "
+                         "`https://products.wolframalpha.com/api/`.")
+
+    try:
+        client = wolframalpha.Client(WOLFRAMALPHA_APP_ID)
+        res = client.query(query)
+        assumption = next(res.pods).text or "No assumption made."
+        answer = next(res.results).text or "No answer found."
+    except Exception as e:
+        if isinstance(e, StopIteration):
+            return "Wolfram Alpha wasn't able to answer it"
+        else:
+            error_message = (f"Wolfram Alpha wasn't able to answer it"
+                             f"{str(e)}.")
+            return error_message
+
+    result = f"Assumption:\n{assumption}\n\nAnswer:\n{answer}"
+
+    # Add additional details in the result
+    if is_detailed:
+        result += '\n'
+        for pod in res.pods:
+            result += '\n' + pod['@title'] + ':\n'
+            for sub in pod.subpods:
+                result += (sub.plaintext or "None") + '\n'
+
+    return result.rstrip()  # Remove trailing whitespace
+
+
 SEARCH_FUNCS: List[OpenAIFunction] = [
-    OpenAIFunction(func)
-    for func in [search_wiki, search_google_and_summarize]
+    OpenAIFunction(func)  # type: ignore
+    for func in
+    [search_wiki, search_google_and_summarize, search_wolfram_alpha]
 ]
