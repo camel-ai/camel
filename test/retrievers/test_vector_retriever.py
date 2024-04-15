@@ -79,7 +79,7 @@ def test_process(mock_unstructured_modules, vector_retriever,
     mock_vector_storage.add.assert_called_once()
 
 
-# Test query_and_compile_results method
+# Test query
 def test_query(vector_retriever, mock_vector_storage):
     # Setup mock behavior for vector storage query
     mock_vector_storage.query.return_value = [
