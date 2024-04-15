@@ -11,27 +11,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import pytest
+from PIL import Image
 
-from .openai_function import (
-    OpenAIFunction,
-    get_openai_tool_schema,
-    get_openai_function_schema,
-)
-from .math_functions import MATH_FUNCS
-from .search_functions import SEARCH_FUNCS
-from .weather_functions import WEATHER_FUNCS
-from .google_maps_function import MAP_FUNCS
-from .t2i_functions import T2I_FUNCS
-from ..loaders.unstructured_io import UnstructuredIO
+from camel.utils.token_counting import openai_count_token_from_image
 
-__all__ = [
-    'OpenAIFunction',
-    'get_openai_tool_schema',
-    'get_openai_function_schema',
-    'MATH_FUNCS',
-    'SEARCH_FUNCS',
-    'WEATHER_FUNCS',
-    'MAP_FUNCS',
-    "T2I_FUNCS",
-    'UnstructuredIO',
-]
+
+@pytest.mark.parametrize("width,height,detail,token_cost", [
+    (1024, 1024, "high", 765),
+    (1024, 1024, "auto", 765),
+    (2048, 4096, "high", 1105),
+    (2048, 4096, "low", 85),
+])
+def test_openai_count_token_from_image(width, height, detail, token_cost):
+    image = Image.new("RGB", (width, height), "black")
+    assert openai_count_token_from_image(image, detail) == token_cost

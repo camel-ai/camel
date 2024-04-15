@@ -17,11 +17,13 @@ from camel.prompts import (
     AISocietyPromptTemplateDict,
     CodePromptTemplateDict,
     EvaluationPromptTemplateDict,
+    ObjectRecognitionPromptTemplateDict,
     MisalignmentPromptTemplateDict,
     RoleDescriptionPromptTemplateDict,
     SolutionExtractionPromptTemplateDict,
     TextPromptDict,
     TranslationPromptTemplateDict,
+    ImageCraftPromptTemplateDict,
 )
 from camel.types import TaskType
 
@@ -53,4 +55,8 @@ class TaskPromptTemplateDict(Dict[Any, TextPromptDict]):
             SolutionExtractionPromptTemplateDict(),
             TaskType.ROLE_DESCRIPTION:
             RoleDescriptionPromptTemplateDict(),
+            TaskType.OBJECT_RECOGNITION:
+            ObjectRecognitionPromptTemplateDict(),
+            TaskType.IMAGE_CRAFT:
+            ImageCraftPromptTemplateDict(),
         })
