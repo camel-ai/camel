@@ -14,7 +14,7 @@
 import base64
 import io
 from dataclasses import dataclass
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from PIL import Image
 
@@ -25,9 +25,12 @@ from camel.messages import (
     OpenAIUserMessage,
 )
 from camel.prompts import CodePrompt, TextPrompt
-from camel.types import OpenAIBackendRole, OpenAIImageType, RoleType
-
-IMAGE_DETAIL = Literal["auto", "low", "high"]
+from camel.types import (
+    OpenAIBackendRole,
+    OpenAIImageDetailType,
+    OpenAIImageType,
+    RoleType,
+)
 
 
 @dataclass
@@ -47,25 +50,27 @@ class BaseMessage:
     meta_dict: Optional[Dict[str, str]]
     content: str
     image: Optional[Image.Image] = None
-    image_detail: IMAGE_DETAIL = "auto"
+    image_detail: OpenAIImageDetailType = OpenAIImageDetailType.AUTO
 
     @classmethod
     def make_user_message(
-            cls, role_name: str, content: str,
-            meta_dict: Optional[Dict[str, str]] = None,
-            image: Optional[Image.Image] = None,
-            image_detail: IMAGE_DETAIL = "auto") -> 'BaseMessage':
+        cls, role_name: str, content: str,
+        meta_dict: Optional[Dict[str, str]] = None,
+        image: Optional[Image.Image] = None,
+        image_detail: Union[OpenAIImageDetailType,
+                            str] = "auto") -> 'BaseMessage':
         return cls(role_name, RoleType.USER, meta_dict, content, image,
-                   image_detail)
+                   OpenAIImageDetailType(image_detail))
 
     @classmethod
     def make_assistant_message(
-            cls, role_name: str, content: str,
-            meta_dict: Optional[Dict[str, str]] = None,
-            image: Optional[Image.Image] = None,
-            image_detail: IMAGE_DETAIL = "auto") -> 'BaseMessage':
+        cls, role_name: str, content: str,
+        meta_dict: Optional[Dict[str, str]] = None,
+        image: Optional[Image.Image] = None,
+        image_detail: Union[OpenAIImageDetailType,
+                            str] = "auto") -> 'BaseMessage':
         return cls(role_name, RoleType.ASSISTANT, meta_dict, content, image,
-                   image_detail)
+                   OpenAIImageDetailType(image_detail))
 
     def create_new_instance(self, content: str) -> "BaseMessage":
         r"""Create a new instance of the :obj:`BaseMessage` with updated
@@ -215,16 +220,19 @@ class BaseMessage:
         if self.image is None:
             return {"role": "user", "content": self.content}
         else:
+            #
             if self.image.format is None:
-                raise ValueError(f"Only support image with specified format, "
-                                 f"including {list(OpenAIImageType)}")
+                raise ValueError(f"Image's `format` is `None`, please "
+                                 f"transform the `PIL.Image.Image` to  one of "
+                                 f"following supported formats, such as "
+                                 f"{list(OpenAIImageType)}")
 
             image_type: str = self.image.format.lower()
             if image_type not in OpenAIImageType:
                 raise ValueError(f"Image type {self.image.format} "
                                  f"is not supported by OpenAI vision model")
             with io.BytesIO() as buffer:
-                self.image.save(buffer, format=self.image.format)
+                self.image.save(fp=buffer, format=self.image.format)
                 encoded_image = base64.b64encode(
                     buffer.getvalue()).decode("utf-8")
             image_prefix = f"data:image/{image_type};base64,"
@@ -239,7 +247,7 @@ class BaseMessage:
                     "type": "image_url",
                     "image_url": {
                         "url": f"{image_prefix}{encoded_image}",
-                        "detail": self.image_detail,
+                        "detail": self.image_detail.value,
                     }
                 }],
             }

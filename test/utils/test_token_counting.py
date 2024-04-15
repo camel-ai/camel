@@ -14,15 +14,18 @@
 import pytest
 from PIL import Image
 
-from camel.utils.token_counting import openai_count_token_from_image
+from camel.types import OpenAIImageDetailType
+from camel.utils.token_counting import count_tokens_from_image
 
 
 @pytest.mark.parametrize("width,height,detail,token_cost", [
-    (1024, 1024, "high", 765),
-    (1024, 1024, "auto", 765),
-    (2048, 4096, "high", 1105),
-    (2048, 4096, "low", 85),
+    (1024, 1024, OpenAIImageDetailType.HIGH, 765),
+    (1024, 1024, OpenAIImageDetailType.AUTO, 765),
+    (2048, 4096, OpenAIImageDetailType.HIGH, 1105),
+    (2048, 4096, OpenAIImageDetailType.LOW, 85),
 ])
-def test_openai_count_token_from_image(width, height, detail, token_cost):
+def test_openai_count_token_from_image(width: int, height: int,
+                                       detail: OpenAIImageDetailType,
+                                       token_cost: int):
     image = Image.new("RGB", (width, height), "black")
-    assert openai_count_token_from_image(image, detail) == token_cost
+    assert count_tokens_from_image(image, detail) == token_cost

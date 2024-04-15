@@ -20,7 +20,14 @@ from typing import List, Optional
 from PIL import Image
 
 from camel.messages import OpenAIMessage
-from camel.types import ModelType, OpenAIImageType
+from camel.types import ModelType, OpenAIImageDetailType, OpenAIImageType
+
+LOW_DETAIL_TOKENS = 85
+FIT_SQUARE_PIXELS = 2048
+SHORTEST_SIDE_PIXELS = 768
+SQUARE_PIXELS = 512
+SQUARE_TOKENS = 170
+EXTRA_TOKENS = 85
 
 
 def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
@@ -228,19 +235,18 @@ class OpenAITokenCounter(BaseTokenCounter):
                             image_prefix_format = "data:image/{};base64,"
                             image_prefix: Optional[str] = None
                             for image_type in list(OpenAIImageType):
+                                # Find the correct image format
                                 image_prefix = image_prefix_format.format(
                                     image_type.value)
-                                if image_prefix not in image_str:
-                                    continue
-                                else:
+                                if image_prefix in image_str:
                                     break
                             assert isinstance(image_prefix, str)
                             encoded_image = image_str.split(image_prefix)[1]
                             image_bytes = BytesIO(
                                 base64.b64decode(encoded_image))
                             image = Image.open(image_bytes)
-                            num_tokens += openai_count_token_from_image(
-                                image, detail)
+                            num_tokens += count_tokens_from_image(
+                                image, OpenAIImageDetailType(detail))
                 if key == "name":
                     num_tokens += self.tokens_per_name
 
@@ -249,25 +255,40 @@ class OpenAITokenCounter(BaseTokenCounter):
         return num_tokens
 
 
-def openai_count_token_from_image(image: Image.Image, detail: str) -> int:
+def count_tokens_from_image(image: Image.Image,
+                            detail: OpenAIImageDetailType) -> int:
     r"""Count image tokens for OpenAI vision model. An :obj:`"auto"`
-    resolution model will be treated as :obj:`"high"`.
+    resolution model will be treated as :obj:`"high"`. All images with
+    :obj:`"low"` detail cost 85 tokens each. Images with :obj:`"high"` detail
+    are first scaled to fit within a 2048 x 2048 square, maintaining their
+    aspect ratio. Then, they are scaled such that the shortest side of the
+    image is 768px long. Finally, we count how many 512px squares the image
+    consists of. Each of those squares costs 170 tokens. Another 85 tokens are
+    always added to the final total. For more details please refer to `OpenAI
+    vision docs <https://platform.openai.com/docs/guides/vision>`_
+
+    Args:
+        image (PIL.Image.Image): Image to count number of tokens.
+        detail (OpenAIImageDetailType): Image detail type to count
+            number of tokens.
+
+    Returns:
+        int: Number of tokens for the image given a detail type.
     """
-    # https://platform.openai.com/docs/guides/vision
-    if detail == "low":
-        return 85
+    if detail == OpenAIImageDetailType.LOW:
+        return LOW_DETAIL_TOKENS
 
     width, height = image.size
-    if width > 2048 or height > 2048:
-        scaling_factor = max(width, height) / 2048
+    if width > FIT_SQUARE_PIXELS or height > FIT_SQUARE_PIXELS:
+        scaling_factor = max(width, height) / FIT_SQUARE_PIXELS
         width = int(width / scaling_factor)
         height = int(height / scaling_factor)
 
-    scaling_factor = min(width, height) / 768
+    scaling_factor = min(width, height) / SHORTEST_SIDE_PIXELS
     scaled_width = int(width / scaling_factor)
     scaled_height = int(height / scaling_factor)
 
-    h = ceil(scaled_height / 512)
-    w = ceil(scaled_width / 512)
-    total = 85 + 170 * h * w
+    h = ceil(scaled_height / SQUARE_PIXELS)
+    w = ceil(scaled_width / SQUARE_PIXELS)
+    total = EXTRA_TOKENS + SQUARE_TOKENS * h * w
     return total

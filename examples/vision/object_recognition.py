@@ -28,7 +28,7 @@ parser.add_argument(
 )
 
 
-def detect(image_path: str) -> None:
+def detect_image_obj(image_path: str) -> None:
     sys_msg = PromptTemplateGenerator().get_prompt_from_key(
         TaskType.OBJECT_RECOGNITION, RoleType.ASSISTANT)
     print("=" * 20 + " SYS MSG " + "=" * 20)
@@ -47,7 +47,7 @@ def detect(image_path: str) -> None:
         role_name="User",
         content="Please start the object detection for following image!",
         image=Image.open(image_path),
-        image_detail="high",
+        image_detail="auto",
     )
     assistant_response = agent.step(user_msg)
     print("=" * 20 + " RESULT " + "=" * 20)
@@ -56,7 +56,7 @@ def detect(image_path: str) -> None:
 
 
 def main(args: argparse.Namespace) -> None:
-    detect(args.image_path)
+    detect_image_obj(args.image_path)
 
 
 if __name__ == "__main__":

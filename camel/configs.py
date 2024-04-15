@@ -89,8 +89,8 @@ class ChatGPTConfig(BaseConfig):
 
 @dataclass(frozen=True)
 class ChatGPTVisionConfig(BaseConfig):
-    r"""Defines the parameters for generating chat completions using the
-    OpenAI API.
+    r"""Defines the parameters for generating chat completions with
+    vision model using the OpenAI API.
 
     Args:
         temperature (float, optional): Sampling temperature to use, between

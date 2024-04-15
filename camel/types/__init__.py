@@ -20,6 +20,7 @@ from .enums import (
     EmbeddingModelType,
     VectorDistance,
     OpenAIImageType,
+    OpenAIImageDetailType,
     StorageType,
 )
 from .openai_types import (
@@ -55,4 +56,5 @@ __all__ = [
     'ChatCompletionFunctionMessageParam',
     'CompletionUsage',
     'OpenAIImageType',
+    'OpenAIImageDetailType',
 ]

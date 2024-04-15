@@ -204,6 +204,12 @@ class OpenAIImageType(Enum, metaclass=OpenAIImageTypeMeta):
     GIF = "gif"
 
 
+class OpenAIImageDetailType(Enum):
+    AUTO = "auto"
+    LOW = "low"
+    HIGH = "high"
+
+
 class StorageType(Enum):
     MILVUS = "milvus"
     QDRANT = "qdrant"

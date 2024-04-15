@@ -130,8 +130,18 @@ class ChatAgent(BaseAgent):
                 self.func_dict[func.get_function_name()] = func.func
 
         if self.model_type == ModelType.GPT_4_TURBO_VISION:
+            if model_config is not None and \
+                    not isinstance(model_config, ChatGPTVisionConfig):
+                raise ValueError("Please use `ChatGPTVisionConfig` as "
+                                 "the `model_config` when `model_type` "
+                                 "is `GPT_4_TURBO_VISION`")
             self.model_config = model_config or ChatGPTVisionConfig()
         else:
+            if model_config is not None and \
+                    not isinstance(model_config, ChatGPTConfig):
+                raise ValueError("Please use `ChatGPTConfig` as "
+                                 "the `model_config` when `model_type` "
+                                 "is not `GPT_4_TURBO_VISION`")
             self.model_config = model_config or ChatGPTConfig()
 
         self.model_backend: BaseModelBackend = ModelFactory.create(
