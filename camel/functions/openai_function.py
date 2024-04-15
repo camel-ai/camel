@@ -17,7 +17,7 @@ from typing import Any, Callable, Dict, Mapping, Optional, Tuple
 from docstring_parser import parse
 from jsonschema.exceptions import SchemaError
 from jsonschema.validators import Draft202012Validator as JSONValidator
-from pydantic import ValidationError, create_model
+from pydantic import create_model
 from pydantic.fields import FieldInfo
 
 from camel.utils import PYDANTIC_V2, to_pascal
@@ -174,17 +174,14 @@ class OpenAIFunction:
             openai_tool_schema: Dict[str, Any]) -> None:
         r"""Validates the OpenAI tool schema against
         :obj:`ToolAssistantToolsFunction`.
-
         This function checks if the provided :obj:`openai_tool_schema` adheres
         to the specifications required by OpenAI's
         :obj:`ToolAssistantToolsFunction`. It ensures that the function
         description and parameters are correctly formatted according to JSON
         Schema specifications.
-
         Args:
             openai_tool_schema (Dict[str, Any]): The OpenAI tool schema to
                 validate.
-
         Raises:
             ValidationError: If the schema does not comply with the
                 specifications.
@@ -193,29 +190,10 @@ class OpenAIFunction:
             SchemaError: If the parameters do not meet JSON Schema reference
                 specifications.
         """
-        # Automatically validates whether the openai_tool_schema passed
-        # complies with the specifications of the ToolAssistantToolsFunction.
-        from openai.types.beta.threads.run import ToolAssistantToolsFunction
-
-        # NOTE: Pydantic v1 does not have a strict mode to check input types
-        # Below is a compromise solution.
-        # refs: https://docs.pydantic.dev/1.10/blog/pydantic-v2/#strict-mode
-        if PYDANTIC_V2:
-            try:
-                ToolAssistantToolsFunction.model_validate(  # type: ignore
-                    openai_tool_schema)
-            except ValidationError as e:
-                raise e
-        elif ToolAssistantToolsFunction(
-                **openai_tool_schema) != openai_tool_schema:
-            raise ValidationError(  # type: ignore
-                errors="Validation error for `ToolAssistantToolsFunction`."
-                "Please check the input data types.",
-                model=ToolAssistantToolsFunction,
-            )
         # Check the function description
         if not openai_tool_schema["function"]["description"]:
             raise ValueError("miss function description")
+
         # Validate whether parameters
         # meet the JSON Schema reference specifications.
         # See https://platform.openai.com/docs/guides/gpt/function-calling

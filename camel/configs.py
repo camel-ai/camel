@@ -11,13 +11,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from __future__ import annotations
+
 from abc import ABC
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 
 from anthropic._types import NOT_GIVEN, NotGiven
 
-from camel.functions import OpenAIFunction
+if TYPE_CHECKING:
+    from camel.functions import OpenAIFunction
 
 
 @dataclass(frozen=True)

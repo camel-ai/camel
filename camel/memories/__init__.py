@@ -13,16 +13,26 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from .records import MemoryRecord, ContextRecord
-from .base import BaseMemory
-from .context_creators.base import BaseContextCreator
+from .base import MemoryBlock, AgentMemory, BaseContextCreator
 from .context_creators.score_based import ScoreBasedContextCreator
-from .chat_history_memory import ChatHistoryMemory
+from .blocks.chat_history_block import ChatHistoryBlock
+from .blocks.vectordb_block import VectorDBBlock
+from .agent_memories import (
+    VectorDBMemory,
+    ChatHistoryMemory,
+    LongtermAgentMemory,
+)
 
 __all__ = [
     'MemoryRecord',
     'ContextRecord',
-    'BaseMemory',
+    'MemoryBlock',
+    "AgentMemory",
+    'BaseContextCreator',
+    'ScoreBasedContextCreator',
     'ChatHistoryMemory',
-    "BaseContextCreator",
-    "ScoreBasedContextCreator",
+    'VectorDBMemory',
+    'ChatHistoryBlock',
+    'VectorDBBlock',
+    'LongtermAgentMemory',
 ]

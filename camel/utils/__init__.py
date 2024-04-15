@@ -19,6 +19,7 @@ from .commons import (
     download_tasks,
     get_task_list,
     check_server_running,
+    role_playing_with_function,
     get_system_information,
     to_pascal,
     PYDANTIC_V2,
@@ -43,4 +44,5 @@ __all__ = [
     'BaseTokenCounter',
     'OpenAITokenCounter',
     'OpenSourceTokenCounter',
+    'role_playing_with_function',
 ]
