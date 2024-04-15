@@ -17,7 +17,7 @@ from enum import Enum
 
 class ReasoningType(Enum):
     DEFAULT = "default"
-    REACT = "react"
+    REACT_IN_ROLE_PALYING = "react_in_role_playing"
 
 
 class RoleType(Enum):
@@ -26,8 +26,8 @@ class RoleType(Enum):
     CRITIC = "critic"
     EMBODIMENT = "embodiment"
     DEFAULT = "default"
-    REACT_ASSISTANT = "react_assistant"
-    REACT_USER = "react_user"
+    REACT_IN_ROLE_PALYING_ASSISTANT = "react_in_role_playing_assistant"
+    REACT_IN_ROLE_PALYING_USER = "react_in_role_playing_user"
 
 
 class ModelType(Enum):

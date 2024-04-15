@@ -49,14 +49,15 @@ class SystemMessageGenerator:
             assistant_prompt_template = PromptTemplateGenerator(
             ).get_system_prompt(
                 task_type,
-                RoleType.REACT_ASSISTANT if
-                (reasoning_type
-                 == ReasoningType.REACT) else RoleType.ASSISTANT,
+                RoleType.REACT_IN_ROLE_PALYING_ASSISTANT if
+                (reasoning_type == ReasoningType.REACT_IN_ROLE_PALYING) else
+                RoleType.ASSISTANT,
             )
             user_prompt_template = PromptTemplateGenerator().get_system_prompt(
                 task_type,
-                RoleType.REACT_USER if
-                (reasoning_type == ReasoningType.REACT) else RoleType.USER,
+                RoleType.REACT_IN_ROLE_PALYING_USER if
+                (reasoning_type
+                 == ReasoningType.REACT_IN_ROLE_PALYING) else RoleType.USER,
             )
             critic_prompt_template = PromptTemplateGenerator(
             ).get_system_prompt(
