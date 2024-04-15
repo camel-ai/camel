@@ -24,6 +24,7 @@ from camel.prompts import (
     TextPromptDict,
     TranslationPromptTemplateDict,
     ImageCraftPromptTemplateDict,
+    MultiConditionImageCraftPromptTemplateDict,
 )
 from camel.types import TaskType
 
@@ -59,4 +60,6 @@ class TaskPromptTemplateDict(Dict[Any, TextPromptDict]):
             ObjectRecognitionPromptTemplateDict(),
             TaskType.IMAGE_CRAFT:
             ImageCraftPromptTemplateDict(),
+            TaskType.MULTI_CONDITION_IMAGE_CRAFT:
+            MultiConditionImageCraftPromptTemplateDict(),
         })

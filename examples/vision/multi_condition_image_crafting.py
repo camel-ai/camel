@@ -12,58 +12,72 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import argparse
-
 from PIL import Image
-
-from camel.agents import ChatAgent
+from camel.types import ModelType
+from camel.agents.chat_agent import ChatAgent
+from camel.configs import FunctionCallingVisionConfig
 from camel.generators import PromptTemplateGenerator
-from camel.messages import BaseMessage
+from camel.messages.base import BaseMessage
 from camel.types import ModelType, RoleType, TaskType
+from camel.functions import T2I_FUNCS
 
-parser = argparse.ArgumentParser(description="Arguments for object detection.")
+
+parser = argparse.ArgumentParser(description="Arguments for Image Condition.")
 parser.add_argument(
     "--image_paths",
     metavar='N',
     type=str,
     nargs='+',
-    help="Path to the images for object detection.",
+    help="Path to the images as conditions.",
     default=None
 )
 
-
-def understanding_image(image_paths: str) -> list[str]:
-    sys_msg = PromptTemplateGenerator().get_prompt_from_key(TaskType.OBJECT_RECOGNITION, RoleType.ASSISTANT)
+def multi_condition_image_craft(image_paths: str) -> list[str]:
+    sys_msg = PromptTemplateGenerator().get_prompt_from_key(TaskType.MULTI_CONDITION_IMAGE_CRAFT, RoleType.ASSISTANT)
     print("=" * 20 + " SYS MSG " + "=" * 20)
     print(sys_msg)
     print("=" * 49)
 
     assistant_sys_msg = BaseMessage.make_assistant_message(
-        role_name="Assistant",
+        role_name="Artist",
         content=sys_msg,
     )
-    assistant_agent = ChatAgent(
-        assistant_sys_msg,
-        model_type=ModelType.GPT_4_TURBO_VISION,
+
+    function_list=[*T2I_FUNCS]
+    assistant_model_config = FunctionCallingVisionConfig.from_openai_function_list(
+        function_list=function_list,
+        kwargs=dict(temperature=0.0),
     )
-    # image_path_list = [r"test_0.jpg", r"test_1.jpg"]
+
+    dalle_agent = ChatAgent(
+        system_message=assistant_sys_msg,
+        model_type=ModelType.GPT_4_TURBO_VISION,
+        model_config=assistant_model_config,
+        function_list=[*T2I_FUNCS],
+    )
+
     image_list = [Image.open(image_path) for image_path in image_paths]
+    
     user_msg = BaseMessage.make_user_message(
         role_name="User",
-        content="Please start the object detection for following image!",
+        content="Please generate an image based on the provided images and text, ensuring that the image meets the textual requirements and includes all the visual subjects from the images.",
         # TODO: Now we only use local path, and we use replace it with url in the future.
         image_list=image_list,
         image_detail="high",
     )
-    assistant_response = assistant_agent.step(user_msg)
+
+
+    response = dalle_agent.step(user_msg)
+    
     print("=" * 20 + " RESULT " + "=" * 20)
-    print(assistant_response.msgs[0].content)
+    print(response.msg.content)
     print("=" * 48)
 
-
 def main(args: argparse.Namespace) -> None:
-    understanding_image(args.image_paths)
-
+    multi_condition_image_craft(args.image_paths)
 
 if __name__ == "__main__":
     args = parser.parse_args()
     main(args=args)
+
+

@@ -12,13 +12,14 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import argparse
-
-from PIL import Image
-
-from camel.agents import ChatAgent
-from camel.generators import PromptTemplateGenerator
-from camel.messages import BaseMessage
+from camel.types import ModelType
+from camel.agents.chat_agent import ChatAgent
+from camel.configs import FunctionCallingConfig
+from camel.generators import SystemMessageGenerator, PromptTemplateGenerator
+from camel.messages.base import BaseMessage
 from camel.types import ModelType, RoleType, TaskType
+from camel.functions import T2I_FUNCS
+
 
 parser = argparse.ArgumentParser(description="Arguments for object detection.")
 parser.add_argument(
@@ -30,40 +31,43 @@ parser.add_argument(
     default=None
 )
 
-
-def understanding_image(image_paths: str) -> list[str]:
-    sys_msg = PromptTemplateGenerator().get_prompt_from_key(TaskType.OBJECT_RECOGNITION, RoleType.ASSISTANT)
+def main():
+    sys_msg = PromptTemplateGenerator().get_prompt_from_key(TaskType.IMAGE_CRAFT, RoleType.ASSISTANT)
     print("=" * 20 + " SYS MSG " + "=" * 20)
     print(sys_msg)
     print("=" * 49)
 
     assistant_sys_msg = BaseMessage.make_assistant_message(
-        role_name="Assistant",
+        role_name="Artist",
         content=sys_msg,
     )
-    assistant_agent = ChatAgent(
-        assistant_sys_msg,
-        model_type=ModelType.GPT_4_TURBO_VISION,
-    )
-    # image_path_list = [r"test_0.jpg", r"test_1.jpg"]
-    image_list = [Image.open(image_path) for image_path in image_paths]
+    
     user_msg = BaseMessage.make_user_message(
         role_name="User",
-        content="Please start the object detection for following image!",
-        # TODO: Now we only use local path, and we use replace it with url in the future.
-        image_list=image_list,
-        image_detail="high",
+        content="Draw a picture of a camel.",
     )
-    assistant_response = assistant_agent.step(user_msg)
+
+    function_list=[*T2I_FUNCS]
+    assistant_model_config = FunctionCallingConfig.from_openai_function_list(
+        function_list=function_list,
+        kwargs=dict(temperature=0.0),
+    )
+
+    dalle_agent = ChatAgent(
+        system_message=assistant_sys_msg,
+        model_type=ModelType.GPT_4_TURBO_VISION,
+        model_config=assistant_model_config,
+        function_list=[*T2I_FUNCS],
+    )
+
+    response = dalle_agent.step(user_msg)
+    
     print("=" * 20 + " RESULT " + "=" * 20)
-    print(assistant_response.msgs[0].content)
+    print(response.msg.content)
     print("=" * 48)
 
 
-def main(args: argparse.Namespace) -> None:
-    understanding_image(args.image_paths)
-
-
 if __name__ == "__main__":
-    args = parser.parse_args()
-    main(args=args)
+    main()
+
+

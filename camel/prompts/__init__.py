@@ -18,6 +18,7 @@ from .misalignment import MisalignmentPromptTemplateDict
 from .translation import TranslationPromptTemplateDict
 from .object_recognition import ObjectRecognitionPromptTemplateDict
 from .image_craft import ImageCraftPromptTemplateDict
+from .multi_condition_image_craft import MultiConditionImageCraftPromptTemplateDict
 from .solution_extraction import SolutionExtractionPromptTemplateDict
 from .evaluation import EvaluationPromptTemplateDict
 from .role_description_prompt_template import RoleDescriptionPromptTemplateDict
@@ -40,5 +41,5 @@ __all__ = [
     'PromptTemplateGenerator',
     'SolutionExtractionPromptTemplateDict',
     'ImageCraftPromptTemplateDict',
-    
+    'MultiConditionImageCraftPromptTemplateDict',
 ]

@@ -28,7 +28,7 @@ class ModelType(Enum):
     GPT_3_5_TURBO_16K = "gpt-3.5-turbo-1106"
     GPT_4 = "gpt-4"
     GPT_4_32K = "gpt-4-32k"
-    GPT_4_TURBO = "gpt-4-1106-preview"
+    GPT_4_TURBO = "gpt-4-turbo-2024-04-09"
     GPT_4_TURBO_VISION = "gpt-4-turbo-2024-04-09"
 
     STUB = "stub"
@@ -157,6 +157,7 @@ class TaskType(Enum):
     ROLE_DESCRIPTION = "role_description"
     OBJECT_RECOGNITION = "object_recognition"
     IMAGE_CRAFT = "image_craft"
+    MULTI_CONDITION_IMAGE_CRAFT = "multi_condition_image_craft"
     DEFAULT = "default"
 
 

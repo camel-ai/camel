@@ -44,6 +44,7 @@ if TYPE_CHECKING:
     from camel.configs import BaseConfig
     from camel.functions import OpenAIFunction
     from camel.terminators import ResponseTerminator
+
 from camel.configs import ChatGPTVisionConfig
 
 @dataclass(frozen=True)
@@ -128,8 +129,9 @@ class ChatAgent(BaseAgent):
         if function_list is not None:
             for func in function_list:
                 self.func_dict[func.get_function_name()] = func.func
+
         # self.model_config = model_config or ChatGPTConfig()
-        # 载入ChatGPTVisionConfig
+        # Note: Support ChatGPTVisionConfig
         if self.model_type == ModelType.GPT_4_TURBO_VISION:
             self.model_config = model_config or ChatGPTVisionConfig()
         else:

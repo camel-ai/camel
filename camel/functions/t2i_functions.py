@@ -56,7 +56,7 @@ def get_dalle_img(model: str, prompt: str, size: str, quality: str, n: int) -> s
     """Generate an image using OpenAI's DALL-E model.
 
     Args:
-        model (str): The specific DALL-E model to use for image generation, including "dall-e-3" and "dall-e-2". Defaults to "dall-e-2".
+        model (str): The specific DALL-E model to use for image generation, including "dall-e-3" and "dall-e-2". Defaults to "dall-e-3".
         prompt (str): The text prompt based on which the image is generated.
         size (str): The size specification of the image. Must be one of "256x256", "512x512", or "1024x1024" for "dall-e-2". Must be one of "1024x1024", "1792x1024", or "1024x1792" for "dall-e-3".
         quality (str): The quality setting for the image generation, including "standard" and "hd". Defaults to "standard".

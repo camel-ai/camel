@@ -15,9 +15,7 @@ from colorama import Fore
 
 from camel.societies import RolePlaying
 from camel.utils import print_text_animated
-from camel.types import (
-    ModelType,
-)
+
 
 def main(model_type=None, chat_turn_limit=50) -> None:
     task_prompt = "Develop a trading bot for the stock market"
@@ -25,7 +23,7 @@ def main(model_type=None, chat_turn_limit=50) -> None:
         assistant_role_name="Python Programmer",
         assistant_agent_kwargs=dict(model_type=model_type),
         user_role_name="Stock Trader",
-        user_agent_kwargs=dict(model_type=ModelType.GPT_4_TURBO_VISION),
+        user_agent_kwargs=dict(model_type=model_type),
         task_prompt=task_prompt,
         with_task_specify=True,
         task_specify_agent_kwargs=dict(model_type=model_type),
@@ -50,7 +48,6 @@ def main(model_type=None, chat_turn_limit=50) -> None:
 
         assistant_response, user_response = role_play_session.step(input_msg)
 
-        # 这里是一些终止和输出的设定，不用管
         if assistant_response.terminated:
             print(Fore.GREEN +
                   ("AI Assistant terminated. Reason: "

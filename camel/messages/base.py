@@ -55,7 +55,6 @@ class BaseMessage:
     def make_user_message(
             cls, role_name: str, content: str,
             meta_dict: Optional[Dict[str, str]] = None,
-            # image: Optional[List[Image.Image]] = None,
             image_list: Optional[List[Image.Image]] = None,
             image_detail: IMAGE_DETAIL = "auto") -> 'BaseMessage':
         return cls(role_name, RoleType.USER, meta_dict, content, image_list,
@@ -249,7 +248,7 @@ class BaseMessage:
             return body
         
 
-    # 所以这里没改，可以改一改
+    # TODO: 所以这里没改，可以改一改
     def to_openai_assistant_message(self) -> OpenAIAssistantMessage:
         r"""Converts the message to an :obj:`OpenAIAssistantMessage` object.
 
@@ -258,36 +257,37 @@ class BaseMessage:
                 object.
         """
         body = {"role": "assistant", "content": self.content}
-        if self.image_list is None:
-            return body
-        else:
-            body["content"] = [{
-                    "type": "text",
-                    "text": self.content,
-                }]
-            for image in self.image_list:
-                if image.format is None:
-                    raise ValueError(f"Only support image with specified format, "
-                                    f"including {list(OpenAIImageType)}")
-                image_type: str = image.format.lower()
-                if image_type not in OpenAIImageType:
-                    raise ValueError(f"Image type {image.format} "
-                                    f"is not supported by OpenAI vision model")
-                with io.BytesIO() as buffer:
-                    image.save(fp=buffer, format=image.format)
-                    encoded_image = base64.b64encode(
-                        buffer.getvalue()).decode("utf-8")
-                image_prefix = f"data:image/{image_type};base64,"
-                new_image = {
-                    "type": "image_url",
-                    "image_url": {
-                        "url": f"{image_prefix}{encoded_image}",
-                        "detail": self.image_detail,
-                    }
-                }
-                body["content"].append(new_image)
+        return body
+        # if self.image_list is None:
+        #     return body
+        # else:
+        #     body["content"] = [{
+        #             "type": "text",
+        #             "text": self.content,
+        #         }]
+        #     for image in self.image_list:
+        #         if image.format is None:
+        #             raise ValueError(f"Only support image with specified format, "
+        #                             f"including {list(OpenAIImageType)}")
+        #         image_type: str = image.format.lower()
+        #         if image_type not in OpenAIImageType:
+        #             raise ValueError(f"Image type {image.format} "
+        #                             f"is not supported by OpenAI vision model")
+        #         with io.BytesIO() as buffer:
+        #             image.save(fp=buffer, format=image.format)
+        #             encoded_image = base64.b64encode(
+        #                 buffer.getvalue()).decode("utf-8")
+        #         image_prefix = f"data:image/{image_type};base64,"
+        #         new_image = {
+        #             "type": "image_url",
+        #             "image_url": {
+        #                 "url": f"{image_prefix}{encoded_image}",
+        #                 "detail": self.image_detail,
+        #             }
+        #         }
+        #         body["content"].append(new_image)
 
-            return body
+        #     return body
 
     def to_dict(self) -> Dict:
         r"""Converts the message to a dictionary.
