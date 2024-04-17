@@ -37,7 +37,7 @@ The rapid advancement of conversational and chat-based language models has led t
 ## Community
 🐫 CAMEL is an open-source library designed for the study of autonomous and communicative agents. We believe that studying these agents on a large scale offers valuable insights into their behaviors, capabilities, and potential risks. To facilitate research in this field, we implement and support various types of agents, tasks, prompts, models, and simulated environments.
 
-Join us ([*Slack*](https://join.slack.com/t/camel-kwr1314/shared_invite/zt-1vy8u9lbo-ZQmhIAyWSEfSwLCl2r2eKA), [*Discord*](https://discord.gg/CNcNpquyDc) or [*WeChat*](https://ghli.org/camel/wechat.png)) in pushing the boundaries of building AI Society.
+Join us ([*Slack*](https://join.slack.com/t/camel-ai/shared_invite/zt-2g7xc41gy-_7rcrNNAArIP6sLQqldkqQ), [*Discord*](https://discord.gg/CNcNpquyDc) or [*WeChat*](https://ghli.org/camel/wechat.png)) in pushing the boundaries of building AI Society.
 
 ## Try it yourself
 We provide a [![Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1AzP33O8rnMW__7ocWJhVBXjKziJXPtim?usp=sharing) demo showcasing a conversation between two ChatGPT agents playing roles as a python programmer and a stock trader collaborating on developing a trading bot for stock market.
@@ -104,7 +104,7 @@ conda create --name camel python=3.10
 conda activate camel
 
 # Clone github repo
-git clone -b v0.1.0 https://github.com/camel-ai/camel.git
+git clone -b v0.1.2 https://github.com/camel-ai/camel.git
 
 # Change directory into project directory
 cd camel
@@ -121,6 +121,7 @@ pip install -e .[all] # (Optional)
 [CAMEL package documentation pages](https://camel-ai.github.io/camel/).
 
 ## Example
+
 You can find a list of tasks for different set of assistant and user role pairs [here](https://drive.google.com/file/d/194PPaSTBR07m-PzjS-Ty6KlPLdFIPQDd/view?usp=share_link).
 
 As an example, to run the `role_playing.py` script:
