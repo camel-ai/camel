@@ -405,5 +405,4 @@ def parse_json(s: str) -> Any:
                 result.append("\"")
         else:
             result.append(char)
-    print("".join(result))
     return json.loads("".join(result))
