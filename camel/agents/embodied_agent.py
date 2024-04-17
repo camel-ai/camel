@@ -23,7 +23,7 @@ from camel.interpreters import (
 )
 from camel.messages import BaseMessage
 from camel.responses import ChatAgentResponse
-from camel.types import ModelType
+from camel.types import ModelType, ReasonType
 from camel.utils import print_text_animated
 
 
