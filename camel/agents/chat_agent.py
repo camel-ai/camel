@@ -46,6 +46,7 @@ if TYPE_CHECKING:
     from camel.terminators import ResponseTerminator
 
 from camel.configs import ChatGPTVisionConfig
+from camel.utils import parse_json
 
 @dataclass(frozen=True)
 class FunctionCallingRecord:
@@ -489,8 +490,7 @@ class ChatAgent(BaseAgent):
         func = self.func_dict[func_name]
 
         args_str: str = choice.message.function_call.arguments
-        args = json.loads(args_str.replace("\'", "\""))
-
+        args = parse_json(args_str)
         # Pass the extracted arguments to the indicated function
         try:
             result = func(**args)
