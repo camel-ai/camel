@@ -116,16 +116,15 @@ class ModelType(Enum):
             return 2048
         elif self is ModelType.VICUNA_16K:
             return 16384
-        elif self.is_anthropic:
-            if self in {ModelType.CLAUDE_2_0, ModelType.CLAUDE_INSTANT_1_2}:
-                return 100_000
-            elif self in {
-                    ModelType.CLAUDE_2_1,
-                    ModelType.CLAUDE_3_OPUS,
-                    ModelType.CLAUDE_3_SONNET,
-                    ModelType.CLAUDE_3_HAIKU,
-            }:
-                return 200_000
+        if self in {ModelType.CLAUDE_2_0, ModelType.CLAUDE_INSTANT_1_2}:
+            return 100_000
+        elif self in {
+                ModelType.CLAUDE_2_1,
+                ModelType.CLAUDE_3_OPUS,
+                ModelType.CLAUDE_3_SONNET,
+                ModelType.CLAUDE_3_HAIKU,
+        }:
+            return 200_000
         else:
             raise ValueError("Unknown model type")
 
