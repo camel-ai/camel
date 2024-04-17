@@ -12,18 +12,15 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional
 
-from anthropic import AI_PROMPT, HUMAN_PROMPT, Anthropic
-from anthropic.types import Completion
-from openai import Stream
+from anthropic import Anthropic
+from anthropic._types import NOT_GIVEN
 
 from camel.configs import ANTHROPIC_API_PARAMS
-from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
-from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
+from camel.types import ChatCompletion, ModelType
 from camel.utils import AnthropicTokenCounter, BaseTokenCounter
-from camel.utils.token_counting import messages_to_prompt
 
 
 class AnthropicModel(BaseModelBackend):
@@ -31,24 +28,18 @@ class AnthropicModel(BaseModelBackend):
 
     def __init__(self, model_type: ModelType,
                  model_config_dict: Dict[str, Any]) -> None:
-
         super().__init__(model_type, model_config_dict)
-
         self.client = Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
         self._token_counter: Optional[BaseTokenCounter] = None
 
-    def _convert_openai_messages_to_anthropic_prompt(
-            self, messages: List[OpenAIMessage]):
-        return messages_to_prompt(messages, self.model_type)
-
-    def _convert_response_from_anthropic_to_openai(self, response: Completion):
+    def _convert_response_from_anthropic_to_openai(self, response):
         # openai ^1.0.0 format, reference openai/types/chat/chat_completion.py
         obj = ChatCompletion.construct(
             id=None, choices=[
                 dict(
                     index=0, message={
                         "role": "assistant",
-                        "content": response.completion
+                        "content": response.content[0].text
                     }, finish_reason=response.stop_reason)
             ], created=None, model=response.model, object="chat.completion")
         return obj
@@ -65,21 +56,6 @@ class AnthropicModel(BaseModelBackend):
             self._token_counter = AnthropicTokenCounter(self.model_type)
         return self._token_counter
 
-    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
-        r"""Count the number of tokens from a user-assisstant alternating
-        message list (the OpenAI format).
-
-        Args:
-            messages (List[OpenAIMessage]): Message list with the chat history
-                in OpenAI API format.
-
-        Returns:
-            int: The number of tokens in the message list after transformed
-                into Anthropic prompting format.
-        """
-        prompt = self._convert_openai_messages_to_anthropic_prompt(messages)
-        return self.count_tokens_from_prompt(prompt)
-
     def count_tokens_from_prompt(self, prompt: str) -> int:
         r"""Count the number of tokens from a prompt.
 
@@ -93,8 +69,8 @@ class AnthropicModel(BaseModelBackend):
 
     def run(
         self,
-        messages: List[OpenAIMessage],
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+        messages,
+    ):
         r"""Run inference of Anthropic chat completion.
 
         Args:
@@ -105,10 +81,12 @@ class AnthropicModel(BaseModelBackend):
             Dict[str, Any]: Response in the OpenAI API format.
         """
 
-        prompt = self._convert_openai_messages_to_anthropic_prompt(messages)
-        response = self.client.completions.create(
-            model=self.model_type.value,
-            prompt=f"{HUMAN_PROMPT} {prompt} {AI_PROMPT}",
+        if messages[0]["role"] == "system":
+            sys_msg = messages.pop(0)["content"]  # type: ignore
+        else:
+            sys_msg = NOT_GIVEN
+        response = self.client.messages.create(  # type: ignore
+            model=self.model_type.value, system=sys_msg, messages=messages,
             **self.model_config_dict)
 
         # format response to openai format

@@ -37,8 +37,16 @@ class ModelType(Enum):
     VICUNA = "vicuna"
     VICUNA_16K = "vicuna-16k"
 
-    CLAUDE_2 = "claude-2"
-    CLAUDE_INSTANT = "claude-instant-1"
+    # Legacy anthropic models
+    # NOTE: anthropic lagecy models only Claude 2.1 has system prompt support
+    CLAUDE_2_1 = "claude-2.1"
+    CLAUDE_2_0 = "claude-2.0"
+    CLAUDE_INSTANT_1_2 = "claude-instant-1.2"
+
+    #  3 models
+    CLAUDE_3_OPUS = "claude-3-opus-20240229"
+    CLAUDE_3_SONNET = "claude-3-sonnet-20240229"
+    CLAUDE_3_HAIKU = "claude-3-haiku-20240307"
 
     @property
     def value_for_tiktoken(self) -> str:
@@ -72,10 +80,14 @@ class ModelType(Enum):
         Returns:
             bool: Whether this type of models is anthropic.
         """
-        if self.name in {"CLAUDE_2", "CLAUDE_INSTANT"}:
-            return True
-        else:
-            return False
+        return self in {
+            ModelType.CLAUDE_INSTANT_1_2,
+            ModelType.CLAUDE_2_0,
+            ModelType.CLAUDE_2_1,
+            ModelType.CLAUDE_3_OPUS,
+            ModelType.CLAUDE_3_SONNET,
+            ModelType.CLAUDE_3_HAIKU,
+        }
 
     @property
     def token_limit(self) -> int:
@@ -104,8 +116,16 @@ class ModelType(Enum):
             return 2048
         elif self is ModelType.VICUNA_16K:
             return 16384
-        elif self in {ModelType.CLAUDE_2, ModelType.CLAUDE_INSTANT}:
-            return 100_000
+        elif self.is_anthropic:
+            if self in {ModelType.CLAUDE_2_0, ModelType.CLAUDE_INSTANT_1_2}:
+                return 100_000
+            elif self in {
+                    ModelType.CLAUDE_2_1,
+                    ModelType.CLAUDE_3_OPUS,
+                    ModelType.CLAUDE_3_SONNET,
+                    ModelType.CLAUDE_3_HAIKU,
+            }:
+                return 200_000
         else:
             raise ValueError("Unknown model type")
 

@@ -23,8 +23,12 @@ from camel.utils import AnthropicTokenCounter
 
 @pytest.mark.model_backend
 @pytest.mark.parametrize("model_type", [
-    ModelType.CLAUDE_2,
-    ModelType.CLAUDE_INSTANT,
+    ModelType.CLAUDE_INSTANT_1_2,
+    ModelType.CLAUDE_2_0,
+    ModelType.CLAUDE_2_1,
+    ModelType.CLAUDE_3_OPUS,
+    ModelType.CLAUDE_3_SONNET,
+    ModelType.CLAUDE_3_HAIKU,
 ])
 def test_anthropic_model(model_type):
     model_config_dict = AnthropicConfig().__dict__
@@ -38,7 +42,7 @@ def test_anthropic_model(model_type):
 
 @pytest.mark.model_backend
 def test_anthropic_model_unexpected_argument():
-    model_type = ModelType.CLAUDE_2
+    model_type = ModelType.CLAUDE_2_0
     model_config = OpenSourceConfig(
         model_path="vicuna-7b-v1.5",
         server_url="http://localhost:8000/v1",

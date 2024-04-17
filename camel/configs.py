@@ -206,11 +206,11 @@ class AnthropicConfig(BaseConfig):
             (default: :obj:`False`)
 
     """
-    max_tokens_to_sample: int = 256
+    max_tokens: int = 256
     stop_sequences: Union[List[str], NotGiven] = NOT_GIVEN
     temperature: float = 1
-    top_p: float = 0.7
-    top_k: int = 5
+    top_p: Union[float, NotGiven] = NOT_GIVEN
+    top_k: Union[int, NotGiven] = NOT_GIVEN
     metadata: NotGiven = NOT_GIVEN
     stream: bool = False
 

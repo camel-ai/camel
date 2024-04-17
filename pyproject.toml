@@ -170,6 +170,7 @@ optional = true
 sphinx = "^6"
 sphinx_book_theme = "*"
 recommonmark = "*"
+docutils = "<0.20.0"
 
 [tool.yapf]
 based_on_style = "pep8"
