@@ -65,6 +65,9 @@ sentence-transformers = { version = "^2.2.2", optional = true }
 qdrant-client = { version = "^1.6.4", optional = true }
 pymilvus = { version = "^2.4.0", optional = true }
 
+# retrievers
+rank-bm25 = { version = "^0.2.2", optional = true }
+
 # test
 pytest = { version = "^7", optional = true}
 mock = { version = "^5", optional = true}
@@ -103,6 +106,10 @@ vector-databases = [
     "pymilvus",
 ]
 
+retrievers = [
+    "rank-bm25",
+]
+
 all = [
     # huggingface-agent
     "transformers",
@@ -127,6 +134,8 @@ all = [
     "pymilvus",
     # encoders
     "sentence-transformers",
+    # retrievers
+    "rank-bm25",
 ]
 
 [tool.poetry.group.dev]
@@ -209,6 +218,7 @@ module = [
     "fitz",
     "qdrant_client.*",
     "unstructured.*",
+    "rank_bm25",
     "sentence_transformers.*",
     "pymilvus",
 ]
