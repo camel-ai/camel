@@ -29,9 +29,9 @@ def test_role_playing_init(model_type, critic_role_name,
                            with_critic_in_the_loop):
     role_playing = RolePlaying(
         assistant_role_name="assistant",
-        assistant_agent_kwargs=dict(model_type=ModelType.GPT_3_5_TURBO_16K),
+        assistant_agent_kwargs=dict(model_type=ModelType.GPT_3_5_TURBO),
         user_role_name="user",
-        user_agent_kwargs=dict(model_type=ModelType.GPT_3_5_TURBO_16K),
+        user_agent_kwargs=dict(model_type=ModelType.GPT_3_5_TURBO),
         model_type=model_type,
         critic_role_name=critic_role_name,
         task_prompt="Perform the task",
@@ -62,8 +62,8 @@ def test_role_playing_init(model_type, critic_role_name,
     assert isinstance(assistant_agent, ChatAgent)
     assert isinstance(user_agent, ChatAgent)
     if model_type is None:
-        assert assistant_agent.model_type == ModelType.GPT_3_5_TURBO_16K
-        assert user_agent.model_type == ModelType.GPT_3_5_TURBO_16K
+        assert assistant_agent.model_type == ModelType.GPT_3_5_TURBO
+        assert user_agent.model_type == ModelType.GPT_3_5_TURBO
     else:
         assert assistant_agent.model_type == ModelType.GPT_4
         assert user_agent.model_type == ModelType.GPT_4
