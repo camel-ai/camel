@@ -40,6 +40,13 @@ Main Documentation
 
 .. toctree::
    :maxdepth: 1
+   :caption: Tutorial and Cookbooks
+   :name: tutorials_and_cookbooks
+
+   tutorials_and_cookbooks/agents_with_rag.md
+
+.. toctree::
+   :maxdepth: 1
    :caption: API References
    :name: api_references
 

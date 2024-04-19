@@ -1,6 +1,6 @@
 # Creating Your First Agent Society
-## Philosophical Bits
 
+## Philosophical Bits
 [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1HU4-sxNWFTs9JOegGbKOBcgHjDfj8FX5?usp=sharing)
 
 
