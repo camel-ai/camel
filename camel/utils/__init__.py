@@ -13,6 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .commons import (
     openai_api_key_required,
+    azure_openai_api_key_required,
     print_text_animated,
     get_prompt_template_key_words,
     get_first_int,
@@ -33,6 +34,7 @@ from .token_counting import (
 
 __all__ = [
     'openai_api_key_required',
+    'azure_openai_api_key_required',
     'print_text_animated',
     'get_prompt_template_key_words',
     'get_first_int',
