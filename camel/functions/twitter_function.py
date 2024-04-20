@@ -13,14 +13,14 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import datetime
 import os
-from typing import List, Optional, Union
+from typing import List, Optional, Tuple, Union
 
-from requests import Response
+import requests
 
 from camel.functions import OpenAIFunction
 
 
-def get_twitter_api_key() -> str:
+def get_twitter_api_key() -> Tuple[str, str]:
     r"""Retrieve the Twitter API key and secret from environment variables.
 
     Returns:
@@ -49,19 +49,22 @@ def get_twitter_api_key() -> str:
     return TWITTER_CONSUMER_KEY, TWITTER_CONSUMER_SECRET
 
 
-def get_oauth_session() -> Response:
+def get_oauth_session() -> requests.Session:
     r'''
     Initiates an OAuth1Session with Twitter's API and returns it.
 
-    The function first fetches a request token, then prompts the user to authorize the application.
-    After the user has authorized the application and provided a verifier (PIN), the function fetches an access token.
+    The function first fetches a request token, then prompts the user to
+    authorize the application. After the user has authorized the application
+    and provided a verifier (PIN), the function fetches an access token.
     Finally, a new OAuth1Session is created with the access token and returned.
 
     Raises:
-        Exception: If an error occurs while fetching the OAuth access token or the OAuth request token.
+        Exception: If an error occurs while fetching the OAuth access token or
+            the OAuth request token.
 
     Returns:
-        requests_oauthlib.OAuth1Session: An OAuth1Session object authenticated with the user's access token.
+        requests_oauthlib.OAuth1Session: An OAuth1Session object authenticated
+            with the user's access token.
 
     Reference:
         https://github.com/twitterdev/Twitter-API-v2-sample-code/blob/main/Manage-Tweets/create_tweet.py
@@ -77,7 +80,8 @@ def get_oauth_session() -> Response:
     consumer_key, consumer_secret = get_twitter_api_key()
 
     # Get request token
-    request_token_url = "https://api.twitter.com/oauth/request_token?oauth_callback=oob&x_auth_access_type=write"
+    request_token_url = ("https://api.twitter.com/oauth/request_token"
+                         "?oauth_callback=oob&x_auth_access_type=write")
     oauth = OAuth1Session(consumer_key, client_secret=consumer_secret)
 
     try:
@@ -124,15 +128,16 @@ def get_oauth_session() -> Response:
     return oauth
 
 
-def handle_http_error(response: Response) -> str:
-    r"""
-    Handles the HTTP response by checking the status code and returning an appropriate message if there is an error.
+def handle_http_error(response: requests.Response) -> str:
+    r"""Handles the HTTP response by checking the status code and returning an
+    appropriate message if there is an error.
 
     Args:
         response (requests.Response): The HTTP response to handle.
 
     Returns:
-        str: A string describing the error, if any. If there is no error, the function returns an "Unexpected Exception" message.
+        str: A string describing the error, if any. If there is no error, the
+            function returns an "Unexpected Exception" message.
 
     Reference:
         https://github.com/tweepy/tweepy/blob/master/tweepy/client.py#L64
@@ -218,13 +223,15 @@ def create_tweet(*, text: str, poll_options: Optional[List[str]] = None,
     if poll_options is not None:
         json_data["poll"] = {"options": poll_options}
         if poll_duration_minutes is not None:
-            json_data["poll"]["duration_minutes"] = poll_duration_minutes
+            json_data["poll"]["duration_minutes"] = (
+                poll_duration_minutes  # type: ignore
+            )
 
     if quote_tweet_id is not None:
-        json_data["quote_tweet_id"] = str(quote_tweet_id)
+        json_data["quote_tweet_id"] = str(quote_tweet_id)  # type: ignore
 
     if text is not None:
-        json_data["text"] = text
+        json_data["text"] = text  # type: ignore
 
     # Making the request
     response = oauth.post(
@@ -251,7 +258,7 @@ def create_tweet(*, text: str, poll_options: Optional[List[str]] = None,
     return response_str
 
 
-def delete_tweet(tweet_id: str = None) -> str:
+def delete_tweet(tweet_id: str) -> str:
     r"""Deletes a tweet with the specified ID for an authorized user.
 
     This function sends a DELETE request to the Twitter API to delete
@@ -272,9 +279,8 @@ def delete_tweet(tweet_id: str = None) -> str:
     """
     # Print the parameters that are not None
     if tweet_id is not None:
-        print(
-            f"You are about to delete a tweet with the following ID: {tweet_id}"
-        )
+        print(f"You are about to delete a tweet with the following "
+              f"ID: {tweet_id}")
 
     # Add a confirmation prompt at the beginning of the function
     confirm = input("Are you sure you want to delete this tweet? (yes/no): ")
@@ -321,17 +327,12 @@ def get_user_me() -> str:
     """
     oauth = get_oauth_session()
 
-    tweet_fields = [
-        "created_at",
-        "text",
-    ]
-
+    tweet_fields = ["created_at", "text"]
     user_fields = [
         "created_at", "description", "id", "location", "most_recent_tweet_id",
         "name", "pinned_tweet_id", "profile_image_url", "protected",
         "public_metrics", "url", "username", "verified_type"
     ]
-
     params = {
         "expansions": "pinned_tweet_id",
         "tweet.fields": ",".join(tweet_fields),
@@ -362,33 +363,48 @@ def get_user_me() -> str:
     ]
     for key in userInfoKeys:
         if key in user_info:
-            user_report += f"{key.replace('_', ' ').capitalize()}: {user_info[key]}. "
+            user_report += (
+                f"{key.replace('_', ' ').capitalize()}: {user_info[key]}. ")
 
     if 'created_at' in user_info:
         created_at = datetime.datetime.strptime(user_info['created_at'],
                                                 "%Y-%m-%dT%H:%M:%S.%fZ")
-        user_report += f"Account created at: {created_at.strftime('%B %d, %Y at %H:%M:%S')}. "
+        date_str = created_at.strftime('%B %d, %Y at %H:%M:%S')
+        user_report += (f"Account created at: "
+                        f"{date_str}. ")
 
     if 'protected' in user_info:
         protection_status = "private" if user_info['protected'] else "public"
-        user_report += f"Protected: This user's Tweets are {protection_status}. "
+        user_report += (
+            f"Protected: This user's Tweets are {protection_status}. ")
 
     if 'verified_type' in user_info:
         user_report += "Verified type: "
         verification_type = user_info['verified_type']
         if verification_type == 'blue':
-            user_report += "The user has a blue verification, typically reserved for public figures, celebrities, or global brands. "
+            user_report += (
+                "The user has a blue verification, typically reserved "
+                "for public figures, celebrities, or global brands. ")
         elif verification_type == 'business':
-            user_report += "The user has a business verification, typically reserved for businesses and corporations. "
+            user_report += (
+                "The user has a business verification, typically reserved "
+                "for businesses and corporations. ")
         elif verification_type == 'government':
-            user_report += "The user has a government verification, typically reserved for government officials or entities. "
+            user_report += (
+                "The user has a government verification, typically reserved "
+                "for government officials or entities. ")
         elif verification_type == 'none':
             user_report += "The user is not verified. "
 
     if 'public_metrics' in user_info:
         user_report += "Public metrics: "
         metrics = user_info['public_metrics']
-        user_report += f"The user has {metrics.get('followers_count', 0)} followers, is following {metrics.get('following_count', 0)} users, has made {metrics.get('tweet_count', 0)} tweets, is listed in {metrics.get('listed_count', 0)} lists, and has received {metrics.get('like_count', 0)} likes. "
+        user_report += (
+            f"The user has {metrics.get('followers_count', 0)} followers, "
+            f"is following {metrics.get('following_count', 0)} users, "
+            f"has made {metrics.get('tweet_count', 0)} tweets, "
+            f"is listed in {metrics.get('listed_count', 0)} lists, "
+            f"and has received {metrics.get('like_count', 0)} likes. ")
 
     if 'pinned_tweet_id' in user_info:
         user_report += f"Pinned tweet ID: {user_info['pinned_tweet_id']}. "
@@ -397,11 +413,15 @@ def get_user_me() -> str:
         user_report += "\nPinned tweet information: "
         tweet_created_at = datetime.datetime.strptime(tweets['created_at'],
                                                       "%Y-%m-%dT%H:%M:%S.%fZ")
-        user_report += f"Pinned tweet created at {tweet_created_at.strftime('%B %d, %Y at %H:%M:%S')} with text: '{tweets['text']}'."
+        user_report += (
+            f"Pinned tweet created at "
+            f"{tweet_created_at.strftime('%B %d, %Y at %H:%M:%S')} "
+            f"with text: '{tweets['text']}'.")
 
     return user_report
 
 
 TWITTER_FUNCS: List[OpenAIFunction] = [
-    OpenAIFunction(func) for func in [create_tweet, delete_tweet, get_user_me]
+    OpenAIFunction(func)  # type: ignore
+    for func in [create_tweet, delete_tweet, get_user_me]
 ]
