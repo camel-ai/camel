@@ -14,7 +14,7 @@
 import copy
 import json
 from datetime import datetime
-from typing import List
+from typing import List, Tuple
 
 import pytest
 from jsonschema.exceptions import SchemaError
@@ -31,6 +31,7 @@ def test_get_openai_tool_schema():
         str_para: str,
         int_para: int,
         list_para: List[int],
+        tuple_para: Tuple[str, str],
         float_para: float,
         datatime_para: datetime,
         *args,
@@ -45,6 +46,7 @@ def test_get_openai_tool_schema():
             str_para (str) : str_para desc
             int_para (int): int_para desc
             list_para (List): list_para desc
+            tuple_para (Tuple): tuple_para desc
             float_para (float): float_para desc
             datatime_para (datetime): datatime_para desc
             default_enum_para (RoleType): default_enum_para desc
@@ -82,6 +84,11 @@ def test_get_openai_tool_schema():
                         },
                         'description': 'list_para desc'
                     },
+                    'tuple_para': {
+                        'type': 'array',
+                        'items': {},
+                        'description': 'tuple_para desc'
+                    },
                     'float_para': {
                         'type': 'number',
                         'description': 'float_para desc'
@@ -100,8 +107,8 @@ def test_get_openai_tool_schema():
                     }
                 },
                 'required': [
-                    'str_para', 'int_para', 'list_para', 'float_para',
-                    'datatime_para'
+                    'str_para', 'int_para', 'list_para', 'tuple_para',
+                    'float_para', 'datatime_para'
                 ],
                 'definitions': {
                     'RoleType': {
@@ -154,6 +161,11 @@ def test_get_openai_tool_schema():
                         'type': 'array',
                         'description': 'list_para desc'
                     },
+                    'tuple_para': {
+                        'type': 'array',
+                        'items': {},
+                        'description': 'tuple_para desc'
+                    },
                     'float_para': {
                         'type': 'number',
                         'description': 'float_para desc'
@@ -173,7 +185,7 @@ def test_get_openai_tool_schema():
                 },
                 'required': [
                     'any_para', 'str_para', 'int_para', 'list_para',
-                    'float_para', 'datatime_para'
+                    'tuple_para', 'float_para', 'datatime_para'
                 ],
                 'type':
                 'object'

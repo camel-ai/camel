@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from inspect import Parameter, signature
+from types import GenericAlias
 from typing import Any, Callable, Dict, Mapping, Optional, Tuple
 
 from docstring_parser import parse
@@ -89,6 +90,11 @@ def get_openai_tool_schema(func: Callable) -> Dict[str, Any]:
         param_default = p.default
         param_kind = p.kind
         param_annotation = p.annotation
+        # Output like Tuple[str,str] from pydantic create_model() is not
+        # suppored by openai request
+        if isinstance(param_type,
+                      GenericAlias) and param_type.__origin__ is tuple:
+            param_type = Tuple
         # Variable parameters are not supported
         if (param_kind == Parameter.VAR_POSITIONAL
                 or param_kind == Parameter.VAR_KEYWORD):
@@ -123,11 +129,7 @@ def get_openai_tool_schema(func: Callable) -> Dict[str, Any]:
         if ((name := param.arg_name) in parameters_dict["properties"]
                 and (description := param.description)):
             parameters_dict["properties"][name]["description"] = description
-        # For Tuple type pydantic will not return 'items', but it's required
-        # by openai request
-        if 'items' not in parameters_dict['properties'][name]:
-            parameters_dict['properties'][name]['items'] = {}
-    
+
     short_description = docstring.short_description or ""
     long_description = docstring.long_description or ""
     if long_description:
