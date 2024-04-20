@@ -123,7 +123,11 @@ def get_openai_tool_schema(func: Callable) -> Dict[str, Any]:
         if ((name := param.arg_name) in parameters_dict["properties"]
                 and (description := param.description)):
             parameters_dict["properties"][name]["description"] = description
-
+        # For Tuple type pydantic will not return 'items', but it's required
+        # by openai request
+        if 'items' not in parameters_dict['properties'][name]:
+            parameters_dict['properties'][name]['items'] = {}
+    
     short_description = docstring.short_description or ""
     long_description = docstring.long_description or ""
     if long_description:
