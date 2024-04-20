@@ -12,8 +12,15 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from inspect import Parameter, signature
-from types import GenericAlias
-from typing import Any, Callable, Dict, Mapping, Optional, Tuple
+from typing import (  # type: ignore
+    Any,
+    Callable,
+    Dict,
+    Mapping,
+    Optional,
+    Tuple,
+    _GenericAlias,
+)
 
 from docstring_parser import parse
 from jsonschema.exceptions import SchemaError
@@ -93,7 +100,7 @@ def get_openai_tool_schema(func: Callable) -> Dict[str, Any]:
         # Output like Tuple[str,str] from pydantic create_model() is not
         # suppored by openai request
         if isinstance(param_type,
-                      GenericAlias) and param_type.__origin__ is tuple:
+                      _GenericAlias) and param_type.__origin__ is tuple:
             param_type = Tuple
         # Variable parameters are not supported
         if (param_kind == Parameter.VAR_POSITIONAL
