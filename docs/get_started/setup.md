@@ -21,6 +21,34 @@ Some features require extra dependencies:
     ```
 
 ### [Option 2] Install from Source
+#### Install from Source with Poetry
+```bash
+# Make sure your python version is later than 3.9
+# You can use pyenv to manage multiple python verisons in your sytstem
+
+# Clone github repo
+git clone https://github.com/camel-ai/camel.git
+
+# Change directory into project directory
+cd camel
+
+# We suggest using python 3.10
+poetry env use python3.10  # (Optional)
+
+# Activate camel virtual environment
+poetry shell
+
+# Install camel from source
+# It takes about 90 seconds to resolve dependencies
+poetry install
+
+# Or if you want to use all other extra packages
+poetry install -E all  # (Optional)
+
+# Exit the virtual environment
+exit
+```
+
 #### Install from Source with Conda and Pip
 ```bash
 # Create a conda virtual environment
@@ -42,31 +70,6 @@ pip install -e .
 pip install -e '.[all]' # (Optional)
 ```
 
-#### Install from Source with Poetry
-```bash
-# Make sure your python version is later than 3.9
-# You can use pyenv to manage multiple python verisons in your sytstem
-
-# Clone github repo
-git clone https://github.com/camel-ai/camel.git
-
-# Change directory into project directory
-cd camel
-
-# Activate camel virtual environment
-poetry shell
-
-# Install camel from source
-# It takes about 90 seconds to resolve dependencies
-poetry install
-
-# Or if you want to use all other extra packages
-poetry install -E all  # (Optional)
-
-# Exit the virtual environment
-exit
-```
-
 
 ## 🕹 API Setup
 Our agents can be deployed with either OpenAI API or your local models.
@@ -78,8 +81,8 @@ Assessing the OpenAI API requires the API key, which you may obtained from [here
 ```bash
 echo 'export OPENAI_API_KEY="your_api_key"' >> ~/.zshrc
 
-# [Optional] if you are using other proxy services like Azure
-echo 'export OPENAI_API_BASE_URL="your_base_url"' >> ~/.zshrc
+# If you are using other proxy services like Azure
+echo 'export OPENAI_API_BASE_URL="your_base_url"' >> ~/.zshrc # (Optional)
 
 # Let the change take place
 source ~/.zshrc
@@ -90,13 +93,17 @@ Replace `~/.zshrc` with `~/.bashrc` if you are using bash.
 #### Windows
 If you are using Command Prompt:
 ```bash
-set OPENAI_API_KEY=your_api_key
-set OPENAI_API_BASE_URL=your_base_url
+set OPENAI_API_KEY="your_api_key"
+
+# If you are using other proxy services like Azure
+set OPENAI_API_BASE_URL="your_base_url" # (Optional)
 ```
 Or if you are using PowerShell:
 ```powershell
-$env:OPENAI_API_KEY=your_api_key
-$env:OPENAI_API_BASE_URL=your_base_url
+$env:OPENAI_API_KEY="your_api_key"
+
+# If you are using other proxy services like Azure
+$env:OPENAI_API_BASE_URL="your_base_url" # (Optional)
 ```
 These commands on Windows will set the environment variable for the duration of that particular Command Prompt or PowerShell session only. You may use `setx` or change the system properties dialog for the change to take place in all the new sessions.
 

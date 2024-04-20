@@ -40,6 +40,13 @@ Main Documentation
 
 .. toctree::
    :maxdepth: 1
+   :caption: Tutorial and Cookbooks
+   :name: tutorials_and_cookbooks
+
+   tutorials_and_cookbooks/agents_with_rag.md
+
+.. toctree::
+   :maxdepth: 1
    :caption: API References
    :name: api_references
 
@@ -63,4 +70,4 @@ We are always happy to work with friends to continuously move forward with our o
 
 **For Coding Enthusiasts**:  Whether you want to introduce new features, enhance the infrastructure, improve documentation, asking issues, add more examples, implement state-of-the-art research ideas, or fix bugs, we appreciate each and every commit. Get started by checking out the `Contributing Guidelines <https://github.com/camel-ai/camel/wiki/Contributing-Guidlines>`_ on GitHub.
 
-**For Interested Humans**: Connect with us on `Slack <https://join.slack.com/t/camel-kwr1314/shared_invite/zt-1vy8u9lbo-ZQmhIAyWSEfSwLCl2r2eKA>`_ or `Discord <https://discord.gg/CNcNpquyDc>`_.
+**For Interested Humans**: Connect with us on `Slack <https://join.slack.com/t/camel-ai/shared_invite/zt-2g7xc41gy-_7rcrNNAArIP6sLQqldkqQ>`_ or `Discord <https://discord.gg/CNcNpquyDc>`_.
