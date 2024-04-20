@@ -12,26 +12,16 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from .openai_function import (
-    OpenAIFunction,
-    get_openai_tool_schema,
-    get_openai_function_schema,
-)
-from .math_functions import MATH_FUNCS
-from .search_functions import SEARCH_FUNCS
-from .weather_functions import WEATHER_FUNCS
-from .google_maps_function import MAP_FUNCS
-from .twitter_function import TWITTER_FUNCS
-from ..loaders.unstructured_io import UnstructuredIO
+from camel.types import ModelType
+from camel.utils import role_playing_with_function
 
-__all__ = [
-    'OpenAIFunction',
-    'get_openai_tool_schema',
-    'get_openai_function_schema',
-    'MATH_FUNCS',
-    'SEARCH_FUNCS',
-    'WEATHER_FUNCS',
-    'MAP_FUNCS',
-    'TWITTER_FUNCS',
-    'UnstructuredIO',
-]
+
+def main(model_type=ModelType.GPT_4, chat_turn_limit=10) -> None:
+    role_playing_with_function(
+        model_type=model_type, chat_turn_limit=chat_turn_limit, task_prompt=
+        "help me to create a tweet with poll, explore whether studnet should have gap year."
+    )
+
+
+if __name__ == "__main__":
+    main()

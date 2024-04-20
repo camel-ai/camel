@@ -35,9 +35,12 @@ def get_lazy_imported_functions_module():
         MAP_FUNCS,
         MATH_FUNCS,
         SEARCH_FUNCS,
+        TWITTER_FUNCS,
         WEATHER_FUNCS,
     )
-    return [*MATH_FUNCS, *SEARCH_FUNCS, *WEATHER_FUNCS, *MAP_FUNCS]
+    return [
+        *MATH_FUNCS, *SEARCH_FUNCS, *WEATHER_FUNCS, *MAP_FUNCS, *TWITTER_FUNCS
+    ]
 
 
 # Set lazy import
