@@ -12,15 +12,8 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from inspect import Parameter, signature
-from typing import (  # type: ignore
-    Any,
-    Callable,
-    Dict,
-    Mapping,
-    Optional,
-    Tuple,
-    _GenericAlias,
-)
+from typing import _GenericAlias  # type: ignore
+from typing import Any, Callable, Dict, Mapping, Optional, Tuple
 
 from docstring_parser import parse
 from jsonschema.exceptions import SchemaError
