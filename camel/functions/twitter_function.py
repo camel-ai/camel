@@ -163,8 +163,7 @@ def handle_http_error(response: requests.Response) -> str:
 def create_tweet(*, text: str, poll_options: Optional[List[str]] = None,
                  poll_duration_minutes: Optional[int] = None,
                  quote_tweet_id: Optional[Union[int, str]] = None) -> str:
-    r"""
-    Creates a new tweet, optionally including a poll or a quote tweet, or
+    r"""Creates a new tweet, optionally including a poll or a quote tweet, or
     simply a text-only tweet.
 
     This function sends a POST request to the Twitter API to create a new
