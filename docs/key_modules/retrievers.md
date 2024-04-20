@@ -1,6 +1,6 @@
 # Retrievers
 ## 1. Concept
-The RetrievalModule is essentially a search engine. It's designed to help you find specific pieces of information by searching through large volumes of text. Imagine you have a huge library of books and you want to find where certain topics or keywords are mentioned, this module is like a librarian that helps you do just that.
+The Retrievers module is essentially a search engine. It's designed to help you find specific pieces of information by searching through large volumes of text. Imagine you have a huge library of books and you want to find where certain topics or keywords are mentioned, this module is like a librarian that helps you do just that.
 
 
 ## 2. Types
@@ -14,17 +14,17 @@ Here's a brief overview of how it works:
 
 - Storing Information: The module takes large documents, breaks them down into smaller chunks, and then uses the embedding model to turn these chunks into vectors. These vectors are stored in a [vector storage](https://github.com/camel-ai/camel/wiki/Storages).
 
-- Retrieving Information: When you ask a question or make a query, the [embedding model](https://github.com/camel-ai/camel/wiki/Embeddings) translates your question into vector and then searches in this [vector storage](https://github.com/camel-ai/camel/wiki/Storages) for the closest matching vector. The closest matches are likely the most relevant pieces of information you are looking for.
+- Retrieving Information: When we ask a question or make a query, the [embedding model](https://github.com/camel-ai/camel/wiki/Embeddings) translates our question into vector and then searches in this [vector storage](https://github.com/camel-ai/camel/wiki/Storages) for the closest matching vector. The closest matches are likely the most relevant pieces of information we are looking for.
 
 
-### 2.2. Keyword Retriever(WIP)
+### 2.2. Keyword Retriever
 The Keyword Retriever is designed to retrieve relevant information based on keyword matching. Unlike the Vector Retriever that works with vector representations of data, the Keyword Retriever operates by identifying keywords or specific terms within documents and queries to find matches.
 
 Here's a brief overview of how it works:
 
 - Document Preprocessing: Before using the retriever, the documents are preprocessed to tokenize and index the keywords within them. Tokenization is the process of splitting text into individual words or phrases, making it easier to identify keywords.
 
-- Query Parsing: When you input a question or query, the retriever parses the query to extract relevant keywords. This involves breaking down the query into its constituent terms.
+- Query Parsing: When we input a question or query, the retriever parses the query to extract relevant keywords. This involves breaking down the query into its constituent terms.
 
 - Keyword Matching: Once the keywords from the query are identified, the retriever searches the preprocessed documents for occurrences of these keywords. It checks for exact matches of the keywords within the documents.
 
@@ -32,63 +32,68 @@ Here's a brief overview of how it works:
 
 ## 3. Get Started
 
-### 3.1. Using Customize Retrieval
+### 3.1. Using Vector Retriever
 
-To get started, you need to initialize the RetrievalModule with an optional embedding model. If you don't provide an embedding model, it will use the default `OpenAIEmbedding`. Here's how to do it:
+**Initialize VectorRetrieve:**
+To get started, we need to initialize the `VectorRetriever` with an optional embedding model. If we don't provide an embedding model, it will use the default `OpenAIEmbedding`. Here's how to do it:
 ```python
 from camel.embeddings import OpenAIEmbedding
-from camel.retrievers.retrieval_module import RetrievalModule
+from camel.retrievers import VectorRetriever
 
-# Initialize the RetrievalModule with an optional embedding model
-rm = RetrievalModule(embedding_model=OpenAIEmbedding())
+# Initialize the VectorRetriever with an embedding model
+vr = VectorRetriever(embedding_model=OpenAIEmbedding())
 ```
 
 **Embed and Store Data:**
-
-Before you can retrieve information, you need to prepare your data and store it in vector storage. The embed_and_store_chunks method takes care of this for you. It processes content from a file or URL, divides it into chunks, and stores their embeddings in the specified vector storage.
+Before we can retrieve information, we need to prepare the data and store it in vector storage. The `process` method takes care of this for us. It processes content from a file or URL, divides it into chunks, and stores their embeddings in the specified vector storage.
 ```python
-# Provide the path to your content input (can be a file or URL)
-content_input_path = "https://arxiv.org/pdf/2303.17760.pdf"
+# Provide the path to our content input (can be a file or URL)
+content_input_path = "https://www.camel-ai.org/"
 
 # Create or initialize a vector storage (e.g., QdrantStorage)
 from camel.storages.vectordb_storages import QdrantStorage
 
 vector_storage = QdrantStorage(
-    vector_dim=embedding_instance.get_output_dim(),
-    collection="my first collection",
+    vector_dim=OpenAIEmbedding().get_output_dim(),
+    collection_name="my first collection",
     path="storage_customized_run",
 )
 
 # Embed and store chunks of data in the vector storage
-rm.embed_and_store_chunks(content_input_path, vector_storage)
+vr.process(content_input_path, vector_storage)
 ```
 
 **Execute a Query:**
-
-Now that your data is stored, you can execute a query to retrieve information based on a search string. The query_and_compile_results method executes the query and compiles the retrieved results into a string.
+Now that our data is stored, we can execute a query to retrieve information based on a search string. The `query` method executes the query and compiles the retrieved results into a string.
 ```python
-# Specify your query string
+# Specify our query string
 query = "What is CAMEL"
 
 # Execute the query and retrieve results
-results = rm.query_and_compile_results(query, vector_storage)
+results = vr.query(query, vector_storage)
 print(results)
 ```
 ```markdown
->>>  {'similarity score': '0.8321616118446469', 'content path': 'local_data/camel paper.pdf', 'metadata': {'filetype': 'application/pdf', 'languages': ['eng'], 'last_modified': '2024-01-14T22:55:19', 'page_number': 45}, 'text': 'CAMEL Data and Code License The intended purpose and licensing of CAMEL is solely for research use. The source code is licensed under Apache 2.0. The datasets are licensed under CC BY NC 4.0, which permits only non-commercial usage. It is advised that any models trained using the dataset should not be utilized for anything other than research purposes.\n\n45'}
+>>>  [{'similarity score': '0.812884257383057', 'content path': 'https://www.camel-ai.org/', 'metadata': {'filetype': 'text/html', 'languages': ['eng'], 'page_number': 1, 'url': 'https://www.camel-ai.org/', 'link_urls': ['/home', '/home', '/research/agent-trust', '/agent', '/data_explorer', '/chat', 'https://www.google.com/url?q=https%3A%2F%2Fcamel-ai.github.io%2Fcamel&sa=D&sntz=1&usg=AOvVaw1ifGIva9n-a-0KpTrIG8Cv', 'https://www.google.com/url?q=https%3A%2F%2Fgithub.com%2Fcamel-ai%2Fcamel&sa=D&sntz=1&usg=AOvVaw03Z2OD0-plx_zugZZgBb8w', '/team', '/sponsors', '/home', '/home', '/research/agent-trust', '/agent', '/data_explorer', '/chat', 'https://www.google.com/url?q=https%3A%2F%2Fcamel-ai.github.io%2Fcamel&sa=D&sntz=1&usg=AOvVaw1ifGIva9n-a-0KpTrIG8Cv', 'https://www.google.com/url?q=https%3A%2F%2Fgithub.com%2Fcamel-ai%2Fcamel&sa=D&sntz=1&usg=AOvVaw03Z2OD0-plx_zugZZgBb8w', '/team', '/sponsors', '/home', '/research/agent-trust', '/agent', '/data_explorer', '/chat', 'https://www.google.com/url?q=https%3A%2F%2Fcamel-ai.github.io%2Fcamel&sa=D&sntz=1&usg=AOvVaw1ifGIva9n-a-0KpTrIG8Cv', 'https://www.google.com/url?q=https%3A%2F%2Fgithub.com%2Fcamel-ai%2Fcamel&sa=D&sntz=1&usg=AOvVaw03Z2OD0-plx_zugZZgBb8w', '/team', '/sponsors', 'https://github.com/camel-ai/camel'], 'link_texts': [None, 'Home', 'AgentTrust', 'Agent App', 'Data Explorer App', 'ChatBot', 'Docs', 'Github Repo', 'Team', 'Sponsors', None, 'Home', 'AgentTrust', 'Agent App', 'Data Explorer App', 'ChatBot', 'Docs', 'Github Repo', 'Team', 'Sponsors', 'Home', 'AgentTrust', 'Agent App', 'Data Explorer App', 'ChatBot', 'Docs', 'Github Repo', 'Team', 'Sponsors', None], 'emphasized_text_contents': ['Skip to main content', 'Skip to navigation', 'CAMEL-AI', 'CAMEL-AI', 'CAMEL:\xa0 Communicative Agents for “Mind” Exploration of Large Language Model Society', 'https://github.com/camel-ai/camel'], 'emphasized_text_tags': ['span', 'span', 'span', 'span', 'span', 'span']}, 'text': 'Search this site\n\nSkip to main content\n\nSkip to navigation\n\nCAMEL-AI\n\nHome\n\nResearchAgentTrust\n\nAgent App\n\nData Explorer App\n\nChatBot\n\nDocs\n\nGithub Repo\n\nTeam\n\nSponsors\n\nCAMEL-AI\n\nHome\n\nResearchAgentTrust\n\nAgent App\n\nData Explorer App\n\nChatBot\n\nDocs\n\nGithub Repo\n\nTeam\n\nSponsors\n\nMoreHomeResearchAgentTrustAgent AppData Explorer AppChatBotDocsGithub RepoTeamSponsors\n\nCAMEL:\xa0 Communicative Agents for “Mind” Exploration of Large Language Model Society\n\nhttps://github.com/camel-ai/camel'}]
 ```
 
-### 3.2. Using Default Retrieval
+### 3.2. Using Auto Retriever
 
-To simplify the retrieval process further, you can use the run_default_retrieval method. This method handles both embedding and storing data and executing queries. It's particularly useful when dealing with multiple content input paths.
+To simplify the retrieval process further, we can use the `AutoRetriever` method. This method handles both embedding and storing data and executing queries. It's particularly useful when dealing with multiple content input paths.
 ```python
-rm = RetrievalModule()
-retrieved_info = rm.run_default_retrieval(
+from camel.retrievers import AutoRetriever
+from camel.types import StorageType
+
+# Set the vector storage local path and the storage type
+ar = AutoRetriever(vector_storage_local_path="camel/retrievers",storage_type=StorageType.QDRANT)
+
+# Run the auto vector retriever
+retrieved_info = ar.run_vector_retriever(
     content_input_paths=[
-        "https://www.camel-ai.org/",  # example remote url
+        "https://www.camel-ai.org/",  # Example remote url
     ],
-    vector_storage_local_path="storage_default_run",
     query="What is CAMEL-AI",
+    return_detailed_info=True, # Set this as true is we want to get detailed info including metadata
 )
 
 print(retrieved_info)
@@ -100,6 +105,6 @@ print(retrieved_info)
 >>>  {'similarity score': '0.8380731206379989', 'content path': 'https://www.camel-ai.org/', 'metadata': {'emphasized_text_contents': ['Mission', 'CAMEL-AI.org', 'is an open-source community dedicated to the study of autonomous and communicative agents. We believe that studying these agents on a large scale offers valuable insights into their behaviors, capabilities, and potential risks. To facilitate research in this field, we provide, implement, and support various types of agents, tasks, prompts, models, datasets, and simulated environments.', 'Join us via', 'Slack', 'Discord', 'or'], 'emphasized_text_tags': ['span', 'span', 'span', 'span', 'span', 'span', 'span'], 'filetype': 'text/html', 'languages': ['eng'], 'link_texts': [None, None, None], 'link_urls': ['#h.3f4tphhd9pn8', 'https://join.slack.com/t/camel-ai/shared_invite/zt-1vy8u9lbo-ZQmhIAyWSEfSwLCl2r2eKA', 'https://discord.gg/CNcNpquyDc'], 'page_number': 1, 'url': 'https://www.camel-ai.org/'}, 'text': 'Mission\n\nCAMEL-AI.org is an open-source community dedicated to the study of autonomous and communicative agents. We believe that studying these agents on a large scale offers valuable insights into their behaviors, capabilities, and potential risks. To facilitate research in this field, we provide, implement, and support various types of agents, tasks, prompts, models, datasets, and simulated environments.\n\nJoin us via\n\nSlack\n\nDiscord\n\nor'}
 ```
 
-That's it! You've successfully set up and used the RetrievalModule to retrieve information based on queries from your data collection.
+That's it! We've successfully set up and used the Retriever Module to retrieve information based on queries from our data collection.
 
-Feel free to customize the code according to your specific use case and data sources. Happy retrieving!
+Feel free to customize the code according to your specific use case and data sources!
