@@ -38,9 +38,9 @@ def test_get_openai_tool_schema():
         default_enum_para: RoleType = RoleType.CRITIC,
         **kwargs,
     ):
-        r"""A function to test all parameter type. The parameters will be
-        provided by user.
-
+        """
+        A function to test all parameter type.
+        The parameters will be provided by user.
         Args:
             any_para: any_para desc. Type defaults to 'Any' if not specified.
             str_para (str) : str_para desc
