@@ -98,7 +98,7 @@ def get_openai_tool_schema(func: Callable) -> Dict[str, Any]:
         param_kind = p.kind
         param_annotation = p.annotation
         # Output like Tuple[str,str] from pydantic create_model() is not
-        # suppored by openai request
+        # suppored by openai request, convert into Tuple
         if isinstance(param_type,
                       _GenericAlias) and param_type.__origin__ is tuple:
             param_type = Tuple
