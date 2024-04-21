@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import re
-from enum import Enum
+from enum import Enum, EnumMeta
 
 
 class RoleType(Enum):
@@ -191,6 +191,7 @@ class TaskType(Enum):
     EVALUATION = "evaluation"
     SOLUTION_EXTRACTION = "solution_extraction"
     ROLE_DESCRIPTION = "role_description"
+    OBJECT_RECOGNITION = "object_recognition"
     DEFAULT = "default"
 
 
@@ -217,6 +218,32 @@ class OpenAIBackendRole(Enum):
 class TerminationMode(Enum):
     ANY = "any"
     ALL = "all"
+
+
+class OpenAIImageTypeMeta(EnumMeta):
+
+    def __contains__(cls, image_type: object) -> bool:
+        try:
+            cls(image_type)
+        except ValueError:
+            return False
+        return True
+
+
+class OpenAIImageType(Enum, metaclass=OpenAIImageTypeMeta):
+    r"""Image types supported by OpenAI vision model."""
+    # https://platform.openai.com/docs/guides/vision
+    PNG = "png"
+    JPEG = "jpeg"
+    JPG = "jpg"
+    WEBP = "webp"
+    GIF = "gif"
+
+
+class OpenAIImageDetailType(Enum):
+    AUTO = "auto"
+    LOW = "low"
+    HIGH = "high"
 
 
 class StorageType(Enum):

@@ -11,13 +11,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import base64
 from abc import ABC, abstractmethod
-from typing import List
+from io import BytesIO
+from math import ceil
+from typing import List, Optional
+
+from PIL import Image
 
 from anthropic import AI_PROMPT, HUMAN_PROMPT, Anthropic
 
 from camel.messages import OpenAIMessage
-from camel.types import ModelType
+from camel.types import ModelType, OpenAIImageDetailType, OpenAIImageType
+
+LOW_DETAIL_TOKENS = 85
+FIT_SQUARE_PIXELS = 2048
+SHORTEST_SIDE_PIXELS = 768
+SQUARE_PIXELS = 512
+SQUARE_TOKENS = 170
+EXTRA_TOKENS = 85
 
 
 def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
@@ -169,8 +181,7 @@ class OpenAITokenCounter(BaseTokenCounter):
         r"""Constructor for the token counter for OpenAI models.
 
         Args:
-            model_type (ModelType): Model type for which tokens will be
-                counted.
+            model (ModelType): Model type for which tokens will be counted.
         """
         self.model: str = model.value_for_tiktoken
 
@@ -213,13 +224,38 @@ class OpenAITokenCounter(BaseTokenCounter):
         for message in messages:
             num_tokens += self.tokens_per_message
             for key, value in message.items():
-                num_tokens += len(self.encoding.encode(str(value)))
+                if not isinstance(value, list):
+                    num_tokens += len(self.encoding.encode(str(value)))
+                else:
+                    for item in value:
+                        if item["type"] == "text":
+                            num_tokens += len(
+                                self.encoding.encode(str(item["text"])))
+                        elif item["type"] == "image_url":
+                            image_str: str = item["image_url"]["url"]
+                            detail = item["image_url"]["detail"]
+                            image_prefix_format = "data:image/{};base64,"
+                            image_prefix: Optional[str] = None
+                            for image_type in list(OpenAIImageType):
+                                # Find the correct image format
+                                image_prefix = image_prefix_format.format(
+                                    image_type.value)
+                                if image_prefix in image_str:
+                                    break
+                            assert isinstance(image_prefix, str)
+                            encoded_image = image_str.split(image_prefix)[1]
+                            image_bytes = BytesIO(
+                                base64.b64decode(encoded_image))
+                            image = Image.open(image_bytes)
+                            num_tokens += count_tokens_from_image(
+                                image, OpenAIImageDetailType(detail))
                 if key == "name":
                     num_tokens += self.tokens_per_name
 
         # every reply is primed with <|start|>assistant<|message|>
         num_tokens += 3
         return num_tokens
+
 
 
 class AnthropicTokenCounter(BaseTokenCounter):
@@ -250,3 +286,41 @@ class AnthropicTokenCounter(BaseTokenCounter):
         prompt = messages_to_prompt(messages, self.model_type)
 
         return self.client.count_tokens(prompt)
+
+def count_tokens_from_image(image: Image.Image,
+                            detail: OpenAIImageDetailType) -> int:
+    r"""Count image tokens for OpenAI vision model. An :obj:`"auto"`
+    resolution model will be treated as :obj:`"high"`. All images with
+    :obj:`"low"` detail cost 85 tokens each. Images with :obj:`"high"` detail
+    are first scaled to fit within a 2048 x 2048 square, maintaining their
+    aspect ratio. Then, they are scaled such that the shortest side of the
+    image is 768px long. Finally, we count how many 512px squares the image
+    consists of. Each of those squares costs 170 tokens. Another 85 tokens are
+    always added to the final total. For more details please refer to `OpenAI
+    vision docs <https://platform.openai.com/docs/guides/vision>`_
+
+    Args:
+        image (PIL.Image.Image): Image to count number of tokens.
+        detail (OpenAIImageDetailType): Image detail type to count
+            number of tokens.
+
+    Returns:
+        int: Number of tokens for the image given a detail type.
+    """
+    if detail == OpenAIImageDetailType.LOW:
+        return LOW_DETAIL_TOKENS
+
+    width, height = image.size
+    if width > FIT_SQUARE_PIXELS or height > FIT_SQUARE_PIXELS:
+        scaling_factor = max(width, height) / FIT_SQUARE_PIXELS
+        width = int(width / scaling_factor)
+        height = int(height / scaling_factor)
+
+    scaling_factor = min(width, height) / SHORTEST_SIDE_PIXELS
+    scaled_width = int(width / scaling_factor)
+    scaled_height = int(height / scaling_factor)
+
+    h = ceil(scaled_height / SQUARE_PIXELS)
+    w = ceil(scaled_width / SQUARE_PIXELS)
+    total = EXTRA_TOKENS + SQUARE_TOKENS * h * w
+    return total
