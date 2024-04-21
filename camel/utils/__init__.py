@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .commons import (
-    api_key_required,
+    openai_api_key_required,
     print_text_animated,
     get_prompt_template_key_words,
     get_first_int,
@@ -24,19 +24,21 @@ from .commons import (
     to_pascal,
     PYDANTIC_V2,
 )
-from .token_counting import (get_model_encoding, BaseTokenCounter,
-                             OpenAITokenCounter, OpenSourceTokenCounter,
-                             AnthropicTokenCounter)
+from .token_counting import (
+    get_model_encoding,
+    BaseTokenCounter,
+    OpenAITokenCounter,
+    OpenSourceTokenCounter,
+)
 
 __all__ = [
-    'api_key_required',
+    'openai_api_key_required',
     'print_text_animated',
     'get_prompt_template_key_words',
     'get_first_int',
     'download_tasks',
     'get_task_list',
     'check_server_running',
-    'AnthropicTokenCounter',
     'get_system_information',
     'to_pascal',
     'PYDANTIC_V2',

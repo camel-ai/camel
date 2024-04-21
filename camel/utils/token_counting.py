@@ -19,8 +19,6 @@ from typing import List, Optional
 
 from PIL import Image
 
-from anthropic import AI_PROMPT, HUMAN_PROMPT, Anthropic
-
 from camel.messages import OpenAIMessage
 from camel.types import ModelType, OpenAIImageDetailType, OpenAIImageType
 
@@ -256,36 +254,6 @@ class OpenAITokenCounter(BaseTokenCounter):
         num_tokens += 3
         return num_tokens
 
-
-
-class AnthropicTokenCounter(BaseTokenCounter):
-
-    def __init__(self, model_type: ModelType):
-        r"""Constructor for the token counter for Anthropic models.
-
-        Args:
-            model_type (ModelType): Model type for which tokens will be
-                counted.
-        """
-
-        self.model_type = model_type
-        self.client = Anthropic()
-        self.tokenizer = self.client.get_tokenizer()
-
-    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
-        r"""Count number of tokens in the provided message list using
-        loaded tokenizer specific for this type of model.
-
-        Args:
-            messages (List[OpenAIMessage]): Message list with the chat history
-                in OpenAI API format.
-
-        Returns:
-            int: Number of tokens in the messages.
-        """
-        prompt = messages_to_prompt(messages, self.model_type)
-
-        return self.client.count_tokens(prompt)
 
 def count_tokens_from_image(image: Image.Image,
                             detail: OpenAIImageDetailType) -> int:
