@@ -21,7 +21,7 @@ from camel.types import ModelType, RoleType
 
 
 class InsightAgent(ChatAgent):
-    r"""An agent that aims to generate insights from a provided text.
+    r"""An agent to generate insights from text data.
     Args:
         model_type (ModelType, optional): The type of model to use for the
             agent. (default: :obj:`ModelType.GPT_3_5_TURBO`)
