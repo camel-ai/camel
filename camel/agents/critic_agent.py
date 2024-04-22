@@ -18,6 +18,7 @@ from typing import Any, Dict, Optional, Sequence
 from colorama import Fore
 
 from camel.agents import ChatAgent
+from camel.configs import BaseConfig
 from camel.memories import AgentMemory
 from camel.messages import BaseMessage
 from camel.responses import ChatAgentResponse
@@ -49,7 +50,7 @@ class CriticAgent(ChatAgent):
         self,
         system_message: BaseMessage,
         model_type: ModelType = ModelType.GPT_3_5_TURBO,
-        model_config: Optional[Any] = None,
+        model_config: Optional[BaseConfig] = None,
         memory: Optional[AgentMemory] = None,
         message_window_size: int = 6,
         retry_attempts: int = 2,

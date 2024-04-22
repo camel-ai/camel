@@ -12,9 +12,10 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import re
-from typing import Any, Dict, Optional, Union
+from typing import Dict, Optional, Union
 
 from camel.agents import ChatAgent
+from camel.configs import BaseConfig
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
 from camel.types import ModelType, RoleType
@@ -36,7 +37,7 @@ class RoleAssignmentAgent(ChatAgent):
     def __init__(
         self,
         model_type: ModelType = ModelType.GPT_3_5_TURBO,
-        model_config: Optional[Any] = None,
+        model_config: Optional[BaseConfig] = None,
     ) -> None:
         system_message = BaseMessage(
             role_name="Role Assigner",
