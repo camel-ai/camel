@@ -11,18 +11,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .base_model import BaseModelBackend
-from .openai_model import OpenAIModel
-from .stub_model import StubModel
-from .open_source_model import OpenSourceModel
-from .anthropic_model import AnthropicModel
-from .model_factory import ModelFactory
+from typing import Any
 
-__all__ = [
-    'BaseModelBackend',
-    'OpenAIModel',
-    'AnthropicModel',
-    'StubModel',
-    'OpenSourceModel',
-    'ModelFactory',
-]
+from camel.prompts import TextPrompt, TextPromptDict
+from camel.types import RoleType
+
+
+# flake8: noqa :E501
+class ObjectRecognitionPromptTemplateDict(TextPromptDict):
+    ASSISTANT_PROMPT = TextPrompt(
+        """You have been assigned an object recognition task.
+Your mission is to list all detected objects in following image.
+Your output should always be a list of strings starting with `1.`, `2.` etc.
+Do not explain yourself or output anything else.""")
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.update({
+            RoleType.ASSISTANT: self.ASSISTANT_PROMPT,
+        })

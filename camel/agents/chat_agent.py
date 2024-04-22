@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
 from camel.agents import BaseAgent
-from camel.configs import ChatGPTConfig
+from camel.configs import ChatGPTConfig, ChatGPTVisionConfig
 from camel.memories import (
     AgentMemory,
     ChatHistoryMemory,
@@ -128,7 +128,22 @@ class ChatAgent(BaseAgent):
         if function_list is not None:
             for func in function_list:
                 self.func_dict[func.get_function_name()] = func.func
-        self.model_config = model_config or ChatGPTConfig()
+
+        self.model_config: BaseConfig
+        if self.model_type == ModelType.GPT_4_TURBO_VISION:
+            if model_config is not None and \
+                    not isinstance(model_config, ChatGPTVisionConfig):
+                raise ValueError("Please use `ChatGPTVisionConfig` as "
+                                 "the `model_config` when `model_type` "
+                                 "is `GPT_4_TURBO_VISION`")
+            self.model_config = model_config or ChatGPTVisionConfig()
+        else:
+            if model_config is not None and \
+                    isinstance(model_config, ChatGPTVisionConfig):
+                raise ValueError("Please don't use `ChatGPTVisionConfig` as "
+                                 "the `model_config` when `model_type` "
+                                 "is not `GPT_4_TURBO_VISION`")
+            self.model_config = model_config or ChatGPTConfig()
 
         self.model_backend: BaseModelBackend = ModelFactory.create(
             self.model_type, self.model_config.__dict__)

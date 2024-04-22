@@ -103,7 +103,7 @@ class ScoreBasedContextCreator(BaseContextCreator):
         context_units = sorted(context_units,
                                key=lambda unit: unit.record.score)
 
-        # Remove least score messages until total token number is smaller
+        # Remove the least score messages until total token number is smaller
         # than token limit
         truncate_idx = None
         for i, unit in enumerate(context_units):
