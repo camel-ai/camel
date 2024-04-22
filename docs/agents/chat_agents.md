@@ -1,4 +1,4 @@
-# Creating Your First Agent Society
+# Chat Agents
 ## Philosophical Bits
 [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1hG_q9F8PY1kDua_JyoHirJAPOGRexFmM?usp=sharing)
 

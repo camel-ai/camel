@@ -122,7 +122,7 @@ pip install -e .[all] # (Optional)
 
 ## Example
 
-You can find a list of tasks for different sets of assistant and user role pairs [here](https://drive.google.com/file/d/194PPaSTBR07m-PzjS-Ty6KlPLdFIPQDd/view?usp=share_link).
+You can find a list of tasks for different set of assistant and user role pairs [here](https://drive.google.com/file/d/194PPaSTBR07m-PzjS-Ty6KlPLdFIPQDd/view?usp=share_link).
 
 As an example, to run the `role_playing.py` script:
 
@@ -282,7 +282,7 @@ For more information please contact camel.ai.team@gmail.com.
 [colab-image]: https://colab.research.google.com/assets/colab-badge.svg
 [huggingface-url]: https://huggingface.co/camel-ai
 [huggingface-image]: https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-CAMEL--AI-ffc107?color=ffc107&logoColor=white
-[slack-url]: https://join.slack.com/t/camel-ai/shared_invite/zt-2g7xc41gy-_7rcrNNAArIP6sLQqldkqQ
+[slack-url]: https://join.slack.com/t/camel-kwr1314/shared_invite/zt-1vy8u9lbo-ZQmhIAyWSEfSwLCl2r2eKA
 [slack-image]: https://img.shields.io/badge/Slack-CAMEL--AI-blueviolet?logo=slack
 [discord-url]: https://discord.gg/CNcNpquyDc
 [discord-image]: https://img.shields.io/badge/Discord-CAMEL--AI-7289da?logo=discord&logoColor=white&color=7289da
