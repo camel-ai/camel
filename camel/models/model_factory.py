@@ -14,7 +14,6 @@
 from typing import Any, Dict
 
 from camel.models import (
-    AnthropicModel,
     BaseModelBackend,
     OpenAIModel,
     OpenSourceModel,
@@ -53,8 +52,6 @@ class ModelFactory:
             model_class = StubModel
         elif model_type.is_open_source:
             model_class = OpenSourceModel
-        elif model_type.is_anthropic:
-            model_class = AnthropicModel
         else:
             raise ValueError(f"Unknown model type `{model_type}` is input")
 

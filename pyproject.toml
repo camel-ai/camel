@@ -35,7 +35,6 @@ colorama = "^0"
 jsonschema = "^4"
 protobuf = "^4"
 pathlib = "^1.0.1"   
-anthropic = "^0.21.3"
 docstring-parser = "^0.15"
 pydantic = ">=1.9,<3"
 
@@ -72,7 +71,6 @@ rank-bm25 = { version = "^0.2.2", optional = true }
 # test
 pytest = { version = "^7", optional = true}
 mock = { version = "^5", optional = true}
-
 
 [tool.poetry.extras]
 test = ["pytest", "mock"]
@@ -170,7 +168,6 @@ optional = true
 sphinx = "^6"
 sphinx_book_theme = "*"
 recommonmark = "*"
-docutils = "<0.20.0"
 
 [tool.yapf]
 based_on_style = "pep8"
