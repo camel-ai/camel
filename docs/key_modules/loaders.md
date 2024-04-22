@@ -16,7 +16,7 @@ Unstructured IO module deals with the handling, parsing, and processing of unstr
 
 ### 3.1. Using `Base IO`
 
-To get started with the `Base IO` module, you'll need to understand how to work with the File class and its subclasses. This module is designed to read files of various formats, extract their contents, and represent them as File objects, each tailored to handle a specific file type.
+This module is designed to read files of various formats, extract their contents, and represent them as `File` objects, each tailored to handle a specific file type.
 
 ```python
 from io import BytesIO
@@ -38,19 +38,26 @@ print(file_obj.docs[0]["page_content"])
 
 To get started with the `Unstructured IO` module, you first need to import the module and initialize an instance of it. Once initialized, you can utilize this module to handle a variety of functionalities such as parsing, cleaning, extracting data, and integrating with cloud services like AWS S3 and Azure. Here's a basic guide to help you begin:
 
-Utilize parse_file_or_url to parse file
+Utilize `parse_file_or_url` to load and parse unstructured data from a file or URL
 ```python
-from camel.loaders import UnstructuredIO
+# Set example url
+example_url = (
+    "https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
+    "philadelphia-eagles-spt-intl/index.html")
+elements = uio.parse_file_or_url(example_url)
+print(("\n\n".join([str(el) for el in elements])))
+```
+```markdown
+>>> The Empire State Building was lit in green and white to celebrate the Philadelphia Eagles’ victory in the NFC Championship game on Sunday – a decision that’s sparked a bit of a backlash in the Big Apple.
 
-# Create an instance of UnstructuredIO
-uio = UnstructuredIO()
+>>>  The Eagles advanced to the Super Bowl for the first time since 2018 after defeating the San Francisco 49ers 31-7, and the Empire State Building later tweeted how it was marking the occasion.
 
-elements = uio.parse_file_or_url("test.pdf")
-content = ("\n\n".join([str(el) for el in elements]))
-print(content)
+>>>  Fly @Eagles Fly! We’re going Green and White in honor of the Eagles NFC Championship Victory. pic.twitter.com/RNiwbCIkt7— Empire State Building (@EmpireStateBldg)
+
+>>>  January 29, 2023...
 ```
 
-Utilize clean_text_data to do various text cleaning operations
+Utilize `clean_text_data` to do various text cleaning operations
 ```python
 # Set example dirty text
 example_dirty_text = ("\x93Some dirty text â€™ with extra spaces and – dashes.")
@@ -70,7 +77,7 @@ print(cleaned_text)
 >>> Some dirty text with extra spaces and dashes.
 ```
 
-Utilize extract_data_example to do text extraction operation
+Utilize `extract_data_from_text` to do text extraction operation
 ```python
 # Set example email to extract
 example_email_text = ("Contact me at example@email.com.")
@@ -84,26 +91,7 @@ print(extracted_text)
 >>> ['example@email.com']
 ```
 
-Utilize parse_file_or_url to load and parse unstructured data from a file or URL
-```python
-# Set example url
-example_url = (
-    "https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
-    "philadelphia-eagles-spt-intl/index.html")
-elements = uio.parse_file_or_url(example_url)
-print(("\n\n".join([str(el) for el in elements])))
-```
-```markdown
->>> The Empire State Building was lit in green and white to celebrate the Philadelphia Eagles’ victory in the NFC Championship game on Sunday – a decision that’s sparked a bit of a backlash in the Big Apple.
-
->>>  The Eagles advanced to the Super Bowl for the first time since 2018 after defeating the San Francisco 49ers 31-7, and the Empire State Building later tweeted how it was marking the occasion.
-
->>>  Fly @Eagles Fly! We’re going Green and White in honor of the Eagles NFC Championship Victory. pic.twitter.com/RNiwbCIkt7— Empire State Building (@EmpireStateBldg)
-
->>>  January 29, 2023...
-```
-
-Utilize chunk_elements to do element chunking
+Utilize `chunk_elements` to chunk the content
 ```python
 chunks = uio.chunk_elements(elements=elements,chunk_type="chunk_by_title")
 
@@ -123,7 +111,7 @@ for chunk in chunks:
 >>>  January 29, 2023
 ```
 
-Utilize stage_elements to do element staging
+Utilize `stage_elements` to do element staging
 ```python
 staged_element = uio.stage_elements(elements=elements,stage_type="stage_for_baseplate")
 
