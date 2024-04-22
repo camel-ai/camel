@@ -13,15 +13,16 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from typing import Any, List, Union
+from typing import List, Union
 
 from pydantic import BaseModel, Field
+from unstructured.documents.elements import Element
 
 
 class Node(BaseModel):
     r"""Represents a node in a graph with associated properties.
 
-    Args:
+    Attributes:
         id (Union[str, int]): A unique identifier for the node.
         type (str): The type or label of the node, default is "Node".
         properties (dict): Additional properties and metadata associated with
@@ -35,7 +36,7 @@ class Node(BaseModel):
 class Relationship(BaseModel):
     r"""Represents a directed relationship between two nodes in a graph.
 
-    Args:
+    Attributes:
         source (Node): The source node of the relationship.
         target (Node): The target node of the relationship.
         type (str): The type of the relationship.
@@ -48,15 +49,21 @@ class Relationship(BaseModel):
     properties: dict = Field(default_factory=dict)
 
 
-class BaseModelConfig:
-    arbitrary_types_allowed = True
-
-
 class GraphElement(BaseModel):
+    r"""Represents a graph element consisting of nodes and relationships.
 
-    class Config(BaseModelConfig):
-        pass
+    Attributes:
+        nodes (List[Node]): A list of nodes in the graph.
+        relationships (List[Relationship]): A list of relationships in the
+        graph.
+        source (Element): The element from which the graph information is
+        derived.
+    """
+
+    # Allow arbitrary types for Element
+    class Config:
+        arbitrary_types_allowed = True
 
     nodes: List[Node]
     relationships: List[Relationship]
-    source: Any
+    source: Element

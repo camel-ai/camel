@@ -15,7 +15,7 @@ import logging
 from hashlib import md5
 from typing import Any, Dict, List, Optional
 
-from camel.storages.graph_storages import GraphElement
+from camel.storages.graph_storages import BaseGraphStorage, GraphElement
 
 logger = logging.getLogger(__name__)
 
@@ -59,11 +59,11 @@ INCLUDE_DOCS_QUERY = ("MERGE (d:Element {id:$element['element_id']}) "
 LIST_LIMIT = 128
 
 
-class Neo4jGraph():
+class Neo4jGraph(BaseGraphStorage):
     r"""Provides a connection to a Neo4j database for various graph operations.
 
     The detailed information about Neo4j is available at:
-    `Neo4j https://neo4j.com/docs/getting-started/>`
+    `Neo4j https://neo4j.com/docs/getting-started`
 
     This module refered to the work of Langchian and Llamaindex.
 
@@ -123,7 +123,8 @@ class Neo4jGraph():
                 "'apoc.meta.data()' is allowed in Neo4j configuration ")
 
     @property
-    def client(self) -> Any:
+    def get_client(self) -> Any:
+        r"""Get the underlying graph storage client."""
         return self.driver
 
     @property
@@ -149,7 +150,7 @@ class Neo4jGraph():
         r"""Returns the structured schema of the graph
 
         Returns:
-            dict[str, any]: The structured schema of the graph.
+            Dict[str, Any]: The structured schema of the graph.
         """
         return self.structured_schema
 
@@ -205,13 +206,11 @@ class Neo4jGraph():
         Args:
             query (str): The Cypher query to be executed.
             params (Optional[Dict[str, Any]]): A dictionary of parameters to
-                be used in the query. Defaults to None.
+                be used in the query. Defaults to `None`.
 
         Returns:
             List[Dict[str, Any]]: A list of dictionaries, each
                 dictionary represents a row of results from the Cypher query.
-                The keys are the column names, and the values are the
-                corresponding values for that column.
 
         Raises:
             ValueError: If the executed Cypher query syntax is invalid.
@@ -309,11 +308,11 @@ class Neo4jGraph():
 
         self.schema = "\n".join([
             "Node properties are the following:",
-            ",".join(formatted_node_props),
+            ", ".join(formatted_node_props),
             "Relationship properties are the following:",
-            ",".join(formatted_rel_props),
+            ", ".join(formatted_rel_props),
             "The relationships are the following:",
-            ",".join(formatted_rels),
+            ", ".join(formatted_rels),
         ])
 
     def add_triplet(self, subj: str, obj: str, rel: str) -> None:
@@ -482,7 +481,7 @@ class Neo4jGraph():
         base_entity_label: bool = False,
     ) -> None:
         r"""Adds nodes and relationships from a list of GraphElement objects
-        to the graph database.
+        to the graph storage.
 
         Args:
             graph_elements (List[GraphElement]): A list of GraphElement
@@ -496,11 +495,11 @@ class Neo4jGraph():
                 data. Merges source elements based on the `id` property from
                 the source element metadata if available; otherwise it
                 calculates the MD5 hash of `page_content` for merging process.
-                Defaults to False.
+                Defaults to `False`.
             base_entity_label (bool, optional): If True, each newly created
                 node gets a secondary `BASE_ENTITY_LABEL` label, which is
                 indexed and improves import speed and performance. Defaults to
-                False.
+                `False`.
         """
         if base_entity_label:  # check if constraint already exists
             constraint_exists = any([
@@ -520,8 +519,8 @@ class Neo4jGraph():
             base_entity_label, include_source)
         rel_import_query = self._get_rel_import_query(base_entity_label)
         for element in graph_elements:
-            if not element.source['element_id']:
-                element.source['element_id'] = md5(
+            if not element.source.to_dict()['element_id']:
+                element.source.to_dict()['element_id'] = md5(
                     str(element).encode("utf-8")).hexdigest()
 
             # Import nodes
@@ -529,7 +528,7 @@ class Neo4jGraph():
                 node_import_query,
                 {
                     "data": [el.__dict__ for el in element.nodes],
-                    "element": element.source,
+                    "element": element.source.to_dict(),
                 },
             )
             # Import relationships

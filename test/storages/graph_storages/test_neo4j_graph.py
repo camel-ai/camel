@@ -35,8 +35,8 @@ test_data = [
                        target=Node(id="bar", type="bar"),
                        type="REL",
                    )
-               ], source=Element(
-                   element_id="a04b820b51c760a41415c57c1eef8f08").to_dict())
+               ],
+        source=Element(element_id="a04b820b51c760a41415c57c1eef8f08"))
 ]
 
 NEO4J_URI = "neo4j+s://5af77aab.databases.neo4j.io"
@@ -45,7 +45,9 @@ NEO4J_PASSWORD = "SEK_Fx5Bx-BkRwMx6__zM_TOPqXLWEP-czuIZ_u7-zE"
 
 
 def test_cypher_return_correct_schema() -> None:
-    r"""Test that chain returns direct results."""
+    r"""Test that chain returns direct results.
+    Tested graph.query and graph.refresh_schema.
+    """
     url = NEO4J_URI
     username = NEO4J_USERNAME
     password = NEO4J_PASSWORD
