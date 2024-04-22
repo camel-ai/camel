@@ -24,10 +24,10 @@ from camel.types import ModelType, RoleType
 class InsightAgent(ChatAgent):
     r"""An agent to generate insights from text data. And it refers to a
     system or methodology used to transform a given set of textual data
-    (context text) into actionable insights. The ultimate goal of the
-    Insight Agent is to facilitate a deeper understanding and generate
-    specific insights/data from large volumes of textual data, which
-    can be utilized in various domains such as research, analysis and summary.
+    (context text) into actionable insights. The ultimate goal of the Insight
+    Agent is to facilitate a deeper understanding and generate specific
+    insights/data from large volumes of textual data, which can be utilized in
+    various domains such as research, analysis and summary.
 
     Args:
         model_type (ModelType, optional): The type of model to use for the
