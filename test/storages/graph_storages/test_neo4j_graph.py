@@ -141,7 +141,7 @@ def test_neo4j_timeout() -> None:
                 "TransactionTimedOutClientConfiguration")
 
 
-def test_neo4j_sanitize_values() -> None:
+def test_neo4j_truncate_values() -> None:
     r"""Test that neo4j uses the timeout correctly."""
     url = NEO4J_URI
     username = NEO4J_USERNAME
@@ -151,7 +151,7 @@ def test_neo4j_sanitize_values() -> None:
     assert password is not None
 
     graph = Neo4jGraph(url=url, username=username, password=password,
-                       sanitize=True)
+                       truncate=True)
     # Delete all nodes in the graph
     graph.query("MATCH (n) DETACH DELETE n")
     # Create two nodes and a relationship
@@ -178,7 +178,7 @@ def test_neo4j_add_data() -> None:
     assert password is not None
 
     graph = Neo4jGraph(url=url, username=username, password=password,
-                       sanitize=True)
+                       truncate=True)
     # Delete all nodes in the graph
     graph.query("MATCH (n) DETACH DELETE n")
     # Remove all constraints
@@ -209,7 +209,7 @@ def test_neo4j_add_data_source() -> None:
     assert password is not None
 
     graph = Neo4jGraph(url=url, username=username, password=password,
-                       sanitize=True)
+                       truncate=True)
     # Delete all nodes in the graph
     graph.query("MATCH (n) DETACH DELETE n")
     # Remove all constraints
@@ -247,7 +247,7 @@ def test_neo4j_add_data_base() -> None:
     assert password is not None
 
     graph = Neo4jGraph(url=url, username=username, password=password,
-                       sanitize=True)
+                       truncate=True)
     # Delete all nodes in the graph
     graph.query("MATCH (n) DETACH DELETE n")
     # Remove all constraints
@@ -282,7 +282,7 @@ def test_neo4j_add_data_base_source() -> None:
     assert password is not None
 
     graph = Neo4jGraph(url=url, username=username, password=password,
-                       sanitize=True)
+                       truncate=True)
     # Delete all nodes in the graph
     graph.query("MATCH (n) DETACH DELETE n")
     # Remove all constraints
@@ -321,7 +321,7 @@ def test_neo4j_filtering_labels() -> None:
     assert password is not None
 
     graph = Neo4jGraph(url=url, username=username, password=password,
-                       sanitize=True)
+                       truncate=True)
     # Delete all nodes in the graph
     graph.query("MATCH (n) DETACH DELETE n")
     # Remove all constraints

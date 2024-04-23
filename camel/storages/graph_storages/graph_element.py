@@ -13,13 +13,14 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from typing import List, Union
 
-from pydantic import BaseModel, Field
 from unstructured.documents.elements import Element
 
 
-class Node(BaseModel):
+@dataclass
+class Node():
     r"""Represents a node in a graph with associated properties.
 
     Attributes:
@@ -30,10 +31,11 @@ class Node(BaseModel):
     """
     id: Union[str, int]
     type: str = "Node"
-    properties: dict = Field(default_factory=dict)
+    properties: dict = field(default_factory=dict)
 
 
-class Relationship(BaseModel):
+@dataclass
+class Relationship():
     r"""Represents a directed relationship between two nodes in a graph.
 
     Attributes:
@@ -45,12 +47,13 @@ class Relationship(BaseModel):
     """
     source: Node
     target: Node
-    type: str
-    properties: dict = Field(default_factory=dict)
+    type: str = "Relationship"
+    properties: dict = field(default_factory=dict)
 
 
-class GraphElement(BaseModel):
-    r"""Represents a graph element consisting of nodes and relationships.
+@dataclass
+class GraphElement():
+    r"""A graph element with lists of nodes and relationships.
 
     Attributes:
         nodes (List[Node]): A list of nodes in the graph.

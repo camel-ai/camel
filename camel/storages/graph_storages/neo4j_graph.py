@@ -75,18 +75,18 @@ class Neo4jGraph(BaseGraphStorage):
             `neo4j`.
         timeout (Optional[float]): The timeout for transactions in seconds.
             Useful for terminating long-running queries. Defaults to `None`.
-        sanitize (bool): A flag to indicate whether to remove lists with more
+        truncate (bool): A flag to indicate whether to remove lists with more
             than `LIST_LIMIT` elements from results. Defaults to `False`.
     """
 
     def __init__(
         self,
-        url: str = "",
-        username: str = "",
-        password: str = "",
+        url: str,
+        username: str,
+        password: str,
         database: str = "neo4j",
         timeout: Optional[float] = None,
-        sanitize: bool = False,
+        truncate: bool = False,
     ) -> None:
         r"""Create a new Neo4j graph instance."""
         try:
@@ -99,7 +99,7 @@ class Neo4jGraph(BaseGraphStorage):
                                                  auth=(username, password))
         self.database = database
         self.timeout = timeout
-        self.sanitize = sanitize
+        self.truncate = truncate
         self.schema: str = ""
         self.structured_schema: Dict[str, Any] = {}
 
@@ -154,8 +154,8 @@ class Neo4jGraph(BaseGraphStorage):
         """
         return self.structured_schema
 
-    def _value_sanitize(self, d: Any) -> Any:
-        r"""Sanitizes the input dictionary `d` by removing entries that are
+    def _value_truncate(self, d: Any) -> Any:
+        r"""Truncates the input dictionary `d` by removing entries that are
         dictionaries with values resembling embeddings and lists containing
         more than `LIST_LIMIT` elements. This method aims to reduce unnecessary
         computational cost and noise in scenarios where such detailed data
@@ -163,26 +163,26 @@ class Neo4jGraph(BaseGraphStorage):
         processing by a language model.
 
         Args:
-            d (Any): The dictionary to be sanitized.
+            d (Any): The dictionary to be truncated.
 
         Returns:
-            Any: The sanitized dictionary, with embedding-like
+            Any: The truncated dictionary, with embedding-like
                 dictionaries and oversized lists handled.
         """
         if isinstance(d, dict):
             new_dict = {}
             for key, value in d.items():
                 if isinstance(value, dict):
-                    sanitized_value = self._value_sanitize(value)
-                    # Check if the sanitized value is not None
-                    if (sanitized_value is not None):
-                        new_dict[key] = sanitized_value
+                    truncated_value = self._value_truncate(value)
+                    # Check if the truncated value is not None
+                    if (truncated_value is not None):
+                        new_dict[key] = truncated_value
                 elif isinstance(value, list):
                     if len(value) < LIST_LIMIT:
-                        sanitized_value = self._value_sanitize(value)
-                        # Check if the sanitized value is not None
-                        if (sanitized_value is not None):
-                            new_dict[key] = sanitized_value
+                        truncated_value = self._value_truncate(value)
+                        # Check if the truncated value is not None
+                        if (truncated_value is not None):
+                            new_dict[key] = truncated_value
                     # Do not include the key if the list is oversized
                 else:
                     new_dict[key] = value
@@ -190,8 +190,8 @@ class Neo4jGraph(BaseGraphStorage):
         elif isinstance(d, list):
             if len(d) < LIST_LIMIT:
                 return [
-                    self._value_sanitize(item) for item in d
-                    if self._value_sanitize(item) is not None
+                    self._value_truncate(item) for item in d
+                    if self._value_truncate(item) is not None
                 ]
             else:
                 return None
@@ -200,8 +200,7 @@ class Neo4jGraph(BaseGraphStorage):
 
     def query(self, query: str,
               params: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
-        r"""Executes a Cypher query against a Neo4j database and returns the
-        results.
+        r"""Executes a Neo4j Cypher declarative query in a database.
 
         Args:
             query (str): The Cypher query to be executed.
@@ -226,8 +225,8 @@ class Neo4jGraph(BaseGraphStorage):
                 data = session.run(Query(text=query, timeout=self.timeout),
                                    params)
                 json_data = [r.data() for r in data]
-                if self.sanitize:
-                    json_data = [self._value_sanitize(el) for el in json_data]
+                if self.truncate:
+                    json_data = [self._value_truncate(el) for el in json_data]
                 return json_data
             except CypherSyntaxError as e:
                 raise ValueError(
