@@ -11,27 +11,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from typing import Any
 
-from .openai_function import (
-    OpenAIFunction,
-    get_openai_tool_schema,
-    get_openai_function_schema,
-)
-from .math_functions import MATH_FUNCS
-from .search_functions import SEARCH_FUNCS
-from .weather_functions import WEATHER_FUNCS
-from .google_maps_function import MAP_FUNCS
-from .dalle_functions import DALLE_FUNCS
-from ..loaders.unstructured_io import UnstructuredIO
+from camel.prompts import TextPrompt, TextPromptDict
+from camel.types import RoleType
 
-__all__ = [
-    'OpenAIFunction',
-    'get_openai_tool_schema',
-    'get_openai_function_schema',
-    'MATH_FUNCS',
-    'SEARCH_FUNCS',
-    'WEATHER_FUNCS',
-    'MAP_FUNCS',
-    'DALLE_FUNCS',
-    'UnstructuredIO',
-]
+
+class MultiConditionImageCraftPromptTemplateDict(TextPromptDict):
+    ASSISTANT_PROMPT = TextPrompt(
+        """You are tasked with creating an image based on the provided text and images conditions. Please use your imagination and artistic capabilities to visualize and draw the images and explain what you are thinking about.""")
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.update({
+            RoleType.ASSISTANT: self.ASSISTANT_PROMPT,
+        })

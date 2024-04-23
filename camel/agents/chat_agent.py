@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
-
+import re
 import json
 from collections import defaultdict
 from dataclasses import dataclass
@@ -497,7 +497,16 @@ class ChatAgent(BaseAgent):
         func = self.func_dict[func_name]
 
         args_str: str = choice.message.function_call.arguments
-        args = json.loads(args_str.replace("\'", "\""))
+
+        # Support single quotes in the values
+        # Regular expression to match outermost single quotes around keys and values
+        pattern = r"(?<=\{|\,)\s*'([^']+?)'\s*:"
+        args_str = re.sub(pattern, r'"\1":', args_str)  # Replace keys
+
+        pattern = r":\s*'([^']+?)'\s*(?=\,|\})"
+        args_str = re.sub(pattern, r': "\1"', args_str)  # Replace values
+
+        args = json.loads(args_str)
 
         # Pass the extracted arguments to the indicated function
         try:
