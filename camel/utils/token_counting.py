@@ -17,9 +17,8 @@ from io import BytesIO
 from math import ceil
 from typing import List, Optional
 
+from anthropic import Anthropic
 from PIL import Image
-
-from anthropic import AI_PROMPT, HUMAN_PROMPT, Anthropic
 
 from camel.messages import OpenAIMessage
 from camel.types import ModelType, OpenAIImageDetailType, OpenAIImageType
@@ -257,7 +256,6 @@ class OpenAITokenCounter(BaseTokenCounter):
         return num_tokens
 
 
-
 class AnthropicTokenCounter(BaseTokenCounter):
 
     def __init__(self, model_type: ModelType):
@@ -286,6 +284,7 @@ class AnthropicTokenCounter(BaseTokenCounter):
         prompt = messages_to_prompt(messages, self.model_type)
 
         return self.client.count_tokens(prompt)
+
 
 def count_tokens_from_image(image: Image.Image,
                             detail: OpenAIImageDetailType) -> int:
