@@ -23,6 +23,7 @@ from .commons import (
     get_system_information,
     to_pascal,
     PYDANTIC_V2,
+    parse_json,
 )
 from .token_counting import (
     get_model_encoding,
@@ -47,4 +48,5 @@ __all__ = [
     'OpenAITokenCounter',
     'OpenSourceTokenCounter',
     'role_playing_with_function',
+    'parse_json',
 ]

@@ -21,7 +21,6 @@ from camel.messages.base import BaseMessage
 from camel.types import ModelType, RoleType, TaskType
 from camel.functions import T2I_FUNCS
 
-
 parser = argparse.ArgumentParser(description="Arguments for Image Condition.")
 parser.add_argument(
     "--image_paths",
@@ -31,6 +30,7 @@ parser.add_argument(
     help="Path to the images as conditions.",
     default=None
 )
+
 
 def multi_condition_image_craft(image_paths: str) -> list[str]:
     sys_msg = PromptTemplateGenerator().get_prompt_from_key(TaskType.MULTI_CONDITION_IMAGE_CRAFT, RoleType.ASSISTANT)
@@ -43,7 +43,7 @@ def multi_condition_image_craft(image_paths: str) -> list[str]:
         content=sys_msg,
     )
 
-    function_list=[*T2I_FUNCS]
+    function_list = [*T2I_FUNCS]
     assistant_model_config = FunctionCallingVisionConfig.from_openai_function_list(
         function_list=function_list,
         kwargs=dict(temperature=0.0),
@@ -57,7 +57,7 @@ def multi_condition_image_craft(image_paths: str) -> list[str]:
     )
 
     image_list = [Image.open(image_path) for image_path in image_paths]
-    
+
     user_msg = BaseMessage.make_user_message(
         role_name="User",
         content="Please generate an image based on the provided images and text, ensuring that the image meets the textual requirements and includes all the visual subjects from the images.",
@@ -66,18 +66,17 @@ def multi_condition_image_craft(image_paths: str) -> list[str]:
         image_detail="high",
     )
 
-
     response = dalle_agent.step(user_msg)
-    
+
     print("=" * 20 + " RESULT " + "=" * 20)
     print(response.msg.content)
     print("=" * 48)
 
+
 def main(args: argparse.Namespace) -> None:
     multi_condition_image_craft(args.image_paths)
+
 
 if __name__ == "__main__":
     args = parser.parse_args()
     main(args=args)
-
-

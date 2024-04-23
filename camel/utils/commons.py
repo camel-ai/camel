@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import json
 import os
 import platform
 import re
@@ -246,17 +247,17 @@ PYDANTIC_V2 = pydantic.VERSION.startswith("2.")
 
 
 def role_playing_with_function(
-    task_prompt: str = ("Assume now is 2024 in the Gregorian calendar, "
-                        "estimate the current age of University of Oxford "
-                        "and then add 10 more years to this age, "
-                        "and get the current weather of the city where "
-                        "the University is located. And tell me what time "
-                        "zone University of Oxford is in."),
-    function_list: Optional[List] = None,
-    model_type=None,
-    chat_turn_limit=10,
-    assistant_role_name: str = "Searcher",
-    user_role_name: str = "Professor",
+        task_prompt: str = ("Assume now is 2024 in the Gregorian calendar, "
+                            "estimate the current age of University of Oxford "
+                            "and then add 10 more years to this age, "
+                            "and get the current weather of the city where "
+                            "the University is located. And tell me what time "
+                            "zone University of Oxford is in."),
+        function_list: Optional[List] = None,
+        model_type=None,
+        chat_turn_limit=10,
+        assistant_role_name: str = "Searcher",
+        user_role_name: str = "Professor",
 ) -> None:
     r"""Initializes and conducts a `RolePlaying` with `FunctionCallingConfig`
     session. The function creates an interactive and dynamic role-play session
@@ -361,7 +362,7 @@ def role_playing_with_function(
         print_text_animated(Fore.GREEN + "AI Assistant:")
         called_functions: List[
             FunctionCallingRecord] = assistant_response.info[
-                'called_functions']
+            'called_functions']
         for func_record in called_functions:
             print_text_animated(f"{func_record}")
         print_text_animated(f"{assistant_response.msg.content}\n")
@@ -370,3 +371,38 @@ def role_playing_with_function(
             break
 
         input_msg = assistant_response.msg
+
+
+def parse_json(s: str) -> Any:
+    """
+    Parse a JSON string into a JSON object, allowing single quotes as well as double quotes.
+    Args:
+        s: The JSON string to parse.
+
+    Returns:
+        Any: The parsed JSON object.
+
+    """
+    stack = []
+    result = []
+    for i, char in enumerate(s):
+        if char == "'" or char == "\"":
+            if char == "\'" and i < len(s) - 1 and s[i + 1] == 's':
+                result.append('\'')
+                continue
+            if stack:
+                if stack[-1] == char:
+                    stack.pop()
+                    if stack:
+                        result.append('`')
+                    else:
+                        result.append("\"")
+                else:
+                    stack.append(char)
+                    result.append("`")
+            else:
+                stack.append(char)
+                result.append("\"")
+        else:
+            result.append(char)
+    return json.loads("".join(result))
