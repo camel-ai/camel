@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .commons import (
+    groq_api_key_required,
     openai_api_key_required,
     print_text_animated,
     get_prompt_template_key_words,
@@ -32,6 +33,7 @@ from .token_counting import (
 )
 
 __all__ = [
+    'groq_api_key_required',
     'openai_api_key_required',
     'print_text_animated',
     'get_prompt_template_key_words',

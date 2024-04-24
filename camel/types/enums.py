@@ -31,6 +31,9 @@ class ModelType(Enum):
     GPT_4_TURBO = "gpt-4-1106-preview"
     GPT_4_TURBO_VISION = "gpt-4-vision-preview"
 
+    GROQ_LLAMA_3_8_B = "llama3-8b-8192"
+    GROQ_LLAMA_3_70_B = "llama3-70b-8192"
+
     STUB = "stub"
 
     LLAMA_2 = "llama-2"
@@ -51,6 +54,14 @@ class ModelType(Enum):
             ModelType.GPT_4_32K,
             ModelType.GPT_4_TURBO,
             ModelType.GPT_4_TURBO_VISION,
+        }
+
+    @property
+    def is_groq(self) -> bool:
+        r"""Returns whether this type of models is served by Groq."""
+        return self in {
+            ModelType.GROQ_LLAMA_3_8_B,
+            ModelType.GROQ_LLAMA_3_70_B,
         }
 
     @property
@@ -80,6 +91,10 @@ class ModelType(Enum):
             return 128000
         elif self is ModelType.GPT_4_TURBO_VISION:
             return 128000
+        elif self is ModelType.GROQ_LLAMA_3_8_B:
+            return 8192
+        elif self is ModelType.GROQ_LLAMA_3_70_B:
+            return 8192
         elif self is ModelType.STUB:
             return 4096
         elif self is ModelType.LLAMA_2:

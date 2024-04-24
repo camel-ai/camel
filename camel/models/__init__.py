@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .base_model import BaseModelBackend
+from .groq_model import GroqModel
 from .openai_model import OpenAIModel
 from .stub_model import StubModel
 from .open_source_model import OpenSourceModel
@@ -19,6 +20,7 @@ from .model_factory import ModelFactory
 
 __all__ = [
     'BaseModelBackend',
+    'GroqModel',
     'OpenAIModel',
     'StubModel',
     'OpenSourceModel',

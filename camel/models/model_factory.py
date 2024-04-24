@@ -15,6 +15,7 @@ from typing import Any, Dict
 
 from camel.models import (
     BaseModelBackend,
+    GroqModel,
     OpenAIModel,
     OpenSourceModel,
     StubModel,
@@ -48,6 +49,8 @@ class ModelFactory:
         model_class: Any
         if model_type.is_openai:
             model_class = OpenAIModel
+        elif model_type.is_groq:
+            model_class = GroqModel
         elif model_type == ModelType.STUB:
             model_class = StubModel
         elif model_type.is_open_source:
