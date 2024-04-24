@@ -17,6 +17,8 @@ from abc import ABC
 from dataclasses import asdict, dataclass, field
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 
+from anthropic._types import NOT_GIVEN, NotGiven
+
 if TYPE_CHECKING:
     from camel.functions import OpenAIFunction
 
@@ -84,6 +86,55 @@ class ChatGPTConfig(BaseConfig):
     presence_penalty: float = 0.0
     frequency_penalty: float = 0.0
     logit_bias: Dict = field(default_factory=dict)
+    user: str = ""
+
+
+@dataclass(frozen=True)
+class ChatGPTVisionConfig(BaseConfig):
+    r"""Defines the parameters for generating chat completions with
+    vision model using the OpenAI API. The vision config here is the
+    subset of the :class:`ChatGPTConfig`.
+
+    Args:
+        temperature (float, optional): Sampling temperature to use, between
+            :obj:`0` and :obj:`2`. Higher values make the output more random,
+            while lower values make it more focused and deterministic.
+            (default: :obj:`0.2`)
+        top_p (float, optional): An alternative to sampling with temperature,
+            called nucleus sampling, where the model considers the results of
+            the tokens with top_p probability mass. So :obj:`0.1` means only
+            the tokens comprising the top 10% probability mass are considered.
+            (default: :obj:`1.0`)
+        n (int, optional): How many chat completion choices to generate for
+            each input message. (default: :obj:`1`)
+        stream (bool, optional): If True, partial message deltas will be sent
+            as data-only server-sent events as they become available.
+            (default: :obj:`False`)
+        max_tokens (int, optional): The maximum number of tokens to generate
+            in the chat completion. The total length of input tokens and
+            generated tokens is limited by the model's context length.
+            (default: :obj:`4096`)
+        presence_penalty (float, optional): Number between :obj:`-2.0` and
+            :obj:`2.0`. Positive values penalize new tokens based on whether
+            they appear in the text so far, increasing the model's likelihood
+            to talk about new topics. See more information about frequency and
+            presence penalties. (default: :obj:`0.0`)
+        frequency_penalty (float, optional): Number between :obj:`-2.0` and
+            :obj:`2.0`. Positive values penalize new tokens based on their
+            existing frequency in the text so far, decreasing the model's
+            likelihood to repeat the same line verbatim. See more information
+            about frequency and presence penalties. (default: :obj:`0.0`)
+        user (str, optional): A unique identifier representing your end-user,
+            which can help OpenAI to monitor and detect abuse.
+            (default: :obj:`""`)
+    """
+    temperature: float = 0.2  # openai default: 1.0
+    top_p: float = 1.0
+    n: int = 1
+    stream: bool = False
+    max_tokens: int = 4096
+    presence_penalty: float = 0.0
+    frequency_penalty: float = 0.0
     user: str = ""
 
 
@@ -162,3 +213,55 @@ OPENAI_API_PARAMS_WITH_FUNCTIONS = {
     param
     for param in asdict(FunctionCallingConfig()).keys()
 }
+
+
+@dataclass(frozen=True)
+class AnthropicConfig(BaseConfig):
+    r"""Defines the parameters for generating chat completions using the
+    Anthropic API.
+
+    See: https://docs.anthropic.com/claude/reference/complete_post
+    Args:
+        max_tokens_to_sample (int, optional): The maximum number of tokens to
+            generate before stopping. Note that Anthropic models may stop
+            before reaching this maximum. This parameter only specifies the
+            absolute maximum number of tokens to generate.
+            (default: :obj:`256`)
+        stop_sequences (List[str], optional): Sequences that will cause the
+            model to stop generating completion text. Anthropic models stop
+            on "\n\nHuman:", and may include additional built-in stop sequences
+            in the future. By providing the stop_sequences parameter, you may
+            include additional strings that will cause the model to stop
+            generating.
+        temperature (float, optional): Amount of randomness injected into the
+            response. Defaults to 1. Ranges from 0 to 1. Use temp closer to 0
+            for analytical / multiple choice, and closer to 1 for creative
+            and generative tasks.
+            (default: :obj:`1`)
+        top_p (float, optional): Use nucleus sampling. In nucleus sampling, we
+            compute the cumulative distribution over all the options for each
+            subsequent token in decreasing probability order and cut it off
+            once it reaches a particular probability specified by `top_p`.
+            You should either alter `temperature` or `top_p`,
+            but not both.
+            (default: :obj:`0.7`)
+        top_k (int, optional): Only sample from the top K options for each
+            subsequent token. Used to remove "long tail" low probability
+            responses.
+            (default: :obj:`5`)
+        metadata: An object describing metadata about the request.
+        stream (bool, optional): Whether to incrementally stream the response
+          using server-sent events.
+            (default: :obj:`False`)
+
+    """
+    max_tokens: int = 256
+    stop_sequences: Union[List[str], NotGiven] = NOT_GIVEN
+    temperature: float = 1
+    top_p: Union[float, NotGiven] = NOT_GIVEN
+    top_k: Union[int, NotGiven] = NOT_GIVEN
+    metadata: NotGiven = NOT_GIVEN
+    stream: bool = False
+
+
+ANTHROPIC_API_PARAMS = {param for param in asdict(AnthropicConfig()).keys()}
