@@ -25,11 +25,7 @@ from camel.types import (
     CompletionUsage,
     ModelType,
 )
-from camel.utils import (
-    BaseTokenCounter,
-    OpenAITokenCounter,
-    groq_api_key_required,
-)
+from camel.utils import BaseTokenCounter, OpenAITokenCounter, api_key_required
 
 
 class GroqModel(BaseModelBackend):
@@ -64,7 +60,7 @@ class GroqModel(BaseModelBackend):
             self._token_counter = OpenAITokenCounter(ModelType.GPT_3_5_TURBO)
         return self._token_counter
 
-    @groq_api_key_required
+    @api_key_required
     def run(
         self,
         messages: List[OpenAIMessage],

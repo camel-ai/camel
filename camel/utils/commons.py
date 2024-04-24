@@ -47,7 +47,7 @@ def get_lazy_imported_types_module():
 
 
 def api_key_required(func: F) -> F:
-    r"""Decorator that checks if the OpenAI API key is available in the
+    r"""Decorator that checks if the LLM API key is available in the
     environment variables.
 
     Args:
@@ -57,7 +57,7 @@ def api_key_required(func: F) -> F:
         callable: The decorated function.
 
     Raises:
-        ValueError: If the OpenAI API key is not found in the environment
+        ValueError: If the LLM API key is not found in the environment
             variables.
     """
 
@@ -71,33 +71,11 @@ def api_key_required(func: F) -> F:
             if 'ANTHROPIC_API_KEY' not in os.environ:
                 raise ValueError('Anthropic API key not found.')
             return func(self, *args, **kwargs)
+        elif self.model_type.is_groq:
+            if "GROQ_API_KEY" not in os.environ:
+                raise ValueError('Groq API key not found.')
         else:
             raise ValueError('Unsupported model type.')
-
-    return cast(F, wrapper)
-
-
-def groq_api_key_required(func: F) -> F:
-    r"""Decorator that checks if the Groq API key is available in the
-    environment variables.
-
-    Args:
-        func (callable): The function to be wrapped.
-
-    Returns:
-        callable: The decorated function.
-
-    Raises:
-        ValueError: If the Groq API key is not found in the environment
-            variables.
-    """
-
-    @wraps(func)
-    def wrapper(self, *args, **kwargs):
-        if 'GROQ_API_KEY' in os.environ:
-            return func(self, *args, **kwargs)
-        else:
-            raise ValueError('Groq API key not found.')
 
     return cast(F, wrapper)
 

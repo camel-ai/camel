@@ -20,7 +20,11 @@ from anthropic._types import NOT_GIVEN
 from camel.configs import ANTHROPIC_API_PARAMS
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ModelType
-from camel.utils import AnthropicTokenCounter, BaseTokenCounter
+from camel.utils import (
+    AnthropicTokenCounter,
+    BaseTokenCounter,
+    api_key_required,
+)
 
 
 class AnthropicModel(BaseModelBackend):
@@ -67,6 +71,7 @@ class AnthropicModel(BaseModelBackend):
         """
         return self.client.count_tokens(prompt)
 
+    @api_key_required
     def run(
         self,
         messages,
