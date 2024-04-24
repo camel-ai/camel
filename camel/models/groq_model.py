@@ -79,6 +79,10 @@ class GroqModel(BaseModelBackend):
             ChatCompletion: `ChatCompletion` in the non-stream mode, while the
             stream mode is not supported by Groq.
         """
+        # Since the data structure defined in the Groq client is slightly
+        # different from the one defined in the CAMEL, we need to convert the
+        # data structure. In addition, the tyep ignore is used to avoid the
+        # meaningless type error detected by the mypy.
         response = self._client.chat.completions.create(
             messages=messages,  # type: ignore
             model=self.model_type.value,
