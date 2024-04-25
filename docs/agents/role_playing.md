@@ -1,141 +1,127 @@
 # Creating Your First Agent Society
+
 ## Philosophical Bits
-[![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1hG_q9F8PY1kDua_JyoHirJAPOGRexFmM?usp=sharing)
+[![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1HU4-sxNWFTs9JOegGbKOBcgHjDfj8FX5?usp=sharing)
 
 
-The `ChatAgent()` class is a cornerstone of CAMEL. We design our agent with the spirit to answer the following question:
+> *What magical trick makes us intelligent? The trick is that there is no trick. The power of intelligence stems from our vast diversity, not from any single, perfect principle.*
+>
+> -- Marvin Minsky, The Society of Mind, p. 308
 
-> Can we design an autonomous communicative agent capable of steering the conversation toward task completion with minimal human supervision?
+In this section, we will take a spite of the task-oriented `RolyPlaying()` class. We design this in an instruction-following manner. The essence is that to solve a complex task, you can enable two communicative agents collabratively working together step by step to reach solutions. The main concepts include:
+- **Task**: a task can be as simple as an idea, initialized by an inception prompt.
+- **AI User**: the agent who is expected to provide instructions.
+- **AI Assistant**: the agent who is expected to respond with solutions that fulfills the instructions.
 
-In our current implementation, we consider agents with the following key features:
-- **Role**: along with the goal and content specification, this sets the initial state of an agent, guiding the agent to take actions during the sequential interaction.
-- **Memory**: in-context memory and external memory which allows the agent to infer and learn in a more grounded approach.
-- **Tools**: a set of functions that our agents can utilize to interact with the external world; essentially this gives embodiments to our agents.
-- **Communication**: our framework allows flexible and scalable communication between agents. This is fundamental for the critical research question.
-- **Reasoning**: we will equip agents with different planning and reward (critic) learning abilities, allowing them to optimize task completion in a more guided approach.
-
-
-
-<!-- - (WIP) **Reasoning Ability**: since any goal can be formalized as the outcome of maximizing cumulative rewards, we will equip our agents with policy which they could follow to achieve goals. -->
-
-<!-- We will first start with the single agent setting, where the agent can interact with users, process and store messages, and utilize external tools to generate responses and accomplish tasks. -->
 
 ## Quick Start
-Let's first play with a `ChatAgent` instance by simply initialize it with a system message and interact with user messages.
 
-### Step 0: Prepartions
+### Step 0: Preparations
 ```python
-from camel.messages import BaseMessage as bm
-from camel.agents import ChatAgent
+# Import necessary classes
+from camel.societies import RolePlaying
+from camel.types import TaskType, ModelType
+
+# Set the LLM model type to use
+model_type = ModelType.GPT_3_5_TURBO
 ```
 
-### Step 1: Define the Role
-Create a system message to define agent's default role and behaviors.
+### Step 1: Configure the Role-Playing Session
+#### Set the `Task` Arguments
 ```python
-sys_msg = bm.make_assistant_message(
-    role_name='stone',
-    content='you are a curious stone wondering about the universe.')
+task_kwargs = {
+    'task_prompt': 'Develop a plan to TRAVEL TO THE PAST and make changes.',
+    'with_task_specify': True,
+    'task_specify_agent_kwargs': {'model_type': model_type}
+}
 ```
 
-### Step 2: Initialize the Agent
+#### Set the `User` Arguments
+You may think the user as the `instruction sender`.
 ```python
-agent = ChatAgent(
-    system_message=sys_msg,
-    message_window_size=10,    # [Optional] the length for chat memory
-    )
-```
-### Step 3: Interact with the Agent with `.step()`
-```python
-# Define a user message
-usr_msg = bm.make_user_message(
-    role_name='prof. claude shannon',
-    content='what is information in your mind?')
-
-# Sending the message to the agent
-response = agent.step(usr_msg)
-
-# Check the response (just for illustrative purpose)
-print(response.msgs[0].content)
->>> information is the resolution of uncertainty.
-```
-Woohoo, your first agent is ready to play with you!
-
-
-## Advanced Features
-
-### Tool Usage
-```python
-# Import the necessary functions
-from camel.functions import MATH_FUNCS, SEARCH_FUNCS
-
-# Initialize the agent with list of functions
-agent = ChatAgent(
-    system_message=sys_msg,        
-    function_list=[*MATH_FUNCS, *SEARCH_FUNCS]
-    )
-
-# Check if functions are enabled
-agent.is_function_calling_enabled()
->>> True
+user_role_kwargs = {
+    'user_role_name': 'an ambitious aspiring TIME TRAVELER',
+    'user_agent_kwargs': {'model_type': model_type}
+}
 ```
 
-### Memory
-By default our agent is initialized with `ChatHistoryMemory`, allowing agents to do in-context learning, though restricted by the finite window length.
-
-Assume that you have followed the setup in [Quick Start](#quick-start). Let's first check what is inside its brain.
+#### Set the `Assistant` Arguments
+Again, you may think the assistant as the `instruction executor`.
 ```python
-agent.memory.get_context()
->>> ([{'role': 'system', 'content': 'you are a helpful assistant.'},
-      {'role': 'user', 'content': 'what is information in your mind?'}],
-      30)
+assistant_role_kwargs = {
+    'assistant_role_name': 'the best-ever experimental physicist',
+    'assistant_agent_kwargs': {'model_type': model_type}
+}
 ```
-By default, only the user messages are saved. You may update/alter the agent's memory with any externally provided message in the format of `BaseMessage`; for example, using the agent's own response:
+
+### Step 2: Kickstart Your Society
+Putting them altogether – your role-playing session is ready to go!
 ```python
-# Update the memory
-agent.record_message(response.msgs[0])
+society = RolePlaying(
+    **task_kwargs,             # The task arguments
+    **user_role_kwargs,        # The instruction sender's arguments
+    **assistant_role_kwargs,   # The instruction receiver's arguments
+)
 ```
+
+### Step 3: Solving Tasks with Your Society
+Hold your bytes. Prior to our travel, let's define a small helper function.
 ```python
-# Check the current memory
-agent.memory.get_context()
->>> ([{'role': 'system', 'content': 'you are a helpful assistant.'},
-      {'role': 'user', 'content': 'what is information in your mind?'}],
-      {'role': 'assistant', 'content': 'information is the resolution of uncertainty.'}
-      44)
+def is_terminated(response):
+    """
+    Give alerts when the session shuold be terminated.
+    """
+    if response.terminated:
+        role = response.msg.role_type.name
+        reason = response.info['termination_reasons']
+        print(f'AI {role} terminated due to {reason}')
+
+    return response.terminated
 ```
-You can connect the agent with external database (as long-term memory) in which they can access and retrieve at each step. We will soon update instructions on this part.
+Time to chart our course – writing a simple loop for our society to proceed:
+```python
+def run(society, round_limit: int=10):
 
-### Miscs
-- Setting the agent to its initial state.
-    ```python
-    agent.reset()
-    ```
-- Set the output language for the agent.
-    ```python
-    agent.set_output_language('french')
-    ```
-- Using open-source models.
-    ```python
-    # Please refer to our setup chapter for details on backend settings.
-    ...
+    # Get the initial message from the ai assistant to the ai user
+    input_msg = society.init_chat()
 
-    # Import the necessary classes
-    from camel.configs import ChatGPTConfig, OpenSourceConfig
-    from camel.types import ModelType
+    # Starting the interactive session
+    for _ in range(round_limit):
 
-    # Set the arguments
-    agent_kwargs = dict(
-        model_type=ModelType.LLAMA_2,                    # Specify the model type
+        # Get the both responses for this round
+        assistant_response, user_response = society.step(input_msg)
 
-        model_config=OpenSourceConfig(
-            model_path='meta-llama/Llama-2-7b-chat-hf',  # a local folder or HuggingFace repo Name
-            server_url='http://localhost:8000/v1'))      # The url with the set port number
+        # Check the termination condition
+        if is_terminated(assistant_response) or is_terminated(user_response):
+            break
 
-    # Set the agent
-    agent = ChatAgent(sys_msg, **agent_kwargs)
-    ```
+        # Get the results
+        print(f'[AI User] {user_response.msg.content}.\n')
+        print(f'[AI Assistant] {assistant_response.msg.content}.\n')
 
-- The `ChatAgent` class offers several useful initialization options, including `model_type`, `model_config`, `memory`, `message_window_size`, `token_limit`, `output_language`, `function_list`, and `response_terminators`. Check [`chat_agent.py`](https://github.com/camel-ai/camel/blob/master/camel/agents/chat_agent.py) for detailed usage guidance.
+        # Check if the task is end
+        if 'CAMEL_TASK_DONE' in user_response.msg.content:
+            break
+
+        # Get the input message for the next round
+        input_msg = assistant_response.msg
+
+    return None
+```
+Now let's set our code in motion:
+```python
+run(society)
+```
+There you have your two lovely agents working collaboratively together to fulfill your requests. : )
+```markdown
+>>> [AI User] Instruction: Provide the theoretical framework for creating a stable wormhole or manipulating spacetime for controlled travel to a specific historical era in the past.
+>>> [AI Assistant] Solution: To create a theoretical framework for stable wormhole creation or spacetime manipulation for controlled time travel, we can start by considering the principles of general relativity and quantum mechanics.
+>>> ... (omitted)
+>>> [AI User] <CAMEL_TASK_DONE>.
+>>> [AI Assistant] Great! Good luck with your ambitious endeavors in time travel!.
+```
+
 
 
 ## Remarks
-Awesome. Now you have made your first step in creating a single agent. In the next chapter, we will explore the creation of different types agents along with the role playing features. Stay tuned.
+We hope you enjoy thie adventure with the two communicative agents. In the following chapters, we will discuss various types of agents, and how we can elicit complex task solving ability for large language models within our framework. Stay tuned.
