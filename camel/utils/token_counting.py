@@ -17,7 +17,7 @@ from io import BytesIO
 from math import ceil
 from typing import List, Optional
 
-from anthropic import AI_PROMPT, HUMAN_PROMPT, Anthropic
+from anthropic import Anthropic
 from PIL import Image
 
 from camel.messages import OpenAIMessage
