@@ -43,7 +43,7 @@ def get_lazy_imported_functions_module():
 # Set lazy import
 def get_lazy_imported_types_module():
     from camel.types import ModelType
-    return ModelType.GPT_4_TURBO
+    return ModelType.GPT_3_5_TURBO
 
 
 def api_key_required(func: F) -> F:
