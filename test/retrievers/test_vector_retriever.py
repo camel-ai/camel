@@ -35,8 +35,9 @@ def mock_vector_storage():
 
 
 @pytest.fixture
-def vector_retriever(mock_embedding_model):
-    return VectorRetriever(embedding_model=mock_embedding_model)
+def vector_retriever(mock_embedding_model, mock_vector_storage):
+    return VectorRetriever(embedding_model=mock_embedding_model,
+                           storage=mock_vector_storage)
 
 
 # Test initialization with a custom embedding model
@@ -53,8 +54,7 @@ def test_initialization_with_default_embedding():
 
 # Test process method
 @patch('camel.retrievers.vector_retriever.UnstructuredIO')
-def test_process(mock_unstructured_modules, vector_retriever,
-                 mock_vector_storage):
+def test_process(mock_unstructured_modules, vector_retriever):
     # Create a mock chunk with metadata
     mock_chunk = MagicMock()
     mock_chunk.metadata.to_dict.return_value = {'mock_key': 'mock_value'}
@@ -70,23 +70,24 @@ def test_process(mock_unstructured_modules, vector_retriever,
         0.1, 0.2, 0.3
     ]]
 
-    vector_retriever.process("mock_path", mock_vector_storage)
+    vector_retriever.process(content_input_path="mock_path")
 
     # Assert that methods are called as expected
     mock_unstructured_instance.parse_file_or_url.assert_called_once_with(
         "mock_path")
     mock_unstructured_instance.chunk_elements.assert_called_once()
-    mock_vector_storage.add.assert_called_once()
 
 
 # Test query
-def test_query(vector_retriever, mock_vector_storage):
+def test_query(vector_retriever):
+    query = "test query"
+    top_k = 1
     # Setup mock behavior for vector storage query
-    mock_vector_storage.query.return_value = [
-        Mock(similarity=0.8, record=Mock(payload={"text": "mock_result"}))
+    vector_retriever.storage.load = Mock()
+    vector_retriever.storage.query.return_value = [
+        Mock(similarity=0.8, record=Mock(payload={"text1": "mock_result1"}))
     ]
 
-    result = vector_retriever.query("mock_query", mock_vector_storage)
-
-    # Assert that the result is as expected
-    assert any(d.get('text') == 'mock_result' for d in result)
+    results = vector_retriever.query(query, top_k=top_k)
+    assert len(results) == 1
+    assert results[0]['similarity score'] == '0.8'

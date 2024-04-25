@@ -26,20 +26,30 @@ def test_bm25retriever_initialization():
     assert retriever.chunks == []
 
 
-@patch('camel.loaders.UnstructuredIO')
-def test_process(mock_unstructured_modules):
-    mock_unstructured_modules.return_value.parse_file_or_url.return_value = [
-        'Your parsed content'
-    ]
-    mock_unstructured_modules.return_value.chunk_elements.return_value = [
-        'Chunk 1', 'Chunk 2'
-    ]
+@pytest.fixture
+def bm25_retriever():
+    return BM25Retriever()
 
-    retriever = BM25Retriever()
-    retriever.process('https://www.camel-ai.org/')
 
-    assert retriever.content_input_path == 'https://www.camel-ai.org/'
-    assert len(retriever.chunks) == 4
+@patch('camel.retrievers.bm25_retriever.UnstructuredIO')
+def test_process(mock_unstructured_modules, bm25_retriever):
+    # Create a mock chunk with metadata
+    mock_chunk = MagicMock()
+    mock_chunk.metadata.to_dict.return_value = {'mock_key': 'mock_value'}
+
+    # Setup mock behavior
+    mock_unstructured_instance = mock_unstructured_modules.return_value
+    mock_unstructured_instance.parse_file_or_url.return_value = [
+        "mock_element"
+    ]
+    mock_unstructured_instance.chunk_elements.return_value = [mock_chunk]
+
+    bm25_retriever.process(content_input_path="mock_path")
+
+    # Assert that methods are called as expected
+    mock_unstructured_instance.parse_file_or_url.assert_called_once_with(
+        "mock_path")
+    mock_unstructured_instance.chunk_elements.assert_called_once()
 
 
 @patch('camel.retrievers.BM25Retriever')

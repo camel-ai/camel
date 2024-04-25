@@ -28,7 +28,7 @@ class BaseRetriever(ABC):
 
     @abstractmethod
     def process(self, content_input_path: str,
-                chunk_type: str = "chunk_by_title", **kwargs: Any) -> None:
+                chunk_type: str = "chunk_by_title") -> None:
         r"""Processes content from a file or URL, divides it into chunks by
         using `Unstructured IO`,then stored internally. This method must be
         called before executing queries with the retriever.
@@ -38,13 +38,12 @@ class BaseRetriever(ABC):
                 processed.
             chunk_type (str): Type of chunking going to apply. Defaults to
                 "chunk_by_title".
-            **kwargs (Any): Additional keyword arguments for content parsing.
         """
         pass
 
     @abstractmethod
-    def query(self, query: str, top_k: int = DEFAULT_TOP_K_RESULTS,
-              **kwargs: Any) -> List[Dict[str, Any]]:
+    def query(self, query: str,
+              top_k: int = DEFAULT_TOP_K_RESULTS) -> List[Dict[str, Any]]:
         r"""Query the results. Subclasses should implement this
         method according to their specific needs.
 
@@ -53,7 +52,5 @@ class BaseRetriever(ABC):
             top_k (int, optional): The number of top results to return during
                 retriever. Must be a positive integer. Defaults to
                 `DEFAULT_TOP_K_RESULTS`.
-            **kwargs (Any): Flexible keyword arguments for additional
-                parameters, like `similarity_threshold`.
         """
         pass

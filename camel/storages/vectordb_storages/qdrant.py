@@ -180,7 +180,9 @@ class QdrantStorage(BaseVectorStorage):
             VectorDistance.COSINE: Distance.COSINE,
             VectorDistance.EUCLIDEAN: Distance.EUCLID,
         }
-        self._client.recreate_collection(
+        # `recreate_collection` method will be removed in the future by
+        # Qdrant.
+        self._client.create_collection(
             collection_name=collection_name,
             vectors_config=VectorParams(
                 size=size,

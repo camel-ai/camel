@@ -16,7 +16,12 @@ from typing import Any, Dict, List, Optional
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
 from camel.functions import UnstructuredIO
 from camel.retrievers import BaseRetriever
-from camel.storages import BaseVectorStorage, VectorDBQuery, VectorRecord
+from camel.storages import (
+    BaseVectorStorage,
+    QdrantStorage,
+    VectorDBQuery,
+    VectorRecord,
+)
 
 DEFAULT_TOP_K_RESULTS = 1
 DEFAULT_SIMILARITY_THRESHOLD = 0.75
@@ -32,21 +37,33 @@ class VectorRetriever(BaseRetriever):
     Attributes:
         embedding_model (BaseEmbedding): Embedding model used to generate
             vector embeddings.
+        storage (BaseVectorStorage): Vector storage to query.
+        similarity_threshold (float, optional): The similarity threshold
+            for filtering results. Defaults to `DEFAULT_SIMILARITY_THRESHOLD`.
     """
 
-    def __init__(self,
-                 embedding_model: Optional[BaseEmbedding] = None) -> None:
+    def __init__(
+            self, embedding_model: Optional[BaseEmbedding] = None,
+            storage: Optional[BaseVectorStorage] = None,
+            similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD
+    ) -> None:
         r"""Initializes the retriever class with an optional embedding model.
 
         Args:
             embedding_model (Optional[BaseEmbedding]): The embedding model
                 instance. Defaults to `OpenAIEmbedding` if not provided.
+            storage (BaseVectorStorage): Vector storage to query.
+            similarity_threshold (float, optional): The similarity threshold
+                for filtering results. Defaults to
+                `DEFAULT_SIMILARITY_THRESHOLD`.
         """
         self.embedding_model = embedding_model or OpenAIEmbedding()
+        self.storage = storage or QdrantStorage(
+            vector_dim=self.embedding_model.get_output_dim())
+        self.similarity_threshold = similarity_threshold
 
-    def process(  # type: ignore
-            self, content_input_path: str, storage: BaseVectorStorage,
-            chunk_type: str = "chunk_by_title", **kwargs: Any) -> None:
+    def process(self, content_input_path: str,
+                chunk_type: str = "chunk_by_title") -> None:
         r""" Processes content from a file or URL, divides it into chunks by
         using `Unstructured IO`, and stores their embeddings in the specified
         vector storage.
@@ -56,13 +73,11 @@ class VectorRetriever(BaseRetriever):
                 processed.
             chunk_type (str): Type of chunking going to apply. Defaults to
                 "chunk_by_title".
-            **kwargs (Any): Additional keyword arguments for elements chunking.
         """
         unstructured_modules = UnstructuredIO()
         elements = unstructured_modules.parse_file_or_url(content_input_path)
         chunks = unstructured_modules.chunk_elements(chunk_type=chunk_type,
-                                                     elements=elements,
-                                                     **kwargs)
+                                                     elements=elements)
         # Iterate to process and store embeddings, set batch of 50
         for i in range(0, len(chunks), 50):
             batch_chunks = chunks[i:i + 50]
@@ -85,25 +100,17 @@ class VectorRetriever(BaseRetriever):
                 records.append(
                     VectorRecord(vector=vector, payload=combined_dict))
 
-            storage.add(records=records)
+            self.storage.add(records=records)
 
-    def query(  # type: ignore
-            self, query: str, storage: BaseVectorStorage,
-            top_k: int = DEFAULT_TOP_K_RESULTS,
-            similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
-            **kwargs: Any) -> List[Dict[str, Any]]:
+    def query(self, query: str,
+              top_k: int = DEFAULT_TOP_K_RESULTS) -> List[Dict[str, Any]]:
         r"""Executes a query in vector storage and compiles the retrieved
         results into a dictionary.
 
         Args:
             query (str): Query string for information retriever.
-            storage (BaseVectorStorage): Vector storage to query.
             top_k (int, optional): The number of top results to return during
                 retriever. Must be a positive integer. Defaults to 1.
-            similarity_threshold (float, optional): The similarity threshold
-                for filtering results. Defaults to 0.75.
-            **kwargs (Any): Additional keyword arguments for vector storage
-                query.
 
         Returns:
             List[Dict[str, Any]]: Concatenated list of the query results.
@@ -117,11 +124,11 @@ class VectorRetriever(BaseRetriever):
             raise ValueError("top_k must be a positive integer.")
 
         # Load the storage incase it's hosted remote
-        storage.load()
+        self.storage.load()
 
         query_vector = self.embedding_model.embed(obj=query)
         db_query = VectorDBQuery(query_vector=query_vector, top_k=top_k)
-        query_results = storage.query(query=db_query, **kwargs)
+        query_results = self.storage.query(query=db_query)
 
         if query_results[0].record.payload is None:
             raise ValueError("Payload of vector storage is None, please check"
@@ -130,7 +137,7 @@ class VectorRetriever(BaseRetriever):
         # format the results
         formatted_results = []
         for result in query_results:
-            if (result.similarity >= similarity_threshold
+            if (result.similarity >= self.similarity_threshold
                     and result.record.payload is not None):
                 result_dict = {
                     'similarity score': str(result.similarity),
@@ -147,6 +154,6 @@ class VectorRetriever(BaseRetriever):
             return [{
                 'text':
                 f"""No suitable information retrieved from {content_path} \
-                with similarity_threshold = {similarity_threshold}."""
+                with similarity_threshold = {self.similarity_threshold}."""
             }]
         return formatted_results
