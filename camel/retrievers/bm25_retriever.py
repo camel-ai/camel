@@ -41,8 +41,7 @@ class BM25Retriever(BaseRetriever):
     """
 
     def __init__(self) -> None:
-        r"""Initializes the BM25Retriever.
-        """
+        r"""Initializes the BM25Retriever."""
 
         try:
             from rank_bm25 import BM25Okapi
@@ -56,7 +55,7 @@ class BM25Retriever(BaseRetriever):
         self.chunks: List[Any] = []
 
     def process(self, content_input_path: str,
-                chunk_type: str = "chunk_by_title") -> None:
+                chunk_type: str = "chunk_by_title", **kwargs: Any) -> None:
         r"""Processes content from a file or URL, divides it into chunks by
         using `Unstructured IO`,then stored internally. This method must be
         called before executing queries with the retriever.
@@ -66,13 +65,15 @@ class BM25Retriever(BaseRetriever):
                 processed.
             chunk_type (str): Type of chunking going to apply. Defaults to
                 "chunk_by_title".
+            **kwargs (Any): Additional keyword arguments for content parsing.
         """
         from rank_bm25 import BM25Okapi
 
         # Load and preprocess documents
         self.content_input_path = content_input_path
         unstructured_modules = UnstructuredIO()
-        elements = unstructured_modules.parse_file_or_url(content_input_path)
+        elements = unstructured_modules.parse_file_or_url(
+            content_input_path, **kwargs)
         self.chunks = unstructured_modules.chunk_elements(
             chunk_type=chunk_type, elements=elements)
 
