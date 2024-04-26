@@ -58,7 +58,7 @@ class VectorRetriever(BaseRetriever):
                 `DEFAULT_SIMILARITY_THRESHOLD`.
         """
         self.embedding_model = embedding_model or OpenAIEmbedding()
-        self.storage = storage or QdrantStorage(
+        self.storage = storage if storage is not None else QdrantStorage(
             vector_dim=self.embedding_model.get_output_dim())
         self.similarity_threshold = similarity_threshold
 
