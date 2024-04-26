@@ -58,8 +58,8 @@ def get_oauth_session() -> requests.Session:
     Finally, a new OAuth1Session is created with the access token and returned.
 
     Raises:
-        Exception: If an error occurs while fetching the OAuth access token or
-            the OAuth request token.
+        RuntimeError: If an error occurs while fetching the OAuth access token
+            or the OAuth request token.
 
     Returns:
         requests_oauthlib.OAuth1Session: An OAuth1Session object authenticated
@@ -86,7 +86,7 @@ def get_oauth_session() -> requests.Session:
     try:
         fetch_response = oauth.fetch_request_token(request_token_url)
     except Exception as e:
-        raise Exception(
+        raise RuntimeError(
             f"Error occurred while fetching the OAuth access token: {e}")
 
     resource_owner_key = fetch_response.get("oauth_token")
@@ -111,7 +111,7 @@ def get_oauth_session() -> requests.Session:
     try:
         oauth_tokens = oauth.fetch_access_token(access_token_url)
     except Exception as e:
-        raise Exception(
+        raise RuntimeError(
             f"Error occurred while fetching the OAuth request token: {e}")
 
     # Create a new OAuth1Session with the access token
@@ -189,7 +189,7 @@ def create_tweet(*, text: str, poll_options: Optional[List[str]] = None,
 
     Raises:
         HTTPError: If the POST request to the Twitter API returns a status code
-            other than 200.
+            other than 201.
 
     Reference:
         https://developer.twitter.com/en/docs/twitter-api/tweets/manage-tweets/api-reference/post-tweets
@@ -225,8 +225,7 @@ def create_tweet(*, text: str, poll_options: Optional[List[str]] = None,
     if quote_tweet_id is not None:
         json_data["quote_tweet_id"] = str(quote_tweet_id)  # type: ignore
 
-    if text is not None:
-        json_data["text"] = text  # type: ignore
+    json_data["text"] = text  # type: ignore
 
     # Making the request
     response = oauth.post(
@@ -236,7 +235,9 @@ def create_tweet(*, text: str, poll_options: Optional[List[str]] = None,
 
     if response.status_code != 201:
         error_type = handle_http_error(response)
-        return f"Request returned a(n) {error_type}: {response.status_code} {response.text}"
+        # use string concatenation to satisfy flake8
+        return ("Request returned a(n) " + str(error_type) + ": " +
+                str(response.status_code) + " " + response.text)
 
     # Saving the response as JSON
     json_response = response.json()
@@ -287,7 +288,9 @@ def delete_tweet(tweet_id: str) -> str:
 
     if response.status_code != 200:
         error_type = handle_http_error(response)
-        return f"Request returned a(n) {error_type}: {response.status_code} {response.text}"
+        # use string concatenation to satisfy flake8
+        return ("Request returned a(n) " + str(error_type) + ": " +
+                str(response.status_code) + " " + response.text)
 
     # Saving the response as JSON
     json_response = response.json()
@@ -349,10 +352,10 @@ def get_user_me() -> str:
     user_report += f"Username: {user_info['username']}. "
 
     # Define the part of keys that need to be repeatedly processed
-    userInfoKeys = [
+    user_info_keys = [
         'description', 'location', 'most_recent_tweet_id', 'profile_image_url'
     ]
-    for key in userInfoKeys:
+    for key in user_info_keys:
         if key in user_info:
             user_report += (
                 f"{key.replace('_', ' ').capitalize()}: {user_info[key]}. ")
