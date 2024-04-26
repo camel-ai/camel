@@ -50,8 +50,7 @@ def get_twitter_api_key() -> Tuple[str, str]:
 
 
 def get_oauth_session() -> requests.Session:
-    r'''
-    Initiates an OAuth1Session with Twitter's API and returns it.
+    r'''Initiates an OAuth1Session with Twitter's API and returns it.
 
     The function first fetches a request token, then prompts the user to
     authorize the application. After the user has authorized the application
@@ -115,15 +114,12 @@ def get_oauth_session() -> requests.Session:
         raise Exception(
             f"Error occurred while fetching the OAuth request token: {e}")
 
-    access_token = oauth_tokens["oauth_token"]
-    access_token_secret = oauth_tokens["oauth_token_secret"]
-
     # Create a new OAuth1Session with the access token
     oauth = OAuth1Session(
         consumer_key,
         client_secret=consumer_secret,
-        resource_owner_key=access_token,
-        resource_owner_secret=access_token_secret,
+        resource_owner_key=oauth_tokens["oauth_token"],
+        resource_owner_secret=oauth_tokens["oauth_token_secret"],
     )
     return oauth
 
@@ -240,9 +236,7 @@ def create_tweet(*, text: str, poll_options: Optional[List[str]] = None,
 
     if response.status_code != 201:
         error_type = handle_http_error(response)
-        error_message = "Request returned a(n) {}: {} {}".format(
-            error_type, response.status_code, response.text)
-        return error_message
+        return f"Request returned a(n) {error_type}: {response.status_code} {response.text}"
 
     # Saving the response as JSON
     json_response = response.json()
@@ -293,9 +287,7 @@ def delete_tweet(tweet_id: str) -> str:
 
     if response.status_code != 200:
         error_type = handle_http_error(response)
-        error_message = "Request returned a(n) {}: {} {}".format(
-            error_type, response.status_code, response.text)
-        return error_message
+        return f"Request returned a(n) {error_type}: {response.status_code} {response.text}"
 
     # Saving the response as JSON
     json_response = response.json()
