@@ -20,7 +20,6 @@ from camel.storages import MilvusStorage, VectorDBQuery, VectorRecord
 
 @pytest.fixture
 def mock_milvus_storage():
-
     with patch('camel.storages.MilvusStorage') as MockMilvusStorage:
         mock_storage1 = create_autospec(MilvusStorage)
         mock_storage2 = create_autospec(MilvusStorage)
@@ -29,7 +28,6 @@ def mock_milvus_storage():
 
 
 def setup_mock_storage(mock_storage, vectors, query_result_id, payload):
-
     mock_query_result = MagicMock()
     mock_query_result.record.id = query_result_id
     mock_query_result.record.payload = payload
@@ -43,23 +41,17 @@ def test_multiple_remote_clients(mock_milvus_storage):
 
     # Example vectors for testing
     vectors1 = [
-        VectorRecord(vector=[0.1, 0.1, 0.1, 0.1], payload={"message":
-                                                           "text1"}),
-        VectorRecord(vector=[0.1, -0.1, -0.1, 0.1],
-                     payload={"message": "text2"})
+        VectorRecord(vector=[0.1, 0.1, 0.1, 0.1], payload={"message": "text1"}),
+        VectorRecord(vector=[0.1, -0.1, -0.1, 0.1], payload={"message": "text2"}),
     ]
     vectors2 = [
-        VectorRecord(vector=[-0.1, 0.1, -0.1, 0.1],
-                     payload={"message": "text3"}),
-        VectorRecord(vector=[-0.1, 0.1, 0.1, 0.1], payload={
-            "message": "text4",
-            "number": 1
-        })
+        VectorRecord(vector=[-0.1, 0.1, -0.1, 0.1], payload={"message": "text3"}),
+        VectorRecord(
+            vector=[-0.1, 0.1, 0.1, 0.1], payload={"message": "text4", "number": 1}
+        ),
     ]
-    setup_mock_storage(mock_storage1, vectors1, vectors1[0].id,
-                       {"message": "text1"})
-    setup_mock_storage(mock_storage2, vectors2, vectors2[0].id,
-                       {"message": "text3"})
+    setup_mock_storage(mock_storage1, vectors1, vectors1[0].id, {"message": "text1"})
+    setup_mock_storage(mock_storage2, vectors2, vectors2[0].id, {"message": "text3"})
 
     # Assert add method was called correctly
     mock_storage1.add.assert_called_once_with(vectors1)

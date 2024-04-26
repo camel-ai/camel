@@ -25,7 +25,6 @@ from camel.utils import PYDANTIC_V2
 
 
 def test_get_openai_tool_schema():
-
     def test_all_parameters(
         any_para,
         str_para: str,
@@ -59,62 +58,52 @@ def test_get_openai_tool_schema():
             'description': 'A function to test all parameter type.'
             '\nThe parameters will be provided by user.',
             'parameters': {
-                'type':
-                'object',
+                'type': 'object',
                 'properties': {
                     'any_para': {
-                        'description':
-                        "any_para desc. "
+                        'description': "any_para desc. "
                         "Type defaults to 'Any' if not specified."
                     },
-                    'str_para': {
-                        'type': 'string',
-                        'description': 'str_para desc'
-                    },
-                    'int_para': {
-                        'type': 'integer',
-                        'description': 'int_para desc'
-                    },
+                    'str_para': {'type': 'string', 'description': 'str_para desc'},
+                    'int_para': {'type': 'integer', 'description': 'int_para desc'},
                     'list_para': {
                         'type': 'array',
-                        'items': {
-                            'type': 'integer'
-                        },
-                        'description': 'list_para desc'
+                        'items': {'type': 'integer'},
+                        'description': 'list_para desc',
                     },
-                    'float_para': {
-                        'type': 'number',
-                        'description': 'float_para desc'
-                    },
+                    'float_para': {'type': 'number', 'description': 'float_para desc'},
                     'datatime_para': {
                         'type': 'string',
                         'format': 'date-time',
-                        'description': 'datatime_para desc'
+                        'description': 'datatime_para desc',
                     },
                     'default_enum_para': {
                         'default': 'critic',
-                        'allOf': [{
-                            '$ref': '#/definitions/RoleType'
-                        }],
-                        'description': 'default_enum_para desc'
-                    }
+                        'allOf': [{'$ref': '#/definitions/RoleType'}],
+                        'description': 'default_enum_para desc',
+                    },
                 },
                 'required': [
-                    'str_para', 'int_para', 'list_para', 'float_para',
-                    'datatime_para'
+                    'str_para',
+                    'int_para',
+                    'list_para',
+                    'float_para',
+                    'datatime_para',
                 ],
                 'definitions': {
                     'RoleType': {
-                        'description':
-                        'An enumeration.',
+                        'description': 'An enumeration.',
                         'enum': [
-                            'assistant', 'user', 'critic', 'embodiment',
-                            'default'
-                        ]
+                            'assistant',
+                            'user',
+                            'critic',
+                            'embodiment',
+                            'default',
+                        ],
                     }
-                }
-            }
-        }
+                },
+            },
+        },
     }
     expect_res_v2 = {
         'type': 'function',
@@ -126,59 +115,50 @@ def test_get_openai_tool_schema():
                 '$defs': {
                     'RoleType': {
                         'enum': [
-                            'assistant', 'user', 'critic', 'embodiment',
-                            'default'
+                            'assistant',
+                            'user',
+                            'critic',
+                            'embodiment',
+                            'default',
                         ],
-                        'type':
-                        'string'
+                        'type': 'string',
                     }
                 },
                 'properties': {
                     'any_para': {
-                        'description':
-                        "any_para desc. "
+                        'description': "any_para desc. "
                         "Type defaults to 'Any' if not specified."
                     },
-                    'str_para': {
-                        'type': 'string',
-                        'description': 'str_para desc'
-                    },
-                    'int_para': {
-                        'type': 'integer',
-                        'description': 'int_para desc'
-                    },
+                    'str_para': {'type': 'string', 'description': 'str_para desc'},
+                    'int_para': {'type': 'integer', 'description': 'int_para desc'},
                     'list_para': {
-                        'items': {
-                            'type': 'integer'
-                        },
+                        'items': {'type': 'integer'},
                         'type': 'array',
-                        'description': 'list_para desc'
+                        'description': 'list_para desc',
                     },
-                    'float_para': {
-                        'type': 'number',
-                        'description': 'float_para desc'
-                    },
+                    'float_para': {'type': 'number', 'description': 'float_para desc'},
                     'datatime_para': {
                         'format': 'date-time',
                         'type': 'string',
-                        'description': 'datatime_para desc'
+                        'description': 'datatime_para desc',
                     },
                     'default_enum_para': {
-                        'allOf': [{
-                            '$ref': '#/$defs/RoleType'
-                        }],
+                        'allOf': [{'$ref': '#/$defs/RoleType'}],
                         'default': 'critic',
-                        'description': 'default_enum_para desc'
-                    }
+                        'description': 'default_enum_para desc',
+                    },
                 },
                 'required': [
-                    'any_para', 'str_para', 'int_para', 'list_para',
-                    'float_para', 'datatime_para'
+                    'any_para',
+                    'str_para',
+                    'int_para',
+                    'list_para',
+                    'float_para',
+                    'datatime_para',
                 ],
-                'type':
-                'object'
-            }
-        }
+                'type': 'object',
+            },
+        },
     }
 
     openai_tool_schema = get_openai_tool_schema(test_all_parameters)
@@ -190,7 +170,6 @@ def test_get_openai_tool_schema():
 
 
 def test_different_docstring_style():
-
     def rest_style(a: int, b: int):
         """
         Multiply two integers.
@@ -318,17 +297,11 @@ function_schema = {
     "parameters": {
         'type': 'object',
         'properties': {
-            'a': {
-                'type': 'integer',
-                'description': 'The first number to be added.'
-            },
-            'b': {
-                'type': 'integer',
-                'description': 'The second number to be added.'
-            }
+            'a': {'type': 'integer', 'description': 'The first number to be added.'},
+            'b': {'type': 'integer', 'description': 'The second number to be added.'},
         },
-        'required': ['a', 'b']
-    }
+        'required': ['a', 'b'],
+    },
 }
 
 tool_schema = {
@@ -376,8 +349,7 @@ def test_get_set_openai_tool_schema():
 
 def test_get_set_parameter_description():
     add = OpenAIFunction(add_with_doc)
-    assert (
-        add.get_paramter_description("a") == "The first number to be added.")
+    assert add.get_paramter_description("a") == "The first number to be added."
     add.set_paramter_description("a", "New description for a.")
     assert add.get_paramter_description("a") == "New description for a."
 
@@ -396,7 +368,7 @@ def test_get_set_openai_function_schema():
     new_function_schema = {
         "name": "new_add",
         "description": "Adds two numbers in a new way.",
-        "parameters": initial_schema["parameters"]
+        "parameters": initial_schema["parameters"],
     }
     add.set_openai_function_schema(new_function_schema)
     assert add.get_openai_function_schema() == new_function_schema
@@ -439,14 +411,8 @@ def test_parameters_getter_setter():
     assert initial_params is not None
 
     new_params = {
-        "a": {
-            "type": "integer",
-            "description": "New first number"
-        },
-        "b": {
-            "type": "integer",
-            "description": "New second number"
-        }
+        "a": {"type": "integer", "description": "New first number"},
+        "b": {"type": "integer", "description": "New second number"},
     }
     add.parameters = new_params
     assert add.parameters == new_params

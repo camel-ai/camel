@@ -34,9 +34,12 @@ class ResponseWordsTerminator(ResponseTerminator):
             (default: :obj:`TerminationMode.ANY`)
     """
 
-    def __init__(self, words_dict: Dict[str,
-                                        int], case_sensitive: bool = False,
-                 mode: TerminationMode = TerminationMode.ANY):
+    def __init__(
+        self,
+        words_dict: Dict[str, int],
+        case_sensitive: bool = False,
+        mode: TerminationMode = TerminationMode.ANY,
+    ):
         super().__init__()
         self.words_dict = words_dict
         self.case_sensitive = case_sensitive
@@ -50,11 +53,12 @@ class ResponseWordsTerminator(ResponseTerminator):
         for word in self.words_dict:
             threshold = self.words_dict[word]
             if threshold <= 0:
-                raise ValueError(f"Threshold for word `{word}` should "
-                                 f"be larger than 0, got `{threshold}`")
+                raise ValueError(
+                    f"Threshold for word `{word}` should "
+                    f"be larger than 0, got `{threshold}`"
+                )
 
-    def is_terminated(
-            self, messages: List[BaseMessage]) -> Tuple[bool, Optional[str]]:
+    def is_terminated(self, messages: List[BaseMessage]) -> Tuple[bool, Optional[str]]:
         r"""Whether terminate the agent by checking the occurrence
         of specified words reached to preset thresholds.
 
@@ -90,10 +94,12 @@ class ResponseWordsTerminator(ResponseTerminator):
             for word, value in self._word_count_dict[i].items():
                 if value >= self.words_dict[word]:
                     reached += 1
-                    reason = (f"Word `{word}` appears {value} times in the "
-                              f"{i + 1} message of the response which has "
-                              f"reached termination threshold "
-                              f"{self.words_dict[word]}.")
+                    reason = (
+                        f"Word `{word}` appears {value} times in the "
+                        f"{i + 1} message of the response which has "
+                        f"reached termination threshold "
+                        f"{self.words_dict[word]}."
+                    )
                     reasons.append(reason)
             all_reasons.append(reasons)
             num_reached.append(reached)
@@ -108,8 +114,7 @@ class ResponseWordsTerminator(ResponseTerminator):
                     self._terminated = True
                     self._termination_reason = "\n".join(all_reasons[i])
             else:
-                raise ValueError(f"Unsupported termination mode "
-                                 f"`{self.mode}`")
+                raise ValueError(f"Unsupported termination mode " f"`{self.mode}`")
         return self._terminated, self._termination_reason
 
     def reset(self):

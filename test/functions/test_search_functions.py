@@ -28,7 +28,8 @@ def test_search_wiki_normal():
     expected_output = (
         "Erygia sigillata is a species of moth in the family Erebidae found "
         "in Himachal Pradesh, Northern India. The moth was officially "
-        "recognized and classified in 1892.")
+        "recognized and classified in 1892."
+    )
 
     assert search_wiki("Erygia sigillata") == expected_output
 
@@ -38,12 +39,12 @@ def test_search_wiki_not_found():
     assert search_output.startswith(
         "There is no page in Wikipedia corresponding to entity South Africa "
         "Women Football Team, please specify another word to describe the "
-        "entity to be searched.")
+        "entity to be searched."
+    )
 
 
 def test_search_wiki_with_ambiguity():
-    expected_output = wikipedia.summary("Google", sentences=5,
-                                        auto_suggest=False)
+    expected_output = wikipedia.summary("Google", sentences=5, auto_suggest=False)
     assert search_wiki("Google LLC") == expected_output
 
 
@@ -55,8 +56,10 @@ def test_google_api():
     # https://cse.google.com/cse/all
     SEARCH_ENGINE_ID = os.getenv("SEARCH_ENGINE_ID")
 
-    url = f"https://www.googleapis.com/customsearch/v1?" \
-          f"key={GOOGLE_API_KEY}&cx={SEARCH_ENGINE_ID}&q=any"
+    url = (
+        f"https://www.googleapis.com/customsearch/v1?"
+        f"key={GOOGLE_API_KEY}&cx={SEARCH_ENGINE_ID}&q=any"
+    )
     result = requests.get(url)
 
     assert result.status_code == 200
@@ -78,7 +81,7 @@ def test_search_wolfram_alpha(mock_get, mock_client):
     mock_subpods1 = [
         MagicMock(plaintext="lim_(x->0) (sin^2(x))/x = 0"),
         MagicMock(plaintext="lim_(x->-∞) (sin^2(x))/x = 0"),
-        MagicMock(plaintext="lim_(x->∞) (sin^2(x))/x = 0")
+        MagicMock(plaintext="lim_(x->∞) (sin^2(x))/x = 0"),
     ]
     mock_subpods2 = [MagicMock(plaintext=None)]
 
@@ -109,13 +112,15 @@ def test_search_wolfram_alpha(mock_get, mock_client):
     mock_client.return_value = mock_instance
 
     result = search_wolfram_alpha("calculate limit of sinx^2/x", True)
-    expected_output = ("Assumption:\n"
-                       "lim_(x->0) (sin^2(x))/x = 0\n\n"
-                       "Answer:\n"
-                       "lim_(x->0) (sin^2(x))/x = 0\n\n"
-                       "Limit:\n"
-                       "lim_(x->0) (sin^2(x))/x = 0\n"
-                       "lim_(x->-∞) (sin^2(x))/x = 0\n"
-                       "lim_(x->∞) (sin^2(x))/x = 0\n\n"
-                       "Plot:\nNone")
+    expected_output = (
+        "Assumption:\n"
+        "lim_(x->0) (sin^2(x))/x = 0\n\n"
+        "Answer:\n"
+        "lim_(x->0) (sin^2(x))/x = 0\n\n"
+        "Limit:\n"
+        "lim_(x->0) (sin^2(x))/x = 0\n"
+        "lim_(x->-∞) (sin^2(x))/x = 0\n"
+        "lim_(x->∞) (sin^2(x))/x = 0\n\n"
+        "Plot:\nNone"
+    )
     assert result == expected_output

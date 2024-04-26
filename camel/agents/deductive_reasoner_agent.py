@@ -14,7 +14,7 @@
 import re
 from typing import Dict, List, Optional, Union
 
-from camel.agents import ChatAgent
+from camel.agents.chat_agent import ChatAgent
 from camel.configs import BaseConfig
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
@@ -153,61 +153,72 @@ Given the starting state $A$ and the target state $B$, assuming that a path $L$ 
 - Entity/Label Recognition of Conditions:\n[<BLANK>, <BLANK>, ...] (include square brackets)
 - Quality Assessment ($Q$) (do not use symbols):
     <BLANK>.
-- Iterative Evaluation:\n<BLANK>/None"""  # noqa: E501
+- Iterative Evaluation:\n<BLANK>/None"""
 
         if role_descriptions_dict is not None:
             role_names = role_descriptions_dict.keys()
-            role_with_description_prompt = \
-                "===== ROLES WITH DESCRIPTIONS =====\n" + "\n".join(
+            role_with_description_prompt = (
+                "===== ROLES WITH DESCRIPTIONS =====\n"
+                + "\n".join(
                     f"{role_name}:\n{role_descriptions_dict[role_name]}\n"
-                    for role_name in role_names) + "\n\n"
+                    for role_name in role_names
+                )
+                + "\n\n"
+            )
         else:
             role_with_description_prompt = ""
         deduce_prompt = TextPrompt(deduce_prompt)
 
         deduce = deduce_prompt.format(
-            starting_state=starting_state, target_state=target_state,
-            role_with_description_prompt=role_with_description_prompt)
+            starting_state=starting_state,
+            target_state=target_state,
+            role_with_description_prompt=role_with_description_prompt,
+        )
 
-        conditions_and_quality_generation_msg = \
-            BaseMessage.make_user_message(role_name="Deductive Reasoner",
-                                          content=deduce)
+        conditions_and_quality_generation_msg = BaseMessage.make_user_message(
+            role_name="Deductive Reasoner", content=deduce
+        )
 
-        response = self.step(
-            input_message=conditions_and_quality_generation_msg)
+        response = self.step(input_message=conditions_and_quality_generation_msg)
 
         if response.terminated:
-            raise RuntimeError("Deduction failed. Error:\n" +
-                               f"{response.info}")
+            raise RuntimeError("Deduction failed. Error:\n" + f"{response.info}")
         msg: BaseMessage = response.msg
         print(f"Message content:\n{msg.content}")
 
         # Extract the conditions from the message
         condistions_dict = {
-            f"condition {i}":
-            cdt.replace("<", "").replace(">", "").strip().strip('\n')
+            f"condition {i}": cdt.replace("<", "").replace(">", "").strip().strip('\n')
             for i, cdt in re.findall(
                 r"condition (\d+):\s*(.+?)(?=condition \d+|- Entity)",
-                msg.content, re.DOTALL)
+                msg.content,
+                re.DOTALL,
+            )
         }
 
         # Extract the labels from the message
         labels = [
-            label.strip().strip('\n').strip("\"\'") for label in re.findall(
+            label.strip().strip('\n').strip("\"'")
+            for label in re.findall(
                 r"Entity/Label Recognition of Conditions:\n\[(.+?)\]",
-                msg.content, re.DOTALL)[0].split(",")
+                msg.content,
+                re.DOTALL,
+            )[0].split(",")
         ]
 
         # Extract the quality from the message
-        quality = [
-            q.strip().strip('\n') for q in re.findall(
+        quality = next(
+            q.strip().strip('\n')
+            for q in re.findall(
                 r"Quality Assessment \(\$Q\$\) \(do not use symbols\):"
-                r"\n(.+?)- Iterative", msg.content, re.DOTALL)
-        ][0]
+                r"\n(.+?)- Iterative",
+                msg.content,
+                re.DOTALL,
+            )
+        )
 
         # Convert them into JSON format
-        conditions_and_quality_json: \
-            Dict[str, Union[List[str], Dict[str, str]]] = {}
+        conditions_and_quality_json: Dict[str, Union[List[str], Dict[str, str]]] = {}
         conditions_and_quality_json["conditions"] = condistions_dict
         conditions_and_quality_json["labels"] = labels
         conditions_and_quality_json["evaluate_quality"] = quality

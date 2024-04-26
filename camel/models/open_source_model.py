@@ -45,11 +45,11 @@ class OpenSourceModel(BaseModelBackend):
         # Check whether the input model type is open-source
         if not model_type.is_open_source:
             raise ValueError(
-                f"Model `{model_type}` is not a supported open-source model.")
+                f"Model `{model_type}` is not a supported open-source model."
+            )
 
         # Check whether input model path is empty
-        model_path: Optional[str] = (self.model_config_dict.get(
-            "model_path", None))
+        model_path: Optional[str] = self.model_config_dict.get("model_path", None)
         if not model_path:
             raise ValueError("Path to open-source model is not provided.")
         self.model_path: str = model_path
@@ -59,14 +59,13 @@ class OpenSourceModel(BaseModelBackend):
         if not self.model_type.validate_model_name(self.model_name):
             raise ValueError(
                 f"Model name `{self.model_name}` does not match model type "
-                f"`{self.model_type.value}`.")
+                f"`{self.model_type.value}`."
+            )
 
         # Load the server URL and check whether it is None
-        server_url: Optional[str] = (self.model_config_dict.get(
-            "server_url", None))
+        server_url: Optional[str] = self.model_config_dict.get("server_url", None)
         if not server_url:
-            raise ValueError(
-                "URL to server running open-source LLM is not provided.")
+            raise ValueError("URL to server running open-source LLM is not provided.")
         self.server_url: str = server_url
         self._client = OpenAI(
             base_url=self.server_url,
@@ -89,7 +88,8 @@ class OpenSourceModel(BaseModelBackend):
         """
         if not self._token_counter:
             self._token_counter = OpenSourceTokenCounter(
-                self.model_type, self.model_path)
+                self.model_type, self.model_path
+            )
         return self._token_counter
 
     def run(
@@ -124,16 +124,21 @@ class OpenSourceModel(BaseModelBackend):
                 unexpected arguments to OpenAI API, or it does not contain
                 :obj:`model_path` or :obj:`server_url`.
         """
-        if ("model_path" not in self.model_config_dict
-                or "server_url" not in self.model_config_dict):
+        if (
+            "model_path" not in self.model_config_dict
+            or "server_url" not in self.model_config_dict
+        ):
             raise ValueError(
                 "Invalid configuration for open-source model backend with "
-                ":obj:`model_path` or :obj:`server_url` missing.")
+                ":obj:`model_path` or :obj:`server_url` missing."
+            )
 
         for param in self.model_config_dict["api_params"].__dict__:
             if param not in OPENAI_API_PARAMS:
-                raise ValueError(f"Unexpected argument `{param}` is "
-                                 "input into open-source model backend.")
+                raise ValueError(
+                    f"Unexpected argument `{param}` is "
+                    "input into open-source model backend."
+                )
 
     @property
     def stream(self) -> bool:

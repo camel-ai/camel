@@ -18,10 +18,8 @@ from camel.messages import BaseMessage
 def test_display_options():
     human = Human()
     msgs = [
-        BaseMessage.make_assistant_message(role_name="assistant",
-                                           content="Hello"),
-        BaseMessage.make_assistant_message(role_name="assistant",
-                                           content="World"),
+        BaseMessage.make_assistant_message(role_name="assistant", content="Hello"),
+        BaseMessage.make_assistant_message(role_name="assistant", content="World"),
     ]
     human.display_options(msgs)
 
@@ -29,10 +27,8 @@ def test_display_options():
 def test_get_input(monkeypatch):
     human = Human()
     msgs = [
-        BaseMessage.make_assistant_message(role_name="assistant",
-                                           content="Hello"),
-        BaseMessage.make_assistant_message(role_name="assistant",
-                                           content="World"),
+        BaseMessage.make_assistant_message(role_name="assistant", content="Hello"),
+        BaseMessage.make_assistant_message(role_name="assistant", content="World"),
     ]
     human.display_options(msgs)
     monkeypatch.setattr('builtins.input', lambda _: str(1))
@@ -42,10 +38,8 @@ def test_get_input(monkeypatch):
 def test_reduce_step(monkeypatch):
     human = Human()
     msgs = [
-        BaseMessage.make_assistant_message(role_name="assistant",
-                                           content="Hello"),
-        BaseMessage.make_assistant_message(role_name="assistant",
-                                           content="World"),
+        BaseMessage.make_assistant_message(role_name="assistant", content="Hello"),
+        BaseMessage.make_assistant_message(role_name="assistant", content="World"),
     ]
 
     monkeypatch.setattr('builtins.input', lambda _: str(1))

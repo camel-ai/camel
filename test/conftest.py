@@ -19,19 +19,27 @@ from _pytest.nodes import Item
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
-    parser.addoption("--full-test-mode", action="store_true",
-                     help="Run all tests")
-    parser.addoption("--default-test-mode", action="store_true",
-                     help="Run all tests except the very slow ones")
-    parser.addoption("--fast-test-mode", action="store_true",
-                     help="Run only tests without LLM inference")
+    parser.addoption("--full-test-mode", action="store_true", help="Run all tests")
+    parser.addoption(
+        "--default-test-mode",
+        action="store_true",
+        help="Run all tests except the very slow ones",
+    )
+    parser.addoption(
+        "--fast-test-mode",
+        action="store_true",
+        help="Run only tests without LLM inference",
+    )
     parser.addoption(
         "--llm-test-only",
         action="store_true",
         help="Run only tests with LLM inference except the very slow ones",
     )
-    parser.addoption("--very-slow-test-only", action="store_true",
-                     help="Run only the very slow tests")
+    parser.addoption(
+        "--very-slow-test-only",
+        action="store_true",
+        help="Run only the very slow tests",
+    )
 
 
 def pytest_collection_modifyitems(config: Config, items: List[Item]) -> None:
@@ -61,7 +69,8 @@ def pytest_collection_modifyitems(config: Config, items: List[Item]) -> None:
         return
     else:
         skip_full_test = pytest.mark.skip(
-            reason="Very slow test runs only in full test mode")
+            reason="Very slow test runs only in full test mode"
+        )
         for item in items:
             if "very_slow" in item.keywords:
                 item.add_marker(skip_full_test)

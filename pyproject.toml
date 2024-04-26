@@ -143,9 +143,7 @@ all = [
 [tool.poetry.group.dev]
 optional = true
 [tool.poetry.group.dev.dependencies]
-yapf = "0.32.0"
-isort = "5.12.0"
-flake8 = "4.0.1"
+ruff = "^0.4.1"
 mypy = "^1.5.1"
 toml = ">=0.10.2"
 pre-commit = "^3"
@@ -172,14 +170,33 @@ sphinx_book_theme = "*"
 recommonmark = "*"
 docutils = "<0.20.0"
 
-[tool.yapf]
-based_on_style = "pep8"
-split_before_named_assigns = false
+[tool.ruff]
+line-length = 88
+fix = true
+target-version = "py39"
 
-[tool.isort]
-multi_line_output = 3
-include_trailing_comma = true
-skip = [".gitingore", "__init__.py"]
+[tool.ruff.format]
+quote-style = "preserve"
+
+[tool.ruff.lint]
+extend-select = [
+  "I",    # isort
+  "B",    # flake8-bugbear
+  "C4",   # flake8-comprehensions
+  "PGH",  # pygrep-hooks
+  "RUF",  # ruff
+]
+ignore = [
+    "B028", # Warning without stacklevel
+    "B904", # use 'raise ... from err'
+    "B905", # use explicit 'strict=' parameter with 'zip()'
+    "N818", #  Exception name should be named with an Error suffix
+    "C416", # I think comprehension is more clear https://docs.astral.sh/ruff/rules/unnecessary-comprehension/
+    "C408", # we have used lots of dict(...) instead of literal
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["camel"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

@@ -39,8 +39,9 @@ class Human:
             displayed to the user.
     """
 
-    def __init__(self, name: str = "Kill Switch Engineer",
-                 logger_color: Any = Fore.MAGENTA) -> None:
+    def __init__(
+        self, name: str = "Kill Switch Engineer", logger_color: Any = Fore.MAGENTA
+    ) -> None:
         self.name = name
         self.logger_color = logger_color
         self.input_button = f"Input by {self.name}."
@@ -62,11 +63,12 @@ class Human:
         print_text_animated(
             self.logger_color + "\n> Proposals from "
             f"{messages[0].role_name} ({messages[0].role_type}). "
-            "Please choose an option:\n")
+            "Please choose an option:\n"
+        )
         for index, option in enumerate(options):
             print_text_animated(
-                self.logger_color +
-                f"\x1b[3mOption {index + 1}:\n{option}\x1b[0m\n")
+                self.logger_color + f"\x1b[3mOption {index + 1}:\n{option}\x1b[0m\n"
+            )
             self.options_dict[str(index + 1)] = option
 
     def get_input(self) -> str:
@@ -77,13 +79,15 @@ class Human:
         """
         while True:
             human_input = input(
-                self.logger_color +
-                f"Please enter your choice ([1-{len(self.options_dict)}]): ")
+                self.logger_color
+                + f"Please enter your choice ([1-{len(self.options_dict)}]): "
+            )
             print("\n")
             if human_input in self.options_dict:
                 break
-            print_text_animated(self.logger_color +
-                                "\n> Invalid choice. Please try again.\n")
+            print_text_animated(
+                self.logger_color + "\n> Invalid choice. Please try again.\n"
+            )
 
         return human_input
 
@@ -105,8 +109,7 @@ class Human:
 
         return content
 
-    def reduce_step(self,
-                    messages: Sequence[BaseMessage]) -> ChatAgentResponse:
+    def reduce_step(self, messages: Sequence[BaseMessage]) -> ChatAgentResponse:
         r"""Performs one step of the conversation by displaying options to the
         user, getting their input, and parsing their choice.
 

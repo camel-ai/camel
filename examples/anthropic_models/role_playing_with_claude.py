@@ -41,15 +41,16 @@ def main(model_type=None) -> None:
     )
 
     print(
-        Fore.GREEN +
-        f"AI Assistant sys message:\n{role_play_session.assistant_sys_msg}\n")
-    print(Fore.BLUE +
-          f"AI User sys message:\n{role_play_session.user_sys_msg}\n")
+        Fore.GREEN
+        + f"AI Assistant sys message:\n{role_play_session.assistant_sys_msg}\n"
+    )
+    print(Fore.BLUE + f"AI User sys message:\n{role_play_session.user_sys_msg}\n")
 
     print(Fore.YELLOW + f"Original task prompt:\n{task_prompt}\n")
     print(
-        Fore.CYAN +
-        f"Specified task prompt:\n{role_play_session.specified_task_prompt}\n")
+        Fore.CYAN
+        + f"Specified task prompt:\n{role_play_session.specified_task_prompt}\n"
+    )
     print(Fore.RED + f"Final task prompt:\n{role_play_session.task_prompt}\n")
 
     chat_turn_limit, n = 50, 0
@@ -59,20 +60,28 @@ def main(model_type=None) -> None:
         assistant_response, user_response = role_play_session.step(input_msg)
 
         if assistant_response.terminated:
-            print(Fore.GREEN +
-                  ("AI Assistant terminated. Reason: "
-                   f"{assistant_response.info['termination_reasons']}."))
+            print(
+                Fore.GREEN
+                + (
+                    "AI Assistant terminated. Reason: "
+                    f"{assistant_response.info['termination_reasons']}."
+                )
+            )
             break
         if user_response.terminated:
-            print(Fore.GREEN +
-                  ("AI User terminated. "
-                   f"Reason: {user_response.info['termination_reasons']}."))
+            print(
+                Fore.GREEN
+                + (
+                    "AI User terminated. "
+                    f"Reason: {user_response.info['termination_reasons']}."
+                )
+            )
             break
 
-        print_text_animated(Fore.BLUE +
-                            f"AI User:\n\n{user_response.msg.content}\n")
-        print_text_animated(Fore.GREEN + "AI Assistant:\n\n"
-                            f"{assistant_response.msg.content}\n")
+        print_text_animated(Fore.BLUE + f"AI User:\n\n{user_response.msg.content}\n")
+        print_text_animated(
+            Fore.GREEN + "AI Assistant:\n\n" f"{assistant_response.msg.content}\n"
+        )
 
         if "CAMEL_TASK_DONE" in user_response.msg.content:
             break
@@ -81,5 +90,4 @@ def main(model_type=None) -> None:
 
 
 if __name__ == "__main__":
-
     main(model_type=ModelType.CLAUDE_2_0)

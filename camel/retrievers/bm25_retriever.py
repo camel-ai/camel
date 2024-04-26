@@ -41,22 +41,23 @@ class BM25Retriever(BaseRetriever):
     """
 
     def __init__(self) -> None:
-        r"""Initializes the BM25Retriever.
-        """
+        r"""Initializes the BM25Retriever."""
 
         try:
             from rank_bm25 import BM25Okapi
         except ImportError as e:
             raise ImportError(
                 "Package `rank_bm25` not installed, install by running"
-                " 'pip install rank_bm25'") from e
+                " 'pip install rank_bm25'"
+            ) from e
 
         self.bm25: BM25Okapi = None
         self.content_input_path: str = ""
         self.chunks: List[Any] = []
 
-    def process(self, content_input_path: str,
-                chunk_type: str = "chunk_by_title", **kwargs: Any) -> None:
+    def process(
+        self, content_input_path: str, chunk_type: str = "chunk_by_title", **kwargs: Any
+    ) -> None:
         r"""Processes content from a file or URL, divides it into chunks by
         using `Unstructured IO`,then stored internally. This method must be
         called before executing queries with the retriever.
@@ -73,16 +74,16 @@ class BM25Retriever(BaseRetriever):
         # Load and preprocess documents
         self.content_input_path = content_input_path
         unstructured_modules = UnstructuredIO()
-        elements = unstructured_modules.parse_file_or_url(
-            content_input_path, **kwargs)
+        elements = unstructured_modules.parse_file_or_url(content_input_path, **kwargs)
         self.chunks = unstructured_modules.chunk_elements(
-            chunk_type=chunk_type, elements=elements)
+            chunk_type=chunk_type, elements=elements
+        )
 
         # Convert chunks to a list of strings for tokenization
         tokenized_corpus = [str(chunk).split(" ") for chunk in self.chunks]
         self.bm25 = BM25Okapi(tokenized_corpus)
 
-    def query(  # type: ignore
+    def query(  # type: ignore[override]
         self,
         query: str,
         top_k: int = DEFAULT_TOP_K_RESULTS,
@@ -114,8 +115,8 @@ class BM25Retriever(BaseRetriever):
 
         if self.bm25 is None:
             raise ValueError(
-                "BM25 model is not initialized. Call `process_and_store`"
-                " first.")
+                "BM25 model is not initialized. Call `process_and_store`" " first."
+            )
 
         # Preprocess query similarly to how documents were processed
         processed_query = query.split(" ")
@@ -130,12 +131,11 @@ class BM25Retriever(BaseRetriever):
                 'similarity score': scores[i],
                 'content path': self.content_input_path,
                 'metadata': self.chunks[i].metadata.to_dict(),
-                'text': str(self.chunks[i])
+                'text': str(self.chunks[i]),
             }
             formatted_results.append(result_dict)
 
         # Sort the list of dictionaries by 'similarity score' from high to low
-        formatted_results.sort(key=lambda x: x['similarity score'],
-                               reverse=True)
+        formatted_results.sort(key=lambda x: x['similarity score'], reverse=True)
 
         return formatted_results

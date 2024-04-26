@@ -14,7 +14,7 @@
 import os
 from typing import List, Literal
 
-from camel.functions import OpenAIFunction
+from camel.functions.openai_function import OpenAIFunction
 
 
 def get_openweathermap_api_key() -> str:
@@ -29,17 +29,18 @@ def get_openweathermap_api_key() -> str:
     # Get `OPENWEATHERMAP_API_KEY` here: https://openweathermap.org
     OPENWEATHERMAP_API_KEY = os.environ.get('OPENWEATHERMAP_API_KEY')
     if not OPENWEATHERMAP_API_KEY:
-        raise ValueError("`OPENWEATHERMAP_API_KEY` not found in environment "
-                         "variables. Get `OPENWEATHERMAP_API_KEY` here: "
-                         "`https://openweathermap.org`.")
+        raise ValueError(
+            "`OPENWEATHERMAP_API_KEY` not found in environment "
+            "variables. Get `OPENWEATHERMAP_API_KEY` here: "
+            "`https://openweathermap.org`."
+        )
     return OPENWEATHERMAP_API_KEY
 
 
 def get_weather_data(
     city: str,
     temp_units: Literal['kelvin', 'celsius', 'fahrenheit'] = 'kelvin',
-    wind_units: Literal['meters_sec', 'miles_hour', 'knots',
-                        'beaufort'] = 'meters_sec',
+    wind_units: Literal['meters_sec', 'miles_hour', 'knots', 'beaufort'] = 'meters_sec',
     visibility_units: Literal['meters', 'miles'] = 'meters',
     time_units: Literal['unix', 'iso', 'date'] = 'unix',
 ) -> str:
@@ -88,7 +89,8 @@ def get_weather_data(
     except ImportError:
         raise ImportError(
             "Please install `pyowm` first. You can install it by running "
-            "`pip install pyowm`.")
+            "`pip install pyowm`."
+        )
 
     OPENWEATHERMAP_API_KEY = get_openweathermap_api_key()
     owm = pyowm.OWM(OPENWEATHERMAP_API_KEY)
@@ -109,8 +111,11 @@ def get_weather_data(
 
         # Visibility
         visibility_distance = observation.weather.visibility_distance
-        visibility = (str(visibility_distance) if visibility_units == 'meters'
-                      else str(observation.weather.visibility(unit='miles')))
+        visibility = (
+            str(visibility_distance)
+            if visibility_units == 'meters'
+            else str(observation.weather.visibility(unit='miles'))
+        )
 
         # Sunrise and Sunset
         sunrise_time = str(weather.sunrise_time(timeformat=time_units))
@@ -124,14 +129,15 @@ def get_weather_data(
             f"Min temp: {temperature['temp_min']}°{temp_units.title()}. "
             f"Wind: {wind_speed} {wind_units} at {wind_deg} degrees. "
             f"Visibility: {visibility} {visibility_units}. "
-            f"Sunrise at {sunrise_time}, Sunset at {sunset_time}.")
+            f"Sunrise at {sunrise_time}, Sunset at {sunset_time}."
+        )
 
         return weather_report
 
     except Exception as e:
         error_message = (
-            f"An error occurred while fetching weather data for {city}: "
-            f"{str(e)}.")
+            f"An error occurred while fetching weather data for {city}: " f"{e!s}."
+        )
         return error_message
 
 

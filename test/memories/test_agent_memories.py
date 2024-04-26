@@ -27,7 +27,6 @@ from camel.types import OpenAIBackendRole, RoleType
 
 
 class TestLongtermAgentMemory:
-
     @pytest.fixture
     def mock_chat_history_block(self):
         return MagicMock(spec=ChatHistoryBlock)
@@ -45,22 +44,27 @@ class TestLongtermAgentMemory:
         assert memory.chat_history_block is not None
         assert memory.vector_db_block is not None
 
-    def test_init_with_custom_components(self, mock_chat_history_block,
-                                         mock_vector_db_block,
-                                         mock_context_creator):
+    def test_init_with_custom_components(
+        self, mock_chat_history_block, mock_vector_db_block, mock_context_creator
+    ):
         memory = LongtermAgentMemory(
-            mock_context_creator, chat_history_block=mock_chat_history_block,
-            vector_db_block=mock_vector_db_block)
+            mock_context_creator,
+            chat_history_block=mock_chat_history_block,
+            vector_db_block=mock_vector_db_block,
+        )
         assert memory.chat_history_block == mock_chat_history_block
         assert memory.vector_db_block == mock_vector_db_block
 
-    def test_retrieve(self, mock_chat_history_block, mock_vector_db_block,
-                      mock_context_creator):
+    def test_retrieve(
+        self, mock_chat_history_block, mock_vector_db_block, mock_context_creator
+    ):
         mock_chat_history_block.retrieve.return_value = ["chat_history_record"]
         mock_vector_db_block.retrieve.return_value = ["vector_db_record"]
         memory = LongtermAgentMemory(
-            mock_context_creator, chat_history_block=mock_chat_history_block,
-            vector_db_block=mock_vector_db_block)
+            mock_context_creator,
+            chat_history_block=mock_chat_history_block,
+            vector_db_block=mock_vector_db_block,
+        )
 
         records = memory.retrieve()
         assert records == ["chat_history_record", "vector_db_record"]
@@ -85,7 +89,8 @@ class TestLongtermAgentMemory:
                     "test message {}".format(i),
                 ),
                 OpenAIBackendRole.USER,
-            ) for i in range(5)
+            )
+            for i in range(5)
         ]
 
         memory.write_records(records)

@@ -24,7 +24,6 @@ def test_ai_society_prompt_template_dict():
     assert isinstance(template_dict.USER_PROMPT, TextPrompt)
 
     # Test if the prompts are correctly added to the dictionary
-    assert template_dict[
-        "role_description"] == template_dict.ROLE_DESCRIPTION_PROMPT
+    assert template_dict["role_description"] == template_dict.ROLE_DESCRIPTION_PROMPT
     assert template_dict[RoleType.ASSISTANT] == template_dict.ASSISTANT_PROMPT
     assert template_dict[RoleType.USER] == template_dict.USER_PROMPT

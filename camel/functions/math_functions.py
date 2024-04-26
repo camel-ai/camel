@@ -14,7 +14,7 @@
 
 from typing import List
 
-from .openai_function import OpenAIFunction
+from camel.functions.openai_function import OpenAIFunction
 
 
 def add(a: int, b: int) -> int:
@@ -56,6 +56,4 @@ def mul(a: int, b: int) -> int:
     return a * b
 
 
-MATH_FUNCS: List[OpenAIFunction] = [
-    OpenAIFunction(func) for func in [add, sub, mul]
-]
+MATH_FUNCS: List[OpenAIFunction] = [OpenAIFunction(func) for func in [add, sub, mul]]

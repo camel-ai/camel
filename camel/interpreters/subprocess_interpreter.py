@@ -16,15 +16,16 @@ import shlex
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, ClassVar, Dict, List
 
 from colorama import Fore
 
-from camel.interpreters import BaseInterpreter, InterpreterError
+from camel.interpreters.base import BaseInterpreter
+from camel.interpreters.interpreter_error import InterpreterError
 
 
 class SubprocessInterpreter(BaseInterpreter):
-    r""" SubprocessInterpreter is a class for executing code files or code
+    r"""SubprocessInterpreter is a class for executing code files or code
     strings in a subprocess.
 
     This class handles the execution of code in different scripting languages
@@ -41,17 +42,17 @@ class SubprocessInterpreter(BaseInterpreter):
             executed code. (default: :obj:`True`)
     """
 
-    _CODE_EXECUTE_CMD_MAPPING = {
+    _CODE_EXECUTE_CMD_MAPPING: ClassVar[Dict[str, str]] = {
         "python": "python {file_name}",
         "bash": "bash {file_name}",
     }
 
-    _CODE_EXTENSION_MAPPING = {
+    _CODE_EXTENSION_MAPPING: ClassVar[Dict[str, str]] = {
         "python": "py",
         "bash": "sh",
     }
 
-    _CODE_TYPE_MAPPING = {
+    _CODE_TYPE_MAPPING: ClassVar[Dict[str, str]] = {
         "python": "python",
         "py3": "python",
         "python3": "python",
@@ -94,10 +95,12 @@ class SubprocessInterpreter(BaseInterpreter):
         if not file.is_file():
             raise RuntimeError(f"{file} is not a file.")
         code_type = self._check_code_type(code_type)
-        cmd = shlex.split(self._CODE_EXECUTE_CMD_MAPPING[code_type].format(
-            file_name=str(file)))
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE, text=True)
+        cmd = shlex.split(
+            self._CODE_EXECUTE_CMD_MAPPING[code_type].format(file_name=str(file))
+        )
+        proc = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
         stdout, stderr = proc.communicate()
         if self.print_stdout and stdout:
             print("======stdout======")
@@ -116,7 +119,7 @@ class SubprocessInterpreter(BaseInterpreter):
         code: str,
         code_type: str,
     ) -> str:
-        r""" Generates a temporary file with the given code, executes it, and
+        r"""Generates a temporary file with the given code, executes it, and
             deletes the file afterward.
 
         Args:
@@ -146,9 +149,11 @@ class SubprocessInterpreter(BaseInterpreter):
                     raise InterpreterError(
                         "Execution halted: User opted not to run the code. "
                         "This choice stops the current operation and any "
-                        "further code execution.")
+                        "further code execution."
+                    )
         temp_file_path = self._create_temp_file(
-            code=code, extension=self._CODE_EXTENSION_MAPPING[code_type])
+            code=code, extension=self._CODE_EXTENSION_MAPPING[code_type]
+        )
 
         result = self.run_file(temp_file_path, code_type)
 
@@ -156,8 +161,9 @@ class SubprocessInterpreter(BaseInterpreter):
         return result
 
     def _create_temp_file(self, code: str, extension: str) -> Path:
-        with tempfile.NamedTemporaryFile(mode="w", delete=False,
-                                         suffix=f".{extension}") as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", delete=False, suffix=f".{extension}"
+        ) as f:
             f.write(code)
             name = f.name
         return Path(name)
@@ -167,7 +173,8 @@ class SubprocessInterpreter(BaseInterpreter):
             raise InterpreterError(
                 f"Unsupported code type {code_type}. Currently "
                 f"`{self.__class__.__name__}` only supports "
-                f"{', '.join(self._CODE_EXTENSION_MAPPING.keys())}.")
+                f"{', '.join(self._CODE_EXTENSION_MAPPING.keys())}."
+            )
         return self._CODE_TYPE_MAPPING[code_type]
 
     def supported_code_types(self) -> List[str]:
@@ -176,5 +183,4 @@ class SubprocessInterpreter(BaseInterpreter):
 
     def update_action_space(self, action_space: Dict[str, Any]) -> None:
         r"""Updates action space for *python* interpreter"""
-        raise RuntimeError("SubprocessInterpreter doesn't support "
-                           "`action_space`.")
+        raise RuntimeError("SubprocessInterpreter doesn't support " "`action_space`.")

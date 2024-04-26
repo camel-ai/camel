@@ -29,7 +29,7 @@ def parse_file_example():
         file.write("Here is my second thought.\n")
 
     elements = unstructured_modules.parse_file_or_url("mydoc.txt")
-    content = ("\n\n".join([str(el) for el in elements]))
+    content = "\n\n".join([str(el) for el in elements])
     # Cleanup: remove the created file after the example
     if os.path.exists("mydoc.txt"):
         os.remove("mydoc.txt")
@@ -38,7 +38,7 @@ def parse_file_example():
 
 def parse_url_example(url):
     elements = unstructured_modules.parse_file_or_url(url)
-    content = ("\n\n".join([str(el) for el in elements]))
+    content = "\n\n".join([str(el) for el in elements])
     return content
 
 
@@ -49,38 +49,39 @@ def clean_text_example(text):
         ('clean_non_ascii_chars', {}),
         ('clean_extra_whitespace', {}),
     ]
-    return unstructured_modules.clean_text_data(text=text,
-                                                clean_options=options)
+    return unstructured_modules.clean_text_data(text=text, clean_options=options)
 
 
 def extract_data_example(text):
     return unstructured_modules.extract_data_from_text(
-        text=text, extract_type="extract_email_address")
+        text=text, extract_type="extract_email_address"
+    )
 
 
 def stage_data_example(url):
     elements = unstructured_modules.parse_file_or_url(url)
 
     staged_element = unstructured_modules.stage_elements(
-        elements=elements, stage_type="stage_for_baseplate")
+        elements=elements, stage_type="stage_for_baseplate"
+    )
     return staged_element
 
 
 def chunk_url_content_example(url):
     elements = unstructured_modules.parse_file_or_url(url)
-    chunks = unstructured_modules.chunk_elements(elements=elements,
-                                                 chunk_type="chunk_by_title")
+    chunks = unstructured_modules.chunk_elements(
+        elements=elements, chunk_type="chunk_by_title"
+    )
     return chunks
 
 
 def main():
-
     example_url = (
         "https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
-        "philadelphia-eagles-spt-intl/index.html")
-    example_dirty_text = (
-        "\x93Some dirty text â€™ with extra spaces and – dashes.")
-    example_email_text = ("Contact me at example@email.com.")
+        "philadelphia-eagles-spt-intl/index.html"
+    )
+    example_dirty_text = "\x93Some dirty text â€™ with extra spaces and – dashes."  # noqa: RUF001
+    example_email_text = "Contact me at example@email.com."
 
     print("Choose an example to run:")
     print("1. Parse File")

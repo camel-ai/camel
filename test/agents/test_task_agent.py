@@ -24,10 +24,13 @@ from camel.agents import (
 from camel.configs import ChatGPTConfig
 from camel.types import ModelType, TaskType
 
-parametrize = pytest.mark.parametrize('model', [
-    ModelType.STUB,
-    pytest.param(None, marks=pytest.mark.model_backend),
-])
+parametrize = pytest.mark.parametrize(
+    'model',
+    [
+        ModelType.STUB,
+        pytest.param(None, marks=pytest.mark.model_backend),
+    ],
+)
 
 
 @parametrize
@@ -35,11 +38,13 @@ def test_task_specify_ai_society_agent(model: Optional[ModelType]):
     original_task_prompt = "Improving stage presence and performance skills"
     print(f"Original task prompt:\n{original_task_prompt}\n")
     task_specify_agent = TaskSpecifyAgent(
-        model_config=ChatGPTConfig(temperature=1.0), model_type=model)
+        model_config=ChatGPTConfig(temperature=1.0), model_type=model
+    )
     specified_task_prompt = task_specify_agent.run(
-        original_task_prompt, meta_dict=dict(assistant_role="Musician",
-                                             user_role="Student"))
-    assert ("{" and "}" not in specified_task_prompt)
+        original_task_prompt,
+        meta_dict=dict(assistant_role="Musician", user_role="Student"),
+    )
+    assert "{" and "}" not in specified_task_prompt
     print(f"Specified task prompt:\n{specified_task_prompt}\n")
 
 
@@ -53,9 +58,9 @@ def test_task_specify_code_agent(model: Optional[ModelType]):
         model_type=model,
     )
     specified_task_prompt = task_specify_agent.run(
-        original_task_prompt, meta_dict=dict(domain="Chemistry",
-                                             language="Python"))
-    assert ("{" and "}" not in specified_task_prompt)
+        original_task_prompt, meta_dict=dict(domain="Chemistry", language="Python")
+    )
+    assert "{" and "}" not in specified_task_prompt
     print(f"Specified task prompt:\n{specified_task_prompt}\n")
 
 
@@ -69,11 +74,12 @@ def test_task_planner_agent(model: Optional[ModelType]):
         model_type=model,
     )
     specified_task_prompt = task_specify_agent.run(
-        original_task_prompt, meta_dict=dict(domain="Chemistry",
-                                             language="Python"))
+        original_task_prompt, meta_dict=dict(domain="Chemistry", language="Python")
+    )
     print(f"Specified task prompt:\n{specified_task_prompt}\n")
     task_planner_agent = TaskPlannerAgent(
-        model_config=ChatGPTConfig(temperature=1.0), model_type=model)
+        model_config=ChatGPTConfig(temperature=1.0), model_type=model
+    )
     planned_task_prompt = task_planner_agent.run(specified_task_prompt)
     print(f"Planned task prompt:\n{planned_task_prompt}\n")
 
@@ -82,18 +88,24 @@ def test_task_planner_agent(model: Optional[ModelType]):
 def test_task_creation_agent(model: Optional[ModelType]):
     original_task_prompt = "Modeling molecular dynamics"
     task_creation_agent = TaskCreationAgent(
-        role_name="PhD in molecular biology", objective=original_task_prompt,
-        model_type=model, model_config=ChatGPTConfig(temperature=1.0))
+        role_name="PhD in molecular biology",
+        objective=original_task_prompt,
+        model_type=model,
+        model_config=ChatGPTConfig(temperature=1.0),
+    )
     task_list = ["Study the computational technology for dynamics modeling"]
-    planned_task = task_creation_agent.run(task_list=task_list, )
+    planned_task = task_creation_agent.run(
+        task_list=task_list,
+    )
     print(f"Planned task list:\n{planned_task}\n")
     assert isinstance(planned_task, list)
 
 
 @parametrize
 def test_task_prioritization_agent(model: Optional[ModelType]):
-    original_task_prompt = ("A high school student wants to "
-                            "prove the Riemann hypothesis")
+    original_task_prompt = (
+        "A high school student wants to " "prove the Riemann hypothesis"
+    )
 
     task_list = [
         "Drop out of high school",

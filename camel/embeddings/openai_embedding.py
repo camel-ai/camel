@@ -15,7 +15,7 @@ from typing import Any, List
 
 from openai import OpenAI
 
-from camel.embeddings import BaseEmbedding
+from camel.embeddings.base import BaseEmbedding
 from camel.types import EmbeddingModelType
 from camel.utils import api_key_required
 

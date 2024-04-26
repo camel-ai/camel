@@ -37,8 +37,9 @@ def temp_storage_path():
 
 @pytest.fixture
 def auto_retriever(temp_storage_path):
-    return AutoRetriever(vector_storage_local_path=temp_storage_path,
-                         storage_type=StorageType.QDRANT)
+    return AutoRetriever(
+        vector_storage_local_path=temp_storage_path, storage_type=StorageType.QDRANT
+    )
 
 
 def test__initialize_vector_storage(auto_retriever):
@@ -50,15 +51,12 @@ def test__initialize_vector_storage(auto_retriever):
 def test_get_file_modified_date_from_file(auto_retriever):
     with patch('os.path.getmtime') as mocked_getmtime:
         mocked_getmtime.return_value = 1234567890
-        mod_date = auto_retriever._get_file_modified_date_from_file(
-            "/path/to/file")
-        expected_date = datetime.fromtimestamp(1234567890).strftime(
-            '%Y-%m-%dT%H:%M:%S')
+        mod_date = auto_retriever._get_file_modified_date_from_file("/path/to/file")
+        expected_date = datetime.fromtimestamp(1234567890).strftime('%Y-%m-%dT%H:%M:%S')
         assert mod_date == expected_date
 
     with pytest.raises(FileNotFoundError):
-        auto_retriever._get_file_modified_date_from_file(
-            "/path/to/nonexistent/file")
+        auto_retriever._get_file_modified_date_from_file("/path/to/nonexistent/file")
 
 
 def test_run_vector_retriever(auto_retriever):
@@ -71,20 +69,23 @@ def test_run_vector_retriever(auto_retriever):
 
     # Test with query related to the content in mock data
     result_related = auto_retriever.run_vector_retriever(
-        query_related, content_input_paths, top_k, similarity_threshold,
-        return_detailed_info=True)
+        query_related,
+        content_input_paths,
+        top_k,
+        similarity_threshold,
+        return_detailed_info=True,
+    )
 
-    assert "similarity score" in result_related, \
-        "result_related missing 'similarity score'"
-    assert "content path" in result_related, \
-        "result_related missing 'content path'"
-    assert "metadata" in result_related, \
-        "result_related missing 'metadata'"
-    assert "text" in result_related, \
-        "result_related missing 'text'"
+    assert (
+        "similarity score" in result_related
+    ), "result_related missing 'similarity score'"
+    assert "content path" in result_related, "result_related missing 'content path'"
+    assert "metadata" in result_related, "result_related missing 'metadata'"
+    assert "text" in result_related, "result_related missing 'text'"
 
     # Test with query unrelated to the content in mock data
     result_unrelated = auto_retriever.run_vector_retriever(
-        query_unrealted, content_input_paths, top_k, similarity_threshold)
+        query_unrealted, content_input_paths, top_k, similarity_threshold
+    )
 
     assert "No suitable information retrieved from" in result_unrelated

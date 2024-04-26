@@ -15,7 +15,8 @@ from typing import Any, List, Optional
 
 from colorama import Fore
 
-from camel.agents import BaseToolAgent, ChatAgent
+from camel.agents.chat_agent import ChatAgent
+from camel.agents.tool_agents.base import BaseToolAgent
 from camel.interpreters import (
     BaseInterpreter,
     InternalPythonInterpreter,
@@ -85,12 +86,12 @@ class EmbodiedAgent(ChatAgent):
     def _set_tool_agents(self, system_message: BaseMessage) -> BaseMessage:
         action_space_prompt = self._get_tool_agents_prompt()
         result_message = system_message.create_new_instance(
-            content=system_message.content.format(
-                action_space=action_space_prompt))
+            content=system_message.content.format(action_space=action_space_prompt)
+        )
         if self.tool_agents is not None:
             self.code_interpreter.update_action_space(
-                {tool.name: tool
-                 for tool in self.tool_agents})
+                {tool.name: tool for tool in self.tool_agents}
+            )
         return result_message
 
     def _get_tool_agents_prompt(self) -> str:
@@ -100,10 +101,12 @@ class EmbodiedAgent(ChatAgent):
             str: The action space prompt.
         """
         if self.tool_agents is not None:
-            return "\n".join([
-                f"*** {tool.name} ***:\n {tool.description}"
-                for tool in self.tool_agents
-            ])
+            return "\n".join(
+                [
+                    f"*** {tool.name} ***:\n {tool.description}"
+                    for tool in self.tool_agents
+                ]
+            )
         else:
             return ""
 
@@ -144,13 +147,15 @@ class EmbodiedAgent(ChatAgent):
 
         if self.verbose:
             for explanation, code in zip(explanations, codes):
-                print_text_animated(self.logger_color +
-                                    f"> Explanation:\n{explanation}")
+                print_text_animated(
+                    self.logger_color + f"> Explanation:\n{explanation}"
+                )
                 print_text_animated(self.logger_color + f"> Code:\n{code}")
 
             if len(explanations) > len(codes):
-                print_text_animated(self.logger_color +
-                                    f"> Explanation:\n{explanations[-1]}")
+                print_text_animated(
+                    self.logger_color + f"> Explanation:\n{explanations[-1]}"
+                )
 
         content = response.msg.content
 
@@ -158,16 +163,21 @@ class EmbodiedAgent(ChatAgent):
             try:
                 content = "\n> Executed Results:\n"
                 for block_idx, code in enumerate(codes):
-                    executed_output = self.code_interpreter.run(
-                        code, code.code_type)
-                    content += (f"Executing code block {block_idx}: {{\n" +
-                                executed_output + "}\n")
+                    executed_output = self.code_interpreter.run(code, code.code_type)
+                    content += (
+                        f"Executing code block {block_idx}: {{\n"
+                        + executed_output
+                        + "}\n"
+                    )
             except InterruptedError as e:
-                content = (f"\n> Running code fail: {e}\n"
-                           "Please regenerate the code.")
+                content = f"\n> Running code fail: {e}\n" "Please regenerate the code."
 
         # TODO: Handle errors
         content = input_message.content + f"\n> Embodied Actions:\n{content}"
-        message = BaseMessage(input_message.role_name, input_message.role_type,
-                              input_message.meta_dict, content)
+        message = BaseMessage(
+            input_message.role_name,
+            input_message.role_type,
+            input_message.meta_dict,
+            content,
+        )
         return ChatAgentResponse([message], response.terminated, response.info)

@@ -15,9 +15,10 @@ import ast
 import difflib
 import importlib
 import typing
-from typing import Any, Dict, List, Optional
+from typing import Any, ClassVar, Dict, List, Optional
 
-from camel.interpreters import BaseInterpreter, InterpreterError
+from camel.interpreters.base import BaseInterpreter
+from camel.interpreters.interpreter_error import InterpreterError
 
 
 class InternalPythonInterpreter(BaseInterpreter):
@@ -77,7 +78,7 @@ class InternalPythonInterpreter(BaseInterpreter):
             (default: :obj:`False`)
     """
 
-    _CODE_TYPES = ["python", "py", "python3", "python2"]
+    _CODE_TYPES: ClassVar[List[str]] = ["python", "py", "python3", "python2"]
 
     def __init__(
         self,
@@ -117,12 +118,13 @@ class InternalPythonInterpreter(BaseInterpreter):
         Raises:
             InterpreterError: If the `code_type` is not supported or if any
                 runtime error occurs during the execution of the code.
-    """
+        """
         if code_type not in self._CODE_TYPES:
             raise InterpreterError(
                 f"Unsupported code type {code_type}. "
                 f"`{self.__class__.__name__}` only supports "
-                f"{', '.join(self._CODE_TYPES)}.")
+                f"{', '.join(self._CODE_TYPES)}."
+            )
         if not self.unsafe_mode:
             return str(self.execute(code))
         else:
@@ -136,9 +138,13 @@ class InternalPythonInterpreter(BaseInterpreter):
         r"""Provides supported code types by the interpreter."""
         return self._CODE_TYPES
 
-    def execute(self, code: str, state: Optional[Dict[str, Any]] = None,
-                fuzz_state: Optional[Dict[str, Any]] = None,
-                keep_state: bool = True) -> Any:
+    def execute(
+        self,
+        code: str,
+        state: Optional[Dict[str, Any]] = None,
+        fuzz_state: Optional[Dict[str, Any]] = None,
+        keep_state: bool = True,
+    ) -> Any:
         r"""Execute the input python codes in a security environment.
 
         Args:
@@ -174,6 +180,7 @@ class InternalPythonInterpreter(BaseInterpreter):
                 raise InterpreterError(f"Syntax error in code: {e}")
             else:
                 import traceback
+
                 return traceback.format_exc()
 
         result = None
@@ -183,14 +190,14 @@ class InternalPythonInterpreter(BaseInterpreter):
             except InterpreterError as e:
                 if not keep_state:
                     self.clear_state()
-                msg = (f"Evaluation of the code stopped at node {idx}. "
-                       f"See:\n{e}")
+                msg = f"Evaluation of the code stopped at node {idx}. " f"See:\n{e}"
                 # More information can be provided by `ast.unparse()`,
                 # which is new in python 3.9.
                 if self.raise_error:
                     raise InterpreterError(msg)
                 else:
                     import traceback
+
                     return traceback.format_exc()
             if line_result is not None:
                 result = line_result
@@ -261,8 +268,7 @@ class InternalPythonInterpreter(BaseInterpreter):
             # cannot pass type check
             return self._execute_ast(expression.value)
         elif isinstance(expression, ast.JoinedStr):
-            return "".join(
-                [str(self._execute_ast(v)) for v in expression.values])
+            return "".join([str(self._execute_ast(v)) for v in expression.values])
         elif isinstance(expression, ast.List):
             # List -> evaluate all elements
             return [self._execute_ast(elt) for elt in expression.elts]
@@ -280,8 +286,7 @@ class InternalPythonInterpreter(BaseInterpreter):
         else:
             # For now we refuse anything else. Let's add things as we need
             # them.
-            raise InterpreterError(
-                f"{expression.__class__.__name__} is not supported.")
+            raise InterpreterError(f"{expression.__class__.__name__} is not supported.")
 
     def _execute_assign(self, assign: ast.Assign) -> Any:
         targets = assign.targets
@@ -296,18 +301,22 @@ class InternalPythonInterpreter(BaseInterpreter):
             self.state[target.id] = value
         elif isinstance(target, ast.Tuple):
             if not isinstance(value, tuple):
-                raise InterpreterError(f"Expected type tuple, but got"
-                                       f"{value.__class__.__name__} instead.")
+                raise InterpreterError(
+                    f"Expected type tuple, but got"
+                    f"{value.__class__.__name__} instead."
+                )
             if len(target.elts) != len(value):
                 raise InterpreterError(
-                    f"Expected {len(target.elts)} values but got"
-                    f" {len(value)}.")
+                    f"Expected {len(target.elts)} values but got" f" {len(value)}."
+                )
             for t, v in zip(target.elts, value):
                 self.state[self._execute_ast(t)] = v
         else:
-            raise InterpreterError(f"Unsupported variable type. Expected "
-                                   f"ast.Name or ast.Tuple, got "
-                                   f"{target.__class__.__name__} instead.")
+            raise InterpreterError(
+                f"Unsupported variable type. Expected "
+                f"ast.Name or ast.Tuple, got "
+                f"{target.__class__.__name__} instead."
+            )
 
     def _execute_call(self, call: ast.Call) -> Any:
         callable_func = self._execute_ast(call.func)
@@ -315,8 +324,7 @@ class InternalPythonInterpreter(BaseInterpreter):
         # Todo deal with args
         args = [self._execute_ast(arg) for arg in call.args]
         kwargs = {
-            keyword.arg: self._execute_ast(keyword.value)
-            for keyword in call.keywords
+            keyword.arg: self._execute_ast(keyword.value) for keyword in call.keywords
         }
         return callable_func(*args, **kwargs)
 
@@ -325,8 +333,8 @@ class InternalPythonInterpreter(BaseInterpreter):
         value = self._execute_ast(subscript.value)
         if not isinstance(subscript.ctx, ast.Load):
             raise InterpreterError(
-                f"{subscript.ctx.__class__.__name__} is not supported for "
-                "subscript.")
+                f"{subscript.ctx.__class__.__name__} is not supported for " "subscript."
+            )
         if isinstance(value, (list, tuple)):
             return value[int(index)]
         if index in value:
@@ -351,8 +359,7 @@ class InternalPythonInterpreter(BaseInterpreter):
 
     def _execute_condition(self, condition: ast.Compare):
         if len(condition.ops) > 1:
-            raise InterpreterError(
-                "Cannot evaluate conditions with multiple operators")
+            raise InterpreterError("Cannot evaluate conditions with multiple operators")
 
         left = self._execute_ast(condition.left)
         comparator = condition.ops[0]
@@ -386,7 +393,8 @@ class InternalPythonInterpreter(BaseInterpreter):
         if not isinstance(if_statement.test, ast.Compare):
             raise InterpreterError(
                 "Only Campare expr supported in if statement, get"
-                f" {if_statement.test.__class__.__name__}")
+                f" {if_statement.test.__class__.__name__}"
+            )
         if self._execute_condition(if_statement.test):
             for line in if_statement.body:
                 line_result = self._execute_ast(line)
@@ -436,9 +444,11 @@ class InternalPythonInterpreter(BaseInterpreter):
                 return
 
         if not found_name:
-            raise InterpreterError(f"It is not permitted to import modules "
-                                   f"than module white list (try to import "
-                                   f"{full_name}).")
+            raise InterpreterError(
+                f"It is not permitted to import modules "
+                f"than module white list (try to import "
+                f"{full_name})."
+            )
 
     def _execute_binop(self, binop: ast.BinOp):
         left = self._execute_ast(binop.left)
@@ -485,8 +495,9 @@ class InternalPythonInterpreter(BaseInterpreter):
         if key in self.state:
             return self.state[key]
         else:
-            close_matches = (difflib.get_close_matches(
-                key, list(self.fuzz_state.keys()), n=1))
+            close_matches = difflib.get_close_matches(
+                key, list(self.fuzz_state.keys()), n=1
+            )
             if close_matches:
                 return self.fuzz_state[close_matches[0]]
             else:
