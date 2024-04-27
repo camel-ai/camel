@@ -368,39 +368,32 @@ def get_user_me_profile() -> str:
         'description', 'location', 'most_recent_tweet_id', 'profile_image_url'
     ]
     for key in user_info_keys:
-        if key in user_info:
-            user_report += (
-                f"{key.replace('_', ' ').capitalize()}: {user_info[key]}. ")
+        value = user_info.get(key)
+        if user_info.get(key):
+            user_report += f"{key.replace('_', ' ').capitalize()}: {value}. "
 
     if 'created_at' in user_info:
         created_at = datetime.datetime.strptime(user_info['created_at'],
                                                 "%Y-%m-%dT%H:%M:%S.%fZ")
         date_str = created_at.strftime('%B %d, %Y at %H:%M:%S')
-        user_report += (f"Account created at: "
-                        f"{date_str}. ")
+        user_report += f"Account created at: {date_str}. "
 
-    if 'protected' in user_info:
-        protection_status = "private" if user_info['protected'] else "public"
-        user_report += (
-            f"Protected: This user's Tweets are {protection_status}. ")
+    protection_status = "private" if user_info['protected'] else "public"
+    user_report += (f"Protected: This user's Tweets are {protection_status}. ")
 
-    if 'verified_type' in user_info:
-        user_report += "Verified type: "
-        verification_type = user_info['verified_type']
-        if verification_type == 'blue':
-            user_report += (
-                "The user has a blue verification, typically reserved "
-                "for public figures, celebrities, or global brands. ")
-        elif verification_type == 'business':
-            user_report += (
-                "The user has a business verification, typically reserved "
-                "for businesses and corporations. ")
-        elif verification_type == 'government':
-            user_report += (
-                "The user has a government verification, typically reserved "
-                "for government officials or entities. ")
-        elif verification_type == 'none':
-            user_report += "The user is not verified. "
+    verification_messages = {
+        'blue': ("The user has a blue verification, typically reserved for "
+                 "public figures, celebrities, or global brands. "),
+        'business': ("The user has a business verification, typically "
+                     "reserved for businesses and corporations. "),
+        'government': ("The user has a government verification, typically "
+                       "reserved for government officials or entities. "),
+        'none':
+        "The user is not verified. "
+    }
+    verification_type = user_info.get('verified_type', 'none')
+    user_report += (
+        f"Verified type: {verification_messages.get(verification_type)}")
 
     if 'public_metrics' in user_info:
         user_report += "Public metrics: "
