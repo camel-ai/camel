@@ -40,6 +40,8 @@ class VectorRetriever(BaseRetriever):
         storage (BaseVectorStorage): Vector storage to query.
         similarity_threshold (float, optional): The similarity threshold
             for filtering results. Defaults to `DEFAULT_SIMILARITY_THRESHOLD`.
+        unstructured_modules (UnstructuredIO): A module for parsing files and
+            URLs and chunking content based on specified parameters.
     """
 
     def __init__(
@@ -61,6 +63,7 @@ class VectorRetriever(BaseRetriever):
         self.storage = storage if storage is not None else QdrantStorage(
             vector_dim=self.embedding_model.get_output_dim())
         self.similarity_threshold = similarity_threshold
+        self.unstructured_modules: UnstructuredIO = UnstructuredIO()
 
     def process(self, content_input_path: str,
                 chunk_type: str = "chunk_by_title", **kwargs: Any) -> None:
@@ -75,11 +78,10 @@ class VectorRetriever(BaseRetriever):
                 "chunk_by_title".
             **kwargs (Any): Additional keyword arguments for content parsing.
         """
-        unstructured_modules = UnstructuredIO()
-        elements = unstructured_modules.parse_file_or_url(
+        elements = self.unstructured_modules.parse_file_or_url(
             content_input_path, **kwargs)
-        chunks = unstructured_modules.chunk_elements(chunk_type=chunk_type,
-                                                     elements=elements)
+        chunks = self.unstructured_modules.chunk_elements(
+            chunk_type=chunk_type, elements=elements)
         # Iterate to process and store embeddings, set batch of 50
         for i in range(0, len(chunks), 50):
             batch_chunks = chunks[i:i + 50]

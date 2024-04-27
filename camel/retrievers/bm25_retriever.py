@@ -35,6 +35,8 @@ class BM25Retriever(BaseRetriever):
             processed and stored.
         chunks (List[Any]): A list of document chunks processed from the
             input content.
+        unstructured_modules (UnstructuredIO): A module for parsing files and
+            URLs and chunking content based on specified parameters.
 
     References:
         https://github.com/dorianbrown/rank_bm25
@@ -53,6 +55,7 @@ class BM25Retriever(BaseRetriever):
         self.bm25: BM25Okapi = None
         self.content_input_path: str = ""
         self.chunks: List[Any] = []
+        self.unstructured_modules: UnstructuredIO = UnstructuredIO()
 
     def process(self, content_input_path: str,
                 chunk_type: str = "chunk_by_title", **kwargs: Any) -> None:
@@ -71,10 +74,9 @@ class BM25Retriever(BaseRetriever):
 
         # Load and preprocess documents
         self.content_input_path = content_input_path
-        unstructured_modules = UnstructuredIO()
-        elements = unstructured_modules.parse_file_or_url(
+        elements = self.unstructured_modules.parse_file_or_url(
             content_input_path, **kwargs)
-        self.chunks = unstructured_modules.chunk_elements(
+        self.chunks = self.unstructured_modules.chunk_elements(
             chunk_type=chunk_type, elements=elements)
 
         # Convert chunks to a list of strings for tokenization
