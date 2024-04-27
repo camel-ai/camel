@@ -24,12 +24,11 @@ class RoleType(Enum):
 
 
 class ModelType(Enum):
-    GPT_3_5_TURBO = "gpt-3.5-turbo-1106"
-    GPT_3_5_TURBO_16K = "gpt-3.5-turbo-1106"
+    GPT_3_5_TURBO = "gpt-3.5-turbo"
     GPT_4 = "gpt-4"
     GPT_4_32K = "gpt-4-32k"
-    GPT_4_TURBO = "gpt-4-1106-preview"
-    GPT_4_TURBO_VISION = "gpt-4-vision-preview"
+    GPT_4_TURBO = "gpt-4-turbo"
+    GPT_4_TURBO_VISION = "gpt-4-turbo"
 
     GROQ_LLAMA_3_8_B = "llama3-8b-8192"
     GROQ_LLAMA_3_70_B = "llama3-70b-8192"
@@ -60,7 +59,6 @@ class ModelType(Enum):
         r"""Returns whether this type of models is an OpenAI-released model."""
         return self in {
             ModelType.GPT_3_5_TURBO,
-            ModelType.GPT_3_5_TURBO_16K,
             ModelType.GPT_4,
             ModelType.GPT_4_32K,
             ModelType.GPT_4_TURBO,
@@ -107,8 +105,6 @@ class ModelType(Enum):
             int: The maximum token limit for the given model.
         """
         if self is ModelType.GPT_3_5_TURBO:
-            return 16385
-        elif self is ModelType.GPT_3_5_TURBO_16K:
             return 16385
         elif self is ModelType.GPT_4:
             return 8192
