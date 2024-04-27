@@ -16,7 +16,7 @@ from unittest.mock import MagicMock, patch
 from camel.functions.twitter_function import (
     create_tweet,
     delete_tweet,
-    get_user_me,
+    get_user_me_profile,
 )
 
 
@@ -132,7 +132,7 @@ def test_get_user_me(monkeypatch):
         mock_get_oauth_session.return_value.get.return_value = mock_response
 
         # Call the get_user_me function
-        response = get_user_me()
+        response = get_user_me_profile()
 
         # Verify the returned user information report
         expected_report = (

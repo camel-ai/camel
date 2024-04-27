@@ -35,17 +35,14 @@ def get_twitter_api_key() -> Tuple[str, str]:
     TWITTER_CONSUMER_KEY = os.environ.get("TWITTER_CONSUMER_KEY")
     TWITTER_CONSUMER_SECRET = os.environ.get("TWITTER_CONSUMER_SECRET")
 
-    if not TWITTER_CONSUMER_KEY:
+    if not TWITTER_CONSUMER_KEY or not TWITTER_CONSUMER_SECRET:
+        missing_keys = ", ".join([
+            "TWITTER_CONSUMER_KEY" if not TWITTER_CONSUMER_KEY else "",
+            "TWITTER_CONSUMER_SECRET" if not TWITTER_CONSUMER_SECRET else ""
+        ]).strip(", ")
         raise ValueError(
-            "`TWITTER_CONSUMER_KEY` not found in environment "
-            "variables. Get `TWITTER_CONSUMER_KEY` here: "
-            "`https://developer.twitter.com/en/portal/products/free`.")
-
-    if not TWITTER_CONSUMER_SECRET:
-        raise ValueError(
-            "`TWITTER_CONSUMER_SECRET` not found in environment "
-            "variables. Get `TWITTER_CONSUMER_SECRET` here: "
-            "`https://developer.twitter.com/en/portal/products/free`.")
+            f"{missing_keys} not found in environment variables. Get them "
+            "here: `https://developer.twitter.com/en/portal/products/free`.")
     return TWITTER_CONSUMER_KEY, TWITTER_CONSUMER_SECRET
 
 
@@ -195,6 +192,22 @@ def create_tweet(*, text: str, poll_options: Optional[List[str]] = None,
         https://developer.twitter.com/en/docs/twitter-api/tweets/manage-tweets/api-reference/post-tweets
         https://github.com/xdevplatform/Twitter-API-v2-sample-code/blob/main/Manage-Tweets/create_tweet.py
     """
+    # validate text
+    if text is None:
+        return "Text cannot be None"
+    elif len(text) > 280:
+        return "Text must not exceed 280 characters."
+
+    # Validate poll options and duration
+    if (poll_options is None) != (poll_duration_minutes is None):
+        return ("Error: Both `poll_options` and `poll_duration_minutes` must "
+                "be provided together or not at all.")
+
+    # Validate exclusive parameters
+    if quote_tweet_id is not None and (poll_options or poll_duration_minutes):
+        return ("Error: Cannot provide both `quote_tweet_id` and "
+                "(`poll_options` or `poll_duration_minutes`).")
+
     # Print the parameters that are not None
     params = {
         "text": text,
@@ -215,12 +228,11 @@ def create_tweet(*, text: str, poll_options: Optional[List[str]] = None,
     oauth = get_oauth_session()
     json_data = {}
 
-    if poll_options is not None:
-        json_data["poll"] = {"options": poll_options}
-        if poll_duration_minutes is not None:
-            json_data["poll"]["duration_minutes"] = (
-                poll_duration_minutes  # type: ignore
-            )
+    if poll_options is not None and poll_duration_minutes is not None:
+        json_data["poll"] = {
+            "options": poll_options,
+            "duration_minutes": poll_duration_minutes  # type: ignore
+        }
 
     if quote_tweet_id is not None:
         json_data["quote_tweet_id"] = str(quote_tweet_id)  # type: ignore
@@ -301,7 +313,7 @@ def delete_tweet(tweet_id: str) -> str:
     return response_str
 
 
-def get_user_me() -> str:
+def get_user_me_profile() -> str:
     r"""Retrieves and formats the authenticated user's Twitter profile info.
 
     This function sends a GET request to the Twitter API to retrieve the
@@ -417,5 +429,5 @@ def get_user_me() -> str:
 
 TWITTER_FUNCS: List[OpenAIFunction] = [
     OpenAIFunction(func)  # type: ignore
-    for func in [create_tweet, delete_tweet, get_user_me]
+    for func in [create_tweet, delete_tweet, get_user_me_profile]
 ]
