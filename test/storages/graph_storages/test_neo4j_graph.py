@@ -31,8 +31,8 @@ test_data = [
         nodes=[Node(id="foo", type="foo"),
                Node(id="bar", type="bar")], relationships=[
                    Relationship(
-                       source=Node(id="foo", type="foo"),
-                       target=Node(id="bar", type="bar"),
+                       subj=Node(id="foo", type="foo"),
+                       obj=Node(id="bar", type="bar"),
                        type="REL",
                    )
                ],

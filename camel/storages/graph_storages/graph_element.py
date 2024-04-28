@@ -25,7 +25,7 @@ class Node():
 
     Attributes:
         id (Union[str, int]): A unique identifier for the node.
-        type (str): The type or label of the node, default is "Node".
+        label (str): The type or label of the node, defaults to "".
         properties (dict): Additional properties and metadata associated with
             the node.
     """
@@ -39,14 +39,14 @@ class Relationship():
     r"""Represents a directed relationship between two nodes in a graph.
 
     Attributes:
-        source (Node): The source node of the relationship.
-        target (Node): The target node of the relationship.
-        type (str): The type of the relationship.
+        subj (Node): The subject/source node of the relationship.
+        obj (Node): The object/target node of the relationship.
+        label (str):  The type or label of the relationship, defaults to "".
         properties (dict): Additional properties associated with the
             relationship.
     """
-    source: Node
-    target: Node
+    subj: Node
+    obj: Node
     type: str = "Relationship"
     properties: dict = field(default_factory=dict)
 

@@ -456,22 +456,21 @@ class Neo4jGraph(BaseGraphStorage):
         """
         if base_entity_label:
             return ("UNWIND $data AS row "
-                    f"MERGE (source:`{BASE_ENTITY_LABEL}` {{id: row.source}}) "
-                    f"MERGE (target:`{BASE_ENTITY_LABEL}` {{id: row.target}}) "
-                    "WITH source, target, row "
-                    "CALL apoc.merge.relationship(source, row.type, "
-                    "{}, row.properties, target) YIELD rel "
+                    f"MERGE (subj:`{BASE_ENTITY_LABEL}` {{id: row.subj}}) "
+                    f"MERGE (obj:`{BASE_ENTITY_LABEL}` {{id: row.obj}}) "
+                    "WITH subj, obj, row "
+                    "CALL apoc.merge.relationship(subj, row.type, "
+                    "{}, row.properties, obj) YIELD rel "
                     "RETURN distinct 'done'")
         else:
-            return (
-                "UNWIND $data AS row "
-                "CALL apoc.merge.node([row.source_label], {id: row.source},"
-                "{}, {}) YIELD node as source "
-                "CALL apoc.merge.node([row.target_label], {id: row.target},"
-                "{}, {}) YIELD node as target "
-                "CALL apoc.merge.relationship(source, row.type, "
-                "{}, row.properties, target) YIELD rel "
-                "RETURN distinct 'done'")
+            return ("UNWIND $data AS row "
+                    "CALL apoc.merge.node([row.subj_label], {id: row.subj},"
+                    "{}, {}) YIELD node as subj "
+                    "CALL apoc.merge.node([row.obj_label], {id: row.obj},"
+                    "{}, {}) YIELD node as obj "
+                    "CALL apoc.merge.relationship(subj, row.type, "
+                    "{}, row.properties, obj) YIELD rel "
+                    "RETURN distinct 'done'")
 
     def add_graph_elements(
         self,
@@ -535,10 +534,10 @@ class Neo4jGraph(BaseGraphStorage):
                 rel_import_query,
                 {
                     "data": [{
-                        "source": el.source.id,
-                        "source_label": el.source.type,
-                        "target": el.target.id,
-                        "target_label": el.target.type,
+                        "subj": el.subj.id,
+                        "subj_label": el.subj.type,
+                        "obj": el.obj.id,
+                        "obj_label": el.obj.type,
                         "type": el.type.replace(" ", "_").upper(),
                         "properties": el.properties,
                     } for el in element.relationships]
