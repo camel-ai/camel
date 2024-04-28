@@ -20,8 +20,8 @@ from camel.storages.graph_storages import BaseGraphStorage, GraphElement
 logger = logging.getLogger(__name__)
 
 BASE_ENTITY_LABEL = "__Entity__"
-EXCLUDED_LABELS = ["_Bloom_Perspective_", "_Bloom_Scene_"]
-EXCLUDED_RELS = ["_Bloom_HAS_SCENE_"]
+EXCLUDED_LABELS = ["_Excluded_Label_A_", "_Excluded_Label_B_"]
+EXCLUDED_RELS = ["_Excluded_Rel_A_"]
 
 NODE_PROPERTY_QUERY = """
 CALL apoc.meta.data()

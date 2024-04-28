@@ -28,33 +28,27 @@ from camel.storages.graph_storages.neo4j_graph import (
 
 test_data = [
     GraphElement(
-        nodes=[Node(id="foo", type="foo"),
-               Node(id="bar", type="bar")], relationships=[
-                   Relationship(
-                       subj=Node(id="foo", type="foo"),
-                       obj=Node(id="bar", type="bar"),
-                       type="REL",
-                   )
-               ],
-        source=Element(element_id="a04b820b51c760a41415c57c1eef8f08"))
+        nodes=[
+            Node(id="id_subj", type="type_subj"),
+            Node(id="id_obj", type="type_obj")
+        ], relationships=[
+            Relationship(
+                subj=Node(id="id_subj", type="type_subj"),
+                obj=Node(id="id_obj", type="type_obj"),
+                type="type_rel",
+            )
+        ], source=Element(element_id="a04b820b51c760a41415c57c1eef8f08"))
 ]
 
-NEO4J_URI = "neo4j+s://5af77aab.databases.neo4j.io"
-NEO4J_USERNAME = "neo4j"
-NEO4J_PASSWORD = "SEK_Fx5Bx-BkRwMx6__zM_TOPqXLWEP-czuIZ_u7-zE"
+url = "neo4j+s://5af77aab.databases.neo4j.io"
+username = "neo4j"
+password = "SEK_Fx5Bx-BkRwMx6__zM_TOPqXLWEP-czuIZ_u7-zE"
 
 
 def test_cypher_return_correct_schema() -> None:
     r"""Test that chain returns direct results.
     Tested graph.query and graph.refresh_schema.
     """
-    url = NEO4J_URI
-    username = NEO4J_USERNAME
-    password = NEO4J_PASSWORD
-    assert url is not None
-    assert username is not None
-    assert password is not None
-
     graph = Neo4jGraph(
         url=url,
         username=username,
@@ -124,13 +118,6 @@ def test_cypher_return_correct_schema() -> None:
 
 def test_neo4j_timeout() -> None:
     r"""Test that neo4j uses the timeout correctly."""
-    url = NEO4J_URI
-    username = NEO4J_USERNAME
-    password = NEO4J_PASSWORD
-    assert url is not None
-    assert username is not None
-    assert password is not None
-
     graph = Neo4jGraph(url=url, username=username, password=password,
                        timeout=0.1)
     try:
@@ -143,13 +130,6 @@ def test_neo4j_timeout() -> None:
 
 def test_neo4j_truncate_values() -> None:
     r"""Test that neo4j uses the timeout correctly."""
-    url = NEO4J_URI
-    username = NEO4J_USERNAME
-    password = NEO4J_PASSWORD
-    assert url is not None
-    assert username is not None
-    assert password is not None
-
     graph = Neo4jGraph(url=url, username=username, password=password,
                        truncate=True)
     # Delete all nodes in the graph
@@ -170,13 +150,6 @@ def test_neo4j_truncate_values() -> None:
 
 def test_neo4j_add_data() -> None:
     r"""Test that neo4j correctly import graph element."""
-    url = NEO4J_URI
-    username = NEO4J_USERNAME
-    password = NEO4J_PASSWORD
-    assert url is not None
-    assert username is not None
-    assert password is not None
-
     graph = Neo4jGraph(url=url, username=username, password=password,
                        truncate=True)
     # Delete all nodes in the graph
@@ -190,10 +163,10 @@ def test_neo4j_add_data() -> None:
         "MATCH (n) RETURN labels(n) AS label, count(*) AS count ORDER BY label"
     )
     assert output == [{
-        "label": ["bar"],
+        "label": ["type_obj"],
         "count": 1
     }, {
-        "label": ["foo"],
+        "label": ["type_subj"],
         "count": 1
     }]
     assert graph.structured_schema["metadata"]["constraint"] == []
@@ -201,13 +174,6 @@ def test_neo4j_add_data() -> None:
 
 def test_neo4j_add_data_source() -> None:
     r"""Test that neo4j correctly import graph element with source."""
-    url = NEO4J_URI
-    username = NEO4J_USERNAME
-    password = NEO4J_PASSWORD
-    assert url is not None
-    assert username is not None
-    assert password is not None
-
     graph = Neo4jGraph(url=url, username=username, password=password,
                        truncate=True)
     # Delete all nodes in the graph
@@ -226,11 +192,11 @@ def test_neo4j_add_data_source() -> None:
             "count": 1
         },
         {
-            "label": ["bar"],
+            "label": ["type_obj"],
             "count": 1
         },
         {
-            "label": ["foo"],
+            "label": ["type_subj"],
             "count": 1
         },
     ]
@@ -239,13 +205,6 @@ def test_neo4j_add_data_source() -> None:
 
 def test_neo4j_add_data_base() -> None:
     r"""Test that neo4j correctly import graph element with base_entity."""
-    url = NEO4J_URI
-    username = NEO4J_USERNAME
-    password = NEO4J_PASSWORD
-    assert url is not None
-    assert username is not None
-    assert password is not None
-
     graph = Neo4jGraph(url=url, username=username, password=password,
                        truncate=True)
     # Delete all nodes in the graph
@@ -260,11 +219,11 @@ def test_neo4j_add_data_base() -> None:
         "count(*) AS count ORDER BY label")
     assert output == [
         {
-            "label": [BASE_ENTITY_LABEL, "bar"],
+            "label": [BASE_ENTITY_LABEL, "type_obj"],
             "count": 1
         },
         {
-            "label": [BASE_ENTITY_LABEL, "foo"],
+            "label": [BASE_ENTITY_LABEL, "type_subj"],
             "count": 1
         },
     ]
@@ -274,13 +233,6 @@ def test_neo4j_add_data_base() -> None:
 def test_neo4j_add_data_base_source() -> None:
     r"""Test that neo4j correctly import graph element with base_entity and
     source."""
-    url = NEO4J_URI
-    username = NEO4J_USERNAME
-    password = NEO4J_PASSWORD
-    assert url is not None
-    assert username is not None
-    assert password is not None
-
     graph = Neo4jGraph(url=url, username=username, password=password,
                        truncate=True)
     # Delete all nodes in the graph
@@ -300,11 +252,11 @@ def test_neo4j_add_data_base_source() -> None:
             "count": 1
         },
         {
-            "label": [BASE_ENTITY_LABEL, "bar"],
+            "label": [BASE_ENTITY_LABEL, "type_obj"],
             "count": 1
         },
         {
-            "label": [BASE_ENTITY_LABEL, "foo"],
+            "label": [BASE_ENTITY_LABEL, "type_subj"],
             "count": 1
         },
     ]
@@ -313,21 +265,14 @@ def test_neo4j_add_data_base_source() -> None:
 
 def test_neo4j_filtering_labels() -> None:
     r"""Test that neo4j correctly filters excluded labels."""
-    url = NEO4J_URI
-    username = NEO4J_USERNAME
-    password = NEO4J_PASSWORD
-    assert url is not None
-    assert username is not None
-    assert password is not None
-
     graph = Neo4jGraph(url=url, username=username, password=password,
                        truncate=True)
     # Delete all nodes in the graph
     graph.query("MATCH (n) DETACH DELETE n")
     # Remove all constraints
     graph.query("CALL apoc.schema.assert({}, {})")
-    graph.query("CREATE (:`_Bloom_Scene_`)-[:_Bloom_HAS_SCENE_]->"
-                "(:`_Bloom_Perspective_`)")
+    graph.query("CREATE (:`_Excluded_Rel_A_`)-[:_Excluded_Label_A_]->"
+                "(:`_Excluded_Label_B_`)")
     graph.refresh_schema()
 
     # Assert both are empty
