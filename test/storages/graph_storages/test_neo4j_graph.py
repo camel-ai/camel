@@ -271,8 +271,8 @@ def test_neo4j_filtering_labels() -> None:
     graph.query("MATCH (n) DETACH DELETE n")
     # Remove all constraints
     graph.query("CALL apoc.schema.assert({}, {})")
-    graph.query("CREATE (:`_Excluded_Rel_A_`)-[:_Excluded_Label_A_]->"
-                "(:`_Excluded_Label_B_`)")
+    graph.query("CREATE (:`Excluded_Label_A`)-[:`Excluded_Rel_A`]->"
+                "(:`Excluded_Label_B`)")
     graph.refresh_schema()
 
     # Assert both are empty

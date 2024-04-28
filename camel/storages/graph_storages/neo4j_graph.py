@@ -20,8 +20,8 @@ from camel.storages.graph_storages import BaseGraphStorage, GraphElement
 logger = logging.getLogger(__name__)
 
 BASE_ENTITY_LABEL = "__Entity__"
-EXCLUDED_LABELS = ["_Excluded_Label_A_", "_Excluded_Label_B_"]
-EXCLUDED_RELS = ["_Excluded_Rel_A_"]
+EXCLUDED_LABELS = ["Excluded_Label_A", "Excluded_Label_B"]
+EXCLUDED_RELS = ["Excluded_Rel_A"]
 
 NODE_PROPERTY_QUERY = """
 CALL apoc.meta.data()
@@ -154,24 +154,24 @@ class Neo4jGraph(BaseGraphStorage):
         """
         return self.structured_schema
 
-    def _value_truncate(self, d: Any) -> Any:
-        r"""Truncates the input dictionary `d` by removing entries that are
-        dictionaries with values resembling embeddings and lists containing
+    def _value_truncate(self, raw_value: Any) -> Any:
+        r"""Truncates the input raw value by removing entries that is
+        dictionary or list with values resembling embeddings and containing
         more than `LIST_LIMIT` elements. This method aims to reduce unnecessary
         computational cost and noise in scenarios where such detailed data
-        structures are not needed, for example, in simplifying data for
-        processing by a language model.
+        structures are not needed. If the input value is not dictionary or
+        list then give the raw value back.
 
         Args:
-            d (Any): The dictionary to be truncated.
+            raw_value (Any): The raw value to be truncated.
 
         Returns:
-            Any: The truncated dictionary, with embedding-like
+            Any: The truncated value, with embedding-like
                 dictionaries and oversized lists handled.
         """
-        if isinstance(d, dict):
+        if isinstance(raw_value, dict):
             new_dict = {}
-            for key, value in d.items():
+            for key, value in raw_value.items():
                 if isinstance(value, dict):
                     truncated_value = self._value_truncate(value)
                     # Check if the truncated value is not None
@@ -187,16 +187,16 @@ class Neo4jGraph(BaseGraphStorage):
                 else:
                     new_dict[key] = value
             return new_dict
-        elif isinstance(d, list):
-            if len(d) < LIST_LIMIT:
+        elif isinstance(raw_value, list):
+            if len(raw_value) < LIST_LIMIT:
                 return [
-                    self._value_truncate(item) for item in d
+                    self._value_truncate(item) for item in raw_value
                     if self._value_truncate(item) is not None
                 ]
             else:
                 return None
         else:
-            return d
+            return raw_value
 
     def query(self, query: str,
               params: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:

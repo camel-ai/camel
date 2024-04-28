@@ -25,7 +25,7 @@ class Node():
 
     Attributes:
         id (Union[str, int]): A unique identifier for the node.
-        label (str): The type or label of the node, defaults to "".
+        type (str):  The type of the relationship.
         properties (dict): Additional properties and metadata associated with
             the node.
     """
@@ -41,7 +41,7 @@ class Relationship():
     Attributes:
         subj (Node): The subject/source node of the relationship.
         obj (Node): The object/target node of the relationship.
-        label (str):  The type or label of the relationship, defaults to "".
+        type (str):  The type of the relationship.
         properties (dict): Additional properties associated with the
             relationship.
     """
