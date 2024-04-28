@@ -16,6 +16,7 @@ from typing import Any, List, Optional
 from colorama import Fore
 
 from camel.agents import BaseToolAgent, ChatAgent
+from camel.configs import BaseConfig
 from camel.interpreters import (
     BaseInterpreter,
     InternalPythonInterpreter,
@@ -55,7 +56,7 @@ class EmbodiedAgent(ChatAgent):
         self,
         system_message: BaseMessage,
         model_type: ModelType = ModelType.GPT_4,
-        model_config: Optional[Any] = None,
+        model_config: Optional[BaseConfig] = None,
         message_window_size: Optional[int] = None,
         tool_agents: Optional[List[BaseToolAgent]] = None,
         code_interpreter: Optional[BaseInterpreter] = None,
