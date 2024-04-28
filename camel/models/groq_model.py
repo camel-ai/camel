@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional
 
 from groq import Groq
 
+from camel.configs import GROQ_LLAMA3_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import (
@@ -29,7 +30,7 @@ from camel.utils import BaseTokenCounter, OpenAITokenCounter, api_key_required
 
 
 class GroqModel(BaseModelBackend):
-    r"""API served by Groq in a unified BaseModelBackend interface."""
+    r"""LLM API served by Groq in a unified BaseModelBackend interface."""
 
     def __init__(self, model_type: ModelType,
                  model_config_dict: Dict[str, Any]) -> None:
@@ -41,8 +42,9 @@ class GroqModel(BaseModelBackend):
                 be fed into groq.ChatCompletion.create().
         """
         super().__init__(model_type, model_config_dict)
-        api_key = os.environ.get("GROQ_API_KEY")
-        self._client = Groq(api_key=api_key)
+        url = os.environ.get('GROQ_API_BASE_URL', None)
+        api_key = os.environ.get('GROQ_API_KEY')
+        self._client = Groq(api_key=api_key, base_url=url)
         self._token_counter: Optional[BaseTokenCounter] = None
 
     @property
@@ -82,6 +84,7 @@ class GroqModel(BaseModelBackend):
         response = self._client.chat.completions.create(
             messages=messages,  # type: ignore
             model=self.model_type.value,
+            **self.model_config_dict,
         )
 
         _choices: List[Choice] = []  # type: ignore
@@ -102,8 +105,14 @@ class GroqModel(BaseModelBackend):
         r"""Check whether the model configuration contains any
         unexpected arguments to Groq API. But Groq API does not have any
         additional arguments to check.
+        Raises:
+            ValueError: If the model configuration dictionary contains any
+                unexpected arguments to OpenAI API.
         """
-        pass
+        for param in self.model_config_dict:
+            if param not in GROQ_LLAMA3_API_PARAMS:
+                raise ValueError(f"Unexpected argument `{param}` is "
+                                 "input into Groq Llama3 model backend.")
 
     @property
     def stream(self) -> bool:

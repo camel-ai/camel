@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
 from camel.agents import BaseAgent
-from camel.configs import ChatGPTConfig, ChatGPTVisionConfig
+from camel.configs import ChatGPTConfig, ChatGPTVisionConfig, GroqLLAMA3Config
 from camel.memories import (
     AgentMemory,
     ChatHistoryMemory,
@@ -143,7 +143,12 @@ class ChatAgent(BaseAgent):
                 raise ValueError("Please don't use `ChatGPTVisionConfig` as "
                                  "the `model_config` when `model_type` "
                                  "is not `GPT_4_TURBO_VISION`")
-            self.model_config = model_config or ChatGPTConfig()
+            if self.model_type.is_groq:
+                # Since the configuration of Groq models is different from
+                # OpenAI models, we need to use `if`.
+                self.model_config = model_config or GroqLLAMA3Config()
+            else:
+                self.model_config = model_config or ChatGPTConfig()
 
         self.model_backend: BaseModelBackend = ModelFactory.create(
             self.model_type, self.model_config.__dict__)

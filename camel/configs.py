@@ -15,7 +15,16 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import asdict, dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Union,
+)
 
 from anthropic._types import NOT_GIVEN, NotGiven
 
@@ -222,10 +231,10 @@ class AnthropicConfig(BaseConfig):
 
     See: https://docs.anthropic.com/claude/reference/complete_post
     Args:
-        max_tokens_to_sample (int, optional): The maximum number of tokens to
-            generate before stopping. Note that Anthropic models may stop
-            before reaching this maximum. This parameter only specifies the
-            absolute maximum number of tokens to generate.
+        max_tokens (int, optional): The maximum number of tokens to generate
+            before stopping. Note that Anthropic models may stop before
+            reaching this maximum. This parameter only specifies the absolute
+            maximum number of tokens to generate.
             (default: :obj:`256`)
         stop_sequences (List[str], optional): Sequences that will cause the
             model to stop generating completion text. Anthropic models stop
@@ -253,7 +262,6 @@ class AnthropicConfig(BaseConfig):
         stream (bool, optional): Whether to incrementally stream the response
           using server-sent events.
             (default: :obj:`False`)
-
     """
     max_tokens: int = 256
     stop_sequences: Union[List[str], NotGiven] = NOT_GIVEN
@@ -265,3 +273,37 @@ class AnthropicConfig(BaseConfig):
 
 
 ANTHROPIC_API_PARAMS = {param for param in asdict(AnthropicConfig()).keys()}
+
+
+@dataclass(frozen=True)
+class GroqLLAMA3Config(BaseConfig):
+    r"""Defines the parameters for generating chat completions using the
+    Anthropic API. And Camel does not support stream mode for GroqLLAMA3.
+
+    See: https://console.groq.com/docs/text-chat
+    Args:
+        max_tokens (int, optional): The maximum number of tokens to generate
+            before stopping. Note that Anthropic models may stop before
+            reaching this maximum. This parameter only specifies the absolute
+            maximum number of tokens to generate.
+            (default: :obj:`256`)
+        temperature (float, optional): Amount of randomness injected into the
+            response. Defaults to 1. Ranges from 0 to 1. Use temp closer to 0
+            for analytical / multiple choice, and closer to 1 for creative
+            and generative tasks.
+            (default: :obj:`1`)
+        stream (bool, optional): Whether to incrementally stream the response
+            using server-sent events. Camel does not support stream mode for
+            Groq Llama3.
+            (default: :obj:`False`)
+    """
+
+    max_tokens: int = 4096  # since the Llama3 usually has a context
+    # window of 8192 tokens, the default is set to 4096
+    temperature: float = 1  # Camel does not suggest modifying the `top_p`
+    # Camel does not support stream mode for Groq Llama3, the default value of
+    # `stream` is False
+    stream: Literal[False] = False
+
+
+GROQ_LLAMA3_API_PARAMS = {param for param in asdict(GroqLLAMA3Config()).keys()}
