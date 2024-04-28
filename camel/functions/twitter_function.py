@@ -13,11 +13,15 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import datetime
 import os
+from http import HTTPStatus
+from http.client import responses
 from typing import List, Optional, Tuple, Union
 
 import requests
 
 from camel.functions import OpenAIFunction
+
+TWEET_TEXT_LIMIT = 280
 
 
 def get_twitter_api_key() -> Tuple[str, str]:
@@ -135,18 +139,13 @@ def handle_http_error(response: requests.Response) -> str:
     Reference:
         https://github.com/tweepy/tweepy/blob/master/tweepy/client.py#L64
     """
-    if response.status_code == 400:
-        return "Bad Request Error"
-    elif response.status_code == 401:
-        return "Unauthorized Error"
-    elif response.status_code == 403:
-        return "Forbidden Error"
-    elif response.status_code == 404:
-        return "Not Found Error"
-    elif response.status_code == 429:
-        return "Too Many Requests Error"
-    elif response.status_code >= 500:
-        return "Twitter Server Error"
+    if response.status_code in responses:
+        # For 5xx server errors, return "Twitter Server Error"
+        if 500 <= response.status_code < 600:
+            return "Twitter Server Error"
+        else:
+            error_message = responses[response.status_code] + " Error"
+            return error_message
     elif not 200 <= response.status_code < 300:
         return "HTTP Exception"
     else:
@@ -184,10 +183,6 @@ def create_tweet(*, text: str, poll_options: Optional[List[str]] = None,
             the tweet ID and text. If the request to the Twitter API is not
             successful, the return is an error message.
 
-    Raises:
-        HTTPError: If the POST request to the Twitter API returns a status code
-            other than 201.
-
     Reference:
         https://developer.twitter.com/en/docs/twitter-api/tweets/manage-tweets/api-reference/post-tweets
         https://github.com/xdevplatform/Twitter-API-v2-sample-code/blob/main/Manage-Tweets/create_tweet.py
@@ -195,7 +190,7 @@ def create_tweet(*, text: str, poll_options: Optional[List[str]] = None,
     # validate text
     if text is None:
         return "Text cannot be None"
-    elif len(text) > 280:
+    elif len(text) > TWEET_TEXT_LIMIT:
         return "Text must not exceed 280 characters."
 
     # Validate poll options and duration
@@ -215,7 +210,7 @@ def create_tweet(*, text: str, poll_options: Optional[List[str]] = None,
         "poll_duration_minutes": poll_duration_minutes,
         "quote_tweet_id": quote_tweet_id
     }
-    print("You are about to create a tweet with the following parameters:")
+    print("You are going to create a tweet with following parameters:")
     for key, value in params.items():
         if value is not None:
             print(f"{key}: {value}")
@@ -245,7 +240,7 @@ def create_tweet(*, text: str, poll_options: Optional[List[str]] = None,
         json=json_data,
     )
 
-    if response.status_code != 201:
+    if response.status_code != HTTPStatus.CREATED:
         error_type = handle_http_error(response)
         # use string concatenation to satisfy flake8
         return ("Request returned a(n) " + str(error_type) + ": " +
@@ -285,7 +280,7 @@ def delete_tweet(tweet_id: str) -> str:
     """
     # Print the parameters that are not None
     if tweet_id is not None:
-        print(f"You are about to delete a tweet with the following "
+        print(f"You are going to delete a tweet with the following "
               f"ID: {tweet_id}")
 
     # Add a confirmation prompt at the beginning of the function
@@ -298,7 +293,7 @@ def delete_tweet(tweet_id: str) -> str:
     # Making the request
     response = oauth.delete(f"https://api.twitter.com/2/tweets/{tweet_id}", )
 
-    if response.status_code != 200:
+    if response.status_code != HTTPStatus.OK:
         error_type = handle_http_error(response)
         # use string concatenation to satisfy flake8
         return ("Request returned a(n) " + str(error_type) + ": " +
@@ -313,7 +308,7 @@ def delete_tweet(tweet_id: str) -> str:
     return response_str
 
 
-def get_user_me_profile() -> str:
+def get_my_user_profile() -> str:
     r"""Retrieves and formats the authenticated user's Twitter profile info.
 
     This function sends a GET request to the Twitter API to retrieve the
@@ -347,7 +342,7 @@ def get_user_me_profile() -> str:
 
     response = oauth.get("https://api.twitter.com/2/users/me", params=params)
 
-    if response.status_code != 200:
+    if response.status_code != HTTPStatus.OK:
         error_type = handle_http_error(response)
         error_message = "Request returned a(n) {}: {} {}".format(
             error_type, response.status_code, response.text)
@@ -422,5 +417,5 @@ def get_user_me_profile() -> str:
 
 TWITTER_FUNCS: List[OpenAIFunction] = [
     OpenAIFunction(func)  # type: ignore
-    for func in [create_tweet, delete_tweet, get_user_me_profile]
+    for func in [create_tweet, delete_tweet, get_my_user_profile]
 ]

@@ -16,7 +16,7 @@ from unittest.mock import MagicMock, patch
 from camel.functions.twitter_function import (
     create_tweet,
     delete_tweet,
-    get_user_me_profile,
+    get_my_user_profile,
 )
 
 
@@ -51,7 +51,7 @@ def test_create_tweet(monkeypatch):
 
         # Verify the output
         expected_start = (
-            "You are about to create a tweet with the following parameters:")
+            "You are going to create a tweet with following parameters:")
         assert expected_start in captured_output
         assert "text: Test tweet." in captured_output
         expected_response = ("Create tweet successful. The tweet ID is: "
@@ -84,7 +84,7 @@ def test_delete_tweet(monkeypatch):
 
         # Verify the output
         expected_start = (
-            "You are about to delete a tweet with the following ID: 11111")
+            "You are going to delete a tweet with the following ID: 11111")
         assert expected_start in captured_output
         expected_response = ("Delete tweet successful: True. The tweet ID is: "
                              "11111. ")
@@ -132,7 +132,7 @@ def test_get_user_me(monkeypatch):
         mock_get_oauth_session.return_value.get.return_value = mock_response
 
         # Call the get_user_me function
-        response = get_user_me_profile()
+        response = get_my_user_profile()
 
         # Verify the returned user information report
         expected_report = (
