@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import uuid
 from typing import Any, Dict, List, Tuple
 
 import pytest
@@ -32,6 +33,41 @@ def test__ensure_unstructured_version(unstructured_instance: UnstructuredIO):
     # Test with an invalid version (should raise a ValueError)
     with pytest.raises(ValueError):
         unstructured_instance._ensure_unstructured_version("1.0.0")
+
+
+# Test the create_element_from_text method
+def test_create_element_from_text(unstructured_instance: UnstructuredIO):
+    # Input parameters
+    test_text = "Hello, World!"
+    test_id = uuid.uuid4()
+    test_embeddings = [0.1, 0.2, 0.3]
+    test_filename = "testfile.txt"
+    test_directory = "/test/directory"
+    test_modified = "2024-04-01"
+    test_filetype = "txt"
+    test_parent_id = uuid.uuid4()
+
+    # Expected Metadata construction
+    expected_metadata = {
+        "filename": test_filename,
+        "file_directory": test_directory,
+        "last_modified": test_modified,
+        "filetype": test_filetype,
+        "parent_id": test_parent_id
+    }
+
+    # Create the element
+    element = unstructured_instance.create_element_from_text(
+        text=test_text, element_id=test_id, embeddings=test_embeddings,
+        filename=test_filename, file_directory=test_directory,
+        last_modified=test_modified, filetype=test_filetype,
+        parent_id=test_parent_id)
+
+    # Assertions to verify correct element creation
+    assert element.to_dict()['text'] == test_text
+    assert element.to_dict()['element_id'] == test_id
+    assert element.to_dict()['embeddings'] == test_embeddings
+    assert element.to_dict()['metadata'] == expected_metadata
 
 
 # Test the parse_file_or_url method
