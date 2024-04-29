@@ -44,7 +44,9 @@ def test_search_wiki_not_found():
 
 
 def test_search_wiki_with_ambiguity():
-    expected_output = wikipedia.summary("Google", sentences=5, auto_suggest=False)
+    expected_output = wikipedia.summary(
+        "Google", sentences=5, auto_suggest=False
+    )
     assert search_wiki("Google LLC") == expected_output
 
 

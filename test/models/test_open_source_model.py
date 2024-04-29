@@ -93,7 +93,10 @@ def test_open_source_model_close_source_model_type():
     with pytest.raises(
         ValueError,
         match=re.escape(
-            ("Model `ModelType.GPT_3_5_TURBO` is not a supported" " open-source model.")
+            (
+                "Model `ModelType.GPT_3_5_TURBO` is not a supported"
+                " open-source model."
+            )
         ),
     ):
         _ = OpenSourceModel(model_type, model_config_dict)
@@ -206,6 +209,7 @@ def test_open_source_model_missing_server_url():
     model_config_dict = model_config.__dict__
 
     with pytest.raises(
-        ValueError, match=("URL to server running open-source LLM is not provided.")
+        ValueError,
+        match=("URL to server running open-source LLM is not provided."),
     ):
         _ = OpenSourceModel(model_type, model_config_dict)

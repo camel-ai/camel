@@ -85,7 +85,10 @@ def test_get_option(critic_agent: CriticAgent):
         content=flatten_options,
     )
     assert critic_agent.options_dict == {"1": "Apple", "2": "Banana"}
-    assert critic_agent.get_option(input_message) in critic_agent.options_dict.values()
+    assert (
+        critic_agent.get_option(input_message)
+        in critic_agent.options_dict.values()
+    )
 
 
 def test_parse_critic(critic_agent: CriticAgent):
@@ -117,4 +120,6 @@ def test_reduce_step(critic_agent: CriticAgent):
     ]
 
     critic_response = critic_agent.reduce_step(messages)
-    assert (critic_response.msg == messages[0]) or (critic_response.msg == messages[1])
+    assert (critic_response.msg == messages[0]) or (
+        critic_response.msg == messages[1]
+    )

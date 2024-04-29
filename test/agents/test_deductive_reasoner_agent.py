@@ -48,8 +48,10 @@ def test_deductive_reasoner_agent(mock_step):
 
     # Generate the conditions and quality dictionary based on the mock step
     # function
-    conditions_and_quality = deductive_reasoner_agent.deduce_conditions_and_quality(
-        starting_state=starting_state, target_state=target_state
+    conditions_and_quality = (
+        deductive_reasoner_agent.deduce_conditions_and_quality(
+            starting_state=starting_state, target_state=target_state
+        )
     )
 
     expected_dict = generate_expected_content()
@@ -95,7 +97,9 @@ def generate_expected_content():
     return {
         "conditions": {
             "condition 1": "The website needs to have a search bar.",
-            "condition 2": ("The website needs to have a database of indexed content."),
+            "condition 2": (
+                "The website needs to have a database of indexed content."
+            ),
             "condition 3": (
                 "The website needs to have a search algorithm or function "
                 "implemented."

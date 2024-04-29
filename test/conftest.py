@@ -19,7 +19,9 @@ from _pytest.nodes import Item
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
-    parser.addoption("--full-test-mode", action="store_true", help="Run all tests")
+    parser.addoption(
+        "--full-test-mode", action="store_true", help="Run all tests"
+    )
     parser.addoption(
         "--default-test-mode",
         action="store_true",

@@ -86,7 +86,9 @@ class EmbodiedAgent(ChatAgent):
     def _set_tool_agents(self, system_message: BaseMessage) -> BaseMessage:
         action_space_prompt = self._get_tool_agents_prompt()
         result_message = system_message.create_new_instance(
-            content=system_message.content.format(action_space=action_space_prompt)
+            content=system_message.content.format(
+                action_space=action_space_prompt
+            )
         )
         if self.tool_agents is not None:
             self.code_interpreter.update_action_space(
@@ -163,14 +165,19 @@ class EmbodiedAgent(ChatAgent):
             try:
                 content = "\n> Executed Results:\n"
                 for block_idx, code in enumerate(codes):
-                    executed_output = self.code_interpreter.run(code, code.code_type)
+                    executed_output = self.code_interpreter.run(
+                        code, code.code_type
+                    )
                     content += (
                         f"Executing code block {block_idx}: {{\n"
                         + executed_output
                         + "}\n"
                     )
             except InterruptedError as e:
-                content = f"\n> Running code fail: {e}\n" "Please regenerate the code."
+                content = (
+                    f"\n> Running code fail: {e}\n"
+                    "Please regenerate the code."
+                )
 
         # TODO: Handle errors
         content = input_message.content + f"\n> Embodied Actions:\n{content}"

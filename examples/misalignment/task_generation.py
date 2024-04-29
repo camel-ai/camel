@@ -57,7 +57,9 @@ def generate_tasks(
     # Ensure exact number of tasks is generated
     assert str(num_tasks) in tasks[-1], print(tasks)
 
-    with open(f"./misalignment_data/tasks/{'_'.join(role_names)}.txt", "w") as file:
+    with open(
+        f"./misalignment_data/tasks/{'_'.join(role_names)}.txt", "w"
+    ) as file:
         file.write("\n".join(tasks))
 
 
@@ -85,18 +87,27 @@ def main() -> None:
     ).from_role_files()
 
     task_generator_prompt_generator = AISocietyTaskPromptGenerator(
-        generate_tasks_prompt_path=generate_tasks_prompt_path, num_tasks=num_tasks
+        generate_tasks_prompt_path=generate_tasks_prompt_path,
+        num_tasks=num_tasks,
     ).from_role_generator(role_names_generator)
 
     for task_generator_prompt, role_names in task_generator_prompt_generator:
-        if not os.path.exists(f"./misalignment_data/tasks/{'_'.join(role_names)}.txt"):
+        if not os.path.exists(
+            f"./misalignment_data/tasks/{'_'.join(role_names)}.txt"
+        ):
             counter += 1
 
             print(f"Generating tasks for {role_names}")
             print(f"Generating tasks for {task_generator_prompt}")
             pool.apply_async(
                 generate_tasks,
-                (role_names, task_generator_prompt, start_token, num_tasks, sys_prompt),
+                (
+                    role_names,
+                    task_generator_prompt,
+                    start_token,
+                    num_tasks,
+                    sys_prompt,
+                ),
             )
 
     pool.close()

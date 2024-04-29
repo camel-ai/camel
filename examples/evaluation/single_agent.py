@@ -22,7 +22,9 @@ from camel.prompts import PromptTemplateGenerator
 from camel.types import TaskType
 
 
-def parse_question_string(question_string: str, category: str) -> List[Dict[str, Any]]:
+def parse_question_string(
+    question_string: str, category: str
+) -> List[Dict[str, Any]]:
     pattern = r'^(\d+)\.\s+(.*?)\s*\n*$'
     questions = []
     for match in re.finditer(pattern, question_string, re.MULTILINE):

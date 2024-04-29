@@ -193,7 +193,9 @@ class CodePrompt(TextPrompt):
                 could be resolved by modifying or regenerating the code.
         """
         if interpreter is None:
-            execution_res = SubprocessInterpreter().run(self, self._code_type, **kwargs)
+            execution_res = SubprocessInterpreter().run(
+                self, self._code_type, **kwargs
+            )
         else:
             execution_res = interpreter.run(self, self._code_type, **kwargs)
         return execution_res

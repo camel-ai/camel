@@ -52,7 +52,9 @@ class SentenceTransformerEncoder(BaseEmbedding[str]):
         """
         if not objs:
             raise ValueError("Input text list is empty")
-        return self.model.encode(objs, normalize_embeddings=True, **kwargs).tolist()
+        return self.model.encode(
+            objs, normalize_embeddings=True, **kwargs
+        ).tolist()
 
     def get_output_dim(self) -> int:
         r"""Returns the output dimension of the embeddings.

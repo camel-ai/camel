@@ -41,7 +41,9 @@ parser.add_argument(
     help='Directory for solution json files',
     default='../camel/camel_data/ai_society_solution_extraction',
 )
-parser.add_argument('--seed', type=int, help='Seed for reproducibility', default=10)
+parser.add_argument(
+    '--seed', type=int, help='Seed for reproducibility', default=10
+)
 
 
 def flatten_conversation(conversation: Dict) -> str:
@@ -90,14 +92,18 @@ def flatten_conversation(conversation: Dict) -> str:
     messages = []
     for i in range(1, num_messages + 1):
         if conversation[f'message_{i}']['role_name'] == role_1:
-            message = f"User ({role_1}): " + conversation[f'message_{i}']['content']
+            message = (
+                f"User ({role_1}): " + conversation[f'message_{i}']['content']
+            )
         elif conversation[f'message_{i}']['role_name'] == role_2:
             message = (
-                f"Assistant ({role_2}): " + conversation[f'message_{i}']['content']
+                f"Assistant ({role_2}): "
+                + conversation[f'message_{i}']['content']
             )
         else:
             raise ValueError(
-                "Unknown role name: " f"{conversation[f'message_{i}']['role_name']}"
+                "Unknown role name: "
+                f"{conversation[f'message_{i}']['role_name']}"
             )
         messages.append(message)
 
@@ -176,7 +182,9 @@ def main():
     )
 
     # Randomly subsample `subsample_num_tasks` of the total tasks
-    subsampled_tasks = random.sample(range(1, total_num_tasks + 1), subsample_num_tasks)
+    subsampled_tasks = random.sample(
+        range(1, total_num_tasks + 1), subsample_num_tasks
+    )
 
     file_names = list(
         itertools.product(

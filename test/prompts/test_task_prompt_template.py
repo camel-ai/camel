@@ -20,5 +20,6 @@ def test_task_prompt_template_dict_init():
     assert isinstance(task_prompt_template_dict, dict)
     assert TaskType.AI_SOCIETY in task_prompt_template_dict
     assert (
-        task_prompt_template_dict[TaskType.AI_SOCIETY] == AISocietyPromptTemplateDict()
+        task_prompt_template_dict[TaskType.AI_SOCIETY]
+        == AISocietyPromptTemplateDict()
     )

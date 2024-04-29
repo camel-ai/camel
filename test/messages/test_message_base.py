@@ -92,7 +92,10 @@ def test_base_message():
     content = "test_content"
 
     message = BaseMessage(
-        role_name=role_name, role_type=role_type, meta_dict=meta_dict, content=content
+        role_name=role_name,
+        role_type=role_type,
+        meta_dict=meta_dict,
+        content=content,
     )
 
     assert message.role_name == role_name

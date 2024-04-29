@@ -37,13 +37,19 @@ def test_weather(api_key):
         'fahrenheit': (-148, 140),
     }
     for temp_units, (temp_min, temp_max) in temp_units_options.items():
-        report = get_weather_data(city, temp_units, 'meters_sec', 'meters', 'iso')
+        report = get_weather_data(
+            city, temp_units, 'meters_sec', 'meters', 'iso'
+        )
         # Parse temperature
-        pattern = re.compile(rf"Weather in .+: (-?\d+\.?\d*)°{temp_units.title()},")
+        pattern = re.compile(
+            rf"Weather in .+: (-?\d+\.?\d*)°{temp_units.title()},"
+        )
         match = pattern.search(report)
         temp = float(match.group(1)) if match else None
         # Test temperature
-        assert temp is not None, "Temperature information is missing from the report"
+        assert (
+            temp is not None
+        ), "Temperature information is missing from the report"
         assert (
             temp_min <= temp <= temp_max
         ), f"Temperature {temp} not in range for {temp_units}"
@@ -95,7 +101,9 @@ def test_weather(api_key):
     # Test each time_units option
     time_units_options = ['unix', 'iso', 'date']
     for time_units in time_units_options:
-        report = get_weather_data(city, 'celsius', 'meters_sec', 'meters', time_units)
+        report = get_weather_data(
+            city, 'celsius', 'meters_sec', 'meters', time_units
+        )
         # Regex to extract sunrise and sunset times based on time_units
         pattern_map = {
             'unix': (r"Sunrise at (\d+), Sunset at (\d+)."),
@@ -124,8 +132,12 @@ def test_weather(api_key):
             'date': '%Y-%m-%d %H:%M:%S%z',
         }
         if time_units == 'unix':
-            sunrise_time = datetime.fromtimestamp(int(sunrise_str), tz=timezone.utc)
-            sunset_time = datetime.fromtimestamp(int(sunset_str), tz=timezone.utc)
+            sunrise_time = datetime.fromtimestamp(
+                int(sunrise_str), tz=timezone.utc
+            )
+            sunset_time = datetime.fromtimestamp(
+                int(sunset_str), tz=timezone.utc
+            )
         else:
             sunrise_format = time_format_map[time_units]
             sunrise_time = datetime.strptime(sunrise_str, sunrise_format)

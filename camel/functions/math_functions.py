@@ -56,4 +56,6 @@ def mul(a: int, b: int) -> int:
     return a * b
 
 
-MATH_FUNCS: List[OpenAIFunction] = [OpenAIFunction(func) for func in [add, sub, mul]]
+MATH_FUNCS: List[OpenAIFunction] = [
+    OpenAIFunction(func) for func in [add, sub, mul]
+]

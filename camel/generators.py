@@ -43,21 +43,27 @@ class SystemMessageGenerator:
             self.sys_prompts = sys_prompts
             self.sys_msg_meta_dict_keys = sys_msg_meta_dict_keys or set()
         else:
-            assistant_prompt_template = PromptTemplateGenerator().get_system_prompt(
-                task_type,
-                RoleType.ASSISTANT,
+            assistant_prompt_template = (
+                PromptTemplateGenerator().get_system_prompt(
+                    task_type,
+                    RoleType.ASSISTANT,
+                )
             )
             user_prompt_template = PromptTemplateGenerator().get_system_prompt(
                 task_type,
                 RoleType.USER,
             )
-            critic_prompt_template = PromptTemplateGenerator().get_system_prompt(
-                task_type,
-                RoleType.CRITIC,
+            critic_prompt_template = (
+                PromptTemplateGenerator().get_system_prompt(
+                    task_type,
+                    RoleType.CRITIC,
+                )
             )
-            embodiment_prompt_template = PromptTemplateGenerator().get_system_prompt(
-                task_type,
-                RoleType.EMBODIMENT,
+            embodiment_prompt_template = (
+                PromptTemplateGenerator().get_system_prompt(
+                    task_type,
+                    RoleType.EMBODIMENT,
+                )
             )
 
             self.sys_prompts = dict()
@@ -159,7 +165,8 @@ class RoleNameGenerator:
             with open(assistant_role_names_path, "r") as f:
                 assistant_role_names_: List[str] = f.read().splitlines()
                 self.assistant_role_names = [
-                    " ".join(name.split(" ")[1:]) for name in assistant_role_names_
+                    " ".join(name.split(" ")[1:])
+                    for name in assistant_role_names_
                 ]
         else:
             self.assistant_role_names = assistant_role_names
@@ -185,7 +192,9 @@ class AISocietyTaskPromptGenerator:
         num_tasks: int = 10,
     ) -> None:
         self.generate_tasks_prompt = (
-            PromptTemplateGenerator().get_generate_tasks_prompt(TaskType.AI_SOCIETY)
+            PromptTemplateGenerator().get_generate_tasks_prompt(
+                TaskType.AI_SOCIETY
+            )
         )
 
         self.num_tasks = num_tasks
@@ -201,7 +210,9 @@ class AISocietyTaskPromptGenerator:
         ).from_role_files()
         for role_1, role_2 in roles_generator:
             generate_tasks_prompt = self.generate_tasks_prompt.format(
-                assistant_role=role_1, user_role=role_2, num_tasks=self.num_tasks
+                assistant_role=role_1,
+                user_role=role_2,
+                num_tasks=self.num_tasks,
             )
 
             yield (generate_tasks_prompt, (role_1, role_2))
@@ -211,7 +222,9 @@ class AISocietyTaskPromptGenerator:
     ) -> Generator[Tuple[str, Tuple[str, str]], None, None]:
         for role_1, role_2 in role_generator:
             generate_tasks_prompt = self.generate_tasks_prompt.format(
-                assistant_role=role_1, user_role=role_2, num_tasks=self.num_tasks
+                assistant_role=role_1,
+                user_role=role_2,
+                num_tasks=self.num_tasks,
             )
 
             yield (generate_tasks_prompt, (role_1, role_2))
@@ -224,7 +237,9 @@ class SingleTxtGenerator:
     ) -> None:
         with open(text_file_path, "r") as f:
             data_list: List[str] = f.read().splitlines()
-            self.data_list = [" ".join(name.split(" ")[1:]) for name in data_list]
+            self.data_list = [
+                " ".join(name.split(" ")[1:]) for name in data_list
+            ]
 
     def from_role_files(self) -> Generator[str, None, None]:
         for data in self.data_list:
@@ -247,10 +262,14 @@ class CodeTaskPromptGenerator:
         languages_path: str = "data/code/languages.txt",
         domains_path: str = "data/code/domains.txt",
     ) -> Generator[Tuple[TextPrompt, str, str], None, None]:
-        language_generator = SingleTxtGenerator(languages_path).from_role_files()
+        language_generator = SingleTxtGenerator(
+            languages_path
+        ).from_role_files()
 
         for language in language_generator:
-            domains_generator = SingleTxtGenerator(domains_path).from_role_files()
+            domains_generator = SingleTxtGenerator(
+                domains_path
+            ).from_role_files()
             for domain in domains_generator:
                 generated_tasks_prompt = self.generate_tasks_prompt.format(
                     language=language, domain=domain, num_tasks=self.num_tasks

@@ -83,7 +83,9 @@ def test_text_prompt_format():
     prompt = TextPrompt('Your name and age are: {name}, {age}')
 
     name, age = 'John', 30
-    assert prompt.format(name=name, age=age) == 'Your name and age are: John, 30'
+    assert (
+        prompt.format(name=name, age=age) == 'Your name and age are: John, 30'
+    )
 
     # Partial formatting
     assert prompt.format(name=name) == 'Your name and age are: John, {age}'
@@ -134,7 +136,9 @@ def test_code_prompt_set_code_type():
 
 def test_code_prompt_execute(monkeypatch):
     monkeypatch.setattr('builtins.input', lambda _: 'Y')
-    code_prompt = CodePrompt("a = 1\nprint('Hello, World!')", code_type="python")
+    code_prompt = CodePrompt(
+        "a = 1\nprint('Hello, World!')", code_type="python"
+    )
     result = code_prompt.execute()
     assert result == "Hello, World!\n"
 

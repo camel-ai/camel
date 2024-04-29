@@ -23,7 +23,9 @@ from camel.utils import OpenAITokenCounter
 
 
 def test_score_based_context_creator():
-    context_creator = ScoreBasedContextCreator(OpenAITokenCounter(ModelType.GPT_4), 21)
+    context_creator = ScoreBasedContextCreator(
+        OpenAITokenCounter(ModelType.GPT_4), 21
+    )
     context_records = [
         ContextRecord(
             memory_record=MemoryRecord(

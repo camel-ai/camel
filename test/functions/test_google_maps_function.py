@@ -41,13 +41,18 @@ def test_get_address_description(mock_get, mock_client):
             'verdict': {'addressComplete': True},
             'address': {
                 'formattedAddress': (
-                    '1600 Amphitheatre Parkway Pk, Mountain View, ' 'CA 94043-1351, USA'
+                    '1600 Amphitheatre Parkway Pk, Mountain View, '
+                    'CA 94043-1351, USA'
                 )
             },
             'geocode': {
                 'location': {'latitude': 37.4225028, 'longitude': -122.0843066}
             },
-            'metadata': {'business': True, 'poBox': False, 'residential': False},
+            'metadata': {
+                'business': True,
+                'poBox': False,
+                'residential': False,
+            },
         }
     }
 
@@ -116,7 +121,9 @@ def test_get_timezone(mock_get, mock_client):
     mock_client.return_value = mock_instance
 
     # Call the function with a test latitude and longitude
-    result = get_timezone((39.603481, -119.682251))  # Coordinates for Los Angeles
+    result = get_timezone(
+        (39.603481, -119.682251)
+    )  # Coordinates for Los Angeles
 
     # Verify the result
     expected_result = (

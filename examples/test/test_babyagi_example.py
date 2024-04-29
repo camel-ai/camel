@@ -29,4 +29,6 @@ parametrize = pytest.mark.parametrize(
 @parametrize
 def test_ai_society_babyagi_playing_example(model):
     with patch('time.sleep', return_value=None):
-        examples.ai_society.babyagi_playing.main(model_type=model, chat_turn_limit=2)
+        examples.ai_society.babyagi_playing.main(
+            model_type=model, chat_turn_limit=2
+        )

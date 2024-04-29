@@ -130,7 +130,9 @@ class TestVectorDBBlock:
         assert vector_db.embedding is not None
 
     def test_init_with_custom_components(self, mock_storage, mock_embedding):
-        vector_db = VectorDBBlock(storage=mock_storage, embedding=mock_embedding)
+        vector_db = VectorDBBlock(
+            storage=mock_storage, embedding=mock_embedding
+        )
         assert vector_db.storage == mock_storage
         assert vector_db.embedding == mock_embedding
 
@@ -149,7 +151,9 @@ class TestVectorDBBlock:
             for record in mock_records
         ]
         mock_storage.query.return_value = mock_query_results
-        vector_db = VectorDBBlock(storage=mock_storage, embedding=mock_embedding)
+        vector_db = VectorDBBlock(
+            storage=mock_storage, embedding=mock_embedding
+        )
 
         records = vector_db.retrieve("keyword", limit=2)
         assert len(records) == 2
@@ -158,7 +162,9 @@ class TestVectorDBBlock:
         assert records[1].memory_record.message.content == "test message 1"
 
     def test_write_records(self, mock_storage, mock_embedding):
-        vector_db = VectorDBBlock(storage=mock_storage, embedding=mock_embedding)
+        vector_db = VectorDBBlock(
+            storage=mock_storage, embedding=mock_embedding
+        )
         records_to_write = [
             MemoryRecord(
                 BaseMessage(

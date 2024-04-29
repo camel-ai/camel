@@ -70,7 +70,9 @@ class MilvusStorage(BaseVectorStorage):
         self._client: MilvusClient
         self._create_client(url_and_api_key, **kwargs)
         self.vector_dim = vector_dim
-        self.collection_name = collection_name or self._generate_collection_name()
+        self.collection_name = (
+            collection_name or self._generate_collection_name()
+        )
         self._check_and_create_collection()
 
     def _create_client(
@@ -98,7 +100,9 @@ class MilvusStorage(BaseVectorStorage):
         if it doesn't, ensuring it matches the specified vector dimensionality.
         """
         if self._collection_exists(self.collection_name):
-            in_dim = self._get_collection_info(self.collection_name)["vector_dim"]
+            in_dim = self._get_collection_info(self.collection_name)[
+                "vector_dim"
+            ]
             if in_dim != self.vector_dim:
                 # The name of collection has to be confirmed by the user
                 raise ValueError(
@@ -128,7 +132,9 @@ class MilvusStorage(BaseVectorStorage):
 
         # Set the schema
         schema = self._client.create_schema(
-            auto_id=False, enable_dynamic_field=True, description='collection schema'
+            auto_id=False,
+            enable_dynamic_field=True,
+            description='collection schema',
         )
 
         schema.add_field(
@@ -220,7 +226,9 @@ class MilvusStorage(BaseVectorStorage):
             Dict[str, Any]: A dictionary containing details about the
                 collection.
         """
-        vector_count = self._client.get_collection_stats(collection_name)['row_count']
+        vector_count = self._client.get_collection_stats(collection_name)[
+            'row_count'
+        ]
         collection_info = self._client.describe_collection(collection_name)
         collection_id = collection_info['collection_id']
 
@@ -228,7 +236,8 @@ class MilvusStorage(BaseVectorStorage):
             (
                 field['params']['dim']
                 for field in collection_info['fields']
-                if field['description'] == 'The numerical representation of the vector'
+                if field['description']
+                == 'The numerical representation of the vector'
             ),
             None,
         )
@@ -239,7 +248,9 @@ class MilvusStorage(BaseVectorStorage):
             "vector_dim": dim_value,  # the dimension of the vector
         }
 
-    def _validate_and_convert_vectors(self, records: List[VectorRecord]) -> List[dict]:
+    def _validate_and_convert_vectors(
+        self, records: List[VectorRecord]
+    ) -> List[dict]:
         r"""Validates and converts VectorRecord instances to the format
         expected by Milvus.
 

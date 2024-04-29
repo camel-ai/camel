@@ -77,8 +77,8 @@ def test_session():
         assert state.session is not None
 
         for _ in range(5):
-            state, chat, progress_update, start_bn_update = role_playing_chat_cont(
-                state
+            state, chat, progress_update, start_bn_update = (
+                role_playing_chat_cont(state)
             )
 
         state, _, _ = stop_session(state)

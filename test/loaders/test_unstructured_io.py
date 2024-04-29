@@ -53,7 +53,9 @@ def test_parse_file_or_url(unstructured_instance: UnstructuredIO):
 # Test the clean_text_data method
 def test_clean_text_data(unstructured_instance: UnstructuredIO):
     # Test with a valid cleaning option
-    test_options: List[Tuple[str, Dict[str, Any]]] = [("clean_extra_whitespace", {})]
+    test_options: List[Tuple[str, Dict[str, Any]]] = [
+        ("clean_extra_whitespace", {})
+    ]
     cleaned_text = unstructured_instance.clean_text_data(
         text="  Hello  World  ", clean_options=test_options
     )

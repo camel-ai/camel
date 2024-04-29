@@ -149,7 +149,9 @@ class BabyAGI:
         task_specify_meta_dict = dict()
         if self.task_type in [TaskType.AI_SOCIETY, TaskType.MISALIGNMENT]:
             task_specify_meta_dict.update(
-                dict(assistant_role=assistant_role_name, user_role=user_role_name)
+                dict(
+                    assistant_role=assistant_role_name, user_role=user_role_name
+                )
             )
         task_specify_meta_dict.update(extend_task_specify_meta_dict or {})
         task_specify_agent = TaskSpecifyAgent(
@@ -263,10 +265,14 @@ class BabyAGI:
         assistant_response.info['subtasks'] = list(self.subtasks)
         if not self.subtasks:
             terminated = True
-            assistant_response.info['termination_reasons'] = "All tasks are solved"
+            assistant_response.info['termination_reasons'] = (
+                "All tasks are solved"
+            )
             return ChatAgentResponse(
                 [assistant_msg], terminated, assistant_response.info
             )
         return ChatAgentResponse(
-            [assistant_msg], assistant_response.terminated, assistant_response.info
+            [assistant_msg],
+            assistant_response.terminated,
+            assistant_response.info,
         )

@@ -57,7 +57,9 @@ def generate_tasks(
     # Ensure exact number of tasks is generated
     assert str(num_tasks) in tasks[-1], print(tasks)
 
-    with open(f"./ai_society_data/tasks/{'_'.join(role_names)}.txt", "w") as file:
+    with open(
+        f"./ai_society_data/tasks/{'_'.join(role_names)}.txt", "w"
+    ) as file:
         file.write("\n".join(tasks))
 
 
@@ -72,11 +74,19 @@ def main(model=None) -> None:
     pool = multiprocessing.Pool()
 
     for task_generator_prompt, role_names in task_generator_prompt_generator:
-        if not os.path.exists(f"./ai_society_data/tasks/{'_'.join(role_names)}.txt"):
+        if not os.path.exists(
+            f"./ai_society_data/tasks/{'_'.join(role_names)}.txt"
+        ):
             print(f"Generating tasks for {role_names}")
             pool.apply_async(
                 generate_tasks,
-                (role_names, task_generator_prompt, start_token, num_tasks, model),
+                (
+                    role_names,
+                    task_generator_prompt,
+                    start_token,
+                    num_tasks,
+                    model,
+                ),
             )
 
     pool.close()

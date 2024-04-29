@@ -45,7 +45,10 @@ class TestLongtermAgentMemory:
         assert memory.vector_db_block is not None
 
     def test_init_with_custom_components(
-        self, mock_chat_history_block, mock_vector_db_block, mock_context_creator
+        self,
+        mock_chat_history_block,
+        mock_vector_db_block,
+        mock_context_creator,
     ):
         memory = LongtermAgentMemory(
             mock_context_creator,
@@ -56,7 +59,10 @@ class TestLongtermAgentMemory:
         assert memory.vector_db_block == mock_vector_db_block
 
     def test_retrieve(
-        self, mock_chat_history_block, mock_vector_db_block, mock_context_creator
+        self,
+        mock_chat_history_block,
+        mock_vector_db_block,
+        mock_context_creator,
     ):
         mock_chat_history_block.retrieve.return_value = ["chat_history_record"]
         mock_vector_db_block.retrieve.return_value = ["vector_db_record"]

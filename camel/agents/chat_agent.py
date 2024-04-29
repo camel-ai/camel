@@ -211,7 +211,9 @@ class ChatAgent(BaseAgent):
         """
         return len(self.func_dict) > 0
 
-    def update_memory(self, message: BaseMessage, role: OpenAIBackendRole) -> None:
+    def update_memory(
+        self, message: BaseMessage, role: OpenAIBackendRole
+    ) -> None:
         r"""Updates the agent memory with a new message.
 
         Args:
@@ -277,7 +279,9 @@ class ChatAgent(BaseAgent):
         r"""Initializes the stored messages list with the initial system
         message.
         """
-        system_record = MemoryRecord(self.system_message, OpenAIBackendRole.SYSTEM)
+        system_record = MemoryRecord(
+            self.system_message, OpenAIBackendRole.SYSTEM
+        )
         self.memory.clear()
         self.memory.write_record(system_record)
 
@@ -349,7 +353,9 @@ class ChatAgent(BaseAgent):
                 )
 
                 # Update the messages
-                self.update_memory(func_assistant_msg, OpenAIBackendRole.ASSISTANT)
+                self.update_memory(
+                    func_assistant_msg, OpenAIBackendRole.ASSISTANT
+                )
                 self.update_memory(func_result_msg, OpenAIBackendRole.FUNCTION)
 
                 # Record the function calling
@@ -409,8 +415,12 @@ class ChatAgent(BaseAgent):
                 content=choice.message.content or "",
             )
             output_messages.append(chat_message)
-        finish_reasons = [str(choice.finish_reason) for choice in response.choices]
-        usage = response.usage.model_dump() if response.usage is not None else {}
+        finish_reasons = [
+            str(choice.finish_reason) for choice in response.choices
+        ]
+        usage = (
+            response.usage.model_dump() if response.usage is not None else {}
+        )
         return (
             output_messages,
             finish_reasons,
@@ -501,7 +511,9 @@ class ChatAgent(BaseAgent):
     def step_function_call(
         self,
         response: ChatCompletion,
-    ) -> Tuple[FunctionCallingMessage, FunctionCallingMessage, FunctionCallingRecord]:
+    ) -> Tuple[
+        FunctionCallingMessage, FunctionCallingMessage, FunctionCallingRecord
+    ]:
         r"""Execute the function with arguments following the model's response.
 
         Args:
@@ -583,4 +595,6 @@ class ChatAgent(BaseAgent):
         Returns:
             str: The string representation of the :obj:`ChatAgent`.
         """
-        return f"ChatAgent({self.role_name}, {self.role_type}, {self.model_type})"
+        return (
+            f"ChatAgent({self.role_name}, {self.role_type}, {self.model_type})"
+        )

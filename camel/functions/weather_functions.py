@@ -40,7 +40,9 @@ def get_openweathermap_api_key() -> str:
 def get_weather_data(
     city: str,
     temp_units: Literal['kelvin', 'celsius', 'fahrenheit'] = 'kelvin',
-    wind_units: Literal['meters_sec', 'miles_hour', 'knots', 'beaufort'] = 'meters_sec',
+    wind_units: Literal[
+        'meters_sec', 'miles_hour', 'knots', 'beaufort'
+    ] = 'meters_sec',
     visibility_units: Literal['meters', 'miles'] = 'meters',
     time_units: Literal['unix', 'iso', 'date'] = 'unix',
 ) -> str:
@@ -136,7 +138,8 @@ def get_weather_data(
 
     except Exception as e:
         error_message = (
-            f"An error occurred while fetching weather data for {city}: " f"{e!s}."
+            f"An error occurred while fetching weather data for {city}: "
+            f"{e!s}."
         )
         return error_message
 

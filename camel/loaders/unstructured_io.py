@@ -69,7 +69,8 @@ class UnstructuredIO:
 
         if installed_ver < min_ver:
             raise ValueError(
-                f"Require `unstructured>={min_version}`, " f"you have {__version__}."
+                f"Require `unstructured>={min_version}`, "
+                f"you have {__version__}."
             )
 
     def parse_file_or_url(
@@ -232,7 +233,9 @@ class UnstructuredIO:
         cleaned_text = text
         for func_name, params in clean_options:
             if func_name in cleaning_functions:
-                cleaned_text = cleaning_functions[func_name](cleaned_text, **params)
+                cleaned_text = cleaning_functions[func_name](
+                    cleaned_text, **params
+                )
             else:
                 raise ValueError(
                     f"'{func_name}' is not a valid function in `unstructured`."
@@ -370,9 +373,8 @@ class UnstructuredIO:
             "convert_to_dataframe": base.convert_to_dataframe,
             "convert_to_dict": base.convert_to_dict,
             "dict_to_elements": base.dict_to_elements,
-            "stage_csv_for_prodigy": lambda els, **kw: prodigy.stage_csv_for_prodigy(
-                els, kw.get('metadata', [])
-            ),
+            "stage_csv_for_prodigy": lambda els,
+            **kw: prodigy.stage_csv_for_prodigy(els, kw.get('metadata', [])),
             "stage_for_prodigy": lambda els, **kw: prodigy.stage_for_prodigy(
                 els, kw.get('metadata', [])
             ),
@@ -380,9 +382,8 @@ class UnstructuredIO:
             "stage_for_datasaur": lambda els, **kw: datasaur.stage_for_datasaur(
                 els, kw.get('entities', [])
             ),
-            "stage_for_label_box": lambda els, **kw: label_box.stage_for_label_box(
-                els, **kw
-            ),
+            "stage_for_label_box": lambda els,
+            **kw: label_box.stage_for_label_box(els, **kw),
             "stage_for_label_studio": lambda els,
             **kw: label_studio.stage_for_label_studio(els, **kw),
             "stage_for_weaviate": weaviate.stage_for_weaviate,
@@ -470,7 +471,11 @@ class UnstructuredIO:
         runner.run(anonymous=anonymous)
 
     def run_azure_ingest(
-        self, azure_url: str, output_dir: str, account_name: str, num_processes: int = 2
+        self,
+        azure_url: str,
+        output_dir: str,
+        account_name: str,
+        num_processes: int = 2,
     ) -> None:
         """
         Processes documents from an Azure storage container and stores
@@ -511,7 +516,11 @@ class UnstructuredIO:
         runner.run(account_name=account_name)
 
     def run_github_ingest(
-        self, repo_url: str, git_branch: str, output_dir: str, num_processes: int = 2
+        self,
+        repo_url: str,
+        git_branch: str,
+        output_dir: str,
+        num_processes: int = 2,
     ) -> None:
         r"""Processes documents from a GitHub repository and stores
         structured outputs locally.
@@ -593,11 +602,18 @@ class UnstructuredIO:
             partition_config=PartitionConfig(),
         )
         runner.run(
-            channels=channels, token=token, start_date=start_date, end_date=end_date
+            channels=channels,
+            token=token,
+            start_date=start_date,
+            end_date=end_date,
         )
 
     def run_discord_ingest(
-        self, channels: List[str], token: str, output_dir: str, num_processes: int = 2
+        self,
+        channels: List[str],
+        token: str,
+        output_dir: str,
+        num_processes: int = 2,
     ) -> None:
         r"""Processes messages from specified Discord channels and stores
         structured outputs locally.

@@ -49,7 +49,9 @@ def clean_text_example(text):
         ('clean_non_ascii_chars', {}),
         ('clean_extra_whitespace', {}),
     ]
-    return unstructured_modules.clean_text_data(text=text, clean_options=options)
+    return unstructured_modules.clean_text_data(
+        text=text, clean_options=options
+    )
 
 
 def extract_data_example(text):
@@ -80,7 +82,9 @@ def main():
         "https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
         "philadelphia-eagles-spt-intl/index.html"
     )
-    example_dirty_text = "\x93Some dirty text â€™ with extra spaces and – dashes."  # noqa: RUF001
+    example_dirty_text = (
+        "\x93Some dirty text â€™ with extra spaces and – dashes."  # noqa: RUF001
+    )
     example_email_text = "Contact me at example@email.com."
 
     print("Choose an example to run:")

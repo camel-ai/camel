@@ -155,7 +155,10 @@ class TaskPlannerAgent(ChatAgent):
         )
 
         super().__init__(
-            system_message, model_type, model_config, output_language=output_language
+            system_message,
+            model_type,
+            model_config,
+            output_language=output_language,
         )
 
     def run(
@@ -284,9 +287,13 @@ Be concrete.
         """
 
         if len(task_list) > 0:
-            task_creation_prompt = self.task_creation_prompt.format(task_list=task_list)
+            task_creation_prompt = self.task_creation_prompt.format(
+                task_list=task_list
+            )
         else:
-            task_creation_prompt = self.task_creation_prompt.format(task_list="")
+            task_creation_prompt = self.task_creation_prompt.format(
+                task_list=""
+            )
 
         task_msg = BaseMessage.make_user_message(
             role_name="Task Creator", content=task_creation_prompt

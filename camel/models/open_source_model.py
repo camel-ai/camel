@@ -49,7 +49,9 @@ class OpenSourceModel(BaseModelBackend):
             )
 
         # Check whether input model path is empty
-        model_path: Optional[str] = self.model_config_dict.get("model_path", None)
+        model_path: Optional[str] = self.model_config_dict.get(
+            "model_path", None
+        )
         if not model_path:
             raise ValueError("Path to open-source model is not provided.")
         self.model_path: str = model_path
@@ -63,9 +65,13 @@ class OpenSourceModel(BaseModelBackend):
             )
 
         # Load the server URL and check whether it is None
-        server_url: Optional[str] = self.model_config_dict.get("server_url", None)
+        server_url: Optional[str] = self.model_config_dict.get(
+            "server_url", None
+        )
         if not server_url:
-            raise ValueError("URL to server running open-source LLM is not provided.")
+            raise ValueError(
+                "URL to server running open-source LLM is not provided."
+            )
         self.server_url: str = server_url
         self._client = OpenAI(
             base_url=self.server_url,

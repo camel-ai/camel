@@ -129,7 +129,8 @@ class CriticAgent(ChatAgent):
                     role_name=input_message.role_name,
                     role_type=input_message.role_type,
                     meta_dict=input_message.meta_dict,
-                    content="> Invalid choice. Please choose again.\n" + msg_content,
+                    content="> Invalid choice. Please choose again.\n"
+                    + msg_content,
                 )
                 i += 1
         warnings.warn(

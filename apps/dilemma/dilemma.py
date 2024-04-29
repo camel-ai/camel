@@ -33,7 +33,10 @@ def parse_arguments():
 
     parser = argparse.ArgumentParser("Dilemma tool")
     parser.add_argument(
-        '--data-path', type=str, default=None, help='Path to ZIP file containing JSONs'
+        '--data-path',
+        type=str,
+        default=None,
+        help='Path to ZIP file containing JSONs',
     )
     parser.add_argument(
         '--no-db',
@@ -51,7 +54,10 @@ def parse_arguments():
         help='localhost for local, 0.0.0.0 (default) for public',
     )
     parser.add_argument(
-        '--server-port', type=int, default=8080, help='Port ot run the web page on'
+        '--server-port',
+        type=int,
+        default=8080,
+        help='Port ot run the web page on',
     )
     parser.add_argument(
         '--inbrowser',
@@ -141,7 +147,9 @@ def construct_ui(
                 dict(summary="ERROR_TEXT", gpt_solution="ERROR_TEXT"),
             )
         specified_task = rec['specified_task']
-        lst = [(k, v) for k, v in rec.items() if k in {'summary', 'gpt_solution'}]
+        lst = [
+            (k, v) for k, v in rec.items() if k in {'summary', 'gpt_solution'}
+        ]
         random.shuffle(lst)
         state = dict(
             name=name,
@@ -149,7 +157,12 @@ def construct_ui(
             right=dict(who=lst[1][0], text=lst[1][1]),
             specified_task=specified_task,
         )
-        return (state, state['left']['text'], state['right']['text'], specified_task)
+        return (
+            state,
+            state['left']['text'],
+            state['right']['text'],
+            specified_task,
+        )
 
     def record(choice: str, state):
         assert choice in {'left', 'draw', 'right'}

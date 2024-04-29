@@ -56,7 +56,10 @@ class BM25Retriever(BaseRetriever):
         self.chunks: List[Any] = []
 
     def process(
-        self, content_input_path: str, chunk_type: str = "chunk_by_title", **kwargs: Any
+        self,
+        content_input_path: str,
+        chunk_type: str = "chunk_by_title",
+        **kwargs: Any,
     ) -> None:
         r"""Processes content from a file or URL, divides it into chunks by
         using `Unstructured IO`,then stored internally. This method must be
@@ -74,7 +77,9 @@ class BM25Retriever(BaseRetriever):
         # Load and preprocess documents
         self.content_input_path = content_input_path
         unstructured_modules = UnstructuredIO()
-        elements = unstructured_modules.parse_file_or_url(content_input_path, **kwargs)
+        elements = unstructured_modules.parse_file_or_url(
+            content_input_path, **kwargs
+        )
         self.chunks = unstructured_modules.chunk_elements(
             chunk_type=chunk_type, elements=elements
         )
@@ -115,7 +120,8 @@ class BM25Retriever(BaseRetriever):
 
         if self.bm25 is None:
             raise ValueError(
-                "BM25 model is not initialized. Call `process_and_store`" " first."
+                "BM25 model is not initialized. Call `process_and_store`"
+                " first."
             )
 
         # Preprocess query similarly to how documents were processed
@@ -136,6 +142,8 @@ class BM25Retriever(BaseRetriever):
             formatted_results.append(result_dict)
 
         # Sort the list of dictionaries by 'similarity score' from high to low
-        formatted_results.sort(key=lambda x: x['similarity score'], reverse=True)
+        formatted_results.sort(
+            key=lambda x: x['similarity score'], reverse=True
+        )
 
         return formatted_results

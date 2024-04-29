@@ -30,14 +30,17 @@ def main(
 
     model_config_description = ChatGPTConfig()
     role_description_agent = RoleAssignmentAgent(
-        model_type=model_type_for_role_generation, model_config=model_config_description
+        model_type=model_type_for_role_generation,
+        model_config=model_config_description,
     )
 
     role_description_dict = role_description_agent.run(
         task_prompt=task_prompt, num_roles=2
     )
 
-    ai_assistant_role = list(role_description_dict.keys())[AI_ASSISTANT_ROLE_INDEX]
+    ai_assistant_role = list(role_description_dict.keys())[
+        AI_ASSISTANT_ROLE_INDEX
+    ]
     ai_user_role = list(role_description_dict.keys())[AI_USER_ROLE_INDEX]
     ai_assistant_description = role_description_dict[ai_assistant_role]
     ai_user_description = role_description_dict[ai_user_role]
@@ -67,7 +70,9 @@ def main(
         Fore.GREEN
         + f"AI Assistant sys message:\n{role_play_session.assistant_sys_msg}\n"
     )
-    print(Fore.BLUE + f"AI User sys message:\n{role_play_session.user_sys_msg}\n")
+    print(
+        Fore.BLUE + f"AI User sys message:\n{role_play_session.user_sys_msg}\n"
+    )
     print(
         Fore.GREEN + f"Role description of AI Assistant:\n"
         f"{role_play_session.assistant_sys_msg.role_name}\n"
@@ -112,7 +117,8 @@ def main(
             break
 
         print_text_animated(
-            Fore.BLUE + f"AI User: {ai_user_role}\n\n{user_response.msg.content}\n"
+            Fore.BLUE
+            + f"AI User: {ai_user_role}\n\n{user_response.msg.content}\n"
         )
         print_text_animated(
             Fore.GREEN

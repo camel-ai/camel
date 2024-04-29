@@ -26,7 +26,10 @@ def _create_messages() -> List[BaseMessage]:
     messages = []
     for _ in range(3):
         message = BaseMessage(
-            role_name="user", role_type=RoleType.USER, meta_dict={}, content="GoodBye"
+            role_name="user",
+            role_type=RoleType.USER,
+            meta_dict={},
+            content="GoodBye",
         )
         messages.append(message)
     return messages

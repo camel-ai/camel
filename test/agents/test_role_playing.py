@@ -25,7 +25,9 @@ from camel.types import ModelType, RoleType, TaskType
 @pytest.mark.parametrize("model_type", [None, ModelType.GPT_4])
 @pytest.mark.parametrize("critic_role_name", ["human", "critic agent"])
 @pytest.mark.parametrize("with_critic_in_the_loop", [True, False])
-def test_role_playing_init(model_type, critic_role_name, with_critic_in_the_loop):
+def test_role_playing_init(
+    model_type, critic_role_name, with_critic_in_the_loop
+):
     role_playing = RolePlaying(
         assistant_role_name="assistant",
         assistant_agent_kwargs=dict(model_type=ModelType.GPT_3_5_TURBO),
@@ -182,7 +184,13 @@ def test_role_playing_role_sequence(model_type=None):
     for record in role_playing.assistant_agent.memory.get_context()[0]:
         assistant_role_sequence.append(record["role"])
 
-    assert user_role_sequence == ['system', 'user', 'assistant', 'user', 'assistant']
+    assert user_role_sequence == [
+        'system',
+        'user',
+        'assistant',
+        'user',
+        'assistant',
+    ]
     assert assistant_role_sequence == [
         'system',
         'user',

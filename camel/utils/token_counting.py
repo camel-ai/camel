@@ -239,7 +239,9 @@ class OpenAITokenCounter(BaseTokenCounter):
                 else:
                     for item in value:
                         if item["type"] == "text":
-                            num_tokens += len(self.encoding.encode(str(item["text"])))
+                            num_tokens += len(
+                                self.encoding.encode(str(item["text"]))
+                            )
                         elif item["type"] == "image_url":
                             image_str: str = item["image_url"]["url"]
                             detail = item["image_url"]["detail"]
@@ -254,7 +256,9 @@ class OpenAITokenCounter(BaseTokenCounter):
                                     break
                             assert isinstance(image_prefix, str)
                             encoded_image = image_str.split(image_prefix)[1]
-                            image_bytes = BytesIO(base64.b64decode(encoded_image))
+                            image_bytes = BytesIO(
+                                base64.b64decode(encoded_image)
+                            )
                             image = Image.open(image_bytes)
                             num_tokens += count_tokens_from_image(
                                 image, OpenAIImageDetailType(detail)
@@ -296,7 +300,9 @@ class AnthropicTokenCounter(BaseTokenCounter):
         return self.client.count_tokens(prompt)
 
 
-def count_tokens_from_image(image: Image.Image, detail: OpenAIImageDetailType) -> int:
+def count_tokens_from_image(
+    image: Image.Image, detail: OpenAIImageDetailType
+) -> int:
     r"""Count image tokens for OpenAI vision model. An :obj:`"auto"`
     resolution model will be treated as :obj:`"high"`. All images with
     :obj:`"low"` detail cost 85 tokens each. Images with :obj:`"high"` detail

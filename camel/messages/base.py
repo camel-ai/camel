@@ -181,7 +181,9 @@ class BaseMessage:
         idx = 0
         start_idx = 0
         while idx < len(lines):
-            while idx < len(lines) and (not lines[idx].lstrip().startswith("```")):
+            while idx < len(lines) and (
+                not lines[idx].lstrip().startswith("```")
+            ):
                 idx += 1
             text = "\n".join(lines[start_idx:idx]).strip()
             text_prompts.append(TextPrompt(text))
@@ -259,7 +261,9 @@ class BaseMessage:
                 )
             with io.BytesIO() as buffer:
                 self.image.save(fp=buffer, format=self.image.format)
-                encoded_image = base64.b64encode(buffer.getvalue()).decode("utf-8")
+                encoded_image = base64.b64encode(buffer.getvalue()).decode(
+                    "utf-8"
+                )
             image_prefix = f"data:image/{image_type};base64,"
 
             return {

@@ -80,9 +80,15 @@ class VectorRetriever(BaseRetriever):
                 content_path_info = {"content path": content_input_path}
                 chunk_metadata = {"metadata": chunk.metadata.to_dict()}
                 chunk_text = {"text": str(chunk)}
-                combined_dict = {**content_path_info, **chunk_metadata, **chunk_text}
+                combined_dict = {
+                    **content_path_info,
+                    **chunk_metadata,
+                    **chunk_text,
+                }
 
-                records.append(VectorRecord(vector=vector, payload=combined_dict))
+                records.append(
+                    VectorRecord(vector=vector, payload=combined_dict)
+                )
 
             storage.add(records=records)
 
@@ -127,7 +133,8 @@ class VectorRetriever(BaseRetriever):
 
         if query_results[0].record.payload is None:
             raise ValueError(
-                "Payload of vector storage is None, please check" " the collection."
+                "Payload of vector storage is None, please check"
+                " the collection."
             )
 
         # format the results
@@ -139,7 +146,9 @@ class VectorRetriever(BaseRetriever):
             ):
                 result_dict = {
                     'similarity score': str(result.similarity),
-                    'content path': result.record.payload.get('content path', ''),
+                    'content path': result.record.payload.get(
+                        'content path', ''
+                    ),
                     'metadata': result.record.payload.get('metadata', {}),
                     'text': result.record.payload.get('text', ''),
                 }

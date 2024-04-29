@@ -58,7 +58,8 @@ def test_task_specify_code_agent(model: Optional[ModelType]):
         model_type=model,
     )
     specified_task_prompt = task_specify_agent.run(
-        original_task_prompt, meta_dict=dict(domain="Chemistry", language="Python")
+        original_task_prompt,
+        meta_dict=dict(domain="Chemistry", language="Python"),
     )
     assert "{" and "}" not in specified_task_prompt
     print(f"Specified task prompt:\n{specified_task_prompt}\n")
@@ -74,7 +75,8 @@ def test_task_planner_agent(model: Optional[ModelType]):
         model_type=model,
     )
     specified_task_prompt = task_specify_agent.run(
-        original_task_prompt, meta_dict=dict(domain="Chemistry", language="Python")
+        original_task_prompt,
+        meta_dict=dict(domain="Chemistry", language="Python"),
     )
     print(f"Specified task prompt:\n{specified_task_prompt}\n")
     task_planner_agent = TaskPlannerAgent(

@@ -33,7 +33,9 @@ class BaseTerminator(ABC):
 
 class ResponseTerminator(BaseTerminator):
     @abstractmethod
-    def is_terminated(self, messages: List[BaseMessage]) -> Tuple[bool, Optional[str]]:
+    def is_terminated(
+        self, messages: List[BaseMessage]
+    ) -> Tuple[bool, Optional[str]]:
         pass
 
     @abstractmethod

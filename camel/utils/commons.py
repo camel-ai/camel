@@ -339,7 +339,9 @@ def role_playing_with_function(
         Fore.GREEN
         + f"AI Assistant sys message:\n{role_play_session.assistant_sys_msg}\n"
     )
-    print(Fore.BLUE + f"AI User sys message:\n{role_play_session.user_sys_msg}\n")
+    print(
+        Fore.BLUE + f"AI User sys message:\n{role_play_session.user_sys_msg}\n"
+    )
 
     print(Fore.YELLOW + f"Original task prompt:\n{task_prompt}\n")
     print(
@@ -374,7 +376,9 @@ def role_playing_with_function(
             break
 
         # Print output from the user
-        print_text_animated(Fore.BLUE + f"AI User:\n\n{user_response.msg.content}\n")
+        print_text_animated(
+            Fore.BLUE + f"AI User:\n\n{user_response.msg.content}\n"
+        )
 
         # Print output from the assistant, including any function
         # execution information

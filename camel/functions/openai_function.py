@@ -140,7 +140,10 @@ def get_openai_tool_schema(func: Callable) -> Dict[str, Any]:
         "parameters": parameters_dict,
     }
 
-    openai_tool_schema = {"type": "function", "function": openai_function_schema}
+    openai_tool_schema = {
+        "type": "function",
+        "function": openai_function_schema,
+    }
     return openai_tool_schema
 
 
@@ -165,7 +168,9 @@ class OpenAIFunction:
         openai_tool_schema: Optional[Dict[str, Any]] = None,
     ) -> None:
         self.func = func
-        self.openai_tool_schema = openai_tool_schema or get_openai_tool_schema(func)
+        self.openai_tool_schema = openai_tool_schema or get_openai_tool_schema(
+            func
+        )
         self.properties = self.openai_tool_schema
 
     @staticmethod
@@ -208,7 +213,9 @@ class OpenAIFunction:
         for param_name in properties.keys():
             param_dict = properties[param_name]
             if "description" not in param_dict:
-                raise ValueError(f'miss description of parameter "{param_name}"')
+                raise ValueError(
+                    f'miss description of parameter "{param_name}"'
+                )
 
     def get_openai_tool_schema(self) -> Dict[str, Any]:
         r"""Gets the OpenAI tool schema for this function.
@@ -322,9 +329,9 @@ class OpenAIFunction:
                 for.
             description (str): The description for the parameter.
         """
-        self.openai_tool_schema["function"]["parameters"]["properties"][param_name][
-            "description"
-        ] = description
+        self.openai_tool_schema["function"]["parameters"]["properties"][
+            param_name
+        ]["description"] = description
 
     def get_parameter(self, param_name: str) -> Dict[str, Any]:
         r"""Gets the schema for a specific parameter from the function schema.
@@ -351,9 +358,9 @@ class OpenAIFunction:
             JSONValidator.check_schema(value)
         except SchemaError as e:
             raise e
-        self.openai_tool_schema["function"]["parameters"]["properties"][param_name] = (
-            value
-        )
+        self.openai_tool_schema["function"]["parameters"]["properties"][
+            param_name
+        ] = value
 
     @property
     def parameters(self) -> Dict[str, Any]:

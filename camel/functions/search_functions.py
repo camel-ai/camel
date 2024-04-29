@@ -44,7 +44,9 @@ def search_wiki(entity: str) -> str:
     try:
         result = wikipedia.summary(entity, sentences=5, auto_suggest=False)
     except wikipedia.exceptions.DisambiguationError as e:
-        result = wikipedia.summary(e.options[0], sentences=5, auto_suggest=False)
+        result = wikipedia.summary(
+            e.options[0], sentences=5, auto_suggest=False
+        )
     except wikipedia.exceptions.PageError:
         result = (
             "There is no page in Wikipedia corresponding to entity "
@@ -176,7 +178,9 @@ def text_extract_from_web(url: str) -> str:
         text = soup.get_text()
         # Strip text
         lines = (line.strip() for line in text.splitlines())
-        chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+        chunks = (
+            phrase.strip() for line in lines for phrase in line.split("  ")
+        )
         text = ".".join(chunk for chunk in chunks if chunk)
 
     except requests.RequestException:

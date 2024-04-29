@@ -51,9 +51,13 @@ def update_license_in_file(
     start_index = fine_license_start_line(
         maybe_existing_licenses, start_line_start_with
     )
-    end_index = find_license_end_line(maybe_existing_licenses, end_line_start_with)
+    end_index = find_license_end_line(
+        maybe_existing_licenses, end_line_start_with
+    )
     if start_index is not None and end_index is not None:
-        maybe_existing_licenses = maybe_existing_licenses[start_index : end_index + 1]
+        maybe_existing_licenses = maybe_existing_licenses[
+            start_index : end_index + 1
+        ]
     else:
         maybe_existing_licenses = None
     if maybe_existing_licenses:

@@ -183,13 +183,18 @@ class RolePlaying:
             task_specify_meta_dict = dict()
             if self.task_type in [TaskType.AI_SOCIETY, TaskType.MISALIGNMENT]:
                 task_specify_meta_dict.update(
-                    dict(assistant_role=assistant_role_name, user_role=user_role_name)
+                    dict(
+                        assistant_role=assistant_role_name,
+                        user_role=user_role_name,
+                    )
                 )
             task_specify_meta_dict.update(extend_task_specify_meta_dict or {})
             if self.model_type is not None:
                 if task_specify_agent_kwargs is None:
                     task_specify_agent_kwargs = {}
-                task_specify_agent_kwargs.update(dict(model_type=self.model_type))
+                task_specify_agent_kwargs.update(
+                    dict(model_type=self.model_type)
+                )
             task_specify_agent = TaskSpecifyAgent(
                 task_type=self.task_type,
                 output_language=output_language,
@@ -222,13 +227,17 @@ class RolePlaying:
             if self.model_type is not None:
                 if task_planner_agent_kwargs is None:
                     task_planner_agent_kwargs = {}
-                task_planner_agent_kwargs.update(dict(model_type=self.model_type))
+                task_planner_agent_kwargs.update(
+                    dict(model_type=self.model_type)
+                )
             task_planner_agent = TaskPlannerAgent(
                 output_language=output_language,
                 **(task_planner_agent_kwargs or {}),
             )
             self.planned_task_prompt = task_planner_agent.run(self.task_prompt)
-            self.task_prompt = f"{self.task_prompt}\n" f"{self.planned_task_prompt}"
+            self.task_prompt = (
+                f"{self.task_prompt}\n" f"{self.planned_task_prompt}"
+            )
         else:
             self.planned_task_prompt = None
 
@@ -264,7 +273,9 @@ class RolePlaying:
             TaskType.MISALIGNMENT,
         ]:
             extend_sys_msg_meta_dicts = [
-                dict(assistant_role=assistant_role_name, user_role=user_role_name)
+                dict(
+                    assistant_role=assistant_role_name, user_role=user_role_name
+                )
                 for _ in range(2)
             ]
 
@@ -276,12 +287,14 @@ class RolePlaying:
                 )
             ]
 
-        init_assistant_sys_msg, init_user_sys_msg = sys_msg_generator.from_dicts(
-            meta_dicts=sys_msg_meta_dicts,
-            role_tuples=[
-                (assistant_role_name, RoleType.ASSISTANT),
-                (user_role_name, RoleType.USER),
-            ],
+        init_assistant_sys_msg, init_user_sys_msg = (
+            sys_msg_generator.from_dicts(
+                meta_dicts=sys_msg_meta_dicts,
+                role_tuples=[
+                    (assistant_role_name, RoleType.ASSISTANT),
+                    (user_role_name, RoleType.USER),
+                ],
+            )
         )
         return init_assistant_sys_msg, init_user_sys_msg, sys_msg_meta_dicts
 
@@ -357,7 +370,9 @@ class RolePlaying:
             if critic_role_name.lower() == "human":
                 self.critic = Human(**(critic_kwargs or {}))
             else:
-                critic_criteria = critic_criteria or "improving the task performance"
+                critic_criteria = (
+                    critic_criteria or "improving the task performance"
+                )
                 critic_msg_meta_dict = dict(
                     critic_role=critic_role_name,
                     criteria=critic_criteria,
@@ -397,7 +412,8 @@ class RolePlaying:
             raise ValueError("No messages to process.")
         if len(messages) > 1 and not self.with_critic_in_the_loop:
             raise ValueError(
-                "Got than one message to process. " f"Num of messages: {len(messages)}."
+                "Got than one message to process. "
+                f"Num of messages: {len(messages)}."
             )
         elif self.with_critic_in_the_loop and self.critic is not None:
             critic_response = self.critic.reduce_step(messages)
@@ -465,7 +481,9 @@ class RolePlaying:
         if user_response.terminated or user_response.msgs is None:
             return (
                 ChatAgentResponse([], False, {}),
-                ChatAgentResponse([], user_response.terminated, user_response.info),
+                ChatAgentResponse(
+                    [], user_response.terminated, user_response.info
+                ),
             )
         user_msg = self._reduce_message_options(user_response.msgs)
         self.user_agent.record_message(user_msg)
@@ -483,7 +501,11 @@ class RolePlaying:
 
         return (
             ChatAgentResponse(
-                [assistant_msg], assistant_response.terminated, assistant_response.info
+                [assistant_msg],
+                assistant_response.terminated,
+                assistant_response.info,
             ),
-            ChatAgentResponse([user_msg], user_response.terminated, user_response.info),
+            ChatAgentResponse(
+                [user_msg], user_response.terminated, user_response.info
+            ),
         )

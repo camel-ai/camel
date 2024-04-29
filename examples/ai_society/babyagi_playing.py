@@ -30,14 +30,19 @@ def main(model_type=None, chat_turn_limit=15) -> None:
     )
 
     print(
-        Fore.GREEN + f"AI Assistant sys message:\n{babyagi_session.assistant_sys_msg}\n"
+        Fore.GREEN
+        + f"AI Assistant sys message:\n{babyagi_session.assistant_sys_msg}\n"
     )
 
     print(Fore.YELLOW + f"Original task prompt:\n{task_prompt}\n")
     print(
-        Fore.CYAN + f"Specified task prompt:\n{babyagi_session.specified_task_prompt}\n"
+        Fore.CYAN
+        + f"Specified task prompt:\n{babyagi_session.specified_task_prompt}\n"
     )
-    print(Fore.RED + f"Final task prompt:\n{babyagi_session.specified_task_prompt}\n")
+    print(
+        Fore.RED
+        + f"Final task prompt:\n{babyagi_session.specified_task_prompt}\n"
+    )
 
     n = 0
     while n < chat_turn_limit:
@@ -53,10 +58,12 @@ def main(model_type=None, chat_turn_limit=15) -> None:
             )
             break
         print_text_animated(
-            Fore.RED + "Task Name:\n\n" f"{assistant_response.info['task_name']}\n"
+            Fore.RED + "Task Name:\n\n"
+            f"{assistant_response.info['task_name']}\n"
         )
         print_text_animated(
-            Fore.GREEN + "AI Assistant:\n\n" f"{assistant_response.msg.content}\n"
+            Fore.GREEN + "AI Assistant:\n\n"
+            f"{assistant_response.msg.content}\n"
         )
         print_text_animated(
             Fore.BLUE + "Remaining Subtasks:\n\n"

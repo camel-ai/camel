@@ -64,14 +64,23 @@ def test_get_openai_tool_schema():
                         'description': "any_para desc. "
                         "Type defaults to 'Any' if not specified."
                     },
-                    'str_para': {'type': 'string', 'description': 'str_para desc'},
-                    'int_para': {'type': 'integer', 'description': 'int_para desc'},
+                    'str_para': {
+                        'type': 'string',
+                        'description': 'str_para desc',
+                    },
+                    'int_para': {
+                        'type': 'integer',
+                        'description': 'int_para desc',
+                    },
                     'list_para': {
                         'type': 'array',
                         'items': {'type': 'integer'},
                         'description': 'list_para desc',
                     },
-                    'float_para': {'type': 'number', 'description': 'float_para desc'},
+                    'float_para': {
+                        'type': 'number',
+                        'description': 'float_para desc',
+                    },
                     'datatime_para': {
                         'type': 'string',
                         'format': 'date-time',
@@ -129,14 +138,23 @@ def test_get_openai_tool_schema():
                         'description': "any_para desc. "
                         "Type defaults to 'Any' if not specified."
                     },
-                    'str_para': {'type': 'string', 'description': 'str_para desc'},
-                    'int_para': {'type': 'integer', 'description': 'int_para desc'},
+                    'str_para': {
+                        'type': 'string',
+                        'description': 'str_para desc',
+                    },
+                    'int_para': {
+                        'type': 'integer',
+                        'description': 'int_para desc',
+                    },
                     'list_para': {
                         'items': {'type': 'integer'},
                         'type': 'array',
                         'description': 'list_para desc',
                     },
-                    'float_para': {'type': 'number', 'description': 'float_para desc'},
+                    'float_para': {
+                        'type': 'number',
+                        'description': 'float_para desc',
+                    },
                     'datatime_para': {
                         'format': 'date-time',
                         'type': 'string',
@@ -297,8 +315,14 @@ function_schema = {
     "parameters": {
         'type': 'object',
         'properties': {
-            'a': {'type': 'integer', 'description': 'The first number to be added.'},
-            'b': {'type': 'integer', 'description': 'The second number to be added.'},
+            'a': {
+                'type': 'integer',
+                'description': 'The first number to be added.',
+            },
+            'b': {
+                'type': 'integer',
+                'description': 'The second number to be added.',
+            },
         },
         'required': ['a', 'b'],
     },

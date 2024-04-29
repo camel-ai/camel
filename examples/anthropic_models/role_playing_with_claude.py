@@ -44,7 +44,9 @@ def main(model_type=None) -> None:
         Fore.GREEN
         + f"AI Assistant sys message:\n{role_play_session.assistant_sys_msg}\n"
     )
-    print(Fore.BLUE + f"AI User sys message:\n{role_play_session.user_sys_msg}\n")
+    print(
+        Fore.BLUE + f"AI User sys message:\n{role_play_session.user_sys_msg}\n"
+    )
 
     print(Fore.YELLOW + f"Original task prompt:\n{task_prompt}\n")
     print(
@@ -78,9 +80,12 @@ def main(model_type=None) -> None:
             )
             break
 
-        print_text_animated(Fore.BLUE + f"AI User:\n\n{user_response.msg.content}\n")
         print_text_animated(
-            Fore.GREEN + "AI Assistant:\n\n" f"{assistant_response.msg.content}\n"
+            Fore.BLUE + f"AI User:\n\n{user_response.msg.content}\n"
+        )
+        print_text_animated(
+            Fore.GREEN + "AI Assistant:\n\n"
+            f"{assistant_response.msg.content}\n"
         )
 
         if "CAMEL_TASK_DONE" in user_response.msg.content:

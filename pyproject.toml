@@ -171,7 +171,7 @@ recommonmark = "*"
 docutils = "<0.20.0"
 
 [tool.ruff]
-line-length = 88
+line-length = 80
 fix = true
 target-version = "py39"
 

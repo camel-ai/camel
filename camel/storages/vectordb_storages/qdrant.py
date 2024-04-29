@@ -86,7 +86,9 @@ class QdrantStorage(BaseVectorStorage):
 
         self.vector_dim = vector_dim
         self.distance = distance
-        self.collection_name = collection_name or self._generate_collection_name()
+        self.collection_name = (
+            collection_name or self._generate_collection_name()
+        )
 
         self._check_and_create_collection()
 
@@ -106,7 +108,10 @@ class QdrantStorage(BaseVectorStorage):
                     _count - 1,
                 )
 
-        if hasattr(self, "delete_collection_on_del") and self.delete_collection_on_del:
+        if (
+            hasattr(self, "delete_collection_on_del")
+            and self.delete_collection_on_del
+        ):
             self._delete_collection(self.collection_name)
 
     def _create_client(
@@ -139,7 +144,9 @@ class QdrantStorage(BaseVectorStorage):
 
     def _check_and_create_collection(self) -> None:
         if self._collection_exists(self.collection_name):
-            in_dim = self._get_collection_info(self.collection_name)["vector_dim"]
+            in_dim = self._get_collection_info(self.collection_name)[
+                "vector_dim"
+            ]
             if in_dim != self.vector_dim:
                 # The name of collection has to be confirmed by the user
                 raise ValueError(
@@ -198,7 +205,9 @@ class QdrantStorage(BaseVectorStorage):
             collection (str): Name of the collection to be deleted.
             **kwargs (Any): Additional keyword arguments.
         """
-        self._client.delete_collection(collection_name=collection_name, **kwargs)
+        self._client.delete_collection(
+            collection_name=collection_name, **kwargs
+        )
 
     def _collection_exists(self, collection_name: str) -> bool:
         r"""Returns wether the collection exists in the database"""
@@ -224,7 +233,9 @@ class QdrantStorage(BaseVectorStorage):
         from qdrant_client.http.models import VectorParams
 
         # TODO: check more information
-        collection_info = self._client.get_collection(collection_name=collection_name)
+        collection_info = self._client.get_collection(
+            collection_name=collection_name
+        )
         vector_config = collection_info.config.params.vectors
         return {
             "vector_dim": vector_config.size
@@ -261,7 +272,8 @@ class QdrantStorage(BaseVectorStorage):
         )
         if op_info.status != UpdateStatus.COMPLETED:
             raise RuntimeError(
-                "Failed to add vectors in Qdrant, operation info: " f"{op_info}."
+                "Failed to add vectors in Qdrant, operation info: "
+                f"{op_info}."
             )
 
     def delete(
@@ -290,7 +302,8 @@ class QdrantStorage(BaseVectorStorage):
         )
         if op_info.status != UpdateStatus.COMPLETED:
             raise RuntimeError(
-                "Failed to delete vectors in Qdrant, operation info: " f"{op_info}"
+                "Failed to delete vectors in Qdrant, operation info: "
+                f"{op_info}"
             )
 
     def status(self) -> VectorDBStatus:

@@ -259,4 +259,6 @@ def read_file(file: BytesIO) -> File:
     elif file.name.lower().endswith(".html"):
         return HtmlFile.from_bytes(file)
     else:
-        raise NotImplementedError(f"File type {file.name.split('.')[-1]} not supported")
+        raise NotImplementedError(
+            f"File type {file.name.split('.')[-1]} not supported"
+        )

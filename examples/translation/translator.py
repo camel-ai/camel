@@ -54,10 +54,14 @@ parser.add_argument(
     default='../camel_data/ai_society_translated',
 )
 parser.add_argument(
-    '--single', action='store_true', help='Run translator in a non-parallel way.'
+    '--single',
+    action='store_true',
+    help='Run translator in a non-parallel way.',
 )
 parser.add_argument(
-    '--stream', action='store_true', help='Set OpenAI GPT model with the stream mode.'
+    '--stream',
+    action='store_true',
+    help='Set OpenAI GPT model with the stream mode.',
 )
 parser.add_argument(
     '--language',
@@ -71,7 +75,9 @@ parser.add_argument(
 )
 
 
-def translate_content(args: argparse.Namespace, file_path: str, language: str) -> None:
+def translate_content(
+    args: argparse.Namespace, file_path: str, language: str
+) -> None:
     # Extract file name from the .json file path to be translated
     file_name = osp.splitext(osp.basename(file_path))[0]
 
@@ -97,7 +103,9 @@ def translate_content(args: argparse.Namespace, file_path: str, language: str) -
             "Sentence to translate: " + json_data[f"message_{i+1}"]["content"]
         )
 
-        sys_msg_generator = SystemMessageGenerator(task_type=TaskType.TRANSLATION)
+        sys_msg_generator = SystemMessageGenerator(
+            task_type=TaskType.TRANSLATION
+        )
 
         assistant_sys_msg = sys_msg_generator.from_dict(
             meta_dict=dict(language=language.capitalize()),
@@ -167,7 +175,9 @@ def main(args: argparse.Namespace) -> None:
         pool = multiprocessing.Pool()
         # Apply parallel translation to all .json files
         for file_path in json_file_paths:
-            pool.apply_async(translate_content, args=(args, file_path, language))
+            pool.apply_async(
+                translate_content, args=(args, file_path, language)
+            )
         pool.close()
         pool.join()
     else:

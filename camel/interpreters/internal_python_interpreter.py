@@ -190,7 +190,10 @@ class InternalPythonInterpreter(BaseInterpreter):
             except InterpreterError as e:
                 if not keep_state:
                     self.clear_state()
-                msg = f"Evaluation of the code stopped at node {idx}. " f"See:\n{e}"
+                msg = (
+                    f"Evaluation of the code stopped at node {idx}. "
+                    f"See:\n{e}"
+                )
                 # More information can be provided by `ast.unparse()`,
                 # which is new in python 3.9.
                 if self.raise_error:
@@ -268,7 +271,9 @@ class InternalPythonInterpreter(BaseInterpreter):
             # cannot pass type check
             return self._execute_ast(expression.value)
         elif isinstance(expression, ast.JoinedStr):
-            return "".join([str(self._execute_ast(v)) for v in expression.values])
+            return "".join(
+                [str(self._execute_ast(v)) for v in expression.values]
+            )
         elif isinstance(expression, ast.List):
             # List -> evaluate all elements
             return [self._execute_ast(elt) for elt in expression.elts]
@@ -286,7 +291,9 @@ class InternalPythonInterpreter(BaseInterpreter):
         else:
             # For now we refuse anything else. Let's add things as we need
             # them.
-            raise InterpreterError(f"{expression.__class__.__name__} is not supported.")
+            raise InterpreterError(
+                f"{expression.__class__.__name__} is not supported."
+            )
 
     def _execute_assign(self, assign: ast.Assign) -> Any:
         targets = assign.targets
@@ -307,7 +314,8 @@ class InternalPythonInterpreter(BaseInterpreter):
                 )
             if len(target.elts) != len(value):
                 raise InterpreterError(
-                    f"Expected {len(target.elts)} values but got" f" {len(value)}."
+                    f"Expected {len(target.elts)} values but got"
+                    f" {len(value)}."
                 )
             for t, v in zip(target.elts, value):
                 self.state[self._execute_ast(t)] = v
@@ -324,7 +332,8 @@ class InternalPythonInterpreter(BaseInterpreter):
         # Todo deal with args
         args = [self._execute_ast(arg) for arg in call.args]
         kwargs = {
-            keyword.arg: self._execute_ast(keyword.value) for keyword in call.keywords
+            keyword.arg: self._execute_ast(keyword.value)
+            for keyword in call.keywords
         }
         return callable_func(*args, **kwargs)
 
@@ -333,7 +342,8 @@ class InternalPythonInterpreter(BaseInterpreter):
         value = self._execute_ast(subscript.value)
         if not isinstance(subscript.ctx, ast.Load):
             raise InterpreterError(
-                f"{subscript.ctx.__class__.__name__} is not supported for " "subscript."
+                f"{subscript.ctx.__class__.__name__} is not supported for "
+                "subscript."
             )
         if isinstance(value, (list, tuple)):
             return value[int(index)]
@@ -359,7 +369,9 @@ class InternalPythonInterpreter(BaseInterpreter):
 
     def _execute_condition(self, condition: ast.Compare):
         if len(condition.ops) > 1:
-            raise InterpreterError("Cannot evaluate conditions with multiple operators")
+            raise InterpreterError(
+                "Cannot evaluate conditions with multiple operators"
+            )
 
         left = self._execute_ast(condition.left)
         comparator = condition.ops[0]

@@ -36,7 +36,9 @@ def interpreter():
 def test_state_update(interpreter: InternalPythonInterpreter):
     code = "x = input_variable"
     input_variable = 10
-    execution_res = interpreter.execute(code, state={"input_variable": input_variable})
+    execution_res = interpreter.execute(
+        code, state={"input_variable": input_variable}
+    )
     assert execution_res == input_variable
 
 
@@ -53,7 +55,9 @@ def test_import_success0(interpreter: InternalPythonInterpreter):
 a = pt.tensor([[1., -1.], [1., -1.]])
 openai.__version__"""
     execution_res = interpreter.execute(code)
-    assert torch.equal(interpreter.state["a"], torch.tensor([[1.0, -1.0], [1.0, -1.0]]))
+    assert torch.equal(
+        interpreter.state["a"], torch.tensor([[1.0, -1.0], [1.0, -1.0]])
+    )
     assert isinstance(execution_res, str)
 
 
@@ -287,5 +291,6 @@ x += 1"""
         interpreter.execute(code, keep_state=False)
     exec_msg = e.value.args[0]
     assert exec_msg == (
-        "Evaluation of the code stopped at node 1. See:" "\nAugAssign is not supported."
+        "Evaluation of the code stopped at node 1. See:"
+        "\nAugAssign is not supported."
     )

@@ -45,7 +45,9 @@ class HuggingFaceToolAgent(BaseToolAgent):
             import transformers
             from packaging import version
 
-            if version.parse(transformers.__version__) < version.parse("4.31.0"):
+            if version.parse(transformers.__version__) < version.parse(
+                "4.31.0"
+            ):
                 raise ValueError(
                     "The version of \"transformers\" package should >= 4.31.0"
                 )

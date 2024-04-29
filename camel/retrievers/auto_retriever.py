@@ -75,7 +75,8 @@ class AutoRetriever:
         if self.storage_type == StorageType.MILVUS:
             if self.url_and_api_key is None:
                 raise ValueError(
-                    "URL and API key required for Milvus storage are not" "provided."
+                    "URL and API key required for Milvus storage are not"
+                    "provided."
                 )
             return MilvusStorage(
                 vector_dim=self.embedding_model.get_output_dim(),
@@ -91,7 +92,9 @@ class AutoRetriever:
                 url_and_api_key=self.url_and_api_key,
             )
 
-        raise ValueError(f"Unsupported vector storage type: {self.storage_type}")
+        raise ValueError(
+            f"Unsupported vector storage type: {self.storage_type}"
+        )
 
     def _collection_name_generator(self, content_input_path: str) -> str:
         r"""Generates a valid collection name from a given file path or URL.
@@ -113,7 +116,9 @@ class AutoRetriever:
             # For URLs, remove https://, replace /, and any characters not
             # allowed by Milvus with _
             collection_name = re.sub(
-                r'[^0-9a-zA-Z]+', '_', content_input_path.replace("https://", "")
+                r'[^0-9a-zA-Z]+',
+                '_',
+                content_input_path.replace("https://", ""),
             )
         else:
             # For file paths, get the stem and replace spaces with _, also
@@ -171,9 +176,9 @@ class AutoRetriever:
         # Extract the file's last modified date from the metadata
         # in the query result
         if result_any[0].record.payload is not None:
-            file_modified_date_from_meta = result_any[0].record.payload["metadata"][
-                'last_modified'
-            ]
+            file_modified_date_from_meta = result_any[0].record.payload[
+                "metadata"
+            ]['last_modified']
         else:
             raise ValueError(
                 "The vector storage exits but the payload is None,"
@@ -233,7 +238,9 @@ class AutoRetriever:
 
         for content_input_path in content_input_paths:
             # Generate a valid collection name
-            collection_name = self._collection_name_generator(content_input_path)
+            collection_name = self._collection_name_generator(
+                content_input_path
+            )
             try:
                 vector_storage_instance = self._initialize_vector_storage(
                     collection_name
@@ -247,8 +254,10 @@ class AutoRetriever:
                     and not self.is_url
                 ):
                     # Get original modified date from file
-                    modified_date_from_file = self._get_file_modified_date_from_file(
-                        content_input_path
+                    modified_date_from_file = (
+                        self._get_file_modified_date_from_file(
+                            content_input_path
+                        )
                     )
                     # Get modified date from vector storage
                     modified_date_from_storage = (

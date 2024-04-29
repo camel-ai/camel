@@ -40,7 +40,9 @@ class Human:
     """
 
     def __init__(
-        self, name: str = "Kill Switch Engineer", logger_color: Any = Fore.MAGENTA
+        self,
+        name: str = "Kill Switch Engineer",
+        logger_color: Any = Fore.MAGENTA,
     ) -> None:
         self.name = name
         self.logger_color = logger_color
@@ -67,7 +69,8 @@ class Human:
         )
         for index, option in enumerate(options):
             print_text_animated(
-                self.logger_color + f"\x1b[3mOption {index + 1}:\n{option}\x1b[0m\n"
+                self.logger_color
+                + f"\x1b[3mOption {index + 1}:\n{option}\x1b[0m\n"
             )
             self.options_dict[str(index + 1)] = option
 

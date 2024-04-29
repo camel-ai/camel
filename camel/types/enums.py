@@ -139,7 +139,10 @@ class ModelType(Enum):
             pattern = r'^vicuna-\d+b-v\d+\.\d+-16k$'
             return bool(re.match(pattern, model_name))
         elif self is ModelType.LLAMA_2:
-            return self.value in model_name.lower() or "llama2" in model_name.lower()
+            return (
+                self.value in model_name.lower()
+                or "llama2" in model_name.lower()
+            )
         else:
             return self.value in model_name.lower()
 

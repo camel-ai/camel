@@ -26,7 +26,9 @@ from camel.prompts.object_recognition import ObjectRecognitionPromptTemplateDict
 from camel.prompts.role_description_prompt_template import (
     RoleDescriptionPromptTemplateDict,
 )
-from camel.prompts.solution_extraction import SolutionExtractionPromptTemplateDict
+from camel.prompts.solution_extraction import (
+    SolutionExtractionPromptTemplateDict,
+)
 from camel.prompts.translation import TranslationPromptTemplateDict
 from camel.types import TaskType
 

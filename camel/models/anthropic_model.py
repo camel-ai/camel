@@ -40,7 +40,10 @@ class AnthropicModel(BaseModelBackend):
             choices=[
                 dict(
                     index=0,
-                    message={"role": "assistant", "content": response.content[0].text},
+                    message={
+                        "role": "assistant",
+                        "content": response.content[0].text,
+                    },
                     finish_reason=response.stop_reason,
                 )
             ],

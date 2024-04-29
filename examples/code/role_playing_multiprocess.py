@@ -78,7 +78,11 @@ def generate_data(
 
     sys_msg_generator = SystemMessageGenerator(task_type=TaskType.CODE)
     sys_msg_meta_dicts = [
-        dict(language=language_name, domain=domain_name, task=specified_task_prompt)
+        dict(
+            language=language_name,
+            domain=domain_name,
+            task=specified_task_prompt,
+        )
     ] * 2
     assistant_sys_msg, user_sys_msg = sys_msg_generator.from_dicts(
         sys_msg_meta_dicts,
@@ -88,7 +92,9 @@ def generate_data(
         ],
     )
 
-    assistant_agent = ChatAgent(assistant_sys_msg, message_window_size=max_num_messages)
+    assistant_agent = ChatAgent(
+        assistant_sys_msg, message_window_size=max_num_messages
+    )
     user_agent = ChatAgent(user_sys_msg, message_window_size=max_num_messages)
 
     input_assistant_msg = init_chat(
@@ -104,7 +110,9 @@ def generate_data(
     # We start number from 1 not 0.
     message_dict["role_1"] = f"{language_name}_{assistant_agent.role_type!s}"
     message_dict["role_2"] = f"{domain_name}_{user_agent.role_type!s}"
-    message_dict["id"] = f"{(language_idx+1):03}_{(domain_idx+1):03}_{(task_idx+1):03}"
+    message_dict["id"] = (
+        f"{(language_idx+1):03}_{(domain_idx+1):03}_{(task_idx+1):03}"
+    )
     message_dict["original_task"] = original_task_prompt
     message_dict["specified_task"] = specified_task_prompt
 
@@ -161,7 +169,9 @@ def generate_data(
         if user_no_instruct_word not in user_response.msg.content:
             user_no_instruct_counter += 1
             if user_no_instruct_counter == user_no_instruct_threshold:
-                message_dict['termination_reason'] = "user_no_instruct_threshold"
+                message_dict['termination_reason'] = (
+                    "user_no_instruct_threshold"
+                )
                 break
         else:
             user_no_instruct_counter = 0
@@ -170,7 +180,9 @@ def generate_data(
         if assistant_instruct_word in assistant_response.msg.content:
             assistant_instruct_counter += 1
             if assistant_instruct_counter == assistant_instruct_threshold:
-                message_dict['termination_reason'] = "assistant_instruct_threshold"
+                message_dict['termination_reason'] = (
+                    "assistant_instruct_threshold"
+                )
                 break
         else:
             assistant_instruct_counter = 0
@@ -199,7 +211,9 @@ def generate_data(
 
         # Save assistant message
         message_counter += 1
-        message_dict[f"message_{message_counter}"] = assistant_response.msg.to_dict()
+        message_dict[f"message_{message_counter}"] = (
+            assistant_response.msg.to_dict()
+        )
 
         input_assistant_msg = assistant_response.msg
 
@@ -259,7 +273,9 @@ def main() -> None:
         for domain_idx, domain_name in enumerate(domains):
             domain_name = " ".join(domain_name.split(" ")[1:])
             # Load the task list assigned for assistant and user roles
-            with open(f"./code_data/tasks/{language_name}_{domain_name}.txt", "r") as f:
+            with open(
+                f"./code_data/tasks/{language_name}_{domain_name}.txt", "r"
+            ) as f:
                 tasks = f.read().splitlines()
 
                 # Filter out the generated response to include the tasks only
@@ -272,7 +288,10 @@ def main() -> None:
                 assert str(num_tasks) in tasks[-1], print(tasks)
 
             for task_idx, task_prompt in enumerate(tasks):
-                id = f"{(language_idx+1):03}_" f"{(domain_idx+1):03}_{(task_idx+1):03}"
+                id = (
+                    f"{(language_idx+1):03}_"
+                    f"{(domain_idx+1):03}_{(task_idx+1):03}"
+                )
                 if not os.path.exists(f"./camel_data/code/{id}.json"):
                     pool.apply_async(
                         generate_data,

@@ -42,16 +42,25 @@ def test_multiple_remote_clients(mock_milvus_storage):
     # Example vectors for testing
     vectors1 = [
         VectorRecord(vector=[0.1, 0.1, 0.1, 0.1], payload={"message": "text1"}),
-        VectorRecord(vector=[0.1, -0.1, -0.1, 0.1], payload={"message": "text2"}),
-    ]
-    vectors2 = [
-        VectorRecord(vector=[-0.1, 0.1, -0.1, 0.1], payload={"message": "text3"}),
         VectorRecord(
-            vector=[-0.1, 0.1, 0.1, 0.1], payload={"message": "text4", "number": 1}
+            vector=[0.1, -0.1, -0.1, 0.1], payload={"message": "text2"}
         ),
     ]
-    setup_mock_storage(mock_storage1, vectors1, vectors1[0].id, {"message": "text1"})
-    setup_mock_storage(mock_storage2, vectors2, vectors2[0].id, {"message": "text3"})
+    vectors2 = [
+        VectorRecord(
+            vector=[-0.1, 0.1, -0.1, 0.1], payload={"message": "text3"}
+        ),
+        VectorRecord(
+            vector=[-0.1, 0.1, 0.1, 0.1],
+            payload={"message": "text4", "number": 1},
+        ),
+    ]
+    setup_mock_storage(
+        mock_storage1, vectors1, vectors1[0].id, {"message": "text1"}
+    )
+    setup_mock_storage(
+        mock_storage2, vectors2, vectors2[0].id, {"message": "text3"}
+    )
 
     # Assert add method was called correctly
     mock_storage1.add.assert_called_once_with(vectors1)

@@ -179,16 +179,23 @@ Given the starting state $A$ and the target state $B$, assuming that a path $L$ 
             role_name="Deductive Reasoner", content=deduce
         )
 
-        response = self.step(input_message=conditions_and_quality_generation_msg)
+        response = self.step(
+            input_message=conditions_and_quality_generation_msg
+        )
 
         if response.terminated:
-            raise RuntimeError("Deduction failed. Error:\n" + f"{response.info}")
+            raise RuntimeError(
+                "Deduction failed. Error:\n" + f"{response.info}"
+            )
         msg: BaseMessage = response.msg
         print(f"Message content:\n{msg.content}")
 
         # Extract the conditions from the message
         condistions_dict = {
-            f"condition {i}": cdt.replace("<", "").replace(">", "").strip().strip('\n')
+            f"condition {i}": cdt.replace("<", "")
+            .replace(">", "")
+            .strip()
+            .strip('\n')
             for i, cdt in re.findall(
                 r"condition (\d+):\s*(.+?)(?=condition \d+|- Entity)",
                 msg.content,
@@ -218,7 +225,9 @@ Given the starting state $A$ and the target state $B$, assuming that a path $L$ 
         )
 
         # Convert them into JSON format
-        conditions_and_quality_json: Dict[str, Union[List[str], Dict[str, str]]] = {}
+        conditions_and_quality_json: Dict[
+            str, Union[List[str], Dict[str, str]]
+        ] = {}
         conditions_and_quality_json["conditions"] = condistions_dict
         conditions_and_quality_json["labels"] = labels
         conditions_and_quality_json["evaluate_quality"] = quality

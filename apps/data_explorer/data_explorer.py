@@ -50,7 +50,10 @@ def parse_arguments():
         help='localhost for local, 0.0.0.0 (default) for public',
     )
     parser.add_argument(
-        '--server-port', type=int, default=8080, help='Port ot run the web page on'
+        '--server-port',
+        type=int,
+        default=8080,
+        help='Port ot run the web page on',
     )
     parser.add_argument(
         '--inbrowser',
@@ -71,7 +74,9 @@ def parse_arguments():
     return args
 
 
-def construct_ui(blocks, datasets: Datasets, default_dataset: Optional[str] = None):
+def construct_ui(
+    blocks, datasets: Datasets, default_dataset: Optional[str] = None
+):
     """Build Gradio UI and populate with chat data from JSONs.
 
     Args:
@@ -88,8 +93,12 @@ def construct_ui(blocks, datasets: Datasets, default_dataset: Optional[str] = No
         default_dataset = "ai_society_chat"
 
     misalignment_set_names = {"misalignment"}
-    ordinary_datasets = [v for v in datasets.keys() if v not in misalignment_set_names]
-    misalignment_datasets = [v for v in datasets.keys() if v in misalignment_set_names]
+    ordinary_datasets = [
+        v for v in datasets.keys() if v not in misalignment_set_names
+    ]
+    misalignment_datasets = [
+        v for v in datasets.keys() if v in misalignment_set_names
+    ]
     default_dataset_name = (
         default_dataset
         if default_dataset in datasets.keys()
@@ -130,7 +139,9 @@ def construct_ui(blocks, datasets: Datasets, default_dataset: Optional[str] = No
                         [], label="ASSISTANT", value="", interactive=True
                     )
                 with gr.Column(scale=3):
-                    user_dd = gr.Dropdown([], label="USER", value="", interactive=True)
+                    user_dd = gr.Dropdown(
+                        [], label="USER", value="", interactive=True
+                    )
         with gr.Column(scale=1):
             gr.Markdown(
                 "## CAMEL: Communicative Agents for \"Mind\" Exploration"
@@ -239,7 +250,9 @@ def construct_ui(blocks, datasets: Datasets, default_dataset: Optional[str] = No
             gr.update(value=user_role, choices=user_roles),
         )
 
-    def roles_dd_change(dataset_name: str, assistant_role: str, user_role: str) -> Dict:
+    def roles_dd_change(
+        dataset_name: str, assistant_role: str, user_role: str
+    ) -> Dict:
         """Update the displayed chat upon inputs change.
 
         Args:
@@ -292,7 +305,10 @@ def construct_ui(blocks, datasets: Datasets, default_dataset: Optional[str] = No
         return history
 
     def task_dd_change(
-        dataset_name: str, assistant_role: str, user_role: str, original_task: str
+        dataset_name: str,
+        assistant_role: str,
+        user_role: str,
+        original_task: str,
     ) -> Tuple[str, List]:
         """Load task details and chatbot history into UI elements.
 
@@ -325,19 +341,41 @@ def construct_ui(blocks, datasets: Datasets, default_dataset: Optional[str] = No
         check_if_misalignment,
         [dataset_dd, accepted_st],
         [disclaimer_ta, accept_disclaimer_bn, decline_disclaimer_bn],
-    ).then(update_dataset_selection, [dataset_dd, accepted_st], [assistant_dd, user_dd])
+    ).then(
+        update_dataset_selection,
+        [dataset_dd, accepted_st],
+        [assistant_dd, user_dd],
+    )
 
     accept_disclaimer_bn.click(
         enable_misalignment,
         None,
-        [accepted_st, disclaimer_ta, accept_disclaimer_bn, decline_disclaimer_bn],
-    ).then(update_dataset_selection, [dataset_dd, accepted_st], [assistant_dd, user_dd])
+        [
+            accepted_st,
+            disclaimer_ta,
+            accept_disclaimer_bn,
+            decline_disclaimer_bn,
+        ],
+    ).then(
+        update_dataset_selection,
+        [dataset_dd, accepted_st],
+        [assistant_dd, user_dd],
+    )
 
     decline_disclaimer_bn.click(
         disable_misalignment,
         None,
-        [accepted_st, disclaimer_ta, accept_disclaimer_bn, decline_disclaimer_bn],
-    ).then(update_dataset_selection, [dataset_dd, accepted_st], [assistant_dd, user_dd])
+        [
+            accepted_st,
+            disclaimer_ta,
+            accept_disclaimer_bn,
+            decline_disclaimer_bn,
+        ],
+    ).then(
+        update_dataset_selection,
+        [dataset_dd, accepted_st],
+        [assistant_dd, user_dd],
+    )
 
     func_args = (roles_dd_change, [dataset_dd, assistant_dd, user_dd], task_dd)
     assistant_dd.change(*func_args)

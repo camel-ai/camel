@@ -101,13 +101,18 @@ def get_address_description(
 
     try:
         addressvalidation_result = gmaps.addressvalidation(
-            [address], regionCode=region_code, locality=locality, enableUspsCass=False
+            [address],
+            regionCode=region_code,
+            locality=locality,
+            enableUspsCass=False,
         )  # Always False as per requirements
 
         # Check if the result contains an error
         if 'error' in addressvalidation_result:
             error_info = addressvalidation_result['error']
-            error_message = error_info.get('message', 'An unknown error occurred')
+            error_message = error_info.get(
+                'message', 'An unknown error occurred'
+            )
             error_status = error_info.get('status', 'UNKNOWN_STATUS')
             error_code = error_info.get('code', 'UNKNOWN_CODE')
             return (
@@ -123,8 +128,12 @@ def get_address_description(
         metadata = result.get('metadata', {})
 
         # Construct the descriptive string
-        address_complete = "Yes" if verdict.get('addressComplete', False) else "No"
-        formatted_address = address_info.get('formattedAddress', 'Not available')
+        address_complete = (
+            "Yes" if verdict.get('addressComplete', False) else "No"
+        )
+        formatted_address = address_info.get(
+            'formattedAddress', 'Not available'
+        )
         location = geocode.get('location', {})
         latitude = location.get('latitude', 'Not available')
         longitude = location.get('longitude', 'Not available')
@@ -145,7 +154,9 @@ def get_address_description(
         return f"An unexpected error occurred: {e!s}"
 
 
-def handle_googlemaps_exceptions(func: Callable[..., Any]) -> Callable[..., Any]:
+def handle_googlemaps_exceptions(
+    func: Callable[..., Any],
+) -> Callable[..., Any]:
     r"""Decorator to catch and handle exceptions raised by Google Maps API
     calls.
 
@@ -180,7 +191,10 @@ def handle_googlemaps_exceptions(func: Callable[..., Any]) -> Callable[..., Any]
                 f'Status: {e.status}, Message: {e.message}'
             )
         except HTTPError as e:
-            return 'An unexpected HTTP error occurred. ' f'Status Code: {e.status_code}'
+            return (
+                'An unexpected HTTP error occurred. '
+                f'Status Code: {e.status_code}'
+            )
         except Timeout:
             return 'The request timed out.'
         except TransportError as e:
@@ -290,7 +304,9 @@ def get_timezone(lat_lng: Tuple) -> str:
     timezone_dict = gmaps.timezone(lat_lng)
 
     # Extract necessary information
-    dst_offset = timezone_dict['dstOffset']  # Daylight Saving Time offset in seconds
+    dst_offset = timezone_dict[
+        'dstOffset'
+    ]  # Daylight Saving Time offset in seconds
     raw_offset = timezone_dict['rawOffset']  # Standard time offset in seconds
     timezone_id = timezone_dict['timeZoneId']
     timezone_name = timezone_dict['timeZoneName']

@@ -54,17 +54,26 @@ parametrize = pytest.mark.parametrize(
 @parametrize
 def test_chat_agent(model: ModelType):
     model_config = ChatGPTConfig()
-    system_msg = SystemMessageGenerator(task_type=TaskType.AI_SOCIETY).from_dict(
+    system_msg = SystemMessageGenerator(
+        task_type=TaskType.AI_SOCIETY
+    ).from_dict(
         dict(assistant_role="doctor"),
         role_tuple=("doctor", RoleType.ASSISTANT),
     )
-    assistant = ChatAgent(system_msg, model_type=model, model_config=model_config)
+    assistant = ChatAgent(
+        system_msg, model_type=model, model_config=model_config
+    )
 
-    assert str(assistant) == ("ChatAgent(doctor, " f"RoleType.ASSISTANT, {model!s})")
+    assert str(assistant) == (
+        "ChatAgent(doctor, " f"RoleType.ASSISTANT, {model!s})"
+    )
 
     assistant.reset()
     user_msg = BaseMessage(
-        role_name="Patient", role_type=RoleType.USER, meta_dict=dict(), content="Hello!"
+        role_name="Patient",
+        role_type=RoleType.USER,
+        meta_dict=dict(),
+        content="Hello!",
     )
     assistant_response = assistant.step(user_msg)
 
@@ -147,7 +156,9 @@ def test_chat_agent_step_exceed_token_number():
         content="You are a help assistant.",
     )
     assistant = ChatAgent(
-        system_message=system_msg, model_type=ModelType.GPT_3_5_TURBO, token_limit=1
+        system_message=system_msg,
+        model_type=ModelType.GPT_3_5_TURBO,
+        token_limit=1,
     )
 
     user_msg = BaseMessage(
@@ -209,7 +220,9 @@ def test_chat_agent_multiple_return_message_error(n):
 
     with pytest.raises(
         RuntimeError,
-        match=("Property msg is only available " "for a single message in msgs."),
+        match=(
+            "Property msg is only available " "for a single message in msgs."
+        ),
     ):
         _ = assistant_response.msg
 
@@ -254,7 +267,9 @@ def test_set_output_language():
         meta_dict=None,
         content="You are a help assistant.",
     )
-    agent = ChatAgent(system_message=system_message, model_type=ModelType.GPT_3_5_TURBO)
+    agent = ChatAgent(
+        system_message=system_message, model_type=ModelType.GPT_3_5_TURBO
+    )
     assert agent.output_language is None
 
     # Set the output language to "Arabic"
@@ -283,7 +298,9 @@ def test_set_multiple_output_language():
         meta_dict=None,
         content="You are a help assistant.",
     )
-    agent = ChatAgent(system_message=system_message, model_type=ModelType.GPT_3_5_TURBO)
+    agent = ChatAgent(
+        system_message=system_message, model_type=ModelType.GPT_3_5_TURBO
+    )
 
     # Verify that the length of the system message is kept constant even when
     # multiple set_output_language operations are called
@@ -308,7 +325,9 @@ def test_token_exceed_return():
         meta_dict=None,
         content="You are a help assistant.",
     )
-    agent = ChatAgent(system_message=system_message, model_type=ModelType.GPT_3_5_TURBO)
+    agent = ChatAgent(
+        system_message=system_message, model_type=ModelType.GPT_3_5_TURBO
+    )
 
     expect_info = {
         "id": None,
@@ -381,7 +400,9 @@ def test_function_calling():
     )
     agent_response = agent.step(user_msg)
 
-    called_funcs: List[FunctionCallingRecord] = agent_response.info['called_functions']
+    called_funcs: List[FunctionCallingRecord] = agent_response.info[
+        'called_functions'
+    ]
     for called_func in called_funcs:
         print(str(called_func))
 
@@ -470,7 +491,9 @@ def test_chat_agent_vision():
         model='gpt-4-1106-vision-preview',
         object='chat.completion',
         system_fingerprint=None,
-        usage=CompletionUsage(completion_tokens=2, prompt_tokens=113, total_tokens=115),
+        usage=CompletionUsage(
+            completion_tokens=2, prompt_tokens=113, total_tokens=115
+        ),
     )
 
     agent_response = agent.step(user_msg)
