@@ -12,9 +12,10 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import re
-from typing import Any, Dict, Optional, Union
+from typing import Dict, List, Optional, Union
 
 from camel.agents import ChatAgent
+from camel.configs import BaseConfig
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
 from camel.types import ModelType, RoleType
@@ -33,15 +34,15 @@ class DeductiveReasonerAgent(ChatAgent):
 
     Args:
         model_type (ModelType, optional): The type of model to use for the
-            agent. (default: :obj:`ModelType.GPT_3_5_TURBO`)
-        model_config (Any, optional): The configuration for the model.
+            agent. (default: :obj: `None`)
+        model_config (BaseConfig, optional): The configuration for the model.
             (default: :obj:`None`)
     """
 
     def __init__(
         self,
-        model_type: ModelType = ModelType.GPT_3_5_TURBO,
-        model_config: Optional[Any] = None,
+        model_type: Optional[ModelType] = None,
+        model_config: Optional[BaseConfig] = None,
     ) -> None:
         system_message = BaseMessage(
             role_name="Insight Agent",
@@ -53,25 +54,39 @@ class DeductiveReasonerAgent(ChatAgent):
 
     def deduce_conditions_and_quality(
         self,
-        starting_state: Union[str, TextPrompt],
-        target_state: Union[str, TextPrompt],
+        starting_state: str,
+        target_state: str,
         role_descriptions_dict: Optional[Dict[str, str]] = None,
-    ) -> Dict[str, Dict[str, Optional[str]]]:
+    ) -> Dict[str, Union[List[str], Dict[str, str]]]:
         r"""Derives the conditions and quality from the starting state and the
         target state based on the model of the deductive reasoning and the
-        knowledge base.
+        knowledge base. It can optionally consider the roles involved in the
+        scenario, which allows tailoring the output more closely to the AI
+        agent's environment.
 
         Args:
-            starting_state (Union[str, TextPrompt]): The starting state of the
-                task.
-            target_state (Union[str, TextPrompt]): The target state of the
-                task.
+            starting_state (str): The initial or starting state from which
+                conditions are deduced.
+            target_state (str): The target state of the task.
             role_descriptions_dict (Optional[Dict[str, str]], optional): The
                 descriptions of the roles. (default: :obj:`None`)
+            role_descriptions_dict (Optional[Dict[str, str]], optional): A
+                dictionary describing the roles involved in the scenario. This
+                is optional and can be used to provide a context for the
+                CAMEL's role-playing, enabling the generation of more relevant
+                and tailored conditions and quality assessments. This could be
+                generated using a `RoleAssignmentAgent()` or defined manually
+                by the user.
 
         Returns:
-            Dict[str, Dict[str, Optional[str]]]: The generated insights from
-                the input context text.
+            Dict[str, Union[List[str], Dict[str, str]]]: A dictionary with the
+                extracted data from the message. The dictionary contains three
+                keys:
+                - 'conditions': A list where each key is a condition ID and
+                    each value is the corresponding condition text.
+                - 'labels': A list of label strings extracted from the message.
+                - 'quality': A string of quality assessment strings extracted
+                    from the message.
         """
         self.reset()
 
@@ -143,7 +158,7 @@ Given the starting state $A$ and the target state $B$, assuming that a path $L$ 
         if role_descriptions_dict is not None:
             role_names = role_descriptions_dict.keys()
             role_with_description_prompt = \
-                "===== ROLES WITH DESCRIPTION =====\n" + "\n".join(
+                "===== ROLES WITH DESCRIPTIONS =====\n" + "\n".join(
                     f"{role_name}:\n{role_descriptions_dict[role_name]}\n"
                     for role_name in role_names) + "\n\n"
         else:
@@ -164,8 +179,10 @@ Given the starting state $A$ and the target state $B$, assuming that a path $L$ 
         if response.terminated:
             raise RuntimeError("Deduction failed. Error:\n" +
                                f"{response.info}")
-        msg = response.msg  # type: BaseMessage
+        msg: BaseMessage = response.msg
+        print(f"Message content:\n{msg.content}")
 
+        # Extract the conditions from the message
         condistions_dict = {
             f"condition {i}":
             cdt.replace("<", "").replace(">", "").strip().strip('\n')
@@ -174,23 +191,25 @@ Given the starting state $A$ and the target state $B$, assuming that a path $L$ 
                 msg.content, re.DOTALL)
         }
 
+        # Extract the labels from the message
         labels = [
-            label.strip().strip("\"\'") for label in re.findall(
-                r"Entity/Label Recognition of Conditions:[\s\n]*\[(.+?)\]",
+            label.strip().strip('\n').strip("\"\'") for label in re.findall(
+                r"Entity/Label Recognition of Conditions:\n\[(.+?)\]",
                 msg.content, re.DOTALL)[0].split(",")
         ]
 
+        # Extract the quality from the message
         quality = [
-            q.replace("<", "").replace(">", "").strip().strip('\n')
-            for q in re.findall(
+            q.strip().strip('\n') for q in re.findall(
                 r"Quality Assessment \(\$Q\$\) \(do not use symbols\):"
                 r"\n(.+?)- Iterative", msg.content, re.DOTALL)
         ][0]
 
         # Convert them into JSON format
-        conditions_and_quality_json: Dict[str, Any] = {}
+        conditions_and_quality_json: \
+            Dict[str, Union[List[str], Dict[str, str]]] = {}
         conditions_and_quality_json["conditions"] = condistions_dict
         conditions_and_quality_json["labels"] = labels
-        conditions_and_quality_json["quality"] = quality
+        conditions_and_quality_json["evaluate_quality"] = quality
 
         return conditions_and_quality_json

@@ -355,6 +355,10 @@ class QdrantStorage(BaseVectorStorage):
             distance=self.distance,
         )
 
+    def load(self) -> None:
+        r"""Load the collection hosted on cloud service."""
+        pass
+
     @property
     def client(self) -> Any:
         r"""Provides access to the underlying vector database client."""

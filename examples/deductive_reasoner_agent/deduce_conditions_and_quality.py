@@ -20,9 +20,6 @@ from camel.configs import ChatGPTConfig
 
 
 def main(model_type=None) -> None:
-    starting_state = "I was walking down the street in New York with a Anna."
-    target_state = "I remind Anna to pay attention to personal safety."
-
     # Construct deductive reasoner agent
     model_config_description = ChatGPTConfig()
     insight_agent = \
@@ -33,8 +30,9 @@ def main(model_type=None) -> None:
     target_state = "A website with search capabilities."
     conditions_and_quality = insight_agent.deduce_conditions_and_quality(
         starting_state=starting_state, target_state=target_state)
-    print(Fore.GREEN + "Conditions and quality from the starting state:\n" +
-          f"{json.dumps(conditions_and_quality, indent=4)}")
+    print(
+        Fore.GREEN + "Conditions and quality from the starting state:\n" +
+        f"{json.dumps(conditions_and_quality, indent=4)}", Fore.RESET)
 
 
 if __name__ == "__main__":

@@ -11,18 +11,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from __future__ import annotations
+
 import json
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Tuple
-
-from openai import Stream
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
 from camel.agents import BaseAgent
-from camel.configs import BaseConfig, ChatGPTConfig
-from camel.functions import OpenAIFunction
+from camel.configs import ChatGPTConfig
 from camel.memories import (
-    BaseMemory,
+    AgentMemory,
     ChatHistoryMemory,
     MemoryRecord,
     ScoreBasedContextCreator,
@@ -30,7 +29,6 @@ from camel.memories import (
 from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.responses import ChatAgentResponse
-from camel.terminators import ResponseTerminator
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -39,6 +37,13 @@ from camel.types import (
     RoleType,
 )
 from camel.utils import get_model_encoding
+
+if TYPE_CHECKING:
+    from openai import Stream
+
+    from camel.configs import BaseConfig
+    from camel.functions import OpenAIFunction
+    from camel.terminators import ResponseTerminator
 
 
 @dataclass(frozen=True)
@@ -76,13 +81,13 @@ class ChatAgent(BaseAgent):
             responses. (default :obj:`ModelType.GPT_3_5_TURBO`)
         model_config (BaseConfig, optional): Configuration options for the
             LLM model. (default: :obj:`None`)
-        memory (BaseMemory, optional): The agent memory for managing chat
+        memory (AgentMemory, optional): The agent memory for managing chat
             messages. If `None`, a :obj:`ChatHistoryMemory` will be used.
             (default: :obj:`None`)
         message_window_size (int, optional): The maximum number of previous
             messages to include in the context window. If `None`, no windowing
             is performed. (default: :obj:`None`)
-        token_limit (int, optional): The maxinum number of tokens in a context.
+        token_limit (int, optional): The maximum number of tokens in a context.
             The context will be automatically pruned to fulfill the limitation.
             If `None`, it will be set according to the backend model.
             (default: :obj:`None`)
@@ -100,7 +105,7 @@ class ChatAgent(BaseAgent):
         system_message: BaseMessage,
         model_type: Optional[ModelType] = None,
         model_config: Optional[BaseConfig] = None,
-        memory: Optional[BaseMemory] = None,
+        memory: Optional[AgentMemory] = None,
         message_window_size: Optional[int] = None,
         token_limit: Optional[int] = None,
         output_language: Optional[str] = None,
@@ -132,7 +137,7 @@ class ChatAgent(BaseAgent):
             self.model_backend.token_counter,
             self.model_token_limit,
         )
-        self.memory: BaseMemory = memory or ChatHistoryMemory(
+        self.memory: AgentMemory = memory or ChatHistoryMemory(
             context_creator, window_size=message_window_size)
 
         self.terminated: bool = False

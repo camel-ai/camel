@@ -14,7 +14,7 @@
 import os
 from typing import Any, Dict, List
 
-import camel.agents
+from camel.agents import ChatAgent, InsightAgent
 from camel.functions import OpenAIFunction
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
@@ -84,7 +84,7 @@ def search_google(query: str) -> List[Dict[str, Any]]:
                 as a whole',
                 'url': 'https://www.openai.com'
             }
-        title, descrption, url of a website.
+        title, description, url of a website.
     """
     import requests
 
@@ -151,7 +151,7 @@ def text_extract_from_web(url: str) -> str:
     r"""Get the text information from given url.
 
     Args:
-        url (str): The web site you want to search.
+        url (str): The website you want to search.
 
     Returns:
         str: All texts extract from the web.
@@ -191,7 +191,7 @@ def create_chunks(text: str, n: int) -> List[str]:
         n (int): The max length of a single chunk.
 
     Returns:
-        List[str]: A list of splitted texts.
+        List[str]: A list of split texts.
     """
 
     chunks = []
@@ -221,7 +221,7 @@ def prompt_single_step_agent(prompt: str) -> str:
         role_name="Assistant",
         content="You are a helpful assistant.",
     )
-    agent = camel.agents.ChatAgent(assistant_sys_msg)
+    agent = ChatAgent(assistant_sys_msg)
     agent.reset()
 
     user_msg = BaseMessage.make_user_message(
@@ -239,7 +239,7 @@ def summarize_text(text: str, query: str) -> str:
     given.
 
     Args:
-        text (str): Text to summarise.
+        text (str): Text to summarize.
         query (str): What information you want.
 
     Returns:
@@ -299,7 +299,7 @@ def search_google_and_summarize(query: str) -> str:
             text = text_extract_from_web(str(url))
             # Using chatgpt summarise text
             # answer = summarize_text(text, query)
-            insight_agent = camel.agents.InsightAgent(
+            insight_agent = InsightAgent(
                 model_type=ModelType.GPT_3_5_TURBO_16K)
             insights = insight_agent.run(
                 context_text=text, insights_instruction=(
@@ -328,7 +328,60 @@ def search_google_and_summarize(query: str) -> str:
             if top_answer else "Failed to find the answer from google search.")
 
 
+def search_wolfram_alpha(query: str, is_detailed: bool) -> str:
+    r"""Queries Wolfram|Alpha and returns the result. Wolfram|Alpha is a
+    search engine that uses algorithms, knowledgebase and AI to compute
+    expert-level answers for math, science, society, everyday life and more.
+
+    Args:
+        query (str): The query to send to Wolfram Alpha.
+        is_detailed (bool): Whether to include additional details in the
+            result.
+
+    Returns:
+        str: The result from Wolfram Alpha, formatted as a string.
+    """
+    try:
+        import wolframalpha
+    except ImportError:
+        raise ImportError(
+            "Please install `wolframalpha` first. You can install it by "
+            "running `pip install wolframalpha`.")
+
+    WOLFRAMALPHA_APP_ID = os.environ.get('WOLFRAMALPHA_APP_ID')
+    if not WOLFRAMALPHA_APP_ID:
+        raise ValueError("`WOLFRAMALPHA_APP_ID` not found in environment "
+                         "variables. Get `WOLFRAMALPHA_APP_ID` here: "
+                         "`https://products.wolframalpha.com/api/`.")
+
+    try:
+        client = wolframalpha.Client(WOLFRAMALPHA_APP_ID)
+        res = client.query(query)
+        assumption = next(res.pods).text or "No assumption made."
+        answer = next(res.results).text or "No answer found."
+    except Exception as e:
+        if isinstance(e, StopIteration):
+            return "Wolfram Alpha wasn't able to answer it"
+        else:
+            error_message = (f"Wolfram Alpha wasn't able to answer it"
+                             f"{str(e)}.")
+            return error_message
+
+    result = f"Assumption:\n{assumption}\n\nAnswer:\n{answer}"
+
+    # Add additional details in the result
+    if is_detailed:
+        result += '\n'
+        for pod in res.pods:
+            result += '\n' + pod['@title'] + ':\n'
+            for sub in pod.subpods:
+                result += (sub.plaintext or "None") + '\n'
+
+    return result.rstrip()  # Remove trailing whitespace
+
+
 SEARCH_FUNCS: List[OpenAIFunction] = [
-    OpenAIFunction(func)
-    for func in [search_wiki, search_google_and_summarize]
+    OpenAIFunction(func)  # type: ignore
+    for func in
+    [search_wiki, search_google_and_summarize, search_wolfram_alpha]
 ]

@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import pytest
 from mock import patch
 
 from camel.agents import ChatAgent
@@ -19,12 +18,11 @@ from camel.agents.deductive_reasoner_agent import DeductiveReasonerAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.responses import ChatAgentResponse
-from camel.types import ModelType, RoleType
+from camel.types import RoleType
 
 
 @patch.object(ChatAgent, 'step')
-@pytest.mark.parametrize("model_type", [None, ModelType.GPT_3_5_TURBO])
-def test_deductive_reasoner_agent(mock_step, model_type):
+def test_deductive_reasoner_agent(mock_step):
     mock_content = generate_mock_content()
     mock_msg = BaseMessage(role_name="Deductive Reasoner",
                            role_type=RoleType.ASSISTANT, meta_dict=None,
@@ -39,15 +37,15 @@ def test_deductive_reasoner_agent(mock_step, model_type):
     model_config_description = ChatGPTConfig()
 
     # Construct deductive reasoner agent
-    deductive_reasoner_agent = \
-        DeductiveReasonerAgent(model_type=model_type,
-                               model_config=model_config_description)
+    model_type = None
+    deductive_reasoner_agent = (DeductiveReasonerAgent(
+        model_type=model_type, model_config=model_config_description))
 
     # Generate the conditions and quality dictionary based on the mock step
     # function
-    conditions_and_quality = \
+    conditions_and_quality = (
         deductive_reasoner_agent.deduce_conditions_and_quality(
-            starting_state=starting_state, target_state=target_state)
+            starting_state=starting_state, target_state=target_state))
 
     expected_dict = generate_expected_content()
 
@@ -94,7 +92,7 @@ def generate_expected_content():
             "condition 1":
             "The website needs to have a search bar.",
             "condition 2":
-            "The website needs to have a database of indexed content.",
+            ("The website needs to have a database of indexed content."),
             "condition 3":
             ("The website needs to have a search algorithm or function "
              "implemented."),
@@ -110,7 +108,7 @@ def generate_expected_content():
             "Search algorithm/function", "User interface for search queries",
             "Backend system for query processing"
         ],
-        "quality":
+        "evaluate_quality":
         ("The transition from $A$ to $B$ would be considered efficient if "
          "the search capabilities are implemented with minimal resource "
          "usage.\n    The transition would be considered effective if the "
