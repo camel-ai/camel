@@ -53,15 +53,20 @@ def test_create_element_from_text(unstructured_instance: UnstructuredIO):
         "file_directory": test_directory,
         "last_modified": test_modified,
         "filetype": test_filetype,
-        "parent_id": test_parent_id
+        "parent_id": test_parent_id,
     }
 
     # Create the element
     element = unstructured_instance.create_element_from_text(
-        text=test_text, element_id=test_id, embeddings=test_embeddings,
-        filename=test_filename, file_directory=test_directory,
-        last_modified=test_modified, filetype=test_filetype,
-        parent_id=test_parent_id)
+        text=test_text,
+        element_id=test_id,
+        embeddings=test_embeddings,
+        filename=test_filename,
+        file_directory=test_directory,
+        last_modified=test_modified,
+        filetype=test_filetype,
+        parent_id=test_parent_id,
+    )
 
     # Assertions to verify correct element creation
     assert element.to_dict()['text'] == test_text

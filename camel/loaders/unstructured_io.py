@@ -76,14 +76,16 @@ class UnstructuredIO:
             )
 
     def create_element_from_text(
-            self, text: str, element_id: Optional[Union[str,
-                                                        uuid.UUID]] = None,
-            embeddings: Optional[List[float]] = None,
-            filename: Optional[str] = None,
-            file_directory: Optional[str] = None,
-            last_modified: Optional[str] = None,
-            filetype: Optional[str] = None,
-            parent_id: Optional[Union[str, uuid.UUID]] = None) -> Element:
+        self,
+        text: str,
+        element_id: Optional[Union[str, uuid.UUID]] = None,
+        embeddings: Optional[List[float]] = None,
+        filename: Optional[str] = None,
+        file_directory: Optional[str] = None,
+        last_modified: Optional[str] = None,
+        filetype: Optional[str] = None,
+        parent_id: Optional[Union[str, uuid.UUID]] = None,
+    ) -> Element:
         r"""Creates a Text element from a given text input, with optional
         metadata and embeddings.
 
@@ -110,14 +112,20 @@ class UnstructuredIO:
         """
         from unstructured.documents.elements import ElementMetadata, Text
 
-        metadata = ElementMetadata(filename=filename,
-                                   file_directory=file_directory,
-                                   last_modified=last_modified,
-                                   filetype=filetype, parent_id=parent_id)
+        metadata = ElementMetadata(
+            filename=filename,
+            file_directory=file_directory,
+            last_modified=last_modified,
+            filetype=filetype,
+            parent_id=parent_id,
+        )
 
-        return Text(text=text,
-                    element_id=element_id if element_id else str(uuid.uuid4()),
-                    metadata=metadata, embeddings=embeddings)
+        return Text(
+            text=text,
+            element_id=element_id if element_id else str(uuid.uuid4()),
+            metadata=metadata,
+            embeddings=embeddings,
+        )
 
     def parse_file_or_url(
         self,
