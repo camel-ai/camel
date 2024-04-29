@@ -49,7 +49,7 @@ def get_lazy_imported_types_module():
     return ModelType.GPT_4_TURBO
 
 
-def openai_api_key_required(func: F) -> F:
+def api_key_required(func: F) -> F:
     r"""Decorator that checks if the OpenAI API key is available in the
     environment variables.
 
@@ -66,10 +66,16 @@ def openai_api_key_required(func: F) -> F:
 
     @wraps(func)
     def wrapper(self, *args, **kwargs):
-        if 'OPENAI_API_KEY' in os.environ:
+        if self.model_type.is_openai:
+            if 'OPENAI_API_KEY' not in os.environ:
+                raise ValueError('OpenAI API key not found.')
+            return func(self, *args, **kwargs)
+        elif self.model_type.is_anthropic:
+            if 'ANTHROPIC_API_KEY' not in os.environ:
+                raise ValueError('Anthropic API key not found.')
             return func(self, *args, **kwargs)
         else:
-            raise ValueError('OpenAI API key not found.')
+            raise ValueError('Unsupported model type.')
 
     return cast(F, wrapper)
 

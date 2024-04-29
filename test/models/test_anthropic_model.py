@@ -15,33 +15,34 @@ import re
 
 import pytest
 
-from camel.configs import ChatGPTConfig, OpenSourceConfig
-from camel.models import OpenAIModel
+from camel.configs import AnthropicConfig, OpenSourceConfig
+from camel.models import AnthropicModel
 from camel.types import ModelType
-from camel.utils import OpenAITokenCounter
+from camel.utils import AnthropicTokenCounter
 
 
 @pytest.mark.model_backend
 @pytest.mark.parametrize("model_type", [
-    ModelType.GPT_3_5_TURBO,
-    ModelType.GPT_4,
-    ModelType.GPT_4_32K,
-    ModelType.GPT_4_TURBO,
-    ModelType.GPT_4_TURBO_VISION,
+    ModelType.CLAUDE_INSTANT_1_2,
+    ModelType.CLAUDE_2_0,
+    ModelType.CLAUDE_2_1,
+    ModelType.CLAUDE_3_OPUS,
+    ModelType.CLAUDE_3_SONNET,
+    ModelType.CLAUDE_3_HAIKU,
 ])
-def test_openai_model(model_type):
-    model_config_dict = ChatGPTConfig().__dict__
-    model = OpenAIModel(model_type, model_config_dict)
+def test_anthropic_model(model_type):
+    model_config_dict = AnthropicConfig().__dict__
+    model = AnthropicModel(model_type, model_config_dict)
     assert model.model_type == model_type
     assert model.model_config_dict == model_config_dict
-    assert isinstance(model.token_counter, OpenAITokenCounter)
+    assert isinstance(model.token_counter, AnthropicTokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
 
 
 @pytest.mark.model_backend
-def test_openai_model_unexpected_argument():
-    model_type = ModelType.GPT_4
+def test_anthropic_model_unexpected_argument():
+    model_type = ModelType.CLAUDE_2_0
     model_config = OpenSourceConfig(
         model_path="vicuna-7b-v1.5",
         server_url="http://localhost:8000/v1",
@@ -49,6 +50,7 @@ def test_openai_model_unexpected_argument():
     model_config_dict = model_config.__dict__
 
     with pytest.raises(
-            ValueError, match=re.escape(("Unexpected argument `model_path` is "
-                                         "input into OpenAI model backend."))):
-        _ = OpenAIModel(model_type, model_config_dict)
+            ValueError, match=re.escape(
+                ("Unexpected argument `model_path` is "
+                 "input into Anthropic model backend."))):
+        _ = AnthropicModel(model_type, model_config_dict)

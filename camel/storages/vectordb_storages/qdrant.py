@@ -235,7 +235,7 @@ class QdrantStorage(BaseVectorStorage):
             vector_config.size
             if isinstance(vector_config, VectorParams) else None,
             "vector_count":
-            collection_info.vectors_count,
+            collection_info.points_count,
             "status":
             collection_info.status,
             "vectors_count":
