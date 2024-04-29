@@ -11,8 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-
+import uuid
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+
+from unstructured.documents.elements import Element
 
 
 class UnstructuredIO:
@@ -72,6 +74,50 @@ class UnstructuredIO:
                 f"Require `unstructured>={min_version}`, "
                 f"you have {__version__}."
             )
+
+    def create_element_from_text(
+            self, text: str, element_id: Optional[Union[str,
+                                                        uuid.UUID]] = None,
+            embeddings: Optional[List[float]] = None,
+            filename: Optional[str] = None,
+            file_directory: Optional[str] = None,
+            last_modified: Optional[str] = None,
+            filetype: Optional[str] = None,
+            parent_id: Optional[Union[str, uuid.UUID]] = None) -> Element:
+        r"""Creates a Text element from a given text input, with optional
+        metadata and embeddings.
+
+        Args:
+            text (str): The text content for the element.
+            element_id (Union[str, uuid.UUID], optional): Unique identifier
+                forthe element. Defaults to an empty string.
+            embeddings (Optional[List[float]], optional): A list of float
+                numbers representing the text embeddings. Defaults to `None`.
+            filename (Optional[str], optional): The name of the file the
+                element is associated with. Defaults to `None`.
+            file_directory (Optional[str], optional): The directory path where
+                the file is located. Defaults to `None`.
+            last_modified (Optional[str], optional): The last modified date of
+                the file. Defaults to `None`.
+            filetype (Optional[str], optional): The type of the file. Defaults
+                to `None`.
+            parent_id (Optional[Union[str, uuid.UUID]], optional): The
+                identifier of the parent element. Defaults to `None`.
+
+        Returns:
+            Element: An instance of Text with the provided content and
+                metadata.
+        """
+        from unstructured.documents.elements import ElementMetadata, Text
+
+        metadata = ElementMetadata(filename=filename,
+                                   file_directory=file_directory,
+                                   last_modified=last_modified,
+                                   filetype=filetype, parent_id=parent_id)
+
+        return Text(text=text,
+                    element_id=element_id if element_id else str(uuid.uuid4()),
+                    metadata=metadata, embeddings=embeddings)
 
     def parse_file_or_url(
         self,
