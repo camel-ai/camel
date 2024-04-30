@@ -315,10 +315,10 @@ def search_google_and_summarize(query: str) -> str:
 
 
 def search_wolfram_alpha(query: str, is_detailed: bool) -> str:
-    r"""Queries Wolfram|Alpha and returns the result. Wolfram|Alpha is a
-    computational knowledge engine that uses algorithms, knowledgebase and AI
-    to compute expert-level answers for math, science, society, everyday life
-    and more.
+    r"""Queries Wolfram|Alpha and returns the result. Wolfram|Alpha is an
+    answer engine developed by Wolfram Research. It is offered as an online
+    service that answers factual queries by computing answers from externally
+    sourced data.
 
     Args:
         query (str): The query to send to Wolfram Alpha.
