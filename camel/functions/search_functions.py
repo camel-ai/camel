@@ -314,7 +314,7 @@ def search_google_and_summarize(query: str) -> str:
     return "Failed to find the answer from google search."
 
 
-def search_wolfram_alpha(query: str, is_detailed: bool) -> str:
+def query_wolfram_alpha(query: str, is_detailed: bool) -> str:
     r"""Queries Wolfram|Alpha and returns the result. Wolfram|Alpha is an
     answer engine developed by Wolfram Research. It is offered as an online
     service that answers factual queries by computing answers from externally
@@ -370,5 +370,5 @@ def search_wolfram_alpha(query: str, is_detailed: bool) -> str:
 
 SEARCH_FUNCS: List[OpenAIFunction] = [
     OpenAIFunction(func)  # type: ignore[arg-type]
-    for func in [search_wiki, search_google_and_summarize, search_wolfram_alpha]
+    for func in [search_wiki, search_google_and_summarize, query_wolfram_alpha]
 ]
