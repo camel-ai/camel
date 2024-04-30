@@ -316,8 +316,9 @@ def search_google_and_summarize(query: str) -> str:
 
 def search_wolfram_alpha(query: str, is_detailed: bool) -> str:
     r"""Queries Wolfram|Alpha and returns the result. Wolfram|Alpha is a
-    search engine that uses algorithms, knowledgebase and AI to compute
-    expert-level answers for math, science, society, everyday life and more.
+    computational knowledge engine that uses algorithms, knowledgebase and AI
+    to compute expert-level answers for math, science, society, everyday life
+    and more.
 
     Args:
         query (str): The query to send to Wolfram Alpha.
@@ -331,8 +332,7 @@ def search_wolfram_alpha(query: str, is_detailed: bool) -> str:
         import wolframalpha
     except ImportError:
         raise ImportError(
-            "Please install `wolframalpha` first. You can install it by "
-            "running `pip install wolframalpha`."
+            "Please install `wolframalpha` first. You can install it by running `pip install wolframalpha`."
         )
 
     WOLFRAMALPHA_APP_ID = os.environ.get('WOLFRAMALPHA_APP_ID')
