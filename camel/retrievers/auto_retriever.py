@@ -19,7 +19,7 @@ from typing import List, Optional, Tuple, Union
 from urllib.parse import urlparse
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
-from camel.retrievers import VectorRetriever
+from camel.retrievers.vector_retriever import VectorRetriever
 from camel.storages import (
     BaseVectorStorage,
     MilvusStorage,
@@ -32,8 +32,8 @@ DEFAULT_TOP_K_RESULTS = 1
 DEFAULT_SIMILARITY_THRESHOLD = 0.75
 
 
-class AutoRetriever():
-    r""" Facilitates the automatic retrieval of information using a
+class AutoRetriever:
+    r"""Facilitates the automatic retrieval of information using a
     query-based approach with pre-defined elements.
 
     Attributes:
@@ -54,7 +54,6 @@ class AutoRetriever():
         storage_type: Optional[StorageType] = None,
         embedding_model: Optional[BaseEmbedding] = None,
     ):
-
         self.storage_type = storage_type or StorageType.MILVUS
         self.embedding_model = embedding_model or OpenAIEmbedding()
         self.vector_storage_local_path = vector_storage_local_path
@@ -77,21 +76,25 @@ class AutoRetriever():
             if self.url_and_api_key is None:
                 raise ValueError(
                     "URL and API key required for Milvus storage are not"
-                    "provided.")
+                    "provided."
+                )
             return MilvusStorage(
                 vector_dim=self.embedding_model.get_output_dim(),
                 collection_name=collection_name,
-                url_and_api_key=self.url_and_api_key)
+                url_and_api_key=self.url_and_api_key,
+            )
 
         if self.storage_type == StorageType.QDRANT:
             return QdrantStorage(
                 vector_dim=self.embedding_model.get_output_dim(),
                 collection_name=collection_name,
                 path=self.vector_storage_local_path,
-                url_and_api_key=self.url_and_api_key)
+                url_and_api_key=self.url_and_api_key,
+            )
 
         raise ValueError(
-            f"Unsupported vector storage type: {self.storage_type}")
+            f"Unsupported vector storage type: {self.storage_type}"
+        )
 
     def _collection_name_generator(self, content_input_path: str) -> str:
         r"""Generates a valid collection name from a given file path or URL.
@@ -113,13 +116,16 @@ class AutoRetriever():
             # For URLs, remove https://, replace /, and any characters not
             # allowed by Milvus with _
             collection_name = re.sub(
-                r'[^0-9a-zA-Z]+', '_',
-                content_input_path.replace("https://", ""))
+                r'[^0-9a-zA-Z]+',
+                '_',
+                content_input_path.replace("https://", ""),
+            )
         else:
             # For file paths, get the stem and replace spaces with _, also
             # ensuring only allowed characters are present
-            collection_name = re.sub(r'[^0-9a-zA-Z]+', '_',
-                                     Path(content_input_path).stem)
+            collection_name = re.sub(
+                r'[^0-9a-zA-Z]+', '_', Path(content_input_path).stem
+            )
 
         # Ensure the collection name does not start or end with underscore
         collection_name = collection_name.strip("_")
@@ -127,8 +133,7 @@ class AutoRetriever():
         collection_name = collection_name[:30]
         return collection_name
 
-    def _get_file_modified_date_from_file(self,
-                                          content_input_path: str) -> str:
+    def _get_file_modified_date_from_file(self, content_input_path: str) -> str:
         r"""Retrieves the last modified date and time of a given file. This
         function takes a file path as input and returns the last modified date
         and time of that file.
@@ -141,12 +146,14 @@ class AutoRetriever():
             str: The last modified time from file.
         """
         mod_time = os.path.getmtime(content_input_path)
-        readable_mod_time = datetime.datetime.fromtimestamp(
-            mod_time).isoformat(timespec='seconds')
+        readable_mod_time = datetime.datetime.fromtimestamp(mod_time).isoformat(
+            timespec='seconds'
+        )
         return readable_mod_time
 
     def _get_file_modified_date_from_storage(
-            self, vector_storage_instance: BaseVectorStorage) -> str:
+        self, vector_storage_instance: BaseVectorStorage
+    ) -> str:
         r"""Retrieves the last modified date and time of a given file. This
         function takes vector storage instance as input and returns the last
         modified date from the meta data.
@@ -169,20 +176,25 @@ class AutoRetriever():
         # Extract the file's last modified date from the metadata
         # in the query result
         if result_any[0].record.payload is not None:
-            file_modified_date_from_meta = (
-                result_any[0].record.payload["metadata"]['last_modified'])
+            file_modified_date_from_meta = result_any[0].record.payload[
+                "metadata"
+            ]['last_modified']
         else:
             raise ValueError(
                 "The vector storage exits but the payload is None,"
-                "please check the collection")
+                "please check the collection"
+            )
 
         return file_modified_date_from_meta
 
     def run_vector_retriever(
-            self, query: str, content_input_paths: Union[str, List[str]],
-            top_k: int = DEFAULT_TOP_K_RESULTS,
-            similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
-            return_detailed_info: bool = False) -> str:
+        self,
+        query: str,
+        content_input_paths: Union[str, List[str]],
+        top_k: int = DEFAULT_TOP_K_RESULTS,
+        similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
+        return_detailed_info: bool = False,
+    ) -> str:
         r"""Executes the automatic vector retriever process using vector storage.
 
         Args:
@@ -213,8 +225,11 @@ class AutoRetriever():
         if not content_input_paths:
             raise ValueError("content_input_paths cannot be empty.")
 
-        content_input_paths = [content_input_paths] if isinstance(
-            content_input_paths, str) else content_input_paths
+        content_input_paths = (
+            [content_input_paths]
+            if isinstance(content_input_paths, str)
+            else content_input_paths
+        )
 
         vr = VectorRetriever()
 
@@ -224,51 +239,78 @@ class AutoRetriever():
         for content_input_path in content_input_paths:
             # Generate a valid collection name
             collection_name = self._collection_name_generator(
-                content_input_path)
+                content_input_path
+            )
             try:
                 vector_storage_instance = self._initialize_vector_storage(
-                    collection_name)
+                    collection_name
+                )
 
                 # Check the modified time of the input file path, only works
                 # for local path since no standard way for remote url
                 file_is_modified = False  # initialize with a default value
-                if vector_storage_instance.status(
-                ).vector_count != 0 and not self.is_url:
+                if (
+                    vector_storage_instance.status().vector_count != 0
+                    and not self.is_url
+                ):
                     # Get original modified date from file
-                    modified_date_from_file = \
+                    modified_date_from_file = (
                         self._get_file_modified_date_from_file(
-                            content_input_path)
+                            content_input_path
+                        )
+                    )
                     # Get modified date from vector storage
-                    modified_date_from_storage = \
+                    modified_date_from_storage = (
                         self._get_file_modified_date_from_storage(
-                            vector_storage_instance)
+                            vector_storage_instance
+                        )
+                    )
                     # Determine if the file has been modified since the last
                     # check
-                    file_is_modified = (modified_date_from_file !=
-                                        modified_date_from_storage)
+                    file_is_modified = (
+                        modified_date_from_file != modified_date_from_storage
+                    )
 
-                if vector_storage_instance.status(
-                ).vector_count == 0 or file_is_modified:
+                if (
+                    vector_storage_instance.status().vector_count == 0
+                    or file_is_modified
+                ):
                     # Clear the vector storage
                     vector_storage_instance.clear()
                     # Process and store the content to the vector storage
                     vr.process(content_input_path, vector_storage_instance)
                 # Retrieve info by given query from the vector storage
-                retrieved_info = vr.query(query, vector_storage_instance,
-                                          top_k, similarity_threshold)
+                retrieved_info = vr.query(
+                    query, vector_storage_instance, top_k, similarity_threshold
+                )
                 # Reorganize the retrieved info with original query
                 for info in retrieved_info:
                     retrieved_infos += "\n" + str(info)
                     retrieved_infos_text += "\n" + str(info['text'])
-                output = ("Original Query:" + "\n" + "{" + query + "}" + "\n" +
-                          "Retrieved Context:" + retrieved_infos)
-                output_text = ("Original Query:" + "\n" + "{" + query + "}" +
-                               "\n" + "Retrieved Context:" +
-                               retrieved_infos_text)
+                output = (
+                    "Original Query:"
+                    + "\n"
+                    + "{"
+                    + query
+                    + "}"
+                    + "\n"
+                    + "Retrieved Context:"
+                    + retrieved_infos
+                )
+                output_text = (
+                    "Original Query:"
+                    + "\n"
+                    + "{"
+                    + query
+                    + "}"
+                    + "\n"
+                    + "Retrieved Context:"
+                    + retrieved_infos_text
+                )
 
             except Exception as e:
                 raise RuntimeError(
-                    f"Error in auto vector retriever processing: {str(e)}"
+                    f"Error in auto vector retriever processing: {e!s}"
                 ) from e
 
         if return_detailed_info:

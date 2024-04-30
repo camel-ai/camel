@@ -18,16 +18,18 @@ from camel.messages import BaseMessage
 from camel.societies import BabyAGI
 from camel.types import ModelType, RoleType, TaskType
 
-parametrize = pytest.mark.parametrize('model', [
-    None,
-    pytest.param(ModelType.GPT_3_5_TURBO, marks=pytest.mark.model_backend),
-    pytest.param(ModelType.GPT_4, marks=pytest.mark.model_backend),
-])
+parametrize = pytest.mark.parametrize(
+    'model',
+    [
+        None,
+        pytest.param(ModelType.GPT_3_5_TURBO, marks=pytest.mark.model_backend),
+        pytest.param(ModelType.GPT_4, marks=pytest.mark.model_backend),
+    ],
+)
 
 
 @parametrize
 def test_babyagi_playing_init(model: ModelType):
-
     task_prompt = "Develop a trading bot for the stock market"
 
     babyagi_playing = BabyAGI(
@@ -47,8 +49,9 @@ def test_babyagi_playing_init(model: ModelType):
 
     assert isinstance(babyagi_playing.assistant_agent, ChatAgent)
     assert isinstance(babyagi_playing.task_creation_agent, TaskCreationAgent)
-    assert isinstance(babyagi_playing.task_prioritization_agent,
-                      TaskPrioritizationAgent)
+    assert isinstance(
+        babyagi_playing.task_prioritization_agent, TaskPrioritizationAgent
+    )
 
     assert len(babyagi_playing.subtasks) == 0
     assert len(babyagi_playing.solved_subtasks) == 0

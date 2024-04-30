@@ -12,17 +12,17 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
+from ..loaders.unstructured_io import UnstructuredIO
+from .google_maps_function import MAP_FUNCS
+from .math_functions import MATH_FUNCS
 from .openai_function import (
     OpenAIFunction,
-    get_openai_tool_schema,
     get_openai_function_schema,
+    get_openai_tool_schema,
 )
-from .math_functions import MATH_FUNCS
 from .search_functions import SEARCH_FUNCS
-from .weather_functions import WEATHER_FUNCS
-from .google_maps_function import MAP_FUNCS
 from .twitter_function import TWITTER_FUNCS
-from ..loaders.unstructured_io import UnstructuredIO
+from .weather_functions import WEATHER_FUNCS
 
 __all__ = [
     'OpenAIFunction',

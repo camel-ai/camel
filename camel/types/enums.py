@@ -115,10 +115,10 @@ class ModelType(Enum):
         if self in {ModelType.CLAUDE_2_0, ModelType.CLAUDE_INSTANT_1_2}:
             return 100_000
         elif self in {
-                ModelType.CLAUDE_2_1,
-                ModelType.CLAUDE_3_OPUS,
-                ModelType.CLAUDE_3_SONNET,
-                ModelType.CLAUDE_3_HAIKU,
+            ModelType.CLAUDE_2_1,
+            ModelType.CLAUDE_3_OPUS,
+            ModelType.CLAUDE_3_SONNET,
+            ModelType.CLAUDE_3_HAIKU,
         }:
             return 200_000
         else:
@@ -139,8 +139,10 @@ class ModelType(Enum):
             pattern = r'^vicuna-\d+b-v\d+\.\d+-16k$'
             return bool(re.match(pattern, model_name))
         elif self is ModelType.LLAMA_2:
-            return (self.value in model_name.lower()
-                    or "llama2" in model_name.lower())
+            return (
+                self.value in model_name.lower()
+                or "llama2" in model_name.lower()
+            )
         else:
             return self.value in model_name.lower()
 
@@ -217,7 +219,6 @@ class TerminationMode(Enum):
 
 
 class OpenAIImageTypeMeta(EnumMeta):
-
     def __contains__(cls, image_type: object) -> bool:
         try:
             cls(image_type)
@@ -228,6 +229,7 @@ class OpenAIImageTypeMeta(EnumMeta):
 
 class OpenAIImageType(Enum, metaclass=OpenAIImageTypeMeta):
     r"""Image types supported by OpenAI vision model."""
+
     # https://platform.openai.com/docs/guides/vision
     PNG = "png"
     JPEG = "jpeg"

@@ -11,12 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from .anthropic_model import AnthropicModel
 from .base_model import BaseModelBackend
+from .model_factory import ModelFactory
+from .open_source_model import OpenSourceModel
 from .openai_model import OpenAIModel
 from .stub_model import StubModel
-from .open_source_model import OpenSourceModel
-from .anthropic_model import AnthropicModel
-from .model_factory import ModelFactory
 
 __all__ = [
     'BaseModelBackend',
