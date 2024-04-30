@@ -256,7 +256,7 @@ class Neo4jGraph(BaseGraphStorage):
             for el in self.query(
                 NODE_PROPERTY_QUERY,
                 params={
-                    "EXCLUDED_LABELS": EXCLUDED_LABELS + [BASE_ENTITY_LABEL]
+                    "EXCLUDED_LABELS": [*EXCLUDED_LABELS, BASE_ENTITY_LABEL]
                 },
             )
         ]
@@ -271,7 +271,7 @@ class Neo4jGraph(BaseGraphStorage):
             for el in self.query(
                 REL_QUERY,
                 params={
-                    "EXCLUDED_LABELS": EXCLUDED_LABELS + [BASE_ENTITY_LABEL]
+                    "EXCLUDED_LABELS": [*EXCLUDED_LABELS, BASE_ENTITY_LABEL]
                 },
             )
         ]
@@ -530,13 +530,11 @@ class Neo4jGraph(BaseGraphStorage):
         """
         if base_entity_label:  # check if constraint already exists
             constraint_exists = any(
-                [
-                    el["labelsOrTypes"] == [BASE_ENTITY_LABEL]
-                    and el["properties"] == ["id"]
-                    for el in self.structured_schema.get("metadata", {}).get(
-                        "constraint"
-                    )
-                ]
+                el["labelsOrTypes"] == [BASE_ENTITY_LABEL]
+                and el["properties"] == ["id"]
+                for el in self.structured_schema.get("metadata", {}).get(
+                    "constraint", []
+                )
             )
             if not constraint_exists:
                 # Create constraint
