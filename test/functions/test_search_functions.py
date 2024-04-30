@@ -18,9 +18,9 @@ import requests
 import wikipedia
 
 from camel.functions.search_functions import (
+    query_wolfram_alpha,
     search_google_and_summarize,
     search_wiki,
-    search_wolfram_alpha,
 )
 
 
@@ -76,7 +76,7 @@ def test_web_search():
 
 @patch('wolframalpha.Client')
 @patch('os.environ.get')
-def test_search_wolfram_alpha(mock_get, mock_client):
+def test_query_wolfram_alpha(mock_get, mock_client):
     mock_get.return_value = 'FAKE_APP_ID'
 
     # Create mock subpods objects
@@ -113,7 +113,7 @@ def test_search_wolfram_alpha(mock_get, mock_client):
     mock_instance.query.return_value = mock_res
     mock_client.return_value = mock_instance
 
-    result = search_wolfram_alpha("calculate limit of sinx^2/x", True)
+    result = query_wolfram_alpha("calculate limit of sinx^2/x", True)
     expected_output = (
         "Assumption:\n"
         "lim_(x->0) (sin^2(x))/x = 0\n\n"
