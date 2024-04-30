@@ -12,30 +12,12 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from .graph_storages.base import BaseGraphStorage
-from .graph_storages.neo4j_graph import Neo4jGraph
-from .key_value_storages.base import BaseKeyValueStorage
-from .key_value_storages.in_memory import InMemoryKeyValueStorage
-from .key_value_storages.json import JsonStorage
-from .vectordb_storages.base import (
-    BaseVectorStorage,
-    VectorDBQuery,
-    VectorDBQueryResult,
-    VectorRecord,
-)
-from .vectordb_storages.milvus import MilvusStorage
-from .vectordb_storages.qdrant import QdrantStorage
+from .base import BaseGraphStorage
+from .graph_element import GraphElement
+from .neo4j_graph import Neo4jGraph
 
 __all__ = [
-    'BaseKeyValueStorage',
-    'InMemoryKeyValueStorage',
-    'JsonStorage',
-    'VectorRecord',
-    'BaseVectorStorage',
-    'VectorDBQuery',
-    'VectorDBQueryResult',
-    'QdrantStorage',
-    'MilvusStorage',
     'BaseGraphStorage',
+    'GraphElement',
     'Neo4jGraph',
 ]
