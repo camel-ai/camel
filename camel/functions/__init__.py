@@ -21,6 +21,7 @@ from .math_functions import MATH_FUNCS
 from .search_functions import SEARCH_FUNCS
 from .weather_functions import WEATHER_FUNCS
 from .google_maps_function import MAP_FUNCS
+from .twitter_function import TWITTER_FUNCS
 from ..loaders.unstructured_io import UnstructuredIO
 
 __all__ = [
@@ -31,5 +32,6 @@ __all__ = [
     'SEARCH_FUNCS',
     'WEATHER_FUNCS',
     'MAP_FUNCS',
+    'TWITTER_FUNCS',
     'UnstructuredIO',
 ]
