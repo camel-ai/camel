@@ -67,6 +67,9 @@ sentence-transformers = { version = "^2.2.2", optional = true }
 qdrant-client = { version = "^1.9.0", optional = true }
 pymilvus = { version = "^2.4.0", optional = true }
 
+# graph-storages
+neo4j = { version = "^5.18.0", optional = true }
+
 # retrievers
 rank-bm25 = { version = "^0.2.2", optional = true }
 
@@ -110,6 +113,10 @@ vector-databases = [
     "pymilvus",
 ]
 
+graph-storages = [
+    "neo4j",
+]
+
 retrievers = [
     "rank-bm25",
 ]
@@ -139,6 +146,8 @@ all = [
     "pymilvus",
     # encoders
     "sentence-transformers",
+    # graph-storages
+    "neo4j",
     # retrievers
     "rank-bm25",
 ]
