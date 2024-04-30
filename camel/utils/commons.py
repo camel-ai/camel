@@ -35,10 +35,17 @@ def get_lazy_imported_functions_module():
         MAP_FUNCS,
         MATH_FUNCS,
         SEARCH_FUNCS,
+        TWITTER_FUNCS,
         WEATHER_FUNCS,
     )
 
-    return [*MATH_FUNCS, *SEARCH_FUNCS, *WEATHER_FUNCS, *MAP_FUNCS]
+    return [
+        *MATH_FUNCS,
+        *SEARCH_FUNCS,
+        *WEATHER_FUNCS,
+        *MAP_FUNCS,
+        *TWITTER_FUNCS,
+    ]
 
 
 # Set lazy import
@@ -262,7 +269,8 @@ def role_playing_with_function(
         "and then add 10 more years to this age, "
         "and get the current weather of the city where "
         "the University is located. And tell me what time "
-        "zone University of Oxford is in."
+        "zone University of Oxford is in. And use my twitter "
+        "account infomation to create a tweet. "
     ),
     function_list: Optional[List] = None,
     model_type=None,

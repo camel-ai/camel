@@ -124,9 +124,9 @@ def construct_ui(
         right_better_bn = gr.Button("Right is better")
     with gr.Row():
         with gr.Column(scale=1):
-            left_md = gr.Markdown("LOREM\n" "IPSUM\n")
+            left_md = gr.Markdown("LOREM\nIPSUM\n")
         with gr.Column(scale=1):
-            right_md = gr.Markdown("LOREM 2\n" "IPSUM 2\n")
+            right_md = gr.Markdown("LOREM 2\nIPSUM 2\n")
 
     state_st = gr.State(
         dict(
