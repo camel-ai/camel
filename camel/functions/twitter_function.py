@@ -40,13 +40,18 @@ def get_twitter_api_key() -> Tuple[str, str]:
     TWITTER_CONSUMER_SECRET = os.environ.get("TWITTER_CONSUMER_SECRET")
 
     if not TWITTER_CONSUMER_KEY or not TWITTER_CONSUMER_SECRET:
-        missing_keys = ", ".join([
-            "TWITTER_CONSUMER_KEY" if not TWITTER_CONSUMER_KEY else "",
-            "TWITTER_CONSUMER_SECRET" if not TWITTER_CONSUMER_SECRET else ""
-        ]).strip(", ")
+        missing_keys = ", ".join(
+            [
+                "TWITTER_CONSUMER_KEY" if not TWITTER_CONSUMER_KEY else "",
+                "TWITTER_CONSUMER_SECRET"
+                if not TWITTER_CONSUMER_SECRET
+                else "",
+            ]
+        ).strip(", ")
         raise ValueError(
             f"{missing_keys} not found in environment variables. Get them "
-            "here: `https://developer.twitter.com/en/portal/products/free`.")
+            "here: `https://developer.twitter.com/en/portal/products/free`."
+        )
     return TWITTER_CONSUMER_KEY, TWITTER_CONSUMER_SECRET
 
 
@@ -73,22 +78,27 @@ def get_oauth_session() -> requests.Session:
     try:
         from requests_oauthlib import OAuth1Session
     except ImportError:
-        raise ImportError("Please install `requests_oauthlib` first. You can "
-                          "install it by running `pip install "
-                          "requests_oauthlib`.")
+        raise ImportError(
+            "Please install `requests_oauthlib` first. You can "
+            "install it by running `pip install "
+            "requests_oauthlib`."
+        )
 
     consumer_key, consumer_secret = get_twitter_api_key()
 
     # Get request token
-    request_token_url = ("https://api.twitter.com/oauth/request_token"
-                         "?oauth_callback=oob&x_auth_access_type=write")
+    request_token_url = (
+        "https://api.twitter.com/oauth/request_token"
+        "?oauth_callback=oob&x_auth_access_type=write"
+    )
     oauth = OAuth1Session(consumer_key, client_secret=consumer_secret)
 
     try:
         fetch_response = oauth.fetch_request_token(request_token_url)
     except Exception as e:
         raise RuntimeError(
-            f"Error occurred while fetching the OAuth access token: {e}")
+            f"Error occurred while fetching the OAuth access token: {e}"
+        )
 
     resource_owner_key = fetch_response.get("oauth_token")
     resource_owner_secret = fetch_response.get("oauth_token_secret")
@@ -113,7 +123,8 @@ def get_oauth_session() -> requests.Session:
         oauth_tokens = oauth.fetch_access_token(access_token_url)
     except Exception as e:
         raise RuntimeError(
-            f"Error occurred while fetching the OAuth request token: {e}")
+            f"Error occurred while fetching the OAuth request token: {e}"
+        )
 
     # Create a new OAuth1Session with the access token
     oauth = OAuth1Session(
@@ -152,9 +163,13 @@ def handle_http_error(response: requests.Response) -> str:
         return "Unexpected Exception"
 
 
-def create_tweet(*, text: str, poll_options: Optional[List[str]] = None,
-                 poll_duration_minutes: Optional[int] = None,
-                 quote_tweet_id: Optional[Union[int, str]] = None) -> str:
+def create_tweet(
+    *,
+    text: str,
+    poll_options: Optional[List[str]] = None,
+    poll_duration_minutes: Optional[int] = None,
+    quote_tweet_id: Optional[Union[int, str]] = None,
+) -> str:
     r"""Creates a new tweet, optionally including a poll or a quote tweet, or
     simply a text-only tweet.
 
@@ -195,20 +210,24 @@ def create_tweet(*, text: str, poll_options: Optional[List[str]] = None,
 
     # Validate poll options and duration
     if (poll_options is None) != (poll_duration_minutes is None):
-        return ("Error: Both `poll_options` and `poll_duration_minutes` must "
-                "be provided together or not at all.")
+        return (
+            "Error: Both `poll_options` and `poll_duration_minutes` must "
+            "be provided together or not at all."
+        )
 
     # Validate exclusive parameters
     if quote_tweet_id is not None and (poll_options or poll_duration_minutes):
-        return ("Error: Cannot provide both `quote_tweet_id` and "
-                "(`poll_options` or `poll_duration_minutes`).")
+        return (
+            "Error: Cannot provide both `quote_tweet_id` and "
+            "(`poll_options` or `poll_duration_minutes`)."
+        )
 
     # Print the parameters that are not None
     params = {
         "text": text,
         "poll_options": poll_options,
         "poll_duration_minutes": poll_duration_minutes,
-        "quote_tweet_id": quote_tweet_id
+        "quote_tweet_id": quote_tweet_id,
     }
     print("You are going to create a tweet with following parameters:")
     for key, value in params.items():
@@ -226,13 +245,13 @@ def create_tweet(*, text: str, poll_options: Optional[List[str]] = None,
     if poll_options is not None and poll_duration_minutes is not None:
         json_data["poll"] = {
             "options": poll_options,
-            "duration_minutes": poll_duration_minutes  # type: ignore
+            "duration_minutes": poll_duration_minutes,
         }
 
     if quote_tweet_id is not None:
-        json_data["quote_tweet_id"] = str(quote_tweet_id)  # type: ignore
+        json_data["quote_tweet_id"] = str(quote_tweet_id)  # type: ignore[assignment]
 
-    json_data["text"] = text  # type: ignore
+    json_data["text"] = text  # type: ignore[assignment]
 
     # Making the request
     response = oauth.post(
@@ -243,8 +262,14 @@ def create_tweet(*, text: str, poll_options: Optional[List[str]] = None,
     if response.status_code != HTTPStatus.CREATED:
         error_type = handle_http_error(response)
         # use string concatenation to satisfy flake8
-        return ("Request returned a(n) " + str(error_type) + ": " +
-                str(response.status_code) + " " + response.text)
+        return (
+            "Request returned a(n) "
+            + str(error_type)
+            + ": "
+            + str(response.status_code)
+            + " "
+            + response.text
+        )
 
     # Saving the response as JSON
     json_response = response.json()
@@ -252,9 +277,11 @@ def create_tweet(*, text: str, poll_options: Optional[List[str]] = None,
     tweet_id = json_response["data"]["id"]
     tweet_text = json_response["data"]["text"]
 
-    response_str = (f"Create tweet successful. "
-                    f"The tweet ID is: {tweet_id}. "
-                    f"The tweet text is: '{tweet_text}'.")
+    response_str = (
+        f"Create tweet successful. "
+        f"The tweet ID is: {tweet_id}. "
+        f"The tweet text is: '{tweet_text}'."
+    )
 
     return response_str
 
@@ -280,8 +307,10 @@ def delete_tweet(tweet_id: str) -> str:
     """
     # Print the parameters that are not None
     if tweet_id is not None:
-        print(f"You are going to delete a tweet with the following "
-              f"ID: {tweet_id}")
+        print(
+            f"You are going to delete a tweet with the following "
+            f"ID: {tweet_id}"
+        )
 
     # Add a confirmation prompt at the beginning of the function
     confirm = input("Are you sure you want to delete this tweet? (yes/no): ")
@@ -291,20 +320,30 @@ def delete_tweet(tweet_id: str) -> str:
     oauth = get_oauth_session()
 
     # Making the request
-    response = oauth.delete(f"https://api.twitter.com/2/tweets/{tweet_id}", )
+    response = oauth.delete(
+        f"https://api.twitter.com/2/tweets/{tweet_id}",
+    )
 
     if response.status_code != HTTPStatus.OK:
         error_type = handle_http_error(response)
         # use string concatenation to satisfy flake8
-        return ("Request returned a(n) " + str(error_type) + ": " +
-                str(response.status_code) + " " + response.text)
+        return (
+            "Request returned a(n) "
+            + str(error_type)
+            + ": "
+            + str(response.status_code)
+            + " "
+            + response.text
+        )
 
     # Saving the response as JSON
     json_response = response.json()
     # `deleted_status` may be True or False. Defaults to False if not found.
     deleted_status = json_response.get("data", {}).get("deleted", False)
-    response_str = (f"Delete tweet successful: {deleted_status}. "
-                    f"The tweet ID is: {tweet_id}. ")
+    response_str = (
+        f"Delete tweet successful: {deleted_status}. "
+        f"The tweet ID is: {tweet_id}. "
+    )
     return response_str
 
 
@@ -330,14 +369,24 @@ def get_my_user_profile() -> str:
 
     tweet_fields = ["created_at", "text"]
     user_fields = [
-        "created_at", "description", "id", "location", "most_recent_tweet_id",
-        "name", "pinned_tweet_id", "profile_image_url", "protected",
-        "public_metrics", "url", "username", "verified_type"
+        "created_at",
+        "description",
+        "id",
+        "location",
+        "most_recent_tweet_id",
+        "name",
+        "pinned_tweet_id",
+        "profile_image_url",
+        "protected",
+        "public_metrics",
+        "url",
+        "username",
+        "verified_type",
     ]
     params = {
         "expansions": "pinned_tweet_id",
         "tweet.fields": ",".join(tweet_fields),
-        "user.fields": ",".join(user_fields)
+        "user.fields": ",".join(user_fields),
     }
 
     response = oauth.get("https://api.twitter.com/2/users/me", params=params)
@@ -345,7 +394,8 @@ def get_my_user_profile() -> str:
     if response.status_code != HTTPStatus.OK:
         error_type = handle_http_error(response)
         error_message = "Request returned a(n) {}: {} {}".format(
-            error_type, response.status_code, response.text)
+            error_type, response.status_code, response.text
+        )
         return error_message
 
     json_response = response.json()
@@ -360,7 +410,10 @@ def get_my_user_profile() -> str:
 
     # Define the part of keys that need to be repeatedly processed
     user_info_keys = [
-        'description', 'location', 'most_recent_tweet_id', 'profile_image_url'
+        'description',
+        'location',
+        'most_recent_tweet_id',
+        'profile_image_url',
     ]
     for key in user_info_keys:
         value = user_info.get(key)
@@ -368,27 +421,34 @@ def get_my_user_profile() -> str:
             user_report += f"{key.replace('_', ' ').capitalize()}: {value}. "
 
     if 'created_at' in user_info:
-        created_at = datetime.datetime.strptime(user_info['created_at'],
-                                                "%Y-%m-%dT%H:%M:%S.%fZ")
+        created_at = datetime.datetime.strptime(
+            user_info['created_at'], "%Y-%m-%dT%H:%M:%S.%fZ"
+        )
         date_str = created_at.strftime('%B %d, %Y at %H:%M:%S')
         user_report += f"Account created at: {date_str}. "
 
     protection_status = "private" if user_info['protected'] else "public"
-    user_report += (f"Protected: This user's Tweets are {protection_status}. ")
+    user_report += f"Protected: This user's Tweets are {protection_status}. "
 
     verification_messages = {
-        'blue': ("The user has a blue verification, typically reserved for "
-                 "public figures, celebrities, or global brands. "),
-        'business': ("The user has a business verification, typically "
-                     "reserved for businesses and corporations. "),
-        'government': ("The user has a government verification, typically "
-                       "reserved for government officials or entities. "),
-        'none':
-        "The user is not verified. "
+        'blue': (
+            "The user has a blue verification, typically reserved for "
+            "public figures, celebrities, or global brands. "
+        ),
+        'business': (
+            "The user has a business verification, typically "
+            "reserved for businesses and corporations. "
+        ),
+        'government': (
+            "The user has a government verification, typically "
+            "reserved for government officials or entities. "
+        ),
+        'none': "The user is not verified. ",
     }
     verification_type = user_info.get('verified_type', 'none')
     user_report += (
-        f"Verified type: {verification_messages.get(verification_type)}")
+        f"Verified type: {verification_messages.get(verification_type)}"
+    )
 
     if 'public_metrics' in user_info:
         user_report += "Public metrics: "
@@ -398,24 +458,27 @@ def get_my_user_profile() -> str:
             f"is following {metrics.get('following_count', 0)} users, "
             f"has made {metrics.get('tweet_count', 0)} tweets, "
             f"is listed in {metrics.get('listed_count', 0)} lists, "
-            f"and has received {metrics.get('like_count', 0)} likes. ")
+            f"and has received {metrics.get('like_count', 0)} likes. "
+        )
 
     if 'pinned_tweet_id' in user_info:
         user_report += f"Pinned tweet ID: {user_info['pinned_tweet_id']}. "
 
     if 'created_at' in tweets and 'text' in tweets:
         user_report += "\nPinned tweet information: "
-        tweet_created_at = datetime.datetime.strptime(tweets['created_at'],
-                                                      "%Y-%m-%dT%H:%M:%S.%fZ")
+        tweet_created_at = datetime.datetime.strptime(
+            tweets['created_at'], "%Y-%m-%dT%H:%M:%S.%fZ"
+        )
         user_report += (
             f"Pinned tweet created at "
             f"{tweet_created_at.strftime('%B %d, %Y at %H:%M:%S')} "
-            f"with text: '{tweets['text']}'.")
+            f"with text: '{tweets['text']}'."
+        )
 
     return user_report
 
 
 TWITTER_FUNCS: List[OpenAIFunction] = [
-    OpenAIFunction(func)  # type: ignore
+    OpenAIFunction(func)  # type: ignore[arg-type]
     for func in [create_tweet, delete_tweet, get_my_user_profile]
 ]

@@ -38,14 +38,20 @@ def get_lazy_imported_functions_module():
         TWITTER_FUNCS,
         WEATHER_FUNCS,
     )
+
     return [
-        *MATH_FUNCS, *SEARCH_FUNCS, *WEATHER_FUNCS, *MAP_FUNCS, *TWITTER_FUNCS
+        *MATH_FUNCS,
+        *SEARCH_FUNCS,
+        *WEATHER_FUNCS,
+        *MAP_FUNCS,
+        *TWITTER_FUNCS,
     ]
 
 
 # Set lazy import
 def get_lazy_imported_types_module():
     from camel.types import ModelType
+
     return ModelType.GPT_4_TURBO
 
 
@@ -149,8 +155,10 @@ def download_tasks(task: TaskType, folder_path: str) -> None:
     zip_file_path = os.path.join(folder_path, "tasks.zip")
 
     # Download the zip file from the Google Drive link
-    response = requests.get("https://huggingface.co/datasets/camel-ai/"
-                            f"metadata/resolve/main/{task.value}_tasks.zip")
+    response = requests.get(
+        "https://huggingface.co/datasets/camel-ai/"
+        f"metadata/resolve/main/{task.value}_tasks.zip"
+    )
 
     # Save the zip file
     with open(zip_file_path, "wb") as f:
@@ -255,13 +263,15 @@ PYDANTIC_V2 = pydantic.VERSION.startswith("2.")
 
 
 def role_playing_with_function(
-    task_prompt: str = ("Assume now is 2024 in the Gregorian calendar, "
-                        "estimate the current age of University of Oxford "
-                        "and then add 10 more years to this age, "
-                        "and get the current weather of the city where "
-                        "the University is located. And tell me what time "
-                        "zone University of Oxford is in. And use my twitter "
-                        "account infomation to create a tweet. "),
+    task_prompt: str = (
+        "Assume now is 2024 in the Gregorian calendar, "
+        "estimate the current age of University of Oxford "
+        "and then add 10 more years to this age, "
+        "and get the current weather of the city where "
+        "the University is located. And tell me what time "
+        "zone University of Oxford is in. And use my twitter "
+        "account infomation to create a tweet. "
+    ),
     function_list: Optional[List] = None,
     model_type=None,
     chat_turn_limit=10,
@@ -334,15 +344,18 @@ def role_playing_with_function(
     )
 
     print(
-        Fore.GREEN +
-        f"AI Assistant sys message:\n{role_play_session.assistant_sys_msg}\n")
-    print(Fore.BLUE +
-          f"AI User sys message:\n{role_play_session.user_sys_msg}\n")
+        Fore.GREEN
+        + f"AI Assistant sys message:\n{role_play_session.assistant_sys_msg}\n"
+    )
+    print(
+        Fore.BLUE + f"AI User sys message:\n{role_play_session.user_sys_msg}\n"
+    )
 
     print(Fore.YELLOW + f"Original task prompt:\n{task_prompt}\n")
     print(
-        Fore.CYAN +
-        f"Specified task prompt:\n{role_play_session.specified_task_prompt}\n")
+        Fore.CYAN
+        + f"Specified task prompt:\n{role_play_session.specified_task_prompt}\n"
+    )
     print(Fore.RED + f"Final task prompt:\n{role_play_session.task_prompt}\n")
 
     n = 0
@@ -352,26 +365,35 @@ def role_playing_with_function(
         assistant_response, user_response = role_play_session.step(input_msg)
 
         if assistant_response.terminated:
-            print(Fore.GREEN +
-                  ("AI Assistant terminated. Reason: "
-                   f"{assistant_response.info['termination_reasons']}."))
+            print(
+                Fore.GREEN
+                + (
+                    "AI Assistant terminated. Reason: "
+                    f"{assistant_response.info['termination_reasons']}."
+                )
+            )
             break
         if user_response.terminated:
-            print(Fore.GREEN +
-                  ("AI User terminated. "
-                   f"Reason: {user_response.info['termination_reasons']}."))
+            print(
+                Fore.GREEN
+                + (
+                    "AI User terminated. "
+                    f"Reason: {user_response.info['termination_reasons']}."
+                )
+            )
             break
 
         # Print output from the user
-        print_text_animated(Fore.BLUE +
-                            f"AI User:\n\n{user_response.msg.content}\n")
+        print_text_animated(
+            Fore.BLUE + f"AI User:\n\n{user_response.msg.content}\n"
+        )
 
         # Print output from the assistant, including any function
         # execution information
         print_text_animated(Fore.GREEN + "AI Assistant:")
-        called_functions: List[
-            FunctionCallingRecord] = assistant_response.info[
-                'called_functions']
+        called_functions: List[FunctionCallingRecord] = assistant_response.info[
+            'called_functions'
+        ]
         for func_record in called_functions:
             print_text_animated(f"{func_record}")
         print_text_animated(f"{assistant_response.msg.content}\n")

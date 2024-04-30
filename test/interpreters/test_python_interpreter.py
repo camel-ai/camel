@@ -37,7 +37,8 @@ def test_state_update(interpreter: InternalPythonInterpreter):
     code = "x = input_variable"
     input_variable = 10
     execution_res = interpreter.execute(
-        code, state={"input_variable": input_variable})
+        code, state={"input_variable": input_variable}
+    )
     assert execution_res == input_variable
 
 
@@ -54,8 +55,9 @@ def test_import_success0(interpreter: InternalPythonInterpreter):
 a = pt.tensor([[1., -1.], [1., -1.]])
 openai.__version__"""
     execution_res = interpreter.execute(code)
-    assert torch.equal(interpreter.state["a"],
-                       torch.tensor([[1., -1.], [1., -1.]]))
+    assert torch.equal(
+        interpreter.state["a"], torch.tensor([[1.0, -1.0], [1.0, -1.0]])
+    )
     assert isinstance(execution_res, str)
 
 
@@ -63,7 +65,7 @@ def test_import_success1(interpreter: InternalPythonInterpreter):
     code = """from torch import tensor
 a = tensor([[1., -1.], [1., -1.]])"""
     execution_res = interpreter.execute(code)
-    assert torch.equal(execution_res, torch.tensor([[1., -1.], [1., -1.]]))
+    assert torch.equal(execution_res, torch.tensor([[1.0, -1.0], [1.0, -1.0]]))
 
 
 def test_import_success2(interpreter: InternalPythonInterpreter):
@@ -79,9 +81,11 @@ os.mkdir("/tmp/test")"""
     with pytest.raises(InterpreterError) as e:
         interpreter.execute(code)
     exec_msg = e.value.args[0]
-    assert exec_msg == ("Evaluation of the code stopped at node 0. See:\n"
-                        "It is not permitted to import modules than module"
-                        " white list (try to import os).")
+    assert exec_msg == (
+        "Evaluation of the code stopped at node 0. See:\n"
+        "It is not permitted to import modules than module"
+        " white list (try to import os)."
+    )
 
 
 def test_import_fail1(interpreter: InternalPythonInterpreter):
@@ -90,9 +94,11 @@ x = np.array([[1, 2, 3], [4, 5, 6]], np.int32)"""
     with pytest.raises(InterpreterError) as e:
         interpreter.execute(code)
     exec_msg = e.value.args[0]
-    assert exec_msg == ("Evaluation of the code stopped at node 0. See:\n"
-                        "It is not permitted to import modules than module"
-                        " white list (try to import numpy).")
+    assert exec_msg == (
+        "Evaluation of the code stopped at node 0. See:\n"
+        "It is not permitted to import modules than module"
+        " white list (try to import numpy)."
+    )
 
 
 def test_action_space(interpreter: InternalPythonInterpreter):
@@ -103,6 +109,7 @@ def test_action_space(interpreter: InternalPythonInterpreter):
 
 def test_fuzz_space(interpreter: InternalPythonInterpreter):
     from PIL import Image
+
     fuzz_state = {"image": Image.new("RGB", (256, 256))}
     code = "output_image = input_image.crop((20, 20, 100, 100))"
     execution_res = interpreter.execute(code, fuzz_state=fuzz_state)
@@ -122,8 +129,10 @@ def test_keep_state0(interpreter: InternalPythonInterpreter):
     with pytest.raises(InterpreterError) as e:
         interpreter.execute(code3, keep_state=False)
     exec_msg = e.value.args[0]
-    assert exec_msg == ("Evaluation of the code stopped at node 0. See:\n"
-                        "The variable `b` is not defined.")
+    assert exec_msg == (
+        "Evaluation of the code stopped at node 0. See:\n"
+        "The variable `b` is not defined."
+    )
 
 
 def test_keep_state1(interpreter: InternalPythonInterpreter):
@@ -131,12 +140,14 @@ def test_keep_state1(interpreter: InternalPythonInterpreter):
     code2 = "a = tensor([[1., -1.], [1., -1.]])"
     execution_res = interpreter.execute(code1, keep_state=True)
     execution_res = interpreter.execute(code2, keep_state=False)
-    assert torch.equal(execution_res, torch.tensor([[1., -1.], [1., -1.]]))
+    assert torch.equal(execution_res, torch.tensor([[1.0, -1.0], [1.0, -1.0]]))
     with pytest.raises(InterpreterError) as e:
         interpreter.execute(code2, keep_state=False)
     exec_msg = e.value.args[0]
-    assert exec_msg == ("Evaluation of the code stopped at node 0. See:\n"
-                        "The variable `tensor` is not defined.")
+    assert exec_msg == (
+        "Evaluation of the code stopped at node 0. See:\n"
+        "The variable `tensor` is not defined."
+    )
 
 
 def test_assign0(interpreter: InternalPythonInterpreter):
@@ -159,8 +170,10 @@ def test_assign_fail(interpreter: InternalPythonInterpreter):
     with pytest.raises(InterpreterError) as e:
         interpreter.execute(code, keep_state=False)
     exec_msg = e.value.args[0]
-    assert exec_msg == ("Evaluation of the code stopped at node 0. See:\n"
-                        "Expected 3 values but got 2.")
+    assert exec_msg == (
+        "Evaluation of the code stopped at node 0. See:\n"
+        "Expected 3 values but got 2."
+    )
 
 
 def test_if0(interpreter: InternalPythonInterpreter):
@@ -241,9 +254,11 @@ l[3] = 1"""
     with pytest.raises(InterpreterError) as e:
         interpreter.execute(code, keep_state=False)
     exec_msg = e.value.args[0]
-    assert exec_msg == ("Evaluation of the code stopped at node 1. See:\n"
-                        "Unsupported variable type. Expected ast.Name or "
-                        "ast.Tuple, got Subscript instead.")
+    assert exec_msg == (
+        "Evaluation of the code stopped at node 1. See:\n"
+        "Unsupported variable type. Expected ast.Name or "
+        "ast.Tuple, got Subscript instead."
+    )
 
 
 def test_dict(interpreter: InternalPythonInterpreter):
@@ -275,5 +290,7 @@ x += 1"""
     with pytest.raises(InterpreterError) as e:
         interpreter.execute(code, keep_state=False)
     exec_msg = e.value.args[0]
-    assert exec_msg == ("Evaluation of the code stopped at node 1. See:"
-                        "\nAugAssign is not supported.")
+    assert exec_msg == (
+        "Evaluation of the code stopped at node 1. See:"
+        "\nAugAssign is not supported."
+    )

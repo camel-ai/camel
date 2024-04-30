@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Dict, List, Optional, Union
 
-from camel.agents import ChatAgent
+from camel.agents.chat_agent import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.prompts import PromptTemplateGenerator, TextPrompt
@@ -43,6 +43,7 @@ class TaskSpecifyAgent(ChatAgent):
         output_language (str, optional): The language to be output by the
         agent. (default: :obj:`None`)
     """
+
     DEFAULT_WORD_LIMIT = 50
 
     def __init__(
@@ -54,14 +55,15 @@ class TaskSpecifyAgent(ChatAgent):
         word_limit: int = DEFAULT_WORD_LIMIT,
         output_language: Optional[str] = None,
     ) -> None:
-
         self.task_specify_prompt: Union[str, TextPrompt]
         if task_specify_prompt is None:
-            task_specify_prompt_template = PromptTemplateGenerator(
-            ).get_task_specify_prompt(task_type)
+            task_specify_prompt_template = (
+                PromptTemplateGenerator().get_task_specify_prompt(task_type)
+            )
 
             self.task_specify_prompt = task_specify_prompt_template.format(
-                word_limit=word_limit)
+                word_limit=word_limit
+            )
         else:
             self.task_specify_prompt = TextPrompt(task_specify_prompt)
 
@@ -74,9 +76,12 @@ class TaskSpecifyAgent(ChatAgent):
             content="You can make a task more specific.",
         )
 
-        super().__init__(system_message, model_type=model_type,
-                         model_config=model_config,
-                         output_language=output_language)
+        super().__init__(
+            system_message,
+            model_type=model_type,
+            model_config=model_config,
+            output_language=output_language,
+        )
 
     def run(
         self,
@@ -101,8 +106,9 @@ class TaskSpecifyAgent(ChatAgent):
         if meta_dict is not None:
             task_specify_prompt = task_specify_prompt.format(**meta_dict)
 
-        task_msg = BaseMessage.make_user_message(role_name="Task Specifier",
-                                                 content=task_specify_prompt)
+        task_msg = BaseMessage.make_user_message(
+            role_name="Task Specifier", content=task_specify_prompt
+        )
         specifier_response = self.step(task_msg)
 
         if specifier_response.terminated:
@@ -138,9 +144,9 @@ class TaskPlannerAgent(ChatAgent):
         model_config: Optional[Any] = None,
         output_language: Optional[str] = None,
     ) -> None:
-
         self.task_planner_prompt = TextPrompt(
-            "Divide this task into subtasks: {task}. Be concise.")
+            "Divide this task into subtasks: {task}. Be concise."
+        )
         system_message = BaseMessage(
             role_name="Task Planner",
             role_type=RoleType.ASSISTANT,
@@ -148,8 +154,12 @@ class TaskPlannerAgent(ChatAgent):
             content="You are a helpful task planner.",
         )
 
-        super().__init__(system_message, model_type, model_config,
-                         output_language=output_language)
+        super().__init__(
+            system_message,
+            model_type,
+            model_config,
+            output_language=output_language,
+        )
 
     def run(
         self,
@@ -168,8 +178,9 @@ class TaskPlannerAgent(ChatAgent):
         self.reset()
         task_planner_prompt = self.task_planner_prompt.format(task=task_prompt)
 
-        task_msg = BaseMessage.make_user_message(role_name="Task Planner",
-                                                 content=task_planner_prompt)
+        task_msg = BaseMessage.make_user_message(
+            role_name="Task Planner", content=task_planner_prompt
+        )
 
         task_response = self.step(task_msg)
 
@@ -220,7 +231,6 @@ class TaskCreationAgent(ChatAgent):
         message_window_size: Optional[int] = None,
         max_task_num: Optional[int] = 3,
     ) -> None:
-
         task_creation_prompt = TextPrompt(
             """Create new a task with the following objective: {objective}.
 Never forget you are a Task Creator of {role_name}.
@@ -239,11 +249,12 @@ You should make task plan and not ask me questions.
 If you think no new tasks are needed right now, write "No tasks to add."
 Now start to give me new tasks one by one. No more than three tasks.
 Be concrete.
-""")
+"""
+        )
 
         self.task_creation_prompt = task_creation_prompt.format(
-            objective=objective, role_name=role_name,
-            max_task_num=max_task_num)
+            objective=objective, role_name=role_name, max_task_num=max_task_num
+        )
         self.objective = objective
 
         system_message = BaseMessage(
@@ -253,9 +264,13 @@ Be concrete.
             content="You are a helpful task creator.",
         )
 
-        super().__init__(system_message, model_type, model_config,
-                         output_language=output_language,
-                         message_window_size=message_window_size)
+        super().__init__(
+            system_message,
+            model_type,
+            model_config,
+            output_language=output_language,
+            message_window_size=message_window_size,
+        )
 
     def run(
         self,
@@ -273,13 +288,16 @@ Be concrete.
 
         if len(task_list) > 0:
             task_creation_prompt = self.task_creation_prompt.format(
-                task_list=task_list)
+                task_list=task_list
+            )
         else:
             task_creation_prompt = self.task_creation_prompt.format(
-                task_list="")
+                task_list=""
+            )
 
-        task_msg = BaseMessage.make_user_message(role_name="Task Creator",
-                                                 content=task_creation_prompt)
+        task_msg = BaseMessage.make_user_message(
+            role_name="Task Creator", content=task_creation_prompt
+        )
         task_response = self.step(task_msg)
 
         if task_response.terminated:
@@ -337,10 +355,12 @@ The result must be a numbered list in the format:
 The entries must be consecutively numbered, starting with 1.
 The number of each entry must be followed by a period.
 Do not include any headers before your ranked list or follow your list \
-with any other output.""")
+with any other output."""
+        )
 
         self.task_prioritization_prompt = task_prioritization_prompt.format(
-            objective=objective)
+            objective=objective
+        )
         self.objective = objective
 
         system_message = BaseMessage(
@@ -350,9 +370,13 @@ with any other output.""")
             content="You are a helpful task prioritizer.",
         )
 
-        super().__init__(system_message, model_type, model_config,
-                         output_language=output_language,
-                         message_window_size=message_window_size)
+        super().__init__(
+            system_message,
+            model_type,
+            model_config,
+            output_language=output_language,
+            message_window_size=message_window_size,
+        )
 
     def run(
         self,
@@ -366,10 +390,12 @@ with any other output.""")
             List[str]: The new prioritized task list generated by the Agent.
         """
         task_prioritization_prompt = self.task_prioritization_prompt.format(
-            task_list=task_list)
+            task_list=task_list
+        )
 
         task_msg = BaseMessage.make_user_message(
-            role_name="Task Prioritizer", content=task_prioritization_prompt)
+            role_name="Task Prioritizer", content=task_prioritization_prompt
+        )
 
         task_response = self.step(task_msg)
 

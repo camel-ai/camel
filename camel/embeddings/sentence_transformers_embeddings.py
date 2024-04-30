@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, List, Union
 
-from camel.embeddings import BaseEmbedding
+from camel.embeddings.base import BaseEmbedding
 
 
 class SentenceTransformerEncoder(BaseEmbedding[str]):
@@ -33,6 +33,7 @@ class SentenceTransformerEncoder(BaseEmbedding[str]):
                                         Defaults to `intfloat/e5-large-v2`.
         """
         from sentence_transformers import SentenceTransformer
+
         self.model = SentenceTransformer(model_name)
 
     def embed_list(
@@ -51,8 +52,9 @@ class SentenceTransformerEncoder(BaseEmbedding[str]):
         """
         if not objs:
             raise ValueError("Input text list is empty")
-        return self.model.encode(objs, normalize_embeddings=True,
-                                 **kwargs).tolist()
+        return self.model.encode(
+            objs, normalize_embeddings=True, **kwargs
+        ).tolist()
 
     def get_output_dim(self) -> int:
         r"""Returns the output dimension of the embeddings.

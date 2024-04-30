@@ -13,7 +13,8 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any
 
-from camel.prompts import AISocietyPromptTemplateDict, TextPrompt
+from camel.prompts.ai_society import AISocietyPromptTemplateDict
+from camel.prompts.base import TextPrompt
 from camel.types import RoleType
 
 
@@ -32,22 +33,27 @@ class RoleDescriptionPromptTemplateDict(AISocietyPromptTemplateDict):
             outlines the rules of the conversation and provides instructions
             for giving instructions to the AI assistant.
     """
+
     ROLE_DESCRIPTION_PROMPT = TextPrompt("""===== ROLES WITH DESCRIPTION =====
 {user_role} and {assistant_role} are collaborating to complete a task: {task}.
 Competencies, characteristics, duties and workflows of {user_role} to complete the task: {user_description}
 {assistant_role}'s competencies, characteristics, duties and workflows to complete the task: {assistant_description}
 """)
 
-    ASSISTANT_PROMPT = TextPrompt(ROLE_DESCRIPTION_PROMPT +
-                                  AISocietyPromptTemplateDict.ASSISTANT_PROMPT)
+    ASSISTANT_PROMPT = TextPrompt(
+        ROLE_DESCRIPTION_PROMPT + AISocietyPromptTemplateDict.ASSISTANT_PROMPT
+    )
 
-    USER_PROMPT = TextPrompt(ROLE_DESCRIPTION_PROMPT +
-                             AISocietyPromptTemplateDict.USER_PROMPT)
+    USER_PROMPT = TextPrompt(
+        ROLE_DESCRIPTION_PROMPT + AISocietyPromptTemplateDict.USER_PROMPT
+    )
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.update({
-            "role_description": self.ROLE_DESCRIPTION_PROMPT,
-            RoleType.ASSISTANT: self.ASSISTANT_PROMPT,
-            RoleType.USER: self.USER_PROMPT,
-        })
+        self.update(
+            {
+                "role_description": self.ROLE_DESCRIPTION_PROMPT,
+                RoleType.ASSISTANT: self.ASSISTANT_PROMPT,
+                RoleType.USER: self.USER_PROMPT,
+            }
+        )

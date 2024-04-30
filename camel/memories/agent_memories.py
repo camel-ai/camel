@@ -14,13 +14,12 @@
 
 from typing import List, Optional
 
-from camel.memories import (
-    AgentMemory,
-    BaseContextCreator,
+from camel.memories.base import AgentMemory, BaseContextCreator
+from camel.memories.blocks import ChatHistoryBlock, VectorDBBlock
+from camel.memories.records import (
     ContextRecord,
     MemoryRecord,
 )
-from camel.memories.blocks import ChatHistoryBlock, VectorDBBlock
 from camel.storages import BaseKeyValueStorage, BaseVectorStorage
 from camel.types import OpenAIBackendRole
 
@@ -132,7 +131,8 @@ class LongtermAgentMemory(AgentMemory):
     def retrieve(self) -> List[ContextRecord]:
         chat_history = self.chat_history_block.retrieve()
         vector_db_retrieve = self.vector_db_block.retrieve(
-            self._current_topic, self.retrieve_limit)
+            self._current_topic, self.retrieve_limit
+        )
         return chat_history[:1] + vector_db_retrieve + chat_history[1:]
 
     def write_records(self, records: List[MemoryRecord]) -> None:

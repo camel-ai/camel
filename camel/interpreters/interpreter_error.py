@@ -12,7 +12,8 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-
+# TODO: Do we need a file to store this error class?
 class InterpreterError(Exception):
-    r"""Exception raised for errors that can be solved by regenerating code """
+    r"""Exception raised for errors that can be solved by regenerating code"""
+
     pass

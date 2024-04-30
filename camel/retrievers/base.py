@@ -27,8 +27,12 @@ class BaseRetriever(ABC):
         pass
 
     @abstractmethod
-    def process(self, content_input_path: str,
-                chunk_type: str = "chunk_by_title", **kwargs: Any) -> None:
+    def process(
+        self,
+        content_input_path: str,
+        chunk_type: str = "chunk_by_title",
+        **kwargs: Any,
+    ) -> None:
         r"""Processes content from a file or URL, divides it into chunks by
         using `Unstructured IO`,then stored internally. This method must be
         called before executing queries with the retriever.
@@ -43,8 +47,9 @@ class BaseRetriever(ABC):
         pass
 
     @abstractmethod
-    def query(self, query: str, top_k: int = DEFAULT_TOP_K_RESULTS,
-              **kwargs: Any) -> List[Dict[str, Any]]:
+    def query(
+        self, query: str, top_k: int = DEFAULT_TOP_K_RESULTS, **kwargs: Any
+    ) -> List[Dict[str, Any]]:
         r"""Query the results. Subclasses should implement this
         method according to their specific needs.
 

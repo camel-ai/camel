@@ -27,7 +27,7 @@ def test_create_tweet(monkeypatch):
         'data': {
             'edit_history_tweet_ids': ['12345'],
             'id': '12345',
-            'text': 'Test tweet'
+            'text': 'Test tweet',
         }
     }
     mock_response.status_code = 201
@@ -51,11 +51,14 @@ def test_create_tweet(monkeypatch):
 
         # Verify the output
         expected_start = (
-            "You are going to create a tweet with following parameters:")
+            "You are going to create a tweet with following parameters:"
+        )
         assert expected_start in captured_output
         assert "text: Test tweet." in captured_output
-        expected_response = ("Create tweet successful. The tweet ID is: "
-                             "12345. The tweet text is: 'Test tweet'.")
+        expected_response = (
+            "Create tweet successful. The tweet ID is: "
+            "12345. The tweet text is: 'Test tweet'."
+        )
         assert response == expected_response
 
 
@@ -84,10 +87,12 @@ def test_delete_tweet(monkeypatch):
 
         # Verify the output
         expected_start = (
-            "You are going to delete a tweet with the following ID: 11111")
+            "You are going to delete a tweet with the following ID: 11111"
+        )
         assert expected_start in captured_output
-        expected_response = ("Delete tweet successful: True. The tweet ID is: "
-                             "11111. ")
+        expected_response = (
+            "Delete tweet successful: True. The tweet ID is: " "11111. "
+        )
         assert response == expected_response
 
 
@@ -109,18 +114,20 @@ def test_get_user_me(monkeypatch):
                 'following_count': 20,
                 'tweet_count': 30,
                 'listed_count': 40,
-                'like_count': 50
+                'like_count': 50,
             },
             'profile_image_url': 'https://example.com/image.jpg',
-            'created_at': '2024-03-16T06:31:14.000Z'
+            'created_at': '2024-03-16T06:31:14.000Z',
         },
         'includes': {
-            'tweets': [{
-                'id': '9876543210987654321',
-                'created_at': '2024-04-17T12:40:01.000Z',
-                'text': 'A tweet content.'
-            }]
-        }
+            'tweets': [
+                {
+                    'id': '9876543210987654321',
+                    'created_at': '2024-04-17T12:40:01.000Z',
+                    'text': 'A tweet content.',
+                }
+            ]
+        },
     }
 
     # Use patch to mock the get_oauth_session method
@@ -149,5 +156,6 @@ def test_get_user_me(monkeypatch):
             "is listed in 40 lists, and has received 50 likes. "
             "Pinned tweet ID: 9876543210987654321. "
             "\nPinned tweet information: Pinned tweet created at "
-            "April 17, 2024 at 12:40:01 with text: 'A tweet content.'.")
+            "April 17, 2024 at 12:40:01 with text: 'A tweet content.'."
+        )
         assert response == expected_report
