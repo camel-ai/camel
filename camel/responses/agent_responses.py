@@ -30,6 +30,7 @@ class ChatAgentResponse:
             to terminate the chat session.
         info (Dict[str, Any]): Extra information about the chat message.
     """
+
     msgs: List[BaseMessage]
     terminated: bool
     info: Dict[str, Any]
@@ -37,6 +38,8 @@ class ChatAgentResponse:
     @property
     def msg(self):
         if len(self.msgs) != 1:
-            raise RuntimeError("Property msg is only available "
-                               "for a single message in msgs.")
+            raise RuntimeError(
+                "Property msg is only available "
+                "for a single message in msgs."
+            )
         return self.msgs[0]

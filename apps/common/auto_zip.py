@@ -17,7 +17,6 @@ import zipfile
 
 
 class AutoZip:
-
     def __init__(self, zip_path: str, ext: str = ".json"):
         self.zip_path = zip_path
         self.zip = zipfile.ZipFile(zip_path, "r")

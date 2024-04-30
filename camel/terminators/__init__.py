@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .base import BaseTerminator
-from .response_terminator import ResponseWordsTerminator, ResponseTerminator
+from .response_terminator import ResponseTerminator, ResponseWordsTerminator
 from .token_limit_terminator import TokenLimitTerminator
 
 __all__ = [

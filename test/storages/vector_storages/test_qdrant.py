@@ -48,10 +48,7 @@ def test_multiple_local_clients() -> None:
         ),
         VectorRecord(
             vector=[-0.1, 0.1, 0.1, 0.1],
-            payload={
-                "message": "text",
-                "number": 1
-            },
+            payload={"message": "text", "number": 1},
         ),
     ]
     storage2.add(records=vectors2)
