@@ -20,7 +20,7 @@ from unstructured.documents.elements import Element
 
 
 @dataclass
-class Node():
+class Node:
     r"""Represents a node in a graph with associated properties.
 
     Attributes:
@@ -29,13 +29,14 @@ class Node():
         properties (dict): Additional properties and metadata associated with
             the node.
     """
+
     id: Union[str, int]
     type: str = "Node"
     properties: dict = field(default_factory=dict)
 
 
 @dataclass
-class Relationship():
+class Relationship:
     r"""Represents a directed relationship between two nodes in a graph.
 
     Attributes:
@@ -45,6 +46,7 @@ class Relationship():
         properties (dict): Additional properties associated with the
             relationship.
     """
+
     subj: Node
     obj: Node
     type: str = "Relationship"
@@ -52,7 +54,7 @@ class Relationship():
 
 
 @dataclass
-class GraphElement():
+class GraphElement:
     r"""A graph element with lists of nodes and relationships.
 
     Attributes:

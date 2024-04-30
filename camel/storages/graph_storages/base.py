@@ -66,8 +66,9 @@ class BaseGraphStorage(ABC):
         pass
 
     @abstractmethod
-    def query(self, query: str,
-              params: Optional[Dict[str, Any]] = {}) -> List[Dict[str, Any]]:
+    def query(
+        self, query: str, params: Optional[Dict[str, Any]] = {}
+    ) -> List[Dict[str, Any]]:
         r"""Query the graph store with statement and parameters.
         Args:
             query (str): The query to be executed.

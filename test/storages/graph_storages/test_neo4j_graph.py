@@ -30,14 +30,17 @@ test_data = [
     GraphElement(
         nodes=[
             Node(id="id_subj", type="type_subj"),
-            Node(id="id_obj", type="type_obj")
-        ], relationships=[
+            Node(id="id_obj", type="type_obj"),
+        ],
+        relationships=[
             Relationship(
                 subj=Node(id="id_subj", type="type_subj"),
                 obj=Node(id="id_obj", type="type_obj"),
                 type="type_rel",
             )
-        ], source=Element(element_id="a04b820b51c760a41415c57c1eef8f08"))
+        ],
+        source=Element(element_id="a04b820b51c760a41415c57c1eef8f08"),
+    )
 ]
 
 url = "neo4j+s://5af77aab.databases.neo4j.io"
@@ -68,70 +71,65 @@ def test_cypher_return_correct_schema() -> None:
     graph.refresh_schema()
 
     node_properties = graph.query(
-        NODE_PROPERTY_QUERY, params={"EXCLUDED_LABELS": [BASE_ENTITY_LABEL]})
+        NODE_PROPERTY_QUERY, params={"EXCLUDED_LABELS": [BASE_ENTITY_LABEL]}
+    )
     relationships_properties = graph.query(
-        REL_PROPERTY_QUERY, params={"EXCLUDED_LABELS": [BASE_ENTITY_LABEL]})
+        REL_PROPERTY_QUERY, params={"EXCLUDED_LABELS": [BASE_ENTITY_LABEL]}
+    )
     relationships = graph.query(
-        REL_QUERY, params={"EXCLUDED_LABELS": [BASE_ENTITY_LABEL]})
+        REL_QUERY, params={"EXCLUDED_LABELS": [BASE_ENTITY_LABEL]}
+    )
 
-    expected_node_properties = [{
-        "output": {
-            "properties": [{
-                "property": "property_a",
-                "type": "STRING"
-            }],
-            "labels": "LabelA",
+    expected_node_properties = [
+        {
+            "output": {
+                "properties": [{"property": "property_a", "type": "STRING"}],
+                "labels": "LabelA",
+            }
         }
-    }]
-    expected_relationships_properties = [{
-        "output": {
-            "type": "REL_TYPE",
-            "properties": [{
-                "property": "rel_prop",
-                "type": "STRING"
-            }],
+    ]
+    expected_relationships_properties = [
+        {
+            "output": {
+                "type": "REL_TYPE",
+                "properties": [{"property": "rel_prop", "type": "STRING"}],
+            }
         }
-    }]
+    ]
     expected_relationships = [
-        {
-            "output": {
-                "start": "LabelA",
-                "type": "REL_TYPE",
-                "end": "LabelB"
-            }
-        },
-        {
-            "output": {
-                "start": "LabelA",
-                "type": "REL_TYPE",
-                "end": "LabelC"
-            }
-        },
+        {"output": {"start": "LabelA", "type": "REL_TYPE", "end": "LabelB"}},
+        {"output": {"start": "LabelA", "type": "REL_TYPE", "end": "LabelC"}},
     ]
 
     assert node_properties == expected_node_properties
     assert relationships_properties == expected_relationships_properties
     # Order is not guaranteed with Neo4j returns
-    assert (sorted(relationships,
-                   key=lambda x: x["output"]["end"]) == expected_relationships)
+    assert (
+        sorted(relationships, key=lambda x: x["output"]["end"])
+        == expected_relationships
+    )
 
 
 def test_neo4j_timeout() -> None:
     r"""Test that neo4j uses the timeout correctly."""
-    graph = Neo4jGraph(url=url, username=username, password=password,
-                       timeout=0.1)
+    graph = Neo4jGraph(
+        url=url, username=username, password=password, timeout=0.1
+    )
     try:
         graph.query("UNWIND range(0,100000,1) AS i MERGE (:Foo {id:i})")
     except Exception as e:
-        assert (e.code  # type: ignore[attr-defined]
-                == "Neo.ClientError.Transaction."
-                "TransactionTimedOutClientConfiguration")
+        assert (
+            e.code  # type: ignore[attr-defined]
+            == "Neo.ClientError.Transaction."
+            "TransactionTimedOutClientConfiguration"
+        )
 
 
 def test_neo4j_truncate_values() -> None:
     r"""Test that neo4j uses the timeout correctly."""
-    graph = Neo4jGraph(url=url, username=username, password=password,
-                       truncate=True)
+    graph = Neo4jGraph(
+        url=url, username=username, password=password, truncate=True
+    )
     # Delete all nodes in the graph
     graph.query("MATCH (n) DETACH DELETE n")
     # Create two nodes and a relationship
@@ -150,8 +148,9 @@ def test_neo4j_truncate_values() -> None:
 
 def test_neo4j_add_data() -> None:
     r"""Test that neo4j correctly import graph element."""
-    graph = Neo4jGraph(url=url, username=username, password=password,
-                       truncate=True)
+    graph = Neo4jGraph(
+        url=url, username=username, password=password, truncate=True
+    )
     # Delete all nodes in the graph
     graph.query("MATCH (n) DETACH DELETE n")
     # Remove all constraints
@@ -162,20 +161,18 @@ def test_neo4j_add_data() -> None:
     output = graph.query(
         "MATCH (n) RETURN labels(n) AS label, count(*) AS count ORDER BY label"
     )
-    assert output == [{
-        "label": ["type_obj"],
-        "count": 1
-    }, {
-        "label": ["type_subj"],
-        "count": 1
-    }]
+    assert output == [
+        {"label": ["type_obj"], "count": 1},
+        {"label": ["type_subj"], "count": 1},
+    ]
     assert graph.structured_schema["metadata"]["constraint"] == []
 
 
 def test_neo4j_add_data_source() -> None:
     r"""Test that neo4j correctly import graph element with source."""
-    graph = Neo4jGraph(url=url, username=username, password=password,
-                       truncate=True)
+    graph = Neo4jGraph(
+        url=url, username=username, password=password, truncate=True
+    )
     # Delete all nodes in the graph
     graph.query("MATCH (n) DETACH DELETE n")
     # Remove all constraints
@@ -187,26 +184,18 @@ def test_neo4j_add_data_source() -> None:
         "MATCH (n) RETURN labels(n) AS label, count(*) AS count ORDER BY label"
     )
     assert output == [
-        {
-            "label": ["Element"],
-            "count": 1
-        },
-        {
-            "label": ["type_obj"],
-            "count": 1
-        },
-        {
-            "label": ["type_subj"],
-            "count": 1
-        },
+        {"label": ["Element"], "count": 1},
+        {"label": ["type_obj"], "count": 1},
+        {"label": ["type_subj"], "count": 1},
     ]
     assert graph.structured_schema["metadata"]["constraint"] == []
 
 
 def test_neo4j_add_data_base() -> None:
     r"""Test that neo4j correctly import graph element with base_entity."""
-    graph = Neo4jGraph(url=url, username=username, password=password,
-                       truncate=True)
+    graph = Neo4jGraph(
+        url=url, username=username, password=password, truncate=True
+    )
     # Delete all nodes in the graph
     graph.query("MATCH (n) DETACH DELETE n")
     # Remove all constraints
@@ -216,16 +205,11 @@ def test_neo4j_add_data_base() -> None:
     graph.add_graph_elements(test_data, base_entity_label=True)
     output = graph.query(
         "MATCH (n) RETURN apoc.coll.sort(labels(n)) AS label, "
-        "count(*) AS count ORDER BY label")
+        "count(*) AS count ORDER BY label"
+    )
     assert output == [
-        {
-            "label": [BASE_ENTITY_LABEL, "type_obj"],
-            "count": 1
-        },
-        {
-            "label": [BASE_ENTITY_LABEL, "type_subj"],
-            "count": 1
-        },
+        {"label": [BASE_ENTITY_LABEL, "type_obj"], "count": 1},
+        {"label": [BASE_ENTITY_LABEL, "type_subj"], "count": 1},
     ]
     assert graph.structured_schema["metadata"]["constraint"] != []
 
@@ -233,46 +217,43 @@ def test_neo4j_add_data_base() -> None:
 def test_neo4j_add_data_base_source() -> None:
     r"""Test that neo4j correctly import graph element with base_entity and
     source."""
-    graph = Neo4jGraph(url=url, username=username, password=password,
-                       truncate=True)
+    graph = Neo4jGraph(
+        url=url, username=username, password=password, truncate=True
+    )
     # Delete all nodes in the graph
     graph.query("MATCH (n) DETACH DELETE n")
     # Remove all constraints
     graph.query("CALL apoc.schema.assert({}, {})")
     graph.refresh_schema()
     # Create two nodes and a relationship
-    graph.add_graph_elements(test_data, base_entity_label=True,
-                             include_source=True)
+    graph.add_graph_elements(
+        test_data, base_entity_label=True, include_source=True
+    )
     output = graph.query(
         "MATCH (n) RETURN apoc.coll.sort(labels(n)) AS label, "
-        "count(*) AS count ORDER BY label")
+        "count(*) AS count ORDER BY label"
+    )
     assert output == [
-        {
-            "label": ["Element"],
-            "count": 1
-        },
-        {
-            "label": [BASE_ENTITY_LABEL, "type_obj"],
-            "count": 1
-        },
-        {
-            "label": [BASE_ENTITY_LABEL, "type_subj"],
-            "count": 1
-        },
+        {"label": ["Element"], "count": 1},
+        {"label": [BASE_ENTITY_LABEL, "type_obj"], "count": 1},
+        {"label": [BASE_ENTITY_LABEL, "type_subj"], "count": 1},
     ]
     assert graph.structured_schema["metadata"]["constraint"] != []
 
 
 def test_neo4j_filtering_labels() -> None:
     r"""Test that neo4j correctly filters excluded labels."""
-    graph = Neo4jGraph(url=url, username=username, password=password,
-                       truncate=True)
+    graph = Neo4jGraph(
+        url=url, username=username, password=password, truncate=True
+    )
     # Delete all nodes in the graph
     graph.query("MATCH (n) DETACH DELETE n")
     # Remove all constraints
     graph.query("CALL apoc.schema.assert({}, {})")
-    graph.query("CREATE (:`Excluded_Label_A`)-[:`Excluded_Rel_A`]->"
-                "(:`Excluded_Label_B`)")
+    graph.query(
+        "CREATE (:`Excluded_Label_A`)-[:`Excluded_Rel_A`]->"
+        "(:`Excluded_Label_B`)"
+    )
     graph.refresh_schema()
 
     # Assert both are empty
