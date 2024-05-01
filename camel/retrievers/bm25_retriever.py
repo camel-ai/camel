@@ -33,8 +33,6 @@ class BM25Retriever(BaseRetriever):
             calculating document scores.
         content_input_path (str): The path to the content that has been
             processed and stored.
-        chunks (List[Any]): A list of document chunks processed from the
-            input content.
         unstructured_modules (UnstructuredIO): A module for parsing files and
             URLs and chunking content based on specified parameters.
 
@@ -49,13 +47,11 @@ class BM25Retriever(BaseRetriever):
             from rank_bm25 import BM25Okapi
         except ImportError as e:
             raise ImportError(
-                "Package `rank_bm25` not installed, install by running"
-                " 'pip install rank_bm25'"
+                "Package `rank_bm25` not installed, install by running 'pip install rank_bm25'"
             ) from e
 
         self.bm25: BM25Okapi = None
         self.content_input_path: str = ""
-        self.chunks: List[Any] = []
         self.unstructured_modules: UnstructuredIO = UnstructuredIO()
 
     def process(
@@ -108,22 +104,15 @@ class BM25Retriever(BaseRetriever):
 
         Raises:
             ValueError: If `top_k` is less than or equal to 0, if the BM25
-                model has not been initialized by calling `process_and_store`
+                model has not been initialized by calling `process`
                 first.
-
-        Note:
-            `storage` and `kwargs` parameters are included to maintain
-            compatibility with the `BaseRetriever` interface but are not used
-            in this implementation.
         """
 
         if top_k <= 0:
             raise ValueError("top_k must be a positive integer.")
-
-        if self.bm25 is None:
+        if self.bm25 is None or not self.chunks:
             raise ValueError(
-                "BM25 model is not initialized. Call `process_and_store`"
-                " first."
+                "BM25 model is not initialized. Call `process`" " first."
             )
 
         # Preprocess query similarly to how documents were processed

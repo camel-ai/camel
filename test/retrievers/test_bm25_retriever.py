@@ -29,8 +29,6 @@ def test_bm25retriever_initialization():
     retriever = BM25Retriever()
     assert retriever.bm25 is None
     assert retriever.content_input_path == ""
-    assert retriever.chunks == []
-
 
 def test_process(mock_unstructured_modules):
     mock_instance = mock_unstructured_modules.return_value
