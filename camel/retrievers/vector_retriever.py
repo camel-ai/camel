@@ -69,7 +69,7 @@ class VectorRetriever(BaseRetriever):
         self.similarity_threshold = similarity_threshold
         self.unstructured_modules: UnstructuredIO = UnstructuredIO()
 
-    def process(  # type: ignore[override]
+    def process(
         self,
         content_input_path: str,
         chunk_type: str = "chunk_by_title",
@@ -118,7 +118,7 @@ class VectorRetriever(BaseRetriever):
 
             self.storage.add(records=records)
 
-    def query(  # type: ignore[override]
+    def query(
         self,
         query: str,
         top_k: int = DEFAULT_TOP_K_RESULTS,

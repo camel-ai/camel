@@ -12,9 +12,48 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any, Callable
 
 DEFAULT_TOP_K_RESULTS = 1
+
+
+def _query_unimplemented(self, *input: Any) -> None:
+    r"""Defines the query behavior performed at every call.
+
+    Query the results. Subclasses should implement this
+        method according to their specific needs.
+
+    Should be overridden by all subclasses.
+
+    .. note::
+        Although the recipe for forward pass needs to be defined within
+        this function, one should call the :class:`BaseRetriever` instance afterwards
+        instead of this since the former takes care of running the
+        registered hooks while the latter silently ignores them.
+    """
+    raise NotImplementedError(
+        f"Retriever [{type(self).__name__}] is missing the required \"query\" function"
+    )
+
+
+def _process_unimplemented(self, *input: Any) -> None:
+    r"""Defines the process behavior performed at every call.
+
+    Processes content from a file or URL, divides it into chunks by
+        using `Unstructured IO`,then stored internally. This method must be
+        called before executing queries with the retriever.
+
+    Should be overridden by all subclasses.
+
+    .. note::
+        Although the recipe for forward pass needs to be defined within
+        this function, one should call the :class:`BaseRetriever` instance afterwards
+        instead of this since the former takes care of running the
+        registered hooks while the latter silently ignores them.
+    """
+    raise NotImplementedError(
+        f"Retriever [{type(self).__name__}] is missing the required \"process\" function"
+    )
 
 
 class BaseRetriever(ABC):
@@ -26,37 +65,5 @@ class BaseRetriever(ABC):
     def __init__(self) -> None:
         pass
 
-    @abstractmethod
-    def process(
-        self,
-        content_input_path: str,
-        chunk_type: str = "chunk_by_title",
-        **kwargs: Any,
-    ) -> None:
-        r"""Processes content from a file or URL, divides it into chunks by
-        using `Unstructured IO`,then stored internally. This method must be
-        called before executing queries with the retriever.
-
-        Args:
-            content_input_path (str): File path or URL of the content to be
-                processed.
-            chunk_type (str): Type of chunking going to apply. Defaults to
-                "chunk_by_title".
-            **kwargs (Any): Additional keyword arguments for content parsing.
-        """
-        pass
-
-    @abstractmethod
-    def query(
-        self, query: str, top_k: int = DEFAULT_TOP_K_RESULTS
-    ) -> List[Dict[str, Any]]:
-        r"""Query the results. Subclasses should implement this
-        method according to their specific needs.
-
-        Args:
-            query (str): Query string for information retriever.
-            top_k (int, optional): The number of top results to return during
-                retriever. Must be a positive integer. Defaults to
-                `DEFAULT_TOP_K_RESULTS`.
-        """
-        pass
+    process: Callable[..., Any] = _process_unimplemented
+    query: Callable[..., Any] = _query_unimplemented
