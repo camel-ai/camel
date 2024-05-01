@@ -33,22 +33,24 @@ from camel.types import OpenAIBackendRole, RoleType
 
 
 def generate_mock_records(num_records: int):
-    return [{
-        "uuid": str(uuid4()),
-        "message": {
-            "__class__": "BaseMessage",
-            "role_name": "user",
-            "role_type": RoleType.USER,
-            "meta_dict": None,
-            "content": f"test message {i}"
-        },
-        "role_at_backend": "user",
-        "extra_info": {}
-    } for i in range(num_records)]
+    return [
+        {
+            "uuid": str(uuid4()),
+            "message": {
+                "__class__": "BaseMessage",
+                "role_name": "user",
+                "role_type": RoleType.USER,
+                "meta_dict": None,
+                "content": f"test message {i}",
+            },
+            "role_at_backend": "user",
+            "extra_info": {},
+        }
+        for i in range(num_records)
+    ]
 
 
 class TestChatHistoryBlock:
-
     @pytest.fixture
     def mock_storage(self):
         return create_autospec(BaseKeyValueStorage)
@@ -97,7 +99,8 @@ class TestChatHistoryBlock:
                     "test message {}".format(i),
                 ),
                 OpenAIBackendRole.USER,
-            ) for i in range(5)
+            )
+            for i in range(5)
         ]
 
         chat_history.write_records(records_to_write)
@@ -110,7 +113,6 @@ class TestChatHistoryBlock:
 
 
 class TestVectorDBBlock:
-
     @pytest.fixture
     def mock_storage(self):
         return create_autospec(BaseVectorStorage)
@@ -128,8 +130,9 @@ class TestVectorDBBlock:
         assert vector_db.embedding is not None
 
     def test_init_with_custom_components(self, mock_storage, mock_embedding):
-        vector_db = VectorDBBlock(storage=mock_storage,
-                                  embedding=mock_embedding)
+        vector_db = VectorDBBlock(
+            storage=mock_storage, embedding=mock_embedding
+        )
         assert vector_db.storage == mock_storage
         assert vector_db.embedding == mock_embedding
 
@@ -143,11 +146,14 @@ class TestVectorDBBlock:
                 similarity=0.9,
                 vector=[0.1] * 128,  # Example vector
                 id=record["uuid"],
-                payload=record) for record in mock_records
+                payload=record,
+            )
+            for record in mock_records
         ]
         mock_storage.query.return_value = mock_query_results
-        vector_db = VectorDBBlock(storage=mock_storage,
-                                  embedding=mock_embedding)
+        vector_db = VectorDBBlock(
+            storage=mock_storage, embedding=mock_embedding
+        )
 
         records = vector_db.retrieve("keyword", limit=2)
         assert len(records) == 2
@@ -156,8 +162,9 @@ class TestVectorDBBlock:
         assert records[1].memory_record.message.content == "test message 1"
 
     def test_write_records(self, mock_storage, mock_embedding):
-        vector_db = VectorDBBlock(storage=mock_storage,
-                                  embedding=mock_embedding)
+        vector_db = VectorDBBlock(
+            storage=mock_storage, embedding=mock_embedding
+        )
         records_to_write = [
             MemoryRecord(
                 BaseMessage(
@@ -167,7 +174,8 @@ class TestVectorDBBlock:
                     "test message {}".format(i),
                 ),
                 OpenAIBackendRole.USER,
-            ) for i in range(5)
+            )
+            for i in range(5)
         ]
 
         vector_db.write_records(records_to_write)

@@ -50,15 +50,20 @@ class BM25Retriever(BaseRetriever):
         except ImportError as e:
             raise ImportError(
                 "Package `rank_bm25` not installed, install by running"
-                " 'pip install rank_bm25'") from e
+                " 'pip install rank_bm25'"
+            ) from e
 
         self.bm25: BM25Okapi = None
         self.content_input_path: str = ""
         self.chunks: List[Any] = []
         self.unstructured_modules: UnstructuredIO = UnstructuredIO()
 
-    def process(self, content_input_path: str,
-                chunk_type: str = "chunk_by_title", **kwargs: Any) -> None:
+    def process(
+        self,
+        content_input_path: str,
+        chunk_type: str = "chunk_by_title",
+        **kwargs: Any,
+    ) -> None:
         r"""Processes content from a file or URL, divides it into chunks by
         using `Unstructured IO`,then stored internally. This method must be
         called before executing queries with the retriever.
@@ -75,9 +80,11 @@ class BM25Retriever(BaseRetriever):
         # Load and preprocess documents
         self.content_input_path = content_input_path
         elements = self.unstructured_modules.parse_file_or_url(
-            content_input_path, **kwargs)
+            content_input_path, **kwargs
+        )
         self.chunks = self.unstructured_modules.chunk_elements(
-            chunk_type=chunk_type, elements=elements)
+            chunk_type=chunk_type, elements=elements
+        )
 
         # Convert chunks to a list of strings for tokenization
         tokenized_corpus = [str(chunk).split(" ") for chunk in self.chunks]
@@ -116,7 +123,8 @@ class BM25Retriever(BaseRetriever):
         if self.bm25 is None:
             raise ValueError(
                 "BM25 model is not initialized. Call `process_and_store`"
-                " first.")
+                " first."
+            )
 
         # Preprocess query similarly to how documents were processed
         processed_query = query.split(" ")
@@ -131,12 +139,13 @@ class BM25Retriever(BaseRetriever):
                 'similarity score': scores[i],
                 'content path': self.content_input_path,
                 'metadata': self.chunks[i].metadata.to_dict(),
-                'text': str(self.chunks[i])
+                'text': str(self.chunks[i]),
             }
             formatted_results.append(result_dict)
 
         # Sort the list of dictionaries by 'similarity score' from high to low
-        formatted_results.sort(key=lambda x: x['similarity score'],
-                               reverse=True)
+        formatted_results.sort(
+            key=lambda x: x['similarity score'], reverse=True
+        )
 
         return formatted_results

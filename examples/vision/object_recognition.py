@@ -30,7 +30,8 @@ parser.add_argument(
 
 def detect_image_obj(image_path: str) -> None:
     sys_msg = PromptTemplateGenerator().get_prompt_from_key(
-        TaskType.OBJECT_RECOGNITION, RoleType.ASSISTANT)
+        TaskType.OBJECT_RECOGNITION, RoleType.ASSISTANT
+    )
     print("=" * 20 + " SYS MSG " + "=" * 20)
     print(sys_msg)
     print("=" * 49)

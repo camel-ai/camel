@@ -36,8 +36,9 @@ def mock_vector_storage():
 
 @pytest.fixture
 def vector_retriever(mock_embedding_model, mock_vector_storage):
-    return VectorRetriever(embedding_model=mock_embedding_model,
-                           storage=mock_vector_storage)
+    return VectorRetriever(
+        embedding_model=mock_embedding_model, storage=mock_vector_storage
+    )
 
 
 @pytest.fixture
@@ -47,8 +48,9 @@ def mock_unstructured_modules():
 
 
 # Test initialization with a custom embedding model
-def test_initialization_with_custom_embedding(vector_retriever,
-                                              mock_embedding_model):
+def test_initialization_with_custom_embedding(
+    vector_retriever, mock_embedding_model
+):
     assert vector_retriever.embedding_model == mock_embedding_model
 
 
