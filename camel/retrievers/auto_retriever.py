@@ -278,12 +278,16 @@ class AutoRetriever:
                     # Clear the vector storage
                     vector_storage_instance.clear()
                     # Process and store the content to the vector storage
-                    vr = VectorRetriever(storage=vector_storage_instance)
+                    vr = VectorRetriever(
+                        storage=vector_storage_instance,
+                        similarity_threshold=similarity_threshold,
+                    )
                     vr.process(content_input_path)
-                vr = VectorRetriever(
-                    storage=vector_storage_instance,
-                    similarity_threshold=similarity_threshold,
-                )
+                else:
+                    vr = VectorRetriever(
+                        storage=vector_storage_instance,
+                        similarity_threshold=similarity_threshold,
+                    )
                 # Retrieve info by given query from the vector storage
                 retrieved_info = vr.query(query, top_k)
                 # Reorganize the retrieved info with original query
