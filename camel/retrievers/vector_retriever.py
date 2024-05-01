@@ -151,8 +151,7 @@ class VectorRetriever(BaseRetriever):
 
         if query_results[0].record.payload is None:
             raise ValueError(
-                "Payload of vector storage is None, please check"
-                " the collection."
+                "Payload of vector storage is None, please check the collection."
             )
 
         # format the results

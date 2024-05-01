@@ -30,6 +30,7 @@ def test_bm25retriever_initialization():
     assert retriever.bm25 is None
     assert retriever.content_input_path == ""
 
+
 def test_process(mock_unstructured_modules):
     mock_instance = mock_unstructured_modules.return_value
 
