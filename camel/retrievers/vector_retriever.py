@@ -46,19 +46,19 @@ class VectorRetriever(BaseRetriever):
 
     def __init__(
         self,
+        similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
         embedding_model: Optional[BaseEmbedding] = None,
         storage: Optional[BaseVectorStorage] = None,
-        similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
     ) -> None:
         r"""Initializes the retriever class with an optional embedding model.
 
         Args:
-            embedding_model (Optional[BaseEmbedding]): The embedding model
-                instance. Defaults to `OpenAIEmbedding` if not provided.
-            storage (BaseVectorStorage): Vector storage to query.
             similarity_threshold (float, optional): The similarity threshold
                 for filtering results. Defaults to
                 `DEFAULT_SIMILARITY_THRESHOLD`.
+            embedding_model (Optional[BaseEmbedding]): The embedding model
+                instance. Defaults to `OpenAIEmbedding` if not provided.
+            storage (BaseVectorStorage): Vector storage to query.
         """
         self.embedding_model = embedding_model or OpenAIEmbedding()
         self.storage = (
