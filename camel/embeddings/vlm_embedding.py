@@ -29,8 +29,9 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
         RuntimeError: If an unsupported model type is specified.
     """
 
-    def __init__(self,
-                 model_name: str = "openai/clip-vit-base-patch32") -> None:
+    def __init__(
+        self, model_name: str = "openai/clip-vit-base-patch32"
+    ) -> None:
         r"""Initializes the: obj: `VisionLanguageEmbedding` class
                                     with a specified model
                                     and return the dimension of embeddings.
@@ -40,6 +41,7 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
             (default: :obj:`openai/clip-vit-base-patch32`)
         """
         from transformers import AutoModel, AutoProcessor
+
         self.model = AutoModel.from_pretrained(model_name)
         self.processor = AutoProcessor.from_pretrained(model_name)
         self.dim = None
@@ -65,18 +67,21 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
         result_list = []
         for obj in objs:
             if isinstance(obj, Image.Image):
-                input = self.processor(images=obj, return_tensors="pt",
-                                       padding=True, **kwargs)
+                input = self.processor(
+                    images=obj, return_tensors="pt", padding=True, **kwargs
+                )
                 image_feature = self.model.get_image_features(
-                    **input, **kwargs).squeeze(dim=0)
+                    **input, **kwargs
+                ).squeeze(dim=0)
                 result_list.append(image_feature)
 
             elif isinstance(obj, str):
-                input = self.processor(text=obj, return_tensors="pt",
-                                       padding=True, **kwargs)
-                text_feature = self.model.get_text_features(**input,
-                                                            **kwargs).squeeze(
-                                                                dim=0)
+                input = self.processor(
+                    text=obj, return_tensors="pt", padding=True, **kwargs
+                )
+                text_feature = self.model.get_text_features(
+                    **input, **kwargs
+                ).squeeze(dim=0)
                 result_list.append(text_feature)
             else:
                 raise ValueError("Input type is not image nor text.")
