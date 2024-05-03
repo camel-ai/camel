@@ -37,6 +37,7 @@ def get_lazy_imported_functions_module():
         SEARCH_FUNCS,
         TWITTER_FUNCS,
         WEATHER_FUNCS,
+        OPENAPI_FUNCS,
     )
 
     return [
@@ -45,6 +46,7 @@ def get_lazy_imported_functions_module():
         *WEATHER_FUNCS,
         *MAP_FUNCS,
         *TWITTER_FUNCS,
+        *OPENAPI_FUNCS,
     ]
 
 

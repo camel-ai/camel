@@ -23,6 +23,7 @@ from .openai_function import (
 from .search_functions import SEARCH_FUNCS
 from .twitter_function import TWITTER_FUNCS
 from .weather_functions import WEATHER_FUNCS
+from .open_api_function import OPENAPI_FUNCS
 
 __all__ = [
     'OpenAIFunction',
@@ -33,5 +34,6 @@ __all__ = [
     'WEATHER_FUNCS',
     'MAP_FUNCS',
     'TWITTER_FUNCS',
+    'OPENAPI_FUNCS',
     'UnstructuredIO',
 ]
