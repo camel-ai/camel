@@ -17,11 +17,14 @@ from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
 from camel.types import ModelType
 
-parametrize = pytest.mark.parametrize('model', [
-    pytest.param(ModelType.GPT_3_5_TURBO, marks=pytest.mark.model_backend),
-    pytest.param(ModelType.GPT_4_TURBO, marks=pytest.mark.model_backend),
-    ModelType.STUB,
-])
+parametrize = pytest.mark.parametrize(
+    'model',
+    [
+        pytest.param(ModelType.GPT_3_5_TURBO, marks=pytest.mark.model_backend),
+        pytest.param(ModelType.GPT_4_TURBO, marks=pytest.mark.model_backend),
+        ModelType.STUB,
+    ],
+)
 
 
 @parametrize

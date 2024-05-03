@@ -54,8 +54,11 @@ def return_prompt_wrapper(
             return cls(result)
         elif isinstance(result, tuple):
             new_result = tuple(
-                cls(item) if isinstance(item, str)
-                and not isinstance(item, cls) else item for item in result)
+                cls(item)
+                if isinstance(item, str) and not isinstance(item, cls)
+                else item
+                for item in result
+            )
             return new_result
         return result
 
@@ -98,9 +101,9 @@ class TextPrompt(str):
 
     @property
     def key_words(self) -> Set[str]:
-        r"""Returns a set of strings representing the keywords in the prompt.
-        """
+        r"""Returns a set of strings representing the keywords in the prompt."""
         from camel.utils import get_prompt_template_key_words
+
         return get_prompt_template_key_words(self)
 
     def format(self, *args: Any, **kwargs: Any) -> 'TextPrompt':
@@ -188,10 +191,11 @@ class CodePrompt(TextPrompt):
         Raises:
             InterpreterError: If the code execution encounters errors that
                 could be resolved by modifying or regenerating the code.
-    """
+        """
         if interpreter is None:
             execution_res = SubprocessInterpreter().run(
-                self, self._code_type, **kwargs)
+                self, self._code_type, **kwargs
+            )
         else:
             execution_res = interpreter.run(self, self._code_type, **kwargs)
         return execution_res
@@ -199,13 +203,15 @@ class CodePrompt(TextPrompt):
 
 # flake8: noqa :E501
 class TextPromptDict(Dict[Any, TextPrompt]):
-    r"""A dictionary class that maps from key to :obj:`TextPrompt` object.
-    """
+    r"""A dictionary class that maps from key to :obj:`TextPrompt` object."""
+
     EMBODIMENT_PROMPT = TextPrompt(
-        "System information :" +
-        "\n".join(f"{key}: {value}"
-                  for key, value in get_system_information().items()) + "\n" +
-        """You are the physical embodiment of the {role} who is working on solving a task: {task}.
+        "System information :"
+        + "\n".join(
+            f"{key}: {value}" for key, value in get_system_information().items()
+        )
+        + "\n"
+        + """You are the physical embodiment of the {role} who is working on solving a task: {task}.
 You can do things in the physical world including browsing the Internet, reading documents, drawing images, creating videos, executing code and so on.
 Your job is to perform the physical actions necessary to interact with the physical world.
 You will receive thoughts from the {role} and you will need to perform the actions described in the thoughts.
@@ -220,7 +226,8 @@ You can perform multiple actions.
 You can perform actions in any order.
 First, explain the actions you will perform and your reasons, then write code to implement your actions.
 If you decide to perform actions, you must write code to implement the actions.
-You may print intermediate results if necessary.""")
+You may print intermediate results if necessary."""
+    )
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)

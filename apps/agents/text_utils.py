@@ -15,7 +15,7 @@ import re
 
 
 def split_markdown_code(string: str) -> str:
-    """ Split a multiline block of markdown code (triple-quotes) into
+    """Split a multiline block of markdown code (triple-quotes) into
     line-sized sub-blocks to make newlines stay where they belong.
     This transformation is a workaround to a known Gradio bug:
     https://github.com/gradio-app/gradio/issues/3531

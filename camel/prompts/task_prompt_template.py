@@ -13,16 +13,23 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Dict
 
-from camel.prompts import (
+from camel.prompts.ai_society import (
     AISocietyPromptTemplateDict,
-    CodePromptTemplateDict,
-    EvaluationPromptTemplateDict,
-    MisalignmentPromptTemplateDict,
-    RoleDescriptionPromptTemplateDict,
-    SolutionExtractionPromptTemplateDict,
     TextPromptDict,
-    TranslationPromptTemplateDict,
 )
+from camel.prompts.code import CodePromptTemplateDict
+from camel.prompts.evaluation import (
+    EvaluationPromptTemplateDict,
+)
+from camel.prompts.misalignment import MisalignmentPromptTemplateDict
+from camel.prompts.object_recognition import ObjectRecognitionPromptTemplateDict
+from camel.prompts.role_description_prompt_template import (
+    RoleDescriptionPromptTemplateDict,
+)
+from camel.prompts.solution_extraction import (
+    SolutionExtractionPromptTemplateDict,
+)
+from camel.prompts.translation import TranslationPromptTemplateDict
 from camel.types import TaskType
 
 
@@ -38,19 +45,15 @@ class TaskPromptTemplateDict(Dict[Any, TextPromptDict]):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.update({
-            TaskType.AI_SOCIETY:
-            AISocietyPromptTemplateDict(),
-            TaskType.CODE:
-            CodePromptTemplateDict(),
-            TaskType.MISALIGNMENT:
-            MisalignmentPromptTemplateDict(),
-            TaskType.TRANSLATION:
-            TranslationPromptTemplateDict(),
-            TaskType.EVALUATION:
-            EvaluationPromptTemplateDict(),
-            TaskType.SOLUTION_EXTRACTION:
-            SolutionExtractionPromptTemplateDict(),
-            TaskType.ROLE_DESCRIPTION:
-            RoleDescriptionPromptTemplateDict(),
-        })
+        self.update(
+            {
+                TaskType.AI_SOCIETY: AISocietyPromptTemplateDict(),
+                TaskType.CODE: CodePromptTemplateDict(),
+                TaskType.MISALIGNMENT: MisalignmentPromptTemplateDict(),
+                TaskType.TRANSLATION: TranslationPromptTemplateDict(),
+                TaskType.EVALUATION: EvaluationPromptTemplateDict(),
+                TaskType.SOLUTION_EXTRACTION: SolutionExtractionPromptTemplateDict(),
+                TaskType.ROLE_DESCRIPTION: RoleDescriptionPromptTemplateDict(),
+                TaskType.OBJECT_RECOGNITION: ObjectRecognitionPromptTemplateDict(),
+            }
+        )

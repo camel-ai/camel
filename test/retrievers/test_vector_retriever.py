@@ -40,8 +40,9 @@ def vector_retriever(mock_embedding_model):
 
 
 # Test initialization with a custom embedding model
-def test_initialization_with_custom_embedding(vector_retriever,
-                                              mock_embedding_model):
+def test_initialization_with_custom_embedding(
+    vector_retriever, mock_embedding_model
+):
     assert vector_retriever.embedding_model == mock_embedding_model
 
 
@@ -53,33 +54,31 @@ def test_initialization_with_default_embedding():
 
 # Test process method
 @patch('camel.retrievers.vector_retriever.UnstructuredIO')
-def test_process(mock_unstructured_modules, vector_retriever,
-                 mock_vector_storage):
+def test_process(
+    mock_unstructured_modules, vector_retriever, mock_vector_storage
+):
     # Create a mock chunk with metadata
     mock_chunk = MagicMock()
     mock_chunk.metadata.to_dict.return_value = {'mock_key': 'mock_value'}
 
     # Setup mock behavior
     mock_unstructured_instance = mock_unstructured_modules.return_value
-    mock_unstructured_instance.parse_file_or_url.return_value = [
-        "mock_element"
-    ]
+    mock_unstructured_instance.parse_file_or_url.return_value = ["mock_element"]
     mock_unstructured_instance.chunk_elements.return_value = [mock_chunk]
 
-    vector_retriever.embedding_model.embed_list.return_value = [[
-        0.1, 0.2, 0.3
-    ]]
+    vector_retriever.embedding_model.embed_list.return_value = [[0.1, 0.2, 0.3]]
 
     vector_retriever.process("mock_path", mock_vector_storage)
 
     # Assert that methods are called as expected
     mock_unstructured_instance.parse_file_or_url.assert_called_once_with(
-        "mock_path")
+        "mock_path"
+    )
     mock_unstructured_instance.chunk_elements.assert_called_once()
     mock_vector_storage.add.assert_called_once()
 
 
-# Test query_and_compile_results method
+# Test query
 def test_query(vector_retriever, mock_vector_storage):
     # Setup mock behavior for vector storage query
     mock_vector_storage.query.return_value = [

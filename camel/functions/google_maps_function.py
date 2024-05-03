@@ -15,7 +15,7 @@ import os
 from functools import wraps
 from typing import Any, Callable, List, Optional, Tuple, Union
 
-from camel.functions import OpenAIFunction
+from camel.functions.openai_function import OpenAIFunction
 
 
 def import_googlemaps_or_raise() -> Any:
@@ -31,10 +31,13 @@ def import_googlemaps_or_raise() -> Any:
     """
     try:
         import googlemaps
+
         return googlemaps
     except ImportError:
-        raise ImportError("Please install `googlemaps` first. You can install "
-                          "it by running `pip install googlemaps`.")
+        raise ImportError(
+            "Please install `googlemaps` first. You can install "
+            "it by running `pip install googlemaps`."
+        )
 
 
 def get_googlemap_api_key() -> str:
@@ -50,17 +53,21 @@ def get_googlemap_api_key() -> str:
     # https://console.cloud.google.com/apis/credentials
     GOOGLEMAPS_API_KEY = os.environ.get('GOOGLEMAPS_API_KEY')
     if not GOOGLEMAPS_API_KEY:
-        raise ValueError("`GOOGLEMAPS_API_KEY` not found in environment "
-                         "variables. `GOOGLEMAPS_API_KEY` API keys are "
-                         "generated in the `Credentials` page of the "
-                         "`APIs & Services` tab of "
-                         "https://console.cloud.google.com/apis/credentials.")
+        raise ValueError(
+            "`GOOGLEMAPS_API_KEY` not found in environment "
+            "variables. `GOOGLEMAPS_API_KEY` API keys are "
+            "generated in the `Credentials` page of the "
+            "`APIs & Services` tab of "
+            "https://console.cloud.google.com/apis/credentials."
+        )
     return GOOGLEMAPS_API_KEY
 
 
-def get_address_description(address: Union[str, List[str]],
-                            region_code: Optional[str] = None,
-                            locality: Optional[str] = None) -> str:
+def get_address_description(
+    address: Union[str, List[str]],
+    region_code: Optional[str] = None,
+    locality: Optional[str] = None,
+) -> str:
     r"""Validates an address via Google Maps API, returns a descriptive
     summary.
 
@@ -90,22 +97,28 @@ def get_address_description(address: Union[str, List[str]],
     try:
         gmaps = googlemaps.Client(key=GOOGLEMAPS_API_KEY)
     except Exception as e:
-        return f"Error: {str(e)}"
+        return f"Error: {e!s}"
 
     try:
         addressvalidation_result = gmaps.addressvalidation(
-            [address], regionCode=region_code, locality=locality,
-            enableUspsCass=False)  # Always False as per requirements
+            [address],
+            regionCode=region_code,
+            locality=locality,
+            enableUspsCass=False,
+        )  # Always False as per requirements
 
         # Check if the result contains an error
         if 'error' in addressvalidation_result:
             error_info = addressvalidation_result['error']
-            error_message = error_info.get('message',
-                                           'An unknown error occurred')
+            error_message = error_info.get(
+                'message', 'An unknown error occurred'
+            )
             error_status = error_info.get('status', 'UNKNOWN_STATUS')
             error_code = error_info.get('code', 'UNKNOWN_CODE')
-            return (f"Address validation failed with error: {error_message} "
-                    f"Status: {error_status}, Code: {error_code}")
+            return (
+                f"Address validation failed with error: {error_message} "
+                f"Status: {error_status}, Code: {error_code}"
+            )
 
         # Assuming the successful response structure includes a 'result' key
         result = addressvalidation_result['result']
@@ -115,30 +128,35 @@ def get_address_description(address: Union[str, List[str]],
         metadata = result.get('metadata', {})
 
         # Construct the descriptive string
-        address_complete = "Yes" if verdict.get('addressComplete',
-                                                False) else "No"
-        formatted_address = address_info.get('formattedAddress',
-                                             'Not available')
+        address_complete = (
+            "Yes" if verdict.get('addressComplete', False) else "No"
+        )
+        formatted_address = address_info.get(
+            'formattedAddress', 'Not available'
+        )
         location = geocode.get('location', {})
         latitude = location.get('latitude', 'Not available')
         longitude = location.get('longitude', 'Not available')
         true_metadata_types = [key for key, value in metadata.items() if value]
-        true_metadata_types_str = ', '.join(
-            true_metadata_types) if true_metadata_types else 'None'
+        true_metadata_types_str = (
+            ', '.join(true_metadata_types) if true_metadata_types else 'None'
+        )
 
         description = (
             f"Address completion status: {address_complete}. "
             f"Formatted address: {formatted_address}. "
             f"Location (latitude, longitude): ({latitude}, {longitude}). "
-            f"Metadata indicating true types: {true_metadata_types_str}.")
+            f"Metadata indicating true types: {true_metadata_types_str}."
+        )
 
         return description
     except Exception as e:
-        return f"An unexpected error occurred: {str(e)}"
+        return f"An unexpected error occurred: {e!s}"
 
 
 def handle_googlemaps_exceptions(
-        func: Callable[..., Any]) -> Callable[..., Any]:
+    func: Callable[..., Any],
+) -> Callable[..., Any]:
     r"""Decorator to catch and handle exceptions raised by Google Maps API
     calls.
 
@@ -153,27 +171,37 @@ def handle_googlemaps_exceptions(
     @wraps(func)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
         try:
-            from googlemaps.exceptions import (  # type: ignore  # isort: skip
-                ApiError, HTTPError, Timeout, TransportError,
+            from googlemaps.exceptions import (  # type: ignore[import-untyped]  # isort: skip
+                ApiError,
+                HTTPError,
+                Timeout,
+                TransportError,
             )
         except ImportError:
             raise ImportError(
                 "Please install `googlemaps` first. You can install "
-                "it by running `pip install googlemaps`.")
+                "it by running `pip install googlemaps`."
+            )
 
         try:
             return func(*args, **kwargs)
         except ApiError as e:
-            return ('An exception returned by the remote API. '
-                    f'Status: {e.status}, Message: {e.message}')
+            return (
+                'An exception returned by the remote API. '
+                f'Status: {e.status}, Message: {e.message}'
+            )
         except HTTPError as e:
-            return ('An unexpected HTTP error occurred. '
-                    f'Status Code: {e.status_code}')
+            return (
+                'An unexpected HTTP error occurred. '
+                f'Status Code: {e.status_code}'
+            )
         except Timeout:
             return 'The request timed out.'
         except TransportError as e:
-            return ('Something went wrong while trying to execute the '
-                    f'request. Details: {e.base_exception}')
+            return (
+                'Something went wrong while trying to execute the '
+                f'request. Details: {e.base_exception}'
+            )
         except Exception as e:
             return f'An unexpected error occurred: {e}'
 
@@ -203,7 +231,7 @@ def get_elevation(lat_lng: Tuple) -> str:
     try:
         gmaps = googlemaps.Client(key=GOOGLEMAPS_API_KEY)
     except Exception as e:
-        return f"Error: {str(e)}"
+        return f"Error: {e!s}"
 
     # Assuming gmaps is a configured Google Maps client instance
     elevation_result = gmaps.elevation(lat_lng)
@@ -219,7 +247,8 @@ def get_elevation(lat_lng: Tuple) -> str:
             f"The elevation at latitude {location['lat']}, "
             f"longitude {location['lng']} "
             f"is approximately {elevation:.2f} meters above sea level, "
-            f"with a data resolution of {resolution:.2f} meters.")
+            f"with a data resolution of {resolution:.2f} meters."
+        )
     else:
         description = "Elevation data is not available for the given location."
 
@@ -269,14 +298,15 @@ def get_timezone(lat_lng: Tuple) -> str:
     try:
         gmaps = googlemaps.Client(key=GOOGLEMAPS_API_KEY)
     except Exception as e:
-        return f"Error: {str(e)}"
+        return f"Error: {e!s}"
 
     # Get timezone information
     timezone_dict = gmaps.timezone(lat_lng)
 
     # Extract necessary information
     dst_offset = timezone_dict[
-        'dstOffset']  # Daylight Saving Time offset in seconds
+        'dstOffset'
+    ]  # Daylight Saving Time offset in seconds
     raw_offset = timezone_dict['rawOffset']  # Standard time offset in seconds
     timezone_id = timezone_dict['timeZoneId']
     timezone_name = timezone_dict['timeZoneName']
@@ -293,12 +323,13 @@ def get_timezone(lat_lng: Tuple) -> str:
         f"Daylight Saving Time offset is {dst_offset_str}. "
         f"The total offset from Coordinated Universal Time (UTC) is "
         f"{total_offset_str}, including any Daylight Saving Time adjustment "
-        f"if applicable. ")
+        f"if applicable. "
+    )
 
     return description
 
 
 MAP_FUNCS: List[OpenAIFunction] = [
-    OpenAIFunction(func)  # type: ignore
+    OpenAIFunction(func)  # type: ignore[arg-type]
     for func in [get_address_description, get_elevation, get_timezone]
 ]
