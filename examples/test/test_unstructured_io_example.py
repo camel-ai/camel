@@ -28,13 +28,15 @@ from examples.loaders.unstructured_io_example import (
 
 @pytest.fixture
 def sample_url():
-    return ("https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
-            "philadelphia-eagles-spt-intl/index.html")
+    return (
+        "https://www.cnn.com/2023/01/30/sport/empire-state-building-green-"
+        "philadelphia-eagles-spt-intl/index.html"
+    )
 
 
 @pytest.fixture
 def sample_dirty_text():
-    return "Some dirty text â€™ with extra spaces and – dashes."
+    return "Some dirty text â€™ with extra spaces and – dashes."  # noqa: RUF001
 
 
 @pytest.fixture
@@ -54,8 +56,10 @@ def test_parse_file_example():
     content = parse_file_example()
 
     # Assertion: check if the result is as expected
-    expected_string = ("Important Analysis\n\nHere is my first "
-                       "thought.\n\nHere is my second thought.")
+    expected_string = (
+        "Important Analysis\n\nHere is my first "
+        "thought.\n\nHere is my second thought."
+    )
     assert content == expected_string
 
     # Cleanup: remove the created file after the test
@@ -88,21 +92,18 @@ def test_stage_data_example(sample_url):
         'data': {
             'type': 'UncategorizedText',
             'element_id': 'e78902d05b0cb1e4c38fc7a79db450d5',
-            'text': 'CNN\n        \xa0—'
+            'text': 'CNN\n        \xa0—',
         },
         'metadata': {
-            'filetype':
-            'text/html',
+            'filetype': 'text/html',
             'languages': ['eng'],
-            'page_number':
-            1,
-            'url':
-            'https://www.cnn.com/2023/01/30/sport/'
+            'page_number': 1,
+            'url': 'https://www.cnn.com/2023/01/30/sport/'
             'empire-state-building-green-philadelphia-eagles-spt-'
             'intl/index.html',
             'emphasized_text_contents': ['CNN'],
-            'emphasized_text_tags': ['span']
-        }
+            'emphasized_text_tags': ['span'],
+        },
     }
 
 

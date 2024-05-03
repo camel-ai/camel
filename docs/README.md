@@ -17,26 +17,30 @@ To build the documentation:
 ```bash
 pip install sphinx
 pip install sphinx_book_theme
+pip install sphinx-autobuild
 pip install recommonmark
 ```
 
-3. Navigate to the `docs` directory, and run the `make` command:
+3. Build the document and launch the HTML documentation.
 ```bash
 cd docs
-make html
+sphinx-autobuild . _build/html --port 8000
 ```
 
-4. Launch the HTML documentation from the terminal using a local HTTP server
+This command starts a local HTTP server on port 8080 by default. Once the server is running, open your web browser and enter the following URL:
 ```bash
-cd _build/html
-python -m http.server
+127.0.0.1:8000
 ```
-This command starts a local HTTP server on port 8000 by default. Once the server is running, open your web browser and enter the following URL:
-```bash
-http://localhost:8000
-```
-This will load the HTML documentation in your web browser from the local server.
+This will load the HTML documentation in your web browser from the local server. The server will watch for changes in your source files and automatically rebuild the documentation and refresh the page in the browser when you make changes – so changes in docs will be immediately reflected in the rendered doc.
 
 You can navigate through the documentation using the links and interact with it as you would with any other web page.
 
 To stop the local server, go back to the terminal or command prompt where it is running and press `Ctrl+C` to terminate the server.
+
+In case the autobuild does not work, you may use the traditional build approach:
+```bash
+cd docs
+make html
+cd _build/html
+python -m http.server
+```

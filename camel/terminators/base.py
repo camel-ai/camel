@@ -18,7 +18,6 @@ from camel.messages import BaseMessage
 
 
 class BaseTerminator(ABC):
-
     def __init__(self, *args, **kwargs) -> None:
         self._terminated: bool = False
         self._termination_reason: Optional[str] = None
@@ -33,10 +32,10 @@ class BaseTerminator(ABC):
 
 
 class ResponseTerminator(BaseTerminator):
-
     @abstractmethod
     def is_terminated(
-            self, messages: List[BaseMessage]) -> Tuple[bool, Optional[str]]:
+        self, messages: List[BaseMessage]
+    ) -> Tuple[bool, Optional[str]]:
         pass
 
     @abstractmethod
