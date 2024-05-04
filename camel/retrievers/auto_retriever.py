@@ -233,8 +233,7 @@ class AutoRetriever:
 
         vr = VectorRetriever()
 
-        retrieved_infos = ""
-        retrieved_infos_text = ""
+        all_retrieved_info = []
 
         for content_input_path in content_input_paths:
             # Generate a valid collection name
@@ -283,35 +282,40 @@ class AutoRetriever:
                 retrieved_info = vr.query(
                     query, vector_storage_instance, top_k, similarity_threshold
                 )
-                # Reorganize the retrieved info with original query
-                for info in retrieved_info:
-                    retrieved_infos += "\n" + str(info)
-                    retrieved_infos_text += "\n" + str(info['text'])
-                output = (
-                    "Original Query:"
-                    + "\n"
-                    + "{"
-                    + query
-                    + "}"
-                    + "\n"
-                    + "Retrieved Context:"
-                    + retrieved_infos
-                )
-                output_text = (
-                    "Original Query:"
-                    + "\n"
-                    + "{"
-                    + query
-                    + "}"
-                    + "\n"
-                    + "Retrieved Context:"
-                    + retrieved_infos_text
-                )
-
+                all_retrieved_info.extend(retrieved_info)
             except Exception as e:
                 raise RuntimeError(
                     f"Error in auto vector retriever processing: {e!s}"
                 ) from e
+
+        # Splitting records into those with and without a 'similarity_score'
+        with_score = [
+            info for info in all_retrieved_info if 'similarity score' in info
+        ]
+        without_score = [
+            info
+            for info in all_retrieved_info
+            if 'similarity score' not in info
+        ]
+
+        # Sorting only the list with scores
+        with_score_sorted = sorted(
+            with_score, key=lambda x: x['similarity score'], reverse=True
+        )
+
+        # Merging back the sorted scored items with the non-scored items
+        all_retrieved_info_sorted = with_score_sorted + without_score
+
+        # Selecting the top 'top_k' results
+        all_retrieved_info = all_retrieved_info_sorted[:top_k]
+
+        retrieved_infos = "\n".join(str(info) for info in all_retrieved_info)
+        retrieved_infos_text = "\n".join(
+            info['text'] for info in all_retrieved_info if 'text' in info
+        )
+
+        output = f"Original Query:\n{{ {query} }}\nRetrieved Context:\n{retrieved_infos}"
+        output_text = f"Original Query:\n{{ {query} }}\nRetrieved Context:\n{retrieved_infos_text}"
 
         if return_detailed_info:
             return output
