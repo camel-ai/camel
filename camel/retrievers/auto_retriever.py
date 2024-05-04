@@ -234,7 +234,6 @@ class AutoRetriever:
         vr = VectorRetriever()
 
         all_retrieved_info = []
-
         for content_input_path in content_input_paths:
             # Generate a valid collection name
             collection_name = self._collection_name_generator(
@@ -288,7 +287,7 @@ class AutoRetriever:
                     f"Error in auto vector retriever processing: {e!s}"
                 ) from e
 
-        # Splitting records into those with and without a 'similarity_score'
+        # Split records into those with and without a 'similarity_score'
         with_score = [
             info for info in all_retrieved_info if 'similarity score' in info
         ]
@@ -297,16 +296,13 @@ class AutoRetriever:
             for info in all_retrieved_info
             if 'similarity score' not in info
         ]
-
-        # Sorting only the list with scores
+        # Sort only the list with scores
         with_score_sorted = sorted(
             with_score, key=lambda x: x['similarity score'], reverse=True
         )
-
-        # Merging back the sorted scored items with the non-scored items
+        # Merge back the sorted scored items with the non-scored items
         all_retrieved_info_sorted = with_score_sorted + without_score
-
-        # Selecting the top 'top_k' results
+        # Select the 'top_k' results
         all_retrieved_info = all_retrieved_info_sorted[:top_k]
 
         retrieved_infos = "\n".join(str(info) for info in all_retrieved_info)
@@ -314,10 +310,10 @@ class AutoRetriever:
             info['text'] for info in all_retrieved_info if 'text' in info
         )
 
-        output = f"Original Query:\n{{ {query} }}\nRetrieved Context:\n{retrieved_infos}"
-        output_text = f"Original Query:\n{{ {query} }}\nRetrieved Context:\n{retrieved_infos_text}"
+        detailed_info = f"Original Query:\n{{ {query} }}\nRetrieved Context:\n{retrieved_infos}"
+        text_info = f"Original Query:\n{{ {query} }}\nRetrieved Context:\n{retrieved_infos_text}"
 
         if return_detailed_info:
-            return output
+            return detailed_info
         else:
-            return output_text
+            return text_info
