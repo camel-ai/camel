@@ -21,7 +21,7 @@ from camel.types import StorageType
 def information_retrieval(
     query: str, content_input_paths: Union[str, List[str]]
 ) -> str:
-    r"""Retrieves information from a remote vector storage based on the specified query. This function connects to a remote vector storage system and retrieves relevant information by processing the input query. It is essential to use this function when the answer to a question requires external knowledge sources.
+    r"""Retrieves information from a local vector storage based on the specified query. This function connects to a local vector storage system and retrieves relevant information by processing the input query. It is essential to use this function when the answer to a question requires external knowledge sources.
 
     Args:
         query (str): The question or query for which an answer is required.
@@ -37,8 +37,8 @@ def information_retrieval(
                             content_input_paths="https://www.camel-ai.org/")
     """
     auto_retriever = AutoRetriever(
-        url_and_api_key=("Your Milvus URI", "Your Milvus Token"),
-        storage_type=StorageType.MILVUS,
+        vector_storage_local_path="camel/temp_storage",
+        storage_type=StorageType.QDRANT,
     )
 
     retrieved_info = auto_retriever.run_vector_retriever(
