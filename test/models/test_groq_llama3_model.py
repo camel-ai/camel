@@ -22,10 +22,13 @@ from camel.utils import OpenAITokenCounter
 
 
 @pytest.mark.model_backend
-@pytest.mark.parametrize("model_type", [
-    ModelType.GROQ_LLAMA_3_8_B,
-    ModelType.GROQ_LLAMA_3_70_B,
-])
+@pytest.mark.parametrize(
+    "model_type",
+    [
+        ModelType.GROQ_LLAMA_3_8_B,
+        ModelType.GROQ_LLAMA_3_70_B,
+    ],
+)
 def test_groq_llama3_model(model_type):
     model_config_dict = GroqLLAMA3Config().__dict__
     model = GroqModel(model_type, model_config_dict)
@@ -48,7 +51,12 @@ def test_anthropic_model_unexpected_argument():
     model_config_dict = model_config.__dict__
 
     with pytest.raises(
-            ValueError, match=re.escape(
-                ("Unexpected argument `model_path` is "
-                 "input into Groq Llama3 model backend."))):
+        ValueError,
+        match=re.escape(
+            (
+                "Unexpected argument `model_path` is "
+                "input into Groq Llama3 model backend."
+            )
+        ),
+    ):
         _ = GroqModel(model_type, model_config_dict)
