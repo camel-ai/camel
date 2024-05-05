@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, List, Union
+from typing import Any, List, Optional, Union
 
 from PIL import Image
 
@@ -44,7 +44,7 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
 
         self.model = AutoModel.from_pretrained(model_name)
         self.processor = AutoProcessor.from_pretrained(model_name)
-        self.dim = None
+        self.dim: Optional[int] = None
 
     def embed_list(
         self,
@@ -70,22 +70,26 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
                 input = self.processor(
                     images=obj, return_tensors="pt", padding=True, **kwargs
                 )
-                image_feature = self.model.get_image_features(
-                    **input, **kwargs
-                ).squeeze(dim=0)
+                image_feature = (
+                    self.model.get_image_features(**input, **kwargs)
+                    .squeeze(dim=0)
+                    .tolist()
+                )
                 result_list.append(image_feature)
 
             elif isinstance(obj, str):
                 input = self.processor(
                     text=obj, return_tensors="pt", padding=True, **kwargs
                 )
-                text_feature = self.model.get_text_features(
-                    **input, **kwargs
-                ).squeeze(dim=0)
+                text_feature = (
+                    self.model.get_text_features(**input, **kwargs)
+                    .squeeze(dim=0)
+                    .tolist()
+                )
                 result_list.append(text_feature)
             else:
                 raise ValueError("Input type is not image nor text.")
-        self.dim = result_list[0].shape
+        self.dim = len(result_list[0])
         return result_list
 
     def get_output_dim(self):
