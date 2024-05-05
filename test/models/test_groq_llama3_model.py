@@ -18,7 +18,7 @@ import pytest
 from camel.configs import GroqLLAMA3Config, OpenSourceConfig
 from camel.models import GroqModel
 from camel.types import ModelType
-from camel.utils import OpenAITokenCounter
+from camel.utils import GroqLlama3TokenCounter
 
 
 @pytest.mark.model_backend
@@ -36,7 +36,7 @@ def test_groq_llama3_model(model_type):
     assert model.model_config_dict == model_config_dict
     # LLM served by Groq does not support token counter, so Camel uses
     # OpenAI token counter as a placeholder.
-    assert isinstance(model.token_counter, OpenAITokenCounter)
+    assert isinstance(model.token_counter, GroqLlama3TokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
 
