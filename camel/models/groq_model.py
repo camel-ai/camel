@@ -32,8 +32,9 @@ from camel.utils import BaseTokenCounter, OpenAITokenCounter, api_key_required
 class GroqModel(BaseModelBackend):
     r"""LLM API served by Groq in a unified BaseModelBackend interface."""
 
-    def __init__(self, model_type: ModelType,
-                 model_config_dict: Dict[str, Any]) -> None:
+    def __init__(
+        self, model_type: ModelType, model_config_dict: Dict[str, Any]
+    ) -> None:
         r"""Constructor for Groq backend.
 
         Args:
@@ -66,7 +67,7 @@ class GroqModel(BaseModelBackend):
     def run(
         self,
         messages: List[OpenAIMessage],
-    ) -> ChatCompletion:  # type: ignore
+    ) -> ChatCompletion:  # type: ignore[assignment]
         r"""Runs inference of OpenAI chat completion.
 
         Args:
@@ -82,23 +83,23 @@ class GroqModel(BaseModelBackend):
         # data structure. In addition, the tyep ignore is used to avoid the
         # meaningless type error detected by the mypy.
         response = self._client.chat.completions.create(
-            messages=messages,  # type: ignore
+            messages=messages,  # type: ignore[arg-type]
             model=self.model_type.value,
             **self.model_config_dict,
-        )
+        )  # type: ignore[assignment]
 
-        _choices: List[Choice] = []  # type: ignore
+        _choices: List[Choice] = []
         for choice in response.choices:
             choice.message = ChatCompletionMessage(
-                role=choice.message.role,  # type: ignore
+                role=choice.message.role,  # type: ignore[arg-type]
                 content=choice.message.content,
-                tool_calls=choice.message.tool_calls)  # type: ignore
-            _choice = Choice(**choice.__dict__)  # type: ignore
+                tool_calls=choice.message.tool_calls,  # type: ignore[arg-type]
+            )  # type: ignore[assignment]
+            _choice = Choice(**choice.__dict__)
             _choices.append(_choice)
-        response.choices = _choices  # type: ignore
+        response.choices = _choices  # type: ignore[assignment]
 
-        response.usage = CompletionUsage(
-            **response.usage.__dict__)  # type: ignore
+        response.usage = CompletionUsage(**response.usage.__dict__)  # type: ignore[assignment]
         return ChatCompletion(**response.__dict__)
 
     def check_model_config(self):
@@ -111,8 +112,10 @@ class GroqModel(BaseModelBackend):
         """
         for param in self.model_config_dict:
             if param not in GROQ_LLAMA3_API_PARAMS:
-                raise ValueError(f"Unexpected argument `{param}` is "
-                                 "input into Groq Llama3 model backend.")
+                raise ValueError(
+                    f"Unexpected argument `{param}` is "
+                    "input into Groq Llama3 model backend."
+                )
 
     @property
     def stream(self) -> bool:
