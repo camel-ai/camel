@@ -19,7 +19,9 @@ from camel.utils import role_playing_with_function
 def main(model_type=ModelType.GPT_4, chat_turn_limit=10) -> None:
     role_playing_with_function(
         model_type=model_type, chat_turn_limit=chat_turn_limit,
-        task_prompt="I would like use zapier to operate actions."
+        assistant_role_name="function calling operator",
+        user_role_name="human",
+        task_prompt="help me to search Coursera about machine learning."
     )
 
 

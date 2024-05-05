@@ -1,0 +1,90 @@
+openapi: 3.0.1
+info:
+  title: Jobs API
+  description: API for searching and retrieving job information
+  version: '1.0'
+servers:
+  - url: https://jobsearch.vencio.de
+paths:
+  /jobs:
+    get:
+      operationId: searchJobs
+      summary: Get a list of jobs. Output as table. Job details can be found at jobsearch.vencio.de/jobdetails/{hashId}
+      parameters:
+        - in: query
+          name: jobTitle
+          schema:
+            type: string
+          description: Job title
+        - in: query
+          name: employerName
+          schema:
+            type: string
+          description: Employer name
+        - in: query
+          name: city
+          schema:
+            type: string
+          description: City
+        - in: query
+          name: country
+          schema:
+            type: string
+          description: Country
+        - in: query
+          name: entryDateInDays
+          schema:
+            type: integer
+          description: Entry date in days
+        - in: query
+          name: publishedAtInDays
+          schema:
+            type: integer
+          description: Published at in days
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchJobsResponse'
+components:
+  schemas:
+    SearchJobsResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Message regarding the number of jobs found
+        jobs:
+          type: array
+          items:
+            $ref: '#/components/schemas/Job'
+    Job:
+      type: object
+      properties:
+        profession:
+          type: string
+        title:
+          type: string
+        location:
+          type: object
+          properties:
+            city:
+              type: string
+            district:
+              type: string
+            region:
+              type: string
+            country:
+              type: string
+        employer:
+          type: string
+        published_at:
+          type: string
+          format: date
+        entry_date:
+          type: string
+          format: date
+        hashId:
+          type: string

@@ -1,59 +1,73 @@
 import prance
-from typing import Dict, Any, List
-import json
+import requests
+from typing import Dict, Any, List, Callable
 
 from camel.functions import OpenAIFunction
 
 
-def openapi_parse(openapi_spec):
+def parse_openapi_file(openapi_spec):
     # Load the OpenAPI spec
     parser = prance.ResolvingParser(openapi_spec)
     openapi = parser.specification
     return (openapi)
 
 
-def convert_openapi_to_json(api_name: str, openapi: Dict[str, Any]) -> List[Dict[str, Any]]:
-    result = []  # Initialize the result list
+def openapi_spec_to_openai_tool_schema(api_name: str, openapi: Dict[str, Any]) -> List[Dict[str, Any]]:
+    result = []
 
     # Iterate over each path and operation in the OpenAPI spec
     for path, path_item in openapi.get('paths', {}).items():
         for method, operation in path_item.items():
+            if operation.get('deprecated') is True:
+                continue
+
+            # Get the function name from the operationId, or construct it from the API method, and path
+            function_name = f"{api_name}"
+            operation_id = operation.get('operationId')
+            function_name += f"_{operation_id}" if operation_id else f"{method}{path.replace('/', '_')}"
+
+            # Get the description from the operation, or raise an error if it does not exist
+            description = operation.get('description') or operation.get('summary')
+            if not description:
+                raise ValueError("{method} {path} Operation from {api_name} does not have a description or summary.")
+            description = f"{description} This function is from {api_name} API."
+
+            # If the OpenAPI spec has a description, add it to the function description
+            if 'description' in openapi.get('info', {}):
+                description += f" {openapi['info']['description']}"
 
             # Get the parameters for the operation, if any
-            parameters = operation.get('parameters', [])
-
-            properties = {}  # Initialize the properties dictionary
-            required = []  # Initialize the required list
+            params = operation.get('parameters', [])
+            properties = {}
+            required = []
 
             # Iterate over each parameter
-            for parameter in parameters:
-                # Only parameters in path or query need to be inputed by agent
-                if parameter['in'] in ['path', 'query'] and not parameter.get('deprecated', False):
-                    param_name = parameter['name']
-                    properties[param_name] = {}  # Initialize the property dictionary for this parameter
+            for param in params:
+                if not param.get('deprecated', False):
+                    param_name = param['name'] + '_in_' + param['in']
+                    properties[param_name] = {}
 
                     # If the parameter has a description, add it to the property dictionary
-                    if 'description' in parameter:
-                        properties[param_name]['description'] = parameter['description']
+                    if 'description' in param:
+                        properties[param_name]['description'] = param['description']
 
                     # If the parameter has a schema, add it to the property dictionary
-                    if 'schema' in parameter:
+                    if 'schema' in param:
                         # If 'description' exists in the properties dictionary and is not empty, remove 'description' from the schema dictionary
-                        if properties[param_name].get('description') and 'description' in parameter['schema']:
-                            parameter['schema'].pop('description')
-
-                        if 'type' not in parameter['schema']:
-                            parameter['schema']['type'] = 'Any'
-
-                        properties[param_name].update(parameter['schema'])
+                        if properties[param_name].get('description') and 'description' in param['schema']:
+                            param['schema'].pop('description')
+                        properties[param_name].update(param['schema'])
 
                     # If the parameter is required, add it to the required list
-                    if parameter.get('required'):
+                    if param.get('required'):
                         required.append(param_name)
 
                     # If the property dictionary does not have a description, use the parameter name as the description
                     if 'description' not in properties[param_name]:
-                        properties[param_name]['description'] = param_name
+                        properties[param_name]['description'] = param['name']
+
+                    if 'type' not in properties[param_name]:
+                        properties[param_name]['type'] = 'Any'
 
             # Process requestBody if present
             if 'requestBody' in operation:
@@ -68,22 +82,6 @@ def convert_openapi_to_json(api_name: str, openapi: Dict[str, Any]) -> List[Dict
                     properties['requestBody'] = json_schema
                 if 'description' not in properties['requestBody']:
                     properties['requestBody']['description'] = "The request body, with parameters specifically described under the `properties` key"
-
-            # Get the function name from the operationId, or construct it from the API method, and path
-            function_name = f"{api_name}"
-            operation_id = operation.get('operationId')
-            function_name += f"_{operation_id}" if operation_id else f"{method}{path.replace('/', '_')}"
-
-
-            # Get the description from the operation, or raise an error if it does not exist
-            description = operation.get('description') or operation.get('summary')
-            if not description:
-                raise ValueError("Operation does not have a description or summary.")
-            description = f"{description} This function is from {api_name} API."
-
-            # If the OpenAPI spec has a description, add it to the function description
-            if 'description' in openapi.get('info', {}):
-                description += f" {openapi['info']['description']}"
 
             # Construct the function dictionary and add it to the result list
             function = {
@@ -102,14 +100,89 @@ def convert_openapi_to_json(api_name: str, openapi: Dict[str, Any]) -> List[Dict
 
     return result  # Return the result list
 
-openai_schemas = convert_openapi_to_json('zapier', openapi_parse('open_api_try/zapier/openapi.yaml'))
+
+def openapi_function_decorator(base_url, path, method, operation):
+    def inner_decorator(openapi_function):
+        def wrapper(**kwargs):
+            request_url = base_url + path
+            headers = {}
+            params = {}
+            cookies = {}
+
+            # 分配参数到正确位置
+            for param in operation.get('parameters', []):
+                input_param_name = param['name'] + '_in_' + param['in']
+                param_in = param['in']
+                # 传入无关参数不影响函数运行
+                if input_param_name in kwargs:
+                    if param_in == 'path':
+                        request_url = request_url.replace(f"{{{param['name']}}}", str(kwargs[input_param_name]))
+                    elif param_in == 'query':
+                        params[param['name']] = kwargs[input_param_name]
+                    elif param_in == 'header':
+                        headers[param['name']] = kwargs[input_param_name]
+                    elif param_in == 'cookie':
+                        cookies[param['name']] = kwargs[input_param_name]
+
+            if 'requestBody' in operation:
+                request_body = kwargs.get('requestBody', {})
+                content_type_list = list(operation.get('requestBody', {}).get('content', {}).keys())
+                if content_type_list != []:
+                    content_type = content_type_list[0]
+                    headers.update({"Content-Type": content_type})
+
+                # 根据Content-Type来决定如何发送请求体
+                if content_type == "application/json":
+                    response = requests.request(method.upper(), request_url, params=params, headers=headers, cookies=cookies, json=request_body)
+                else:
+                    raise ValueError(f"Unsupported content type: {content_type}")
+            else:
+                # 如果没有requestBody，那么不发送请求体
+                response = requests.request(method.upper(), request_url, params=params, headers=headers, cookies=cookies)
+
+            return response.json()
+        return wrapper
+    return inner_decorator
 
 
-def fake_fun():
-    return True
+def generate_openapi_functions(openapi_spec: Dict[str, Any], api_name: str) -> List[Callable]:
+    # 检查服务器信息
+    servers = openapi_spec.get('servers', [])
+    if not servers:
+        raise ValueError("No server information found in OpenAPI spec.")
+    base_url = servers[0].get('url')  # 使用第一个服务器URL
+
+    # 函数列表
+    functions = []
+
+    # 遍历路径和方法
+    for path, methods in openapi_spec.get('paths', {}).items():
+
+        for method, operation in methods.items():
+            # print(method, operation)
+            operation_id = operation.get('operationId')
+            function_name = f"{api_name}"
+            function_name += f"_{operation_id}" if operation_id else f"{method}{path.replace('/', '_')}"
+
+            @openapi_function_decorator(base_url, path, method, operation)
+            def openapi_function(**kwargs):
+                pass
+
+            # 动态设置函数名称
+            openapi_function.__name__ = function_name
+
+            # 添加到列表
+            functions.append(openapi_function)
+
+    return functions
+
+
+
+openapi_functions_list = generate_openapi_functions(parse_openapi_file('open_api_try\Coursera\openapi.yaml'), 'Coursera')
+openapi_functions_schemas = openapi_spec_to_openai_tool_schema('Coursera', parse_openapi_file('open_api_try/Coursera/openapi.yaml'))
 
 
 OPENAPI_FUNCS: List[OpenAIFunction] = [
-    OpenAIFunction(fake_fun, a_schema)
-    for a_schema in openai_schemas
+    OpenAIFunction(a_func, a_schema)
+    for a_func, a_schema in zip(openapi_functions_list, openapi_functions_schemas)
 ]
