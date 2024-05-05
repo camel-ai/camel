@@ -26,7 +26,11 @@ from camel.types import (
     CompletionUsage,
     ModelType,
 )
-from camel.utils import BaseTokenCounter, OpenAITokenCounter, api_key_required
+from camel.utils import (
+    BaseTokenCounter,
+    GroqLlama3TokenCounter,
+    api_key_required,
+)
 
 
 class GroqModel(BaseModelBackend):
@@ -58,9 +62,7 @@ class GroqModel(BaseModelBackend):
                 tokenization style.
         """
         if not self._token_counter:
-            # Groq API does not provide any token counter, so we use the
-            # OpenAI token counter as a placeholder.
-            self._token_counter = OpenAITokenCounter(ModelType.GPT_3_5_TURBO)
+            self._token_counter = GroqLlama3TokenCounter(self.model_type)
         return self._token_counter
 
     @api_key_required
