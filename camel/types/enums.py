@@ -247,3 +247,10 @@ class OpenAIImageDetailType(Enum):
 class StorageType(Enum):
     MILVUS = "milvus"
     QDRANT = "qdrant"
+
+
+class OpenApiName(Enum):
+    COURSERA = "Coursera"
+    JOBSEARCH = "jobsearch"
+    KLARNA = "klarna"
+    SPEAK = "speak"

@@ -534,7 +534,8 @@ class ChatAgent(BaseAgent):
         func = self.func_dict[func_name]
 
         args_str: str = choice.message.function_call.arguments
-        args = json.loads(args_str.replace("'", "\""))
+        print(args_str)
+        args = json.loads(args_str)
 
         # Pass the extracted arguments to the indicated function
         try:

@@ -1,8 +1,11 @@
 import prance
 import requests
+import importlib
+import os
 from typing import Dict, Any, List, Callable
 
 from camel.functions import OpenAIFunction
+from camel.types import OpenApiName
 
 
 def parse_openapi_file(openapi_spec):
@@ -12,7 +15,7 @@ def parse_openapi_file(openapi_spec):
     return (openapi)
 
 
-def openapi_spec_to_openai_tool_schema(api_name: str, openapi: Dict[str, Any]) -> List[Dict[str, Any]]:
+def openapi_spec2openai_schemas(api_name: str, openapi: Dict[str, Any]) -> List[Dict[str, Any]]:
     result = []
 
     # Iterate over each path and operation in the OpenAPI spec
@@ -177,12 +180,33 @@ def generate_openapi_functions(openapi_spec: Dict[str, Any], api_name: str) -> L
     return functions
 
 
+def combine_all_functions_schemas():
+    combined_openapi_functions_list = []
+    combined_openapi_functions_schemas = []
 
-openapi_functions_list = generate_openapi_functions(parse_openapi_file('open_api_try\Coursera\openapi.yaml'), 'Coursera')
-openapi_functions_schemas = openapi_spec_to_openai_tool_schema('Coursera', parse_openapi_file('open_api_try/Coursera/openapi.yaml'))
+    for api_name in OpenApiName:
+        # 解析每个API的OpenAPI规范
+        current_dir = os.path.dirname(__file__)
+        spec_file_path = os.path.join(current_dir, 'open_api_specs',
+                                      f'{api_name.value}', 'openapi.yaml')
+
+        openapi = parse_openapi_file(spec_file_path)
+
+        # 生成并合并函数列表
+        openapi_functions_list = generate_openapi_functions(openapi, api_name)
+        combined_openapi_functions_list.extend(openapi_functions_list)
+
+        # 生成并合并函数schemas
+        openapi_functions_schemas = openapi_spec2openai_schemas(api_name.value, openapi)
+        combined_openapi_functions_schemas.extend(openapi_functions_schemas)
+
+    return combined_openapi_functions_list, combined_openapi_functions_schemas
+
+
+combined_openapi_functions_list, combined_openapi_functions_schemas = combine_all_functions_schemas()
 
 
 OPENAPI_FUNCS: List[OpenAIFunction] = [
     OpenAIFunction(a_func, a_schema)
-    for a_func, a_schema in zip(openapi_functions_list, openapi_functions_schemas)
+    for a_func, a_schema in zip(combined_openapi_functions_list, combined_openapi_functions_schemas)
 ]

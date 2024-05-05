@@ -22,6 +22,7 @@ from .enums import (
     TaskType,
     TerminationMode,
     VectorDistance,
+    OpenApiName,
 )
 from .openai_types import (
     ChatCompletion,
@@ -57,4 +58,5 @@ __all__ = [
     'CompletionUsage',
     'OpenAIImageType',
     'OpenAIImageDetailType',
+    'OpenApiName',
 ]
