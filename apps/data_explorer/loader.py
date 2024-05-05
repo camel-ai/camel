@@ -30,11 +30,12 @@ AllChats = Dict[str, Any]
 Datasets = Dict[str, AllChats]
 
 REPO_ROOT = os.path.realpath(
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.."))
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..")
+)
 
 
 def parse(raw_chat: ChatHistory) -> Union[ParsedChatHistory, None]:
-    """ Gets the JSON raw chat data, validates it and transforms
+    """Gets the JSON raw chat data, validates it and transforms
         into an easy to work with form.
 
     Args:
@@ -93,7 +94,7 @@ def parse(raw_chat: ChatHistory) -> Union[ParsedChatHistory, None]:
 
 
 def load_zip(zip_path: str) -> AllChats:
-    """ Load all JSONs from a zip file and parse them.
+    """Load all JSONs from a zip file and parse them.
 
     Args:
         path (str): path to the ZIP file.
@@ -116,8 +117,8 @@ def load_zip(zip_path: str) -> AllChats:
     for parsed in parsed_list:
         assistant_roles_set.add(parsed['assistant_role'])
         user_roles_set.add(parsed['user_role'])
-    assistant_roles = list(sorted(assistant_roles_set))
-    user_roles = list(sorted(user_roles_set))
+    assistant_roles = sorted(assistant_roles_set)
+    user_roles = sorted(user_roles_set)
     matrix: Dict[Tuple[str, str], Dict[str, Dict]] = dict()
     for parsed in parsed_list:
         key = (parsed['assistant_role'], parsed['user_role'])
@@ -140,7 +141,7 @@ def load_zip(zip_path: str) -> AllChats:
 
 
 def load_datasets(path: Optional[str] = None) -> Datasets:
-    """ Load all JSONs from a set of zip files and parse them.
+    """Load all JSONs from a set of zip files and parse them.
 
     Args:
         path (str): path to the folder with ZIP datasets.

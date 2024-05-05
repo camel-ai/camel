@@ -26,8 +26,9 @@ from camel.utils import BaseTokenCounter, OpenAITokenCounter, api_key_required
 class OpenAIModel(BaseModelBackend):
     r"""OpenAI API in a unified BaseModelBackend interface."""
 
-    def __init__(self, model_type: ModelType,
-                 model_config_dict: Dict[str, Any]) -> None:
+    def __init__(
+        self, model_type: ModelType, model_config_dict: Dict[str, Any]
+    ) -> None:
         r"""Constructor for OpenAI backend.
 
         Args:
@@ -86,8 +87,10 @@ class OpenAIModel(BaseModelBackend):
         """
         for param in self.model_config_dict:
             if param not in OPENAI_API_PARAMS_WITH_FUNCTIONS:
-                raise ValueError(f"Unexpected argument `{param}` is "
-                                 "input into OpenAI model backend.")
+                raise ValueError(
+                    f"Unexpected argument `{param}` is "
+                    "input into OpenAI model backend."
+                )
 
     @property
     def stream(self) -> bool:

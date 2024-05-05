@@ -67,8 +67,10 @@ def test_docx_file_with_multiple_pages():
     assert docx_file.name == "test.docx"
     assert len(docx_file.docs) == 1
     # Access 'page_content' from the dictionary in the docs list
-    assert (docx_file.docs[0]["page_content"] ==
-            "Hello World 1\nHello World 2\nHello World 3")
+    assert (
+        docx_file.docs[0]["page_content"]
+        == "Hello World 1\nHello World 2\nHello World 3"
+    )
 
 
 def test_pdf_file_with_single_page():
@@ -150,8 +152,10 @@ def test_read_file():
         assert file_obj.name == f"test_hello{ext}"
         assert len(file_obj.docs) == 1
         # Access 'page_content' from the dictionary in the docs list
-        assert (file_obj.docs[0]["page_content"] == "Hello World"
-                or '{"message": "Hello World"}')
+        assert (
+            file_obj.docs[0]["page_content"] == "Hello World"
+            or '{"message": "Hello World"}'
+        )
 
 
 # Test that read_file raises a NotImplementedError for unsupported file types

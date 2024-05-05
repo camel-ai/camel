@@ -92,8 +92,8 @@ Whenever you add, update, or delete any dependencies in `pyproject.toml`, please
 ### Linting & Formatting ✨
 
 ```bash
-flake8
-isort .
+poetry run ruff check .
+poetry run ruff format .
 ```
 
 For extra validation of type hints:

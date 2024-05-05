@@ -18,7 +18,7 @@ from anthropic import Anthropic
 from anthropic._types import NOT_GIVEN
 
 from camel.configs import ANTHROPIC_API_PARAMS
-from camel.models import BaseModelBackend
+from camel.models.base_model import BaseModelBackend
 from camel.types import ChatCompletion, ModelType
 from camel.utils import (
     AnthropicTokenCounter,
@@ -30,8 +30,9 @@ from camel.utils import (
 class AnthropicModel(BaseModelBackend):
     r"""Anthropic API in a unified BaseModelBackend interface."""
 
-    def __init__(self, model_type: ModelType,
-                 model_config_dict: Dict[str, Any]) -> None:
+    def __init__(
+        self, model_type: ModelType, model_config_dict: Dict[str, Any]
+    ) -> None:
         super().__init__(model_type, model_config_dict)
         self.client = Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
         self._token_counter: Optional[BaseTokenCounter] = None
@@ -39,13 +40,21 @@ class AnthropicModel(BaseModelBackend):
     def _convert_response_from_anthropic_to_openai(self, response):
         # openai ^1.0.0 format, reference openai/types/chat/chat_completion.py
         obj = ChatCompletion.construct(
-            id=None, choices=[
+            id=None,
+            choices=[
                 dict(
-                    index=0, message={
+                    index=0,
+                    message={
                         "role": "assistant",
-                        "content": response.content[0].text
-                    }, finish_reason=response.stop_reason)
-            ], created=None, model=response.model, object="chat.completion")
+                        "content": response.content[0].text,
+                    },
+                    finish_reason=response.stop_reason,
+                )
+            ],
+            created=None,
+            model=response.model,
+            object="chat.completion",
+        )
         return obj
 
     @property
@@ -87,12 +96,15 @@ class AnthropicModel(BaseModelBackend):
         """
 
         if messages[0]["role"] == "system":
-            sys_msg = messages.pop(0)["content"]  # type: ignore
+            sys_msg = messages.pop(0)["content"]
         else:
             sys_msg = NOT_GIVEN
-        response = self.client.messages.create(  # type: ignore
-            model=self.model_type.value, system=sys_msg, messages=messages,
-            **self.model_config_dict)
+        response = self.client.messages.create(
+            model=self.model_type.value,
+            system=sys_msg,
+            messages=messages,
+            **self.model_config_dict,
+        )
 
         # format response to openai format
         response = self._convert_response_from_anthropic_to_openai(response)
@@ -110,8 +122,10 @@ class AnthropicModel(BaseModelBackend):
         """
         for param in self.model_config_dict:
             if param not in ANTHROPIC_API_PARAMS:
-                raise ValueError(f"Unexpected argument `{param}` is "
-                                 "input into Anthropic model backend.")
+                raise ValueError(
+                    f"Unexpected argument `{param}` is "
+                    "input into Anthropic model backend."
+                )
 
     @property
     def stream(self) -> bool:

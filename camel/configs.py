@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 
 
 @dataclass(frozen=True)
-class BaseConfig(ABC):
+class BaseConfig(ABC):  # noqa: B024
     pass
 
 
@@ -86,6 +86,7 @@ class ChatGPTConfig(BaseConfig):
             which can help OpenAI to monitor and detect abuse.
             (default: :obj:`""`)
     """
+
     temperature: float = 0.2  # openai default: 1.0
     top_p: float = 1.0
     n: int = 1
@@ -137,6 +138,7 @@ class ChatGPTVisionConfig(BaseConfig):
             which can help OpenAI to monitor and detect abuse.
             (default: :obj:`""`)
     """
+
     temperature: float = 0.2  # openai default: 1.0
     top_p: float = 1.0
     n: int = 1
@@ -163,6 +165,7 @@ class FunctionCallingConfig(ChatGPTConfig):
             :obj:`{"name": "my_function"}` forces the model to call that
             function. (default: :obj:`"auto"`)
     """
+
     functions: List[Dict[str, Any]] = field(default_factory=list)
     function_call: Union[Dict[str, str], str] = "auto"
 
@@ -212,15 +215,15 @@ class OpenSourceConfig(BaseConfig):
         api_params (ChatGPTConfig): An instance of :obj:ChatGPTConfig to
             contain the arguments to be passed to OpenAI API.
     """
+
     model_path: str
     server_url: str
-    api_params: ChatGPTConfig = ChatGPTConfig()
+    api_params: ChatGPTConfig = field(default_factory=ChatGPTConfig)
 
 
 OPENAI_API_PARAMS = {param for param in asdict(ChatGPTConfig()).keys()}
 OPENAI_API_PARAMS_WITH_FUNCTIONS = {
-    param
-    for param in asdict(FunctionCallingConfig()).keys()
+    param for param in asdict(FunctionCallingConfig()).keys()
 }
 
 
@@ -263,6 +266,7 @@ class AnthropicConfig(BaseConfig):
           using server-sent events.
             (default: :obj:`False`)
     """
+
     max_tokens: int = 256
     stop_sequences: Union[List[str], NotGiven] = NOT_GIVEN
     temperature: float = 1

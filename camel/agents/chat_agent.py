@@ -18,7 +18,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
-from camel.agents import BaseAgent
+from camel.agents.base import BaseAgent
 from camel.configs import ChatGPTConfig, ChatGPTVisionConfig, GroqLLAMA3Config
 from camel.memories import (
     AgentMemory,
@@ -56,6 +56,7 @@ class FunctionCallingRecord:
             the function.
         result (Any): The execution result of calling this function.
     """
+
     func_name: str
     args: Dict[str, Any]
     result: Any
@@ -67,9 +68,11 @@ class FunctionCallingRecord:
             str: Modified string to represent the function calling.
         """
 
-        return (f"Function Execution: {self.func_name}\n"
-                f"\tArgs: {self.args}\n"
-                f"\tResult: {self.result}")
+        return (
+            f"Function Execution: {self.func_name}\n"
+            f"\tArgs: {self.args}\n"
+            f"\tResult: {self.result}"
+        )
 
 
 class ChatAgent(BaseAgent):
@@ -112,7 +115,6 @@ class ChatAgent(BaseAgent):
         function_list: Optional[List[OpenAIFunction]] = None,
         response_terminators: Optional[List[ResponseTerminator]] = None,
     ) -> None:
-
         self.orig_sys_message: BaseMessage = system_message
         self.system_message = system_message
         self.role_name: str = system_message.role_name
@@ -121,8 +123,9 @@ class ChatAgent(BaseAgent):
         if self.output_language is not None:
             self.set_output_language(self.output_language)
 
-        self.model_type: ModelType = (model_type if model_type is not None else
-                                      ModelType.GPT_3_5_TURBO)
+        self.model_type: ModelType = (
+            model_type if model_type is not None else ModelType.GPT_3_5_TURBO
+        )
 
         self.func_dict: Dict[str, Callable] = {}
         if function_list is not None:
@@ -131,18 +134,24 @@ class ChatAgent(BaseAgent):
 
         self.model_config: BaseConfig
         if self.model_type == ModelType.GPT_4_TURBO_VISION:
-            if model_config is not None and \
-                    not isinstance(model_config, ChatGPTVisionConfig):
-                raise ValueError("Please use `ChatGPTVisionConfig` as "
-                                 "the `model_config` when `model_type` "
-                                 "is `GPT_4_TURBO_VISION`")
+            if model_config is not None and not isinstance(
+                model_config, ChatGPTVisionConfig
+            ):
+                raise ValueError(
+                    "Please use `ChatGPTVisionConfig` as "
+                    "the `model_config` when `model_type` "
+                    "is `GPT_4_TURBO_VISION`"
+                )
             self.model_config = model_config or ChatGPTVisionConfig()
         else:
-            if model_config is not None and \
-                    isinstance(model_config, ChatGPTVisionConfig):
-                raise ValueError("Please don't use `ChatGPTVisionConfig` as "
-                                 "the `model_config` when `model_type` "
-                                 "is not `GPT_4_TURBO_VISION`")
+            if model_config is not None and isinstance(
+                model_config, ChatGPTVisionConfig
+            ):
+                raise ValueError(
+                    "Please don't use `ChatGPTVisionConfig` as "
+                    "the `model_config` when `model_type` "
+                    "is not `GPT_4_TURBO_VISION`"
+                )
             if self.model_type.is_groq:
                 # Since the configuration of Groq models is different from
                 # OpenAI models, we need to use `if`.
@@ -151,14 +160,16 @@ class ChatAgent(BaseAgent):
                 self.model_config = model_config or ChatGPTConfig()
 
         self.model_backend: BaseModelBackend = ModelFactory.create(
-            self.model_type, self.model_config.__dict__)
+            self.model_type, self.model_config.__dict__
+        )
         self.model_token_limit = token_limit or self.model_backend.token_limit
         context_creator = ScoreBasedContextCreator(
             self.model_backend.token_counter,
             self.model_token_limit,
         )
         self.memory: AgentMemory = memory or ChatHistoryMemory(
-            context_creator, window_size=message_window_size)
+            context_creator, window_size=message_window_size
+        )
 
         self.terminated: bool = False
         self.response_terminators = response_terminators or []
@@ -205,8 +216,9 @@ class ChatAgent(BaseAgent):
         """
         return len(self.func_dict) > 0
 
-    def update_memory(self, message: BaseMessage,
-                      role: OpenAIBackendRole) -> None:
+    def update_memory(
+        self, message: BaseMessage, role: OpenAIBackendRole
+    ) -> None:
         r"""Updates the agent memory with a new message.
 
         Args:
@@ -229,15 +241,21 @@ class ChatAgent(BaseAgent):
             BaseMessage: The updated system message object.
         """
         self.output_language = output_language
-        content = (self.orig_sys_message.content +
-                   ("\nRegardless of the input language, "
-                    f"you must output text in {output_language}."))
+        content = self.orig_sys_message.content + (
+            "\nRegardless of the input language, "
+            f"you must output text in {output_language}."
+        )
         self.system_message = self.system_message.create_new_instance(content)
         return self.system_message
 
-    def get_info(self, id: Optional[str], usage: Optional[Dict[str, int]],
-                 termination_reasons: List[str], num_tokens: int,
-                 called_funcs: List[FunctionCallingRecord]) -> Dict[str, Any]:
+    def get_info(
+        self,
+        id: Optional[str],
+        usage: Optional[Dict[str, int]],
+        termination_reasons: List[str],
+        num_tokens: int,
+        called_funcs: List[FunctionCallingRecord],
+    ) -> Dict[str, Any]:
         r"""Returns a dictionary containing information about the chat session.
 
         Args:
@@ -266,8 +284,9 @@ class ChatAgent(BaseAgent):
         r"""Initializes the stored messages list with the initial system
         message.
         """
-        system_record = MemoryRecord(self.system_message,
-                                     OpenAIBackendRole.SYSTEM)
+        system_record = MemoryRecord(
+            self.system_message, OpenAIBackendRole.SYSTEM
+        )
         self.memory.clear()
         self.memory.write_record(system_record)
 
@@ -312,29 +331,36 @@ class ChatAgent(BaseAgent):
             try:
                 openai_messages, num_tokens = self.memory.get_context()
             except RuntimeError as e:
-                return self.step_token_exceed(e.args[1], called_funcs,
-                                              "max_tokens_exceeded")
+                return self.step_token_exceed(
+                    e.args[1], called_funcs, "max_tokens_exceeded"
+                )
 
             # Obtain the model's response
             response = self.model_backend.run(openai_messages)
 
             if isinstance(response, ChatCompletion):
                 output_messages, finish_reasons, usage_dict, response_id = (
-                    self.handle_batch_response(response))
+                    self.handle_batch_response(response)
+                )
             else:
                 output_messages, finish_reasons, usage_dict, response_id = (
-                    self.handle_stream_response(response, num_tokens))
+                    self.handle_stream_response(response, num_tokens)
+                )
 
-            if (self.is_function_calling_enabled()
-                    and finish_reasons[0] == 'function_call'
-                    and isinstance(response, ChatCompletion)):
+            if (
+                self.is_function_calling_enabled()
+                and finish_reasons[0] == 'function_call'
+                and isinstance(response, ChatCompletion)
+            ):
                 # Do function calling
                 func_assistant_msg, func_result_msg, func_record = (
-                    self.step_function_call(response))
+                    self.step_function_call(response)
+                )
 
                 # Update the messages
-                self.update_memory(func_assistant_msg,
-                                   OpenAIBackendRole.ASSISTANT)
+                self.update_memory(
+                    func_assistant_msg, OpenAIBackendRole.ASSISTANT
+                )
                 self.update_memory(func_result_msg, OpenAIBackendRole.FUNCTION)
 
                 # Record the function calling
@@ -351,9 +377,13 @@ class ChatAgent(BaseAgent):
                 ]
                 # Terminate the agent if any of the terminator terminates
                 self.terminated, termination_reason = next(
-                    ((terminated, termination_reason)
-                     for terminated, termination_reason in termination
-                     if terminated), (False, None))
+                    (
+                        (terminated, termination_reason)
+                        for terminated, termination_reason in termination
+                        if terminated
+                    ),
+                    (False, None),
+                )
                 # For now only retain the first termination reason
                 if self.terminated and termination_reason is not None:
                     finish_reasons = [termination_reason] * len(finish_reasons)
@@ -393,8 +423,9 @@ class ChatAgent(BaseAgent):
         finish_reasons = [
             str(choice.finish_reason) for choice in response.choices
         ]
-        usage = (response.usage.model_dump()
-                 if response.usage is not None else {})
+        usage = (
+            response.usage.model_dump() if response.usage is not None else {}
+        )
         return (
             output_messages,
             finish_reasons,
@@ -433,10 +464,12 @@ class ChatAgent(BaseAgent):
                     content_dict[index] += delta.content
                 else:
                     finish_reasons_dict[index] = choice.finish_reason
-                    chat_message = BaseMessage(role_name=self.role_name,
-                                               role_type=self.role_type,
-                                               meta_dict=dict(),
-                                               content=content_dict[index])
+                    chat_message = BaseMessage(
+                        role_name=self.role_name,
+                        role_type=self.role_type,
+                        meta_dict=dict(),
+                        content=content_dict[index],
+                    )
                     output_messages.append(chat_message)
         finish_reasons = [
             finish_reasons_dict[i] for i in range(len(finish_reasons_dict))
@@ -444,9 +477,12 @@ class ChatAgent(BaseAgent):
         usage_dict = self.get_usage_dict(output_messages, prompt_tokens)
         return output_messages, finish_reasons, usage_dict, response_id
 
-    def step_token_exceed(self, num_tokens: int,
-                          called_funcs: List[FunctionCallingRecord],
-                          termination_reason: str) -> ChatAgentResponse:
+    def step_token_exceed(
+        self,
+        num_tokens: int,
+        called_funcs: List[FunctionCallingRecord],
+        termination_reason: str,
+    ) -> ChatAgentResponse:
         r"""Return trivial response containing number of tokens and information
         of called functions when the number of tokens exceeds.
 
@@ -480,8 +516,9 @@ class ChatAgent(BaseAgent):
     def step_function_call(
         self,
         response: ChatCompletion,
-    ) -> Tuple[FunctionCallingMessage, FunctionCallingMessage,
-               FunctionCallingRecord]:
+    ) -> Tuple[
+        FunctionCallingMessage, FunctionCallingMessage, FunctionCallingRecord
+    ]:
         r"""Execute the function with arguments following the model's response.
 
         Args:
@@ -502,7 +539,7 @@ class ChatAgent(BaseAgent):
         func = self.func_dict[func_name]
 
         args_str: str = choice.message.function_call.arguments
-        args = json.loads(args_str.replace("\'", "\""))
+        args = json.loads(args_str.replace("'", "\""))
 
         # Pass the extracted arguments to the indicated function
         try:
@@ -510,7 +547,8 @@ class ChatAgent(BaseAgent):
         except Exception:
             raise ValueError(
                 f"Execution of function {func.__name__} failed with "
-                f"arguments being {args}.")
+                f"arguments being {args}."
+            )
 
         assist_msg = FunctionCallingMessage(
             role_name=self.role_name,
@@ -533,8 +571,9 @@ class ChatAgent(BaseAgent):
         func_record = FunctionCallingRecord(func_name, args, result)
         return assist_msg, func_msg, func_record
 
-    def get_usage_dict(self, output_messages: List[BaseMessage],
-                       prompt_tokens: int) -> Dict[str, int]:
+    def get_usage_dict(
+        self, output_messages: List[BaseMessage], prompt_tokens: int
+    ) -> Dict[str, int]:
         r"""Get usage dictionary when using the stream mode.
 
         Args:
@@ -548,9 +587,11 @@ class ChatAgent(BaseAgent):
         completion_tokens = 0
         for message in output_messages:
             completion_tokens += len(encoding.encode(message.content))
-        usage_dict = dict(completion_tokens=completion_tokens,
-                          prompt_tokens=prompt_tokens,
-                          total_tokens=completion_tokens + prompt_tokens)
+        usage_dict = dict(
+            completion_tokens=completion_tokens,
+            prompt_tokens=prompt_tokens,
+            total_tokens=completion_tokens + prompt_tokens,
+        )
         return usage_dict
 
     def __repr__(self) -> str:

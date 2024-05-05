@@ -32,7 +32,8 @@ def test_process(mock_unstructured_modules):
         'Your parsed content'
     ]
     mock_unstructured_modules.return_value.chunk_elements.return_value = [
-        'Chunk 1', 'Chunk 2'
+        'Chunk 1',
+        'Chunk 2',
     ]
 
     retriever = BM25Retriever()
