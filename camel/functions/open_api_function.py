@@ -55,7 +55,21 @@ def convert_openapi_to_json(api_name: str, openapi: Dict[str, Any]) -> List[Dict
                     if 'description' not in properties[param_name]:
                         properties[param_name]['description'] = param_name
 
-            # Get the function name from the operationId, or construct it from the API name, method, and path
+            # Process requestBody if present
+            if 'requestBody' in operation:
+                properties['requestBody'] = {}
+                requestBody = operation['requestBody']
+                if requestBody.get('required') is True:
+                    required.append('requestBody')
+
+                content = requestBody.get('content', {})
+                json_schema = content.get('application/json', {}).get('schema', {})
+                if json_schema:
+                    properties['requestBody'] = json_schema
+                if 'description' not in properties['requestBody']:
+                    properties['requestBody']['description'] = "The request body, with parameters specifically described under the `properties` key"
+
+            # Get the function name from the operationId, or construct it from the API method, and path
             function_name = f"{api_name}"
             operation_id = operation.get('operationId')
             function_name += f"_{operation_id}" if operation_id else f"{method}{path.replace('/', '_')}"
