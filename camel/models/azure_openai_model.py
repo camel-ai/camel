@@ -16,7 +16,10 @@ from typing import Any, Dict, List, Optional, Union
 
 from openai import AzureOpenAI, Stream
 
-from camel.configs import OPENAI_API_PARAMS_WITH_FUNCTIONS
+from camel.configs import (
+    OPENAI_API_PARAMS_WITH_FUNCTIONS,
+    AZURE_OPENAI_API_BACKEND_PARAMS,
+)
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
@@ -44,9 +47,12 @@ class AzureOpenAIModel(BaseModelBackend):
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into openai.ChatCompletion.create().
             backend_config_dict (Dict[str, Any]): A dictionary that contains
-                the backend configs.(default : {})
+                the backend configs like model_type, deployment_name,
+                endpoint, api_version, etc.(default : {})
         """
         super().__init__(model_type, model_config_dict)
+
+        self.backend_config_dict = backend_config_dict
 
         self.model_type = backend_config_dict.get(
             "model_type", os.environ.get("AZURE_MODEL_TYPE", None))
@@ -59,11 +65,18 @@ class AzureOpenAIModel(BaseModelBackend):
             os.environ.get("AZURE_API_VERSION", "2023-10-01-preview"),
         )
 
-        assert model_type is not None, "Azure model type is not provided."
-        assert (self.deployment_name
-                is not None), "Azure model deployment name is not provided."
-        assert (self.azure_endpoint
-                is not None), "Azure endpoint is not provided."
+        try:
+            assert self.model_type is not None
+        except AssertionError:
+            raise ValueError("Azure model type is not provided.")
+        try:
+            assert self.deployment_name is not None
+        except AssertionError:
+            raise ValueError("Azure model deployment name is not provided.")
+        try:
+            assert self.api_version is not None
+        except AssertionError:
+            raise ValueError("Azure API version is not provided.")
 
         if isinstance(self.model_type, str):
             self.model_type = ModelType[self.model_type.upper()]
@@ -93,7 +106,7 @@ class AzureOpenAIModel(BaseModelBackend):
         self,
         messages: List[OpenAIMessage],
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        r"""Runs inference of OpenAI chat completion.
+        r"""Runs inference of Azure OpenAI chat completion.
 
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
@@ -113,16 +126,31 @@ class AzureOpenAIModel(BaseModelBackend):
 
     def check_model_config(self):
         r"""Check whether the model configuration contains any
-        unexpected arguments to OpenAI API.
+        unexpected arguments to Azure OpenAI API.
 
         Raises:
             ValueError: If the model configuration dictionary contains any
-                unexpected arguments to OpenAI API.
+                unexpected arguments to Azure OpenAI API.
         """
         for param in self.model_config_dict:
             if param not in OPENAI_API_PARAMS_WITH_FUNCTIONS:
                 raise ValueError(f"Unexpected argument `{param}` is "
                                  "input into OpenAI model backend.")
+
+    def check_backend_config(self):
+        r"""Check whether the backend configuration contains any
+        unexpected arguments to Azure OpenAI API.
+
+        Raises:
+            ValueError: If the backend configuration dictionary contains any
+                unexpected arguments to Azure OpenAI API.
+        """
+        for param in self.backend_config_dict:
+            if param not in AZURE_OPENAI_API_BACKEND_PARAMS:
+                raise ValueError(
+                    f"Unexpected argument `{param}` for "
+                    "Azure OpenAI API backend."
+                )
 
     @property
     def stream(self) -> bool:

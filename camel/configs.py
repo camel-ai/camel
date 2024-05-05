@@ -162,3 +162,9 @@ OPENAI_API_PARAMS_WITH_FUNCTIONS = {
     param
     for param in asdict(FunctionCallingConfig()).keys()
 }
+AZURE_OPENAI_API_BACKEND_PARAMS = {
+    "model_type",
+    "deployment_name",
+    "azure_endpoint",
+    "api_version",
+}
