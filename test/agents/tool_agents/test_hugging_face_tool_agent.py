@@ -32,12 +32,15 @@ def test_hugging_face_tool_agent_initialization():
 @pytest.mark.very_slow
 def test_hugging_face_tool_agent_step():
     from PIL.PngImagePlugin import PngImageFile
+
     agent = HuggingFaceToolAgent("hugging_face_tool_agent")
     try:
         result = agent.step("Generate an image of a boat in the water")
     except (binascii.Error, requests.exceptions.ConnectionError) as ex:
-        print("Warning: caught an exception, ignoring it since "
-              f"it is a known issue of Huggingface ({str(ex)})")
+        print(
+            "Warning: caught an exception, ignoring it since "
+            f"it is a known issue of Huggingface ({ex!s})"
+        )
         return
     assert isinstance(result, PngImageFile)
 
@@ -47,12 +50,15 @@ def test_hugging_face_tool_agent_step():
 @pytest.mark.very_slow
 def test_hugging_face_tool_agent_chat():
     from PIL.PngImagePlugin import PngImageFile
+
     agent = HuggingFaceToolAgent("hugging_face_tool_agent")
     try:
         result = agent.chat("Show me an image of a capybara")
     except (binascii.Error, requests.exceptions.ConnectionError) as ex:
-        print("Warning: caught an exception, ignoring it since "
-              f"it is a known issue of Huggingface ({str(ex)})")
+        print(
+            "Warning: caught an exception, ignoring it since "
+            f"it is a known issue of Huggingface ({ex!s})"
+        )
         return
     assert isinstance(result, PngImageFile)
 

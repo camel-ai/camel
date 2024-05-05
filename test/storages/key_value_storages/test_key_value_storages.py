@@ -42,10 +42,7 @@ def test_key_value_storage(storage: BaseKeyValueStorage):
         "key1": "value1",
         "role": RoleType.USER,
         "message": "Do a task",
-        "additional_dict": {
-            "1": 1,
-            "2": 2
-        },
+        "additional_dict": {"1": 1, "2": 2},
     }
     msg2 = {
         "key1": "value2",

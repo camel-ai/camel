@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import re
-from enum import Enum
+from enum import Enum, EnumMeta
 
 
 class ReasoningType(Enum):
@@ -31,18 +31,28 @@ class RoleType(Enum):
 
 
 class ModelType(Enum):
-    GPT_3_5_TURBO = "gpt-3.5-turbo-1106"
-    GPT_3_5_TURBO_16K = "gpt-3.5-turbo-1106"
+    GPT_3_5_TURBO = "gpt-3.5-turbo"
     GPT_4 = "gpt-4"
     GPT_4_32K = "gpt-4-32k"
-    GPT_4_TURBO = "gpt-4-1106-preview"
-    GPT_4_TURBO_VISION = "gpt-4-vision-preview"
+    GPT_4_TURBO = "gpt-4-turbo"
+    GPT_4_TURBO_VISION = "gpt-4-turbo"
 
     STUB = "stub"
 
     LLAMA_2 = "llama-2"
     VICUNA = "vicuna"
     VICUNA_16K = "vicuna-16k"
+
+    # Legacy anthropic models
+    # NOTE: anthropic lagecy models only Claude 2.1 has system prompt support
+    CLAUDE_2_1 = "claude-2.1"
+    CLAUDE_2_0 = "claude-2.0"
+    CLAUDE_INSTANT_1_2 = "claude-instant-1.2"
+
+    #  3 models
+    CLAUDE_3_OPUS = "claude-3-opus-20240229"
+    CLAUDE_3_SONNET = "claude-3-sonnet-20240229"
+    CLAUDE_3_HAIKU = "claude-3-haiku-20240307"
 
     @property
     def value_for_tiktoken(self) -> str:
@@ -53,7 +63,6 @@ class ModelType(Enum):
         r"""Returns whether this type of models is an OpenAI-released model."""
         return self in {
             ModelType.GPT_3_5_TURBO,
-            ModelType.GPT_3_5_TURBO_16K,
             ModelType.GPT_4,
             ModelType.GPT_4_32K,
             ModelType.GPT_4_TURBO,
@@ -70,14 +79,28 @@ class ModelType(Enum):
         }
 
     @property
+    def is_anthropic(self) -> bool:
+        r"""Returns whether this type of models is Anthropic-released model.
+
+        Returns:
+            bool: Whether this type of models is anthropic.
+        """
+        return self in {
+            ModelType.CLAUDE_INSTANT_1_2,
+            ModelType.CLAUDE_2_0,
+            ModelType.CLAUDE_2_1,
+            ModelType.CLAUDE_3_OPUS,
+            ModelType.CLAUDE_3_SONNET,
+            ModelType.CLAUDE_3_HAIKU,
+        }
+
+    @property
     def token_limit(self) -> int:
         r"""Returns the maximum token limit for a given model.
         Returns:
             int: The maximum token limit for the given model.
         """
         if self is ModelType.GPT_3_5_TURBO:
-            return 16385
-        elif self is ModelType.GPT_3_5_TURBO_16K:
             return 16385
         elif self is ModelType.GPT_4:
             return 8192
@@ -96,6 +119,15 @@ class ModelType(Enum):
             return 2048
         elif self is ModelType.VICUNA_16K:
             return 16384
+        if self in {ModelType.CLAUDE_2_0, ModelType.CLAUDE_INSTANT_1_2}:
+            return 100_000
+        elif self in {
+            ModelType.CLAUDE_2_1,
+            ModelType.CLAUDE_3_OPUS,
+            ModelType.CLAUDE_3_SONNET,
+            ModelType.CLAUDE_3_HAIKU,
+        }:
+            return 200_000
         else:
             raise ValueError("Unknown model type")
 
@@ -114,8 +146,10 @@ class ModelType(Enum):
             pattern = r'^vicuna-\d+b-v\d+\.\d+-16k$'
             return bool(re.match(pattern, model_name))
         elif self is ModelType.LLAMA_2:
-            return (self.value in model_name.lower()
-                    or "llama2" in model_name.lower())
+            return (
+                self.value in model_name.lower()
+                or "llama2" in model_name.lower()
+            )
         else:
             return self.value in model_name.lower()
 
@@ -162,6 +196,7 @@ class TaskType(Enum):
     EVALUATION = "evaluation"
     SOLUTION_EXTRACTION = "solution_extraction"
     ROLE_DESCRIPTION = "role_description"
+    OBJECT_RECOGNITION = "object_recognition"
     DEFAULT = "default"
 
 
@@ -188,6 +223,32 @@ class OpenAIBackendRole(Enum):
 class TerminationMode(Enum):
     ANY = "any"
     ALL = "all"
+
+
+class OpenAIImageTypeMeta(EnumMeta):
+    def __contains__(cls, image_type: object) -> bool:
+        try:
+            cls(image_type)
+        except ValueError:
+            return False
+        return True
+
+
+class OpenAIImageType(Enum, metaclass=OpenAIImageTypeMeta):
+    r"""Image types supported by OpenAI vision model."""
+
+    # https://platform.openai.com/docs/guides/vision
+    PNG = "png"
+    JPEG = "jpeg"
+    JPG = "jpg"
+    WEBP = "webp"
+    GIF = "gif"
+
+
+class OpenAIImageDetailType(Enum):
+    AUTO = "auto"
+    LOW = "low"
+    HIGH = "high"
 
 
 class StorageType(Enum):

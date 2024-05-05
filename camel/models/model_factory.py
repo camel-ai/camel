@@ -13,12 +13,11 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Dict
 
-from camel.models import (
-    BaseModelBackend,
-    OpenAIModel,
-    OpenSourceModel,
-    StubModel,
-)
+from camel.models.anthropic_model import AnthropicModel
+from camel.models.base_model import BaseModelBackend
+from camel.models.open_source_model import OpenSourceModel
+from camel.models.openai_model import OpenAIModel
+from camel.models.stub_model import StubModel
 from camel.types import ModelType
 
 
@@ -30,8 +29,9 @@ class ModelFactory:
     """
 
     @staticmethod
-    def create(model_type: ModelType,
-               model_config_dict: Dict) -> BaseModelBackend:
+    def create(
+        model_type: ModelType, model_config_dict: Dict
+    ) -> BaseModelBackend:
         r"""Creates an instance of `BaseModelBackend` of the specified type.
 
         Args:
@@ -52,6 +52,8 @@ class ModelFactory:
             model_class = StubModel
         elif model_type.is_open_source:
             model_class = OpenSourceModel
+        elif model_type.is_anthropic:
+            model_class = AnthropicModel
         else:
             raise ValueError(f"Unknown model type `{model_type}` is input")
 

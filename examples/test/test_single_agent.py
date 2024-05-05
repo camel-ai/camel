@@ -20,10 +20,13 @@ import examples.misalignment.single_agent
 import examples.single_agent
 from camel.types import ModelType
 
-parametrize = pytest.mark.parametrize('model', [
-    ModelType.STUB,
-    pytest.param(None, marks=pytest.mark.model_backend),
-])
+parametrize = pytest.mark.parametrize(
+    'model',
+    [
+        ModelType.STUB,
+        pytest.param(None, marks=pytest.mark.model_backend),
+    ],
+)
 
 
 @parametrize

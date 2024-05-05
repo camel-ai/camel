@@ -27,15 +27,23 @@ from camel.prompts import SolutionExtractionPromptTemplateDict
 from camel.types import ModelType, RoleType
 
 parser = argparse.ArgumentParser(
-    description='Arguments for conversation summarization.')
-parser.add_argument('--json_dir', type=str,
-                    help='Directory containing original json files',
-                    default='../camel/camel_data/ai_society')
+    description='Arguments for conversation summarization.'
+)
 parser.add_argument(
-    '--solution_dir', type=str, help='Directory for solution json files',
-    default='../camel/camel_data/ai_society_solution_extraction')
-parser.add_argument('--seed', type=int, help='Seed for reproducibility',
-                    default=10)
+    '--json_dir',
+    type=str,
+    help='Directory containing original json files',
+    default='../camel/camel_data/ai_society',
+)
+parser.add_argument(
+    '--solution_dir',
+    type=str,
+    help='Directory for solution json files',
+    default='../camel/camel_data/ai_society_solution_extraction',
+)
+parser.add_argument(
+    '--seed', type=int, help='Seed for reproducibility', default=10
+)
 
 
 def flatten_conversation(conversation: Dict) -> str:
@@ -84,14 +92,19 @@ def flatten_conversation(conversation: Dict) -> str:
     messages = []
     for i in range(1, num_messages + 1):
         if conversation[f'message_{i}']['role_name'] == role_1:
-            message = f"User ({role_1}): " + conversation[f'message_{i}'][
-                'content']
+            message = (
+                f"User ({role_1}): " + conversation[f'message_{i}']['content']
+            )
         elif conversation[f'message_{i}']['role_name'] == role_2:
-            message = f"Assistant ({role_2}): " + conversation[f'message_{i}'][
-                'content']
+            message = (
+                f"Assistant ({role_2}): "
+                + conversation[f'message_{i}']['content']
+            )
         else:
-            raise ValueError("Unknown role name: "
-                             f"{conversation[f'message_{i}']['role_name']}")
+            raise ValueError(
+                "Unknown role name: "
+                f"{conversation[f'message_{i}']['role_name']}"
+            )
         messages.append(message)
 
     joined_messages = '\n'.join(messages)
@@ -108,14 +121,18 @@ def format_combination(combination: Tuple[int, int, int]):
     return f"{assistant_role_str}_{user_role_str}_{task_str}"
 
 
-def solution_extraction(conversation: Dict, flattened_conversation: str,
-                        file_name: str, args: argparse.Namespace) -> None:
-
+def solution_extraction(
+    conversation: Dict,
+    flattened_conversation: str,
+    file_name: str,
+    args: argparse.Namespace,
+) -> None:
     solution_extraction_template = SolutionExtractionPromptTemplateDict()
     assistant_sys_msg_prompt = solution_extraction_template[RoleType.ASSISTANT]
 
     assistant_sys_msg = BaseMessage.make_assistant_message(
-        role_name="Solution Extractor", content=assistant_sys_msg_prompt)
+        role_name="Solution Extractor", content=assistant_sys_msg_prompt
+    )
 
     # We use GPT4 because it has a longer context length
     agent = ChatAgent(assistant_sys_msg, model_type=ModelType.GPT_4)
@@ -156,25 +173,28 @@ def main():
     # Randomly subsample `subsample_num_assistant_roles`
     # of the total assistant roles
     subsampled_assistant_roles = random.sample(
-        range(1, total_num_assistant_roles + 1), subsample_num_assistant_roles)
+        range(1, total_num_assistant_roles + 1), subsample_num_assistant_roles
+    )
 
     # Randomly subsample `subsample_num_user_roles` of the total user roles
-    subsampled_user_roles = random.sample(range(1, total_num_user_roles + 1),
-                                          subsample_num_user_roles)
+    subsampled_user_roles = random.sample(
+        range(1, total_num_user_roles + 1), subsample_num_user_roles
+    )
 
     # Randomly subsample `subsample_num_tasks` of the total tasks
-    subsampled_tasks = random.sample(range(1, total_num_tasks + 1),
-                                     subsample_num_tasks)
+    subsampled_tasks = random.sample(
+        range(1, total_num_tasks + 1), subsample_num_tasks
+    )
 
     file_names = list(
-        itertools.product(subsampled_assistant_roles, subsampled_user_roles,
-                          subsampled_tasks))
+        itertools.product(
+            subsampled_assistant_roles, subsampled_user_roles, subsampled_tasks
+        )
+    )
 
     # Formatting is needed to match the names of the original
     # generated JSON files xxx_xxx_xxx.json
-    file_names = [
-        format_combination(combination) for combination in file_names
-    ]
+    file_names = [format_combination(combination) for combination in file_names]
 
     # Check that all files exist
     for file_name in file_names:
@@ -191,8 +211,14 @@ def main():
                 conversation = json.load(f)
             flattened_conversation = flatten_conversation(conversation)
             futures.append(
-                executor.submit(solution_extraction, conversation,
-                                flattened_conversation, file_name, args))
+                executor.submit(
+                    solution_extraction,
+                    conversation,
+                    flattened_conversation,
+                    file_name,
+                    args,
+                )
+            )
 
         for future in concurrent.futures.as_completed(futures):
             try:

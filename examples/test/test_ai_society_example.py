@@ -22,23 +22,25 @@ from camel.types import ModelType
 
 def test_ai_society_role_playing_example():
     with patch('time.sleep', return_value=None):
-        examples.ai_society.role_playing.main(ModelType.STUB,
-                                              chat_turn_limit=2)
+        examples.ai_society.role_playing.main(ModelType.STUB, chat_turn_limit=2)
 
 
 def test_ai_society_role_playing_by_react():
     with patch('time.sleep', return_value=None):
-        examples.ai_society.role_playing_by_react.main(ModelType.STUB,
-                                                       chat_turn_limit=2)
+        examples.ai_society.role_playing_by_react.main(
+            ModelType.STUB, chat_turn_limit=2
+        )
 
 
 def test_role_playing_with_function_example():
     with patch('time.sleep', return_value=None):
         examples.function_call.role_playing_with_function.main(
-            ModelType.STUB, chat_turn_limit=2)
+            ModelType.STUB, chat_turn_limit=2
+        )
 
 
 def test_role_playing_with_open_source_model():
     with patch('time.sleep', return_value=None):
         examples.open_source_models.role_playing_with_open_source_model.main(
-            ModelType.STUB, chat_turn_limit=2)
+            ModelType.STUB, chat_turn_limit=2
+        )
