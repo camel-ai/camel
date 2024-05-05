@@ -38,7 +38,7 @@ def test_image_embed_list_with_valid_input(VLM_instance):
     assert isinstance(embeddings, list)
     assert len(embeddings) == 2
     for e in embeddings:
-        assert e.shape == VLM_instance.get_output_dim()
+        assert len(e) == VLM_instance.get_output_dim()
 
 
 def test_image_embed_list_with_empty_input(VLM_instance):
@@ -52,7 +52,7 @@ def test_text_embed_list_with_valid_input(VLM_instance):
     assert isinstance(embeddings, list)
     assert len(embeddings) == 2
     for e in embeddings:
-        assert e.shape == VLM_instance.get_output_dim()
+        assert len(e) == VLM_instance.get_output_dim()
 
 
 def test_text_embed_list_with_empty_input(VLM_instance):
@@ -69,7 +69,7 @@ def test_mixed_embed_list_with_valid_input(VLM_instance):
     assert isinstance(embeddings, list)
     assert len(embeddings) == 3
     for e in embeddings:
-        assert e.shape == VLM_instance.get_output_dim()
+        assert len(e) == VLM_instance.get_output_dim()
 
 
 def test_get_output_dim(VLM_instance):
