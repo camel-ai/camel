@@ -102,9 +102,7 @@ def search_duckduckgo(
     responses = []
 
     try:
-        results = [
-            r for r in ddgs.text(keywords=query, max_results=max_results)
-        ]
+        results = ddgs.text(keywords=query, max_results=max_results)
 
         # Iterate over results found
         for i, result in enumerate(results, start=1):
@@ -237,18 +235,21 @@ def text_extract_from_web(url: str) -> str:
     Returns:
         str: All texts extract from the web.
     """
-    import requests
-    from newspaper import Article
-
     try:
+        import requests
+        from newspaper import Article
+
         # Request the target page
         article = Article(url)
         article.download()
         article.parse()
-        text = article.text.replace("\n", "")
+        text = article.text
 
-    except requests.RequestException:
-        text = f"can't access {url}"
+    except requests.RequestException as e:
+        text = f"Can't access {url}, error: {e}"
+
+    except Exception as e:
+        text = f"Can't extract text from {url}, error: {e}"
 
     return text
 
@@ -317,8 +318,8 @@ def summarize_text(text: str, query: str) -> str:
         str: Strings with information.
     """
     summary_prompt = TextPrompt(
-        '''Gather information from this text that relative to the question, but
-         do not directly answer the question.\nquestion: {query}\ntext '''
+        '''Gather information from this text that relative to the question, but 
+do not directly answer the question.\nquestion: {query}\ntext '''
     )
     summary_prompt = summary_prompt.format(query=query)
     # Max length of each chunk
@@ -333,8 +334,9 @@ def summarize_text(text: str, query: str) -> str:
 
     # Final summarise
     final_prompt = TextPrompt(
-        '''Here are some summarized texts which split from one text, Using the
-        information to answer the question: {query}.\n\nText: '''
+        '''Here are some summarized texts which split from one text. Using the information to answer the question.
+If can't find the answer, you must answer "I can not find the answer to the query" and explain why.\n
+Query:\n{query}.\n\nText:\n'''
     )
     final_prompt = final_prompt.format(query=query)
     prompt = final_prompt + results
@@ -356,9 +358,9 @@ def continue_search(query: str, answer: str) -> bool:
     """
     prompt = TextPrompt(
         "Do you think the ANSWER can answer the QUERY? "
-        "Use only 'yes' or 'no' to answer\n"
-        "===== QUERY ====={query}\n\n"
-        "===== ANSWER ====={answer}"
+        "Use only 'yes' or 'no' to answer.\n"
+        "===== QUERY =====\n{query}\n\n"
+        "===== ANSWER =====\n{answer}"
     )
     prompt = prompt.format(query=query, answer=answer)
     reply = prompt_single_step_agent(prompt)
@@ -380,23 +382,25 @@ def search_and_summarize(query: str, search_func: Callable) -> str:
     Returns:
         str: Summarized information from the web.
     """
-    responses = search_func(query)
-    for item in responses:
-        if "url" in item:
-            url = item.get("url")
-            try:
-                extracted_text = text_extract_from_web(str(url))
-            except Exception:
-                continue
-            answer = summarize_text(extracted_text, query)
-            if not continue_search(query=query, answer=answer):
-                return answer
-    return "Failed to find an answer."
+    try:
+        responses = search_func(query)
+        for item in responses:
+            if "url" in item:
+                url = item.get("url")
+                try:
+                    extracted_text = text_extract_from_web(str(url))
+                except Exception:
+                    continue
+                answer = summarize_text(extracted_text, query)
+                if not continue_search(query=query, answer=answer):
+                    return answer
+        return "I can not find the answer to the query."
+    except Exception as e:
+        return f"Failed to search the web: {e}"
 
 
 def choose_search_and_summarize(query: str) -> str:
-    """
-    Choose between Google and DuckDuckGo search based on the availability
+    r"""Query Google or DuckDuckGo search based on the availability
     of Google API credentials, and summarize the results.
 
     Args:
