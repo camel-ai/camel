@@ -13,7 +13,6 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import multiprocessing
 import os
-from typing import Optional
 
 from camel.agents import ChatAgent
 from camel.generators import (
@@ -31,12 +30,12 @@ def generate_tasks(
     task_generator_prompt: str,
     start_token: str = "1.",
     num_tasks: int = 10,
-    role_prompt: Optional[str] = None,
 ) -> None:
     sys_msg_generator = SystemMessageGenerator()
 
-    assistant_sys_msg = sys_msg_generator.from_role(
-        role_type=RoleType.DEFAULT, role_prompt=role_prompt
+    assistant_sys_msg = sys_msg_generator.from_dict(
+        dict(assistant_role="chatbot"),
+        role_tuple=("chatbot", RoleType.ASSISTANT),
     )
     assistant_agent = ChatAgent(assistant_sys_msg, ModelType.GPT_3_5_TURBO)
 
@@ -73,13 +72,10 @@ def main() -> None:
 
     pool = multiprocessing.Pool()
 
-    # TODO: This script is broken and needs to be fixed.
-    generate_tasks_prompt_path = "prompts/misalignment/generate_tasks.txt"
-
     counter = 0
 
-    assistant_role_names_path = "data/misalignment/assistant_roles.txt"
-    user_role_names_path = "data/misalignment/user_roles.txt"
+    assistant_role_names_path = "data/ai_society/assistant_roles.txt"
+    user_role_names_path = "data/ai_society/user_roles.txt"
 
     role_names_generator = RoleNameGenerator(
         assistant_role_names_path=assistant_role_names_path,
@@ -87,7 +83,6 @@ def main() -> None:
     ).from_role_files()
 
     task_generator_prompt_generator = AISocietyTaskPromptGenerator(
-        generate_tasks_prompt_path=generate_tasks_prompt_path,
         num_tasks=num_tasks,
     ).from_role_generator(role_names_generator)
 
