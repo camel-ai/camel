@@ -25,6 +25,7 @@ parser.add_argument(
     "--image_path",
     type=str,
     help="Path to the image for object detection.",
+    required=True,
 )
 
 

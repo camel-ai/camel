@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
 from camel.agents.base import BaseAgent
-from camel.configs import ChatGPTConfig, ChatGPTVisionConfig
+from camel.configs import ChatGPTConfig
 from camel.memories import (
     AgentMemory,
     ChatHistoryMemory,
@@ -44,6 +44,9 @@ if TYPE_CHECKING:
     from camel.configs import BaseConfig
     from camel.functions import OpenAIFunction
     from camel.terminators import ResponseTerminator
+
+_OPENAI_VISION_DEFAULT_MAX_TOKENS = 4096
+_OPENAI_VISION_DEFAULT_STOP = ""
 
 
 @dataclass(frozen=True)
@@ -134,24 +137,31 @@ class ChatAgent(BaseAgent):
 
         self.model_config: BaseConfig
         if self.model_type == ModelType.GPT_4_TURBO_VISION:
-            if model_config is not None and not isinstance(
-                model_config, ChatGPTVisionConfig
-            ):
+            assert model_config is None or isinstance(
+                model_config, ChatGPTConfig
+            )
+            # Now OpenAI GPT-4 vision model requires these params
+            # to be specified in the config, raise error if they
+            # are not specified:
+            if model_config is not None and model_config.stop is None:
                 raise ValueError(
-                    "Please use `ChatGPTVisionConfig` as "
-                    "the `model_config` when `model_type` "
-                    "is `GPT_4_TURBO_VISION`"
+                    "Please specify a value to `stop` in "
+                    "`ChatGPTConfig` when the model type is "
+                    "`GPT_4_TURBO_VISION`"
                 )
-            self.model_config = model_config or ChatGPTVisionConfig()
+            if model_config is not None and model_config.max_tokens is None:
+                raise ValueError(
+                    "Please specify a value to `max_tokens` in "
+                    "`ChatGPTConfig` when the model type is "
+                    "`GPT_4_TURBO_VISION`"
+                )
+            # Now OpenAI GPT-4 vision model requires these params
+            # to be specified, so set to some default values:
+            self.model_config = model_config or ChatGPTConfig(
+                max_tokens=_OPENAI_VISION_DEFAULT_MAX_TOKENS,
+                stop=_OPENAI_VISION_DEFAULT_STOP,
+            )
         else:
-            if model_config is not None and isinstance(
-                model_config, ChatGPTVisionConfig
-            ):
-                raise ValueError(
-                    "Please don't use `ChatGPTVisionConfig` as "
-                    "the `model_config` when `model_type` "
-                    "is not `GPT_4_TURBO_VISION`"
-                )
             self.model_config = model_config or ChatGPTConfig()
 
         self.model_backend: BaseModelBackend = ModelFactory.create(
