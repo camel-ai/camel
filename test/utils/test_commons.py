@@ -89,8 +89,10 @@ def test_to_pascal_mixed_case():
 
 
 def test_to_pascal_with_special_characters():
-    assert to_pascal("snake_case_with_special_characters!@#"
-                     ) == "SnakeCaseWithSpecialCharacters!@#"
+    assert (
+        to_pascal("snake_case_with_special_characters!@#")
+        == "SnakeCaseWithSpecialCharacters!@#"
+    )
 
 
 def test_to_pascal_with_multiple_underscores():

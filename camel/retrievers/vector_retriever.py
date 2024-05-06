@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Optional
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
 from camel.functions import UnstructuredIO
-from camel.retrievers import BaseRetriever
+from camel.retrievers.base import BaseRetriever
 from camel.storages import BaseVectorStorage, VectorDBQuery, VectorRecord
 
 DEFAULT_TOP_K_RESULTS = 1
@@ -34,8 +34,7 @@ class VectorRetriever(BaseRetriever):
             vector embeddings.
     """
 
-    def __init__(self,
-                 embedding_model: Optional[BaseEmbedding] = None) -> None:
+    def __init__(self, embedding_model: Optional[BaseEmbedding] = None) -> None:
         r"""Initializes the retriever class with an optional embedding model.
 
         Args:
@@ -44,10 +43,14 @@ class VectorRetriever(BaseRetriever):
         """
         self.embedding_model = embedding_model or OpenAIEmbedding()
 
-    def process(  # type: ignore
-            self, content_input_path: str, storage: BaseVectorStorage,
-            chunk_type: str = "chunk_by_title", **kwargs: Any) -> None:
-        r""" Processes content from a file or URL, divides it into chunks by
+    def process(  # type: ignore[override]
+        self,
+        content_input_path: str,
+        storage: BaseVectorStorage,
+        chunk_type: str = "chunk_by_title",
+        **kwargs: Any,
+    ) -> None:
+        r"""Processes content from a file or URL, divides it into chunks by
         using `Unstructured IO`, and stores their embeddings in the specified
         vector storage.
 
@@ -60,14 +63,15 @@ class VectorRetriever(BaseRetriever):
         """
         unstructured_modules = UnstructuredIO()
         elements = unstructured_modules.parse_file_or_url(content_input_path)
-        chunks = unstructured_modules.chunk_elements(chunk_type=chunk_type,
-                                                     elements=elements,
-                                                     **kwargs)
+        chunks = unstructured_modules.chunk_elements(
+            chunk_type=chunk_type, elements=elements, **kwargs
+        )
         # Iterate to process and store embeddings, set batch of 50
         for i in range(0, len(chunks), 50):
-            batch_chunks = chunks[i:i + 50]
+            batch_chunks = chunks[i : i + 50]
             batch_vectors = self.embedding_model.embed_list(
-                objs=[str(chunk) for chunk in batch_chunks])
+                objs=[str(chunk) for chunk in batch_chunks]
+            )
 
             records = []
             # Prepare the payload for each vector record, includes the content
@@ -79,19 +83,23 @@ class VectorRetriever(BaseRetriever):
                 combined_dict = {
                     **content_path_info,
                     **chunk_metadata,
-                    **chunk_text
+                    **chunk_text,
                 }
 
                 records.append(
-                    VectorRecord(vector=vector, payload=combined_dict))
+                    VectorRecord(vector=vector, payload=combined_dict)
+                )
 
             storage.add(records=records)
 
-    def query(  # type: ignore
-            self, query: str, storage: BaseVectorStorage,
-            top_k: int = DEFAULT_TOP_K_RESULTS,
-            similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
-            **kwargs: Any) -> List[Dict[str, Any]]:
+    def query(  # type: ignore[override]
+        self,
+        query: str,
+        storage: BaseVectorStorage,
+        top_k: int = DEFAULT_TOP_K_RESULTS,
+        similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
+        **kwargs: Any,
+    ) -> List[Dict[str, Any]]:
         r"""Executes a query in vector storage and compiles the retrieved
         results into a dictionary.
 
@@ -124,29 +132,35 @@ class VectorRetriever(BaseRetriever):
         query_results = storage.query(query=db_query, **kwargs)
 
         if query_results[0].record.payload is None:
-            raise ValueError("Payload of vector storage is None, please check"
-                             " the collection.")
+            raise ValueError(
+                "Payload of vector storage is None, please check"
+                " the collection."
+            )
 
         # format the results
         formatted_results = []
         for result in query_results:
-            if (result.similarity >= similarity_threshold
-                    and result.record.payload is not None):
+            if (
+                result.similarity >= similarity_threshold
+                and result.record.payload is not None
+            ):
                 result_dict = {
                     'similarity score': str(result.similarity),
-                    'content path':
-                    result.record.payload.get('content path', ''),
+                    'content path': result.record.payload.get(
+                        'content path', ''
+                    ),
                     'metadata': result.record.payload.get('metadata', {}),
-                    'text': result.record.payload.get('text', '')
+                    'text': result.record.payload.get('text', ''),
                 }
                 formatted_results.append(result_dict)
 
         content_path = query_results[0].record.payload.get('content path', '')
 
         if not formatted_results:
-            return [{
-                'text':
-                f"""No suitable information retrieved from {content_path} \
+            return [
+                {
+                    'text': f"""No suitable information retrieved from {content_path} \
                 with similarity_threshold = {similarity_threshold}."""
-            }]
+                }
+            ]
         return formatted_results

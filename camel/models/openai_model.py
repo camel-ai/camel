@@ -20,18 +20,15 @@ from camel.configs import OPENAI_API_PARAMS_WITH_FUNCTIONS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
-from camel.utils import (
-    BaseTokenCounter,
-    OpenAITokenCounter,
-    openai_api_key_required,
-)
+from camel.utils import BaseTokenCounter, OpenAITokenCounter, api_key_required
 
 
 class OpenAIModel(BaseModelBackend):
     r"""OpenAI API in a unified BaseModelBackend interface."""
 
-    def __init__(self, model_type: ModelType,
-                 model_config_dict: Dict[str, Any]) -> None:
+    def __init__(
+        self, model_type: ModelType, model_config_dict: Dict[str, Any]
+    ) -> None:
         r"""Constructor for OpenAI backend.
 
         Args:
@@ -57,7 +54,7 @@ class OpenAIModel(BaseModelBackend):
             self._token_counter = OpenAITokenCounter(self.model_type)
         return self._token_counter
 
-    @openai_api_key_required
+    @api_key_required
     def run(
         self,
         messages: List[OpenAIMessage],
@@ -90,8 +87,10 @@ class OpenAIModel(BaseModelBackend):
         """
         for param in self.model_config_dict:
             if param not in OPENAI_API_PARAMS_WITH_FUNCTIONS:
-                raise ValueError(f"Unexpected argument `{param}` is "
-                                 "input into OpenAI model backend.")
+                raise ValueError(
+                    f"Unexpected argument `{param}` is "
+                    "input into OpenAI model backend."
+                )
 
     @property
     def stream(self) -> bool:

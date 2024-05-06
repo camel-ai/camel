@@ -15,7 +15,7 @@ import os
 from typing import Any, Callable, Dict, List
 
 from camel.agents import ChatAgent
-from camel.functions import OpenAIFunction
+from camel.functions.openai_function import OpenAIFunction
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
 
@@ -36,27 +36,32 @@ def search_wiki(entity: str) -> str:
     except ImportError:
         raise ImportError(
             "Please install `wikipedia` first. You can install it by running "
-            "`pip install wikipedia`.")
+            "`pip install wikipedia`."
+        )
 
     result: str
 
     try:
         result = wikipedia.summary(entity, sentences=5, auto_suggest=False)
     except wikipedia.exceptions.DisambiguationError as e:
-        result = wikipedia.summary(e.options[0], sentences=5,
-                                   auto_suggest=False)
+        result = wikipedia.summary(
+            e.options[0], sentences=5, auto_suggest=False
+        )
     except wikipedia.exceptions.PageError:
-        result = ("There is no page in Wikipedia corresponding to entity "
-                  f"{entity}, please specify another word to describe the"
-                  " entity to be searched.")
+        result = (
+            "There is no page in Wikipedia corresponding to entity "
+            f"{entity}, please specify another word to describe the"
+            " entity to be searched."
+        )
     except wikipedia.exceptions.WikipediaException as e:
         result = f"An exception occurred during the search: {e}"
 
     return result
 
 
-def search_duckduckgo(query: str,
-                      max_results: int = 10) -> List[Dict[str, Any]]:
+def search_duckduckgo(
+    query: str, max_results: int = 10
+) -> List[Dict[str, Any]]:
     r"""Use DuckDuckGo search engine to search information for the given query.
 
     This function queries the DuckDuckGo API for related topics to the given
@@ -113,22 +118,23 @@ def search_duckduckgo(query: str,
                 "result_id": i,
                 "title": title,
                 "description": body,
-                "url": url
+                "url": url,
             }
             responses.append(response)
 
     except RequestException as e:
         # Handle specific exceptions or general request exceptions
-        responses.append({"error": f"DuckDuckGo search failed: {str(e)}"})
+        responses.append({"error": f"DuckDuckGo search failed: {e!s}"})
     except Exception as e:
         # Catch-all for any other exceptions that were not anticipated
-        responses.append({"error": f"An unexpected error occurred: {str(e)}"})
+        responses.append({"error": f"An unexpected error occurred: {e!s}"})
 
     return responses
 
 
-def search_google(query: str,
-                  num_result_pages: int = 10) -> List[Dict[str, Any]]:
+def search_google(
+    query: str, num_result_pages: int = 10
+) -> List[Dict[str, Any]]:
     r"""Use Google search engine to search information for the given query.
 
     Args:
@@ -173,9 +179,11 @@ def search_google(query: str,
     num_result_pages = 10
     # Constructing the URL
     # Doc: https://developers.google.com/custom-search/v1/using_rest
-    url = f"https://www.googleapis.com/customsearch/v1?" \
-          f"key={GOOGLE_API_KEY}&cx={SEARCH_ENGINE_ID}&q={query}&start=" \
-          f"{start_page_idx}&lr={search_language}&num={num_result_pages}"
+    url = (
+        f"https://www.googleapis.com/customsearch/v1?"
+        f"key={GOOGLE_API_KEY}&cx={SEARCH_ENGINE_ID}&q={query}&start="
+        f"{start_page_idx}&lr={search_language}&num={num_result_pages}"
+    )
 
     responses = []
     # Fetch the results given the URL
@@ -191,8 +199,9 @@ def search_google(query: str,
             # Iterate over 10 results found
             for i, search_item in enumerate(search_items, start=1):
                 if "og:description" in search_item["pagemap"]["metatags"][0]:
-                    long_description = \
-                        search_item["pagemap"]["metatags"][0]["og:description"]
+                    long_description = search_item["pagemap"]["metatags"][0][
+                        "og:description"
+                    ]
                 else:
                     long_description = "N/A"
                 # Get the page title
@@ -207,7 +216,7 @@ def search_google(query: str,
                     "title": title,
                     "description": snippet,
                     "long_description": long_description,
-                    "url": link
+                    "url": link,
                 }
                 responses.append(response)
         else:
@@ -309,7 +318,8 @@ def summarize_text(text: str, query: str) -> str:
     """
     summary_prompt = TextPrompt(
         '''Gather information from this text that relative to the question, but
-         do not directly answer the question.\nquestion: {query}\ntext ''')
+         do not directly answer the question.\nquestion: {query}\ntext '''
+    )
     summary_prompt = summary_prompt.format(query=query)
     # Max length of each chunk
     max_len = 3000
@@ -324,7 +334,8 @@ def summarize_text(text: str, query: str) -> str:
     # Final summarise
     final_prompt = TextPrompt(
         '''Here are some summarized texts which split from one text, Using the
-        information to answer the question: {query}.\n\nText: ''')
+        information to answer the question: {query}.\n\nText: '''
+    )
     final_prompt = final_prompt.format(query=query)
     prompt = final_prompt + results
 
@@ -343,10 +354,12 @@ def continue_search(query: str, answer: str) -> bool:
     Returns:
         bool: True if the user want to continue search, False otherwise.
     """
-    prompt = TextPrompt("Do you think the ANSWER can answer the QUERY? "
-                        "Use only 'yes' or 'no' to answer\n"
-                        "===== QUERY ====={query}\n\n"
-                        "===== ANSWER ====={answer}")
+    prompt = TextPrompt(
+        "Do you think the ANSWER can answer the QUERY? "
+        "Use only 'yes' or 'no' to answer\n"
+        "===== QUERY ====={query}\n\n"
+        "===== ANSWER ====={answer}"
+    )
     prompt = prompt.format(query=query, answer=answer)
     reply = prompt_single_step_agent(prompt)
     if "yes" in str(reply).lower():
@@ -398,10 +411,11 @@ def choose_search_and_summarize(query: str) -> str:
         return search_and_summarize(query, search_duckduckgo)
 
 
-def search_wolfram_alpha(query: str, is_detailed: bool) -> str:
-    r"""Queries Wolfram|Alpha and returns the result. Wolfram|Alpha is a
-    search engine that uses algorithms, knowledgebase and AI to compute
-    expert-level answers for math, science, society, everyday life and more.
+def query_wolfram_alpha(query: str, is_detailed: bool) -> str:
+    r"""Queries Wolfram|Alpha and returns the result. Wolfram|Alpha is an
+    answer engine developed by Wolfram Research. It is offered as an online
+    service that answers factual queries by computing answers from externally
+    sourced data.
 
     Args:
         query (str): The query to send to Wolfram Alpha.
@@ -415,14 +429,16 @@ def search_wolfram_alpha(query: str, is_detailed: bool) -> str:
         import wolframalpha
     except ImportError:
         raise ImportError(
-            "Please install `wolframalpha` first. You can install it by "
-            "running `pip install wolframalpha`.")
+            "Please install `wolframalpha` first. You can install it by running `pip install wolframalpha`."
+        )
 
     WOLFRAMALPHA_APP_ID = os.environ.get('WOLFRAMALPHA_APP_ID')
     if not WOLFRAMALPHA_APP_ID:
-        raise ValueError("`WOLFRAMALPHA_APP_ID` not found in environment "
-                         "variables. Get `WOLFRAMALPHA_APP_ID` here: "
-                         "`https://products.wolframalpha.com/api/`.")
+        raise ValueError(
+            "`WOLFRAMALPHA_APP_ID` not found in environment "
+            "variables. Get `WOLFRAMALPHA_APP_ID` here: "
+            "`https://products.wolframalpha.com/api/`."
+        )
 
     try:
         client = wolframalpha.Client(WOLFRAMALPHA_APP_ID)
@@ -433,8 +449,7 @@ def search_wolfram_alpha(query: str, is_detailed: bool) -> str:
         if isinstance(e, StopIteration):
             return "Wolfram Alpha wasn't able to answer it"
         else:
-            error_message = (f"Wolfram Alpha wasn't able to answer it"
-                             f"{str(e)}.")
+            error_message = f"Wolfram Alpha wasn't able to answer it" f"{e!s}."
             return error_message
 
     result = f"Assumption:\n{assumption}\n\nAnswer:\n{answer}"
@@ -451,7 +466,6 @@ def search_wolfram_alpha(query: str, is_detailed: bool) -> str:
 
 
 SEARCH_FUNCS: List[OpenAIFunction] = [
-    OpenAIFunction(func)  # type: ignore
-    for func in
-    [search_wiki, choose_search_and_summarize, search_wolfram_alpha]
+    OpenAIFunction(func)  # type: ignore[arg-type]
+    for func in [search_wiki, choose_search_and_summarize, query_wolfram_alpha]
 ]
