@@ -88,7 +88,7 @@ class ChatGPTConfig(BaseConfig):
     frequency_penalty: float = 0.0
     logit_bias: Dict = field(default_factory=dict)
     user: str = ""
-ChatGPTVisionConfig
+
 
 @dataclass(frozen=True)
 class FunctionCallingConfig(ChatGPTConfig):
