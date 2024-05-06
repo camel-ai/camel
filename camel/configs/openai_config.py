@@ -13,19 +13,13 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from abc import ABC
 from dataclasses import asdict, dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Sequence
 
-from anthropic._types import NOT_GIVEN, NotGiven
+from camel.configs.base_config import BaseConfig
 
 if TYPE_CHECKING:
     from camel.functions import OpenAIFunction
-
-
-@dataclass(frozen=True)
-class BaseConfig(ABC):  # noqa: B024
-    pass
 
 
 @dataclass(frozen=True)
@@ -82,11 +76,11 @@ class ChatGPTConfig(BaseConfig):
     top_p: float = 1.0
     n: int = 1
     stream: bool = False
-    stop: Optional[Union[str, Sequence[str]]] = None
-    max_tokens: Optional[int] = None
+    stop: str | Sequence[str] | None = None
+    max_tokens: int | None = None
     presence_penalty: float = 0.0
     frequency_penalty: float = 0.0
-    logit_bias: Dict = field(default_factory=dict)
+    logit_bias: dict = field(default_factory=dict)
     user: str = ""
 
 
@@ -107,15 +101,15 @@ class FunctionCallingConfig(ChatGPTConfig):
             function. (default: :obj:`"auto"`)
     """
 
-    functions: List[Dict[str, Any]] = field(default_factory=list)
-    function_call: Union[Dict[str, str], str] = "auto"
+    functions: list[dict[str, Any]] = field(default_factory=list)
+    function_call: dict[str, str] | str = "auto"
 
     @classmethod
     def from_openai_function_list(
         cls,
-        function_list: List[OpenAIFunction],
-        function_call: Union[Dict[str, str], str] = "auto",
-        kwargs: Optional[Dict[str, Any]] = None,
+        function_list: list[OpenAIFunction],
+        function_call: dict[str, str] | str = "auto",
+        kwargs: dict[str, Any] | None = None,
     ):
         r"""Class method for creating an instance given the function-related
         arguments.
@@ -143,6 +137,12 @@ class FunctionCallingConfig(ChatGPTConfig):
         )
 
 
+OPENAI_API_PARAMS = {param for param in asdict(ChatGPTConfig()).keys()}
+OPENAI_API_PARAMS_WITH_FUNCTIONS = {
+    param for param in asdict(FunctionCallingConfig()).keys()
+}
+
+
 @dataclass(frozen=True)
 class OpenSourceConfig(BaseConfig):
     r"""Defines parameters for setting up open-source models and includes
@@ -160,62 +160,3 @@ class OpenSourceConfig(BaseConfig):
     model_path: str
     server_url: str
     api_params: ChatGPTConfig = field(default_factory=ChatGPTConfig)
-
-
-OPENAI_API_PARAMS = {param for param in asdict(ChatGPTConfig()).keys()}
-OPENAI_API_PARAMS_WITH_FUNCTIONS = {
-    param for param in asdict(FunctionCallingConfig()).keys()
-}
-
-
-@dataclass(frozen=True)
-class AnthropicConfig(BaseConfig):
-    r"""Defines the parameters for generating chat completions using the
-    Anthropic API.
-
-    See: https://docs.anthropic.com/claude/reference/complete_post
-    Args:
-        max_tokens_to_sample (int, optional): The maximum number of tokens to
-            generate before stopping. Note that Anthropic models may stop
-            before reaching this maximum. This parameter only specifies the
-            absolute maximum number of tokens to generate.
-            (default: :obj:`256`)
-        stop_sequences (List[str], optional): Sequences that will cause the
-            model to stop generating completion text. Anthropic models stop
-            on "\n\nHuman:", and may include additional built-in stop sequences
-            in the future. By providing the stop_sequences parameter, you may
-            include additional strings that will cause the model to stop
-            generating.
-        temperature (float, optional): Amount of randomness injected into the
-            response. Defaults to 1. Ranges from 0 to 1. Use temp closer to 0
-            for analytical / multiple choice, and closer to 1 for creative
-            and generative tasks.
-            (default: :obj:`1`)
-        top_p (float, optional): Use nucleus sampling. In nucleus sampling, we
-            compute the cumulative distribution over all the options for each
-            subsequent token in decreasing probability order and cut it off
-            once it reaches a particular probability specified by `top_p`.
-            You should either alter `temperature` or `top_p`,
-            but not both.
-            (default: :obj:`0.7`)
-        top_k (int, optional): Only sample from the top K options for each
-            subsequent token. Used to remove "long tail" low probability
-            responses.
-            (default: :obj:`5`)
-        metadata: An object describing metadata about the request.
-        stream (bool, optional): Whether to incrementally stream the response
-          using server-sent events.
-            (default: :obj:`False`)
-
-    """
-
-    max_tokens: int = 256
-    stop_sequences: Union[List[str], NotGiven] = NOT_GIVEN
-    temperature: float = 1
-    top_p: Union[float, NotGiven] = NOT_GIVEN
-    top_k: Union[int, NotGiven] = NOT_GIVEN
-    metadata: NotGiven = NOT_GIVEN
-    stream: bool = False
-
-
-ANTHROPIC_API_PARAMS = {param for param in asdict(AnthropicConfig()).keys()}
