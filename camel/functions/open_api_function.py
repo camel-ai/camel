@@ -1,6 +1,6 @@
 import prance
 import requests
-import importlib
+import json
 import os
 from typing import Dict, Any, List, Callable
 
@@ -143,7 +143,11 @@ def openapi_function_decorator(base_url, path, method, operation):
                 # 如果没有requestBody，那么不发送请求体
                 response = requests.request(method.upper(), request_url, params=params, headers=headers, cookies=cookies)
 
-            return response.json()
+            try:
+                return response.json()
+            except json.JSONDecodeError:
+                raise ValueError("Response could not be decoded as JSON. Please check the input parameters.")
+
         return wrapper
     return inner_decorator
 
@@ -193,7 +197,7 @@ def combine_all_functions_schemas():
         openapi = parse_openapi_file(spec_file_path)
 
         # 生成并合并函数列表
-        openapi_functions_list = generate_openapi_functions(openapi, api_name)
+        openapi_functions_list = generate_openapi_functions(openapi, api_name.value)
         combined_openapi_functions_list.extend(openapi_functions_list)
 
         # 生成并合并函数schemas
@@ -204,7 +208,8 @@ def combine_all_functions_schemas():
 
 
 combined_openapi_functions_list, combined_openapi_functions_schemas = combine_all_functions_schemas()
-
+for func in combined_openapi_functions_list:
+    print(func.__name__) 
 
 OPENAPI_FUNCS: List[OpenAIFunction] = [
     OpenAIFunction(a_func, a_schema)

@@ -251,6 +251,5 @@ class StorageType(Enum):
 
 class OpenApiName(Enum):
     COURSERA = "Coursera"
-    JOBSEARCH = "jobsearch"
     KLARNA = "klarna"
     SPEAK = "speak"
