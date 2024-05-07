@@ -198,7 +198,6 @@ def test_speak_explainPhrase(get_function):
     }
     mock_response = MagicMock()
     mock_response.json.return_value = mock_response_data
-    # 使用patch装饰器模拟requests.request方法
     with patch('requests.request', return_value=mock_response):
         explain_phrase_request = {
             "foreign_phrase": "no mames",
