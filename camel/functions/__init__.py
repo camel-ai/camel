@@ -12,15 +12,16 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
+# ruff: noqa: I001
 from ..loaders.unstructured_io import UnstructuredIO
 from .google_maps_function import MAP_FUNCS
 from .math_functions import MATH_FUNCS
-from .open_api_function import OPENAPI_FUNCS
 from .openai_function import (
     OpenAIFunction,
     get_openai_function_schema,
     get_openai_tool_schema,
 )
+from .open_api_function import OPENAPI_FUNCS
 from .search_functions import SEARCH_FUNCS
 from .twitter_function import TWITTER_FUNCS
 from .weather_functions import WEATHER_FUNCS
