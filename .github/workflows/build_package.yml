@@ -33,5 +33,6 @@ jobs:
           GOOGLE_API_KEY: "${{ secrets.GOOGLE_API_KEY }}"
           SEARCH_ENGINE_ID: "${{ secrets.SEARCH_ENGINE_ID }}"
           OPENWEATHERMAP_API_KEY: "${{ secrets.OPENWEATHERMAP_API_KEY }}"
+          ANTHROPIC_API_KEY: "${{ secrets.ANTHROPIC_API_KEY }}"
           COHERE_API_KEY: "${{ secrets.COHERE_API_KEY }}"
         run: pytest --fast-test-mode ./test

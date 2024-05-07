@@ -11,68 +11,69 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import List, Optional, Tuple
+import warnings
+from typing import List, Optional
 
-from camel.memories import BaseMemory, ContextRecord, MemoryRecord
-from camel.memories.context_creators import BaseContextCreator
-from camel.messages import OpenAIMessage
+from camel.memories.base import MemoryBlock
+from camel.memories.records import ContextRecord, MemoryRecord
 from camel.storages import BaseKeyValueStorage, InMemoryKeyValueStorage
 from camel.types import OpenAIBackendRole
 
 
-class ChatHistoryMemory(BaseMemory):
-    r"""An implementation of the :obj:`BaseMemory` abstract base class for
+class ChatHistoryBlock(MemoryBlock):
+    r"""An implementation of the :obj:`MemoryBlock` abstract base class for
     maintaining a record of chat histories.
 
-    This memory class helps manage conversation histories with a designated
-    storage mechanism, either provided by the user or using a default
+    This memory block helps manage conversation histories with a key-value
+    storage backend, either provided by the user or using a default
     in-memory storage. It offers a windowed approach to retrieving chat
     histories, allowing users to specify how many recent messages they'd
     like to fetch.
 
-    `ChatHistoryMemory` requires messages to be stored with certain
-    metadata (e.g., `role_at_backend`) to maintain consistency and validate
-    the chat history.
-
     Args:
-        context_creator (BaseContextCreator): A context creator contianing
-            the context limit and the message pruning strategy.
         storage (BaseKeyValueStorage, optional): A storage mechanism for
             storing chat history. If `None`, an :obj:`InMemoryKeyValueStorage`
             will be used. (default: :obj:`None`)
-        window_size (int, optional): Specifies the number of recent chat
-            messages to retrieve. If not provided, the entire chat history
-            will be retrieved. (default: :obj:`None`)
+        keep_rate (float, optional): In historical messages, the score of the
+            last message is 1.0, and with each step taken backward, the score
+            of the message is multiplied by the `keep_rate`. Higher `keep_rate`
+            leads to high possiblity to keep history messages during context
+            creation.
     """
 
     def __init__(
         self,
-        context_creator: BaseContextCreator,
         storage: Optional[BaseKeyValueStorage] = None,
-        window_size: Optional[int] = None,
+        keep_rate: float = 0.9,
     ) -> None:
-        self.context_creator = context_creator
+        if keep_rate > 1 or keep_rate < 0:
+            raise ValueError("`keep_rate` should be in [0,1]")
         self.storage = storage or InMemoryKeyValueStorage()
-        self.window_size = window_size
+        self.keep_rate = keep_rate
 
-    def get_context(self) -> Tuple[List[OpenAIMessage], int]:
-        r"""Gets chat context with a proper size for the agent from the memory
+    def retrieve(
+        self,
+        window_size: Optional[int] = None,
+    ) -> List[ContextRecord]:
+        r"""Retrieves records with a proper size for the agent from the memory
         based on the window size or fetches the entire chat history if no
         window size is specified.
 
+        Args:
+            window_size (int, optional): Specifies the number of recent chat
+                messages to retrieve. If not provided, the entire chat history
+                will be retrieved. (default: :obj:`None`)
+
         Returns:
-            (List[OpenAIMessage], int): A tuple containing the constructed
-                context in OpenAIMessage format and the total token count.
-        Raises:
-            ValueError: If the memory is empty or if the first message in the
-                memory is not a system message.
+            List[ContextRecord]: A list of retrieved records.
         """
         record_dicts = self.storage.load()
         if len(record_dicts) == 0:
-            raise ValueError("The `ChatHistoryMemory` is empty.")
+            warnings.warn("The `ChatHistoryMemory` is empty.")
+            return list()
 
         chat_records: List[MemoryRecord] = []
-        truncate_idx = -self.window_size if self.window_size is not None else 0
+        truncate_idx = -window_size if window_size is not None else 0
         for record_dict in record_dicts[truncate_idx:]:
             chat_records.append(MemoryRecord.from_dict(record_dict))
 
@@ -86,11 +87,11 @@ class ChatHistoryMemory(BaseMemory):
                 output_records.append(ContextRecord(record, 1.0))
             else:
                 # Other messages' score drops down gradually
-                score *= 0.99
+                score *= self.keep_rate
                 output_records.append(ContextRecord(record, score))
 
         output_records.reverse()
-        return self.context_creator.create_context(output_records)
+        return output_records
 
     def write_records(self, records: List[MemoryRecord]) -> None:
         r"""Writes memory records to the memory. Additionally, performs
@@ -106,6 +107,5 @@ class ChatHistoryMemory(BaseMemory):
         self.storage.save(stored_records)
 
     def clear(self) -> None:
-        r"""Clears all chat messages from the memory.
-        """
+        r"""Clears all chat messages from the memory."""
         self.storage.clear()

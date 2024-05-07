@@ -50,19 +50,18 @@ class CohereRerankRetriever(BaseRetriever):
             self.api_key = api_key or os.environ["COHERE_API_KEY"]
         except ValueError as e:
             raise ValueError(
-                "Must pass in cohere api key or specify via COHERE_API_KEY"
-                "environment variable.") from e
+                "Must pass in cohere api key or specify via COHERE_API_KEY environment variable."
+            ) from e
 
         self.co = cohere.Client(self.api_key)
         self.model_name = model_name
 
-    def process(self):
-        r"""Minimal implementation fit with `BaseRetriever`"""
-        pass
-
-    def query(  # type: ignore
-            self, query: str, retrieved_result: List[Dict[str, Any]],
-            top_k: int = DEFAULT_TOP_K_RESULTS) -> List[Dict[str, Any]]:
+    def query(
+        self,
+        query: str,
+        retrieved_result: List[Dict[str, Any]],
+        top_k: int = DEFAULT_TOP_K_RESULTS,
+    ) -> List[Dict[str, Any]]:
         r"""Queries and compiles results using the Cohere re-ranking model.
 
         Args:
@@ -77,13 +76,17 @@ class CohereRerankRetriever(BaseRetriever):
         Returns:
             List[Dict[str, Any]]: Concatenated list of the query results.
         """
-        rerank_results = self.co.rerank(query=query,
-                                        documents=retrieved_result,
-                                        top_n=top_k, model=self.model_name)
+        rerank_results = self.co.rerank(
+            query=query,
+            documents=retrieved_result,
+            top_n=top_k,
+            model=self.model_name,
+        )
         formatted_results = []
         for i in range(0, len(rerank_results.results)):
             selected_chunk = retrieved_result[rerank_results[i].index]
             selected_chunk['similarity score'] = rerank_results[
-                i].relevance_score
+                i
+            ].relevance_score
             formatted_results.append(selected_chunk)
         return formatted_results

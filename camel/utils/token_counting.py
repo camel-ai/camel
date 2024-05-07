@@ -11,11 +11,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from abc import ABC, abstractmethod
-from typing import List
 
-from camel.messages import OpenAIMessage
-from camel.types import ModelType
+from __future__ import annotations
+
+import base64
+from abc import ABC, abstractmethod
+from io import BytesIO
+from math import ceil
+from typing import TYPE_CHECKING, List, Optional
+
+from anthropic import Anthropic
+from PIL import Image
+
+from camel.types import ModelType, OpenAIImageDetailType, OpenAIImageType
+
+if TYPE_CHECKING:
+    from camel.messages import OpenAIMessage
+
+LOW_DETAIL_TOKENS = 85
+FIT_SQUARE_PIXELS = 2048
+SHORTEST_SIDE_PIXELS = 768
+SQUARE_PIXELS = 512
+SQUARE_TOKENS = 170
+EXTRA_TOKENS = 85
 
 
 def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
@@ -45,8 +63,10 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
             content = msg["content"]
             if content:
                 if not isinstance(content, str):
-                    raise ValueError("Currently multimodal context is not "
-                                     "supported by the token counter.")
+                    raise ValueError(
+                        "Currently multimodal context is not "
+                        "supported by the token counter."
+                    )
                 if i == 0:
                     ret += system_prompt + content
                 else:
@@ -64,8 +84,10 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
             role = role_map[msg["role"]]
             content = msg["content"]
             if not isinstance(content, str):
-                raise ValueError("Currently multimodal context is not "
-                                 "supported by the token counter.")
+                raise ValueError(
+                    "Currently multimodal context is not "
+                    "supported by the token counter."
+                )
             if content:
                 ret += role + ": " + content + seps[i % 2]
             else:
@@ -85,6 +107,7 @@ def get_model_encoding(value_for_tiktoken: str):
         tiktoken.Encoding: Model encoding.
     """
     import tiktoken
+
     try:
         encoding = tiktoken.encoding_for_model(value_for_tiktoken)
     except KeyError:
@@ -111,7 +134,6 @@ class BaseTokenCounter(ABC):
 
 
 class OpenSourceTokenCounter(BaseTokenCounter):
-
     def __init__(self, model_type: ModelType, model_path: str):
         r"""Constructor for the token counter for open-source models.
 
@@ -126,6 +148,7 @@ class OpenSourceTokenCounter(BaseTokenCounter):
         # If a fast tokenizer is not available for a given model,
         # a normal Python-based tokenizer is returned instead.
         from transformers import AutoTokenizer
+
         try:
             tokenizer = AutoTokenizer.from_pretrained(
                 model_path,
@@ -136,10 +159,11 @@ class OpenSourceTokenCounter(BaseTokenCounter):
                 model_path,
                 use_fast=False,
             )
-        except:
+        except Exception:
             raise ValueError(
                 f"Invalid `model_path` ({model_path}) is provided. "
-                "Tokenizer loading failed.")
+                "Tokenizer loading failed."
+            )
 
         self.tokenizer = tokenizer
         self.model_type = model_type
@@ -162,13 +186,11 @@ class OpenSourceTokenCounter(BaseTokenCounter):
 
 
 class OpenAITokenCounter(BaseTokenCounter):
-
     def __init__(self, model: ModelType):
         r"""Constructor for the token counter for OpenAI models.
 
         Args:
-            model_type (ModelType): Model type for which tokens will be
-                counted.
+            model (ModelType): Model type for which tokens will be counted.
         """
         self.model: str = model.value_for_tiktoken
 
@@ -192,7 +214,8 @@ class OpenAITokenCounter(BaseTokenCounter):
                 "for information on how messages are converted to tokens. "
                 "See https://platform.openai.com/docs/models/gpt-4"
                 "or https://platform.openai.com/docs/models/gpt-3-5"
-                "for information about openai chat models.")
+                "for information about openai chat models."
+            )
 
         self.encoding = get_model_encoding(self.model)
 
@@ -211,10 +234,107 @@ class OpenAITokenCounter(BaseTokenCounter):
         for message in messages:
             num_tokens += self.tokens_per_message
             for key, value in message.items():
-                num_tokens += len(self.encoding.encode(str(value)))
+                if not isinstance(value, list):
+                    num_tokens += len(self.encoding.encode(str(value)))
+                else:
+                    for item in value:
+                        if item["type"] == "text":
+                            num_tokens += len(
+                                self.encoding.encode(str(item["text"]))
+                            )
+                        elif item["type"] == "image_url":
+                            image_str: str = item["image_url"]["url"]
+                            detail = item["image_url"]["detail"]
+                            image_prefix_format = "data:image/{};base64,"
+                            image_prefix: Optional[str] = None
+                            for image_type in list(OpenAIImageType):
+                                # Find the correct image format
+                                image_prefix = image_prefix_format.format(
+                                    image_type.value
+                                )
+                                if image_prefix in image_str:
+                                    break
+                            assert isinstance(image_prefix, str)
+                            encoded_image = image_str.split(image_prefix)[1]
+                            image_bytes = BytesIO(
+                                base64.b64decode(encoded_image)
+                            )
+                            image = Image.open(image_bytes)
+                            num_tokens += count_tokens_from_image(
+                                image, OpenAIImageDetailType(detail)
+                            )
                 if key == "name":
                     num_tokens += self.tokens_per_name
 
         # every reply is primed with <|start|>assistant<|message|>
         num_tokens += 3
         return num_tokens
+
+
+class AnthropicTokenCounter(BaseTokenCounter):
+    def __init__(self, model_type: ModelType):
+        r"""Constructor for the token counter for Anthropic models.
+
+        Args:
+            model_type (ModelType): Model type for which tokens will be
+                counted.
+        """
+
+        self.model_type = model_type
+        self.client = Anthropic()
+        self.tokenizer = self.client.get_tokenizer()
+
+    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
+        r"""Count number of tokens in the provided message list using
+        loaded tokenizer specific for this type of model.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+
+        Returns:
+            int: Number of tokens in the messages.
+        """
+        prompt = messages_to_prompt(messages, self.model_type)
+
+        return self.client.count_tokens(prompt)
+
+
+def count_tokens_from_image(
+    image: Image.Image, detail: OpenAIImageDetailType
+) -> int:
+    r"""Count image tokens for OpenAI vision model. An :obj:`"auto"`
+    resolution model will be treated as :obj:`"high"`. All images with
+    :obj:`"low"` detail cost 85 tokens each. Images with :obj:`"high"` detail
+    are first scaled to fit within a 2048 x 2048 square, maintaining their
+    aspect ratio. Then, they are scaled such that the shortest side of the
+    image is 768px long. Finally, we count how many 512px squares the image
+    consists of. Each of those squares costs 170 tokens. Another 85 tokens are
+    always added to the final total. For more details please refer to `OpenAI
+    vision docs <https://platform.openai.com/docs/guides/vision>`_
+
+    Args:
+        image (PIL.Image.Image): Image to count number of tokens.
+        detail (OpenAIImageDetailType): Image detail type to count
+            number of tokens.
+
+    Returns:
+        int: Number of tokens for the image given a detail type.
+    """
+    if detail == OpenAIImageDetailType.LOW:
+        return LOW_DETAIL_TOKENS
+
+    width, height = image.size
+    if width > FIT_SQUARE_PIXELS or height > FIT_SQUARE_PIXELS:
+        scaling_factor = max(width, height) / FIT_SQUARE_PIXELS
+        width = int(width / scaling_factor)
+        height = int(height / scaling_factor)
+
+    scaling_factor = min(width, height) / SHORTEST_SIDE_PIXELS
+    scaled_width = int(width / scaling_factor)
+    scaled_height = int(height / scaling_factor)
+
+    h = ceil(scaled_height / SQUARE_PIXELS)
+    w = ceil(scaled_width / SQUARE_PIXELS)
+    total = EXTRA_TOKENS + SQUARE_TOKENS * h * w
+    return total
