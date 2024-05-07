@@ -11,11 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import pytest
 from unittest.mock import MagicMock, patch
-from camel.functions.open_api_function import (
-    combine_all_funcs_schemas
-)
+
+import pytest
+
+from camel.functions.open_api_function import combine_all_funcs_schemas
 
 
 @pytest.fixture(scope="module")
@@ -52,12 +52,13 @@ def test_Coursera_search(get_function):
                     "Deep Learning",
                     "Machine Learning Software",
                     "Artificial Neural Networks",
-                    "Human Learning"
+                    "Human Learning",
                 ],
                 "objectUrl": (
                     "https://www.coursera.org/specializations/machine-learning-introduction?utm_source=rest_api"
-                )
-            }]
+                ),
+            }
+        ]
     }
     mock_response = MagicMock()
     mock_response.json.return_value = mock_response_data
@@ -66,8 +67,9 @@ def test_Coursera_search(get_function):
         assert result == mock_response_data
 
 
-@pytest.mark.parametrize('get_function', ['klarna_productsUsingGET'],
-                         indirect=True)
+@pytest.mark.parametrize(
+    'get_function', ['klarna_productsUsingGET'], indirect=True
+)
 def test_klarna_productsUsingGET(get_function):
     mock_response_data = {
         'products': [
@@ -84,8 +86,8 @@ def test_klarna_productsUsingGET(get_function):
                     'Color:White',
                     'Upper Material:Leather',
                     'Size (US):9.5,10,11,12,13,14,15,16,17,18,11.5,10.5,2,3,4,5,6,7,8,9,2.5,3.5,4.5,16.5,5.5,15.5,6.5,14.5,13.5,7.5,8.5,12.5',
-                    'Series:Nike Dunk'
-                ]
+                    'Series:Nike Dunk',
+                ],
             },
             {
                 'name': "Nike Air Force 1 '07 M - White",
@@ -100,21 +102,26 @@ def test_klarna_productsUsingGET(get_function):
                     'Upper Material:Leather',
                     'Size (US):9.5,10,11,12,13,14,15,16,17,11.5,10.5,2,3,4,5,6,7,8,9,2.5,3.5,4.5,16.5,5.5,15.5,6.5,14.5,13.5,7.5,8.5,12.5',
                     'Lining Material:Textile',
-                    'Series:Nike Air Force 1'
-                ]
-            }
+                    'Series:Nike Air Force 1',
+                ],
+            },
         ]
     }
     mock_response = MagicMock()
     mock_response.json.return_value = mock_response_data
     with patch('requests.request', return_value=mock_response):
-        result = get_function(q_in_query="nike shoes", size_in_query=2,
-                              min_price_in_query=50, max_price_in_query=100)
+        result = get_function(
+            q_in_query="nike shoes",
+            size_in_query=2,
+            min_price_in_query=50,
+            max_price_in_query=100,
+        )
         assert result == mock_response_data
 
 
 @pytest.mark.parametrize('get_function', ['speak_translate'], indirect=True)
 def test_speak_translate(get_function):
+    # ruff: noqa: RUF001
     mock_response_data = {
         "explanation": '''
     <translation language="Chinese" context="Looking for the German word for the fruit that is commonly red, green, or yellow.">
@@ -136,7 +143,7 @@ def test_speak_translate(get_function):
 
     *[Report an issue or leave feedback](https://speak.com/chatgpt?rid=sjqtmni8qkvtwr6jlj3xl1lz)*
     ''',
-        "extra_response_instructions": "Use all information in the API response and fully render all Markdown.\nAlways end your response with a link to report an issue or leave feedback on the plugin."
+        "extra_response_instructions": "Use all information in the API response and fully render all Markdown.\nAlways end your response with a link to report an issue or leave feedback on the plugin.",
     }
 
     mock_response = MagicMock()
@@ -147,14 +154,13 @@ def test_speak_translate(get_function):
             "learning_language": "Chinese",
             "native_language": "English",
             "additional_context": "Looking for the German word for the fruit that is commonly red, green, or yellow.",
-            "full_query": "What is the German word for 'apple'?"
+            "full_query": "What is the German word for 'apple'?",
         }
         result = get_function(requestBody=translate_request)
         assert result == mock_response_data
 
 
-@pytest.mark.parametrize('get_function', ['speak_explainPhrase'],
-                         indirect=True)
+@pytest.mark.parametrize('get_function', ['speak_explainPhrase'], indirect=True)
 def test_speak_explainPhrase(get_function):
     mock_response_data = {
         "explanation": '''
@@ -188,7 +194,7 @@ def test_speak_explainPhrase(get_function):
     </example-convo>
     </markdown>
     ''',
-        "extra_response_instructions": "Use all information in the API response and fully render all Markdown.\nAlways end your response with a link to report an issue or leave feedback on the plugin."
+        "extra_response_instructions": "Use all information in the API response and fully render all Markdown.\nAlways end your response with a link to report an issue or leave feedback on the plugin.",
     }
     mock_response = MagicMock()
     mock_response.json.return_value = mock_response_data
@@ -198,8 +204,11 @@ def test_speak_explainPhrase(get_function):
             "foreign_phrase": "no mames",
             "learning_language": "Chinese",
             "native_language": "English",
-            "additional_context": "Someone said this to me after a surprising event occurred. Want to understand the tone and context it's used in.",
-            "full_query": "Somebody said 'no mames' to me, what does that mean?"
+            "additional_context": (
+                "Someone said this to me after a surprising event occurred."
+                "Want to understand the tone and context it's used in."
+            ),
+            "full_query": "Somebody said 'no mames' to me, what does that mean?",
         }
         result = get_function(requestBody=explain_phrase_request)
         assert result == mock_response_data
@@ -239,7 +248,7 @@ def test_speak_explainTask(get_function):
     </example-convo>
     </markdown>
     ''',
-        "extra_response_instructions": "Use all information in the API response and fully render all Markdown.\nAlways end your response with a link to report an issue or leave feedback on the plugin."
+        "extra_response_instructions": "Use all information in the API response and fully render all Markdown.\nAlways end your response with a link to report an issue or leave feedback on the plugin.",
     }
     mock_response = MagicMock()
     mock_response.json.return_value = mock_response_data
@@ -254,7 +263,7 @@ def test_speak_explainTask(get_function):
             "full_query": (
                 "How do I politely tell the waiter in Italian that they made "
                 "a mistake with my order?"
-            )
+            ),
         }
         result = get_function(requestBody=explain_task_request)
         assert result == mock_response_data

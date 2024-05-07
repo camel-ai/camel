@@ -18,13 +18,7 @@ from camel.utils import role_playing_with_function
 
 def main(model_type=ModelType.GPT_4, chat_turn_limit=10) -> None:
     role_playing_with_function(
-        model_type=model_type, chat_turn_limit=chat_turn_limit,
-        assistant_role_name="function calling operator",
-        user_role_name="human",
-        task_prompt=(
-                     "search basketball course from coursera. and help me "
-                     "to find a job by jobsearch to be a basketball coach in "
-                     "london.")
+        model_type=model_type, chat_turn_limit=chat_turn_limit
     )
 
 
