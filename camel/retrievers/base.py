@@ -23,7 +23,7 @@ def _query_unimplemented(self, *input: Any) -> None:
     Query the results. Subclasses should implement this
         method according to their specific needs.
 
-    Should be overridden by all subclasses.
+    It should be overridden by all subclasses.
 
     .. note::
         Although the recipe for forward pass needs to be defined within
