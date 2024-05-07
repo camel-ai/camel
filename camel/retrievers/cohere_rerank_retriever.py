@@ -37,8 +37,24 @@ class CohereRerankRetriever(BaseRetriever):
         model_name: str = "rerank-multilingual-v2.0",
         api_key: Optional[str] = None,
     ) -> None:
-        r"""Initializes the CohereRerankRetriever with a specified model and
-        API key.
+        r"""Initializes an instance of the CohereRerankRetriever. This
+        constructor sets up a client for interacting with the Cohere API using
+        the specified model name and API key. If the API key is not provided,
+        it attempts to retrieve it from the COHERE_API_KEY environment
+        variable.
+
+        Args:
+            model_name (str): The name of the model to be used for re-ranking.
+                Defaults to 'rerank-multilingual-v2.0'.
+            api_key (Optional[str]): The API key for authenticating requests
+                to the Cohere API. If not provided, the method will attempt to
+                retrieve the key from the environment variable
+                'COHERE_API_KEY'.
+
+        Raises:
+            ImportError: If the 'cohere' package is not installed.
+            ValueError: If the API key is neither passed as an argument nor
+                set in the environment variable.
         """
 
         try:
