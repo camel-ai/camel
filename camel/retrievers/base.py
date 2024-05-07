@@ -27,8 +27,8 @@ def _query_unimplemented(self, *input: Any) -> None:
 
     .. note::
         Although the recipe for forward pass needs to be defined within
-        this function, one should call the :class:`BaseRetriever` instance afterwards
-        instead of this since the former takes care of running the
+        this function, one should call the :class:`BaseRetriever` instance
+        afterwards instead of this since the former takes care of running the
         registered hooks while the latter silently ignores them.
     """
     raise NotImplementedError(
@@ -47,8 +47,8 @@ def _process_unimplemented(self, *input: Any) -> None:
 
     .. note::
         Although the recipe for forward pass needs to be defined within
-        this function, one should call the :class:`BaseRetriever` instance afterwards
-        instead of this since the former takes care of running the
+        this function, one should call the :class:`BaseRetriever` instance
+        afterwards instead of this since the former takes care of running the
         registered hooks while the latter silently ignores them.
     """
     raise NotImplementedError(
