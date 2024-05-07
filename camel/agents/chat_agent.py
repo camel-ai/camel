@@ -13,8 +13,8 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-import re
 import json
+import re
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
@@ -535,8 +535,8 @@ class ChatAgent(BaseAgent):
         func = self.func_dict[func_name]
 
         args_str: str = choice.message.function_call.arguments
-        # Support single quotes in the values
-        # Regular expression to match outermost single quotes around keys and values
+        # Support single quotes in the values, egular expression
+        # to match outermost single quotes around keys and values
         pattern = r"(?<=\{|\,)\s*'([^']+?)'\s*:"
         args_str = re.sub(pattern, r'"\1":', args_str)  # Replace keys
 
