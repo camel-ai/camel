@@ -149,8 +149,7 @@ def construct_ui(
                 "Github repo: [https://github.com/lightaime/camel]"
                 "(https://github.com/lightaime/camel)\n"
                 '<div style="display:flex; justify-content:center;">'
-                '<img src="https://raw.githubusercontent.com/lightaime/camel/'
-                'master/misc/logo.png" alt="Logo" style="max-width:50%;">'
+                '<img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/primary_logo.png" alt="Logo" style="max-width:50%;">'
                 '</div>'
             )
 
