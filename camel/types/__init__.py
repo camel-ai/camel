@@ -17,12 +17,12 @@ from .enums import (
     OpenAIBackendRole,
     OpenAIImageDetailType,
     OpenAIImageType,
+    OpenApiName,
     RoleType,
     StorageType,
     TaskType,
     TerminationMode,
     VectorDistance,
-    OpenApiName,
 )
 from .openai_types import (
     ChatCompletion,
