@@ -112,7 +112,7 @@ class BM25Retriever(BaseRetriever):
             raise ValueError("top_k must be a positive integer.")
         if self.bm25 is None or not self.chunks:
             raise ValueError(
-                "BM25 model is not initialized. Call `process`" " first."
+                "BM25 model is not initialized. Call `process` first."
             )
 
         # Preprocess query similarly to how documents were processed
