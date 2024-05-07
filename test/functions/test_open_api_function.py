@@ -14,13 +14,13 @@
 import pytest
 from unittest.mock import MagicMock, patch
 from camel.functions.open_api_function import (
-    combine_all_functions_schemas
+    combine_all_funcs_schemas
 )
 
 
 @pytest.fixture(scope="module")
 def functions_dict():
-    openapi_functions_list, _ = combine_all_functions_schemas()
+    openapi_functions_list, _ = combine_all_funcs_schemas()
     functions_dict = {func.__name__: func for func in openapi_functions_list}
     return functions_dict
 
@@ -54,18 +54,20 @@ def test_Coursera_search(get_function):
                     "Artificial Neural Networks",
                     "Human Learning"
                 ],
-                "objectUrl": "https://www.coursera.org/specializations/machine-learning-introduction?utm_source=rest_api"
+                "objectUrl": (
+                    "https://www.coursera.org/specializations/machine-learning-introduction?utm_source=rest_api"
+                )
             }]
-        }
+    }
     mock_response = MagicMock()
     mock_response.json.return_value = mock_response_data
-    # 使用patch装饰器模拟requests.request方法
     with patch('requests.request', return_value=mock_response):
         result = get_function(requestBody={"query": "machine learning"})
         assert result == mock_response_data
 
 
-@pytest.mark.parametrize('get_function', ['klarna_productsUsingGET'], indirect=True)
+@pytest.mark.parametrize('get_function', ['klarna_productsUsingGET'],
+                         indirect=True)
 def test_klarna_productsUsingGET(get_function):
     mock_response_data = {
         'products': [
@@ -105,7 +107,6 @@ def test_klarna_productsUsingGET(get_function):
     }
     mock_response = MagicMock()
     mock_response.json.return_value = mock_response_data
-    # 使用patch装饰器模拟requests.request方法
     with patch('requests.request', return_value=mock_response):
         result = get_function(q_in_query="nike shoes", size_in_query=2,
                               min_price_in_query=50, max_price_in_query=100)
@@ -140,7 +141,6 @@ def test_speak_translate(get_function):
 
     mock_response = MagicMock()
     mock_response.json.return_value = mock_response_data
-    # 使用patch装饰器模拟requests.request方法
     with patch('requests.request', return_value=mock_response):
         translate_request = {
             "phrase_to_translate": "Wie sagt man 'apple' auf Deutsch?",
@@ -153,7 +153,8 @@ def test_speak_translate(get_function):
         assert result == mock_response_data
 
 
-@pytest.mark.parametrize('get_function', ['speak_explainPhrase'], indirect=True)
+@pytest.mark.parametrize('get_function', ['speak_explainPhrase'],
+                         indirect=True)
 def test_speak_explainPhrase(get_function):
     mock_response_data = {
         "explanation": '''
@@ -247,8 +248,13 @@ def test_speak_explainTask(get_function):
             "task_description": "tell the waiter they messed up my order",
             "learning_language": "Chinese",
             "native_language": "English",
-            "additional_context": "I want to say it politely because it wasn't a big mistake.",
-            "full_query": "How do I politely tell the waiter in Italian that they made a mistake with my order?"
+            "additional_context": (
+                "I want to say it politely because it wasn't a big mistake."
+            ),
+            "full_query": (
+                "How do I politely tell the waiter in Italian that they made "
+                "a mistake with my order?"
+            )
         }
         result = get_function(requestBody=explain_task_request)
         assert result == mock_response_data
