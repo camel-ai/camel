@@ -70,6 +70,7 @@ def search_duckduckgo(
 
     Args:
         query (str): The query to be searched.
+        num_result_pages (int): The number of result pages to retrieve.
 
     Returns:
         List[Dict[str, Any]]: A list of dictionaries where each dictionary
@@ -150,6 +151,7 @@ def search_google(
 
     Args:
         query (str): The query to be searched.
+        num_result_pages (int): The number of result pages to retrieve.
 
     Returns:
         List[Dict[str, Any]]: A list of dictionaries where each dictionary
