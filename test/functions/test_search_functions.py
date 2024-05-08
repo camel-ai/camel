@@ -18,8 +18,9 @@ import requests
 import wikipedia
 
 from camel.functions.search_functions import (
-    choose_search_and_summarize,
     query_wolfram_alpha,
+    search_duckduckgo,
+    search_google,
     search_wiki,
 )
 
@@ -79,7 +80,9 @@ def test_duckduckgo_api():
 
 def test_web_search():
     query = "What big things are happening in 2023?"
-    answer = choose_search_and_summarize(query)
+    answer = search_google(query)
+    assert answer is not None
+    answer = search_duckduckgo(query)
     assert answer is not None
 
 

@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from typing import Any, Callable, Dict, List
+from typing import Any, Dict, List
 
 from camel.agents import ChatAgent
 from camel.functions.openai_function import OpenAIFunction
@@ -120,13 +120,26 @@ def search_duckduckgo(
             }
             responses.append(response)
 
-    except RequestException as e:
-        # Handle specific exceptions or general request exceptions
-        responses.append({"error": f"DuckDuckGo search failed: {e!s}"})
-    except Exception as e:
-        # Catch-all for any other exceptions that were not anticipated
-        responses.append({"error": f"An unexpected error occurred: {e!s}"})
+        # Summarize the first relevant result
+        for item in responses:
+            if "url" in item:
+                url = item.get("url")
+                try:
+                    extracted_text = text_extract_from_web(str(url))
+                except Exception:
+                    continue
+                answer = summarize_text(extracted_text, query)
+                if not continue_search(query=query, answer=answer):
+                    responses.append({"answer": answer})
 
+    except RequestException:
+        # Handle specific exceptions or general request exceptions
+        responses.append({"error": "duckduckgo search failed."})
+    except Exception:
+        # Catch-all for any other exceptions that were not anticipated
+        responses.append({"error": "An unexpected error occurred"})
+
+    # If no answer found, return an empty list
     return responses
 
 
@@ -220,9 +233,24 @@ def search_google(
         else:
             responses.append({"error": "google search failed."})
 
-    except requests.RequestException:
-        responses.append({"error": "google search failed."})
+        # Summarize the first relevant result
+        for item in responses:
+            if "url" in item:
+                url_value = item.get("url")
+                if url_value is not None:
+                    url = url_value
+                    try:
+                        extracted_text = text_extract_from_web(str(url))
+                    except Exception:
+                        continue
+                    answer = summarize_text(extracted_text, query)
+                    if not continue_search(query=query, answer=answer):
+                        responses.append({"answer": answer})
 
+    except requests.RequestException:
+        # Handle specific exceptions or general request exceptions
+        responses.append({"error": "google search failed."})
+    # If no answer found, return an empty list
     return responses
 
 
@@ -369,52 +397,6 @@ def continue_search(query: str, answer: str) -> bool:
     return True
 
 
-def search_and_summarize(query: str, search_func: Callable) -> str:
-    """
-    Search the web for information using a specified search function
-    and summarize the results.
-
-    Args:
-        query (str): Question you want to be answered.
-        search_func (Callable): A function that takes a query.
-        and returns search results.
-
-    Returns:
-        str: Summarized information from the web.
-    """
-    try:
-        responses = search_func(query)
-        for item in responses:
-            if "url" in item:
-                url = item.get("url")
-                try:
-                    extracted_text = text_extract_from_web(str(url))
-                except Exception:
-                    continue
-                answer = summarize_text(extracted_text, query)
-                if not continue_search(query=query, answer=answer):
-                    return answer
-        return "I can not find the answer to the query."
-    except Exception as e:
-        return f"Failed to search the web: {e}"
-
-
-def choose_search_and_summarize(query: str) -> str:
-    r"""Query Google or DuckDuckGo search based on the availability
-    of Google API credentials, and summarize the results.
-
-    Args:
-        query (str): Question you want to be answered.
-
-    Returns:
-        str: Summarized information from the web.
-    """
-    if os.getenv("GOOGLE_API_KEY") and os.getenv("SEARCH_ENGINE_ID"):
-        return search_and_summarize(query, search_google)
-    else:
-        return search_and_summarize(query, search_duckduckgo)
-
-
 def query_wolfram_alpha(query: str, is_detailed: bool) -> str:
     r"""Queries Wolfram|Alpha and returns the result. Wolfram|Alpha is an
     answer engine developed by Wolfram Research. It is offered as an online
@@ -471,5 +453,10 @@ def query_wolfram_alpha(query: str, is_detailed: bool) -> str:
 
 SEARCH_FUNCS: List[OpenAIFunction] = [
     OpenAIFunction(func)  # type: ignore[arg-type]
-    for func in [search_wiki, choose_search_and_summarize, query_wolfram_alpha]
+    for func in [
+        search_wiki,
+        search_google,
+        search_duckduckgo,
+        query_wolfram_alpha,
+    ]
 ]
