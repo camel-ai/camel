@@ -75,7 +75,6 @@ neo4j = { version = "^5.18.0", optional = true }
 
 # retrievers
 rank-bm25 = { version = "^0.2.2", optional = true }
-cohere = { version = "^4.56", optional = true }
 
 # test
 pytest = { version = "^7", optional = true}
@@ -125,7 +124,6 @@ graph-storages = [
 
 retrievers = [
     "rank-bm25",
-    "cohere",
 ]
 
 all = [
@@ -153,8 +151,6 @@ all = [
     # vector-database
     "qdrant-client",
     "pymilvus",
-    # retrievers
-    "cohere",
     # encoders
     "sentence-transformers",
     # graph-storages
@@ -265,7 +261,6 @@ module = [
     "qdrant_client.*",
     "unstructured.*",
     "rank_bm25",
-    "cohere",
     "sentence_transformers.*",
     "pymilvus",
 ]
