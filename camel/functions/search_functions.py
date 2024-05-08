@@ -60,7 +60,7 @@ def search_wiki(entity: str) -> str:
 
 
 def search_duckduckgo(
-    query: str, max_results: int = 10
+    query: str, num_result_pages: int = 10
 ) -> List[Dict[str, Any]]:
     r"""Use DuckDuckGo search engine to search information for the given query.
 
@@ -103,7 +103,7 @@ def search_duckduckgo(
     responses = []
 
     try:
-        results = ddgs.text(keywords=query, max_results=max_results)
+        results = ddgs.text(keywords=query, num_result_pages=num_result_pages)
 
         # Iterate over results found
         for i, result in enumerate(results, start=1):
