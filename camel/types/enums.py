@@ -28,7 +28,6 @@ class ModelType(Enum):
     GPT_4 = "gpt-4"
     GPT_4_32K = "gpt-4-32k"
     GPT_4_TURBO = "gpt-4-turbo"
-    GPT_4_TURBO_VISION = "gpt-4-turbo"
 
     STUB = "stub"
 
@@ -59,7 +58,6 @@ class ModelType(Enum):
             ModelType.GPT_4,
             ModelType.GPT_4_32K,
             ModelType.GPT_4_TURBO,
-            ModelType.GPT_4_TURBO_VISION,
         }
 
     @property
@@ -100,8 +98,6 @@ class ModelType(Enum):
         elif self is ModelType.GPT_4_32K:
             return 32768
         elif self is ModelType.GPT_4_TURBO:
-            return 128000
-        elif self is ModelType.GPT_4_TURBO_VISION:
             return 128000
         elif self is ModelType.STUB:
             return 4096

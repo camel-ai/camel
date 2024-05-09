@@ -16,6 +16,8 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import TYPE_CHECKING, Any, Sequence
 
+from openai._types import NOT_GIVEN, NotGiven
+
 from camel.configs.base_config import BaseConfig
 
 if TYPE_CHECKING:
@@ -76,8 +78,8 @@ class ChatGPTConfig(BaseConfig):
     top_p: float = 1.0
     n: int = 1
     stream: bool = False
-    stop: str | Sequence[str] | None = None
-    max_tokens: int | None = None
+    stop: str | Sequence[str] | NotGiven = NOT_GIVEN
+    max_tokens: int | NotGiven = NOT_GIVEN
     presence_penalty: float = 0.0
     frequency_penalty: float = 0.0
     logit_bias: dict = field(default_factory=dict)

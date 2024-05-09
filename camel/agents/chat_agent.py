@@ -45,9 +45,6 @@ if TYPE_CHECKING:
     from camel.functions import OpenAIFunction
     from camel.terminators import ResponseTerminator
 
-_OPENAI_VISION_DEFAULT_MAX_TOKENS = 4096
-_OPENAI_VISION_DEFAULT_STOP = ""
-
 
 @dataclass(frozen=True)
 class FunctionCallingRecord:
@@ -135,34 +132,7 @@ class ChatAgent(BaseAgent):
             for func in function_list:
                 self.func_dict[func.get_function_name()] = func.func
 
-        self.model_config: BaseConfig
-        if self.model_type == ModelType.GPT_4_TURBO_VISION:
-            assert model_config is None or isinstance(
-                model_config, ChatGPTConfig
-            )
-            # Now OpenAI GPT-4 vision model requires these params
-            # to be specified in the config, raise error if they
-            # are not specified:
-            if model_config is not None and model_config.stop is None:
-                raise ValueError(
-                    "Please specify a value to `stop` in "
-                    "`ChatGPTConfig` when the model type is "
-                    "`GPT_4_TURBO_VISION`"
-                )
-            if model_config is not None and model_config.max_tokens is None:
-                raise ValueError(
-                    "Please specify a value to `max_tokens` in "
-                    "`ChatGPTConfig` when the model type is "
-                    "`GPT_4_TURBO_VISION`"
-                )
-            # Now OpenAI GPT-4 vision model requires these params
-            # to be specified, so set to some default values:
-            self.model_config = model_config or ChatGPTConfig(
-                max_tokens=_OPENAI_VISION_DEFAULT_MAX_TOKENS,
-                stop=_OPENAI_VISION_DEFAULT_STOP,
-            )
-        else:
-            self.model_config = model_config or ChatGPTConfig()
+        self.model_config = model_config or ChatGPTConfig()
 
         self.model_backend: BaseModelBackend = ModelFactory.create(
             self.model_type, self.model_config.__dict__
