@@ -124,9 +124,6 @@ class ModelType(Enum):
             ModelType.CLAUDE_3_HAIKU,
         }:
             return 200_000
-        elif self is ModelType.FSCHAT:
-            # todo 获取最大长度
-            return 32768
         else:
             raise ValueError("Unknown model type")
 

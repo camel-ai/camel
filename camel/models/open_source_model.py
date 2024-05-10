@@ -20,6 +20,7 @@ from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
 from camel.utils import BaseTokenCounter, OpenSourceTokenCounter, FsChatTokenCounter
+from camel.utils.token_counting import get_fschat_tokens
 
 
 class OpenSourceModel(BaseModelBackend):
@@ -28,9 +29,9 @@ class OpenSourceModel(BaseModelBackend):
     """
 
     def __init__(
-        self,
-        model_type: ModelType,
-        model_config_dict: Dict[str, Any],
+            self,
+            model_type: ModelType,
+            model_config_dict: Dict[str, Any],
     ) -> None:
         r"""Constructor for model backends of Open-source models.
 
@@ -157,3 +158,14 @@ class OpenSourceModel(BaseModelBackend):
             bool: Whether the model is in stream mode.
         """
         return self.model_config_dict.get('stream', False)
+
+    @property
+    def token_limit(self) -> int:
+        r"""Returns the token limit of the model.
+        Returns:
+            int: The token limit of the model.
+        """
+        if self.model_type == ModelType.FSCHAT:
+            _, max_tokens = get_fschat_tokens(server_url=self.server_url, model_name=self.model_name, prompt="")
+            return max_tokens
+        return self.model_type.token_limit

@@ -19,7 +19,7 @@ import json
 from abc import ABC, abstractmethod
 from io import BytesIO
 from math import ceil
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Tuple
 
 import requests
 from anthropic import Anthropic
@@ -36,6 +36,23 @@ SHORTEST_SIDE_PIXELS = 768
 SQUARE_PIXELS = 512
 SQUARE_TOKENS = 170
 EXTRA_TOKENS = 85
+
+
+def get_fschat_tokens(server_url: str, model_name: str, prompt: str = "") -> Tuple[int, int]:
+    token_check_url = server_url.replace("v1", "api/v1/token_check")
+    r = requests.post(token_check_url, json={
+        "prompts": [
+            {
+                "model": model_name,
+                "prompt": prompt,
+                "max_tokens": 0
+            }
+        ]
+    })
+    if r.status_code != 200:
+        raise ValueError(f"Token check failed: {r.text}, status code: {r.status_code}")
+    r_data = json.loads(r.text)
+    return r_data["prompts"][0]["tokenCount"], r_data["prompts"][0]["contextLength"]
 
 
 def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
@@ -162,21 +179,8 @@ class FsChatTokenCounter(BaseTokenCounter):
         # In general, the system placeholder 1 token
         placeholder_tokens = len(messages) * 3
         prompt = messages_to_prompt(messages, self.model_type)
-        # token_check_url = self.server_url.replace("v1", "api/v1/token_check")
-        token_check_url = "http://192.168.11.199:1282/v1/api/v1/token_check"
-        r = requests.post(token_check_url, json={
-            "prompts": [
-                {
-                    "model": self.model_name,
-                    "prompt": prompt,
-                    "max_tokens": 0
-                }
-            ]
-        })
-        if r.status_code != 200:
-            raise ValueError(f"Token check failed: {r.text}, status code: {r.status_code}")
-        r_data = json.loads(r.text)
-        return r_data["prompts"][0]["tokenCount"] + placeholder_tokens
+        tokens_length, _ = get_fschat_tokens(self.server_url, self.model_name, prompt)
+        return tokens_length + placeholder_tokens
 
 
 class OpenSourceTokenCounter(BaseTokenCounter):
