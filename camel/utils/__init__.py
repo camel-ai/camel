@@ -29,6 +29,7 @@ from .token_counting import (
     BaseTokenCounter,
     OpenAITokenCounter,
     OpenSourceTokenCounter,
+    FsChatTokenCounter,
     get_model_encoding,
 )
 
@@ -48,5 +49,6 @@ __all__ = [
     'BaseTokenCounter',
     'OpenAITokenCounter',
     'OpenSourceTokenCounter',
+    'FsChatTokenCounter',
     'role_playing_with_function',
 ]

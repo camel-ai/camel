@@ -15,11 +15,13 @@
 from __future__ import annotations
 
 import base64
+import json
 from abc import ABC, abstractmethod
 from io import BytesIO
 from math import ceil
 from typing import TYPE_CHECKING, List, Optional
 
+import requests
 from anthropic import Anthropic
 from PIL import Image
 
@@ -93,6 +95,14 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
             else:
                 ret += role + ":"
         return ret
+    elif model == ModelType.FSCHAT:
+        # Simple processing and return
+        ret = ""
+        for msg in messages:
+            role = msg["role"]
+            content = msg["content"]
+            ret += role + ": " + content + "\n"
+        return ret
     else:
         raise ValueError(f"Invalid model type: {model}")
 
@@ -131,6 +141,42 @@ class BaseTokenCounter(ABC):
             int: Number of tokens in the messages.
         """
         pass
+
+
+class FsChatTokenCounter(BaseTokenCounter):
+    def __init__(self, model_type: ModelType, model_name: str, server_url: str):
+        self.model_type = model_type
+        self.model_name = model_name
+        self.server_url = server_url
+
+    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
+        r"""Count number of tokens in the provided message list.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+
+        Returns:
+            int: Number of tokens in the messages.
+        """
+        # In general, the system placeholder 1 token
+        placeholder_tokens = len(messages) * 3
+        prompt = messages_to_prompt(messages, self.model_type)
+        # token_check_url = self.server_url.replace("v1", "api/v1/token_check")
+        token_check_url = "http://192.168.11.199:1282/v1/api/v1/token_check"
+        r = requests.post(token_check_url, json={
+            "prompts": [
+                {
+                    "model": self.model_name,
+                    "prompt": prompt,
+                    "max_tokens": 0
+                }
+            ]
+        })
+        if r.status_code != 200:
+            raise ValueError(f"Token check failed: {r.text}, status code: {r.status_code}")
+        r_data = json.loads(r.text)
+        return r_data["prompts"][0]["tokenCount"] + placeholder_tokens
 
 
 class OpenSourceTokenCounter(BaseTokenCounter):
@@ -301,7 +347,7 @@ class AnthropicTokenCounter(BaseTokenCounter):
 
 
 def count_tokens_from_image(
-    image: Image.Image, detail: OpenAIImageDetailType
+        image: Image.Image, detail: OpenAIImageDetailType
 ) -> int:
     r"""Count image tokens for OpenAI vision model. An :obj:`"auto"`
     resolution model will be treated as :obj:`"high"`. All images with
