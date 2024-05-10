@@ -27,7 +27,10 @@ class OpenAIModel(BaseModelBackend):
     r"""OpenAI API in a unified BaseModelBackend interface."""
 
     def __init__(
-        self, model_type: ModelType, model_config_dict: Dict[str, Any]
+        self,
+        model_type: ModelType,
+        model_config_dict: Dict[str, Any],
+        api_key: Optional[str] = None,
     ) -> None:
         r"""Constructor for OpenAI backend.
 
@@ -36,10 +39,15 @@ class OpenAIModel(BaseModelBackend):
                 one of GPT_* series.
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into openai.ChatCompletion.create().
+            api_key (Optional[str]): The API key for authenticating with the
+                OpenAI service. (default: :obj:`None`)
         """
         super().__init__(model_type, model_config_dict)
         url = os.environ.get('OPENAI_API_BASE_URL', None)
-        self._client = OpenAI(timeout=60, max_retries=3, base_url=url)
+        self._api_key = api_key or os.environ.get("OPENAI_API_KEY")
+        self._client = OpenAI(
+            timeout=60, max_retries=3, base_url=url, api_key=self._api_key
+        )
         self._token_counter: Optional[BaseTokenCounter] = None
 
     @property

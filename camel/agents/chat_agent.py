@@ -84,6 +84,8 @@ class ChatAgent(BaseAgent):
             responses. (default :obj:`ModelType.GPT_3_5_TURBO`)
         model_config (BaseConfig, optional): Configuration options for the
             LLM model. (default: :obj:`None`)
+        api_key (str, optional): The API key for authenticating with the
+            LLM service. (default: :obj:`None`)
         memory (AgentMemory, optional): The agent memory for managing chat
             messages. If `None`, a :obj:`ChatHistoryMemory` will be used.
             (default: :obj:`None`)
@@ -108,6 +110,7 @@ class ChatAgent(BaseAgent):
         system_message: BaseMessage,
         model_type: Optional[ModelType] = None,
         model_config: Optional[BaseConfig] = None,
+        api_key: Optional[str] = None,
         memory: Optional[AgentMemory] = None,
         message_window_size: Optional[int] = None,
         token_limit: Optional[int] = None,
@@ -153,9 +156,9 @@ class ChatAgent(BaseAgent):
                     "is not `GPT_4_TURBO_VISION`"
                 )
             self.model_config = model_config or ChatGPTConfig()
-
+        self._api_key = api_key
         self.model_backend: BaseModelBackend = ModelFactory.create(
-            self.model_type, self.model_config.__dict__
+            self.model_type, self.model_config.__dict__, self._api_key
         )
         self.model_token_limit = token_limit or self.model_backend.token_limit
         context_creator = ScoreBasedContextCreator(
