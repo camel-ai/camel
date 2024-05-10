@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from camel.models.anthropic_model import AnthropicModel
 from camel.models.base_model import BaseModelBackend
@@ -32,7 +32,7 @@ class ModelFactory:
     def create(
         model_type: ModelType,
         model_config_dict: Dict,
-        api_key: str | None = None,
+        api_key: Optional[str] = None,
     ) -> BaseModelBackend:
         r"""Creates an instance of `BaseModelBackend` of the specified type.
 
