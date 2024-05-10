@@ -19,7 +19,7 @@ from camel.configs import OPENAI_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
-from camel.utils import BaseTokenCounter, OpenSourceTokenCounter
+from camel.utils import BaseTokenCounter, OpenSourceTokenCounter, FsChatTokenCounter
 
 
 class OpenSourceModel(BaseModelBackend):
@@ -97,6 +97,9 @@ class OpenSourceModel(BaseModelBackend):
             BaseTokenCounter: The token counter following the model's
                 tokenization style.
         """
+        if self.model_type == ModelType.FSCHAT:
+            self._token_counter = FsChatTokenCounter(self.model_type, self.model_name, self.server_url)
+
         if not self._token_counter:
             self._token_counter = OpenSourceTokenCounter(
                 self.model_type, self.model_path
