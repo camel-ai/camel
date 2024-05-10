@@ -192,10 +192,19 @@ python3 -m fastchat.serve.openai_api_server --host localhost --port 8000
 ```python
 system_message = # ...
 
+# Option1 :
 agent_kwargs = dict(
     model=model_type,
     model_config=OpenSourceConfig(
         model_path="meta-llama/Llama-2-7b-chat-hf",
+        server_url="http://localhost:8000/v1",
+    ),
+)
+# Option2: 
+agent_kwargs = dict(
+    model=ModelType.FSCHAT,
+    model_config=OpenSourceConfig(
+        model_path="Qwen1___5-1___8B-Chat",
         server_url="http://localhost:8000/v1",
     ),
 )
@@ -212,6 +221,9 @@ agent = ChatAgent(
   - example: [meta-llama/Llama-2-7b-chat-hf](https://huggingface.co/meta-llama/Llama-2-7b-chat-hf)
 - Vicuna-based models
   - example: [lmsys/vicuna-7b-v1.5](https://huggingface.co/lmsys/vicuna-7b-v1.5)
+- Other models supported by Fastchat
+  - [fastchat support list](https://github.com/lm-sys/FastChat/blob/main/docs/model_support.md)
+
 
 ## Data (Hosted on Hugging Face)
 | Dataset        | Chat format                                                                                         | Instruction format                                                                                               | Chat format (translated)                                                                   |
