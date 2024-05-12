@@ -63,7 +63,8 @@ class AutoRetriever:
         self,
         collection_name: Optional[str] = None,
     ) -> BaseVectorStorage:
-        r"""Sets up and returns a vector storage instance with specified parameters.
+        r"""Sets up and returns a vector storage instance with specified
+        parameters.
 
         Args:
             collection_name (Optional[str]): Name of the collection in the
@@ -195,7 +196,8 @@ class AutoRetriever:
         similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
         return_detailed_info: bool = False,
     ) -> str:
-        r"""Executes the automatic vector retriever process using vector storage.
+        r"""Executes the automatic vector retriever process using vector
+        storage.
 
         Args:
             query (str): Query string for information retriever.
@@ -288,6 +290,8 @@ class AutoRetriever:
                 ) from e
 
         # Split records into those with and without a 'similarity_score'
+        # Records with 'similarity_score' lower than 'similarity_threshold'
+        # will not have a 'similarity_score' in the output content
         with_score = [
             info for info in all_retrieved_info if 'similarity score' in info
         ]

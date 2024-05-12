@@ -21,7 +21,11 @@ from camel.types import StorageType
 def information_retrieval(
     query: str, content_input_paths: Union[str, List[str]]
 ) -> str:
-    r"""Retrieves information from a local vector storage based on the specified query. This function connects to a local vector storage system and retrieves relevant information by processing the input query. It is essential to use this function when the answer to a question requires external knowledge sources.
+    r"""Retrieves information from a local vector storage based on the
+    specified query. This function connects to a local vector storage system
+    and retrieves relevant information by processing the input query. It is
+    essential to use this function when the answer to a question requires
+    external knowledge sources.
 
     Args:
         query (str): The question or query for which an answer is required.
@@ -29,7 +33,8 @@ def information_retrieval(
             files or remote URLs.
 
     Returns:
-        str: The information retrieved in response to the query, aggregated and formatted as a string.
+        str: The information retrieved in response to the query, aggregated
+            and formatted as a string.
 
     Example:
         # Retrieve information about CAMEL AI.
