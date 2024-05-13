@@ -21,7 +21,6 @@ from .stub_model import StubModel
 
 __all__ = [
     'BaseModelBackend',
-    'GroqModel',
     'OpenAIModel',
     'AnthropicModel',
     'GroqModel',
