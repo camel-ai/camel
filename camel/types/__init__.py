@@ -17,6 +17,7 @@ from .enums import (
     OpenAIBackendRole,
     OpenAIImageDetailType,
     OpenAIImageType,
+    ReasoningType,
     RoleType,
     StorageType,
     TaskType,
@@ -37,6 +38,7 @@ from .openai_types import (
 )
 
 __all__ = [
+    'ReasoningType',
     'RoleType',
     'ModelType',
     'TaskType',

@@ -15,12 +15,19 @@ import re
 from enum import Enum, EnumMeta
 
 
+class ReasoningType(Enum):
+    DEFAULT = "default"
+    REACT_IN_ROLE_PALYING = "react_in_role_playing"
+
+
 class RoleType(Enum):
     ASSISTANT = "assistant"
     USER = "user"
     CRITIC = "critic"
     EMBODIMENT = "embodiment"
     DEFAULT = "default"
+    REACT_IN_ROLE_PALYING_ASSISTANT = "react_in_role_playing_assistant"
+    REACT_IN_ROLE_PALYING_USER = "react_in_role_playing_user"
 
 
 class ModelType(Enum):

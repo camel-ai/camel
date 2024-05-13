@@ -108,6 +108,8 @@ def test_get_openai_tool_schema():
                             'critic',
                             'embodiment',
                             'default',
+                            'react_in_role_playing_assistant',
+                            'react_in_role_playing_user',
                         ],
                     }
                 },
@@ -129,6 +131,8 @@ def test_get_openai_tool_schema():
                             'critic',
                             'embodiment',
                             'default',
+                            'react_in_role_playing_assistant',
+                            'react_in_role_playing_user',
                         ],
                         'type': 'string',
                     }
