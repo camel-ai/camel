@@ -25,6 +25,7 @@ parser.add_argument(
     "--image_path",
     type=str,
     help="Path to the image for object detection.",
+    required=True,
 )
 
 
@@ -42,7 +43,7 @@ def detect_image_obj(image_path: str) -> None:
     )
     agent = ChatAgent(
         assistant_sys_msg,
-        model_type=ModelType.GPT_4_TURBO_VISION,
+        model_type=ModelType.GPT_4_TURBO,
     )
     user_msg = BaseMessage.make_user_message(
         role_name="User",

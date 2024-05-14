@@ -23,11 +23,7 @@ from PIL import Image
 
 from camel.agents import ChatAgent
 from camel.agents.chat_agent import FunctionCallingRecord
-from camel.configs import (
-    ChatGPTConfig,
-    ChatGPTVisionConfig,
-    FunctionCallingConfig,
-)
+from camel.configs import ChatGPTConfig, FunctionCallingConfig
 from camel.functions import MATH_FUNCS
 from camel.generators import SystemMessageGenerator
 from camel.memories import MemoryRecord
@@ -449,10 +445,10 @@ def test_chat_agent_vision():
         meta_dict=None,
         content="You are a help assistant.",
     )
-    model_config = ChatGPTVisionConfig(temperature=0, max_tokens=200)
+    model_config = ChatGPTConfig(temperature=0, max_tokens=200, stop="")
     agent = ChatAgent(
         system_message=system_message,
-        model_type=ModelType.GPT_4_TURBO_VISION,
+        model_type=ModelType.GPT_4_TURBO,
         model_config=model_config,
     )
 
@@ -488,9 +484,9 @@ def test_chat_agent_vision():
             )
         ],
         created=123456,
-        model='gpt-4-1106-vision-preview',
+        model='gpt-4-turbo-2024-04-09',
         object='chat.completion',
-        system_fingerprint=None,
+        system_fingerprint='fp_5d12056990',
         usage=CompletionUsage(
             completion_tokens=2, prompt_tokens=113, total_tokens=115
         ),
