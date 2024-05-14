@@ -130,9 +130,9 @@ def test_role_playing_step(
 
 @pytest.mark.model_backend
 def test_role_playing_with_function():
-    function_list = [*MATH_FUNCS]
+    tools = [*MATH_FUNCS]
     assistant_model_config = FunctionCallingConfig.from_openai_function_list(
-        function_list=function_list
+        tools=tools
     )
 
     role_playing = RolePlaying(
@@ -140,7 +140,7 @@ def test_role_playing_with_function():
         assistant_agent_kwargs=dict(
             model_type=ModelType.GPT_3_5_TURBO,
             model_config=assistant_model_config,
-            function_list=function_list,
+            tools=tools,
         ),
         user_role_name="AI User",
         user_agent_kwargs=dict(model_type=ModelType.GPT_3_5_TURBO),

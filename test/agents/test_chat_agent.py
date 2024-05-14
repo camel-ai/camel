@@ -330,7 +330,7 @@ def test_token_exceed_return():
         "usage": None,
         "termination_reasons": ["max_tokens_exceeded"],
         "num_tokens": 1000,
-        "called_functions": [],
+        "called_tools": [],
     }
     agent.terminated = True
     response = agent.step_token_exceed(1000, [], "max_tokens_exceeded")
@@ -359,15 +359,15 @@ def test_function_enabled():
         system_message=system_message,
         model_config=model_config,
         model_type=ModelType.GPT_4,
-        function_list=MATH_FUNCS,
+        tools=MATH_FUNCS,
     )
 
-    assert not agent_no_func.is_function_calling_enabled()
-    assert agent_with_funcs.is_function_calling_enabled()
+    assert not agent_no_func.is_tools_added()
+    assert agent_with_funcs.is_tools_added()
 
 
 @pytest.mark.model_backend
-def test_function_calling():
+def test_tool_calling():
     system_message = BaseMessage(
         role_name="assistant",
         role_type=RoleType.ASSISTANT,
@@ -381,7 +381,7 @@ def test_function_calling():
         system_message=system_message,
         model_config=model_config,
         model_type=ModelType.GPT_4,
-        function_list=MATH_FUNCS,
+        tools=MATH_FUNCS,
     )
 
     ref_funcs = MATH_FUNCS
@@ -397,7 +397,7 @@ def test_function_calling():
     agent_response = agent.step(user_msg)
 
     called_funcs: List[FunctionCallingRecord] = agent_response.info[
-        'called_functions'
+        'called_tools'
     ]
     for called_func in called_funcs:
         print(str(called_func))

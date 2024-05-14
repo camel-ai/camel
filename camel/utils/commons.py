@@ -272,7 +272,7 @@ def role_playing_with_function(
         "zone University of Oxford is in. And use my twitter "
         "account infomation to create a tweet. "
     ),
-    function_list: Optional[List] = None,
+    tools: Optional[List] = None,
     model_type=None,
     chat_turn_limit=10,
     assistant_role_name: str = "Searcher",
@@ -289,7 +289,7 @@ def role_playing_with_function(
         task_prompt (str): The initial task or scenario description to start
             the `RolePlaying` session. Defaults to a prompt involving the
             estimation of KAUST's age and weather information.
-        function_list (list): A list of functions that the agent can utilize
+        tools (list): A list of functions that the agent can utilize
             during the session. Defaults to a combination of math, search, and
             weather functions.
         model_type (ModelType): The type of chatbot model used for both the
@@ -307,8 +307,8 @@ def role_playing_with_function(
     """
 
     # Run lazy import
-    if function_list is None:
-        function_list = get_lazy_imported_functions_module()
+    if tools is None:
+        tools = get_lazy_imported_functions_module()
     if model_type is None:
         model_type = get_lazy_imported_types_module()
 
@@ -321,9 +321,9 @@ def role_playing_with_function(
     task_prompt = task_prompt
     user_model_config = ChatGPTConfig(temperature=0.0)
 
-    function_list = function_list
+    tools = tools
     assistant_model_config = FunctionCallingConfig.from_openai_function_list(
-        function_list=function_list,
+        tools=tools,
         kwargs=dict(temperature=0.0),
     )
 
@@ -333,7 +333,7 @@ def role_playing_with_function(
         assistant_agent_kwargs=dict(
             model_type=model_type,
             model_config=assistant_model_config,
-            function_list=function_list,
+            tools=tools,
         ),
         user_agent_kwargs=dict(
             model_type=model_type,
@@ -391,10 +391,10 @@ def role_playing_with_function(
         # Print output from the assistant, including any function
         # execution information
         print_text_animated(Fore.GREEN + "AI Assistant:")
-        called_functions: List[FunctionCallingRecord] = assistant_response.info[
-            'called_functions'
+        called_tools: List[FunctionCallingRecord] = assistant_response.info[
+            'called_tools'
         ]
-        for func_record in called_functions:
+        for func_record in called_tools:
             print_text_animated(f"{func_record}")
         print_text_animated(f"{assistant_response.msg.content}\n")
 
