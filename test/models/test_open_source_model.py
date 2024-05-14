@@ -135,7 +135,7 @@ def test_open_source_model_unexpected_argument():
         ValueError,
         match=re.escape(
             (
-                "Unexpected argument `functions` is "
+                "Unexpected argument `tools` is "
                 "input into open-source model backend."
             )
         ),

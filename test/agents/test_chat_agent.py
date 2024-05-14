@@ -348,7 +348,7 @@ def test_function_enabled():
         content="You are a help assistant.",
     )
     model_config = FunctionCallingConfig(
-        functions=[func.get_openai_function_schema() for func in MATH_FUNCS]
+        tools=[func.get_openai_tool_schema() for func in MATH_FUNCS]
     )
     agent_no_func = ChatAgent(
         system_message=system_message,
@@ -375,7 +375,7 @@ def test_tool_calling():
         content="You are a help assistant.",
     )
     model_config = FunctionCallingConfig(
-        functions=[func.get_openai_function_schema() for func in MATH_FUNCS]
+        tools=[func.get_openai_tool_schema() for func in MATH_FUNCS]
     )
     agent = ChatAgent(
         system_message=system_message,
