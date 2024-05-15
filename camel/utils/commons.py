@@ -34,6 +34,7 @@ def get_lazy_imported_functions_module():
     from camel.functions import (
         MAP_FUNCS,
         MATH_FUNCS,
+        OPENAPI_FUNCS,
         SEARCH_FUNCS,
         TWITTER_FUNCS,
         WEATHER_FUNCS,
@@ -45,6 +46,7 @@ def get_lazy_imported_functions_module():
         *WEATHER_FUNCS,
         *MAP_FUNCS,
         *TWITTER_FUNCS,
+        *OPENAPI_FUNCS,
     ]
 
 
@@ -270,7 +272,8 @@ def role_playing_with_function(
         "and get the current weather of the city where "
         "the University is located. And tell me what time "
         "zone University of Oxford is in. And use my twitter "
-        "account infomation to create a tweet. "
+        "account infomation to create a tweet. Search basketball"
+        "course from coursera And help me to choose a basketball by klarna."
     ),
     tools: Optional[List] = None,
     model_type=None,
