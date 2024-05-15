@@ -140,6 +140,7 @@ def test_role_playing_with_function():
         assistant_agent_kwargs=dict(
             model_type=ModelType.GPT_3_5_TURBO,
             model_config=assistant_model_config,
+            tools=tools,
         ),
         user_role_name="AI User",
         user_agent_kwargs=dict(model_type=ModelType.GPT_3_5_TURBO),

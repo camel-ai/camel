@@ -322,7 +322,11 @@ class ChatAgent(BaseAgent):
                 self.handle_stream_response(response, num_tokens)
             )
 
-        if self.is_tools_added() and isinstance(response, ChatCompletion):
+        if (
+            self.is_tools_added()
+            and isinstance(response, ChatCompletion)
+            and response.choices[0].message.tool_calls is not None
+        ):
             # Tools added for function calling and not in stream mode
 
             # Do function calling
@@ -502,7 +506,6 @@ class ChatAgent(BaseAgent):
                 result, and a struct for logging information about this
                 function call.
         """
-        # Note that when function calling is enabled, `n` is set to 1.
         choice = response.choices[0]
         if choice.message.tool_calls is None:
             raise RuntimeError("Tool calls is None")
