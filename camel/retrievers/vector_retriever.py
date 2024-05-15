@@ -14,7 +14,7 @@
 from typing import Any, Dict, List, Optional
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
-from camel.functions import UnstructuredIO
+from camel.loaders import UnstructuredIO
 from camel.retrievers.base import BaseRetriever
 from camel.storages import (
     BaseVectorStorage,
