@@ -63,7 +63,8 @@ class AutoRetriever:
         self,
         collection_name: Optional[str] = None,
     ) -> BaseVectorStorage:
-        r"""Sets up and returns a vector storage instance with specified parameters.
+        r"""Sets up and returns a vector storage instance with specified
+        parameters.
 
         Args:
             collection_name (Optional[str]): Name of the collection in the
@@ -195,7 +196,8 @@ class AutoRetriever:
         similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
         return_detailed_info: bool = False,
     ) -> str:
-        r"""Executes the automatic vector retriever process using vector storage.
+        r"""Executes the automatic vector retriever process using vector
+        storage.
 
         Args:
             query (str): Query string for information retriever.
@@ -233,9 +235,7 @@ class AutoRetriever:
 
         vr = VectorRetriever()
 
-        retrieved_infos = ""
-        retrieved_infos_text = ""
-
+        all_retrieved_info = []
         for content_input_path in content_input_paths:
             # Generate a valid collection name
             collection_name = self._collection_name_generator(
@@ -290,37 +290,41 @@ class AutoRetriever:
                     )
                 # Retrieve info by given query from the vector storage
                 retrieved_info = vr.query(query, top_k)
-                # Reorganize the retrieved info with original query
-                for info in retrieved_info:
-                    retrieved_infos += "\n" + str(info)
-                    retrieved_infos_text += "\n" + str(info['text'])
-                output = (
-                    "Original Query:"
-                    + "\n"
-                    + "{"
-                    + query
-                    + "}"
-                    + "\n"
-                    + "Retrieved Context:"
-                    + retrieved_infos
-                )
-                output_text = (
-                    "Original Query:"
-                    + "\n"
-                    + "{"
-                    + query
-                    + "}"
-                    + "\n"
-                    + "Retrieved Context:"
-                    + retrieved_infos_text
-                )
-
+                all_retrieved_info.extend(retrieved_info)
             except Exception as e:
                 raise RuntimeError(
                     f"Error in auto vector retriever processing: {e!s}"
                 ) from e
 
+        # Split records into those with and without a 'similarity_score'
+        # Records with 'similarity_score' lower than 'similarity_threshold'
+        # will not have a 'similarity_score' in the output content
+        with_score = [
+            info for info in all_retrieved_info if 'similarity score' in info
+        ]
+        without_score = [
+            info
+            for info in all_retrieved_info
+            if 'similarity score' not in info
+        ]
+        # Sort only the list with scores
+        with_score_sorted = sorted(
+            with_score, key=lambda x: x['similarity score'], reverse=True
+        )
+        # Merge back the sorted scored items with the non-scored items
+        all_retrieved_info_sorted = with_score_sorted + without_score
+        # Select the 'top_k' results
+        all_retrieved_info = all_retrieved_info_sorted[:top_k]
+
+        retrieved_infos = "\n".join(str(info) for info in all_retrieved_info)
+        retrieved_infos_text = "\n".join(
+            info['text'] for info in all_retrieved_info if 'text' in info
+        )
+
+        detailed_info = f"Original Query:\n{{ {query} }}\nRetrieved Context:\n{retrieved_infos}"
+        text_info = f"Original Query:\n{{ {query} }}\nRetrieved Context:\n{retrieved_infos_text}"
+
         if return_detailed_info:
-            return output
+            return detailed_info
         else:
-            return output_text
+            return text_info
