@@ -335,6 +335,7 @@ def role_playing_with_function(
         assistant_agent_kwargs=dict(
             model_type=model_type,
             model_config=assistant_model_config,
+            tools=tools,
         ),
         user_agent_kwargs=dict(
             model_type=model_type,
