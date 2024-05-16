@@ -133,9 +133,7 @@ def test_open_source_model_unexpected_argument():
     with pytest.raises(
         TypeError,
         match=re.escape(
-            (
-                "OpenSourceModel.__init__() got an unexpected keyword argument 'unexpected_arg'"
-            )
+            ("__init__() got an unexpected keyword argument 'unexpected_arg'")
         ),
     ):
         _ = OpenSourceModel(
