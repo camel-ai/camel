@@ -23,7 +23,7 @@ from PIL import Image
 
 from camel.agents import ChatAgent
 from camel.agents.chat_agent import FunctionCallingRecord
-from camel.configs import ChatGPTConfig, FunctionCallingConfig
+from camel.configs import ChatGPTConfig
 from camel.functions import MATH_FUNCS
 from camel.generators import SystemMessageGenerator
 from camel.memories import MemoryRecord
@@ -347,7 +347,7 @@ def test_function_enabled():
         meta_dict=None,
         content="You are a help assistant.",
     )
-    model_config = FunctionCallingConfig(
+    model_config = ChatGPTConfig(
         tools=[func.get_openai_tool_schema() for func in MATH_FUNCS]
     )
     agent_no_func = ChatAgent(
@@ -374,7 +374,7 @@ def test_tool_calling():
         meta_dict=None,
         content="You are a help assistant.",
     )
-    model_config = FunctionCallingConfig(
+    model_config = ChatGPTConfig(
         tools=[func.get_openai_tool_schema() for func in MATH_FUNCS]
     )
     agent = ChatAgent(

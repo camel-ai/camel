@@ -17,7 +17,6 @@ import pytest
 
 from camel.configs import (
     ChatGPTConfig,
-    FunctionCallingConfig,
     OpenSourceConfig,
 )
 from camel.models import OpenSourceModel
@@ -127,7 +126,7 @@ def test_open_source_model_unexpected_argument():
     model_config = OpenSourceConfig(
         model_path=model_path,
         server_url=DEFAULT_SERVER_URL,
-        api_params=FunctionCallingConfig(),
+        api_params=ChatGPTConfig(),
     )
     model_config_dict = model_config.__dict__
 

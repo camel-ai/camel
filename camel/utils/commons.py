@@ -281,7 +281,7 @@ def role_playing_with_function(
     assistant_role_name: str = "Searcher",
     user_role_name: str = "Professor",
 ) -> None:
-    r"""Initializes and conducts a `RolePlaying` with `FunctionCallingConfig`
+    r"""Initializes and conducts a `RolePlaying` with `ChatGPTConfig`
     session. The function creates an interactive and dynamic role-play session
     where the AI Assistant and User engage based on the given task, roles, and
     available functions. It demonstrates the versatility of AI in handling
@@ -318,13 +318,13 @@ def role_playing_with_function(
     from colorama import Fore
 
     from camel.agents.chat_agent import FunctionCallingRecord
-    from camel.configs import ChatGPTConfig, FunctionCallingConfig
+    from camel.configs import ChatGPTConfig
     from camel.societies import RolePlaying
 
     task_prompt = task_prompt
     user_model_config = ChatGPTConfig(temperature=0.0)
 
-    assistant_model_config = FunctionCallingConfig.from_openai_function_list(
+    assistant_model_config = ChatGPTConfig.from_openai_function_list(
         tools=tools,
         kwargs=dict(temperature=0.0),
     )

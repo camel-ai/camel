@@ -14,7 +14,7 @@
 import pytest
 
 from camel.agents import ChatAgent, CriticAgent
-from camel.configs import FunctionCallingConfig
+from camel.configs import ChatGPTConfig
 from camel.functions import MATH_FUNCS
 from camel.human import Human
 from camel.messages import BaseMessage
@@ -131,7 +131,7 @@ def test_role_playing_step(
 @pytest.mark.model_backend
 def test_role_playing_with_function():
     tools = [*MATH_FUNCS]
-    assistant_model_config = FunctionCallingConfig.from_openai_function_list(
+    assistant_model_config = ChatGPTConfig.from_openai_function_list(
         tools=tools
     )
 
