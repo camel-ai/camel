@@ -27,13 +27,16 @@ class GitHubPromptTemplateDict(TextPromptDict):
     """
 
     SOLVE_ISSUE = TextPrompt(
-        """You need to solve this issue: {issue_description}
+        """You need to solve the issue with title: {issue_title}
 The source code for which this issue needs to be solved is:
 {source_code}
+The issue number is: {issue_number}.
 
-Your output has to be a full corrected version of the source code. 
-Please do not include anything else in the response, including any 
-kind of formatting markdown."""
+You will need to use the provided github function to create a pull request
+that updates the file on path {file_path} in the repository {repo_name}.
+The new_content property of the function should be the corrected source code.
+Return response of this function as the output of this task.
+"""
     )
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
