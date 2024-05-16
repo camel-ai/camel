@@ -14,6 +14,7 @@
 from unittest.mock import patch
 
 from camel.functions.github_functions import (
+    create_pull_request,
     get_github_access_token,
     retrieve_issue,
 )
@@ -28,13 +29,9 @@ mock_issue = GitHubLoaderIssue(
 )
 
 
-@patch(
-    'camel.loaders.github_loader.GitHubLoader.retrieve_issue',
-    return_value=mock_issue,
-)
 @patch.object(GitHubLoader, '__init__', lambda self, *args, **kwargs: None)
 @patch.object(GitHubLoader, 'retrieve_issue', return_value=mock_issue)
-def test_retrieve_issue(mock_retrieve_issue, mock_get_github_access_token):
+def test_retrieve_issue(mock_retrieve_issue):
     expected_response = (
         "Title: Time complexity for product_of_array_except_self.py\n"
         "Body: Improve the time complexity for the product_of_array_except_self.py file\n"
@@ -46,6 +43,32 @@ def test_retrieve_issue(mock_retrieve_issue, mock_get_github_access_token):
     loader = GitHubLoader('test/repo', get_github_access_token())
 
     assert retrieve_issue(loader, 1) == expected_response
+
+
+@patch(
+    'camel.functions.github_functions.get_github_access_token',
+    return_value="1",
+)
+@patch.object(GitHubLoader, '__init__', lambda self, *args, **kwargs: None)
+@patch.object(GitHubLoader, 'create_pull_request', return_value="pr")
+def test_create_pull_request(
+    mock_get_github_access_token, mock_create_pull_request
+):
+    expected_response = (
+        "Title: [GitHub Agent] Solved issue: Time complexity for product_of_array_except_self.py\n"
+        "Body: Fixes #1\n"
+    )
+    loader = GitHubLoader('test/repo', get_github_access_token())
+
+    pr = create_pull_request(
+        loader,
+        mock_issue.file_path,
+        mock_issue.file_content,
+        mock_issue.title,
+        mock_issue.number,
+    )
+
+    assert pr == expected_response
 
 
 if __name__ == '__main__':
