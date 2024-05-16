@@ -79,6 +79,7 @@ cohere = { version = "^4.56", optional = true }
 # test
 pytest = { version = "^7", optional = true}
 mock = { version = "^5", optional = true}
+pygithub = "^2.3.0"
 
 
 [tool.poetry.extras]
