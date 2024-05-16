@@ -18,6 +18,7 @@ from .openai_function import (
     get_openai_tool_schema,
 )
 
+from .github_functions import GITHUB_FUNCS
 from .google_maps_function import MAP_FUNCS
 from .math_functions import MATH_FUNCS
 from .open_api_function import OPENAPI_FUNCS
@@ -31,6 +32,7 @@ __all__ = [
     'OpenAIFunction',
     'get_openai_function_schema',
     'get_openai_tool_schema',
+    'GITHUB_FUNCS',
     'MAP_FUNCS',
     'MATH_FUNCS',
     'OPENAPI_FUNCS',
