@@ -186,7 +186,7 @@ class ChatAgent(BaseAgent):
 
         Returns:
             bool: Whether OpenAI function calling is enabled for this
-                agent, determined by whether the dictionary of functions
+                agent, determined by whether the dictionary of tools
                 is empty.
         """
         return len(self.func_dict) > 0
