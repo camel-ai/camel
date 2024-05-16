@@ -40,6 +40,33 @@ def get_github_access_token() -> str:
     return GITHUB_ACCESS_TOKEN
 
 
+def retrieve_issue(repo_name, issue_number):
+    r"""Retrieves an issue from a GitHub repository.
+
+    This function retrieves an issue from a specified repository using the
+    issue number.
+
+    Args:
+        repo_name (str): The name of the repository from which to retrieve the issue.
+        issue_number (str): The number of the issue to retrieve.
+
+    Returns:
+        str: A formatted report of the retrieved issue.
+    """
+    loader = GitHubLoader(repo_name, get_github_access_token())
+    issue = loader.retrieve_issue(issue_number)
+
+    if issue:
+        return (
+            f"Title: {issue.title}\n"
+            f"Body: {issue.body}\n"
+            f"Number: {issue.number}\n"
+            f"File Path: {issue.file_path}\n"
+            f"File Content: {issue.file_content}"
+        )
+    return "Issue not found."
+
+
 def create_pull_request(
     repo_name, file_path, new_content, issue_title, issue_number
 ):
@@ -73,5 +100,5 @@ def create_pull_request(
 
 GITHUB_FUNCS: List[OpenAIFunction] = [
     OpenAIFunction(func)  # type: ignore[arg-type]
-    for func in [create_pull_request]
+    for func in [retrieve_issue, create_pull_request]
 ]

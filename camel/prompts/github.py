@@ -27,13 +27,15 @@ class GitHubPromptTemplateDict(TextPromptDict):
     """
 
     SOLVE_ISSUE = TextPrompt(
-        """You need to solve the issue with title: {issue_title}
-The source code for which this issue needs to be solved is:
-{source_code}
-The issue number is: {issue_number}.
+        """You need to solve the issue with number: {issue_number}
+For this you will have to use the provided github function to retrieve
+that issue. You will get all the necessary parameters to later create a
+pull request.
 
-You will need to use the provided github function to create a pull request
-that updates the file on path {file_path} in the repository {repo_name}.
+When you have the issue, please follow the instruction and make the necessary
+changes to the source code provided. Once you have made the changes, you will
+need to use another provided github function to create a pull request
+that updates the file on the provided file path in the repository {repo_name}.
 The new_content property of the function should be the corrected source code.
 Return response of this function as the output of this task.
 """

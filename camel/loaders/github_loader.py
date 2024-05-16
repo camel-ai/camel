@@ -44,9 +44,12 @@ class GitHubLoader:
             if not issue.pull_request
         ]
 
-    def retrieve_latest_issue(self):
+    def retrieve_issue(self, issue_number):
         issues = self.retrieve_issue_list()
-        return issues[0]
+        for issue in issues:
+            if issue.number == issue_number:
+                return issue
+        return None
 
     def retrieve_file_content(self, file_path):
         file_content = self.repo.get_contents(file_path)
