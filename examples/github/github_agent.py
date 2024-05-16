@@ -11,36 +11,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import os
-
 from colorama import Fore
 
 from camel.agents import ChatAgent
 from camel.configs import FunctionCallingConfig
 from camel.functions import GITHUB_FUNCS
-from camel.loaders import GitHubLoader
 from camel.messages import BaseMessage
 from camel.prompts import PromptTemplateGenerator
 from camel.types import TaskType
 from camel.utils import print_text_animated
 
 
-def solve_latest_issue(
-    loader: GitHubLoader,
+def solve_issue(
     repo_name,
+    issue_number,
     model=None,
 ) -> None:
-    latest_issue = loader.retrieve_latest_issue()
     prompt_template = PromptTemplateGenerator().get_prompt_from_key(
         TaskType.GITHUB, 'solve_issue'
     )
     prompt = prompt_template.format(
-        issue_title=latest_issue.title,
-        issue_number=latest_issue.number,
-        issue_description=latest_issue.body,
-        file_path=latest_issue.file_path,
-        source_code=latest_issue.file_content,
         repo_name=repo_name,
+        issue_number=issue_number,
     )
     print(Fore.YELLOW + f"Final prompt:\n{prompt}\n")
 
@@ -74,9 +66,7 @@ def solve_latest_issue(
 
 def main(model=None) -> None:
     repo_name = "eigent-ai/lambda-working-repo"
-    access_token = os.getenv("GITHUB_ACCESS_TOKEN")
-    loader = GitHubLoader(repo_name, access_token)
-    solve_latest_issue(loader, repo_name, model)
+    solve_issue(repo_name=repo_name, issue_number=1, model=model)
 
 
 if __name__ == "__main__":
