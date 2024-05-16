@@ -15,14 +15,17 @@ from github import Auth, Github
 
 
 class GitHubLoaderIssue:
-    def __init__(self, title, body, file_name, file_content):
+    def __init__(self, title, body, number, file_path, file_content):
         self.title = title
         self.body = body
-        self.file_name = file_name
+        self.number = number
+        self.file_path = file_path
         self.file_content = file_content
 
 
 class GitHubLoader:
+    r"""A class for loading data from GitHub repositories."""
+
     def __init__(self, repo_name, access_token):
         self.github = Github(auth=Auth.Token(access_token))
         self.repo = self.github.get_repo(repo_name)
@@ -33,6 +36,7 @@ class GitHubLoader:
             GitHubLoaderIssue(
                 issue.title,
                 issue.body,
+                issue.number,
                 issue.labels[0].name,
                 self.retrieve_file_content(issue.labels[0].name),
             )
