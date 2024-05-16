@@ -131,15 +131,16 @@ def test_open_source_model_unexpected_argument():
     model_config_dict = model_config.__dict__
 
     with pytest.raises(
-        ValueError,
+        TypeError,
         match=re.escape(
             (
-                "Unexpected argument `tools` is "
-                "input into open-source model backend."
+                "OpenSourceModel.__init__() got an unexpected keyword argument 'unexpected_arg'"
             )
         ),
     ):
-        _ = OpenSourceModel(model_type, model_config_dict)
+        _ = OpenSourceModel(
+            model_type, model_config_dict, unexpected_arg="unexpected_arg"
+        )
 
 
 @pytest.mark.model_backend
