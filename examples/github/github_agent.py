@@ -13,11 +13,14 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
 
+from colorama import Fore
+
 from camel.agents import ChatAgent
 from camel.loaders import GitHubLoader
 from camel.messages import BaseMessage
 from camel.prompts import PromptTemplateGenerator
 from camel.types import TaskType
+from camel.utils import print_text_animated
 
 
 def solve_latest_issue(
@@ -32,7 +35,7 @@ def solve_latest_issue(
         issue_description=latest_issue.body,
         source_code=latest_issue.file_content,
     )
-    print(f"Prompt: {prompt}")
+    print(Fore.YELLOW + f"Final prompt:\n{prompt}\n")
     assistant_sys_msg = BaseMessage.make_assistant_message(
         role_name="Software Engineer",
         content="You are an experienced software engineer who specializes on data structures and algorithms tasks.",
@@ -44,8 +47,10 @@ def solve_latest_issue(
     assistant_response = agent.step(user_msg)
 
     if len(assistant_response.msgs) > 0:
-        print(f"Assistant response: {assistant_response.msg.content}")
-        print("Committing...")
+        print(
+            Fore.GREEN + f"Agent response:\n{assistant_response.msg.content}\n"
+        )
+        print_text_animated(Fore.BLUE + "Comitting.........\n")
         loader.create_pull_request(
             latest_issue.file_name,
             assistant_response.msg.content,
