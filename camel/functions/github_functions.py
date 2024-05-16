@@ -53,7 +53,7 @@ def get_github_loader(access_token: str, repo_name: str) -> GitHubLoader:
     return GitHubLoader(repo_name, access_token)
 
 
-def retrieve_issue(loader, issue_number):
+def retrieve_issue(repo_name, issue_number):
     r"""Retrieves an issue from a GitHub repository.
 
     This function retrieves an issue from a specified repository using the
@@ -66,6 +66,7 @@ def retrieve_issue(loader, issue_number):
     Returns:
         str: A formatted report of the retrieved issue.
     """
+    loader = get_github_loader(get_github_access_token(), repo_name)
     issue = loader.retrieve_issue(issue_number)
 
     if issue:
@@ -80,7 +81,7 @@ def retrieve_issue(loader, issue_number):
 
 
 def create_pull_request(
-    loader, file_path, new_content, issue_title, issue_number
+    repo_name, file_path, new_content, issue_title, issue_number
 ):
     r"""Creates a pull request.
 
@@ -99,6 +100,7 @@ def create_pull_request(
         str: A formatted report of the whether the pull request was created
         successfully or not.
     """
+    loader = get_github_loader(get_github_access_token(), repo_name)
     title = f"[GitHub Agent] Solved issue: {issue_title}"
     body = f"Fixes #{issue_number}"
     pr = loader.create_pull_request(file_path, new_content, title, body)
@@ -110,5 +112,10 @@ def create_pull_request(
 
 GITHUB_FUNCS: List[OpenAIFunction] = [
     OpenAIFunction(func)  # type: ignore[arg-type]
-    for func in [retrieve_issue, create_pull_request]
+    for func in [
+        get_github_access_token,
+        get_github_loader,
+        retrieve_issue,
+        create_pull_request,
+    ]
 ]
