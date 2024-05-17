@@ -347,9 +347,7 @@ def test_function_enabled():
         meta_dict=None,
         content="You are a help assistant.",
     )
-    model_config = ChatGPTConfig(
-        tools=[*MATH_FUNCS]
-    )
+    model_config = ChatGPTConfig(tools=[*MATH_FUNCS])
     agent_no_func = ChatAgent(
         system_message=system_message,
         model_config=model_config,
@@ -374,9 +372,7 @@ def test_tool_calling():
         meta_dict=None,
         content="You are a help assistant.",
     )
-    model_config = ChatGPTConfig(
-        tools=[*MATH_FUNCS]
-    )
+    model_config = ChatGPTConfig(tools=[*MATH_FUNCS])
     agent = ChatAgent(
         system_message=system_message,
         model_config=model_config,
