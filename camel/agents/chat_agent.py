@@ -299,78 +299,81 @@ class ChatAgent(BaseAgent):
         output_messages: List[BaseMessage]
         info: Dict[str, Any]
         called_funcs: List[FunctionCallingRecord] = []
+        while True:
+            # Format messages and get the token number
+            openai_messages: Optional[List[OpenAIMessage]]
 
-        # Format messages and get the token number
-        openai_messages: Optional[List[OpenAIMessage]]
+            try:
+                openai_messages, num_tokens = self.memory.get_context()
+            except RuntimeError as e:
+                return self.step_token_exceed(
+                    e.args[1], called_funcs, "max_tokens_exceeded"
+                )
 
-        try:
-            openai_messages, num_tokens = self.memory.get_context()
-        except RuntimeError as e:
-            return self.step_token_exceed(
-                e.args[1], called_funcs, "max_tokens_exceeded"
-            )
+            # Obtain the model's response
+            response = self.model_backend.run(openai_messages)
 
-        # Obtain the model's response
-        response = self.model_backend.run(openai_messages)
+            if isinstance(response, ChatCompletion):
+                output_messages, finish_reasons, usage_dict, response_id = (
+                    self.handle_batch_response(response)
+                )
+            else:
+                output_messages, finish_reasons, usage_dict, response_id = (
+                    self.handle_stream_response(response, num_tokens)
+                )
 
-        if isinstance(response, ChatCompletion):
-            output_messages, finish_reasons, usage_dict, response_id = (
-                self.handle_batch_response(response)
-            )
-        else:
-            output_messages, finish_reasons, usage_dict, response_id = (
-                self.handle_stream_response(response, num_tokens)
-            )
+            if (
+                self.is_tools_added()
+                and isinstance(response, ChatCompletion)
+                and response.choices[0].message.tool_calls is not None
+            ):
+                # Tools added for function calling and not in stream mode
 
-        if (
-            self.is_tools_added()
-            and isinstance(response, ChatCompletion)
-            and response.choices[0].message.tool_calls is not None
-        ):
-            # Tools added for function calling and not in stream mode
+                # Do function calling
+                func_assistant_msg, func_result_msg, func_record = (
+                    self.step_tool_call(response)
+                )
 
-            # Do function calling
-            func_assistant_msg, func_result_msg, func_record = (
-                self.step_tool_call(response)
-            )
+                # Update the messages
+                self.update_memory(
+                    func_assistant_msg, OpenAIBackendRole.ASSISTANT
+                )
+                self.update_memory(func_result_msg, OpenAIBackendRole.FUNCTION)
 
-            # Update the messages
-            self.update_memory(func_assistant_msg, OpenAIBackendRole.ASSISTANT)
-            self.update_memory(func_result_msg, OpenAIBackendRole.FUNCTION)
+                # Record the function calling
+                called_funcs.append(func_record)
 
-            # Record the function calling
-            called_funcs.append(func_record)
+            else:
+                # Function calling disabled or not a function calling
 
-        else:
-            # Function calling disabled or not a function calling
+                # Loop over responses terminators, get list of termination
+                # tuples with whether the terminator terminates the agent
+                # and termination reason
+                termination = [
+                    terminator.is_terminated(output_messages)
+                    for terminator in self.response_terminators
+                ]
+                # Terminate the agent if any of the terminator terminates
+                self.terminated, termination_reason = next(
+                    (
+                        (terminated, termination_reason)
+                        for terminated, termination_reason in termination
+                        if terminated
+                    ),
+                    (False, None),
+                )
+                # For now only retain the first termination reason
+                if self.terminated and termination_reason is not None:
+                    finish_reasons = [termination_reason] * len(finish_reasons)
 
-            # Loop over responses terminators, get list of termination
-            # tuples with whether the terminator terminates the agent
-            # and termination reason
-            termination = [
-                terminator.is_terminated(output_messages)
-                for terminator in self.response_terminators
-            ]
-            # Terminate the agent if any of the terminator terminates
-            self.terminated, termination_reason = next(
-                (
-                    (terminated, termination_reason)
-                    for terminated, termination_reason in termination
-                    if terminated
-                ),
-                (False, None),
-            )
-            # For now only retain the first termination reason
-            if self.terminated and termination_reason is not None:
-                finish_reasons = [termination_reason] * len(finish_reasons)
-
-        info = self.get_info(
-            response_id,
-            usage_dict,
-            finish_reasons,
-            num_tokens,
-            called_funcs,
-        )
+                info = self.get_info(
+                    response_id,
+                    usage_dict,
+                    finish_reasons,
+                    num_tokens,
+                    called_funcs,
+                )
+                break
 
         return ChatAgentResponse(output_messages, self.terminated, info)
 
