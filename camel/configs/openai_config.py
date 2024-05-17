@@ -14,7 +14,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from typing import TYPE_CHECKING, Any, Optional, Sequence
+from typing import TYPE_CHECKING, Optional, Sequence
 
 from openai._types import NOT_GIVEN, NotGiven
 
@@ -72,11 +72,11 @@ class ChatGPTConfig(BaseConfig):
         user (str, optional): A unique identifier representing your end-user,
             which can help OpenAI to monitor and detect abuse.
             (default: :obj:`""`)
-        tools (List[Dict[str, Any]]): A list of tools the model may call.
-            Currently, only functions are supported as a tool. Use this to
-            provide a list of functions the model may generate JSON inputs
+        tools (list[OpenAIFunction], optional): A list of tools the model may
+            call. Currently, only functions are supported as a tool. Use this
+            to provide a list of functions the model may generate JSON inputs
             for. A max of 128 functions are supported.
-        tool_choice (Union[Dict[str, str], str], optional): Controls which (if
+        tool_choice (Union[dict[str, str], str], optional): Controls which (if
             any) tool is called by the model. :obj:`"none"` means the model
             will not call any tool and instead generates a message.
             :obj:`"auto"` means the model can pick between generating a
@@ -98,47 +98,16 @@ class ChatGPTConfig(BaseConfig):
     frequency_penalty: float = 0.0
     logit_bias: dict = field(default_factory=dict)
     user: str = ""
-    tools: Optional[list[dict[str, Any]]] = None
+    tools: Optional[list[OpenAIFunction]] = None
     tool_choice: Optional[dict[str, str] | str] = None
 
-    @classmethod
-    def from_openai_function_list(
-        cls,
-        tools: list[OpenAIFunction],
-        tool_choice: dict[str, str] | str = "auto",
-        kwargs: dict[str, Any] | None = None,
-    ):
-        r"""Class method for creating an instance given the function-related
-        arguments.
-
-        Args:
-            tools (List[Dict[str, Any]]): A list of tools the model may call.
-                Currently, only functions are supported as a tool. Use this to
-                provide a list of functions the model may generate JSON inputs
-                for. A max of 128 functions are supported.
-            tool_choice (Union[Dict[str, str], str], optional): Controls which
-                (if any) tool is called by the model. :obj:`"none"` means the
-                model will not call any tool and instead generates a message.
-                :obj:`"auto"` means the model can pick between generating a
-                message or calling one or more tools.  :obj:`"required"` means
-                the model must call one or more tools. Specifying a particular
-                tool via {"type": "function", "function": {"name":
-                "my_function"}} forces the model to call that tool.
-                :obj:`"none"` is the default when no tools are present.
-                :obj:`"auto"` is the default if tools are present.
-            kwargs (Optional[Dict[str, Any]]): The extra modifications to be
-                made on the original settings defined in :obj:`ChatGPTConfig`.
-
-        Return:
-            ChatGPTConfig: A new instance which loads the given
-                function list into a list of dictionaries and the input
-                :obj:`function_call` argument.
-        """
-        return cls(
-            tools=[tool.get_openai_tool_schema() for tool in tools],
-            tool_choice=tool_choice,
-            **(kwargs or {}),
-        )
+    def __post_init__(self):
+        if self.tools is not None:
+            object.__setattr__(
+                self,
+                'tools',
+                [tool.get_openai_tool_schema() for tool in self.tools],
+            )
 
 
 OPENAI_API_PARAMS = {param for param in asdict(ChatGPTConfig()).keys()}

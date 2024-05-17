@@ -324,9 +324,9 @@ def role_playing_with_function(
     task_prompt = task_prompt
     user_model_config = ChatGPTConfig(temperature=0.0)
 
-    assistant_model_config = ChatGPTConfig.from_openai_function_list(
+    assistant_model_config = ChatGPTConfig(
         tools=tools,
-        kwargs=dict(temperature=0.0),
+        temperature=0.0,
     )
 
     role_play_session = RolePlaying(

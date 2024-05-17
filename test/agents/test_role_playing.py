@@ -131,9 +131,7 @@ def test_role_playing_step(
 @pytest.mark.model_backend
 def test_role_playing_with_function():
     tools = [*MATH_FUNCS]
-    assistant_model_config = ChatGPTConfig.from_openai_function_list(
-        tools=tools
-    )
+    assistant_model_config = ChatGPTConfig(tools=tools)
 
     role_playing = RolePlaying(
         assistant_role_name="AI Assistant",
