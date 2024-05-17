@@ -392,18 +392,18 @@ def test_tool_calling():
     )
     agent_response = agent.step(user_msg)
 
-    called_funcs: List[FunctionCallingRecord] = agent_response.info[
+    called_tools: List[FunctionCallingRecord] = agent_response.info[
         'called_tools'
     ]
-    for called_func in called_funcs:
+    for called_func in called_tools:
         print(str(called_func))
 
-    assert len(called_funcs) > 0
-    assert str(called_funcs[0]).startswith("Function Execution")
+    assert len(called_tools) > 0
+    assert str(called_tools[0]).startswith("Function Execution")
 
-    assert called_funcs[0].func_name == "mul"
-    assert called_funcs[0].args == {"a": 2, "b": 8}
-    assert called_funcs[0].result == 16
+    assert called_tools[0].func_name == "mul"
+    assert called_tools[0].args == {"a": 2, "b": 8}
+    assert called_tools[0].result == 16
 
 
 def test_response_words_termination():
