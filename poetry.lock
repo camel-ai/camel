@@ -1205,16 +1205,6 @@ snappy = ["cramjam"]
 zstandard = ["zstandard"]
 
 [[package]]
-name = "ffmpeg"
-version = "1.4"
-description = "ffmpeg python package url [https://github.com/jiashaokun/ffmpeg]"
-optional = true
-python-versions = "*"
-files = [
-    {file = "ffmpeg-1.4.tar.gz", hash = "sha256:6931692c890ff21d39938433c2189747815dca0c60ddc7f9bb97f199dba0b5b9"},
-]
-
-[[package]]
 name = "ffmpy"
 version = "0.3.2"
 description = "A simple Python wrapper for ffmpeg"
@@ -6917,16 +6907,16 @@ docs = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.link
 testing = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more-itertools", "pytest (>=6,!=8.1.*)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-ignore-flaky", "pytest-mypy", "pytest-ruff (>=0.2.1)"]
 
 [extras]
-all = ["PyMuPDF", "accelerate", "beautifulsoup4", "cohere", "datasets", "diffusers", "docx2txt", "ffmpeg", "googlemaps", "neo4j", "openapi-spec-validator", "opencv-python", "prance", "pydub", "pymilvus", "pyowm", "qdrant-client", "rank-bm25", "requests_oauthlib", "sentence-transformers", "sentencepiece", "soundfile", "torch", "transformers", "unstructured", "wikipedia", "wolframalpha"]
+all = ["PyMuPDF", "accelerate", "beautifulsoup4", "cohere", "datasets", "diffusers", "docx2txt", "googlemaps", "neo4j", "openapi-spec-validator", "opencv-python", "prance", "pydub", "pymilvus", "pyowm", "qdrant-client", "rank-bm25", "requests_oauthlib", "sentence-transformers", "sentencepiece", "soundfile", "torch", "transformers", "unstructured", "wikipedia", "wolframalpha"]
 encoders = ["sentence-transformers"]
 graph-storages = ["neo4j"]
 huggingface-agent = ["accelerate", "datasets", "diffusers", "opencv-python", "sentencepiece", "soundfile", "torch", "transformers"]
 retrievers = ["cohere", "rank-bm25"]
 test = ["mock", "pytest"]
-tools = ["PyMuPDF", "beautifulsoup4", "docx2txt", "ffmpeg", "googlemaps", "openapi-spec-validator", "prance", "pydub", "pyowm", "requests_oauthlib", "unstructured", "wikipedia", "wolframalpha"]
+tools = ["PyMuPDF", "beautifulsoup4", "docx2txt", "googlemaps", "openapi-spec-validator", "prance", "pydub", "pyowm", "requests_oauthlib", "unstructured", "wikipedia", "wolframalpha"]
 vector-databases = ["pymilvus", "qdrant-client"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<3.12"
-content-hash = "b11344adeca822bfb1af76e2c868212fb1ad661112706b263aa109594e3918ef"
+content-hash = "08972edbd80540e732b8a6df801b54f3c7ca9fc26924e6db48ffdd823125ed01"
