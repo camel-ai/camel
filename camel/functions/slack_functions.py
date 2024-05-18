@@ -17,7 +17,7 @@ from __future__ import annotations
 import json
 import logging
 import os
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 if TYPE_CHECKING:
     from ssl import SSLContext
@@ -25,6 +25,8 @@ if TYPE_CHECKING:
     from slack_sdk import WebClient
 
 from slack_sdk.errors import SlackApiError
+
+from camel.functions import OpenAIFunction
 
 logger = logging.getLogger(__name__)
 
@@ -257,3 +259,17 @@ def delete_slack_message(
         return str(response)
     except SlackApiError as e:
         return f"Error creating conversation: {e.response['error']}"
+
+
+SLACK_FUNCS: List[OpenAIFunction] = [
+    OpenAIFunction(func)  # type: ignore[arg-type]
+    for func in [
+        create_slack_channel,
+        join_slack_channel,
+        leave_slack_channel,
+        get_slack_channel_information,
+        get_slack_channel_message,
+        send_slack_message,
+        delete_slack_message,
+    ]
+]
