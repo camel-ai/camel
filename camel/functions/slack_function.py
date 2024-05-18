@@ -20,16 +20,21 @@ import os
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
-    from slack_sdk import WebClient
     from ssl import SSLContext
+
+    from slack_sdk import WebClient
 
 from slack_sdk.errors import SlackApiError
 
 logger = logging.getLogger(__name__)
 
-def login_slack(slack_token: Optional[str] = None, ssl: Optional[SSLContext] = None,) -> WebClient:
+
+def _login_slack(
+    slack_token: Optional[str] = None,
+    ssl: Optional[SSLContext] = None,
+) -> WebClient:
     r"""Authenticate using the Slack API.
-    
+
     Args:
         slack_token (str, optional): The Slack API token. If not provided, it
             attempts to retrieve the token from the environment variable
@@ -53,13 +58,88 @@ def login_slack(slack_token: Optional[str] = None, ssl: Optional[SSLContext] = N
             `pip install slack_sdk`."
         ) from e
     if not slack_token:
-        slack_token = os.environ.get("SLACK_BOT_TOKEN") or os.environ.get("SLACK_USER_TOKEN")
+        slack_token = os.environ.get("SLACK_BOT_TOKEN") or os.environ.get(
+            "SLACK_USER_TOKEN"
+        )
         if not slack_token:
-            raise KeyError("SLACK_BOT_TOKEN or SLACK_USER_TOKEN environment variable not set.")
+            raise KeyError(
+                "SLACK_BOT_TOKEN or SLACK_USER_TOKEN environment variable not set."
+            )
 
-    client = WebClient(token=slack_token,ssl=ssl)
+    client = WebClient(token=slack_token, ssl=ssl)
     logger.info("Slack login successful.")
     return client
+
+
+def create_slack_channel(name: str, is_private: Optional[bool] = True) -> str:
+    r"""Creates a new slack channel, either public or private.
+
+    Args:
+        name (str): Name of the public or private channel to create.
+        is_private (bool, optional): Whether to create a private channel
+            instead of a public one. Defaults to `True`.
+
+    Returns:
+        str: JSON string containing information about Slack channel created.
+
+    Raises:
+        SlackApiError: If there is an error during get slack channel
+            information.
+    """
+    try:
+        slack_client = _login_slack()
+        response = slack_client.conversations_create(
+            name=name, is_private=is_private
+        )
+        channel_id = response["channel"]["id"]
+        response = slack_client.conversations_archive(channel=channel_id)
+        return str(response)
+    except SlackApiError as e:
+        return f"Error creating conversation: {e.response['error']}"
+
+
+def join_slack_channel(channel_id: str) -> str:
+    r"""Joins an existing Slack channel.
+
+    Args:
+        channel_id (str): The ID of the Slack channel to join.
+
+    Returns:
+        str: A confirmation message indicating whether join successfully or an
+            error message.
+
+    Raises:
+        SlackApiError: If there is an error during get slack channel
+            information.
+    """
+    try:
+        slack_client = _login_slack()
+        response = slack_client.conversations_join(channel=channel_id)
+        return str(response)
+    except SlackApiError as e:
+        return f"Error creating conversation: {e.response['error']}"
+
+
+def leave_slack_channel(channel_id: str) -> str:
+    r"""Leaves an existing Slack channel.
+
+    Args:
+        channel_id (str): The ID of the Slack channel to leave.
+
+    Returns:
+        str: A confirmation message indicating whether leave successfully or an
+            error message.
+
+    Raises:
+        SlackApiError: If there is an error during get slack channel
+            information.
+    """
+    try:
+        slack_client = _login_slack()
+        response = slack_client.conversations_leave(channel=channel_id)
+        return str(response)
+    except SlackApiError as e:
+        return f"Error creating conversation: {e.response['error']}"
 
 
 def get_slack_channel_information() -> str:
@@ -73,21 +153,27 @@ def get_slack_channel_information() -> str:
             information.
     """
     try:
-        slack_client = login_slack()
-        result = slack_client.conversations_list()
-        channels = result.get("channels", []) # type: ignore[var-annotated]
-        # Filtering channels and extracting required information
+        slack_client = _login_slack()
+        response = slack_client.conversations_list()
+        conversations = response["channels"]
+        # Filtering conversations and extracting required information
         filtered_result = [
-            {key: channel[key] for key in ("id", "name", "created", "num_members")}
-            for channel in channels
-            if all(key in channel for key in ("id", "name", "created", "num_members"))
+            {
+                key: conversation[key]
+                for key in ("id", "name", "created", "num_members")
+            }
+            for conversation in conversations
+            if all(
+                key in conversation
+                for key in ("id", "name", "created", "num_members")
+            )
         ]
         return json.dumps(filtered_result, ensure_ascii=False)
     except SlackApiError as e:
         return f"Error creating conversation: {e.response['error']}"
 
-def get_slack_channel_message(
-    channel_id: str) -> str:
+
+def get_slack_channel_message(channel_id: str) -> str:
     r"""Retrieve messages from a Slack channel.
 
     Args:
@@ -101,7 +187,7 @@ def get_slack_channel_message(
         SlackApiError: If there is an error during get slack channel message.
     """
     try:
-        slack_client = login_slack()
+        slack_client = _login_slack()
         result = slack_client.conversations_history(channel=channel_id)
         messages = result["messages"]
         filtered_messages = [
@@ -113,15 +199,18 @@ def get_slack_channel_message(
     except SlackApiError as e:
         return f"Error retrieving messages: {e.response['error']}"
 
+
 def send_slack_message(
     message: str,
-    channel: str,
+    channel_id: str,
+    user: Optional[str] = None,
 ) -> str:
     r"""Send a message to a Slack channel.
 
     Args:
         message (str): The message to send.
-        channel (str): The Slack channel ID or name.
+        channel_id (str): The ID of the Slack channel to send message.
+        user (Optional[str]): The user ID of the recipient. Defaults to `None`.
 
     Returns:
         str: A confirmation message indicating whether the message was sent
@@ -131,9 +220,40 @@ def send_slack_message(
         SlackApiError: If an error occurs while sending the message.
     """
     try:
-        slack_client = login_slack()
-        result = slack_client.chat_postMessage(channel=channel, text=message)
-        output = f"Message sent: {result}"
-        return output
+        slack_client = _login_slack()
+        if user:
+            response = slack_client.chat_postEphemeral(
+                channel=channel_id, text=message, user=user
+            )
+        else:
+            response = slack_client.chat_postMessage(
+                channel=channel_id, text=message
+            )
+        return str(response)
+    except SlackApiError as e:
+        return f"Error creating conversation: {e.response['error']}"
+
+
+def delete_slack_message(
+    time_stamp: str,
+    channel_id: str,
+) -> str:
+    r"""Delete a message to a Slack channel.
+
+    Args:
+        time_stamp (str): Timestamp of the message to be deleted.
+        channel_id (str): The ID of the Slack channel to delete message.
+
+    Returns:
+        str: A confirmation message indicating whether the message was delete
+            successfully or an error message.
+
+    Raises:
+        SlackApiError: If an error occurs while sending the message.
+    """
+    try:
+        slack_client = _login_slack()
+        response = slack_client.chat_delete(channel=channel_id, ts=time_stamp)
+        return str(response)
     except SlackApiError as e:
         return f"Error creating conversation: {e.response['error']}"
