@@ -11,11 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import io
 import os
-from typing import Any
+from typing import Any, List, Union
 
-from openai import OpenAI
+from openai import OpenAI, _legacy_response
 
 from camel.types import AudioModelType, VoiceType
 
@@ -29,7 +28,7 @@ class OpenAIAudioModels:
     ) -> None:
         r"""Initialize an instance of OpenAI."""
         url = os.environ.get('OPENAI_API_BASE_URL')
-        self._client = OpenAI(timeout=60, max_retries=3, base_url=url)
+        self._client = OpenAI(timeout=120, max_retries=3, base_url=url)
 
     def text_to_speech(
         self,
@@ -37,7 +36,10 @@ class OpenAIAudioModels:
         model_type: AudioModelType = AudioModelType.TTS_1,
         voice: VoiceType = VoiceType.ALLOY,
         **kwargs: Any,
-    ) -> Any:
+    ) -> Union[
+        List[_legacy_response.HttpxBinaryResponseContent],
+        _legacy_response.HttpxBinaryResponseContent,
+    ]:
         r"""Convert text to speech using OpenAI's TTS model. This method
         converts the given input text to speech using the specified model and
         voice.
@@ -51,21 +53,98 @@ class OpenAIAudioModels:
             **kwargs (Any): Extra kwargs passed to the TTS API.
 
         Returns:
-            Response content object from OpenAI.
+            Union[List[_legacy_response.HttpxBinaryResponseContent],
+                _legacy_response.HttpxBinaryResponseContent]: List of response
+                content object from OpenAI if input charaters more than 4096,
+                single response content if input charaters less than 4096.
 
         Raises:
             Exception: If there's an error during the TTS API call.
         """
         try:
-            response = self._client.audio.speech.create(
-                model=model_type.value,
-                voice=voice.value,
-                input=input,
-                **kwargs,
-            )
+            # Model only support at most 4096 characters one time.
+            max_chunk_size = 4095
+            audio_chunks = []
+            if len(input) > max_chunk_size:
+                while input:
+                    if len(input) <= max_chunk_size:
+                        chunk = input
+                        input = ''
+                    else:
+                        # Find the nearest period before the chunk size limit
+                        while input[max_chunk_size - 1] != '.':
+                            max_chunk_size -= 1
+
+                        chunk = input[:max_chunk_size]
+                        input = input[max_chunk_size:].lstrip()
+
+                    response = self._client.audio.speech.create(
+                        model=model_type.value,
+                        voice=voice.value,
+                        input=chunk,
+                        **kwargs,
+                    )
+                    audio_chunks.append(response)
+                return audio_chunks
+
+            else:
+                response = self._client.audio.speech.create(
+                    model=model_type.value,
+                    voice=voice.value,
+                    input=input,
+                    **kwargs,
+                )
             return response
+
         except Exception as e:
             raise Exception("Error during TTS API call") from e
+
+    def _split_audio(
+        self, audio_file_path: str, chunk_size_mb: int = 24
+    ) -> list:
+        r"""Split the audio file into smaller chunks. Since the Whisper API
+        only supports files that are less than 25 MB.
+
+        Args:
+            audio_file_path (str): Path to the input audio file.
+            chunk_size_mb (int, optional): Size of each chunk in megabytes.
+                Defaults to `24`.
+
+        Returns:
+            list: List of paths to the split audio files.
+        """
+        from pydub import AudioSegment
+
+        audio = AudioSegment.from_file(audio_file_path)
+        audio_format = os.path.splitext(audio_file_path)[1][1:].lower()
+
+        # Calculate chunk size in bytes
+        chunk_size_bytes = chunk_size_mb * 1024 * 1024
+
+        # Number of chunks needed
+        num_chunks = os.path.getsize(audio_file_path) // chunk_size_bytes + 1
+
+        # Create a directory to store the chunks
+        output_dir = os.path.splitext(audio_file_path)[0] + "_chunks"
+        os.makedirs(output_dir, exist_ok=True)
+
+        # Get audio chunk len in milliseconds
+        chunk_size_milliseconds = len(audio) // (num_chunks)
+
+        # Split the audio into chunks
+        split_files = []
+        for i in range(num_chunks):
+            start = i * chunk_size_milliseconds
+            end = (i + 1) * chunk_size_milliseconds
+            if i + 1 == num_chunks:
+                chunk = audio[start:]
+            else:
+                chunk = audio[start:end]
+            # Create new chunk path
+            chunk_path = os.path.join(output_dir, f"chunk_{i}.{audio_format}")
+            chunk.export(chunk_path, format=audio_format)
+            split_files.append(chunk_path)
+        return split_files
 
     def speech_to_text(
         self,
@@ -77,7 +156,8 @@ class OpenAIAudioModels:
 
         Args:
             audio_file_path (str): The audio file path, supporting one of
-                these formats: flac, mp3, mp4, mpeg, mpga, m4a, ogg, wav, or webm.
+                these formats: flac, mp3, mp4, mpeg, mpga, m4a, ogg, wav, or
+                webm.
             translate_into_eng (bool, optional): Whether to translate the
                 speech into English. Defaults to `False`.
             **kwargs (Any): Extra keyword arguments passed to the
@@ -105,20 +185,40 @@ class OpenAIAudioModels:
 
         if file_format not in supported_formats:
             raise ValueError(f"Unsupported audio file format: {file_format}")
-
-        with open(audio_file_path, "rb") as audio_file:
-            audio_data = io.BytesIO(audio_file.read())
-
         try:
-            if translate_into_eng:
-                translation = self._client.audio.translations.create(
-                    model="whisper-1", file=audio_data, **kwargs
-                )
-                return translation.text
+            if os.path.getsize(audio_file_path) > 24 * 1024 * 1024:
+                # Split audio into chunks
+                audio_chunks = self._split_audio(audio_file_path)
+                texts = []
+                for chunk_path in audio_chunks:
+                    audio_data = open(chunk_path, "rb")
+                    if translate_into_eng:
+                        translation = self._client.audio.translations.create(
+                            model="whisper-1", file=audio_data, **kwargs
+                        )
+                        texts.append(translation.text)
+                    else:
+                        transcription = (
+                            self._client.audio.transcriptions.create(
+                                model="whisper-1", file=audio_data, **kwargs
+                            )
+                        )
+                        texts.append(transcription.text)
+                    os.remove(chunk_path)  # Delete temporary chunk file
+                return " ".join(texts)
             else:
-                transcription = self._client.audio.transcriptions.create(
-                    model="whisper-1", file=audio_data, **kwargs
-                )
-                return transcription.text
+                # Process the entire audio file
+                audio_data = open(audio_file_path, "rb")
+
+                if translate_into_eng:
+                    translation = self._client.audio.translations.create(
+                        model="whisper-1", file=audio_data, **kwargs
+                    )
+                    return translation.text
+                else:
+                    transcription = self._client.audio.transcriptions.create(
+                        model="whisper-1", file=audio_data, **kwargs
+                    )
+                    return transcription.text
         except Exception as e:
             raise Exception("Error during STT API call") from e

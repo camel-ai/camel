@@ -11,61 +11,75 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import io
-from unittest.mock import Mock, patch
-
-import pytest
+import os
+import tempfile
+from unittest.mock import ANY, Mock, patch
 
 from camel.models import OpenAIAudioModels
+from camel.types import AudioModelType, VoiceType
 
 
-def test_text_to_speech_success():
-    openai = OpenAIAudioModels()
-    openai._client.audio.speech.create = Mock(return_value="Mock response")
+def test_text_to_speech():
+    openai_audio = OpenAIAudioModels()
+    input_text = "Hello, world!"
+    mock_response = Mock()
+    mock_response.text = "Mock audio response"
+    mock_client = Mock()
+    mock_client.audio.speech.create.return_value = mock_response
+    openai_audio._client = mock_client
 
-    response = openai.text_to_speech("Hello, world!")
+    response = openai_audio.text_to_speech(input_text)
 
-    assert response == "Mock response"
-
-
-def test_text_to_speech_error():
-    openai = OpenAIAudioModels()
-    openai._client.audio.speech.create = Mock(
-        side_effect=Exception("Test Exception")
+    assert response.text == "Mock audio response"
+    mock_client.audio.speech.create.assert_called_once_with(
+        model=AudioModelType.TTS_1.value,
+        voice=VoiceType.ALLOY.value,
+        input=input_text,
     )
 
-    try:
-        openai.text_to_speech("Hello, world!")
-    except Exception as e:
-        assert str(e) == "Error during TTS API call"
 
+def test_speech_to_text():
+    openai_audio = OpenAIAudioModels()
+    # Create a temporary audio file
+    with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
+        temp_file.write(b'Test audio data')
+        temp_file_path = temp_file.name
 
-@patch("builtins.open", return_value=io.BytesIO(b"mock audio data"))
-def test_speech_to_text_success(mock_open):
-    openai = OpenAIAudioModels()
-    openai._client.audio.transcriptions.create = Mock(
-        return_value=Mock(text="Hello, world!")
+    mock_response = Mock()
+    mock_response.text = "Mock transcription response"
+    mock_client = Mock()
+    mock_client.audio.transcriptions.create.return_value = mock_response
+    openai_audio._client = mock_client
+
+    response = openai_audio.speech_to_text(temp_file_path)
+
+    assert response == "Mock transcription response"
+    mock_client.audio.transcriptions.create.assert_called_once_with(
+        model="whisper-1", file=ANY
     )
 
-    response = openai.speech_to_text("test_audio.wav")
-
-    assert response == "Hello, world!"
-
-
-@patch("builtins.open", return_value=io.BytesIO(b"mock audio data"))
-def test_speech_to_text_translate_success(mock_open):
-    openai = OpenAIAudioModels()
-    openai._client.audio.translations.create = Mock(
-        return_value=Mock(text="Bonjour le monde!")
-    )
-
-    response = openai.speech_to_text("test_audio.wav", translate_into_eng=True)
-
-    assert response == "Bonjour le monde!"
+    # Clean up temporary file
+    os.remove(temp_file_path)
 
 
-def test_speech_to_text_unsupported_format():
-    openai = OpenAIAudioModels()
+@patch(
+    "camel.models.openai_audio_models.os.path.getsize", return_value=1024
+)  # Mocking the file size
+@patch(
+    "camel.models.openai_audio_models.open", new_callable=Mock
+)  # Mocking the open function
+def test_speech_to_text_large_audio(mock_open, mock_getsize):
+    openai_audio = OpenAIAudioModels()
+    audio_file_path = "large_audio.wav"
+    mock_split_audio = Mock(return_value=["chunk1.wav", "chunk2.wav"])
+    openai_audio._split_audio = mock_split_audio
+    mock_response = Mock()
+    mock_response.text = "Mock transcription response"
+    mock_client = Mock()
+    mock_client.audio.transcriptions.create.return_value = mock_response
+    openai_audio._client = mock_client
 
-    with pytest.raises(ValueError):
-        openai.speech_to_text("test_audio.xyz")
+    response = openai_audio.speech_to_text(audio_file_path)
+
+    assert response == "Mock transcription response"
+    assert mock_client.audio.transcriptions.create.call_count == 1
