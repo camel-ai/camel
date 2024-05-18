@@ -12,10 +12,12 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import io
-import pytest
 from unittest.mock import Mock, patch
 
+import pytest
+
 from camel.models import OpenAIAudioModels
+
 
 def test_text_to_speech_success():
     openai = OpenAIAudioModels()
@@ -28,7 +30,9 @@ def test_text_to_speech_success():
 
 def test_text_to_speech_error():
     openai = OpenAIAudioModels()
-    openai._client.audio.speech.create = Mock(side_effect=Exception("Test Exception"))
+    openai._client.audio.speech.create = Mock(
+        side_effect=Exception("Test Exception")
+    )
 
     with pytest.raises(Exception):
         openai.text_to_speech("Hello, world!")
@@ -37,7 +41,9 @@ def test_text_to_speech_error():
 @patch("builtins.open", return_value=io.BytesIO(b"mock audio data"))
 def test_speech_to_text_success(mock_open):
     openai = OpenAIAudioModels()
-    openai._client.audio.transcriptions.create = Mock(return_value=Mock(text="Hello, world!"))
+    openai._client.audio.transcriptions.create = Mock(
+        return_value=Mock(text="Hello, world!")
+    )
 
     response = openai.speech_to_text("test_audio.wav")
 
@@ -47,7 +53,9 @@ def test_speech_to_text_success(mock_open):
 @patch("builtins.open", return_value=io.BytesIO(b"mock audio data"))
 def test_speech_to_text_translate_success(mock_open):
     openai = OpenAIAudioModels()
-    openai._client.audio.translations.create = Mock(return_value=Mock(text="Bonjour le monde!"))
+    openai._client.audio.translations.create = Mock(
+        return_value=Mock(text="Bonjour le monde!")
+    )
 
     response = openai.speech_to_text("test_audio.wav", translate_into_eng=True)
 
@@ -63,7 +71,9 @@ def test_speech_to_text_unsupported_format():
 
 def test_speech_to_text_error():
     openai = OpenAIAudioModels()
-    openai._client.audio.transcriptions.create = Mock(side_effect=Exception("Test Exception"))
+    openai._client.audio.transcriptions.create = Mock(
+        side_effect=Exception("Test Exception")
+    )
 
     with pytest.raises(Exception):
         openai.speech_to_text("test_audio.wav")

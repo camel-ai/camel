@@ -11,31 +11,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import os
 import io
-
+import os
 from typing import Any
+
 from openai import OpenAI
 
 from camel.types import AudioModelType, VoiceType
 
-class OpenAIAudioModels():
+
+class OpenAIAudioModels:
     r"""Provides access to OpenAI's Text-to-Speech (TTS) and Speech_to_Text
     (STT) models."""
 
     def __init__(
         self,
-        ) -> None:
+    ) -> None:
         r"""Initialize an instance of OpenAI."""
         url = os.environ.get('OPENAI_API_BASE_URL')
         self._client = OpenAI(timeout=60, max_retries=3, base_url=url)
 
-    def text_to_speech(self,
-                       input:str,
-                       model_type: AudioModelType = AudioModelType.TTS_1,
-                       voice: VoiceType = VoiceType.ALLOY,
-                       **kwargs: Any,
-                       ) -> Any:
+    def text_to_speech(
+        self,
+        input: str,
+        model_type: AudioModelType = AudioModelType.TTS_1,
+        voice: VoiceType = VoiceType.ALLOY,
+        **kwargs: Any,
+    ) -> Any:
         r"""Convert text to speech using OpenAI's TTS model. This method
         converts the given input text to speech using the specified model and
         voice.
@@ -65,7 +67,12 @@ class OpenAIAudioModels():
         except Exception as e:
             raise Exception("Error during TTS API call") from e
 
-    def speech_to_text(self, audio_file_path: str, translate_into_eng: bool = False, **kwargs: Any) -> str:
+    def speech_to_text(
+        self,
+        audio_file_path: str,
+        translate_into_eng: bool = False,
+        **kwargs: Any,
+    ) -> str:
         r"""Convert speech audio to text.
 
         Args:
@@ -83,7 +90,17 @@ class OpenAIAudioModels():
             ValueError: If the audio file format is not supported.
             Exception: If there's an error during the STT API call.
         """
-        supported_formats = ["flac", "mp3", "mp4", "mpeg", "mpga", "m4a", "ogg", "wav", "webm"]
+        supported_formats = [
+            "flac",
+            "mp3",
+            "mp4",
+            "mpeg",
+            "mpga",
+            "m4a",
+            "ogg",
+            "wav",
+            "webm",
+        ]
         file_format = audio_file_path.split(".")[-1].lower()
 
         if file_format not in supported_formats:
@@ -95,16 +112,12 @@ class OpenAIAudioModels():
         try:
             if translate_into_eng:
                 translation = self._client.audio.translations.create(
-                    model="whisper-1",
-                    file=audio_data,
-                    **kwargs
+                    model="whisper-1", file=audio_data, **kwargs
                 )
                 return translation.text
             else:
                 transcription = self._client.audio.transcriptions.create(
-                    model="whisper-1",
-                    file=audio_data,
-                    **kwargs
+                    model="whisper-1", file=audio_data, **kwargs
                 )
                 return transcription.text
         except Exception as e:
