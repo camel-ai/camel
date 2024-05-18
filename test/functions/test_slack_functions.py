@@ -13,29 +13,39 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from unittest.mock import MagicMock, patch
 
-from camel.functions.slack_functions import (create_slack_channel,
-        join_slack_channel,
-        leave_slack_channel,
-        get_slack_channel_information,
-        get_slack_channel_message,
-        send_slack_message,
-        delete_slack_message,)
+from camel.functions.slack_functions import (
+    create_slack_channel,
+    delete_slack_message,
+    get_slack_channel_information,
+    get_slack_channel_message,
+    join_slack_channel,
+    leave_slack_channel,
+    send_slack_message,
+)
 
 
 def test_create_slack_channel():
-    with patch('camel.functions.slack_functions._login_slack') as mock_login_slack:
+    with patch(
+        'camel.functions.slack_functions._login_slack'
+    ) as mock_login_slack:
         mock_client = MagicMock()
         mock_login_slack.return_value = mock_client
 
         mock_response = {'channel': {'id': 'fake_channel_id'}}
         mock_client.conversations_create.return_value = mock_response
-        mock_client.conversations_archive.return_value = {'fake_response_key': 'fake_response_value'}
+        mock_client.conversations_archive.return_value = {
+            'fake_response_key': 'fake_response_value'
+        }
 
         result = create_slack_channel('test_channel', is_private=True)
 
         assert result == "{'fake_response_key': 'fake_response_value'}"
-        mock_client.conversations_create.assert_called_once_with(name='test_channel', is_private=True)
-        mock_client.conversations_archive.assert_called_once_with(channel='fake_channel_id')
+        mock_client.conversations_create.assert_called_once_with(
+            name='test_channel', is_private=True
+        )
+        mock_client.conversations_archive.assert_called_once_with(
+            channel='fake_channel_id'
+        )
 
 
 def test_join_slack_channel():
@@ -46,6 +56,7 @@ def test_join_slack_channel():
         response = join_slack_channel("123")
         assert response == "{}"
 
+
 def test_leave_slack_channel():
     with patch("camel.functions.slack_functions._login_slack") as mock_login:
         mock_client = MagicMock()
@@ -54,27 +65,41 @@ def test_leave_slack_channel():
         response = leave_slack_channel("123")
         assert response == "{}"
 
+
 def test_get_slack_channel_information():
     with patch("camel.functions.slack_functions._login_slack") as mock_login:
         mock_client = MagicMock()
         mock_login.return_value = mock_client
         mock_client.conversations_list.return_value = {
-            "channels": [{"id": "123", "name": "test_channel", "created": 123, "num_members": 5}]
+            "channels": [
+                {
+                    "id": "123",
+                    "name": "test_channel",
+                    "created": 123,
+                    "num_members": 5,
+                }
+            ]
         }
         response = get_slack_channel_information()
         expected_result = '[{"id": "123", "name": "test_channel", "created": 123, "num_members": 5}]'
         assert response == expected_result
+
 
 def test_get_slack_channel_message():
     with patch("camel.functions.slack_functions._login_slack") as mock_login:
         mock_client = MagicMock()
         mock_login.return_value = mock_client
         mock_client.conversations_history.return_value = {
-            "messages": [{"user": "user_id", "text": "test_message", "ts": "123"}]
+            "messages": [
+                {"user": "user_id", "text": "test_message", "ts": "123"}
+            ]
         }
         response = get_slack_channel_message("123")
-        expected_result = '[{"user": "user_id", "text": "test_message", "ts": "123"}]'
+        expected_result = (
+            '[{"user": "user_id", "text": "test_message", "ts": "123"}]'
+        )
         assert response == expected_result
+
 
 def test_send_slack_message():
     with patch("camel.functions.slack_functions._login_slack") as mock_login:
@@ -83,6 +108,7 @@ def test_send_slack_message():
         mock_client.chat_postMessage.return_value = {}
         response = send_slack_message("test_message", "123")
         assert response == "{}"
+
 
 def test_delete_slack_message():
     with patch("camel.functions.slack_functions._login_slack") as mock_login:
