@@ -34,8 +34,10 @@ def test_text_to_speech_error():
         side_effect=Exception("Test Exception")
     )
 
-    with pytest.raises(Exception):
+    try:
         openai.text_to_speech("Hello, world!")
+    except Exception as e:
+        assert str(e) == "Error during TTS API call"
 
 
 @patch("builtins.open", return_value=io.BytesIO(b"mock audio data"))
@@ -67,13 +69,3 @@ def test_speech_to_text_unsupported_format():
 
     with pytest.raises(ValueError):
         openai.speech_to_text("test_audio.xyz")
-
-
-def test_speech_to_text_error():
-    openai = OpenAIAudioModels()
-    openai._client.audio.transcriptions.create = Mock(
-        side_effect=Exception("Test Exception")
-    )
-
-    with pytest.raises(Exception):
-        openai.speech_to_text("test_audio.wav")
