@@ -24,23 +24,45 @@ def extract_json_from_string(input_str: str) -> dict:
     Returns:
         dict: The first JSON object found in the string as a Python dictionary.
     """
+    in_quotes = False
+    escaped = False
     depth = 0
     start_index = -1
+    clean_input = []  # to build the cleaned input string
+
     for i, char in enumerate(input_str):
-        if char == '{':
+        if char == '"' and not escaped:  # toggle the in_quotes status
+            in_quotes = not in_quotes
+
+        if (
+            in_quotes and char == '\\' and not escaped
+        ):  # handle escape character
+            escaped = True
+        else:
+            escaped = False
+
+        if in_quotes and char == '\n':  # replace newline inside quotes
+            clean_input.append(' ')  # replace newline with space inside quotes
+        else:
+            clean_input.append(char)  # append current character as it is
+
+        if char == '{' and not in_quotes:
             depth += 1
             if depth == 1:
-                start_index = i  # Mark the start of a JSON object
-        elif char == '}':
+                start_index = i  # mark the start of a JSON object
+        elif char == '}' and not in_quotes:
             depth -= 1
             if depth == 0 and start_index != -1:
-                # When it reachs a closing bracket that matches the first
+                # when it reaches a closing bracket that matches the first
                 # opening bracket
+                cleaned_str = ''.join(clean_input[start_index : i + 1])
                 try:
-                    # Attempt to parse the JSON
-                    return json.loads(input_str[start_index:i + 1])
+                    return json.loads(cleaned_str)
                 except json.JSONDecodeError as e:
-                    # If parsing fails, raise an error indicating the problem
-                    raise ValueError("Failed to decode JSON object\n" +
-                                     input_str) from e
-    raise ValueError("No complete JSON object found:\n" + input_str)
+                    raise ValueError(
+                        "Failed to decode JSON object:\n"
+                        + cleaned_str
+                        + "\n"
+                        + str(e)
+                    ) from e
+    raise ValueError("No complete JSON object found:\n" + ''.join(clean_input))
