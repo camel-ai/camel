@@ -51,7 +51,7 @@ def _login_discord(
             "Must specify `discord_token` or set the environment variable `DISCORD_TOKEN`."
         )
 
-    client = discord.Client(application_id=application_id)
+    client = discord.Client(application_id=application_id)  # type: ignore[call-arg]
     client.login(discord_token)  # type: ignore[unused-coroutine]
     return client
 
