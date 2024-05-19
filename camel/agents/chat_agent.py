@@ -373,7 +373,7 @@ class ChatAgent(BaseAgent):
                 break
 
         return ChatAgentResponse(output_messages, self.terminated, info)
-    
+
     def handle_batch_response(
         self, response: ChatCompletion
     ) -> Tuple[List[BaseMessage], List[str], Dict[str, int], str]:
