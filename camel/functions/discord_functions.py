@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 def _login_discord(
     discord_token: Optional[str] = None,
     application_id: Optional[int] = None,
-) -> 'Client':
+) -> Client:
     r"""Authenticate using the Discord API.
 
     Args:
