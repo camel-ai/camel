@@ -35,14 +35,14 @@ def _login_discord(
         ImportError: If the discord package is not installed.
         ValueError: If the discord_token is not provided.
     """
+    import os
+
     try:
         import discord
     except ImportError as e:
         raise ImportError(
             "Cannot import discord. Please install the package with `pip install discord`."
         ) from e
-
-    import os
 
     if discord_token is None:
         discord_token = os.getenv("DISCORD_TOKEN")
