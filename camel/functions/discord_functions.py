@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from typing import Optional, TYPE_CHECKING, List, Dict, Any
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 if TYPE_CHECKING:
     from discord import Client
@@ -43,6 +43,7 @@ def _login_discord(
         ) from e
 
     import os
+
     if discord_token is None:
         discord_token = os.getenv("DISCORD_TOKEN")
     if discord_token is None:
@@ -51,13 +52,12 @@ def _login_discord(
         )
 
     client = discord.Client(application_id=application_id)
-    client.login(discord_token) # type: ignore[unused-coroutine]
+    client.login(discord_token)  # type: ignore[unused-coroutine]
     return client
 
 
 def get_client_info(
-    discord_token: Optional[str] = None,
-    application_id: Optional[int] = None
+    discord_token: Optional[str] = None, application_id: Optional[int] = None
 ) -> List[Dict[str, Any]]:
     r"""Retrieve user and message information from the Discord client.
 
@@ -71,13 +71,16 @@ def get_client_info(
     """
     discord_client = _login_discord(discord_token, application_id)
 
-    cached_messages = [message.clean_content() for message in discord_client.cached_messages()] # type: ignore[operator]
+    cached_messages = [
+        message.clean_content()
+        for message in discord_client.cached_messages()  # type: ignore[operator]
+    ]
 
     user_info = {
-        "user_name": discord_client.user().name, # type: ignore
-        "user_id": discord_client.user().id, # type: ignore
-        "user_discriminator": discord_client.user().discriminator, # type: ignore
+        "user_name": discord_client.user().name,  # type: ignore[operator,misc]
+        "user_id": discord_client.user().id,  # type: ignore[operator,misc]
+        "user_discriminator": discord_client.user().discriminator,  # type: ignore[operator,misc]
     }
 
-    combined_info = [user_info] + cached_messages
+    combined_info = [user_info, *cached_messages]
     return combined_info
