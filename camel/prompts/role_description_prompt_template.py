@@ -13,7 +13,8 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any
 
-from camel.prompts import AISocietyPromptTemplateDict, TextPrompt
+from camel.prompts.ai_society import AISocietyPromptTemplateDict
+from camel.prompts.base import TextPrompt
 from camel.types import RoleType
 
 
@@ -32,6 +33,7 @@ class RoleDescriptionPromptTemplateDict(AISocietyPromptTemplateDict):
             outlines the rules of the conversation and provides instructions
             for giving instructions to the AI assistant.
     """
+
     ROLE_DESCRIPTION_PROMPT = TextPrompt("""===== ROLES WITH DESCRIPTION =====
 Before you proceed, pay close attention to the following role descriptions. It's essential that you internalize each aspect of these descriptions, as they will serve as the foundation for subsequent answers. Ensure that your responses align with and reflect the nuances of these roles. 
 {user_role} and {assistant_role} are collaborating to complete a task.
@@ -42,15 +44,19 @@ Before you proceed, pay close attention to the following role descriptions. It's
 """)
 
     ASSISTANT_PROMPT = TextPrompt(
-        AISocietyPromptTemplateDict.ASSISTANT_PROMPT + ROLE_DESCRIPTION_PROMPT)
+        ROLE_DESCRIPTION_PROMPT + AISocietyPromptTemplateDict.ASSISTANT_PROMPT
+    )
 
-    USER_PROMPT = TextPrompt(AISocietyPromptTemplateDict.USER_PROMPT +
-                             ROLE_DESCRIPTION_PROMPT)
+    USER_PROMPT = TextPrompt(
+        ROLE_DESCRIPTION_PROMPT + AISocietyPromptTemplateDict.USER_PROMPT
+    )
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.update({
-            "role_description": self.ROLE_DESCRIPTION_PROMPT,
-            RoleType.ASSISTANT: self.ASSISTANT_PROMPT,
-            RoleType.USER: self.USER_PROMPT,
-        })
+        self.update(
+            {
+                "role_description": self.ROLE_DESCRIPTION_PROMPT,
+                RoleType.ASSISTANT: self.ASSISTANT_PROMPT,
+                RoleType.USER: self.USER_PROMPT,
+            }
+        )

@@ -25,31 +25,41 @@ from camel.types import ModelType, RoleType
 @pytest.mark.parametrize("model_type", [None, ModelType.GPT_3_5_TURBO])
 @pytest.mark.parametrize(
     "num_roles, role_names",
-    [(
-        1,
-        ["Trading Strategist"],
-    ), (2, ["Trading Strategist", "Data Scientist"]),
-     (3, ["Trading Strategist", "Data Scientist", "Software Developer"])])
+    [
+        (
+            1,
+            ["Trading Strategist"],
+        ),
+        (2, ["Trading Strategist", "Data Scientist"]),
+        (3, ["Trading Strategist", "Data Scientist", "Software Developer"]),
+    ],
+)
 def test_multi_agent(mock_step, model_type, num_roles, role_names):
     mock_content = generate_mock_content(num_roles, role_names)
-    mock_msg = BaseMessage(role_name="Role Assigner",
-                           role_type=RoleType.ASSISTANT, meta_dict=None,
-                           content=mock_content)
+    mock_msg = BaseMessage(
+        role_name="Role Assigner",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
+        content=mock_content,
+    )
 
     # Mock the step function
-    mock_step.return_value = ChatAgentResponse(msgs=[mock_msg],
-                                               terminated=False, info={})
+    mock_step.return_value = ChatAgentResponse(
+        msgs=[mock_msg], terminated=False, info={}
+    )
 
     task_prompt = "Develop a trading bot for the stock market."
     model_config_description = ChatGPTConfig()
 
     # Construct role assignment agent
-    role_description_agent = MultiAgent(model_type=model_type,
-                                        model_config=model_config_description)
+    role_description_agent = MultiAgent(
+        model_type=model_type, model_config=model_config_description
+    )
 
     # Generate the role description dictionary based on the mock step function
     role_description_dict = role_description_agent.run_role_with_description(
-        task_prompt=task_prompt, num_roles=num_roles)
+        task_prompt=task_prompt, num_roles=num_roles
+    )
 
     expected_dict = generate_expected_dict(num_roles, role_names)
 
@@ -60,11 +70,14 @@ def test_multi_agent(mock_step, model_type, num_roles, role_names):
 # Generate mock content according to the number of roles and role names
 def generate_mock_content(num_roles, role_names):
     if len(role_names) != num_roles:
-        raise ValueError(f"Length of role_names ({len(role_names)}) "
-                         f"does not equal to num_roles ({num_roles}).")
+        raise ValueError(
+            f"Length of role_names ({len(role_names)}) "
+            f"does not equal to num_roles ({num_roles})."
+        )
     role_descriptions = [
-        "Design trading strategies.", "Analyze market data.",
-        "Implement trading algorithms."
+        "Design trading strategies.",
+        "Analyze market data.",
+        "Implement trading algorithms.",
     ]
     roles_with_descriptions = [
         (role_name, role_desc)
@@ -77,7 +90,8 @@ def generate_mock_content(num_roles, role_names):
         content.append(
             f"Domain expert {i + 1}: {role_name}\n"
             f"Associated competencies, characteristics, and duties:\n"
-            f"{role_desc}\nEnd.")
+            f"{role_desc}\nEnd."
+        )
 
     return "\n".join(content)
 
@@ -85,11 +99,14 @@ def generate_mock_content(num_roles, role_names):
 # Generate expected dictionary according to the number of roles and role names
 def generate_expected_dict(num_roles, role_names):
     if len(role_names) != num_roles:
-        raise ValueError(f"Length of role_names ({len(role_names)}) "
-                         f"does not equal to num_roles ({num_roles}).")
+        raise ValueError(
+            f"Length of role_names ({len(role_names)}) "
+            f"does not equal to num_roles ({num_roles})."
+        )
     role_descriptions = [
-        "Design trading strategies.", "Analyze market data.",
-        "Implement trading algorithms."
+        "Design trading strategies.",
+        "Analyze market data.",
+        "Implement trading algorithms.",
     ]
     roles_with_descriptions = {
         role_name: role_desc

@@ -46,6 +46,5 @@ class InMemoryKeyValueStorage(BaseKeyValueStorage):
         return deepcopy(self.memory_list)
 
     def clear(self) -> None:
-        r"""Removes all records from the key-value storage system.
-        """
+        r"""Removes all records from the key-value storage system."""
         self.memory_list.clear()

@@ -61,19 +61,21 @@ class InsightAgent(ChatAgent):
         """
         self.reset()
 
-        insights_instruction_prompt = \
-            TextPrompt("Based on the CONTEXT TEXT " +
-                       "provided, generate a comprehensive set of distinct " +
-                       "insights following the \"RULES OF INSIGHTS " +
-                       "GENERATION\" and use the \"ANSWER TEMPLATE\" to " +
-                       "structure your response. Extract as many meaningful " +
-                       "insights as the context allows. " +
-                       "{insights_instruction}\nYour answer MUST strictly " +
-                       "adhere to the structure of ANSWER TEMPLATE, ONLY " +
-                       "fill in  the BLANKs, and DO NOT alter or modify any " +
-                       "other part of the template.\n")
+        insights_instruction_prompt = TextPrompt(
+            "Based on the CONTEXT TEXT "
+            + "provided, generate a comprehensive set of distinct "
+            + "insights following the \"RULES OF INSIGHTS "
+            + "GENERATION\" and use the \"ANSWER TEMPLATE\" to "
+            + "structure your response. Extract as many meaningful "
+            + "insights as the context allows. "
+            + "{insights_instruction}\nYour answer MUST strictly "
+            + "adhere to the structure of ANSWER TEMPLATE, ONLY "
+            + "fill in  the BLANKs, and DO NOT alter or modify any "
+            + "other part of the template.\n"
+        )
         context_text_prompt = TextPrompt(
-            "===== CONTEXT TEXT =====\n{context_text}\n\n")
+            "===== CONTEXT TEXT =====\n{context_text}\n\n"
+        )
         insights_prompt = """===== INSIGHTS GENERATION WITH MATHEMATICAL CONTEXT =====
 Understanding and generating insights from textual data can be represented by the model:
 ``L_I: A_I -> n_I * B_I``.
@@ -107,7 +109,7 @@ For each identified entity or detail from the decomposition:
 - Apply the rules or methodology represented by $L_I$ to transition from the initial CONTEXT TEXT ($A_I$) to a set of insights ($n_I$ * $B_I$), where $n_I$ indicates the number of insights obtained.
 - Adhere to ANSWER TEMPLATE. In answer, use nouns and phrases to replace sentences.
 
-"""  # noqa: E501
+"""
 
         insight_json_template = """{
     "insight <NUM>": {
@@ -131,26 +133,31 @@ For each identified entity or detail from the decomposition:
     // it is allowed to have more insights
 }"""
         answer_template_prompt = (
-            "===== ANSWER TEMPLATE =====\n" +
-            "You need to generate multiple insights, and the number of " +
-            "insights depend on the number of Topic/Functionality " +
-            "Segmentation. So the total number of insights is <NUM>.\n" +
-            f"{insight_json_template}\n")
-        insights_generation_prompt = insights_instruction_prompt + \
-            context_text_prompt + insights_prompt
+            "===== ANSWER TEMPLATE =====\n"
+            + "You need to generate multiple insights, and the number of "
+            + "insights depend on the number of Topic/Functionality "
+            + "Segmentation. So the total number of insights is <NUM>.\n"
+            + f"{insight_json_template}\n"
+        )
+        insights_generation_prompt = (
+            insights_instruction_prompt + context_text_prompt + insights_prompt
+        )
         insights_generation = insights_generation_prompt.format(
             insights_instruction=insights_instruction or "",
-            context_text=context_text)
+            context_text=context_text,
+        )
         insights_generation += answer_template_prompt
 
         insights_generation_msg = BaseMessage.make_user_message(
-            role_name="Insight Agent", content=insights_generation)
+            role_name="Insight Agent", content=insights_generation
+        )
 
         response = self.step(input_message=insights_generation_msg)
 
         if response.terminated:
-            raise RuntimeError("Insights generation failed. Error:\n" +
-                               f"{response.info}")
+            raise RuntimeError(
+                "Insights generation failed. Error:\n" + f"{response.info}"
+            )
         msg = response.msg  # type: BaseMessage
 
         insights_json = extract_json_from_string(msg.content)
@@ -162,52 +169,56 @@ For each identified entity or detail from the decomposition:
             return value.strip() if value else None
 
         # Parse the insights from the response
-        insights_dict: Dict[str, Union[str, list]] = {}
+        insights_dict: Dict[str, Dict[str, Any]] = {}
         for insight_idx, insight_data in insights_json.items():
             insights_dict[insight_idx] = {
-                "topic":
-                handle_none_values_in_msg(
-                    insight_data.get("Topic Segmentation")),
+                "topic": handle_none_values_in_msg(
+                    insight_data.get("Topic Segmentation")
+                ),
                 "entity_recognition": [
                     entity.strip()
                     for entity in insight_data.get("Entity Recognition", [])
                 ],
-                "extract_details":
-                handle_none_values_in_msg(insight_data.get("Extract Details")),
-                "contextual_understanding":
-                handle_none_values_in_msg(
-                    insight_data.get("Contextual Understanding")),
-                "formulate_questions":
-                handle_none_values_in_msg(
-                    insight_data.get("Formulate Questions")),
-                "answer_to_formulate_questions":
-                handle_none_values_in_msg(
+                "extract_details": handle_none_values_in_msg(
+                    insight_data.get("Extract Details")
+                ),
+                "contextual_understanding": handle_none_values_in_msg(
+                    insight_data.get("Contextual Understanding")
+                ),
+                "formulate_questions": handle_none_values_in_msg(
+                    insight_data.get("Formulate Questions")
+                ),
+                "answer_to_formulate_questions": handle_none_values_in_msg(
                     insight_data.get(
-                        "Answer to Formulate Questions using CONTEXT TEXT")),
-                "iterative_feedback":
-                handle_none_values_in_msg(
-                    insight_data.get("Iterative Feedback"))
+                        "Answer to Formulate Questions using CONTEXT TEXT"
+                    )
+                ),
+                "iterative_feedback": handle_none_values_in_msg(
+                    insight_data.get("Iterative Feedback")
+                ),
             }
 
         if len(insights_dict) == 0:
-            raise RuntimeError("No insights generated.\n"
-                               f"Response of LLM:\n{msg.content}")
+            raise RuntimeError(
+                "No insights generated.\n" f"Response of LLM:\n{msg.content}"
+            )
 
         return insights_dict
 
-    def transform_into_text(self, insights: Union[Dict[str, Dict[str, str]],
-                                                  str],
-                            answer_template: [str, TextPrompt] = None) -> str:
+    def transform_into_text(
+        self,
+        insights: Union[Dict[str, Dict[str, str]], str],
+        answer_template: Optional[Union[str, TextPrompt]] = None,
+    ) -> str:
         r"""Transform the insights into text format.
 
         Args:
             insights (Union[Dict[str, Dict[str, str]], str]): The insights from
                 the context text, generated by the `run` method, or the
                 insights in string format.
-            answer_template (Union[str, TextPrompt]): The answer template for
-                transforming the insights into text format by LLM. In the
-                answer template, the <BLANK> is the placeholder for the
-                generated answer (text).
+            answer_template (Optional[Union[str, TextPrompt]], optional): The
+                answer template to structure the response. (default:
+                :obj:`None`)
 
         Returns:
             str: The organized text of the insights.
@@ -234,36 +245,42 @@ Here is how you should approach this task:
 5. Final Review:
     - Check the final text to ensure that all insights have been accurately and completely transcribed.
 
-"""  # noqa: E501
+"""
         insights_prompt = TextPrompt("===== INSIGHTS =====\n{insights}\n\n")
         if answer_template is None or answer_template == "":
             answer_template_prompt = TextPrompt(
-                "===== ANSWER TEMPLATE =====\n<BLANK>")
+                "===== ANSWER TEMPLATE =====\n<BLANK>"
+            )
         else:
             answer_template_prompt = TextPrompt(
-                f"===== ANSWER TEMPLATE =====\n{answer_template}\n")
+                f"===== ANSWER TEMPLATE =====\n{answer_template}\n"
+            )
 
-        transformed_text_generation_prompt = transform_into_text_prompt + \
-            insights_prompt + answer_template_prompt
+        transformed_text_generation_prompt = (
+            transform_into_text_prompt
+            + insights_prompt
+            + answer_template_prompt
+        )
 
         if isinstance(insights, str):
             insights_str = insights
         else:
             insights_str = self.convert_json_to_str(insights)
-        transformed_text_generation = \
-            transformed_text_generation_prompt.format(
-                insights=insights_str)
+        transformed_text_generation = transformed_text_generation_prompt.format(
+            insights=insights_str
+        )
 
         transformed_text_generation_msg = BaseMessage.make_user_message(
-            role_name="Insight Synthesizer",
-            content=transformed_text_generation)
+            role_name="Insight Synthesizer", content=transformed_text_generation
+        )
 
         response = self.step(input_message=transformed_text_generation_msg)
 
         if response.terminated:
             raise RuntimeError(
-                "Transforming insights into text failed. Error:\n" +
-                f"{response.info}")
+                "Transforming insights into text failed. Error:\n"
+                + f"{response.info}"
+            )
         msg = response.msg  # type: BaseMessage
 
         transformed_text = msg.content
@@ -273,8 +290,9 @@ Here is how you should approach this task:
 
         return transformed_text
 
-    def convert_json_to_str(self, insights_json: Dict[str, Dict[str,
-                                                                str]]) -> str:
+    def convert_json_to_str(
+        self, insights_json: Dict[str, Dict[str, str]]
+    ) -> str:
         r"""Convert the insights from json format to string format.
 
         Args:

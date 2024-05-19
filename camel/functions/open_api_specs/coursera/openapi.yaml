@@ -1,0 +1,82 @@
+openapi: 3.0.1
+info:
+  title: Search API
+  version: v1
+  description: Find recommendation for courses, specializations, and degrees on Coursera.
+servers:
+  - url: https://www.coursera.org
+    description: API schema for search APIs exposed to 3rd party services (e.g. OpenAI)
+tags:
+  - name: SearchV1Controller
+    description: the Search V1 Controller API
+paths:
+  /api/rest/v1/search:
+    post:
+      summary:
+        A public API that searches the Coursera catalog for products (e.g. courses) that
+        are relevant to the provided query string.
+      tags:
+        - search-v1-controller
+      operationId:
+        search
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchQuery'
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+components:
+  schemas:
+    SearchQuery:
+      type: object
+      properties:
+        query:
+          type: string
+      required:
+        - query
+      example:
+        query: machine learning
+    SearchResponse:
+      properties:
+        hits:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchHit'
+    SearchHit:
+      type: object
+      properties:
+        name:
+          type: string
+        partners:
+          type: array
+          items:
+            type: string
+        duration:
+          type: string
+        partnerLogos:
+          type: array
+          items:
+            type: string
+        productDifficultyLevel:
+          type: string
+        entityType:
+          type: string
+        avgProductRating:
+          type: string
+        skills:
+          type: string
+        imageUrl:
+          type: string
+        isCourseFree:
+          type: string
+        isPartOfCourseraPlus:
+          type: string
+        objectUrl:
+          type: string

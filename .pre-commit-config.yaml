@@ -1,22 +1,20 @@
 repos:
-  - repo: https://github.com/pre-commit/mirrors-yapf
-    rev: v0.32.0
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: 'v0.3.5'
     hooks:
-      - id: yapf
-        name: Format code
-        additional_dependencies: ["toml>=0.10.2"]
-
-  - repo: https://github.com/pycqa/isort
-    rev: 5.12.0
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix, --show-fixes]
+      - id: ruff-format
+  
+  - repo: local
     hooks:
-      - id: isort
-        name: Sort imports
-
-  - repo: https://github.com/PyCQA/flake8
-    rev: 4.0.1
-    hooks:
-      - id: flake8
-        name: Check PEP8
+      - id: mypy
+        name: Check mypy
+        entry: mypy --namespace-packages -p camel -p test -p apps
+        language: system
+        types: [python]
+        pass_filenames: false
+        require_serial: true
 
   - repo: local
     hooks:

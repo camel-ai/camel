@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Dict, List, Optional, Union
 
-from camel.agents import ChatAgent
+from camel.agents.chat_agent import ChatAgent
 from camel.configs import BaseConfig
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
@@ -144,7 +144,7 @@ Given the starting state $A$ and the target state $B$, assuming that a path $L$ 
 {target_state}
 
 {role_with_description_prompt}
-"""  # noqa: E501
+"""
 
         answer_json_template = """
 ===== ANSWER TEMPLATE (JSON) =====
@@ -164,47 +164,65 @@ Given the starting state $A$ and the target state $B$, assuming that a path $L$ 
     "Quality Assessment (Q)": "<BLANK>", // do not use symbols
     "Iterative Evaluation": "<BLANK>", // use "None" if not applicable
 }
-"""  # noqa: E501
+"""
 
         if role_descriptions_dict is not None:
             role_names = role_descriptions_dict.keys()
-            role_with_description_prompt = \
-                "===== ROLES WITH DESCRIPTIONS =====\n" + "\n".join(
+            role_with_description_prompt = (
+                "===== ROLES WITH DESCRIPTIONS =====\n"
+                + "\n".join(
                     f"{role_name}:\n{role_descriptions_dict[role_name]}\n"
-                    for role_name in role_names) + "\n\n"
+                    for role_name in role_names
+                )
+                + "\n\n"
+            )
         else:
             role_with_description_prompt = ""
         deduce_prompt = TextPrompt(deduce_prompt)
 
-        deduce = deduce_prompt.format(
-            starting_state=starting_state, target_state=target_state,
-            role_with_description_prompt=role_with_description_prompt)
+        deduce: str = deduce_prompt.format(
+            starting_state=starting_state,
+            target_state=target_state,
+            role_with_description_prompt=role_with_description_prompt,
+        )
         deduce += answer_json_template
 
-        conditions_and_quality_generation_msg = \
-            BaseMessage.make_user_message(role_name="Deductive Reasoner",
-                                          content=deduce)
+        conditions_and_quality_generation_msg = BaseMessage.make_user_message(
+            role_name="Deductive Reasoner", content=deduce
+        )
 
         response = self.step(
-            input_message=conditions_and_quality_generation_msg)
+            input_message=conditions_and_quality_generation_msg
+        )
 
         if response.terminated:
-            raise RuntimeError("Deduction failed. Error:\n" +
-                               f"{response.info}")
+            raise RuntimeError(
+                "Deduction failed. Error:\n" + f"{response.info}"
+            )
         msg: BaseMessage = response.msg
 
         # Convert them into the dictionary
         json_dict = extract_json_from_string(msg.content)
 
-        conditions = json_dict["Logical Deduction of Conditions (C)"] if \
-            "Logical Deduction of Conditions (C)" in json_dict else []
-        labels = json_dict["Entity or Label Recognition of Conditions"] if \
-            "Entity or Label Recognition of Conditions" in json_dict else []
-        quality = json_dict["Quality Assessment (Q)"] if \
-            "Quality Assessment (Q)" in json_dict else ""
+        conditions = (
+            json_dict["Logical Deduction of Conditions (C)"]
+            if "Logical Deduction of Conditions (C)" in json_dict
+            else []
+        )
+        labels = (
+            json_dict["Entity or Label Recognition of Conditions"]
+            if "Entity or Label Recognition of Conditions" in json_dict
+            else []
+        )
+        quality = (
+            json_dict["Quality Assessment (Q)"]
+            if "Quality Assessment (Q)" in json_dict
+            else ""
+        )
 
-        conditions_and_quality_dict: \
-            Dict[str, Union[List[str], Dict[str, str]]] = {}
+        conditions_and_quality_dict: Dict[
+            str, Union[List[str], Dict[str, str]]
+        ] = {}
         conditions_and_quality_dict["conditions"] = conditions
         conditions_and_quality_dict["labels"] = labels
         conditions_and_quality_dict["evaluate_quality"] = quality

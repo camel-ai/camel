@@ -13,17 +13,15 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from abc import ABC
 from dataclasses import asdict, dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Sequence
+
+from openai._types import NOT_GIVEN, NotGiven
+
+from camel.configs.base_config import BaseConfig
 
 if TYPE_CHECKING:
     from camel.functions import OpenAIFunction
-
-
-@dataclass(frozen=True)
-class BaseConfig(ABC):
-    pass
 
 
 @dataclass(frozen=True)
@@ -75,15 +73,16 @@ class ChatGPTConfig(BaseConfig):
             which can help OpenAI to monitor and detect abuse.
             (default: :obj:`""`)
     """
+
     temperature: float = 0.2  # openai default: 1.0
     top_p: float = 1.0
     n: int = 1
     stream: bool = False
-    stop: Optional[Union[str, Sequence[str]]] = None
-    max_tokens: Optional[int] = None
+    stop: str | Sequence[str] | NotGiven = NOT_GIVEN
+    max_tokens: int | NotGiven = NOT_GIVEN
     presence_penalty: float = 0.0
     frequency_penalty: float = 0.0
-    logit_bias: Dict = field(default_factory=dict)
+    logit_bias: dict = field(default_factory=dict)
     user: str = ""
 
 
@@ -103,15 +102,16 @@ class FunctionCallingConfig(ChatGPTConfig):
             :obj:`{"name": "my_function"}` forces the model to call that
             function. (default: :obj:`"auto"`)
     """
-    functions: List[Dict[str, Any]] = field(default_factory=list)
-    function_call: Union[Dict[str, str], str] = "auto"
+
+    functions: list[dict[str, Any]] = field(default_factory=list)
+    function_call: dict[str, str] | str = "auto"
 
     @classmethod
     def from_openai_function_list(
         cls,
-        function_list: List[OpenAIFunction],
-        function_call: Union[Dict[str, str], str] = "auto",
-        kwargs: Optional[Dict[str, Any]] = None,
+        function_list: list[OpenAIFunction],
+        function_call: dict[str, str] | str = "auto",
+        kwargs: dict[str, Any] | None = None,
     ):
         r"""Class method for creating an instance given the function-related
         arguments.
@@ -139,6 +139,12 @@ class FunctionCallingConfig(ChatGPTConfig):
         )
 
 
+OPENAI_API_PARAMS = {param for param in asdict(ChatGPTConfig()).keys()}
+OPENAI_API_PARAMS_WITH_FUNCTIONS = {
+    param for param in asdict(FunctionCallingConfig()).keys()
+}
+
+
 @dataclass(frozen=True)
 class OpenSourceConfig(BaseConfig):
     r"""Defines parameters for setting up open-source models and includes
@@ -152,13 +158,7 @@ class OpenSourceConfig(BaseConfig):
         api_params (ChatGPTConfig): An instance of :obj:ChatGPTConfig to
             contain the arguments to be passed to OpenAI API.
     """
+
     model_path: str
     server_url: str
-    api_params: ChatGPTConfig = ChatGPTConfig()
-
-
-OPENAI_API_PARAMS = {param for param in asdict(ChatGPTConfig()).keys()}
-OPENAI_API_PARAMS_WITH_FUNCTIONS = {
-    param
-    for param in asdict(FunctionCallingConfig()).keys()
-}
+    api_params: ChatGPTConfig = field(default_factory=ChatGPTConfig)

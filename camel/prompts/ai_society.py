@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any
 
-from camel.prompts import TextPrompt, TextPromptDict
+from camel.prompts.base import TextPrompt, TextPromptDict
 from camel.types import RoleType
 
 
@@ -38,19 +38,23 @@ class AISocietyPromptTemplateDict(TextPromptDict):
             outlines the rules of the conversation and provides instructions
             for giving instructions to the AI assistant.
     """
+
     GENERATE_ASSISTANTS = TextPrompt(
         """You are a helpful assistant that can play many different roles.
 Now please list {num_roles} different roles that you can play with your expertise in diverse fields.
-Sort them by alphabetical order. No explanation required.""")
+Sort them by alphabetical order. No explanation required."""
+    )
 
     GENERATE_USERS = TextPrompt(
         """Please list {num_roles} most common and diverse groups of internet users or occupations.
 Use singular form. No explanation.
-Sort them by alphabetical order. No explanation required.""")
+Sort them by alphabetical order. No explanation required."""
+    )
 
     GENERATE_TASKS = TextPrompt(
         """List {num_tasks} diverse tasks that {assistant_role} can assist {user_role} cooperatively to achieve together.
-Be concise. Be creative.""")
+Be concise. Be creative."""
+    )
 
     TASK_SPECIFY_PROMPT = TextPrompt(
         """Here is a task that {assistant_role} will help {user_role} to complete: {task}.
@@ -107,16 +111,19 @@ Input:
         """You are a {critic_role} who teams up with a {user_role} and a {assistant_role} to solve a task: {task}.
 Your job is to select an option from their proposals and provides your explanations.
 Your selection criteria are {criteria}.
-You always have to choose an option from the proposals.""")
+You always have to choose an option from the proposals."""
+    )
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.update({
-            "generate_assistants": self.GENERATE_ASSISTANTS,
-            "generate_users": self.GENERATE_USERS,
-            "generate_tasks": self.GENERATE_TASKS,
-            "task_specify_prompt": self.TASK_SPECIFY_PROMPT,
-            RoleType.ASSISTANT: self.ASSISTANT_PROMPT,
-            RoleType.USER: self.USER_PROMPT,
-            RoleType.CRITIC: self.CRITIC_PROMPT,
-        })
+        self.update(
+            {
+                "generate_assistants": self.GENERATE_ASSISTANTS,
+                "generate_users": self.GENERATE_USERS,
+                "generate_tasks": self.GENERATE_TASKS,
+                "task_specify_prompt": self.TASK_SPECIFY_PROMPT,
+                RoleType.ASSISTANT: self.ASSISTANT_PROMPT,
+                RoleType.USER: self.USER_PROMPT,
+                RoleType.CRITIC: self.CRITIC_PROMPT,
+            }
+        )

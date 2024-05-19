@@ -11,8 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import base64
+import io
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+
+from PIL import Image
 
 from camel.messages import (
     OpenAIAssistantMessage,
@@ -21,7 +25,12 @@ from camel.messages import (
     OpenAIUserMessage,
 )
 from camel.prompts import CodePrompt, TextPrompt
-from camel.types import OpenAIBackendRole, RoleType
+from camel.types import (
+    OpenAIBackendRole,
+    OpenAIImageDetailType,
+    OpenAIImageType,
+    RoleType,
+)
 
 
 @dataclass
@@ -36,22 +45,49 @@ class BaseMessage:
             for the message.
         content (str): The content of the message.
     """
+
     role_name: str
     role_type: RoleType
     meta_dict: Optional[Dict[str, str]]
     content: str
+    image: Optional[Image.Image] = None
+    image_detail: Literal["auto", "low", "high"] = "auto"
 
     @classmethod
     def make_user_message(
-            cls, role_name: str, content: str,
-            meta_dict: Optional[Dict[str, str]] = None) -> 'BaseMessage':
-        return cls(role_name, RoleType.USER, meta_dict, content)
+        cls,
+        role_name: str,
+        content: str,
+        meta_dict: Optional[Dict[str, str]] = None,
+        image: Optional[Image.Image] = None,
+        image_detail: Union[OpenAIImageDetailType, str] = "auto",
+    ) -> 'BaseMessage':
+        return cls(
+            role_name,
+            RoleType.USER,
+            meta_dict,
+            content,
+            image,
+            OpenAIImageDetailType(image_detail).value,
+        )
 
     @classmethod
     def make_assistant_message(
-            cls, role_name: str, content: str,
-            meta_dict: Optional[Dict[str, str]] = None) -> 'BaseMessage':
-        return cls(role_name, RoleType.ASSISTANT, meta_dict, content)
+        cls,
+        role_name: str,
+        content: str,
+        meta_dict: Optional[Dict[str, str]] = None,
+        image: Optional[Image.Image] = None,
+        image_detail: Union[OpenAIImageDetailType, str] = "auto",
+    ) -> 'BaseMessage':
+        return cls(
+            role_name,
+            RoleType.ASSISTANT,
+            meta_dict,
+            content,
+            image,
+            OpenAIImageDetailType(image_detail).value,
+        )
 
     def create_new_instance(self, content: str) -> "BaseMessage":
         r"""Create a new instance of the :obj:`BaseMessage` with updated
@@ -63,9 +99,12 @@ class BaseMessage:
         Returns:
             BaseMessage: The new instance of :obj:`BaseMessage`.
         """
-        return self.__class__(role_name=self.role_name,
-                              role_type=self.role_type,
-                              meta_dict=self.meta_dict, content=content)
+        return self.__class__(
+            role_name=self.role_name,
+            role_type=self.role_type,
+            meta_dict=self.meta_dict,
+            content=content,
+        )
 
     def __add__(self, other: Any) -> Union["BaseMessage", Any]:
         r"""Addition operator override for :obj:`BaseMessage`.
@@ -83,7 +122,8 @@ class BaseMessage:
         else:
             raise TypeError(
                 f"Unsupported operand type(s) for +: '{type(self)}' and "
-                f"'{type(other)}'")
+                f"'{type(other)}'"
+            )
         return self.create_new_instance(combined_content)
 
     def __mul__(self, other: Any) -> Union["BaseMessage", Any]:
@@ -101,7 +141,8 @@ class BaseMessage:
         else:
             raise TypeError(
                 f"Unsupported operand type(s) for *: '{type(self)}' and "
-                f"'{type(other)}'")
+                f"'{type(other)}'"
+            )
 
     def __len__(self) -> int:
         r"""Length operator override for :obj:`BaseMessage`.
@@ -124,7 +165,8 @@ class BaseMessage:
         return item in self.content
 
     def extract_text_and_code_prompts(
-            self) -> Tuple[List[TextPrompt], List[CodePrompt]]:
+        self,
+    ) -> Tuple[List[TextPrompt], List[CodePrompt]]:
         r"""Extract text and code prompts from the message content.
 
         Returns:
@@ -140,7 +182,8 @@ class BaseMessage:
         start_idx = 0
         while idx < len(lines):
             while idx < len(lines) and (
-                    not lines[idx].lstrip().startswith("```")):
+                not lines[idx].lstrip().startswith("```")
+            ):
                 idx += 1
             text = "\n".join(lines[start_idx:idx]).strip()
             text_prompts.append(TextPrompt(text))
@@ -198,7 +241,47 @@ class BaseMessage:
         Returns:
             OpenAIUserMessage: The converted :obj:`OpenAIUserMessage` object.
         """
-        return {"role": "user", "content": self.content}
+        if self.image is None:
+            return {"role": "user", "content": self.content}
+        else:
+            #
+            if self.image.format is None:
+                raise ValueError(
+                    f"Image's `format` is `None`, please "
+                    f"transform the `PIL.Image.Image` to  one of "
+                    f"following supported formats, such as "
+                    f"{list(OpenAIImageType)}"
+                )
+
+            image_type: str = self.image.format.lower()
+            if image_type not in OpenAIImageType:
+                raise ValueError(
+                    f"Image type {self.image.format} "
+                    f"is not supported by OpenAI vision model"
+                )
+            with io.BytesIO() as buffer:
+                self.image.save(fp=buffer, format=self.image.format)
+                encoded_image = base64.b64encode(buffer.getvalue()).decode(
+                    "utf-8"
+                )
+            image_prefix = f"data:image/{image_type};base64,"
+
+            return {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": self.content,
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"{image_prefix}{encoded_image}",
+                            "detail": self.image_detail,
+                        },
+                    },
+                ],
+            }
 
     def to_openai_assistant_message(self) -> OpenAIAssistantMessage:
         r"""Converts the message to an :obj:`OpenAIAssistantMessage` object.

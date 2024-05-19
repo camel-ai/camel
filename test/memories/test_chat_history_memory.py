@@ -31,15 +31,18 @@ from camel.utils.token_counting import OpenAITokenCounter
 @pytest.fixture
 def memory(request):
     context_creator = ScoreBasedContextCreator(
-        OpenAITokenCounter(ModelType.GPT_4), ModelType.GPT_4.token_limit)
+        OpenAITokenCounter(ModelType.GPT_4), ModelType.GPT_4.token_limit
+    )
     if request.param == "in-memory":
-        yield ChatHistoryMemory(context_creator=context_creator,
-                                storage=InMemoryKeyValueStorage())
+        yield ChatHistoryMemory(
+            context_creator=context_creator, storage=InMemoryKeyValueStorage()
+        )
     elif request.param == "json":
         _, path = tempfile.mkstemp()
         path = Path(path)
-        yield ChatHistoryMemory(context_creator=context_creator,
-                                storage=JsonStorage(path))
+        yield ChatHistoryMemory(
+            context_creator=context_creator, storage=JsonStorage(path)
+        )
         path.unlink()
 
 

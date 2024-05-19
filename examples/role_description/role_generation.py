@@ -11,36 +11,44 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import json
 
 from colorama import Fore
 
-from camel.agents.multi_agent import MultiAgent
+from camel.agents import MultiAgent
 from camel.configs import ChatGPTConfig
 
 
 def main(model_type=None, num_roles=3, role_names=None) -> None:
     if role_names is not None and len(role_names) != num_roles:
-        raise ValueError(f"Length of role_names ({len(role_names)}) "
-                         f"does not equal to num_roles ({num_roles}).")
+        raise ValueError(
+            f"Length of role_names ({len(role_names)}) "
+            f"does not equal to num_roles ({num_roles})."
+        )
 
     task_prompt = "Develop a trading bot for the stock market."
 
     model_config_description = ChatGPTConfig()
-    role_description_agent = MultiAgent(model_type=model_type,
-                                        model_config=model_config_description)
+    role_description_agent = MultiAgent(
+        model_type=model_type, model_config=model_config_description
+    )
 
-    role_description_dict = role_description_agent.run_role_with_description(
-        task_prompt=task_prompt, num_roles=num_roles)
+    role_description_dict = role_description_agent.run(
+        task_prompt=task_prompt, num_roles=num_roles
+    )
 
     if len(role_description_dict) != num_roles:
         raise ValueError(
             f"Length of role_names ({len(role_description_dict)}) "
-            f"does not equal to num_roles ({num_roles}).")
+            f"does not equal to num_roles ({num_roles})."
+        )
 
     print(Fore.YELLOW + f"Original task prompt:\n{task_prompt}\n")
-    print(Fore.BLUE + "The roles generated with description:\n"
-          f"{json.dumps(role_description_dict, indent=4)}")
+    print(Fore.GREEN + f"List of {num_roles} roles with description:")
+    for role_name in role_description_dict.keys():
+        print(
+            Fore.BLUE + f"{role_name}:\n"
+            f"{role_description_dict[role_name]}\n"
+        )
 
 
 if __name__ == "__main__":

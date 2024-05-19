@@ -12,16 +12,16 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from .records import MemoryRecord, ContextRecord
-from .base import MemoryBlock, AgentMemory, BaseContextCreator
-from .context_creators.score_based import ScoreBasedContextCreator
-from .blocks.chat_history_block import ChatHistoryBlock
-from .blocks.vectordb_block import VectorDBBlock
 from .agent_memories import (
-    VectorDBMemory,
     ChatHistoryMemory,
     LongtermAgentMemory,
+    VectorDBMemory,
 )
+from .base import AgentMemory, BaseContextCreator, MemoryBlock
+from .blocks.chat_history_block import ChatHistoryBlock
+from .blocks.vectordb_block import VectorDBBlock
+from .context_creators.score_based import ScoreBasedContextCreator
+from .records import ContextRecord, MemoryRecord
 
 __all__ = [
     'MemoryRecord',
