@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import re
 from typing import Dict, List, Optional, Union
 
 from camel.agents import ChatAgent
@@ -19,6 +18,7 @@ from camel.configs import BaseConfig
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
 from camel.types import ModelType, RoleType
+from camel.utils.structure_output import extract_json_from_string
 
 
 class DeductiveReasonerAgent(ChatAgent):
@@ -144,16 +144,27 @@ Given the starting state $A$ and the target state $B$, assuming that a path $L$ 
 {target_state}
 
 {role_with_description_prompt}
-===== ANSWER TEMPLATE =====
-- Characterization and comparison of $A$ and $B$:\n<BLANK>
-- Historical & Empirical Analysis:\n<BLANK>/None
-- Logical Deduction of Conditions ($C$) (multiple conditions can be deduced):
-    condition <NUM>:
-        <BLANK>.
-- Entity/Label Recognition of Conditions:\n[<BLANK>, <BLANK>, ...] (include square brackets)
-- Quality Assessment ($Q$) (do not use symbols):
-    <BLANK>.
-- Iterative Evaluation:\n<BLANK>/None"""  # noqa: E501
+"""  # noqa: E501
+
+        answer_json_template = """
+===== ANSWER TEMPLATE (JSON) =====
+{
+    "Characterization and comparison of A and B": "<BLANK>",
+    "Historical & Empirical Analysis": "<BLANK>", // use "None" if not applicable
+    "Logical Deduction of Conditions (C)": {
+        "condition <NUM>": "<BLANK>",
+        // it is allowed to have multiple conditions
+        "condition <NUM_2>": "<BLANK>",
+    },
+    "Entity or Label Recognition of Conditions": [
+        "<BLANK>",
+        // it is allowed to have multiple labels
+        "<BLANK>",
+    ],
+    "Quality Assessment (Q)": "<BLANK>", // do not use symbols
+    "Iterative Evaluation": "<BLANK>", // use "None" if not applicable
+}
+"""  # noqa: E501
 
         if role_descriptions_dict is not None:
             role_names = role_descriptions_dict.keys()
@@ -168,6 +179,7 @@ Given the starting state $A$ and the target state $B$, assuming that a path $L$ 
         deduce = deduce_prompt.format(
             starting_state=starting_state, target_state=target_state,
             role_with_description_prompt=role_with_description_prompt)
+        deduce += answer_json_template
 
         conditions_and_quality_generation_msg = \
             BaseMessage.make_user_message(role_name="Deductive Reasoner",
@@ -180,36 +192,21 @@ Given the starting state $A$ and the target state $B$, assuming that a path $L$ 
             raise RuntimeError("Deduction failed. Error:\n" +
                                f"{response.info}")
         msg: BaseMessage = response.msg
-        print(f"Message content:\n{msg.content}")
 
-        # Extract the conditions from the message
-        condistions_dict = {
-            f"condition {i}":
-            cdt.replace("<", "").replace(">", "").strip().strip('\n')
-            for i, cdt in re.findall(
-                r"condition (\d+):\s*(.+?)(?=condition \d+|- Entity)",
-                msg.content, re.DOTALL)
-        }
+        # Convert them into the dictionary
+        json_dict = extract_json_from_string(msg.content)
 
-        # Extract the labels from the message
-        labels = [
-            label.strip().strip('\n').strip("\"\'") for label in re.findall(
-                r"Entity/Label Recognition of Conditions:\n\[(.+?)\]",
-                msg.content, re.DOTALL)[0].split(",")
-        ]
+        conditions = json_dict["Logical Deduction of Conditions (C)"] if \
+            "Logical Deduction of Conditions (C)" in json_dict else []
+        labels = json_dict["Entity or Label Recognition of Conditions"] if \
+            "Entity or Label Recognition of Conditions" in json_dict else []
+        quality = json_dict["Quality Assessment (Q)"] if \
+            "Quality Assessment (Q)" in json_dict else ""
 
-        # Extract the quality from the message
-        quality = [
-            q.strip().strip('\n') for q in re.findall(
-                r"Quality Assessment \(\$Q\$\) \(do not use symbols\):"
-                r"\n(.+?)- Iterative", msg.content, re.DOTALL)
-        ][0]
-
-        # Convert them into JSON format
-        conditions_and_quality_json: \
+        conditions_and_quality_dict: \
             Dict[str, Union[List[str], Dict[str, str]]] = {}
-        conditions_and_quality_json["conditions"] = condistions_dict
-        conditions_and_quality_json["labels"] = labels
-        conditions_and_quality_json["evaluate_quality"] = quality
+        conditions_and_quality_dict["conditions"] = conditions
+        conditions_and_quality_dict["labels"] = labels
+        conditions_and_quality_dict["evaluate_quality"] = quality
 
-        return conditions_and_quality_json
+        return conditions_and_quality_dict

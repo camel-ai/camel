@@ -25,6 +25,7 @@ from camel.functions import OpenAIFunction
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
 from camel.types import ModelType, RoleType
+from camel.utils.structure_output import extract_json_from_string
 
 
 class MultiAgent(ChatAgent):
@@ -89,16 +90,28 @@ class MultiAgent(ChatAgent):
 
         task_prompt = TextPrompt("===== TASK =====\n" + task_prompt + "\n\n")
         if role_names is None:
-            expert_prompt = "===== ANSWER TEMPLATE =====\n" + "\n".join(
-                f"Domain expert {i + 1}: <BLANK>\n"
-                f"Associated competencies, characteristics, and duties: "
-                f"<BLANK>.\nEnd." for i in range(num_roles)) + "\n\n"
+            expert_json_prompt = """===== ANSWER TEMPLATE (JSON) =====
+{
+    "Domain expert <NUM>": {
+        "Role name": "<BLANK>",
+        "Associated competencies, characteristics, and duties": "<BLANK>"
+    },
+    // it is allowed to complete more domain experts
+    "Domain expert <NUM2>": {
+        "Role name": "<BLANK>",
+        "Associated competencies, characteristics, and duties": "<BLANK>"
+    },
+}"""
         else:
-            expert_prompt = "===== ANSWER TEMPLATE =====\n" + "\n".join(
-                f"Domain expert {i + 1}: {role_name}\n"
-                f"Associated competencies, characteristics, and duties: "
-                f"<BLANK>.\nEnd."
-                for i, role_name in enumerate(role_names)) + "\n\n"
+            expert_json_prompt = (
+                "===== ANSWER TEMPLATE (JSON) =====\n{\n" +
+                ", \n".join(f"    \"Domain expert {i + 1}\": {{\n"
+                            f"        \"Role name\": \"{role_name}"
+                            "\",\n        \"Associated competencies, "
+                            "characteristics, and duties\": "
+                            "\"<BLANK>\"\n    }"
+                            for i, role_name in enumerate(role_names)) + "\n}")
+
         if role_descriptions_instruction is None:
             role_descriptions_instruction = ""
         else:
@@ -131,10 +144,10 @@ The tool descriptions are the context information of the potential competencies 
             role_descriptions_instruction + "\n"
             "Your answer MUST strictly adhere to the structure of ANSWER "
             "TEMPLATE, ONLY fill in the BLANKs, and DO NOT alter or modify "
-            "any other part of the template.\n\n" + function_docstring +
-            expert_prompt + task_prompt)
+            "any other part of the template.\n\n" + function_docstring)
         role_assignment_generation = role_assignment_generation_prompt.format(
             num_roles=num_roles, task=task_prompt)
+        role_assignment_generation += expert_json_prompt + task_prompt
 
         role_assignment_generation_msg = BaseMessage.make_user_message(
             role_name="Role Assigner", content=role_assignment_generation)
@@ -151,32 +164,22 @@ The tool descriptions are the context information of the potential competencies 
                                "language model.\n"
                                f"Response of the LLM:\n{msg.content}")
 
-        # Distribute the output completions into role names and descriptions
-        role_names = [
-            desc.replace("<", "").replace(">", "").strip()
-            for desc in re.findall(
-                r"Domain expert \d:[\s\n](.+?)\nAssociated competencies,",
-                msg.content,
-                re.DOTALL,
-            )
-        ]
-        role_descriptions = [
-            desc.lstrip('\n').replace("<", "").replace(">", "").strip()
-            for desc in re.findall(
-                r"Associated competencies, characteristics, and duties:"
-                r"(?:\n)?(.+?)\nEnd.", msg.content, re.DOTALL)
-        ]
+        json_dict = extract_json_from_string(msg.content)
 
-        if len(role_names) != num_roles or len(role_descriptions) != num_roles:
+        # Distribute the output completions into role names and descriptions
+        role_descriptions_dict = {}
+        for _, expert_data in json_dict.items():
+            role_name = expert_data["Role name"]
+            description = expert_data["Associated competencies," +
+                                      " characteristics, and duties"]
+            role_descriptions_dict[role_name] = description
+
+        if num_roles != len(role_descriptions_dict):
             raise RuntimeError(
                 "Got None or insufficient information of roles.\n"
                 f"Response of the LLM:\n{msg.content}\n"
                 f"Role names:{str(role_names)}\n"
-                f"Role descriptions:\n{str(role_descriptions)}")
-        role_descriptions_dict = {
-            role_name: description
-            for role_name, description in zip(role_names, role_descriptions)
-        }
+                f"Role descriptions:\n{str(role_descriptions_dict)}")
 
         return role_descriptions_dict
 
@@ -231,10 +234,13 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
 
         # Generate insights from the context text to help decompose the task
         if context_text is not None:
-            model_config = self.model_config
             insight_agent = InsightAgent(model_type=self.model_type,
-                                         model_config=model_config)
-            task_insights_json = insight_agent.run(context_text=context_text)
+                                         model_config=self.model_config)
+            insights_instruction = ("The number of the insights should not be "
+                                    "more than 4.")
+            task_insights_json = insight_agent.run(
+                context_text=context_text,
+                insights_instruction=insights_instruction)
             task_context_prompt = (
                 "===== CONTEXT TEXT =====\n"
                 "The CONTEXT TEXT is related to TASK and "
@@ -257,123 +263,107 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
         else:
             role_names = []
             role_with_description_prompt = ""
+
         if num_subtasks is None:
-            answer_prompt = (
-                "===== ANSWER TEMPLATE =====\n"
-                "PART I (all subtasks):\n"
-                "Details of subtask <NUM>:\n<BLANK>\n"
-                "Contextual Parameters of subtask <NUM>:\n<BLANK>\n"
-                "Content of the Input of subtask <NUM>:\n<BLANK>\n"
-                "Input tags of subtask <NUM>: [<BLANK>, ..., <BLANK>]/[None] "
-                "(must include square brackets)\n"
-                "Task completion standard of subtask <NUM>:\n<BLANK>\n"
-                "Dependency of subtask <NUM>: [subtask <i>, subtask <j>, "
-                "subtask <k>]/[None] (must include square brackets).\n"
-                "PART II:\nGantt Chart with complex dependency in MarkDown "
-                "format:\n<BLANK>\n\n\n")
+            answer_json_prompt = """===== ANSWER TEMPLATE (JSON) =====
+{
+    "subtask <NUM>": {
+        "Details": "<BLANK>",
+        "Contextual Parameters": "<BLANK>",
+        "Content of the Input": "<BLANK>",
+        "Input Tags": ["<BLANK>", "<BLANK>", "None"],
+        "Task Completion Standard": "<BLANK>",
+        "Dependencies of the Subtask": [
+            "subtask <i>",
+            // it is allowed to add more dependent subtasks, and use "None" if there is no dependency
+            "subtask <j>",
+        ]
+    },
+    "subtask <NUM2>": {
+        "Details": "<BLANK>",
+        "Contextual Parameters": "<BLANK>",
+        "Content of the Input": "<BLANK>",
+        "Input Tags": ["<BLANK>", "<BLANK>", "None"],
+        "Task Completion Standard": "<BLANK>",
+        "Dependencies of the Subtask": [
+            "subtask <i>",
+            // it is allowed to add more dependent subtasks, and use "None" if there is no dependency
+            "subtask <j>",
+        ]
+    },
+    // it is allowed to complete more subtasks
+}"""  # noqa: E501
         else:
-            answer_prompt = "===== ANSWER TEMPLATE =====\n" + \
-                "PART I (all subtasks):\n" + \
-                "\n".join(
-                    f"Details of subtask {i + 1}:\n<BLANK>\n"
-                    f"Contextual Parameters of subtask {i + 1}:\n<BLANK>\n"
-                    f"Content of the Input of subtask {i + 1}:\n<BLANK>\n"
-                    f"Input tags of subtask {i + 1}: [<BLANK>, ..., "
-                    "<BLANK>]/[None] (must include square brackets)\n"
-                    f"Task completion standard of subtask {i + 1}:\n<BLANK>\n"
-                    f"Dependency of subtask {i + 1}: [subtask <i>, subtask "
-                    f"<j>, subtask <k>]/[None] (must include square brackets)."
-                    for i in range(num_subtasks)) + \
-                "\nPART II:\nGantt Chart with complex dependency in " + \
-                "MarkDown format:\n<BLANK>\n\n\n"
-        split_task_prompt = TextPrompt(split_task_rules_prompt +
-                                       answer_prompt + task_prompt + "\n\n" +
-                                       task_context_prompt +
-                                       role_with_description_prompt)
+            subtask_template_prompt = """
+    "subtask {i + 1}": {{
+        "Details": "<BLANK>",
+        "Contextual Parameters": "<BLANK>",
+        "Content of the Input": "<BLANK>",
+        "Input Tags": ["<BLANK>", "<BLANK>", "None"],
+        "Task Completion Standard": "<BLANK>",
+        "Dependencies of the Subtask": [
+            "subtask <i>",
+            // it is allowed to add more dependent subtasks, and use "None" if there is no dependency
+            "subtask <j>"
+        ]
+    }}"""  # noqa: E501
+            answer_json_prompt = (
+                "===== ANSWER TEMPLATE (JSON) =====\n{" + ",".join(
+                    [subtask_template_prompt
+                     for i in range(num_subtasks)]) + "\n}")
+
+        split_task_prompt = TextPrompt(split_task_rules_prompt)
         subtasks_generation = split_task_prompt.format(
             num_subtasks=num_subtasks or "SEVERAL/ENOUGH",
             num_roles=len(role_names))
+        subtasks_generation = (subtasks_generation + answer_json_prompt +
+                               task_prompt + "\n\n" + task_context_prompt +
+                               role_with_description_prompt)
 
         subtasks_generation_msg = BaseMessage.make_user_message(
             role_name="Task Decomposer", content=subtasks_generation)
 
-        model_type = self.model_type
-        self.model_type = ModelType.GPT_4_TURBO
         response = self.step(input_message=subtasks_generation_msg)
-        self.model_type = model_type
 
         if response.terminated:
             raise RuntimeError("Role compatibility scoring failed.\n" +
                                f"Error:\n{response.info}")
         msg = response.msg  # type: BaseMessage
 
-        # Distribute the output completions into subtasks
-        subtask_descriptions = [
-            desc.replace("<", "").replace(">", "").strip('\n')
-            for desc in re.findall(
-                r"Details of subtask \d:[\s\n](.+?)Contextual Parameters of ",
-                msg.content, re.DOTALL)
-        ]
-        subtask_contexts = [
-            ctx.replace("<", "").replace(">", "").strip('\n')
-            for ctx in re.findall(
-                r"Contextual Parameters of subtask \d:[\s\n](.+?)Content of "
-                r"the Input of subtask ", msg.content, re.DOTALL)
-        ]
-        subtask_inputs_content = [
-            ipt.replace("<", "").replace(">", "").strip('\n')
-            for ipt in re.findall(
-                r"Content of the Input of subtask \d:[\s\n](.+?)"
-                r"Input tags of ", msg.content, re.DOTALL)
-        ]
-        subtask_inputs_tags = [[
-            tag.strip() for tag in re.findall(r"\[(.+?)\]", tag)[0].split(",")
-        ] for tag in re.findall(r"Input tags of subtask \d:[\s\n]*\[.+?\]",
-                                msg.content, re.DOTALL)]
-        subtask_outputs_standard = [
-            opt_std.replace("<", "").replace(">", "").strip('\n')
-            for opt_std in re.findall(
-                r"Task completion standard of subtask \d:[\s\n]"
-                r"(.+?)Dependency of subtask", msg.content, re.DOTALL)
-        ]
-        subtask_dependencies = [[
-            dep.strip() for dep in re.findall(r"\[(.+?)\]", dep)[0].split(",")
-        ] for dep in re.findall(r"Dependency of subtask \d:[\s\n]*\[.+?\]",
-                                msg.content, re.DOTALL)]
-        # Extracting dependencies and creating a dictionary
-        dependent_subtasks_list = [[
-            f"subtask {int(dep.split()[1])}" for dep in deps
-            if "subtask" in dep.lower()
-        ] for deps in subtask_dependencies]
+        json_dict = extract_json_from_string(input_str=msg.content)
 
-        # Creating a dictionary of subtasks with dependencies
-        subtasks_with_dependencies_dict = {
-            f"subtask {index+1}": {
-                "description": desp,
-                "context": ctx,
-                "dependencies": deps,
-                "input_tags": tags,
-                "input_content": ipt,
-                "output_standard": opt_std
+        subtasks_with_dependencies_dict: Dict[str,
+                                              Dict[str,
+                                                   Union[str,
+                                                         List[str]]]] = {}
+        for subtask_key, subtask_value in json_dict.items():
+            # Extract the description, context, dependencies, input tags,
+            # input content and output standard of the subtask
+            description = subtask_value["Details"]
+            context = subtask_value["Contextual Parameters"]
+            dependencies = subtask_value["Dependencies of the Subtask"]
+            input_tags = subtask_value["Input Tags"]
+            input_content = subtask_value["Content of the Input"]
+            output_standard = subtask_value["Task Completion Standard"]
+
+            # Add the subtasks with their associated details
+            subtasks_with_dependencies_dict[subtask_key] = {
+                "description": description,
+                "context": context,
+                "dependencies":
+                dependencies if "None" not in dependencies else [],
+                "input_tags": input_tags,
+                "input_content": input_content,
+                "output_standard": output_standard
             }
-            for index, (desp, ctx, deps, tags, ipt, opt_std) in enumerate(
-                zip(subtask_descriptions, subtask_contexts,
-                    dependent_subtasks_list, subtask_inputs_tags,
-                    subtask_inputs_content, subtask_outputs_standard))
-        }
 
         if len(subtasks_with_dependencies_dict) == 0:
-            raise RuntimeError("The task is not decomposed into subtasks.")
+            raise RuntimeError("The task is not decomposed into subtasks.\n"
+                               f"Response of the LLM:\n{msg.content}")
         if (num_subtasks is not None
-                and (len(subtask_descriptions) != num_subtasks
-                     or len(dependent_subtasks_list) != num_subtasks)):
-            raise RuntimeError(
-                f"Got None or insufficient information of subtasks. "
-                f"Response of the LLM:\n{msg.content}\n"
-                f"Length of generated subtasks: {len(subtask_descriptions)}, "
-                "Length of generated dependencies: "
-                f"{len(dependent_subtasks_list)}, "
-                f"Length of required subtasks: {num_subtasks}")
+                and len(subtasks_with_dependencies_dict) != num_subtasks):
+            raise RuntimeError("The number of generated subtasks does not "
+                               "match the required number of subtasks.\n")
 
         return subtasks_with_dependencies_dict
 
@@ -398,7 +388,7 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
                 f"{subtask_idx} does not map to a dictionary: {details}"
             assert "dependencies" in details, \
                 f"{subtask_idx} does not have a 'dependencies' key: {details}"
-            deps = details["dependencies"]
+            deps = details['dependencies']
             oriented_graph[subtask_idx] = deps
 
         subtasks_execution_pipelines = \
@@ -448,7 +438,8 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
         if sum(len(sublist) for sublist in parallel_subtask_pipelines) != len(
                 oriented_graph):
             raise RuntimeError("There exists a cycle in the graph. "
-                               "Can't determine an order.")
+                               "Can't determine an order.\n"
+                               f"Graph: {oriented_graph}")
 
         return parallel_subtask_pipelines
 
@@ -707,7 +698,7 @@ Please ensure that you consider both explicit and implicit similarities while ev
     def transform_dialogue_into_text(
             self, user_name: str, assistant_name: str, task_prompt: str,
             user_conversation: str,
-            assistant_conversation: str) -> Dict[str, Any]:
+            assistant_conversation: str) -> Dict[str, Union[str, List[str]]]:
         r"""Synthesize a narrative from the chat history.
 
         Args:
@@ -718,9 +709,9 @@ Please ensure that you consider both explicit and implicit similarities while ev
             assistant_conversation (str): The conversation of the assistant.
 
         Returns:
-            Dict[str, Any]: A dictionary with two keys: `categories`: a list
-                of cleaned and validated category names; `text`: a single
-                string of cleaned reproduced text.
+            Dict[str, Union[str, List[str]]]: A dictionary with two keys:
+                `categories`: a list of cleaned and validated category names;
+                `text`: a single string of cleaned reproduced text.
         """
         self.reset()
 
@@ -765,17 +756,22 @@ Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE, ONLY fill 
 [Global TASK of Conversation]\n{task_prompt}
 [User: {user_name}]:\n{user_conversation}
 [Assistant: {assistant_name}]:\n{assistant_conversation}
+"""  # noqa: E501
 
-
-===== ANSWER TEMPLATE =====
-Category of Assistant's Response: [<BLANK>, ..., <BLANK>] (choose from "ASSISTANCE", "ANALYSIS", "AUXILIARY", "NON-SUBSTANTIAL", must include square brackets, multiple choices are separated by commas)
-Retold Text:\n<BLANK>"""  # noqa: E501
+        answer_json_template = """
+===== ANSWER TEMPLATE (JSON) =====
+{
+    "Categories of Assistant Response": ["<BLANK>", ..., "<BLANK>"], // choose from "ASSISTANCE", "ANALYSIS", "AUXILIARY", "NON-SUBSTANTIAL"
+    "Retold Text": "<BLANK>"
+}
+"""  # noqa: E501
         text_synthesis_prompt = TextPrompt(text_synthesis)
 
         text_synthesis_generation = text_synthesis_prompt.format(
             user_name=user_name, assistant_name=assistant_name,
             task_prompt=task_prompt, user_conversation=user_conversation,
             assistant_conversation=assistant_conversation)
+        text_synthesis_generation += answer_json_template
 
         text_synthesis_generation_msg = BaseMessage.make_user_message(
             role_name="Conversation Analyst",
@@ -788,30 +784,21 @@ Retold Text:\n<BLANK>"""  # noqa: E501
                                f"Error:\n{response.info}")
         msg = response.msg  # type: BaseMessage
 
-        # Distribute the output completions into narrative synthesis
-        category_of_responses = re.findall(
-            r"Category of Assistant's Response: \[(.+?)\]", msg.content)
-        reproduced_texts = re.findall(r"Retold Text:\n\s*(.+)", msg.content,
-                                      re.DOTALL)
+        json_dict = extract_json_from_string(msg.content)
 
-        if category_of_responses is None or len(category_of_responses) == 0:
+        # Distribute the output completions into narrative synthesis
+        categories: List[str] = json_dict["Categories of Assistant Response"]
+        reproduced_text: str = json_dict["Retold Text"]
+
+        if categories is None or len(categories) == 0:
             raise RuntimeError("Got None of category of responses."
                                f"Response of the LLM:\n{msg.content}\n")
-        categories = [
-            category.strip().strip('"\'')
-            for category in category_of_responses[0].split(',')
-        ]
         for category in categories:
             if category not in [
                     "ASSISTANCE", "ANALYSIS", "AUXILIARY", "NON-SUBSTANTIAL"
             ]:
                 raise RuntimeError("Got invalid category of responses."
                                    f"Response of the LLM:\n{msg.content}\n")
-
-        if reproduced_texts is None or len(reproduced_texts) == 0:
-            raise RuntimeError("Got None of reproduced text."
-                               f"Response of the LLM:\n{msg.content}\n")
-        reproduced_text = reproduced_texts[0].strip('\n')
 
         reproduced_text_with_category = {
             "categories": categories,

@@ -11,13 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import re
 from typing import Any, Dict, Optional, Union
 
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
 from camel.types import ModelType, RoleType
+from camel.utils.structure_output import extract_json_from_string
 
 
 class InsightAgent(ChatAgent):
@@ -46,7 +46,7 @@ class InsightAgent(ChatAgent):
         self,
         context_text: Union[str, TextPrompt],
         insights_instruction: Optional[Union[str, TextPrompt]] = None,
-    ) -> Dict[str, Dict[str, str]]:
+    ) -> Dict[str, Dict[str, Any]]:
         r"""Generate role names based on the input task prompt.
 
         Args:
@@ -56,7 +56,7 @@ class InsightAgent(ChatAgent):
                 The instruction for generating insights. (default: :obj:`None`)
 
         Returns:
-            Dict[str, Dict[str, str]]: The generated insights from the context
+            Dict[str, Dict[str, Any]]: The generated insights from the context
                 text.
         """
         self.reset()
@@ -109,26 +109,39 @@ For each identified entity or detail from the decomposition:
 
 """  # noqa: E501
 
-        insight_template = (
-            "Insight <NUM>:\n" + "- Topic Segmentation:\n<BLLANK>\n" +
-            "- Entity Recognition:\n[<BLANK>, <BLANK>] (include square "
-            "brackets)\n- Extract Details:\n<BLANK>\n"
-            "- Contextual Understanding:\n<BLANK or N/A>\n"
-            "- Formulate Questions:\n<BLANK>\n"
-            "- Answer to \"Formulate Questions\" using "
-            "CONTEXT TEXT:\n<BLANK>\n"
-            "- Iterative Feedback:\n<BLANK>\n")
-        answer_template_prompt = TextPrompt(
+        insight_json_template = """{
+    "insight <NUM>": {
+        "Topic Segmentation": "<BLANK>",
+        "Entity Recognition": ["<BLANK_I>", "<BLANK_J>"],
+        "Extract Details": "<BLANK>",
+        "Contextual Understanding": "<BLANK>",
+        "Formulate Questions": "<BLANK>",
+        "Answer to Formulate Questions using CONTEXT TEXT": "<BLANK>",
+        "Iterative Feedback": "<BLANK>"
+    },
+    "insight <NUM2>": {
+        "Topic Segmentation": "<BLANK>",
+        "Entity Recognition": ["<BLANK_I>", "<BLANK_J>"],
+        "Extract Details": "<BLANK>",
+        "Contextual Understanding": "<BLANK>",
+        "Formulate Questions": "<BLANK>",
+        "Answer to Formulate Questions using CONTEXT TEXT": "<BLANK>",
+        "Iterative Feedback": "<BLANK>"
+    },
+    // it is allowed to have more insights
+}"""
+        answer_template_prompt = (
             "===== ANSWER TEMPLATE =====\n" +
             "You need to generate multiple insights, and the number of " +
             "insights depend on the number of Topic/Functionality " +
             "Segmentation. So the total number of insights is <NUM>.\n" +
-            f"{insight_template}\n")
+            f"{insight_json_template}\n")
         insights_generation_prompt = insights_instruction_prompt + \
-            context_text_prompt + insights_prompt + answer_template_prompt
+            context_text_prompt + insights_prompt
         insights_generation = insights_generation_prompt.format(
             insights_instruction=insights_instruction or "",
             context_text=context_text)
+        insights_generation += answer_template_prompt
 
         insights_generation_msg = BaseMessage.make_user_message(
             role_name="Insight Agent", content=insights_generation)
@@ -140,6 +153,8 @@ For each identified entity or detail from the decomposition:
                                f"{response.info}")
         msg = response.msg  # type: BaseMessage
 
+        insights_json = extract_json_from_string(msg.content)
+
         # Replace the "N/A", "None", "NONE" with None
         def handle_none_values_in_msg(value):
             if value.strip() in ["N/A", "None", "NONE", "null", "NULL"]:
@@ -147,61 +162,38 @@ For each identified entity or detail from the decomposition:
             return value.strip() if value else None
 
         # Parse the insights from the response
-        insights_pattern = (r"Insight (\d+):" +
-                            r"(?:\s+- Topic Segmentation:\s*((?:.|\n)+?)"
-                            r"(?=\s+- \w+ |\Z|Insight))?" +
-                            r"(?:\s+- Entity Recognition:\s*((?:.|\n)+?)"
-                            r"(?=\s+- \w+ |\Z|Insight))?" +
-                            r"(?:\s+- Extract Details:\s*((?:.|\n)+?)"
-                            r"(?=\s+- \w+ |\Z|Insight))?" +
-                            r"(?:\s+- Contextual Understanding:\s*((?:.|\n)+?)"
-                            r"(?=\s+- \w+ |\Z|Insight))?" +
-                            r"(?:\s+- Formulate Questions:\s*((?:.|\n)+?)"
-                            r"(?=\s+- \w+ |\Z|Insight))?" +
-                            r"(?:\s+- Answer to \"Formulate Questions\" using "
-                            r"CONTEXT TEXT:\s*((?:.|\n)+?)"
-                            r"(?=\s+- \w+ |\Z|Insight))?" +
-                            r"(?:\s+- Iterative Feedback:\s*((?:.|\n)+?)"
-                            r"(?=\s+- \w+ |\Z|Insight))?")
-
-        insights_matches = re.findall(insights_pattern, msg.content, re.DOTALL)
-
-        insights_json = {}
-        for match in insights_matches:
-            (idx, topic, entity, extract, context, question, answer,
-             feedback) = match
-            insights_json[f"insight {idx}"] = {
-                "topic_segmentation": handle_none_values_in_msg(topic),
-                "entity_recognition": handle_none_values_in_msg(entity),
-                "extract_details": handle_none_values_in_msg(extract),
-                "contextual_understanding": handle_none_values_in_msg(context),
-                "formulate_questions": handle_none_values_in_msg(question),
+        insights_dict: Dict[str, Union[str, list]] = {}
+        for insight_idx, insight_data in insights_json.items():
+            insights_dict[insight_idx] = {
+                "topic":
+                handle_none_values_in_msg(
+                    insight_data.get("Topic Segmentation")),
+                "entity_recognition": [
+                    entity.strip()
+                    for entity in insight_data.get("Entity Recognition", [])
+                ],
+                "extract_details":
+                handle_none_values_in_msg(insight_data.get("Extract Details")),
+                "contextual_understanding":
+                handle_none_values_in_msg(
+                    insight_data.get("Contextual Understanding")),
+                "formulate_questions":
+                handle_none_values_in_msg(
+                    insight_data.get("Formulate Questions")),
                 "answer_to_formulate_questions":
-                handle_none_values_in_msg(answer),
-                "iterative_feedback": handle_none_values_in_msg(feedback),
+                handle_none_values_in_msg(
+                    insight_data.get(
+                        "Answer to Formulate Questions using CONTEXT TEXT")),
+                "iterative_feedback":
+                handle_none_values_in_msg(
+                    insight_data.get("Iterative Feedback"))
             }
 
-            # Convert the value of entity_recognition from string to list
-            if insights_json[f"insight {idx}"]["entity_recognition"]:
-                entity_recognition_list = (
-                    insights_json[f"insight {idx}"]
-                    ["entity_recognition"].strip('[]').split(', '))
-                # Use list comprehension to filter out strings of digits
-                entity_recognition_list = [
-                    er for er in entity_recognition_list if not er.isdigit()
-                ]
-                insights_json[f"insight {idx}"]["entity_recognition"] = \
-                    entity_recognition_list
+        if len(insights_dict) == 0:
+            raise RuntimeError("No insights generated.\n"
+                               f"Response of LLM:\n{msg.content}")
 
-        # Remove the insight if the topic segmentation/insight is None or empty
-        remove_empty_insights_list = []
-        for insight_idx, _ in insights_json.items():
-            if insights_json[insight_idx]["topic_segmentation"] is None:
-                remove_empty_insights_list.append(insight_idx)
-        for insight_idx in remove_empty_insights_list:
-            insights_json.pop(insight_idx)
-
-        return insights_json
+        return insights_dict
 
     def transform_into_text(self, insights: Union[Dict[str, Dict[str, str]],
                                                   str],

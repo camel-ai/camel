@@ -27,8 +27,8 @@ from camel.societies import RolePlaying
 from camel.types import ModelType, TaskType
 
 
-def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
-         context_text=None, num_roles=None) -> None:
+def main(model_type=ModelType.GPT_4_TURBO, task_prompt=None, context_text=None,
+         num_roles=None) -> None:
     # Start the multi-agent communication
     print_and_write_md("========================================",
                        color=Fore.BLACK)
@@ -44,9 +44,11 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                        color=Fore.BLACK)
 
     # Model and agent initialization
-    model_config = ChatGPTConfig()
-    multi_agent = MultiAgent(model_type=ModelType.GPT_4_TURBO,
-                             model_config=model_config)
+    model_config = ChatGPTConfig(max_tokens=2048, temperature=0)
+
+    multi_agent = MultiAgent(
+        model_type=model_type,  # GPT_4_TURBO
+        model_config=model_config)
     insight_agent = InsightAgent(model_type=model_type,
                                  model_config=model_config)
     deductive_reasoner_agent = DeductiveReasonerAgent(
@@ -54,10 +56,11 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
 
     # Generate role with descriptions
     time_role_with_description_0 = time.time()
+    role_names = None
     role_descriptions_dict = \
         multi_agent.run_role_with_description(task_prompt=task_prompt,
                                               num_roles=num_roles,
-                                              role_names=None,
+                                              role_names=role_names,
                                               function_list=[])
     time_role_with_description_1 = time.time()
     run_time_role_with_description = int(time_role_with_description_1 -
@@ -81,14 +84,14 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
     # Draw the graph of the subtasks
     oriented_graph = {}
     for subtask_idx, details in subtasks_with_dependencies_dict.items():
-        deps = details["dependencies"]
+        deps = details['dependencies']
         oriented_graph[subtask_idx] = deps
     # TODO: cycle detection and handling
     multi_agent.draw_subtasks_graph(oriented_graph=oriented_graph)
 
     # Get the list of subtasks
     subtasks = [
-        subtasks_with_dependencies_dict[key]["description"]
+        subtasks_with_dependencies_dict[key]['description']
         for key in sorted(subtasks_with_dependencies_dict.keys())
     ]
 
@@ -103,9 +106,9 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
     if context_text is not None:
         insights = insight_agent.run(context_text=context_text)
         for insight in insights.values():
-            if insight["entity_recognition"] is None:
+            if insight['entity_recognition'] is None:
                 continue
-            tags = tuple(insight["entity_recognition"])
+            tags = tuple(insight['entity_recognition'])
             environment_record[tags] = insight
 
     # Print a part of the configurations of the multi-agent communication
@@ -135,9 +138,9 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                        for subtask in pipeline):
         # Get the description of the subtask
         subtask = \
-            subtasks_with_dependencies_dict[subtask_id]["description"]
+            subtasks_with_dependencies_dict[subtask_id]['description']
         subtask_labels = \
-            subtasks_with_dependencies_dict[subtask_id]["input_tags"]
+            subtasks_with_dependencies_dict[subtask_id]['input_tags']
         # Get the insights from the environment for the subtask
         insights_for_subtask = get_insights_from_environment(
             subtask_id, subtask, subtask_labels, environment_record,
@@ -153,11 +156,11 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
         ai_assistant_role = \
             max(role_compatibility_scores_dict,
                 key=lambda role:
-                role_compatibility_scores_dict[role]["score_assistant"])
+                role_compatibility_scores_dict[role]['score_assistant'])
         ai_user_role = \
             max(role_compatibility_scores_dict,
                 key=lambda role:
-                role_compatibility_scores_dict[role]["score_user"])
+                role_compatibility_scores_dict[role]['score_user'])
 
         ai_assistant_description = role_descriptions_dict[ai_assistant_role]
         ai_user_description = role_descriptions_dict[ai_user_role]
@@ -174,12 +177,12 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
 
         subtask_content = (
             "- Description of TASK:\n" +
-            subtasks_with_dependencies_dict[subtask_id]["description"] + " " +
-            subtasks_with_dependencies_dict[subtask_id]["context"] +
+            subtasks_with_dependencies_dict[subtask_id]['description'] + " " +
+            subtasks_with_dependencies_dict[subtask_id]['context'] +
             "\n- Input of TASK:\n" +
-            subtasks_with_dependencies_dict[subtask_id]["input_content"] +
+            subtasks_with_dependencies_dict[subtask_id]['input_content'] +
             "\n- Output Standard for the completion of TASK:\n" +
-            subtasks_with_dependencies_dict[subtask_id]["output_standard"])
+            subtasks_with_dependencies_dict[subtask_id]['output_standard'])
         print_and_write_md(
             f"Task of the role-playing ({subtask_id}):\n"
             f"{subtask_content}\n\n", color=Fore.RED, file_path=subtask_id)
@@ -191,18 +194,18 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
             dict(
                 assistant_role=ai_assistant_role, user_role=ai_user_role,
                 assistant_description=ai_assistant_description + "\n" +
-                insights_for_subtask, user_description=ai_user_description +
-                "\n" + insights_for_subtask) for _ in range(2)
+                insights_for_subtask,
+                user_description=ai_user_description + "\n" + "")
+            for _ in range(2)  # insights_for_subtask
         ]  # System message meta data dicts
 
         function_list = [*MATH_FUNCS, *SEARCH_FUNCS]
 
         # Assistant model config
-        assistant_config = \
-            FunctionCallingConfig.from_openai_function_list(
-                function_list=function_list,
-                kwargs=dict(temperature=0.7),
-            )
+        assistant_config = FunctionCallingConfig.from_openai_function_list(
+            function_list=function_list,
+            kwargs=dict(temperature=0.7),
+        )
 
         # User model config
         user_config = FunctionCallingConfig.from_openai_function_list(
@@ -211,26 +214,24 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
         )
 
         assistant_agent_kwargs = dict(
-            model_type=ModelType.GPT_4_TURBO,
+            model_type=model_type,
             model_config=assistant_config,
             function_list=function_list,
         )
 
         user_agent_kwargs = dict(
-            model_type=ModelType.GPT_4_TURBO,
+            model_type=model_type,
             model_config=user_config,
-            function_list=function_list,
+            # function_list=function_list,
         )
-
         # Initialize the role-playing session
         role_play_session = RolePlaying(
             assistant_role_name=ai_assistant_role,
-            user_role_name=ai_user_role,
             assistant_agent_kwargs=assistant_agent_kwargs,
+            user_role_name=ai_user_role,
             user_agent_kwargs=user_agent_kwargs,
-            task_prompt=subtask_content,
-            model_type=ModelType.GPT_4_TURBO,
             task_type=TaskType.ROLE_DESCRIPTION,
+            task_prompt=subtask_content,
             with_task_specify=False,
             extend_sys_msg_meta_dicts=sys_msg_meta_dicts,
         )
@@ -241,7 +242,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                                 "the TASK:\n")
 
         # Start the role-playing to complete the subtask
-        chat_turn_limit, n = 50, 0
+        chat_turn_limit, n = 20, 0
         input_msg = role_play_session.init_chat()
         while n < chat_turn_limit:
             n += 1
@@ -250,7 +251,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                 assistant_response, user_response = \
                     role_play_session.step(input_msg)
             except Exception as e:
-                # output a warning message and continue
+                # Output a warning message and continue
                 print(Fore.RED + f"Warning: {e}")
                 continue
 
@@ -263,10 +264,6 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                 print(Fore.GREEN +
                       (f"{ai_user_role} terminated. Reason: "
                        f"{user_response.info['termination_reasons']}."))
-                break
-
-            if "CAMEL_TASK_DONE" in user_response.msg.content or \
-                    "CAMEL_TASK_DONE" in assistant_response.msg.content:
                 break
 
             end_time_conversation = time.time()
@@ -302,8 +299,12 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
                     user_conversation=user_response.msg.content,
                     assistant_conversation=assistant_response.msg.content)
             reproduced_assistant_msg = \
-                reproduced_assistant_msg_with_category["text"]
+                reproduced_assistant_msg_with_category['text']
             print_and_write_md(reproduced_assistant_msg, color=Fore.BLACK)
+
+            if "CAMEL_TASK_DONE" in user_response.msg.content or \
+                    "CAMEL_TASK_DONE" in assistant_response.msg.content:
+                break
 
         insights_instruction = ("The CONTEXT TEXT is the steps to resolve " +
                                 "the TASK. The INSIGHTs should come solely" +
@@ -313,9 +314,9 @@ def main(model_type=ModelType.GPT_3_5_TURBO_16K, task_prompt=None,
 
         # Update the environment record
         for insight in insights.values():
-            if insight["entity_recognition"] is None:
+            if insight['entity_recognition'] is None:
                 continue
-            labels_key = tuple(insight["entity_recognition"])
+            labels_key = tuple(insight['entity_recognition'])
             environment_record[labels_key] = insight
         printable_environment_record = \
             [insight_data for _, insight_data in environment_record.items()]
@@ -335,13 +336,13 @@ def get_insights_from_environment(subtask_id, subtask, subtask_labels,
             target_state=subtask)
 
     target_labels = list(
-        set(conditions_and_quality_json["labels"]) | set(subtask_labels))
-    print(f"Target labels for {subtask_id}:\n{target_labels}")
+        set(conditions_and_quality_json['labels']) | set(subtask_labels))
+    print(Fore.CYAN + f"Target labels for {subtask_id}:\n{target_labels}")
 
     labels_sets = [
         list(labels_set) for labels_set in environment_record.keys()
     ]
-    print(f"Labels sets for {subtask_id}:\n{labels_sets}")
+    print(Fore.CYAN + f"Labels sets for {subtask_id}:\n{labels_sets}")
 
     _, _, _, labels_retrieved_sets = \
         multi_agent.get_retrieval_index_from_environment(
@@ -357,7 +358,7 @@ def get_insights_from_environment(subtask_id, subtask, subtask_labels,
         environment_record[tuple(label_set)]
         for label_set in labels_retrieved_sets
     ]
-    print("Retrieved insights from the environment for "
+    print(Fore.CYAN + "Retrieved insights from the environment for "
           f"{subtask_id}:\n"
           f"{json.dumps(retrieved_insights, indent=4)}")
 
@@ -466,7 +467,48 @@ if __name__ == "__main__":
 
     # Number of roles in the society (multi-agent communication),
     # which is supposed to be greater than 4
-    num_roles = 5
+    num_roles = 4
+
+    task_prompt = """You are an advanced AI tasked with designing a Retrieval-Augmented Generation (RAG) system. This system should leverage multimodal embeddings, a hybrid index vector database, dynamic memory management, and context generation to enhance the relevance, accuracy, and coherence of generated content. Please provide a detailed design including system components, functionality, pseudocode for key algorithms, and interaction flow.
+And every subtask should start with a warning "not to use code when you solve the task".
+"""  # noqa: E501
+    context_text = """You are an advanced AI tasked with designing a Retrieval-Augmented Generation (RAG) system. This system should leverage multimodal embeddings, a hybrid index vector database, dynamic memory management, and context generation to enhance the relevance, accuracy, and coherence of generated content. Please provide a detailed design including system components, functionality, pseudocode for key algorithms, and interaction flow. Focus on the following aspects:
+
+1. **Multimodal Embedding Module**:
+   - Describe how to handle text, image, and audio data.
+   - Provide pseudocode for converting these data types into vector representations using a pre-trained model.
+
+2. **Hybrid Index Vector Database**:
+   - Explain how to implement a hybrid index combining coarse-grained (e.g., HNSW) and fine-grained (e.g., Faiss) search strategies.
+   - Include pseudocode for adding vectors to the index and performing similarity search.
+
+3. **Dynamic Memory Management Module**:
+   - Detail how to manage stored memory, including online updates and self-learning based on user feedback.
+   - Provide pseudocode for updating memory embeddings dynamically.
+
+4. **Context Generation Module**:
+   - Describe how to generate context based on current dialogue history and retrieved memory.
+   - Provide pseudocode for embedding context information into prompts.
+
+5. **LLM API Call Module**:
+   - Explain how to call an LLM API with the generated prompt.
+   - Provide pseudocode for this process.
+
+6. **Interaction Flow Diagram**:
+   - Outline the end-to-end interaction flow from user query to response generation.
+   - Highlight key steps and data flow between modules.
+
+
+7. **Interaction Flow Diagram**:
+   - User Query: User inputs a query or task, and the system receives the input.
+   - Multimodal Embedding: The system converts user input and related information into vector representations.
+   - Hybrid Index Retrieval: The system performs multilevel similarity retrieval in the vector database, finding relevant memory units.
+   - Dynamic Memory Management: The system updates memory units based on new information and user feedback.
+   - Context Generation: The system generates context information based on retrieval results and dialogue history.
+   - LLM API Call: The system embeds the context into the prompt and calls the LLM API to generate a response.
+   - Result Processing and Return: The system processes the generated response and returns it to the user.
+
+"""  # noqa: E501
 
     main(task_prompt=task_prompt, context_text=context_text,
          num_roles=num_roles)
