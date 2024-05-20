@@ -11,30 +11,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-# ruff: noqa: I001
-from .openai_function import (
-    OpenAIFunction,
-    get_openai_function_schema,
-    get_openai_tool_schema,
+from .anthropic_config import ANTHROPIC_API_PARAMS, AnthropicConfig
+from .base_config import BaseConfig
+from .openai_config import (
+    OPENAI_API_PARAMS,
+    OPENAI_API_PARAMS_WITH_FUNCTIONS,
+    ChatGPTConfig,
+    FunctionCallingConfig,
+    OpenSourceConfig,
 )
 
-from .google_maps_function import MAP_FUNCS
-from .math_functions import MATH_FUNCS
-from .open_api_function import OPENAPI_FUNCS
-from .retrieval_functions import RETRIEVAL_FUNCS
-from .search_functions import SEARCH_FUNCS
-from .twitter_function import TWITTER_FUNCS
-from .weather_functions import WEATHER_FUNCS
-
 __all__ = [
-    'OpenAIFunction',
-    'get_openai_function_schema',
-    'get_openai_tool_schema',
-    'MAP_FUNCS',
-    'MATH_FUNCS',
-    'OPENAPI_FUNCS',
-    'RETRIEVAL_FUNCS',
-    'SEARCH_FUNCS',
-    'TWITTER_FUNCS',
-    'WEATHER_FUNCS',
+    'BaseConfig',
+    'ChatGPTConfig',
+    'FunctionCallingConfig',
+    'OPENAI_API_PARAMS',
+    'OPENAI_API_PARAMS_WITH_FUNCTIONS',
+    'AnthropicConfig',
+    'ANTHROPIC_API_PARAMS',
+    'OpenSourceConfig',
 ]

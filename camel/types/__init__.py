@@ -17,6 +17,7 @@ from .enums import (
     OpenAIBackendRole,
     OpenAIImageDetailType,
     OpenAIImageType,
+    OpenAPIName,
     RoleType,
     StorageType,
     TaskType,
@@ -57,4 +58,5 @@ __all__ = [
     'CompletionUsage',
     'OpenAIImageType',
     'OpenAIImageDetailType',
+    'OpenAPIName',
 ]
