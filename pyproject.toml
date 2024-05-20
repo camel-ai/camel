@@ -141,7 +141,6 @@ all = [
     # tools
     "beautifulsoup4",
     "docx2txt",
-    "pygithub",
     "PyMuPDF",
     "wikipedia",
     "wolframalpha",
@@ -270,6 +269,6 @@ module = [
     "cohere",
     "sentence_transformers.*",
     "pymilvus",
-    "pygithub"
+    "pygithub",
 ]
 ignore_missing_imports = true
