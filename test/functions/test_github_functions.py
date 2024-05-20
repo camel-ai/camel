@@ -68,9 +68,3 @@ def test_create_pull_request(
     )
 
     assert pr == expected_response
-
-
-if __name__ == '__main__':
-    import pytest
-
-    pytest.main()

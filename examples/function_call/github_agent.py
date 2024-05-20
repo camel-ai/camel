@@ -41,7 +41,8 @@ def solve_issue(
     ]
     assistant_sys_msg = BaseMessage.make_assistant_message(
         role_name="Software Engineer",
-        content="You are an experienced software engineer who specializes on data structures and algorithms tasks.",
+        content="""You are an experienced software engineer who 
+        specializes on data structures and algorithms tasks.""",
     )
     assistant_model_config = FunctionCallingConfig.from_openai_function_list(
         function_list=function_list,
