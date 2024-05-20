@@ -145,7 +145,6 @@ all = [
     # tools
     "beautifulsoup4",
     "docx2txt",
-    "pygithub",
     "PyMuPDF",
     "wikipedia",
     "wolframalpha",
