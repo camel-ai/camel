@@ -15,7 +15,6 @@ from unittest.mock import patch
 
 from camel.functions.github_functions import (
     create_pull_request,
-    get_github_access_token,
     retrieve_issue,
 )
 from camel.loaders.github_loader import GitHubLoader, GitHubLoaderIssue
@@ -40,7 +39,7 @@ def test_retrieve_issue(mock_retrieve_issue):
         "File Content: def product_of_array_except_self(nums): ..."
     )
 
-    loader = GitHubLoader('test/repo', get_github_access_token())
+    loader = GitHubLoader('test/repo', '1')
 
     assert retrieve_issue(loader, 1) == expected_response
 
@@ -58,8 +57,8 @@ def test_create_pull_request(
         "Title: [GitHub Agent] Solved issue: Time complexity for product_of_array_except_self.py\n"
         "Body: Fixes #1\n"
     )
-    loader = GitHubLoader('test/repo', get_github_access_token())
 
+    loader = GitHubLoader('test/repo', '1')
     pr = create_pull_request(
         loader,
         mock_issue.file_path,
