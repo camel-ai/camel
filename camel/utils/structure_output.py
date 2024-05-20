@@ -39,7 +39,7 @@ def extract_json_from_string(input_str: str) -> dict:
 
         # Check for code block start or end
         if (
-            input_str[i : i + 3] == '```'
+            input_str[i : i + 3] == '```' and input_str[i + 3 : i + 7] != 'json'
         ):  # assuming ``` as code block delimiter
             in_code_block = not in_code_block
             i += 3  # Skip the next two characters as well
