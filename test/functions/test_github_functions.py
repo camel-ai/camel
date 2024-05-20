@@ -14,8 +14,8 @@
 from unittest.mock import patch
 
 from camel.functions.github_functions import (
-    create_pull_request,
-    retrieve_issue,
+    create_pull_request_with_loader,
+    retrieve_issue_with_loader,
 )
 from camel.loaders.github_loader import GitHubLoader, GitHubLoaderIssue
 
@@ -41,7 +41,7 @@ def test_retrieve_issue(mock_retrieve_issue):
 
     loader = GitHubLoader('test/repo', '1')
 
-    assert retrieve_issue(loader, 1) == expected_response
+    assert retrieve_issue_with_loader(loader, 1) == expected_response
 
 
 @patch(
@@ -59,7 +59,7 @@ def test_create_pull_request(
     )
 
     loader = GitHubLoader('test/repo', '1')
-    pr = create_pull_request(
+    pr = create_pull_request_with_loader(
         loader,
         mock_issue.file_path,
         mock_issue.file_content,
