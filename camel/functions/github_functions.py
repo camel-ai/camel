@@ -55,7 +55,7 @@ def get_github_loader(access_token: str, repo_name: str) -> GitHubLoader:
 
 def retrieve_issue(repo_name, issue_number):
     loader = get_github_loader(get_github_access_token(), repo_name)
-    retrieve_issue_with_loader(loader, issue_number)
+    return retrieve_issue_with_loader(loader, issue_number)
 
 
 def retrieve_issue_with_loader(loader, issue_number):
@@ -88,7 +88,7 @@ def create_pull_request(
     repo_name, file_path, new_content, issue_title, issue_number
 ):
     loader = get_github_loader(get_github_access_token(), repo_name)
-    create_pull_request_with_loader(
+    return create_pull_request_with_loader(
         loader, file_path, new_content, issue_title, issue_number
     )
 
