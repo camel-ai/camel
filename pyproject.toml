@@ -162,6 +162,7 @@ all = [
     "neo4j",
     # retrievers
     "rank-bm25",
+    "pygithub",
 ]
 
 [tool.poetry.group.dev]
