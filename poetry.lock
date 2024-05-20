@@ -7075,16 +7075,16 @@ docs = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.link
 testing = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more-itertools", "pytest (>=6,!=8.1.*)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-ignore-flaky", "pytest-mypy", "pytest-ruff (>=0.2.1)"]
 
 [extras]
-all = ["PyMuPDF", "accelerate", "beautifulsoup4", "cohere", "datasets", "diffusers", "docx2txt", "googlemaps", "neo4j", "openapi-spec-validator", "opencv-python", "prance", "pymilvus", "pyowm", "qdrant-client", "rank-bm25", "requests_oauthlib", "sentence-transformers", "sentencepiece", "soundfile", "torch", "transformers", "unstructured", "wikipedia", "wolframalpha"]
+all = ["PyMuPDF", "accelerate", "beautifulsoup4", "cohere", "datasets", "diffusers", "docx2txt", "googlemaps", "neo4j", "openapi-spec-validator", "opencv-python", "prance", "pygithub", "pymilvus", "pyowm", "qdrant-client", "rank-bm25", "requests_oauthlib", "sentence-transformers", "sentencepiece", "soundfile", "torch", "transformers", "unstructured", "wikipedia", "wolframalpha"]
 encoders = ["sentence-transformers"]
 graph-storages = ["neo4j"]
 huggingface-agent = ["accelerate", "datasets", "diffusers", "opencv-python", "sentencepiece", "soundfile", "torch", "transformers"]
 retrievers = ["cohere", "rank-bm25"]
 test = ["mock", "pytest"]
-tools = ["PyMuPDF", "beautifulsoup4", "docx2txt", "googlemaps", "openapi-spec-validator", "prance", "pyowm", "requests_oauthlib", "unstructured", "wikipedia", "wolframalpha"]
+tools = ["PyMuPDF", "beautifulsoup4", "docx2txt", "googlemaps", "openapi-spec-validator", "prance", "pygithub", "pyowm", "requests_oauthlib", "unstructured", "wikipedia", "wolframalpha"]
 vector-databases = ["pymilvus", "qdrant-client"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<3.12"
-content-hash = "8fd155d7d0d75f283f9a95928e6e03a4a9dc2da64d5ba1613bf973ad505f4015"
+content-hash = "4bce1dffeb7c9dd06e4b8e775f3d5751fd150898666a1c39c927250f3e508f20"
