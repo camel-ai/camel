@@ -24,6 +24,8 @@ def extract_json_from_string(input_str: str) -> dict:
     Returns:
         dict: The first JSON object found in the string as a Python dictionary.
     """
+    input_str = input_str.replace('\\', '\\\\')
+
     in_quotes = False
     escaped = False
     depth = 0
@@ -34,17 +36,16 @@ def extract_json_from_string(input_str: str) -> dict:
         if char == '"' and not escaped:  # toggle the in_quotes status
             in_quotes = not in_quotes
 
-        if (
-            in_quotes and char == '\\' and not escaped
-        ):  # handle escape character
+        # Track whether the current character is escaped
+        if in_quotes and char == '\\' and not escaped:
             escaped = True
-        else:
+        elif escaped:
             escaped = False
-
-        if in_quotes and char == '\n':  # replace newline inside quotes
-            clean_input.append(' ')  # replace newline with space inside quotes
         else:
-            clean_input.append(char)  # append current character as it is
+            if in_quotes and char == '\n':  # replace newline inside quotes
+                clean_input.append('\\n')
+            else:
+                clean_input.append(char)
 
         if char == '{' and not in_quotes:
             depth += 1
