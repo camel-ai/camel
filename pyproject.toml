@@ -269,5 +269,6 @@ module = [
     "cohere",
     "sentence_transformers.*",
     "pymilvus",
+    "pygithub",
 ]
 ignore_missing_imports = true
