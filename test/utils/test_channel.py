@@ -48,7 +48,7 @@ class B:
                 break
 
 
-def test_channel():
+async def main():
     manager = Channel_Management()
     a = A("A")
     b = B("B")
@@ -56,10 +56,15 @@ def test_channel():
     channel_b = manager.regester_channel(b.name)
     manager.regester_task(a.task, channel=channel_a)
     manager.regester_task(b.task, channel=channel_b)
-    asyncio.run(manager.run())
+
+    await manager.run()
     
     assert isinstance(channel_a, Channel)
     assert isinstance(channel_b, Channel)
     assert manager.channels["A"] == channel_a
     assert manager.channels["B"] == channel_b
     assert check == True
+
+
+def test_channel():
+    asyncio.run(main())
