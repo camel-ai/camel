@@ -14,10 +14,12 @@
 import os
 from typing import Any, Dict, List
 
-from camel.agents import ChatAgent
 from camel.functions.openai_function import OpenAIFunction
-from camel.messages import BaseMessage
-from camel.prompts import TextPrompt
+from camel.utils import (
+    continue_search,
+    summarize_text,
+    text_extract_from_web,
+)
 
 
 def search_wiki(entity: str) -> str:
@@ -254,149 +256,6 @@ def search_google(
         responses.append({"error": "google search failed."})
     # If no answer found, return an empty list
     return responses
-
-
-def text_extract_from_web(url: str) -> str:
-    r"""Get the text information from given url.
-
-    Args:
-        url (str): The website you want to search.
-
-    Returns:
-        str: All texts extract from the web.
-    """
-    try:
-        import requests
-        from newspaper import Article
-
-        # Request the target page
-        article = Article(url)
-        article.download()
-        article.parse()
-        text = article.text
-
-    except requests.RequestException as e:
-        text = f"Can't access {url}, error: {e}"
-
-    except Exception as e:
-        text = f"Can't extract text from {url}, error: {e}"
-
-    return text
-
-
-# Split a text into smaller chunks of size n
-def create_chunks(text: str, n: int) -> List[str]:
-    r"""Returns successive n-sized chunks from provided text."
-
-    Args:
-        text (str): The text to be split.
-        n (int): The max length of a single chunk.
-
-    Returns:
-        List[str]: A list of split texts.
-    """
-
-    chunks = []
-    i = 0
-    while i < len(text):
-        # Find the nearest end of sentence within a range of 0.5 * n
-        # and 1.5 * n tokens
-        j = min(i + int(1.2 * n), len(text))
-        while j > i + int(0.8 * n):
-            # Decode the tokens and check for full stop or newline
-            chunk = text[i:j]
-            if chunk.endswith(".") or chunk.endswith("\n"):
-                break
-            j -= 1
-        # If no end of sentence found, use n tokens as the chunk size
-        if j == i + int(0.8 * n):
-            j = min(i + n, len(text))
-        chunks.append(text[i:j])
-        i = j
-    return chunks
-
-
-def prompt_single_step_agent(prompt: str) -> str:
-    """Prompt a single-step agent to summarize texts or answer a question."""
-
-    assistant_sys_msg = BaseMessage.make_assistant_message(
-        role_name="Assistant",
-        content="You are a helpful assistant.",
-    )
-    agent = ChatAgent(assistant_sys_msg)
-    agent.reset()
-
-    user_msg = BaseMessage.make_user_message(
-        role_name="User",
-        content=prompt,
-    )
-    assistant_response = agent.step(user_msg)
-    if assistant_response.msgs is not None:
-        return assistant_response.msg.content
-    return ""
-
-
-def summarize_text(text: str, query: str) -> str:
-    r"""Summarize the information from the text, base on the query if query is
-        given.
-
-    Args:
-        text (str): Text to summarize.
-        query (str): What information you want.
-
-    Returns:
-        str: Strings with information.
-    """
-    summary_prompt = TextPrompt(
-        '''Gather information from this text that relative to the question, but 
-do not directly answer the question.\nquestion: {query}\ntext '''
-    )
-    summary_prompt = summary_prompt.format(query=query)
-    # Max length of each chunk
-    max_len = 3000
-    results = ""
-    chunks = create_chunks(text, max_len)
-    # Summarize
-    for i, chunk in enumerate(chunks, start=1):
-        prompt = summary_prompt + str(i) + ": " + chunk
-        result = prompt_single_step_agent(prompt)
-        results += result + "\n"
-
-    # Final summarise
-    final_prompt = TextPrompt(
-        '''Here are some summarized texts which split from one text. Using the information to answer the question.
-If can't find the answer, you must answer "I can not find the answer to the query" and explain why.\n
-Query:\n{query}.\n\nText:\n'''
-    )
-    final_prompt = final_prompt.format(query=query)
-    prompt = final_prompt + results
-
-    response = prompt_single_step_agent(prompt)
-
-    return response
-
-
-def continue_search(query: str, answer: str) -> bool:
-    r"""Ask LLM whether to continue search or not.
-
-    Args:
-        query (str): Question you want to be answered.
-        answer (str): Answer to the query.
-
-    Returns:
-        bool: True if the user want to continue search, False otherwise.
-    """
-    prompt = TextPrompt(
-        "Do you think the ANSWER can answer the QUERY? "
-        "Use only 'yes' or 'no' to answer.\n"
-        "===== QUERY =====\n{query}\n\n"
-        "===== ANSWER =====\n{answer}"
-    )
-    prompt = prompt.format(query=query, answer=answer)
-    reply = prompt_single_step_agent(prompt)
-    if "yes" in str(reply).lower():
-        return False
-    return True
 
 
 def query_wolfram_alpha(query: str, is_detailed: bool) -> str:
