@@ -186,6 +186,7 @@ class KnowledgeGraphAgent(ChatAgent):
         Returns:
             GraphElement: The parsed graph elements.
         """
+        # NOTE: The validation for relationships is not finished.
         import re
 
         # Regular expressions to extract nodes and relationships
