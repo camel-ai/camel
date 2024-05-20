@@ -21,12 +21,12 @@ agent = KnowledgeGraphAgent()
 
 def test_validate_node_valid():
     valid_node = Node(id='test_id', type='test_type', properties={})
-    assert agent._validate_node(valid_node) == True
+    assert agent._validate_node(valid_node)
 
 
 def test_validate_node_invalid():
     invalid_node = "not a Node object"
-    assert agent._validate_node(invalid_node) == False
+    assert not agent._validate_node(invalid_node)
 
 
 def test_validate_relationship_valid():
@@ -36,12 +36,12 @@ def test_validate_relationship_valid():
         'test_type',
         {},
     )
-    assert agent._validate_relationship(valid_relationship) == True
+    assert agent._validate_relationship(valid_relationship)
 
 
 def test_validate_relationship_invalid():
     invalid_relationship = "not a Relationship object"
-    assert agent._validate_relationship(invalid_relationship) == False
+    assert not agent._validate_relationship(invalid_relationship)
 
 
 def test_parse_graph_elements():
