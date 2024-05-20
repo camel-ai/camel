@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import asyncio
-from typing import Any
+from typing import Any, Dict
 
 class Channel:
     def __init__(self, name: str):
@@ -22,9 +22,8 @@ class Channel:
             name (str): name of the channel
         '''
         self.name = name
-        self.flags = {}
-        self.input_queues = {}
-        self.output_queues = {}
+        self.input_queues: Dict[str, asyncio.Queue]= {}
+        self.output_queues: Dict[str, asyncio.Queue] = {}
 
     def connect(self, channel):
         '''Connect to another channel.
@@ -83,7 +82,7 @@ class Channel_Management:
                 if _name != name:
                     channel.connect(self.channels[_name])
         else:
-            channel = self.chanels[name]
+            channel = self.channels[name]
         
         return channel
 

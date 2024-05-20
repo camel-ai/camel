@@ -26,7 +26,7 @@ class A:
          while True:
             self.count += 1
             await channel.send_to("B", f"{self.name} says hello {self.count}")
-            message = await channel.receive_from("B")
+            await channel.receive_from("B")
             if self.count == 1:
                 await channel.send_to("B", "stop")
                 break
@@ -63,7 +63,7 @@ async def main():
     assert isinstance(channel_b, Channel)
     assert manager.channels["A"] == channel_a
     assert manager.channels["B"] == channel_b
-    assert check == True
+    assert check
 
 
 def test_channel():
