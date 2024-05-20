@@ -12,10 +12,16 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
+
 import pytest
 
-from camel.utils import api_keys_required, dependencies_required, get_task_list
-from camel.utils import get_system_information, get_task_list, to_pascal
+from camel.utils import (
+    api_keys_required,
+    dependencies_required,
+    get_system_information,
+    get_task_list,
+    to_pascal,
+)
 
 
 def test_get_task_list():
@@ -44,7 +50,6 @@ def test_get_task_list():
 
 
 def test_dependencies_required(monkeypatch):
-
     @dependencies_required('os')
     def mock_dependencies_present():
         return True
@@ -79,7 +84,7 @@ def test_api_keys_required():
         mock_api_keys_not_exist()
 
     assert "Missing API keys: API_KEY_3" in str(exc.value)
- 
+
 
 def test_get_system_information():
     # Call the function

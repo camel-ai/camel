@@ -11,14 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import importlib
 import os
 import platform
 import re
 import socket
 import time
 import zipfile
-import importlib
-import inspect
 from functools import wraps
 from typing import Any, Callable, List, Optional, Set, TypeVar, cast
 from urllib.parse import urlparse
@@ -244,7 +243,6 @@ def dependencies_required(*required_modules: str) -> Callable[[F], F]:
     """
 
     def decorator(func: F) -> F:
-
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             missing_modules = [
@@ -252,7 +250,8 @@ def dependencies_required(*required_modules: str) -> Callable[[F], F]:
             ]
             if missing_modules:
                 raise ImportError(
-                    f"Missing required modules: {', '.join(missing_modules)}")
+                    f"Missing required modules: {', '.join(missing_modules)}"
+                )
             return func(*args, **kwargs)
 
         return cast(F, wrapper)
@@ -300,21 +299,19 @@ def api_keys_required(*required_keys: str) -> Callable[[F], F]:
     """
 
     def decorator(func: F) -> F:
-
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             missing_keys = [k for k in required_keys if k not in os.environ]
             if missing_keys:
-                raise ValueError(
-                    f"Missing API keys: {', '.join(missing_keys)}")
+                raise ValueError(f"Missing API keys: {', '.join(missing_keys)}")
             return func(*args, **kwargs)
 
         return cast(F, wrapper)
 
     return decorator
-  
-  
-  def get_system_information():
+
+
+def get_system_information():
     r"""Gathers information about the operating system.
 
     Returns:
