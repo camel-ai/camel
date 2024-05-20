@@ -111,6 +111,7 @@ tools = [
     "prance",
     "openapi-spec-validator",
     "unstructured",
+    "pygithub",
 ]
 
 vector-databases = [
@@ -160,6 +161,7 @@ all = [
     "neo4j",
     # retrievers
     "rank-bm25",
+    "pygithub",
 ]
 
 [tool.poetry.group.dev]
