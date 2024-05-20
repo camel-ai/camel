@@ -66,7 +66,7 @@ def solve_issue(
 
 
 def main(model=None) -> None:
-    repo_name = "eigent-ai/lambda-working-repo"
+    repo_name = "camel-ai/test-github-agent"
     solve_issue(repo_name=repo_name, issue_number=1, model=model)
 
 
