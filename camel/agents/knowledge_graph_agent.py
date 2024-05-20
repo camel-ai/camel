@@ -17,9 +17,13 @@ from unstructured.documents.elements import Element
 
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
-from camel.types import ModelType, RoleType
 from camel.prompts import TextPrompt
-from camel.storages.graph_storages.graph_element import Node, Relationship, GraphElement
+from camel.storages.graph_storages.graph_element import (
+    GraphElement,
+    Node,
+    Relationship,
+)
+from camel.types import ModelType, RoleType
 
 text_prompt = """
 You are tasked with extracting nodes and relationships from given content and structures them into Node and Relationship objects. Here's the outline of what you needs to do:
@@ -73,6 +77,7 @@ Please extracts nodes and relationships from given content and structures them i
 {task}
 """
 
+
 class KnowledgeGraphAgent(ChatAgent):
     r"""An agent that can extract node and relationship information for different entities from given `Element` content.
 
@@ -124,7 +129,8 @@ class KnowledgeGraphAgent(ChatAgent):
         self.element = element
 
         knowledge_graph_prompt = TextPrompt(text_prompt)
-        knowledge_graph_generation = knowledge_graph_prompt.format(task=str(element)
+        knowledge_graph_generation = knowledge_graph_prompt.format(
+            task=str(element)
         )
 
         knowledge_graph_generation_msg = BaseMessage.make_user_message(
@@ -139,7 +145,7 @@ class KnowledgeGraphAgent(ChatAgent):
             content = self._parse_graph_elements(content)
 
         return content
-    
+
     def _validate_node(self, node: Node) -> bool:
         r"""Validate if the object is a valid Node.
 
@@ -149,7 +155,11 @@ class KnowledgeGraphAgent(ChatAgent):
         Returns:
             bool: True if the object is a valid Node, False otherwise.
         """
-        return isinstance(node, Node) and isinstance(node.id, (str, int)) and isinstance(node.type, str)
+        return (
+            isinstance(node, Node)
+            and isinstance(node.id, (str, int))
+            and isinstance(node.type, str)
+        )
 
     def _validate_relationship(self, relationship: Relationship) -> bool:
         r"""Validate if the object is a valid Relationship.
@@ -160,7 +170,12 @@ class KnowledgeGraphAgent(ChatAgent):
         Returns:
             bool: True if the object is a valid Relationship, False otherwise.
         """
-        return isinstance(relationship, Relationship) and self._validate_node(relationship.subj) and self._validate_node(relationship.obj) and isinstance(relationship.type, str)
+        return (
+            isinstance(relationship, Relationship)
+            and self._validate_node(relationship.subj)
+            and self._validate_node(relationship.obj)
+            and isinstance(relationship.type, str)
+        )
 
     def _parse_graph_elements(self, input_string: str) -> GraphElement:
         r"""Parses graph elements from given content.
@@ -193,8 +208,12 @@ class KnowledgeGraphAgent(ChatAgent):
             subj_str, obj_str, rel_type, properties = match.groups()
             obj_match = re.search(r"Node\(.*?\)", obj_str)
             if obj_match:
-                subj = next(node for node in nodes if node.id == eval(subj_str).id)
-                obj = next(node for node in nodes if node.id == eval(obj_str).id)
+                subj = next(
+                    node for node in nodes if node.id == eval(subj_str).id
+                )
+                obj = next(
+                    node for node in nodes if node.id == eval(obj_str).id
+                )
                 properties = eval(properties)
                 rel = Relationship(subj, obj, rel_type, properties)
                 if self._validate_relationship(rel):
