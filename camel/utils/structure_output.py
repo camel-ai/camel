@@ -42,12 +42,10 @@ def extract_json_from_string(input_str: str) -> dict:
         elif escaped:
             escaped = False
         else:
-            if (
-                in_quotes and char == '\n'
-            ):  # replace newline inside quotes with space
-                clean_input.append(' ')
+            if in_quotes and char == '\n':  # replace newline inside quotes
+                clean_input.append('\\n')
             else:
-                clean_input.append(char)  # append current character as it is
+                clean_input.append(char)
 
         if char == '{' and not in_quotes:
             depth += 1
