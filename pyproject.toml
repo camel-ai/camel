@@ -61,6 +61,7 @@ requests_oauthlib = { version = "^1.3.1", optional = true }
 prance = { version = "^23.6.21.0", optional = true }
 openapi-spec-validator = { version = "^0.7.1", optional = true }
 unstructured = { extras = ["all-docs"], version = "^0.10.30", optional = true }
+pygithub = { version = "^2.3.0", optional = true }
 
 # encoders
 sentence-transformers = { version = "^2.2.2", optional = true }
@@ -79,8 +80,6 @@ cohere = { version = "^4.56", optional = true }
 # test
 pytest = { version = "^7", optional = true}
 mock = { version = "^5", optional = true}
-pygithub = "^2.3.0"
-
 
 [tool.poetry.extras]
 test = ["pytest", "mock"]
