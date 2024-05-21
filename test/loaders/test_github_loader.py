@@ -31,7 +31,10 @@ def test_init():
     mock_github.get_repo.assert_called_once_with("repo_name")
 
 
-def test_retrieve_issue_list():
+def test_retrieve_issue_list(monkeypatch):
+    # Set a dummy access token in the environment variables
+    monkeypatch.setenv('GITHUB_ACCESS_TOKEN', 'TOKEN')
+
     # Create a mock GitHub instance
     mock_github = MagicMock()
 
@@ -71,7 +74,10 @@ def test_retrieve_issue_list():
     ], f"Expected {expected_issue}, but got {issue_list}"
 
 
-def test_retrieve_issue():
+def test_retrieve_issue(monkeypatch):
+    # Set a dummy access token in the environment variables
+    monkeypatch.setenv('GITHUB_ACCESS_TOKEN', 'TOKEN')
+
     # Create a mock GitHub instance
     mock_github = MagicMock()
 
