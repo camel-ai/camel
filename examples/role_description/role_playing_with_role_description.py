@@ -13,14 +13,14 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from colorama import Fore
 
-from camel.agents import RoleAssignmentAgent
+from camel.agents.multi_agent import MultiAgent
 from camel.configs import ChatGPTConfig
 from camel.societies import RolePlaying
 from camel.types import TaskType
 from camel.utils import print_text_animated
 
-AI_ASSISTANT_ROLE_INDEX = 0
-AI_USER_ROLE_INDEX = 1
+AI_ASSISTANT_ROLE_INDEX = 1
+AI_USER_ROLE_INDEX = 0
 
 
 def main(
@@ -29,7 +29,7 @@ def main(
     task_prompt = "Develop a trading bot for the stock market."
 
     model_config_description = ChatGPTConfig()
-    role_description_agent = RoleAssignmentAgent(
+    role_description_agent = MultiAgent(
         model_type=model_type_for_role_generation,
         model_config=model_config_description,
     )
@@ -56,11 +56,11 @@ def main(
     ]
 
     role_play_session = RolePlaying(
+        model_type=model_type,
         assistant_role_name=ai_assistant_role,
         user_role_name=ai_user_role,
         task_prompt=task_prompt,
-        model_type=model_type,
-        task_type=TaskType.ROLE_DESCRIPTION,  # Score for role description
+        task_type=TaskType.ROLE_DESCRIPTION,  # important for role description
         with_task_specify=True,
         task_specify_agent_kwargs=dict(model_type=model_type),
         extend_sys_msg_meta_dicts=sys_msg_meta_dicts,

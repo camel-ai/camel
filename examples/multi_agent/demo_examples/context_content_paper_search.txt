@@ -1,0 +1,20 @@
+**Scope of AI Topics**:
+    - Focus on key areas: Deep Learning, Machine Learning Algorithms, AI in Healthcare, and Ethical Implications of AI.
+    - Include both theoretical research and practical applications.
+**Time Frame**:
+    - Concentrate on articles published within the last five years to ensure the relevance and recency of information.
+**Type of Publications**:
+    - Prioritize peer-reviewed journals and conference proceedings.
+    - Include significant academic theses and industry reports if highly relevant.
+**Depth of Content**:
+    - Aim for a mix of both introductory overviews and in-depth analyses to cater to a broad audience, including those new to the field as well as 
+
+**Language and Accessibility**:
+    - Focus on English-language articles.
+    - Prefer open-access resources but include key subscription-based articles where necessary.
+**Geographical Focus**:
+    - While maintaining a global perspective, highlight any significant regional-specific research, particularly from North America and Europe.
+**Citation Analysis**:
+    - Pay special attention to highly cited articles as they might indicate pivotal research in the field.
+**Keyword Variations**:
+    - Use a range of related keywords and synonyms to ensure comprehensive coverage, such as "Artificial Intelligence," "AI," "Machine Learning," "Deep Learning," etc.

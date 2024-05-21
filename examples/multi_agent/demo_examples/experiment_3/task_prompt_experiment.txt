@@ -1,0 +1,1 @@
+Determine the solution of the differential equation \( \frac{dy}{dx} = y^2 \sin(x) \), given the initial condition \( y(0) = 1 \).

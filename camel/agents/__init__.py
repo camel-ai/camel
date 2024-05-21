@@ -15,7 +15,8 @@ from .base import BaseAgent
 from .chat_agent import ChatAgent
 from .critic_agent import CriticAgent
 from .embodied_agent import EmbodiedAgent
-from .role_assignment_agent import RoleAssignmentAgent
+from .insight_agent import InsightAgent
+from .multi_agent import MultiAgent
 from .task_agent import (
     TaskCreationAgent,
     TaskPlannerAgent,
@@ -28,6 +29,8 @@ from .tool_agents.hugging_face_tool_agent import HuggingFaceToolAgent
 __all__ = [
     'BaseAgent',
     'ChatAgent',
+    'DeductiveReasonerAgent',
+    'InsightAgent',
     'TaskSpecifyAgent',
     'TaskPlannerAgent',
     'TaskCreationAgent',
@@ -36,5 +39,5 @@ __all__ = [
     'BaseToolAgent',
     'HuggingFaceToolAgent',
     'EmbodiedAgent',
-    'RoleAssignmentAgent',
+    'MultiAgent',
 ]

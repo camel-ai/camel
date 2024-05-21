@@ -14,10 +14,11 @@
 import os
 from typing import Any, Dict, List
 
-from camel.agents import ChatAgent
+from camel.agents import ChatAgent, InsightAgent
 from camel.functions.openai_function import OpenAIFunction
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
+from camel.types import ModelType
 
 
 def search_wiki(entity: str) -> str:
@@ -281,9 +282,16 @@ def summarize_text(text: str, query: str) -> str:
 
 
 def search_google_and_summarize(query: str) -> str:
-    r"""Search webs for information. Given a query, this function will use
-    the Google search engine to search for related information from the
-    internet, and then return a summarized answer.
+    r"""Comprehensive Web Search and Information Synthesis. This function
+    serves as a gateway to the vast universe of information available on the
+    internet. By inputting a query, you are leveraging the powerful Google
+    search engine to scan the web for relevant data, articles, studies, and
+    discussions pertaining to your topic of interest.
+    Whether you're looking for a quick factual answer, an overview of a
+        complex topic, or diverse viewpoints on a controversial subject,
+        this function is your streamlined conduit to knowledge. Just type in
+        your question, and let the tool do the rest, bringing you a clear,
+        distilled answer drawn from the breadth of the internet.
 
     Args:
         query (str): Question you want to be answered.
@@ -293,25 +301,47 @@ def search_google_and_summarize(query: str) -> str:
     """
     # Google search will return a list of urls
     responses = search_google(query)
+    top_answer = None
     for item in responses:
         if "url" in item:
             url = item.get("url")
             # Extract text
             text = text_extract_from_web(str(url))
             # Using chatgpt summarise text
-            answer = summarize_text(text, query)
+            # answer = summarize_text(text, query)
+            insight_agent = InsightAgent(model_type=ModelType.GPT_3_5_TURBO)
+            insights = insight_agent.run(
+                context_text=text,
+                insights_instruction=(
+                    "The CONTEXT CONTENT is the content of the web page, "
+                    f"and the Google Search query is \"{query}\"."
+                ),
+            )
+            answer = insight_agent.transform_into_text(insights=insights)
 
             # Let chatgpt decide whether to continue search or not
-            prompt = TextPrompt(
-                '''Do you think the answer: {answer} can answer the query:
-                {query}. Use only 'yes' or 'no' to answer.'''
-            )
+            prompt_tamplate = """Do you think the SEARCH_ANSWER can answer the SEARCH_QUERY? Use only 'yes' or 'no' to answer it.
+===== SEARCH_ANSWER =====
+{answer}
+===== SEARCH_QUERY =====
+{query}
+===== ANSWER TEMPLATE =====
+[yes/no]"""
+            prompt = TextPrompt(prompt_tamplate)
             prompt = prompt.format(answer=answer, query=query)
             reply = prompt_single_step_agent(prompt)
             if "yes" in str(reply).lower():
                 return answer
+            elif top_answer is None:
+                top_answer = answer
 
-    return "Failed to find the answer from google search."
+    return (
+        "Failed to find the answer from google search, but only "
+        + "found the following information:\n"
+        + top_answer
+        if top_answer
+        else "Failed to find the answer from google search."
+    )
 
 
 def query_wolfram_alpha(query: str, is_detailed: bool) -> str:

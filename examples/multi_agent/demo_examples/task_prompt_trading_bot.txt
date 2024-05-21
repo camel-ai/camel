@@ -1,0 +1,1 @@
+Develop a trading bot for the stock market.

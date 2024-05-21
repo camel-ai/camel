@@ -1,0 +1,8 @@
+
+<span style='color: darkcyan;'>Retrieved labels from the environment:</span>
+
+<span style='color: darkcyan;'>[[&#x27;France&#x27;, &#x27;Paris&#x27;, &#x27;Nice&#x27;, &#x27;Lyon&#x27;, &#x27;Bordeaux&#x27;, &#x27;Marseille&#x27;, &#x27;French Riviera&#x27;, &#x27;Loire Valley&#x27;, &#x27;Normandy&#x27;, &#x27;June 10&#x27;, &#x27;June 24&#x27;, &#x27;Eiffel Tower&#x27;, &#x27;Louvre Museum&#x27;, &#x27;Palace of Versailles&#x27;, &#x27;Mont Saint-Michel&#x27;, &quot;Côte d&#x27;Azur&quot;, &#x27;Bordeaux&#x27;, &#x27;Lyon&#x27;, &#x27;Seine&#x27;, &#x27;Provence&#x27;, &#x27;2000 euros&#x27;, &#x27;cooking classes&#x27;, &#x27;art workshops&#x27;, &#x27;cabaret show&#x27;, &#x27;no-pork&#x27;, &#x27;French&#x27;, &#x27;English-speaking&#x27;]]</span>
+
+<span style='color: darkcyan;'>Retrieved labels from the environment:</span>
+
+<span style='color: darkcyan;'>[[&#x27;&quot;France&quot;&#x27;, &#x27;&quot;Paris&#x27;, &#x27;Nice&#x27;, &#x27;Lyon&#x27;, &#x27;Bordeaux&#x27;, &#x27;Marseille&quot;&#x27;, &#x27;&quot;June 10&#x27;, &#x27;to June 24&#x27;, &#x27;2024&quot;&#x27;, &#x27;&quot;Eiffel Tower&#x27;, &#x27;Louvre Museum&#x27;, &#x27;Palace of Versailles&#x27;, &#x27;Mont Saint-Michel&#x27;, &#x27;Côte d\&#x27;Azur beaches&quot;&#x27;, &#x27;&quot;hotels and boutique guesthouses&quot;&#x27;, &#x27;&quot;2000 euros&quot;&#x27;, &#x27;&quot;cooking classes&#x27;, &#x27;art workshops&#x27;, &#x27;live performance&quot;&#x27;, &#x27;&quot;bistros&#x27;, &#x27;brasseries&#x27;, &#x27;Michelin-starred restaurants&quot;&#x27;, &#x27;&quot;no-pork&quot;&#x27;, &#x27;&quot;French language proficiency&#x27;, &#x27;English-speaking guides&quot;&#x27;]]</span>

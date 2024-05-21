@@ -11,17 +11,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+
 from colorama import Fore
 
-from camel.agents import RoleAssignmentAgent
+from camel.agents import MultiAgent
 from camel.configs import ChatGPTConfig
 
 
-def main(model_type=None, num_roles=3) -> None:
+def main(model_type=None, num_roles=3, role_names=None) -> None:
+    if role_names is not None and len(role_names) != num_roles:
+        raise ValueError(
+            f"Length of role_names ({len(role_names)}) "
+            f"does not equal to num_roles ({num_roles})."
+        )
+
     task_prompt = "Develop a trading bot for the stock market."
 
     model_config_description = ChatGPTConfig()
-    role_description_agent = RoleAssignmentAgent(
+    role_description_agent = MultiAgent(
         model_type=model_type, model_config=model_config_description
     )
 
