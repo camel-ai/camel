@@ -14,6 +14,8 @@
 import os
 from typing import List
 
+from github import Auth, Github
+
 from camel.functions import OpenAIFunction
 from camel.loaders import GitHubLoader
 
@@ -53,7 +55,8 @@ def retrieve_issue(repo_name: str, issue_number: int):
     Returns:
         str: A formatted report of the retrieved issue.
     """
-    loader = GitHubLoader(repo_name, get_github_access_token())
+    github = Github(auth=Auth.Token(get_github_access_token()))
+    loader = GitHubLoader(github, repo_name)
     issue = loader.retrieve_issue(issue_number)
 
     if issue:
@@ -91,7 +94,8 @@ def create_pull_request(
         str: A formatted report of the whether the pull request was created
         successfully or not.
     """
-    loader = GitHubLoader(repo_name, get_github_access_token())
+    github = Github(auth=Auth.Token(get_github_access_token()))
+    loader = GitHubLoader(github, repo_name)
     title = f"[GitHub Agent] Solved issue: {issue_title}"
     body = f"Fixes #{issue_number}"
     pr = loader.create_pull_request(file_path, new_content, title, body)

@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from github import Auth, Github
 
 
 class GitHubLoaderIssue:
@@ -22,12 +21,29 @@ class GitHubLoaderIssue:
         self.file_path = file_path
         self.file_content = file_content
 
+    def __eq__(self, other):
+        if isinstance(other, GitHubLoaderIssue):
+            return (
+                self.number == other.number
+                and self.title == other.title
+                and self.body == other.body
+                and self.file_path == other.file_path
+                and self.file_content == other.file_content
+            )
+        return False
+
+    def __repr__(self):
+        return (
+            f"GitHubLoaderIssue(number={self.number}, title={self.title}, "
+            f"body={self.body}, file_path={self.file_path}, file_content={self.file_content})"
+        )
+
 
 class GitHubLoader:
     r"""A class for loading data from GitHub repositories."""
 
-    def __init__(self, repo_name, access_token):
-        self.github = Github(auth=Auth.Token(access_token))
+    def __init__(self, github, repo_name):
+        self.github = github
         self.repo = self.github.get_repo(repo_name)
 
     def retrieve_issue_list(self):
