@@ -13,6 +13,8 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from unittest.mock import patch
 
+import pytest
+
 from camel.functions.github_functions import (
     create_pull_request,
     get_github_access_token,
@@ -28,6 +30,8 @@ mock_issue = GitHubLoaderIssue(
     file_content='def product_of_array_except_self(nums): ...',
 )
 
+# get_github_access_token
+
 
 def test_get_github_access_token(monkeypatch):
     monkeypatch.setenv('GITHUB_ACCESS_TOKEN', 'TOKEN')
@@ -36,6 +40,17 @@ def test_get_github_access_token(monkeypatch):
     assert access_token == expected_access_token
 
 
+def test_get_github_access_token_no_token(monkeypatch):
+    monkeypatch.delenv('GITHUB_ACCESS_TOKEN', raising=False)
+    with pytest.raises(ValueError) as error:
+        get_github_access_token()
+    assert (
+        str(error.value)
+        == "`GITHUB_ACCESS_TOKEN` not found in environment variables. Get it here: `https://github.com/settings/tokens`."
+    )
+
+
+# retrieve_issue
 @patch.object(GitHubLoader, '__init__', lambda self, *args, **kwargs: None)
 @patch.object(GitHubLoader, 'retrieve_issue', return_value=mock_issue)
 def test_retrieve_issue(mock_retrieve_issue):
@@ -48,6 +63,16 @@ def test_retrieve_issue(mock_retrieve_issue):
     )
 
     assert retrieve_issue('test/repo', 1) == expected_response
+
+
+@patch.object(GitHubLoader, '__init__', lambda self, *args, **kwargs: None)
+@patch.object(GitHubLoader, 'retrieve_issue', return_value=None)
+def test_retrieve_issue_not_found(mock_retrieve_issue):
+    expected_response = "Issue not found."
+    assert retrieve_issue('test/repo', 1) == expected_response
+
+
+# create_pull_request
 
 
 @patch(
@@ -72,4 +97,40 @@ def test_create_pull_request(
         mock_issue.number,
     )
 
+    assert pr == expected_response
+
+
+@patch(
+    'camel.functions.github_functions.get_github_access_token',
+    return_value=None,
+)
+def test_create_pull_request_no_access_token(mock_get_github_access_token):
+    with pytest.raises(AssertionError) as error:
+        create_pull_request(
+            'test/repo',
+            mock_issue.file_path,
+            mock_issue.file_content,
+            mock_issue.title,
+            mock_issue.number,
+        )
+    assert str(error.value) == ""  # from Auth.Token initializer
+
+
+@patch(
+    'camel.functions.github_functions.get_github_access_token',
+    return_value="1",
+)
+@patch.object(GitHubLoader, '__init__', lambda self, *args, **kwargs: None)
+@patch.object(GitHubLoader, 'create_pull_request', return_value=None)
+def test_create_pull_request_failed(
+    mock_get_github_access_token, mock_create_pull_request
+):
+    expected_response = "Failed to create the pull request."
+    pr = create_pull_request(
+        'test/repo',
+        mock_issue.file_path,
+        mock_issue.file_content,
+        mock_issue.title,
+        mock_issue.number,
+    )
     assert pr == expected_response
