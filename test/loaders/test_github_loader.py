@@ -69,3 +69,42 @@ def test_retrieve_issue_list():
     assert issue_list == [
         expected_issue
     ], f"Expected {expected_issue}, but got {issue_list}"
+
+
+def test_retrieve_issue():
+    # Create a mock GitHub instance
+    mock_github = MagicMock()
+
+    # Create a mock GitHubLoader instance
+    mock_github_loader = GitHubLoader(mock_github, "repo_name")
+
+    # Create a mock issue object
+    mock_issue = MagicMock()
+    mock_issue.number = 1
+    mock_issue.title = "Test Issue"
+    mock_issue.body = "This is a test issue"
+    mock_issue.pull_request = False
+
+    mock_label = MagicMock()
+    mock_label.name = "path/to/file"
+    mock_issue.labels = [mock_label]
+
+    # Mock the get_issues method of the mock_repo instance to return a list containing the mock issue object
+    mock_github_loader.repo.get_issues.return_value = [mock_issue]
+    mock_github_loader.retrieve_file_content = MagicMock(
+        return_value="This is the content of the file"
+    )
+
+    # Call the retrieve_issue method
+    issue = mock_github_loader.retrieve_issue(1)
+    # Assert the returned issue
+    expected_issue = GitHubLoaderIssue(
+        "Test Issue",
+        "This is a test issue",
+        1,
+        "path/to/file",
+        "This is the content of the file",
+    )
+    assert (
+        issue == expected_issue
+    ), f"Expected {expected_issue}, but got {issue}"
