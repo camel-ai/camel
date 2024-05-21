@@ -57,7 +57,7 @@ mock_issue = GitHubLoaderIssue(
 )
 @patch.object(Github, 'get_repo', return_value="test/repo")
 @patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
-def test_retrieve_issue(monkeypatch):
+def test_retrieve_issue(monkeypatch, mock_get_github_access_token):
     monkeypatch.setenv('GITHUB_ACCESS_TOKEN', 'TOKEN')
     expected_response = (
         "Title: Time complexity for product_of_array_except_self.py\n"
@@ -79,7 +79,7 @@ def test_retrieve_issue(monkeypatch):
 )
 @patch.object(Github, 'get_repo', return_value="test/repo")
 @patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
-def test_retrieve_issue_not_found(monkeypatch):
+def test_retrieve_issue_not_found(monkeypatch, mock_get_github_access_token):
     monkeypatch.setenv('GITHUB_ACCESS_TOKEN', 'TOKEN')
     expected_response = "Issue not found."
 
@@ -98,7 +98,7 @@ def test_retrieve_issue_not_found(monkeypatch):
 )
 @patch.object(Github, 'get_repo', return_value="test/repo")
 @patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
-def test_create_pull_request(monkeypatch):
+def test_create_pull_request(monkeypatch, mock_get_github_access_token):
     monkeypatch.setenv('GITHUB_ACCESS_TOKEN', 'TOKEN')
     expected_response = (
         "Title: [GitHub Agent] Solved issue: Time complexity for product_of_array_except_self.py\n"
@@ -125,7 +125,7 @@ def test_create_pull_request(monkeypatch):
 )
 @patch.object(Github, 'get_repo', return_value="test/repo")
 @patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
-def test_create_pull_request_failed(monkeypatch):
+def test_create_pull_request_failed(monkeypatch, mock_get_github_access_token):
     monkeypatch.setenv('GITHUB_ACCESS_TOKEN', 'TOKEN')
     expected_response = "Failed to create the pull request."
 
