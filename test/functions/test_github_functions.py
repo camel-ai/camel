@@ -14,8 +14,9 @@
 from unittest.mock import patch
 
 from camel.functions.github_functions import (
-    create_pull_request_with_loader,
-    retrieve_issue_with_loader,
+    create_pull_request,
+    get_github_access_token,
+    retrieve_issue,
 )
 from camel.loaders.github_loader import GitHubLoader, GitHubLoaderIssue
 
@@ -26,6 +27,13 @@ mock_issue = GitHubLoaderIssue(
     file_path='product_of_array_except_self.py',
     file_content='def product_of_array_except_self(nums): ...',
 )
+
+
+def test_get_github_access_token(monkeypatch):
+    monkeypatch.setenv('GITHUB_ACCESS_TOKEN', 'TOKEN')
+    expected_access_token = 'TOKEN'
+    access_token = get_github_access_token()
+    assert access_token == expected_access_token
 
 
 @patch.object(GitHubLoader, '__init__', lambda self, *args, **kwargs: None)
@@ -39,9 +47,7 @@ def test_retrieve_issue(mock_retrieve_issue):
         "File Content: def product_of_array_except_self(nums): ..."
     )
 
-    loader = GitHubLoader('test/repo', '1')
-
-    assert retrieve_issue_with_loader(loader, 1) == expected_response
+    assert retrieve_issue('test/repo', 1) == expected_response
 
 
 @patch(
@@ -58,9 +64,8 @@ def test_create_pull_request(
         "Body: Fixes #1\n"
     )
 
-    loader = GitHubLoader('test/repo', '1')
-    pr = create_pull_request_with_loader(
-        loader,
+    pr = create_pull_request(
+        'test/repo',
         mock_issue.file_path,
         mock_issue.file_content,
         mock_issue.title,
