@@ -14,6 +14,7 @@
 import asyncio
 from typing import Any, Dict
 
+
 class Channel:
     def __init__(self, name: str):
         '''Channel class for communication between different tasks and agents.
