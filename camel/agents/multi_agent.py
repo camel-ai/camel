@@ -17,6 +17,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import matplotlib.pyplot as plt
 import networkx as nx
+from tenacity import retry, stop_after_attempt, wait_fixed
 
 from camel.agents import ChatAgent
 from camel.agents.insight_agent import InsightAgent
@@ -809,6 +810,7 @@ Please ensure that you consider both explicit and implicit similarities while ev
             labels_retrieved_sets,
         )
 
+    @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
     def transform_dialogue_into_text(
         self,
         user_name: str,
