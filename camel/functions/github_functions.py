@@ -40,38 +40,7 @@ def get_github_access_token() -> str:
     return GITHUB_ACCESS_TOKEN
 
 
-def get_github_loader(access_token: str, repo_name: str) -> GitHubLoader:
-    r"""Create a GitHub loader object.
-
-    Args:
-        access_token (str): The GitHub access token.
-        repo_name (str): The name of the repository.
-
-    Returns:
-        GitHubLoader: A GitHub loader object.
-    """
-    return GitHubLoader(repo_name, access_token)
-
-
 def retrieve_issue(repo_name: str, issue_number: int):
-    r"""Retrieves an issue from a GitHub repository.
-
-    This function retrieves an issue from a specified repository using the
-    issue number. It takes the repo name to be easily accessible from an
-    agent
-
-    Args:
-        repo_name (str): The name of the repository from which to retrieve the issue.
-        issue_number (int): The number of the issue to retrieve.
-
-    Returns:
-        str: A formatted report of the retrieved issue.
-    """
-    loader = get_github_loader(get_github_access_token(), repo_name)
-    return retrieve_issue_with_loader(loader, issue_number)
-
-
-def retrieve_issue_with_loader(loader: GitHubLoader, issue_number: int):
     r"""Retrieves an issue from a GitHub repository.
 
     This function retrieves an issue from a specified repository using the
@@ -84,6 +53,7 @@ def retrieve_issue_with_loader(loader: GitHubLoader, issue_number: int):
     Returns:
         str: A formatted report of the retrieved issue.
     """
+    loader = GitHubLoader(repo_name, get_github_access_token())
     issue = loader.retrieve_issue(issue_number)
 
     if issue:
@@ -110,39 +80,6 @@ def create_pull_request(
     file in the specific path with new content. The pull request description
     contains information about the issue title and number.
 
-    It takes the repo name to be easily accessible from an
-    agent.
-
-    Args:
-        repo_name (str): The name of the repository in which to create the pull request.
-        file_path (str): The path of the file to be updated in the repository.
-        new_content (str): The specified new content of the specified file.
-        issue_title (str): The title of the issue that is solved by this pull request.
-        issue_number (int): The number of the issue that is solved by this pull request.
-
-    Returns:
-        str: A formatted report of the whether the pull request was created
-        successfully or not.
-    """
-    loader = get_github_loader(get_github_access_token(), repo_name)
-    return create_pull_request_with_loader(
-        loader, file_path, new_content, issue_title, issue_number
-    )
-
-
-def create_pull_request_with_loader(
-    loader: GitHubLoader,
-    file_path: str,
-    new_content: str,
-    issue_title: str,
-    issue_number: int,
-):
-    r"""Creates a pull request.
-
-    This function creates a pull request in specified repository, which updates a
-    file in the specific path with new content. The pull request description
-    contains information about the issue title and number.
-
     Args:
         repo_name (str): The name of the repository in which to create the pull request.
         file_path (str): The path of the file to be updated in the repository.
@@ -154,6 +91,7 @@ def create_pull_request_with_loader(
         str: A formatted report of the whether the pull request was created
         successfully or not.
     """
+    loader = GitHubLoader(repo_name, get_github_access_token())
     title = f"[GitHub Agent] Solved issue: {issue_title}"
     body = f"Fixes #{issue_number}"
     pr = loader.create_pull_request(file_path, new_content, title, body)
@@ -166,8 +104,6 @@ def create_pull_request_with_loader(
 GITHUB_FUNCS: List[OpenAIFunction] = [
     OpenAIFunction(func)  # type: ignore[arg-type]
     for func in [
-        get_github_access_token,
-        get_github_loader,
         retrieve_issue,
         create_pull_request,
     ]
