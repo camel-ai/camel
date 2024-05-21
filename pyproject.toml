@@ -39,6 +39,7 @@ anthropic = "^0.21.3"
 docstring-parser = "^0.15"
 pydantic = ">=1.9,<3"
 networkx = "^2.8.8"
+tenacity = "^8.0.0"
 
 # huggingface-agent
 transformers = { version = "^4", optional = true }
@@ -269,6 +270,7 @@ module = [
     "sentence_transformers.*",
     "pymilvus",
     "matplotlib.*",
-    "networkx.*"
+    "networkx.*",
+    "tenacity.*"
 ]
 ignore_missing_imports = true
