@@ -35,7 +35,7 @@ class OpenAIAudioModels:
         input: str,
         model_type: AudioModelType = AudioModelType.TTS_1,
         voice: VoiceType = VoiceType.ALLOY,
-        storage_path: Optional[Union[str, os.PathLike[str]]] = None,
+        storage_path: Optional[str] = None,
         **kwargs: Any,
     ) -> Union[
         List[_legacy_response.HttpxBinaryResponseContent],
@@ -51,7 +51,7 @@ class OpenAIAudioModels:
                 Defaults to `AudioModelType.TTS_1`.
             voice (VoiceType, optional): The voice to be used for generating
                 speech. Defaults to `VoiceType.ALLOY`.
-            storage_path (Union[str, os.PathLike[str]], optional): The local
+            storage_path (str, optional): The local
                 path to store the generated speech file if provided, defaults
                 to `None`.
             **kwargs (Any): Extra kwargs passed to the TTS API.
@@ -103,7 +103,7 @@ class OpenAIAudioModels:
                 try:
                     response.write_to_file(storage_path)
                 except Exception as e:
-                    raise Exception("Error during write to file") from e
+                    raise Exception("Error during write the file") from e
 
             return response
 
