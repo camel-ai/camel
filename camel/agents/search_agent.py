@@ -21,10 +21,12 @@ from camel.utils import create_chunks
 
 
 class SearchAgent(ChatAgent):
-    r"""An agent that generates role names based on the task prompt.
+    r"""An agent that summarizes text based on a query and evaluates the
+    relevance of an answer.
+
     Attributes:
-        role_assignment_prompt (TextPrompt): A prompt for the agent to generate
-        role names.
+        role_assignment_prompt (TextPrompt): A prompt for the agent to
+            generate role names.
 
     Args:
         model_type (ModelType, optional): The type of model to use for the
