@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from typing import Any, List, Union
+from typing import Any, List, Optional, Union
 
 from openai import OpenAI, _legacy_response
 
@@ -35,6 +35,7 @@ class OpenAIAudioModels:
         input: str,
         model_type: AudioModelType = AudioModelType.TTS_1,
         voice: VoiceType = VoiceType.ALLOY,
+        storage_path: Optional[Union[str, os.PathLike[str]]] = None,
         **kwargs: Any,
     ) -> Union[
         List[_legacy_response.HttpxBinaryResponseContent],
@@ -50,6 +51,9 @@ class OpenAIAudioModels:
                 Defaults to `AudioModelType.TTS_1`.
             voice (VoiceType, optional): The voice to be used for generating
                 speech. Defaults to `VoiceType.ALLOY`.
+            storage_path (Union[str, os.PathLike[str]], optional): The local
+                path to store the generated speech file if provided, defaults
+                to `None`.
             **kwargs (Any): Extra kwargs passed to the TTS API.
 
         Returns:
@@ -94,6 +98,13 @@ class OpenAIAudioModels:
                     input=input,
                     **kwargs,
                 )
+
+            if storage_path:
+                try:
+                    response.write_to_file(storage_path)
+                except Exception as e:
+                    raise Exception("Error during write to file") from e
+
             return response
 
         except Exception as e:
@@ -149,7 +160,7 @@ class OpenAIAudioModels:
     def speech_to_text(
         self,
         audio_file_path: str,
-        translate_into_eng: bool = False,
+        translate_into_english: bool = False,
         **kwargs: Any,
     ) -> str:
         r"""Convert speech audio to text.
@@ -158,7 +169,7 @@ class OpenAIAudioModels:
             audio_file_path (str): The audio file path, supporting one of
                 these formats: flac, mp3, mp4, mpeg, mpga, m4a, ogg, wav, or
                 webm.
-            translate_into_eng (bool, optional): Whether to translate the
+            translate_into_english (bool, optional): Whether to translate the
                 speech into English. Defaults to `False`.
             **kwargs (Any): Extra keyword arguments passed to the
                 Speech-to-Text (STT) API.
@@ -192,7 +203,7 @@ class OpenAIAudioModels:
                 texts = []
                 for chunk_path in audio_chunks:
                     audio_data = open(chunk_path, "rb")
-                    if translate_into_eng:
+                    if translate_into_english:
                         translation = self._client.audio.translations.create(
                             model="whisper-1", file=audio_data, **kwargs
                         )
@@ -210,7 +221,7 @@ class OpenAIAudioModels:
                 # Process the entire audio file
                 audio_data = open(audio_file_path, "rb")
 
-                if translate_into_eng:
+                if translate_into_english:
                     translation = self._client.audio.translations.create(
                         model="whisper-1", file=audio_data, **kwargs
                     )
