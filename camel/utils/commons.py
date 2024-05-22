@@ -393,10 +393,10 @@ def role_playing_with_function(
         # Print output from the assistant, including any function
         # execution information
         print_text_animated(Fore.GREEN + "AI Assistant:")
-        called_tools: List[FunctionCallingRecord] = assistant_response.info[
-            'called_tools'
+        tool_calls: List[FunctionCallingRecord] = assistant_response.info[
+            'tool_calls'
         ]
-        for func_record in called_tools:
+        for func_record in tool_calls:
             print_text_animated(f"{func_record}")
         print_text_animated(f"{assistant_response.msg.content}\n")
 

@@ -330,7 +330,7 @@ def test_token_exceed_return():
         "usage": None,
         "termination_reasons": ["max_tokens_exceeded"],
         "num_tokens": 1000,
-        "called_tools": [],
+        "tool_calls": [],
     }
     agent.terminated = True
     response = agent.step_token_exceed(1000, [], "max_tokens_exceeded")
@@ -392,18 +392,16 @@ def test_tool_calling():
     )
     agent_response = agent.step(user_msg)
 
-    called_tools: List[FunctionCallingRecord] = agent_response.info[
-        'called_tools'
-    ]
-    for called_func in called_tools:
+    tool_calls: List[FunctionCallingRecord] = agent_response.info['tool_calls']
+    for called_func in tool_calls:
         print(str(called_func))
 
-    assert len(called_tools) > 0
-    assert str(called_tools[0]).startswith("Function Execution")
+    assert len(tool_calls) > 0
+    assert str(tool_calls[0]).startswith("Function Execution")
 
-    assert called_tools[0].func_name == "mul"
-    assert called_tools[0].args == {"a": 2, "b": 8}
-    assert called_tools[0].result == 16
+    assert tool_calls[0].func_name == "mul"
+    assert tool_calls[0].args == {"a": 2, "b": 8}
+    assert tool_calls[0].result == 16
 
 
 def test_response_words_termination():

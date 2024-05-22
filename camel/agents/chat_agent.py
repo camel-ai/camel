@@ -229,7 +229,7 @@ class ChatAgent(BaseAgent):
         usage: Optional[Dict[str, int]],
         termination_reasons: List[str],
         num_tokens: int,
-        called_tools: List[FunctionCallingRecord],
+        tool_calls: List[FunctionCallingRecord],
     ) -> Dict[str, Any]:
         r"""Returns a dictionary containing information about the chat session.
 
@@ -240,9 +240,9 @@ class ChatAgent(BaseAgent):
             termination_reasons (List[str]): The reasons for the termination
                 of the chat session.
             num_tokens (int): The number of tokens used in the chat session.
-            called_tools (List[FunctionCallingRecord]): The list of function
+            tool_calls (List[FunctionCallingRecord]): The list of function
                 calling records, containing the information of called
-                functions.
+                tools.
 
         Returns:
             Dict[str, Any]: The chat session information.
@@ -252,7 +252,7 @@ class ChatAgent(BaseAgent):
             "usage": usage,
             "termination_reasons": termination_reasons,
             "num_tokens": num_tokens,
-            "called_tools": called_tools,
+            "tool_calls": tool_calls,
         }
 
     def init_messages(self) -> None:
@@ -299,7 +299,7 @@ class ChatAgent(BaseAgent):
 
         output_messages: List[BaseMessage]
         info: Dict[str, Any]
-        called_tools: List[FunctionCallingRecord] = []
+        tool_calls: List[FunctionCallingRecord] = []
         while True:
             # Format messages and get the token number
             openai_messages: Optional[List[OpenAIMessage]]
@@ -308,7 +308,7 @@ class ChatAgent(BaseAgent):
                 openai_messages, num_tokens = self.memory.get_context()
             except RuntimeError as e:
                 return self.step_token_exceed(
-                    e.args[1], called_tools, "max_tokens_exceeded"
+                    e.args[1], tool_calls, "max_tokens_exceeded"
                 )
 
             # Obtain the model's response
@@ -342,7 +342,7 @@ class ChatAgent(BaseAgent):
                 self.update_memory(func_result_msg, OpenAIBackendRole.FUNCTION)
 
                 # Record the function calling
-                called_tools.append(func_record)
+                tool_calls.append(func_record)
 
             else:
                 # Function calling disabled or not a function calling
@@ -372,7 +372,7 @@ class ChatAgent(BaseAgent):
                     usage_dict,
                     finish_reasons,
                     num_tokens,
-                    called_tools,
+                    tool_calls,
                 )
                 break
 
@@ -459,7 +459,7 @@ class ChatAgent(BaseAgent):
     def step_token_exceed(
         self,
         num_tokens: int,
-        called_tools: List[FunctionCallingRecord],
+        tool_calls: List[FunctionCallingRecord],
         termination_reason: str,
     ) -> ChatAgentResponse:
         r"""Return trivial response containing number of tokens and information
@@ -467,7 +467,7 @@ class ChatAgent(BaseAgent):
 
         Args:
             num_tokens (int): Number of tokens in the messages.
-            called_tools (List[FunctionCallingRecord]): List of information
+            tool_calls (List[FunctionCallingRecord]): List of information
                 objects of functions called in the current step.
             termination_reason (str): String of termination reason.
 
@@ -483,7 +483,7 @@ class ChatAgent(BaseAgent):
             None,
             [termination_reason],
             num_tokens,
-            called_tools,
+            tool_calls,
         )
 
         return ChatAgentResponse(
