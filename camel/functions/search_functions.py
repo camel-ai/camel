@@ -15,11 +15,6 @@ import os
 from typing import Any, Dict, List
 
 from camel.functions.openai_function import OpenAIFunction
-from camel.utils import (
-    continue_search,
-    summarize_text,
-    text_extract_from_web,
-)
 
 
 def search_wiki(entity: str) -> str:
@@ -62,7 +57,7 @@ def search_wiki(entity: str) -> str:
 
 
 def search_duckduckgo(
-    query: str, num_result_pages: int = 10
+    query: str, source: str = "text", max_results: int = 10
 ) -> List[Dict[str, Any]]:
     r"""Use DuckDuckGo search engine to search information for the given query.
 
@@ -72,75 +67,77 @@ def search_duckduckgo(
 
     Args:
         query (str): The query to be searched.
-        num_result_pages (int): The number of result pages to retrieve.
+        source (str): The type of information to query (e.g., "text",
+            "images", "videos"). Defaults to "text".
+        max_results (int): Max number of results, defaults to `10`.
 
     Returns:
         List[Dict[str, Any]]: A list of dictionaries where each dictionary
-        represents a search result.
-            Each dictionary contains the following keys:
-            - 'result_id': A sequential number starting from 1.
-            - 'title': The title or main text of the search result.
-            - 'description': A brief description of the result, often similar
-                to the title.
-            - 'long_description': More detail of the result, often the same as
-                the description.
-            - 'url': The URL of the result.
-
-            Example:
-            {
-                'result_id': 1,
-                'title': 'DuckDuckGo',
-                'description': 'DuckDuckGo is an Internet search engine ' + \
-                    'that emphasizes protecting searchers' privacy.',
-                'long_description': 'DuckDuckGo is an Internet search ' + \
-                    'engine that emphasizes protecting searchers' privacy.',
-                'url': 'https://www.duckduckgo.com'
-            }
-        title, description, url of a search result.
+            represents a search result.
     """
     from duckduckgo_search import DDGS
     from requests.exceptions import RequestException
 
     ddgs = DDGS()
-    responses = []
+    responses: List[Dict[str, Any]] = []
 
-    try:
-        results = ddgs.text(keywords=query, num_result_pages=num_result_pages)
+    if source == "text":
+        try:
+            results = ddgs.text(keywords=query, max_results=max_results)
+        except RequestException as e:
+            # Handle specific exceptions or general request exceptions
+            responses.append({"error": f"duckduckgo search failed.{e}"})
 
         # Iterate over results found
         for i, result in enumerate(results, start=1):
-            # Extracting data from each result
-            title = result["title"]
-            body = result["body"]
-            url = result["href"]
-
             # Creating a response object with a similar structure
             response = {
                 "result_id": i,
-                "title": title,
-                "description": body,
-                "url": url,
+                "title": result["title"],
+                "description": result["body"],
+                "url": result["href"],
             }
             responses.append(response)
 
-        # Summarize the first relevant result
-        for item in responses:
-            if "url" in item:
-                url = item.get("url")
-                try:
-                    extracted_text = text_extract_from_web(str(url))
-                except Exception:
-                    continue
-                answer = summarize_text(extracted_text, query)
-                if not continue_search(query=query, answer=answer):
-                    responses.append({"answer": answer})
+    elif source == "images":
+        try:
+            results = ddgs.images(keywords=query, max_results=max_results)
+        except RequestException as e:
+            # Handle specific exceptions or general request exceptions
+            responses.append({"error": f"duckduckgo search failed.{e}"})
 
-    except RequestException:
-        # Handle specific exceptions or general request exceptions
-        responses.append({"error": "duckduckgo search failed."})
-    except Exception:
-        # Catch-all for any other exceptions that were not anticipated
-        responses.append({"error": "An unexpected error occurred"})
+        # Iterate over results found
+        for i, result in enumerate(results, start=1):
+            # Creating a response object with a similar structure
+            response = {
+                "result_id": i,
+                "title": result["title"],
+                "image": result["image"],
+                "url": result["url"],
+                "source": result["source"],
+            }
+            responses.append(response)
+
+    elif source == "videos":
+        try:
+            results = ddgs.videos(keywords=query, max_results=max_results)
+        except RequestException as e:
+            # Handle specific exceptions or general request exceptions
+            responses.append({"error": f"duckduckgo search failed.{e}"})
+
+        # Iterate over results found
+        for i, result in enumerate(results, start=1):
+            # Creating a response object with a similar structure
+            response = {
+                "result_id": i,
+                "title": result["title"],
+                "description": result["description"],
+                "embed_url": result["embed_url"],
+                "publisher": result["publisher"],
+                "duration": result["duration"],
+                "published": result["published"],
+            }
+            responses.append(response)
 
     # If no answer found, return an empty list
     return responses
@@ -236,20 +233,6 @@ def search_google(
                 responses.append(response)
         else:
             responses.append({"error": "google search failed."})
-
-        # Summarize the first relevant result
-        for item in responses:
-            if "url" in item:
-                url_value = item.get("url")
-                if url_value is not None:
-                    url = url_value
-                    try:
-                        extracted_text = text_extract_from_web(str(url))
-                    except Exception:
-                        continue
-                    answer = summarize_text(extracted_text, query)
-                    if not continue_search(query=query, answer=answer):
-                        responses.append({"answer": answer})
 
     except requests.RequestException:
         # Handle specific exceptions or general request exceptions

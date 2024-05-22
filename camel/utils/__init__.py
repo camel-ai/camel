@@ -16,7 +16,7 @@ from .commons import (
     PYDANTIC_V2,
     api_key_required,
     check_server_running,
-    continue_search,
+    create_chunks,
     download_tasks,
     get_first_int,
     get_prompt_template_key_words,
@@ -24,7 +24,6 @@ from .commons import (
     get_task_list,
     print_text_animated,
     role_playing_with_function,
-    summarize_text,
     text_extract_from_web,
     to_pascal,
 )
@@ -53,7 +52,6 @@ __all__ = [
     'OpenAITokenCounter',
     'OpenSourceTokenCounter',
     'role_playing_with_function',
-    'continue_search',
-    'summarize_text',
     'text_extract_from_web',
+    'create_chunks',
 ]
