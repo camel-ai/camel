@@ -15,8 +15,8 @@ from typing import Any, Optional
 
 from camel.agents.chat_agent import ChatAgent
 from camel.messages import BaseMessage
-from camel.types import ModelType, RoleType
 from camel.prompts import TextPrompt
+from camel.types import ModelType, RoleType
 from camel.utils import create_chunks
 
 
@@ -96,7 +96,6 @@ class SearchAgent(ChatAgent):
         response = self.step(user_msg).msg.content
 
         return response
-
 
     def continue_search(self, query: str, answer: str) -> bool:
         r"""Ask LLM whether to continue search or not.
