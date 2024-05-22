@@ -49,8 +49,7 @@ class SearchAgent(ChatAgent):
         super().__init__(system_message, model_type, model_config)
 
     def summarize_text(self, text: str, query: str) -> str:
-        r"""Summarize the information from the text, base on the query if
-        query is given.
+        r"""Summarize the information from the text, base on the query.
 
         Args:
             text (str): Text to summarize.
@@ -100,14 +99,15 @@ class SearchAgent(ChatAgent):
         return response
 
     def continue_search(self, query: str, answer: str) -> bool:
-        r"""Ask LLM whether to continue search or not.
+        r"""Ask whether to continue search or not based on the provided answer.
 
         Args:
-            query (str): Question you want to be answered.
-            answer (str): Answer to the query.
+            query (str): The question.
+            answer (str): The answer to the question.
 
         Returns:
-            bool: True if the user want to continue search, False otherwise.
+            bool: `True` if the user want to continue search, `False`
+            otherwise.
         """
         from camel.prompts import TextPrompt
 
