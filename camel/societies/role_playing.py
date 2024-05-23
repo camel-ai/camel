@@ -22,10 +22,10 @@ from camel.agents import (
 from camel.generators import SystemMessageGenerator
 from camel.human import Human
 from camel.messages import BaseMessage
+from camel.models import BaseModelBackend
 from camel.prompts import TextPrompt
 from camel.responses import ChatAgentResponse
-from camel.types import ModelType, RoleType, TaskType
-from camel.models import BaseModelBackend
+from camel.types import RoleType, TaskType
 
 
 class RolePlaying:
@@ -194,9 +194,7 @@ class RolePlaying:
             if self.llm is not None:
                 if task_specify_agent_kwargs is None:
                     task_specify_agent_kwargs = {}
-                task_specify_agent_kwargs.update(
-                    dict(llm=self.llm)
-                )
+                task_specify_agent_kwargs.update(dict(llm=self.llm))
             task_specify_agent = TaskSpecifyAgent(
                 task_type=self.task_type,
                 output_language=output_language,
@@ -229,9 +227,7 @@ class RolePlaying:
             if self.llm is not None:
                 if task_planner_agent_kwargs is None:
                     task_planner_agent_kwargs = {}
-                task_planner_agent_kwargs.update(
-                    dict(llm=self.llm)
-                )
+                task_planner_agent_kwargs.update(dict(llm=self.llm))
             task_planner_agent = TaskPlannerAgent(
                 output_language=output_language,
                 **(task_planner_agent_kwargs or {}),
