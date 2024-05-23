@@ -50,13 +50,6 @@ def get_lazy_imported_functions_module():
     ]
 
 
-# Set lazy import
-def get_lazy_imported_types_module():
-    from camel.types import ModelType
-
-    return ModelType.GPT_3_5_TURBO
-
-
 def api_key_required(func: F) -> F:
     r"""Decorator that checks if the OpenAI API key is available in the
     environment variables.
@@ -276,7 +269,6 @@ def role_playing_with_function(
         "course from coursera And help me to choose a basketball by klarna."
     ),
     function_list: Optional[List] = None,
-    model_type=None,
     chat_turn_limit=10,
     assistant_role_name: str = "Searcher",
     user_role_name: str = "Professor",
@@ -295,8 +287,6 @@ def role_playing_with_function(
         function_list (list): A list of functions that the agent can utilize
             during the session. Defaults to a combination of math, search, and
             weather functions.
-        model_type (ModelType): The type of chatbot model used for both the
-            assistant and the user. Defaults to `GPT-4 Turbo`.
         chat_turn_limit (int): The maximum number of turns (exchanges) in the
             chat session. Defaults to 10.
         assistant_role_name (str): The role name assigned to the AI Assistant.
@@ -312,17 +302,16 @@ def role_playing_with_function(
     # Run lazy import
     if function_list is None:
         function_list = get_lazy_imported_functions_module()
-    if model_type is None:
-        model_type = get_lazy_imported_types_module()
 
     from colorama import Fore
 
     from camel.agents.chat_agent import FunctionCallingRecord
-    from camel.configs import ChatGPTConfig, FunctionCallingConfig
+    from camel.configs import FunctionCallingConfig
+    from camel.models import ModelFactory
     from camel.societies import RolePlaying
+    from camel.types import ModelPlatformType, ModelType
 
     task_prompt = task_prompt
-    user_model_config = ChatGPTConfig(temperature=0.0)
 
     function_list = function_list
     assistant_model_config = FunctionCallingConfig.from_openai_function_list(
@@ -334,14 +323,14 @@ def role_playing_with_function(
         assistant_role_name=assistant_role_name,
         user_role_name=user_role_name,
         assistant_agent_kwargs=dict(
-            model_type=model_type,
-            model_config=assistant_model_config,
+            llm=ModelFactory.create(
+                model_platform=ModelPlatformType.OPENAI,
+                model_type=ModelType.GPT_3_5_TURBO,
+                model_config_dict=assistant_model_config.__dict__,
+            ),
             function_list=function_list,
         ),
-        user_agent_kwargs=dict(
-            model_type=model_type,
-            model_config=user_model_config,
-        ),
+        user_agent_kwargs=dict(),
         task_prompt=task_prompt,
         with_task_specify=False,
     )

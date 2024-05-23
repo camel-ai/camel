@@ -14,23 +14,27 @@
 from colorama import Fore
 
 from camel.configs import ChatGPTConfig, OpenSourceConfig
+from camel.models import ModelFactory
 from camel.societies import RolePlaying
-from camel.types import ModelType
+from camel.types import ModelPlatformType, ModelType
 from camel.utils import print_text_animated
 
 
 def main(
-    model_type=None, chat_turn_limit=50, model_path=" ", server_url=" "
+    chat_turn_limit=50, model_path="meta-llama/llama-2", server_url=" "
 ) -> None:
     task_prompt = "Develop a trading bot for the stock market"
 
     agent_kwargs = {
         role: dict(
-            model_type=model_type,
-            model_config=OpenSourceConfig(
-                model_path=model_path,
-                server_url=server_url,
-                api_params=ChatGPTConfig(temperature=0),
+            llm=ModelFactory.create(
+                model_platform=ModelPlatformType.OPENSOURCE,
+                model_type=ModelType.LLAMA_2,
+                model_config_dict=OpenSourceConfig(
+                    model_path=model_path,
+                    server_url=server_url,
+                    api_params=ChatGPTConfig(temperature=0),
+                ).__dict__,
             ),
         )
         for role in ["assistant", "user", "task-specify"]
