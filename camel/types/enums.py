@@ -253,3 +253,31 @@ class OpenAPIName(Enum):
     COURSERA = "coursera"
     KLARNA = "klarna"
     SPEAK = "speak"
+
+
+class ModelPlatformType(Enum):
+    OPENAI = "openai"
+    AZURE = "azure"
+    ANTHROPIC = "anthropic"
+    OPENSOURCE = "opensource"
+    DEFAULT = "default"
+
+    @property
+    def is_openai(self) -> bool:
+        r"""Returns whether this platform is openai."""
+        return self is ModelPlatformType.OPENAI
+
+    @property
+    def is_azure(self) -> bool:
+        r"""Returns whether this platform is azure."""
+        return self is ModelPlatformType.AZURE
+
+    @property
+    def is_anthropic(self) -> bool:
+        r"""Returns whether this platform is anthropic."""
+        return self is ModelPlatformType.ANTHROPIC
+
+    @property
+    def is_opensource(self) -> bool:
+        r"""Returns whether this platform is opensource."""
+        return self is ModelPlatformType.OPENSOURCE

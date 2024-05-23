@@ -21,7 +21,6 @@ from camel.agents.chat_agent import ChatAgent
 from camel.memories import AgentMemory
 from camel.messages import BaseMessage
 from camel.responses import ChatAgentResponse
-from camel.types import ModelType
 from camel.utils import get_first_int, print_text_animated
 
 
@@ -31,10 +30,6 @@ class CriticAgent(ChatAgent):
     Args:
         system_message (BaseMessage): The system message for the critic
             agent.
-        model_type (ModelType, optional): The LLM model to use for generating
-            responses. (default :obj:`ModelType.GPT_3_5_TURBO`)
-        model_config (Any, optional): Configuration options for the LLM model.
-            (default: :obj:`None`)
         message_window_size (int, optional): The maximum number of previous
             messages to include in the context window. If `None`, no windowing
             is performed. (default: :obj:`6`)
@@ -48,8 +43,6 @@ class CriticAgent(ChatAgent):
     def __init__(
         self,
         system_message: BaseMessage,
-        model_type: ModelType = ModelType.GPT_3_5_TURBO,
-        model_config: Optional[Any] = None,
         memory: Optional[AgentMemory] = None,
         message_window_size: int = 6,
         retry_attempts: int = 2,
@@ -58,8 +51,6 @@ class CriticAgent(ChatAgent):
     ) -> None:
         super().__init__(
             system_message,
-            model_type=model_type,
-            model_config=model_config,
             memory=memory,
             message_window_size=message_window_size,
         )

@@ -18,7 +18,7 @@ from camel.models.base_model import BaseModelBackend
 from camel.models.open_source_model import OpenSourceModel
 from camel.models.openai_model import OpenAIModel
 from camel.models.stub_model import StubModel
-from camel.types import ModelType
+from camel.types import ModelPlatformType, ModelType
 
 
 class ModelFactory:
@@ -30,11 +30,15 @@ class ModelFactory:
 
     @staticmethod
     def create(
-        model_type: ModelType, model_config_dict: Dict
+        model_platform: ModelPlatformType,
+        model_type: ModelType,
+        model_config_dict: Dict,
     ) -> BaseModelBackend:
         r"""Creates an instance of `BaseModelBackend` of the specified type.
 
         Args:
+            model_platform (ModelPlatformType): Platform from which the model
+                originates.
             model_type (ModelType): Model for which a backend is created.
             model_config_dict (Dict): A dictionary that will be fed into
                 the backend constructor.
@@ -46,16 +50,18 @@ class ModelFactory:
             BaseModelBackend: The initialized backend.
         """
         model_class: Any
-        if model_type.is_openai:
+        if model_platform.is_openai and model_type.is_openai:
             model_class = OpenAIModel
         elif model_type == ModelType.STUB:
             model_class = StubModel
-        elif model_type.is_open_source:
+        elif model_platform.is_opensource and model_type.is_open_source:
             model_class = OpenSourceModel
-        elif model_type.is_anthropic:
+        elif model_platform.is_anthropic and model_type.is_anthropic:
             model_class = AnthropicModel
         else:
-            raise ValueError(f"Unknown model type `{model_type}` is input")
+            raise ValueError(
+                f"Unknown pair of model platform `{model_platform}` and model type `{model_type}` is input"
+            )
 
         inst = model_class(model_type, model_config_dict)
         return inst

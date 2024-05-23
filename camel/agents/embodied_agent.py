@@ -24,7 +24,6 @@ from camel.interpreters import (
 )
 from camel.messages import BaseMessage
 from camel.responses import ChatAgentResponse
-from camel.types import ModelType
 from camel.utils import print_text_animated
 
 
@@ -33,10 +32,6 @@ class EmbodiedAgent(ChatAgent):
 
     Args:
         system_message (BaseMessage): The system message for the chat agent.
-        model_type (ModelType, optional): The LLM model to use for generating
-            responses. (default :obj:`ModelType.GPT_4`)
-        model_config (Any, optional): Configuration options for the LLM model.
-            (default: :obj:`None`)
         message_window_size (int, optional): The maximum number of previous
             messages to include in the context window. If `None`, no windowing
             is performed. (default: :obj:`None`)
@@ -55,8 +50,6 @@ class EmbodiedAgent(ChatAgent):
     def __init__(
         self,
         system_message: BaseMessage,
-        model_type: ModelType = ModelType.GPT_4,
-        model_config: Optional[Any] = None,
         message_window_size: Optional[int] = None,
         tool_agents: Optional[List[BaseToolAgent]] = None,
         code_interpreter: Optional[BaseInterpreter] = None,
@@ -78,8 +71,6 @@ class EmbodiedAgent(ChatAgent):
         self.logger_color = logger_color
         super().__init__(
             system_message=system_message,
-            model_type=model_type,
-            model_config=model_config,
             message_window_size=message_window_size,
         )
 

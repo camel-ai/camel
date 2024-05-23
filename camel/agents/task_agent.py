@@ -78,8 +78,6 @@ class TaskSpecifyAgent(ChatAgent):
 
         super().__init__(
             system_message,
-            model_type=model_type,
-            model_config=model_config,
             output_language=output_language,
         )
 
@@ -156,8 +154,6 @@ class TaskPlannerAgent(ChatAgent):
 
         super().__init__(
             system_message,
-            model_type,
-            model_config,
             output_language=output_language,
         )
 
@@ -208,10 +204,6 @@ class TaskCreationAgent(ChatAgent):
         role_name (str): The role name of the Agent to create the task.
         objective (Union[str, TextPrompt]): The objective of the Agent to
             perform the task.
-        model_type (ModelType, optional): The type of model to use for the
-            agent. (default: :obj:`ModelType.GPT_3_5_TURBO`)
-        model_config (Any, optional): The configuration for the model.
-            (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
         message_window_size (int, optional): The maximum number of previous
@@ -225,8 +217,6 @@ class TaskCreationAgent(ChatAgent):
         self,
         role_name: str,
         objective: Union[str, TextPrompt],
-        model_type: Optional[ModelType] = None,
-        model_config: Optional[Any] = None,
         output_language: Optional[str] = None,
         message_window_size: Optional[int] = None,
         max_task_num: Optional[int] = 3,
@@ -266,8 +256,6 @@ Be concrete.
 
         super().__init__(
             system_message,
-            model_type,
-            model_config,
             output_language=output_language,
             message_window_size=message_window_size,
         )
@@ -321,10 +309,6 @@ class TaskPrioritizationAgent(ChatAgent):
     Args:
         objective (Union[str, TextPrompt]): The objective of the Agent to
             perform the task.
-        model_type (ModelType, optional): The type of model to use for the
-            agent. (default: :obj:`ModelType.GPT_3_5_TURBO`)
-        model_config (Any, optional): The configuration for the model.
-            (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
         message_window_size (int, optional): The maximum number of previous
@@ -335,8 +319,6 @@ class TaskPrioritizationAgent(ChatAgent):
     def __init__(
         self,
         objective: Union[str, TextPrompt],
-        model_type: Optional[ModelType] = None,
-        model_config: Optional[Any] = None,
         output_language: Optional[str] = None,
         message_window_size: Optional[int] = None,
     ) -> None:
@@ -372,8 +354,6 @@ with any other output."""
 
         super().__init__(
             system_message,
-            model_type,
-            model_config,
             output_language=output_language,
             message_window_size=message_window_size,
         )

@@ -13,6 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .enums import (
     EmbeddingModelType,
+    ModelPlatformType,
     ModelType,
     OpenAIBackendRole,
     OpenAIImageDetailType,
@@ -59,4 +60,5 @@ __all__ = [
     'OpenAIImageType',
     'OpenAIImageDetailType',
     'OpenAPIName',
+    'ModelPlatformType',
 ]

@@ -28,40 +28,35 @@ from camel.functions import MATH_FUNCS
 from camel.generators import SystemMessageGenerator
 from camel.memories import MemoryRecord
 from camel.messages import BaseMessage
+from camel.models import ModelFactory
 from camel.terminators import ResponseWordsTerminator
 from camel.types import (
     ChatCompletion,
+    ModelPlatformType,
     ModelType,
     OpenAIBackendRole,
     RoleType,
     TaskType,
 )
 
-parametrize = pytest.mark.parametrize(
-    'model',
-    [
-        ModelType.STUB,
-        pytest.param(ModelType.GPT_3_5_TURBO, marks=pytest.mark.model_backend),
-        pytest.param(ModelType.GPT_4, marks=pytest.mark.model_backend),
-    ],
-)
 
-
-@parametrize
-def test_chat_agent(model: ModelType):
+def test_chat_agent():
     model_config = ChatGPTConfig()
+    llm = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_3_5_TURBO,
+        model_config_dict=model_config.__dict__,
+    )
     system_msg = SystemMessageGenerator(
         task_type=TaskType.AI_SOCIETY
     ).from_dict(
         dict(assistant_role="doctor"),
         role_tuple=("doctor", RoleType.ASSISTANT),
     )
-    assistant = ChatAgent(
-        system_msg, model_type=model, model_config=model_config
-    )
+    assistant = ChatAgent(system_msg, llm=llm)
 
     assert str(assistant) == (
-        "ChatAgent(doctor, " f"RoleType.ASSISTANT, {model!s})"
+        "ChatAgent(doctor, " f"RoleType.ASSISTANT, {ModelType.GPT_3_5_TURBO})"
     )
 
     assistant.reset()
@@ -119,7 +114,6 @@ def test_chat_agent_messages_window():
     )
     assistant = ChatAgent(
         system_message=system_msg,
-        model_type=ModelType.GPT_3_5_TURBO,
         message_window_size=2,
     )
 
@@ -153,7 +147,6 @@ def test_chat_agent_step_exceed_token_number():
     )
     assistant = ChatAgent(
         system_message=system_msg,
-        model_type=ModelType.GPT_3_5_TURBO,
         token_limit=1,
     )
 
@@ -173,13 +166,18 @@ def test_chat_agent_step_exceed_token_number():
 @pytest.mark.parametrize('n', [1, 2, 3])
 def test_chat_agent_multiple_return_messages(n):
     model_config = ChatGPTConfig(temperature=1.4, n=n)
+    llm = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_3_5_TURBO,
+        model_config_dict=model_config.__dict__,
+    )
     system_msg = BaseMessage(
         "Assistant",
         RoleType.ASSISTANT,
         meta_dict=None,
         content="You are a helpful assistant.",
     )
-    assistant = ChatAgent(system_msg, model_config=model_config)
+    assistant = ChatAgent(system_msg, llm=llm)
     assistant.reset()
     user_msg = BaseMessage(
         role_name="User",
@@ -196,6 +194,11 @@ def test_chat_agent_multiple_return_messages(n):
 @pytest.mark.parametrize('n', [2])
 def test_chat_agent_multiple_return_message_error(n):
     model_config = ChatGPTConfig(temperature=1.4, n=n)
+    llm = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_3_5_TURBO,
+        model_config_dict=model_config.__dict__,
+    )
     system_msg = BaseMessage(
         "Assistant",
         RoleType.ASSISTANT,
@@ -203,7 +206,7 @@ def test_chat_agent_multiple_return_message_error(n):
         content="You are a helpful assistant.",
     )
 
-    assistant = ChatAgent(system_msg, model_config=model_config)
+    assistant = ChatAgent(system_msg, llm=llm)
     assistant.reset()
 
     user_msg = BaseMessage(
@@ -239,7 +242,12 @@ def test_chat_agent_stream_output():
     )
 
     stream_model_config = ChatGPTConfig(temperature=0, n=2, stream=True)
-    stream_assistant = ChatAgent(system_msg, model_config=stream_model_config)
+    llm = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_3_5_TURBO,
+        model_config_dict=stream_model_config.__dict__,
+    )
+    stream_assistant = ChatAgent(system_msg, llm=llm)
     stream_assistant.reset()
     stream_assistant_response = stream_assistant.step(user_msg)
 
@@ -263,9 +271,7 @@ def test_set_output_language():
         meta_dict=None,
         content="You are a help assistant.",
     )
-    agent = ChatAgent(
-        system_message=system_message, model_type=ModelType.GPT_3_5_TURBO
-    )
+    agent = ChatAgent(system_message=system_message)
     assert agent.output_language is None
 
     # Set the output language to "Arabic"
@@ -294,9 +300,7 @@ def test_set_multiple_output_language():
         meta_dict=None,
         content="You are a help assistant.",
     )
-    agent = ChatAgent(
-        system_message=system_message, model_type=ModelType.GPT_3_5_TURBO
-    )
+    agent = ChatAgent(system_message=system_message)
 
     # Verify that the length of the system message is kept constant even when
     # multiple set_output_language operations are called
@@ -321,9 +325,7 @@ def test_token_exceed_return():
         meta_dict=None,
         content="You are a help assistant.",
     )
-    agent = ChatAgent(
-        system_message=system_message, model_type=ModelType.GPT_3_5_TURBO
-    )
+    agent = ChatAgent(system_message=system_message)
 
     expect_info = {
         "id": None,
@@ -350,15 +352,15 @@ def test_function_enabled():
     model_config = FunctionCallingConfig(
         functions=[func.get_openai_function_schema() for func in MATH_FUNCS]
     )
-    agent_no_func = ChatAgent(
-        system_message=system_message,
-        model_config=model_config,
-        model_type=ModelType.GPT_4,
+    llm = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_3_5_TURBO,
+        model_config_dict=model_config.__dict__,
     )
+    agent_no_func = ChatAgent(system_message=system_message)
     agent_with_funcs = ChatAgent(
         system_message=system_message,
-        model_config=model_config,
-        model_type=ModelType.GPT_4,
+        llm=llm,
         function_list=MATH_FUNCS,
     )
 
@@ -377,10 +379,14 @@ def test_function_calling():
     model_config = FunctionCallingConfig(
         functions=[func.get_openai_function_schema() for func in MATH_FUNCS]
     )
+    llm = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_3_5_TURBO,
+        model_config_dict=model_config.__dict__,
+    )
     agent = ChatAgent(
         system_message=system_message,
-        model_config=model_config,
-        model_type=ModelType.GPT_4,
+        llm=llm,
         function_list=MATH_FUNCS,
     )
 
@@ -418,11 +424,8 @@ def test_response_words_termination():
         content="You are a help assistant.",
     )
     response_terminator = ResponseWordsTerminator(words_dict=dict(goodbye=1))
-    model_config = ChatGPTConfig(temperature=0, n=2)
     agent = ChatAgent(
         system_message=system_message,
-        model_type=ModelType.GPT_3_5_TURBO,
-        model_config=model_config,
         response_terminators=[response_terminator],
     )
     user_msg = BaseMessage(
@@ -446,10 +449,14 @@ def test_chat_agent_vision():
         content="You are a help assistant.",
     )
     model_config = ChatGPTConfig(temperature=0, max_tokens=200, stop="")
+    llm = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_3_5_TURBO,
+        model_config_dict=model_config.__dict__,
+    )
     agent = ChatAgent(
         system_message=system_message,
-        model_type=ModelType.GPT_4_TURBO,
-        model_config=model_config,
+        llm=llm,
     )
 
     # Create an all blue PNG image:

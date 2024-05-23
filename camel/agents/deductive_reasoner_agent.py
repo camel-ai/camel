@@ -15,10 +15,9 @@ import re
 from typing import Dict, List, Optional, Union
 
 from camel.agents.chat_agent import ChatAgent
-from camel.configs import BaseConfig
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
-from camel.types import ModelType, RoleType
+from camel.types import RoleType
 
 
 class DeductiveReasonerAgent(ChatAgent):
@@ -31,18 +30,10 @@ class DeductiveReasonerAgent(ChatAgent):
         - Q represents the quality or effectiveness of the transition from
         A to B.
         - L represents the path or process from A to B.
-
-    Args:
-        model_type (ModelType, optional): The type of model to use for the
-            agent. (default: :obj: `None`)
-        model_config (BaseConfig, optional): The configuration for the model.
-            (default: :obj:`None`)
     """
 
     def __init__(
         self,
-        model_type: Optional[ModelType] = None,
-        model_config: Optional[BaseConfig] = None,
     ) -> None:
         system_message = BaseMessage(
             role_name="Insight Agent",
@@ -50,7 +41,7 @@ class DeductiveReasonerAgent(ChatAgent):
             meta_dict=None,
             content="You assign roles based on tasks.",
         )
-        super().__init__(system_message, model_type, model_config)
+        super().__init__(system_message)
 
     def deduce_conditions_and_quality(
         self,
