@@ -14,32 +14,37 @@
 # import pytest
 
 # from camel.agents import ChatAgent, CriticAgent
-# from camel.configs import FunctionCallingConfig
+# from camel.configs import FunctionCallingConfig, ChatGPTConfig
 # from camel.functions import MATH_FUNCS
 # from camel.human import Human
 # from camel.messages import BaseMessage
 # from camel.societies import RolePlaying
-# from camel.types import ModelType, RoleType, TaskType
+# from camel.types import ModelType, RoleType, TaskType, ModelPlatformType
+# from camel.models import ModelFactory
+
+# llm = ModelFactory.create(model_platform=ModelPlatformType.OPENAI,
+#                                      model_type=ModelType.GPT_4O,
+#                                      model_config_dict=ChatGPTConfig().__dict__)
 
 
-# @pytest.mark.parametrize("model_type", [None, ModelType.GPT_4])
+# @pytest.mark.parametrize("llm", [None, llm])
 # @pytest.mark.parametrize("critic_role_name", ["human", "critic agent"])
 # @pytest.mark.parametrize("with_critic_in_the_loop", [True, False])
 # def test_role_playing_init(
-#     model_type, critic_role_name, with_critic_in_the_loop
+#     llm, critic_role_name, with_critic_in_the_loop
 # ):
 #     role_playing = RolePlaying(
 #         assistant_role_name="assistant",
-#         assistant_agent_kwargs=dict(model_type=ModelType.GPT_3_5_TURBO),
+#         assistant_agent_kwargs=dict(llm=llm),
 #         user_role_name="user",
-#         user_agent_kwargs=dict(model_type=ModelType.GPT_3_5_TURBO),
-#         model_type=model_type,
+#         user_agent_kwargs=dict(llm=llm),
+#         llm=llm,
 #         critic_role_name=critic_role_name,
 #         task_prompt="Perform the task",
 #         with_task_specify=False,
-#         task_specify_agent_kwargs=dict(model_type=ModelType.GPT_4),
+#         task_specify_agent_kwargs=dict(llm=ModelType.GPT_4),
 #         with_task_planner=False,
-#         task_planner_agent_kwargs=dict(model_type=ModelType.GPT_4),
+#         task_planner_agent_kwargs=dict(llm=ModelType.GPT_4),
 #         with_critic_in_the_loop=with_critic_in_the_loop,
 #         task_type=TaskType.AI_SOCIETY,
 #     )
@@ -62,12 +67,12 @@
 
 #     assert isinstance(assistant_agent, ChatAgent)
 #     assert isinstance(user_agent, ChatAgent)
-#     if model_type is None:
-#         assert assistant_agent.model_type == ModelType.GPT_3_5_TURBO
-#         assert user_agent.model_type == ModelType.GPT_3_5_TURBO
+#     if llm is None:
+#         assert assistant_agent.model_backend.model_type == ModelType.GPT_3_5_TURBO
+#         assert user_agent.model_backend.model_type == ModelType.GPT_3_5_TURBO
 #     else:
-#         assert assistant_agent.model_type == ModelType.GPT_4
-#         assert user_agent.model_type == ModelType.GPT_4
+#         assert assistant_agent.model_backend.model_type == ModelType.GPT_4O
+#         assert user_agent.model_backend.model_type == ModelType.GPT_4O
 
 #     if not with_critic_in_the_loop:
 #         assert critic is None
@@ -78,10 +83,10 @@
 #         else:
 #             assert isinstance(critic, CriticAgent)
 #             assert role_playing.critic_sys_msg is not None
-#             if model_type is None:
-#                 assert critic.model_type == ModelType.GPT_3_5_TURBO
+#             if llm is None:
+#                 assert critic.model_backend.model_type == ModelType.GPT_3_5_TURBO
 #             else:
-#                 assert critic.model_type == ModelType.GPT_4
+#                 assert critic.model_backend.model_type == ModelType.GPT_4O
 
 
 # @pytest.mark.model_backend
@@ -102,11 +107,11 @@
 # ):
 #     role_playing = RolePlaying(
 #         assistant_role_name="AI Assistant",
-#         assistant_agent_kwargs=dict(model_type=ModelType.GPT_3_5_TURBO),
+#         assistant_agent_kwargs=dict(llm=llm),
 #         user_role_name="AI User",
-#         user_agent_kwargs=dict(model_type=ModelType.GPT_3_5_TURBO),
+#         user_agent_kwargs=dict(llm=llm),
 #         task_prompt="Perform the task",
-#         task_specify_agent_kwargs=dict(model_type=ModelType.GPT_3_5_TURBO),
+#         task_specify_agent_kwargs=dict(llm=llm),
 #         task_type=task_type,
 #         extend_sys_msg_meta_dicts=extend_sys_msg_meta_dicts,
 #         extend_task_specify_meta_dict=extend_task_specify_meta_dict,
@@ -138,14 +143,14 @@
 #     role_playing = RolePlaying(
 #         assistant_role_name="AI Assistant",
 #         assistant_agent_kwargs=dict(
-#             model_type=ModelType.GPT_3_5_TURBO,
+#             llm=llm,
 #             model_config=assistant_model_config,
 #             function_list=function_list,
 #         ),
 #         user_role_name="AI User",
-#         user_agent_kwargs=dict(model_type=ModelType.GPT_3_5_TURBO),
+#         user_agent_kwargs=dict(llm=llm),
 #         task_prompt="Perform the task",
-#         task_specify_agent_kwargs=dict(model_type=ModelType.GPT_3_5_TURBO),
+#         task_specify_agent_kwargs=dict(llm=llm),
 #         task_type=TaskType.AI_SOCIETY,
 #     )
 
@@ -160,16 +165,16 @@
 #         assert isinstance(response.info, dict)
 
 
-# def test_role_playing_role_sequence(model_type=None):
+# def test_role_playing_role_sequence(llm=None):
 #     task_prompt = "Develop a trading bot for the stock market"
 #     role_playing = RolePlaying(
 #         assistant_role_name="Python Programmer",
-#         assistant_agent_kwargs=dict(model_type=model_type),
+#         assistant_agent_kwargs=dict(llm=llm),
 #         user_role_name="Stock Trader",
-#         user_agent_kwargs=dict(model_type=model_type),
+#         user_agent_kwargs=dict(llm=llm),
 #         task_prompt=task_prompt,
 #         with_task_specify=True,
-#         task_specify_agent_kwargs=dict(model_type=model_type),
+#         task_specify_agent_kwargs=dict(llm=llm),
 #     )
 #     assistant_role_sequence = []
 #     user_role_sequence = []
