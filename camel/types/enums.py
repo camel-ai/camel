@@ -253,3 +253,7 @@ class OpenAPIName(Enum):
     COURSERA = "coursera"
     KLARNA = "klarna"
     SPEAK = "speak"
+    BIZTOC = "biztoc"
+    CREATE_QR_CODE = "create_qr_code"
+    OUTSCHOOL = "outschool"
+    WEB_SCRAPER = "web_scraper"
