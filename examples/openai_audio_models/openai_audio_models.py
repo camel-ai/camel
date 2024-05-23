@@ -17,12 +17,12 @@ from camel.models import OpenAIAudioModels
 audio_models = OpenAIAudioModels()
 
 # Set example input
-input="""CAMEL-AI.org is an open-source community dedicated to the study of autonomous and communicative agents. We believe that studying these agents on a large scale offers valuable insights into their behaviors, capabilities, and potential risks. To facilitate research in this field, we provide, implement, and support various types of agents, tasks, prompts, models, datasets, and simulated environments.
+input = """CAMEL-AI.org is an open-source community dedicated to the study of autonomous and communicative agents. We believe that studying these agents on a large scale offers valuable insights into their behaviors, capabilities, and potential risks. To facilitate research in this field, we provide, implement, and support various types of agents, tasks, prompts, models, datasets, and simulated environments.
 
 Join us via Slack, Discord, or WeChat in pushing the boundaries of building AI Society."""
 
 # Set example local path to store the file
-storage_path="examples/openai_audio_models/example_audio.mp3"
+storage_path = "examples/openai_audio_models/example_audio.mp3"
 
 # Convert the example input into audio and store it locally
 audio_models.text_to_speech(input=input, storage_path=storage_path)
