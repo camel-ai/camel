@@ -333,13 +333,22 @@ def generate_openapi_funcs(
     return functions
 
 
-def combine_all_funcs_schemas() -> Tuple[List[Callable], List[Dict[str, Any]]]:
-    r"""Combines functions and schemas from multiple OpenAPI specifications.
+def apinames_filepaths_to_funs_schemas(
+    apinames_filepaths: List[Tuple[str, str]],
+) -> Tuple[List[Callable], List[Dict[str, Any]]]:
+    r"""Combines functions and schemas from multiple OpenAPI specifications,
+    using API names as keys.
 
-    Iterates over a list of OpenAPI specs, parses each, and generates functions
-    and schemas based on the defined operations and schemas respectively.
-    Assumes specification files are named 'openapi.yaml' located in
-    `open_api_specs/<api_name>/`.
+    This function iterates over tuples of API names and OpenAPI spec file
+    paths, parsing each spec to generate callable functions and schema
+    dictionaries, all organized by API name.
+
+    Args:
+    apinames_filepaths (List[Tuple[str, str]]): A list of tuples, where each
+        tuple consists of:
+        - The API name (str) as the first element.
+        - The file path (str) to the API's OpenAPI specification file as the
+            second element.
 
     Returns:
         Tuple[List[Callable], List[Dict[str, Any]]]:: one of callable
@@ -348,34 +357,59 @@ def combine_all_funcs_schemas() -> Tuple[List[Callable], List[Dict[str, Any]]]:
     """
     combined_func_lst = []
     combined_schemas_list = []
-
-    for api_name in OpenAPIName:
+    for api_name, file_path in apinames_filepaths:
         # Parse the OpenAPI specification for each API
         current_dir = os.path.dirname(__file__)
-        spec_file_path = os.path.join(
-            current_dir, 'open_api_specs', f'{api_name.value}', 'openapi.yaml'
+        file_path = os.path.join(
+            current_dir, 'open_api_specs', f'{api_name}', 'openapi.yaml'
         )
 
-        openapi_spec = parse_openapi_file(spec_file_path)
+        openapi_spec = parse_openapi_file(file_path)
 
         # Generate and merge function schemas
         openapi_functions_schemas = openapi_spec_to_openai_schemas(
-            api_name.value, openapi_spec
+            api_name, openapi_spec
         )
         combined_schemas_list.extend(openapi_functions_schemas)
 
         # Generate and merge function lists
-        openapi_functions_list = generate_openapi_funcs(
-            api_name.value, openapi_spec
-        )
+        openapi_functions_list = generate_openapi_funcs(api_name, openapi_spec)
         combined_func_lst.extend(openapi_functions_list)
 
     return combined_func_lst, combined_schemas_list
 
 
-combined_funcs_lst, combined_schemas_list = combine_all_funcs_schemas()
+def generate_apinames_filepaths() -> List[Tuple[str, str]]:
+    """Generates a list of tuples containing API names and their corresponding
+    file paths.
+
+    This function iterates over the OpenAPIName enum, constructs the file path
+    for each API's OpenAPI specification file, and appends a tuple of the API
+    name and its file path to the list. The file paths are relative to the
+    'open_api_specs' directory located in the same directory as this script.
+
+    Returns:
+        List[Tuple[str, str]]: A list of tuples where each tuple contains two
+            elements. The first element of each tuple is a string representing
+            the name of an API, and the second element is a string that
+            specifies the file path to that API's OpenAPI specification file.
+    """
+    apinames_filepaths = []
+    current_dir = os.path.dirname(__file__)
+    for api_name in OpenAPIName:
+        file_path = os.path.join(
+            current_dir, 'open_api_specs', f'{api_name.value}', 'openapi.yaml'
+        )
+        apinames_filepaths.append((api_name.value, file_path))
+    return apinames_filepaths
+
+
+apinames_filepaths = generate_apinames_filepaths()
+all_funcs_lst, all_schemas_lst = apinames_filepaths_to_funs_schemas(
+    apinames_filepaths
+)
 
 OPENAPI_FUNCS: List[OpenAIFunction] = [
     OpenAIFunction(a_func, a_schema)
-    for a_func, a_schema in zip(combined_funcs_lst, combined_schemas_list)
+    for a_func, a_schema in zip(all_funcs_lst, all_schemas_lst)
 ]

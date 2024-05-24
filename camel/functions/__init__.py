@@ -26,6 +26,11 @@ from .search_functions import SEARCH_FUNCS
 from .twitter_function import TWITTER_FUNCS
 from .weather_functions import WEATHER_FUNCS
 
+from .open_api_function import (
+    apinames_filepaths_to_funs_schemas,
+    generate_apinames_filepaths,
+)
+
 __all__ = [
     'OpenAIFunction',
     'get_openai_function_schema',
@@ -37,4 +42,6 @@ __all__ = [
     'SEARCH_FUNCS',
     'TWITTER_FUNCS',
     'WEATHER_FUNCS',
+    'apinames_filepaths_to_funs_schemas',
+    'generate_apinames_filepaths',
 ]
