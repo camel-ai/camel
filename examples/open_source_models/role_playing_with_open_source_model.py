@@ -20,9 +20,7 @@ from camel.types import ModelPlatformType, ModelType
 from camel.utils import print_text_animated
 
 
-def main(
-    chat_turn_limit=50, model_path="meta-llama/llama-2", server_url=" "
-) -> None:
+def main(chat_turn_limit=50, model_path="", server_url=" ") -> None:
     task_prompt = "Develop a trading bot for the stock market"
 
     agent_kwargs = {

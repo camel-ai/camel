@@ -49,8 +49,9 @@ class RolePlaying:
             in the loop. (default: :obj:`False`)
         critic_criteria (str, optional): Critic criteria for the critic agent.
             If not specified, set the criteria to improve task performance.
-        model (BaseModelBackend, optional): The LLM backend to use for generating
-            responses. (default: :obj:`None`)
+        model (BaseModelBackend, optional): The model backend to use for
+            generating responses. If specified, it will override the model in
+            all agents. (default: :obj:`None`)
         task_type (TaskType, optional): The type of task to perform.
             (default: :obj:`TaskType.AI_SOCIETY`)
         assistant_agent_kwargs (Dict, optional): Additional arguments to pass
@@ -85,7 +86,6 @@ class RolePlaying:
         with_critic_in_the_loop: bool = False,
         critic_criteria: Optional[str] = None,
         model: Optional[BaseModelBackend] = None,
-        # model_type: Optional[ModelType] = None,
         task_type: TaskType = TaskType.AI_SOCIETY,
         assistant_agent_kwargs: Optional[Dict] = None,
         user_agent_kwargs: Optional[Dict] = None,
@@ -101,7 +101,6 @@ class RolePlaying:
         self.with_task_planner = with_task_planner
         self.with_critic_in_the_loop = with_critic_in_the_loop
         self.model = model
-        # self.model_type = model_type
         self.task_type = task_type
         self.task_prompt = task_prompt
 

@@ -11,20 +11,37 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import pytest
 
 from camel.agents import ChatAgent, TaskCreationAgent, TaskPrioritizationAgent
 from camel.messages import BaseMessage
+from camel.models import ModelFactory
 from camel.societies import BabyAGI
-from camel.types import RoleType, TaskType
+from camel.types import ModelPlatformType, ModelType, RoleType, TaskType
+
+parametrize = pytest.mark.parametrize(
+    'model',
+    [
+        ModelFactory.create(
+            model_platform=ModelPlatformType.OPENAI,
+            model_type=ModelType.STUB,
+            model_config_dict={},
+        ),
+        pytest.param(None, marks=pytest.mark.model_backend),
+    ],
+)
 
 
-def test_babyagi_playing_init():
+@parametrize
+def test_babyagi_playing_init(model):
     task_prompt = "Develop a trading bot for the stock market"
 
     babyagi_playing = BabyAGI(
         assistant_role_name="Python Programmer",
+        assistant_agent_kwargs=dict(model=model),
         user_role_name="Stock Trader",
         task_prompt=task_prompt,
+        task_specify_agent_kwargs=dict(model=model),
         message_window_size=5,
     )
 
@@ -44,13 +61,16 @@ def test_babyagi_playing_init():
     assert len(babyagi_playing.solved_subtasks) == 0
 
 
-def test_babyagi_playing_step():
+@parametrize
+def test_babyagi_playing_step(model):
     task_prompt = "Develop a trading bot for the stock market"
 
     babyagi_playing = BabyAGI(
         assistant_role_name="Python Programmer",
+        assistant_agent_kwargs=dict(model=model),
         user_role_name="Stock Trader",
         task_prompt=task_prompt,
+        task_specify_agent_kwargs=dict(model=model),
         message_window_size=5,
     )
 

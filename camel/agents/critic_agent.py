@@ -31,7 +31,7 @@ class CriticAgent(ChatAgent):
     Args:
         system_message (BaseMessage): The system message for the critic
             agent.
-        model (BaseModelBackend, optional): The LLM backend to use for
+        model (BaseModelBackend, optional): The model backend to use for
             generating responses. (default: :obj:`OpenAIModel` with
             `GPT_3_5_TURBO`)
         message_window_size (int, optional): The maximum number of previous

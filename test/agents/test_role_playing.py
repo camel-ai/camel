@@ -42,9 +42,9 @@ def test_role_playing_init(model, critic_role_name, with_critic_in_the_loop):
         critic_role_name=critic_role_name,
         task_prompt="Perform the task",
         with_task_specify=False,
-        task_specify_agent_kwargs=dict(model=ModelType.GPT_4),
+        task_specify_agent_kwargs=dict(model=model),
         with_task_planner=False,
-        task_planner_agent_kwargs=dict(model=ModelType.GPT_4),
+        task_planner_agent_kwargs=dict(model=model),
         with_critic_in_the_loop=with_critic_in_the_loop,
         task_type=TaskType.AI_SOCIETY,
     )

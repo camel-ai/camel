@@ -17,16 +17,16 @@ from camel.societies import RolePlaying
 from camel.utils import print_text_animated
 
 
-def main(chat_turn_limit=50) -> None:
+def main(model=None, chat_turn_limit=50) -> None:
     task_prompt = "Develop a trading bot for the stock market"
     role_play_session = RolePlaying(
         assistant_role_name="Python Programmer",
-        assistant_agent_kwargs=dict(),
+        assistant_agent_kwargs=dict(model=model),
         user_role_name="Stock Trader",
-        user_agent_kwargs=dict(),
+        user_agent_kwargs=dict(model=model),
         task_prompt=task_prompt,
         with_task_specify=True,
-        task_specify_agent_kwargs=dict(),
+        task_specify_agent_kwargs=dict(model=model),
     )
 
     print(

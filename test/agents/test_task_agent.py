@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-
+import pytest
 
 from camel.agents import (
     TaskCreationAgent,
@@ -19,13 +19,27 @@ from camel.agents import (
     TaskPrioritizationAgent,
     TaskSpecifyAgent,
 )
-from camel.types import TaskType
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType, ModelType, TaskType
+
+parametrize = pytest.mark.parametrize(
+    'model',
+    [
+        ModelFactory.create(
+            model_platform=ModelPlatformType.OPENAI,
+            model_type=ModelType.STUB,
+            model_config_dict={},
+        ),
+        pytest.param(None, marks=pytest.mark.model_backend),
+    ],
+)
 
 
-def test_task_specify_ai_society_agent():
+@parametrize
+def test_task_specify_ai_society_agent(model):
     original_task_prompt = "Improving stage presence and performance skills"
     print(f"Original task prompt:\n{original_task_prompt}\n")
-    task_specify_agent = TaskSpecifyAgent()
+    task_specify_agent = TaskSpecifyAgent(model=model)
     specified_task_prompt = task_specify_agent.run(
         original_task_prompt,
         meta_dict=dict(assistant_role="Musician", user_role="Student"),
@@ -34,12 +48,11 @@ def test_task_specify_ai_society_agent():
     print(f"Specified task prompt:\n{specified_task_prompt}\n")
 
 
-def test_task_specify_code_agent():
+@parametrize
+def test_task_specify_code_agent(model):
     original_task_prompt = "Modeling molecular dynamics"
     print(f"Original task prompt:\n{original_task_prompt}\n")
-    task_specify_agent = TaskSpecifyAgent(
-        task_type=TaskType.CODE,
-    )
+    task_specify_agent = TaskSpecifyAgent(model=model, task_type=TaskType.CODE)
     specified_task_prompt = task_specify_agent.run(
         original_task_prompt,
         meta_dict=dict(domain="Chemistry", language="Python"),
@@ -48,10 +61,12 @@ def test_task_specify_code_agent():
     print(f"Specified task prompt:\n{specified_task_prompt}\n")
 
 
-def test_task_planner_agent():
+@parametrize
+def test_task_planner_agent(model):
     original_task_prompt = "Modeling molecular dynamics"
     print(f"Original task prompt:\n{original_task_prompt}\n")
     task_specify_agent = TaskSpecifyAgent(
+        model=model,
         task_type=TaskType.CODE,
     )
     specified_task_prompt = task_specify_agent.run(
@@ -64,9 +79,11 @@ def test_task_planner_agent():
     print(f"Planned task prompt:\n{planned_task_prompt}\n")
 
 
-def test_task_creation_agent():
+@parametrize
+def test_task_creation_agent(model):
     original_task_prompt = "Modeling molecular dynamics"
     task_creation_agent = TaskCreationAgent(
+        model=model,
         role_name="PhD in molecular biology",
         objective=original_task_prompt,
     )
@@ -78,7 +95,8 @@ def test_task_creation_agent():
     assert isinstance(planned_task, list)
 
 
-def test_task_prioritization_agent():
+@parametrize
+def test_task_prioritization_agent(model):
     original_task_prompt = (
         "A high school student wants to " "prove the Riemann hypothesis"
     )
@@ -95,6 +113,7 @@ def test_task_prioritization_agent():
 
     task_prioritization_agent = TaskPrioritizationAgent(
         objective=original_task_prompt,
+        model=model,
     )
 
     prioritized_task = task_prioritization_agent.run(task_list=task_list)

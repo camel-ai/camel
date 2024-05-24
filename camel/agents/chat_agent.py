@@ -80,8 +80,9 @@ class ChatAgent(BaseAgent):
 
     Args:
         system_message (BaseMessage): The system message for the chat agent.
-        model (BaseModelBackend, optional): The LLM backend to use for generating
-            responses. (default: :obj:`OpenAIModel` with `GPT_3_5_TURBO`)
+        model (BaseModelBackend, optional): The model backend to use for
+            generating responses. (default: :obj:`OpenAIModel` with
+            `GPT_3_5_TURBO`)
         memory (AgentMemory, optional): The agent memory for managing chat
             messages. If `None`, a :obj:`ChatHistoryMemory` will be used.
             (default: :obj:`None`)
@@ -136,7 +137,7 @@ class ChatAgent(BaseAgent):
             for func in function_list:
                 self.func_dict[func.get_function_name()] = func.func
 
-        self.model_config = self.model_backend.model_config_dict
+        self.model_config_dict = self.model_backend.model_config_dict
 
         self.model_token_limit = token_limit or self.model_backend.token_limit
         context_creator = ScoreBasedContextCreator(

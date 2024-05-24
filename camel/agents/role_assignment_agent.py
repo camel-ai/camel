@@ -25,7 +25,7 @@ class RoleAssignmentAgent(ChatAgent):
     r"""An agent that generates role names based on the task prompt.
 
     Args:
-        model (BaseModelBackend, optional): The LLM backend to use for
+        model (BaseModelBackend, optional): The model backend to use for
             generating responses. (default: :obj:`OpenAIModel` with
             `GPT_3_5_TURBO`)
 

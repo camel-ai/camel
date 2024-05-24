@@ -23,7 +23,7 @@ parametrize = pytest.mark.parametrize(
     [
         ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_3_5_TURBO,
+            model_type=ModelType.STUB,
             model_config_dict={},
         ),
         pytest.param(None, marks=pytest.mark.model_backend),

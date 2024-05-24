@@ -23,6 +23,7 @@ from camel.interpreters import (
     SubprocessInterpreter,
 )
 from camel.messages import BaseMessage
+from camel.models import BaseModelBackend
 from camel.responses import ChatAgentResponse
 from camel.utils import print_text_animated
 
@@ -32,6 +33,9 @@ class EmbodiedAgent(ChatAgent):
 
     Args:
         system_message (BaseMessage): The system message for the chat agent.
+        model (BaseModelBackend, optional): The model backend to use for
+            generating responses. (default: :obj:`OpenAIModel` with
+            `GPT_3_5_TURBO`)
         message_window_size (int, optional): The maximum number of previous
             messages to include in the context window. If `None`, no windowing
             is performed. (default: :obj:`None`)
@@ -50,6 +54,7 @@ class EmbodiedAgent(ChatAgent):
     def __init__(
         self,
         system_message: BaseMessage,
+        model: Optional[BaseModelBackend] = None,
         message_window_size: Optional[int] = None,
         tool_agents: Optional[List[BaseToolAgent]] = None,
         code_interpreter: Optional[BaseInterpreter] = None,
@@ -71,6 +76,7 @@ class EmbodiedAgent(ChatAgent):
         self.logger_color = logger_color
         super().__init__(
             system_message=system_message,
+            model=model,
             message_window_size=message_window_size,
         )
 

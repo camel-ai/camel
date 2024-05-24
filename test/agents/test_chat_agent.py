@@ -39,14 +39,22 @@ from camel.types import (
     TaskType,
 )
 
+parametrize = pytest.mark.parametrize(
+    'model',
+    [
+        ModelFactory.create(
+            model_platform=ModelPlatformType.OPENAI,
+            model_type=ModelType.GPT_3_5_TURBO,
+            model_config_dict=ChatGPTConfig().__dict__,
+        ),
+        pytest.param(None, marks=pytest.mark.model_backend),
+    ],
+)
 
-def test_chat_agent():
-    model_config = ChatGPTConfig()
-    model = ModelFactory.create(
-        model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_3_5_TURBO,
-        model_config_dict=model_config.__dict__,
-    )
+
+@parametrize
+def test_chat_agent(model):
+    model = model
     system_msg = SystemMessageGenerator(
         task_type=TaskType.AI_SOCIETY
     ).from_dict(
@@ -451,7 +459,7 @@ def test_chat_agent_vision():
     model_config = ChatGPTConfig(temperature=0, max_tokens=200, stop="")
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_3_5_TURBO,
+        model_type=ModelType.GPT_4O,
         model_config_dict=model_config.__dict__,
     )
     agent = ChatAgent(

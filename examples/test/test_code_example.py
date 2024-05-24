@@ -23,7 +23,7 @@ def test_code_role_playing_example():
         examples.code.role_playing.main(
             ModelFactory.create(
                 model_platform=ModelPlatformType.OPENAI,
-                model_type=ModelType.GPT_3_5_TURBO,
+                model_type=ModelType.STUB,
                 model_config_dict={},
             ),
             chat_turn_limit=2,
