@@ -17,6 +17,7 @@ from .model_factory import ModelFactory
 from .open_source_model import OpenSourceModel
 from .openai_model import OpenAIModel
 from .stub_model import StubModel
+from .litellm_model import LiteLLMModel
 
 __all__ = [
     'BaseModelBackend',
@@ -25,4 +26,5 @@ __all__ = [
     'StubModel',
     'OpenSourceModel',
     'ModelFactory',
+    'LiteLLMModel',
 ]
