@@ -35,9 +35,12 @@ colorama = "^0"
 jsonschema = "^4"
 protobuf = "^4"
 pathlib = "^1.0.1"   
-anthropic = "^0.21.3"
 docstring-parser = "^0.15"
 pydantic = ">=1.9,<3"
+
+# model platforms
+anthropic = "^0.21.3"
+litellm = { version = "^1.38.1", optional = true }
 
 # huggingface-agent
 transformers = { version = "^4", optional = true }
@@ -160,6 +163,8 @@ all = [
     "neo4j",
     # retrievers
     "rank-bm25",
+    # model platforms
+    "litellm",
 ]
 
 [tool.poetry.group.dev]
