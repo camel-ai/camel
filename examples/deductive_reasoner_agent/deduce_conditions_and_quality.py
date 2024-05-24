@@ -19,11 +19,11 @@ from camel.agents.deductive_reasoner_agent import DeductiveReasonerAgent
 from camel.configs import ChatGPTConfig
 
 
-def main(model_type=None) -> None:
+def main(model=None) -> None:
     # Construct deductive reasoner agent
     model_config_description = ChatGPTConfig()
     insight_agent = DeductiveReasonerAgent(
-        model_type=model_type, model_config=model_config_description
+        model=model, model_config=model_config_description
     )
 
     starting_state = "The current empty website."

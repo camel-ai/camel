@@ -116,21 +116,27 @@ You can connect the agent with external database (as long-term memory) in which 
 
     # Import the necessary classes
     from camel.configs import ChatGPTConfig, OpenSourceConfig
-    from camel.types import ModelType
+    from camel.types import ModelType, ModelPlatformType
+    from camel.models import ModelFactory
 
-    # Set the arguments
-    agent_kwargs = dict(
-        model_type=ModelType.LLAMA_2,                    # Specify the model type
+    # Set the LLM model type and model config
+    model_platform = ModelPlatformType.OPENSOURCE
+    model_type = ModelType.LLAMA_2
+    model_config=OpenSourceConfig(
+        model_path='meta-llama/Llama-2-7b-chat-hf',  # a local folder or HuggingFace repo Name
+        server_url='http://localhost:8000/v1')      # The url with the set port number
 
-        model_config=OpenSourceConfig(
-            model_path='meta-llama/Llama-2-7b-chat-hf',  # a local folder or HuggingFace repo Name
-            server_url='http://localhost:8000/v1'))      # The url with the set port number
+    # Create the backend model
+    model = ModelFactory.create(
+        model_platform=model_platform,
+        model_type=model_type,
+        model_config=model_config)
 
     # Set the agent
-    agent = ChatAgent(sys_msg, **agent_kwargs)
+    agent = ChatAgent(sys_msg, model=model)
     ```
 
-- The `ChatAgent` class offers several useful initialization options, including `model_type`, `model_config`, `memory`, `message_window_size`, `token_limit`, `output_language`, `function_list`, and `response_terminators`. Check [`chat_agent.py`](https://github.com/camel-ai/camel/blob/master/camel/agents/chat_agent.py) for detailed usage guidance.
+- The `ChatAgent` class offers several useful initialization options, including `model`, `memory`, `message_window_size`, `token_limit`, `output_language`, `function_list`, and `response_terminators`. Check [`chat_agent.py`](https://github.com/camel-ai/camel/blob/master/camel/agents/chat_agent.py) for detailed usage guidance.
 
 
 ## Remarks
