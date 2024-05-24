@@ -15,9 +15,9 @@ from colorama import Fore
 
 from camel.agents import ChatAgent
 from camel.configs import FunctionCallingConfig
-from camel.functions import GITHUB_FUNCS
 from camel.messages import BaseMessage
 from camel.prompts import PromptTemplateGenerator
+from camel.toolkits import GithubToolkit
 from camel.types import TaskType
 from camel.utils import print_text_animated
 
@@ -36,23 +36,21 @@ def solve_issue(
     )
     print(Fore.YELLOW + f"Final prompt:\n{prompt}\n")
 
-    function_list = [
-        *GITHUB_FUNCS,
-    ]
+    toolkit = GithubToolkit(repo_name=repo_name)
     assistant_sys_msg = BaseMessage.make_assistant_message(
         role_name="Software Engineer",
         content="""You are an experienced software engineer who 
         specializes on data structures and algorithms tasks.""",
     )
     assistant_model_config = FunctionCallingConfig.from_openai_function_list(
-        function_list=function_list,
+        function_list=toolkit.get_tools(),
         kwargs=dict(temperature=0.0),
     )
     agent = ChatAgent(
         assistant_sys_msg,
         model_type=model,
         model_config=assistant_model_config,
-        function_list=function_list,
+        function_list=toolkit.get_tools(),
     )
     agent.reset()
 
