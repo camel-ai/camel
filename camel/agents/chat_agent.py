@@ -80,7 +80,7 @@ class ChatAgent(BaseAgent):
 
     Args:
         system_message (BaseMessage): The system message for the chat agent.
-        llm (BaseModelBackend, optional): The LLM backend to use for generating
+        model (BaseModelBackend, optional): The LLM backend to use for generating
             responses. (default: :obj:`OpenAIModel` with `GPT_3_5_TURBO`)
         memory (AgentMemory, optional): The agent memory for managing chat
             messages. If `None`, a :obj:`ChatHistoryMemory` will be used.
@@ -104,7 +104,7 @@ class ChatAgent(BaseAgent):
     def __init__(
         self,
         system_message: BaseMessage,
-        llm: Optional[BaseModelBackend] = None,
+        model: Optional[BaseModelBackend] = None,
         memory: Optional[AgentMemory] = None,
         message_window_size: Optional[int] = None,
         token_limit: Optional[int] = None,
@@ -117,8 +117,8 @@ class ChatAgent(BaseAgent):
         self.role_name: str = system_message.role_name
         self.role_type: RoleType = system_message.role_type
         self.model_backend: BaseModelBackend = (
-            llm
-            if llm is not None
+            model
+            if model is not None
             else ModelFactory.create(
                 model_platform=ModelPlatformType.OPENAI,
                 model_type=ModelType.GPT_3_5_TURBO,

@@ -323,7 +323,7 @@ def role_playing_with_function(
         assistant_role_name=assistant_role_name,
         user_role_name=user_role_name,
         assistant_agent_kwargs=dict(
-            llm=ModelFactory.create(
+            model=ModelFactory.create(
                 model_platform=ModelPlatformType.OPENAI,
                 model_type=ModelType.GPT_3_5_TURBO,
                 model_config_dict=assistant_model_config.__dict__,

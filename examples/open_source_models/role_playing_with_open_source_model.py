@@ -27,7 +27,7 @@ def main(
 
     agent_kwargs = {
         role: dict(
-            llm=ModelFactory.create(
+            model=ModelFactory.create(
                 model_platform=ModelPlatformType.OPENSOURCE,
                 model_type=ModelType.LLAMA_2,
                 model_config_dict=OpenSourceConfig(

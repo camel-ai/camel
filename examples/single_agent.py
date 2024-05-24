@@ -17,7 +17,7 @@ from camel.prompts import PromptTemplateGenerator
 from camel.types import TaskType
 
 
-def main(key: str = 'generate_users', num_roles: int = 50):
+def main(key: str = 'generate_users', num_roles: int = 50, model=None):
     prompt_template = PromptTemplateGenerator().get_prompt_from_key(
         TaskType.AI_SOCIETY, key
     )
@@ -27,7 +27,7 @@ def main(key: str = 'generate_users', num_roles: int = 50):
         role_name="Assistant",
         content="You are a helpful assistant.",
     )
-    agent = ChatAgent(assistant_sys_msg)
+    agent = ChatAgent(assistant_sys_msg, model=model)
     agent.reset()
 
     user_msg = BaseMessage.make_user_message(role_name="User", content=prompt)

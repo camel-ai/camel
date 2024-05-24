@@ -12,16 +12,22 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import re
-from typing import Dict, Union
+from typing import Dict, Optional, Union
 
 from camel.agents.chat_agent import ChatAgent
 from camel.messages import BaseMessage
+from camel.models import BaseModelBackend
 from camel.prompts import TextPrompt
 from camel.types import RoleType
 
 
 class RoleAssignmentAgent(ChatAgent):
     r"""An agent that generates role names based on the task prompt.
+
+    Args:
+        model (BaseModelBackend, optional): The LLM backend to use for
+            generating responses. (default: :obj:`OpenAIModel` with
+            `GPT_3_5_TURBO`)
 
     Attributes:
         role_assignment_prompt (TextPrompt): A prompt for the agent to generate
@@ -30,6 +36,7 @@ class RoleAssignmentAgent(ChatAgent):
 
     def __init__(
         self,
+        model: Optional[BaseModelBackend] = None,
     ) -> None:
         system_message = BaseMessage(
             role_name="Role Assigner",
@@ -37,7 +44,7 @@ class RoleAssignmentAgent(ChatAgent):
             meta_dict=None,
             content="You assign roles based on tasks.",
         )
-        super().__init__(system_message)
+        super().__init__(system_message, model=model)
 
     def run(
         self,

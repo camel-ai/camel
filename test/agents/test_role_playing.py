@@ -22,29 +22,29 @@ from camel.models import ModelFactory
 from camel.societies import RolePlaying
 from camel.types import ModelPlatformType, ModelType, RoleType, TaskType
 
-llm = ModelFactory.create(
+model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
     model_type=ModelType.GPT_4O,
     model_config_dict=ChatGPTConfig().__dict__,
 )
 
 
-@pytest.mark.parametrize("llm", [None, llm])
+@pytest.mark.parametrize("model", [None, model])
 @pytest.mark.parametrize("critic_role_name", ["human", "critic agent"])
 @pytest.mark.parametrize("with_critic_in_the_loop", [True, False])
-def test_role_playing_init(llm, critic_role_name, with_critic_in_the_loop):
+def test_role_playing_init(model, critic_role_name, with_critic_in_the_loop):
     role_playing = RolePlaying(
         assistant_role_name="assistant",
-        assistant_agent_kwargs=dict(llm=llm),
+        assistant_agent_kwargs=dict(model=model),
         user_role_name="user",
-        user_agent_kwargs=dict(llm=llm),
-        llm=llm,
+        user_agent_kwargs=dict(model=model),
+        model=model,
         critic_role_name=critic_role_name,
         task_prompt="Perform the task",
         with_task_specify=False,
-        task_specify_agent_kwargs=dict(llm=ModelType.GPT_4),
+        task_specify_agent_kwargs=dict(model=ModelType.GPT_4),
         with_task_planner=False,
-        task_planner_agent_kwargs=dict(llm=ModelType.GPT_4),
+        task_planner_agent_kwargs=dict(model=ModelType.GPT_4),
         with_critic_in_the_loop=with_critic_in_the_loop,
         task_type=TaskType.AI_SOCIETY,
     )
@@ -67,7 +67,7 @@ def test_role_playing_init(llm, critic_role_name, with_critic_in_the_loop):
 
     assert isinstance(assistant_agent, ChatAgent)
     assert isinstance(user_agent, ChatAgent)
-    if llm is None:
+    if model is None:
         assert (
             assistant_agent.model_backend.model_type == ModelType.GPT_3_5_TURBO
         )
@@ -85,7 +85,7 @@ def test_role_playing_init(llm, critic_role_name, with_critic_in_the_loop):
         else:
             assert isinstance(critic, CriticAgent)
             assert role_playing.critic_sys_msg is not None
-            if llm is None:
+            if model is None:
                 assert (
                     critic.model_backend.model_type == ModelType.GPT_3_5_TURBO
                 )
@@ -111,11 +111,11 @@ def test_role_playing_step(
 ):
     role_playing = RolePlaying(
         assistant_role_name="AI Assistant",
-        assistant_agent_kwargs=dict(llm=llm),
+        assistant_agent_kwargs=dict(model=model),
         user_role_name="AI User",
-        user_agent_kwargs=dict(llm=llm),
+        user_agent_kwargs=dict(model=model),
         task_prompt="Perform the task",
-        task_specify_agent_kwargs=dict(llm=llm),
+        task_specify_agent_kwargs=dict(model=model),
         task_type=task_type,
         extend_sys_msg_meta_dicts=extend_sys_msg_meta_dicts,
         extend_task_specify_meta_dict=extend_task_specify_meta_dict,
@@ -143,7 +143,7 @@ def test_role_playing_with_function():
     assistant_model_config = FunctionCallingConfig.from_openai_function_list(
         function_list=function_list
     )
-    llm = ModelFactory.create(
+    model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_3_5_TURBO,
         model_config_dict=assistant_model_config.__dict__,
@@ -152,13 +152,13 @@ def test_role_playing_with_function():
     role_playing = RolePlaying(
         assistant_role_name="AI Assistant",
         assistant_agent_kwargs=dict(
-            llm=llm,
+            model=model,
             function_list=function_list,
         ),
         user_role_name="AI User",
-        user_agent_kwargs=dict(llm=llm),
+        user_agent_kwargs=dict(model=model),
         task_prompt="Perform the task",
-        task_specify_agent_kwargs=dict(llm=llm),
+        task_specify_agent_kwargs=dict(model=model),
         task_type=TaskType.AI_SOCIETY,
     )
 
@@ -173,16 +173,16 @@ def test_role_playing_with_function():
         assert isinstance(response.info, dict)
 
 
-def test_role_playing_role_sequence(llm=None):
+def test_role_playing_role_sequence(model=None):
     task_prompt = "Develop a trading bot for the stock market"
     role_playing = RolePlaying(
         assistant_role_name="Python Programmer",
-        assistant_agent_kwargs=dict(llm=llm),
+        assistant_agent_kwargs=dict(model=model),
         user_role_name="Stock Trader",
-        user_agent_kwargs=dict(llm=llm),
+        user_agent_kwargs=dict(model=model),
         task_prompt=task_prompt,
         with_task_specify=True,
-        task_specify_agent_kwargs=dict(llm=llm),
+        task_specify_agent_kwargs=dict(model=model),
     )
     assistant_role_sequence = []
     user_role_sequence = []

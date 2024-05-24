@@ -18,12 +18,17 @@ import examples.code.task_generation
 import examples.evaluation.single_agent
 import examples.misalignment.single_agent
 import examples.single_agent
-from camel.types import ModelType
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType, ModelType
 
 parametrize = pytest.mark.parametrize(
     'model',
     [
-        ModelType.STUB,
+        ModelFactory.create(
+            ModelPlatformType.OPENAI,
+            model_type=ModelType.GPT_3_5_TURBO,
+            model_config_dict={},
+        ),
         pytest.param(None, marks=pytest.mark.model_backend),
     ],
 )
@@ -39,7 +44,7 @@ def test_misalignment_single_agent(model):
     examples.misalignment.single_agent.main(model=model)
 
 
-@pytest.mark.parametrize('model', [ModelType.STUB])
+@parametrize
 def test_evaluation_single_agent(model):
     examples.evaluation.single_agent.main(model=model)
 
@@ -49,6 +54,6 @@ def test_code_generate_metadata(model):
     examples.code.generate_meta_data.main(model=model)
 
 
-@pytest.mark.parametrize('model', [ModelType.STUB])
+@parametrize
 def test_code_task_generation(model):
     examples.code.task_generation.main(model=model)

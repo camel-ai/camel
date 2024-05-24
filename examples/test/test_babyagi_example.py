@@ -15,12 +15,17 @@ import pytest
 from mock import patch
 
 import examples.ai_society.babyagi_playing
-from camel.types import ModelType
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType, ModelType
 
 parametrize = pytest.mark.parametrize(
     'model',
     [
-        ModelType.STUB,
+        ModelFactory.create(
+            model_platform=ModelPlatformType.OPENAI,
+            model_type=ModelType.GPT_3_5_TURBO,
+            model_config_dict={},
+        ),
         pytest.param(None, marks=pytest.mark.model_backend),
     ],
 )
@@ -29,6 +34,4 @@ parametrize = pytest.mark.parametrize(
 @parametrize
 def test_ai_society_babyagi_playing_example(model):
     with patch('time.sleep', return_value=None):
-        examples.ai_society.babyagi_playing.main(
-            model_type=model, chat_turn_limit=2
-        )
+        examples.ai_society.babyagi_playing.main(model=model, chat_turn_limit=2)

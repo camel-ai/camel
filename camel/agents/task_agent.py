@@ -31,7 +31,7 @@ class TaskSpecifyAgent(ChatAgent):
         task_specify_prompt (TextPrompt): The prompt for specifying the task.
 
     Args:
-        llm (BaseModelBackend, optional): The LLM backend to use for generating
+        model (BaseModelBackend, optional): The LLM backend to use for generating
             responses. (default: :obj:`OpenAIModel` with `GPT_3_5_TURBO`)
         task_type (TaskType, optional): The type of task for which to generate
             a prompt. (default: :obj:`TaskType.AI_SOCIETY`)
@@ -47,7 +47,7 @@ class TaskSpecifyAgent(ChatAgent):
 
     def __init__(
         self,
-        llm: Optional[BaseModelBackend] = None,
+        model: Optional[BaseModelBackend] = None,
         task_type: TaskType = TaskType.AI_SOCIETY,
         model_config: Optional[Any] = None,
         task_specify_prompt: Optional[Union[str, TextPrompt]] = None,
@@ -77,7 +77,7 @@ class TaskSpecifyAgent(ChatAgent):
 
         super().__init__(
             system_message,
-            llm=llm,
+            model=model,
             output_language=output_language,
         )
 
@@ -128,7 +128,7 @@ class TaskPlannerAgent(ChatAgent):
             the task into subtasks.
 
     Args:
-        llm (BaseModelBackend, optional): The LLM backend to use for generating
+        model (BaseModelBackend, optional): The LLM backend to use for generating
             responses. (default: :obj:`OpenAIModel` with `GPT_3_5_TURBO`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
@@ -136,7 +136,7 @@ class TaskPlannerAgent(ChatAgent):
 
     def __init__(
         self,
-        llm: Optional[BaseModelBackend] = None,
+        model: Optional[BaseModelBackend] = None,
         output_language: Optional[str] = None,
     ) -> None:
         self.task_planner_prompt = TextPrompt(
@@ -151,7 +151,7 @@ class TaskPlannerAgent(ChatAgent):
 
         super().__init__(
             system_message,
-            llm=llm,
+            model=model,
             output_language=output_language,
         )
 
@@ -202,7 +202,7 @@ class TaskCreationAgent(ChatAgent):
         role_name (str): The role name of the Agent to create the task.
         objective (Union[str, TextPrompt]): The objective of the Agent to
             perform the task.
-        llm (BaseModelBackend, optional): The LLM backend to use for generating
+        model (BaseModelBackend, optional): The LLM backend to use for generating
             responses. (default: :obj:`OpenAIModel` with `GPT_3_5_TURBO`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
@@ -217,7 +217,7 @@ class TaskCreationAgent(ChatAgent):
         self,
         role_name: str,
         objective: Union[str, TextPrompt],
-        llm: Optional[BaseModelBackend] = None,
+        model: Optional[BaseModelBackend] = None,
         output_language: Optional[str] = None,
         message_window_size: Optional[int] = None,
         max_task_num: Optional[int] = 3,
@@ -257,7 +257,7 @@ Be concrete.
 
         super().__init__(
             system_message,
-            llm=llm,
+            model=model,
             output_language=output_language,
             message_window_size=message_window_size,
         )
@@ -311,7 +311,7 @@ class TaskPrioritizationAgent(ChatAgent):
     Args:
         objective (Union[str, TextPrompt]): The objective of the Agent to
             perform the task.
-        llm (BaseModelBackend, optional): The LLM backend to use for generating
+        model (BaseModelBackend, optional): The LLM backend to use for generating
             responses. (default: :obj:`OpenAIModel` with `GPT_3_5_TURBO`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
@@ -323,7 +323,7 @@ class TaskPrioritizationAgent(ChatAgent):
     def __init__(
         self,
         objective: Union[str, TextPrompt],
-        llm: Optional[BaseModelBackend] = None,
+        model: Optional[BaseModelBackend] = None,
         output_language: Optional[str] = None,
         message_window_size: Optional[int] = None,
     ) -> None:
@@ -359,7 +359,7 @@ with any other output."""
 
         super().__init__(
             system_message,
-            llm=llm,
+            model=model,
             output_language=output_language,
             message_window_size=message_window_size,
         )

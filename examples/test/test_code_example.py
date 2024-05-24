@@ -14,9 +14,17 @@
 from mock import patch
 
 import examples.code.role_playing
-from camel.types import ModelType
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType, ModelType
 
 
 def test_code_role_playing_example():
     with patch('time.sleep', return_value=None):
-        examples.code.role_playing.main(ModelType.STUB, chat_turn_limit=2)
+        examples.code.role_playing.main(
+            ModelFactory.create(
+                model_platform=ModelPlatformType.OPENAI,
+                model_type=ModelType.GPT_3_5_TURBO,
+                model_config_dict={},
+            ),
+            chat_turn_limit=2,
+        )

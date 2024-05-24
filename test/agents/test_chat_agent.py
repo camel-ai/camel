@@ -42,7 +42,7 @@ from camel.types import (
 
 def test_chat_agent():
     model_config = ChatGPTConfig()
-    llm = ModelFactory.create(
+    model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_3_5_TURBO,
         model_config_dict=model_config.__dict__,
@@ -53,7 +53,7 @@ def test_chat_agent():
         dict(assistant_role="doctor"),
         role_tuple=("doctor", RoleType.ASSISTANT),
     )
-    assistant = ChatAgent(system_msg, llm=llm)
+    assistant = ChatAgent(system_msg, model=model)
 
     assert str(assistant) == (
         "ChatAgent(doctor, " f"RoleType.ASSISTANT, {ModelType.GPT_3_5_TURBO})"
@@ -166,7 +166,7 @@ def test_chat_agent_step_exceed_token_number():
 @pytest.mark.parametrize('n', [1, 2, 3])
 def test_chat_agent_multiple_return_messages(n):
     model_config = ChatGPTConfig(temperature=1.4, n=n)
-    llm = ModelFactory.create(
+    model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_3_5_TURBO,
         model_config_dict=model_config.__dict__,
@@ -177,7 +177,7 @@ def test_chat_agent_multiple_return_messages(n):
         meta_dict=None,
         content="You are a helpful assistant.",
     )
-    assistant = ChatAgent(system_msg, llm=llm)
+    assistant = ChatAgent(system_msg, model=model)
     assistant.reset()
     user_msg = BaseMessage(
         role_name="User",
@@ -194,7 +194,7 @@ def test_chat_agent_multiple_return_messages(n):
 @pytest.mark.parametrize('n', [2])
 def test_chat_agent_multiple_return_message_error(n):
     model_config = ChatGPTConfig(temperature=1.4, n=n)
-    llm = ModelFactory.create(
+    model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_3_5_TURBO,
         model_config_dict=model_config.__dict__,
@@ -206,7 +206,7 @@ def test_chat_agent_multiple_return_message_error(n):
         content="You are a helpful assistant.",
     )
 
-    assistant = ChatAgent(system_msg, llm=llm)
+    assistant = ChatAgent(system_msg, model=model)
     assistant.reset()
 
     user_msg = BaseMessage(
@@ -242,12 +242,12 @@ def test_chat_agent_stream_output():
     )
 
     stream_model_config = ChatGPTConfig(temperature=0, n=2, stream=True)
-    llm = ModelFactory.create(
+    model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_3_5_TURBO,
         model_config_dict=stream_model_config.__dict__,
     )
-    stream_assistant = ChatAgent(system_msg, llm=llm)
+    stream_assistant = ChatAgent(system_msg, model=model)
     stream_assistant.reset()
     stream_assistant_response = stream_assistant.step(user_msg)
 
@@ -352,7 +352,7 @@ def test_function_enabled():
     model_config = FunctionCallingConfig(
         functions=[func.get_openai_function_schema() for func in MATH_FUNCS]
     )
-    llm = ModelFactory.create(
+    model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_3_5_TURBO,
         model_config_dict=model_config.__dict__,
@@ -360,7 +360,7 @@ def test_function_enabled():
     agent_no_func = ChatAgent(system_message=system_message)
     agent_with_funcs = ChatAgent(
         system_message=system_message,
-        llm=llm,
+        model=model,
         function_list=MATH_FUNCS,
     )
 
@@ -379,14 +379,14 @@ def test_function_calling():
     model_config = FunctionCallingConfig(
         functions=[func.get_openai_function_schema() for func in MATH_FUNCS]
     )
-    llm = ModelFactory.create(
+    model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_3_5_TURBO,
         model_config_dict=model_config.__dict__,
     )
     agent = ChatAgent(
         system_message=system_message,
-        llm=llm,
+        model=model,
         function_list=MATH_FUNCS,
     )
 
@@ -449,14 +449,14 @@ def test_chat_agent_vision():
         content="You are a help assistant.",
     )
     model_config = ChatGPTConfig(temperature=0, max_tokens=200, stop="")
-    llm = ModelFactory.create(
+    model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_3_5_TURBO,
         model_config_dict=model_config.__dict__,
     )
     agent = ChatAgent(
         system_message=system_message,
-        llm=llm,
+        model=model,
     )
 
     # Create an all blue PNG image:
