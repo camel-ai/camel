@@ -183,7 +183,7 @@ class GithubToolkit(BaseToolkit):
             OpenAIFunction(self.retrieve_issue_list),
             OpenAIFunction(self.retrieve_issue),
             OpenAIFunction(self.create_pull_request),
-            OpenAIFunction(self.retrieve_merged_pull_requests),
+            OpenAIFunction(self.retrieve_pull_requests),
         ]
 
     def get_github_access_token(self) -> str:
@@ -244,17 +244,25 @@ class GithubToolkit(BaseToolkit):
                 return issue.summary()
         return None
 
-    def retrieve_merged_pull_requests(self, days: int) -> List:
+    def retrieve_pull_requests(
+        self, days: int, state: Optional[str] = None
+    ) -> List:
         r"""Retrieves a summary of merged pull requests from the repository.
         The summary will be provided for the last specified number of days.
 
         Args:
             days (int): The number of days to retrieve merged pull requests for.
+            state (int): A specific state of PRs to retrieve (open/closed).
 
         Returns:
             list: A list of merged pull request summaries.
         """
-        pull_requests = self.repo.get_pulls(state='closed')
+
+        if state is None:
+            pull_requests = self.repo.get_pulls()
+        else:
+            pull_requests = self.repo.get_pulls(state=state)
+
         merged_prs = []
         earliest_date: datetime = datetime.utcnow() - timedelta(days=days)
 

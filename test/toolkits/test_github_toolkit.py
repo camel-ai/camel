@@ -170,7 +170,7 @@ def test_create_pull_request(monkeypatch):
 
 @patch.object(Github, 'get_repo', return_value=MagicMock())
 @patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
-def test_retrieve_merged_pull_requests(monkeypatch):
+def test_retrieve_pull_requests(monkeypatch):
     # Call the constructor of the GithubToolkit class
     github_toolkit = GithubToolkit("repo_name", "token")
 
@@ -196,7 +196,7 @@ def test_retrieve_merged_pull_requests(monkeypatch):
     # Mock the get_issues method of the mock repo instance to return a list containing the mock issue object
     github_toolkit.repo.get_pulls.return_value = [mock_pull_request]
 
-    pull_requests = github_toolkit.retrieve_merged_pull_requests(days=7)
+    pull_requests = github_toolkit.retrieve_pull_requests(days=7)
     # Assert the returned issue list
     expected_pull_request = GithubPullRequest(
         title="Test PR",
