@@ -74,6 +74,7 @@ class OpenAIModel(BaseModelBackend):
         """
         response = self._client.chat(
             messages=messages,
+            response_format={"type": "json_object"},
             model=self.model_type.value,
             # **self.model_config_dict,
         )
