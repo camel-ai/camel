@@ -21,7 +21,6 @@ from camel.prompts.code import CodePromptTemplateDict
 from camel.prompts.evaluation import (
     EvaluationPromptTemplateDict,
 )
-from camel.prompts.github import GitHubPromptTemplateDict
 from camel.prompts.misalignment import MisalignmentPromptTemplateDict
 from camel.prompts.object_recognition import ObjectRecognitionPromptTemplateDict
 from camel.prompts.role_description_prompt_template import (
@@ -50,7 +49,6 @@ class TaskPromptTemplateDict(Dict[Any, TextPromptDict]):
             {
                 TaskType.AI_SOCIETY: AISocietyPromptTemplateDict(),
                 TaskType.CODE: CodePromptTemplateDict(),
-                TaskType.GITHUB: GitHubPromptTemplateDict(),
                 TaskType.MISALIGNMENT: MisalignmentPromptTemplateDict(),
                 TaskType.TRANSLATION: TranslationPromptTemplateDict(),
                 TaskType.EVALUATION: EvaluationPromptTemplateDict(),
