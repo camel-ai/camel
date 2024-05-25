@@ -80,10 +80,10 @@ We share a common interest in collaborating to successfully complete the task by
 
 ===== ANSWER TEMPLATE JSON =====
 1. Unless I say the task is completed, you need to provide the thoughts and the action:
-{
-    "Thought": "<YOUR_THOUGHT>", // If you are not satisfied with my answer, you can say 'I am not satisfied with the answer, please provide me with another one.'
-    "Action": "<YOUR_ACTION>"
-}
+Thought: 
+    <YOUR_THOUGHT>  // If you are not satisfied with my answer, you can say 'I am not satisfied with the answer, please provide me with another one.'
+Action: 
+    <YOUR_ACTION>
 """)
 
     USER_PROMPT: TextPrompt = TextPrompt("""===== RULES OF USER =====
@@ -101,11 +101,11 @@ We share a common interest in collaborating to successfully complete the task by
 ===== TASK =====
 {task}
 
-===== ANSWER TEMPLATE JSON =====
-{
-    "Instruction": "<YOUR_INSTRUCTION>",
-    "Input": "<YOUR_INPUT>" // Allowed to use None if no input
-}                                         
+===== ANSWER TEMPLATE =====
+Instruction:
+    <YOUR_INSTRUCTION>,
+Input: 
+    <YOUR_INPUT>  // Allowed to use None if no input                    
 """)
 
     CRITIC_PROMPT = TextPrompt(
