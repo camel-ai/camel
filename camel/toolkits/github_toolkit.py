@@ -195,19 +195,30 @@ class GithubIssue:
         file_content (str): The content of the file associated with the issue.
     """
 
-    def __init__(
-        self,
-        title: str,
-        body: str,
-        number: int,
-        file_path: str,
-        file_content: str,
-    ):
-        self.title = title
-        self.body = body
-        self.number = number
-        self.file_path = file_path
-        self.file_content = file_content
+    class GitHubToolkit:
+        def __init__(
+            self,
+            title: str,
+            body: str,
+            number: int,
+            file_path: str,
+            file_content: str,
+        ):
+            """
+            Initialize a GitHubToolkit object.
+
+            Args:
+                title (str): The title of the GitHub issue.
+                body (str): The body/content of the GitHub issue.
+                number (int): The issue number.
+                file_path (str): The path of the file associated with the issue.
+                file_content (str): The content of the file associated with the issue.
+            """
+            self.title = title
+            self.body = body
+            self.number = number
+            self.file_path = file_path
+            self.file_content = file_content
 
     def summary(self):
         """
