@@ -96,4 +96,4 @@ def main(model_type=None) -> None:
 
 
 if __name__ == "__main__":
-    main(model_type=ModelType.MISTRAL_7B)
+    main(model_type=ModelType.GPT_4_TURBO)

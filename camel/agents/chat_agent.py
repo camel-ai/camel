@@ -313,17 +313,20 @@ class ChatAgent(BaseAgent):
             # Obtain the model's response
             response = self.model_backend.run(openai_messages)
 
-            # if isinstance(response, ChatCompletion):
-            #     output_messages, finish_reasons, usage_dict, response_id = (
-            #         self.handle_batch_response(response)
-            #     )
-            # else:
-            #     output_messages, finish_reasons, usage_dict, response_id = (
-            #         self.handle_stream_response(response, num_tokens)
-            #     )
-            output_messages, finish_reasons, usage_dict, response_id = (
-                self.handle_batch_response(response)
-            )
+            from camel.types import ModelType
+            if self.model_type != ModelType.MISTRAL_7B:
+                if isinstance(response, ChatCompletion):
+                    output_messages, finish_reasons, usage_dict, response_id = (
+                        self.handle_batch_response(response)
+                    )
+                else:
+                    output_messages, finish_reasons, usage_dict, response_id = (
+                        self.handle_stream_response(response, num_tokens)
+                    )
+            else:
+                output_messages, finish_reasons, usage_dict, response_id = (
+                    self.handle_batch_response(response)
+                )
 
             if (
                 self.is_function_calling_enabled()

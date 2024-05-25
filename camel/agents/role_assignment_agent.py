@@ -223,7 +223,6 @@ The tool descriptions are the context information of the potential competencies 
             )
         )
         role_assignment_generation += expert_json_prompt + task_prompt
-        print(f"expert_json_prompt:\n{expert_json_prompt}")
 
         role_assignment_generation_msg = BaseMessage.make_user_message(
             role_name="Role Assigner", content=role_assignment_generation

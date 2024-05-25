@@ -41,7 +41,11 @@ class OpenAIModel(BaseModelBackend):
         url = os.environ.get('OPENAI_API_BASE_URL', None)
         # self._client = OpenAI(timeout=60, max_retries=3, base_url=url)
         from mistralai.client import MistralClient
-        self._client = MistralClient()
+        from camel.types import ModelType
+        if self.model_type == ModelType.MISTRAL_7B:
+            self._client = MistralClient()
+        else:
+            self._client = OpenAI()
         self._token_counter: Optional[BaseTokenCounter] = None
 
     @property
@@ -72,11 +76,19 @@ class OpenAIModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        response = self._client.chat(
-            messages=messages,
-            model=self.model_type.value,
-            # **self.model_config_dict,
-        )
+        from camel.types import ModelType
+        if self.model_type == ModelType.MISTRAL_7B:
+            response = self._client.chat(
+                messages=messages,
+                model=self.model_type.value,
+                # **self.model_config_dict,
+            )
+        else:
+            response = self._client.completions.create(
+                messages=messages,
+                model=self.model_type.value,
+                **self.model_config_dict,
+            )
         return response
 
     def check_model_config(self):
