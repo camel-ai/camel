@@ -184,7 +184,6 @@ class EmbeddingModelType(Enum):
 class TaskType(Enum):
     AI_SOCIETY = "ai_society"
     CODE = "code"
-    GITHUB = "github"
     MISALIGNMENT = "misalignment"
     TRANSLATION = "translation"
     EVALUATION = "evaluation"

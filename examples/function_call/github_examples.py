@@ -16,9 +16,7 @@ from colorama import Fore
 from camel.agents import ChatAgent
 from camel.configs import FunctionCallingConfig
 from camel.messages import BaseMessage
-from camel.prompts import PromptTemplateGenerator
 from camel.toolkits import GithubToolkit
-from camel.types import TaskType
 from camel.utils import print_text_animated
 
 
@@ -27,13 +25,19 @@ def solve_issue(
     issue_number,
     model=None,
 ) -> None:
-    prompt_template = PromptTemplateGenerator().get_prompt_from_key(
-        TaskType.GITHUB, 'solve_issue'
-    )
-    prompt = prompt_template.format(
-        repo_name=repo_name,
-        issue_number=issue_number,
-    )
+    prompt = f"""
+    You need to solve the issue with number: {issue_number}
+    For this you will have to use the provided github function to retrieve
+    that issue. You will get all the necessary parameters to later create a
+    pull request.
+
+    When you have the issue, please follow the instruction and make the necessary
+    changes to the source code provided. Once you have made the changes, you will
+    need to use another provided github function to create a pull request
+    that updates the file on the provided file path in the repository {repo_name}.
+    The new_content property of the function should be the corrected source code.
+    Return response of this function as the output of this task.
+    """
     print(Fore.YELLOW + f"Final prompt:\n{prompt}\n")
 
     toolkit = GithubToolkit(repo_name=repo_name)
