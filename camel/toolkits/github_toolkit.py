@@ -14,11 +14,61 @@
 
 import os
 from dataclasses import dataclass
-from typing import Optional
+from typing import List, Optional
 
 from camel.functions import OpenAIFunction
 
 from .base import BaseToolkit
+
+
+@dataclass
+class GithubIssue:
+    r"""Represents a GitHub issue.
+
+    Attributes:
+        title (str): The title of the issue.
+        body (str): The body/content of the issue.
+        number (int): The issue number.
+        file_path (str): The path of the file associated with the issue.
+        file_content (str): The content of the file associated with the issue.
+    """
+
+    def __init__(
+        self,
+        title: str,
+        body: str,
+        number: int,
+        file_path: str,
+        file_content: str,
+    ) -> None:
+        r"""Initialize a GithubIssue object.
+
+        Args:
+            title (str): The title of the GitHub issue.
+            body (str): The body/content of the GitHub issue.
+            number (int): The issue number.
+            file_path (str): The path of the file associated with the issue.
+            file_content (str): The content of the file associated with the issue.
+        """
+        self.title = title
+        self.body = body
+        self.number = number
+        self.file_path = file_path
+        self.file_content = file_content
+
+    def summary(self) -> str:
+        r"""Returns a summary of the issue.
+
+        Returns:
+            str: A string containing the title, body, number, file path, and file content of the issue.
+        """
+        return (
+            f"Title: {self.title}\n"
+            f"Body: {self.body}\n"
+            f"Number: {self.number}\n"
+            f"File Path: {self.file_path}\n"
+            f"File Content: {self.file_content}"
+        )
 
 
 class GithubToolkit(BaseToolkit):
@@ -33,7 +83,9 @@ class GithubToolkit(BaseToolkit):
             If not provided, it will be obtained using the `get_github_access_token` method.
     """
 
-    def __init__(self, repo_name: str, access_token: Optional[str] = None):
+    def __init__(
+        self, repo_name: str, access_token: Optional[str] = None
+    ) -> None:
         r"""Initializes a new instance of the GitHubToolkit class.
 
         Args:
@@ -54,7 +106,7 @@ class GithubToolkit(BaseToolkit):
         self.github = Github(auth=Auth.Token(access_token))
         self.repo = self.github.get_repo(repo_name)
 
-    def get_tools(self):
+    def get_tools(self) -> list[OpenAIFunction]:
         r"""Returns a list of OpenAIFunction objects representing the functions in the toolkit.
 
         Returns:
@@ -85,7 +137,7 @@ class GithubToolkit(BaseToolkit):
             )
         return GITHUB_ACCESS_TOKEN
 
-    def retrieve_issue_list(self):
+    def retrieve_issue_list(self) -> List[GithubIssue]:
         r"""Retrieve a list of open issues from the repository.
 
         Returns:
@@ -106,7 +158,7 @@ class GithubToolkit(BaseToolkit):
             if not issue.pull_request
         ]
 
-    def retrieve_issue(self, issue_number: int):
+    def retrieve_issue(self, issue_number: int) -> Optional[str]:
         r"""Retrieves an issue from a GitHub repository.
 
         This function retrieves an issue from a specified repository using the
@@ -131,7 +183,7 @@ class GithubToolkit(BaseToolkit):
         pr_title: str,
         body: str,
         branch_name: str,
-    ):
+    ) -> str:
         r"""Creates a pull request.
 
         This function creates a pull request in specified repository, which updates a
@@ -174,7 +226,7 @@ class GithubToolkit(BaseToolkit):
         else:
             raise ValueError("PRs with multiple files aren't supported yet.")
 
-    def retrieve_file_content(self, file_path: str):
+    def retrieve_file_content(self, file_path: str) -> str:
         r"""Retrieves the content of a file from the GitHub repository.
 
         Args:
@@ -191,53 +243,3 @@ class GithubToolkit(BaseToolkit):
             return file_content.decoded_content.decode()
         else:
             raise ValueError("PRs with multiple files aren't supported yet.")
-
-
-@dataclass
-class GithubIssue:
-    r"""Represents a GitHub issue.
-
-    Attributes:
-        title (str): The title of the issue.
-        body (str): The body/content of the issue.
-        number (int): The issue number.
-        file_path (str): The path of the file associated with the issue.
-        file_content (str): The content of the file associated with the issue.
-    """
-
-    def __init__(
-        self,
-        title: str,
-        body: str,
-        number: int,
-        file_path: str,
-        file_content: str,
-    ):
-        r"""Initialize a GithubIssue object.
-
-        Args:
-            title (str): The title of the GitHub issue.
-            body (str): The body/content of the GitHub issue.
-            number (int): The issue number.
-            file_path (str): The path of the file associated with the issue.
-            file_content (str): The content of the file associated with the issue.
-        """
-        self.title = title
-        self.body = body
-        self.number = number
-        self.file_path = file_path
-        self.file_content = file_content
-
-    def summary(self):
-        r"""Returns a summary of the issue.
-
-        Returns:
-            str: A string containing the title, body, number, file path, and file content of the issue.
-        """
-        return (
-            f"Title: {self.title}\n"
-            f"Body: {self.body}\n"
-            f"Number: {self.number}\n"
-            f"File Path: {self.file_path}\n"
-            f"File Content: {self.file_content}"
-        )
