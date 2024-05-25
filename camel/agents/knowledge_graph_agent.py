@@ -147,7 +147,7 @@ class KnowledgeGraphAgent(ChatAgent):
 
         return content
 
-    def __validate_node(self, node: Node) -> bool:
+    def _validate_node(self, node: Node) -> bool:
         r"""Validate if the object is a valid Node.
 
         Args:
@@ -162,7 +162,7 @@ class KnowledgeGraphAgent(ChatAgent):
             and isinstance(node.type, str)
         )
 
-    def __validate_relationship(self, relationship: Relationship) -> bool:
+    def _validate_relationship(self, relationship: Relationship) -> bool:
         r"""Validate if the object is a valid Relationship.
 
         Args:
@@ -173,8 +173,8 @@ class KnowledgeGraphAgent(ChatAgent):
         """
         return (
             isinstance(relationship, Relationship)
-            and self.__validate_node(relationship.subj)
-            and self.__validate_node(relationship.obj)
+            and self._validate_node(relationship.subj)
+            and self._validate_node(relationship.obj)
             and isinstance(relationship.type, str)
         )
 
@@ -202,7 +202,7 @@ class KnowledgeGraphAgent(ChatAgent):
             properties = eval(properties)
             if id not in nodes:
                 node = Node(id, type, properties)
-                if self.__validate_node(node):
+                if self._validate_node(node):
                     nodes[id] = node
 
         # Extract relationships
@@ -215,7 +215,7 @@ class KnowledgeGraphAgent(ChatAgent):
                 subj = nodes[subj_id]
                 obj = nodes[obj_id]
                 relationship = Relationship(subj, obj, rel_type, properties)
-                if self.__validate_relationship(relationship):
+                if self._validate_relationship(relationship):
                     relationships.append(relationship)
 
         return GraphElement(list(nodes.values()), relationships, self.element)
