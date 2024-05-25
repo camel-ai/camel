@@ -17,7 +17,6 @@ from camel.agents import ChatAgent
 from camel.configs import FunctionCallingConfig
 from camel.messages import BaseMessage
 from camel.toolkits import GithubToolkit
-from camel.types import ModelType
 from camel.utils import print_text_animated
 
 
@@ -116,7 +115,7 @@ def solve_issue(
 
 def main(model=None) -> None:
     repo_name = "camel-ai/camel"
-    write_weekly_pr_summary(repo_name=repo_name, model=ModelType.GPT_4O)
+    write_weekly_pr_summary(repo_name=repo_name, model=model)
 
 
 if __name__ == "__main__":
