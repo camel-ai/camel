@@ -159,7 +159,7 @@ class GithubToolkit(BaseToolkit):
         except ImportError:
             raise ImportError(
                 "Please install `github` first. You can install it by running "
-                "`pip install wikipedia`."
+                "`pip install pygithub`."
             )
         self.github = Github(auth=Auth.Token(access_token))
         self.repo = self.github.get_repo(repo_name)
