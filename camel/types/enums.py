@@ -278,6 +278,6 @@ class ModelPlatformType(Enum):
         return self is ModelPlatformType.ANTHROPIC
 
     @property
-    def is_opensource(self) -> bool:
+    def is_open_source(self) -> bool:
         r"""Returns whether this platform is opensource."""
         return self is ModelPlatformType.OPENSOURCE

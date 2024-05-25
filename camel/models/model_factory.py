@@ -54,7 +54,7 @@ class ModelFactory:
             model_class = OpenAIModel
         elif model_type == ModelType.STUB:
             model_class = StubModel
-        elif model_platform.is_opensource and model_type.is_open_source:
+        elif model_platform.is_open_source and model_type.is_open_source:
             model_class = OpenSourceModel
         elif model_platform.is_anthropic and model_type.is_anthropic:
             model_class = AnthropicModel
