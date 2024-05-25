@@ -243,7 +243,7 @@ class GithubToolkit(BaseToolkit):
 
         Args:
             days (int): The number of days to retrieve merged pull requests for.
-            state (Optional[str]): A specific state of PRs to retrieve (open/closed).
+            state (str, optional): A specific state of PRs to retrieve (open/closed).
 
         Returns:
             list: A list of merged pull request summaries.
