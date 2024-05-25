@@ -38,14 +38,13 @@ class OpenAIModel(BaseModelBackend):
                 be fed into openai.ChatCompletion.create().
         """
         super().__init__(model_type, model_config_dict)
-        url = os.environ.get('OPENAI_API_BASE_URL', None)
-        # self._client = OpenAI(timeout=60, max_retries=3, base_url=url)
         from mistralai.client import MistralClient
         from camel.types import ModelType
         if self.model_type == ModelType.MISTRAL_7B:
             self._client = MistralClient()
         else:
-            self._client = OpenAI()
+            url = os.environ.get('OPENAI_API_BASE_URL', None)
+            self._client = OpenAI(timeout=60, max_retries=3, base_url=url)
         self._token_counter: Optional[BaseTokenCounter] = None
 
     @property
@@ -84,7 +83,7 @@ class OpenAIModel(BaseModelBackend):
                 # **self.model_config_dict,
             )
         else:
-            response = self._client.completions.create(
+            response = self._client.chat.completions.create(
                 messages=messages,
                 model=self.model_type.value,
                 **self.model_config_dict,

@@ -435,7 +435,6 @@ class ChatAgent(BaseAgent):
         response_id: str = ""
         # All choices in one response share one role
         for chunk in response:
-            print(f"chunk:{chunk}")
             response_id = chunk.id
             for choice in chunk.choices:
                 index = choice.index
