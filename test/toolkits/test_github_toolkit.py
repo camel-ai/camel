@@ -15,6 +15,7 @@
 from unittest.mock import MagicMock, patch
 
 from github import Auth, Github
+from github.ContentFile import ContentFile
 
 from camel.toolkits.github_toolkit import GithubIssue, GithubToolkit
 
@@ -133,6 +134,14 @@ def test_create_pull_request(monkeypatch):
     mock_pr_response.title = "[GitHub Agent] Solved issue: Time complexity for product_of_array_except_self.py"
     mock_pr_response.body = "Fixes #1"
     github_toolkit.repo.create_pull.return_value = mock_pr_response
+
+    # Create a MagicMock that mimics ContentFile
+    mock_content_file = MagicMock(spec=ContentFile)
+    mock_content_file.path = "path/to/file"
+    mock_content_file.sha = "dummy_sha"
+
+    # Ensure get_contents returns the mocked ContentFile
+    github_toolkit.repo.get_contents.return_value = mock_content_file
 
     # Create a pull request
     pr = github_toolkit.create_pull_request(
