@@ -97,13 +97,13 @@ class GithubToolkit:
         issues = self.repo.get_issues(state='open')
         return [
             GithubIssue(
-                issue.title,
-                issue.body,
-                issue.number,
-                issue.labels[
+                title=issue.title,
+                body=issue.body,
+                number=issue.number,
+                file_path=issue.labels[
                     0
                 ].name,  # for now we require file path to be the first label in the PR
-                self.retrieve_file_content(issue.labels[0].name),
+                file_content=self.retrieve_file_content(issue.labels[0].name),
             )
             for issue in issues
             if not issue.pull_request
@@ -195,30 +195,29 @@ class GithubIssue:
         file_content (str): The content of the file associated with the issue.
     """
 
-    class GitHubToolkit:
-        def __init__(
-            self,
-            title: str,
-            body: str,
-            number: int,
-            file_path: str,
-            file_content: str,
-        ):
-            """
-            Initialize a GitHubToolkit object.
+    def __init__(
+        self,
+        title: str,
+        body: str,
+        number: int,
+        file_path: str,
+        file_content: str,
+    ):
+        """
+        Initialize a GithubIssue object.
 
-            Args:
-                title (str): The title of the GitHub issue.
-                body (str): The body/content of the GitHub issue.
-                number (int): The issue number.
-                file_path (str): The path of the file associated with the issue.
-                file_content (str): The content of the file associated with the issue.
-            """
-            self.title = title
-            self.body = body
-            self.number = number
-            self.file_path = file_path
-            self.file_content = file_content
+        Args:
+            title (str): The title of the GitHub issue.
+            body (str): The body/content of the GitHub issue.
+            number (int): The issue number.
+            file_path (str): The path of the file associated with the issue.
+            file_content (str): The content of the file associated with the issue.
+        """
+        self.title = title
+        self.body = body
+        self.number = number
+        self.file_path = file_path
+        self.file_content = file_content
 
     def summary(self):
         """

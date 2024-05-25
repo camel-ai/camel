@@ -71,11 +71,11 @@ def test_retrieve_issue_list(monkeypatch):
 
     # Assert the returned issue list
     expected_issue = GithubIssue(
-        "Test Issue",
-        "This is a test issue",
-        1,
-        "path/to/file",
-        "This is the content of the file",
+        title="Test Issue",
+        body="This is a test issue",
+        number=1,
+        file_path="path/to/file",
+        file_content="This is the content of the file",
     )
     assert issue_list == [
         expected_issue
@@ -111,11 +111,11 @@ def test_retrieve_issue(monkeypatch):
 
     # Assert the returned issue list
     expected_issue = GithubIssue(
-        "Test Issue",
-        "This is a test issue",
-        1,
-        "path/to/file",
-        "This is the content of the file",
+        title="Test Issue",
+        body="This is a test issue",
+        number=1,
+        file_path="path/to/file",
+        file_content="This is the content of the file",
     )
     assert (
         issue == expected_issue.summary()
@@ -156,11 +156,11 @@ def test_create_pull_request(monkeypatch):
 def test_github_issue():
     # Create a GithubIssue object
     issue = GithubIssue(
-        "Test Issue",
-        "This is a test issue",
-        1,
-        "path/to/file",
-        "This is the content of the file",
+        title="Test Issue",
+        body="This is a test issue",
+        number=1,
+        file_path="path/to/file",
+        file_content="This is the content of the file",
     )
 
     # Assert the attributes of the GithubIssue object
