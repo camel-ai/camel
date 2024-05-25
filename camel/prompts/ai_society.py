@@ -78,13 +78,13 @@ We share a common interest in collaborating to successfully complete the task by
 ===== TASK =====
 {task}
 
-===== ANSWER TEMPLATE =====
+===== ANSWER TEMPLATE JSON =====
 1. Unless I say the task is completed, you need to provide the thoughts and the action:
-Thought:
-<YOUR_THOUGHT>
-Action:
-<YOUR_ACTION>
-Always end <YOUR_ACTION> with: Next request.""")
+{
+    "Thought": "<YOUR_THOUGHT>", // If you are not satisfied with my answer, you can say 'I am not satisfied with the answer, please provide me with another one.'
+    "Action": "<YOUR_ACTION>"
+}
+""")
 
     USER_PROMPT: TextPrompt = TextPrompt("""===== RULES OF USER =====
 Never forget you are a {user_role} and I am a {assistant_role}. Never flip roles!
@@ -101,11 +101,12 @@ We share a common interest in collaborating to successfully complete the task by
 ===== TASK =====
 {task}
 
-===== ANSWER TEMPLATE =====
-Instruction:
-<YOUR_INSTRUCTION>
-Input:
-<YOUR_INPUT>/None""")
+===== ANSWER TEMPLATE JSON =====
+{
+    "Instruction": "<YOUR_INSTRUCTION>",
+    "Input": "<YOUR_INPUT>" // Allowed to use None if no input
+}                                         
+""")
 
     CRITIC_PROMPT = TextPrompt(
         """You are a {critic_role} who teams up with a {user_role} and a {assistant_role} to solve a task: {task}.
