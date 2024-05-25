@@ -17,7 +17,53 @@ from camel.agents import ChatAgent
 from camel.configs import FunctionCallingConfig
 from camel.messages import BaseMessage
 from camel.toolkits import GithubToolkit
+from camel.types import ModelType
 from camel.utils import print_text_animated
+
+
+def write_weekly_pr_summary(repo_name, model=None):
+    prompt = """
+    You need to write a summary of the pull requests that were merged in the last week.
+    You can use the provided github function retrieve_merged_pull_requests to retrieve the list of pull requests that were merged in the last week.
+    The function will return a list of pull requests with the following properties: title, body, and diffs.
+    Diffs is a list of dictionaries with the following properties: filename, diff.
+    You will have to look closely at each diff to understand the changes that were made in each pull request.
+    Output a twitter post that describes recent changes in the project and thanks the contributors.
+
+    Here is an example of a summary for one pull request:
+    📢 We've improved function calling in the 🐪 CAMEL-AI framework!
+    This update enhances the handling of various docstring styles and supports enum types, ensuring more accurate and reliable function calls. 
+    Thanks to our contributor Jiahui Zhang for making this possible.
+    """
+    print(Fore.YELLOW + f"Final prompt:\n{prompt}\n")
+
+    toolkit = GithubToolkit(repo_name=repo_name)
+    assistant_sys_msg = BaseMessage.make_assistant_message(
+        role_name="Marketing Manager",
+        content=f"""
+        You are an experienced marketing manager responsible for posting weekly updates about the status 
+        of an open source project {repo_name} on the project's blog.
+        """,
+    )
+    assistant_model_config = FunctionCallingConfig.from_openai_function_list(
+        function_list=toolkit.get_tools(),
+        kwargs=dict(temperature=0.0),
+    )
+    agent = ChatAgent(
+        assistant_sys_msg,
+        model_type=model,
+        model_config=assistant_model_config,
+        function_list=toolkit.get_tools(),
+    )
+    agent.reset()
+
+    user_msg = BaseMessage.make_user_message(role_name="User", content=prompt)
+    assistant_response = agent.step(user_msg)
+
+    if len(assistant_response.msgs) > 0:
+        print_text_animated(
+            Fore.GREEN + f"Agent response:\n{assistant_response.msg.content}\n"
+        )
 
 
 def solve_issue(
@@ -68,8 +114,8 @@ def solve_issue(
 
 
 def main(model=None) -> None:
-    repo_name = "camel-ai/test-github-agent"
-    solve_issue(repo_name=repo_name, issue_number=1, model=model)
+    repo_name = "camel-ai/camel"
+    write_weekly_pr_summary(repo_name=repo_name, model=ModelType.GPT_4O)
 
 
 if __name__ == "__main__":

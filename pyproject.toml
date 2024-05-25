@@ -81,7 +81,6 @@ cohere = { version = "^4.56", optional = true }
 pytest = { version = "^7", optional = true}
 mock = { version = "^5", optional = true}
 
-
 [tool.poetry.extras]
 test = ["pytest", "mock"]
 
@@ -270,6 +269,6 @@ module = [
     "cohere",
     "sentence_transformers.*",
     "pymilvus",
-    "pygithub"
+    "pygithub",
 ]
 ignore_missing_imports = true
