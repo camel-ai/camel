@@ -114,7 +114,7 @@ class KnowledgeGraphAgent(ChatAgent):
         self,
         element: Union[str, Element],
         parse_graph_elements: bool = False,
-    ) -> str:
+    ) -> Union[str, GraphElement]:
         r"""Run the agent to extract node and relationship information.
 
         Args:
@@ -123,7 +123,8 @@ class KnowledgeGraphAgent(ChatAgent):
                 `GraphElement`. Defaults to `False`.
 
         Returns:
-            str  GraphElement: The extracted node and relationship information.
+            Union[str, GraphElement]: The extracted node and relationship
+                information. If `parse_graph_elements` is `True` then return `GraphElement`, else return `str`.
         """
         self.reset()
         self.element = element
@@ -146,7 +147,7 @@ class KnowledgeGraphAgent(ChatAgent):
 
         return content
 
-    def _validate_node(self, node: Node) -> bool:
+    def __validate_node(self, node: Node) -> bool:
         r"""Validate if the object is a valid Node.
 
         Args:
@@ -161,7 +162,7 @@ class KnowledgeGraphAgent(ChatAgent):
             and isinstance(node.type, str)
         )
 
-    def _validate_relationship(self, relationship: Relationship) -> bool:
+    def __validate_relationship(self, relationship: Relationship) -> bool:
         r"""Validate if the object is a valid Relationship.
 
         Args:
@@ -172,8 +173,8 @@ class KnowledgeGraphAgent(ChatAgent):
         """
         return (
             isinstance(relationship, Relationship)
-            and self._validate_node(relationship.subj)
-            and self._validate_node(relationship.obj)
+            and self.__validate_node(relationship.subj)
+            and self.__validate_node(relationship.obj)
             and isinstance(relationship.type, str)
         )
 
@@ -186,38 +187,35 @@ class KnowledgeGraphAgent(ChatAgent):
         Returns:
             GraphElement: The parsed graph elements.
         """
-        # NOTE: The validation for relationships is not finished.
         import re
 
         # Regular expressions to extract nodes and relationships
         node_pattern = r"Node\(id='(.*?)', type='(.*?)', properties=(.*?)\)"
-        rel_pattern = r"Relationship\(subj=(.*?), obj=(.*?), type='(.*?)', properties=(.*?)\)"
+        rel_pattern = r"Relationship\(subj=Node\(id='(.*?)', type='(.*?)'\), obj=Node\(id='(.*?)', type='(.*?)'\), type='(.*?)', properties=\{(.*?)\}\)"
 
-        nodes = []
+        nodes = {}
         relationships = []
 
         # Extract nodes
         for match in re.finditer(node_pattern, input_string):
             id, type, properties = match.groups()
             properties = eval(properties)
-            node = Node(id, type, properties)
-            if self._validate_node(node):
-                nodes.append(node)
+            if id not in nodes:
+                node = Node(id, type, properties)
+                if self.__validate_node(node):
+                    nodes[id] = node
 
         # Extract relationships
         for match in re.finditer(rel_pattern, input_string):
-            subj_str, obj_str, rel_type, properties = match.groups()
-            obj_match = re.search(r"Node\(.*?\)", obj_str)
-            if obj_match:
-                subj = next(
-                    node for node in nodes if node.id == eval(subj_str).id
-                )
-                obj = next(
-                    node for node in nodes if node.id == eval(obj_str).id
-                )
-                properties = eval(properties)
-                rel = Relationship(subj, obj, rel_type, properties)
-                if self._validate_relationship(rel):
-                    relationships.append(rel)
+            subj_id, subj_type, obj_id, obj_type, rel_type, properties_str = (
+                match.groups()
+            )
+            properties = eval(properties_str)
+            if subj_id in nodes and obj_id in nodes:
+                subj = nodes[subj_id]
+                obj = nodes[obj_id]
+                relationship = Relationship(subj, obj, rel_type, properties)
+                if self.__validate_relationship(relationship):
+                    relationships.append(relationship)
 
-        return GraphElement(nodes, relationships, self.element)
+        return GraphElement(list(nodes.values()), relationships, self.element)

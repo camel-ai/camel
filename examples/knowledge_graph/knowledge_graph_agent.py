@@ -19,17 +19,22 @@ uio = UnstructuredIO()
 kg_agent = KnowledgeGraphAgent()
 
 # Set example text input
-text_example = """CAMEL-AI.org is an open-source community dedicated to the study of autonomous and communicative agents. We believe that studying these agents on a large scale offers valuable insights into their behaviors, capabilities, and potential risks. To facilitate research in this field, we provide, implement, and support various types of agents, tasks, prompts, models, datasets, and simulated environments.
+text_example = """CAMEL-AI.org is an open-source community dedicated to the study of autonomous and communicative agents. 
 """
 
 # Create an element from given text
 element_example = uio.create_element_from_text(text=text_example)
 
 # Let KnowledgeGraph Agent extract node and relationship information
-ans = kg_agent.run(element_example)
+ans_str = kg_agent.run(element_example, parse_graph_elements=False)
+ans_GraphElement = kg_agent.run(element_example, parse_graph_elements=True)
 
-# Get output
-print(ans)
+# Get str output
+print(ans_str)
+
+# Get GraphElement output
+print(ans_GraphElement)
+
 """
 ===============================================================================
 Nodes:
@@ -39,36 +44,18 @@ Node(id='community', type='Concept', properties={'agent_generated'})
 Node(id='study', type='Concept', properties={'agent_generated'})
 Node(id='autonomous agents', type='Concept', properties={'agent_generated'})
 Node(id='communicative agents', type='Concept', properties={'agent_generated'})
-Node(id='insights', type='Concept', properties={'agent_generated'})
-Node(id='behaviors', type='Concept', properties={'agent_generated'})
-Node(id='capabilities', type='Concept', properties={'agent_generated'})
-Node(id='risks', type='Concept', properties={'agent_generated'})
-Node(id='research', type='Concept', properties={'agent_generated'})
-Node(id='field', type='Concept', properties={'agent_generated'})
-Node(id='agents', type='Concept', properties={'agent_generated'})
-Node(id='tasks', type='Concept', properties={'agent_generated'})
-Node(id='prompts', type='Concept', properties={'agent_generated'})
-Node(id='models', type='Concept', properties={'agent_generated'})
-Node(id='datasets', type='Concept', properties={'agent_generated'})
-Node(id='simulated environments', type='Concept', properties={'agent_generated'})
 
 Relationships:
 
-Relationship(subj=Node(id='CAMEL-AI.org', type='Organization'), obj=Node(id='community', type='Concept'), type='DedicatedTo', properties={'agent_generated'})
-Relationship(subj=Node(id='CAMEL-AI.org', type='Organization'), obj=Node(id='study', type='Concept'), type='DedicatedTo', properties={'agent_generated'})
-Relationship(subj=Node(id='CAMEL-AI.org', type='Organization'), obj=Node(id='autonomous agents', type='Concept'), type='DedicatedTo', properties={'agent_generated'})
-Relationship(subj=Node(id='CAMEL-AI.org', type='Organization'), obj=Node(id='communicative agents', type='Concept'), type='DedicatedTo', properties={'agent_generated'})
-Relationship(subj=Node(id='study', type='Concept'), obj=Node(id='insights', type='Concept'), type='Offers', properties={'agent_generated'})
-Relationship(subj=Node(id='study', type='Concept'), obj=Node(id='behaviors', type='Concept'), type='Offers', properties={'agent_generated'})
-Relationship(subj=Node(id='study', type='Concept'), obj=Node(id='capabilities', type='Concept'), type='Offers', properties={'agent_generated'})
-Relationship(subj=Node(id='study', type='Concept'), obj=Node(id='risks', type='Concept'), type='Offers', properties={'agent_generated'})
-Relationship(subj=Node(id='CAMEL-AI.org', type='Organization'), obj=Node(id='research', type='Concept'), type='Facilitate', properties={'agent_generated'})
-Relationship(subj=Node(id='research', type='Concept'), obj=Node(id='field', type='Concept'), type='In', properties={'agent_generated'})
-Relationship(subj=Node(id='research', type='Concept'), obj=Node(id='agents', type='Concept'), type='In', properties={'agent_generated'})
-Relationship(subj=Node(id='research', type='Concept'), obj=Node(id='tasks', type='Concept'), type='In', properties={'agent_generated'})
-Relationship(subj=Node(id='research', type='Concept'), obj=Node(id='prompts', type='Concept'), type='In', properties={'agent_generated'})
-Relationship(subj=Node(id='research', type='Concept'), obj=Node(id='models', type='Concept'), type='In', properties={'agent_generated'})
-Relationship(subj=Node(id='research', type='Concept'), obj=Node(id='datasets', type='Concept'), type='In', properties={'agent_generated'})
-Relationship(subj=Node(id='research', type='Concept'), obj=Node(id='simulated environments', type='Concept'), type='In', properties={'agent_generated'})
+Relationship(subj=Node(id='CAMEL-AI.org', type='Organization'), obj=Node(id='community', type='Concept'), type='FocusOn', properties={'agent_generated'})
+Relationship(subj=Node(id='CAMEL-AI.org', type='Organization'), obj=Node(id='study', type='Concept'), type='FocusOn', properties={'agent_generated'})
+Relationship(subj=Node(id='CAMEL-AI.org', type='Organization'), obj=Node(id='autonomous agents', type='Concept'), type='FocusOn', properties={'agent_generated'})
+Relationship(subj=Node(id='CAMEL-AI.org', type='Organization'), obj=Node(id='communicative agents', type='Concept'), type='FocusOn', properties={'agent_generated'})
+===============================================================================
+"""
+
+"""
+===============================================================================
+GraphElement(nodes=[Node(id='CAMEL-AI.org', type='Organization', properties={'agent_generated'}), Node(id='community', type='Concept', properties={'agent_generated'}), Node(id='study', type='Concept', properties={'agent_generated'}), Node(id='autonomous agents', type='Concept', properties={'agent_generated'}), Node(id='communicative agents', type='Concept', properties={'agent_generated'})], relationships=[Relationship(subj=Node(id='CAMEL-AI.org', type='Organization', properties={'agent_generated'}), obj=Node(id='community', type='Concept', properties={'agent_generated'}), type='FocusOn', properties={"'agent_generated'"}), Relationship(subj=Node(id='CAMEL-AI.org', type='Organization', properties={'agent_generated'}), obj=Node(id='study', type='Concept', properties={'agent_generated'}), type='FocusOn', properties={"'agent_generated'"}), Relationship(subj=Node(id='CAMEL-AI.org', type='Organization', properties={'agent_generated'}), obj=Node(id='autonomous agents', type='Concept', properties={'agent_generated'}), type='FocusOn', properties={"'agent_generated'"}), Relationship(subj=Node(id='CAMEL-AI.org', type='Organization', properties={'agent_generated'}), obj=Node(id='communicative agents', type='Concept', properties={'agent_generated'}), type='FocusOn', properties={"'agent_generated'"})], source=<unstructured.documents.elements.Text object at 0x7fd050e7bd90>)
 ===============================================================================
 """
