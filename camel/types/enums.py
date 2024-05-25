@@ -47,6 +47,11 @@ class ModelType(Enum):
     CLAUDE_3_SONNET = "claude-3-sonnet-20240229"
     CLAUDE_3_HAIKU = "claude-3-haiku-20240307"
 
+    # Mistral AI Model
+    MISTRAL_SMALL = "mistral-small-latest"
+    MISTRAL_MEDIUM = "mistral-medium-latest"
+    MISTRAL_LARGE = "mistral-large-latest"
+
     @property
     def value_for_tiktoken(self) -> str:
         return self.value if self is not ModelType.STUB else "gpt-3.5-turbo"
@@ -88,6 +93,19 @@ class ModelType(Enum):
         }
 
     @property
+    def is_mistral(self) -> bool:
+        r"""Returns whether this type of models is Mistral-released model.
+
+        Returns:
+            bool: Whether this type of models is Mistral.
+        """
+        return self in {
+            ModelType.MISTRAL_SMALL,
+            ModelType.MISTRAL_MEDIUM,
+            ModelType.MISTRAL_LARGE,
+        }
+
+    @property
     def token_limit(self) -> int:
         r"""Returns the maximum token limit for a given model.
         Returns:
@@ -95,34 +113,40 @@ class ModelType(Enum):
         """
         if self is ModelType.GPT_3_5_TURBO:
             return 16385
-        elif self is ModelType.GPT_4:
+        if self is ModelType.GPT_4:
             return 8192
-        elif self is ModelType.GPT_4_32K:
+        if self is ModelType.GPT_4_32K:
             return 32768
-        elif self is ModelType.GPT_4_TURBO:
+        if self is ModelType.GPT_4_TURBO:
             return 128000
-        elif self is ModelType.GPT_4O:
+        if self is ModelType.GPT_4O:
             return 128000
-        elif self is ModelType.STUB:
+        if self is ModelType.STUB:
             return 4096
-        elif self is ModelType.LLAMA_2:
+        if self is ModelType.LLAMA_2:
             return 4096
-        elif self is ModelType.VICUNA:
+        if self is ModelType.VICUNA:
             # reference: https://lmsys.org/blog/2023-03-30-vicuna/
             return 2048
-        elif self is ModelType.VICUNA_16K:
+        if self is ModelType.VICUNA_16K:
             return 16384
         if self in {ModelType.CLAUDE_2_0, ModelType.CLAUDE_INSTANT_1_2}:
             return 100_000
-        elif self in {
+        if self in {
             ModelType.CLAUDE_2_1,
             ModelType.CLAUDE_3_OPUS,
             ModelType.CLAUDE_3_SONNET,
             ModelType.CLAUDE_3_HAIKU,
         }:
             return 200_000
-        else:
-            raise ValueError("Unknown model type")
+        if self in {
+            ModelType.MISTRAL_SMALL,
+            ModelType.MISTRAL_MEDIUM,
+            ModelType.MISTRAL_LARGE,
+        }:
+            return 32_000
+
+        raise ValueError("Unknown model type")
 
     def validate_model_name(self, model_name: str) -> bool:
         r"""Checks whether the model type and the model name matches.

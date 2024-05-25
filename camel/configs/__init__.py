@@ -13,6 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .anthropic_config import ANTHROPIC_API_PARAMS, AnthropicConfig
 from .base_config import BaseConfig
+from .mistral_config import MISTRAL_API_PARAMS, MistralConfig
 from .openai_config import (
     OPENAI_API_PARAMS,
     OPENAI_API_PARAMS_WITH_FUNCTIONS,
@@ -29,5 +30,7 @@ __all__ = [
     'OPENAI_API_PARAMS_WITH_FUNCTIONS',
     'AnthropicConfig',
     'ANTHROPIC_API_PARAMS',
+    'MISTRAL_API_PARAMS',
+    'MistralConfig',
     'OpenSourceConfig',
 ]

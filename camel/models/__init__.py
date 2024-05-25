@@ -13,6 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .anthropic_model import AnthropicModel
 from .base_model import BaseModelBackend
+from .mistral_model import MistralModel
 from .model_factory import ModelFactory
 from .open_source_model import OpenSourceModel
 from .openai_model import OpenAIModel
@@ -22,6 +23,7 @@ __all__ = [
     'BaseModelBackend',
     'OpenAIModel',
     'AnthropicModel',
+    'MistralModel',
     'StubModel',
     'OpenSourceModel',
     'ModelFactory',

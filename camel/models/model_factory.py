@@ -15,6 +15,7 @@ from typing import Any, Dict
 
 from camel.models.anthropic_model import AnthropicModel
 from camel.models.base_model import BaseModelBackend
+from camel.models.mistral_model import MistralModel
 from camel.models.open_source_model import OpenSourceModel
 from camel.models.openai_model import OpenAIModel
 from camel.models.stub_model import StubModel
@@ -54,6 +55,8 @@ class ModelFactory:
             model_class = OpenSourceModel
         elif model_type.is_anthropic:
             model_class = AnthropicModel
+        elif model_type.is_mistral:
+            model_class = MistralModel
         else:
             raise ValueError(f"Unknown model type `{model_type}` is input")
 

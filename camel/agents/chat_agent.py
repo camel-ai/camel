@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
 from camel.agents.base import BaseAgent
-from camel.configs import ChatGPTConfig
+from camel.configs import AnthropicConfig, ChatGPTConfig, MistralConfig
 from camel.memories import (
     AgentMemory,
     ChatHistoryMemory,
@@ -132,7 +132,15 @@ class ChatAgent(BaseAgent):
             for func in function_list:
                 self.func_dict[func.get_function_name()] = func.func
 
-        self.model_config = model_config or ChatGPTConfig()
+        if model_config is None:
+            if self.model_type.is_openai:
+                self.model_config = ChatGPTConfig()
+            if self.model_type.is_anthropic:
+                self.model_config = AnthropicConfig()
+            if self.model_type.is_mistral:
+                self.model_config = MistralConfig()
+        else:
+            self.model_config = model_config
 
         self.model_backend: BaseModelBackend = ModelFactory.create(
             self.model_type, self.model_config.__dict__
