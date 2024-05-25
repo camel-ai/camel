@@ -258,7 +258,7 @@ def summarize_text(text: str, query: str) -> str:
     )
     summary_prompt = summary_prompt.format(query=query)
     # Max length of each chunk
-    max_len = 3000
+    max_len = 4096
     results = ""
     chunks = create_chunks(text, max_len)
     # Summarize
@@ -283,7 +283,7 @@ def summarize_text(text: str, query: str) -> str:
 def search_google_and_summarize(query: str) -> str:
     r"""Search webs for information. Given a query, this function will use
     the Google search engine to search for related information from the
-    internet, and then return a summarized answer.
+    internet, and then return a searched answer.
 
     Args:
         query (str): Question you want to be answered.
@@ -298,18 +298,21 @@ def search_google_and_summarize(query: str) -> str:
             url = item.get("url")
             # Extract text
             text = text_extract_from_web(str(url))
-            # Using chatgpt summarise text
-            answer = summarize_text(text, query)
+            chunk_size = 2048
+            chunks = create_chunks(text, chunk_size)
+            for chunk in chunks:
+                # Using chatgpt summarise text
+                answer = summarize_text(chunk, query)
 
-            # Let chatgpt decide whether to continue search or not
-            prompt = TextPrompt(
-                '''Do you think the answer: {answer} can answer the query:
-                {query}. Use only 'yes' or 'no' to answer.'''
-            )
-            prompt = prompt.format(answer=answer, query=query)
-            reply = prompt_single_step_agent(prompt)
-            if "yes" in str(reply).lower():
-                return answer
+                # Let chatgpt decide whether to continue search or not
+                prompt = TextPrompt(
+                    '''Do you think the answer: {answer} can answer the query:
+                    {query}. Use only 'yes' or 'no' to answer.'''
+                )
+                prompt = prompt.format(answer=answer, query=query)
+                reply = prompt_single_step_agent(prompt)
+                if "yes" in str(reply).lower():
+                    return f"{url} search result:\n{answer}"
 
     return "Failed to find the answer from google search."
 
