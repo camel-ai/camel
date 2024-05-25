@@ -51,9 +51,8 @@ class OpenAIAudioModels:
                 Defaults to `AudioModelType.TTS_1`.
             voice (VoiceType, optional): The voice to be used for generating
                 speech. Defaults to `VoiceType.ALLOY`.
-            storage_path (str, optional): The local
-                path to store the generated speech file if provided, defaults
-                to `None`.
+            storage_path (str, optional): The local path to store the
+                generated speech file if provided, defaults to `None`.
             **kwargs (Any): Extra kwargs passed to the TTS API.
 
         Returns:
@@ -69,6 +68,7 @@ class OpenAIAudioModels:
             # Model only support at most 4096 characters one time.
             max_chunk_size = 4095
             audio_chunks = []
+            chunk_index = 0
             if len(input) > max_chunk_size:
                 while input:
                     if len(input) <= max_chunk_size:
@@ -88,6 +88,22 @@ class OpenAIAudioModels:
                         input=chunk,
                         **kwargs,
                     )
+                    if storage_path:
+                        try:
+                            # Create a new storage path for each chunk
+                            file_name, file_extension = os.path.splitext(
+                                storage_path
+                            )
+                            new_storage_path = (
+                                f"{file_name}_{chunk_index}{file_extension}"
+                            )
+                            response.write_to_file(new_storage_path)
+                            chunk_index += 1
+                        except Exception as e:
+                            raise Exception(
+                                "Error during writing the file"
+                            ) from e
+
                     audio_chunks.append(response)
                 return audio_chunks
 
