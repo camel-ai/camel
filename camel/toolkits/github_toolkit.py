@@ -106,14 +106,14 @@ class GithubPullRequest:
         self,
         title: str,
         body: str,
-        diffs: list[GithubPullRequestDiff],
+        diffs: List[GithubPullRequestDiff],
     ) -> None:
         r"""Initialize a GithubPullRequest object.
 
         Args:
             title (str): The title of the GitHub pull request.
             body (str): The body/content of the GitHub pull request.
-            diffs (list[GithubPullRequestDiff]): A list of diffs for the pull request.
+            diffs (List[GithubPullRequestDiff]): A list of diffs for the pull request.
         """
         self.title = title
         self.body = body
