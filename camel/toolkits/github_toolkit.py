@@ -18,10 +18,11 @@ from typing import Optional
 
 from camel.functions import OpenAIFunction
 
+from .base import BaseToolkit
 
-class GithubToolkit:
-    """
-    A class representing a toolkit for interacting with GitHub repositories.
+
+class GithubToolkit(BaseToolkit):
+    r"""A class representing a toolkit for interacting with GitHub repositories.
 
     This class provides methods for retrieving open issues, retrieving specific issues,
     and creating pull requests in a GitHub repository.
@@ -33,8 +34,7 @@ class GithubToolkit:
     """
 
     def __init__(self, repo_name: str, access_token: Optional[str] = None):
-        """
-        Initializes a new instance of the GitHubToolkit class.
+        r"""Initializes a new instance of the GitHubToolkit class.
 
         Args:
             repo_name (str): The name of the GitHub repository.
@@ -55,8 +55,7 @@ class GithubToolkit:
         self.repo = self.github.get_repo(repo_name)
 
     def get_tools(self):
-        """
-        Returns a list of OpenAIFunction objects representing the functions in the toolkit.
+        r"""Returns a list of OpenAIFunction objects representing the functions in the toolkit.
 
         Returns:
             List[OpenAIFunction]: A list of OpenAIFunction objects representing the functions in the toolkit.
@@ -68,8 +67,7 @@ class GithubToolkit:
         ]
 
     def get_github_access_token(self) -> str:
-        """
-        Retrieve the GitHub access token from environment variables.
+        r"""Retrieve the GitHub access token from environment variables.
 
         Returns:
             str: A string containing the GitHub access token.
@@ -88,8 +86,7 @@ class GithubToolkit:
         return GITHUB_ACCESS_TOKEN
 
     def retrieve_issue_list(self):
-        """
-        Retrieve a list of open issues from the repository.
+        r"""Retrieve a list of open issues from the repository.
 
         Returns:
             A list of GithubIssue objects representing the open issues.
@@ -109,9 +106,8 @@ class GithubToolkit:
             if not issue.pull_request
         ]
 
-    def retrieve_issue(self, issue_number):
-        """
-        Retrieves an issue from a GitHub repository.
+    def retrieve_issue(self, issue_number: int):
+        r"""Retrieves an issue from a GitHub repository.
 
         This function retrieves an issue from a specified repository using the
         issue number.
@@ -129,10 +125,14 @@ class GithubToolkit:
         return None
 
     def create_pull_request(
-        self, file_path, new_content, pr_title, body, branch_name
+        self,
+        file_path: str,
+        new_content: str,
+        pr_title: str,
+        body: str,
+        branch_name: str,
     ):
-        """
-        Creates a pull request.
+        r"""Creates a pull request.
 
         This function creates a pull request in specified repository, which updates a
         file in the specific path with new content. The pull request description
@@ -152,25 +152,30 @@ class GithubToolkit:
         self.repo.create_git_ref(
             ref=f"refs/heads/{branch_name}", sha=sb.commit.sha
         )
+
         file = self.repo.get_contents(file_path)
-        self.repo.update_file(
-            file.path, body, new_content, file.sha, branch=branch_name
-        )
-        pr = self.repo.create_pull(
-            title=pr_title,
-            body=body,
-            head=branch_name,
-            base=self.repo.default_branch,
-        )
+        from github.ContentFile import ContentFile
 
-        if pr is not None:
-            return f"Title: {pr.title}\n" f"Body: {pr.body}\n"
+        if isinstance(file, ContentFile):
+            self.repo.update_file(
+                file.path, body, new_content, file.sha, branch=branch_name
+            )
+            pr = self.repo.create_pull(
+                title=pr_title,
+                body=body,
+                head=branch_name,
+                base=self.repo.default_branch,
+            )
+
+            if pr is not None:
+                return f"Title: {pr.title}\n" f"Body: {pr.body}\n"
+            else:
+                return "Failed to create pull request."
         else:
-            return "Failed to create pull request."
+            raise ValueError("PRs with multiple files aren't supported yet.")
 
-    def retrieve_file_content(self, file_path):
-        """
-        Retrieves the content of a file from the GitHub repository.
+    def retrieve_file_content(self, file_path: str):
+        r"""Retrieves the content of a file from the GitHub repository.
 
         Args:
             file_path (str): The path of the file to retrieve.
@@ -179,13 +184,18 @@ class GithubToolkit:
             str: The decoded content of the file.
         """
         file_content = self.repo.get_contents(file_path)
-        return file_content.decoded_content.decode()
+
+        from github.ContentFile import ContentFile
+
+        if isinstance(file_content, ContentFile):
+            return file_content.decoded_content.decode()
+        else:
+            raise ValueError("PRs with multiple files aren't supported yet.")
 
 
 @dataclass
 class GithubIssue:
-    """
-    Represents a GitHub issue.
+    r"""Represents a GitHub issue.
 
     Attributes:
         title (str): The title of the issue.
@@ -203,8 +213,7 @@ class GithubIssue:
         file_path: str,
         file_content: str,
     ):
-        """
-        Initialize a GithubIssue object.
+        r"""Initialize a GithubIssue object.
 
         Args:
             title (str): The title of the GitHub issue.
@@ -220,8 +229,7 @@ class GithubIssue:
         self.file_content = file_content
 
     def summary(self):
-        """
-        Returns a summary of the issue.
+        r"""Returns a summary of the issue.
 
         Returns:
             str: A string containing the title, body, number, file path, and file content of the issue.
