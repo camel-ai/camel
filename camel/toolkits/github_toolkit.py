@@ -14,8 +14,8 @@
 
 import os
 from dataclasses import dataclass
-from typing import List, Optional
 from datetime import datetime, timedelta
+from typing import List, Optional
 
 from camel.functions import OpenAIFunction
 
@@ -244,17 +244,19 @@ class GithubToolkit(BaseToolkit):
                 return issue.summary()
         return None
 
-    def retrieve_merged_pull_requests(self, days: int) -> list:
-        """
-        Retrieves a summary of merged pull requests from the repository.
-        The summary will be provided for the last 7 days.
+    def retrieve_merged_pull_requests(self, days: int) -> List:
+        r"""Retrieves a summary of merged pull requests from the repository.
+        The summary will be provided for the last specified number of days.
+
+        Args:
+            days (int): The number of days to retrieve merged pull requests for.
 
         Returns:
             list: A list of merged pull request summaries.
         """
         pull_requests = self.repo.get_pulls(state='closed')
         merged_prs = []
-        earliest_date: datetime = datetime.utcnow() - timedelta(days=14)
+        earliest_date: datetime = datetime.utcnow() - timedelta(days=days)
 
         for pr in pull_requests:
             if (
