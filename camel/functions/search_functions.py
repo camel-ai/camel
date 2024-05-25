@@ -370,5 +370,5 @@ def query_wolfram_alpha(query: str, is_detailed: bool) -> str:
 
 SEARCH_FUNCS: List[OpenAIFunction] = [
     OpenAIFunction(func)  # type: ignore[arg-type]
-    for func in [search_wiki, search_google_and_summarize, query_wolfram_alpha]
+    for func in [search_google_and_summarize, search_wiki]
 ]
