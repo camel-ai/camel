@@ -29,6 +29,7 @@ class ModelType(Enum):
     GPT_4_32K = "gpt-4-32k"
     GPT_4_TURBO = "gpt-4-turbo"
     GPT_4O = "gpt-4o"
+    MISTRAL_7B = "open-mistral-7b"
 
     STUB = "stub"
 
@@ -47,6 +48,9 @@ class ModelType(Enum):
     CLAUDE_3_SONNET = "claude-3-sonnet-20240229"
     CLAUDE_3_HAIKU = "claude-3-haiku-20240307"
 
+    # 
+    MISTRAL_7B_OPEN_SOURCE = "open-mistral-7b"
+
     @property
     def value_for_tiktoken(self) -> str:
         return self.value if self is not ModelType.STUB else "gpt-3.5-turbo"
@@ -60,6 +64,7 @@ class ModelType(Enum):
             ModelType.GPT_4_32K,
             ModelType.GPT_4_TURBO,
             ModelType.GPT_4O,
+            ModelType.MISTRAL_7B,
         }
 
     @property
@@ -69,6 +74,7 @@ class ModelType(Enum):
             ModelType.LLAMA_2,
             ModelType.VICUNA,
             ModelType.VICUNA_16K,
+            ModelType.MISTRAL_7B_OPEN_SOURCE,
         }
 
     @property
@@ -103,6 +109,8 @@ class ModelType(Enum):
             return 128000
         elif self is ModelType.GPT_4O:
             return 128000
+        elif self is ModelType.MISTRAL_7B:
+            return 32768
         elif self is ModelType.STUB:
             return 4096
         elif self is ModelType.LLAMA_2:

@@ -13,7 +13,8 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, List
 
-from openai import OpenAI
+# from openai import OpenAI
+from mistralai.client import MistralClient
 
 from camel.embeddings.base import BaseEmbedding
 from camel.types import EmbeddingModelType
@@ -39,7 +40,7 @@ class OpenAIEmbedding(BaseEmbedding[str]):
             raise ValueError("Invalid OpenAI embedding model type.")
         self.model_type = model_type
         self.output_dim = model_type.output_dim
-        self.client = OpenAI()
+        self.client = MistralClient()
 
     @api_key_required
     def embed_list(

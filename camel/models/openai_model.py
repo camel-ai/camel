@@ -39,7 +39,9 @@ class OpenAIModel(BaseModelBackend):
         """
         super().__init__(model_type, model_config_dict)
         url = os.environ.get('OPENAI_API_BASE_URL', None)
-        self._client = OpenAI(timeout=60, max_retries=3, base_url=url)
+        # self._client = OpenAI(timeout=60, max_retries=3, base_url=url)
+        from mistralai.client import MistralClient
+        self._client = MistralClient(max_retries=3)
         self._token_counter: Optional[BaseTokenCounter] = None
 
     @property
