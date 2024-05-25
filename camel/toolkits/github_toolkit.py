@@ -13,9 +13,8 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 import os
+from dataclasses import dataclass
 from typing import Optional
-
-from github import Auth, Github
 
 from camel.functions import OpenAIFunction
 
@@ -45,6 +44,13 @@ class GithubToolkit:
         if access_token is None:
             access_token = self.get_github_access_token()
 
+        try:
+            from github import Auth, Github
+        except ImportError:
+            raise ImportError(
+                "Please install `github` first. You can install it by running "
+                "`pip install wikipedia`."
+            )
         self.github = Github(auth=Auth.Token(access_token))
         self.repo = self.github.get_repo(repo_name)
 
@@ -94,10 +100,10 @@ class GithubToolkit:
                 issue.title,
                 issue.body,
                 issue.number,
-                issue.labels[0].name,
-                self.repo.get_contents(
-                    issue.labels[0].name
-                ).decoded_content.decode(),
+                issue.labels[
+                    0
+                ].name,  # for now we require file path to be the first label in the PR
+                self.retrieve_file_content(issue.labels[0].name),
             )
             for issue in issues
             if not issue.pull_request
@@ -119,17 +125,11 @@ class GithubToolkit:
         issues = self.retrieve_issue_list()
         for issue in issues:
             if issue.number == issue_number:
-                return (
-                    f"Title: {issue.title}\n"
-                    f"Body: {issue.body}\n"
-                    f"Number: {issue.number}\n"
-                    f"File Path: {issue.file_path}\n"
-                    f"File Content: {issue.file_content}"
-                )
-        return "Issue not found."
+                return issue.summary()
+        return None
 
     def create_pull_request(
-        self, file_path, new_content, pr_title, commit_message
+        self, file_path, new_content, pr_title, body, branch_name
     ):
         """
         Creates a pull request.
@@ -142,33 +142,47 @@ class GithubToolkit:
             file_path (str): The path of the file to be updated in the repository.
             new_content (str): The specified new content of the specified file.
             pr_title (str): The title of the issue that is solved by this pull request.
-            commit_message (str): The commit message for the pull request.
+            body (str): The commit message for the pull request.
+            branch_name (str): The name of the branch to create and submit the pull request from.
 
         Returns:
             str: A formatted report of whether the pull request was created successfully or not.
         """
-        branch_name = f"github-agent-update-{file_path.replace('/', '-')}"
         sb = self.repo.get_branch(self.repo.default_branch)
         self.repo.create_git_ref(
             ref=f"refs/heads/{branch_name}", sha=sb.commit.sha
         )
         file = self.repo.get_contents(file_path)
         self.repo.update_file(
-            file.path, commit_message, new_content, file.sha, branch=branch_name
+            file.path, body, new_content, file.sha, branch=branch_name
         )
         pr = self.repo.create_pull(
             title=pr_title,
-            body=commit_message,
+            body=body,
             head=branch_name,
             base=self.repo.default_branch,
         )
 
-        if pr:
+        if pr is not None:
             return f"Title: {pr.title}\n" f"Body: {pr.body}\n"
         else:
             return "Failed to create pull request."
 
+    def retrieve_file_content(self, file_path):
+        """
+        Retrieves the content of a file from the GitHub repository.
 
+        Args:
+            file_path (str): The path of the file to retrieve.
+
+        Returns:
+            str: The decoded content of the file.
+        """
+        file_content = self.repo.get_contents(file_path)
+        return file_content.decoded_content.decode()
+
+
+@dataclass
 class GithubIssue:
     """
     Represents a GitHub issue.
@@ -194,3 +208,18 @@ class GithubIssue:
         self.number = number
         self.file_path = file_path
         self.file_content = file_content
+
+    def summary(self):
+        """
+        Returns a summary of the issue.
+
+        Returns:
+            str: A string containing the title, body, number, file path, and file content of the issue.
+        """
+        return (
+            f"Title: {self.title}\n"
+            f"Body: {self.body}\n"
+            f"Number: {self.number}\n"
+            f"File Path: {self.file_path}\n"
+            f"File Content: {self.file_content}"
+        )
