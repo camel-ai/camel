@@ -85,7 +85,8 @@ class ChatAgent(BaseAgent):
         model_config (BaseConfig, optional): Configuration options for the
             LLM model. (default: :obj:`None`)
         api_key (str, optional): The API key for authenticating with the
-            LLM service. (default: :obj:`None`)
+            LLM service. Only OpenAI and Anthropic model supported (default:
+            :obj:`None`)
         memory (AgentMemory, optional): The agent memory for managing chat
             messages. If `None`, a :obj:`ChatHistoryMemory` will be used.
             (default: :obj:`None`)

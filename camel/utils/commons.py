@@ -67,7 +67,8 @@ def api_key_required(func: F) -> F:
         callable: The decorated function.
 
     Raises:
-        ValueError: If the API key is not found.
+        ValueError: If the API key is not found, either as an environment
+            variable or directly passed.
     """
 
     @wraps(func)
