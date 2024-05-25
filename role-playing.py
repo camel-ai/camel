@@ -25,7 +25,7 @@ def main(model_type=None) -> None:
     agent_kwargs = {
         role: dict(
             model_type=model_type,
-            model_config=ChatGPTConfig(),
+            model_config=ChatGPTConfig(max_tokens=4096),
         )
         for role in ["assistant", "user", "task-specify"]
     }
@@ -36,7 +36,7 @@ def main(model_type=None) -> None:
         user_role_name="Stock Trader",
         user_agent_kwargs=agent_kwargs["user"],
         task_prompt=task_prompt,
-        with_task_specify=True,
+        with_task_specify=False,
         task_specify_agent_kwargs=agent_kwargs["task-specify"],
     )
 

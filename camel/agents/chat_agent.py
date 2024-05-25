@@ -313,14 +313,17 @@ class ChatAgent(BaseAgent):
             # Obtain the model's response
             response = self.model_backend.run(openai_messages)
 
-            if isinstance(response, ChatCompletion):
-                output_messages, finish_reasons, usage_dict, response_id = (
-                    self.handle_batch_response(response)
-                )
-            else:
-                output_messages, finish_reasons, usage_dict, response_id = (
-                    self.handle_stream_response(response, num_tokens)
-                )
+            # if isinstance(response, ChatCompletion):
+            #     output_messages, finish_reasons, usage_dict, response_id = (
+            #         self.handle_batch_response(response)
+            #     )
+            # else:
+            #     output_messages, finish_reasons, usage_dict, response_id = (
+            #         self.handle_stream_response(response, num_tokens)
+            #     )
+            output_messages, finish_reasons, usage_dict, response_id = (
+                self.handle_batch_response(response)
+            )
 
             if (
                 self.is_function_calling_enabled()
@@ -429,6 +432,7 @@ class ChatAgent(BaseAgent):
         response_id: str = ""
         # All choices in one response share one role
         for chunk in response:
+            print(f"chunk:{chunk}")
             response_id = chunk.id
             for choice in chunk.choices:
                 index = choice.index
