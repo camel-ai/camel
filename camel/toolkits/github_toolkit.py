@@ -15,6 +15,7 @@
 import os
 from dataclasses import dataclass
 from typing import List, Optional
+from datetime import datetime, timedelta
 
 from camel.functions import OpenAIFunction
 
@@ -71,6 +72,72 @@ class GithubIssue:
         )
 
 
+@dataclass
+class GithubPullRequestDiff:
+    """
+    Represents a single diff of a pull request on Github.
+    """
+
+    def __init__(self, filename: str, patch: str):
+        """
+        Initialize a GithubPullRequestDiff object.
+
+        Args:
+            filename (str): The name of the file that was changed.
+            patch (str): The diff patch for the file.
+        """
+        self.filename = filename
+        self.patch = patch
+
+    def summary(self):
+        """
+        Returns a summary of the diff.
+        """
+        return f"Filename: {self.filename}\nPatch: {self.patch}"
+
+
+@dataclass
+class GithubPullRequest:
+    """
+    Represents a pull request on Github.
+
+    Attributes:
+        title (str): The title of the pull request.
+        body (str): The body/content of the pull request.
+        file_path (str): The path of the file associated with the pull request.
+        file_content (str): The content of the file associated with the pull request.
+    """
+
+    def __init__(
+        self,
+        title: str,
+        body: str,
+        diffs: list[GithubPullRequestDiff],
+    ):
+        """
+        Initialize a GithubPullRequest object.
+
+        Args:
+            title (str): The title of the GitHub pull request.
+            body (str): The body/content of the GitHub pull request.
+            diffs (list[GithubPullRequestDiff]): A list of diffs for the pull request.
+        """
+        self.title = title
+        self.body = body
+        self.diffs = diffs
+
+    def summary(self):
+        """
+        Returns a summary of the pull request.
+        """
+        diff_summaries = '\n'.join(diff.summary() for diff in self.diffs)
+        return (
+            f"Title: {self.title}\n"
+            f"Body: {self.body}\n"
+            f"Diffs: {diff_summaries}\n"
+        )
+
+
 class GithubToolkit(BaseToolkit):
     r"""A class representing a toolkit for interacting with GitHub repositories.
 
@@ -116,6 +183,7 @@ class GithubToolkit(BaseToolkit):
             OpenAIFunction(self.retrieve_issue_list),
             OpenAIFunction(self.retrieve_issue),
             OpenAIFunction(self.create_pull_request),
+            OpenAIFunction(self.retrieve_merged_pull_requests),
         ]
 
     def get_github_access_token(self) -> str:
@@ -175,6 +243,36 @@ class GithubToolkit(BaseToolkit):
             if issue.number == issue_number:
                 return issue.summary()
         return None
+
+    def retrieve_merged_pull_requests(self, days: int) -> list:
+        """
+        Retrieves a summary of merged pull requests from the repository.
+        The summary will be provided for the last 7 days.
+
+        Returns:
+            list: A list of merged pull request summaries.
+        """
+        pull_requests = self.repo.get_pulls(state='closed')
+        merged_prs = []
+        earliest_date: datetime = datetime.utcnow() - timedelta(days=14)
+
+        for pr in pull_requests:
+            if (
+                pr.merged
+                and pr.merged_at is not None
+                and pr.merged_at.timestamp() > earliest_date.timestamp()
+            ):
+                pr_details = GithubPullRequest(pr.title, pr.body, [])
+
+                # Get files changed in the PR
+                files = pr.get_files()
+
+                for file in files:
+                    diff = GithubPullRequestDiff(file.filename, file.patch)
+                    pr_details.diffs.append(diff)
+
+                merged_prs.append(pr_details.summary())
+        return merged_prs
 
     def create_pull_request(
         self,
