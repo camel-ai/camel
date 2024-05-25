@@ -14,8 +14,8 @@
 
 import os
 from dataclasses import dataclass
-from typing import List, Optional
 from datetime import datetime, timedelta
+from typing import List, Optional
 
 from camel.functions import OpenAIFunction
 
@@ -74,13 +74,10 @@ class GithubIssue:
 
 @dataclass
 class GithubPullRequestDiff:
-    """
-    Represents a single diff of a pull request on Github.
-    """
+    r"""Represents a single diff of a pull request on Github."""
 
-    def __init__(self, filename: str, patch: str):
-        """
-        Initialize a GithubPullRequestDiff object.
+    def __init__(self, filename: str, patch: str) -> None:
+        r"""Initialize a GithubPullRequestDiff object.
 
         Args:
             filename (str): The name of the file that was changed.
@@ -89,17 +86,14 @@ class GithubPullRequestDiff:
         self.filename = filename
         self.patch = patch
 
-    def summary(self):
-        """
-        Returns a summary of the diff.
-        """
+    def summary(self) -> str:
+        r"""Returns a summary of this diff."""
         return f"Filename: {self.filename}\nPatch: {self.patch}"
 
 
 @dataclass
 class GithubPullRequest:
-    """
-    Represents a pull request on Github.
+    r"""Represents a pull request on Github.
 
     Attributes:
         title (str): The title of the pull request.
@@ -113,9 +107,8 @@ class GithubPullRequest:
         title: str,
         body: str,
         diffs: list[GithubPullRequestDiff],
-    ):
-        """
-        Initialize a GithubPullRequest object.
+    ) -> None:
+        r"""Initialize a GithubPullRequest object.
 
         Args:
             title (str): The title of the GitHub pull request.
@@ -126,10 +119,8 @@ class GithubPullRequest:
         self.body = body
         self.diffs = diffs
 
-    def summary(self):
-        """
-        Returns a summary of the pull request.
-        """
+    def summary(self) -> str:
+        r"""Returns a summary of the pull request."""
         diff_summaries = '\n'.join(diff.summary() for diff in self.diffs)
         return (
             f"Title: {self.title}\n"
@@ -168,7 +159,7 @@ class GithubToolkit(BaseToolkit):
         except ImportError:
             raise ImportError(
                 "Please install `github` first. You can install it by running "
-                "`pip install wikipedia`."
+                "`pip install pygithub`."
             )
         self.github = Github(auth=Auth.Token(access_token))
         self.repo = self.github.get_repo(repo_name)
@@ -183,7 +174,7 @@ class GithubToolkit(BaseToolkit):
             OpenAIFunction(self.retrieve_issue_list),
             OpenAIFunction(self.retrieve_issue),
             OpenAIFunction(self.create_pull_request),
-            OpenAIFunction(self.retrieve_merged_pull_requests),
+            OpenAIFunction(self.retrieve_pull_requests),
         ]
 
     def get_github_access_token(self) -> str:
@@ -244,17 +235,27 @@ class GithubToolkit(BaseToolkit):
                 return issue.summary()
         return None
 
-    def retrieve_merged_pull_requests(self, days: int) -> list:
-        """
-        Retrieves a summary of merged pull requests from the repository.
-        The summary will be provided for the last 7 days.
+    def retrieve_pull_requests(
+        self, days: int, state: Optional[str] = None
+    ) -> List:
+        r"""Retrieves a summary of merged pull requests from the repository.
+        The summary will be provided for the last specified number of days.
+
+        Args:
+            days (int): The number of days to retrieve merged pull requests for.
+            state (str, optional): A specific state of PRs to retrieve (open/closed).
 
         Returns:
             list: A list of merged pull request summaries.
         """
-        pull_requests = self.repo.get_pulls(state='closed')
+
+        if state is None:
+            pull_requests = self.repo.get_pulls()
+        else:
+            pull_requests = self.repo.get_pulls(state=state)
+
         merged_prs = []
-        earliest_date: datetime = datetime.utcnow() - timedelta(days=14)
+        earliest_date: datetime = datetime.utcnow() - timedelta(days=days)
 
         for pr in pull_requests:
             if (

@@ -12,12 +12,18 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
+from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 from github import Auth, Github
 from github.ContentFile import ContentFile
 
-from camel.toolkits.github_toolkit import GithubIssue, GithubToolkit
+from camel.toolkits.github_toolkit import (
+    GithubIssue,
+    GithubPullRequest,
+    GithubPullRequestDiff,
+    GithubToolkit,
+)
 
 
 @patch.object(Github, '__init__', lambda self, *args, **kwargs: None)
@@ -160,6 +166,50 @@ def test_create_pull_request(monkeypatch):
     assert (
         pr == expected_response
     ), f"Expected {expected_response}, but got {pr}"
+
+
+@patch.object(Github, 'get_repo', return_value=MagicMock())
+@patch.object(Auth.Token, '__init__', lambda self, *args, **kwargs: None)
+def test_retrieve_pull_requests(monkeypatch):
+    # Call the constructor of the GithubToolkit class
+    github_toolkit = GithubToolkit("repo_name", "token")
+
+    # Create a mock file
+    mock_file = MagicMock()
+    mock_file.filename = "path/to/file"
+    mock_file.diff = "This is the diff of the file"
+
+    # Create a mock pull request
+    mock_pull_request = MagicMock()
+    mock_pull_request.title = "Test PR"
+    mock_pull_request.body = "This is a test issue"
+    mock_pull_request.merged_at = datetime.utcnow()
+
+    # Create a mock file
+    mock_file = MagicMock()
+    mock_file.filename = "path/to/file"
+    mock_file.patch = "This is the diff of the file"
+
+    # Mock the get_files method of the mock_pull_request instance to return a list containing the mock file object
+    mock_pull_request.get_files.return_value = [mock_file]
+
+    # Mock the get_issues method of the mock repo instance to return a list containing the mock issue object
+    github_toolkit.repo.get_pulls.return_value = [mock_pull_request]
+
+    pull_requests = github_toolkit.retrieve_pull_requests(days=7)
+    # Assert the returned issue list
+    expected_pull_request = GithubPullRequest(
+        title="Test PR",
+        body="This is a test issue",
+        diffs=[
+            GithubPullRequestDiff(
+                filename="path/to/file", patch="This is the diff of the file"
+            )
+        ],
+    )
+    assert pull_requests == [
+        expected_pull_request.summary()
+    ], f"Expected {expected_pull_request.summary()}, but got {pull_requests}"
 
 
 def test_github_issue():
