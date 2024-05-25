@@ -170,7 +170,7 @@ class RoleAssignmentAgent(ChatAgent):
                     f"        \"Role name\": \"{role_name}"
                     "\",\n        \"Associated competencies, "
                     "characteristics, and duties\": "
-                    "\"<BLANK>\"\n    }"
+                    "\"<BLANK>\"\n    },"
                     for i, role_name in enumerate(role_names)
                 )
                 + "\n}"
