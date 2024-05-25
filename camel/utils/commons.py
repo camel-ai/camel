@@ -32,7 +32,6 @@ F = TypeVar('F', bound=Callable[..., Any])
 # Set lazy import
 def get_lazy_imported_functions_module():
     from camel.functions import (
-        GITHUB_FUNCS,
         MAP_FUNCS,
         MATH_FUNCS,
         OPENAPI_FUNCS,
@@ -42,7 +41,6 @@ def get_lazy_imported_functions_module():
     )
 
     return [
-        *GITHUB_FUNCS,
         *MATH_FUNCS,
         *SEARCH_FUNCS,
         *WEATHER_FUNCS,

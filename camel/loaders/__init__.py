@@ -13,12 +13,10 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from .base_io import File, read_file
-from .github_loader import GitHubLoader
 from .unstructured_io import UnstructuredIO
 
 __all__ = [
     'File',
     'read_file',
     'UnstructuredIO',
-    'GitHubLoader',
 ]
