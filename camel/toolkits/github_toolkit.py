@@ -106,7 +106,7 @@ class GithubToolkit(BaseToolkit):
         self.github = Github(auth=Auth.Token(access_token))
         self.repo = self.github.get_repo(repo_name)
 
-    def get_tools(self) -> list[OpenAIFunction]:
+    def get_tools(self) -> List[OpenAIFunction]:
         r"""Returns a list of OpenAIFunction objects representing the functions in the toolkit.
 
         Returns:
