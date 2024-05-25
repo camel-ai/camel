@@ -87,7 +87,7 @@ class GithubPullRequestDiff:
         self.patch = patch
 
     def summary(self) -> str:
-        r"""Returns a summary of the diff."""
+        r"""Returns a summary of this diff."""
         return f"Filename: {self.filename}\nPatch: {self.patch}"
 
 
