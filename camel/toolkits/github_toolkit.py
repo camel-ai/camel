@@ -74,13 +74,10 @@ class GithubIssue:
 
 @dataclass
 class GithubPullRequestDiff:
-    """
-    Represents a single diff of a pull request on Github.
-    """
+    r"""Represents a single diff of a pull request on Github."""
 
-    def __init__(self, filename: str, patch: str):
-        """
-        Initialize a GithubPullRequestDiff object.
+    def __init__(self, filename: str, patch: str) -> None:
+        r"""Initialize a GithubPullRequestDiff object.
 
         Args:
             filename (str): The name of the file that was changed.
@@ -89,17 +86,14 @@ class GithubPullRequestDiff:
         self.filename = filename
         self.patch = patch
 
-    def summary(self):
-        """
-        Returns a summary of the diff.
-        """
+    def summary(self) -> str:
+        r"""Returns a summary of the diff."""
         return f"Filename: {self.filename}\nPatch: {self.patch}"
 
 
 @dataclass
 class GithubPullRequest:
-    """
-    Represents a pull request on Github.
+    r"""Represents a pull request on Github.
 
     Attributes:
         title (str): The title of the pull request.
@@ -113,9 +107,8 @@ class GithubPullRequest:
         title: str,
         body: str,
         diffs: list[GithubPullRequestDiff],
-    ):
-        """
-        Initialize a GithubPullRequest object.
+    ) -> None:
+        r"""Initialize a GithubPullRequest object.
 
         Args:
             title (str): The title of the GitHub pull request.
@@ -126,10 +119,8 @@ class GithubPullRequest:
         self.body = body
         self.diffs = diffs
 
-    def summary(self):
-        """
-        Returns a summary of the pull request.
-        """
+    def summary(self) -> str:
+        r"""Returns a summary of the pull request."""
         diff_summaries = '\n'.join(diff.summary() for diff in self.diffs)
         return (
             f"Title: {self.title}\n"
