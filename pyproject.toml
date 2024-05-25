@@ -141,6 +141,7 @@ all = [
     # tools
     "beautifulsoup4",
     "docx2txt",
+    "pygithub",
     "PyMuPDF",
     "wikipedia",
     "wolframalpha",
@@ -161,7 +162,6 @@ all = [
     "neo4j",
     # retrievers
     "rank-bm25",
-    "pygithub",
 ]
 
 [tool.poetry.group.dev]
