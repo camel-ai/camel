@@ -12,9 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import time
-from typing import Any, Dict, List, Optional, Union
-
-from openai import Stream
+from typing import Any, Dict, Iterator, List, Optional, Union
 
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
@@ -70,7 +68,7 @@ class StubModel(BaseModelBackend):
 
     def run(
         self, messages: List[OpenAIMessage]
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+    ) -> Union[ChatCompletion, Iterator[ChatCompletionChunk]]:
         r"""Run fake inference by returning a fixed string.
         All arguments are unused for the dummy model.
 

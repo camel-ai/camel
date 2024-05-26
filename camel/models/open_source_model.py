@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Iterator, List, Optional, Union
 
 from openai import OpenAI, Stream
 
@@ -98,10 +98,10 @@ class OpenSourceModel(BaseModelBackend):
             )
         return self._token_counter
 
-    def run(
+    def run(  # type: ignore[return]
         self,
         messages: List[OpenAIMessage],
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+    ) -> Union[ChatCompletion, Iterator[ChatCompletionChunk]]:
         r"""Runs inference of OpenAI-API-style chat completion.
 
         Args:
@@ -109,9 +109,9 @@ class OpenSourceModel(BaseModelBackend):
                 in OpenAI API format.
 
         Returns:
-            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+            Union[ChatCompletion,  Iterator[ChatCompletionChunk]]:
                 `ChatCompletion` in the non-stream mode, or
-                `Stream[ChatCompletionChunk]` in the stream mode.
+                `Iterator[ChatCompletionChunk]` in the stream mode.
         """
         messages_openai: List[OpenAIMessage] = messages
         response = self._client.chat.completions.create(
@@ -119,7 +119,12 @@ class OpenSourceModel(BaseModelBackend):
             model=self.model_name,
             **self.model_config_dict,
         )
-        return response
+
+        if isinstance(response, Stream):
+            for chunk in response:
+                yield chunk
+        else:
+            return response
 
     def check_model_config(self):
         r"""Check whether the model configuration is valid for open-source

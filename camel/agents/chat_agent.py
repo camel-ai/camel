@@ -16,7 +16,17 @@ from __future__ import annotations
 import json
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
 
 from camel.agents.base import BaseAgent
 from camel.configs import ChatGPTConfig
@@ -39,8 +49,6 @@ from camel.types import (
 from camel.utils import get_model_encoding
 
 if TYPE_CHECKING:
-    from openai import Stream
-
     from camel.configs import BaseConfig
     from camel.functions import OpenAIFunction
     from camel.terminators import ResponseTerminator
@@ -276,10 +284,10 @@ class ChatAgent(BaseAgent):
         """
         self.update_memory(message, OpenAIBackendRole.ASSISTANT)
 
-    def step(
+    def step(  # type: ignore[return]
         self,
         input_message: BaseMessage,
-    ) -> ChatAgentResponse:
+    ) -> Union[ChatAgentResponse, Iterator[ChatAgentResponse]]:
         r"""Performs a single step in the chat session by generating a response
         to the input message.
 
@@ -291,14 +299,17 @@ class ChatAgent(BaseAgent):
                 external.
 
         Returns:
-            ChatAgentResponse: A struct containing the output messages,
-                a boolean indicating whether the chat session has terminated,
-                and information about the chat session.
+            Union[ChatAgentResponse,  Iterator[ChatAgentResponse]:
+                `ChatAgentResponse` in the non-stream mode, a struct
+                containing the output messages, a boolean indicating whether
+                the chat session has terminated, and information about the
+                chat session.
+                `Iterator[ChatAgentResponse]` in the stream mode.
         """
         self.update_memory(input_message, OpenAIBackendRole.USER)
 
-        output_messages: List[BaseMessage]
-        info: Dict[str, Any]
+        output_messages: List[BaseMessage] = []
+        info: Dict[str, Any] = {}
         called_tools: List[FunctionCallingRecord] = []
         while True:
             # Format messages and get the token number
@@ -313,8 +324,41 @@ class ChatAgent(BaseAgent):
 
             # Obtain the model's response
             response = self.model_backend.run(openai_messages)
+            # Debug print
+            print("=" * 50)
+            print("model_backend_config:", self.model_backend.model_config_dict)
+            print("=" * 50)
+            print("Output of model backend response:", response)
+            for chunk in response:
+                print("=" * 20)
+                print(chunk)
 
-            if isinstance(response, ChatCompletion):
+            if isinstance(response, Iterator):
+                # Handle streaming response
+                for (
+                    output_messages,
+                    finish_reasons,
+                    usage_dict,
+                    response_id,
+                ) in self.handle_stream_response(response, num_tokens):
+                    self.terminated = any(
+                        reason == 'terminate' for reason in finish_reasons
+                    )
+
+                    info = self.get_info(
+                        response_id,
+                        usage_dict,
+                        finish_reasons,
+                        num_tokens,
+                        called_tools,
+                    )
+
+                    yield ChatAgentResponse(
+                        output_messages, self.terminated, info
+                    )
+                break
+
+            elif isinstance(response, ChatCompletion):
                 output_messages, finish_reasons, usage_dict, response_id = (
                     self.handle_batch_response(response)
                 )
@@ -414,22 +458,27 @@ class ChatAgent(BaseAgent):
 
     def handle_stream_response(
         self,
-        response: Stream[ChatCompletionChunk],
+        response: Iterator[ChatCompletionChunk],
         prompt_tokens: int,
-    ) -> Tuple[List[BaseMessage], List[str], Dict[str, int], str]:
-        r"""
+    ) -> Iterator[Tuple[List[BaseMessage], List[str], Dict[str, int], str]]:
+        r"""Handles the streaming response from a model, yielding processed
+        results.
 
         Args:
-            response (dict): Model response.
-            prompt_tokens (int): Number of input prompt tokens.
+            response (Iterator[ChatCompletionChunk]): A generator
+                of response chunks from the model.
+            prompt_tokens (int): The number of tokens used in the input prompt.
 
         Returns:
-            tuple: A tuple of list of output `ChatMessage`, list of
-                finish reasons, usage dictionary, and response id.
+            Iterator[Tuple[List[BaseMessage], List[str], Dict[str, int],
+                str]]: A generator that yields tuples containing:
+                - A list of `BaseMessage` objects representing the processed messages.
+                - A list of strings representing the reasons why the processing of each chunk was finished.
+                - A dictionary mapping various usage metrics (keys) to their values.
+                - A string representing the unique identifier of the response.
         """
         content_dict: defaultdict = defaultdict(lambda: "")
         finish_reasons_dict: defaultdict = defaultdict(lambda: "")
-        output_messages: List[BaseMessage] = []
         response_id: str = ""
         # All choices in one response share one role
         for chunk in response:
@@ -437,24 +486,20 @@ class ChatAgent(BaseAgent):
             for choice in chunk.choices:
                 index = choice.index
                 delta = choice.delta
-                if delta.content is not None:
-                    # When response has not been stopped
-                    # Notice that only the first chunk_dict has the "role"
-                    content_dict[index] += delta.content
-                else:
-                    finish_reasons_dict[index] = choice.finish_reason
-                    chat_message = BaseMessage(
-                        role_name=self.role_name,
-                        role_type=self.role_type,
-                        meta_dict=dict(),
-                        content=content_dict[index],
-                    )
-                    output_messages.append(chat_message)
-        finish_reasons = [
-            finish_reasons_dict[i] for i in range(len(finish_reasons_dict))
-        ]
-        usage_dict = self.get_usage_dict(output_messages, prompt_tokens)
-        return output_messages, finish_reasons, usage_dict, response_id
+                content_dict[index] = delta.content
+                chat_message = BaseMessage(
+                    role_name=self.role_name,
+                    role_type=self.role_type,
+                    meta_dict=dict(),
+                    content=content_dict[index],
+                )
+                usage_dict = self.get_usage_dict([chat_message], prompt_tokens)
+                finish_reasons_dict[index] = choice.finish_reason
+                finish_reasons = [
+                    finish_reasons_dict[i]
+                    for i in range(len(finish_reasons_dict))
+                ]
+                yield [chat_message], finish_reasons, usage_dict, response_id
 
     def step_token_exceed(
         self,
@@ -564,7 +609,8 @@ class ChatAgent(BaseAgent):
         encoding = get_model_encoding(self.model_type.value_for_tiktoken)
         completion_tokens = 0
         for message in output_messages:
-            completion_tokens += len(encoding.encode(message.content))
+            if message.content is not None:
+                completion_tokens += len(encoding.encode(message.content))
         usage_dict = dict(
             completion_tokens=completion_tokens,
             prompt_tokens=prompt_tokens,

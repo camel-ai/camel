@@ -12,9 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Union
-
-from openai import Stream
+from typing import Any, Dict, Iterator, List, Union
 
 from camel.messages import OpenAIMessage
 from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
@@ -55,7 +53,7 @@ class BaseModelBackend(ABC):
     def run(
         self,
         messages: List[OpenAIMessage],
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+    ) -> Union[ChatCompletion, Iterator[ChatCompletionChunk]]:
         r"""Runs the query to the backend model.
 
         Args:
@@ -63,9 +61,9 @@ class BaseModelBackend(ABC):
                 in OpenAI API format.
 
         Returns:
-            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+            Union[ChatCompletion,  Iterator[ChatCompletionChunk]]:
                 `ChatCompletion` in the non-stream mode, or
-                `Stream[ChatCompletionChunk]` in the stream mode.
+                `Iterator[ChatCompletionChunk]` in the stream mode.
         """
         pass
 

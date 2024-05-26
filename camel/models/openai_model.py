@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Iterator, List, Optional, Union
 
 from openai import OpenAI, Stream
 
@@ -55,10 +55,10 @@ class OpenAIModel(BaseModelBackend):
         return self._token_counter
 
     @api_key_required
-    def run(
+    def run(  # type: ignore[return]
         self,
         messages: List[OpenAIMessage],
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+    ) -> Union[ChatCompletion, Iterator[ChatCompletionChunk]]:
         r"""Runs inference of OpenAI chat completion.
 
         Args:
@@ -66,16 +66,29 @@ class OpenAIModel(BaseModelBackend):
                 in OpenAI API format.
 
         Returns:
-            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+            Union[ChatCompletion,  Iterator[ChatCompletionChunk]]:
                 `ChatCompletion` in the non-stream mode, or
-                `Stream[ChatCompletionChunk]` in the stream mode.
+                `Iterator[ChatCompletionChunk]` in the stream mode.
         """
         response = self._client.chat.completions.create(
             messages=messages,
             model=self.model_type.value,
             **self.model_config_dict,
         )
-        return response
+
+        # Handle streaming responses by yielding each chunk as it's received
+        if isinstance(response, Stream):
+            print("=" * 50)
+            print("OpenAI model handling as Stream")
+            for chunk in response:
+                yield chunk
+        else:
+            print("=" * 50)
+            print(
+                "OpenAI model handling as Single Response,output of openai response:",
+                response,
+            )
+            return response  # Handling non-stream response
 
     def check_model_config(self):
         r"""Check whether the model configuration contains any
