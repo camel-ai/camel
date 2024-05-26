@@ -18,34 +18,56 @@ from camel.configs import MistralConfig
 from camel.functions import OpenAIFunction
 from camel.functions.search_functions import search_google
 from camel.functions.twitter_function import create_tweet
-from camel.messages import BaseMessage
 from camel.toolkits import GithubToolkit
-from camel.types import ModelType, RoleType
+from camel.messages import BaseMessage
+from camel.types import ModelType, RoleType, StorageType
+from camel.retrievers import AutoRetriever
 
 os.environ["MISTRAL_API_KEY"] = "XpTqOjvetVjtCfRSYkOfxY2te1cfvbTp"
 os.environ["GOOGLE_API_KEY"] = "AIzaSyBIaVHuNCnH2-B4SQbqOvy2lMOlGOLYCEk"
 os.environ["SEARCH_ENGINE_ID"] = "e6d9bb79dc6794f38"
 os.environ['TWITTER_CONSUMER_KEY'] = 'y6YKgE3WxSInjVGNKCyWZOO2s'
-os.environ['TWITTER_CONSUMER_SECRET'] = (
-    'WDjrFEiJhMIQIqVne3RSgkqOwckj7eHIWZDUaZP1Enftnhb8Ad'
-)
+os.environ[
+    'TWITTER_CONSUMER_SECRET'] = 'WDjrFEiJhMIQIqVne3RSgkqOwckj7eHIWZDUaZP1Enftnhb8Ad'
 
 create_tweet_tool = OpenAIFunction(create_tweet)
 search_google_tool = OpenAIFunction(search_google)
 repo_name = "mistralai/mistral-inference"
 github_tools = GithubToolkit(repo_name=repo_name).get_tools()
 
+
+def tweet_rag(query: str):
+    r"""Retrieve relevant tweet examples.
+    
+    Args:
+        query (str): The retrieval query of the tweets.
+        
+    Returns:
+        str: The retrieved tweet examples.
+    """
+    rag_response = AutoRetriever(
+        storage_type=StorageType.QDRANT).run_vector_retriever(
+            query,
+            content_input_paths=
+            "/Users/lig/github/camel/examples/mistral/tweet_data.csv",
+        )
+    print(rag_response)
+    return rag_response
+
+
+tweet_rag_tool = OpenAIFunction(tweet_rag)
+
 # tools = [
 #     search_google_tool.openai_tool_schema,
 #     create_tweet_tool.openai_tool_schema,
 # ]
 
-tools = [tool.openai_tool_schema for tool in github_tools]
+# tools = [tool.openai_tool_schema for tool in github_tools]
 
-model_config_dict = dict(
-    tools=tools,
-    tool_choice="auto",
-)
+# model_config_dict = dict(
+#     tools=tools,
+#     tool_choice="auto",
+# )
 
 query_1 = "What's the status of my transaction T1001?"
 query_2 = "Post a tweet to say 'Hello World' on twitter"
@@ -86,7 +108,10 @@ prompt = f"""
     """
 
 model_config = MistralConfig(
-    tools=[github_tools[3].openai_tool_schema],
+    tools=[
+        github_tools[3].openai_tool_schema,
+        tweet_rag_tool.openai_tool_schema,
+    ],
     tool_choice="auto",
 )
 
@@ -101,14 +126,23 @@ mistral_agent = ChatAgent(
     system_message=system_message,
     model_type=ModelType.MISTRAL_LARGE,
     model_config=model_config,
-    function_list=[github_tools[3]],
+    function_list=[github_tools[3], tweet_rag_tool],
 )
 
 bm = BaseMessage.make_user_message('user', prompt)
 
 mistral_agent.reset()
 response = mistral_agent.step(bm)
+mistral_agent.record_message(response.msg)
 # print(response)
+print(response.msg.content)
+
+# Retrieve and refine tweet
+prompt_refine_tweet = (
+    f"Retrieve a tweet related to {response.msg.content} "
+    "use `tweet_rag` tool, learn from the style and refine the tweet.")
+bm = BaseMessage.make_user_message('user', prompt_refine_tweet)
+response = mistral_agent.step(bm)
 print(response.msg.content)
 
 # Post tweet Agent

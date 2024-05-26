@@ -63,11 +63,13 @@ class GithubIssue:
         Returns:
             str: A string containing the title, body, number, file path, and file content of the issue.
         """
-        return (f"Title: {self.title}\n"
-                f"Body: {self.body}\n"
-                f"Number: {self.number}\n"
-                f"File Path: {self.file_path}\n"
-                f"File Content: {self.file_content}")
+        return (
+            f"Title: {self.title}\n"
+            f"Body: {self.body}\n"
+            f"Number: {self.number}\n"
+            f"File Path: {self.file_path}\n"
+            f"File Content: {self.file_content}"
+        )
 
 
 @dataclass
@@ -120,9 +122,11 @@ class GithubPullRequest:
     def summary(self) -> str:
         r"""Returns a summary of the pull request."""
         diff_summaries = '\n'.join(diff.summary() for diff in self.diffs)
-        return (f"Title: {self.title}\n"
-                f"Body: {self.body}\n"
-                f"Diffs: {diff_summaries}\n")
+        return (
+            f"Title: {self.title}\n"
+            f"Body: {self.body}\n"
+            f"Diffs: {diff_summaries}\n"
+        )
 
 
 class GithubToolkit(BaseToolkit):
@@ -137,8 +141,9 @@ class GithubToolkit(BaseToolkit):
             If not provided, it will be obtained using the `get_github_access_token` method.
     """
 
-    def __init__(self, repo_name: str,
-                 access_token: Optional[str] = None) -> None:
+    def __init__(
+        self, repo_name: str, access_token: Optional[str] = None
+    ) -> None:
         r"""Initializes a new instance of the GitHubToolkit class.
 
         Args:
@@ -154,7 +159,8 @@ class GithubToolkit(BaseToolkit):
         except ImportError:
             raise ImportError(
                 "Please install `github` first. You can install it by running "
-                "`pip install pygithub`.")
+                "`pip install pygithub`."
+            )
         self.github = Github(auth=Auth.Token(access_token))
         self.repo = self.github.get_repo(repo_name)
 
@@ -186,7 +192,8 @@ class GithubToolkit(BaseToolkit):
         if not GITHUB_ACCESS_TOKEN:
             raise ValueError(
                 "`GITHUB_ACCESS_TOKEN` not found in environment variables. Get it "
-                "here: `https://github.com/settings/tokens`.")
+                "here: `https://github.com/settings/tokens`."
+            )
         return GITHUB_ACCESS_TOKEN
 
     def retrieve_issue_list(self) -> List[GithubIssue]:
@@ -201,10 +208,13 @@ class GithubToolkit(BaseToolkit):
                 title=issue.title,
                 body=issue.body,
                 number=issue.number,
-                file_path=issue.labels[0].
-                name,  # for now we require file path to be the first label in the PR
+                file_path=issue.labels[
+                    0
+                ].name,  # for now we require file path to be the first label in the PR
                 file_content=self.retrieve_file_content(issue.labels[0].name),
-            ) for issue in issues if not issue.pull_request
+            )
+            for issue in issues
+            if not issue.pull_request
         ]
 
     def retrieve_issue(self, issue_number: int) -> Optional[str]:
@@ -238,8 +248,11 @@ class GithubToolkit(BaseToolkit):
         earliest_date: datetime = datetime.utcnow() - timedelta(days=2)
 
         for pr in pull_requests:
-            if (pr.merged and pr.merged_at is not None
-                    and pr.merged_at.timestamp() > earliest_date.timestamp()):
+            if (
+                pr.merged
+                and pr.merged_at is not None
+                and pr.merged_at.timestamp() > earliest_date.timestamp()
+            ):
                 pr_details = GithubPullRequest(pr.title, pr.body, [])
 
                 # Get files changed in the PR
@@ -278,15 +291,17 @@ class GithubToolkit(BaseToolkit):
             str: A formatted report of whether the pull request was created successfully or not.
         """
         sb = self.repo.get_branch(self.repo.default_branch)
-        self.repo.create_git_ref(ref=f"refs/heads/{branch_name}",
-                                 sha=sb.commit.sha)
+        self.repo.create_git_ref(
+            ref=f"refs/heads/{branch_name}", sha=sb.commit.sha
+        )
 
         file = self.repo.get_contents(file_path)
         from github.ContentFile import ContentFile
 
         if isinstance(file, ContentFile):
-            self.repo.update_file(file.path, body, new_content, file.sha,
-                                  branch=branch_name)
+            self.repo.update_file(
+                file.path, body, new_content, file.sha, branch=branch_name
+            )
             pr = self.repo.create_pull(
                 title=pr_title,
                 body=body,
