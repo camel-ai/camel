@@ -20,14 +20,24 @@ from camel.types import ModelPlatformType, ModelType
 from camel.utils import print_text_animated
 
 
-def main(chat_turn_limit=50, model_path="", server_url=" ") -> None:
+# Here :obj:`model_type` can be any of the supported open-source
+# model types and :obj:`model_path` should be set corresponding to
+# model type. For example, to use Vicuna, we can set:
+# model_path = "lmsys/vicuna-7b-v1.5"
+def main(
+    chat_turn_limit=50,
+    model_platform=ModelPlatformType.OPENSOURCE,
+    model_type=ModelType.LLAMA_2,
+    model_path="meta-llama/Llama-2-7b-chat-hf",
+    server_url="http://localhost:8000/v1",
+) -> None:
     task_prompt = "Develop a trading bot for the stock market"
 
     agent_kwargs = {
         role: dict(
             model=ModelFactory.create(
-                model_platform=ModelPlatformType.OPENSOURCE,
-                model_type=ModelType.LLAMA_2,
+                model_platform=model_platform,
+                model_type=model_type,
                 model_config_dict=OpenSourceConfig(
                     model_path=model_path,
                     server_url=server_url,
@@ -103,11 +113,4 @@ def main(chat_turn_limit=50, model_path="", server_url=" ") -> None:
 
 
 if __name__ == "__main__":
-    # Here :obj:`model_type` can be any of the supported open-source
-    # model types and :obj:`model_path` should be set corresponding to
-    # model type. For example, to use Vicuna, we can set:
-    # model_path = "lmsys/vicuna-7b-v1.5"
-    main(
-        model_path="meta-llama/Llama-2-7b-chat-hf",
-        server_url="http://localhost:8000/v1",
-    )
+    main()
