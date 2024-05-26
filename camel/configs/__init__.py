@@ -11,20 +11,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .anthropic_model import AnthropicModel
-from .base_model import BaseModelBackend
-from .model_factory import ModelFactory
-from .open_source_model import OpenSourceModel
-from .openai_audio_models import OpenAIAudioModels
-from .openai_model import OpenAIModel
-from .stub_model import StubModel
+from .anthropic_config import ANTHROPIC_API_PARAMS, AnthropicConfig
+from .base_config import BaseConfig
+from .openai_config import (
+    OPENAI_API_PARAMS,
+    ChatGPTConfig,
+    OpenSourceConfig,
+)
 
 __all__ = [
-    'BaseModelBackend',
-    'OpenAIModel',
-    'AnthropicModel',
-    'StubModel',
-    'OpenSourceModel',
-    'ModelFactory',
-    'OpenAIAudioModels',
+    'BaseConfig',
+    'ChatGPTConfig',
+    'OPENAI_API_PARAMS',
+    'AnthropicConfig',
+    'ANTHROPIC_API_PARAMS',
+    'OpenSourceConfig',
 ]
