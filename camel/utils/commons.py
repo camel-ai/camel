@@ -58,8 +58,7 @@ def get_lazy_imported_types_module():
 
 
 def api_key_required(func: F) -> F:
-    r"""Decorator that checks if the OpenAI API key is available in the
-    environment variables.
+    r"""Decorator that checks if the API key is available either as an environment variable or passed directly.
 
     Args:
         func (callable): The function to be wrapped.
@@ -68,14 +67,14 @@ def api_key_required(func: F) -> F:
         callable: The decorated function.
 
     Raises:
-        ValueError: If the OpenAI API key is not found in the environment
-            variables.
+        ValueError: If the API key is not found, either as an environment
+            variable or directly passed.
     """
 
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         if self.model_type.is_openai:
-            if 'OPENAI_API_KEY' not in os.environ:
+            if not self._api_key and 'OPENAI_API_KEY' not in os.environ:
                 raise ValueError('OpenAI API key not found.')
             return func(self, *args, **kwargs)
         elif self.model_type.is_anthropic:
