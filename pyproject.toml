@@ -79,7 +79,7 @@ cohere = { version = "^4.56", optional = true }
 
 # test
 pytest = { version = "^7", optional = true}
-pytest-asyncio = { version = "^0.2.0", optional = true }
+pytest-asyncio = { version = "^0.23.0", optional = true }
 mock = { version = "^5", optional = true}
 
 
