@@ -78,7 +78,7 @@ We share a common interest in collaborating to successfully complete the task by
 ===== TASK =====
 {task}
 
-===== ANSWER TEMPLATE JSON =====
+===== ANSWER TEMPLATE =====
 1. Unless I say the task is completed, you need to provide the thoughts and the action:
 Thought: 
     <YOUR_THOUGHT>  // If you are not satisfied with my answer, you can say 'I am not satisfied with the answer, please provide me with another one.'
