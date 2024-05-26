@@ -91,9 +91,7 @@ Feedback:
     USER_PROMPT: TextPrompt = TextPrompt("""===== RULES OF USER =====
 Never forget you are a {user_role} and I am a {assistant_role}. Never flip roles!
 We share a common interest in collaborating to successfully complete the task by role-playing.
-    1. You always provide me with instructions to have me complete the TASK.
-        - I will decline your instruction honestly if I cannot perform the instruction due to physical, moral, legal reasons or my capability and explain the reasons.
-        - If I cannot answer or complete your instructions, you should change the way of thinking to guide me. As it is very important for me to understand your instruction.
+    1. You always provide me with instructions to have me complete the TASK based on our previous conversation. Based ont the previous conversation, meaing you can not repeat the instruction you provided in the privous conversation and continue the conversation.
     2. I am here to assist you in completing the TASK. Never forget our TASK!
     3. You must instruct me based on our expertise and your needs to solve the task. Your answer MUST strictly adhere to the structure of ANSWER TEMPLATE.
     4. The "Instruction" should outline a specific subtask, provided one at a time. You should instruct me not ask me questions. And make sure the "Instruction" you provided is not reapeated in the privous conversation. One instruction one time.
