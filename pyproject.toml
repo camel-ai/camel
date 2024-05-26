@@ -175,6 +175,7 @@ toml = ">=0.10.2"
 pre-commit = "^3"
 pytest = "^7"
 pytest-cov = "^4"
+pytest-asyncio = "^0.23.0"
 gradio = "^3"
 mock = "^5"
 

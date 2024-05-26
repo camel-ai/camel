@@ -4274,7 +4274,7 @@ testing = ["argcomplete", "attrs (>=19.2.0)", "hypothesis (>=3.56)", "mock", "no
 name = "pytest-asyncio"
 version = "0.23.7"
 description = "Pytest support for asyncio"
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "pytest_asyncio-0.23.7-py3-none-any.whl", hash = "sha256:009b48127fbe44518a547bddd25611551b0e43ccdbf1e67d12479f569832c20b"},
@@ -7096,4 +7096,4 @@ vector-databases = ["pymilvus", "qdrant-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<3.12"
-content-hash = "873faf646e986e7cbea6ae8171bcb3c0cd01536acbcdbdd43c64891981b826b9"
+content-hash = "c5f696c14a9e05e67dd0d3dc6fb4bc3071eefa227692e830785171be344ce1ac"
