@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import asyncio
 from io import BytesIO
 from typing import List
 from unittest.mock import Mock
@@ -25,6 +26,7 @@ from camel.agents import ChatAgent
 from camel.agents.chat_agent import FunctionCallingRecord
 from camel.configs import ChatGPTConfig, FunctionCallingConfig
 from camel.functions import MATH_FUNCS
+from camel.functions.openai_function import OpenAIFunction
 from camel.generators import SystemMessageGenerator
 from camel.memories import MemoryRecord
 from camel.messages import BaseMessage
@@ -367,7 +369,7 @@ def test_function_enabled():
 
 
 @pytest.mark.model_backend
-def test_function_calling():
+def test_function_calling_sync():
     system_message = BaseMessage(
         role_name="assistant",
         role_type=RoleType.ASSISTANT,
@@ -380,7 +382,7 @@ def test_function_calling():
     agent = ChatAgent(
         system_message=system_message,
         model_config=model_config,
-        model_type=ModelType.GPT_4,
+        model_type=ModelType.GPT_4O,
         function_list=MATH_FUNCS,
     )
 
@@ -408,6 +410,63 @@ def test_function_calling():
     assert called_funcs[0].func_name == "mul"
     assert called_funcs[0].args == {"a": 2, "b": 8}
     assert called_funcs[0].result == 16
+
+
+@pytest.mark.model_backend
+@pytest.mark.asyncio
+async def test_function_calling_async():
+    system_message = BaseMessage(
+        role_name="assistant",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
+        content="You are a help assistant.",
+    )
+
+    async def async_sleep(second: int) -> int:
+        r"""Async sleep function.
+
+        Args:
+            second (int): Number of seconds to sleep.
+
+        Returns:
+            integer: Number of seconds sleeped.
+        """
+        await asyncio.sleep(second)
+        return second
+
+    model_config = FunctionCallingConfig(
+        temperature=0,
+        functions=[OpenAIFunction(async_sleep).get_openai_function_schema()],
+    )
+    agent = ChatAgent(
+        system_message=system_message,
+        model_config=model_config,
+        model_type=ModelType.GPT_4O,
+        function_list=[OpenAIFunction(async_sleep)],
+    )
+
+    assert len(agent.func_dict) == 1
+
+    user_msg = BaseMessage(
+        role_name="User",
+        role_type=RoleType.USER,
+        meta_dict=dict(),
+        content="Call the async sleep which is specified in function list with 1 second.",
+    )
+    agent_response = await agent.step_async(user_msg)
+
+    called_funcs: List[FunctionCallingRecord] = agent_response.info[
+        'called_functions'
+    ]
+    for called_func in called_funcs:
+        print(str(called_func))
+
+    assert len(called_funcs) > 0
+    assert str(called_funcs[0]).startswith("Function Execution")
+
+    assert called_funcs[0].func_name == "async_sleep"
+    assert called_funcs[0].args == {'second': 1}
+    assert called_funcs[0].result == 1
 
 
 def test_response_words_termination():
