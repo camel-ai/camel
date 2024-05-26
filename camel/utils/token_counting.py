@@ -38,21 +38,26 @@ SQUARE_TOKENS = 170
 EXTRA_TOKENS = 85
 
 
-def get_fschat_tokens(server_url: str, model_name: str, prompt: str = "") -> Tuple[int, int]:
+def get_fschat_tokens(
+    server_url: str, model_name: str, prompt: str = ""
+) -> Tuple[int, int]:
     token_check_url = server_url.replace("v1", "api/v1/token_check")
-    r = requests.post(token_check_url, json={
-        "prompts": [
-            {
-                "model": model_name,
-                "prompt": prompt,
-                "max_tokens": 0
-            }
-        ]
-    })
+    r = requests.post(
+        token_check_url,
+        json={
+            "prompts": [
+                {"model": model_name, "prompt": prompt, "max_tokens": 0}
+            ]
+        },
+    )
     if r.status_code != 200:
-        raise ValueError(f"Token check failed: {r.text}, status code: {r.status_code}")
+        raise ValueError(
+            f"Token check failed: {r.text}, status code: {r.status_code}"
+        )
     r_data = json.loads(r.text)
-    return r_data["prompts"][0]["tokenCount"], r_data["prompts"][0]["contextLength"]
+    return r_data["prompts"][0]["tokenCount"], r_data["prompts"][0][
+        "contextLength"
+    ]
 
 
 def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
@@ -179,7 +184,9 @@ class FsChatTokenCounter(BaseTokenCounter):
         # In general, the system placeholder 1 token
         placeholder_tokens = len(messages) * 3
         prompt = messages_to_prompt(messages, self.model_type)
-        tokens_length, _ = get_fschat_tokens(self.server_url, self.model_name, prompt)
+        tokens_length, _ = get_fschat_tokens(
+            self.server_url, self.model_name, prompt
+        )
         return tokens_length + placeholder_tokens
 
 
@@ -351,7 +358,7 @@ class AnthropicTokenCounter(BaseTokenCounter):
 
 
 def count_tokens_from_image(
-        image: Image.Image, detail: OpenAIImageDetailType
+    image: Image.Image, detail: OpenAIImageDetailType
 ) -> int:
     r"""Count image tokens for OpenAI vision model. An :obj:`"auto"`
     resolution model will be treated as :obj:`"high"`. All images with

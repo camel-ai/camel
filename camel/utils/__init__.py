@@ -27,9 +27,9 @@ from .commons import (
 from .token_counting import (
     AnthropicTokenCounter,
     BaseTokenCounter,
+    FsChatTokenCounter,
     OpenAITokenCounter,
     OpenSourceTokenCounter,
-    FsChatTokenCounter,
     get_model_encoding,
 )
 

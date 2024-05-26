@@ -105,7 +105,10 @@ if __name__ == "__main__":
     # model types and :obj:`model_path` should be set corresponding to
     # model type. For example, to use Vicuna, we can set:
     # model_path = "lmsys/vicuna-7b-v1.5"
-    model_type = [{"type": ModelType.LLAMA_2, "path": "meta-llama/Llama-2-7b-chat-hf"}, {"type": ModelType.FSCHAT, "path": "Qwen1___5-1___8B-Chat"}]
+    model_type = [
+        {"type": ModelType.LLAMA_2, "path": "meta-llama/Llama-2-7b-chat-hf"},
+        {"type": ModelType.FSCHAT, "path": "Qwen1___5-1___8B-Chat"},
+    ]
     for model in model_type:
         main(
             model_type=model["type"],
