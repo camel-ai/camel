@@ -115,7 +115,7 @@ You can connect the agent with external database (as long-term memory) in which 
     ...
 
     # Import the necessary classes
-    from camel.configs import ChatGPTConfig, OpenSourceConfig
+    from camel.configs import OpenSourceConfig
     from camel.types import ModelType
 
     # Set the arguments
