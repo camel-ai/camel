@@ -123,7 +123,15 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
         for msg in messages:
             role = msg["role"]
             content = msg["content"]
-            ret += role + ": " + content + "\n"
+            if not isinstance(content, str):
+                raise ValueError(
+                    "Currently multimodal context is not "
+                    "supported by the token counter."
+                )
+            if content:
+                ret += role + ": " + content + "\n"
+            else:
+                ret += role + ":"
         return ret
     else:
         raise ValueError(f"Invalid model type: {model}")
