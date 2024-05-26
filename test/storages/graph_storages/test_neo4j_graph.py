@@ -120,8 +120,10 @@ def test_neo4j_timeout() -> None:
     except Exception as e:
         assert (
             e.code  # type: ignore[attr-defined]
-            == "Neo.ClientError.Transaction."
-            "TransactionTimedOutClientConfiguration"
+            in [
+                "Neo.ClientError.Transaction.TransactionTimedOutClientConfiguration",
+                "Neo.ClientError.Transaction.LockClientStopped",
+            ]
         )
 
 

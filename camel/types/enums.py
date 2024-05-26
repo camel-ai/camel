@@ -28,6 +28,7 @@ class ModelType(Enum):
     GPT_4 = "gpt-4"
     GPT_4_32K = "gpt-4-32k"
     GPT_4_TURBO = "gpt-4-turbo"
+    GPT_4O = "gpt-4o"
 
     STUB = "stub"
 
@@ -60,6 +61,7 @@ class ModelType(Enum):
             ModelType.GPT_4,
             ModelType.GPT_4_32K,
             ModelType.GPT_4_TURBO,
+            ModelType.GPT_4O,
         }
 
     @property
@@ -101,6 +103,8 @@ class ModelType(Enum):
         elif self is ModelType.GPT_4_32K:
             return 32768
         elif self is ModelType.GPT_4_TURBO:
+            return 128000
+        elif self is ModelType.GPT_4O:
             return 128000
         elif self is ModelType.STUB:
             return 4096
@@ -249,3 +253,9 @@ class OpenAIImageDetailType(Enum):
 class StorageType(Enum):
     MILVUS = "milvus"
     QDRANT = "qdrant"
+
+
+class OpenAPIName(Enum):
+    COURSERA = "coursera"
+    KLARNA = "klarna"
+    SPEAK = "speak"
