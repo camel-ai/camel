@@ -69,14 +69,14 @@ Woohoo, your first agent is ready to play with you!
 # Import the necessary functions
 from camel.functions import MATH_FUNCS, SEARCH_FUNCS
 
-# Initialize the agent with list of functions
+# Initialize the agent with list of tools
 agent = ChatAgent(
     system_message=sys_msg,        
-    function_list=[*MATH_FUNCS, *SEARCH_FUNCS]
+    tools=[*MATH_FUNCS, *SEARCH_FUNCS]
     )
 
-# Check if functions are enabled
-agent.is_function_calling_enabled()
+# Check if tools are enabled
+agent.is_tools_added()
 >>> True
 ```
 
@@ -130,7 +130,7 @@ You can connect the agent with external database (as long-term memory) in which 
     agent = ChatAgent(sys_msg, **agent_kwargs)
     ```
 
-- The `ChatAgent` class offers several useful initialization options, including `model_type`, `model_config`, `memory`, `message_window_size`, `token_limit`, `output_language`, `function_list`, and `response_terminators`. Check [`chat_agent.py`](https://github.com/camel-ai/camel/blob/master/camel/agents/chat_agent.py) for detailed usage guidance.
+- The `ChatAgent` class offers several useful initialization options, including `model_type`, `model_config`, `memory`, `message_window_size`, `token_limit`, `output_language`, `tools`, and `response_terminators`. Check [`chat_agent.py`](https://github.com/camel-ai/camel/blob/master/camel/agents/chat_agent.py) for detailed usage guidance.
 
 
 ## Remarks
