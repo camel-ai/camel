@@ -275,13 +275,13 @@ def role_playing_with_function(
         "account infomation to create a tweet. Search basketball"
         "course from coursera And help me to choose a basketball by klarna."
     ),
-    function_list: Optional[List] = None,
+    tools: Optional[List] = None,
     model_type=None,
     chat_turn_limit=10,
     assistant_role_name: str = "Searcher",
     user_role_name: str = "Professor",
 ) -> None:
-    r"""Initializes and conducts a `RolePlaying` with `FunctionCallingConfig`
+    r"""Initializes and conducts a `RolePlaying` with `ChatGPTConfig`
     session. The function creates an interactive and dynamic role-play session
     where the AI Assistant and User engage based on the given task, roles, and
     available functions. It demonstrates the versatility of AI in handling
@@ -292,7 +292,7 @@ def role_playing_with_function(
         task_prompt (str): The initial task or scenario description to start
             the `RolePlaying` session. Defaults to a prompt involving the
             estimation of KAUST's age and weather information.
-        function_list (list): A list of functions that the agent can utilize
+        tools (list): A list of functions that the agent can utilize
             during the session. Defaults to a combination of math, search, and
             weather functions.
         model_type (ModelType): The type of chatbot model used for both the
@@ -310,24 +310,23 @@ def role_playing_with_function(
     """
 
     # Run lazy import
-    if function_list is None:
-        function_list = get_lazy_imported_functions_module()
+    if tools is None:
+        tools = get_lazy_imported_functions_module()
     if model_type is None:
         model_type = get_lazy_imported_types_module()
 
     from colorama import Fore
 
     from camel.agents.chat_agent import FunctionCallingRecord
-    from camel.configs import ChatGPTConfig, FunctionCallingConfig
+    from camel.configs import ChatGPTConfig
     from camel.societies import RolePlaying
 
     task_prompt = task_prompt
     user_model_config = ChatGPTConfig(temperature=0.0)
 
-    function_list = function_list
-    assistant_model_config = FunctionCallingConfig.from_openai_function_list(
-        function_list=function_list,
-        kwargs=dict(temperature=0.0),
+    assistant_model_config = ChatGPTConfig(
+        tools=tools,
+        temperature=0.0,
     )
 
     role_play_session = RolePlaying(
@@ -336,7 +335,7 @@ def role_playing_with_function(
         assistant_agent_kwargs=dict(
             model_type=model_type,
             model_config=assistant_model_config,
-            function_list=function_list,
+            tools=tools,
         ),
         user_agent_kwargs=dict(
             model_type=model_type,
@@ -394,10 +393,10 @@ def role_playing_with_function(
         # Print output from the assistant, including any function
         # execution information
         print_text_animated(Fore.GREEN + "AI Assistant:")
-        called_functions: List[FunctionCallingRecord] = assistant_response.info[
-            'called_functions'
+        tool_calls: List[FunctionCallingRecord] = assistant_response.info[
+            'tool_calls'
         ]
-        for func_record in called_functions:
+        for func_record in tool_calls:
             print_text_animated(f"{func_record}")
         print_text_animated(f"{assistant_response.msg.content}\n")
 
