@@ -22,6 +22,7 @@ from .role_description_prompt_template import RoleDescriptionPromptTemplateDict
 from .solution_extraction import SolutionExtractionPromptTemplateDict
 from .task_prompt_template import TaskPromptTemplateDict
 from .translation import TranslationPromptTemplateDict
+from .descripte_video_prompt import DescriptionVideoPromptTemplateDict
 
 __all__ = [
     'TextPrompt',
@@ -37,4 +38,5 @@ __all__ = [
     'PromptTemplateGenerator',
     'SolutionExtractionPromptTemplateDict',
     'ObjectRecognitionPromptTemplateDict',
+    'DescriptionVideoPromptTemplateDict',
 ]

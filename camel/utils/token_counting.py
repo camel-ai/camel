@@ -244,7 +244,12 @@ class OpenAITokenCounter(BaseTokenCounter):
                             )
                         elif item["type"] == "image_url":
                             image_str: str = item["image_url"]["url"]
-                            detail = item["image_url"]["detail"]
+                            if "detail" in item["image_url"]:
+                                detail = item["image_url"]["detail"]
+                            else:
+                                # Automatically set the detail type if the image is segmented by video.
+                                detail = OpenAIImageDetailType.AUTO
+
                             image_prefix_format = "data:image/{};base64,"
                             image_prefix: Optional[str] = None
                             for image_type in list(OpenAIImageType):
@@ -268,6 +273,7 @@ class OpenAITokenCounter(BaseTokenCounter):
 
         # every reply is primed with <|start|>assistant<|message|>
         num_tokens += 3
+        if num_tokens > 
         return num_tokens
 
 

@@ -191,6 +191,7 @@ class TaskType(Enum):
     ROLE_DESCRIPTION = "role_description"
     OBJECT_RECOGNITION = "object_recognition"
     DEFAULT = "default"
+    DESCRIPTE_VIDEO = "descripte_video"
 
 
 class VectorDistance(Enum):
@@ -218,7 +219,7 @@ class TerminationMode(Enum):
     ALL = "all"
 
 
-class OpenAIImageTypeMeta(EnumMeta):
+class OpenAIVisionTypeMeta(EnumMeta):
     def __contains__(cls, image_type: object) -> bool:
         try:
             cls(image_type)
@@ -227,7 +228,7 @@ class OpenAIImageTypeMeta(EnumMeta):
         return True
 
 
-class OpenAIImageType(Enum, metaclass=OpenAIImageTypeMeta):
+class OpenAIImageType(Enum, metaclass=OpenAIVisionTypeMeta):
     r"""Image types supported by OpenAI vision model."""
 
     # https://platform.openai.com/docs/guides/vision
@@ -237,6 +238,16 @@ class OpenAIImageType(Enum, metaclass=OpenAIImageTypeMeta):
     WEBP = "webp"
     GIF = "gif"
 
+class OpenAIVideoType(Enum, metaclass=OpenAIVisionTypeMeta):
+    r"""Video types supported by OpenCV."""
+    AVI = "avi"
+    MP4 = "mp4"
+    MOV = "mov"
+    MKV = "mkv"
+    WMV = "wmv"
+    WEBM = "webm"   
+    FLV = "flv"
+    MPEG = "mpeg"
 
 class OpenAIImageDetailType(Enum):
     AUTO = "auto"

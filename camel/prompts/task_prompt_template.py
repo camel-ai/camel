@@ -30,6 +30,7 @@ from camel.prompts.solution_extraction import (
     SolutionExtractionPromptTemplateDict,
 )
 from camel.prompts.translation import TranslationPromptTemplateDict
+from camel.prompts.descripte_video_prompt import DescriptionVideoPromptTemplateDict
 from camel.types import TaskType
 
 
@@ -55,5 +56,6 @@ class TaskPromptTemplateDict(Dict[Any, TextPromptDict]):
                 TaskType.SOLUTION_EXTRACTION: SolutionExtractionPromptTemplateDict(),
                 TaskType.ROLE_DESCRIPTION: RoleDescriptionPromptTemplateDict(),
                 TaskType.OBJECT_RECOGNITION: ObjectRecognitionPromptTemplateDict(),
+                TaskType.DESCRIPTE_VIDEO: DescriptionVideoPromptTemplateDict(),
             }
         )

@@ -17,6 +17,8 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 from PIL import Image
+import cv2
+import os
 
 from camel.messages import (
     OpenAIAssistantMessage,
@@ -30,7 +32,9 @@ from camel.types import (
     OpenAIImageDetailType,
     OpenAIImageType,
     RoleType,
+    OpenAIVideoType,
 )
+from camel.common import Constants
 
 
 @dataclass
@@ -50,6 +54,7 @@ class BaseMessage:
     role_type: RoleType
     meta_dict: Optional[Dict[str, str]]
     content: str
+    video_path: Optional[str] = None
     image: Optional[Image.Image] = None
     image_detail: Literal["auto", "low", "high"] = "auto"
 
@@ -59,14 +64,16 @@ class BaseMessage:
         role_name: str,
         content: str,
         meta_dict: Optional[Dict[str, str]] = None,
+        video_path: Optional[str] = None,
         image: Optional[Image.Image] = None,
         image_detail: Union[OpenAIImageDetailType, str] = "auto",
-    ) -> 'BaseMessage':
+    ) -> "BaseMessage":
         return cls(
             role_name,
             RoleType.USER,
             meta_dict,
             content,
+            video_path,
             image,
             OpenAIImageDetailType(image_detail).value,
         )
@@ -77,14 +84,16 @@ class BaseMessage:
         role_name: str,
         content: str,
         meta_dict: Optional[Dict[str, str]] = None,
+        video_path: Optional[str] = None,
         image: Optional[Image.Image] = None,
         image_detail: Union[OpenAIImageDetailType, str] = "auto",
-    ) -> 'BaseMessage':
+    ) -> "BaseMessage":
         return cls(
             role_name,
             RoleType.ASSISTANT,
             meta_dict,
             content,
+            video_path,
             image,
             OpenAIImageDetailType(image_detail).value,
         )
@@ -181,9 +190,7 @@ class BaseMessage:
         idx = 0
         start_idx = 0
         while idx < len(lines):
-            while idx < len(lines) and (
-                not lines[idx].lstrip().startswith("```")
-            ):
+            while idx < len(lines) and (not lines[idx].lstrip().startswith("```")):
                 idx += 1
             text = "\n".join(lines[start_idx:idx]).strip()
             text_prompts.append(TextPrompt(text))
@@ -241,10 +248,7 @@ class BaseMessage:
         Returns:
             OpenAIUserMessage: The converted :obj:`OpenAIUserMessage` object.
         """
-        if self.image is None:
-            return {"role": "user", "content": self.content}
-        else:
-            #
+        if self.image is not None:
             if self.image.format is None:
                 raise ValueError(
                     f"Image's `format` is `None`, please "
@@ -261,9 +265,7 @@ class BaseMessage:
                 )
             with io.BytesIO() as buffer:
                 self.image.save(fp=buffer, format=self.image.format)
-                encoded_image = base64.b64encode(buffer.getvalue()).decode(
-                    "utf-8"
-                )
+                encoded_image = base64.b64encode(buffer.getvalue()).decode("utf-8")
             image_prefix = f"data:image/{image_type};base64,"
 
             return {
@@ -282,6 +284,74 @@ class BaseMessage:
                     },
                 ],
             }
+        elif self.video_path is not None:
+            if not os.path.exists(self.video_path):
+                raise FileNotFoundError(f"Video file {self.video_path} does not exist.")
+
+            video_format: str = self.video_path.split(".")[-1].lower()
+            if video_format not in OpenAIVideoType:
+                raise ValueError(
+                    f"Video type {video_format} "
+                    f"is not supported by OpenAI vision model"
+                )
+
+            base64Frames = []
+            video = cv2.VideoCapture(self.video_path)
+            while video.isOpened():
+                success, frame = video.read()
+                if not success:
+                    break
+
+                # Get the dimensions of the frame
+                height, width = frame.shape[:2]
+
+                # Calculate the new dimensions while maintaining the aspect ratio
+                new_width = Constants.DEFAULT_IMAGE_SIZE
+                aspect_ratio = width / height
+                new_height = int(new_width / aspect_ratio)
+
+                # Resize the frame
+                resized_frame = cv2.resize(frame, (new_width, new_height))
+
+                # Encode the frame as JPEG
+                _, buffer = cv2.imencode(f".{OpenAIImageType.JPEG}", resized_frame)
+
+                # Convert the encoded frame to base64
+                base64Frame = base64.b64encode(buffer).decode("utf-8")
+
+                # Append the base64 encoded frame to the list
+                base64Frames.append(base64Frame)
+
+            # Release the video capture object
+            video.release()
+
+            # Define a list to hold extracted images from base64Frames
+            # Extract images at intervals specified by Constants.IMAGE_EXTRACTION_INTERVAL
+            # Using list comprehension to select an image at each interval
+            image_extraction_list = [x for x in base64Frames[0::Constants.IMAGE_EXTRACTION_INTERVAL]]
+
+            video_content = []
+            video_content.append(
+                {
+                    "type": "text",
+                    "text": "These are frames from a video that I want to upload. Generate a compelling description that I can upload along with the video.",
+                }
+            )
+            for image in image_extraction_list:
+                item = {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/jpg;base64,{image}",
+                    },
+                }
+                video_content.append(item)
+            return {
+                "role": "user",
+                "content": video_content,
+            }
+
+        else:
+            return {"role": "user", "content": self.content}
 
     def to_openai_assistant_message(self) -> OpenAIAssistantMessage:
         r"""Converts the message to an :obj:`OpenAIAssistantMessage` object.
