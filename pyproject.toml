@@ -62,6 +62,8 @@ prance = { version = "^23.6.21.0", optional = true }
 openapi-spec-validator = { version = "^0.7.1", optional = true }
 unstructured = { extras = ["all-docs"], version = "^0.10.30", optional = true }
 slack-sdk = { version = "^3.27.2", optional = true }
+pydub = { version = "^0.25.1", optional = true }
+pygithub = { version = "^2.3.0", optional = true }
 
 # encoders
 sentence-transformers = { version = "^2.2.2", optional = true }
@@ -113,6 +115,8 @@ tools = [
     "openapi-spec-validator",
     "unstructured",
     "slack-sdk",
+    "pydub",
+    "pygithub",
 ]
 
 vector-databases = [
@@ -142,6 +146,7 @@ all = [
     # tools
     "beautifulsoup4",
     "docx2txt",
+    "pygithub",
     "PyMuPDF",
     "wikipedia",
     "wolframalpha",
@@ -152,6 +157,7 @@ all = [
     "openapi-spec-validator",
     "unstructured",
     "slack-sdk",
+    "pydub",
     # vector-database
     "qdrant-client",
     "pymilvus",
@@ -271,5 +277,7 @@ module = [
     "sentence_transformers.*",
     "pymilvus",
     "slack-sdk",
+    "pydub",
+    "pygithub"
 ]
 ignore_missing_imports = true

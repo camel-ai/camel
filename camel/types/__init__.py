@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .enums import (
+    AudioModelType,
     EmbeddingModelType,
     ModelType,
     OpenAIBackendRole,
@@ -23,6 +24,7 @@ from .enums import (
     TaskType,
     TerminationMode,
     VectorDistance,
+    VoiceType,
 )
 from .openai_types import (
     ChatCompletion,
@@ -59,4 +61,6 @@ __all__ = [
     'OpenAIImageType',
     'OpenAIImageDetailType',
     'OpenAPIName',
+    'AudioModelType',
+    'VoiceType',
 ]
