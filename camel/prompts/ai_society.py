@@ -84,6 +84,8 @@ Thought:
     <YOUR_THOUGHT>  // If you are not satisfied with my answer, you can say 'I am not satisfied with the answer, please provide me with another one.'
 Action: 
     <YOUR_ACTION>
+Feedback:
+    <YOUR_FEEDBACK_OF_FUNCTION_CALLING>  // If you have do the function calling, you need to return the feedback of the function calling.
 """)
 
     USER_PROMPT: TextPrompt = TextPrompt("""===== RULES OF USER =====
