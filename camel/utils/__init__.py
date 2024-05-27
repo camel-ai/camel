@@ -14,7 +14,9 @@
 from .commons import (
     PYDANTIC_V2,
     api_key_required,
+    api_keys_required,
     check_server_running,
+    dependencies_required,
     download_tasks,
     get_first_int,
     get_prompt_template_key_words,
@@ -47,4 +49,6 @@ __all__ = [
     'BaseTokenCounter',
     'OpenAITokenCounter',
     'OpenSourceTokenCounter',
+    'dependencies_required',
+    'api_keys_required',
 ]
