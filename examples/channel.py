@@ -12,8 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import asyncio
-
-from camel.utils.info_channel import Channel_Management
+from camel.utils.info_channel import ChannelManagement
 
 
 class A:
@@ -55,7 +54,7 @@ class B:
             await channel.send_to("A", f"{self.name} says hello {self.count}")
             if message == "stop":
                 break
-  
+
 
 class C:
     def __init__(self, name):
@@ -73,7 +72,7 @@ class C:
 
 
 async def main():
-    manager = Channel_Management()
+    manager = ChannelManagement()
     a = A("A")
     b = B("B")
     c = C("C")

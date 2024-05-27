@@ -13,6 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import asyncio
 from typing import Any, Dict
+from .info_channel import Channel
 
 
 class Channel:
@@ -26,11 +27,11 @@ class Channel:
         self.input_queues: Dict[str, asyncio.Queue]= {}
         self.output_queues: Dict[str, asyncio.Queue] = {}
 
-    def connect(self, channel):
+    def connect(self, channel: Channel):
         r"""Connect to another channel.
 
         Args:
-            channel: another channel to connect
+            channel(Channel): another channel to connect
         """
         self.input_queues[channel.name] = asyncio.Queue()
         channel.input_queues[self.name] = asyncio.Queue()
@@ -43,6 +44,8 @@ class Channel:
         Args:
             name (str): name of the channel to receive from
         """
+        if name not in self.input_queues:
+            raise ValueError(f"Channel {name} not connected")
         return await self.input_queues[name].get()
 
     async def send_to(self, name: str, message: Any):
@@ -52,6 +55,8 @@ class Channel:
             name (str): name of the channel to send to
             message (Any): message to send
         """
+        if name not in self.output_queues:
+            raise ValueError(f"Channel {name} not connected")
         await self.output_queues[name].put(message)
 
     def empty(self, name: str):
