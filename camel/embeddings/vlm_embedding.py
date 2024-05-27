@@ -91,7 +91,7 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
         self.dim = len(result_list[0])
         return result_list
 
-    def get_output_dim(self):
+    def get_output_dim(self) -> int:
         r"""Returns the output dimension of the embeddings.
 
         Returns:
