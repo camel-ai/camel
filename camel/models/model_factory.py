@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from camel.models.anthropic_model import AnthropicModel
 from camel.models.base_model import BaseModelBackend
@@ -30,7 +30,9 @@ class ModelFactory:
 
     @staticmethod
     def create(
-        model_type: ModelType, model_config_dict: Dict
+        model_type: ModelType,
+        model_config_dict: Dict,
+        api_key: Optional[str] = None,
     ) -> BaseModelBackend:
         r"""Creates an instance of `BaseModelBackend` of the specified type.
 
@@ -38,6 +40,8 @@ class ModelFactory:
             model_type (ModelType): Model for which a backend is created.
             model_config_dict (Dict): A dictionary that will be fed into
                 the backend constructor.
+            api_key (Optional[str]): The API key for authenticating with the
+                LLM service.
 
         Raises:
             ValueError: If there is not backend for the model.
@@ -57,5 +61,5 @@ class ModelFactory:
         else:
             raise ValueError(f"Unknown model type `{model_type}` is input")
 
-        inst = model_class(model_type, model_config_dict)
+        inst = model_class(model_type, model_config_dict, api_key)
         return inst
