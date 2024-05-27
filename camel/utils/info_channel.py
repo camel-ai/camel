@@ -17,65 +17,65 @@ from typing import Any, Dict
 
 class Channel:
     def __init__(self, name: str):
-        '''Channel class for communication between different tasks and agents.
+        r"""Channel class for communication between different tasks and agents.
 
         Args:
             name (str): name of the channel
-        '''
+        """
         self.name = name
         self.input_queues: Dict[str, asyncio.Queue]= {}
         self.output_queues: Dict[str, asyncio.Queue] = {}
 
     def connect(self, channel):
-        '''Connect to another channel.
+        r"""Connect to another channel.
 
         Args:
             chanel: another channel to connect
-        '''
+        """
         self.input_queues[channel.name] = asyncio.Queue()
         channel.input_queues[self.name] = asyncio.Queue()
         self.output_queues[channel.name] = channel.input_queues[self.name]
         channel.output_queues[self.name] = self.input_queues[channel.name]
 
     async def receive_from(self, name: str):
-        '''Receive message from another channel.
+        r"""Receive message from another channel.
 
         Args:
             name (str): name of the channel to receive from
-        '''
+        """
         return await self.input_queues[name].get()
 
     async def send_to(self, name: str, message: Any):
-        '''Send message to another channel.
+        r"""Send message to another channel.
 
         Args:
             name (str): name of the channel to send to
             message (Any): message to send
-        '''
+        """
         await self.output_queues[name].put(message)
 
     def empty(self, name: str):
-        '''Check if the queue is empty.
+        r"""Check if the queue is empty.
 
         Args:
             name (str): name of the channel to check
-        '''
+        """
         return self.input_queues[name].empty()
 
 
-class Channel_Management:
+class ChannelManagement:
     def __init__(self):
-        '''Channel management class for managing channels and tasks.
-        '''
+        r"""Channel management class for managing channels and tasks.
+        """
         self.tasks = []
         self.channels = {}
 
-    def regester_channel(self, name: str):
-        '''Register a channel.
+    def register_channel(self, name: str):
+        r"""Register a channel.
 
         Args:
             name (str): name of the channel
-        '''
+        """
         if name not in self.channels:
             channel = Channel(name)
             self.channels[name] = channel
@@ -87,16 +87,16 @@ class Channel_Management:
 
         return channel
 
-    def regester_task(self, func, **params):
-        '''Register a task.
+    def register_task(self, func, **params):
+        r"""Register a task.
 
         Args:
             func: function to run
             **params: parameters for the function
-        '''
+        """
         self.tasks.append(func(**params))
 
     async def run(self):
-        '''Run all the tasks.
-        '''
+        r"""Run all the tasks.
+        """
         await asyncio.gather(*self.tasks)

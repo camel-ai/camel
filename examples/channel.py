@@ -40,7 +40,7 @@ class A:
             if self.count == 2000:
                 await channel.send_to("C", "stop")
                 break
-            
+
 
 class B:
     def __init__(self, name):
@@ -55,7 +55,7 @@ class B:
             await channel.send_to("A", f"{self.name} says hello {self.count}")
             if message == "stop":
                 break
-        
+  
 
 class C:
     def __init__(self, name):
@@ -77,13 +77,13 @@ async def main():
     a = A("A")
     b = B("B")
     c = C("C")
-    channel_a = manager.regester_channel(a.name)
-    channel_b = manager.regester_channel(b.name)
-    channel_c = manager.regester_channel(c.name)
-    manager.regester_task(a.task, channel=channel_a)
-    manager.regester_task(a.task2, channel=channel_a)
-    manager.regester_task(b.task, channel=channel_b)
-    manager.regester_task(c.task, channel=channel_c)
+    channel_a = manager.register_channel(a.name)
+    channel_b = manager.register_channel(b.name)
+    channel_c = manager.register_channel(c.name)
+    manager.register_task(a.task, channel=channel_a)
+    manager.register_task(a.task2, channel=channel_a)
+    manager.register_task(b.task, channel=channel_b)
+    manager.register_task(c.task, channel=channel_c)
     await manager.run()
 
 if __name__ == "__main__":

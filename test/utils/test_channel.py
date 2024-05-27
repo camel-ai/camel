@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import asyncio
 
-from camel.utils.info_channel import Channel, Channel_Management
+from camel.utils.info_channel import Channel, ChannelManagement
 
 check = False
 
@@ -49,16 +49,16 @@ class B:
 
 
 async def main():
-    manager = Channel_Management()
+    manager = ChannelManagement()
     a = A("A")
     b = B("B")
-    channel_a = manager.regester_channel(a.name)
-    channel_b = manager.regester_channel(b.name)
-    manager.regester_task(a.task, channel=channel_a)
-    manager.regester_task(b.task, channel=channel_b)
+    channel_a = manager.register_channel(a.name)
+    channel_b = manager.register_channel(b.name)
+    manager.register_task(a.task, channel=channel_a)
+    manager.register_task(b.task, channel=channel_b)
 
     await manager.run()
-    
+
     assert isinstance(channel_a, Channel)
     assert isinstance(channel_b, Channel)
     assert manager.channels["A"] == channel_a
