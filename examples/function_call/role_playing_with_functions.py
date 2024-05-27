@@ -17,7 +17,7 @@ from typing import List
 from colorama import Fore
 
 from camel.agents.chat_agent import FunctionCallingRecord
-from camel.configs import ChatGPTConfig, FunctionCallingConfig
+from camel.configs import ChatGPTConfig
 from camel.functions import (
     MAP_FUNCS,
     MATH_FUNCS,
@@ -48,9 +48,9 @@ def main(model_type=ModelType.GPT_3_5_TURBO, chat_turn_limit=10) -> None:
         *MAP_FUNCS,
         *TWITTER_FUNCS,
     ]
-    assistant_model_config = FunctionCallingConfig.from_openai_function_list(
-        function_list=function_list,
-        kwargs=dict(temperature=0.0),
+    assistant_model_config = ChatGPTConfig(
+        tools=function_list,
+        temperature=0.0,
     )
 
     role_play_session = RolePlaying(
