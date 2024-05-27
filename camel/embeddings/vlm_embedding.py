@@ -41,8 +41,11 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
         """
         from transformers import AutoModel, AutoProcessor
 
-        self.model = AutoModel.from_pretrained(model_name)
-        self.processor = AutoProcessor.from_pretrained(model_name)
+        try:
+            self.model = AutoModel.from_pretrained(model_name)
+            self.processor = AutoProcessor.from_pretrained(model_name)
+        except Exception as e:
+            raise RuntimeError(f"Failed to load model '{model_name}': {e}")
         self.dim: Optional[int] = None
 
     def embed_list(
