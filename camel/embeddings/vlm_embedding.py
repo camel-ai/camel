@@ -95,6 +95,10 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
             else:
                 raise ValueError("Input type is not image nor text.")
         self.dim = len(result_list[0])
+
+        if any(len(result) != self.dim for result in result_list):
+            raise ValueError("Dimensionality is not consistent.")
+
         return result_list
 
     def get_output_dim(self) -> int:
