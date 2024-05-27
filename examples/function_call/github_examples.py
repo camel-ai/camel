@@ -14,7 +14,7 @@
 from colorama import Fore
 
 from camel.agents import ChatAgent
-from camel.configs import FunctionCallingConfig
+from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.toolkits import GithubToolkit
 from camel.utils import print_text_animated
@@ -46,15 +46,15 @@ def solve_issue(
         content="""You are an experienced software engineer who 
         specializes on data structures and algorithms tasks.""",
     )
-    assistant_model_config = FunctionCallingConfig.from_openai_function_list(
-        function_list=toolkit.get_tools(),
-        kwargs=dict(temperature=0.0),
+    assistant_model_config = ChatGPTConfig(
+        tools=toolkit.get_tools(),
+        temperature=0.0,
     )
     agent = ChatAgent(
         assistant_sys_msg,
         model_type=model,
         model_config=assistant_model_config,
-        function_list=toolkit.get_tools(),
+        tools=toolkit.get_tools(),
     )
     agent.reset()
 

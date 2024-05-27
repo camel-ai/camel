@@ -23,7 +23,6 @@ from .commons import (
     get_system_information,
     get_task_list,
     print_text_animated,
-    role_playing_with_function,
     to_pascal,
 )
 from .token_counting import (
@@ -52,5 +51,4 @@ __all__ = [
     'OpenSourceTokenCounter',
     'dependencies_required',
     'api_keys_required',
-    'role_playing_with_function',
 ]
