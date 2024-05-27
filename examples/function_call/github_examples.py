@@ -54,7 +54,7 @@ def solve_issue(
         assistant_sys_msg,
         model_type=model,
         model_config=assistant_model_config,
-        function_list=toolkit.get_tools(),
+        tools=toolkit.get_tools(),
     )
     agent.reset()
 

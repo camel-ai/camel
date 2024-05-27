@@ -59,7 +59,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO, chat_turn_limit=10) -> None:
         assistant_agent_kwargs=dict(
             model_type=model_type,
             model_config=assistant_model_config,
-            function_list=function_list,
+            tools=function_list,
         ),
         user_agent_kwargs=dict(
             model_type=model_type,
