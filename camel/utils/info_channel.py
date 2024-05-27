@@ -30,7 +30,7 @@ class Channel:
         r"""Connect to another channel.
 
         Args:
-            chanel: another channel to connect
+            channel: another channel to connect
         """
         self.input_queues[channel.name] = asyncio.Queue()
         channel.input_queues[self.name] = asyncio.Queue()
