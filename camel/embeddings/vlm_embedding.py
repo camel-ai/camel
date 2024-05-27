@@ -46,6 +46,22 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
             self.processor = AutoProcessor.from_pretrained(model_name)
         except Exception as e:
             raise RuntimeError(f"Failed to load model '{model_name}': {e}")
+
+        self.valid_processor_kwargs = []
+        self.valid_model_kwargs = []
+
+        try:
+            self.valid_processor_kwargs = (
+                self.processor.image_processor._valid_processor_keys
+            )
+            self.valid_model_kwargs = [
+                "pixel_values",
+                "return_dict",
+                "interpolate_pos_encoding",
+            ]
+        except Exception:
+            print("Warning: not typically processor and model structure")
+            pass
         self.dim: Optional[int] = None
 
     def embed_list(
@@ -70,24 +86,49 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
         if not objs:
             raise ValueError("Input objs list is empty.")
         result_list = []
+        tokenizer_kwargs = {}
+        image_processor_kwargs = {}
+        model_kwargs = {}
+        if kwargs:
+            valid_kwargs = set(self.valid_processor_kwargs).union(
+                self.valid_model_kwargs
+            )
+            tokenizer_kwargs = {
+                k: v for k, v in kwargs.items() if k not in valid_kwargs
+            }
+            image_processor_kwargs = {
+                k: v
+                for k, v in kwargs.items()
+                if k in self.valid_processor_kwargs
+            }
+            model_kwargs = {
+                k: v for k, v in kwargs.items() if k in self.valid_model_kwargs
+            }
+
         for obj in objs:
             if isinstance(obj, Image.Image):
-                input = self.processor(
-                    images=obj, return_tensors="pt", padding=True, **kwargs
+                image_input = self.processor(
+                    images=obj,
+                    return_tensors="pt",
+                    padding=True,
+                    **image_processor_kwargs,
                 )
                 image_feature = (
-                    self.model.get_image_features(**input, **kwargs)
+                    self.model.get_image_features(**image_input, **model_kwargs)
                     .squeeze(dim=0)
                     .tolist()
                 )
                 result_list.append(image_feature)
 
             elif isinstance(obj, str):
-                input = self.processor(
-                    text=obj, return_tensors="pt", padding=True, **kwargs
+                text_input = self.processor(
+                    text=obj,
+                    return_tensors="pt",
+                    padding=True,
+                    **tokenizer_kwargs,
                 )
                 text_feature = (
-                    self.model.get_text_features(**input, **kwargs)
+                    self.model.get_text_features(**text_input, **model_kwargs)
                     .squeeze(dim=0)
                     .tolist()
                 )
