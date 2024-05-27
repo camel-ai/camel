@@ -44,5 +44,5 @@ def test_Async_Agent():
 
     for task in tasks:
         assert isinstance(task.result(), ChatAgentResponse)
-  
+
     loop.close()

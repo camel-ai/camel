@@ -188,7 +188,7 @@ class EmbodiedAgent(ChatAgent):
             content,
         )
         return ChatAgentResponse([message], response.terminated, response.info)
-    
+
     async def astep(
         self,
         input_message: BaseMessage,

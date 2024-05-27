@@ -373,7 +373,7 @@ class ChatAgent(BaseAgent):
                 break
 
         return ChatAgentResponse(output_messages, self.terminated, info)
-    
+
     async def astep(
         self,
         input_message: BaseMessage,
