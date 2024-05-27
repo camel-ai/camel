@@ -13,13 +13,14 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import base64
 import io
+import os
 from dataclasses import dataclass
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
-from PIL import Image
 import cv2
-import os
+from PIL import Image
 
+from camel.common import Constants
 from camel.messages import (
     OpenAIAssistantMessage,
     OpenAIMessage,
@@ -31,10 +32,9 @@ from camel.types import (
     OpenAIBackendRole,
     OpenAIImageDetailType,
     OpenAIImageType,
-    RoleType,
     OpenAIVideoType,
+    RoleType,
 )
-from camel.common import Constants
 
 
 @dataclass
@@ -190,7 +190,9 @@ class BaseMessage:
         idx = 0
         start_idx = 0
         while idx < len(lines):
-            while idx < len(lines) and (not lines[idx].lstrip().startswith("```")):
+            while idx < len(lines) and (
+                not lines[idx].lstrip().startswith("```")
+            ):
                 idx += 1
             text = "\n".join(lines[start_idx:idx]).strip()
             text_prompts.append(TextPrompt(text))
@@ -265,7 +267,9 @@ class BaseMessage:
                 )
             with io.BytesIO() as buffer:
                 self.image.save(fp=buffer, format=self.image.format)
-                encoded_image = base64.b64encode(buffer.getvalue()).decode("utf-8")
+                encoded_image = base64.b64encode(buffer.getvalue()).decode(
+                    "utf-8"
+                )
             image_prefix = f"data:image/{image_type};base64,"
 
             return {
@@ -286,7 +290,9 @@ class BaseMessage:
             }
         elif self.video_path is not None:
             if not os.path.exists(self.video_path):
-                raise FileNotFoundError(f"Video file {self.video_path} does not exist.")
+                raise FileNotFoundError(
+                    f"Video file {self.video_path} does not exist."
+                )
 
             video_format: str = self.video_path.split(".")[-1].lower()
             if video_format not in OpenAIVideoType:
@@ -314,7 +320,9 @@ class BaseMessage:
                 resized_frame = cv2.resize(frame, (new_width, new_height))
 
                 # Encode the frame as JPEG
-                _, buffer = cv2.imencode(f".{OpenAIImageType.JPEG}", resized_frame)
+                _, buffer = cv2.imencode(
+                    f".{OpenAIImageType.JPEG}", resized_frame
+                )
 
                 # Convert the encoded frame to base64
                 base64Frame = base64.b64encode(buffer).decode("utf-8")
@@ -328,7 +336,10 @@ class BaseMessage:
             # Define a list to hold extracted images from base64Frames
             # Extract images at intervals specified by Constants.IMAGE_EXTRACTION_INTERVAL
             # Using list comprehension to select an image at each interval
-            image_extraction_list = [x for x in base64Frames[0::Constants.IMAGE_EXTRACTION_INTERVAL]]
+            image_extraction_list = [
+                x
+                for x in base64Frames[0 :: Constants.IMAGE_EXTRACTION_INTERVAL]
+            ]
 
             video_content = []
             video_content.append(

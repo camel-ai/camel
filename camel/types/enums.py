@@ -238,16 +238,19 @@ class OpenAIImageType(Enum, metaclass=OpenAIVisionTypeMeta):
     WEBP = "webp"
     GIF = "gif"
 
+
 class OpenAIVideoType(Enum, metaclass=OpenAIVisionTypeMeta):
     r"""Video types supported by OpenCV."""
+
     AVI = "avi"
     MP4 = "mp4"
     MOV = "mov"
     MKV = "mkv"
     WMV = "wmv"
-    WEBM = "webm"   
+    WEBM = "webm"
     FLV = "flv"
     MPEG = "mpeg"
+
 
 class OpenAIImageDetailType(Enum):
     AUTO = "auto"

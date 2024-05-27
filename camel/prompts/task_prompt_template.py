@@ -18,6 +18,9 @@ from camel.prompts.ai_society import (
     TextPromptDict,
 )
 from camel.prompts.code import CodePromptTemplateDict
+from camel.prompts.descripte_video_prompt import (
+    DescriptionVideoPromptTemplateDict,
+)
 from camel.prompts.evaluation import (
     EvaluationPromptTemplateDict,
 )
@@ -30,7 +33,6 @@ from camel.prompts.solution_extraction import (
     SolutionExtractionPromptTemplateDict,
 )
 from camel.prompts.translation import TranslationPromptTemplateDict
-from camel.prompts.descripte_video_prompt import DescriptionVideoPromptTemplateDict
 from camel.types import TaskType
 
 

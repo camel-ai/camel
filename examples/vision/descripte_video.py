@@ -26,6 +26,7 @@ parser.add_argument(
     required=True,
 )
 
+
 def descripte_video(video_path: str) -> None:
     sys_msg = PromptTemplateGenerator().get_prompt_from_key(
         TaskType.DESCRIPTE_VIDEO, RoleType.ASSISTANT
@@ -52,6 +53,7 @@ def descripte_video(video_path: str) -> None:
 
 def main(args: argparse.Namespace) -> None:
     descripte_video(args.video_path)
+
 
 if __name__ == "__main__":
     args = parser.parse_args()

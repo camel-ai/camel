@@ -273,7 +273,6 @@ class OpenAITokenCounter(BaseTokenCounter):
 
         # every reply is primed with <|start|>assistant<|message|>
         num_tokens += 3
-        if num_tokens > 
         return num_tokens
 
 

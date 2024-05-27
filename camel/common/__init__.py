@@ -13,7 +13,6 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .constant import Constants
 
-
 __all__ = [
     "Constants",
 ]
