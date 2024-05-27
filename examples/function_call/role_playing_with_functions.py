@@ -117,10 +117,10 @@ def main(model_type=ModelType.GPT_3_5_TURBO, chat_turn_limit=10) -> None:
         # Print output from the assistant, including any function
         # execution information
         print_text_animated(Fore.GREEN + "AI Assistant:")
-        called_functions: List[FunctionCallingRecord] = assistant_response.info[
-            'called_functions'
+        tool_calls: List[FunctionCallingRecord] = assistant_response.info[
+            'tool_calls'
         ]
-        for func_record in called_functions:
+        for func_record in tool_calls:
             print_text_animated(f"{func_record}")
         print_text_animated(f"{assistant_response.msg.content}\n")
 
