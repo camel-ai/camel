@@ -63,6 +63,9 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
         Returns:
             List[List[float]]: A list that represents the generated embedding
                 as a list of floating-point numbers.
+
+        Raises:
+            ValueError: If the input type is not `Image.Image` or `str`.
         """
         if not objs:
             raise ValueError("Input objs list is empty.")
