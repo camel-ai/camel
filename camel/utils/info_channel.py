@@ -18,7 +18,7 @@ from typing import Any, Dict
 class Channel:
     def __init__(self, name: str):
         '''Channel class for communication between different tasks and agents.
-    
+
         Args:
             name (str): name of the channel
         '''
@@ -28,7 +28,7 @@ class Channel:
 
     def connect(self, channel):
         '''Connect to another channel.
-        
+
         Args:
             chanel: another channel to connect
         '''
@@ -44,7 +44,7 @@ class Channel:
             name (str): name of the channel to receive from
         '''
         return await self.input_queues[name].get()
-    
+
     async def send_to(self, name: str, message: Any):
         '''Send message to another channel.
 
@@ -53,7 +53,7 @@ class Channel:
             message (Any): message to send
         '''
         await self.output_queues[name].put(message)
-    
+
     def empty(self, name: str):
         '''Check if the queue is empty.
 
@@ -61,7 +61,7 @@ class Channel:
             name (str): name of the channel to check
         '''
         return self.input_queues[name].empty()
-    
+
 
 class Channel_Management:
     def __init__(self):
@@ -84,7 +84,7 @@ class Channel_Management:
                     channel.connect(self.channels[_name])
         else:
             channel = self.channels[name]
-        
+
         return channel
 
     def regester_task(self, func, **params):
