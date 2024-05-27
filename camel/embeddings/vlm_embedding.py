@@ -32,13 +32,12 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
     def __init__(
         self, model_name: str = "openai/clip-vit-base-patch32"
     ) -> None:
-        r"""Initializes the: obj: `VisionLanguageEmbedding` class
-                                    with a specified model
-                                    and return the dimension of embeddings.
+        r"""Initializes the: obj: `VisionLanguageEmbedding` class with a
+        specified model and return the dimension of embeddings.
 
         Args:
             model_name (str, optional): The version name of the model to use.
-            (default: :obj:`openai/clip-vit-base-patch32`)
+                (default: :obj:`openai/clip-vit-base-patch32`)
         """
         from transformers import AutoModel, AutoProcessor
 
