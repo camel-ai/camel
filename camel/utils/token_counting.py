@@ -21,6 +21,7 @@ from math import ceil
 from typing import TYPE_CHECKING, List, Optional
 
 from anthropic import Anthropic
+from litellm import completion_cost, token_counter
 from PIL import Image
 
 from camel.types import ModelType, OpenAIImageDetailType, OpenAIImageType
@@ -298,6 +299,43 @@ class AnthropicTokenCounter(BaseTokenCounter):
         prompt = messages_to_prompt(messages, self.model_type)
 
         return self.client.count_tokens(prompt)
+
+
+class LiteLLMTokenCounter(BaseTokenCounter):
+    def __init__(self, model_type: ModelType):
+        r"""Constructor for the token counter for LiteLLM models.
+
+        Args:
+            model_type (ModelType): Model type for which tokens will be counted.
+        """
+        self.model_type = model_type
+
+    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
+        r"""Count number of tokens in the provided message list using
+        the tokenizer specific to this type of model.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in LiteLLM API format.
+
+        Returns:
+            int: Number of tokens in the messages.
+        """
+        messages_dict = [msg.to_dict() for msg in messages]
+        return token_counter(
+            model=self.model_type.value, messages=messages_dict
+        )
+
+    def calculate_cost_from_response(self, response: dict) -> float:
+        r"""Calculate the cost of the given completion response.
+
+        Args:
+            response (dict): The completion response from LiteLLM.
+
+        Returns:
+            float: The cost of the completion call.
+        """
+        return completion_cost(completion_response=response)
 
 
 def count_tokens_from_image(

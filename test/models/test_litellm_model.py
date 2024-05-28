@@ -52,8 +52,12 @@ def test_litellm_model_unexpected_argument():
     model_config_dict = model_config.__dict__
 
     with pytest.raises(
-            ValueError,
-            match=re.escape(("Unexpected argument `model_path` is "
-                             "input into LiteLLM model backend.")),
+        ValueError,
+        match=re.escape(
+            (
+                "Unexpected argument `model_path` is "
+                "input into LiteLLM model backend."
+            )
+        ),
     ):
         _ = LiteLLMModel(model_type, model_config_dict)
