@@ -14,7 +14,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from typing import Optional, Union, List
+from typing import List, Optional, Union
 
 from camel.configs.base_config import BaseConfig
 
@@ -56,7 +56,7 @@ class LiteLLMConfig(BaseConfig):
         max_retries (Optional[int], optional): Maximum number of retries. (default: None)
     """
 
-    model: str
+    model: str = "gpt-3.5-turbo"
     messages: List = field(default_factory=list)
     timeout: Optional[Union[float, str]] = None
     temperature: Optional[float] = None

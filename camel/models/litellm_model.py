@@ -71,7 +71,7 @@ class LiteLLMModel(BaseModelBackend):
         """
         response = self._client(
             model=self.model_type.value,
-            messages=[msg.to_dict() for msg in messages],
+            messages=messages,
             **self.model_config_dict,
         )
         return response

@@ -27,6 +27,7 @@ from .commons import (
 from .token_counting import (
     AnthropicTokenCounter,
     BaseTokenCounter,
+    LiteLLMTokenCounter,
     OpenAITokenCounter,
     OpenSourceTokenCounter,
     get_model_encoding,
@@ -48,5 +49,6 @@ __all__ = [
     'BaseTokenCounter',
     'OpenAITokenCounter',
     'OpenSourceTokenCounter',
+    'LiteLLMTokenCounter',
     'role_playing_with_function',
 ]

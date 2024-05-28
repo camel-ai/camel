@@ -321,10 +321,7 @@ class LiteLLMTokenCounter(BaseTokenCounter):
         Returns:
             int: Number of tokens in the messages.
         """
-        messages_dict = [msg.to_dict() for msg in messages]
-        return token_counter(
-            model=self.model_type.value, messages=messages_dict
-        )
+        return token_counter(model=self.model_type.value, messages=messages)
 
     def calculate_cost_from_response(self, response: dict) -> float:
         r"""Calculate the cost of the given completion response.
