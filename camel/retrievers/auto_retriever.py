@@ -101,8 +101,8 @@ class AutoRetriever:
         r"""Generates a valid collection name from a given file path or URL.
 
         Args:
-        content_input_path: str. The input URL or file path from which to
-            generate the collection name.
+            content_input_path: str. The input URL or file path from which to
+                generate the collection name.
 
         Returns:
             str: A sanitized, valid collection name suitable for use.
