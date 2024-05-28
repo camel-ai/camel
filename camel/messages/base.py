@@ -320,12 +320,15 @@ class BaseMessage:
                 resized_frame = cv2.resize(frame, (new_width, new_height))
 
                 # Encode the frame as JPEG
-                _, buffer = cv2.imencode(
+                success, buffer = cv2.imencode(
                     f".{OpenAIImageType.JPEG}", resized_frame
                 )
 
+                if success:
+                    # Convert the buffer to bytes
+                    image_bytes = buffer.tobytes()
                 # Convert the encoded frame to base64
-                base64Frame = base64.b64encode(buffer).decode("utf-8")
+                base64Frame = base64.b64encode(image_bytes).decode("utf-8")
 
                 # Append the base64 encoded frame to the list
                 base64Frames.append(base64Frame)
@@ -349,10 +352,11 @@ class BaseMessage:
                 }
             )
             for image in image_extraction_list:
+                image_str = str(image)
                 item = {
                     "type": "image_url",
                     "image_url": {
-                        "url": f"data:image/jpg;base64,{image}",
+                        "url": f"data:image/jpg;base64,{image_str}",
                     },
                 }
                 video_content.append(item)
