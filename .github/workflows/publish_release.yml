@@ -16,11 +16,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - name: Build and publish to pypi
-        uses: JRubics/poetry-publish@v1.17
-        with:
-          pypi_token: ${{ secrets.PYPI_API_KEY }}
-          ignore_dev_requirements: "yes"
 
       - name: Create GitHub Release
         id: create_release
