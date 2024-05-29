@@ -124,9 +124,9 @@ def test_retrieve_issue(monkeypatch):
         file_path="path/to/file",
         file_content="This is the content of the file",
     )
-    assert (
-        issue == expected_issue.summary()
-    ), f"Expected {expected_issue.summary()}, but got {issue}"
+    assert issue == str(
+        expected_issue
+    ), f"Expected {expected_issue}, but got {issue}"
 
 
 @patch.object(Github, 'get_repo', return_value=MagicMock())
@@ -196,7 +196,9 @@ def test_retrieve_pull_requests(monkeypatch):
     # Mock the get_issues method of the mock repo instance to return a list containing the mock issue object
     github_toolkit.repo.get_pulls.return_value = [mock_pull_request]
 
-    pull_requests = github_toolkit.retrieve_pull_requests(days=7)
+    pull_requests = github_toolkit.retrieve_pull_requests(
+        days=7, state='closed'
+    )
     # Assert the returned issue list
     expected_pull_request = GithubPullRequest(
         title="Test PR",
@@ -208,8 +210,8 @@ def test_retrieve_pull_requests(monkeypatch):
         ],
     )
     assert pull_requests == [
-        expected_pull_request.summary()
-    ], f"Expected {expected_pull_request.summary()}, but got {pull_requests}"
+        str(expected_pull_request)
+    ], f"Expected {expected_pull_request}, but got {pull_requests}"
 
 
 def test_github_issue():
@@ -230,7 +232,7 @@ def test_github_issue():
     assert issue.file_content == "This is the content of the file"
 
     # Test the summary method
-    summary = issue.summary()
+    summary = str(issue)
     expected_summary = (
         f"Title: {issue.title}\n"
         f"Body: {issue.body}\n"

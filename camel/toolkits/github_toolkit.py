@@ -57,8 +57,8 @@ class GithubIssue:
         self.file_path = file_path
         self.file_content = file_content
 
-    def summary(self) -> str:
-        r"""Returns a summary of the issue.
+    def __str__(self) -> str:
+        r"""Returns a string representation of the issue.
 
         Returns:
             str: A string containing the title, body, number, file path, and file content of the issue.
@@ -74,20 +74,19 @@ class GithubIssue:
 
 @dataclass
 class GithubPullRequestDiff:
-    r"""Represents a single diff of a pull request on Github."""
+    r"""Represents a single diff of a pull request on Github.
+
+    Attributes:
+        filename (str): The name of the file that was changed.
+        patch (str): The diff patch for the file.
+    """
 
     def __init__(self, filename: str, patch: str) -> None:
-        r"""Initialize a GithubPullRequestDiff object.
-
-        Args:
-            filename (str): The name of the file that was changed.
-            patch (str): The diff patch for the file.
-        """
         self.filename = filename
         self.patch = patch
 
-    def summary(self) -> str:
-        r"""Returns a summary of this diff."""
+    def __str__(self) -> str:
+        r"""Returns a string representation of this diff."""
         return f"Filename: {self.filename}\nPatch: {self.patch}"
 
 
@@ -96,10 +95,9 @@ class GithubPullRequest:
     r"""Represents a pull request on Github.
 
     Attributes:
-        title (str): The title of the pull request.
-        body (str): The body/content of the pull request.
-        file_path (str): The path of the file associated with the pull request.
-        file_content (str): The content of the file associated with the pull request.
+        title (str): The title of the GitHub pull request.
+        body (str): The body/content of the GitHub pull request.
+        diffs (List[GithubPullRequestDiff]): A list of diffs for the pull request.
     """
 
     def __init__(
@@ -108,20 +106,13 @@ class GithubPullRequest:
         body: str,
         diffs: List[GithubPullRequestDiff],
     ) -> None:
-        r"""Initialize a GithubPullRequest object.
-
-        Args:
-            title (str): The title of the GitHub pull request.
-            body (str): The body/content of the GitHub pull request.
-            diffs (List[GithubPullRequestDiff]): A list of diffs for the pull request.
-        """
         self.title = title
         self.body = body
         self.diffs = diffs
 
-    def summary(self) -> str:
-        r"""Returns a summary of the pull request."""
-        diff_summaries = '\n'.join(diff.summary() for diff in self.diffs)
+    def __str__(self) -> str:
+        r"""Returns a string representation of the pull request."""
+        diff_summaries = '\n'.join(str(diff) for diff in self.diffs)
         return (
             f"Title: {self.title}\n"
             f"Body: {self.body}\n"
@@ -232,28 +223,21 @@ class GithubToolkit(BaseToolkit):
         issues = self.retrieve_issue_list()
         for issue in issues:
             if issue.number == issue_number:
-                return issue.summary()
+                return str(issue)
         return None
 
-    def retrieve_pull_requests(
-        self, days: int, state: Optional[str] = None
-    ) -> List:
+    def retrieve_pull_requests(self, days: int, state: str) -> List:
         r"""Retrieves a summary of merged pull requests from the repository.
         The summary will be provided for the last specified number of days.
 
         Args:
             days (int): The number of days to retrieve merged pull requests for.
-            state (str, optional): A specific state of PRs to retrieve (open/closed).
+            state (str): A specific state of PRs to retrieve. Can be open or closed.
 
         Returns:
             list: A list of merged pull request summaries.
         """
-
-        if state is None:
-            pull_requests = self.repo.get_pulls()
-        else:
-            pull_requests = self.repo.get_pulls(state=state)
-
+        pull_requests = self.repo.get_pulls(state=state)
         merged_prs = []
         earliest_date: datetime = datetime.utcnow() - timedelta(days=days)
 
@@ -272,7 +256,7 @@ class GithubToolkit(BaseToolkit):
                     diff = GithubPullRequestDiff(file.filename, file.patch)
                     pr_details.diffs.append(diff)
 
-                merged_prs.append(pr_details.summary())
+                merged_prs.append(str(pr_details))
         return merged_prs
 
     def create_pull_request(

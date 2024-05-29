@@ -11,10 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import argparse
+
 from colorama import Fore
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
+from camel.functions import OpenAIFunction
 from camel.messages import BaseMessage
 from camel.toolkits import GithubToolkit
 from camel.utils import print_text_animated
@@ -46,14 +49,14 @@ def write_weekly_pr_summary(repo_name, model=None):
         """,
     )
     assistant_model_config = FunctionCallingConfig.from_openai_function_list(
-        function_list=toolkit.get_tools(),
+        function_list=[OpenAIFunction(toolkit.retrieve_pull_requests)],
         kwargs=dict(temperature=0.0),
     )
     agent = ChatAgent(
         assistant_sys_msg,
         model_type=model,
         model_config=assistant_model_config,
-        function_list=toolkit.get_tools(),
+        function_list=[OpenAIFunction(toolkit.retrieve_pull_requests)],
     )
     agent.reset()
 
@@ -114,7 +117,11 @@ def solve_issue(
 
 
 def main(model=None) -> None:
-    repo_name = "camel-ai/camel"
+    parser = argparse.ArgumentParser(description='Enter repo name.')
+    parser.add_argument('repo_name', type=str, help='Name of the repository')
+    args = parser.parse_args()
+
+    repo_name = args.repo_name
     write_weekly_pr_summary(repo_name=repo_name, model=model)
 
 
