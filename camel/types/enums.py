@@ -29,6 +29,8 @@ class ModelType(Enum):
     GPT_4_32K = "gpt-4-32k"
     GPT_4_TURBO = "gpt-4-turbo"
     GPT_4O = "gpt-4o"
+    GLM_4 = "glm-4"
+    GLM_3_TURBO = "glm-3-turbo"
 
     STUB = "stub"
 
@@ -62,6 +64,14 @@ class ModelType(Enum):
             ModelType.GPT_4O,
         }
 
+    @property
+    def is_zhipuai(self) -> bool:
+        r"""Returns whether this type of models is an ZhipuAI model."""
+        return self in {
+            ModelType.GLM_3_TURBO,
+            ModelType.GLM_4,
+        }
+    
     @property
     def is_open_source(self) -> bool:
         r"""Returns whether this type of models is open-source."""
@@ -103,6 +113,10 @@ class ModelType(Enum):
             return 128000
         elif self is ModelType.GPT_4O:
             return 128000
+        elif self == ModelType.GLM_4:
+            return 8192
+        elif self == ModelType.GLM_3_TURBO:
+            return 16385
         elif self is ModelType.STUB:
             return 4096
         elif self is ModelType.LLAMA_2:

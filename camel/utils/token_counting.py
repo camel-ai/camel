@@ -132,6 +132,19 @@ class BaseTokenCounter(ABC):
         """
         pass
 
+class ZhipuAITokenCounter(BaseTokenCounter):
+    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
+        r"""Token counting for ZhipuAI models, directly returning a constant.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+
+        Returns:
+            int: A constant to act as the number of the tokens in the
+                messages.
+        """
+        return 10
 
 class OpenSourceTokenCounter(BaseTokenCounter):
     def __init__(self, model_type: ModelType, model_path: str):

@@ -15,9 +15,9 @@ from colorama import Fore
 
 from camel.societies import RolePlaying
 from camel.utils import print_text_animated
+from camel.types import ModelType
 
-
-def main(model_type=None, chat_turn_limit=50) -> None:
+def main(model_type=ModelType.GLM_4, chat_turn_limit=50) -> None:
     task_prompt = "Develop a trading bot for the stock market"
     role_play_session = RolePlaying(
         assistant_role_name="Python Programmer",
