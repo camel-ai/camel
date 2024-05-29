@@ -171,7 +171,6 @@ class OpenAIFunction:
         self.openai_tool_schema = openai_tool_schema or get_openai_tool_schema(
             func
         )
-        self.properties = self.openai_tool_schema
 
     @staticmethod
     def validate_openai_tool_schema(openai_tool_schema: Dict[str, Any]) -> None:
@@ -193,6 +192,9 @@ class OpenAIFunction:
             SchemaError: If the parameters do not meet JSON Schema reference
                 specifications.
         """
+        # Check the type
+        if not openai_tool_schema["type"]:
+            raise ValueError("miss type")
         # Check the function description
         if not openai_tool_schema["function"]["description"]:
             raise ValueError("miss function description")

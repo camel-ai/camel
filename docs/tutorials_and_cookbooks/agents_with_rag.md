@@ -245,7 +245,7 @@ role_playing_with_function(
     task_prompt=(
         "What is the main termination reasons for AI Society dataset, how many number of messages did camel decided to limit, what's the value plus 100?"
     ),
-    function_list=[*RETRIEVER_FUNCS, *MATH_FUNCS],
+    tools=[*RETRIEVER_FUNCS, *MATH_FUNCS],
 )
 ```
 ```markdown

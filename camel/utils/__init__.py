@@ -14,14 +14,15 @@
 from .commons import (
     PYDANTIC_V2,
     api_key_required,
+    api_keys_required,
     check_server_running,
+    dependencies_required,
     download_tasks,
     get_first_int,
     get_prompt_template_key_words,
     get_system_information,
     get_task_list,
     print_text_animated,
-    role_playing_with_function,
     to_pascal,
 )
 from .token_counting import (
@@ -50,5 +51,6 @@ __all__ = [
     'OpenAITokenCounter',
     'OpenSourceTokenCounter',
     'LiteLLMTokenCounter',
-    'role_playing_with_function',
+    'dependencies_required',
+    'api_keys_required',
 ]

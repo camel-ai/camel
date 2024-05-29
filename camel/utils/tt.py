@@ -11,22 +11,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .anthropic_config import ANTHROPIC_API_PARAMS, AnthropicConfig
-from .base_config import BaseConfig
-from .litellm_config import LITELLM_API_PARAMS, LiteLLMConfig
-from .openai_config import (
-    OPENAI_API_PARAMS,
-    ChatGPTConfig,
-    OpenSourceConfig,
-)
 
-__all__ = [
-    'BaseConfig',
-    'ChatGPTConfig',
-    'OPENAI_API_PARAMS',
-    'AnthropicConfig',
-    'ANTHROPIC_API_PARAMS',
-    'OpenSourceConfig',
-    'LiteLLMConfig',
-    'LITELLM_API_PARAMS',
-]
+# from transformers import AutoTokenizer
+
+# model_path = "TinyPixel/Llama-2-7B-bf16-sharded"
+# try:
+#     tokenizer = AutoTokenizer.from_pretrained(
+#         model_path,
+#         use_fast=True,
+#     )
+# except TypeError:
+#     tokenizer = AutoTokenizer.from_pretrained(
+#         model_path)
+
+
+# from camel.models import OpenSourceModel
+
+# OpenSourceModel()
