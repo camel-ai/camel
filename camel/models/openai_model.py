@@ -42,7 +42,7 @@ class OpenAIModel(BaseModelBackend):
             api_key (Optional[str]): The API key for authenticating with the
                 OpenAI service. (default: :obj:`None`)
         """
-        super().__init__(model_type, model_config_dict)
+        super().__init__(model_type, model_config_dict, api_key)
         url = os.environ.get('OPENAI_API_BASE_URL', None)
         self._api_key = api_key or os.environ.get("OPENAI_API_KEY")
         self._client = OpenAI(

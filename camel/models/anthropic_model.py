@@ -42,7 +42,7 @@ class AnthropicModel(BaseModelBackend):
             api_key (Optional[str]): The API key for authenticating with the
                 Anthropic service. (default: :obj:`None`)
         """
-        super().__init__(model_type, model_config_dict)
+        super().__init__(model_type, model_config_dict, api_key)
         self._api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
         self.client = Anthropic(api_key=self._api_key)
         self._token_counter: Optional[BaseTokenCounter] = None

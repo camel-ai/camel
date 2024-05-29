@@ -38,7 +38,7 @@ class BaseModelBackend(ABC):
             model_type (ModelType): Model for which a backend is created.
             model_config_dict (Dict[str, Any]): A config dictionary.
             api_key (Optional[str]): The API key for authenticating with the
-                LLM service.
+                model service.
         """
         self.model_type = model_type
 

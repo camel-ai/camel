@@ -28,7 +28,7 @@ def main(
     chat_turn_limit=50,
     model_platform=ModelPlatformType.OPENSOURCE,
     model_type=ModelType.LLAMA_2,
-    model_path="meta-llama/Llama-2-7b-chat-hf",
+    model_path="TinyPixel/Llama-2-7B-bf16-sharded",
     server_url="http://localhost:8000/v1",
 ) -> None:
     task_prompt = "Develop a trading bot for the stock market"
