@@ -25,6 +25,7 @@ from .retrieval_functions import RETRIEVAL_FUNCS
 from .search_functions import SEARCH_FUNCS
 from .twitter_function import TWITTER_FUNCS
 from .weather_functions import WEATHER_FUNCS
+from .slack_functions import SLACK_FUNCS
 
 __all__ = [
     'OpenAIFunction',
@@ -37,4 +38,5 @@ __all__ = [
     'SEARCH_FUNCS',
     'TWITTER_FUNCS',
     'WEATHER_FUNCS',
+    'SLACK_FUNCS',
 ]
