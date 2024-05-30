@@ -197,7 +197,7 @@ def test_retrieve_pull_requests(monkeypatch):
     github_toolkit.repo.get_pulls.return_value = [mock_pull_request]
 
     pull_requests = github_toolkit.retrieve_pull_requests(
-        days=7, state='closed'
+        days=7, state='closed', max_prs=3
     )
     # Assert the returned issue list
     expected_pull_request = GithubPullRequest(
