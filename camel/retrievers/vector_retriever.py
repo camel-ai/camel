@@ -151,7 +151,8 @@ class VectorRetriever(BaseRetriever):
 
         if query_results[0].record.payload is None:
             raise ValueError(
-                "Payload of vector storage is None, please check the collection."
+                "Payload of vector storage is None, please check the "
+                "collection."
             )
 
         # format the results
@@ -176,8 +177,11 @@ class VectorRetriever(BaseRetriever):
         if not formatted_results:
             return [
                 {
-                    'text': f"""No suitable information retrieved from {content_path} \
-                with similarity_threshold = {self.similarity_threshold}."""
+                    'text': (
+                        f"No suitable information retrieved "
+                        f"from {content_path} with similarity_threshold"
+                        f" = {self.similarity_threshold}."
+                    )
                 }
             ]
         return formatted_results

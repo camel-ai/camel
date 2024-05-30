@@ -55,7 +55,8 @@ def test_coursera_search(get_function):
                     "Human Learning",
                 ],
                 "objectUrl": (
-                    "https://www.coursera.org/specializations/machine-learning-introduction?utm_source=rest_api"
+                    '''https://www.coursera.org/specializations/
+                    machine-learning-introduction?utm_source=rest_api'''
                 ),
             }
         ]
@@ -75,7 +76,9 @@ def test_klarna_productsUsingGET(get_function):
         'products': [
             {
                 'name': 'Nike Dunk Low Retro M - Black/White',
-                'url': 'https://www.klarna.com/us/shopping/pl/cl337/3200177969/Shoes/Nike-Dunk-Low-Retro-M-Black-White/?utm_source=openai&ref-site=openai_plugin',
+                'url': '''https://www.klarna.com/us/shopping/pl/cl337/
+                3200177969/Shoes/Nike-Dunk-Low-Retro-M-Black-White/?
+                utm_source=openai&ref-site=openai_plugin''',
                 'price': '\$81.00',
                 'attributes': [
                     'Outsole:Rubber',
@@ -85,13 +88,17 @@ def test_klarna_productsUsingGET(get_function):
                     'Target Group:Man',
                     'Color:White',
                     'Upper Material:Leather',
-                    'Size (US):9.5,10,11,12,13,14,15,16,17,18,11.5,10.5,2,3,4,5,6,7,8,9,2.5,3.5,4.5,16.5,5.5,15.5,6.5,14.5,13.5,7.5,8.5,12.5',
+                    '''Size (US):9.5,10,11,12,13,14,15,16,17,18,11.5,10.5,2,3,
+                    4,5,6,7,8,9,2.5,3.5,4.5,16.5,5.5,15.5,6.5,14.5,13.5,7.5,8.
+                    5,12.5''',
                     'Series:Nike Dunk',
                 ],
             },
             {
                 'name': "Nike Air Force 1 '07 M - White",
-                'url': 'https://www.klarna.com/us/shopping/pl/cl337/3979297/Shoes/Nike-Air-Force-1-07-M-White/?utm_source=openai&ref-site=openai_plugin',
+                'url': '''https://www.klarna.com/us/shopping/pl/cl337/3979297/
+                Shoes/Nike-Air-Force-1-07-M-White/?utm_source=openai&
+                ref-site=openai_plugin''',
                 'price': '\$80.00',
                 'attributes': [
                     'Outsole:Rubber',
@@ -100,7 +107,9 @@ def test_klarna_productsUsingGET(get_function):
                     'Target Group:Man',
                     'Color:White',
                     'Upper Material:Leather',
-                    'Size (US):9.5,10,11,12,13,14,15,16,17,11.5,10.5,2,3,4,5,6,7,8,9,2.5,3.5,4.5,16.5,5.5,15.5,6.5,14.5,13.5,7.5,8.5,12.5',
+                    '''Size (US):9.5,10,11,12,13,14,15,16,17,11.5,10.5,2,3,4,5,
+                    6,7,8,9,2.5,3.5,4.5,16.5,5.5,15.5,6.5,14.5,13.5,7.5,8.5,12.
+                    5''',
                     'Lining Material:Textile',
                     'Series:Nike Air Force 1',
                 ],
@@ -124,26 +133,35 @@ def test_speak_translate(get_function):
     # ruff: noqa: RUF001
     mock_response_data = {
         "explanation": '''
-    <translation language="Chinese" context="Looking for the German word for the fruit that is commonly red, green, or yellow.">
+    <translation language="Chinese" context="Looking for the German word for 
+    the fruit that is commonly red, green, or yellow.">
     苹果 (píngguǒ)
     </translation>
 
-    <alternatives context="Looking for the German word for the fruit that is commonly red, green, or yellow.">
-    1. "苹果 (píngguǒ)" *(Neutral/Formal - the standard term for 'apple' in Chinese)*
-    2. "苹儿 (pín er)" *(Informal - a colloquial way to refer to an apple, often used in Northern China)*
-    3. "苹果儿 (píngguǒ er)" *(Informal - similar to "苹儿 (pín er)", used in casual conversations)*
+    <alternatives context="Looking for the German word for the fruit that is 
+    commonly red, green, or yellow.">
+    1. "苹果 (píngguǒ)" *(Neutral/Formal - the standard term for 'apple' in 
+    Chinese)*
+    2. "苹儿 (pín er)" *(Informal - a colloquial way to refer to an apple, 
+    often used in Northern China)*
+    3. "苹果儿 (píngguǒ er)" *(Informal - similar to "苹儿 (pín er)", used in 
+    casual conversations)*
     </alternatives>
 
     <example-convo language="Chinese">
     <context>At a fruit market in China.</context>
     * Li: "嗨，这里有新鲜的苹果吗？" (Hi, do you have fresh apples here?)
-    * Seller: "当然有！我们这里的苹果非常好吃，是从山上来的。" (Of course! The apples here are delicious, they come from the mountains.)
+    * Seller: "当然有！我们这里的苹果非常好吃，是从山上来的。" (Of course! 
+    The apples here are delicious, they come from the mountains.)
     * Li: "好的，我要买几个红苹果。" (Great, I want to buy some red apples.)
     </example-convo>
 
-    *[Report an issue or leave feedback](https://speak.com/chatgpt?rid=sjqtmni8qkvtwr6jlj3xl1lz)*
+    *[Report an issue or leave feedback](https://speak.com/chatgpt?
+    rid=sjqtmni8qkvtwr6jlj3xl1lz)*
     ''',
-        "extra_response_instructions": "Use all information in the API response and fully render all Markdown.\nAlways end your response with a link to report an issue or leave feedback on the plugin.",
+        "extra_response_instructions": '''Use all information in the API 
+        response and fully render all Markdown.\nAlways end your response with 
+        a link to report an issue or leave feedback on the plugin.''',
     }
 
     mock_response = MagicMock()
@@ -153,7 +171,8 @@ def test_speak_translate(get_function):
             "phrase_to_translate": "Wie sagt man 'apple' auf Deutsch?",
             "learning_language": "Chinese",
             "native_language": "English",
-            "additional_context": "Looking for the German word for the fruit that is commonly red, green, or yellow.",
+            "additional_context": '''Looking for the German word for the fruit 
+            that is commonly red, green, or yellow.''',
             "full_query": "What is the German word for 'apple'?",
         }
         result = get_function(requestBody=translate_request)
@@ -165,36 +184,58 @@ def test_speak_explainPhrase(get_function):
     mock_response_data = {
         "explanation": '''
     <markdown>
-    <explanation context="Someone said this to me after a surprising event occurred. Want to understand the tone and context it's used in.">
+    <explanation context="Someone said this to me after a surprising event 
+    occurred. Want to understand the tone and context it's used in.">
     The phrase you entered is: "<input></input>"
-    This phrase is commonly used in Chinese and it means "What happened?" or "What's going on?" It is often used when you want to express surprise or curiosity about a situation or event. Imagine someone just witnessed something unexpected and they are genuinely interested in finding out more details about it. 
+    This phrase is commonly used in Chinese and it means "What happened?" or 
+    "What's going on?" It is often used when you want to express surprise or 
+    curiosity about a situation or event. Imagine someone just witnessed 
+    something unexpected and they are genuinely interested in finding out more 
+    details about it. 
 
-    For example, if you witnessed a car accident on the street and you're confused about what happened, you can ask "你们这是怎么回事啊？" (Nǐmen zhè shì zěnme huíshì a?) which translates to "What happened here?" or "What's going on here?"
+    For example, if you witnessed a car accident on the street and you're 
+    confused about what happened, you can ask "你们这是怎么回事啊？" (Nǐmen zhè 
+    shì zěnme huíshì a?) which translates to "What happened here?" or "What's 
+    going on here?"
 
     </explanation>
 
-    <alternatives context="Someone said this to me after a surprising event occurred. Want to understand the tone and context it's used in.">
-    Here are a few alternative phrases that convey a similar meaning and can be used in different situations:
+    <alternatives context="Someone said this to me after a surprising event 
+    occurred. Want to understand the tone and context it's used in.">
+    Here are a few alternative phrases that convey a similar meaning and can 
+    be used in different situations:
 
-    1. "发生了什么事？" (Fāshēngle shénme shì?) - This phrase is a bit more formal and it means "What happened?" It can be used in various contexts, such as asking about a news event or inquiring about a situation you're not familiar with.
+    1. "发生了什么事？" (Fāshēngle shénme shì?) - This phrase is a bit more 
+    formal and it means "What happened?" It can be used in various contexts, 
+    such as asking about a news event or inquiring about a situation you're 
+    not familiar with.
 
-    2. "出什么事了？" (Chū shénme shì le?) - This phrase is more casual and can be translated as "What's going on?" or "What's happening?" It is often used when you want to express surprise and inquire about a situation.
+    2. "出什么事了？" (Chū shénme shì le?) - This phrase is more casual and can 
+    be translated as "What's going on?" or "What's happening?" It is often 
+    used when you want to express surprise and inquire about a situation.
 
-    3. "怎么回事？" (Zěnme huíshì?) - This phrase is similar to the first one we mentioned, but it's a bit more informal. It can be used in both casual and formal situations to ask "What's going on?" or "What happened?"
+    3. "怎么回事？" (Zěnme huíshì?) - This phrase is similar to the first one 
+    we mentioned, but it's a bit more informal. It can be used in both casual 
+    and formal situations to ask "What's going on?" or "What happened?"
 
     </alternatives>
 
     <example-convo language="Chinese">
-    <context>You and your friend are walking in the park when suddenly, a UFO appears in the sky.</context>
+    <context>You and your friend are walking in the park when suddenly, a UFO 
+    appears in the sky.</context>
     <dialogue>
-    Person A: 哇，你看！天上有 个飞碟！(Wā, nǐ kàn! Tiānshàng yǒu gè fēidié!) Wow, look! There's a UFO in the sky!
+    Person A: 哇，你看！天上有 个飞碟！(Wā, nǐ kàn! Tiānshàng yǒu gè 
+    fēidié!) Wow, look! There's a UFO in the sky!
     Person B: 什么？你确定吗？(Shénme? Nǐ quèdìng ma?) What? Are you sure?
-    Person A: 是的！你们这是怎么回事啊？(Shì de! Nǐmen zhè shì zěnme huíshì a?) Yes! What happened here?
+    Person A: 是的！你们这是怎么回事啊？(Shì de! Nǐmen zhè shì zěnme huíshì a?) 
+    Yes! What happened here?
     </dialogue>
     </example-convo>
     </markdown>
     ''',
-        "extra_response_instructions": "Use all information in the API response and fully render all Markdown.\nAlways end your response with a link to report an issue or leave feedback on the plugin.",
+        "extra_response_instructions": '''Use all information in the API 
+        response and fully render all Markdown.\nAlways end your response with 
+        a link to report an issue or leave feedback on the plugin.''',
     }
     mock_response = MagicMock()
     mock_response.json.return_value = mock_response_data
@@ -207,7 +248,8 @@ def test_speak_explainPhrase(get_function):
                 "Someone said this to me after a surprising event occurred."
                 "Want to understand the tone and context it's used in."
             ),
-            "full_query": "Somebody said 'no mames' to me, what does that mean?",
+            "full_query": '''Somebody said 'no mames' to me, what does that 
+            mean?''',
         }
         result = get_function(requestBody=explain_phrase_request)
         assert result == mock_response_data
@@ -218,36 +260,58 @@ def test_speak_explainTask(get_function):
     mock_response_data = {
         "explanation": '''
     <markdown>
-    <explanation context="Someone said this to me after a surprising event occurred. Want to understand the tone and context it's used in.">
+    <explanation context="Someone said this to me after a surprising event 
+    occurred. Want to understand the tone and context it's used in.">
     The phrase you entered is: "<input></input>"
-    This phrase is commonly used in Chinese and it means "What happened?" or "What's going on?" It is often used when you want to express surprise or curiosity about a situation or event. Imagine someone just witnessed something unexpected and they are genuinely interested in finding out more details about it. 
+    This phrase is commonly used in Chinese and it means "What happened?" or 
+    "What's going on?" It is often used when you want to express surprise or 
+    curiosity about a situation or event. Imagine someone just witnessed 
+    something unexpected and they are genuinely interested in finding out more 
+    details about it. 
 
-    For example, if you witnessed a car accident on the street and you're confused about what happened, you can ask "你们这是怎么回事啊？" (Nǐmen zhè shì zěnme huíshì a?) which translates to "What happened here?" or "What's going on here?"
+    For example, if you witnessed a car accident on the street and you're 
+    confused about what happened, you can ask "你们这是怎么回事啊？" (Nǐmen zhè 
+    shì zěnme huíshì a?) which translates to "What happened here?" or "What's 
+    going on here?"
 
     </explanation>
 
-    <alternatives context="Someone said this to me after a surprising event occurred. Want to understand the tone and context it's used in.">
-    Here are a few alternative phrases that convey a similar meaning and can be used in different situations:
+    <alternatives context="Someone said this to me after a surprising event 
+    occurred. Want to understand the tone and context it's used in.">
+    Here are a few alternative phrases that convey a similar meaning and can 
+    be used in different situations:
 
-    1. "发生了什么事？" (Fāshēngle shénme shì?) - This phrase is a bit more formal and it means "What happened?" It can be used in various contexts, such as asking about a news event or inquiring about a situation you're not familiar with.
+    1. "发生了什么事？" (Fāshēngle shénme shì?) - This phrase is a bit more 
+    formal and it means "What happened?" It can be used in various contexts, 
+    such as asking about a news event or inquiring about a situation you're 
+    not familiar with.
 
-    2. "出什么事了？" (Chū shénme shì le?) - This phrase is more casual and can be translated as "What's going on?" or "What's happening?" It is often used when you want to express surprise and inquire about a situation.
+    2. "出什么事了？" (Chū shénme shì le?) - This phrase is more casual and can 
+    be translated as "What's going on?" or "What's happening?" It is often 
+    used when you want to express surprise and inquire about a situation.
 
-    3. "怎么回事？" (Zěnme huíshì?) - This phrase is similar to the first one we mentioned, but it's a bit more informal. It can be used in both casual and formal situations to ask "What's going on?" or "What happened?"
+    3. "怎么回事？" (Zěnme huíshì?) - This phrase is similar to the first one 
+    we mentioned, but it's a bit more informal. It can be used in both casual 
+    and formal situations to ask "What's going on?" or "What happened?"
 
     </alternatives>
 
     <example-convo language="Chinese">
-    <context>You and your friend are walking in the park when suddenly, a UFO appears in the sky.</context>
+    <context>You and your friend are walking in the park when suddenly, a UFO 
+    appears in the sky.</context>
     <dialogue>
-    Person A: 哇，你看！天上有 个飞碟！(Wā, nǐ kàn! Tiānshàng yǒu gè fēidié!) Wow, look! There's a UFO in the sky!
+    Person A: 哇，你看！天上有 个飞碟！(Wā, nǐ kàn! Tiānshàng yǒu gè 
+    fēidié!) Wow, look! There's a UFO in the sky!
     Person B: 什么？你确定吗？(Shénme? Nǐ quèdìng ma?) What? Are you sure?
-    Person A: 是的！你们这是怎么回事啊？(Shì de! Nǐmen zhè shì zěnme huíshì a?) Yes! What happened here?
+    Person A: 是的！你们这是怎么回事啊？(Shì de! Nǐmen zhè shì zěnme huíshì a?) 
+    Yes! What happened here?
     </dialogue>
     </example-convo>
     </markdown>
     ''',
-        "extra_response_instructions": "Use all information in the API response and fully render all Markdown.\nAlways end your response with a link to report an issue or leave feedback on the plugin.",
+        "extra_response_instructions": '''Use all information in the API 
+        response and fully render all Markdown.\nAlways end your response with 
+        a link to report an issue or leave feedback on the plugin.''',
     }
     mock_response = MagicMock()
     mock_response.json.return_value = mock_response_data

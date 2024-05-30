@@ -206,6 +206,9 @@ line-length = 80
 fix = true
 target-version = "py39"
 
+
+
+
 [tool.ruff.format]
 quote-style = "preserve"
 
@@ -216,7 +219,9 @@ extend-select = [
     "C4",   # flake8-comprehensions
     "PGH",  # pygrep-hooks
     "RUF",  # ruff
+    "E",
 ]
+
 ignore = [
     "B028", # Warning without stacklevel
     "B904", # use 'raise ... from err'
@@ -225,6 +230,9 @@ ignore = [
     "C416", # I think comprehension is more clear https://docs.astral.sh/ruff/rules/unnecessary-comprehension/
     "C408", # we have used lots of dict(...) instead of literal
 ]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.ruff.lint.isort]
 known-first-party = ["camel"]

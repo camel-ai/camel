@@ -321,8 +321,15 @@ class AutoRetriever:
             info['text'] for info in all_retrieved_info if 'text' in info
         )
 
-        detailed_info = f"Original Query:\n{{ {query} }}\nRetrieved Context:\n{retrieved_infos}"
-        text_info = f"Original Query:\n{{ {query} }}\nRetrieved Context:\n{retrieved_infos_text}"
+        detailed_info = (
+            f"Original Query:\n{{ {query} }}\n"
+            f"Retrieved Context:\n{retrieved_infos}"
+        )
+
+        text_info = (
+            f"Original Query:\n{{ {query} }}\n"
+            f"Retrieved Context:\n{retrieved_infos_text}"
+        )
 
         if return_detailed_info:
             return detailed_info

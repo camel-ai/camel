@@ -31,7 +31,8 @@ F = TypeVar('F', bound=Callable[..., Any])
 
 
 def api_key_required(func: F) -> F:
-    r"""Decorator that checks if the API key is available either as an environment variable or passed directly.
+    r"""Decorator that checks if the API key is available either as an
+    environment variable or passed directly.
 
     Args:
         func (callable): The function to be wrapped.

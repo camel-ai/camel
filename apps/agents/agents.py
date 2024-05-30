@@ -458,8 +458,9 @@ def construct_ui(blocks, api_key: Optional[str] = None) -> None:
                 "Github repo: [https://github.com/lightaime/camel]"
                 "(https://github.com/lightaime/camel)"
                 '<div style="display:flex; justify-content:center;">'
-                '<img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/primary_logo.png" alt="Logo" style="max-width:50%;">'
-                '</div>'
+                '<img src="https://raw.githubusercontent.com/camel-ai/camel/'
+                'master/misc/primary_logo.png" alt="Logo" style='
+                '"max-width:50%;"> </div>'
             )
     with gr.Row():
         with gr.Column(scale=9):
@@ -495,7 +496,10 @@ def construct_ui(blocks, api_key: Optional[str] = None) -> None:
                 )
             with gr.Row():
                 language_ta = gr.TextArea(
-                    label="Language", value="English", lines=1, interactive=True
+                    label="Language",
+                    value="English",
+                    lines=1,
+                    interactive=True,
                 )
         with gr.Column(scale=2):
             with gr.Row():
