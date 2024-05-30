@@ -260,6 +260,7 @@ class ModelPlatformType(Enum):
     AZURE = "azure"
     ANTHROPIC = "anthropic"
     OPENSOURCE = "opensource"
+    OLLAMA = "ollama"
     DEFAULT = "default"
 
     @property
@@ -276,6 +277,11 @@ class ModelPlatformType(Enum):
     def is_anthropic(self) -> bool:
         r"""Returns whether this platform is anthropic."""
         return self is ModelPlatformType.ANTHROPIC
+
+    @property
+    def is_ollama(self) -> bool:
+        r"""Returns whether this platform is ollama."""
+        return self is ModelPlatformType.OLLAMA
 
     @property
     def is_open_source(self) -> bool:

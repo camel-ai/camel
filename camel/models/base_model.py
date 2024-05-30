@@ -31,6 +31,7 @@ class BaseModelBackend(ABC):
         model_type: ModelType,
         model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
+        url: Optional[str] = None,
     ) -> None:
         r"""Constructor for the model backend.
 
@@ -39,11 +40,13 @@ class BaseModelBackend(ABC):
             model_config_dict (Dict[str, Any]): A config dictionary.
             api_key (Optional[str]): The API key for authenticating with the
                 model service.
+            url (Optional[str]): The url to the model service.
         """
         self.model_type = model_type
 
         self.model_config_dict = model_config_dict
         self._api_key = api_key
+        self._url = url
         self.check_model_config()
 
     @property

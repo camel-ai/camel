@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 from camel.models.anthropic_model import AnthropicModel
 from camel.models.base_model import BaseModelBackend
@@ -31,20 +31,23 @@ class ModelFactory:
     @staticmethod
     def create(
         model_platform: ModelPlatformType,
-        model_type: ModelType,
+        model_type: Union[ModelType, str],
         model_config_dict: Dict,
         api_key: Optional[str] = None,
+        url: Optional[str] = None,
     ) -> BaseModelBackend:
         r"""Creates an instance of `BaseModelBackend` of the specified type.
 
         Args:
             model_platform (ModelPlatformType): Platform from which the model
                 originates.
-            model_type (ModelType): Model for which a backend is created.
+            model_type (Union[ModelType, str]): Model for which a backend is
+                created can be a `str` for open source platforms.
             model_config_dict (Dict): A dictionary that will be fed into
                 the backend constructor.
             api_key (Optional[str]): The API key for authenticating with the
                 model service.
+            url (Optional[str]): The url to the model service.
 
         Raises:
             ValueError: If there is not backend for the model.
@@ -53,18 +56,23 @@ class ModelFactory:
             BaseModelBackend: The initialized backend.
         """
         model_class: Any
-        if model_platform.is_openai and model_type.is_openai:
-            model_class = OpenAIModel
-        elif model_type == ModelType.STUB:
-            model_class = StubModel
-        elif model_platform.is_open_source and model_type.is_open_source:
-            model_class = OpenSourceModel
-        elif model_platform.is_anthropic and model_type.is_anthropic:
-            model_class = AnthropicModel
-        else:
-            raise ValueError(
-                f"Unknown pair of model platform `{model_platform}` and model type `{model_type}` is input"
-            )
+        if isinstance(model_type, ModelType):
+            if model_platform.is_openai and model_type.is_openai:
+                model_class = OpenAIModel
+            elif model_platform.is_anthropic and model_type.is_anthropic:
+                model_class = AnthropicModel
+            elif model_platform.is_open_source and model_type.is_open_source:
+                model_class = OpenSourceModel
+            elif model_type == ModelType.STUB:
+                model_class = StubModel
+            else:
+                raise ValueError(
+                    f"Unknown pair of model platform `{model_platform}` and model type `{model_type}` is input"
+                )
 
-        inst = model_class(model_type, model_config_dict, api_key)
+        elif isinstance(model_type, str):
+            if model_platform.is_ollama:
+                model_class = OpenAIModel
+
+        inst = model_class(model_type, model_config_dict, api_key, url)
         return inst
