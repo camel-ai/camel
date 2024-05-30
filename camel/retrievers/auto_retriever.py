@@ -42,7 +42,7 @@ class AutoRetriever:
         vector_storage_local_path (Optional[str]): Local path for vector
             storage, if applicable.
         storage_type (Optional[StorageType]): The type of vector storage to
-            use. Defaults to `StorageType.MILVUS`.
+            use. Defaults to `StorageType.QDRANT`.
         embedding_model (Optional[BaseEmbedding]): Model used for embedding
             queries and documents. Defaults to `OpenAIEmbedding()`.
     """
@@ -54,7 +54,7 @@ class AutoRetriever:
         storage_type: Optional[StorageType] = None,
         embedding_model: Optional[BaseEmbedding] = None,
     ):
-        self.storage_type = storage_type or StorageType.MILVUS
+        self.storage_type = storage_type or StorageType.QDRANT
         self.embedding_model = embedding_model or OpenAIEmbedding()
         self.vector_storage_local_path = vector_storage_local_path
         self.url_and_api_key = url_and_api_key
@@ -211,7 +211,7 @@ class AutoRetriever:
                 `DEFAULT_SIMILARITY_THRESHOLD`.
             return_detailed_info (bool, optional): Whether to return detailed
                 information including similarity score, content path and
-                metadata. Defaults to False.
+                metadata. Defaults to `False`.
 
         Returns:
             string: By default, returns only the text information. If
