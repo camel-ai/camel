@@ -99,7 +99,9 @@ class Neo4jGraph(BaseGraphStorage):
                 "Please install it with `pip install neo4j`."
             )
 
-        self.driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
+        self.driver = neo4j.GraphDatabase.driver(
+            url, auth=(username, password)
+        )
         self.database = database
         self.timeout = timeout
         self.truncate = truncate

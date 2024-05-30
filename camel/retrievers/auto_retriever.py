@@ -134,7 +134,9 @@ class AutoRetriever:
         collection_name = collection_name[:30]
         return collection_name
 
-    def _get_file_modified_date_from_file(self, content_input_path: str) -> str:
+    def _get_file_modified_date_from_file(
+        self, content_input_path: str
+    ) -> str:
         r"""Retrieves the last modified date and time of a given file. This
         function takes a file path as input and returns the last modified date
         and time of that file.
@@ -147,9 +149,9 @@ class AutoRetriever:
             str: The last modified time from file.
         """
         mod_time = os.path.getmtime(content_input_path)
-        readable_mod_time = datetime.datetime.fromtimestamp(mod_time).isoformat(
-            timespec='seconds'
-        )
+        readable_mod_time = datetime.datetime.fromtimestamp(
+            mod_time
+        ).isoformat(timespec='seconds')
         return readable_mod_time
 
     def _get_file_modified_date_from_storage(

@@ -179,7 +179,9 @@ def test_speak_translate(get_function):
         assert result == mock_response_data
 
 
-@pytest.mark.parametrize('get_function', ['speak_explainPhrase'], indirect=True)
+@pytest.mark.parametrize(
+    'get_function', ['speak_explainPhrase'], indirect=True
+)
 def test_speak_explainPhrase(get_function):
     mock_response_data = {
         "explanation": '''
@@ -194,9 +196,9 @@ def test_speak_explainPhrase(get_function):
     details about it. 
 
     For example, if you witnessed a car accident on the street and you're 
-    confused about what happened, you can ask "你们这是怎么回事啊？" (Nǐmen zhè 
-    shì zěnme huíshì a?) which translates to "What happened here?" or "What's 
-    going on here?"
+    confused about what happened, you can ask "你们这是怎么回事啊？" 
+    (Nǐmen zhè shì zěnme huíshì a?) which translates to "What 
+    happened here?" or "What's going on here?"
 
     </explanation>
 
@@ -210,9 +212,10 @@ def test_speak_explainPhrase(get_function):
     such as asking about a news event or inquiring about a situation you're 
     not familiar with.
 
-    2. "出什么事了？" (Chū shénme shì le?) - This phrase is more casual and can 
-    be translated as "What's going on?" or "What's happening?" It is often 
-    used when you want to express surprise and inquire about a situation.
+    2. "出什么事了？" (Chū shénme shì le?) - This phrase is more 
+    casual and can be translated as "What's going on?" or "What's 
+    happening?" It is often used when you want to express surprise 
+    and inquire about a situation.
 
     3. "怎么回事？" (Zěnme huíshì?) - This phrase is similar to the first one 
     we mentioned, but it's a bit more informal. It can be used in both casual 
@@ -227,7 +230,8 @@ def test_speak_explainPhrase(get_function):
     Person A: 哇，你看！天上有 个飞碟！(Wā, nǐ kàn! Tiānshàng yǒu gè 
     fēidié!) Wow, look! There's a UFO in the sky!
     Person B: 什么？你确定吗？(Shénme? Nǐ quèdìng ma?) What? Are you sure?
-    Person A: 是的！你们这是怎么回事啊？(Shì de! Nǐmen zhè shì zěnme huíshì a?) 
+    Person A: 是的！你们这是怎么回事啊？(Shì de! Nǐmen zhè shì 
+    zěnme huíshì a?) 
     Yes! What happened here?
     </dialogue>
     </example-convo>
@@ -270,9 +274,9 @@ def test_speak_explainTask(get_function):
     details about it. 
 
     For example, if you witnessed a car accident on the street and you're 
-    confused about what happened, you can ask "你们这是怎么回事啊？" (Nǐmen zhè 
-    shì zěnme huíshì a?) which translates to "What happened here?" or "What's 
-    going on here?"
+    confused about what happened, you can ask "你们这是怎么回事啊？" 
+    (Nǐmen zhè shì zěnme huíshì a?) which translates to "What happened 
+    here?" or "What's going on here?"
 
     </explanation>
 
@@ -286,9 +290,10 @@ def test_speak_explainTask(get_function):
     such as asking about a news event or inquiring about a situation you're 
     not familiar with.
 
-    2. "出什么事了？" (Chū shénme shì le?) - This phrase is more casual and can 
-    be translated as "What's going on?" or "What's happening?" It is often 
-    used when you want to express surprise and inquire about a situation.
+    2. "出什么事了？" (Chū shénme shì le?) - This phrase is more casual and 
+    can be translated as "What's going on?" or "What's happening?" It is 
+    often used when you want to express surprise and inquire about a 
+    situation.
 
     3. "怎么回事？" (Zěnme huíshì?) - This phrase is similar to the first one 
     we mentioned, but it's a bit more informal. It can be used in both casual 
@@ -302,8 +307,10 @@ def test_speak_explainTask(get_function):
     <dialogue>
     Person A: 哇，你看！天上有 个飞碟！(Wā, nǐ kàn! Tiānshàng yǒu gè 
     fēidié!) Wow, look! There's a UFO in the sky!
-    Person B: 什么？你确定吗？(Shénme? Nǐ quèdìng ma?) What? Are you sure?
-    Person A: 是的！你们这是怎么回事啊？(Shì de! Nǐmen zhè shì zěnme huíshì a?) 
+    Person B: 什么？你确定吗？(Shénme? Nǐ quèdìng ma?) What? Are 
+    you sure?
+    Person A: 是的！你们这是怎么回事啊？(Shì de! Nǐmen zhè shì zěnme 
+    huíshì a?) 
     Yes! What happened here?
     </dialogue>
     </example-convo>

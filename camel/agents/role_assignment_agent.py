@@ -115,7 +115,9 @@ class RoleAssignmentAgent(ChatAgent):
         ]
 
         if len(role_names) != num_roles or len(role_descriptions) != num_roles:
-            raise RuntimeError("Got None or insufficient information of roles.")
+            raise RuntimeError(
+                "Got None or insufficient information of roles."
+            )
         if terminated:
             raise RuntimeError("Role assignment failed.")
 

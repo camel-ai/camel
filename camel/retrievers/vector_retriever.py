@@ -64,7 +64,9 @@ class VectorRetriever(BaseRetriever):
         self.storage = (
             storage
             if storage is not None
-            else QdrantStorage(vector_dim=self.embedding_model.get_output_dim())
+            else QdrantStorage(
+                vector_dim=self.embedding_model.get_output_dim()
+            )
         )
         self.similarity_threshold = similarity_threshold
         self.unstructured_modules: UnstructuredIO = UnstructuredIO()

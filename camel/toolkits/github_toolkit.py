@@ -74,7 +74,8 @@ class GithubIssue:
 
 
 class GithubToolkit(BaseToolkit):
-    r"""A class representing a toolkit for interacting with GitHub repositories.
+    r"""A class representing a toolkit for interacting with GitHub
+    repositories.
 
     This class provides methods for retrieving open issues, retrieving
         specific issues, and creating pull requests in a GitHub repository.

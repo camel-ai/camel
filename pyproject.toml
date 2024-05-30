@@ -202,12 +202,9 @@ recommonmark = "*"
 docutils = "<0.20.0"
 
 [tool.ruff]
-line-length = 80
+line-length = 79
 fix = true
 target-version = "py39"
-
-
-
 
 [tool.ruff.format]
 quote-style = "preserve"

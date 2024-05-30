@@ -89,7 +89,9 @@ def test_run_file_not_found(subprocess_interpreter):
 def test_run_unsupported_code_type(subprocess_interpreter):
     with pytest.raises(InterpreterError) as exc_info:
         subprocess_interpreter.run("print('Hello')", "unsupported_code_type")
-    assert "Unsupported code type unsupported_code_type." in str(exc_info.value)
+    assert "Unsupported code type unsupported_code_type." in str(
+        exc_info.value
+    )
 
 
 def test_require_confirm(subprocess_interpreter, monkeypatch):

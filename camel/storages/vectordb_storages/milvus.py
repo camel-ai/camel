@@ -155,7 +155,8 @@ class MilvusStorage(BaseVectorStorage):
             field_name="payload",
             datatype=DataType.JSON,
             description=(
-                'Any additional metadata or information related' 'to the vector'
+                'Any additional metadata or information related'
+                'to the vector'
             ),
         )
 
@@ -267,7 +268,9 @@ class MilvusStorage(BaseVectorStorage):
         for record in records:
             record_dict = {
                 "id": record.id,
-                "payload": record.payload if record.payload is not None else '',
+                "payload": record.payload
+                if record.payload is not None
+                else '',
                 "vector": record.vector,
             }
             validated_data.append(record_dict)

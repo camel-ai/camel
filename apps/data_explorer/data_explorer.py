@@ -155,7 +155,9 @@ def construct_ui(
                 '</div>'
             )
 
-    task_dd = gr.Dropdown([], label="Original task", value="", interactive=True)
+    task_dd = gr.Dropdown(
+        [], label="Original task", value="", interactive=True
+    )
     specified_task_ta = gr.TextArea(label="Specified task", lines=2)
     chatbot = gr.Chatbot()
     accepted_st = gr.State(False)

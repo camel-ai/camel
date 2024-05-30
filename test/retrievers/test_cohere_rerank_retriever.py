@@ -100,4 +100,6 @@ def test_query(cohere_rerank, mock_retrieved_result):
     )
     assert len(result) == 1
     assert result[0]["similarity score"] == 0.9999998
-    assert 'by Isaac Asimov in his science fiction stories' in result[0]["text"]
+    assert (
+        'by Isaac Asimov in his science fiction stories' in result[0]["text"]
+    )
