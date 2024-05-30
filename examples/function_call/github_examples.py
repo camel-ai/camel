@@ -48,15 +48,15 @@ def write_weekly_pr_summary(repo_name, model=None):
         of an open source project {repo_name} on the project's blog.
         """,
     )
-    assistant_model_config = FunctionCallingConfig.from_openai_function_list(
-        function_list=[OpenAIFunction(toolkit.retrieve_pull_requests)],
-        kwargs=dict(temperature=0.0),
+    assistant_model_config = ChatGPTConfig(
+        tools=[OpenAIFunction(toolkit.retrieve_pull_requests)],
+        temperature=0.0,
     )
     agent = ChatAgent(
         assistant_sys_msg,
         model_type=model,
         model_config=assistant_model_config,
-        function_list=[OpenAIFunction(toolkit.retrieve_pull_requests)],
+        tools=[OpenAIFunction(toolkit.retrieve_pull_requests)],
     )
     agent.reset()
 
