@@ -18,7 +18,6 @@ from camel.messages import BaseMessage
 
 
 def main(model=None) -> None:
-    r"""Main function to run the Discord bot."""
     assistant_sys_msg = BaseMessage.make_assistant_message(
         role_name="Assistant",
         content="You are a helpful assistant.",
