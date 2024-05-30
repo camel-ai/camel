@@ -32,20 +32,20 @@ class DiscordBot:
         self,
         chat_agent: ChatAgent,
         channel_ids: Optional[List[int]] = None,
-        token: Optional[str] = None,
+        discord_token: Optional[str] = None,
     ) -> None:
         if channel_ids is None:
             channel_ids = []
         self.chat_agent = chat_agent
 
-        if not token:
+        if not discord_token:
             self.token = os.getenv('DISCORD_TOKEN')
             if not self.token:
                 raise ValueError(
                     "`DISCORD_TOKEN` not found in environment variables. Get it here: `https://discord.com/developers/applications`."
                 )
         else:
-            self.token = token
+            self.token = discord_token
 
         self.channel_ids = channel_ids
 

@@ -25,7 +25,7 @@ def main(model=None) -> None:
     )
 
     agent = ChatAgent(assistant_sys_msg, model_type=model)
-    bot = DiscordBot(agent, channel_ids=[1245750069026881646])
+    bot = DiscordBot(agent)
     bot.run()
 
 
