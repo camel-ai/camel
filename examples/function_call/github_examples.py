@@ -27,6 +27,7 @@ def write_weekly_pr_summary(repo_name, model=None):
     prompt = """
     You need to write a summary of the pull requests that were merged in the last week.
     You can use the provided github function retrieve_pull_requests to retrieve the list of pull requests that were merged in the last week.
+    The maximum amount of PRs to analyze is 3.
     You have to pass the number of days as the first parameter to retrieve_pull_requests and state='closed' as the second parameter.
     The function will return a list of pull requests with the following properties: title, body, and diffs.
     Diffs is a list of dictionaries with the following properties: filename, diff.

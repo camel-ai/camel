@@ -226,13 +226,16 @@ class GithubToolkit(BaseToolkit):
                 return str(issue)
         return None
 
-    def retrieve_pull_requests(self, days: int, state: str) -> List:
+    def retrieve_pull_requests(
+        self, days: int, state: str, max_prs: int
+    ) -> List:
         r"""Retrieves a summary of merged pull requests from the repository.
         The summary will be provided for the last specified number of days.
 
         Args:
             days (int): The number of days to retrieve merged pull requests for.
             state (str): A specific state of PRs to retrieve. Can be open or closed.
+            max_prs (int): The maximum number of PRs to retrieve.
 
         Returns:
             list: A list of merged pull request summaries.
@@ -241,7 +244,7 @@ class GithubToolkit(BaseToolkit):
         merged_prs = []
         earliest_date: datetime = datetime.utcnow() - timedelta(days=days)
 
-        for pr in pull_requests:
+        for pr in pull_requests[:max_prs]:
             if (
                 pr.merged
                 and pr.merged_at is not None
