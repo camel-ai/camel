@@ -17,7 +17,6 @@ import pytest
 
 from camel.configs import (
     ChatGPTConfig,
-    FunctionCallingConfig,
     OpenSourceConfig,
 )
 from camel.models import OpenSourceModel
@@ -127,20 +126,19 @@ def test_open_source_model_unexpected_argument():
     model_config = OpenSourceConfig(
         model_path=model_path,
         server_url=DEFAULT_SERVER_URL,
-        api_params=FunctionCallingConfig(),
+        api_params=ChatGPTConfig(),
     )
     model_config_dict = model_config.__dict__
 
     with pytest.raises(
-        ValueError,
+        TypeError,
         match=re.escape(
-            (
-                "Unexpected argument `functions` is "
-                "input into open-source model backend."
-            )
+            ("__init__() got an unexpected keyword argument 'unexpected_arg'")
         ),
     ):
-        _ = OpenSourceModel(model_type, model_config_dict)
+        _ = OpenSourceModel(
+            model_type, model_config_dict, unexpected_arg="unexpected_arg"
+        )
 
 
 @pytest.mark.model_backend
