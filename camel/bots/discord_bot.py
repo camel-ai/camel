@@ -12,17 +12,20 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
+
+# Conditionally import telebot types only for type checking
+if TYPE_CHECKING:
+    from discord import Message  # type: ignore[import-untyped]
 
 
 class DiscordBot:
     r"""Represents a Discord bot that is powered by an agent.
 
     Attributes:
-        client (discord.Client): The Discord client.
         chat_agent (ChatAgent): Chat agent that will power the bot.
         channel_ids (List[int], optional): The channel IDs that the bot will listen to.
         discord_token (str, optional): The bot token.
@@ -35,16 +38,7 @@ class DiscordBot:
         discord_token: Optional[str] = None,
     ) -> None:
         self.chat_agent = chat_agent
-
-        if not discord_token:
-            self.token = os.getenv('DISCORD_TOKEN')
-            if not self.token:
-                raise ValueError(
-                    "`DISCORD_TOKEN` not found in environment variables. Get it here: `https://discord.com/developers/applications`."
-                )
-        else:
-            self.token = discord_token
-
+        self.token = discord_token or os.getenv('DISCORD_TOKEN')
         self.channel_ids = channel_ids
 
         try:
@@ -62,23 +56,25 @@ class DiscordBot:
         self.client.event(self.on_ready)
         self.client.event(self.on_message)
 
-    def run(self):
-        """Start the Discord bot using its token.
+    def run(self) -> None:
+        r"""Start the Discord bot using its token.
 
         This method starts the Discord bot by running the client with the provided token.
         """
+        if not self.token:
+            raise ValueError(
+                "`DISCORD_TOKEN` not found in environment variables. Get it here: `https://discord.com/developers/applications`."
+            )
         self.client.run(self.token)
 
-    async def on_ready(self):
-        """
-        This method is called when the bot has successfully connected to the Discord server.
+    async def on_ready(self) -> None:
+        r"""This method is called when the bot has successfully connected to the Discord server.
         It prints a message indicating that the bot has logged in and displays the username of the bot.
         """
         print(f'We have logged in as {self.client.user}')
 
-    async def on_message(self, message):
-        """
-        Event handler for when a message is received.
+    async def on_message(self, message: 'Message') -> None:
+        r"""Event handler for when a message is received.
 
         Parameters:
         - message (discord.Message): The message object received.
@@ -94,7 +90,7 @@ class DiscordBot:
             if message.channel.id not in self.channel_ids:
                 return
 
-        if not self.client.user.mentioned_in(message):
+        if not self.client.user or not self.client.user.mentioned_in(message):
             return
 
         self.chat_agent.reset()
