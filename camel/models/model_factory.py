@@ -15,6 +15,7 @@ from typing import Any, Dict, Optional, Union
 
 from camel.models.anthropic_model import AnthropicModel
 from camel.models.base_model import BaseModelBackend
+from camel.models.ollama_model import OllamaModel
 from camel.models.open_source_model import OpenSourceModel
 from camel.models.openai_model import OpenAIModel
 from camel.models.stub_model import StubModel
@@ -72,7 +73,7 @@ class ModelFactory:
 
         elif isinstance(model_type, str):
             if model_platform.is_ollama:
-                model_class = OpenAIModel
+                model_class = OllamaModel
 
         inst = model_class(model_type, model_config_dict, api_key, url)
         return inst

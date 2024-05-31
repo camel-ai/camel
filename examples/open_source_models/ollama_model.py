@@ -21,7 +21,7 @@ ollama_model = ModelFactory.create(
     model_platform=ModelPlatformType.OLLAMA,
     model_type="camelai-llama3",
     url="http://localhost:11434/v1",
-    model_config_dict={},
+    model_config_dict={"temperature": 0.4},
 )
 
 assistant_sys_msg = BaseMessage.make_assistant_message(
@@ -61,7 +61,7 @@ SYSTEM """ """
 
 # variables
 model_name="llama3"
-custom_model_name="camelai-llama3"
+custom_model_name="camel-llama3"
 
 #get the base model
 ollama pull $model_name
