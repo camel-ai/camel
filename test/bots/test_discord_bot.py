@@ -100,7 +100,40 @@ class TestDiscordBot(unittest.TestCase):
         asyncio.run(test())
 
     @patch('discord.Client')
-    def test_on_message_sends_response(self, mock_client_class):
+    def test_on_message_sends_response_when_mentioned(self, mock_client_class):
+        mock_client = MagicMock()
+        channel_ids = [123, 456]
+        mock_client.user = MagicMock()
+
+        mock_client_class.return_value = mock_client
+
+        bot = DiscordBot(
+            self.chat_agent_mock,
+            channel_ids=channel_ids,
+            discord_token=self.token,
+        )
+
+        message_mock = MagicMock()
+        message_mock.channel.id = 123  # In channel_ids
+        message_mock.content = "Hello, @bot!"
+        message_mock.mentions = []  # Bot is not mentioned
+        mock_client.user.mentioned_in = MagicMock(return_value=True)
+
+        response_message = "Hello, human!"
+        self.chat_agent_mock.step.return_value = MagicMock(
+            msg=MagicMock(content=response_message)
+        )
+        # Make the send method an async function
+        message_mock.channel.send = AsyncMock()
+
+        async def test():
+            await bot.on_message(message_mock)
+            message_mock.channel.send.assert_called_once_with(response_message)
+
+        asyncio.run(test())
+
+    @patch('discord.Client')
+    def test_on_message_ignores_when_not_mentioned(self, mock_client_class):
         mock_client = MagicMock()
         channel_ids = [123, 456]
         mock_client.user = MagicMock()
@@ -116,6 +149,8 @@ class TestDiscordBot(unittest.TestCase):
         message_mock = MagicMock()
         message_mock.channel.id = 123  # In channel_ids
         message_mock.content = "Hello, bot!"
+        message_mock.mentions = []  # Bot is not mentioned
+        mock_client.user.mentioned_in = MagicMock(return_value=False)
 
         response_message = "Hello, human!"
         self.chat_agent_mock.step.return_value = MagicMock(
@@ -126,7 +161,7 @@ class TestDiscordBot(unittest.TestCase):
 
         async def test():
             await bot.on_message(message_mock)
-            message_mock.channel.send.assert_called_once_with(response_message)
+            message_mock.channel.send.assert_not_called()
 
         asyncio.run(test())
 
