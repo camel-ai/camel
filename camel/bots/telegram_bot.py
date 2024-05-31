@@ -58,7 +58,7 @@ class TelegramBot:
         # Register the message handler within the constructor
         self.bot.message_handler(func=lambda message: True)(self.on_message)
 
-    def run(self):
+    def run(self) -> None:
         r"""Start the Telegram bot."""
         print("Telegram bot is running...")
         self.bot.infinity_polling()
