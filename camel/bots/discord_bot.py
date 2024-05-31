@@ -34,8 +34,6 @@ class DiscordBot:
         channel_ids: Optional[List[int]] = None,
         discord_token: Optional[str] = None,
     ) -> None:
-        if channel_ids is None:
-            channel_ids = []
         self.chat_agent = chat_agent
 
         if not discord_token:
@@ -95,6 +93,9 @@ class DiscordBot:
         if self.channel_ids is not None:
             if message.channel.id not in self.channel_ids:
                 return
+
+        if not self.client.user.mentioned_in(message):
+            return
 
         self.chat_agent.reset()
 
