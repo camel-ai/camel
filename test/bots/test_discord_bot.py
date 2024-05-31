@@ -27,7 +27,7 @@ class TestDiscordBot(unittest.TestCase):
         self.channel_ids = [123, 456]
 
     def test_init_token_provided_uses_provided_token(self):
-        bot = DiscordBot(self.chat_agent_mock, token=self.token)
+        bot = DiscordBot(self.chat_agent_mock, discord_token=self.token)
         self.assertEqual(bot.token, self.token)
 
     @patch('discord.Client')
@@ -42,7 +42,7 @@ class TestDiscordBot(unittest.TestCase):
         mock_client_class.return_value = mock_client
 
         # Initialize the bot with the mocked client
-        bot = DiscordBot(self.chat_agent_mock, token=self.token)
+        bot = DiscordBot(self.chat_agent_mock, discord_token=self.token)
 
         async def test():
             with patch('builtins.print') as mocked_print:
@@ -59,7 +59,7 @@ class TestDiscordBot(unittest.TestCase):
 
         mock_client_class.return_value = mock_client
 
-        bot = DiscordBot(self.chat_agent_mock, token=self.token)
+        bot = DiscordBot(self.chat_agent_mock, discord_token=self.token)
 
         message_mock = MagicMock()
         message_mock.author = mock_user
@@ -82,7 +82,9 @@ class TestDiscordBot(unittest.TestCase):
         mock_client_class.return_value = mock_client
 
         bot = DiscordBot(
-            self.chat_agent_mock, channel_ids=channel_ids, token=self.token
+            self.chat_agent_mock,
+            channel_ids=channel_ids,
+            discord_token=self.token,
         )
 
         message_mock = MagicMock()
@@ -106,7 +108,9 @@ class TestDiscordBot(unittest.TestCase):
         mock_client_class.return_value = mock_client
 
         bot = DiscordBot(
-            self.chat_agent_mock, channel_ids=channel_ids, token=self.token
+            self.chat_agent_mock,
+            channel_ids=channel_ids,
+            discord_token=self.token,
         )
 
         message_mock = MagicMock()
