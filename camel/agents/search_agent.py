@@ -105,8 +105,6 @@ class SearchAgent(ChatAgent):
             bool: `True` if the user want to continue search, `False`
             otherwise.
         """
-        from camel.prompts import TextPrompt
-
         prompt = TextPrompt(
             "Do you think the ANSWER can answer the QUERY? "
             "Use only 'yes' or 'no' to answer.\n"

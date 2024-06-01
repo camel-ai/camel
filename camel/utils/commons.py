@@ -437,7 +437,7 @@ def text_extract_from_web(url: str) -> str:
 
 def create_chunks(text: str, n: int) -> List[str]:
     r"""Returns successive n-sized chunks from provided text. Split a text
-    into smaller chunks of size n"
+    into smaller chunks of size n".
 
     Args:
         text (str): The text to be split.
