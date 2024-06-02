@@ -28,7 +28,7 @@ class ModelType(Enum):
     GPT_4 = "gpt-4"
     GPT_4_32K = "gpt-4-32k"
     GPT_4_TURBO = "gpt-4-turbo"
-    GPT_4_TURBO_VISION = "gpt-4-turbo"
+    GPT_4O = "gpt-4o"
 
     GROQ_LLAMA_3_8_B = "llama3-8b-8192"
     GROQ_LLAMA_3_70_B = "llama3-70b-8192"
@@ -62,7 +62,7 @@ class ModelType(Enum):
             ModelType.GPT_4,
             ModelType.GPT_4_32K,
             ModelType.GPT_4_TURBO,
-            ModelType.GPT_4_TURBO_VISION,
+            ModelType.GPT_4O,
         }
 
     @property
@@ -112,7 +112,7 @@ class ModelType(Enum):
             return 32768
         elif self is ModelType.GPT_4_TURBO:
             return 128000
-        elif self is ModelType.GPT_4_TURBO_VISION:
+        elif self is ModelType.GPT_4O:
             return 128000
         elif self is ModelType.GROQ_LLAMA_3_8_B:
             return 8192
@@ -262,3 +262,44 @@ class OpenAIImageDetailType(Enum):
 class StorageType(Enum):
     MILVUS = "milvus"
     QDRANT = "qdrant"
+
+
+class OpenAPIName(Enum):
+    COURSERA = "coursera"
+    KLARNA = "klarna"
+    SPEAK = "speak"
+
+
+class AudioModelType(Enum):
+    TTS_1 = "tts-1"
+    TTS_1_HD = "tts-1-hd"
+
+    @property
+    def is_openai(self) -> bool:
+        r"""Returns whether this type of audio models is an OpenAI-released
+        model."""
+        return self in {
+            AudioModelType.TTS_1,
+            AudioModelType.TTS_1_HD,
+        }
+
+
+class VoiceType(Enum):
+    ALLOY = "alloy"
+    ECHO = "echo"
+    FABLE = "fable"
+    ONYX = "onyx"
+    NOVA = "nova"
+    SHIMMER = "shimmer"
+
+    @property
+    def is_openai(self) -> bool:
+        r"""Returns whether this type of voice is an OpenAI-released voice."""
+        return self in {
+            VoiceType.ALLOY,
+            VoiceType.ECHO,
+            VoiceType.FABLE,
+            VoiceType.ONYX,
+            VoiceType.NOVA,
+            VoiceType.SHIMMER,
+        }

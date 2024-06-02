@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "camel-ai"
-version = "0.1.3"
+version = "0.1.5.1"
 authors = ["CAMEL-AI.org"]
 description = "Communicative Agents for AI Society Study"
 readme = "README.md"
@@ -32,7 +32,7 @@ numpy = "^1"
 openai = "^1.2.3"
 groq = "^0.5.0"
 anthropic = "^0.21.3"
-tiktoken = "^0"
+tiktoken = "^0.7.0"
 colorama = "^0"
 jsonschema = "^4"
 protobuf = "^4"
@@ -59,7 +59,12 @@ wolframalpha = { version = "^5.0.0", optional = true }
 pyowm = { version = "^3.3.0", optional = true }
 googlemaps = { version = "^4.10.0", optional = true }
 requests_oauthlib = { version = "^1.3.1", optional = true }
+prance = { version = "^23.6.21.0", optional = true }
+openapi-spec-validator = { version = "^0.7.1", optional = true }
 unstructured = { extras = ["all-docs"], version = "^0.10.30", optional = true }
+slack-sdk = { version = "^3.27.2", optional = true }
+pydub = { version = "^0.25.1", optional = true }
+pygithub = { version = "^2.3.0", optional = true }
 
 # encoders
 sentence-transformers = { version = "^2.2.2", optional = true }
@@ -107,7 +112,12 @@ tools = [
     "pyowm",
     "googlemaps",
     "requests_oauthlib",
+    "prance",
+    "openapi-spec-validator",
     "unstructured",
+    "slack-sdk",
+    "pydub",
+    "pygithub",
 ]
 
 vector-databases = [
@@ -137,13 +147,18 @@ all = [
     # tools
     "beautifulsoup4",
     "docx2txt",
+    "pygithub",
     "PyMuPDF",
     "wikipedia",
     "wolframalpha",
     "pyowm",
     "googlemaps",
     "requests_oauthlib",
+    "prance",
+    "openapi-spec-validator",
     "unstructured",
+    "slack-sdk",
+    "pydub",
     # vector-database
     "qdrant-client",
     "pymilvus",
@@ -251,6 +266,8 @@ module = [
     "pyowm",
     "googlemaps",
     "requests_oauthlib",
+    "prance",
+    "openapi-spec-validator",
     "jsonschema.*",
     "bs4.*",
     "docx2txt",
@@ -262,5 +279,8 @@ module = [
     "cohere",
     "sentence_transformers.*",
     "pymilvus",
+    "slack-sdk",
+    "pydub",
+    "pygithub"
 ]
 ignore_missing_imports = true
