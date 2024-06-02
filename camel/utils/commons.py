@@ -435,9 +435,9 @@ def text_extract_from_web(url: str) -> str:
     return text
 
 
-# Split a text into smaller chunks of size n
 def create_chunks(text: str, n: int) -> List[str]:
-    r"""Returns successive n-sized chunks from provided text."
+    r"""Returns successive n-sized chunks from provided text. Split a text
+    into smaller chunks of size n".
 
     Args:
         text (str): The text to be split.
@@ -465,93 +465,3 @@ def create_chunks(text: str, n: int) -> List[str]:
         chunks.append(text[i:j])
         i = j
     return chunks
-
-
-def prompt_single_step_agent(prompt: str) -> str:
-    """Prompt a single-step agent to summarize texts or answer a question."""
-
-    from camel.agents import ChatAgent
-    from camel.messages import BaseMessage
-
-    assistant_sys_msg = BaseMessage.make_assistant_message(
-        role_name="Assistant",
-        content="You are a helpful assistant.",
-    )
-    agent = ChatAgent(assistant_sys_msg)
-    agent.reset()
-
-    user_msg = BaseMessage.make_user_message(
-        role_name="User",
-        content=prompt,
-    )
-    assistant_response = agent.step(user_msg)
-    if assistant_response.msgs is not None:
-        return assistant_response.msg.content
-    return ""
-
-
-def summarize_text(text: str, query: str) -> str:
-    r"""Summarize the information from the text, base on the query if query is
-        given.
-
-    Args:
-        text (str): Text to summarize.
-        query (str): What information you want.
-
-    Returns:
-        str: Strings with information.
-    """
-    from camel.prompts import TextPrompt
-
-    summary_prompt = TextPrompt(
-        '''Gather information from this text that relative to the question, but 
-do not directly answer the question.\nquestion: {query}\ntext '''
-    )
-    summary_prompt = summary_prompt.format(query=query)
-    # Max length of each chunk
-    max_len = 3000
-    results = ""
-    chunks = create_chunks(text, max_len)
-    # Summarize
-    for i, chunk in enumerate(chunks, start=1):
-        prompt = summary_prompt + str(i) + ": " + chunk
-        result = prompt_single_step_agent(prompt)
-        results += result + "\n"
-
-    # Final summarise
-    final_prompt = TextPrompt(
-        '''Here are some summarized texts which split from one text. Using the information to answer the question.
-If can't find the answer, you must answer "I can not find the answer to the query" and explain why.\n
-Query:\n{query}.\n\nText:\n'''
-    )
-    final_prompt = final_prompt.format(query=query)
-    prompt = final_prompt + results
-
-    response = prompt_single_step_agent(prompt)
-
-    return response
-
-
-def continue_search(query: str, answer: str) -> bool:
-    r"""Ask LLM whether to continue search or not.
-
-    Args:
-        query (str): Question you want to be answered.
-        answer (str): Answer to the query.
-
-    Returns:
-        bool: True if the user want to continue search, False otherwise.
-    """
-    from camel.prompts import TextPrompt
-
-    prompt = TextPrompt(
-        "Do you think the ANSWER can answer the QUERY? "
-        "Use only 'yes' or 'no' to answer.\n"
-        "===== QUERY =====\n{query}\n\n"
-        "===== ANSWER =====\n{answer}"
-    )
-    prompt = prompt.format(query=query, answer=answer)
-    reply = prompt_single_step_agent(prompt)
-    if "yes" in str(reply).lower():
-        return False
-    return True

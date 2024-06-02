@@ -22,6 +22,7 @@ from camel.types import ModelType, RoleType
 
 class RoleAssignmentAgent(ChatAgent):
     r"""An agent that generates role names based on the task prompt.
+
     Attributes:
         role_assignment_prompt (TextPrompt): A prompt for the agent to generate
         role names.
