@@ -21,7 +21,9 @@ from math import ceil
 from typing import TYPE_CHECKING, List, Optional
 
 from anthropic import Anthropic
+from groq import Groq
 from PIL import Image
+from transformers import AutoTokenizer
 
 from camel.types import ModelType, OpenAIImageDetailType, OpenAIImageType
 
@@ -290,7 +292,7 @@ class AnthropicTokenCounter(BaseTokenCounter):
 
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
-                in OpenAI API format.
+                in Anthropic API format.
 
         Returns:
             int: Number of tokens in the messages.
@@ -298,6 +300,39 @@ class AnthropicTokenCounter(BaseTokenCounter):
         prompt = messages_to_prompt(messages, self.model_type)
 
         return self.client.count_tokens(prompt)
+
+
+class GroqLlama3TokenCounter(BaseTokenCounter):
+    def __init__(self, model_type: ModelType):
+        r"""Constructor for the token counter for Llama3 models served by Groq.
+
+        Args:
+            model_type (ModelType): Model type for which tokens will be
+                counted.
+        """
+
+        self.model_type = model_type
+        self.client = Groq()
+        # Since Groq API does not provide any token counter, we use the
+        # openao source tokenizer as a placeholder.
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            "meta-llama/Meta-Llama-3-8B"
+        )
+
+    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
+        r"""Count number of tokens in the provided message list using
+        loaded tokenizer specific for this type of model.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in Groq llama3 API format.
+
+        Returns:
+            int: Number of tokens in the messages.
+        """
+        prompt = messages_to_prompt(messages, self.model_type)
+
+        return self.tokenizer.encode(prompt, return_length=True)[1]
 
 
 def count_tokens_from_image(

@@ -28,6 +28,7 @@ jobs:
         SEARCH_ENGINE_ID: "${{ secrets.SEARCH_ENGINE_ID }}"
         OPENWEATHERMAP_API_KEY: "${{ secrets.OPENWEATHERMAP_API_KEY }}"
         ANTHROPIC_API_KEY: "${{ secrets.ANTHROPIC_API_KEY }}"
+        GROQ_API_KEY: "${{ secrets.GROQ_API_KEY }}"
         COHERE_API_KEY: "${{ secrets.COHERE_API_KEY }}"
       run: poetry run pytest --fast-test-mode test/
 
@@ -46,6 +47,7 @@ jobs:
         SEARCH_ENGINE_ID: "${{ secrets.SEARCH_ENGINE_ID }}"
         OPENWEATHERMAP_API_KEY: "${{ secrets.OPENWEATHERMAP_API_KEY }}"
         ANTHROPIC_API_KEY: "${{ secrets.ANTHROPIC_API_KEY }}"
+        GROQ_API_KEY: "${{ secrets.GROQ_API_KEY }}"
         COHERE_API_KEY: "${{ secrets.COHERE_API_KEY }}"
       run: poetry run pytest --llm-test-only test/
 
@@ -64,5 +66,6 @@ jobs:
         SEARCH_ENGINE_ID: "${{ secrets.SEARCH_ENGINE_ID }}"
         OPENWEATHERMAP_API_KEY: "${{ secrets.OPENWEATHERMAP_API_KEY }}"
         ANTHROPIC_API_KEY: "${{ secrets.ANTHROPIC_API_KEY }}"
+        GROQ_API_KEY: "${{ secrets.GROQ_API_KEY }}"
         COHERE_API_KEY: "${{ secrets.COHERE_API_KEY }}"
       run: poetry run pytest --very-slow-test-only test/

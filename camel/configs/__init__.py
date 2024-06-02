@@ -13,6 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .anthropic_config import ANTHROPIC_API_PARAMS, AnthropicConfig
 from .base_config import BaseConfig
+from .groq_llama3_config import GROQ_LLAMA3_API_PARAMS, GroqLLAMA3Config
 from .openai_config import (
     OPENAI_API_PARAMS,
     ChatGPTConfig,
@@ -25,5 +26,7 @@ __all__ = [
     'OPENAI_API_PARAMS',
     'AnthropicConfig',
     'ANTHROPIC_API_PARAMS',
+    'GROQ_LLAMA3_API_PARAMS',
+    'GroqLLAMA3Config',
     'OpenSourceConfig',
 ]

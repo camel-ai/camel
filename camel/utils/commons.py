@@ -54,6 +54,10 @@ def api_key_required(func: F) -> F:
             if 'ANTHROPIC_API_KEY' not in os.environ:
                 raise ValueError('Anthropic API key not found.')
             return func(self, *args, **kwargs)
+        elif self.model_type.is_groq:
+            if "GROQ_API_KEY" not in os.environ:
+                raise ValueError('Groq API key not found.')
+            return func(self, *args, **kwargs)
         else:
             raise ValueError('Unsupported model type.')
 
