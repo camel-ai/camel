@@ -269,7 +269,8 @@ def test_speak_explainTask(get_function):
 
 
 @pytest.mark.parametrize('get_function', ['nasa_apod_get_apod'], indirect=True)
-def test_nasa_apod_get_apod(get_function):
+def test_nasa_apod_get_apod(get_function, monkeypatch):
+    monkeypatch.setenv('NASA_API_KEY', 'fake_api_key')
     mock_response_data = {
         "copyright": "Yann Sainty",
         "date": "2023-08-17",
