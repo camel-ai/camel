@@ -106,6 +106,7 @@ tools = [
     "googlemaps",
     "requests_oauthlib",
     "unstructured",
+    "pillow",
 ]
 
 vector-databases = [
@@ -150,6 +151,7 @@ all = [
     "neo4j",
     # retrievers
     "rank-bm25",
+    "pillow",
 ]
 
 [tool.poetry.group.dev]
@@ -254,5 +256,6 @@ module = [
     "rank_bm25",
     "sentence_transformers.*",
     "pymilvus",
+    "pillow",
 ]
 ignore_missing_imports = true
