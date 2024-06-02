@@ -52,6 +52,35 @@ class GroqModel(BaseModelBackend):
         self._client = Groq(api_key=api_key, base_url=url)
         self._token_counter: Optional[BaseTokenCounter] = None
 
+    def _convert_response_from_anthropic_to_openai(self, response):
+        # openai ^1.0.0 format, reference openai/types/chat/chat_completion.py
+        obj = ChatCompletion.construct(
+            id=response.id,
+            choices=[
+                Choice.construct(
+                    finish_reason=response.choices[0].finish_reason,
+                    index=response.choices[0].index,
+                    logprobs=response.choices[0].logprobs,
+                    message=ChatCompletionMessage.construct(
+                        content=response.choices[0].message.content,
+                        role=response.choices[0].message.role,
+                        function_call=None,  # It does not provide function call
+                        tool_calls=response.choices[0].message.tool_calls,
+                    ),
+                )
+            ],
+            created=response.created,
+            model=response.model,
+            object="chat.completion",
+            system_fingerprint=response.system_fingerprint,
+            usage=CompletionUsage.construct(
+                completion_tokens=response.usage.completion_tokens,
+                prompt_tokens=response.usage.prompt_tokens,
+                total_tokens=response.usage.total_tokens,
+            ),
+        )
+        return obj
+
     @property
     def token_counter(self) -> BaseTokenCounter:
         r"""Initialize the token counter for the model backend. But Groq API
@@ -69,7 +98,7 @@ class GroqModel(BaseModelBackend):
     def run(
         self,
         messages: List[OpenAIMessage],
-    ) -> ChatCompletion:  # type: ignore[assignment]
+    ) -> ChatCompletion:
         r"""Runs inference of OpenAI chat completion.
 
         Args:
@@ -77,32 +106,19 @@ class GroqModel(BaseModelBackend):
                 in OpenAI API format.
 
         Returns:
-            ChatCompletion: `ChatCompletion` in the non-stream mode, while the
-            stream mode is not supported by Groq.
+            ChatCompletion: Response in the OpenAI API format (non-stream\
+                mode).
         """
-        # Since the data structure defined in the Groq client is slightly
-        # different from the one defined in the CAMEL, we need to convert the
-        # data structure. In addition, the tyep ignore is used to avoid the
-        # meaningless type error detected by the mypy.
-        response = self._client.chat.completions.create(
+        _response = self._client.chat.completions.create(
             messages=messages,  # type: ignore[arg-type]
             model=self.model_type.value,
             **self.model_config_dict,
-        )  # type: ignore[assignment]
+        )
 
-        _choices: List[Choice] = []
-        for choice in response.choices:
-            choice.message = ChatCompletionMessage(
-                role=choice.message.role,  # type: ignore[arg-type]
-                content=choice.message.content,
-                tool_calls=choice.message.tool_calls,  # type: ignore[arg-type]
-            )  # type: ignore[assignment]
-            _choice = Choice(**choice.__dict__)
-            _choices.append(_choice)
-        response.choices = _choices  # type: ignore[assignment]
+        # Format response to OpenAI format
+        response = self._convert_response_from_anthropic_to_openai(_response)
 
-        response.usage = CompletionUsage(**response.usage.__dict__)  # type: ignore[assignment]
-        return ChatCompletion(**response.__dict__)
+        return response
 
     def check_model_config(self):
         r"""Check whether the model configuration contains any unexpected
