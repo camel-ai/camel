@@ -118,7 +118,9 @@ class ModelType(Enum):
         elif self == ModelType.GLM_4:
             return 8192
         elif self == ModelType.GLM_3_TURBO:
-            return 16385
+            return 8192
+        elif self == ModelType.GLM_4V:
+            return 1024
         elif self is ModelType.STUB:
             return 4096
         elif self is ModelType.LLAMA_2:
