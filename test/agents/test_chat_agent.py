@@ -24,7 +24,7 @@ from PIL import Image
 
 from camel.agents import ChatAgent
 from camel.agents.chat_agent import FunctionCallingRecord
-from camel.configs import ChatGPTConfig, FunctionCallingConfig
+from camel.configs import ChatGPTConfig
 from camel.functions import MATH_FUNCS
 from camel.functions.openai_function import OpenAIFunction
 from camel.generators import SystemMessageGenerator
@@ -332,7 +332,7 @@ def test_token_exceed_return():
         "usage": None,
         "termination_reasons": ["max_tokens_exceeded"],
         "num_tokens": 1000,
-        "called_functions": [],
+        "tool_calls": [],
     }
     agent.terminated = True
     response = agent.step_token_exceed(1000, [], "max_tokens_exceeded")
@@ -349,9 +349,7 @@ def test_function_enabled():
         meta_dict=None,
         content="You are a help assistant.",
     )
-    model_config = FunctionCallingConfig(
-        functions=[func.get_openai_function_schema() for func in MATH_FUNCS]
-    )
+    model_config = ChatGPTConfig(tools=[*MATH_FUNCS])
     agent_no_func = ChatAgent(
         system_message=system_message,
         model_config=model_config,
@@ -361,29 +359,27 @@ def test_function_enabled():
         system_message=system_message,
         model_config=model_config,
         model_type=ModelType.GPT_4,
-        function_list=MATH_FUNCS,
+        tools=MATH_FUNCS,
     )
 
-    assert not agent_no_func.is_function_calling_enabled()
-    assert agent_with_funcs.is_function_calling_enabled()
+    assert not agent_no_func.is_tools_added()
+    assert agent_with_funcs.is_tools_added()
 
 
 @pytest.mark.model_backend
-def test_function_calling_sync():
+def test_tool_calling_sync():
     system_message = BaseMessage(
         role_name="assistant",
         role_type=RoleType.ASSISTANT,
         meta_dict=None,
         content="You are a help assistant.",
     )
-    model_config = FunctionCallingConfig(
-        functions=[func.get_openai_function_schema() for func in MATH_FUNCS]
-    )
+    model_config = ChatGPTConfig(tools=[*MATH_FUNCS])
     agent = ChatAgent(
         system_message=system_message,
         model_config=model_config,
         model_type=ModelType.GPT_4O,
-        function_list=MATH_FUNCS,
+        tools=MATH_FUNCS,
     )
 
     ref_funcs = MATH_FUNCS
@@ -398,23 +394,21 @@ def test_function_calling_sync():
     )
     agent_response = agent.step(user_msg)
 
-    called_funcs: List[FunctionCallingRecord] = agent_response.info[
-        'called_functions'
-    ]
-    for called_func in called_funcs:
+    tool_calls: List[FunctionCallingRecord] = agent_response.info['tool_calls']
+    for called_func in tool_calls:
         print(str(called_func))
 
-    assert len(called_funcs) > 0
-    assert str(called_funcs[0]).startswith("Function Execution")
+    assert len(tool_calls) > 0
+    assert str(tool_calls[0]).startswith("Function Execution")
 
-    assert called_funcs[0].func_name == "mul"
-    assert called_funcs[0].args == {"a": 2, "b": 8}
-    assert called_funcs[0].result == 16
+    assert tool_calls[0].func_name == "mul"
+    assert tool_calls[0].args == {"a": 2, "b": 8}
+    assert tool_calls[0].result == 16
 
 
 @pytest.mark.model_backend
 @pytest.mark.asyncio
-async def test_function_calling_async():
+async def test_tool_calling_async():
     system_message = BaseMessage(
         role_name="assistant",
         role_type=RoleType.ASSISTANT,
@@ -434,15 +428,15 @@ async def test_function_calling_async():
         await asyncio.sleep(second)
         return second
 
-    model_config = FunctionCallingConfig(
+    model_config = ChatGPTConfig(
         temperature=0,
-        functions=[OpenAIFunction(async_sleep).get_openai_function_schema()],
+        tools=[OpenAIFunction(async_sleep)],
     )
     agent = ChatAgent(
         system_message=system_message,
         model_config=model_config,
         model_type=ModelType.GPT_4O,
-        function_list=[OpenAIFunction(async_sleep)],
+        tools=[OpenAIFunction(async_sleep)],
     )
 
     assert len(agent.func_dict) == 1
@@ -455,18 +449,16 @@ async def test_function_calling_async():
     )
     agent_response = await agent.step_async(user_msg)
 
-    called_funcs: List[FunctionCallingRecord] = agent_response.info[
-        'called_functions'
-    ]
-    for called_func in called_funcs:
+    tool_calls: List[FunctionCallingRecord] = agent_response.info['tool_calls']
+    for called_func in tool_calls:
         print(str(called_func))
 
-    assert len(called_funcs) > 0
-    assert str(called_funcs[0]).startswith("Function Execution")
+    assert len(tool_calls) > 0
+    assert str(tool_calls[0]).startswith("Function Execution")
 
-    assert called_funcs[0].func_name == "async_sleep"
-    assert called_funcs[0].args == {'second': 1}
-    assert called_funcs[0].result == 1
+    assert tool_calls[0].func_name == "async_sleep"
+    assert tool_calls[0].args == {'second': 1}
+    assert tool_calls[0].result == 1
 
 
 def test_response_words_termination():
