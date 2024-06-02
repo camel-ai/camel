@@ -15,15 +15,16 @@
 from .commons import (
     PYDANTIC_V2,
     api_key_required,
+    api_keys_required,
     check_server_running,
     create_chunks,
+    dependencies_required,
     download_tasks,
     get_first_int,
     get_prompt_template_key_words,
     get_system_information,
     get_task_list,
     print_text_animated,
-    role_playing_with_function,
     text_extract_from_web,
     to_pascal,
 )
@@ -51,7 +52,8 @@ __all__ = [
     'BaseTokenCounter',
     'OpenAITokenCounter',
     'OpenSourceTokenCounter',
-    'role_playing_with_function',
     'text_extract_from_web',
     'create_chunks',
+    'dependencies_required',
+    'api_keys_required',
 ]
