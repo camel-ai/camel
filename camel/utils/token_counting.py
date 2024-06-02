@@ -21,6 +21,7 @@ from math import ceil
 from typing import TYPE_CHECKING, List, Optional
 
 from anthropic import Anthropic
+from groq import Groq
 from PIL import Image
 from transformers import AutoTokenizer
 
@@ -311,9 +312,12 @@ class GroqLlama3TokenCounter(BaseTokenCounter):
         """
 
         self.model_type = model_type
+        self.client = Groq()
         # Since Groq API does not provide any token counter, we use the
-        # AutoTokenizer from transformers as a placeholder.
-        self.tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased')
+        # openao source tokenizer as a placeholder.
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            "meta-llama/Meta-Llama-3-8B"
+        )
 
     def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
         r"""Count number of tokens in the provided message list using
@@ -326,23 +330,9 @@ class GroqLlama3TokenCounter(BaseTokenCounter):
         Returns:
             int: Number of tokens in the messages.
         """
-        num_tokens = 0
-        for message in messages:
-            for _, value in message.items():
-                if not isinstance(value, list):
-                    num_tokens += len(self.tokenizer.encode(str(value)))
-                else:
-                    for item in value:
-                        if item["type"] == "text":
-                            num_tokens += len(
-                                self.tokenizer.encode(item["text"])
-                            )
-                        else:
-                            raise ValueError(
-                                "Currently multimodal context is not "
-                                "supported by the token counter."
-                            )
-        return num_tokens
+        prompt = messages_to_prompt(messages, self.model_type)
+
+        return self.tokenizer.encode(prompt, return_length=True)[1]
 
 
 def count_tokens_from_image(

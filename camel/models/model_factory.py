@@ -53,14 +53,14 @@ class ModelFactory:
         model_class: Any
         if model_type.is_openai:
             model_class = OpenAIModel
-        elif model_type.is_groq:
-            model_class = GroqModel
         elif model_type == ModelType.STUB:
             model_class = StubModel
         elif model_type.is_open_source:
             model_class = OpenSourceModel
         elif model_type.is_anthropic:
             model_class = AnthropicModel
+        elif model_type.is_groq:
+            model_class = GroqModel
         else:
             raise ValueError(f"Unknown model type `{model_type}` is input")
 

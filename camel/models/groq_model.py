@@ -37,7 +37,10 @@ class GroqModel(BaseModelBackend):
     r"""LLM API served by Groq in a unified BaseModelBackend interface."""
 
     def __init__(
-        self, model_type: ModelType, model_config_dict: Dict[str, Any]
+        self,
+        model_type: ModelType,
+        model_config_dict: Dict[str, Any],
+        api_key: Optional[str] = None,
     ) -> None:
         r"""Constructor for Groq backend.
 
@@ -45,6 +48,8 @@ class GroqModel(BaseModelBackend):
             model_type (ModelType): Model for which a backend is created.
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into groq.ChatCompletion.create().
+            api_key (Optional[str]): The API key for authenticating with the
+                Anthropic service. (default: :obj:`None`).
         """
         super().__init__(model_type, model_config_dict)
         url = os.environ.get('GROQ_API_BASE_URL', None)
