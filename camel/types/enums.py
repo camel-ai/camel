@@ -30,6 +30,7 @@ class ModelType(Enum):
     GPT_4_TURBO = "gpt-4-turbo"
     GPT_4O = "gpt-4o"
     GLM_4 = "glm-4"
+    GLM_4V='glm-4v'
     GLM_3_TURBO = "glm-3-turbo"
 
     STUB = "stub"
@@ -70,6 +71,7 @@ class ModelType(Enum):
         return self in {
             ModelType.GLM_3_TURBO,
             ModelType.GLM_4,
+            ModelType.GLM_4V
         }
     
     @property

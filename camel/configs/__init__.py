@@ -15,6 +15,7 @@ from .anthropic_config import ANTHROPIC_API_PARAMS, AnthropicConfig
 from .base_config import BaseConfig
 from .openai_config import (
     OPENAI_API_PARAMS,
+    ZHIPU_API_PARAMS,
     ChatGPTConfig,
     OpenSourceConfig,
 )
@@ -23,6 +24,7 @@ __all__ = [
     'BaseConfig',
     'ChatGPTConfig',
     'OPENAI_API_PARAMS',
+    'ZHIPU_API_PARAMS'
     'AnthropicConfig',
     'ANTHROPIC_API_PARAMS',
     'OpenSourceConfig',

@@ -13,13 +13,37 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 import os
-from zhipuai import ZhipuAI
 from typing import Any, Dict, List, Optional, Union
 from camel.messages import OpenAIMessage
 from openai import OpenAI, Stream
+from camel.configs import ZHIPU_API_PARAMS
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
-from camel.utils import BaseTokenCounter, ZhipuAITokenCounter, api_key_required
+from camel.utils import BaseTokenCounter, api_key_required
+class ZhipuAITokenCounter(BaseTokenCounter):
+    def __init__(self,response) -> None:
+        r"""Constructor for the token counter for OpenAI models.
+        Args:
+            response: The response object from the API call.
+        """
+        self.response=response
+        if self.response is not None:
+            self.tokens = self.response.usage.total_tokens
+        else:
+            raise ValueError("The response object must not be None.")
+    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
+        r"""Token counting for ZhipuAI models, extracting token count from response.
+
+        Args:
+            
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+
+        Returns:
+            int: The number of tokens used in the response.
+        """
+
+        return  self.tokens
 
 class ZhipuAIModel(BaseModelBackend):
     r"""ZhipuAI API in a unified BaseModelBackend interface."""
@@ -38,26 +62,14 @@ class ZhipuAIModel(BaseModelBackend):
         super().__init__(model_type, model_config_dict)
         url = os.environ.get('ZHIPUAI_API_BASE_URL', None)
         api_key = os.environ.get('ZHIPUAI_API_KEY', None)
-        # self._client = ZhipuAI(api_key=api_key)
         self._client = OpenAI(api_key=api_key,base_url=url)
         self._token_counter: Optional[BaseTokenCounter] = None
-
-    @property
-    def token_counter(self) -> BaseTokenCounter:
-        r"""Initialize the token counter for the model backend.
-
-        Returns:
-            BaseTokenCounter: The token counter following the model's
-                tokenization style.
-        """
-        if not self._token_counter:
-            self._token_counter = ZhipuAITokenCounter()
-        return self._token_counter
+        self.response=None
 
     @api_key_required
     def run(
         self,
-        messages: List[OpenAIMessage],
+        messages:  List[OpenAIMessage],
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Runs inference of ZhipuAI chat completion.
 
@@ -74,7 +86,21 @@ class ZhipuAIModel(BaseModelBackend):
             messages=messages,
             model=self.model_type.value,
         )
-        return response
+        self.response=response
+        return self.response
+
+    @property
+    def token_counter(self) -> ZhipuAITokenCounter:
+        r"""Initialize the token counter for the model backend.
+
+        Returns:
+            ZhipuAITokenCounter: The token counter following the model's
+                tokenization style.
+        """
+        
+        if not self._token_counter:
+            self._token_counter = ZhipuAITokenCounter(response=self.response)
+        return self._token_counter
 
     def check_model_config(self):
         r"""Check whether the model configuration contains any
@@ -84,12 +110,12 @@ class ZhipuAIModel(BaseModelBackend):
             ValueError: If the model configuration dictionary contains any
                 unexpected arguments to ZhipuAI API.
         """
-        # for param in self.model_config_dict:
-        #     if param not in ZHIPUAI_API_PARAMS_WITH_FUNCTIONS:
-        #         raise ValueError(
-        #             f"Unexpected argument `{param}` is "
-        #             "input into ZhipuAI model backend."
-        #         )
+        for param in self.model_config_dict:
+            if param not in ZHIPU_API_PARAMS:
+                raise ValueError(
+                    f"Unexpected argument `{param}` is "
+                    "input into ZhipuAI model backend."
+                )
         pass
 
     @property
