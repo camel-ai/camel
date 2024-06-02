@@ -253,6 +253,7 @@ class OpenAPIName(Enum):
     COURSERA = "coursera"
     KLARNA = "klarna"
     SPEAK = "speak"
+    NASA_APOD = "nasa_apod"
 
 
 class AudioModelType(Enum):
