@@ -65,16 +65,16 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
         self.dim: Optional[int] = None
 
     def embed_list(
-        self,
-        objs: List[Union[Image.Image, str]],
-        **kwargs: Any,
+        self, objs: List[Union[Image.Image, str]], **kwargs: Any
     ) -> List[List[float]]:
-        r"""Generates embeddings for the given images or texts.
+        """Generates embeddings for the given images or texts.
 
         Args:
             objs (List[Image.Image|str]): The list of images or texts for
                 which to generate the embeddings.
-            **kwargs (Any): Extra kwargs passed to the embedding API.
+            image_processor_kwargs: Extra kwargs passed to the image processor.
+            tokenizer_kwargs: Extra kwargs passed to the text tokenizer(processor).
+            model_kwargs: Extra kwargs passed to the main model.
 
         Returns:
             List[List[float]]: A list that represents the generated embedding
@@ -85,26 +85,14 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
         """
         if not objs:
             raise ValueError("Input objs list is empty.")
-        result_list = []
-        tokenizer_kwargs = {}
-        image_processor_kwargs = {}
-        model_kwargs = {}
-        if kwargs:
-            valid_kwargs = set(self.valid_processor_kwargs).union(
-                self.valid_model_kwargs
-            )
-            tokenizer_kwargs = {
-                k: v for k, v in kwargs.items() if k not in valid_kwargs
-            }
-            image_processor_kwargs = {
-                k: v
-                for k, v in kwargs.items()
-                if k in self.valid_processor_kwargs
-            }
-            model_kwargs = {
-                k: v for k, v in kwargs.items() if k in self.valid_model_kwargs
-            }
 
+        image_processor_kwargs: Optional[dict] = kwargs.get(
+            'image_processor_kwargs', {}
+        )
+        tokenizer_kwargs: Optional[dict] = kwargs.get('tokenizer_kwargs', {})
+        model_kwargs: Optional[dict] = kwargs.get('model_kwargs', {})
+
+        result_list = []
         for obj in objs:
             if isinstance(obj, Image.Image):
                 image_input = self.processor(
@@ -119,7 +107,6 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
                     .tolist()
                 )
                 result_list.append(image_feature)
-
             elif isinstance(obj, str):
                 text_input = self.processor(
                     text=obj,
@@ -135,6 +122,7 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
                 result_list.append(text_feature)
             else:
                 raise ValueError("Input type is not image nor text.")
+
         self.dim = len(result_list[0])
 
         if any(len(result) != self.dim for result in result_list):
