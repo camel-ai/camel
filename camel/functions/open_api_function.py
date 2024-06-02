@@ -197,20 +197,25 @@ def openapi_function_decorator(
     sec_schemas: Dict[str, Dict[str, Any]],
     operation: Dict[str, Any],
 ) -> Callable:
-    r"""Decorate a function to make HTTP requests based on OpenAPI operation
-    details.
+    r"""Decorate a function to make HTTP requests based on OpenAPI
+    specification details.
 
-    This decorator takes the base URL, path, HTTP method, and operation details
-    from an OpenAPI specification, and returns a decorator. The decorated
-    function can then be called with keyword arguments corresponding to the
-    operation's parameters. The decorator handles constructing the request URL,
-    setting headers, query parameters, and the request body as specified by the
-    operation details.
+    This decorator dynamically constructs and executes an API request based on
+    the provided OpenAPI operation specifications, security requirements, and
+    parameters.  It supports operations secured with `apiKey` type security
+    schemes and automatically injects the necessary API keys from environment
+    variables. Parameters in `path`, `query`, `header`, and `cookie` are also
+    supported.
 
     Args:
+        api_name (str): The name of the API, used to retrieve API key names
+            and URLs from the configuration.
         base_url (str): The base URL for the API.
         path (str): The path for the API endpoint, relative to the base URL.
         method (str): The HTTP method (e.g., 'get', 'post') for the request.
+        openapi_security (List[Dict[str, Any]]): The global security
+            definitions as specified in the OpenAPI specs.
+        sec_schemas (Dict[str, Dict[str, Any]]): Detailed security schemes.
         operation (Dict[str, Any]): A dictionary containing the OpenAPI
             operation details, including parameters and request body
             definitions.
@@ -219,6 +224,12 @@ def openapi_function_decorator(
         Callable: A decorator that, when applied to a function, enables the
             function to make HTTP requests based on the provided OpenAPI
             operation details.
+
+    Raises:
+        TypeError: If the security requirements include unsupported types.
+        ValueError: If required API keys are missing from environment
+            variables or if the content type of the request body is
+            unsupported.
     """
 
     def inner_decorator(openapi_function: Callable) -> Callable:
