@@ -105,12 +105,13 @@ class GroqModel(BaseModelBackend):
         return ChatCompletion(**response.__dict__)
 
     def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to Groq API. But Groq API does not have any
-        additional arguments to check.
+        r"""Check whether the model configuration contains any unexpected
+        arguments to Groq API. But Groq API does not have any additional
+        arguments to check.
+
         Raises:
             ValueError: If the model configuration dictionary contains any
-                unexpected arguments to OpenAI API.
+                unexpected arguments to Groq API.
         """
         for param in self.model_config_dict:
             if param not in GROQ_LLAMA3_API_PARAMS:
