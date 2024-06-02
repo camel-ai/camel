@@ -23,11 +23,7 @@ from PIL import Image
 
 from camel.agents import ChatAgent
 from camel.agents.chat_agent import FunctionCallingRecord
-from camel.configs import (
-    ChatGPTConfig,
-    ChatGPTVisionConfig,
-    FunctionCallingConfig,
-)
+from camel.configs import ChatGPTConfig
 from camel.functions import MATH_FUNCS
 from camel.generators import SystemMessageGenerator
 from camel.memories import MemoryRecord
@@ -334,7 +330,7 @@ def test_token_exceed_return():
         "usage": None,
         "termination_reasons": ["max_tokens_exceeded"],
         "num_tokens": 1000,
-        "called_functions": [],
+        "tool_calls": [],
     }
     agent.terminated = True
     response = agent.step_token_exceed(1000, [], "max_tokens_exceeded")
@@ -351,9 +347,7 @@ def test_function_enabled():
         meta_dict=None,
         content="You are a help assistant.",
     )
-    model_config = FunctionCallingConfig(
-        functions=[func.get_openai_function_schema() for func in MATH_FUNCS]
-    )
+    model_config = ChatGPTConfig(tools=[*MATH_FUNCS])
     agent_no_func = ChatAgent(
         system_message=system_message,
         model_config=model_config,
@@ -363,29 +357,27 @@ def test_function_enabled():
         system_message=system_message,
         model_config=model_config,
         model_type=ModelType.GPT_4,
-        function_list=MATH_FUNCS,
+        tools=MATH_FUNCS,
     )
 
-    assert not agent_no_func.is_function_calling_enabled()
-    assert agent_with_funcs.is_function_calling_enabled()
+    assert not agent_no_func.is_tools_added()
+    assert agent_with_funcs.is_tools_added()
 
 
 @pytest.mark.model_backend
-def test_function_calling():
+def test_tool_calling():
     system_message = BaseMessage(
         role_name="assistant",
         role_type=RoleType.ASSISTANT,
         meta_dict=None,
         content="You are a help assistant.",
     )
-    model_config = FunctionCallingConfig(
-        functions=[func.get_openai_function_schema() for func in MATH_FUNCS]
-    )
+    model_config = ChatGPTConfig(tools=[*MATH_FUNCS])
     agent = ChatAgent(
         system_message=system_message,
         model_config=model_config,
         model_type=ModelType.GPT_4,
-        function_list=MATH_FUNCS,
+        tools=MATH_FUNCS,
     )
 
     ref_funcs = MATH_FUNCS
@@ -400,18 +392,16 @@ def test_function_calling():
     )
     agent_response = agent.step(user_msg)
 
-    called_funcs: List[FunctionCallingRecord] = agent_response.info[
-        'called_functions'
-    ]
-    for called_func in called_funcs:
+    tool_calls: List[FunctionCallingRecord] = agent_response.info['tool_calls']
+    for called_func in tool_calls:
         print(str(called_func))
 
-    assert len(called_funcs) > 0
-    assert str(called_funcs[0]).startswith("Function Execution")
+    assert len(tool_calls) > 0
+    assert str(tool_calls[0]).startswith("Function Execution")
 
-    assert called_funcs[0].func_name == "mul"
-    assert called_funcs[0].args == {"a": 2, "b": 8}
-    assert called_funcs[0].result == 16
+    assert tool_calls[0].func_name == "mul"
+    assert tool_calls[0].args == {"a": 2, "b": 8}
+    assert tool_calls[0].result == 16
 
 
 def test_response_words_termination():
@@ -449,10 +439,10 @@ def test_chat_agent_vision():
         meta_dict=None,
         content="You are a help assistant.",
     )
-    model_config = ChatGPTVisionConfig(temperature=0, max_tokens=200)
+    model_config = ChatGPTConfig(temperature=0, max_tokens=200, stop="")
     agent = ChatAgent(
         system_message=system_message,
-        model_type=ModelType.GPT_4_TURBO_VISION,
+        model_type=ModelType.GPT_4_TURBO,
         model_config=model_config,
     )
 
@@ -488,9 +478,9 @@ def test_chat_agent_vision():
             )
         ],
         created=123456,
-        model='gpt-4-1106-vision-preview',
+        model='gpt-4-turbo-2024-04-09',
         object='chat.completion',
-        system_fingerprint=None,
+        system_fingerprint='fp_5d12056990',
         usage=CompletionUsage(
             completion_tokens=2, prompt_tokens=113, total_tokens=115
         ),

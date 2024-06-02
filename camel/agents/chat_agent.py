@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
 from camel.agents.base import BaseAgent
-from camel.configs import ChatGPTConfig, ChatGPTVisionConfig
+from camel.configs import ChatGPTConfig
 from camel.memories import (
     AgentMemory,
     ChatHistoryMemory,
@@ -84,6 +84,9 @@ class ChatAgent(BaseAgent):
             responses. (default :obj:`ModelType.GPT_3_5_TURBO`)
         model_config (BaseConfig, optional): Configuration options for the
             LLM model. (default: :obj:`None`)
+        api_key (str, optional): The API key for authenticating with the
+            LLM service. Only OpenAI and Anthropic model supported (default:
+            :obj:`None`)
         memory (AgentMemory, optional): The agent memory for managing chat
             messages. If `None`, a :obj:`ChatHistoryMemory` will be used.
             (default: :obj:`None`)
@@ -96,7 +99,7 @@ class ChatAgent(BaseAgent):
             (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
-        function_list (List[OpenAIFunction], optional): List of available
+        tools (List[OpenAIFunction], optional): List of available
             :obj:`OpenAIFunction`. (default: :obj:`None`)
         response_terminators (List[ResponseTerminator], optional): List of
             :obj:`ResponseTerminator` bind to one chat agent.
@@ -108,11 +111,12 @@ class ChatAgent(BaseAgent):
         system_message: BaseMessage,
         model_type: Optional[ModelType] = None,
         model_config: Optional[BaseConfig] = None,
+        api_key: Optional[str] = None,
         memory: Optional[AgentMemory] = None,
         message_window_size: Optional[int] = None,
         token_limit: Optional[int] = None,
         output_language: Optional[str] = None,
-        function_list: Optional[List[OpenAIFunction]] = None,
+        tools: Optional[List[OpenAIFunction]] = None,
         response_terminators: Optional[List[ResponseTerminator]] = None,
     ) -> None:
         self.orig_sys_message: BaseMessage = system_message
@@ -128,34 +132,14 @@ class ChatAgent(BaseAgent):
         )
 
         self.func_dict: Dict[str, Callable] = {}
-        if function_list is not None:
-            for func in function_list:
+        if tools is not None:
+            for func in tools:
                 self.func_dict[func.get_function_name()] = func.func
 
-        self.model_config: BaseConfig
-        if self.model_type == ModelType.GPT_4_TURBO_VISION:
-            if model_config is not None and not isinstance(
-                model_config, ChatGPTVisionConfig
-            ):
-                raise ValueError(
-                    "Please use `ChatGPTVisionConfig` as "
-                    "the `model_config` when `model_type` "
-                    "is `GPT_4_TURBO_VISION`"
-                )
-            self.model_config = model_config or ChatGPTVisionConfig()
-        else:
-            if model_config is not None and isinstance(
-                model_config, ChatGPTVisionConfig
-            ):
-                raise ValueError(
-                    "Please don't use `ChatGPTVisionConfig` as "
-                    "the `model_config` when `model_type` "
-                    "is not `GPT_4_TURBO_VISION`"
-                )
-            self.model_config = model_config or ChatGPTConfig()
-
+        self.model_config = model_config or ChatGPTConfig()
+        self._api_key = api_key
         self.model_backend: BaseModelBackend = ModelFactory.create(
-            self.model_type, self.model_config.__dict__
+            self.model_type, self.model_config.__dict__, self._api_key
         )
         self.model_token_limit = token_limit or self.model_backend.token_limit
         context_creator = ScoreBasedContextCreator(
@@ -201,12 +185,12 @@ class ChatAgent(BaseAgent):
         """
         self._system_message = message
 
-    def is_function_calling_enabled(self) -> bool:
+    def is_tools_added(self) -> bool:
         r"""Whether OpenAI function calling is enabled for this agent.
 
         Returns:
             bool: Whether OpenAI function calling is enabled for this
-                agent, determined by whether the dictionary of functions
+                agent, determined by whether the dictionary of tools
                 is empty.
         """
         return len(self.func_dict) > 0
@@ -249,7 +233,7 @@ class ChatAgent(BaseAgent):
         usage: Optional[Dict[str, int]],
         termination_reasons: List[str],
         num_tokens: int,
-        called_funcs: List[FunctionCallingRecord],
+        tool_calls: List[FunctionCallingRecord],
     ) -> Dict[str, Any]:
         r"""Returns a dictionary containing information about the chat session.
 
@@ -260,9 +244,9 @@ class ChatAgent(BaseAgent):
             termination_reasons (List[str]): The reasons for the termination
                 of the chat session.
             num_tokens (int): The number of tokens used in the chat session.
-            called_funcs (List[FunctionCallingRecord]): The list of function
+            tool_calls (List[FunctionCallingRecord]): The list of function
                 calling records, containing the information of called
-                functions.
+                tools.
 
         Returns:
             Dict[str, Any]: The chat session information.
@@ -272,7 +256,7 @@ class ChatAgent(BaseAgent):
             "usage": usage,
             "termination_reasons": termination_reasons,
             "num_tokens": num_tokens,
-            "called_functions": called_funcs,
+            "tool_calls": tool_calls,
         }
 
     def init_messages(self) -> None:
@@ -305,9 +289,10 @@ class ChatAgent(BaseAgent):
 
         Args:
             input_message (BaseMessage): The input message to the agent.
-            Its `role` field that specifies the role at backend may be either
-            `user` or `assistant` but it will be set to `user` anyway since
-            for the self agent any incoming message is external.
+                Its `role` field that specifies the role at backend may be
+                either `user` or `assistant` but it will be set to `user`
+                anyway since for the self agent any incoming message is
+                external.
 
         Returns:
             ChatAgentResponse: A struct containing the output messages,
@@ -318,7 +303,7 @@ class ChatAgent(BaseAgent):
 
         output_messages: List[BaseMessage]
         info: Dict[str, Any]
-        called_funcs: List[FunctionCallingRecord] = []
+        tool_calls: List[FunctionCallingRecord] = []
         while True:
             # Format messages and get the token number
             openai_messages: Optional[List[OpenAIMessage]]
@@ -327,7 +312,7 @@ class ChatAgent(BaseAgent):
                 openai_messages, num_tokens = self.memory.get_context()
             except RuntimeError as e:
                 return self.step_token_exceed(
-                    e.args[1], called_funcs, "max_tokens_exceeded"
+                    e.args[1], tool_calls, "max_tokens_exceeded"
                 )
 
             # Obtain the model's response
@@ -343,13 +328,15 @@ class ChatAgent(BaseAgent):
                 )
 
             if (
-                self.is_function_calling_enabled()
-                and finish_reasons[0] == 'function_call'
+                self.is_tools_added()
                 and isinstance(response, ChatCompletion)
+                and response.choices[0].message.tool_calls is not None
             ):
+                # Tools added for function calling and not in stream mode
+
                 # Do function calling
                 func_assistant_msg, func_result_msg, func_record = (
-                    self.step_function_call(response)
+                    self.step_tool_call(response)
                 )
 
                 # Update the messages
@@ -359,7 +346,8 @@ class ChatAgent(BaseAgent):
                 self.update_memory(func_result_msg, OpenAIBackendRole.FUNCTION)
 
                 # Record the function calling
-                called_funcs.append(func_record)
+                tool_calls.append(func_record)
+
             else:
                 # Function calling disabled or not a function calling
 
@@ -388,7 +376,7 @@ class ChatAgent(BaseAgent):
                     usage_dict,
                     finish_reasons,
                     num_tokens,
-                    called_funcs,
+                    tool_calls,
                 )
                 break
 
@@ -475,7 +463,7 @@ class ChatAgent(BaseAgent):
     def step_token_exceed(
         self,
         num_tokens: int,
-        called_funcs: List[FunctionCallingRecord],
+        tool_calls: List[FunctionCallingRecord],
         termination_reason: str,
     ) -> ChatAgentResponse:
         r"""Return trivial response containing number of tokens and information
@@ -483,7 +471,7 @@ class ChatAgent(BaseAgent):
 
         Args:
             num_tokens (int): Number of tokens in the messages.
-            called_funcs (List[FunctionCallingRecord]): List of information
+            tool_calls (List[FunctionCallingRecord]): List of information
                 objects of functions called in the current step.
             termination_reason (str): String of termination reason.
 
@@ -499,7 +487,7 @@ class ChatAgent(BaseAgent):
             None,
             [termination_reason],
             num_tokens,
-            called_funcs,
+            tool_calls,
         )
 
         return ChatAgentResponse(
@@ -508,7 +496,7 @@ class ChatAgent(BaseAgent):
             info,
         )
 
-    def step_function_call(
+    def step_tool_call(
         self,
         response: ChatCompletion,
     ) -> Tuple[
@@ -526,14 +514,13 @@ class ChatAgent(BaseAgent):
                 result, and a struct for logging information about this
                 function call.
         """
-        # Note that when function calling is enabled, `n` is set to 1.
         choice = response.choices[0]
-        if choice.message.function_call is None:
-            raise RuntimeError("Function call is None")
-        func_name = choice.message.function_call.name
+        if choice.message.tool_calls is None:
+            raise RuntimeError("Tool calls is None")
+        func_name = choice.message.tool_calls[0].function.name
         func = self.func_dict[func_name]
 
-        args_str: str = choice.message.function_call.arguments
+        args_str: str = choice.message.tool_calls[0].function.arguments
         args = json.loads(args_str.replace("'", "\""))
 
         # Pass the extracted arguments to the indicated function
