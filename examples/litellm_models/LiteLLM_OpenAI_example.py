@@ -24,20 +24,20 @@ def main(model_type=None) -> None:
     model_config_dict = {
         "temperature": 0.7,
         "max_tokens": 150,
-        "stream": False  # Set to True to enable stream mode
+        "stream": False,  # Set to True to enable stream mode
     }
 
     # Create an instance of LiteLLMModel
     model = LiteLLMModel(model_type, model_config_dict)
 
     # Define test messages
-    messages = [{
-        "content": "You are a helpful assistant.",
-        "role": "system"
-    }, {
-        "content": "Can you explain how the LiteLLMModel works?",
-        "role": "user"
-    }]
+    messages = [
+        {"content": "You are a helpful assistant.", "role": "system"},
+        {
+            "content": "Can you explain how the LiteLLMModel works?",
+            "role": "user",
+        },
+    ]
 
     # Run the model
     response = model.run(messages)
@@ -58,8 +58,7 @@ def main(model_type=None) -> None:
 
     print(model.token_counter.count_tokens_from_messages(messages))
 
-    print_text_animated(Fore.GREEN + "AI Assistant:\n\n"
-                        f"{output_messages}\n")
+    print_text_animated(Fore.GREEN + "AI Assistant:\n\n" f"{output_messages}\n")
 
 
 if __name__ == "__main__":

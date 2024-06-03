@@ -21,7 +21,6 @@ from math import ceil
 from typing import TYPE_CHECKING, List, Optional
 
 from anthropic import Anthropic
-from litellm import completion_cost, token_counter
 from PIL import Image
 
 from camel.types import ModelType, OpenAIImageDetailType, OpenAIImageType
@@ -309,6 +308,24 @@ class LiteLLMTokenCounter(BaseTokenCounter):
             model_type (ModelType): Model type for which tokens will be counted.
         """
         self.model_type = model_type
+        self._token_counter = None
+        self._completion_cost = None
+
+    @property
+    def token_counter(self):
+        if self._token_counter is None:
+            from litellm import token_counter
+
+            self._token_counter = token_counter
+        return self._token_counter
+
+    @property
+    def completion_cost(self):
+        if self._completion_cost is None:
+            from litellm import completion_cost
+
+            self._completion_cost = completion_cost
+        return self._completion_cost
 
     def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
         r"""Count number of tokens in the provided message list using
@@ -321,7 +338,9 @@ class LiteLLMTokenCounter(BaseTokenCounter):
         Returns:
             int: Number of tokens in the messages.
         """
-        return token_counter(model=self.model_type.value, messages=messages)
+        return self.token_counter(
+            model=self.model_type.value, messages=messages
+        )
 
     def calculate_cost_from_response(self, response: dict) -> float:
         r"""Calculate the cost of the given completion response.
@@ -330,9 +349,9 @@ class LiteLLMTokenCounter(BaseTokenCounter):
             response (dict): The completion response from LiteLLM.
 
         Returns:
-            float: The cost of the completion call.
+            float: The cost of the completion call in USD.
         """
-        return completion_cost(completion_response=response)
+        return self.completion_cost(completion_response=response)
 
 
 def count_tokens_from_image(
