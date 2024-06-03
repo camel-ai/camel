@@ -12,8 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import asyncio
-
-from camel.utils.info_channel import Channel, ChannelManagement
+from camel.utils.info_channel import ChannelManagement, Channel
 
 check = False
 
