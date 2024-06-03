@@ -22,17 +22,18 @@ from camel.utils import BaseTokenCounter, LiteLLMTokenCounter
 class LiteLLMModel(BaseModelBackend):
     r"""LiteLLM API in a unified BaseModelBackend interface."""
 
-    # NOTE: Currently "stream": True is not supported with LiteLLM due to the 
+    # NOTE: Currently "stream": True is not supported with LiteLLM due to the
     # limitation of the current camel design.
 
-    def __init__(self, model_type: str, model_config_dict: Dict[str,
-                                                                Any]) -> None:
+    def __init__(
+        self, model_type: str, model_config_dict: Dict[str, Any]
+    ) -> None:
         r"""Constructor for LiteLLM backend.
 
         Args:
             model_type (str): Model for which a backend is created,
                 such as GPT-3.5-turbo, Claude-2, etc.
-            model_config_dict (Dict[str, Any]): A dictionary of parameters for 
+            model_config_dict (Dict[str, Any]): A dictionary of parameters for
             the model configuration.
         """
         super().__init__(model_type, model_config_dict)
@@ -54,7 +55,7 @@ class LiteLLMModel(BaseModelBackend):
         r"""Initialize the token counter for the model backend.
 
         Returns:
-            BaseTokenCounter: The token counter following the model's 
+            BaseTokenCounter: The token counter following the model's
             tokenization style.
         """
         if not self._token_counter:
@@ -64,7 +65,7 @@ class LiteLLMModel(BaseModelBackend):
     def run(
         self,
         messages: List[OpenAIMessage],
-    ) -> Union[ModelResponse, CustomStreamWrapper]:
+    ) -> Union['ModelResponse', 'CustomStreamWrapper']:
         r"""Runs inference of LiteLLM chat completion.
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
@@ -74,7 +75,7 @@ class LiteLLMModel(BaseModelBackend):
                 `ModelResponse` in the non-stream mode, or
                 `CustomStreamWrapper` in the stream mode.
         """
-        response = self._client(
+        response = self.client(
             model=self.model_type.value,
             messages=messages,
             **self.model_config_dict,
@@ -82,23 +83,23 @@ class LiteLLMModel(BaseModelBackend):
         return response
 
     def check_model_config(self):
-        r"""Check whether the model configuration contains any unexpected 
+        r"""Check whether the model configuration contains any unexpected
         arguments to LiteLLM API.
 
         Raises:
-            ValueError: If the model configuration dictionary contains any 
+            ValueError: If the model configuration dictionary contains any
             unexpected arguments.
         """
         for param in self.model_config_dict:
             if param not in LITELLM_API_PARAMS:
                 raise ValueError(
-                    f"Unexpected argument `{param}` is input into LiteLLM model 
-                    backend."
+                    f"Unexpected argument `{param}` is "
+                    "input into LiteLLM model backend."
                 )
 
     @property
     def stream(self) -> bool:
-        r"""Returns whether the model is in stream mode, which sends partial 
+        r"""Returns whether the model is in stream mode, which sends partial
         results each time.
 
         Returns:

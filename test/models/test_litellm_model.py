@@ -18,7 +18,7 @@ import pytest
 from camel.configs import ChatGPTConfig, OpenSourceConfig
 from camel.models import LiteLLMModel
 from camel.types import ModelType
-from camel.utils import OpenAITokenCounter
+from camel.utils import LiteLLMTokenCounter
 
 
 @pytest.mark.model_backend
@@ -37,7 +37,7 @@ def test_litellm_model(model_type):
     model = LiteLLMModel(model_type, model_config_dict)
     assert model.model_type == model_type
     assert model.model_config_dict == model_config_dict
-    assert isinstance(model.token_counter, OpenAITokenCounter)
+    assert isinstance(model.token_counter, LiteLLMTokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
 
