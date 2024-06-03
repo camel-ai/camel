@@ -13,7 +13,6 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import asyncio
 from typing import Any, Dict
-from .info_channel import Channel
 
 
 class Channel:
@@ -27,7 +26,7 @@ class Channel:
         self.input_queues: Dict[str, asyncio.Queue]= {}
         self.output_queues: Dict[str, asyncio.Queue] = {}
 
-    def connect(self, channel: Channel):
+    def connect(self, channel):
         r"""Connect to another channel.
 
         Args:
