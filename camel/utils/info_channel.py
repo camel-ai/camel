@@ -26,7 +26,7 @@ class Channel:
         self.input_queues: Dict[str, asyncio.Queue]= {}
         self.output_queues: Dict[str, asyncio.Queue] = {}
 
-    def connect(self, channel):
+    def connect(self, channel: "Channel"):
         r"""Connect to another channel.
 
         Args:
