@@ -382,6 +382,26 @@ class ChatAgent(BaseAgent):
 
         return ChatAgentResponse(output_messages, self.terminated, info)
 
+    async def astep(
+        self,
+        input_message: BaseMessage,
+    ) -> ChatAgentResponse:
+        r"""Performs a single step in the chat session by generating a response
+        to the input message. Asynchronous version of step.
+
+        Args:
+            input_message (BaseMessage): The input message to the agent.
+            Its `role` field that specifies the role at backend may be either
+            `user` or `assistant` but it will be set to `user` anyway since
+            for the self agent any incoming message is external.
+
+        Returns:
+            ChatAgentResponse: A struct containing the output messages,
+                a boolean indicating whether the chat session has terminated,
+                and information about the chat session.
+        """
+        return self.step(input_message)
+
     def handle_batch_response(
         self, response: ChatCompletion
     ) -> Tuple[List[BaseMessage], List[str], Dict[str, int], str]:

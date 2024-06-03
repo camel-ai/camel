@@ -188,3 +188,19 @@ class EmbodiedAgent(ChatAgent):
             content,
         )
         return ChatAgentResponse([message], response.terminated, response.info)
+
+    async def astep(
+        self,
+        input_message: BaseMessage,
+    ) -> ChatAgentResponse:
+        r"""Performs a step in the conversation. Asynchronous version of step.
+
+        Args:
+            input_message (BaseMessage): The input message.
+
+        Returns:
+            ChatAgentResponse: A struct containing the output messages,
+                a boolean indicating whether the chat session has terminated,
+                and information about the chat session.
+        """
+        return self.step(input_message)
