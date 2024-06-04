@@ -14,7 +14,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from typing import TYPE_CHECKING, Optional, Sequence,List
+from typing import TYPE_CHECKING, Optional, Sequence
 
 from openai._types import NOT_GIVEN, NotGiven
 
