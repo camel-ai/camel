@@ -82,7 +82,7 @@ cohere = { version = "^4.56", optional = true }
 # test
 pytest = { version = "^7", optional = true}
 mock = { version = "^5", optional = true}
-
+zhipuai = "^2.1.0.20240521"
 
 [tool.poetry.extras]
 test = ["pytest", "mock"]
