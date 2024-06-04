@@ -271,6 +271,81 @@ class OpenAITokenCounter(BaseTokenCounter):
         return num_tokens
 
 
+class ZhipuAITokenCounter(BaseTokenCounter):
+    def __init__(self, model: ModelType):
+        r"""Constructor for the token counter for OpenAI models.
+
+        Args:
+            model (ModelType): Model type for which tokens will be counted.
+        """
+        self.model: str = model.value_for_tiktoken
+
+        self.tokens_per_message: int
+        self.tokens_per_name: int
+
+        if ("glm-4" in self.model) or ("glm-4v" in self.model) or ("glm-3-turbo" in self.model):
+            self.tokens_per_message = 3
+            self.tokens_per_name = 1
+        else:
+            # flake8: noqa :E501
+            raise NotImplementedError(
+                "Token counting for ZhipuAI Models is not presently "
+            )
+
+        self.encoding = get_model_encoding(self.model)
+
+    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
+        r"""Count number of tokens in the provided message list with the
+        help of package tiktoken.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+
+        Returns:
+            int: Number of tokens in the messages.
+        """
+        num_tokens = 0
+        for message in messages:
+            num_tokens += self.tokens_per_message
+            for key, value in message.items():
+                if not isinstance(value, list):
+                    num_tokens += len(self.encoding.encode(str(value)))
+                else:
+                    for item in value:
+                        if item["type"] == "text":
+                            num_tokens += len(
+                                self.encoding.encode(str(item["text"]))
+                            )
+                        elif item["type"] == "image_url":
+                            image_str: str = item["image_url"]["url"]
+                            detail = item["image_url"]["detail"]
+                            image_prefix_format = "data:image/{};base64,"
+                            image_prefix: Optional[str] = None
+                            for image_type in list(OpenAIImageType):
+                                # Find the correct image format
+                                image_prefix = image_prefix_format.format(
+                                    image_type.value
+                                )
+                                if image_prefix in image_str:
+                                    break
+                            assert isinstance(image_prefix, str)
+                            encoded_image = image_str.split(image_prefix)[1]
+                            image_bytes = BytesIO(
+                                base64.b64decode(encoded_image)
+                            )
+                            image = Image.open(image_bytes)
+                            num_tokens += count_tokens_from_image(
+                                image, OpenAIImageDetailType(detail)
+                            )
+                if key == "name":
+                    num_tokens += self.tokens_per_name
+
+        # every reply is primed with <|start|>assistant<|message|>
+        num_tokens += 3
+        return num_tokens
+
+
 class AnthropicTokenCounter(BaseTokenCounter):
     def __init__(self, model_type: ModelType):
         r"""Constructor for the token counter for Anthropic models.

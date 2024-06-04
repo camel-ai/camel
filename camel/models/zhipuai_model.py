@@ -15,36 +15,12 @@
 import os
 from typing import Any, Dict, List, Optional, Union
 from camel.messages import OpenAIMessage
-from openai import OpenAI, Stream
+from zhipuai import ZhipuAI
+from zhipuai.core._sse_client import StreamResponse
 from camel.configs import ZHIPU_API_PARAMS
 from camel.models import BaseModelBackend
-from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
-from camel.utils import BaseTokenCounter, api_key_required
-class ZhipuAITokenCounter(BaseTokenCounter):
-    def __init__(self,response) -> None:
-        r"""Constructor for the token counter for OpenAI models.
-        Args:
-            response: The response object from the API call.
-        """
-        self.response=response
-        if self.response is not None:
-            self.tokens = self.response.usage.total_tokens
-        else:
-            raise ValueError("The response object must not be None.")
-    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
-        r"""Token counting for ZhipuAI models, extracting token count from response.
-
-        Args:
-            
-            messages (List[OpenAIMessage]): Message list with the chat history
-                in OpenAI API format.
-
-        Returns:
-            int: The number of tokens used in the response.
-        """
-
-        return  self.tokens
-
+from camel.types import Completion, ChatCompletionChunk, ModelType
+from camel.utils import BaseTokenCounter, api_key_required, ZhipuAITokenCounter
 class ZhipuAIModel(BaseModelBackend):
     r"""ZhipuAI API in a unified BaseModelBackend interface."""
 
@@ -62,15 +38,14 @@ class ZhipuAIModel(BaseModelBackend):
         super().__init__(model_type, model_config_dict)
         url = os.environ.get('ZHIPUAI_API_BASE_URL', None)
         api_key = os.environ.get('ZHIPUAI_API_KEY', None)
-        self._client = OpenAI(api_key=api_key,base_url=url)
+        self._client = ZhipuAI(api_key=api_key,base_url=url)
         self._token_counter: Optional[BaseTokenCounter] = None
-        self.response=None
 
     @api_key_required
     def run(
         self,
         messages:  List[OpenAIMessage],
-    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+    ) -> Union[Completion, StreamResponse[ChatCompletionChunk]]:
         r"""Runs inference of ZhipuAI chat completion.
 
         Args:
@@ -78,16 +53,16 @@ class ZhipuAIModel(BaseModelBackend):
                 in ZhipuAI API format.
 
         Returns:
-            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-                `ChatCompletion` in the non-stream mode, or
-                `Stream[ChatCompletionChunk]` in the stream mode.
+            Union[Completion, StreamResponse[ChatCompletionChunk]]:
+                `Completion` in the non-stream mode, or
+                `StreamResponse[ChatCompletionChunk]` in the stream mode.
         """
         response = self._client.chat.completions.create(
             messages=messages,
             model=self.model_type.value,
+            **self.model_config_dict,
         )
-        self.response=response
-        return self.response
+        return response
 
     @property
     def token_counter(self) -> ZhipuAITokenCounter:
@@ -99,7 +74,7 @@ class ZhipuAIModel(BaseModelBackend):
         """
         
         if not self._token_counter:
-            self._token_counter = ZhipuAITokenCounter(response=self.response)
+            self._token_counter = ZhipuAITokenCounter(self.model_type)
         return self._token_counter
 
     def check_model_config(self):
@@ -126,5 +101,4 @@ class ZhipuAIModel(BaseModelBackend):
             bool: Whether the model is in stream mode.
         """
         return self.model_config_dict.get('stream', False)
-
 
