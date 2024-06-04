@@ -11,20 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .anthropic_model import AnthropicModel
-from .base_model import BaseModelBackend
-from .model_factory import ModelFactory
-from .open_source_model import OpenSourceModel
-from .openai_audio_models import OpenAIAudioModels
-from .openai_model import OpenAIModel
-from .stub_model import StubModel
 
-__all__ = [
-    'BaseModelBackend',
-    'OpenAIModel',
-    'AnthropicModel',
-    'StubModel',
-    'OpenSourceModel',
-    'ModelFactory',
-    'OpenAIAudioModels',
-]
+from typing import List
+
+from camel.functions import OpenAIFunction
+
+
+class BaseToolkit:
+    def get_tools(self) -> List[OpenAIFunction]:
+        raise NotImplementedError("Subclasses must implement this method.")

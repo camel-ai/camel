@@ -15,18 +15,14 @@ from .anthropic_config import ANTHROPIC_API_PARAMS, AnthropicConfig
 from .base_config import BaseConfig
 from .openai_config import (
     OPENAI_API_PARAMS,
-    OPENAI_API_PARAMS_WITH_FUNCTIONS,
     ChatGPTConfig,
-    FunctionCallingConfig,
     OpenSourceConfig,
 )
 
 __all__ = [
     'BaseConfig',
     'ChatGPTConfig',
-    'FunctionCallingConfig',
     'OPENAI_API_PARAMS',
-    'OPENAI_API_PARAMS_WITH_FUNCTIONS',
     'AnthropicConfig',
     'ANTHROPIC_API_PARAMS',
     'OpenSourceConfig',
