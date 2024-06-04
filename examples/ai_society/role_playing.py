@@ -16,6 +16,7 @@ from colorama import Fore
 from camel.societies import RolePlaying
 from camel.utils import print_text_animated
 
+
 def main(model_type=None, chat_turn_limit=50) -> None:
     task_prompt = "Develop a trading bot for the stock market"
     role_play_session = RolePlaying(
