@@ -250,7 +250,6 @@ def openapi_function_decorator(
                         f"Unsupported content type: {content_type}"
                     )
             else:
-                # print(params)
                 # If there is no requestBody, no request body is sent
                 response = requests.request(
                     method.upper(),
