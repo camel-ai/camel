@@ -15,7 +15,7 @@ from .enums import (
     EmbeddingModelType,
     ModelType,
     OpenAIBackendRole,
-    OpenAIImageDetailType,
+    OpenAIVisionDetailType,
     OpenAIImageType,
     OpenAPIName,
     RoleType,
@@ -58,6 +58,6 @@ __all__ = [
     'CompletionUsage',
     'OpenAIVideoType',
     'OpenAIImageType',
-    'OpenAIImageDetailType',
+    'OpenAIVisionDetailType',
     'OpenAPIName',
 ]

@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING, List, Optional
 from anthropic import Anthropic
 from PIL import Image
 
-from camel.types import ModelType, OpenAIImageDetailType, OpenAIImageType
+from camel.types import ModelType, OpenAIVisionDetailType, OpenAIImageType
 
 if TYPE_CHECKING:
     from camel.messages import OpenAIMessage
@@ -262,7 +262,7 @@ class OpenAITokenCounter(BaseTokenCounter):
                             )
                             image = Image.open(image_bytes)
                             num_tokens += count_tokens_from_image(
-                                image, OpenAIImageDetailType(detail)
+                                image, OpenAIVisionDetailType(detail)
                             )
                 if key == "name":
                     num_tokens += self.tokens_per_name
@@ -302,7 +302,7 @@ class AnthropicTokenCounter(BaseTokenCounter):
 
 
 def count_tokens_from_image(
-    image: Image.Image, detail: OpenAIImageDetailType
+    image: Image.Image, detail: OpenAIVisionDetailType
 ) -> int:
     r"""Count image tokens for OpenAI vision model. An :obj:`"auto"`
     resolution model will be treated as :obj:`"high"`. All images with
@@ -316,13 +316,13 @@ def count_tokens_from_image(
 
     Args:
         image (PIL.Image.Image): Image to count number of tokens.
-        detail (OpenAIImageDetailType): Image detail type to count
+        detail (OpenAIVisionDetailType): Image detail type to count
             number of tokens.
 
     Returns:
         int: Number of tokens for the image given a detail type.
     """
-    if detail == OpenAIImageDetailType.LOW:
+    if detail == OpenAIVisionDetailType.LOW:
         return LOW_DETAIL_TOKENS
 
     width, height = image.size

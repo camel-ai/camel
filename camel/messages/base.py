@@ -29,7 +29,7 @@ from camel.messages import (
 from camel.prompts import CodePrompt, TextPrompt
 from camel.types import (
     OpenAIBackendRole,
-    OpenAIImageDetailType,
+    OpenAIVisionDetailType,
     OpenAIImageType,
     RoleType,
 )
@@ -47,7 +47,8 @@ class BaseMessage:
         content (str): The content of the message.
         video_bytes (Optional[bytes]): Optional bytes of a video associated with the message. Default is None.
         image_list (Optional[List[Image.Image]]): Optional list of PIL Image objects associated with the message. Default is None.
-        image_detail (Literal["auto", "low", "high"]): Detail level of the images associated with the message. Default is "low".
+        image_detail (Literal["auto", "low", "high"]): Detail level of the images associated with the message. Default is "auto".
+        video_detail (Literal["auto", "low", "high"]): Detail level of the videos associated with the message. Default is "low".
     """
 
     role_name: str
@@ -56,7 +57,8 @@ class BaseMessage:
     content: str
     video_bytes: Optional[bytes] = None
     image_list: Optional[List[Image.Image]] = None
-    image_detail: Literal["auto", "low", "high"] = "low"
+    image_detail: Literal["auto", "low", "high"] = OpenAIVisionDetailType.AUTO
+    video_detail: Literal["auto", "low", "high"] = OpenAIVisionDetailType.LOW
 
     @classmethod
     def make_user_message(
@@ -66,7 +68,8 @@ class BaseMessage:
         meta_dict: Optional[Dict[str, str]] = None,
         video_bytes: Optional[bytes] = None,
         image_list: Optional[List[Image.Image]] = None,
-        image_detail: Union[OpenAIImageDetailType, str] = OpenAIImageDetailType.LOW,
+        image_detail: Union[OpenAIVisionDetailType, str] = OpenAIVisionDetailType.AUTO,
+        video_detail: Union[OpenAIVisionDetailType, str] = OpenAIVisionDetailType.LOW,
     ) -> "BaseMessage":
         return cls(
             role_name,
@@ -75,7 +78,8 @@ class BaseMessage:
             content,
             video_bytes,
             image_list,
-            OpenAIImageDetailType(image_detail).value,
+            OpenAIVisionDetailType(image_detail).value,
+            OpenAIVisionDetailType(video_detail).value,
         )
 
     @classmethod
@@ -86,7 +90,8 @@ class BaseMessage:
         meta_dict: Optional[Dict[str, str]] = None,
         video_bytes: Optional[bytes] = None,
         image_list: Optional[List[Image.Image]] = None,
-        image_detail: Union[OpenAIImageDetailType, str] = OpenAIImageDetailType.LOW,
+        image_detail: Union[OpenAIVisionDetailType, str] = OpenAIVisionDetailType.AUTO,
+        video_detail: Union[OpenAIVisionDetailType, str] = OpenAIVisionDetailType.LOW,
     ) -> "BaseMessage":
         return cls(
             role_name,
@@ -95,7 +100,8 @@ class BaseMessage:
             content,
             video_bytes,
             image_list,
-            OpenAIImageDetailType(image_detail).value,
+            OpenAIVisionDetailType(image_detail).value,
+            OpenAIVisionDetailType(video_detail).value,
         )
 
     def create_new_instance(self, content: str) -> "BaseMessage":
@@ -322,9 +328,10 @@ class BaseMessage:
                     "type": "image_url",
                     "image_url": {
                         "url": f"data:image/jpeg;base64,{encoded_image}",
-                        "detail": self.image_detail,
+                        "detail": self.video_detail,
                     },
                 }
+
                 image_content.append(item)
 
         return {
