@@ -54,11 +54,9 @@ def descripte_video(video_path: str) -> None:
         print("=" * 48)
 
 
-def main() -> None:
-    video_path = "1.mp4"
-    descripte_video(video_path)
-
+def main(args: argparse.Namespace) -> None:
+    descripte_video(args.image_path)
 
 if __name__ == "__main__":
-    # args = parser.parse_args()
-    main()
+    args = parser.parse_args()
+    main(args=args)

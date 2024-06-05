@@ -59,10 +59,10 @@ def detect_image_obj(image_path: str) -> None:
     print("=" * 48)
 
 
-def main() -> None:
-    image_path = "test.jpg"
-    detect_image_obj(image_path)
+def main(args: argparse.Namespace) -> None:
+    detect_image_obj(args.image_path)
 
 
 if __name__ == "__main__":
-    main()
+    args = parser.parse_args()
+    main(args=args)
