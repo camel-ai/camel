@@ -46,13 +46,17 @@ usr_msg = BaseMessage.make_user_message(
 # Get response information
 response = camel_agent.step(usr_msg)
 print(response.info['tool_calls'])
-# >>> [FunctionCallingRecord(func_name='klarna_productsUsingGET', args={
-# 'q_in_query': 'basketball'}, result={'products': [{'name': 'Wilson Evolution'
-# , 'url': 'https://www.klarna.com/us/shopping/pl/cl1220/3203801266/Basketball
-# /Wilson-Evolution/?utm_source=openai&ref-site=openai_plugin', 'price':
-# '$65.00', 'attributes': ['Color:Brown,Blue,Black,Orange', 'Ball Size:6,7',
-# 'Area of Use:Indoors,Outdoors', 'Material:Leather,Rubber']}, {'name':
-# 'Wilson NBA Authentic', 'url': 'https://www.klarna.com/us/shopping/pl/cl1220/
-# 3200358202/Basketball/Wilson-NBA-Authentic/?utm_source=openai&ref-site=openai
-# _plugin', 'price': '$24.99', 'attributes': ['Color:Orange', 'Ball Size:6,7',
-# 'Area of Use: Indoors,Outdoors', 'Material:Leather']},]})]
+"""
+===============================================================================
+[FunctionCallingRecord(func_name='klarna_productsUsingGET', args={
+'q_in_query': 'basketball'}, result={'products': [{'name': 'Wilson Evolution'
+, 'url': 'https://www.klarna.com/us/shopping/pl/cl1220/3203801266/Basketball
+/Wilson-Evolution/?utm_source=openai&ref-site=openai_plugin', 'price':
+'$65.00', 'attributes': ['Color:Brown,Blue,Black,Orange', 'Ball Size:6,7',
+'Area of Use:Indoors,Outdoors', 'Material:Leather,Rubber']}, {'name':
+'Wilson NBA Authentic', 'url': 'https://www.klarna.com/us/shopping/pl/cl1220/
+3200358202/Basketball/Wilson-NBA-Authentic/?utm_source=openai&ref-site=openai
+_plugin', 'price': '$24.99', 'attributes': ['Color:Orange', 'Ball Size:6,7',
+'Area of Use: Indoors,Outdoors', 'Material:Leather']},]})]
+===============================================================================
+"""
