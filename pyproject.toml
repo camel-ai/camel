@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "camel-ai"
-version = "0.1.3"
+version = "0.1.5.1"
 authors = ["CAMEL-AI.org"]
 description = "Communicative Agents for AI Society Study"
 readme = "README.md"
@@ -62,6 +62,10 @@ requests_oauthlib = { version = "^1.3.1", optional = true }
 prance = { version = "^23.6.21.0", optional = true }
 openapi-spec-validator = { version = "^0.7.1", optional = true }
 unstructured = { extras = ["all-docs"], version = "^0.10.30", optional = true }
+pillow = { version = "^10.2.0", optional = true }
+slack-sdk = { version = "^3.27.2", optional = true }
+pydub = { version = "^0.25.1", optional = true }
+pygithub = { version = "^2.3.0", optional = true }
 
 # encoders
 sentence-transformers = { version = "^2.2.2", optional = true }
@@ -111,6 +115,10 @@ tools = [
     "prance",
     "openapi-spec-validator",
     "unstructured",
+    "pillow",
+    "slack-sdk",
+    "pydub",
+    "pygithub",
 ]
 
 vector-databases = [
@@ -140,6 +148,7 @@ all = [
     # tools
     "beautifulsoup4",
     "docx2txt",
+    "pygithub",
     "PyMuPDF",
     "wikipedia",
     "wolframalpha",
@@ -149,6 +158,8 @@ all = [
     "prance",
     "openapi-spec-validator",
     "unstructured",
+    "slack-sdk",
+    "pydub",
     # vector-database
     "qdrant-client",
     "pymilvus",
@@ -160,6 +171,7 @@ all = [
     "neo4j",
     # retrievers
     "rank-bm25",
+    "pillow",
 ]
 
 [tool.poetry.group.dev]
@@ -267,5 +279,10 @@ module = [
     "cohere",
     "sentence_transformers.*",
     "pymilvus",
+    "pillow",
+    "slack-sdk",
+    "pydub",
+    "pygithub"
+
 ]
 ignore_missing_imports = true
