@@ -238,6 +238,7 @@ class OpenAIImageType(Enum, metaclass=OpenAIImageTypeMeta):
     WEBP = "webp"
     GIF = "gif"
 
+
 class OpenAIVisionDetailType(Enum):
     AUTO = "auto"
     LOW = "low"

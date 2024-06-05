@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING, List, Optional
 from anthropic import Anthropic
 from PIL import Image
 
-from camel.types import ModelType, OpenAIVisionDetailType, OpenAIImageType
+from camel.types import ModelType, OpenAIImageType, OpenAIVisionDetailType
 
 if TYPE_CHECKING:
     from camel.messages import OpenAIMessage
