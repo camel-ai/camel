@@ -48,7 +48,6 @@ torch = { version = "^1", optional = true }
 soundfile = { version = "^0", optional = true }
 sentencepiece = { version = "^0", optional = true }
 opencv-python = { version = "^4", optional = true }
-imageio = { version = "^2.34.1", optional = true }
 
 # tools
 beautifulsoup4 = { version = "^4", optional = true }
@@ -66,6 +65,7 @@ pillow = { version = "^10.2.0", optional = true }
 slack-sdk = { version = "^3.27.2", optional = true }
 pydub = { version = "^0.25.1", optional = true }
 pygithub = { version = "^2.3.0", optional = true }
+imageio = { version = "^2.34.1", optional = true }
 
 # encoders
 sentence-transformers = { version = "^2.2.2", optional = true }
@@ -115,6 +115,7 @@ tools = [
     "prance",
     "openapi-spec-validator",
     "unstructured",
+    "imageio",
     "pillow",
     "slack-sdk",
     "pydub",
@@ -158,6 +159,7 @@ all = [
     "prance",
     "openapi-spec-validator",
     "unstructured",
+    "imageio",
     "slack-sdk",
     "pydub",
     # vector-database
@@ -275,6 +277,7 @@ module = [
     "fitz",
     "qdrant_client.*",
     "unstructured.*",
+    "imageio",
     "rank_bm25",
     "cohere",
     "sentence_transformers.*",
