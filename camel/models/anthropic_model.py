@@ -27,10 +27,24 @@ class AnthropicModel(BaseModelBackend):
     r"""Anthropic API in a unified BaseModelBackend interface."""
 
     def __init__(
-        self, model_type: ModelType, model_config_dict: Dict[str, Any]
+        self,
+        model_type: ModelType,
+        model_config_dict: Dict[str, Any],
+        api_key: Optional[str] = None,
     ) -> None:
+        r"""Constructor for Anthropic backend.
+
+        Args:
+            model_type (ModelType): Model for which a backend is created,
+                one of GPT_* series.
+            model_config_dict (Dict[str, Any]): A dictionary that will
+                be fed into openai.ChatCompletion.create().
+            api_key (Optional[str]): The API key for authenticating with the
+                Anthropic service. (default: :obj:`None`)
+        """
         super().__init__(model_type, model_config_dict)
-        self.client = Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+        self._api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
+        self.client = Anthropic(api_key=self._api_key)
         self._token_counter: Optional[BaseTokenCounter] = None
 
     def _convert_response_from_anthropic_to_openai(self, response):

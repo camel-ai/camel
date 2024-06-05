@@ -257,3 +257,38 @@ class OpenAPIName(Enum):
     CREATE_QR_CODE = "create_qr_code"
     OUTSCHOOL = "outschool"
     WEB_SCRAPER = "web_scraper"
+
+
+class AudioModelType(Enum):
+    TTS_1 = "tts-1"
+    TTS_1_HD = "tts-1-hd"
+
+    @property
+    def is_openai(self) -> bool:
+        r"""Returns whether this type of audio models is an OpenAI-released
+        model."""
+        return self in {
+            AudioModelType.TTS_1,
+            AudioModelType.TTS_1_HD,
+        }
+
+
+class VoiceType(Enum):
+    ALLOY = "alloy"
+    ECHO = "echo"
+    FABLE = "fable"
+    ONYX = "onyx"
+    NOVA = "nova"
+    SHIMMER = "shimmer"
+
+    @property
+    def is_openai(self) -> bool:
+        r"""Returns whether this type of voice is an OpenAI-released voice."""
+        return self in {
+            VoiceType.ALLOY,
+            VoiceType.ECHO,
+            VoiceType.FABLE,
+            VoiceType.ONYX,
+            VoiceType.NOVA,
+            VoiceType.SHIMMER,
+        }
