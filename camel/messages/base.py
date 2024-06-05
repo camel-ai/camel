@@ -47,7 +47,7 @@ class BaseMessage:
         content (str): The content of the message.
         video_bytes (Optional[bytes]): Optional bytes of a video associated with the message. Default is None.
         image_list (Optional[List[Image.Image]]): Optional list of PIL Image objects associated with the message. Default is None.
-        image_detail (Literal["auto", "low", "high"]): Detail level of the images associated with the message. Default is "auto".
+        image_detail (Literal["auto", "low", "high"]): Detail level of the images associated with the message. Default is "low".
     """
 
     role_name: str
@@ -56,7 +56,7 @@ class BaseMessage:
     content: str
     video_bytes: Optional[bytes] = None
     image_list: Optional[List[Image.Image]] = None
-    image_detail: Literal["auto", "low", "high"] = "auto"
+    image_detail: Literal["auto", "low", "high"] = "low"
 
     @classmethod
     def make_user_message(
@@ -66,7 +66,7 @@ class BaseMessage:
         meta_dict: Optional[Dict[str, str]] = None,
         video_bytes: Optional[bytes] = None,
         image_list: Optional[List[Image.Image]] = None,
-        image_detail: Union[OpenAIImageDetailType, str] = "auto",
+        image_detail: Union[OpenAIImageDetailType, str] = OpenAIImageDetailType.LOW,
     ) -> "BaseMessage":
         return cls(
             role_name,
@@ -86,7 +86,7 @@ class BaseMessage:
         meta_dict: Optional[Dict[str, str]] = None,
         video_bytes: Optional[bytes] = None,
         image_list: Optional[List[Image.Image]] = None,
-        image_detail: Union[OpenAIImageDetailType, str] = "auto",
+        image_detail: Union[OpenAIImageDetailType, str] = OpenAIImageDetailType.LOW,
     ) -> "BaseMessage":
         return cls(
             role_name,

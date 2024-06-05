@@ -17,7 +17,6 @@ from .enums import (
     OpenAIBackendRole,
     OpenAIImageDetailType,
     OpenAIImageType,
-    OpenAIVideoType,
     OpenAPIName,
     RoleType,
     StorageType,

@@ -244,11 +244,7 @@ class OpenAITokenCounter(BaseTokenCounter):
                             )
                         elif item["type"] == "image_url":
                             image_str: str = item["image_url"]["url"]
-                            if "detail" in item["image_url"]:
-                                detail = item["image_url"]["detail"]
-                            else:
-                                # Automatically set the detail type if the image is segmented by video.
-                                detail = OpenAIImageDetailType.AUTO
+                            detail = item["image_url"]["detail"]
 
                             image_prefix_format = "data:image/{};base64,"
                             image_prefix: Optional[str] = None
