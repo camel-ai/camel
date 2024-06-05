@@ -190,9 +190,7 @@ class BaseMessage:
         idx = 0
         start_idx = 0
         while idx < len(lines):
-            while idx < len(lines) and (
-                not lines[idx].lstrip().startswith("```")
-            ):
+            while idx < len(lines) and (not lines[idx].lstrip().startswith("```")):
                 idx += 1
             text = "\n".join(lines[start_idx:idx]).strip()
             text_prompts.append(TextPrompt(text))
@@ -276,9 +274,7 @@ class BaseMessage:
                     )
                 with io.BytesIO() as buffer:
                     image.save(fp=buffer, format=image.format)
-                    encoded_image = base64.b64encode(buffer.getvalue()).decode(
-                        "utf-8"
-                    )
+                    encoded_image = base64.b64encode(buffer.getvalue()).decode("utf-8")
                 image_prefix = f"data:image/{image_type};base64,"
                 image_content.append(
                     {
@@ -294,9 +290,7 @@ class BaseMessage:
             base64Frames: List[str] = []
             frame_count = 0
             # read video bytes
-            video = iio.imiter(
-                self.video_bytes, plugin=Constants.DEFAULT_PLUG_PYAV
-            )
+            video = iio.imiter(self.video_bytes, plugin=Constants.DEFAULT_PLUG_PYAV)
 
             for frame in video:
                 frame_count += 1
@@ -319,9 +313,9 @@ class BaseMessage:
                         image_format = OpenAIImageType.JPEG.value
                         image_format = image_format.upper()
                         resized_img.save(fp=buffer, format=image_format)
-                        encoded_image = base64.b64encode(
-                            buffer.getvalue()
-                        ).decode("utf-8")
+                        encoded_image = base64.b64encode(buffer.getvalue()).decode(
+                            "utf-8"
+                        )
 
                     base64Frames.append(encoded_image)
 
