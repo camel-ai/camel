@@ -313,9 +313,7 @@ class BaseMessage:
                         image_format = OpenAIImageType.JPEG.value
                         image_format = image_format.upper()
                         resized_img.save(fp=buffer, format=image_format)
-                        encoded_image = base64.b64encode(buffer.getvalue()).decode(
-                            "utf-8"
-                        )
+                        encoded_image = base64.b64encode(buffer.getvalue()).decode("utf-8")
 
                     base64Frames.append(encoded_image)
 
