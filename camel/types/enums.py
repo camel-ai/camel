@@ -219,7 +219,7 @@ class TerminationMode(Enum):
     ALL = "all"
 
 
-class OpenAIVisionTypeMeta(EnumMeta):
+class OpenAIImageTypeMeta(EnumMeta):
     def __contains__(cls, image_type: object) -> bool:
         try:
             cls(image_type)
@@ -228,7 +228,7 @@ class OpenAIVisionTypeMeta(EnumMeta):
         return True
 
 
-class OpenAIImageType(Enum, metaclass=OpenAIVisionTypeMeta):
+class OpenAIImageType(Enum, metaclass=OpenAIImageTypeMeta):
     r"""Image types supported by OpenAI vision model."""
 
     # https://platform.openai.com/docs/guides/vision
@@ -239,7 +239,7 @@ class OpenAIImageType(Enum, metaclass=OpenAIVisionTypeMeta):
     GIF = "gif"
 
 
-class OpenAIVideoType(Enum, metaclass=OpenAIVisionTypeMeta):
+class OpenAIVideoType(Enum, metaclass=OpenAIImageTypeMeta):
     r"""Video types supported by OpenCV."""
 
     AVI = "avi"
