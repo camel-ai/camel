@@ -13,14 +13,13 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import base64
 import io
-import os
 from dataclasses import dataclass
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
-import cv2
+import imageio.v3 as iio
+import numpy as np
 from PIL import Image
 
-from camel.common import Constants
 from camel.messages import (
     OpenAIAssistantMessage,
     OpenAIMessage,
@@ -32,9 +31,9 @@ from camel.types import (
     OpenAIBackendRole,
     OpenAIImageDetailType,
     OpenAIImageType,
-    OpenAIVideoType,
     RoleType,
 )
+from camel.utils import Constants
 
 
 @dataclass
@@ -43,19 +42,20 @@ class BaseMessage:
 
     Args:
         role_name (str): The name of the user or assistant role.
-        role_type (RoleType): The type of role, either
-            :obj:`RoleType.ASSISTANT` or :obj:`RoleType.USER`.
-        meta_dict (Optional[Dict[str, str]]): Additional metadata dictionary
-            for the message.
+        role_type (RoleType): The type of role, either :obj:`RoleType.ASSISTANT` or :obj:`RoleType.USER`.
+        meta_dict (Optional[Dict[str, str]]): Additional metadata dictionary for the message.
         content (str): The content of the message.
+        video_bytes (Optional[bytes]): Optional bytes of a video associated with the message. Default is None.
+        image_list (Optional[List[Image.Image]]): Optional list of PIL Image objects associated with the message. Default is None.
+        image_detail (Literal["auto", "low", "high"]): Detail level of the images associated with the message. Default is "auto".
     """
 
     role_name: str
     role_type: RoleType
     meta_dict: Optional[Dict[str, str]]
     content: str
-    video_path: Optional[str] = None
-    image: Optional[Image.Image] = None
+    video_bytes: Optional[bytes] = None
+    image_list: Optional[List[Image.Image]] = None
     image_detail: Literal["auto", "low", "high"] = "auto"
 
     @classmethod
@@ -64,8 +64,8 @@ class BaseMessage:
         role_name: str,
         content: str,
         meta_dict: Optional[Dict[str, str]] = None,
-        video_path: Optional[str] = None,
-        image: Optional[Image.Image] = None,
+        video_bytes: Optional[bytes] = None,
+        image_list: Optional[List[Image.Image]] = None,
         image_detail: Union[OpenAIImageDetailType, str] = "auto",
     ) -> "BaseMessage":
         return cls(
@@ -73,8 +73,8 @@ class BaseMessage:
             RoleType.USER,
             meta_dict,
             content,
-            video_path,
-            image,
+            video_bytes,
+            image_list,
             OpenAIImageDetailType(image_detail).value,
         )
 
@@ -84,8 +84,8 @@ class BaseMessage:
         role_name: str,
         content: str,
         meta_dict: Optional[Dict[str, str]] = None,
-        video_path: Optional[str] = None,
-        image: Optional[Image.Image] = None,
+        video_bytes: Optional[bytes] = None,
+        image_list: Optional[List[Image.Image]] = None,
         image_detail: Union[OpenAIImageDetailType, str] = "auto",
     ) -> "BaseMessage":
         return cls(
@@ -93,8 +93,8 @@ class BaseMessage:
             RoleType.ASSISTANT,
             meta_dict,
             content,
-            video_path,
-            image,
+            video_bytes,
+            image_list,
             OpenAIImageDetailType(image_detail).value,
         )
 
@@ -250,119 +250,95 @@ class BaseMessage:
         Returns:
             OpenAIUserMessage: The converted :obj:`OpenAIUserMessage` object.
         """
-        if self.image is not None:
-            if self.image.format is None:
-                raise ValueError(
-                    f"Image's `format` is `None`, please "
-                    f"transform the `PIL.Image.Image` to  one of "
-                    f"following supported formats, such as "
-                    f"{list(OpenAIImageType)}"
-                )
+        image_content: List[Any] = []
+        image_content.append(
+            {
+                "type": "text",
+                "text": self.content,
+            }
+        )
 
-            image_type: str = self.image.format.lower()
-            if image_type not in OpenAIImageType:
-                raise ValueError(
-                    f"Image type {self.image.format} "
-                    f"is not supported by OpenAI vision model"
-                )
-            with io.BytesIO() as buffer:
-                self.image.save(fp=buffer, format=self.image.format)
-                encoded_image = base64.b64encode(buffer.getvalue()).decode(
-                    "utf-8"
-                )
-            image_prefix = f"data:image/{image_type};base64,"
+        if self.image_list and len(self.image_list) > 0:
+            for image in self.image_list:
+                if image.format is None:
+                    raise ValueError(
+                        f"Image's `format` is `None`, please "
+                        f"transform the `PIL.Image.Image` to  one of "
+                        f"following supported formats, such as "
+                        f"{list(OpenAIImageType)}"
+                    )
 
-            return {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": self.content,
-                    },
+                image_type: str = image.format.lower()
+                if image_type not in OpenAIImageType:
+                    raise ValueError(
+                        f"Image type {image.format} "
+                        f"is not supported by OpenAI vision model"
+                    )
+                with io.BytesIO() as buffer:
+                    image.save(fp=buffer, format=image.format)
+                    encoded_image = base64.b64encode(buffer.getvalue()).decode(
+                        "utf-8"
+                    )
+                image_prefix = f"data:image/{image_type};base64,"
+                image_content.append(
                     {
                         "type": "image_url",
                         "image_url": {
                             "url": f"{image_prefix}{encoded_image}",
                             "detail": self.image_detail,
                         },
-                    },
-                ],
-            }
-        elif self.video_path is not None:
-            if not os.path.exists(self.video_path):
-                raise FileNotFoundError(
-                    f"Video file {self.video_path} does not exist."
+                    }
                 )
 
-            video_format: str = self.video_path.split(".")[-1].lower()
-            if video_format not in OpenAIVideoType:
-                raise ValueError(
-                    f"Video type {video_format} "
-                    f"is not supported by OpenAI vision model"
-                )
-
-            base64Frames = []
-            video = cv2.VideoCapture(self.video_path)
-            while video.isOpened():
-                success, frame = video.read()
-                if not success:
-                    break
-
-                # Get the dimensions of the frame
-                height, width = frame.shape[:2]
-
-                # Calculate the new dimensions while maintaining the aspect ratio
-                new_width = Constants.DEFAULT_IMAGE_SIZE
-                aspect_ratio = width / height
-                new_height = int(new_width / aspect_ratio)
-
-                # Resize the frame
-                resized_frame = cv2.resize(frame, (new_width, new_height))
-
-                # Encode the frame as JPEG
-                success, buffer = cv2.imencode(  # type: ignore[assignment]
-                    f".{OpenAIImageType.JPEG}", resized_frame
-                )
-
-                # Convert the encoded frame to base64
-                base64Frame = base64.b64encode(buffer).decode("utf-8")  # type: ignore[arg-type]
-
-                # Append the base64 encoded frame to the list
-                base64Frames.append(base64Frame)
-
-            # Release the video capture object
-            video.release()
-
-            # Define a list to hold extracted images from base64Frames
-            # Extract images at intervals specified by Constants.IMAGE_EXTRACTION_INTERVAL
-            # Using list comprehension to select an image at each interval
-            image_extraction_list = [
-                x
-                for x in base64Frames[0 :: Constants.IMAGE_EXTRACTION_INTERVAL]
-            ]
-
-            video_content: List[Any] = []
-            video_content.append(
-                {
-                    "type": "text",
-                    "text": "These are frames from a video that I want to upload. Generate a compelling description that I can upload along with the video.",
-                }
+        elif self.video_bytes:
+            base64Frames: List[str] = []
+            frame_count = 0
+            # read video bytes
+            video = iio.imiter(
+                self.video_bytes, plugin=Constants.DEFAULT_PLUG_PYAV
             )
-            for image in image_extraction_list:
+
+            for frame in video:
+                frame_count += 1
+                if frame_count % Constants.IMAGE_EXTRACTION_INTERVAL == 0:
+                    # convert frame to numpy array
+                    frame_array = np.asarray(frame)
+                    frame_image = Image.fromarray(frame_array)
+
+                    # Get the dimensions of the frame
+                    width, height = frame_image.size
+
+                    # resize the frame to the default image size
+                    new_width = Constants.DEFAULT_IMAGE_SIZE
+                    aspect_ratio = width / height
+                    new_height = int(new_width / aspect_ratio)
+                    resized_img = frame_image.resize((new_width, new_height))
+
+                    # encode the image to base64
+                    with io.BytesIO() as buffer:
+                        image_format = OpenAIImageType.JPEG.value
+                        image_format = image_format.upper()
+                        resized_img.save(fp=buffer, format=image_format)
+                        encoded_image = base64.b64encode(
+                            buffer.getvalue()
+                        ).decode("utf-8")
+
+                    base64Frames.append(encoded_image)
+
+            for encoded_image in base64Frames:
                 item = {
                     "type": "image_url",
                     "image_url": {
-                        "url": f"data:image/jpg;base64,{image}",
+                        "url": f"data:image/jpeg;base64,{encoded_image}",
+                        "detail": self.image_detail,
                     },
                 }
-                video_content.append(item)
-            return {
-                "role": "user",
-                "content": video_content,
-            }
+                image_content.append(item)
 
-        else:
-            return {"role": "user", "content": self.content}
+        return {
+            "role": "user",
+            "content": image_content,
+        }
 
     def to_openai_assistant_message(self) -> OpenAIAssistantMessage:
         r"""Converts the message to an :obj:`OpenAIAssistantMessage` object.

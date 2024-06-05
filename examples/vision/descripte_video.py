@@ -40,21 +40,25 @@ def descripte_video(video_path: str) -> None:
         assistant_sys_msg,
         model_type=ModelType.GPT_4_TURBO,
     )
-    user_msg = BaseMessage.make_user_message(
-        role_name="User",
-        content="These are frames from a video that I want to upload. Generate a compelling description that I can upload along with the video.",
-        video_path=video_path,
-    )
-    assistant_response = agent.step(user_msg)
-    print("=" * 20 + " RESULT " + "=" * 20)
-    print(assistant_response.msgs[0].content)
-    print("=" * 48)
+    with open(video_path, "rb") as video_file:
+        video_bytes = video_file.read()
+        user_msg = BaseMessage.make_user_message(
+            role_name="User",
+            content="These are frames from a video that I want to upload. Generate a compelling description that I can upload along with the video.",
+            video_bytes=video_bytes,
+        )
+
+        assistant_response = agent.step(user_msg)
+        print("=" * 20 + " RESULT " + "=" * 20)
+        print(assistant_response.msgs[0].content)
+        print("=" * 48)
 
 
-def main(args: argparse.Namespace) -> None:
-    descripte_video(args.video_path)
+def main() -> None:
+    video_path = "1.mp4"
+    descripte_video(video_path)
 
 
 if __name__ == "__main__":
-    args = parser.parse_args()
-    main(args)
+    # args = parser.parse_args()
+    main()

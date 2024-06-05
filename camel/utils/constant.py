@@ -20,6 +20,9 @@ class Constants:
     # This value defines the interval (in number of frames) at which images are extracted from the video.
     IMAGE_EXTRACTION_INTERVAL = 50
 
+    # default plug of imageio to read video
+    DEFAULT_PLUG_PYAV = "pyav"
+
     @classmethod
     def get_constant(cls, name):
         r"""

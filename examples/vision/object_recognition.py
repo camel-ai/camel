@@ -45,10 +45,12 @@ def detect_image_obj(image_path: str) -> None:
         assistant_sys_msg,
         model_type=ModelType.GPT_4_TURBO,
     )
+    image_list = []
+    image_list.append(Image.open(image_path))
     user_msg = BaseMessage.make_user_message(
         role_name="User",
         content="Please start the object detection for following image!",
-        image=Image.open(image_path),
+        image_list=image_list,
         image_detail="high",
     )
     assistant_response = agent.step(user_msg)
@@ -57,10 +59,10 @@ def detect_image_obj(image_path: str) -> None:
     print("=" * 48)
 
 
-def main(args: argparse.Namespace) -> None:
-    detect_image_obj(args.image_path)
+def main() -> None:
+    image_path = "test.jpg"
+    detect_image_obj(image_path)
 
 
 if __name__ == "__main__":
-    args = parser.parse_args()
-    main(args=args)
+    main()
