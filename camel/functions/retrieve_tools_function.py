@@ -20,7 +20,10 @@ from transformers import AutoModel, AutoTokenizer
 from camel.functions.openai_function import OpenAIFunction
 
 
-def embed_text(text: Optional[str], model, tokenizer):
+def embed_text(text: str, model: AutoModel, tokenizer: AutoTokenizer):
+    r"""
+    Embed text using chosen model and tokenizer.
+    """
     inputs = tokenizer(text, return_tensors="pt")
     with torch.no_grad():
         outputs = model(**inputs)
@@ -29,7 +32,12 @@ def embed_text(text: Optional[str], model, tokenizer):
 
 
 def cosine_similarity(vec1: np.ndarray, vec2: np.ndarray) -> float:
-    return np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))
+    if np.linalg.norm(vec1) * np.linalg.norm(vec2) == 0:
+        return 0
+    else:
+        return np.dot(vec1, vec2) / (
+            np.linalg.norm(vec1) * np.linalg.norm(vec2)
+        )
 
 
 def retrieve_tools(
@@ -40,11 +48,24 @@ def retrieve_tools(
     Find the most relevent ones based on their embedding vectors
 
     Args:
+        query (str): input question
         tools (List): The tools to be searched.
+        k (int): how many answers the user wants to get.
 
     Returns:
         retrieved_tools (List): List of retrieved (most relevant) tools.
     """
+    # Check if k is greater than 0
+    assert k > 0, "k must be greater than 0"
+
+    # Check if tools is not empty
+    assert tools, "tools is empty"
+
+    # Check not all descriptions are None
+    assert any(
+        func.func.__doc__ is not None for func in tools
+    ), "All docstrings are None"
+
     tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
     model = AutoModel.from_pretrained("bert-base-uncased")
 
@@ -52,7 +73,8 @@ def retrieve_tools(
 
     similarities = []
     for func in tools:
-        func_embedding = embed_text(func.func.__doc__, model, tokenizer)
+        text = func.func.__doc__ if func.func.__doc__ else ""
+        func_embedding = embed_text(text, model, tokenizer)
         similarity = cosine_similarity(query_embedding, func_embedding)
         similarities.append((similarity, func))
 

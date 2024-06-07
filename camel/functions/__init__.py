@@ -26,8 +26,6 @@ from .search_functions import SEARCH_FUNCS
 from .twitter_function import TWITTER_FUNCS
 from .weather_functions import WEATHER_FUNCS
 from .slack_functions import SLACK_FUNCS
-# from .retrieve_tools_function import RETRIEVE_TOOLS_FUNCS
-
 
 
 __all__ = [
@@ -41,6 +39,5 @@ __all__ = [
     'SEARCH_FUNCS',
     'TWITTER_FUNCS',
     'WEATHER_FUNCS',
-    # 'RETRIEVE_TOOLS_FUNCS',
     'SLACK_FUNCS',
 ]
