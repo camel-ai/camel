@@ -41,7 +41,7 @@ def cosine_similarity(vec1: np.ndarray, vec2: np.ndarray) -> float:
 
 
 def retrieve_tools(
-    query: str, tools: List[OpenAIFunction], k: int = 3
+    query: str, tools: List[OpenAIFunction], k: int = 3, sim_thres: int = 4
 ) -> Optional[List[OpenAIFunction]]:
     r"""Using semantic search to retrieve relevent tools
     OpenAI / Open source Embedding models to embed the query and the schemas / docstring of `OpenAIFunction`
@@ -51,6 +51,7 @@ def retrieve_tools(
         query (str): input question
         tools (List): The tools to be searched.
         k (int): how many answers the user wants to get.
+        sim_thres (int): 0.4 # The threshold above which we want to accept a tool
 
     Returns:
         retrieved_tools (List): List of retrieved (most relevant) tools.
@@ -66,6 +67,9 @@ def retrieve_tools(
         func.func.__doc__ is not None for func in tools
     ), "All docstrings are None"
 
+    # Check if sim_thres is between 0 and 1
+    assert sim_thres > 0 and sim_thres < 1, "sim_thres must be between 0 and 1"
+
     tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
     model = AutoModel.from_pretrained("bert-base-uncased")
 
@@ -79,25 +83,9 @@ def retrieve_tools(
         similarities.append((similarity, func))
 
     similarities.sort(key=lambda x: x[0], reverse=True)
-    if similarities[0][0] < 0.4:
+
+    if similarities[0][0] < sim_thres:
         return None
     else:
         retrieved_tools = [func for _, func in similarities[:k]]
         return retrieved_tools
-
-
-# An example:
-# Input: [get_weather_data, search_google_and_summarize, create_tweet, add]
-# retrieved_tools = retrieve_tools(
-#     'how is the weather today',
-#     tools=[*SEARCH_FUNCS, *WEATHER_FUNCS],
-#     k=2,
-# )
-# print(retrieved_tools)
-# get_weather_data, search_google_and_summarize
-
-
-# RETRIEVE_TOOLS_FUNCS: List[OpenAIFunction] = [
-#     OpenAIFunction(func)  # type: ignore[arg-type]
-#     for func in [retrieve_tools]
-# ]
