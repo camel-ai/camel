@@ -27,6 +27,7 @@ from .twitter_function import TWITTER_FUNCS
 from .weather_functions import WEATHER_FUNCS
 from .slack_functions import SLACK_FUNCS
 
+
 __all__ = [
     'OpenAIFunction',
     'get_openai_function_schema',
