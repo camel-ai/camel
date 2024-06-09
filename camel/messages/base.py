@@ -264,8 +264,8 @@ class BaseMessage:
         Returns:
             OpenAIUserMessage: The converted :obj:`OpenAIUserMessage` object.
         """
-        image_content: List[Any] = []
-        image_content.append(
+        hybird_content: List[Any] = []
+        hybird_content.append(
             {
                 "type": "text",
                 "text": self.content,
@@ -294,7 +294,7 @@ class BaseMessage:
                         "utf-8"
                     )
                 image_prefix = f"data:image/{image_type};base64,"
-                image_content.append(
+                hybird_content.append(
                     {
                         "type": "image_url",
                         "image_url": {
@@ -304,7 +304,7 @@ class BaseMessage:
                     }
                 )
 
-        elif self.video_bytes:
+        if self.video_bytes:
             base64Frames: List[str] = []
             frame_count = 0
             # read video bytes
@@ -348,12 +348,12 @@ class BaseMessage:
                     },
                 }
 
-                image_content.append(item)
+                hybird_content.append(item)
 
-        if len(image_content) > 1:
+        if len(hybird_content) > 1:
             return {
                 "role": "user",
-                "content": image_content,
+                "content": hybird_content,
             }
         else:
             return {
