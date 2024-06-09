@@ -355,6 +355,7 @@ class BaseMessage:
                 "role": "user",
                 "content": hybird_content,
             }
+        # This return just for str message
         else:
             return {
                 "role": "user",
