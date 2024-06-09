@@ -49,7 +49,8 @@ with open(video_path, "rb") as video_file:
     video_bytes = video_file.read()
 user_msg = BaseMessage.make_user_message(
     role_name="User",
-    content="These are frames from a video that I want to upload. Generate a compelling description that I can upload along with the video.",
+    content="These are frames from a video that I want to upload. Generate a"
+    "compelling description that I can upload along with the video.",
     video_bytes=video_bytes,
 )
 
@@ -61,14 +62,31 @@ print(response.msgs[0].content)
 Title: "Journey of Resilience: A Tale of Determination and Triumph"
 
 Description:
-Dive into the gripping narrative of "Journey of Resilience," a cinematic exploration of the human spirit's capacity to overcome adversity. This video captures the intense and emotional journey of a man who faces the crossroads of life, symbolized by a desolate highway and the relentless pursuit of his goals. Witness his raw determination as he sprints through the vast, unforgiving landscape, each step echoing his inner turmoil and resolve.
+Dive into the gripping narrative of "Journey of Resilience,"
+a cinematic exploration of the human spirit's capacity to overcome adversity. 
+This video captures the intense and emotional journey of a man who faces the 
+crossroads of life, symbolized by a desolate highway and the relentless pursuit
+of his goals. Witness his raw determination as he sprints through the vast, 
+unforgiving landscape, each step echoing his inner turmoil and resolve.
 
-The narrative unfolds with powerful imagery, from the intense focus in his eyes to the symbolic scenes of struggle and contemplation in a water-filled bathtub, portraying the depths of his challenges. A mentor figure appears, guiding and pushing him beyond his limits, emphasizing the universal theme of growth through guidance and perseverance.
+The narrative unfolds with powerful imagery, from the intense focus in his eyes
+to the symbolic scenes of struggle and contemplation in a water-filled 
+bathtub, portraying the depths of his challenges. A mentor figure appears, 
+guiding and pushing him beyond his limits, emphasizing the universal theme of 
+growth through guidance and perseverance.
 
-As the story progresses, the protagonist is seen preparing for a boxing match, symbolizing his fight against life's obstacles. The climax in the boxing ring serves as a metaphor for facing his toughest challenges head-on, surrounded by an audience that represents societal pressures and expectations.
+As the story progresses, the protagonist is seen preparing for a boxing match, 
+symbolizing his fight against life's obstacles. The climax in the boxing ring 
+serves as a metaphor for facing his toughest challenges head-on, surrounded by 
+an audience that represents societal pressures and expectations.
 
-This video is not just a portrayal of physical strength but a deeper commentary on the psychological battles one must endure and overcome. It's a reminder that the hardest parts of our journeys are often what lead us to our greatest victories.
+This video is not just a portrayal of physical strength but a deeper 
+commentary on the psychological battles one must endure and overcome. It's a 
+reminder that the hardest parts of our journeys are often what lead us to our 
+greatest victories.
 
-Join us in this visually stunning and emotionally charged journey that will inspire you to push through your limits and emerge victorious, no matter the challenges ahead.
+Join us in this visually stunning and emotionally charged journey that will 
+inspire you to push through your limits and emerge victorious, no matter the 
+challenges ahead.
 ===============================================================================
 """

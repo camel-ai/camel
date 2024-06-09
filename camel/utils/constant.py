@@ -25,13 +25,12 @@ class Constants:
 
     @classmethod
     def get_constant(cls, name):
-        r"""
-        Retrieve the value of a class attribute given its name.
+        r"""Retrieve the value of a class attribute given its name.
 
         Parameters:
-        name (str): The name of the class attribute to retrieve.
+            name (str): The name of the class attribute to retrieve.
 
         Returns:
-        The value of the class attribute if it exists, otherwise None.
+            The value of the class attribute if it exists, otherwise None.
         """
         return getattr(cls, name, None)
