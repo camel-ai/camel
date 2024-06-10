@@ -45,7 +45,7 @@ class ZhipuAIModel(BaseModelBackend):
     @api_key_required
     def run(
         self,
-        messages:  List[OpenAIMessage],
+        messages: List[OpenAIMessage],
     ) -> Union[Completion, StreamResponse[ChatCompletionChunk]]:
         r"""Runs inference of ZhipuAI chat completion.
 
