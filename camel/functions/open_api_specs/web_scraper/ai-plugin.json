@@ -1,0 +1,34 @@
+{
+    "id": "plugin-0609b24f-5c80-4864-af90-c7c570d65375",
+    "domain": "scraper.gafo.tech",
+    "namespace": "web_scraper",
+    "status": "approved",
+    "manifest": {
+        "schema_version": "v1",
+        "name_for_model": "web_scraper",
+        "name_for_human": "Scraper",
+        "description_for_model": "Scrape content from webpages by providing a URL.",
+        "description_for_human": "Scrape content from webpages by providing a URL.",
+        "auth": {
+            "type": "none"
+        },
+        "api": {
+            "type": "openapi",
+            "url": "https://scraper.gafo.tech/openapi.yaml"
+        },
+        "logo_url": "https://scraper.gafo.tech/logo.png",
+        "contact_email": "gafotech1@gmail.com",
+        "legal_info_url": "https://scraper.gafo.tech/legal"
+    },
+    "oauth_client_id": null,
+    "user_settings": {
+        "is_installed": false,
+        "is_authenticated": true
+    },
+    "categories": [
+        {
+            "id": "newly_added",
+            "title": "New"
+        }
+    ]
+}
