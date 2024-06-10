@@ -35,6 +35,6 @@ def test_retrieve_tools_normal():
 
 def test_retrieve_tools_not_found():
     retrieve_output = retrieve_tools(
-        "Nearby cafe", tools=[*MATH_FUNCS, *WEATHER_FUNCS], k=1
+        "South Africa Women Football", tools=[*MATH_FUNCS, *WEATHER_FUNCS], k=1
     )
     assert retrieve_output is None

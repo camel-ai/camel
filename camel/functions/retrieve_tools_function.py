@@ -14,24 +14,14 @@
 from typing import List, Optional
 
 import numpy as np
-import torch
-from transformers import AutoModel, AutoTokenizer
 
+from camel.embeddings.sentence_transformers_embeddings import (
+    SentenceTransformerEncoder,
+)
 from camel.functions.openai_function import OpenAIFunction
 
 
-def embed_text(text: str, model: AutoModel, tokenizer: AutoTokenizer):
-    r"""
-    Embed text using chosen model and tokenizer.
-    """
-    inputs = tokenizer(text, return_tensors="pt")
-    with torch.no_grad():
-        outputs = model(**inputs)
-
-    return outputs.last_hidden_state.mean(dim=1).squeeze().cpu().numpy()
-
-
-def cosine_similarity(vec1: np.ndarray, vec2: np.ndarray) -> float:
+def cosine_similarity(vec1: List[float], vec2: List[float]) -> float:
     if np.linalg.norm(vec1) * np.linalg.norm(vec2) == 0:
         return 0
     else:
@@ -41,10 +31,11 @@ def cosine_similarity(vec1: np.ndarray, vec2: np.ndarray) -> float:
 
 
 def retrieve_tools(
-    query: str, tools: List[OpenAIFunction], k: int = 3, sim_thres: int = 4
+    query: str, tools: List[OpenAIFunction], k: int = 3, sim_thres: float = 0.71
 ) -> Optional[List[OpenAIFunction]]:
     r"""Using semantic search to retrieve relevent tools
-    OpenAI / Open source Embedding models to embed the query and the schemas / docstring of `OpenAIFunction`
+    OpenAI / Open source Embedding models to embed the query
+    and the schemas / docstring of `OpenAIFunction`
     Find the most relevent ones based on their embedding vectors
 
     Args:
@@ -70,15 +61,17 @@ def retrieve_tools(
     # Check if sim_thres is between 0 and 1
     assert sim_thres > 0 and sim_thres < 1, "sim_thres must be between 0 and 1"
 
-    tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
-    model = AutoModel.from_pretrained("bert-base-uncased")
+    # tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+    # model = AutoModel.from_pretrained("bert-base-uncased")
+    encoder = SentenceTransformerEncoder()
 
-    query_embedding = embed_text(query, model, tokenizer)
+    query_embedding = encoder.embed(query)
 
     similarities = []
     for func in tools:
         text = func.func.__doc__ if func.func.__doc__ else ""
-        func_embedding = embed_text(text, model, tokenizer)
+        func_embedding = encoder.embed(func.func.__name__ + ': ' + text)
+
         similarity = cosine_similarity(query_embedding, func_embedding)
         similarities.append((similarity, func))
 
