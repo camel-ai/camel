@@ -22,6 +22,13 @@ from camel.functions.openai_function import OpenAIFunction
 
 
 def cosine_similarity(vec1: List[float], vec2: List[float]) -> float:
+    r"""
+    Compute the cosine similarity between two sentence embedding vectors.
+
+    Args:
+        vec1 (List): the first sentence embedding vector.
+        vec2 (List): the second sentence embedding vector.
+    """
     if np.linalg.norm(vec1) * np.linalg.norm(vec2) == 0:
         return 0
     else:
@@ -33,7 +40,8 @@ def cosine_similarity(vec1: List[float], vec2: List[float]) -> float:
 def retrieve_tools(
     query: str, tools: List[OpenAIFunction], k: int = 3, sim_thres: float = 0.71
 ) -> Optional[List[OpenAIFunction]]:
-    r"""Using semantic search to retrieve relevent tools
+    r"""
+    Using semantic search to retrieve relevent tools
     OpenAI / Open source Embedding models to embed the query
     and the schemas / docstring of `OpenAIFunction`
     Find the most relevent ones based on their embedding vectors
@@ -78,7 +86,7 @@ def retrieve_tools(
     similarities.sort(key=lambda x: x[0], reverse=True)
 
     if similarities[0][0] < sim_thres:
-        return None
+        return []
     else:
         retrieved_tools = [func for _, func in similarities[:k]]
         return retrieved_tools
