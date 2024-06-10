@@ -362,7 +362,6 @@ class BaseMessage:
                 "content": self.content,
             }
 
-
     def to_openai_assistant_message(self) -> OpenAIAssistantMessage:
         r"""Converts the message to an :obj:`OpenAIAssistantMessage` object.
 
