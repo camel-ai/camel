@@ -21,6 +21,7 @@ from camel.configs import ZHIPU_API_PARAMS
 from camel.models import BaseModelBackend
 from camel.types import Completion, ChatCompletionChunk, ModelType
 from camel.utils import BaseTokenCounter, api_key_required, ZhipuAITokenCounter
+
 class ZhipuAIModel(BaseModelBackend):
     r"""ZhipuAI API in a unified BaseModelBackend interface."""
 
