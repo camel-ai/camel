@@ -12,11 +12,21 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from camel.agents import ChatAgent
+import argparse
 from camel.configs.openai_config import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.prompts.prompt_templates import PromptTemplateGenerator
 from camel.types import ModelType
 from camel.types.enums import RoleType, TaskType
+
+# 
+parser = argparse.ArgumentParser(description="Arguments for video description.")
+parser.add_argument(
+    "--video_path",
+    type=str,
+    help="Path to the video for description.",
+    required=True,
+)
 
 # Define system message
 sys_msg_prompt = PromptTemplateGenerator().get_prompt_from_key(
@@ -43,8 +53,7 @@ camel_agent.reset()
 # Define a user message
 video_bytes = b""
 
-# Need mp4 files in folder
-video_path = "test.mp4"
+video_path = parser.parse_args().video_path
 with open(video_path, "rb") as video_file:
     video_bytes = video_file.read()
 user_msg = BaseMessage.make_user_message(
