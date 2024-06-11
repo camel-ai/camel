@@ -32,6 +32,7 @@ class OpenSourceModel(BaseModelBackend):
         model_type: ModelType,
         model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
+        url: Optional[str] = None,
     ) -> None:
         r"""Constructor for model backends of Open-source models.
 
@@ -41,8 +42,9 @@ class OpenSourceModel(BaseModelBackend):
                 be fed into :obj:`openai.ChatCompletion.create()`.
             api_key (Optional[str]): The API key for authenticating with the
                 model service. (ignored for open-source models)
+            url (Optional[str]): The url to the model service.
         """
-        super().__init__(model_type, model_config_dict, api_key)
+        super().__init__(model_type, model_config_dict, api_key, url)
         self._token_counter: Optional[BaseTokenCounter] = None
 
         # Check whether the input model type is open-source
@@ -68,7 +70,7 @@ class OpenSourceModel(BaseModelBackend):
             )
 
         # Load the server URL and check whether it is None
-        server_url: Optional[str] = self.model_config_dict.get(
+        server_url: Optional[str] = url or self.model_config_dict.get(
             "server_url", None
         )
         if not server_url:

@@ -54,11 +54,13 @@ class StubModel(BaseModelBackend):
         model_type: ModelType,
         model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
+        url: Optional[str] = None,
     ) -> None:
         r"""All arguments are unused for the dummy model."""
-        super().__init__(model_type, model_config_dict, api_key)
+        super().__init__(model_type, model_config_dict, api_key, url)
         self._token_counter: Optional[BaseTokenCounter] = None
         self._api_key = api_key
+        self._url = url
 
     @property
     def token_counter(self) -> BaseTokenCounter:

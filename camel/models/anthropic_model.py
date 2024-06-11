@@ -31,6 +31,7 @@ class AnthropicModel(BaseModelBackend):
         model_type: ModelType,
         model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
+        url: Optional[str] = None,
     ) -> None:
         r"""Constructor for Anthropic backend.
 
@@ -41,10 +42,11 @@ class AnthropicModel(BaseModelBackend):
                 be fed into openai.ChatCompletion.create().
             api_key (Optional[str]): The API key for authenticating with the
                 Anthropic service. (default: :obj:`None`)
+            url (Optional[str]): The url to the model service.
         """
-        super().__init__(model_type, model_config_dict, api_key)
+        super().__init__(model_type, model_config_dict, api_key, url)
         self._api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
-        self.client = Anthropic(api_key=self._api_key)
+        self.client = Anthropic(api_key=self._api_key, base_url=url)
         self._token_counter: Optional[BaseTokenCounter] = None
 
     def _convert_response_from_anthropic_to_openai(self, response):
