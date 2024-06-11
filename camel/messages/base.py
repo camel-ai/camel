@@ -16,7 +16,6 @@ import io
 from dataclasses import dataclass
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
-import imageio.v3 as iio
 import numpy as np
 from PIL import Image
 
@@ -305,6 +304,8 @@ class BaseMessage:
                 )
 
         if self.video_bytes:
+            import imageio.v3 as iio
+
             base64Frames: List[str] = []
             frame_count = 0
             # read video bytes
