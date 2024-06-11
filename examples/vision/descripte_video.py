@@ -11,15 +11,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from camel.agents import ChatAgent
 import argparse
+
+from camel.agents import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.prompts.prompt_templates import PromptTemplateGenerator
 from camel.types import ModelType
 from camel.types.enums import RoleType, TaskType
 
-# 
+#
 parser = argparse.ArgumentParser(description="Arguments for video description.")
 parser.add_argument(
     "--video_path",
