@@ -19,16 +19,10 @@ from .openai_config import (
     OpenSourceConfig,
 )
 
-from .zhipuai_config import (
-    ZHIPU_API_PARAMS,
-    ZhipuaiConfig,)
-
 __all__ = [
     'BaseConfig',
     'ChatGPTConfig',
-    'ZhipuaiConfig',
     'OPENAI_API_PARAMS',
-    'ZHIPU_API_PARAMS'
     'AnthropicConfig',
     'ANTHROPIC_API_PARAMS',
     'OpenSourceConfig',

@@ -14,48 +14,53 @@
 
 import os
 from typing import Any, Dict, List, Optional, Union
+from openai import OpenAI, Stream
 from camel.messages import OpenAIMessage
-from zhipuai import ZhipuAI
-from zhipuai.core._sse_client import StreamResponse
-from camel.configs import ZHIPU_API_PARAMS
+from camel.configs import OPENAI_API_PARAMS
 from camel.models import BaseModelBackend
-from camel.types import Completion, ChatCompletionChunk, ModelType
-from camel.utils import BaseTokenCounter, api_key_required, ZhipuAITokenCounter
+from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
+from camel.utils import BaseTokenCounter, api_key_required, OpenAITokenCounter
+
 class ZhipuAIModel(BaseModelBackend):
     r"""ZhipuAI API in a unified BaseModelBackend interface."""
 
     def __init__(
-        self, model_type: ModelType, model_config_dict: Dict[str, Any]
+        self,
+        model_type: ModelType,
+        model_config_dict: Dict[str, Any],
+        api_key: Optional[str] = None,
     ) -> None:
-        r"""Constructor for ZhipuAI backend.
+        r"""Constructor for ZhipuAI backend.Use OpenAI SDK to interact with ZhipuAI API.
 
         Args:
             model_type (ModelType): Model for which a backend is created,
                 such as GLM_* series.
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into zhipuai.ChatCompletion.create().
+             api_key (Optional[str]): The API key for authenticating with the
+                ZhipuAI service. (default: :obj:`None`)    
         """
         super().__init__(model_type, model_config_dict)
         url = os.environ.get('ZHIPUAI_API_BASE_URL', None)
         api_key = os.environ.get('ZHIPUAI_API_KEY', None)
-        self._client = ZhipuAI(api_key=api_key,base_url=url)
+        self._client = OpenAI(timeout=60, max_retries=3, api_key=api_key,base_url=url)
         self._token_counter: Optional[BaseTokenCounter] = None
 
     @api_key_required
     def run(
         self,
-        messages:  List[OpenAIMessage],
-    ) -> Union[Completion, StreamResponse[ChatCompletionChunk]]:
+        messages: List[OpenAIMessage],
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Runs inference of ZhipuAI chat completion.
 
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
-                in ZhipuAI API format.
+                in OpenAI API format.
 
         Returns:
-            Union[Completion, StreamResponse[ChatCompletionChunk]]:
-                `Completion` in the non-stream mode, or
-                `StreamResponse[ChatCompletionChunk]` in the stream mode.
+            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+                `ChatCompletion` in the non-stream mode, or
+                `Stream[ChatCompletionChunk]` in the stream mode.
         """
         response = self._client.chat.completions.create(
             messages=messages,
@@ -65,31 +70,31 @@ class ZhipuAIModel(BaseModelBackend):
         return response
 
     @property
-    def token_counter(self) -> ZhipuAITokenCounter:
+    def token_counter(self) -> OpenAITokenCounter:
         r"""Initialize the token counter for the model backend.
 
         Returns:
-            ZhipuAITokenCounter: The token counter following the model's
+            OpenAITokenCounter: The token counter following the model's
                 tokenization style.
         """
         
         if not self._token_counter:
-            self._token_counter = ZhipuAITokenCounter(self.model_type)
+            self._token_counter = OpenAITokenCounter(ModelType.GPT_3_5_TURBO)
         return self._token_counter
 
     def check_model_config(self):
         r"""Check whether the model configuration contains any
-        unexpected arguments to ZhipuAI API.
+        unexpected arguments to OpenAI API.
 
         Raises:
             ValueError: If the model configuration dictionary contains any
-                unexpected arguments to ZhipuAI API.
+                unexpected arguments to OpenAI API.
         """
         for param in self.model_config_dict:
-            if param not in ZHIPU_API_PARAMS:
+            if param not in OPENAI_API_PARAMS:
                 raise ValueError(
                     f"Unexpected argument `{param}` is "
-                    "input into ZhipuAI model backend."
+                    "input into OpenAI model backend."
                 )
         pass
 

@@ -15,17 +15,18 @@ from colorama import Fore
 from camel.types import ModelType
 from camel.societies import RolePlaying
 from camel.utils import print_text_animated
-from camel.configs import ZhipuaiConfig
+from camel.configs import ChatGPTConfig
+
 def main(model_type=ModelType.GLM_4, chat_turn_limit=50) -> None:
     task_prompt = "Develop a trading bot for the stock market"
     role_play_session = RolePlaying(
         assistant_role_name="Python Programmer",
-        assistant_agent_kwargs={'model_type':model_type,'model_config':ZhipuaiConfig()},
+        assistant_agent_kwargs={'model_type': model_type, 'model_config': ChatGPTConfig(temperature=0.2,top_p=0.9)},#temperature=,top_p here can not be 1 or 0.
         user_role_name="Stock Trader",
-        user_agent_kwargs={'model_type':model_type,'model_config':ZhipuaiConfig()},
+        user_agent_kwargs={'model_type': model_type, 'model_config': ChatGPTConfig(temperature=0.2,top_p=0.9)},
         task_prompt=task_prompt,
         with_task_specify=True,
-        task_specify_agent_kwargs={'model_type':model_type,'model_config':ZhipuaiConfig()},
+        task_specify_agent_kwargs={'model_type': model_type, 'model_config': ChatGPTConfig(temperature=0.2,top_p=0.9)},
     )
 
     print(

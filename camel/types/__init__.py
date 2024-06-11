@@ -39,10 +39,6 @@ from .openai_types import (
     CompletionUsage,
 )
 
-from .zhipuai_types import (
-    Completion,
-)
-
 __all__ = [
     'RoleType',
     'ModelType',
@@ -67,5 +63,4 @@ __all__ = [
     'OpenAPIName',
     'AudioModelType',
     'VoiceType',
-    'Completion',
 ]

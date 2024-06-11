@@ -30,7 +30,6 @@ from .token_counting import (
     BaseTokenCounter,
     OpenAITokenCounter,
     OpenSourceTokenCounter,
-    ZhipuAITokenCounter,
     get_model_encoding,
 )
 
@@ -51,6 +50,5 @@ __all__ = [
     'OpenAITokenCounter',
     'OpenSourceTokenCounter',
     'dependencies_required',
-    'ZhipuAITokenCounter'
     'api_keys_required',
 ]
