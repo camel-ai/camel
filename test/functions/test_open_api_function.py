@@ -15,12 +15,18 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from camel.functions.open_api_function import combine_all_funcs_schemas
+from camel.functions import (
+    apinames_filepaths_to_funs_schemas,
+    generate_apinames_filepaths,
+)
 
 
 @pytest.fixture(scope="module")
 def functions_dict():
-    openapi_functions_list, _ = combine_all_funcs_schemas()
+    apinames_filepaths = generate_apinames_filepaths()
+    openapi_functions_list, _ = apinames_filepaths_to_funs_schemas(
+        apinames_filepaths
+    )
     functions_dict = {func.__name__: func for func in openapi_functions_list}
     return functions_dict
 
@@ -336,4 +342,122 @@ def test_speak_explainTask(get_function):
             ),
         }
         result = get_function(requestBody=explain_task_request)
+        assert result == mock_response_data
+
+
+@pytest.mark.parametrize('get_function', ['biztoc_getNews'], indirect=True)
+def test_biztoc_getNews(get_function):
+    mock_response_data = [
+        {
+            "title": "Republican on Fox Calls for the GOP to ‘Shut Down the Economy’ to Fix Immigration: ‘We Should, Really’",
+            "source": "mediaite.com",
+            "date": "Tue, 21 May 2024",
+            "summary": "Republican Congresswoman Victoria Spartz joined Fox Business host Maria Bartiromo to discuss border security, calling for drastic measures.",
+            "image": "https://c.biztoc.com/p/c7a5cea54ed2bdd5/s.webp",
+            "tags": ["victoriaspartz", "borderpatrol", "immigration"],
+            "url": "https://www.mediaite.com/tv/republican-on-fox-calls-for-the-gop-to-shut-down-the-economy-to-fix-immigration-we-should-really/?ref=biztoc.com",
+        }
+    ]
+    mock_response = MagicMock()
+    mock_response.json.return_value = mock_response_data
+    with patch('requests.request', return_value=mock_response):
+        result = get_function(query_in_query='llm Agent')
+        assert result == mock_response_data
+
+
+@pytest.mark.parametrize(
+    'get_function', ['create_qr_code_getQRCode'], indirect=True
+)
+def test_create_qr_code_getQRCode(get_function):
+    mock_response_data = {
+        'img_tag': '<img src="https://api.qrserver.com/v1/create-qr-code/?data=The data to encode in the QR code.&size=120x120" '
+        'alt="The alt text for the QR code image." title="The title for the QR code image." />'
+    }
+    mock_response = MagicMock()
+    mock_response.json.return_value = mock_response_data
+    with patch('requests.request', return_value=mock_response):
+        result = get_function(
+            data_in_query="The data to encode in the QR code.",
+            size_in_query="120x120",
+            alt_in_query="The alt text for the QR code image.",
+            title_in_query="The title for the QR code image.",
+        )
+        assert result == mock_response_data
+
+
+@pytest.mark.parametrize(
+    'get_function', ['outschool_searchClasses'], indirect=True
+)
+def test_out_school_searchClasses(get_function):
+    mock_response_data = [
+        {
+            "uid": "f170ecbb-4ceb-41ad-af1a-3ac68f120833",
+            "title": "1:1 Math Tutoring With a Math Major/Teacher",
+            "summary": "Personalized 1:1 math tutoring by an experienced Math Major/Teacher for Grades 2 through 10.",
+            "subject": "Math",
+            "duration_minutes": 40,
+            "price_cents": 4500,
+            "age_min": 7,
+            "age_max": 15,
+            "url": "https://outschool.com/classes/11-math-tutoring-with-a-math-majorteacher-fYCdDueY?utm_medium=chatgpt&utm_source=chatgpt-plugin",
+            "photo": "https://cdn.filestackcontent.com/vDVX6iIaQiKdguqAzI7e",
+            "teacher": {
+                "name": "Tess Monte, M.Ed.",
+                "photo": "https://cdn.filestackcontent.com/enevVCpZSKqAR4u0Nolt",
+                "averageActivityStarRating": 5,
+                "reviewCount": 2,
+                "url": "https://outschool.com/teachers/Ms-Tess?utm_medium=chatgpt&utm_source=chatgpt-plugin",
+            },
+        }
+    ]
+    mock_response = MagicMock()
+    mock_response.json.return_value = mock_response_data
+    with patch('requests.request', return_value=mock_response):
+        result = get_function(
+            timeZone_in_query="America/Los_Angeles",
+            age_in_query=12,
+            q_in_query='math',
+        )
+        assert result == mock_response_data
+
+
+@pytest.mark.parametrize(
+    'get_function', ['outschool_searchTeachers'], indirect=True
+)
+def test_out_school_searchTeachers(get_function):
+    mock_response_data = [
+        {
+            "uid": "9b4d48b8-80ee-474d-bdc9-73a2b76e3432",
+            "name": "Alice Maundrell, B.Mus, M.Ed ",
+        },
+        {"uid": "ce93ca8f-34a3-463f-a1c6-fedfc5ebd983", "name": "Ms Alice "},
+        {"uid": "7e09d0bb-ba47-4e1a-a024-d22063fe083c", "name": "Alice Wang"},
+        {"uid": "5ffdce7f-6eed-4721-ba6a-05227fc86f3d", "name": "Alice"},
+        {
+            "uid": "64ab28c8-35ac-4c23-8869-bd798bec969a",
+            "name": "Alice Campbell ",
+        },
+        {"uid": "af351235-624f-4a28-9835-ff5628bbc6ba", "name": "Alice H."},
+    ]
+    mock_response = MagicMock()
+    mock_response.json.return_value = mock_response_data
+    with patch('requests.request', return_value=mock_response):
+        result = get_function(name_in_query="Alice", limit_in_query=2)
+        assert result == mock_response_data
+
+
+@pytest.mark.parametrize('get_function', ['web_scraper_scrape'], indirect=True)
+def test_web_scraper_scrape(get_function):
+    mock_response_data = {
+        "text": 'Skip to content\nNavigation Menu\nSign in\ncamel-ai\n/\ncamel\nPublic\nNotifications\nFork 558\n Star 4.5k',
+    }
+    mock_response = MagicMock()
+    mock_response.json.return_value = mock_response_data
+    with patch('requests.request', return_value=mock_response):
+        result = get_function(
+            requestBody={
+                "url": "https://github.com/camel-ai/camel/tree/master",
+                "type": "text",
+            }
+        )
         assert result == mock_response_data

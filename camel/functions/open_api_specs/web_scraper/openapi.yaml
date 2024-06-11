@@ -1,0 +1,71 @@
+openapi: 3.0.1
+info:
+  title: Scraper
+  description: Scrape content from webpages by providing a URL.
+  version: "v1"
+servers:
+  - url: https://scraper.gafo.tech
+paths:
+  /scrape:
+    post:
+      operationId: scrape
+      summary: Scrape content from a webpage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  example: https://example.com
+                type:
+                  type: string
+                  enum: [text, links, images]
+                  default: text
+                  example: text
+              required:
+                - url
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  text:
+                    type: string
+                    description: The text content of the webpage. Returned when type is text or not provided.
+                  links:
+                    type: array
+                    items:
+                      type: object
+                    description: The array of link objects with all attributes from the webpage. Returned when type is links.
+                  images:
+                    type: array
+                    items:
+                      type: object
+                    description: The array of image objects with all attributes from the webpage. Returned when type is images.
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: The error message.
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: The error message.
