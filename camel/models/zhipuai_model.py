@@ -70,7 +70,7 @@ class ZhipuAIModel(BaseModelBackend):
         return response
 
     @property
-    def token_counter(self) -> OpenAITokenCounter:
+    def token_counter(self) -> BaseTokenCounter:
         r"""Initialize the token counter for the model backend.
 
         Returns:
