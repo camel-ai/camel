@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import argparse
 
 from camel.agents import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
@@ -19,15 +18,6 @@ from camel.messages import BaseMessage
 from camel.prompts.prompt_templates import PromptTemplateGenerator
 from camel.types import ModelType
 from camel.types.enums import RoleType, TaskType
-
-#
-parser = argparse.ArgumentParser(description="Arguments for video description.")
-parser.add_argument(
-    "--video_path",
-    type=str,
-    help="Path to the video for description.",
-    required=True,
-)
 
 # Define system message
 sys_msg_prompt = PromptTemplateGenerator().get_prompt_from_key(
@@ -54,7 +44,9 @@ camel_agent.reset()
 # Define a user message
 video_bytes = b""
 
-video_path = parser.parse_args().video_path
+# The video from YouTube can be found at the following link:
+# https://www.youtube.com/watch?v=kQ_7GtE529M
+video_path = "bison.mp4"
 with open(video_path, "rb") as video_file:
     video_bytes = video_file.read()
 user_msg = BaseMessage.make_user_message(
@@ -69,34 +61,18 @@ response = camel_agent.step(user_msg)
 print(response.msgs[0].content)
 """
 ===============================================================================
-Title: "Journey of Resilience: A Tale of Determination and Triumph"
-
+Title: "Survival in the Snow: A Bison's Battle Against Wolves" 
 Description:
-Dive into the gripping narrative of "Journey of Resilience,"
-a cinematic exploration of the human spirit's capacity to overcome adversity. 
-This video captures the intense and emotional journey of a man who faces the 
-crossroads of life, symbolized by a desolate highway and the relentless pursuit
-of his goals. Witness his raw determination as he sprints through the vast, 
-unforgiving landscape, each step echoing his inner turmoil and resolve.
-
-The narrative unfolds with powerful imagery, from the intense focus in his eyes
-to the symbolic scenes of struggle and contemplation in a water-filled 
-bathtub, portraying the depths of his challenges. A mentor figure appears, 
-guiding and pushing him beyond his limits, emphasizing the universal theme of 
-growth through guidance and perseverance.
-
-As the story progresses, the protagonist is seen preparing for a boxing match, 
-symbolizing his fight against life's obstacles. The climax in the boxing ring 
-serves as a metaphor for facing his toughest challenges head-on, surrounded by 
-an audience that represents societal pressures and expectations.
-
-This video is not just a portrayal of physical strength but a deeper 
-commentary on the psychological battles one must endure and overcome. It's a 
-reminder that the hardest parts of our journeys are often what lead us to our 
-greatest victories.
-
-Join us in this visually stunning and emotionally charged journey that will 
-inspire you to push through your limits and emerge victorious, no matter the 
-challenges ahead.
+Witness the raw power of nature in this gripping video showcasing a dramatic 
+encounter between a lone bison and a pack of wolves in a snowy wilderness. As 
+the harsh winter blankets the landscape, the struggle for survival 
+intensifies. Watch as the bison, isolated from its herd, faces the relentless
+ pursuit of hungry wolves. The tension escalates as the wolves coordinate 
+ their attack, attempting to overcome the bison with their numbers and 
+ strategic movements. Experience the breathtaking and brutal moments of this 
+ wildlife interaction, where every second is a fight for survival. This video 
+ captures the fierce beauty and the stark realities of life in the wild. Join 
+ us in observing these incredible animals and the instinctual battles that 
+ unfold in the heart of winter's grasp.
 ===============================================================================
 """
