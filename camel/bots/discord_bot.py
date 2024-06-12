@@ -12,14 +12,10 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from typing import TYPE_CHECKING, List, Optional
+from typing import List, Optional
 
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
-
-# Conditionally import telebot types only for type checking
-if TYPE_CHECKING:
-    from discord import Message  # type: ignore[import-untyped]
 
 
 class DiscordBot:
@@ -68,29 +64,28 @@ class DiscordBot:
         self.client.run(self.token)
 
     async def on_ready(self) -> None:
-        r"""This method is called when the bot has successfully connected to the Discord server.
-        It prints a message indicating that the bot has logged in and displays the username of the bot.
-        """
+        r"""This method is called when the bot has successfully connected to the Discord server.  
+
+        It prints a message indicating that the bot has logged in and displays the username of the bot.  
+        """  
         print(f'We have logged in as {self.client.user}')
 
-    async def on_message(self, message: 'Message') -> None:
+    async def on_message(self, message: Message) -> None:
         r"""Event handler for when a message is received.
 
-        Parameters:
-        - message (discord.Message): The message object received.
+        Args:  
+            message (discord.Message): The message object received.  
 
         Returns:
         - None
 
         """
-        if message.author == self.client.user:
-            return
 
         if self.channel_ids is not None:
             if message.channel.id not in self.channel_ids:
                 return
 
-        if not self.client.user or not self.client.user.mentioned_in(message):
+        if self.channel_ids and message.channel.id not in self.channel_ids:  
             return
 
         self.chat_agent.reset()
