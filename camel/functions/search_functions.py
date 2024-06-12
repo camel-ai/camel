@@ -259,7 +259,8 @@ def query_wolfram_alpha(query: str, is_detailed: bool) -> str:
         import wolframalpha
     except ImportError:
         raise ImportError(
-            "Please install `wolframalpha` first. You can install it by running `pip install wolframalpha`."
+            "Please install `wolframalpha` first. You can install it by"
+            " running `pip install wolframalpha`."
         )
 
     WOLFRAMALPHA_APP_ID = os.environ.get('WOLFRAMALPHA_APP_ID')

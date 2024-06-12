@@ -194,7 +194,9 @@ def main():
 
     # Formatting is needed to match the names of the original
     # generated JSON files xxx_xxx_xxx.json
-    file_names = [format_combination(combination) for combination in file_names]
+    file_names = [
+        format_combination(combination) for combination in file_names
+    ]
 
     # Check that all files exist
     for file_name in file_names:

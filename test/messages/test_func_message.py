@@ -53,7 +53,9 @@ def function_func_message() -> FunctionCallingMessage:
     )
 
 
-def test_assistant_func_message(assistant_func_message: FunctionCallingMessage):
+def test_assistant_func_message(
+    assistant_func_message: FunctionCallingMessage,
+):
     content = "test function message"
 
     assert assistant_func_message.func_name == "add"

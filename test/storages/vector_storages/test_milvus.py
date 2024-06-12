@@ -41,7 +41,9 @@ def test_multiple_remote_clients(mock_milvus_storage):
 
     # Example vectors for testing
     vectors1 = [
-        VectorRecord(vector=[0.1, 0.1, 0.1, 0.1], payload={"message": "text1"}),
+        VectorRecord(
+            vector=[0.1, 0.1, 0.1, 0.1], payload={"message": "text1"}
+        ),
         VectorRecord(
             vector=[0.1, -0.1, -0.1, 0.1], payload={"message": "text2"}
         ),
