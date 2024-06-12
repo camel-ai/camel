@@ -1,0 +1,44 @@
+openapi: 3.0.1
+info:
+  title: QR Code API
+  version: 1.0.0
+  description: Create a QR code for any text or url.
+servers:
+  - url: https://create-qr-code.modelxy.com
+paths:
+  /create-qr-code:
+    get:
+      operationId: getQRCode
+      summary: Create a QR code
+      parameters:
+        - in: query
+          name: data
+          schema:
+            type: string
+          description: The data to encode in the QR code.
+        - in: query
+          name: size
+          schema:
+            type: string
+            default: '100x100'
+          description: The size of the QR code.
+        - in: query
+          name: alt
+          schema:
+            type: string
+          description: The alt text for the QR code image.
+        - in: query
+          name: title
+          schema:
+            type: string
+          description: The title for the QR code image.
+      responses:
+        '200':
+          description: A JSON object containing the QR code image tag.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  img_tag:
+                    type: string

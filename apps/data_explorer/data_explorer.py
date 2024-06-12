@@ -149,11 +149,15 @@ def construct_ui(
                 "Github repo: [https://github.com/lightaime/camel]"
                 "(https://github.com/lightaime/camel)\n"
                 '<div style="display:flex; justify-content:center;">'
-                '<img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/primary_logo.png" alt="Logo" style="max-width:50%;">'
+                '<img src="https://raw.githubusercontent.com/camel-ai/camel/'
+                'master/misc/primary_logo.png" alt="Logo" style='
+                '"max-width:50%;">'
                 '</div>'
             )
 
-    task_dd = gr.Dropdown([], label="Original task", value="", interactive=True)
+    task_dd = gr.Dropdown(
+        [], label="Original task", value="", interactive=True
+    )
     specified_task_ta = gr.TextArea(label="Specified task", lines=2)
     chatbot = gr.Chatbot()
     accepted_st = gr.State(False)
@@ -271,7 +275,9 @@ def construct_ui(
             original_task_options = []
 
         choices = gr.Dropdown.update(
-            choices=original_task_options, value=original_task, interactive=True
+            choices=original_task_options,
+            value=original_task,
+            interactive=True,
         )
         return choices
 

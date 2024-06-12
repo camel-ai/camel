@@ -173,7 +173,9 @@ class OpenAIFunction:
         )
 
     @staticmethod
-    def validate_openai_tool_schema(openai_tool_schema: Dict[str, Any]) -> None:
+    def validate_openai_tool_schema(
+        openai_tool_schema: Dict[str, Any],
+    ) -> None:
         r"""Validates the OpenAI tool schema against
         :obj:`ToolAssistantToolsFunction`.
         This function checks if the provided :obj:`openai_tool_schema` adheres

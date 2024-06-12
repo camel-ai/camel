@@ -65,7 +65,8 @@ def _login_slack(
         )
         if not slack_token:
             raise KeyError(
-                "SLACK_BOT_TOKEN or SLACK_USER_TOKEN environment variable not set."
+                "SLACK_BOT_TOKEN or SLACK_USER_TOKEN environment variable not "
+                "set."
             )
 
     client = WebClient(token=slack_token, ssl=ssl)
