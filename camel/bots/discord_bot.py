@@ -79,7 +79,7 @@ class DiscordBot:
         """
         print(f'We have logged in as {self.client.user}')
 
-    async def on_message(self, message: Message) -> None:
+    async def on_message(self, message: 'Message') -> None:
         r"""Event handler for when a message is received.
 
         Args:
