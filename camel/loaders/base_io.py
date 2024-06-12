@@ -65,7 +65,9 @@ class File(ABC):
         )
 
     def __str__(self) -> str:
-        return f"File(name={self.name}, id={self.id}, metadata={self.metadata})"
+        return (
+            f"File(name={self.name}, id={self.id}, metadata={self.metadata})"
+        )
 
     def copy(self) -> "File":
         r"""Create a deep copy of this File"""

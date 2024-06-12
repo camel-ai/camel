@@ -274,7 +274,8 @@ class RolePlaying:
         ]:
             extend_sys_msg_meta_dicts = [
                 dict(
-                    assistant_role=assistant_role_name, user_role=user_role_name
+                    assistant_role=assistant_role_name,
+                    user_role=user_role_name,
                 )
                 for _ in range(2)
             ]

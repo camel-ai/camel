@@ -207,7 +207,7 @@ recommonmark = "*"
 docutils = "<0.20.0"
 
 [tool.ruff]
-line-length = 80
+line-length = 79
 fix = true
 target-version = "py39"
 
@@ -221,7 +221,9 @@ extend-select = [
     "C4",   # flake8-comprehensions
     "PGH",  # pygrep-hooks
     "RUF",  # ruff
+    "E",
 ]
+
 ignore = [
     "B028", # Warning without stacklevel
     "B904", # use 'raise ... from err'
@@ -231,6 +233,9 @@ ignore = [
     "C408", # we have used lots of dict(...) instead of literal
 ]
 
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
 [tool.ruff.lint.isort]
 known-first-party = ["camel"]
 
@@ -238,6 +243,7 @@ known-first-party = ["camel"]
 pythonpath = ["."]
 addopts = ["--strict-markers"]
 markers = [
+    "asyncio: mark a test as asyncio-based.",
     "very_slow: mark a very slow test to run only in full test mode",
     "model_backend: for tests that require OpenAI API key or a local LLM",
 ]
