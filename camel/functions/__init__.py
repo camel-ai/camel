@@ -27,10 +27,17 @@ from .twitter_function import TWITTER_FUNCS
 from .weather_functions import WEATHER_FUNCS
 from .slack_functions import SLACK_FUNCS
 
+from .open_api_function import (
+    apinames_filepaths_to_funs_schemas,
+    generate_apinames_filepaths,
+)
+
 __all__ = [
     'OpenAIFunction',
     'get_openai_function_schema',
     'get_openai_tool_schema',
+    'apinames_filepaths_to_funs_schemas',
+    'generate_apinames_filepaths',
     'MAP_FUNCS',
     'MATH_FUNCS',
     'OPENAPI_FUNCS',

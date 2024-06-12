@@ -147,7 +147,8 @@ class BaseVectorStorage(ABC):
         query: VectorDBQuery,
         **kwargs: Any,
     ) -> List[VectorDBQueryResult]:
-        r"""Searches for similar vectors in the storage based on the provided query.
+        r"""Searches for similar vectors in the storage based on the provided
+        query.
 
         Args:
             query (VectorDBQuery): The query object containing the search
