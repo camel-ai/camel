@@ -131,30 +131,22 @@ class UnstructuredIO:
         self,
         input_path: str,
         **kwargs: Any,
-    ) -> Union[Any, List[Any]]:
-        r"""Loads a file or a URL and parses its contents as unstructured data.
+    ) -> List[Element]:
+        r"""Loads a file or a URL and parses its contents into elements.
 
         Args:
             input_path (str): Path to the file or URL to be parsed.
             **kwargs: Extra kwargs passed to the partition function.
 
         Returns:
-            List[Any]: The elements after parsing the file or URL, could be a
-                dict, list, etc., depending on the content. If return_str is
-                True, returns a tuple with a string representation of the
-                elements and the elements themselves.
+            List[Element]: List of elements after parsing the file or URL.
 
         Raises:
-            FileNotFoundError: If the file does not exist
-                at the path specified.
+            FileNotFoundError: If the file does not exist at the path
+                specified.
             Exception: For any other issues during file or URL parsing.
 
         Notes:
-            By default we use the basic "unstructured" library,
-            if you are processing document types beyond the basics,
-            you can install the necessary extras like:
-                `pip install "unstructured[docx,pptx]"` or
-                `pip install "unstructured[all-docs]"`.
             Available document types:
                 "csv", "doc", "docx", "epub", "image", "md", "msg", "odt",
                 "org", "pdf", "ppt", "pptx", "rtf", "rst", "tsv", "xlsx".
@@ -453,11 +445,11 @@ class UnstructuredIO:
 
     def chunk_elements(
         self, elements: List[Any], chunk_type: str, **kwargs
-    ) -> List[Any]:
+    ) -> List[Element]:
         r"""Chunks elements by titles.
 
         Args:
-            elements (List[Any]): List of Element objects to be chunked.
+            elements (List[Element]): List of Element objects to be chunked.
             chunk_type (str): Type chunk going to apply. Supported types:
                 'chunk_by_title'.
             **kwargs: Additional keyword arguments for chunking.
@@ -534,8 +526,7 @@ class UnstructuredIO:
         account_name: str,
         num_processes: int = 2,
     ) -> None:
-        """
-        Processes documents from an Azure storage container and stores
+        r"""Processes documents from an Azure storage container and stores
         structured outputs locally.
 
         Args:

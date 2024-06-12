@@ -30,9 +30,9 @@ from camel.types import TaskType
 F = TypeVar('F', bound=Callable[..., Any])
 
 
-def api_key_required(func: F) -> F:
+def model_api_key_required(func: F) -> F:
     r"""Decorator that checks if the API key is available either as an
-    environment variable or passed directly.
+    environment variable or passed directly for a model.
 
     Args:
         func (callable): The function to be wrapped.
@@ -43,6 +43,9 @@ def api_key_required(func: F) -> F:
     Raises:
         ValueError: If the API key is not found, either as an environment
             variable or directly passed.
+
+    Note:
+        Supported model type: `OpenAI` and `Anthropic`.
     """
 
     @wraps(func)
@@ -52,7 +55,7 @@ def api_key_required(func: F) -> F:
                 raise ValueError('OpenAI API key not found.')
             return func(self, *args, **kwargs)
         elif self.model_type.is_anthropic:
-            if 'ANTHROPIC_API_KEY' not in os.environ:
+            if not self._api_key and 'ANTHROPIC_API_KEY' not in os.environ:
                 raise ValueError('Anthropic API key not found.')
             return func(self, *args, **kwargs)
         else:

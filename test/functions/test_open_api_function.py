@@ -349,13 +349,18 @@ def test_speak_explainTask(get_function):
 def test_biztoc_getNews(get_function):
     mock_response_data = [
         {
-            "title": "Republican on Fox Calls for the GOP to ‘Shut Down the Economy’ to Fix Immigration: ‘We Should, Really’",
+            "title": "Republican on Fox Calls for the GOP to ‘Shut Down the"
+            " Economy’ to Fix Immigration: ‘We Should, Really’",
             "source": "mediaite.com",
             "date": "Tue, 21 May 2024",
-            "summary": "Republican Congresswoman Victoria Spartz joined Fox Business host Maria Bartiromo to discuss border security, calling for drastic measures.",
+            "summary": "Republican Congresswoman Victoria Spartz joined Fox"
+            " Business host Maria Bartiromo to discuss border security,"
+            " calling for drastic measures.",
             "image": "https://c.biztoc.com/p/c7a5cea54ed2bdd5/s.webp",
             "tags": ["victoriaspartz", "borderpatrol", "immigration"],
-            "url": "https://www.mediaite.com/tv/republican-on-fox-calls-for-the-gop-to-shut-down-the-economy-to-fix-immigration-we-should-really/?ref=biztoc.com",
+            "url": "https://www.mediaite.com/tv/"
+            "republican-on-fox-calls-for-the-gop-to-shut-down-the-economy-to-"
+            "fix-immigration-we-should-really/?ref=biztoc.com",
         }
     ]
     mock_response = MagicMock()
@@ -370,8 +375,10 @@ def test_biztoc_getNews(get_function):
 )
 def test_create_qr_code_getQRCode(get_function):
     mock_response_data = {
-        'img_tag': '<img src="https://api.qrserver.com/v1/create-qr-code/?data=The data to encode in the QR code.&size=120x120" '
-        'alt="The alt text for the QR code image." title="The title for the QR code image." />'
+        'img_tag': """<img src="https://api.qrserver.com/v1/create-qr-code/?
+        data=The data to encode in the QR code.&size=120x120"
+        'alt="The alt text for the QR code image." title="The title for the QR 
+        code image." />'"""
     }
     mock_response = MagicMock()
     mock_response.json.return_value = mock_response_data
@@ -393,20 +400,25 @@ def test_out_school_searchClasses(get_function):
         {
             "uid": "f170ecbb-4ceb-41ad-af1a-3ac68f120833",
             "title": "1:1 Math Tutoring With a Math Major/Teacher",
-            "summary": "Personalized 1:1 math tutoring by an experienced Math Major/Teacher for Grades 2 through 10.",
+            "summary": "Personalized 1:1 math tutoring by an experienced Math"
+            " Major/Teacher for Grades 2 through 10.",
             "subject": "Math",
             "duration_minutes": 40,
             "price_cents": 4500,
             "age_min": 7,
             "age_max": 15,
-            "url": "https://outschool.com/classes/11-math-tutoring-with-a-math-majorteacher-fYCdDueY?utm_medium=chatgpt&utm_source=chatgpt-plugin",
+            "url": "https://outschool.com/classes/"
+            "11-math-tutoring-with-a-math-majorteacher-fYCdDueY?"
+            "utm_medium=chatgpt&utm_source=chatgpt-plugin",
             "photo": "https://cdn.filestackcontent.com/vDVX6iIaQiKdguqAzI7e",
             "teacher": {
                 "name": "Tess Monte, M.Ed.",
-                "photo": "https://cdn.filestackcontent.com/enevVCpZSKqAR4u0Nolt",
+                "photo": "https://cdn.filestackcontent.com/"
+                "enevVCpZSKqAR4u0Nolt",
                 "averageActivityStarRating": 5,
                 "reviewCount": 2,
-                "url": "https://outschool.com/teachers/Ms-Tess?utm_medium=chatgpt&utm_source=chatgpt-plugin",
+                "url": "https://outschool.com/teachers/Ms-Tess?"
+                "utm_medium=chatgpt&utm_source=chatgpt-plugin",
             },
         }
     ]
@@ -449,7 +461,8 @@ def test_out_school_searchTeachers(get_function):
 @pytest.mark.parametrize('get_function', ['web_scraper_scrape'], indirect=True)
 def test_web_scraper_scrape(get_function):
     mock_response_data = {
-        "text": 'Skip to content\nNavigation Menu\nSign in\ncamel-ai\n/\ncamel\nPublic\nNotifications\nFork 558\n Star 4.5k',
+        "text": """Skip to content\nNavigation Menu\nSign in\ncamel-ai\n/
+        \ncamel\nPublic\nNotifications\nFork 558\n Star 4.5k""",
     }
     mock_response = MagicMock()
     mock_response.json.return_value = mock_response_data

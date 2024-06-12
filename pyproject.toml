@@ -82,11 +82,12 @@ cohere = { version = "^4.56", optional = true }
 
 # test
 pytest = { version = "^7", optional = true}
+pytest-asyncio = { version = "^0.23.0", optional = true }
 mock = { version = "^5", optional = true}
 
 
 [tool.poetry.extras]
-test = ["pytest", "mock"]
+test = ["pytest", "mock", "pytest-asyncio"]
 
 huggingface-agent = [
     "transformers",
@@ -183,6 +184,7 @@ toml = ">=0.10.2"
 pre-commit = "^3"
 pytest = "^7"
 pytest-cov = "^4"
+pytest-asyncio = "^0.23.0"
 gradio = "^3"
 mock = "^5"
 
@@ -241,6 +243,7 @@ known-first-party = ["camel"]
 pythonpath = ["."]
 addopts = ["--strict-markers"]
 markers = [
+    "asyncio: mark a test as asyncio-based.",
     "very_slow: mark a very slow test to run only in full test mode",
     "model_backend: for tests that require OpenAI API key or a local LLM",
 ]
