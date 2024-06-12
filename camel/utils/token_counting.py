@@ -300,12 +300,12 @@ class AnthropicTokenCounter(BaseTokenCounter):
         return self.client.count_tokens(prompt)
 
 
-class LiteLLMTokenCounter(BaseTokenCounter):
-    def __init__(self, model_type: ModelType):
+class LiteLLMTokenCounter:
+    def __init__(self, model_type: str):
         r"""Constructor for the token counter for LiteLLM models.
 
         Args:
-            model_type (ModelType): Model type for which tokens will be counted.
+            model_type (str): Model type for which tokens will be counted.
         """
         self.model_type = model_type
         self._token_counter = None
@@ -338,9 +338,7 @@ class LiteLLMTokenCounter(BaseTokenCounter):
         Returns:
             int: Number of tokens in the messages.
         """
-        return self.token_counter(
-            model=self.model_type.value, messages=messages
-        )
+        return self.token_counter(model=self.model_type, messages=messages)
 
     def calculate_cost_from_response(self, response: dict) -> float:
         r"""Calculate the cost of the given completion response.

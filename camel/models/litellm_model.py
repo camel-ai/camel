@@ -15,21 +15,21 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 from camel.configs import LITELLM_API_PARAMS
 from camel.messages import OpenAIMessage
-from camel.models import BaseModelBackend
-from camel.utils import BaseTokenCounter, LiteLLMTokenCounter
+from camel.utils import LiteLLMTokenCounter
 
 if TYPE_CHECKING:
     from litellm.utils import CustomStreamWrapper, ModelResponse
 
 
-class LiteLLMModel(BaseModelBackend):
-    r"""LiteLLM API in a unified BaseModelBackend interface."""
+class LiteLLMModel:
+    r"""Constructor for LiteLLM backend with OpenAI compatibility."""
 
     # NOTE: Currently "stream": True is not supported with LiteLLM due to the
     # limitation of the current camel design.
 
-    def __init__(self, model_type: str, model_config_dict: Dict[str,
-                                                                Any]) -> None:
+    def __init__(
+        self, model_type: str, model_config_dict: Dict[str, Any]
+    ) -> None:
         r"""Constructor for LiteLLM backend.
 
         Args:
@@ -38,9 +38,10 @@ class LiteLLMModel(BaseModelBackend):
             model_config_dict (Dict[str, Any]): A dictionary of parameters for
                 the model configuration.
         """
-        super().__init__(model_type, model_config_dict)
+        self.model_type = model_type
+        self.model_config_dict = model_config_dict
         self._client = None
-        self._token_counter: Optional[BaseTokenCounter] = None
+        self._token_counter: Optional[LiteLLMTokenCounter] = None
 
     @property
     def client(self):
@@ -51,12 +52,12 @@ class LiteLLMModel(BaseModelBackend):
         return self._client
 
     @property
-    def token_counter(self) -> BaseTokenCounter:
+    def token_counter(self) -> LiteLLMTokenCounter:
         r"""Initialize the token counter for the model backend.
 
         Returns:
-            BaseTokenCounter: The token counter following the model's
-            tokenization style.
+            LiteLLMTokenCounter: The token counter following the model's
+                tokenization style.
         """
         if not self._token_counter:
             self._token_counter = LiteLLMTokenCounter(self.model_type)
@@ -67,16 +68,18 @@ class LiteLLMModel(BaseModelBackend):
         messages: List[OpenAIMessage],
     ) -> Union['ModelResponse', 'CustomStreamWrapper']:
         r"""Runs inference of LiteLLM chat completion.
+
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI format.
+
         Returns:
             Union[ModelResponse, CustomStreamWrapper]:
                 `ModelResponse` in the non-stream mode, or
                 `CustomStreamWrapper` in the stream mode.
         """
         response = self.client(
-            model=self.model_type.value,
+            model=self.model_type,
             messages=messages,
             **self.model_config_dict,
         )
@@ -88,12 +91,14 @@ class LiteLLMModel(BaseModelBackend):
 
         Raises:
             ValueError: If the model configuration dictionary contains any
-            unexpected arguments.
+                unexpected arguments.
         """
         for param in self.model_config_dict:
             if param not in LITELLM_API_PARAMS:
-                raise ValueError(f"Unexpected argument `{param}` is "
-                                 "input into LiteLLM model backend.")
+                raise ValueError(
+                    f"Unexpected argument `{param}` is "
+                    "input into LiteLLM model backend."
+                )
 
     @property
     def stream(self) -> bool:
