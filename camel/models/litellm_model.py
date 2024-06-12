@@ -11,12 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 from camel.configs import LITELLM_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.utils import BaseTokenCounter, LiteLLMTokenCounter
+
+if TYPE_CHECKING:
+    from litellm.utils import CustomStreamWrapper, ModelResponse
 
 
 class LiteLLMModel(BaseModelBackend):
@@ -25,9 +28,8 @@ class LiteLLMModel(BaseModelBackend):
     # NOTE: Currently "stream": True is not supported with LiteLLM due to the
     # limitation of the current camel design.
 
-    def __init__(
-        self, model_type: str, model_config_dict: Dict[str, Any]
-    ) -> None:
+    def __init__(self, model_type: str, model_config_dict: Dict[str,
+                                                                Any]) -> None:
         r"""Constructor for LiteLLM backend.
 
         Args:
@@ -39,8 +41,6 @@ class LiteLLMModel(BaseModelBackend):
         super().__init__(model_type, model_config_dict)
         self._client = None
         self._token_counter: Optional[BaseTokenCounter] = None
-        global CustomStreamWrapper, ModelResponse
-        from litellm.utils import CustomStreamWrapper, ModelResponse
 
     @property
     def client(self):
@@ -92,10 +92,8 @@ class LiteLLMModel(BaseModelBackend):
         """
         for param in self.model_config_dict:
             if param not in LITELLM_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into LiteLLM model backend."
-                )
+                raise ValueError(f"Unexpected argument `{param}` is "
+                                 "input into LiteLLM model backend.")
 
     @property
     def stream(self) -> bool:
