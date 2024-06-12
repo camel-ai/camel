@@ -306,7 +306,7 @@ class ChatAgent(BaseAgent):
         tool_calls: List[FunctionCallingRecord] = []
         while True:
             # Format messages and get the token number
-            openai_messages: Optional[List[OpenAIMessage]]
+            openai_messages: list[OpenAIMessage] | None
 
             try:
                 openai_messages, num_tokens = self.memory.get_context()
@@ -314,18 +314,13 @@ class ChatAgent(BaseAgent):
                 return self.step_token_exceed(
                     e.args[1], tool_calls, "max_tokens_exceeded"
                 )
-
-            # Obtain the model's response
-            response = self.model_backend.run(openai_messages)
-
-            if isinstance(response, ChatCompletion):
-                output_messages, finish_reasons, usage_dict, response_id = (
-                    self.handle_batch_response(response)
-                )
-            else:
-                output_messages, finish_reasons, usage_dict, response_id = (
-                    self.handle_stream_response(response, num_tokens)
-                )
+            (
+                response,
+                output_messages,
+                finish_reasons,
+                usage_dict,
+                response_id,
+            ) = self._step_model_response(openai_messages, num_tokens)
 
             if (
                 self.is_tools_added()
@@ -350,37 +345,164 @@ class ChatAgent(BaseAgent):
 
             else:
                 # Function calling disabled or not a function calling
-
-                # Loop over responses terminators, get list of termination
-                # tuples with whether the terminator terminates the agent
-                # and termination reason
-                termination = [
-                    terminator.is_terminated(output_messages)
-                    for terminator in self.response_terminators
-                ]
-                # Terminate the agent if any of the terminator terminates
-                self.terminated, termination_reason = next(
-                    (
-                        (terminated, termination_reason)
-                        for terminated, termination_reason in termination
-                        if terminated
-                    ),
-                    (False, None),
-                )
-                # For now only retain the first termination reason
-                if self.terminated and termination_reason is not None:
-                    finish_reasons = [termination_reason] * len(finish_reasons)
-
-                info = self.get_info(
-                    response_id,
-                    usage_dict,
+                info = self._step_get_info(
+                    output_messages,
                     finish_reasons,
-                    num_tokens,
+                    usage_dict,
+                    response_id,
                     tool_calls,
+                    num_tokens,
                 )
                 break
 
         return ChatAgentResponse(output_messages, self.terminated, info)
+
+    async def step_async(
+        self,
+        input_message: BaseMessage,
+    ) -> ChatAgentResponse:
+        r"""Performs a single step in the chat session by generating a response
+        to the input message. This agent step can call async function calls.
+
+        Args:
+            input_message (BaseMessage): The input message to the agent.
+            Its `role` field that specifies the role at backend may be either
+            `user` or `assistant` but it will be set to `user` anyway since
+            for the self agent any incoming message is external.
+
+        Returns:
+            ChatAgentResponse: A struct containing the output messages,
+                a boolean indicating whether the chat session has terminated,
+                and information about the chat session.
+        """
+        self.update_memory(input_message, OpenAIBackendRole.USER)
+
+        output_messages: List[BaseMessage]
+        info: Dict[str, Any]
+        tool_calls: List[FunctionCallingRecord] = []
+        while True:
+            # Format messages and get the token number
+            openai_messages: list[OpenAIMessage] | None
+
+            try:
+                openai_messages, num_tokens = self.memory.get_context()
+            except RuntimeError as e:
+                return self.step_token_exceed(
+                    e.args[1], tool_calls, "max_tokens_exceeded"
+                )
+            (
+                response,
+                output_messages,
+                finish_reasons,
+                usage_dict,
+                response_id,
+            ) = self._step_model_response(openai_messages, num_tokens)
+
+            if (
+                self.is_tools_added()
+                and isinstance(response, ChatCompletion)
+                and response.choices[0].message.tool_calls is not None
+            ):
+                # Tools added for function calling and not in stream mode
+
+                # Do function calling
+                (
+                    func_assistant_msg,
+                    func_result_msg,
+                    func_record,
+                ) = await self.step_tool_call_async(response)
+
+                # Update the messages
+                self.update_memory(
+                    func_assistant_msg, OpenAIBackendRole.ASSISTANT
+                )
+                self.update_memory(func_result_msg, OpenAIBackendRole.FUNCTION)
+
+                # Record the function calling
+                tool_calls.append(func_record)
+
+            else:
+                # Function calling disabled or not a function calling
+                info = self._step_get_info(
+                    output_messages,
+                    finish_reasons,
+                    usage_dict,
+                    response_id,
+                    tool_calls,
+                    num_tokens,
+                )
+                break
+
+        return ChatAgentResponse(output_messages, self.terminated, info)
+
+    def _step_model_response(
+        self,
+        openai_messages: list[OpenAIMessage],
+        num_tokens: int,
+    ) -> tuple[
+        ChatCompletion | Stream[ChatCompletionChunk],
+        list[BaseMessage],
+        list[str],
+        dict[str, int],
+        str,
+    ]:
+        r"""Internal function for agent step model response."""
+        # Obtain the model's response
+        response = self.model_backend.run(openai_messages)
+
+        if isinstance(response, ChatCompletion):
+            output_messages, finish_reasons, usage_dict, response_id = (
+                self.handle_batch_response(response)
+            )
+        else:
+            output_messages, finish_reasons, usage_dict, response_id = (
+                self.handle_stream_response(response, num_tokens)
+            )
+        return (
+            response,
+            output_messages,
+            finish_reasons,
+            usage_dict,
+            response_id,
+        )
+
+    def _step_get_info(
+        self,
+        output_messages: List[BaseMessage],
+        finish_reasons: List[str],
+        usage_dict: Dict[str, int],
+        response_id: str,
+        tool_calls: List[FunctionCallingRecord],
+        num_tokens: int,
+    ) -> Dict[str, Any]:
+        # Loop over responses terminators, get list of termination
+        # tuples with whether the terminator terminates the agent
+        # and termination reason
+        termination = [
+            terminator.is_terminated(output_messages)
+            for terminator in self.response_terminators
+        ]
+        # Terminate the agent if any of the terminator terminates
+        self.terminated, termination_reason = next(
+            (
+                (terminated, termination_reason)
+                for terminated, termination_reason in termination
+                if terminated
+            ),
+            (False, None),
+        )
+        # For now only retain the first termination reason
+        if self.terminated and termination_reason is not None:
+            finish_reasons = [termination_reason] * len(finish_reasons)
+
+        info = self.get_info(
+            response_id,
+            usage_dict,
+            finish_reasons,
+            num_tokens,
+            tool_calls,
+        )
+        return info
 
     def handle_batch_response(
         self, response: ChatCompletion
@@ -516,7 +638,7 @@ class ChatAgent(BaseAgent):
         """
         choice = response.choices[0]
         if choice.message.tool_calls is None:
-            raise RuntimeError("Tool calls is None")
+            raise RuntimeError("Tool call is None")
         func_name = choice.message.tool_calls[0].function.name
         func = self.func_dict[func_name]
 
@@ -526,6 +648,65 @@ class ChatAgent(BaseAgent):
         # Pass the extracted arguments to the indicated function
         try:
             result = func(**args)
+        except Exception:
+            raise ValueError(
+                f"Execution of function {func.__name__} failed with "
+                f"arguments being {args}."
+            )
+
+        assist_msg = FunctionCallingMessage(
+            role_name=self.role_name,
+            role_type=self.role_type,
+            meta_dict=None,
+            content="",
+            func_name=func_name,
+            args=args,
+        )
+        func_msg = FunctionCallingMessage(
+            role_name=self.role_name,
+            role_type=self.role_type,
+            meta_dict=None,
+            content="",
+            func_name=func_name,
+            result=result,
+        )
+
+        # Record information about this function call
+        func_record = FunctionCallingRecord(func_name, args, result)
+        return assist_msg, func_msg, func_record
+
+    async def step_tool_call_async(
+        self,
+        response: ChatCompletion,
+    ) -> Tuple[
+        FunctionCallingMessage, FunctionCallingMessage, FunctionCallingRecord
+    ]:
+        r"""Execute the async function with arguments following the model's
+        response.
+
+        Args:
+            response (Dict[str, Any]): The response obtained by calling the
+                model.
+
+        Returns:
+            tuple: A tuple consisting of two obj:`FunctionCallingMessage`,
+                one about the arguments and the other about the execution
+                result, and a struct for logging information about this
+                function call.
+        """
+        # Note that when function calling is enabled, `n` is set to 1.
+        choice = response.choices[0]
+        if choice.message.tool_calls is None:
+            raise RuntimeError("Tool call is None")
+        func_name = choice.message.tool_calls[0].function.name
+        func = self.func_dict[func_name]
+
+        args_str: str = choice.message.tool_calls[0].function.arguments
+        args = json.loads(args_str.replace("'", "\""))
+
+        # Pass the extracted arguments to the indicated function
+        try:
+            result = await func(**args)
         except Exception:
             raise ValueError(
                 f"Execution of function {func.__name__} failed with "

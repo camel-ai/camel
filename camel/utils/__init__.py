@@ -13,7 +13,6 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .commons import (
     PYDANTIC_V2,
-    api_key_required,
     api_keys_required,
     check_server_running,
     dependencies_required,
@@ -22,6 +21,7 @@ from .commons import (
     get_prompt_template_key_words,
     get_system_information,
     get_task_list,
+    model_api_key_required,
     print_text_animated,
     to_pascal,
 )
@@ -35,7 +35,7 @@ from .token_counting import (
 )
 
 __all__ = [
-    'api_key_required',
+    'model_api_key_required',
     'print_text_animated',
     'get_prompt_template_key_words',
     'get_first_int',
