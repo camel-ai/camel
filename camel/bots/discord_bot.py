@@ -76,15 +76,7 @@ class DiscordBot:
         Args:  
             message (discord.Message): The message object received.  
 
-        Returns:
-        - None
-
         """
-
-        if self.channel_ids is not None:
-            if message.channel.id not in self.channel_ids:
-                return
-
         if self.channel_ids and message.channel.id not in self.channel_ids:  
             return
 
