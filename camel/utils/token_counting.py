@@ -51,7 +51,7 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
     system_message = messages[0]["content"]
 
     ret: str
-    if model == ModelType.LLAMA_2:
+    if model == ModelType.LLAMA_2 or ModelType.LLAMA_3:
         # reference: https://github.com/facebookresearch/llama/blob/cfc3fc8c1968d390eb830e65c63865e980873a06/llama/generation.py#L212
         seps = [" ", " </s><s>"]
         role_map = {"user": "[INST]", "assistant": "[/INST]"}

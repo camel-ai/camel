@@ -58,7 +58,8 @@ class OpenSourceModel(BaseModelBackend):
         self.model_path: str = model_path
 
         # Check whether the model name matches the model type
-        self.model_name: str = self.model_path.split('/')[-1]
+        # self.model_name: str = self.model_path.split('/')[-1]
+        self.model_name: str = self.model_path
         if not self.model_type.validate_model_name(self.model_name):
             raise ValueError(
                 f"Model name `{self.model_name}` does not match model type "
