@@ -68,6 +68,7 @@ pillow = { version = "^10.2.0", optional = true }
 slack-sdk = { version = "^3.27.2", optional = true }
 pydub = { version = "^0.25.1", optional = true }
 pygithub = { version = "^2.3.0", optional = true }
+"discord.py" = { version = "^2.3.2", optional = true }
 
 # encoders
 sentence-transformers = { version = "^2.2.2", optional = true }
@@ -125,6 +126,7 @@ tools = [
     "slack-sdk",
     "pydub",
     "pygithub",
+    "discord.py",
 ]
 
 vector-databases = [
@@ -155,6 +157,7 @@ all = [
     "beautifulsoup4",
     "docx2txt",
     "pygithub",
+    "discord.py",
     "PyMuPDF",
     "wikipedia",
     "duckduckgo-search",
@@ -299,7 +302,7 @@ module = [
     "pillow",
     "slack-sdk",
     "pydub",
-    "pygithub"
-
+    "pygithub",
+    "discord.py"
 ]
 ignore_missing_imports = true
