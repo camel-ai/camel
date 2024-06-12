@@ -34,7 +34,7 @@ class LiteLLMModel(BaseModelBackend):
             model_type (str): Model for which a backend is created,
                 such as GPT-3.5-turbo, Claude-2, etc.
             model_config_dict (Dict[str, Any]): A dictionary of parameters for
-            the model configuration.
+                the model configuration.
         """
         super().__init__(model_type, model_config_dict)
         self._client = None
