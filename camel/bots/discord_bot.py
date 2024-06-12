@@ -68,7 +68,7 @@ class DiscordBot:
         This method starts the Discord bot by running the client with the
         provided token.
         """
-        self.client.run(self.token)
+        self.client.run(self.token)  # type: ignore[arg-type]
 
     async def on_ready(self) -> None:
         r"""This method is called when the bot has successfully connected to
