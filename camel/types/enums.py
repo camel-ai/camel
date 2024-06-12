@@ -33,6 +33,7 @@ class ModelType(Enum):
     STUB = "stub"
 
     LLAMA_2 = "llama-2"
+    LLAMA_3 = "llama-3"
     VICUNA = "vicuna"
     VICUNA_16K = "vicuna-16k"
 
@@ -67,6 +68,7 @@ class ModelType(Enum):
         r"""Returns whether this type of models is open-source."""
         return self in {
             ModelType.LLAMA_2,
+            ModelType.LLAMA_3,
             ModelType.VICUNA,
             ModelType.VICUNA_16K,
         }
@@ -107,6 +109,8 @@ class ModelType(Enum):
             return 4096
         elif self is ModelType.LLAMA_2:
             return 4096
+        elif self is ModelType.LLAMA_3:
+            return 4096
         elif self is ModelType.VICUNA:
             # reference: https://lmsys.org/blog/2023-03-30-vicuna/
             return 2048
@@ -142,6 +146,11 @@ class ModelType(Enum):
             return (
                 self.value in model_name.lower()
                 or "llama2" in model_name.lower()
+            )
+        elif self is ModelType.LLAMA_3:
+            return (
+                self.value in model_name.lower()
+                or "llama3" in model_name.lower()
             )
         else:
             return self.value in model_name.lower()
