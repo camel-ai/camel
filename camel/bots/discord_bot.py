@@ -85,7 +85,13 @@ class DiscordBot:
         Args:
             message (discord.Message): The message object received.
         """
+        if message.author == self.client.user:
+            return
+
         if self.channel_ids and message.channel.id not in self.channel_ids:
+            return
+
+        if not self.client.user or not self.client.user.mentioned_in(message):
             return
 
         self.chat_agent.reset()
