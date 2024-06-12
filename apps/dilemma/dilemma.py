@@ -171,7 +171,9 @@ def construct_ui(
         else:
             who_is_better = state[choice]['who']
         name = state['name']
-        print("choice=", choice, "who_is_better=", who_is_better, "name=", name)
+        print(
+            "choice=", choice, "who_is_better=", who_is_better, "name=", name
+        )
         if db_conn is not None:
             db_conn.add_record(name, who_is_better)
 

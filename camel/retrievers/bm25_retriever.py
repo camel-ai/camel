@@ -47,7 +47,8 @@ class BM25Retriever(BaseRetriever):
             from rank_bm25 import BM25Okapi
         except ImportError as e:
             raise ImportError(
-                "Package `rank_bm25` not installed, install by running 'pip install rank_bm25'"
+                "Package `rank_bm25` not installed, install by running 'pip "
+                "install rank_bm25'"
             ) from e
 
         self.bm25: BM25Okapi = None
