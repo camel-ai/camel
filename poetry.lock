@@ -2897,12 +2897,13 @@ files = [
 
 [[package]]
 name = "neo4j"
-version = "5.20.0"
+version = "5.21.0"
 description = "Neo4j Bolt driver for Python"
 optional = true
 python-versions = ">=3.7"
 files = [
-    {file = "neo4j-5.20.0.tar.gz", hash = "sha256:c59e54a0c0fa1f109f1d2fa5293c29c2bb30ba388b4f9dd9656919793c10063a"},
+    {file = "neo4j-5.21.0-py3-none-any.whl", hash = "sha256:f95b19ab67b83888e1c65fa6266659138f7efbecce8d5dfb42eeed2d17140af9"},
+    {file = "neo4j-5.21.0.tar.gz", hash = "sha256:6a6852354479742e43012a7f16007120e9b44bf584c97614544f2f41f46005ee"},
 ]
 
 [package.dependencies]
@@ -3481,13 +3482,13 @@ image = ["Pillow"]
 
 [[package]]
 name = "pdfplumber"
-version = "0.11.0"
+version = "0.11.1"
 description = "Plumb a PDF for detailed information about each char, rectangle, and line."
 optional = true
 python-versions = ">=3.8"
 files = [
-    {file = "pdfplumber-0.11.0-py3-none-any.whl", hash = "sha256:be41686fe9515da5f54fad254e2b6941a723b9afe99eb92008df30880b6d61b3"},
-    {file = "pdfplumber-0.11.0.tar.gz", hash = "sha256:e0027b8fc0ab98329cd8d445f5324d779078a6b58406471234e3e9c265dd8a48"},
+    {file = "pdfplumber-0.11.1-py3-none-any.whl", hash = "sha256:8f3f087001fc3ec72d2c8be23d4ad59a763356e70d659a9180b5250919a3e5a8"},
+    {file = "pdfplumber-0.11.1.tar.gz", hash = "sha256:cb95b4369fa94c3901bc6bce89d81e098afd2bd8d88e0d9706152f4c57e82349"},
 ]
 
 [package.dependencies]
