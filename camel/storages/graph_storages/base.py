@@ -70,6 +70,7 @@ class BaseGraphStorage(ABC):
         self, query: str, params: Optional[Dict[str, Any]] = None
     ) -> List[Dict[str, Any]]:
         r"""Query the graph store with statement and parameters.
+
         Args:
             query (str): The query to be executed.
             params (Optional[Dict[str, Any]]): A dictionary of parameters to

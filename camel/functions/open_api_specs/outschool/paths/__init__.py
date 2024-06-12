@@ -11,14 +11,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .base import BaseEmbedding
-from .openai_embedding import OpenAIEmbedding
-from .sentence_transformers_embeddings import SentenceTransformerEncoder
-from .vlm_embedding import VisionLanguageEmbedding
-
-__all__ = [
-    "BaseEmbedding",
-    "OpenAIEmbedding",
-    "SentenceTransformerEncoder",
-    "VisionLanguageEmbedding",
-]
+path_dict = {"get_classes": "/classes", "search_teachers": "/teachers"}
