@@ -42,8 +42,12 @@ Ensuring excellent documentation and thorough testing is absolutely crucial. Her
 - If you add a feature:
   - Include unit tests in the `test` directory. 
   - Add a demo script in the `examples` directory.
- 
 
+- If you review the code:
+  - Ensure responsible code review principles and cautious code approval.
+  - Try to review not only the modified code snippets but also consider the overall impact and optimization of the PR from a global and system perspective.
+  - More information about code review in Github is [here](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/about-pull-request-reviews)
+ 
 We're a small team focused on building great things. If you have something in mind that you'd like to add or modify, opening a pull request is the ideal way to catch our attention. 🚀
 
 ### Board Item Create Workflow 🛠️
@@ -225,7 +229,7 @@ More guidelines about building and hosting documentations locally can be found [
 
 ## Versioning and Release 🚀
 
-As of now, CAMEL is actively in development and not published to PyPI yet.
+As of now, CAMEL is actively in development and just published preview version to PyPI.
 
 CAMEL follows the [semver](https://semver.org/) versioning standard. As pre-1.0 software, even patch releases may contain [non-backwards-compatible changes](https://semver.org/#spec-item-4). Currently, the major version is 0, and the minor version is incremented. Releases are made once the maintainers feel that a significant body of changes has accumulated.
 
