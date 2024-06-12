@@ -38,7 +38,7 @@ pathlib = "^1.0.1"
 docstring-parser = "^0.15"
 pydantic = ">=1.9,<3"
 
-# model platforms
+# model-platforms
 anthropic = "^0.21.3"
 litellm = { version = "^1.38.1", optional = true }
 
@@ -89,6 +89,11 @@ mock = { version = "^5", optional = true}
 
 [tool.poetry.extras]
 test = ["pytest", "mock"]
+
+model-platforms = [
+    "anthropic",
+    "litellm",
+]
 
 huggingface-agent = [
     "transformers",
@@ -283,6 +288,7 @@ module = [
     "pymilvus",
     "slack-sdk",
     "pydub",
-    "pygithub"
+    "pygithub",
+    "litellm"
 ]
 ignore_missing_imports = true
