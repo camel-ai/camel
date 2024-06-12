@@ -14,12 +14,19 @@
 
 import os
 from typing import Any, Dict, List, Optional, Union
+
 from openai import OpenAI, Stream
-from camel.messages import OpenAIMessage
+
 from camel.configs import OPENAI_API_PARAMS
+from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
-from camel.utils import BaseTokenCounter, model_api_key_required, OpenAITokenCounter
+from camel.utils import (
+    BaseTokenCounter,
+    OpenAITokenCounter,
+    model_api_key_required,
+)
+
 
 class ZhipuAIModel(BaseModelBackend):
     r"""ZhipuAI API in a unified BaseModelBackend interface."""
@@ -38,12 +45,14 @@ class ZhipuAIModel(BaseModelBackend):
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into zhipuai.ChatCompletion.create().
              api_key (Optional[str]): The API key for authenticating with the
-                ZhipuAI service. (default: :obj:`None`)    
+                ZhipuAI service. (default: :obj:`None`)
         """
         super().__init__(model_type, model_config_dict)
         url = os.environ.get('ZHIPUAI_API_BASE_URL', None)
         api_key = os.environ.get('ZHIPUAI_API_KEY', None)
-        self._client = OpenAI(timeout=60, max_retries=3, api_key=api_key,base_url=url)
+        self._client = OpenAI(
+            timeout=60, max_retries=3, api_key=api_key, base_url=url
+        )
         self._token_counter: Optional[BaseTokenCounter] = None
 
     @model_api_key_required
@@ -77,7 +86,7 @@ class ZhipuAIModel(BaseModelBackend):
             OpenAITokenCounter: The token counter following the model's
                 tokenization style.
         """
-        
+
         if not self._token_counter:
             self._token_counter = OpenAITokenCounter(ModelType.GPT_3_5_TURBO)
         return self._token_counter
@@ -106,4 +115,3 @@ class ZhipuAIModel(BaseModelBackend):
             bool: Whether the model is in stream mode.
         """
         return self.model_config_dict.get('stream', False)
-
