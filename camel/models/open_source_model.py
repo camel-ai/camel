@@ -31,6 +31,7 @@ class OpenSourceModel(BaseModelBackend):
         self,
         model_type: ModelType,
         model_config_dict: Dict[str, Any],
+        api_key: str,
     ) -> None:
         r"""Constructor for model backends of Open-source models.
 
