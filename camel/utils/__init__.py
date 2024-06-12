@@ -25,7 +25,7 @@ from .commons import (
     print_text_animated,
     to_pascal,
 )
-from .constant import Constants
+from .constants import Constants
 from .token_counting import (
     AnthropicTokenCounter,
     BaseTokenCounter,

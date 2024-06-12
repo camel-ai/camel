@@ -310,12 +310,12 @@ class BaseMessage:
             frame_count = 0
             # read video bytes
             video = iio.imiter(
-                self.video_bytes, plugin=Constants.DEFAULT_PLUG_PYAV
+                self.video_bytes, plugin=Constants.VIDEO_DEFAULT_PLUG_PYAV
             )
 
             for frame in video:
                 frame_count += 1
-                if frame_count % Constants.IMAGE_EXTRACTION_INTERVAL == 0:
+                if frame_count % Constants.VIDEO_IMAGE_EXTRACTION_INTERVAL == 0:
                     # convert frame to numpy array
                     frame_array = np.asarray(frame)
                     frame_image = Image.fromarray(frame_array)
@@ -324,7 +324,7 @@ class BaseMessage:
                     width, height = frame_image.size
 
                     # resize the frame to the default image size
-                    new_width = Constants.DEFAULT_IMAGE_SIZE
+                    new_width = Constants.VIDEO_DEFAULT_IMAGE_SIZE
                     aspect_ratio = width / height
                     new_height = int(new_width / aspect_ratio)
                     resized_img = frame_image.resize((new_width, new_height))
