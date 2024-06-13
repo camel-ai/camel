@@ -38,7 +38,7 @@ class ZhipuAIModel(BaseModelBackend):
         api_key: Optional[str] = None,
         url: Optional[str] = None,
     ) -> None:
-        r"""Constructor for ZhipuAI backend.Use OpenAI SDK to interact with ZhipuAI API.
+        r"""Constructor for ZhipuAI backend.
 
         Args:
             model_type (ModelType): Model for which a backend is created,
@@ -52,7 +52,10 @@ class ZhipuAIModel(BaseModelBackend):
         self._url = url or os.environ.get("ZHIPUAI_API_BASE_URL")
         self._api_key = api_key or os.environ.get("ZHIPUAI_API_KEY")
         self._client = OpenAI(
-            timeout=60, max_retries=3, api_key=self._api_key, base_url=self._url
+            timeout=60, 
+            max_retries=3, 
+            api_key=self._api_key, 
+            base_url=self._url
         )
         self._token_counter: Optional[BaseTokenCounter] = None
 
@@ -89,7 +92,8 @@ class ZhipuAIModel(BaseModelBackend):
         """
 
         if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(ModelType.GPT_3_5_TURBO) #It's a temporary setting for token counter.
+             #It's a temporary setting for token counter.
+            self._token_counter = OpenAITokenCounter(ModelType.GPT_3_5_TURBO) 
         return self._token_counter
 
     def check_model_config(self):

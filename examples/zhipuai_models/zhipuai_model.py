@@ -38,7 +38,8 @@ camel_agent.reset()
 
 user_msg = BaseMessage.make_user_message(
     role_name="User",
-    content="I want to practice my legs today. Help me make a fitness and diet plan",
+    content="I want to practice my legs today."\
+        "Help me make a fitness and diet plan",
 )
 
 # Get response information
@@ -47,7 +48,8 @@ print(response.msgs[0].content)
 '''
 ===============================================================================
 Certainly! Focusing on leg workouts can help improve strength, endurance, and 
-overall lower-body fitness. Here's a sample fitness and diet plan for leg training:
+overall lower-body fitness. Here's a sample fitness 
+and diet plan for leg training:
 
 **Fitness Plan:**
 
@@ -64,7 +66,7 @@ overall lower-body fitness. Here's a sample fitness and diet plan for leg traini
    - Calf raises: 3 sets of 15-20 reps
 
 3. **Cardio:**
-   - Hill sprints: 5-8 reps of 30-second sprints with a 1-minute rest in between
+   - Hill sprints: 5-8 reps of 30-second sprints
    - Cycling or stationary biking: 20-30 minutes at moderate intensity
 
 4. **Cool Down:**
