@@ -11,10 +11,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .discord_bot import DiscordBot
-from .telegram_bot import TelegramBot
 
-__all__ = [
-    'DiscordBot',
-    'TelegramBot',
-]
+from camel.agents import ChatAgent
+from camel.bots.telegram_bot import TelegramBot
+from camel.messages import BaseMessage
+
+
+def main(model=None) -> None:
+    assistant_sys_msg = BaseMessage.make_assistant_message(
+        role_name="Assistant",
+        content="You are a helpful assistant.",
+    )
+
+    agent = ChatAgent(assistant_sys_msg, model_type=model)
+    bot = TelegramBot(agent)
+    bot.run()
+
+
+if __name__ == "__main__":
+    main()
