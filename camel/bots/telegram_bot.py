@@ -41,7 +41,8 @@ class TelegramBot:
             self.token = os.getenv('TELEGRAM_TOKEN')
             if not self.token:
                 raise ValueError(
-                    "`TELEGRAM_TOKEN` not found in environment variables. Get it from t.me/BotFather."
+                    "`TELEGRAM_TOKEN` not found in environment variables. "
+                    "Get it from t.me/BotFather."
                 )
         else:
             self.token = telegram_token
@@ -50,7 +51,8 @@ class TelegramBot:
             import telebot  # type: ignore[import-untyped]
         except ImportError:
             raise ImportError(
-                "Please install `telegram_bot` first. You can install it by running "
+                "Please install `telegram_bot` first. "
+                "You can install it by running "
                 "`pip install pyTelegramBotAPI`."
             )
         self.bot = telebot.TeleBot(token=self.token)
