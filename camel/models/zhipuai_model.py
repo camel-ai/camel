@@ -60,7 +60,7 @@ class ZhipuAIModel(BaseModelBackend):
         self,
         messages: List[OpenAIMessage],
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        r"""Runs inference of ZhipuAI chat completion.
+        r"""Runs inference of OpenAI chat completion.
 
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
