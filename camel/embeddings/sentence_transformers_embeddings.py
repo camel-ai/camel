@@ -15,6 +15,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from numpy import ndarray
+
 from camel.embeddings.base import BaseEmbedding
 
 
@@ -61,9 +63,11 @@ class SentenceTransformerEncoder(BaseEmbedding[str]):
         """
         if not objs:
             raise ValueError("Input text list is empty")
-        return self.model.encode(
+        embeddings = self.model.encode(
             objs, normalize_embeddings=True, **kwargs
-        ).tolist()
+        )
+        assert isinstance(embeddings, ndarray)
+        return embeddings.tolist()
 
     def get_output_dim(self) -> int:
         r"""Returns the output dimension of the embeddings.
@@ -71,4 +75,6 @@ class SentenceTransformerEncoder(BaseEmbedding[str]):
         Returns:
             int: The dimensionality of the embeddings.
         """
-        return self.model.get_sentence_embedding_dimension()
+        output_dim = self.model.get_sentence_embedding_dimension()
+        assert isinstance(output_dim, int)
+        return output_dim
