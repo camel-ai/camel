@@ -68,11 +68,11 @@ class TelegramBot:
 
         Args:
             message (types.Message): The incoming message object.
-
-        Returns:
-            None
         """
         self.chat_agent.reset()
+
+        if not message.text:
+            return
 
         user_msg = BaseMessage.make_user_message(
             role_name="User", content=message.text
