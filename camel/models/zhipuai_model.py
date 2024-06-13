@@ -43,7 +43,7 @@ class ZhipuAIModel(BaseModelBackend):
             model_type (ModelType): Model for which a backend is created,
                 such as GLM_* series.
             model_config_dict (Dict[str, Any]): A dictionary that will
-                be fed into zhipuai.ChatCompletion.create().
+                be fed into openai.ChatCompletion.create().
              api_key (Optional[str]): The API key for authenticating with the
                 ZhipuAI service. (default: :obj:`None`)
         """
