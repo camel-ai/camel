@@ -19,7 +19,8 @@ import wikipedia
 
 from camel.functions.search_functions import (
     query_wolfram_alpha,
-    search_google_and_summarize,
+    search_duckduckgo,
+    search_google,
     search_wiki,
 )
 
@@ -67,10 +68,21 @@ def test_google_api():
     assert result.status_code == 200
 
 
+def test_duckduckgo_api():
+    # Test DuckDuckGo Instant Answer API
+
+    url = "https://api.duckduckgo.com/"
+    params = {"q": "test", "format": "json"}
+    result = requests.get(url, params=params)
+
+    assert result.status_code == 200
+
+
 def test_web_search():
     query = "What big things are happening in 2023?"
-    answer = search_google_and_summarize(query)
-
+    answer = search_google(query)
+    assert answer is not None
+    answer = search_duckduckgo(query)
     assert answer is not None
 
 

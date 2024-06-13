@@ -112,7 +112,9 @@ class Human:
 
         return content
 
-    def reduce_step(self, messages: Sequence[BaseMessage]) -> ChatAgentResponse:
+    def reduce_step(
+        self, messages: Sequence[BaseMessage]
+    ) -> ChatAgentResponse:
         r"""Performs one step of the conversation by displaying options to the
         user, getting their input, and parsing their choice.
 
