@@ -29,7 +29,7 @@ class SentenceTransformerEncoder(BaseEmbedding[str]):
     def __init__(
         self,
         model_name: str = "intfloat/e5-large-v2",
-        prompts: dict[str, str] | None = None,
+        **kwargs,
     ):
         r"""Initializes the: obj: `SentenceTransformerEmbedding` class
         with the specified transformer model.
@@ -37,13 +37,12 @@ class SentenceTransformerEncoder(BaseEmbedding[str]):
         Args:
             model_name (str, optional): The name of the model to use.
                 (default: :obj:`intfloat/e5-large-v2`)
-            prompts (dict, optional): Specific text prompts to achieve
-                optimal performance for some text embedding models.
-                (default: :obj:`None`)
+            **kwargs (optional): Additional arguments of
+                :class:`SentenceTransformer`, such as :obj:`prompts` etc.
         """
         from sentence_transformers import SentenceTransformer
 
-        self.model = SentenceTransformer(model_name, prompts=prompts)
+        self.model = SentenceTransformer(model_name, **kwargs)
 
     def embed_list(
         self,
