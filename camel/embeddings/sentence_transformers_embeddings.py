@@ -11,44 +11,53 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, List
+from __future__ import annotations
+
+from typing import Any
 
 from camel.embeddings.base import BaseEmbedding
 
 
 class SentenceTransformerEncoder(BaseEmbedding[str]):
-    r"""This class provides functionalities to generate embeddings
-    using a specified model from `Sentence Transformers`.
+    r"""This class provides functionalities to generate text
+    embeddings using `Sentence Transformers`.
 
     References:
         https://www.sbert.net/
     """
 
-    def __init__(self, model_name: str = 'intfloat/e5-large-v2'):
+    def __init__(
+        self,
+        model_name: str = "intfloat/e5-large-v2",
+        prompts: dict[str, str] | None = None,
+    ):
         r"""Initializes the: obj: `SentenceTransformerEmbedding` class
         with the specified transformer model.
 
         Args:
             model_name (str, optional): The name of the model to use.
-                                        Defaults to `intfloat/e5-large-v2`.
+                (default: :obj:`intfloat/e5-large-v2`)
+            prompts (dict, optional): Specific text prompts to achieve
+                optimal performance for some text embedding models.
+                (default: :obj:`None`)
         """
         from sentence_transformers import SentenceTransformer
 
-        self.model = SentenceTransformer(model_name)
+        self.model = SentenceTransformer(model_name, prompts=prompts)
 
     def embed_list(
         self,
-        objs: List[str],
+        objs: list[str],
         **kwargs: Any,
-    ) -> List[List[float]]:
+    ) -> list[list[float]]:
         r"""Generates embeddings for the given texts using the model.
 
         Args:
-            objs (List[str]): The texts for which to generate the
-            embeddings.
+            objs (list[str]): The texts for which to generate the
+                embeddings.
 
         Returns:
-            List[List[float]]: A list that represents the generated embedding
+            list[list[float]]: A list that represents the generated embedding
                 as a list of floating-point numbers.
         """
         if not objs:
