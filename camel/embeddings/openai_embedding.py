@@ -50,9 +50,11 @@ class OpenAIEmbedding(BaseEmbedding[str]):
         if not model_type.is_openai:
             raise ValueError("Invalid OpenAI embedding model type.")
         self.model_type = model_type
-        self.output_dim = (
-            model_type.output_dim if dimensions == NOT_GIVEN else dimensions
-        )
+        if dimensions == NOT_GIVEN:
+            self.output_dim = model_type.output_dim
+        else:
+            assert isinstance(dimensions, int)
+            self.output_dim = dimensions
         self._api_key = api_key or os.environ.get("OPENAI_API_KEY")
         self.client = OpenAI(timeout=60, max_retries=3, api_key=self._api_key)
 
