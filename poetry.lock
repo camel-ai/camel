@@ -4434,6 +4434,32 @@ files = [
 ]
 
 [[package]]
+name = "pytelegrambotapi"
+version = "4.19.1"
+description = "Python Telegram bot api."
+optional = true
+python-versions = ">=3.8"
+files = [
+    {file = "pytelegrambotapi-4.19.1-py3-none-any.whl", hash = "sha256:22b0835f06a79eea93cc2c29079e4bb10f706b282ae10a3e537557b4679b12f2"},
+    {file = "pytelegrambotapi-4.19.1.tar.gz", hash = "sha256:cd5e5188a49f50a5c1fb1d8d195a852a05ae3525d21f26fbe8365cb408ee1342"},
+]
+
+[package.dependencies]
+requests = "*"
+
+[package.extras]
+aiohttp = ["aiohttp"]
+aioredis = ["aioredis"]
+coloredlogs = ["coloredlogs"]
+fastapi = ["fastapi"]
+json = ["ujson"]
+pil = ["pillow"]
+psutil = ["psutil"]
+redis = ["redis (>=3.4.1)"]
+uvicorn = ["uvicorn"]
+watchdog = ["watchdog"]
+
+[[package]]
 name = "pytesseract"
 version = "0.3.10"
 description = "Python-tesseract is a python wrapper for Google's Tesseract-OCR"
@@ -7367,4 +7393,4 @@ vector-databases = ["pymilvus", "qdrant-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<3.12"
-content-hash = "99d3e2383e7f5667a52a5c015ffbc9384be61fa73e0ea39fb2a788cc6ee2cf9e"
+content-hash = "5509468c11a6c9f34eb104fac711c81cc22167e82ba8044ab4b65fe202f59d65"
