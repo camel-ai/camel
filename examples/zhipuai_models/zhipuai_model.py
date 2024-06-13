@@ -25,8 +25,8 @@ sys_msg = BaseMessage.make_assistant_message(
 
 # Set model config
 model_config = ChatGPTConfig(
-    temperature=0.2,top_p=0.9
-) # temperature=,top_p here can not be 1 or 0.
+    temperature=0.2, top_p=0.9
+)  # temperature=,top_p here can not be 1 or 0.
 
 # Set agent
 camel_agent = ChatAgent(
@@ -38,8 +38,8 @@ camel_agent.reset()
 
 user_msg = BaseMessage.make_user_message(
     role_name="User",
-    content="I want to practice my legs today."\
-        "Help me make a fitness and diet plan",
+    content="I want to practice my legs today."
+    "Help me make a fitness and diet plan",
 )
 
 # Get response information
