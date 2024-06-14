@@ -49,6 +49,8 @@ class OllamaModel:
         self.model_config_dict = model_config_dict
         self._url = url or os.environ.get('OPENAI_API_BASE_URL')
         self._api_key = api_key or os.environ.get("OPENAI_API_KEY")
+        # Use OpenAI cilent as interface call Ollama
+        # Reference: https://github.com/ollama/ollama/blob/main/docs/openai.md
         self._client = OpenAI(
             timeout=60,
             max_retries=3,
