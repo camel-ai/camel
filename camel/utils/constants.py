@@ -14,10 +14,12 @@
 
 
 class Constants:
-    # This value defines the default size (both width and height) for images extracted from a video.
+    # This value defines the default size (both width and height) for images
+    # extracted from a video.
     VIDEO_DEFAULT_IMAGE_SIZE = 768
 
-    # This value defines the interval (in number of frames) at which images are extracted from the video.
+    # This value defines the interval (in number of frames) at which images
+    # are extracted from the video.
     VIDEO_IMAGE_EXTRACTION_INTERVAL = 50
 
     # default plug of imageio to read video

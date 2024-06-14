@@ -41,13 +41,19 @@ class BaseMessage:
 
     Args:
         role_name (str): The name of the user or assistant role.
-        role_type (RoleType): The type of role, either :obj:`RoleType.ASSISTANT` or :obj:`RoleType.USER`.
-        meta_dict (Optional[Dict[str, str]]): Additional metadata dictionary for the message.
+        role_type (RoleType): The type of role, either :obj:`RoleType.
+            ASSISTANT` or :obj:`RoleType.USER`.
+        meta_dict (Optional[Dict[str, str]]): Additional metadata dictionary
+            for the message.
         content (str): The content of the message.
-        video_bytes (Optional[bytes]): Optional bytes of a video associated with the message. Default is None.
-        image_list (Optional[List[Image.Image]]): Optional list of PIL Image objects associated with the message. Default is None.
-        image_detail (Literal["auto", "low", "high"]): Detail level of the images associated with the message. Default is "auto".
-        video_detail (Literal["auto", "low", "high"]): Detail level of the videos associated with the message. Default is "low".
+        video_bytes (Optional[bytes]): Optional bytes of a video associated
+            with the message. Default is None.
+        image_list (Optional[List[Image.Image]]): Optional list of PIL Image
+            objects associated with the message. Default is None.
+        image_detail (Literal["auto", "low", "high"]): Detail level of the
+            images associated with the message. Default is "auto".
+        video_detail (Literal["auto", "low", "high"]): Detail level of the
+            videos associated with the message. Default is "low".
     """
 
     role_name: str
@@ -315,7 +321,10 @@ class BaseMessage:
 
             for frame in video:
                 frame_count += 1
-                if frame_count % Constants.VIDEO_IMAGE_EXTRACTION_INTERVAL == 0:
+                if (
+                    frame_count % Constants.VIDEO_IMAGE_EXTRACTION_INTERVAL
+                    == 0
+                ):
                     # convert frame to numpy array
                     frame_array = np.asarray(frame)
                     frame_image = Image.fromarray(frame_array)
