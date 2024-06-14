@@ -11,24 +11,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import pytest
-from PIL import Image
+from typing import Any
 
-from camel.types import OpenAIVisionDetailType
-from camel.utils.token_counting import count_tokens_from_image
+from camel.prompts.base import TextPrompt, TextPromptDict
+from camel.types import RoleType
 
 
-@pytest.mark.parametrize(
-    "width,height,detail,token_cost",
-    [
-        (1024, 1024, OpenAIVisionDetailType.HIGH, 765),
-        (1024, 1024, OpenAIVisionDetailType.AUTO, 765),
-        (2048, 4096, OpenAIVisionDetailType.HIGH, 1105),
-        (2048, 4096, OpenAIVisionDetailType.LOW, 85),
-    ],
-)
-def test_openai_count_token_from_image(
-    width: int, height: int, detail: OpenAIVisionDetailType, token_cost: int
-):
-    image = Image.new("RGB", (width, height), "black")
-    assert count_tokens_from_image(image, detail) == token_cost
+# flake8: noqa :E501
+class DescriptionVideoPromptTemplateDict(TextPromptDict):
+    ASSISTANT_PROMPT = TextPrompt(
+        """You are a master of video analysis. 
+        Please provide a shot description of the content of the current video."""
+    )
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.update(
+            {
+                RoleType.ASSISTANT: self.ASSISTANT_PROMPT,
+            }
+        )

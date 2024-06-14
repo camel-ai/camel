@@ -11,24 +11,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import pytest
-from PIL import Image
-
-from camel.types import OpenAIVisionDetailType
-from camel.utils.token_counting import count_tokens_from_image
 
 
-@pytest.mark.parametrize(
-    "width,height,detail,token_cost",
-    [
-        (1024, 1024, OpenAIVisionDetailType.HIGH, 765),
-        (1024, 1024, OpenAIVisionDetailType.AUTO, 765),
-        (2048, 4096, OpenAIVisionDetailType.HIGH, 1105),
-        (2048, 4096, OpenAIVisionDetailType.LOW, 85),
-    ],
-)
-def test_openai_count_token_from_image(
-    width: int, height: int, detail: OpenAIVisionDetailType, token_cost: int
-):
-    image = Image.new("RGB", (width, height), "black")
-    assert count_tokens_from_image(image, detail) == token_cost
+class Constants:
+    # This value defines the default size (both width and height) for images
+    # extracted from a video.
+    VIDEO_DEFAULT_IMAGE_SIZE = 768
+
+    # This value defines the interval (in number of frames) at which images
+    # are extracted from the video.
+    VIDEO_IMAGE_EXTRACTION_INTERVAL = 50
+
+    # default plug of imageio to read video
+    VIDEO_DEFAULT_PLUG_PYAV = "pyav"
