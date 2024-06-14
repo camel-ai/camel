@@ -22,6 +22,7 @@ from camel.types import ModelType, RoleType
 
 class RoleAssignmentAgent(ChatAgent):
     r"""An agent that generates role names based on the task prompt.
+
     Attributes:
         role_assignment_prompt (TextPrompt): A prompt for the agent to generate
         role names.
@@ -115,7 +116,9 @@ class RoleAssignmentAgent(ChatAgent):
         ]
 
         if len(role_names) != num_roles or len(role_descriptions) != num_roles:
-            raise RuntimeError("Got None or insufficient information of roles.")
+            raise RuntimeError(
+                "Got None or insufficient information of roles."
+            )
         if terminated:
             raise RuntimeError("Role assignment failed.")
 

@@ -45,10 +45,11 @@ def detect_image_obj(image_path: str) -> None:
         assistant_sys_msg,
         model_type=ModelType.GPT_4_TURBO,
     )
+    image_list = [Image.open(image_path)]
     user_msg = BaseMessage.make_user_message(
         role_name="User",
         content="Please start the object detection for following image!",
-        image=Image.open(image_path),
+        image_list=image_list,
         image_detail="high",
     )
     assistant_response = agent.step(user_msg)

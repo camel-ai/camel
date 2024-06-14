@@ -177,7 +177,9 @@ class UnstructuredIO:
 
             # Check if the file exists
             if not os.path.exists(input_path):
-                raise FileNotFoundError(f"The file {input_path} was not found.")
+                raise FileNotFoundError(
+                    f"The file {input_path} was not found."
+                )
 
             # Read the file
             try:
@@ -185,7 +187,9 @@ class UnstructuredIO:
                     elements = partition(file=f, **kwargs)
                     return elements
             except Exception as e:
-                raise Exception("Failed to parse the unstructured file.") from e
+                raise Exception(
+                    "Failed to parse the unstructured file."
+                ) from e
 
     def clean_text_data(
         self,
@@ -425,9 +429,8 @@ class UnstructuredIO:
                 els, kw.get('metadata', [])
             ),
             "stage_for_baseplate": baseplate.stage_for_baseplate,
-            "stage_for_datasaur": lambda els, **kw: datasaur.stage_for_datasaur(
-                els, kw.get('entities', [])
-            ),
+            "stage_for_datasaur": lambda els,
+            **kw: datasaur.stage_for_datasaur(els, kw.get('entities', [])),
             "stage_for_label_box": lambda els,
             **kw: label_box.stage_for_label_box(els, **kw),
             "stage_for_label_studio": lambda els,

@@ -282,7 +282,9 @@ def api_keys_required(*required_keys: str) -> Callable[[F], F]:
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             missing_keys = [k for k in required_keys if k not in os.environ]
             if missing_keys:
-                raise ValueError(f"Missing API keys: {', '.join(missing_keys)}")
+                raise ValueError(
+                    f"Missing API keys: {', '.join(missing_keys)}"
+                )
             return func(*args, **kwargs)
 
         return cast(F, wrapper)
@@ -334,3 +336,63 @@ def to_pascal(snake: str) -> str:
 
 
 PYDANTIC_V2 = pydantic.VERSION.startswith("2.")
+
+
+def text_extract_from_web(url: str) -> str:
+    r"""Get the text information from given url.
+
+    Args:
+        url (str): The website you want to search.
+
+    Returns:
+        str: All texts extract from the web.
+    """
+    try:
+        import requests
+        from newspaper import Article
+
+        # Request the target page
+        article = Article(url)
+        article.download()
+        article.parse()
+        text = article.text
+
+    except requests.RequestException as e:
+        text = f"Can't access {url}, error: {e}"
+
+    except Exception as e:
+        text = f"Can't extract text from {url}, error: {e}"
+
+    return text
+
+
+def create_chunks(text: str, n: int) -> List[str]:
+    r"""Returns successive n-sized chunks from provided text. Split a text
+    into smaller chunks of size n".
+
+    Args:
+        text (str): The text to be split.
+        n (int): The max length of a single chunk.
+
+    Returns:
+        List[str]: A list of split texts.
+    """
+
+    chunks = []
+    i = 0
+    while i < len(text):
+        # Find the nearest end of sentence within a range of 0.5 * n
+        # and 1.5 * n tokens
+        j = min(i + int(1.2 * n), len(text))
+        while j > i + int(0.8 * n):
+            # Decode the tokens and check for full stop or newline
+            chunk = text[i:j]
+            if chunk.endswith(".") or chunk.endswith("\n"):
+                break
+            j -= 1
+        # If no end of sentence found, use n tokens as the chunk size
+        if j == i + int(0.8 * n):
+            j = min(i + n, len(text))
+        chunks.append(text[i:j])
+        i = j
+    return chunks
