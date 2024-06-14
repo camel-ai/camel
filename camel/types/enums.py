@@ -191,6 +191,7 @@ class TaskType(Enum):
     ROLE_DESCRIPTION = "role_description"
     OBJECT_RECOGNITION = "object_recognition"
     DEFAULT = "default"
+    DESCRIPTE_VIDEO = "descripte_video"
 
 
 class VectorDistance(Enum):
@@ -238,7 +239,7 @@ class OpenAIImageType(Enum, metaclass=OpenAIImageTypeMeta):
     GIF = "gif"
 
 
-class OpenAIImageDetailType(Enum):
+class OpenAIVisionDetailType(Enum):
     AUTO = "auto"
     LOW = "low"
     HIGH = "high"
@@ -253,6 +254,11 @@ class OpenAPIName(Enum):
     COURSERA = "coursera"
     KLARNA = "klarna"
     SPEAK = "speak"
+    NASA_APOD = "nasa_apod"
+    BIZTOC = "biztoc"
+    CREATE_QR_CODE = "create_qr_code"
+    OUTSCHOOL = "outschool"
+    WEB_SCRAPER = "web_scraper"
 
 
 class AudioModelType(Enum):

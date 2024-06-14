@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 
-from anthropic._types import NOT_GIVEN, NotGiven
+from anthropic import NOT_GIVEN, NotGiven
 
 from camel.configs.base_config import BaseConfig
 

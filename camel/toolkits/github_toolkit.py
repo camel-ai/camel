@@ -48,7 +48,8 @@ class GithubIssue:
             body (str): The body/content of the GitHub issue.
             number (int): The issue number.
             file_path (str): The path of the file associated with the issue.
-            file_content (str): The content of the file associated with the issue.
+            file_content (str): The content of the file associated with the
+                issue.
         """
         self.title = title
         self.body = body
@@ -60,7 +61,8 @@ class GithubIssue:
         r"""Returns a summary of the issue.
 
         Returns:
-            str: A string containing the title, body, number, file path, and file content of the issue.
+            str: A string containing the title, body, number, file path, and
+                file content of the issue.
         """
         return (
             f"Title: {self.title}\n"
@@ -72,15 +74,17 @@ class GithubIssue:
 
 
 class GithubToolkit(BaseToolkit):
-    r"""A class representing a toolkit for interacting with GitHub repositories.
+    r"""A class representing a toolkit for interacting with GitHub
+    repositories.
 
-    This class provides methods for retrieving open issues, retrieving specific issues,
-    and creating pull requests in a GitHub repository.
+    This class provides methods for retrieving open issues, retrieving
+        specific issues, and creating pull requests in a GitHub repository.
 
     Args:
         repo_name (str): The name of the GitHub repository.
-        access_token (str, optional): The access token to authenticate with GitHub.
-            If not provided, it will be obtained using the `get_github_access_token` method.
+        access_token (str, optional): The access token to authenticate with
+            GitHub. If not provided, it will be obtained using the
+            `get_github_access_token` method.
     """
 
     def __init__(
@@ -90,8 +94,9 @@ class GithubToolkit(BaseToolkit):
 
         Args:
             repo_name (str): The name of the GitHub repository.
-            access_token (str, optional): The access token to authenticate with GitHub.
-                If not provided, it will be obtained using the `get_github_access_token` method.
+            access_token (str, optional): The access token to authenticate
+                with GitHub. If not provided, it will be obtained using the
+                `get_github_access_token` method.
         """
         if access_token is None:
             access_token = self.get_github_access_token()
@@ -107,10 +112,12 @@ class GithubToolkit(BaseToolkit):
         self.repo = self.github.get_repo(repo_name)
 
     def get_tools(self) -> List[OpenAIFunction]:
-        r"""Returns a list of OpenAIFunction objects representing the functions in the toolkit.
+        r"""Returns a list of OpenAIFunction objects representing the
+        functions in the toolkit.
 
         Returns:
-            List[OpenAIFunction]: A list of OpenAIFunction objects representing the functions in the toolkit.
+            List[OpenAIFunction]: A list of OpenAIFunction objects
+                representing the functions in the toolkit.
         """
         return [
             OpenAIFunction(self.retrieve_issue_list),
@@ -125,15 +132,16 @@ class GithubToolkit(BaseToolkit):
             str: A string containing the GitHub access token.
 
         Raises:
-            ValueError: If the API key or secret is not found in the environment variables.
+            ValueError: If the API key or secret is not found in the
+                environment variables.
         """
         # Get `GITHUB_ACCESS_TOKEN` here: https://github.com/settings/tokens
         GITHUB_ACCESS_TOKEN = os.environ.get("GITHUB_ACCESS_TOKEN")
 
         if not GITHUB_ACCESS_TOKEN:
             raise ValueError(
-                "`GITHUB_ACCESS_TOKEN` not found in environment variables. Get it "
-                "here: `https://github.com/settings/tokens`."
+                "`GITHUB_ACCESS_TOKEN` not found in environment variables. Get"
+                " it here: `https://github.com/settings/tokens`."
             )
         return GITHUB_ACCESS_TOKEN
 
@@ -151,7 +159,7 @@ class GithubToolkit(BaseToolkit):
                 number=issue.number,
                 file_path=issue.labels[
                     0
-                ].name,  # for now we require file path to be the first label in the PR
+                ].name,  # we require file path to be the first label in the PR
                 file_content=self.retrieve_file_content(issue.labels[0].name),
             )
             for issue in issues
@@ -186,19 +194,23 @@ class GithubToolkit(BaseToolkit):
     ) -> str:
         r"""Creates a pull request.
 
-        This function creates a pull request in specified repository, which updates a
-        file in the specific path with new content. The pull request description
-        contains information about the issue title and number.
+        This function creates a pull request in specified repository, which
+        updates a file in the specific path with new content. The pull request
+        description contains information about the issue title and number.
 
         Args:
-            file_path (str): The path of the file to be updated in the repository.
+            file_path (str): The path of the file to be updated in the
+                repository.
             new_content (str): The specified new content of the specified file.
-            pr_title (str): The title of the issue that is solved by this pull request.
+            pr_title (str): The title of the issue that is solved by this pull
+                request.
             body (str): The commit message for the pull request.
-            branch_name (str): The name of the branch to create and submit the pull request from.
+            branch_name (str): The name of the branch to create and submit the
+                pull request from.
 
         Returns:
-            str: A formatted report of whether the pull request was created successfully or not.
+            str: A formatted report of whether the pull request was created
+                successfully or not.
         """
         sb = self.repo.get_branch(self.repo.default_branch)
         self.repo.create_git_ref(

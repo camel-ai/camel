@@ -99,7 +99,9 @@ class Neo4jGraph(BaseGraphStorage):
                 "Please install it with `pip install neo4j`."
             )
 
-        self.driver = neo4j.GraphDatabase.driver(url, auth=(username, password))
+        self.driver = neo4j.GraphDatabase.driver(
+            url, auth=(username, password)
+        )
         self.database = database
         self.timeout = timeout
         self.truncate = truncate
@@ -373,8 +375,8 @@ class Neo4jGraph(BaseGraphStorage):
         with self.driver.session(database=self.database) as session:
             session.run(
                 (
-                    "MATCH (n1:{})-[r:{}]->(n2:{}) WHERE n1.id = $subj AND n2.id"
-                    " = $obj DELETE r"
+                    "MATCH (n1:{})-[r:{}]->(n2:{}) WHERE n1.id = $subj AND"
+                    " n2.id = $obj DELETE r"
                 ).format(
                     BASE_ENTITY_LABEL.replace("_", ""),
                     rel,

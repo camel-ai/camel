@@ -150,6 +150,7 @@ class OpenSourceModel(BaseModelBackend):
     def stream(self) -> bool:
         r"""Returns whether the model is in stream mode,
             which sends partial results each time.
+
         Returns:
             bool: Whether the model is in stream mode.
         """
