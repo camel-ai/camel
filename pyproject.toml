@@ -40,6 +40,9 @@ docstring-parser = "^0.15"
 pydantic = ">=1.9,<3"
 curl_cffi = "0.6.2"
 
+# model-platforms
+litellm = { version = "^1.38.1", optional = true }
+
 # huggingface-agent
 transformers = { version = "^4", optional = true }
 diffusers = { version = "^0", optional = true }
@@ -93,6 +96,11 @@ mock = { version = "^5", optional = true}
 
 [tool.poetry.extras]
 test = ["pytest", "mock", "pytest-asyncio"]
+
+model-platforms = [
+    "anthropic",
+    "litellm",
+]
 
 huggingface-agent = [
     "transformers",
@@ -176,6 +184,7 @@ all = [
     "imageio",
     "slack-sdk",
     "pydub",
+    "pillow",
     # vector-database
     "qdrant-client",
     "pymilvus",
@@ -187,7 +196,8 @@ all = [
     "neo4j",
     # retrievers
     "rank-bm25",
-    "pillow",
+    # model platforms
+    "litellm",
 ]
 
 [tool.poetry.group.dev]
@@ -309,7 +319,8 @@ module = [
     "slack-sdk",
     "pydub",
     "pygithub",
+    "litellm",
     "pyTelegramBotAPI",
-    "discord.py"
+    "discord.py",
 ]
 ignore_missing_imports = true

@@ -301,6 +301,58 @@ class AnthropicTokenCounter(BaseTokenCounter):
         return self.client.count_tokens(prompt)
 
 
+class LiteLLMTokenCounter:
+    def __init__(self, model_type: str):
+        r"""Constructor for the token counter for LiteLLM models.
+
+        Args:
+            model_type (str): Model type for which tokens will be counted.
+        """
+        self.model_type = model_type
+        self._token_counter = None
+        self._completion_cost = None
+
+    @property
+    def token_counter(self):
+        if self._token_counter is None:
+            from litellm import token_counter
+
+            self._token_counter = token_counter
+        return self._token_counter
+
+    @property
+    def completion_cost(self):
+        if self._completion_cost is None:
+            from litellm import completion_cost
+
+            self._completion_cost = completion_cost
+        return self._completion_cost
+
+    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
+        r"""Count number of tokens in the provided message list using
+        the tokenizer specific to this type of model.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in LiteLLM API format.
+
+        Returns:
+            int: Number of tokens in the messages.
+        """
+        return self.token_counter(model=self.model_type, messages=messages)
+
+    def calculate_cost_from_response(self, response: dict) -> float:
+        r"""Calculate the cost of the given completion response.
+
+        Args:
+            response (dict): The completion response from LiteLLM.
+
+        Returns:
+            float: The cost of the completion call in USD.
+        """
+        return self.completion_cost(completion_response=response)
+
+
 def count_tokens_from_image(
     image: Image.Image, detail: OpenAIVisionDetailType
 ) -> int:
