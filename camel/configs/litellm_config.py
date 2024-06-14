@@ -26,34 +26,57 @@ class LiteLLMConfig(BaseConfig):
 
     Args:
         model (str): The name of the language model to use for text completion.
-        messages (List): A list of message objects representing the conversation context. (default: [])
-        timeout (Optional[Union[float, str]], optional): Request timeout. (default: None)
-        temperature (Optional[float], optional): Temperature parameter for controlling randomness. (default: None)
-        top_p (Optional[float], optional): Top-p parameter for nucleus sampling. (default: None)
-        n (Optional[int], optional): Number of completions to generate. (default: None)
-        stream (Optional[bool], optional): Whether to return a streaming response. (default: None)
-        stream_options (Optional[dict], optional): Options for the streaming response. (default: None)
-        stop (Optional[Union[str, List[str]]], optional): Sequences where the API will stop generating further tokens. (default: None)
-        max_tokens (Optional[int], optional): Maximum number of tokens to generate. (default: None)
-        presence_penalty (Optional[float], optional): Penalize new tokens based on their existence in the text so far. (default: None)
-        frequency_penalty (Optional[float], optional): Penalize new tokens based on their frequency in the text so far. (default: None)
-        logit_bias (Optional[dict], optional): Modify the probability of specific tokens appearing in the completion. (default: None)
-        user (Optional[str], optional): A unique identifier representing the end-user. (default: None)
-        response_format (Optional[dict], optional): Response format parameters. (default: None)
+        messages (List): A list of message objects representing the
+            conversation context. (default: [])
+        timeout (Optional[Union[float, str]], optional): Request timeout.
+            (default: None)
+        temperature (Optional[float], optional): Temperature parameter for
+            controlling randomness. (default: None)
+        top_p (Optional[float], optional): Top-p parameter for nucleus
+            sampling. (default: None)
+        n (Optional[int], optional): Number of completions to generate.
+            (default: None)
+        stream (Optional[bool], optional): Whether to return a streaming
+            response. (default: None)
+        stream_options (Optional[dict], optional): Options for the streaming
+            response. (default: None)
+        stop (Optional[Union[str, List[str]]], optional): Sequences where the
+            API will stop generating further tokens. (default: None)
+        max_tokens (Optional[int], optional): Maximum number of tokens to
+            generate. (default: None)
+        presence_penalty (Optional[float], optional): Penalize new tokens
+            based on their existence in the text so far. (default: None)
+        frequency_penalty (Optional[float], optional): Penalize new tokens
+            based on their frequency in the text so far. (default: None)
+        logit_bias (Optional[dict], optional): Modify the probability of
+            specific tokens appearing in the completion. (default: None)
+        user (Optional[str], optional): A unique identifier representing the
+            end-user. (default: None)
+        response_format (Optional[dict], optional): Response format
+            parameters. (default: None)
         seed (Optional[int], optional): Random seed. (default: None)
         tools (Optional[List], optional): List of tools. (default: None)
-        tool_choice (Optional[Union[str, dict]], optional): Tool choice parameters. (default: None)
-        logprobs (Optional[bool], optional): Whether to return log probabilities of the output tokens. (default: None)
-        top_logprobs (Optional[int], optional): Number of most likely tokens to return at each token position. (default: None)
+        tool_choice (Optional[Union[str, dict]], optional): Tool choice
+            parameters. (default: None)
+        logprobs (Optional[bool], optional): Whether to return log
+            probabilities of the output tokens. (default: None)
+        top_logprobs (Optional[int], optional): Number of most likely tokens
+            to return at each token position. (default: None)
         deployment_id (Optional[str], optional): Deployment ID. (default: None)
-        extra_headers (Optional[dict], optional): Additional headers for the request. (default: None)
-        base_url (Optional[str], optional): Base URL for the API. (default: None)
+        extra_headers (Optional[dict], optional): Additional headers for the
+            request. (default: None)
+        base_url (Optional[str], optional): Base URL for the API. (default:
+            None)
         api_version (Optional[str], optional): API version. (default: None)
         api_key (Optional[str], optional): API key. (default: None)
-        model_list (Optional[list], optional): List of API base, version, keys. (default: None)
-        mock_response (Optional[str], optional): Mock completion response for testing or debugging. (default: None)
-        custom_llm_provider (Optional[str], optional): Non-OpenAI LLM provider. (default: None)
-        max_retries (Optional[int], optional): Maximum number of retries. (default: None)
+        model_list (Optional[list], optional): List of API base, version,
+            keys. (default: None)
+        mock_response (Optional[str], optional): Mock completion response for
+            testing or debugging. (default: None)
+        custom_llm_provider (Optional[str], optional): Non-OpenAI LLM
+            provider. (default: None)
+        max_retries (Optional[int], optional): Maximum number of retries.
+            (default: None)
     """
 
     model: str = "gpt-3.5-turbo"
