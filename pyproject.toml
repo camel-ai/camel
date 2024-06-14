@@ -35,9 +35,10 @@ colorama = "^0"
 jsonschema = "^4"
 protobuf = "^4"
 pathlib = "^1.0.1"   
-anthropic = "^0.21.3"
+anthropic = "^0.28.0"
 docstring-parser = "^0.15"
 pydantic = ">=1.9,<3"
+curl_cffi = "0.6.2"
 
 # huggingface-agent
 transformers = { version = "^4", optional = true }
@@ -54,6 +55,8 @@ beautifulsoup4 = { version = "^4", optional = true }
 docx2txt = { version = "^0.8", optional = true }
 PyMuPDF = { version = "^1.22.5", optional = true }
 wikipedia = { version = "^1", optional = true }
+duckduckgo-search = { version = "^6.1.0", optional = true }
+newspaper3k = {version = "^0.2.8", optional = true}
 wolframalpha = { version = "^5.0.0", optional = true }
 pyowm = { version = "^3.3.0", optional = true }
 googlemaps = { version = "^4.10.0", optional = true }
@@ -66,6 +69,8 @@ slack-sdk = { version = "^3.27.2", optional = true }
 pydub = { version = "^0.25.1", optional = true }
 pygithub = { version = "^2.3.0", optional = true }
 imageio = { version = "^2.34.1", optional = true }
+pyTelegramBotAPI = { version = "^4.18.0", optional = true }
+"discord.py" = { version = "^2.3.2", optional = true }
 
 # encoders
 sentence-transformers = { version = "^2.2.2", optional = true }
@@ -109,6 +114,8 @@ tools = [
     "docx2txt",
     "PyMuPDF",
     "wikipedia",
+    "duckduckgo-search",
+    "newspaper3k",
     "wolframalpha",
     "pyowm",
     "googlemaps",
@@ -121,6 +128,8 @@ tools = [
     "slack-sdk",
     "pydub",
     "pygithub",
+    "pyTelegramBotAPI",
+    "discord.py",
 ]
 
 vector-databases = [
@@ -151,8 +160,12 @@ all = [
     "beautifulsoup4",
     "docx2txt",
     "pygithub",
+    "pyTelegramBotAPI",
+    "discord.py",
     "PyMuPDF",
     "wikipedia",
+    "duckduckgo-search",
+    "newspaper3k",
     "wolframalpha",
     "pyowm",
     "googlemaps",
@@ -209,7 +222,7 @@ recommonmark = "*"
 docutils = "<0.20.0"
 
 [tool.ruff]
-line-length = 80
+line-length = 79
 fix = true
 target-version = "py39"
 
@@ -223,7 +236,9 @@ extend-select = [
     "C4",   # flake8-comprehensions
     "PGH",  # pygrep-hooks
     "RUF",  # ruff
+    "E",
 ]
+
 ignore = [
     "B028", # Warning without stacklevel
     "B904", # use 'raise ... from err'
@@ -233,6 +248,9 @@ ignore = [
     "C408", # we have used lots of dict(...) instead of literal
 ]
 
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
 [tool.ruff.lint.isort]
 known-first-party = ["camel"]
 
@@ -240,6 +258,7 @@ known-first-party = ["camel"]
 pythonpath = ["."]
 addopts = ["--strict-markers"]
 markers = [
+    "asyncio: mark a test as asyncio-based.",
     "very_slow: mark a very slow test to run only in full test mode",
     "model_backend: for tests that require OpenAI API key or a local LLM",
 ]
@@ -266,6 +285,8 @@ module = [
     "huggingface_hub",
     "huggingface_hub.utils._errors",
     "wikipedia",
+    "duckduckgo_search",
+    "newspaper",
     "wolframalpha",
     "pyowm",
     "googlemaps",
@@ -287,7 +308,8 @@ module = [
     "pillow",
     "slack-sdk",
     "pydub",
-    "pygithub"
-
+    "pygithub",
+    "pyTelegramBotAPI",
+    "discord.py"
 ]
 ignore_missing_imports = true

@@ -26,37 +26,49 @@ from camel.storages.graph_storages.graph_element import (
 from camel.types import ModelType, RoleType
 
 text_prompt = """
-You are tasked with extracting nodes and relationships from given content and structures them into Node and Relationship objects. Here's the outline of what you needs to do:
+You are tasked with extracting nodes and relationships from given content and 
+structures them into Node and Relationship objects. Here's the outline of what 
+you needs to do:
 
 Content Extraction:
-You should be able to process input content and identify entities mentioned within it.
-Entities can be any noun phrases or concepts that represent distinct entities in the context of the given content.
+You should be able to process input content and identify entities mentioned 
+within it.
+Entities can be any noun phrases or concepts that represent distinct entities 
+in the context of the given content.
 
 Node Extraction:
 For each identified entity, you should create a Node object.
 Each Node object should have a unique identifier (id) and a type (type).
-Additional properties associated with the node can also be extracted and stored.
+Additional properties associated with the node can also be extracted and 
+stored.
 
 Relationship Extraction:
 You should identify relationships between entities mentioned in the content.
 For each relationship, create a Relationship object.
-A Relationship object should have a subject (subj) and an object (obj) which are Node objects representing the entities involved in the relationship.
-Each relationship should also have a type (type), and additional properties if applicable.
+A Relationship object should have a subject (subj) and an object (obj) which 
+are Node objects representing the entities involved in the relationship.
+Each relationship should also have a type (type), and additional properties if 
+applicable.
 
 Output Formatting:
-The extracted nodes and relationships should be formatted as instances of the provided Node and Relationship classes.
+The extracted nodes and relationships should be formatted as instances of the 
+provided Node and Relationship classes.
 Ensure that the extracted data adheres to the structure defined by the classes.
-Output the structured data in a format that can be easily validated against the provided code.
+Output the structured data in a format that can be easily validated against 
+the provided code.
 
 Instructions for you:
 Read the provided content thoroughly.
-Identify distinct entities mentioned in the content and categorize them as nodes.
-Determine relationships between these entities and represent them as directed relationships.
+Identify distinct entities mentioned in the content and categorize them as 
+nodes.
+Determine relationships between these entities and represent them as directed 
+relationships.
 Provide the extracted nodes and relationships in the specified format below.
 Example for you:
 
 Example Content:
-"John works at XYZ Corporation. He is a software engineer. The company is located in New York City."
+"John works at XYZ Corporation. He is a software engineer. The company is 
+located in New York City."
 
 Expected Output:
 
@@ -68,18 +80,23 @@ Node(id='New York City', type='Location', properties={'agent_generated'})
 
 Relationships:
 
-Relationship(subj=Node(id='John', type='Person'), obj=Node(id='XYZ Corporation', type='Organization'), type='WorksAt', properties={'agent_generated'})
-Relationship(subj=Node(id='John', type='Person'), obj=Node(id='New York City', type='Location'), type='ResidesIn', properties={'agent_generated'})
+Relationship(subj=Node(id='John', type='Person'), obj=Node(id='XYZ 
+Corporation', type='Organization'), type='WorksAt', properties=
+{'agent_generated'})
+Relationship(subj=Node(id='John', type='Person'), obj=Node(id='New York City', 
+type='Location'), type='ResidesIn', properties={'agent_generated'})
 
 ===== TASK =====
-Please extracts nodes and relationships from given content and structures them into Node and Relationship objects. 
+Please extracts nodes and relationships from given content and structures them 
+into Node and Relationship objects. 
 
 {task}
 """
 
 
 class KnowledgeGraphAgent(ChatAgent):
-    r"""An agent that can extract node and relationship information for different entities from given `Element` content.
+    r"""An agent that can extract node and relationship information for
+    different entities from given `Element` content.
 
     Attributes:
         task_prompt (TextPrompt): A prompt for the agent to extract node and
@@ -106,7 +123,8 @@ class KnowledgeGraphAgent(ChatAgent):
             content="Your mission is to transform unstructured content "
             "intostructured graph data. Extract nodes and relationships with "
             "precision, and let the connections unfold. Your graphs will "
-            "illuminate the hidden connections within the chaos of information.",
+            "illuminate the hidden connections within the chaos of "
+            "information.",
         )
         super().__init__(system_message, model_type, model_config)
 
@@ -124,7 +142,8 @@ class KnowledgeGraphAgent(ChatAgent):
 
         Returns:
             Union[str, GraphElement]: The extracted node and relationship
-                information. If `parse_graph_elements` is `True` then return `GraphElement`, else return `str`.
+                information. If `parse_graph_elements` is `True` then return
+                `GraphElement`, else return `str`.
         """
         self.reset()
         self.element = element
@@ -191,7 +210,11 @@ class KnowledgeGraphAgent(ChatAgent):
 
         # Regular expressions to extract nodes and relationships
         node_pattern = r"Node\(id='(.*?)', type='(.*?)', properties=(.*?)\)"
-        rel_pattern = r"Relationship\(subj=Node\(id='(.*?)', type='(.*?)'\), obj=Node\(id='(.*?)', type='(.*?)'\), type='(.*?)', properties=\{(.*?)\}\)"
+        rel_pattern = (
+            r"Relationship\(subj=Node\(id='(.*?)', type='(.*?)'\), "
+            r"obj=Node\(id='(.*?)', type='(.*?)'\), type='(.*?)', "
+            r"properties=\{(.*?)\}\)"
+        )
 
         nodes = {}
         relationships = []

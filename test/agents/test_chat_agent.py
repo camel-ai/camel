@@ -445,7 +445,8 @@ async def test_tool_calling_async():
         role_name="User",
         role_type=RoleType.USER,
         meta_dict=dict(),
-        content="Call the async sleep which is specified in function list with 1 second.",
+        content="Call the async sleep which is specified in function list with"
+        " 1 second.",
     )
     agent_response = await agent.step_async(user_msg)
 

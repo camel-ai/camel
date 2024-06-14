@@ -14,8 +14,7 @@
 import os
 from typing import Any, Dict, List, Optional
 
-from anthropic import Anthropic
-from anthropic._types import NOT_GIVEN
+from anthropic import NOT_GIVEN, Anthropic
 
 from camel.configs import ANTHROPIC_API_PARAMS
 from camel.messages import OpenAIMessage

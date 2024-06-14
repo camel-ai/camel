@@ -22,7 +22,8 @@ from camel.types import RoleType, TaskType
 def test_system_message_generator():
     sys_msg_generator = SystemMessageGenerator(task_type=TaskType.AI_SOCIETY)
     sys_msg_generator.from_dict(
-        dict(assistant_role="doctor"), role_tuple=("doctor", RoleType.ASSISTANT)
+        dict(assistant_role="doctor"),
+        role_tuple=("doctor", RoleType.ASSISTANT),
     )
     sys_msg_generator.from_dict(
         dict(user_role="doctor"), role_tuple=("doctor", RoleType.USER)

@@ -25,7 +25,9 @@ from camel.prompts.evaluation import (
     EvaluationPromptTemplateDict,
 )
 from camel.prompts.misalignment import MisalignmentPromptTemplateDict
-from camel.prompts.object_recognition import ObjectRecognitionPromptTemplateDict
+from camel.prompts.object_recognition import (
+    ObjectRecognitionPromptTemplateDict,
+)
 from camel.prompts.role_description_prompt_template import (
     RoleDescriptionPromptTemplateDict,
 )
@@ -55,7 +57,7 @@ class TaskPromptTemplateDict(Dict[Any, TextPromptDict]):
                 TaskType.MISALIGNMENT: MisalignmentPromptTemplateDict(),
                 TaskType.TRANSLATION: TranslationPromptTemplateDict(),
                 TaskType.EVALUATION: EvaluationPromptTemplateDict(),
-                TaskType.SOLUTION_EXTRACTION: SolutionExtractionPromptTemplateDict(),
+                TaskType.SOLUTION_EXTRACTION: SolutionExtractionPromptTemplateDict(),  # noqa: E501
                 TaskType.ROLE_DESCRIPTION: RoleDescriptionPromptTemplateDict(),
                 TaskType.OBJECT_RECOGNITION: ObjectRecognitionPromptTemplateDict(),
                 TaskType.DESCRIPTE_VIDEO: DescriptionVideoPromptTemplateDict(),
