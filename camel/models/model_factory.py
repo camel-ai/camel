@@ -68,7 +68,8 @@ class ModelFactory:
                 model_class = StubModel
             else:
                 raise ValueError(
-                    f"Unknown pair of model platform `{model_platform}` and model type `{model_type}` is input"
+                    f"Unknown pair of model platform `{model_platform}` "
+                    "and model type `{model_type}` is input"
                 )
 
         elif isinstance(model_type, str):

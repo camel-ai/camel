@@ -52,7 +52,10 @@ class OpenAIModel(BaseModelBackend):
         self._url = url or os.environ.get("OPENAI_API_BASE_URL")
         self._api_key = api_key or os.environ.get("OPENAI_API_KEY")
         self._client = OpenAI(
-            timeout=60, max_retries=3, base_url=self._url, api_key=self._api_key
+            timeout=60,
+            max_retries=3,
+            base_url=self._url,
+            api_key=self._api_key,
         )
         self._token_counter: Optional[BaseTokenCounter] = None
 
