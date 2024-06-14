@@ -442,14 +442,17 @@ async def test_tool_calling_async():
         await asyncio.sleep(second)
         return second
 
-    model_config = ChatGPTConfig(
-        temperature=0,
-        tools=[OpenAIFunction(async_sleep)],
+    model_config = ChatGPTConfig(tools=[OpenAIFunction(async_sleep)])
+
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_3_5_TURBO,
+        model_config_dict=model_config.__dict__,
     )
+
     agent = ChatAgent(
         system_message=system_message,
-        model_config=model_config,
-        model_type=ModelType.GPT_4O,
+        model=model,
         tools=[OpenAIFunction(async_sleep)],
     )
 
