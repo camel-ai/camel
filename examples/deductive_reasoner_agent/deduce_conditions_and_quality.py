@@ -16,15 +16,11 @@ import json
 from colorama import Fore
 
 from camel.agents.deductive_reasoner_agent import DeductiveReasonerAgent
-from camel.configs import ChatGPTConfig
 
 
 def main(model=None) -> None:
     # Construct deductive reasoner agent
-    model_config_description = ChatGPTConfig()
-    insight_agent = DeductiveReasonerAgent(
-        model=model, model_config=model_config_description
-    )
+    insight_agent = DeductiveReasonerAgent(model=model)
 
     starting_state = "The current empty website."
     target_state = "A website with search capabilities."

@@ -16,7 +16,9 @@ from colorama import Fore
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
+from camel.models import ModelFactory
 from camel.toolkits import GithubToolkit
+from camel.types import ModelPlatformType, ModelType
 from camel.utils import print_text_animated
 
 
@@ -52,10 +54,14 @@ def solve_issue(
         tools=toolkit.get_tools(),
         temperature=0.0,
     )
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OpenAI,
+        model_type=ModelType.GPT_3_5_TURBO,
+        model_config=assistant_model_config,
+    )
     agent = ChatAgent(
         assistant_sys_msg,
-        model_type=model,
-        model_config=assistant_model_config,
+        model=model,
         tools=toolkit.get_tools(),
     )
     agent.reset()
