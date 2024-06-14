@@ -150,7 +150,8 @@ class BabyAGI:
         if self.task_type in [TaskType.AI_SOCIETY, TaskType.MISALIGNMENT]:
             task_specify_meta_dict.update(
                 dict(
-                    assistant_role=assistant_role_name, user_role=user_role_name
+                    assistant_role=assistant_role_name,
+                    user_role=user_role_name,
                 )
             )
         task_specify_meta_dict.update(extend_task_specify_meta_dict or {})

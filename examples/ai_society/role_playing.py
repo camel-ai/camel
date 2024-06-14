@@ -40,7 +40,8 @@ def main(model=None, chat_turn_limit=50) -> None:
     print(Fore.YELLOW + f"Original task prompt:\n{task_prompt}\n")
     print(
         Fore.CYAN
-        + f"Specified task prompt:\n{role_play_session.specified_task_prompt}\n"
+        + "Specified task prompt:"
+        + f"\n{role_play_session.specified_task_prompt}\n"
     )
     print(Fore.RED + f"Final task prompt:\n{role_play_session.task_prompt}\n")
 
