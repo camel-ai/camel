@@ -42,6 +42,7 @@ class LiteLLMModel:
         self.model_config_dict = model_config_dict
         self._client = None
         self._token_counter: Optional[LiteLLMTokenCounter] = None
+        self.check_model_config()
 
     @property
     def client(self):
