@@ -98,7 +98,6 @@ mock = { version = "^5", optional = true}
 test = ["pytest", "mock", "pytest-asyncio"]
 
 model-platforms = [
-    "anthropic",
     "litellm",
 ]
 
