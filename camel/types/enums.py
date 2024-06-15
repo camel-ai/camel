@@ -195,6 +195,7 @@ class TaskType(Enum):
     ROLE_DESCRIPTION = "role_description"
     OBJECT_RECOGNITION = "object_recognition"
     DEFAULT = "default"
+    DESCRIPTE_VIDEO = "descripte_video"
 
 
 class VectorDistance(Enum):
@@ -242,7 +243,7 @@ class OpenAIImageType(Enum, metaclass=OpenAIImageTypeMeta):
     GIF = "gif"
 
 
-class OpenAIImageDetailType(Enum):
+class OpenAIVisionDetailType(Enum):
     AUTO = "auto"
     LOW = "low"
     HIGH = "high"

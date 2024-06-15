@@ -11,22 +11,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .anthropic_config import ANTHROPIC_API_PARAMS, AnthropicConfig
-from .base_config import BaseConfig
-from .litellm_config import LITELLM_API_PARAMS, LiteLLMConfig
-from .openai_config import (
-    OPENAI_API_PARAMS,
-    ChatGPTConfig,
-    OpenSourceConfig,
-)
 
-__all__ = [
-    'BaseConfig',
-    'ChatGPTConfig',
-    'OPENAI_API_PARAMS',
-    'AnthropicConfig',
-    'ANTHROPIC_API_PARAMS',
-    'OpenSourceConfig',
-    'LiteLLMConfig',
-    'LITELLM_API_PARAMS',
-]
+
+class Constants:
+    # This value defines the default size (both width and height) for images
+    # extracted from a video.
+    VIDEO_DEFAULT_IMAGE_SIZE = 768
+
+    # This value defines the interval (in number of frames) at which images
+    # are extracted from the video.
+    VIDEO_IMAGE_EXTRACTION_INTERVAL = 50
+
+    # default plug of imageio to read video
+    VIDEO_DEFAULT_PLUG_PYAV = "pyav"

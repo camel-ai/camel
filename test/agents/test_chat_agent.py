@@ -524,16 +524,18 @@ def test_chat_agent_vision():
 
     # Create an all blue PNG image:
     image = Image.new("RGB", (100, 100), "blue")
+    image_list = []
     img_byte_arr = BytesIO()
     image.save(img_byte_arr, format='PNG')
     image = Image.open(img_byte_arr)
+    image_list.append(image)
 
     user_msg = BaseMessage(
         role_name="User",
         role_type=RoleType.USER,
         meta_dict=dict(),
         content="Is this image blue? Just answer yes or no.",
-        image=image,
+        image_list=image_list,
         image_detail="low",
     )
     # Mock the OpenAI model return value:
