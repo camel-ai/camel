@@ -38,14 +38,14 @@ pip install poetry  # (Optional)
 # We suggest using python 3.10
 poetry env use python3.10  # (Optional)
 
-# Activate camel virtual environment
+# Activate CAMEL virtual environment
 poetry shell
 
 # Install the base CAMEL library
 # It takes about 90 seconds
 poetry install
 
-# Install camel with all dependencies
+# Install CAMEL with all dependencies
 poetry install -E all  # (Optional)
 
 # Exit the virtual environment
@@ -57,7 +57,7 @@ exit
 # Create a conda virtual environment
 conda create --name camel python=3.10
 
-# Activate camel conda environment
+# Activate CAMEL conda environment
 conda activate camel
 
 # Clone github repo
@@ -66,7 +66,7 @@ git clone -b v0.1.5.1 https://github.com/camel-ai/camel.git
 # Change directory into project directory
 cd camel
 
-# Install camel from source
+# Install CAMEL from source
 pip install -e .
 
 # Or if you want to use all other extra packages
