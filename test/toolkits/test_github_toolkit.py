@@ -193,10 +193,12 @@ def test_retrieve_pull_requests(monkeypatch):
     mock_file.filename = "path/to/file"
     mock_file.patch = "This is the diff of the file"
 
-    # Mock the get_files method of the mock_pull_request instance to return a list containing the mock file object
+    # Mock the get_files method of the mock_pull_request instance to return a
+    # list containing the mock file object
     mock_pull_request.get_files.return_value = [mock_file]
 
-    # Mock the get_issues method of the mock repo instance to return a list containing the mock issue object
+    # Mock the get_issues method of the mock repo instance to return a list
+    # containing the mock issue object
     github_toolkit.repo.get_pulls.return_value = [mock_pull_request]
 
     pull_requests = github_toolkit.retrieve_pull_requests(

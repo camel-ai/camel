@@ -25,18 +25,26 @@ from camel.utils import print_text_animated
 
 def write_weekly_pr_summary(repo_name, model=None):
     prompt = """
-    You need to write a summary of the pull requests that were merged in the last week.
-    You can use the provided github function retrieve_pull_requests to retrieve the list of pull requests that were merged in the last week.
+    You need to write a summary of the pull requests that were merged in the
+    last week.
+    You can use the provided github function retrieve_pull_requests to 
+    retrieve the list of pull requests that were merged in the last week.
     The maximum amount of PRs to analyze is 3.
-    You have to pass the number of days as the first parameter to retrieve_pull_requests and state='closed' as the second parameter.
-    The function will return a list of pull requests with the following properties: title, body, and diffs.
-    Diffs is a list of dictionaries with the following properties: filename, diff.
-    You will have to look closely at each diff to understand the changes that were made in each pull request.
-    Output a twitter post that describes recent changes in the project and thanks the contributors.
+    You have to pass the number of days as the first parameter to
+    retrieve_pull_requests and state='closed' as the second parameter.
+    The function will return a list of pull requests with the following
+    properties: title, body, and diffs.
+    Diffs is a list of dictionaries with the following properties: filename,
+    diff.
+    You will have to look closely at each diff to understand the changes that
+    were made in each pull request.
+    Output a twitter post that describes recent changes in the project and
+    thanks the contributors.
 
     Here is an example of a summary for one pull request:
     📢 We've improved function calling in the 🐪 CAMEL-AI framework!
-    This update enhances the handling of various docstring styles and supports enum types, ensuring more accurate and reliable function calls. 
+    This update enhances the handling of various docstring styles and supports
+    enum types, ensuring more accurate and reliable function calls. 
     Thanks to our contributor Jiahui Zhang for making this possible.
     """
     print(Fore.YELLOW + f"Final prompt:\n{prompt}\n")
@@ -45,7 +53,8 @@ def write_weekly_pr_summary(repo_name, model=None):
     assistant_sys_msg = BaseMessage.make_assistant_message(
         role_name="Marketing Manager",
         content=f"""
-        You are an experienced marketing manager responsible for posting weekly updates about the status 
+        You are an experienced marketing manager responsible for posting
+        weekly updates about the status 
         of an open source project {repo_name} on the project's blog.
         """,
     )

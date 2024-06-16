@@ -98,18 +98,13 @@ class GithubPullRequest:
     Attributes:
         title (str): The title of the GitHub pull request.
         body (str): The body/content of the GitHub pull request.
-        diffs (List[GithubPullRequestDiff]): A list of diffs for the pull request.
+        diffs (List[GithubPullRequestDiff]): A list of diffs for the pull
+            request.
     """
 
-    def __init__(
-        self,
-        title: str,
-        body: str,
-        diffs: List[GithubPullRequestDiff],
-    ) -> None:
-        self.title = title
-        self.body = body
-        self.diffs = diffs
+    title: str
+    body: str
+    diffs: List[GithubPullRequestDiff]
 
     def __str__(self) -> str:
         r"""Returns a string representation of the pull request."""
@@ -240,8 +235,10 @@ class GithubToolkit(BaseToolkit):
         The summary will be provided for the last specified number of days.
 
         Args:
-            days (int): The number of days to retrieve merged pull requests for.
-            state (str): A specific state of PRs to retrieve. Can be open or closed.
+            days (int): The number of days to retrieve merged pull requests
+                for.
+            state (str): A specific state of PRs to retrieve. Can be open or
+                closed.
             max_prs (int): The maximum number of PRs to retrieve.
 
         Returns:
