@@ -54,6 +54,10 @@ def model_api_key_required(func: F) -> F:
             if not self._api_key and 'OPENAI_API_KEY' not in os.environ:
                 raise ValueError('OpenAI API key not found.')
             return func(self, *args, **kwargs)
+        elif self.model_type.is_zhipuai:
+            if 'ZHIPUAI_API_KEY' not in os.environ:
+                raise ValueError('ZhiPuAI API key not found.')
+            return func(self, *args, **kwargs)
         elif self.model_type.is_anthropic:
             if not self._api_key and 'ANTHROPIC_API_KEY' not in os.environ:
                 raise ValueError('Anthropic API key not found.')
