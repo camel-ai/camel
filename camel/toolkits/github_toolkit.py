@@ -237,7 +237,7 @@ class GithubToolkit(BaseToolkit):
             max_prs (int): The maximum number of PRs to retrieve.
 
         Returns:
-            list: A list of merged pull request summaries.
+             List[str]: A list of merged pull request summaries.
         """
         pull_requests = self.repo.get_pulls(state=state)
         merged_prs = []
