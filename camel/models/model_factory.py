@@ -18,6 +18,7 @@ from camel.models.base_model import BaseModelBackend
 from camel.models.open_source_model import OpenSourceModel
 from camel.models.openai_model import OpenAIModel
 from camel.models.stub_model import StubModel
+from camel.models.zhipuai_model import ZhipuAIModel
 from camel.types import ModelType
 
 
@@ -58,6 +59,8 @@ class ModelFactory:
             model_class = OpenSourceModel
         elif model_type.is_anthropic:
             model_class = AnthropicModel
+        elif model_type.is_zhipuai:
+            model_class = ZhipuAIModel
         else:
             raise ValueError(f"Unknown model type `{model_type}` is input")
 
