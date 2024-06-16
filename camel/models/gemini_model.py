@@ -47,7 +47,8 @@ class GeminiModel(BaseModelBackend):
         genai.configure(api_key = self._api_key)
         self._client = genai.GenerativeModel(model_type.value)
         self._token_counter: Optional[BaseTokenCounter] = None
-    
+
+    r"""This Property is unavailable"""
     @property
     def token_counter(self) -> BaseTokenCounter:
         if not self._token_counter:
@@ -57,8 +58,24 @@ class GeminiModel(BaseModelBackend):
     @model_api_key_required
     def run(
         self,
-        contents : List[ContentsType]
-    ) -> str:
+        contents : ContentsType
+    ) -> GenerateContentResponse:
+        r"""Runs inference of Gemini model.
+        This method can handle multimodal input
+
+        Args:
+            contents: Message list or Message with the chat history
+            in Gemini API format.
+            example: contents = [{'role':'user', 'parts': ['hello']}]
+            
+
+        Returns: 
+            response(GenerateContentResponse)
+
+        If it is not in streaming mode, you can directly output the response.text.
+
+        If it is in streaming mode, you can iterate over the response chunks as they become available.
+        """
         response = self._client.generate_content(
             contents = contents,
             **self.model_config_dict,
