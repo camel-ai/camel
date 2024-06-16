@@ -20,12 +20,14 @@ from .openai_audio_models import OpenAIAudioModels
 from .openai_model import OpenAIModel
 from .stub_model import StubModel
 from .gemini_model import GeminiModel
+from .zhipuai_model import ZhipuAIModel
 
 __all__ = [
     'BaseModelBackend',
     'OpenAIModel',
     'AnthropicModel',
     'StubModel',
+    'ZhipuAIModel',
     'OpenSourceModel',
     'ModelFactory',
     'LiteLLMModel',
