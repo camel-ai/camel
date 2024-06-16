@@ -81,11 +81,13 @@ def solve_issue(
     that issue. You will get all the necessary parameters to later create a
     pull request.
 
-    When you have the issue, please follow the instruction and make the necessary
-    changes to the source code provided. Once you have made the changes, you will
-    need to use another provided github function to create a pull request
-    that updates the file on the provided file path in the repository {repo_name}.
-    The new_content property of the function should be the corrected source code.
+    When you have the issue, please follow the instruction and make the 
+    necessary changes to the source code provided. Once you have made the 
+    changes, you will need to use another provided github function to create a 
+    pull request that updates the file on the provided file path in the 
+    repository {repo_name}.
+    The new_content property of the function should be the corrected source 
+    code.
     Return response of this function as the output of this task.
     """
     print(Fore.YELLOW + f"Final prompt:\n{prompt}\n")

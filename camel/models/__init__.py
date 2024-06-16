@@ -13,6 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .anthropic_model import AnthropicModel
 from .base_model import BaseModelBackend
+from .litellm_model import LiteLLMModel
 from .model_factory import ModelFactory
 from .open_source_model import OpenSourceModel
 from .openai_audio_models import OpenAIAudioModels
@@ -26,5 +27,6 @@ __all__ = [
     'StubModel',
     'OpenSourceModel',
     'ModelFactory',
+    'LiteLLMModel',
     'OpenAIAudioModels',
 ]
