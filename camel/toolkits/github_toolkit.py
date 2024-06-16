@@ -81,9 +81,8 @@ class GithubPullRequestDiff:
         patch (str): The diff patch for the file.
     """
 
-    def __init__(self, filename: str, patch: str) -> None:
-        self.filename = filename
-        self.patch = patch
+    filename: str
+    patch: str
 
     def __str__(self) -> str:
         r"""Returns a string representation of this diff."""
