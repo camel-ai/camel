@@ -227,7 +227,7 @@ class GithubToolkit(BaseToolkit):
 
     def retrieve_pull_requests(
         self, days: int, state: str, max_prs: int
-    ) -> List:
+    ) -> List[str]:
         r"""Retrieves a summary of merged pull requests from the repository.
         The summary will be provided for the last specified number of days.
 
