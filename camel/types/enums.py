@@ -289,6 +289,8 @@ class ModelPlatformType(Enum):
     ANTHROPIC = "anthropic"
     OPENSOURCE = "opensource"
     OLLAMA = "ollama"
+    LITELLM = "litellm"
+    ZHIPU = "zhipuai"
     DEFAULT = "default"
 
     @property
@@ -310,6 +312,16 @@ class ModelPlatformType(Enum):
     def is_ollama(self) -> bool:
         r"""Returns whether this platform is ollama."""
         return self is ModelPlatformType.OLLAMA
+
+    @property
+    def is_litellm(self) -> bool:
+        r"""Returns whether this platform is litellm."""
+        return self is ModelPlatformType.LITELLM
+
+    @property
+    def is_zhipuai(self) -> bool:
+        r"""Returns whether this platform is zhipu."""
+        return self is ModelPlatformType.ZHIPU
 
     @property
     def is_open_source(self) -> bool:
