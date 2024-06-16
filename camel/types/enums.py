@@ -47,6 +47,10 @@ class ModelType(Enum):
     CLAUDE_3_SONNET = "claude-3-sonnet-20240229"
     CLAUDE_3_HAIKU = "claude-3-haiku-20240307"
 
+    # Gemini models
+    GEMINI_1_5_FLASH = "gemini-1.5-flash"
+    GEMINI_1_5_PRO = "gemini-1.5-pro"
+
     @property
     def value_for_tiktoken(self) -> str:
         return self.value if self is not ModelType.STUB else "gpt-3.5-turbo"
@@ -86,6 +90,12 @@ class ModelType(Enum):
             ModelType.CLAUDE_3_SONNET,
             ModelType.CLAUDE_3_HAIKU,
         }
+    @property
+    def is_gemini(self) -> bool:
+        return self in {
+            ModelType.GEMINI_1_5_FLASH,
+            ModelType.GEMINI_1_5_PRO
+        }
 
     @property
     def token_limit(self) -> int:
@@ -103,6 +113,10 @@ class ModelType(Enum):
             return 128000
         elif self is ModelType.GPT_4O:
             return 128000
+        elif self in ModelType.GEMINI_1_5_FLASH:
+            return 1048576
+        elif self in ModelType.GEMINI_1_5_PRO:
+            return 1048576
         elif self is ModelType.STUB:
             return 4096
         elif self is ModelType.LLAMA_2:

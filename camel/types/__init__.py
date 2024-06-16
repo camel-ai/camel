@@ -38,6 +38,10 @@ from .openai_types import (
     Choice,
     CompletionUsage,
 )
+from .gemini_types import (
+    ContentsType,
+    GenerateContentResponse
+)
 
 __all__ = [
     'RoleType',
@@ -64,4 +68,6 @@ __all__ = [
     'OpenAPIName',
     'AudioModelType',
     'VoiceType',
+    'ContentsType',
+    'GenerateContentResponse'
 ]

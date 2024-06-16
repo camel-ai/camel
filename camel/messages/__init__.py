@@ -17,6 +17,7 @@ from camel.types import (
     ChatCompletionMessageParam,
     ChatCompletionSystemMessageParam,
     ChatCompletionUserMessageParam,
+    ContentsType,
 )
 
 OpenAISystemMessage = ChatCompletionSystemMessageParam
@@ -24,6 +25,7 @@ OpenAIAssistantMessage = ChatCompletionAssistantMessageParam
 OpenAIUserMessage = ChatCompletionUserMessageParam
 OpenAIFunctionMessage = ChatCompletionFunctionMessageParam
 OpenAIMessage = ChatCompletionMessageParam
+ContentsType = ContentsType
 
 from .base import BaseMessage  # noqa: E402
 from .func_message import FunctionCallingMessage  # noqa: E402
@@ -35,4 +37,5 @@ __all__ = [
     'OpenAIMessage',
     'BaseMessage',
     'FunctionCallingMessage',
+    'ContentsType',
 ]

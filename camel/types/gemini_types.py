@@ -11,26 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .anthropic_config import ANTHROPIC_API_PARAMS, AnthropicConfig
-from .base_config import BaseConfig
-from .litellm_config import LITELLM_API_PARAMS, LiteLLMConfig
-from .openai_config import (
-    OPENAI_API_PARAMS,
-    ChatGPTConfig,
-    OpenSourceConfig,
-)
-from .gemini_config import (
-    Gemini_API_PARAMS,
-)
+# isort: skip_file
+from google.generativeai.types.content_types import ContentsType
+from google.generativeai.types.generation_types import GenerateContentResponse
 
-__all__ = [
-    'BaseConfig',
-    'ChatGPTConfig',
-    'OPENAI_API_PARAMS',
-    'AnthropicConfig',
-    'ANTHROPIC_API_PARAMS',
-    'OpenSourceConfig',
-    'LiteLLMConfig',
-    'LITELLM_API_PARAMS',
-    'Gemini_API_PARAMS',
-]
+ContentsType = ContentsType
+GenerateContentResponse= GenerateContentResponse

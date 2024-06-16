@@ -19,6 +19,7 @@ from .open_source_model import OpenSourceModel
 from .openai_audio_models import OpenAIAudioModels
 from .openai_model import OpenAIModel
 from .stub_model import StubModel
+from .gemini_model import GeminiModel
 
 __all__ = [
     'BaseModelBackend',
@@ -29,4 +30,5 @@ __all__ = [
     'ModelFactory',
     'LiteLLMModel',
     'OpenAIAudioModels',
+    'GeminiModel',
 ]
