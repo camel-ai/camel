@@ -125,6 +125,16 @@ class ModelType(Enum):
             return 128000
         elif self is ModelType.GPT_4O:
             return 128000
+        elif self in ModelType.GEMINI_1_5_FLASH:
+            return 1048576
+        elif self in ModelType.GEMINI_1_5_PRO:
+            return 1048576
+        elif self == ModelType.GLM_4:
+            return 8192
+        elif self == ModelType.GLM_3_TURBO:
+            return 8192
+        elif self == ModelType.GLM_4V:
+            return 1024
         elif self is ModelType.STUB:
             return 4096
         elif self is ModelType.LLAMA_2:
