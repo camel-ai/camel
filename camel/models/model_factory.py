@@ -64,5 +64,9 @@ class ModelFactory:
         else:
             raise ValueError(f"Unknown model type `{model_type}` is input")
 
-        inst = model_class(model_type, model_config_dict, api_key)
+        if model_type.is_open_source:
+            inst = model_class(model_type, model_config_dict)
+        else:
+            inst = model_class(model_type, model_config_dict, api_key)
+
         return inst
