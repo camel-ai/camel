@@ -38,7 +38,6 @@ class ModelType(Enum):
     VICUNA_16K = "vicuna-16k"
 
     QWEN_2 = "qwen-2"
-    GLM_4 = "glm-4"
 
     # Legacy anthropic models
     # NOTE: anthropic lagecy models only Claude 2.1 has system prompt support
@@ -73,7 +72,6 @@ class ModelType(Enum):
             ModelType.LLAMA_2,
             ModelType.LLAMA_3,
             ModelType.QWEN_2,
-            ModelType.GLM_4,
             ModelType.VICUNA,
             ModelType.VICUNA_16K,
         }
