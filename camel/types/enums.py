@@ -84,6 +84,7 @@ class ModelType(Enum):
             ModelType.LLAMA_2,
             ModelType.LLAMA_3,
             ModelType.QWEN_2,
+            ModelType.GLM_4,
             ModelType.VICUNA,
             ModelType.VICUNA_16K,
         }
