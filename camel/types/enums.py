@@ -30,6 +30,7 @@ class ModelType(Enum):
     GPT_4_TURBO = "gpt-4-turbo"
     GPT_4O = "gpt-4o"
     GLM_4 = "glm-4"
+    GLM_4_OPEN_SOURCE = "glm-4-open-source"
     GLM_4V = 'glm-4v'
     GLM_3_TURBO = "glm-3-turbo"
 
@@ -84,7 +85,7 @@ class ModelType(Enum):
             ModelType.LLAMA_2,
             ModelType.LLAMA_3,
             ModelType.QWEN_2,
-            ModelType.GLM_4,
+            ModelType.GLM_4_OPEN_SOURCE,
             ModelType.VICUNA,
             ModelType.VICUNA_16K,
         }
@@ -122,6 +123,8 @@ class ModelType(Enum):
         elif self is ModelType.GPT_4O:
             return 128000
         elif self == ModelType.GLM_4:
+            return 8192
+        elif self == ModelType.GLM_4_OPEN_SOURCE:
             return 8192
         elif self == ModelType.GLM_3_TURBO:
             return 8192
@@ -185,7 +188,7 @@ class ModelType(Enum):
             )
         elif self is ModelType.GLM_4:
             return (
-                self.value in model_name.lower()
+                'glm-4' in model_name.lower()
                 or "glm4" in model_name.lower()
             )
         else:

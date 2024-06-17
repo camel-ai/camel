@@ -186,7 +186,7 @@ class OpenSourceTokenCounter(BaseTokenCounter):
                 add_generation_prompt=True
             )
             input_ids = self.tokenizer([text], return_tensors="pt").input_ids
-        elif self.model_type == ModelType.GLM_4:
+        elif self.model_type == ModelType.GLM_4_OPEN_SOURCE:
             inputs = self.tokenizer.apply_chat_template(
                 messages,
                 add_generation_prompt=True,
