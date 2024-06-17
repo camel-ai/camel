@@ -12,24 +12,27 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from camel.models import BaseModelBackend
-from camel.messages import ContentsType
-from camel.types import ModelType, GenerateContentResponse
-from camel.configs import Gemini_API_PARAMS
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional
+
 import google.generativeai as genai
+
+from camel.configs import Gemini_API_PARAMS
+from camel.messages import ContentsType
+from camel.models import BaseModelBackend
+from camel.types import GenerateContentResponse, ModelType
 from camel.utils import (
     BaseTokenCounter,
     GeminiTokenCounter,
     model_api_key_required,
 )
 
+
 class GeminiModel(BaseModelBackend):
     r"""Gemini API in a unified BaseModelBackend interface."""
     def __init__(
         self, 
         model_type: ModelType, 
-        model_config_dict: Optional[Dict[str, Any]] = {},
+        model_config_dict: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
     ) -> None:
         r"""Constructor for Gemini backend.
@@ -46,7 +49,9 @@ class GeminiModel(BaseModelBackend):
         self._api_key = api_key or os.environ.get("GOOGLE_API_KEY")
         genai.configure(api_key = self._api_key)
         if model_type.value not in ['gemini-1.5-flash', 'gemini-1.5-pro']:
-            raise ValueError("model_type can only be set to gemini-1.5-flash or gemini-1.5-pro")
+            raise ValueError(
+            "model_type can only be set to gemini-1.5-flash or gemini-1.5-pro"
+            )
         self._client = genai.GenerativeModel(model_type.value)
         self._token_counter: Optional[BaseTokenCounter] = None
 
@@ -74,9 +79,11 @@ class GeminiModel(BaseModelBackend):
         Returns: 
             response(GenerateContentResponse)
 
-        If it is not in streaming mode, you can directly output the response.text.
+        If it is not in streaming mode, 
+        you can directly output the response.text.
 
-        If it is in streaming mode, you can iterate over the response chunks as they become available.
+        If it is in streaming mode, 
+        you can iterate over the response chunks as they become available.
         """
         response = self._client.generate_content(
             contents = contents,
@@ -92,7 +99,7 @@ class GeminiModel(BaseModelBackend):
             ValueError: If the model configuration dictionary contains any
                 unexpected arguments to OpenAI API.
         """
-        if self.model_config_dict != None:
+        if self.model_config_dict is not None:
             for param in self.model_config_dict:
                 if param not in Gemini_API_PARAMS:
                         raise ValueError(

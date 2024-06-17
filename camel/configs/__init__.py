@@ -13,14 +13,14 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .anthropic_config import ANTHROPIC_API_PARAMS, AnthropicConfig
 from .base_config import BaseConfig
+from .gemini_config import (
+    Gemini_API_PARAMS,
+)
 from .litellm_config import LITELLM_API_PARAMS, LiteLLMConfig
 from .openai_config import (
     OPENAI_API_PARAMS,
     ChatGPTConfig,
     OpenSourceConfig,
-)
-from .gemini_config import (
-    Gemini_API_PARAMS,
 )
 
 __all__ = [

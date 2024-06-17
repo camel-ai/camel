@@ -26,6 +26,7 @@ from .enums import (
     VectorDistance,
     VoiceType,
 )
+from .gemini_types import ContentsType, GenerateContentResponse
 from .openai_types import (
     ChatCompletion,
     ChatCompletionAssistantMessageParam,
@@ -37,10 +38,6 @@ from .openai_types import (
     ChatCompletionUserMessageParam,
     Choice,
     CompletionUsage,
-)
-from .gemini_types import (
-    ContentsType,
-    GenerateContentResponse
 )
 
 __all__ = [

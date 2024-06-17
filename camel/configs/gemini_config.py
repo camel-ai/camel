@@ -13,13 +13,17 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 
-from dataclasses import asdict, dataclass, field
-from typing import TYPE_CHECKING, Optional, Sequence
+from dataclasses import asdict, dataclass
+from typing import Optional
+
+from google.generativeai.types import (
+    content_types,
+    generation_types,
+    helper_types,
+    safety_types,
+)
+
 from camel.configs.base_config import BaseConfig
-from google.generativeai.types import content_types
-from google.generativeai.types import generation_types
-from google.generativeai.types import helper_types
-from google.generativeai.types import safety_types
 
 
 @dataclass(frozen=True)
@@ -89,8 +93,8 @@ class GeminiConfig(BaseConfig):
                 `application/json`: JSON response in the candidates.
 
         response_schema:
-            Optional. Specifies the format of the JSON requested if response_mime_type is
-            `application/json`.
+            Optional. Specifies the format of the JSON requested 
+            if response_mime_type is `application/json`.
     """
     generation_config: Optional[generation_types.GenerationConfigType] = None,
     safety_settings: Optional[safety_types.SafetySettingOptions]= None,
