@@ -51,7 +51,7 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
     system_message = messages[0]["content"]
 
     ret: str
-    if model == ModelType.LLAMA_2:
+    if model == ModelType.LLAMA_2 or model == ModelType.LLAMA_3:
         # reference: https://github.com/facebookresearch/llama/blob/cfc3fc8c1968d390eb830e65c63865e980873a06/llama/generation.py#L212
         seps = [" ", " </s><s>"]
         role_map = {"user": "[INST]", "assistant": "[/INST]"}
@@ -179,8 +179,25 @@ class OpenSourceTokenCounter(BaseTokenCounter):
         Returns:
             int: Number of tokens in the messages.
         """
-        prompt = messages_to_prompt(messages, self.model_type)
-        input_ids = self.tokenizer(prompt).input_ids
+        if self.model_type == ModelType.QWEN_2:
+            text = self.tokenizer.apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=True
+            )
+            input_ids = self.tokenizer([text], return_tensors="pt").input_ids
+        elif self.model_type == ModelType.GLM_4:
+            inputs = self.tokenizer.apply_chat_template(
+                messages,
+                add_generation_prompt=True,
+                tokenize=True,
+                return_tensors="pt",
+                return_dict=True
+            )
+            input_ids = inputs["input_ids"]
+        else:
+            prompt = messages_to_prompt(messages, self.model_type)
+            input_ids = self.tokenizer(prompt).input_ids
 
         return len(input_ids)
 
