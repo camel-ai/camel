@@ -17,6 +17,7 @@ from .openai_function import (
     get_openai_function_schema,
     get_openai_tool_schema,
 )
+from .open_api_specs.security_config import openapi_security_config
 
 from .google_maps_function import MAP_FUNCS
 from .math_functions import MATH_FUNCS
@@ -36,6 +37,7 @@ __all__ = [
     'OpenAIFunction',
     'get_openai_function_schema',
     'get_openai_tool_schema',
+    'openapi_security_config',
     'apinames_filepaths_to_funs_schemas',
     'generate_apinames_filepaths',
     'MAP_FUNCS',

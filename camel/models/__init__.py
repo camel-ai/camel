@@ -13,18 +13,22 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .anthropic_model import AnthropicModel
 from .base_model import BaseModelBackend
+from .litellm_model import LiteLLMModel
 from .model_factory import ModelFactory
 from .open_source_model import OpenSourceModel
 from .openai_audio_models import OpenAIAudioModels
 from .openai_model import OpenAIModel
 from .stub_model import StubModel
+from .zhipuai_model import ZhipuAIModel
 
 __all__ = [
     'BaseModelBackend',
     'OpenAIModel',
     'AnthropicModel',
     'StubModel',
+    'ZhipuAIModel',
     'OpenSourceModel',
     'ModelFactory',
+    'LiteLLMModel',
     'OpenAIAudioModels',
 ]

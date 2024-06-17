@@ -13,6 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .anthropic_config import ANTHROPIC_API_PARAMS, AnthropicConfig
 from .base_config import BaseConfig
+from .litellm_config import LITELLM_API_PARAMS, LiteLLMConfig
 from .openai_config import (
     OPENAI_API_PARAMS,
     ChatGPTConfig,
@@ -26,4 +27,6 @@ __all__ = [
     'AnthropicConfig',
     'ANTHROPIC_API_PARAMS',
     'OpenSourceConfig',
+    'LiteLLMConfig',
+    'LITELLM_API_PARAMS',
 ]

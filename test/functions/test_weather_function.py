@@ -85,7 +85,9 @@ def test_weather(api_key):
             city, 'celsius', 'meters_sec', visibility_units, 'iso'
         )
         # Parse visibility
-        pattern = re.compile(rf"Visibility: (-?\d+\.?\d*) {visibility_units}\.")
+        pattern = re.compile(
+            rf"Visibility: (-?\d+\.?\d*) {visibility_units}\."
+        )
         match = pattern.search(report)
         visibility = float(match.group(1)) if match else None
         # Test visibility
