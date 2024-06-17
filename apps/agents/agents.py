@@ -338,7 +338,10 @@ def role_playing_chat_cont(state) -> Tuple[State, ChatBotHistory, Dict, Dict]:
     if len(state.chat) >= state.max_messages:
         state.session = None
 
-    if "CAMEL_TASK_DONE" in a_msg.content or "CAMEL_TASK_DONE" in u_msg.content:
+    if (
+        "CAMEL_TASK_DONE" in a_msg.content
+        or "CAMEL_TASK_DONE" in u_msg.content
+    ):
         state.session = None
 
     progress_update = gr.update(
@@ -458,8 +461,9 @@ def construct_ui(blocks, api_key: Optional[str] = None) -> None:
                 "Github repo: [https://github.com/lightaime/camel]"
                 "(https://github.com/lightaime/camel)"
                 '<div style="display:flex; justify-content:center;">'
-                '<img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/primary_logo.png" alt="Logo" style="max-width:50%;">'
-                '</div>'
+                '<img src="https://raw.githubusercontent.com/camel-ai/camel/'
+                'master/misc/primary_logo.png" alt="Logo" style='
+                '"max-width:50%;"> </div>'
             )
     with gr.Row():
         with gr.Column(scale=9):
@@ -495,7 +499,10 @@ def construct_ui(blocks, api_key: Optional[str] = None) -> None:
                 )
             with gr.Row():
                 language_ta = gr.TextArea(
-                    label="Language", value="English", lines=1, interactive=True
+                    label="Language",
+                    value="English",
+                    lines=1,
+                    interactive=True,
                 )
         with gr.Column(scale=2):
             with gr.Row():

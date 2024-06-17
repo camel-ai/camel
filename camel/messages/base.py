@@ -16,6 +16,7 @@ import io
 from dataclasses import dataclass
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
+import numpy as np
 from PIL import Image
 
 from camel.messages import (
@@ -27,10 +28,11 @@ from camel.messages import (
 from camel.prompts import CodePrompt, TextPrompt
 from camel.types import (
     OpenAIBackendRole,
-    OpenAIImageDetailType,
     OpenAIImageType,
+    OpenAIVisionDetailType,
     RoleType,
 )
+from camel.utils import Constants
 
 
 @dataclass
@@ -39,19 +41,29 @@ class BaseMessage:
 
     Args:
         role_name (str): The name of the user or assistant role.
-        role_type (RoleType): The type of role, either
-            :obj:`RoleType.ASSISTANT` or :obj:`RoleType.USER`.
+        role_type (RoleType): The type of role, either :obj:`RoleType.
+            ASSISTANT` or :obj:`RoleType.USER`.
         meta_dict (Optional[Dict[str, str]]): Additional metadata dictionary
             for the message.
         content (str): The content of the message.
+        video_bytes (Optional[bytes]): Optional bytes of a video associated
+            with the message. Default is None.
+        image_list (Optional[List[Image.Image]]): Optional list of PIL Image
+            objects associated with the message. Default is None.
+        image_detail (Literal["auto", "low", "high"]): Detail level of the
+            images associated with the message. Default is "auto".
+        video_detail (Literal["auto", "low", "high"]): Detail level of the
+            videos associated with the message. Default is "low".
     """
 
     role_name: str
     role_type: RoleType
     meta_dict: Optional[Dict[str, str]]
     content: str
-    image: Optional[Image.Image] = None
+    video_bytes: Optional[bytes] = None
+    image_list: Optional[List[Image.Image]] = None
     image_detail: Literal["auto", "low", "high"] = "auto"
+    video_detail: Literal["auto", "low", "high"] = "low"
 
     @classmethod
     def make_user_message(
@@ -59,16 +71,24 @@ class BaseMessage:
         role_name: str,
         content: str,
         meta_dict: Optional[Dict[str, str]] = None,
-        image: Optional[Image.Image] = None,
-        image_detail: Union[OpenAIImageDetailType, str] = "auto",
-    ) -> 'BaseMessage':
+        video_bytes: Optional[bytes] = None,
+        image_list: Optional[List[Image.Image]] = None,
+        image_detail: Union[
+            OpenAIVisionDetailType, str
+        ] = OpenAIVisionDetailType.AUTO,
+        video_detail: Union[
+            OpenAIVisionDetailType, str
+        ] = OpenAIVisionDetailType.LOW,
+    ) -> "BaseMessage":
         return cls(
             role_name,
             RoleType.USER,
             meta_dict,
             content,
-            image,
-            OpenAIImageDetailType(image_detail).value,
+            video_bytes,
+            image_list,
+            OpenAIVisionDetailType(image_detail).value,
+            OpenAIVisionDetailType(video_detail).value,
         )
 
     @classmethod
@@ -77,16 +97,24 @@ class BaseMessage:
         role_name: str,
         content: str,
         meta_dict: Optional[Dict[str, str]] = None,
-        image: Optional[Image.Image] = None,
-        image_detail: Union[OpenAIImageDetailType, str] = "auto",
-    ) -> 'BaseMessage':
+        video_bytes: Optional[bytes] = None,
+        image_list: Optional[List[Image.Image]] = None,
+        image_detail: Union[
+            OpenAIVisionDetailType, str
+        ] = OpenAIVisionDetailType.AUTO,
+        video_detail: Union[
+            OpenAIVisionDetailType, str
+        ] = OpenAIVisionDetailType.LOW,
+    ) -> "BaseMessage":
         return cls(
             role_name,
             RoleType.ASSISTANT,
             meta_dict,
             content,
-            image,
-            OpenAIImageDetailType(image_detail).value,
+            video_bytes,
+            image_list,
+            OpenAIVisionDetailType(image_detail).value,
+            OpenAIVisionDetailType(video_detail).value,
         )
 
     def create_new_instance(self, content: str) -> "BaseMessage":
@@ -241,46 +269,107 @@ class BaseMessage:
         Returns:
             OpenAIUserMessage: The converted :obj:`OpenAIUserMessage` object.
         """
-        if self.image is None:
-            return {"role": "user", "content": self.content}
-        else:
-            #
-            if self.image.format is None:
-                raise ValueError(
-                    f"Image's `format` is `None`, please "
-                    f"transform the `PIL.Image.Image` to  one of "
-                    f"following supported formats, such as "
-                    f"{list(OpenAIImageType)}"
-                )
+        hybird_content: List[Any] = []
+        hybird_content.append(
+            {
+                "type": "text",
+                "text": self.content,
+            }
+        )
 
-            image_type: str = self.image.format.lower()
-            if image_type not in OpenAIImageType:
-                raise ValueError(
-                    f"Image type {self.image.format} "
-                    f"is not supported by OpenAI vision model"
-                )
-            with io.BytesIO() as buffer:
-                self.image.save(fp=buffer, format=self.image.format)
-                encoded_image = base64.b64encode(buffer.getvalue()).decode(
-                    "utf-8"
-                )
-            image_prefix = f"data:image/{image_type};base64,"
+        if self.image_list and len(self.image_list) > 0:
+            for image in self.image_list:
+                if image.format is None:
+                    raise ValueError(
+                        f"Image's `format` is `None`, please "
+                        f"transform the `PIL.Image.Image` to  one of "
+                        f"following supported formats, such as "
+                        f"{list(OpenAIImageType)}"
+                    )
 
-            return {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": self.content,
-                    },
+                image_type: str = image.format.lower()
+                if image_type not in OpenAIImageType:
+                    raise ValueError(
+                        f"Image type {image.format} "
+                        f"is not supported by OpenAI vision model"
+                    )
+                with io.BytesIO() as buffer:
+                    image.save(fp=buffer, format=image.format)
+                    encoded_image = base64.b64encode(buffer.getvalue()).decode(
+                        "utf-8"
+                    )
+                image_prefix = f"data:image/{image_type};base64,"
+                hybird_content.append(
                     {
                         "type": "image_url",
                         "image_url": {
                             "url": f"{image_prefix}{encoded_image}",
                             "detail": self.image_detail,
                         },
+                    }
+                )
+
+        if self.video_bytes:
+            import imageio.v3 as iio
+
+            base64Frames: List[str] = []
+            frame_count = 0
+            # read video bytes
+            video = iio.imiter(
+                self.video_bytes, plugin=Constants.VIDEO_DEFAULT_PLUG_PYAV
+            )
+
+            for frame in video:
+                frame_count += 1
+                if (
+                    frame_count % Constants.VIDEO_IMAGE_EXTRACTION_INTERVAL
+                    == 0
+                ):
+                    # convert frame to numpy array
+                    frame_array = np.asarray(frame)
+                    frame_image = Image.fromarray(frame_array)
+
+                    # Get the dimensions of the frame
+                    width, height = frame_image.size
+
+                    # resize the frame to the default image size
+                    new_width = Constants.VIDEO_DEFAULT_IMAGE_SIZE
+                    aspect_ratio = width / height
+                    new_height = int(new_width / aspect_ratio)
+                    resized_img = frame_image.resize((new_width, new_height))
+
+                    # encode the image to base64
+                    with io.BytesIO() as buffer:
+                        image_format = OpenAIImageType.JPEG.value
+                        image_format = image_format.upper()
+                        resized_img.save(fp=buffer, format=image_format)
+                        encoded_image = base64.b64encode(
+                            buffer.getvalue()
+                        ).decode("utf-8")
+
+                    base64Frames.append(encoded_image)
+
+            for encoded_image in base64Frames:
+                item = {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{encoded_image}",
+                        "detail": self.video_detail,
                     },
-                ],
+                }
+
+                hybird_content.append(item)
+
+        if len(hybird_content) > 1:
+            return {
+                "role": "user",
+                "content": hybird_content,
+            }
+        # This return just for str message
+        else:
+            return {
+                "role": "user",
+                "content": self.content,
             }
 
     def to_openai_assistant_message(self) -> OpenAIAssistantMessage:

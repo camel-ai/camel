@@ -29,6 +29,9 @@ class ModelType(Enum):
     GPT_4_32K = "gpt-4-32k"
     GPT_4_TURBO = "gpt-4-turbo"
     GPT_4O = "gpt-4o"
+    GLM_4 = "glm-4"
+    GLM_4V = 'glm-4v'
+    GLM_3_TURBO = "glm-3-turbo"
 
     STUB = "stub"
 
@@ -64,6 +67,15 @@ class ModelType(Enum):
             ModelType.GPT_4_32K,
             ModelType.GPT_4_TURBO,
             ModelType.GPT_4O,
+        }
+
+    @property
+    def is_zhipuai(self) -> bool:
+        r"""Returns whether this type of models is an ZhipuAI model."""
+        return self in {
+            ModelType.GLM_3_TURBO,
+            ModelType.GLM_4,
+            ModelType.GLM_4V,
         }
 
     @property
@@ -110,6 +122,12 @@ class ModelType(Enum):
             return 128000
         elif self is ModelType.GPT_4O:
             return 128000
+        elif self == ModelType.GLM_4:
+            return 8192
+        elif self == ModelType.GLM_3_TURBO:
+            return 8192
+        elif self == ModelType.GLM_4V:
+            return 1024
         elif self is ModelType.STUB:
             return 4096
         elif self is ModelType.LLAMA_2:
@@ -219,6 +237,7 @@ class TaskType(Enum):
     ROLE_DESCRIPTION = "role_description"
     OBJECT_RECOGNITION = "object_recognition"
     DEFAULT = "default"
+    DESCRIPTE_VIDEO = "descripte_video"
 
 
 class VectorDistance(Enum):
@@ -266,7 +285,7 @@ class OpenAIImageType(Enum, metaclass=OpenAIImageTypeMeta):
     GIF = "gif"
 
 
-class OpenAIImageDetailType(Enum):
+class OpenAIVisionDetailType(Enum):
     AUTO = "auto"
     LOW = "low"
     HIGH = "high"
@@ -281,6 +300,7 @@ class OpenAPIName(Enum):
     COURSERA = "coursera"
     KLARNA = "klarna"
     SPEAK = "speak"
+    NASA_APOD = "nasa_apod"
     BIZTOC = "biztoc"
     CREATE_QR_CODE = "create_qr_code"
     OUTSCHOOL = "outschool"

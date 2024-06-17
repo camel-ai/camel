@@ -73,7 +73,8 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
             objs (List[Image.Image|str]): The list of images or texts for
                 which to generate the embeddings.
             image_processor_kwargs: Extra kwargs passed to the image processor.
-            tokenizer_kwargs: Extra kwargs passed to the text tokenizer(processor).
+            tokenizer_kwargs: Extra kwargs passed to the text tokenizer
+                (processor).
             model_kwargs: Extra kwargs passed to the main model.
 
         Returns:
@@ -102,7 +103,9 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
                     **image_processor_kwargs,
                 )
                 image_feature = (
-                    self.model.get_image_features(**image_input, **model_kwargs)
+                    self.model.get_image_features(
+                        **image_input, **model_kwargs
+                    )
                     .squeeze(dim=0)
                     .tolist()
                 )

@@ -21,7 +21,9 @@ from camel.types import ModelType
 
 def test_ai_society_role_playing_example():
     with patch('time.sleep', return_value=None):
-        examples.ai_society.role_playing.main(ModelType.STUB, chat_turn_limit=2)
+        examples.ai_society.role_playing.main(
+            ModelType.STUB, chat_turn_limit=2
+        )
 
 
 def test_role_playing_with_function_example():
