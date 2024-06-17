@@ -22,9 +22,8 @@ from .prompt_templates import PromptTemplateGenerator
 from .role_description_prompt_template import RoleDescriptionPromptTemplateDict
 from .solution_extraction import SolutionExtractionPromptTemplateDict
 from .task_prompt_template import TaskPromptTemplateDict
+from .text_embedding import TextEmbeddingPromptTemplateDict
 from .translation import TranslationPromptTemplateDict
-from .embedding import EmbeddingPromptTemplateDict
-
 
 __all__ = [
     'TextPrompt',
@@ -39,7 +38,7 @@ __all__ = [
     'TaskPromptTemplateDict',
     'PromptTemplateGenerator',
     'SolutionExtractionPromptTemplateDict',
-    'EmbeddingPromptTemplateDict',
+    'TextEmbeddingPromptTemplateDict',
     'ObjectRecognitionPromptTemplateDict',
     'DescriptionVideoPromptTemplateDict',
 ]

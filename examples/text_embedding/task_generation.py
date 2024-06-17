@@ -14,30 +14,35 @@
 import os
 
 from camel.agents import ChatAgent
+from camel.configs.openai_config import ChatGPTConfig
 from camel.generators import PromptTemplateGenerator
 from camel.messages import BaseMessage
-from camel.types import TaskType
+from camel.types import ModelType, TaskType
 
 
 def main() -> None:
-    num_generate = 3
+    num_generate = 2
     num_tasks = 3
     prompt_template = PromptTemplateGenerator().get_prompt_from_key(
-        TaskType.EMBEDDING, "generate_tasks")
-    evaluation_dict = {
-        'num_tasks': num_tasks,
-    }
+        TaskType.TEXT_EMBEDDING, "generate_tasks"
+    )
+    evaluation_dict = dict(num_tasks=num_tasks)
     prompt = prompt_template.format(**evaluation_dict)
     print(prompt)
     assistant_sys_msg = BaseMessage.make_assistant_message(
         role_name="Assistant",
         content="You are a helpful text retrieval task generator.",
     )
-    agent = ChatAgent(assistant_sys_msg)
+    model_config = ChatGPTConfig(temperature=0.0)
+    agent = ChatAgent(
+        assistant_sys_msg,
+        model_config=model_config,
+        model_type=ModelType.GPT_4O,
+    )
     user_msg = BaseMessage.make_user_message(role_name="User", content=prompt)
 
     total_tasks = []
-    for i in range(num_generate):
+    for _ in range(num_generate):
         agent.reset()
         assistant_response = agent.step(user_msg)
         assistant_content = assistant_response.msg.content
@@ -47,10 +52,22 @@ def main() -> None:
         tasks = [task.split('. ')[1] for task in tasks]
         total_tasks = total_tasks + tasks
 
-    os.makedirs("./embedding_data/tasks/", exist_ok=True)
-    with open("./embedding_data/tasks/tasks.txt", "w") as file:
+    os.makedirs("./text_embedding_data/tasks/", exist_ok=True)
+    with open("./text_embedding_data/tasks/tasks.txt", "w") as file:
         file.write("\n".join(total_tasks))
 
 
 if __name__ == "__main__":
     main()
+
+# flake8: noqa :E501
+"""
+===============================================================================
+Provided a historical event as a query, retrieve documents that offer different perspectives and analyses of the event.
+Given a medical symptom as a query, retrieve documents that discuss potential diagnoses, treatments, and patient experiences.
+Provided a technological innovation as a query, retrieve documents that explore its development, applications, and societal impact.
+Given a historical event as a query, retrieve documents that provide different perspectives and analyses of the event.
+Provided a medical symptom as a query, retrieve documents that discuss potential diagnoses, treatments, and patient experiences related to the symptom.
+Given a technological innovation as a query, retrieve documents that explore its development, applications, and impact on various industries.
+===============================================================================
+"""

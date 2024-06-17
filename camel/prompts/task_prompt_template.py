@@ -17,7 +17,7 @@ from camel.prompts.ai_society import (
     AISocietyPromptTemplateDict,
     TextPromptDict,
 )
-from camel.prompts.code import CodePromptTemplateDict, EmbeddingPromptTemplateDict
+from camel.prompts.code import CodePromptTemplateDict
 from camel.prompts.descripte_video_prompt import (
     DescriptionVideoPromptTemplateDict,
 )
@@ -34,6 +34,7 @@ from camel.prompts.role_description_prompt_template import (
 from camel.prompts.solution_extraction import (
     SolutionExtractionPromptTemplateDict,
 )
+from camel.prompts.text_embedding import TextEmbeddingPromptTemplateDict
 from camel.prompts.translation import TranslationPromptTemplateDict
 from camel.types import TaskType
 
@@ -61,6 +62,6 @@ class TaskPromptTemplateDict(Dict[Any, TextPromptDict]):
                 TaskType.ROLE_DESCRIPTION: RoleDescriptionPromptTemplateDict(),
                 TaskType.OBJECT_RECOGNITION: ObjectRecognitionPromptTemplateDict(),  # noqa: E501
                 TaskType.DESCRIPTE_VIDEO: DescriptionVideoPromptTemplateDict(),
-                TaskType.EMBEDDING: EmbeddingPromptTemplateDict(),
+                TaskType.TEXT_EMBEDDING: TextEmbeddingPromptTemplateDict(),
             }
         )
