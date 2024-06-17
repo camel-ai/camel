@@ -299,6 +299,18 @@ class AnthropicTokenCounter(BaseTokenCounter):
         prompt = messages_to_prompt(messages, self.model_type)
 
         return self.client.count_tokens(prompt)
+    
+class GeminiTokenCounter(BaseTokenCounter):
+    def __init__(self, client):
+        r"""Constructor for the token counter for Gemini models.
+        """
+        self._client = client
+    def count_tokens_from_messages(self, messages) -> int:
+        r"""
+            Returns:
+            response(CountTokensResponse), use response.text to get output
+        """
+        return self._client.count_tokens(messages)
 
 
 class LiteLLMTokenCounter:

@@ -36,6 +36,7 @@ from .token_counting import (
     OpenAITokenCounter,
     OpenSourceTokenCounter,
     get_model_encoding,
+    GeminiTokenCounter,
 )
 
 __all__ = [
@@ -60,4 +61,5 @@ __all__ = [
     'create_chunks',
     'dependencies_required',
     'api_keys_required',
+    'GeminiTokenCounter',
 ]

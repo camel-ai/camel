@@ -20,7 +20,7 @@ from typing import Any, Dict, List, Optional, Union
 import google.generativeai as genai
 from camel.utils import (
     BaseTokenCounter,
-    OpenAITokenCounter,
+    GeminiTokenCounter,
     model_api_key_required,
 )
 
@@ -38,21 +38,23 @@ class GeminiModel(BaseModelBackend):
             model_type (ModelType): Model for which a backend is created,
                 Gemini-1.5-flash or Gemini-1.5-pro.
             model_config_dict (Dict[str, Any]): A dictionary that will
-                be fed into openai.ChatCompletion.create().
+                be fed into generate_content().
             api_key (Optional[str]): The API key for authenticating with the
                 gemini service. (default: :obj:`None`)
         """
         super().__init__(model_type, model_config_dict, api_key)
         self._api_key = api_key or os.environ.get("GOOGLE_API_KEY")
         genai.configure(api_key = self._api_key)
+        if model_type.value not in ['gemini-1.5-flash', 'gemini-1.5-pro']:
+            raise ValueError("model_type can only be set to gemini-1.5-flash or gemini-1.5-pro")
         self._client = genai.GenerativeModel(model_type.value)
         self._token_counter: Optional[BaseTokenCounter] = None
 
-    r"""This Property is unavailable"""
+
     @property
     def token_counter(self) -> BaseTokenCounter:
         if not self._token_counter:
-            self._token_counter = None
+            self._token_counter = GeminiTokenCounter(self._client)
         return self._token_counter
     
     @model_api_key_required
