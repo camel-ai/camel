@@ -12,11 +12,11 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from camel.types import (
-    ChatCompletionSystemMessageParam,
     ChatCompletionAssistantMessageParam,
-    ChatCompletionUserMessageParam,
     ChatCompletionFunctionMessageParam,
     ChatCompletionMessageParam,
+    ChatCompletionSystemMessageParam,
+    ChatCompletionUserMessageParam,
 )
 
 OpenAISystemMessage = ChatCompletionSystemMessageParam

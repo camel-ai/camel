@@ -14,7 +14,7 @@
 import pytest
 
 from camel.agents import ChatAgent, CriticAgent
-from camel.configs import FunctionCallingConfig
+from camel.configs import ChatGPTConfig
 from camel.functions import MATH_FUNCS
 from camel.human import Human
 from camel.messages import BaseMessage
@@ -25,13 +25,14 @@ from camel.types import ModelType, RoleType, TaskType
 @pytest.mark.parametrize("model_type", [None, ModelType.GPT_4])
 @pytest.mark.parametrize("critic_role_name", ["human", "critic agent"])
 @pytest.mark.parametrize("with_critic_in_the_loop", [True, False])
-def test_role_playing_init(model_type, critic_role_name,
-                           with_critic_in_the_loop):
+def test_role_playing_init(
+    model_type, critic_role_name, with_critic_in_the_loop
+):
     role_playing = RolePlaying(
         assistant_role_name="assistant",
-        assistant_agent_kwargs=dict(model_type=ModelType.GPT_3_5_TURBO_16K),
+        assistant_agent_kwargs=dict(model_type=ModelType.GPT_3_5_TURBO),
         user_role_name="user",
-        user_agent_kwargs=dict(model_type=ModelType.GPT_3_5_TURBO_16K),
+        user_agent_kwargs=dict(model_type=ModelType.GPT_3_5_TURBO),
         model_type=model_type,
         critic_role_name=critic_role_name,
         task_prompt="Perform the task",
@@ -62,8 +63,8 @@ def test_role_playing_init(model_type, critic_role_name,
     assert isinstance(assistant_agent, ChatAgent)
     assert isinstance(user_agent, ChatAgent)
     if model_type is None:
-        assert assistant_agent.model_type == ModelType.GPT_3_5_TURBO_16K
-        assert user_agent.model_type == ModelType.GPT_3_5_TURBO_16K
+        assert assistant_agent.model_type == ModelType.GPT_3_5_TURBO
+        assert user_agent.model_type == ModelType.GPT_3_5_TURBO
     else:
         assert assistant_agent.model_type == ModelType.GPT_4
         assert user_agent.model_type == ModelType.GPT_4
@@ -86,12 +87,19 @@ def test_role_playing_init(model_type, critic_role_name,
 @pytest.mark.model_backend
 @pytest.mark.parametrize(
     "task_type, extend_sys_msg_meta_dicts, extend_task_specify_meta_dict",
-    [(TaskType.AI_SOCIETY, None, None),
-     (TaskType.CODE, [dict(domain="science", language="python")] * 2,
-      dict(domain="science", language="python")),
-     (TaskType.MISALIGNMENT, None, None)])
-def test_role_playing_step(task_type, extend_sys_msg_meta_dicts,
-                           extend_task_specify_meta_dict):
+    [
+        (TaskType.AI_SOCIETY, None, None),
+        (
+            TaskType.CODE,
+            [dict(domain="science", language="python")] * 2,
+            dict(domain="science", language="python"),
+        ),
+        (TaskType.MISALIGNMENT, None, None),
+    ],
+)
+def test_role_playing_step(
+    task_type, extend_sys_msg_meta_dicts, extend_task_specify_meta_dict
+):
     role_playing = RolePlaying(
         assistant_role_name="AI Assistant",
         assistant_agent_kwargs=dict(model_type=ModelType.GPT_3_5_TURBO),
@@ -104,7 +112,8 @@ def test_role_playing_step(task_type, extend_sys_msg_meta_dicts,
         extend_task_specify_meta_dict=extend_task_specify_meta_dict,
     )
     init_assistant_msg = BaseMessage.make_assistant_message(
-        role_name="AI Assistant", content="Hello")
+        role_name="AI Assistant", content="Hello"
+    )
     print(role_playing.assistant_agent.system_message)
     print(role_playing.user_agent.system_message)
 
@@ -121,15 +130,16 @@ def test_role_playing_step(task_type, extend_sys_msg_meta_dicts,
 
 @pytest.mark.model_backend
 def test_role_playing_with_function():
-    function_list = [*MATH_FUNCS]
-    assistant_model_config = FunctionCallingConfig.from_openai_function_list(
-        function_list=function_list)
+    tools = [*MATH_FUNCS]
+    assistant_model_config = ChatGPTConfig(tools=tools)
 
     role_playing = RolePlaying(
         assistant_role_name="AI Assistant",
-        assistant_agent_kwargs=dict(model_type=ModelType.GPT_3_5_TURBO,
-                                    model_config=assistant_model_config,
-                                    function_list=function_list),
+        assistant_agent_kwargs=dict(
+            model_type=ModelType.GPT_3_5_TURBO,
+            model_config=assistant_model_config,
+            tools=tools,
+        ),
         user_role_name="AI User",
         user_agent_kwargs=dict(model_type=ModelType.GPT_3_5_TURBO),
         task_prompt="Perform the task",
@@ -173,8 +183,16 @@ def test_role_playing_role_sequence(model_type=None):
         assistant_role_sequence.append(record["role"])
 
     assert user_role_sequence == [
-        'system', 'user', 'assistant', 'user', 'assistant'
+        'system',
+        'user',
+        'assistant',
+        'user',
+        'assistant',
     ]
     assert assistant_role_sequence == [
-        'system', 'user', 'assistant', 'user', 'assistant'
+        'system',
+        'user',
+        'assistant',
+        'user',
+        'assistant',
     ]

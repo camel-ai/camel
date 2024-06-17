@@ -14,11 +14,12 @@
 
 from .base import (
     BaseVectorStorage,
-    VectorRecord,
     VectorDBQuery,
     VectorDBQueryResult,
     VectorDBStatus,
+    VectorRecord,
 )
+from .milvus import MilvusStorage
 from .qdrant import QdrantStorage
 
 __all__ = [
@@ -26,6 +27,7 @@ __all__ = [
     'VectorDBQuery',
     'VectorDBQueryResult',
     'QdrantStorage',
+    'MilvusStorage',
     'VectorRecord',
     'VectorDBStatus',
 ]

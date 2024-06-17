@@ -12,24 +12,30 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .enums import (
-    RoleType,
+    AudioModelType,
+    EmbeddingModelType,
     ModelType,
+    OpenAIBackendRole,
+    OpenAIImageType,
+    OpenAIVisionDetailType,
+    OpenAPIName,
+    RoleType,
+    StorageType,
     TaskType,
     TerminationMode,
-    OpenAIBackendRole,
-    EmbeddingModelType,
     VectorDistance,
+    VoiceType,
 )
 from .openai_types import (
-    Choice,
     ChatCompletion,
+    ChatCompletionAssistantMessageParam,
     ChatCompletionChunk,
+    ChatCompletionFunctionMessageParam,
     ChatCompletionMessage,
     ChatCompletionMessageParam,
     ChatCompletionSystemMessageParam,
     ChatCompletionUserMessageParam,
-    ChatCompletionAssistantMessageParam,
-    ChatCompletionFunctionMessageParam,
+    Choice,
     CompletionUsage,
 )
 
@@ -41,6 +47,7 @@ __all__ = [
     'OpenAIBackendRole',
     'EmbeddingModelType',
     'VectorDistance',
+    'StorageType',
     'Choice',
     'ChatCompletion',
     'ChatCompletionChunk',
@@ -51,4 +58,10 @@ __all__ = [
     'ChatCompletionAssistantMessageParam',
     'ChatCompletionFunctionMessageParam',
     'CompletionUsage',
+    'OpenAIVideoType',
+    'OpenAIImageType',
+    'OpenAIVisionDetailType',
+    'OpenAPIName',
+    'AudioModelType',
+    'VoiceType',
 ]

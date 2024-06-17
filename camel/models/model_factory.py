@@ -11,14 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
-from camel.models import (
-    BaseModelBackend,
-    OpenAIModel,
-    OpenSourceModel,
-    StubModel,
-)
+from camel.models.anthropic_model import AnthropicModel
+from camel.models.base_model import BaseModelBackend
+from camel.models.open_source_model import OpenSourceModel
+from camel.models.openai_model import OpenAIModel
+from camel.models.stub_model import StubModel
+from camel.models.zhipuai_model import ZhipuAIModel
 from camel.types import ModelType
 
 
@@ -30,14 +30,19 @@ class ModelFactory:
     """
 
     @staticmethod
-    def create(model_type: ModelType,
-               model_config_dict: Dict) -> BaseModelBackend:
+    def create(
+        model_type: ModelType,
+        model_config_dict: Dict,
+        api_key: Optional[str] = None,
+    ) -> BaseModelBackend:
         r"""Creates an instance of `BaseModelBackend` of the specified type.
 
         Args:
             model_type (ModelType): Model for which a backend is created.
             model_config_dict (Dict): A dictionary that will be fed into
                 the backend constructor.
+            api_key (Optional[str]): The API key for authenticating with the
+                LLM service.
 
         Raises:
             ValueError: If there is not backend for the model.
@@ -52,8 +57,16 @@ class ModelFactory:
             model_class = StubModel
         elif model_type.is_open_source:
             model_class = OpenSourceModel
+        elif model_type.is_anthropic:
+            model_class = AnthropicModel
+        elif model_type.is_zhipuai:
+            model_class = ZhipuAIModel
         else:
             raise ValueError(f"Unknown model type `{model_type}` is input")
 
-        inst = model_class(model_type, model_config_dict)
+        if model_type.is_open_source:
+            inst = model_class(model_type, model_config_dict)
+        else:
+            inst = model_class(model_type, model_config_dict, api_key)
+
         return inst

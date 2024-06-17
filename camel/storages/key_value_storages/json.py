@@ -13,8 +13,9 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 import json
+from enum import EnumMeta
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, ClassVar, Dict, List, Optional
 
 from camel.storages.key_value_storages import BaseKeyValueStorage
 from camel.types import ModelType, OpenAIBackendRole, RoleType, TaskType
@@ -24,7 +25,8 @@ class _CamelJSONEncoder(json.JSONEncoder):
     r"""A custom JSON encoder for serializing specifically enumerated types.
     Ensures enumerated types can be stored in and retrieved from JSON format.
     """
-    CAMEL_ENUMS = {
+
+    CAMEL_ENUMS: ClassVar[Dict[str, EnumMeta]] = {
         "RoleType": RoleType,
         "TaskType": TaskType,
         "ModelType": ModelType,
@@ -68,7 +70,8 @@ class JsonStorage(BaseKeyValueStorage):
         """
         with self.json_path.open("a") as f:
             f.writelines(
-                [json.dumps(r, cls=_CamelJSONEncoder) + "\n" for r in records])
+                [json.dumps(r, cls=_CamelJSONEncoder) + "\n" for r in records]
+            )
 
     def load(self) -> List[Dict[str, Any]]:
         r"""Loads all stored records from the key-value storage system.
@@ -84,7 +87,6 @@ class JsonStorage(BaseKeyValueStorage):
             ]
 
     def clear(self) -> None:
-        r"""Removes all records from the key-value storage system.
-        """
+        r"""Removes all records from the key-value storage system."""
         with self.json_path.open("w"):
             pass

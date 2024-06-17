@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import importlib
 import os
 import platform
 import re
@@ -29,9 +30,9 @@ from camel.types import TaskType
 F = TypeVar('F', bound=Callable[..., Any])
 
 
-def openai_api_key_required(func: F) -> F:
-    r"""Decorator that checks if the OpenAI API key is available in the
-    environment variables.
+def model_api_key_required(func: F) -> F:
+    r"""Decorator that checks if the API key is available either as an
+    environment variable or passed directly for a model.
 
     Args:
         func (callable): The function to be wrapped.
@@ -40,16 +41,29 @@ def openai_api_key_required(func: F) -> F:
         callable: The decorated function.
 
     Raises:
-        ValueError: If the OpenAI API key is not found in the environment
-            variables.
+        ValueError: If the API key is not found, either as an environment
+            variable or directly passed.
+
+    Note:
+        Supported model type: `OpenAI` and `Anthropic`.
     """
 
     @wraps(func)
     def wrapper(self, *args, **kwargs):
-        if 'OPENAI_API_KEY' in os.environ:
+        if self.model_type.is_openai:
+            if not self._api_key and 'OPENAI_API_KEY' not in os.environ:
+                raise ValueError('OpenAI API key not found.')
+            return func(self, *args, **kwargs)
+        elif self.model_type.is_zhipuai:
+            if 'ZHIPUAI_API_KEY' not in os.environ:
+                raise ValueError('ZhiPuAI API key not found.')
+            return func(self, *args, **kwargs)
+        elif self.model_type.is_anthropic:
+            if not self._api_key and 'ANTHROPIC_API_KEY' not in os.environ:
+                raise ValueError('Anthropic API key not found.')
             return func(self, *args, **kwargs)
         else:
-            raise ValueError('OpenAI API key not found.')
+            raise ValueError('Unsupported model type.')
 
     return cast(F, wrapper)
 
@@ -123,8 +137,10 @@ def download_tasks(task: TaskType, folder_path: str) -> None:
     zip_file_path = os.path.join(folder_path, "tasks.zip")
 
     # Download the zip file from the Google Drive link
-    response = requests.get("https://huggingface.co/datasets/camel-ai/"
-                            f"metadata/resolve/main/{task.value}_tasks.zip")
+    response = requests.get(
+        "https://huggingface.co/datasets/camel-ai/"
+        f"metadata/resolve/main/{task.value}_tasks.zip"
+    )
 
     # Save the zip file
     with open(zip_file_path, "wb") as f:
@@ -182,6 +198,100 @@ def check_server_running(server_url: str) -> bool:
     return result == 0
 
 
+def dependencies_required(*required_modules: str) -> Callable[[F], F]:
+    r"""A decorator to ensure that specified Python modules
+    are available before a function executes.
+
+    Args:
+        required_modules (str): The required modules to be checked for
+            availability.
+
+    Returns:
+        Callable[[F], F]: The original function with the added check for
+            required module dependencies.
+
+    Raises:
+        ImportError: If any of the required modules are not available.
+
+    Example:
+        ::
+
+            @dependencies_required('numpy', 'pandas')
+            def data_processing_function():
+                # Function implementation...
+    """
+
+    def decorator(func: F) -> F:
+        @wraps(func)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            missing_modules = [
+                m for m in required_modules if not is_module_available(m)
+            ]
+            if missing_modules:
+                raise ImportError(
+                    f"Missing required modules: {', '.join(missing_modules)}"
+                )
+            return func(*args, **kwargs)
+
+        return cast(F, wrapper)
+
+    return decorator
+
+
+def is_module_available(module_name: str) -> bool:
+    r"""Check if a module is available for import.
+
+    Args:
+        module_name (str): The name of the module to check for availability.
+
+    Returns:
+        bool: True if the module can be imported, False otherwise.
+    """
+    try:
+        importlib.import_module(module_name)
+        return True
+    except ImportError:
+        return False
+
+
+def api_keys_required(*required_keys: str) -> Callable[[F], F]:
+    r"""A decorator to check if the required API keys are
+    present in the environment variables.
+
+    Args:
+        required_keys (str): The required API keys to be checked.
+
+    Returns:
+        Callable[[F], F]: The original function with the added check
+            for required API keys.
+
+    Raises:
+        ValueError: If any of the required API keys are missing in the
+            environment variables.
+
+    Example:
+        ::
+
+            @api_keys_required('API_KEY_1', 'API_KEY_2')
+            def some_api_function():
+                # Function implementation...
+    """
+
+    def decorator(func: F) -> F:
+        @wraps(func)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            missing_keys = [k for k in required_keys if k not in os.environ]
+            if missing_keys:
+                raise ValueError(
+                    f"Missing API keys: {', '.join(missing_keys)}"
+                )
+            return func(*args, **kwargs)
+
+        return cast(F, wrapper)
+
+    return decorator
+
+
 def get_system_information():
     r"""Gathers information about the operating system.
 
@@ -226,3 +336,63 @@ def to_pascal(snake: str) -> str:
 
 
 PYDANTIC_V2 = pydantic.VERSION.startswith("2.")
+
+
+def text_extract_from_web(url: str) -> str:
+    r"""Get the text information from given url.
+
+    Args:
+        url (str): The website you want to search.
+
+    Returns:
+        str: All texts extract from the web.
+    """
+    try:
+        import requests
+        from newspaper import Article
+
+        # Request the target page
+        article = Article(url)
+        article.download()
+        article.parse()
+        text = article.text
+
+    except requests.RequestException as e:
+        text = f"Can't access {url}, error: {e}"
+
+    except Exception as e:
+        text = f"Can't extract text from {url}, error: {e}"
+
+    return text
+
+
+def create_chunks(text: str, n: int) -> List[str]:
+    r"""Returns successive n-sized chunks from provided text. Split a text
+    into smaller chunks of size n".
+
+    Args:
+        text (str): The text to be split.
+        n (int): The max length of a single chunk.
+
+    Returns:
+        List[str]: A list of split texts.
+    """
+
+    chunks = []
+    i = 0
+    while i < len(text):
+        # Find the nearest end of sentence within a range of 0.5 * n
+        # and 1.5 * n tokens
+        j = min(i + int(1.2 * n), len(text))
+        while j > i + int(0.8 * n):
+            # Decode the tokens and check for full stop or newline
+            chunk = text[i:j]
+            if chunk.endswith(".") or chunk.endswith("\n"):
+                break
+            j -= 1
+        # If no end of sentence found, use n tokens as the chunk size
+        if j == i + int(0.8 * n):
+            j = min(i + n, len(text))
+        chunks.append(text[i:j])
+        i = j
+    return chunks

@@ -32,10 +32,7 @@ def assistant_func_message() -> FunctionCallingMessage:
         meta_dict=meta_dict,
         content=content,
         func_name="add",
-        args={
-            "a": "1",
-            "b": "2"
-        },
+        args={"a": "1", "b": "2"},
     )
 
 
@@ -57,7 +54,8 @@ def function_func_message() -> FunctionCallingMessage:
 
 
 def test_assistant_func_message(
-        assistant_func_message: FunctionCallingMessage):
+    assistant_func_message: FunctionCallingMessage,
+):
     content = "test function message"
 
     assert assistant_func_message.func_name == "add"
@@ -69,11 +67,8 @@ def test_assistant_func_message(
         "content": content,
         "function_call": {
             "name": "add",
-            "arguments": str({
-                "a": "1",
-                "b": "2"
-            }),
-        }
+            "arguments": str({"a": "1", "b": "2"}),
+        },
     }
     assert assistant_func_message.to_openai_assistant_message() == msg_dict
 
@@ -92,18 +87,26 @@ def test_function_func_message(function_func_message: FunctionCallingMessage):
 
 
 def test_assistant_func_message_to_openai_function_message(
-        assistant_func_message: FunctionCallingMessage):
+    assistant_func_message: FunctionCallingMessage,
+):
     with pytest.raises(
-            ValueError,
-            match=("Invalid request for converting into function message"
-                   " due to missing function name or results.")):
+        ValueError,
+        match=(
+            "Invalid request for converting into function message"
+            " due to missing function name or results."
+        ),
+    ):
         assistant_func_message.to_openai_function_message()
 
 
 def test_function_func_message_to_openai_assistant_message(
-        function_func_message: FunctionCallingMessage):
+    function_func_message: FunctionCallingMessage,
+):
     with pytest.raises(
-            ValueError,
-            match=("Invalid request for converting into assistant message"
-                   " due to missing function name or arguments.")):
+        ValueError,
+        match=(
+            "Invalid request for converting into assistant message"
+            " due to missing function name or arguments."
+        ),
+    ):
         function_func_message.to_openai_assistant_message()
