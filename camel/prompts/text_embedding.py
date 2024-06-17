@@ -19,8 +19,11 @@ from camel.types import RoleType
 
 # flake8: noqa :E501
 class TextEmbeddingPromptTemplateDict(TextPromptDict):
-    r"""A dictionary containing :obj:`TextPrompt` used in the
-    text embedding sentences task.
+    r"""A :obj:`TextPrompt` dictionary containing text embedding tasks
+    generation, query, positive and hard negative samples generation,
+    from the `"Improving Text Embeddings with Large Language Models"
+    <https://arxiv.org/abs/2401.00368>`_ paper.
+
 
     Attributes:
         GENERATE_TASKS (TextPrompt): A prompt to generate a list
