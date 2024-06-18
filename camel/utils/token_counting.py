@@ -315,7 +315,7 @@ class GeminiTokenCounter(BaseTokenCounter):
         if isinstance(messages, list):
             for msg in messages:
                 if isinstance(msg, dict) and 'content' in msg:
-                    messages = msg['content']
+                    msg['parts'] = msg.pop('content')
         return self._client.count_tokens(messages).total_tokens
 
 

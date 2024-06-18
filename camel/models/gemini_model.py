@@ -49,13 +49,8 @@ class GeminiModel(BaseModelBackend):
         super().__init__(model_type, model_config_dict, api_key)
         self._api_key = api_key or os.environ.get("GOOGLE_API_KEY")
         genai.configure(api_key=self._api_key)
-        if model_type.value not in ['gemini-1.5-flash', 'gemini-1.5-pro']:
-            raise ValueError(
-                "model_type: 'gemini-1.5-flash' or 'gemini-1.5-pro'"
-            )
         self._client = genai.GenerativeModel(model_type.value)
         self._token_counter: Optional[BaseTokenCounter] = None
-        generation_config = model_config_dict.pop("generation_config", None)
         generation_config_dict = {
             k: v
             for k, v in model_config_dict.items()
@@ -97,10 +92,9 @@ class GeminiModel(BaseModelBackend):
         If it is in streaming mode,
         you can iterate over the response chunks as they become available.
         """
-
         response = self._client.generate_content(
-            contents=contents,
-            **self.gemini_config_dict,
+            contents=self.convertor(contents),
+            **self.model_config_dict,
         )
         return response
 
@@ -128,3 +122,19 @@ class GeminiModel(BaseModelBackend):
             bool: Whether the model is in stream mode.
         """
         return self.model_config_dict.get('stream', False)
+
+    def convertor(self, messages):
+        converted_messages = []
+        for message in messages:
+            role = message.get('role')
+            if role != 'user':
+                role = 'model'
+            if 'content' in message:
+                converted_message = {
+                    "role": role,
+                    "parts": message.get("content")
+                }
+                converted_messages.append(converted_message)
+            else:
+                converted_messages.append(message)
+        return converted_messages

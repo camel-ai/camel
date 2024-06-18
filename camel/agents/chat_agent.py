@@ -448,8 +448,6 @@ class ChatAgent(BaseAgent):
     ]:
         r"""Internal function for agent step model response."""
         # Obtain the model's response
-        print("-------------------------------------------")
-        print(openai_messages)
         response = self.model_backend.run(openai_messages)
 
         if isinstance(response, ChatCompletion):
