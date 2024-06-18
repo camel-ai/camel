@@ -33,7 +33,7 @@ class GeminiModel(BaseModelBackend):
     def __init__(
         self,
         model_type: ModelType,
-        model_config_dict: Optional[Dict[str, Any]],
+        model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
     ) -> None:
         r"""Constructor for Gemini backend.
@@ -47,13 +47,11 @@ class GeminiModel(BaseModelBackend):
                 gemini service. (default: :obj:`None`)
         """
         super().__init__(model_type, model_config_dict, api_key)
-        if model_config_dict is None:
-            model_config_dict = {}
         self._api_key = api_key or os.environ.get("GOOGLE_API_KEY")
         genai.configure(api_key=self._api_key)
         if model_type.value not in ['gemini-1.5-flash', 'gemini-1.5-pro']:
             raise ValueError(
-                "model_type can only be set to gemini-1.5-flash or gemini-1.5-pro"
+                "model_type: 'gemini-1.5-flash' or 'gemini-1.5-pro'"
             )
         self._client = genai.GenerativeModel(model_type.value)
         self._token_counter: Optional[BaseTokenCounter] = None

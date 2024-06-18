@@ -89,7 +89,8 @@ class GeminiConfig(BaseConfig):
                     `genai.get_model` function.
 
                 response_mime_type:
-                    Optional. Output response mimetype of the generated candidate text.
+                    Optional.
+                    Output response mimetype of the generated candidate text.
 
                     Supported mimetype:
                         `text/plain`: (default) Text output.
@@ -114,11 +115,11 @@ class GeminiConfig(BaseConfig):
     top_k: Optional[int] = None
     response_mime_type: Optional[str] = None
     response_schema: Optional[protos.Schema] = None
-    safety_settings: Optional[safety_types.SafetySettingOptions] = (None,)
-    stream: bool = (False,)
-    tools: Optional[content_types.FunctionLibraryType] = (None,)
-    tool_config: Optional[content_types.ToolConfigType] = (None,)
-    request_options: Optional[helper_types.RequestOptionsType] = (None,)
+    safety_settings: Optional[safety_types.SafetySettingOptions] = None
+    stream: bool = False
+    tools: Optional[content_types.FunctionLibraryType] = None
+    tool_config: Optional[content_types.ToolConfigType] = None
+    request_options: Optional[helper_types.RequestOptionsType] = None
 
 
 @dataclass(frozen=True)

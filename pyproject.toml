@@ -322,5 +322,6 @@ module = [
     "litellm",
     "pyTelegramBotAPI",
     "discord.py",
+    "google.*",
 ]
 ignore_missing_imports = true
