@@ -21,7 +21,7 @@ from camel.types.enums import RoleType, TaskType
 
 # Define system message
 sys_msg_prompt = PromptTemplateGenerator().get_prompt_from_key(
-    TaskType.DESCRIPTE_VIDEO, RoleType.ASSISTANT
+    TaskType.VIDEO_DESCRIPTION, RoleType.ASSISTANT
 )
 sys_msg = BaseMessage.make_assistant_message(
     role_name="Assistant",
