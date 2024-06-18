@@ -15,7 +15,7 @@ import re
 
 import pytest
 
-from camel.configs import GeminiConfig
+from camel.configs import GeminiConfig, OpenSourceConfig
 from camel.models import GeminiModel
 from camel.types import ModelType
 from camel.utils import GeminiTokenCounter
@@ -42,7 +42,7 @@ def test_anthropic_model(model_type):
 @pytest.mark.model_backend
 def test_anthropic_model_unexpected_argument():
     model_type = ModelType.GEMINI_1_5_FLASH
-    model_config = GeminiConfig(
+    model_config = OpenSourceConfig(
         model_path="vicuna-7b-v1.5",
         server_url="http://localhost:8000/v1",
     )
@@ -53,7 +53,7 @@ def test_anthropic_model_unexpected_argument():
         match=re.escape(
             (
                 "Unexpected argument `model_path` is "
-                "input into Anthropic model backend."
+                "input into Gemini model backend."
             )
         ),
     ):
