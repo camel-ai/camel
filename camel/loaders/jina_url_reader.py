@@ -33,19 +33,18 @@ class JinaURLReader:
     """
 
     class ReturnFormat(Enum):
-        DEFAULT = "default"
+        DEFAULT = None
         MARKDOWN = "markdown"
         HTML = "html"
         TEXT = "text"
-        SCREENSHOT = "screenshot"
 
     def __init__(
-            self,
-            api_key: Optional[str] = None,
-            return_format: Optional[ReturnFormat] = ReturnFormat.DEFAULT,
-            json_response: Optional[bool] = False,
-            timeout: Optional[int] = 10,
-            **kwargs: str,
+        self,
+        api_key: Optional[str] = None,
+        return_format: Optional[ReturnFormat] = ReturnFormat.DEFAULT,
+        json_response: Optional[bool] = False,
+        timeout: Optional[int] = 30,
+        **kwargs: str,
     ) -> None:
         r"""
         Initializes an instance of the JinaURLReader according to the provided
@@ -56,7 +55,8 @@ class JinaURLReader:
                 provided, the reader will have a lower rate limit.
             return_format (Optional[ReturnFormat]): The level of detail
                 of the returned content. Defaults to ``ReturnFormat.DEFAULT``,
-                which is optimized for LLMs.
+                which is optimized for LLMs. For now screenshots are not
+                supported.
             json_response (Optional[bool]): Whether to return the response
                 in JSON format. Defaults to False.
             timeout (Optional[int]): The maximum time in seconds to wait for
@@ -81,6 +81,9 @@ class JinaURLReader:
         api_field = f"Bearer {api_key}" if api_key else None
         json_field = "application/json" if json_response else None
 
+        # in case the user has passed in None
+        return_format = return_format or JinaURLReader.ReturnFormat.DEFAULT
+
         raw_headers = {
             "Authorization": api_field,
             "X-Return-Format": return_format.value,
@@ -93,7 +96,8 @@ class JinaURLReader:
         self.headers = {k: v for k, v in raw_headers.items() if v}
 
     def read_content(self, url: str) -> str:
-        r"""Reads the content of a URL and returns it as a LLM-friendly string.
+        r"""Reads the content of a URL and returns it as a plaintext with
+        given form.
 
         Args:
             url (str): The URL to read.
@@ -102,14 +106,28 @@ class JinaURLReader:
             str: The content of the URL.
         """
 
+        import json
+
         import requests
 
         full_url = f"{JINA_ENDPOINT}{url}"
         try:
             resp = requests.get(full_url, headers=self.headers)
         except Exception as e:
-            raise Exception(
-                f"[JinaURLReader] Failed to read content from {url}"
-            ) from e
+            raise Exception(f"Failed to read content from {url}") from e
 
+        try:
+            resp_json = resp.json()
+        except json.JSONDecodeError:
+            # if the response is not JSON, return the text
+            return resp.text
+
+        # if the result is json, means whether the user has chosen to return
+        # json, *or there is any error*, or both
+        # check the code to see if it is successful
+        if resp_json["code"] != 200:
+            raise Exception(f"{resp_json['message']}")
+
+        # if the code is 200, meaning that user selected JSON mode
+        # directly return what we get from Jina API
         return resp.text
