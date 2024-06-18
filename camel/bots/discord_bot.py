@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, List, Optional
 
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
+from camel.retrievers import AutoRetriever
 
 if TYPE_CHECKING:
     from discord import Message
@@ -36,10 +37,18 @@ class DiscordBot:
         chat_agent: ChatAgent,
         channel_ids: Optional[List[int]] = None,
         discord_token: Optional[str] = None,
+        auto_retriever: Optional[AutoRetriever] = None,
+        content_input_paths: Optional[List[str]] = None,
+        top_k: int = 1,
+        return_detailed_info: bool = True,
     ) -> None:
         self.chat_agent = chat_agent
         self.token = discord_token or os.getenv('DISCORD_TOKEN')
         self.channel_ids = channel_ids
+        self.auto_retriever = auto_retriever
+        self.content_input_paths = content_input_paths
+        self.top_k = top_k
+        self.return_detailed_info = return_detailed_info
 
         if not self.token:
             raise ValueError(
@@ -96,8 +105,18 @@ class DiscordBot:
 
         self.chat_agent.reset()
 
+        user_raw_msg = message.content
+
+        if self.auto_retriever:
+            user_raw_msg = self.auto_retriever.run_vector_retriever(
+                query=user_raw_msg,
+                content_input_paths=self.content_input_paths,
+                top_k=self.top_k,
+                return_detailed_info=self.return_detailed_info,
+            )
+        
         user_msg = BaseMessage.make_user_message(
-            role_name="User", content=message.content
+            role_name="User", content=user_raw_msg
         )
         assistant_response = self.chat_agent.step(user_msg)
         await message.channel.send(assistant_response.msg.content)

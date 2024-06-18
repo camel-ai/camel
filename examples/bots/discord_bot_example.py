@@ -15,6 +15,8 @@
 from camel.agents import ChatAgent
 from camel.bots.discord_bot import DiscordBot
 from camel.messages import BaseMessage
+from camel.retrievers import AutoRetriever
+from camel.types import StorageType
 
 
 def main(model=None) -> None:
@@ -24,7 +26,10 @@ def main(model=None) -> None:
     )
 
     agent = ChatAgent(assistant_sys_msg, model_type=model)
-    bot = DiscordBot(agent)
+    auto_retriever = AutoRetriever(
+        url_and_api_key=("Your Milvus URI","Your Milvus Token"),
+        storage_type=StorageType.MILVUS)
+    bot = DiscordBot(agent,auto_retriever=auto_retriever,content_input_paths=["local_data/"])
     bot.run()
 
 
