@@ -61,7 +61,7 @@ class GeminiModel(BaseModelBackend):
             for k, v in model_config_dict.items()
             if k in Gemini_Config_PARAMS
         }
-        self.model_config_dict = {
+        self.gemini_config_dict = {
             k: v
             for k, v in model_config_dict.items()
             if k not in Gemini_Config_PARAMS
@@ -69,7 +69,7 @@ class GeminiModel(BaseModelBackend):
         generation_config = genai.types.GenerationConfig(
             **generation_config_dict
         )
-        self.model_config_dict["generation_config"] = generation_config
+        self.gemini_config_dict["generation_config"] = generation_config
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -100,7 +100,7 @@ class GeminiModel(BaseModelBackend):
 
         response = self._client.generate_content(
             contents=contents,
-            **self.model_config_dict,
+            **self.gemini_config_dict,
         )
         return response
 
