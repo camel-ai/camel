@@ -123,11 +123,14 @@ class JinaURLReader:
             return resp.text
 
         # if the result is json, means whether the user has chosen to return
-        # json, *or there is any error*, or both
-        # check the code to see if it is successful
-        if resp_json["code"] != 200:
+        # json, *or there is any error*, or the webpage is json itself
+        # check the code to see if it's an error returned by Jina API
+
+        # if "code" or "data" not in resp_json, it's not a Jina API response
+        if "code" not in resp_json or "data" not in resp_json:
+            return resp.text
+
+        if resp_json["code"] != 200 and resp_json["data"] is None:
             raise Exception(f"{resp_json['message']}")
 
-        # if the code is 200, meaning that user selected JSON mode
-        # directly return what we get from Jina API
         return resp.text
