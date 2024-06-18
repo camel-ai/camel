@@ -102,12 +102,10 @@ class ModelType(Enum):
             ModelType.CLAUDE_3_SONNET,
             ModelType.CLAUDE_3_HAIKU,
         }
+
     @property
     def is_gemini(self) -> bool:
-        return self in {
-            ModelType.GEMINI_1_5_FLASH,
-            ModelType.GEMINI_1_5_PRO
-        }
+        return self in {ModelType.GEMINI_1_5_FLASH, ModelType.GEMINI_1_5_PRO}
 
     @property
     def token_limit(self) -> int:
@@ -125,9 +123,9 @@ class ModelType(Enum):
             return 128000
         elif self is ModelType.GPT_4O:
             return 128000
-        elif self in ModelType.GEMINI_1_5_FLASH:
+        elif self == ModelType.GEMINI_1_5_FLASH:
             return 1048576
-        elif self in ModelType.GEMINI_1_5_PRO:
+        elif self == ModelType.GEMINI_1_5_PRO:
             return 1048576
         elif self == ModelType.GLM_4:
             return 8192

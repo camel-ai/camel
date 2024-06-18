@@ -66,5 +66,5 @@ __all__ = [
     'AudioModelType',
     'VoiceType',
     'ContentsType',
-    'GenerateContentResponse'
+    'GenerateContentResponse',
 ]

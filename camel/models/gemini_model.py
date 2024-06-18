@@ -16,7 +16,7 @@ from typing import Any, Dict, Optional
 
 import google.generativeai as genai
 
-from camel.configs import Gemini_API_PARAMS
+from camel.configs import Gemini_API_PARAMS, Gemini_Config_PARAMS
 from camel.messages import ContentsType
 from camel.models import BaseModelBackend
 from camel.types import GenerateContentResponse, ModelType
@@ -29,10 +29,11 @@ from camel.utils import (
 
 class GeminiModel(BaseModelBackend):
     r"""Gemini API in a unified BaseModelBackend interface."""
+
     def __init__(
-        self, 
-        model_type: ModelType, 
-        model_config_dict: Optional[Dict[str, Any]] = None,
+        self,
+        model_type: ModelType,
+        model_config_dict: Optional[Dict[str, Any]],
         api_key: Optional[str] = None,
     ) -> None:
         r"""Constructor for Gemini backend.
@@ -47,26 +48,37 @@ class GeminiModel(BaseModelBackend):
         """
         super().__init__(model_type, model_config_dict, api_key)
         self._api_key = api_key or os.environ.get("GOOGLE_API_KEY")
-        genai.configure(api_key = self._api_key)
+        genai.configure(api_key=self._api_key)
         if model_type.value not in ['gemini-1.5-flash', 'gemini-1.5-pro']:
             raise ValueError(
-            "model_type can only be set to gemini-1.5-flash or gemini-1.5-pro"
+                "model_type can only be set to gemini-1.5-flash or gemini-1.5-pro"
             )
         self._client = genai.GenerativeModel(model_type.value)
         self._token_counter: Optional[BaseTokenCounter] = None
-
+        generation_config = model_config_dict.pop("generation_config", None)
+        generation_config_dict = {
+            k: v
+            for k, v in model_config_dict.items()
+            if k in Gemini_Config_PARAMS
+        }
+        self.model_config_dict = {
+            k: v
+            for k, v in model_config_dict.items()
+            if k not in Gemini_Config_PARAMS
+        }
+        generation_config = genai.types.GenerationConfig(
+            **generation_config_dict
+        )
+        self.model_config_dict["generation_config"] = generation_config
 
     @property
     def token_counter(self) -> BaseTokenCounter:
         if not self._token_counter:
-            self._token_counter = GeminiTokenCounter(self._client)
+            self._token_counter = GeminiTokenCounter(self.model_type)
         return self._token_counter
-    
+
     @model_api_key_required
-    def run(
-        self,
-        contents : ContentsType
-    ) -> GenerateContentResponse:
+    def run(self, contents: ContentsType) -> GenerateContentResponse:
         r"""Runs inference of Gemini model.
         This method can handle multimodal input
 
@@ -74,23 +86,24 @@ class GeminiModel(BaseModelBackend):
             contents: Message list or Message with the chat history
             in Gemini API format.
             example: contents = [{'role':'user', 'parts': ['hello']}]
-            
 
-        Returns: 
+
+        Returns:
             response(GenerateContentResponse)
 
-        If it is not in streaming mode, 
+        If it is not in streaming mode,
         you can directly output the response.text.
 
-        If it is in streaming mode, 
+        If it is in streaming mode,
         you can iterate over the response chunks as they become available.
         """
+
         response = self._client.generate_content(
-            contents = contents,
+            contents=contents,
             **self.model_config_dict,
         )
-        return response
-    
+        return response.text
+
     def check_model_config(self):
         r"""Check whether the model configuration contains any
         unexpected arguments to Gemini API.
@@ -102,11 +115,11 @@ class GeminiModel(BaseModelBackend):
         if self.model_config_dict is not None:
             for param in self.model_config_dict:
                 if param not in Gemini_API_PARAMS:
-                        raise ValueError(
+                    raise ValueError(
                         f"Unexpected argument `{param}` is "
                         "input into Gemini model backend."
                     )
-    
+
     @property
     def stream(self) -> bool:
         r"""Returns whether the model is in stream mode,

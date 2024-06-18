@@ -15,6 +15,8 @@ from .anthropic_config import ANTHROPIC_API_PARAMS, AnthropicConfig
 from .base_config import BaseConfig
 from .gemini_config import (
     Gemini_API_PARAMS,
+    Gemini_Config_PARAMS,
+    GeminiConfig,
 )
 from .litellm_config import LITELLM_API_PARAMS, LiteLLMConfig
 from .openai_config import (
@@ -32,5 +34,7 @@ __all__ = [
     'OpenSourceConfig',
     'LiteLLMConfig',
     'LITELLM_API_PARAMS',
+    'GeminiConfig',
     'Gemini_API_PARAMS',
+    'Gemini_Config_PARAMS',
 ]

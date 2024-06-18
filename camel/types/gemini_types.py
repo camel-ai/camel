@@ -16,4 +16,4 @@ from google.generativeai.types.content_types import ContentsType
 from google.generativeai.types.generation_types import GenerateContentResponse
 
 ContentsType = ContentsType
-GenerateContentResponse= GenerateContentResponse
+GenerateContentResponse = GenerateContentResponse

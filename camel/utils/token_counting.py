@@ -20,6 +20,7 @@ from io import BytesIO
 from math import ceil
 from typing import TYPE_CHECKING, List, Optional
 
+import google.generativeai as genai
 from anthropic import Anthropic
 from PIL import Image
 
@@ -297,20 +298,25 @@ class AnthropicTokenCounter(BaseTokenCounter):
             int: Number of tokens in the messages.
         """
         prompt = messages_to_prompt(messages, self.model_type)
-
         return self.client.count_tokens(prompt)
-    
+
+
 class GeminiTokenCounter(BaseTokenCounter):
-    def __init__(self, client):
-        r"""Constructor for the token counter for Gemini models.
-        """
-        self._client = client
+    def __init__(self, model_type: ModelType):
+        r"""Constructor for the token counter for Gemini models."""
+        self.model_type = model_type
+        self._client = genai.GenerativeModel(self.model_type.value)
+
     def count_tokens_from_messages(self, messages) -> int:
         r"""
-            Returns:
-            response(CountTokensResponse), use response.text to get output
+        Returns:
+        response(CountTokensResponse), use response.text to get output
         """
-        return self._client.count_tokens(messages)
+        if isinstance(messages, list):
+            for msg in messages:
+                if isinstance(msg, dict) and 'content' in msg:
+                    messages = msg['content']
+        return self._client.count_tokens(messages).total_tokens
 
 
 class LiteLLMTokenCounter:
