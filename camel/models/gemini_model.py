@@ -102,7 +102,7 @@ class GeminiModel(BaseModelBackend):
             contents=contents,
             **self.model_config_dict,
         )
-        return response.text
+        return response
 
     def check_model_config(self):
         r"""Check whether the model configuration contains any
