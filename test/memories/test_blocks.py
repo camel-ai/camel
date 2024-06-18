@@ -93,10 +93,10 @@ class TestChatHistoryBlock:
         records_to_write = [
             MemoryRecord(
                 BaseMessage(
-                    "user",
-                    RoleType.USER,
-                    None,
-                    "test message {}".format(i),
+                    role_name="user",
+                    role_type=RoleType.USER,
+                    meta_dict=None,
+                    content="test message {}".format(i),
                 ),
                 OpenAIBackendRole.USER,
             )
@@ -168,10 +168,10 @@ class TestVectorDBBlock:
         records_to_write = [
             MemoryRecord(
                 BaseMessage(
-                    "user",
-                    RoleType.USER,
-                    None,
-                    "test message {}".format(i),
+                    role_name="user",
+                    role_type=RoleType.USER,
+                    meta_dict=None,
+                    content="test message {}".format(i),
                 ),
                 OpenAIBackendRole.USER,
             )

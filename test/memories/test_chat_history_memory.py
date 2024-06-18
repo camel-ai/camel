@@ -49,19 +49,19 @@ def memory(request):
 @pytest.mark.parametrize("memory", ["in-memory", "json"], indirect=True)
 def test_chat_history_memory(memory: ChatHistoryMemory):
     system_msg = BaseMessage(
-        "system",
+        role_name="system",
         role_type=RoleType.DEFAULT,
         meta_dict=None,
         content="You are a helpful assistant",
     )
     user_msg = BaseMessage(
-        "AI user",
+        role_name="AI user",
         role_type=RoleType.USER,
         meta_dict=None,
         content="Do a task",
     )
     assistant_msg = BaseMessage(
-        "AI assistant",
+        role_name="AI assistant",
         role_type=RoleType.ASSISTANT,
         meta_dict=None,
         content="OK",

@@ -89,10 +89,10 @@ class TestLongtermAgentMemory:
         records = [
             MemoryRecord(
                 BaseMessage(
-                    "user",
-                    RoleType.USER,
-                    None,
-                    "test message {}".format(i),
+                    role_name="user",
+                    role_type=RoleType.USER,
+                    meta_dict=None,
+                    content="test message {}".format(i),
                 ),
                 OpenAIBackendRole.USER,
             )

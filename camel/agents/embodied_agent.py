@@ -182,9 +182,9 @@ class EmbodiedAgent(ChatAgent):
         # TODO: Handle errors
         content = input_message.content + f"\n> Embodied Actions:\n{content}"
         message = BaseMessage(
-            input_message.role_name,
-            input_message.role_type,
-            input_message.meta_dict,
-            content,
+            role_name=input_message.role_name,
+            role_type=input_message.role_type,
+            meta_dict=input_message.meta_dict,
+            content=content,
         )
         return ChatAgentResponse([message], response.terminated, response.info)

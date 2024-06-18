@@ -22,9 +22,9 @@ from camel.types import RoleType
 def critic_agent() -> CriticAgent:
     return CriticAgent(
         BaseMessage(
-            "critic",
-            RoleType.CRITIC,
-            None,
+            role_name="critic",
+            role_type=RoleType.CRITIC,
+            meta_dict=None,
             content=(
                 "You are a critic who assists in selecting an option "
                 "and provides explanations. "

@@ -246,17 +246,6 @@ class OpenAIImageTypeMeta(EnumMeta):
         return True
 
 
-class OpenAIImageType(Enum, metaclass=OpenAIImageTypeMeta):
-    r"""Image types supported by OpenAI vision model."""
-
-    # https://platform.openai.com/docs/guides/vision
-    PNG = "png"
-    JPEG = "jpeg"
-    JPG = "jpg"
-    WEBP = "webp"
-    GIF = "gif"
-
-
 class OpenAIVisionDetailType(Enum):
     AUTO = "auto"
     LOW = "low"

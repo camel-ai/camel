@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from typing import Any, ClassVar, Dict
 from uuid import UUID, uuid4
 
@@ -74,7 +74,7 @@ class MemoryRecord:
             "uuid": str(self.uuid),
             "message": {
                 "__class__": self.message.__class__.__name__,
-                **asdict(self.message),
+                **self.message.dict(),
             },
             "role_at_backend": self.role_at_backend,
             "extra_info": self.extra_info,

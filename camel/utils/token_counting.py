@@ -18,12 +18,12 @@ import base64
 from abc import ABC, abstractmethod
 from io import BytesIO
 from math import ceil
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List
 
 from anthropic import Anthropic
 from PIL import Image
 
-from camel.types import ModelType, OpenAIImageType, OpenAIVisionDetailType
+from camel.types import ModelType, OpenAIVisionDetailType
 
 if TYPE_CHECKING:
     from camel.messages import OpenAIMessage
@@ -245,18 +245,7 @@ class OpenAITokenCounter(BaseTokenCounter):
                         elif item["type"] == "image_url":
                             image_str: str = item["image_url"]["url"]
                             detail = item["image_url"]["detail"]
-
-                            image_prefix_format = "data:image/{};base64,"
-                            image_prefix: Optional[str] = None
-                            for image_type in list(OpenAIImageType):
-                                # Find the correct image format
-                                image_prefix = image_prefix_format.format(
-                                    image_type.value
-                                )
-                                if image_prefix in image_str:
-                                    break
-                            assert isinstance(image_prefix, str)
-                            encoded_image = image_str.split(image_prefix)[1]
+                            encoded_image = image_str.split(",")[1]
                             image_bytes = BytesIO(
                                 base64.b64decode(encoded_image)
                             )
