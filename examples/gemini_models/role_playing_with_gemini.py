@@ -12,11 +12,12 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from colorama import Fore
-from camel.models import GeminiModel
-from camel.societies import RolePlaying
+
 from camel.configs import GeminiConfig
+from camel.societies import RolePlaying
 from camel.types import ModelType
 from camel.utils import print_text_animated
+
 
 def main(model_type=None) -> None:
     task_prompt = "Develop a trading bot for the stock market"
