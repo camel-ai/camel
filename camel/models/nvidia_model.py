@@ -50,10 +50,8 @@ class NvidiaModel(BaseModelBackend):
         super().__init__(model_type, model_config_dict)
         url = os.environ.get('NVIDIA_API_BASE_URL', None)
         self._api_key = api_key or os.environ.get("NVIDIA_API_KEY")
-        if not url:
-            raise ValueError("The NVIDIA API base url should be set.")
-        if not self._api_key:
-            raise ValueError("The NVIDIA API key should be set.")
+        if not url or not self._api_key:
+            raise ValueError("The NVIDIA API base url and key should be set.")
         self._client = OpenAI(
             timeout=60, max_retries=3, base_url=url, api_key=self._api_key
         )
