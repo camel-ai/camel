@@ -210,7 +210,7 @@ class TaskType(Enum):
     TEXT_EMBEDDING = "text_embedding"
     OBJECT_RECOGNITION = "object_recognition"
     DEFAULT = "default"
-    DESCRIPTE_VIDEO = "descripte_video"
+    VIDEO_DESCRIPTION = "video_description"
 
 
 class VectorDistance(Enum):
