@@ -18,7 +18,7 @@ from camel.types import RoleType
 
 
 # flake8: noqa :E501
-class TextEmbeddingPromptTemplateDict(TextPromptDict):
+class GenerateTextEmbeddingDataPromptTemplateDict(TextPromptDict):
     r"""A :obj:`TextPrompt` dictionary containing text embedding tasks
     generation, query, positive and hard negative samples generation,
     from the `"Improving Text Embeddings with Large Language Models"
