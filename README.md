@@ -55,6 +55,10 @@ To install the base CAMEL library:
 pip install camel-ai
 ```
 Some features require extra dependencies:
+- To install with all dependencies:
+    ```bash
+    pip install 'camel-ai[all]'
+    ```
 - To use the HuggingFace agents:
     ```bash
     pip install 'camel-ai[huggingface-agent]'
@@ -62,10 +66,6 @@ Some features require extra dependencies:
 - To enable RAG or use agent memory:
     ```bash
     pip install 'camel-ai[tools]'
-    ```
-- To install with all dependencies:
-    ```bash
-    pip install 'camel-ai[all]'
     ```
 
 ### From Source
@@ -81,14 +81,20 @@ git clone https://github.com/camel-ai/camel.git
 # Change directory into project directory
 cd camel
 
-# Activate camel virtual environment
+# If you didn't install peotry before
+pip install poetry  # (Optional)
+
+# We suggest using python 3.10
+poetry env use python3.10  # (Optional)
+
+# Activate CAMEL virtual environment
 poetry shell
 
-# Install camel from source
-# It takes about 90 seconds to resolve dependencies
+# Install the base CAMEL library
+# It takes about 90 seconds
 poetry install
 
-# Or if you want to use all other extra packages
+# Install CAMEL with all dependencies
 poetry install -E all  # (Optional)
 
 # Exit the virtual environment
@@ -100,16 +106,16 @@ Install `CAMEL` from source with conda and pip:
 # Create a conda virtual environment
 conda create --name camel python=3.10
 
-# Activate camel conda environment
+# Activate CAMEL conda environment
 conda activate camel
 
 # Clone github repo
-git clone -b v0.1.3 https://github.com/camel-ai/camel.git
+git clone -b v0.1.5.2 https://github.com/camel-ai/camel.git
 
 # Change directory into project directory
 cd camel
 
-# Install camel from source
+# Install CAMEL from source
 pip install -e .
 
 # Or if you want to use all other extra packages

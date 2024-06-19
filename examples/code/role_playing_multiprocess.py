@@ -195,14 +195,18 @@ def generate_data(
             ):
                 repeat_word_counter += 1
                 if repeat_word_counter == repeat_word_threshold:
-                    message_dict['termination_reason'] = "repeat_word_threshold"
+                    message_dict['termination_reason'] = (
+                        "repeat_word_threshold"
+                    )
                     break
             else:
                 repeat_word_counter = 0
 
         # Save user message
         message_counter += 1
-        message_dict[f"message_{message_counter}"] = user_response.msg.to_dict()
+        message_dict[f"message_{message_counter}"] = (
+            user_response.msg.to_dict()
+        )
 
         # Condition 5: End token observed
         if "<CAMEL_TASK_DONE>" in user_response.msg.content:
@@ -222,7 +226,9 @@ def generate_data(
     if message_dict["num_messages"] == max_num_messages:
         message_dict["termination_reason"] = "max_num_messages"
 
-    with open(f"./camel_data/code/{message_dict['id']}.json", "w") as json_file:
+    with open(
+        f"./camel_data/code/{message_dict['id']}.json", "w"
+    ) as json_file:
         json.dump(message_dict, json_file)
 
 

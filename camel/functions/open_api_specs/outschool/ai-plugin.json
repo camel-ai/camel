@@ -1,0 +1,34 @@
+{
+    "id": "plugin-9335c256-4658-4376-bac8-a0baa5c1c889",
+    "domain": "chatgpt-plugin.outschool.com",
+    "namespace": "Outschool",
+    "status": "approved",
+    "manifest": {
+        "schema_version": "v1",
+        "name_for_model": "Outschool",
+        "name_for_human": "Outschool",
+        "description_for_model": "Search for top-quality online classes and teachers on Outschool.",
+        "description_for_human": "Search for top-quality online classes and teachers on Outschool.",
+        "auth": {
+            "type": "none"
+        },
+        "api": {
+            "type": "openapi",
+            "url": "https://chatgpt-plugin.outschool.com/openapi.json"
+        },
+        "logo_url": "https://chatgpt-plugin.outschool.com/logo.png",
+        "contact_email": "support@outschool.com",
+        "legal_info_url": "https://outschool.com/terms"
+    },
+    "oauth_client_id": null,
+    "user_settings": {
+        "is_installed": false,
+        "is_authenticated": true
+    },
+    "categories": [
+        {
+            "id": "newly_added",
+            "title": "New"
+        }
+    ]
+}

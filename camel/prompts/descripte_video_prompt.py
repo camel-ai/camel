@@ -11,16 +11,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from typing import Any
 
-from camel.types import ModelType
-from camel.utils import role_playing_with_function
+from camel.prompts.base import TextPrompt, TextPromptDict
+from camel.types import RoleType
 
 
-def main(model_type=ModelType.GPT_4, chat_turn_limit=10) -> None:
-    role_playing_with_function(
-        model_type=model_type, chat_turn_limit=chat_turn_limit
+# flake8: noqa :E501
+class DescriptionVideoPromptTemplateDict(TextPromptDict):
+    ASSISTANT_PROMPT = TextPrompt(
+        """You are a master of video analysis. 
+        Please provide a shot description of the content of the current video."""
     )
 
-
-if __name__ == "__main__":
-    main()
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.update(
+            {
+                RoleType.ASSISTANT: self.ASSISTANT_PROMPT,
+            }
+        )

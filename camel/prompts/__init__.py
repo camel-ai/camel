@@ -14,6 +14,7 @@
 from .ai_society import AISocietyPromptTemplateDict
 from .base import CodePrompt, TextPrompt, TextPromptDict
 from .code import CodePromptTemplateDict
+from .descripte_video_prompt import DescriptionVideoPromptTemplateDict
 from .evaluation import EvaluationPromptTemplateDict
 from .misalignment import MisalignmentPromptTemplateDict
 from .object_recognition import ObjectRecognitionPromptTemplateDict
@@ -37,4 +38,5 @@ __all__ = [
     'PromptTemplateGenerator',
     'SolutionExtractionPromptTemplateDict',
     'ObjectRecognitionPromptTemplateDict',
+    'DescriptionVideoPromptTemplateDict',
 ]
