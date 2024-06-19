@@ -25,7 +25,7 @@ from camel.utils import OpenAITokenCounter
 @pytest.mark.parametrize(
     "model_type",
     [
-        ModelType.GPT_3_5_TURBO,
+        ModelType.NEMOTRON_4_REWARD,
     ],
 )
 def test_nvidia_model(model_type):
