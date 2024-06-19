@@ -61,7 +61,7 @@ class TaskPromptTemplateDict(Dict[Any, TextPromptDict]):
                 TaskType.SOLUTION_EXTRACTION: SolutionExtractionPromptTemplateDict(),  # noqa: E501
                 TaskType.ROLE_DESCRIPTION: RoleDescriptionPromptTemplateDict(),
                 TaskType.OBJECT_RECOGNITION: ObjectRecognitionPromptTemplateDict(),  # noqa: E501
-                TaskType.TEXT_EMBEDDING: TextEmbeddingPromptTemplateDict(),
+                TaskType.GENERATE_TEXT_EMBEDDING_DATA: TextEmbeddingPromptTemplateDict(),  # noqa: E501
                 TaskType.VIDEO_DESCRIPTION: DescriptionVideoPromptTemplateDict(),  # noqa: E501
             }
         )

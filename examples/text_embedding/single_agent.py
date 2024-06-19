@@ -37,7 +37,7 @@ def main() -> None:
         tasks = [task.replace("\n", "") for task in tasks]
 
     sys_msg_generator = SystemMessageGenerator(
-        task_type=TaskType.TEXT_EMBEDDING
+        task_type=TaskType.GENERATE_TEXT_EMBEDDING_DATA
     )
     for i, task in enumerate(tasks):
         query_type = random.choice(QUERY_TYPE_LIST)

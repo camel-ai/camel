@@ -207,7 +207,7 @@ class TaskType(Enum):
     EVALUATION = "evaluation"
     SOLUTION_EXTRACTION = "solution_extraction"
     ROLE_DESCRIPTION = "role_description"
-    TEXT_EMBEDDING = "text_embedding"
+    GENERATE_TEXT_EMBEDDING_DATA = "generate_text_embedding_data"
     OBJECT_RECOGNITION = "object_recognition"
     DEFAULT = "default"
     VIDEO_DESCRIPTION = "video_description"

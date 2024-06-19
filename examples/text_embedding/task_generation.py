@@ -24,7 +24,7 @@ def main() -> None:
     num_generate = 2
     num_tasks = 3
     prompt_template = PromptTemplateGenerator().get_prompt_from_key(
-        TaskType.TEXT_EMBEDDING, "generate_tasks"
+        TaskType.GENERATE_TEXT_EMBEDDING_DATA, "generate_tasks"
     )
     evaluation_dict = dict(num_tasks=num_tasks)
     prompt = prompt_template.format(**evaluation_dict)
