@@ -15,6 +15,7 @@ from typing import Any, Dict, Optional
 
 from camel.models.anthropic_model import AnthropicModel
 from camel.models.base_model import BaseModelBackend
+from camel.models.nvidia_model import NvidiaModel
 from camel.models.open_source_model import OpenSourceModel
 from camel.models.openai_model import OpenAIModel
 from camel.models.stub_model import StubModel
@@ -61,6 +62,8 @@ class ModelFactory:
             model_class = AnthropicModel
         elif model_type.is_zhipuai:
             model_class = ZhipuAIModel
+        elif model_type.is_nvidia:
+            model_class = NvidiaModel
         else:
             raise ValueError(f"Unknown model type `{model_type}` is input")
 

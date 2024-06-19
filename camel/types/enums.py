@@ -45,10 +45,13 @@ class ModelType(Enum):
     CLAUDE_2_0 = "claude-2.0"
     CLAUDE_INSTANT_1_2 = "claude-instant-1.2"
 
-    #  3 models
+    # Claude3 models
     CLAUDE_3_OPUS = "claude-3-opus-20240229"
     CLAUDE_3_SONNET = "claude-3-sonnet-20240229"
     CLAUDE_3_HAIKU = "claude-3-haiku-20240307"
+
+    # Nvidia models
+    NEMOTRON_4_REWARD = "nvidia/nemotron-4-340b-reward"
 
     @property
     def value_for_tiktoken(self) -> str:
@@ -100,6 +103,17 @@ class ModelType(Enum):
         }
 
     @property
+    def is_nvidia(self) -> bool:
+        r"""Returns whether this type of models is Nvidia-released model.
+
+        Returns:
+            bool: Whether this type of models is nvidia.
+        """
+        return self in {
+            ModelType.NEMOTRON_4_REWARD,
+        }
+
+    @property
     def token_limit(self) -> int:
         r"""Returns the maximum token limit for a given model.
         Returns:
@@ -130,7 +144,7 @@ class ModelType(Enum):
             return 2048
         elif self is ModelType.VICUNA_16K:
             return 16384
-        if self in {ModelType.CLAUDE_2_0, ModelType.CLAUDE_INSTANT_1_2}:
+        elif self in {ModelType.CLAUDE_2_0, ModelType.CLAUDE_INSTANT_1_2}:
             return 100_000
         elif self in {
             ModelType.CLAUDE_2_1,
@@ -139,6 +153,8 @@ class ModelType(Enum):
             ModelType.CLAUDE_3_HAIKU,
         }:
             return 200_000
+        elif self is ModelType.NEMOTRON_4_REWARD:
+            return 4096
         else:
             raise ValueError("Unknown model type")
 

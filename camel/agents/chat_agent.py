@@ -518,11 +518,19 @@ class ChatAgent(BaseAgent):
         """
         output_messages: List[BaseMessage] = []
         for choice in response.choices:
+            if isinstance(choice.message, list):
+                # If choice.message is a list, handle accordingly
+                # It's a check to fit with Nemotron model integration.
+                content = "".join(
+                    [msg.content for msg in choice.message if msg.content]
+                )
+            else:
+                content = choice.message.content or ""
             chat_message = BaseMessage(
                 role_name=self.role_name,
                 role_type=self.role_type,
                 meta_dict=dict(),
-                content=choice.message.content or "",
+                content=content,
             )
             output_messages.append(chat_message)
         finish_reasons = [
