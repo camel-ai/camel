@@ -425,7 +425,7 @@ def generate_openapi_funcs(
 
 def apinames_filepaths_to_funs_schemas(
     apinames_filepaths: List[Tuple[str, str]],
-) -> Tuple[Optional[List[Callable]], Optional[List[Dict[str, Any]]]]:
+) -> Tuple[List[Callable], List[Dict[str, Any]]]:
     r"""Combines functions and schemas from multiple OpenAPI specifications,
     using API names as keys.
 
@@ -456,7 +456,7 @@ def apinames_filepaths_to_funs_schemas(
 
         openapi_spec = parse_openapi_file(file_path)
         if openapi_spec is None:
-            return None, None
+            return [], []
 
         # Generate and merge function schemas
         openapi_functions_schemas = openapi_spec_to_openai_schemas(
@@ -501,10 +501,7 @@ all_funcs_lst, all_schemas_lst = apinames_filepaths_to_funs_schemas(
     apinames_filepaths
 )
 
-if all_funcs_lst is not None and all_schemas_lst is not None:
-    OPENAPI_FUNCS: List[OpenAIFunction] = [
-        OpenAIFunction(a_func, a_schema)
-        for a_func, a_schema in zip(all_funcs_lst, all_schemas_lst)
-    ]
-else:
-    OPENAPI_FUNCS: List[OpenAIFunction] = []
+OPENAPI_FUNCS: List[OpenAIFunction] = [
+    OpenAIFunction(a_func, a_schema)
+    for a_func, a_schema in zip(all_funcs_lst, all_schemas_lst)
+]
