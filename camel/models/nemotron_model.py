@@ -20,13 +20,12 @@ from camel.messages import OpenAIMessage
 from camel.types import ChatCompletion, ModelType
 from camel.utils import (
     BaseTokenCounter,
-    OpenAITokenCounter,
     model_api_key_required,
 )
 
 
-class NvidiaModelV2:
-    r"""Nvidia API in a unified BaseModelBackend interface."""
+class NemotronModel:
+    r"""Nemotron model API backend with OpenAI compatibility."""
 
     # NOTE: Nemotron model doesn't support additional model config like OpenAI.
 
@@ -51,19 +50,6 @@ class NvidiaModelV2:
             timeout=60, max_retries=3, base_url=url, api_key=self._api_key
         )
         self._token_counter: Optional[BaseTokenCounter] = None
-
-    @property
-    def token_counter(self) -> BaseTokenCounter:
-        r"""Initialize the token counter for the model backend.
-
-        Returns:
-            BaseTokenCounter: The token counter following the model's
-                tokenization style.
-        """
-        if not self._token_counter:
-            # NOTE: It's a temporary setting for token counter.
-            self._token_counter = OpenAITokenCounter(ModelType.GPT_3_5_TURBO)
-        return self._token_counter
 
     @model_api_key_required
     def run(
