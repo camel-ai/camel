@@ -33,7 +33,8 @@ def parse_openapi_file(openapi_spec_path: str) -> Optional[Dict[str, Any]]:
             specification.
 
     Returns:
-        Dict[str, Any]: The parsed OpenAPI specification as a dictionary.
+        Optional[Dict[str, Any]]: The parsed OpenAPI specification
+            as a dictionary. :obj:`None` if the package is not installed.
     """
     try:
         import prance
