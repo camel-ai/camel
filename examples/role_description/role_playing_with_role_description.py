@@ -14,7 +14,6 @@
 from colorama import Fore
 
 from camel.agents import RoleAssignmentAgent
-from camel.configs import ChatGPTConfig
 from camel.societies import RolePlaying
 from camel.types import TaskType
 from camel.utils import print_text_animated
@@ -24,14 +23,12 @@ AI_USER_ROLE_INDEX = 1
 
 
 def main(
-    model_type_for_role_generation=None, model_type=None, chat_turn_limit=50
+    model_for_role_generation=None, model=None, chat_turn_limit=50
 ) -> None:
     task_prompt = "Develop a trading bot for the stock market."
 
-    model_config_description = ChatGPTConfig()
     role_description_agent = RoleAssignmentAgent(
-        model_type=model_type_for_role_generation,
-        model_config=model_config_description,
+        model=model_for_role_generation,
     )
 
     role_description_dict = role_description_agent.run(
@@ -59,10 +56,10 @@ def main(
         assistant_role_name=ai_assistant_role,
         user_role_name=ai_user_role,
         task_prompt=task_prompt,
-        model_type=model_type,
+        model=model,
         task_type=TaskType.ROLE_DESCRIPTION,  # Score for role description
         with_task_specify=True,
-        task_specify_agent_kwargs=dict(model_type=model_type),
+        task_specify_agent_kwargs=dict(model=model),
         extend_sys_msg_meta_dicts=sys_msg_meta_dicts,
     )
 

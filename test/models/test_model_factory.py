@@ -15,22 +15,24 @@ import pytest
 
 from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
-from camel.types import ModelType
+from camel.types import ModelPlatformType, ModelType
 
 parametrize = pytest.mark.parametrize(
-    'model',
+    'model_platform, model_type',
     [
-        pytest.param(ModelType.GPT_3_5_TURBO, marks=pytest.mark.model_backend),
-        pytest.param(ModelType.GPT_4_TURBO, marks=pytest.mark.model_backend),
-        ModelType.STUB,
+        (ModelPlatformType.OPENAI, ModelType.GPT_3_5_TURBO),
+        (ModelPlatformType.OPENAI, ModelType.GPT_4_TURBO),
+        (ModelPlatformType.OPENSOURCE, ModelType.STUB),
     ],
 )
 
 
 @parametrize
-def test_model_factory(model):
+def test_model_factory(model_platform, model_type):
     model_config_dict = ChatGPTConfig().__dict__
-    model_inst = ModelFactory.create(model, model_config_dict)
+    model_inst = ModelFactory.create(
+        model_platform, model_type, model_config_dict
+    )
     messages = [
         {
             "role": "system",

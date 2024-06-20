@@ -15,6 +15,7 @@ from .anthropic_model import AnthropicModel
 from .base_model import BaseModelBackend
 from .litellm_model import LiteLLMModel
 from .model_factory import ModelFactory
+from .ollama_model import OllamaModel
 from .open_source_model import OpenSourceModel
 from .openai_audio_models import OpenAIAudioModels
 from .openai_model import OpenAIModel
@@ -31,4 +32,5 @@ __all__ = [
     'ModelFactory',
     'LiteLLMModel',
     'OpenAIAudioModels',
+    'OllamaModel',
 ]
