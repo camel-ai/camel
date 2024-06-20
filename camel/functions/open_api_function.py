@@ -15,7 +15,6 @@ import json
 import os
 from typing import Any, Callable, Dict, List, Tuple
 
-import prance
 import requests
 
 from camel.functions import OpenAIFunction, openapi_security_config
@@ -36,6 +35,8 @@ def parse_openapi_file(openapi_spec_path: str) -> Dict[str, Any]:
     Returns:
         Dict[str, Any]: The parsed OpenAPI specification as a dictionary.
     """
+    import prance
+
     # Load the OpenAPI spec
     parser = prance.ResolvingParser(
         openapi_spec_path, backend="openapi-spec-validator", strict=False
