@@ -139,17 +139,25 @@ The high-level idea is to deploy a server with the local model in the backend an
     ```python
     # Import the necessary classes
     from camel.configs import ChatGPTConfig, OpenSourceConfig
-    from camel.types import ModelType
+    from camel.types import ModelType, ModelPlatformType
+    from camel.models import ModelFactory
+
+    # Set the LLM model type and model config
+    model_platform = ModelPlatformType.OPENSOURCE
+    model_type=ModelType.LLAMA_2                     # Specify the model type
+    model_config=OpenSourceConfig(
+        model_path='meta-llama/Llama-2-7b-chat-hf',  # a local folder or HuggingFace repo Name
+        server_url='http://localhost:8000/v1')      # The url with the set port number
+
+    # Create the backend model
+    model = ModelFactory.create(
+        model_platform=model_platform,
+        model_type=model_type,
+        model_config=model_config)
 
     # Set the arguments
     agent_kwargs = dict(
-        model_type=ModelType.LLAMA_2,                    # Specify the model type
-
-        model_config=OpenSourceConfig(
-            model_path='meta-llama/Llama-2-7b-chat-hf',  # a local folder or HuggingFace repo Name
-            server_url='http://localhost:8000/v1',       # The url with the set port number
-        ),
-
+        model=model,
         token_limit=2046,                                # [Optional] Choose the ideal limit
     )
 

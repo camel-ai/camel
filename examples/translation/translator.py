@@ -23,7 +23,8 @@ from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
 from camel.messages import BaseMessage
-from camel.types import ModelType, RoleType, TaskType
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType, ModelType, RoleType, TaskType
 
 warnings.filterwarnings("ignore")
 
@@ -117,10 +118,15 @@ def translate_content(
         else:
             model_config = ChatGPTConfig(stream=True)
 
-        assistant_agent = ChatAgent(
-            system_message=assistant_sys_msg,
+        model = ModelFactory.create(
+            model_platform=ModelPlatformType.OpenAI,
             model_type=ModelType.GPT_3_5_TURBO,
             model_config=model_config,
+        )
+
+        assistant_agent = ChatAgent(
+            system_message=assistant_sys_msg,
+            model=model,
         )
 
         user_msg = BaseMessage.make_user_message(

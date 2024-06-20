@@ -15,7 +15,6 @@ from camel.agents import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
 from camel.functions import OPENAPI_FUNCS
 from camel.messages import BaseMessage
-from camel.types import ModelType
 
 # Define system message
 sys_msg = BaseMessage.make_assistant_message(
@@ -32,9 +31,7 @@ model_config = ChatGPTConfig(
 # Set agent
 camel_agent = ChatAgent(
     system_message=sys_msg,
-    model_config=model_config,
     tools=OPENAPI_FUNCS,
-    model_type=ModelType.GPT_4O,
 )
 camel_agent.reset()
 

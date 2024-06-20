@@ -11,12 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, Optional
+from typing import Optional
 
 from camel.agents.chat_agent import ChatAgent
 from camel.messages import BaseMessage
+from camel.models import BaseModelBackend
 from camel.prompts import TextPrompt
-from camel.types import ModelType, RoleType
+from camel.types import RoleType
 from camel.utils import create_chunks
 
 
@@ -33,8 +34,7 @@ class SearchAgent(ChatAgent):
 
     def __init__(
         self,
-        model_type: ModelType = ModelType.GPT_3_5_TURBO,
-        model_config: Optional[Any] = None,
+        model: Optional[BaseModelBackend] = None,
     ) -> None:
         system_message = BaseMessage(
             role_name="Assistant",
@@ -42,7 +42,7 @@ class SearchAgent(ChatAgent):
             meta_dict=None,
             content="You are a helpful assistant.",
         )
-        super().__init__(system_message, model_type, model_config)
+        super().__init__(system_message, model=model)
 
     def summarize_text(self, text: str, query: str) -> str:
         r"""Summarize the information from the text, base on the query.

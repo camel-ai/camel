@@ -198,8 +198,9 @@ python3 -m fastchat.serve.openai_api_server --host localhost --port 8000
 ```python
 system_message = # ...
 
-agent_kwargs = dict(
-    model=model_type,
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.OPENSOURCE
+    model_type=ModelType.LLAMA_2,
     model_config=OpenSourceConfig(
         model_path="meta-llama/Llama-2-7b-chat-hf",
         server_url="http://localhost:8000/v1",
@@ -208,7 +209,7 @@ agent_kwargs = dict(
 
 agent = ChatAgent(
     system_message,
-    **agent_kwargs,
+    model=model,
 )
 ```
 
