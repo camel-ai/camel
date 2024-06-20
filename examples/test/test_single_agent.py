@@ -39,7 +39,16 @@ def test_single_agent(model):
     examples.single_agent.main(model=model)
 
 
-@parametrize
+@pytest.mark.parametrize(
+    'model',
+    [
+        ModelFactory.create(
+            ModelPlatformType.OPENAI,
+            model_type=ModelType.STUB,
+            model_config_dict={},
+        )
+    ],
+)
 def test_misalignment_single_agent(model):
     examples.misalignment.single_agent.main(model=model)
 
@@ -54,6 +63,15 @@ def test_code_generate_metadata(model):
     examples.code.generate_meta_data.main(model=model)
 
 
-@parametrize
+@pytest.mark.parametrize(
+    'model',
+    [
+        ModelFactory.create(
+            ModelPlatformType.OPENAI,
+            model_type=ModelType.STUB,
+            model_config_dict={},
+        )
+    ],
+)
 def test_code_task_generation(model):
     examples.code.task_generation.main(model=model)
