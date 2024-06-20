@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Union
 
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
@@ -30,6 +30,11 @@ class DiscordBot:
         channel_ids (List[int], optional): The channel IDs that the bot will
             listen to.
         discord_token (str, optional): The bot token.
+        auto_retriever (AutoRetriever): AutoRetriever instance for RAG.
+        content_input_paths (Union[str, List[str]]): The paths to the contents
+            for RAG.
+        top_k (int): Top choice for the RAG response.
+        return_detailed_info (bool): If show detailed info of the RAG response.
     """
 
     def __init__(
@@ -38,7 +43,7 @@ class DiscordBot:
         channel_ids: Optional[List[int]] = None,
         discord_token: Optional[str] = None,
         auto_retriever: Optional[AutoRetriever] = None,
-        content_input_paths: Optional[List[str]] = None,
+        content_input_paths: Optional[Union[str, List[str]]] = None,
         top_k: int = 1,
         return_detailed_info: bool = True,
     ) -> None:
