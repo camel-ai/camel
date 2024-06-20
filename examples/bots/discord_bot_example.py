@@ -29,7 +29,11 @@ def main(model=None) -> None:
     auto_retriever = AutoRetriever(
         url_and_api_key=("Your Milvus URI","Your Milvus Token"),
         storage_type=StorageType.MILVUS)
-    bot = DiscordBot(agent,auto_retriever=auto_retriever,content_input_paths=["local_data/"])
+    bot = DiscordBot(
+            agent,
+            auto_retriever=auto_retriever,
+            content_input_paths=["local_data/"]
+        )
     bot.run()
 
 
