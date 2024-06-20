@@ -43,7 +43,7 @@ class DiscordBot:
         channel_ids: Optional[List[int]] = None,
         discord_token: Optional[str] = None,
         auto_retriever: Optional[AutoRetriever] = None,
-        content_input_paths: Optional[Union[str, List[str]]] = None,
+        content_input_paths: Union[str, List[str]] = [],
         top_k: int = 1,
         return_detailed_info: bool = True,
     ) -> None:
