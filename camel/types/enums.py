@@ -55,7 +55,11 @@ class ModelType(Enum):
 
     @property
     def value_for_tiktoken(self) -> str:
-        return self.value if self is not ModelType.STUB else "gpt-3.5-turbo"
+        return (
+            self.value
+            if self is not ModelType.STUB and not isinstance(self, str)
+            else "gpt-3.5-turbo"
+        )
 
     @property
     def is_openai(self) -> bool:
@@ -223,6 +227,7 @@ class TaskType(Enum):
     EVALUATION = "evaluation"
     SOLUTION_EXTRACTION = "solution_extraction"
     ROLE_DESCRIPTION = "role_description"
+    GENERATE_TEXT_EMBEDDING_DATA = "generate_text_embedding_data"
     OBJECT_RECOGNITION = "object_recognition"
     DEFAULT = "default"
     VIDEO_DESCRIPTION = "video_description"
@@ -293,6 +298,52 @@ class OpenAPIName(Enum):
     CREATE_QR_CODE = "create_qr_code"
     OUTSCHOOL = "outschool"
     WEB_SCRAPER = "web_scraper"
+
+
+class ModelPlatformType(Enum):
+    OPENAI = "openai"
+    AZURE = "azure"
+    ANTHROPIC = "anthropic"
+    OPENSOURCE = "opensource"
+    OLLAMA = "ollama"
+    LITELLM = "litellm"
+    ZHIPU = "zhipuai"
+    DEFAULT = "default"
+
+    @property
+    def is_openai(self) -> bool:
+        r"""Returns whether this platform is openai."""
+        return self is ModelPlatformType.OPENAI
+
+    @property
+    def is_azure(self) -> bool:
+        r"""Returns whether this platform is azure."""
+        return self is ModelPlatformType.AZURE
+
+    @property
+    def is_anthropic(self) -> bool:
+        r"""Returns whether this platform is anthropic."""
+        return self is ModelPlatformType.ANTHROPIC
+
+    @property
+    def is_ollama(self) -> bool:
+        r"""Returns whether this platform is ollama."""
+        return self is ModelPlatformType.OLLAMA
+
+    @property
+    def is_litellm(self) -> bool:
+        r"""Returns whether this platform is litellm."""
+        return self is ModelPlatformType.LITELLM
+
+    @property
+    def is_zhipuai(self) -> bool:
+        r"""Returns whether this platform is zhipu."""
+        return self is ModelPlatformType.ZHIPU
+
+    @property
+    def is_open_source(self) -> bool:
+        r"""Returns whether this platform is opensource."""
+        return self is ModelPlatformType.OPENSOURCE
 
 
 class AudioModelType(Enum):

@@ -11,20 +11,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from mock import patch
+from camel.prompts import (
+    GenerateTextEmbeddingDataPromptTemplateDict,
+    TextPrompt,
+)
+from camel.types import RoleType
 
-import examples.code.role_playing
-from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType
 
+def test_generate_text_embedding_data_prompt_template_dict():
+    template_dict = GenerateTextEmbeddingDataPromptTemplateDict()
 
-def test_code_role_playing_example():
-    with patch('time.sleep', return_value=None):
-        examples.code.role_playing.main(
-            ModelFactory.create(
-                model_platform=ModelPlatformType.OPENAI,
-                model_type=ModelType.STUB,
-                model_config_dict={},
-            ),
-            chat_turn_limit=2,
-        )
+    # Test if the prompts are of the correct type
+    assert isinstance(template_dict.ASSISTANT_PROMPT, TextPrompt)
+
+    # Test if the prompts are correctly added to the dictionary
+    assert template_dict[RoleType.ASSISTANT] == template_dict.ASSISTANT_PROMPT

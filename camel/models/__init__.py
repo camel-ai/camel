@@ -17,6 +17,7 @@ from .litellm_model import LiteLLMModel
 from .model_factory import ModelFactory
 from .nvidia_model import NvidiaModel
 from .nvidia_model_v2 import NvidiaModelV2
+from .ollama_model import OllamaModel
 from .open_source_model import OpenSourceModel
 from .openai_audio_models import OpenAIAudioModels
 from .openai_model import OpenAIModel
@@ -35,4 +36,5 @@ __all__ = [
     'OpenAIAudioModels',
     'NvidiaModel',
     'NvidiaModelV2',
+    'OllamaModel',
 ]
