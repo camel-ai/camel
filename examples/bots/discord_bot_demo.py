@@ -1,3 +1,16 @@
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# Licensed under the Apache License, Version 2.0 (the “License”);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an “AS IS” BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import asyncio
 import os
 from typing import Optional, List, Union
@@ -7,11 +20,6 @@ from discord import Message
 from discord.ext import commands
 from discord.ext.commands import DefaultHelpCommand, Context, errors
 from pydantic import HttpUrl
-
-# from camel.agents import ChatAgent
-# from camel.messages import BaseMessage
-# from camel.retrievers import AutoRetriever
-# from camel.types import StorageType
 
 LIMITED_CHANNEL = []
 
@@ -32,43 +40,23 @@ class BotCog(commands.Cog):
         print(f"{content=}")
         user_raw_msg = content
 
-        # if self.bot.auto_retriever:
-        #     user_raw_msg = self.bot.auto_retriever.run_vector_retriever(
-        #         query=user_raw_msg,
-        #         content_input_paths=self.bot.content_input_paths,
-        #         top_k=self.bot.top_k,
-        #         return_detailed_info=self.bot.return_detailed_info,
-        #     )
-        #
-        # user_msg = BaseMessage.make_user_message(
-        #     role_name="User", content=user_raw_msg
-        # )
-        # assistant_response = self.bot.chat_agent.step(user_msg)
-        # await ctx.message.reply(assistant_response.msg.content)
-        # await ctx.channel.send(assistant_response.msg.content)
         await ctx.reply(user_raw_msg)
 
 
 class DiscordBot(commands.Bot):
     def __init__(
             self,
-            # chat_agent: ChatAgent,
             channel_ids: Optional[List[int]] = None,
-            # auto_retriever: Optional[AutoRetriever] = None,
-            # content_input_paths: Union[str, List[str]] = None,
-            # top_k: int = 1,
-            # return_detailed_info: bool = True,
-
             command_prefix: str = "!",
             discord_guild: str = None,
             proxy: Optional[HttpUrl] = None
     ):
-        super().__init__(command_prefix, intents=discord.Intents.all(), help_command=DefaultHelpCommand(), proxy=proxy)
-        # self.chat_agent = chat_agent
-        # self.auto_retriever = auto_retriever
-        # self.content_input_paths = content_input_paths
-        # self.top_k = top_k
-        # self.return_detailed_info = return_detailed_info
+        super().__init__(
+            command_prefix, 
+            intents=discord.Intents.all(), 
+            help_command=DefaultHelpCommand(), 
+            proxy=proxy
+        )
 
         self.discord_guild = discord_guild
 
@@ -124,20 +112,7 @@ if __name__ == "__main__":
     if not discord_token:
         discord_token = "Your Discord Token"
 
-    # assistant_sys_msg = BaseMessage.make_assistant_message(
-    #     role_name="Assistant",
-    #     content="You are a helpful assistant.",
-    # )
-    #
-    # agent = ChatAgent(assistant_sys_msg)
-    # auto_retriever = AutoRetriever(
-    #     url_and_api_key=("Your Milvus URI", "Your Milvus Token"),
-    #     storage_type=StorageType.MILVUS
-    # )
     bot = DiscordBot(
-        # agent,
-        # auto_retriever=auto_retriever,
-        # content_input_paths=["local_data/"]
         proxy="Your proxy or None",
         discord_guild="Your discord guild ID or None, slash command will not work if None."
     )
