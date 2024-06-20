@@ -13,16 +13,15 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import json
 import os
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
-import prance
 import requests
 
 from camel.functions import OpenAIFunction, openapi_security_config
 from camel.types import OpenAPIName
 
 
-def parse_openapi_file(openapi_spec_path: str) -> Dict[str, Any]:
+def parse_openapi_file(openapi_spec_path: str) -> Optional[Dict[str, Any]]:
     r"""Load and parse an OpenAPI specification file.
 
     This function utilizes the `prance.ResolvingParser` to parse and resolve
@@ -34,8 +33,14 @@ def parse_openapi_file(openapi_spec_path: str) -> Dict[str, Any]:
             specification.
 
     Returns:
-        Dict[str, Any]: The parsed OpenAPI specification as a dictionary.
+        Optional[Dict[str, Any]]: The parsed OpenAPI specification
+            as a dictionary. :obj:`None` if the package is not installed.
     """
+    try:
+        import prance
+    except Exception:
+        return None
+
     # Load the OpenAPI spec
     parser = prance.ResolvingParser(
         openapi_spec_path, backend="openapi-spec-validator", strict=False
@@ -451,6 +456,8 @@ def apinames_filepaths_to_funs_schemas(
         )
 
         openapi_spec = parse_openapi_file(file_path)
+        if openapi_spec is None:
+            return [], []
 
         # Generate and merge function schemas
         openapi_functions_schemas = openapi_spec_to_openai_schemas(

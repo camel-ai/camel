@@ -211,9 +211,10 @@ class TaskType(Enum):
     EVALUATION = "evaluation"
     SOLUTION_EXTRACTION = "solution_extraction"
     ROLE_DESCRIPTION = "role_description"
+    GENERATE_TEXT_EMBEDDING_DATA = "generate_text_embedding_data"
     OBJECT_RECOGNITION = "object_recognition"
     DEFAULT = "default"
-    DESCRIPTE_VIDEO = "descripte_video"
+    VIDEO_DESCRIPTION = "video_description"
 
 
 class VectorDistance(Enum):
