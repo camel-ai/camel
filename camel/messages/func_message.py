@@ -36,6 +36,7 @@ class FunctionCallingMessage(BaseMessage):
         result (Optional[Any]): The result of function execution.
             (default: :obj:`None`)
     """
+
     func_name: Optional[str] = None
     args: Optional[Dict] = None
     result: Optional[Any] = None
@@ -70,7 +71,8 @@ class FunctionCallingMessage(BaseMessage):
         if (not self.func_name) or (self.args is None):
             raise ValueError(
                 "Invalid request for converting into assistant message"
-                " due to missing function name or arguments.")
+                " due to missing function name or arguments."
+            )
 
         msg_dict: OpenAIAssistantMessage = {
             "role": "assistant",
@@ -78,7 +80,7 @@ class FunctionCallingMessage(BaseMessage):
             "function_call": {
                 "name": self.func_name,
                 "arguments": str(self.args),
-            }
+            },
         }
 
         return msg_dict
@@ -94,7 +96,8 @@ class FunctionCallingMessage(BaseMessage):
         if (not self.func_name) or (not self.result):
             raise ValueError(
                 "Invalid request for converting into function message"
-                " due to missing function name or results.")
+                " due to missing function name or results."
+            )
 
         result_content = {"result": {str(self.result)}}
         msg_dict: OpenAIFunctionMessage = {

@@ -14,7 +14,8 @@
 import warnings
 from typing import List, Optional
 
-from camel.memories import ContextRecord, MemoryBlock, MemoryRecord
+from camel.memories.base import MemoryBlock
+from camel.memories.records import ContextRecord, MemoryRecord
 from camel.storages import BaseKeyValueStorage, InMemoryKeyValueStorage
 from camel.types import OpenAIBackendRole
 

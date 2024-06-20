@@ -15,7 +15,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Tuple
 
-from camel.memories import ContextRecord, MemoryRecord
+from camel.memories.records import ContextRecord, MemoryRecord
 from camel.messages import OpenAIMessage
 from camel.utils import BaseTokenCounter
 

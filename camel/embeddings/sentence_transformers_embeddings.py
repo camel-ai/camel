@@ -11,9 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, List, Union
+from typing import Any, List
 
-from camel.embeddings import BaseEmbedding
+from camel.embeddings.base import BaseEmbedding
 
 
 class SentenceTransformerEncoder(BaseEmbedding[str]):
@@ -33,26 +33,29 @@ class SentenceTransformerEncoder(BaseEmbedding[str]):
                                         Defaults to `intfloat/e5-large-v2`.
         """
         from sentence_transformers import SentenceTransformer
+
         self.model = SentenceTransformer(model_name)
 
     def embed_list(
         self,
-        objs: Union[str, List[str]],
+        objs: List[str],
         **kwargs: Any,
-    ) -> list:
+    ) -> List[List[float]]:
         r"""Generates embeddings for the given texts using the model.
 
         Args:
-            objs (str | List[str]): The texts for which to generate the
+            objs (List[str]): The texts for which to generate the
             embeddings.
 
         Returns:
-            list: A list of float representing embeddings.
+            List[List[float]]: A list that represents the generated embedding
+                as a list of floating-point numbers.
         """
         if not objs:
             raise ValueError("Input text list is empty")
-        return self.model.encode(objs, normalize_embeddings=True,
-                                 **kwargs).tolist()
+        return self.model.encode(
+            objs, normalize_embeddings=True, **kwargs
+        ).tolist()
 
     def get_output_dim(self) -> int:
         r"""Returns the output dimension of the embeddings.

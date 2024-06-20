@@ -14,17 +14,22 @@
 # isort: skip_file
 from openai.types.chat.chat_completion import ChatCompletion, Choice
 from openai.types.chat.chat_completion_assistant_message_param import (
-    ChatCompletionAssistantMessageParam, )
+    ChatCompletionAssistantMessageParam,
+)
 from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
 from openai.types.chat.chat_completion_function_message_param import (
-    ChatCompletionFunctionMessageParam, )
+    ChatCompletionFunctionMessageParam,
+)
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
 from openai.types.chat.chat_completion_message_param import (
-    ChatCompletionMessageParam, )
+    ChatCompletionMessageParam,
+)
 from openai.types.chat.chat_completion_system_message_param import (
-    ChatCompletionSystemMessageParam, )
+    ChatCompletionSystemMessageParam,
+)
 from openai.types.chat.chat_completion_user_message_param import (
-    ChatCompletionUserMessageParam, )
+    ChatCompletionUserMessageParam,
+)
 from openai.types.completion_usage import CompletionUsage
 
 Choice = Choice

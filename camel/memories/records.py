@@ -37,6 +37,7 @@ class MemoryRecord:
             key-value pairs that provide more information. If not given, it
             will be an empty `Dict`.
     """
+
     message: BaseMessage
     role_at_backend: OpenAIBackendRole
     uuid: UUID = field(default_factory=uuid4)
@@ -44,7 +45,7 @@ class MemoryRecord:
 
     _MESSAGE_TYPES: ClassVar[dict] = {
         "BaseMessage": BaseMessage,
-        "FunctionCallingMessage": FunctionCallingMessage
+        "FunctionCallingMessage": FunctionCallingMessage,
     }
 
     @classmethod
@@ -73,10 +74,10 @@ class MemoryRecord:
             "uuid": str(self.uuid),
             "message": {
                 "__class__": self.message.__class__.__name__,
-                **asdict(self.message)
+                **asdict(self.message),
             },
             "role_at_backend": self.role_at_backend,
-            "extra_info": self.extra_info
+            "extra_info": self.extra_info,
         }
 
     def to_openai_message(self) -> OpenAIMessage:
@@ -87,5 +88,6 @@ class MemoryRecord:
 @dataclass(frozen=True)
 class ContextRecord:
     r"""The result of memory retrieving."""
+
     memory_record: MemoryRecord
     score: float

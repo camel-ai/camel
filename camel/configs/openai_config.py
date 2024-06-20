@@ -13,17 +13,15 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from abc import ABC
 from dataclasses import asdict, dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Optional, Sequence
+
+from openai._types import NOT_GIVEN, NotGiven
+
+from camel.configs.base_config import BaseConfig
 
 if TYPE_CHECKING:
     from camel.functions import OpenAIFunction
-
-
-@dataclass(frozen=True)
-class BaseConfig(ABC):
-    pass
 
 
 @dataclass(frozen=True)
@@ -74,69 +72,45 @@ class ChatGPTConfig(BaseConfig):
         user (str, optional): A unique identifier representing your end-user,
             which can help OpenAI to monitor and detect abuse.
             (default: :obj:`""`)
+        tools (list[OpenAIFunction], optional): A list of tools the model may
+            call. Currently, only functions are supported as a tool. Use this
+            to provide a list of functions the model may generate JSON inputs
+            for. A max of 128 functions are supported.
+        tool_choice (Union[dict[str, str], str], optional): Controls which (if
+            any) tool is called by the model. :obj:`"none"` means the model
+            will not call any tool and instead generates a message.
+            :obj:`"auto"` means the model can pick between generating a
+            message or calling one or more tools.  :obj:`"required"` means the
+            model must call one or more tools. Specifying a particular tool
+            via {"type": "function", "function": {"name": "my_function"}}
+            forces the model to call that tool. :obj:`"none"` is the default
+            when no tools are present. :obj:`"auto"` is the default if tools
+            are present.
     """
+
     temperature: float = 0.2  # openai default: 1.0
     top_p: float = 1.0
     n: int = 1
     stream: bool = False
-    stop: Optional[Union[str, Sequence[str]]] = None
-    max_tokens: Optional[int] = None
+    stop: str | Sequence[str] | NotGiven = NOT_GIVEN
+    max_tokens: int | NotGiven = NOT_GIVEN
     presence_penalty: float = 0.0
     frequency_penalty: float = 0.0
-    logit_bias: Dict = field(default_factory=dict)
+    logit_bias: dict = field(default_factory=dict)
     user: str = ""
+    tools: Optional[list[OpenAIFunction]] = None
+    tool_choice: Optional[dict[str, str] | str] = None
+
+    def __post_init__(self):
+        if self.tools is not None:
+            object.__setattr__(
+                self,
+                'tools',
+                [tool.get_openai_tool_schema() for tool in self.tools],
+            )
 
 
-@dataclass(frozen=True)
-class FunctionCallingConfig(ChatGPTConfig):
-    r"""Defines the parameters for generating chat completions using the
-    OpenAI API with functions included.
-
-    Args:
-        functions (List[Dict[str, Any]]): A list of functions the model may
-            generate JSON inputs for.
-        function_call (Union[Dict[str, str], str], optional): Controls how the
-            model responds to function calls. :obj:`"none"` means the model
-            does not call a function, and responds to the end-user.
-            :obj:`"auto"` means the model can pick between an end-user or
-            calling a function. Specifying a particular function via
-            :obj:`{"name": "my_function"}` forces the model to call that
-            function. (default: :obj:`"auto"`)
-    """
-    functions: List[Dict[str, Any]] = field(default_factory=list)
-    function_call: Union[Dict[str, str], str] = "auto"
-
-    @classmethod
-    def from_openai_function_list(
-        cls,
-        function_list: List[OpenAIFunction],
-        function_call: Union[Dict[str, str], str] = "auto",
-        kwargs: Optional[Dict[str, Any]] = None,
-    ):
-        r"""Class method for creating an instance given the function-related
-        arguments.
-
-        Args:
-            function_list (List[OpenAIFunction]): The list of function objects
-                to be loaded into this configuration and passed to the model.
-            function_call (Union[Dict[str, str], str], optional): Controls how
-                the model responds to function calls, as specified in the
-                creator's documentation.
-            kwargs (Optional[Dict[str, Any]]): The extra modifications to be
-                made on the original settings defined in :obj:`ChatGPTConfig`.
-
-        Return:
-            FunctionCallingConfig: A new instance which loads the given
-                function list into a list of dictionaries and the input
-                :obj:`function_call` argument.
-        """
-        return cls(
-            functions=[
-                func.get_openai_function_schema() for func in function_list
-            ],
-            function_call=function_call,
-            **(kwargs or {}),
-        )
+OPENAI_API_PARAMS = {param for param in asdict(ChatGPTConfig()).keys()}
 
 
 @dataclass(frozen=True)
@@ -152,13 +126,7 @@ class OpenSourceConfig(BaseConfig):
         api_params (ChatGPTConfig): An instance of :obj:ChatGPTConfig to
             contain the arguments to be passed to OpenAI API.
     """
+
     model_path: str
     server_url: str
-    api_params: ChatGPTConfig = ChatGPTConfig()
-
-
-OPENAI_API_PARAMS = {param for param in asdict(ChatGPTConfig()).keys()}
-OPENAI_API_PARAMS_WITH_FUNCTIONS = {
-    param
-    for param in asdict(FunctionCallingConfig()).keys()
-}
+    api_params: ChatGPTConfig = field(default_factory=ChatGPTConfig)

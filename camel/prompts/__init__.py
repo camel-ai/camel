@@ -11,16 +11,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .base import TextPrompt, CodePrompt, TextPromptDict
 from .ai_society import AISocietyPromptTemplateDict
+from .base import CodePrompt, TextPrompt, TextPromptDict
 from .code import CodePromptTemplateDict
-from .misalignment import MisalignmentPromptTemplateDict
-from .translation import TranslationPromptTemplateDict
-from .solution_extraction import SolutionExtractionPromptTemplateDict
+from .descripte_video_prompt import DescriptionVideoPromptTemplateDict
 from .evaluation import EvaluationPromptTemplateDict
-from .role_description_prompt_template import RoleDescriptionPromptTemplateDict
-from .task_prompt_template import TaskPromptTemplateDict
+from .misalignment import MisalignmentPromptTemplateDict
+from .object_recognition import ObjectRecognitionPromptTemplateDict
 from .prompt_templates import PromptTemplateGenerator
+from .role_description_prompt_template import RoleDescriptionPromptTemplateDict
+from .solution_extraction import SolutionExtractionPromptTemplateDict
+from .task_prompt_template import TaskPromptTemplateDict
+from .translation import TranslationPromptTemplateDict
 
 __all__ = [
     'TextPrompt',
@@ -35,4 +37,6 @@ __all__ = [
     'TaskPromptTemplateDict',
     'PromptTemplateGenerator',
     'SolutionExtractionPromptTemplateDict',
+    'ObjectRecognitionPromptTemplateDict',
+    'DescriptionVideoPromptTemplateDict',
 ]
