@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, List, Optional, Union
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.retrievers import AutoRetriever
+from camel.types import StorageType
 
 if TYPE_CHECKING:
     from discord import Message
@@ -119,9 +120,28 @@ class DiscordBot:
                 top_k=self.top_k,
                 return_detailed_info=self.return_detailed_info,
             )
-        
+
         user_msg = BaseMessage.make_user_message(
             role_name="User", content=user_raw_msg
         )
         assistant_response = self.chat_agent.step(user_msg)
         await message.channel.send(assistant_response.msg.content)
+
+
+if __name__ == "__main__":
+    assistant_sys_msg = BaseMessage.make_assistant_message(
+        role_name="Assistant",
+        content="You are a helpful assistant.",
+    )
+
+    agent = ChatAgent(assistant_sys_msg)
+    auto_retriever = AutoRetriever(
+        url_and_api_key=("Your Milvus URI", "Your Milvus Token"),
+        storage_type=StorageType.MILVUS
+    )
+    bot = DiscordBot(
+        agent,
+        auto_retriever=auto_retriever,
+        content_input_paths=["local_data/"]
+    )
+    bot.run()
