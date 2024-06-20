@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import json
 import os
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import requests
 
@@ -21,7 +21,7 @@ from camel.functions import OpenAIFunction, openapi_security_config
 from camel.types import OpenAPIName
 
 
-def parse_openapi_file(openapi_spec_path: str) -> Dict[str, Any]:
+def parse_openapi_file(openapi_spec_path: str) -> Optional[Dict[str, Any]]:
     r"""Load and parse an OpenAPI specification file.
 
     This function utilizes the `prance.ResolvingParser` to parse and resolve
@@ -35,7 +35,10 @@ def parse_openapi_file(openapi_spec_path: str) -> Dict[str, Any]:
     Returns:
         Dict[str, Any]: The parsed OpenAPI specification as a dictionary.
     """
-    import prance
+    try:
+        import prance
+    except Exception:
+        return None
 
     # Load the OpenAPI spec
     parser = prance.ResolvingParser(
@@ -422,7 +425,7 @@ def generate_openapi_funcs(
 
 def apinames_filepaths_to_funs_schemas(
     apinames_filepaths: List[Tuple[str, str]],
-) -> Tuple[List[Callable], List[Dict[str, Any]]]:
+) -> Tuple[Optional[List[Callable]], Optional[List[Dict[str, Any]]]]:
     r"""Combines functions and schemas from multiple OpenAPI specifications,
     using API names as keys.
 
@@ -452,6 +455,8 @@ def apinames_filepaths_to_funs_schemas(
         )
 
         openapi_spec = parse_openapi_file(file_path)
+        if openapi_spec is None:
+            return None, None
 
         # Generate and merge function schemas
         openapi_functions_schemas = openapi_spec_to_openai_schemas(
@@ -496,7 +501,10 @@ all_funcs_lst, all_schemas_lst = apinames_filepaths_to_funs_schemas(
     apinames_filepaths
 )
 
-OPENAPI_FUNCS: List[OpenAIFunction] = [
-    OpenAIFunction(a_func, a_schema)
-    for a_func, a_schema in zip(all_funcs_lst, all_schemas_lst)
-]
+if all_funcs_lst is not None and all_schemas_lst is not None:
+    OPENAPI_FUNCS: List[OpenAIFunction] = [
+        OpenAIFunction(a_func, a_schema)
+        for a_func, a_schema in zip(all_funcs_lst, all_schemas_lst)
+    ]
+else:
+    OPENAPI_FUNCS: List[OpenAIFunction] = []
