@@ -186,7 +186,7 @@ class ModelType(Enum):
 
 
 class EmbeddingModelType(Enum):
-    ADA_2 = "text-embedding-ada-002"
+    TEXT_EMBEDDING_ADA_2 = "text-embedding-ada-002"
     TEXT_EMBEDDING_3_SMALL = "text-embedding-3-small"
     TEXT_EMBEDDING_3_LARGE = "text-embedding-3-large"
 
@@ -194,14 +194,14 @@ class EmbeddingModelType(Enum):
     def is_openai(self) -> bool:
         r"""Returns whether this type of models is an OpenAI-released model."""
         return self in {
-            EmbeddingModelType.ADA_2,
+            EmbeddingModelType.TEXT_EMBEDDING_ADA_2,
             EmbeddingModelType.TEXT_EMBEDDING_3_SMALL,
             EmbeddingModelType.TEXT_EMBEDDING_3_LARGE,
         }
 
     @property
     def output_dim(self) -> int:
-        if self is EmbeddingModelType.ADA_2:
+        if self is EmbeddingModelType.TEXT_EMBEDDING_ADA_2:
             return 1536
         elif self is EmbeddingModelType.TEXT_EMBEDDING_3_SMALL:
             return 1536
