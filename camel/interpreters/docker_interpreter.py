@@ -17,7 +17,7 @@ import shlex
 import tarfile
 import uuid
 from pathlib import Path
-from typing import Any, ClassVar, Dict, List, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, List
 
 import docker
 from colorama import Fore
@@ -59,10 +59,10 @@ class DockerInterpreter(BaseInterpreter):
     }
 
     def __init__(
-            self,
-            require_confirm: bool = True,
-            print_stdout: bool = False,
-            print_stderr: bool = True,
+        self,
+        require_confirm: bool = True,
+        print_stdout: bool = False,
+        print_stderr: bool = True,
     ) -> None:
         """Initializes a DockerInterpreter class with one docker container
         attached to it. All the code execution will be done in this container.
@@ -78,7 +78,6 @@ class DockerInterpreter(BaseInterpreter):
         self._require_confirm = require_confirm
         self._print_stdout = print_stdout
         self._print_stderr = print_stderr
-        # create a docker container
         self._client = docker.from_env()
 
     def _create_new_container(self) -> Container:
@@ -90,8 +89,9 @@ class DockerInterpreter(BaseInterpreter):
             command="tail -f /dev/null",
         )
 
-    def _create_file_in_container(self, content: str,
-                                  container: Container) -> Path:
+    def _create_file_in_container(
+        self, content: str, container: Container
+    ) -> Path:
         # get a random name for the file
         filename = str(uuid.uuid4())
         # create a tar in memory
@@ -106,10 +106,10 @@ class DockerInterpreter(BaseInterpreter):
         return Path(f"/tmp/{filename}")
 
     def _run_file_in_container(
-            self,
-            container: Container,
-            file: Path,
-            code_type: str,
+        self,
+        container: Container,
+        file: Path,
+        code_type: str,
     ) -> str:
         code_type = self._check_code_type(code_type)
         commands = shlex.split(
@@ -117,9 +117,12 @@ class DockerInterpreter(BaseInterpreter):
                 file_name=str(file)
             )
         )
-        exec_result = container.exec_run(commands, stdout=self._print_stdout,
-                                         stderr=self._print_stderr, demux=True)
-        stdout, stderr = exec_result.output
+        stdout, stderr = container.exec_run(
+            commands,
+            stdout=self._print_stdout,
+            stderr=self._print_stderr,
+            demux=True,
+        ).output
 
         if self._print_stdout and stdout:
             print("======stdout======")
@@ -134,9 +137,9 @@ class DockerInterpreter(BaseInterpreter):
         return exec_result
 
     def run(
-            self,
-            code: str,
-            code_type: str,
+        self,
+        code: str,
+        code_type: str,
     ) -> str:
         r"""Creates a temporary container, executes the given code in it, and
         captures the stdout and stderr streams. The container is removed after
@@ -176,8 +179,9 @@ class DockerInterpreter(BaseInterpreter):
         try:
             container = self._create_new_container()
             temp_file_path = self._create_file_in_container(code, container)
-            result = self._run_file_in_container(container, temp_file_path,
-                                                 code_type)
+            result = self._run_file_in_container(
+                container, temp_file_path, code_type
+            )
         except Exception as e:
             raise InterpreterError(
                 f"Execution halted: {e}. "
