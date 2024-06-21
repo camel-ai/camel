@@ -39,6 +39,7 @@ anthropic = "^0.28.0"
 docstring-parser = "^0.15"
 pydantic = ">=1.9,<3"
 curl_cffi = "0.6.2"
+docker = "^7.1.0"
 
 # model-platforms
 litellm = { version = "^1.38.1", optional = true }
@@ -93,7 +94,6 @@ cohere = { version = "^4.56", optional = true }
 pytest = { version = "^7", optional = true}
 pytest-asyncio = { version = "^0.23.0", optional = true }
 mock = { version = "^5", optional = true}
-docker = "^7.1.0"
 
 [tool.poetry.extras]
 test = ["pytest", "mock", "pytest-asyncio"]
@@ -222,6 +222,7 @@ types-setuptools = "*"
 types-tqdm = "*"
 types-colorama = "^0"
 types-requests = "^2"
+types-docker = "^7.1.0.20240617"
 
 [tool.poetry.group.docs]
 optional = true
