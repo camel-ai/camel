@@ -245,7 +245,10 @@ def api_keys_required(*required_keys: str) -> Callable[[F], F]:
             missing_environment_keys = [
                 k for k in required_keys if k not in os.environ
             ]
-            if not self._api_key and missing_environment_keys:
+            if (
+                not getattr(self, '_api_key', None)
+                and missing_environment_keys
+            ):
                 raise ValueError(
                     f"Missing API keys: {', '.join(missing_environment_keys)}"
                 )
