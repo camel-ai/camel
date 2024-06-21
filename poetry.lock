@@ -1065,7 +1065,7 @@ wmi = ["wmi (>=1.5.1)"]
 name = "docker"
 version = "7.1.0"
 description = "A Python library for the Docker Engine API."
-optional = false
+optional = true
 python-versions = ">=3.8"
 files = [
     {file = "docker-7.1.0-py3-none-any.whl", hash = "sha256:c96b93b7f0a746f9e77d325bcfb87422a3d8bd4f03136ae8a85b37f1898d5fc0"},
@@ -2619,13 +2619,13 @@ files = [
 
 [[package]]
 name = "litellm"
-version = "1.40.19"
+version = "1.40.20"
 description = "Library to easily interface with LLM API providers"
 optional = true
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "litellm-1.40.19-py3-none-any.whl", hash = "sha256:4ef171e778ca198ef8c0920dec6e8f3267fe0f193484f78f811e060949868326"},
-    {file = "litellm-1.40.19.tar.gz", hash = "sha256:18d0da4d4e8e1e1e3ba06d7e07d5899de7c05b6b9db8f96d30bfceb115af2bb7"},
+    {file = "litellm-1.40.20-py3-none-any.whl", hash = "sha256:6f142d69ac46450163a24d9d42cb949f72b1ffde4e074bb1d91b70d1e08b1045"},
+    {file = "litellm-1.40.20.tar.gz", hash = "sha256:7510116f2f9f833ffc6395f4840ff94e3ad84640a574cb62c7e64d69d0f0e20b"},
 ]
 
 [package.dependencies]
@@ -4902,7 +4902,7 @@ files = [
 name = "pywin32"
 version = "306"
 description = "Python for Window Extensions"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "pywin32-306-cp310-cp310-win32.whl", hash = "sha256:06d3420a5155ba65f0b72f2699b5bacf3109f36acbe8923765c22938a69dfc8d"},
@@ -6614,21 +6614,6 @@ files = [
 ]
 
 [[package]]
-name = "types-docker"
-version = "7.1.0.20240617"
-description = "Typing stubs for docker"
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "types-docker-7.1.0.20240617.tar.gz", hash = "sha256:f22a8a6ee61cb1d3d67557fcc729057a452b47d2dd883bd407f817fe28b7ea01"},
-    {file = "types_docker-7.1.0.20240617-py3-none-any.whl", hash = "sha256:4c994487fd2e9e535170a03d1aa6a1a9f6416ceb7e3f6a82be1c1c48a0da5536"},
-]
-
-[package.dependencies]
-types-requests = "*"
-urllib3 = ">=2"
-
-[[package]]
 name = "types-docutils"
 version = "0.21.0.20240423"
 description = "Typing stubs for docutils"
@@ -7654,17 +7639,17 @@ doc = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.linke
 test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more-itertools", "pytest (>=6,!=8.1.*)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-ignore-flaky", "pytest-mypy", "pytest-ruff (>=0.2.1)"]
 
 [extras]
-all = ["PyMuPDF", "accelerate", "beautifulsoup4", "cohere", "datasets", "diffusers", "discord.py", "docx2txt", "duckduckgo-search", "googlemaps", "imageio", "litellm", "neo4j", "newspaper3k", "openapi-spec-validator", "opencv-python", "pillow", "prance", "pyTelegramBotAPI", "pydub", "pygithub", "pymilvus", "pyowm", "qdrant-client", "rank-bm25", "requests_oauthlib", "sentence-transformers", "sentencepiece", "slack-sdk", "soundfile", "torch", "transformers", "unstructured", "wikipedia", "wolframalpha"]
+all = ["PyMuPDF", "accelerate", "beautifulsoup4", "cohere", "datasets", "diffusers", "discord.py", "docker", "docx2txt", "duckduckgo-search", "googlemaps", "imageio", "litellm", "neo4j", "newspaper3k", "openapi-spec-validator", "opencv-python", "pillow", "prance", "pyTelegramBotAPI", "pydub", "pygithub", "pymilvus", "pyowm", "qdrant-client", "rank-bm25", "requests_oauthlib", "sentence-transformers", "sentencepiece", "slack-sdk", "soundfile", "torch", "transformers", "unstructured", "wikipedia", "wolframalpha"]
 encoders = ["sentence-transformers"]
 graph-storages = ["neo4j"]
 huggingface-agent = ["accelerate", "datasets", "diffusers", "opencv-python", "sentencepiece", "soundfile", "torch", "transformers"]
 model-platforms = ["litellm"]
 retrievers = ["cohere", "rank-bm25"]
 test = ["mock", "pytest", "pytest-asyncio"]
-tools = ["PyMuPDF", "beautifulsoup4", "discord.py", "docx2txt", "duckduckgo-search", "googlemaps", "imageio", "newspaper3k", "openapi-spec-validator", "pillow", "prance", "pyTelegramBotAPI", "pydub", "pygithub", "pyowm", "requests_oauthlib", "slack-sdk", "unstructured", "wikipedia", "wolframalpha"]
+tools = ["PyMuPDF", "beautifulsoup4", "discord.py", "docker", "docx2txt", "duckduckgo-search", "googlemaps", "imageio", "newspaper3k", "openapi-spec-validator", "pillow", "prance", "pyTelegramBotAPI", "pydub", "pygithub", "pyowm", "requests_oauthlib", "slack-sdk", "unstructured", "wikipedia", "wolframalpha"]
 vector-databases = ["pymilvus", "qdrant-client"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<3.12"
-content-hash = "5091ccf1a4d53ef721c7b8aac6538a2bb23203ea45aa52657deda7efd00fea95"
+content-hash = "66329a332219b0d4a36b8216000009b1cc7aa2d2c7474155ad27981802186e1b"
