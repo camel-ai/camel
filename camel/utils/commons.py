@@ -218,7 +218,7 @@ def is_module_available(module_name: str) -> bool:
 
 def api_keys_required(*required_keys: str) -> Callable[[F], F]:
     r"""A decorator to check if the required API keys are
-    present in the environment variables.
+    present in the environment variables or as an instance attribute.
 
     Args:
         required_keys (str): The required API keys to be checked.
@@ -229,7 +229,7 @@ def api_keys_required(*required_keys: str) -> Callable[[F], F]:
 
     Raises:
         ValueError: If any of the required API keys are missing in the
-            environment variables.
+            environment variables and the instance attribute.
 
     Example:
         ::
@@ -249,7 +249,7 @@ def api_keys_required(*required_keys: str) -> Callable[[F], F]:
                 raise ValueError(
                     f"Missing API keys: {', '.join(missing_environment_keys)}"
                 )
-            return func(*args, **kwargs)
+            return func(self, *args, **kwargs)
 
         return cast(F, wrapper)
 
