@@ -20,7 +20,7 @@ from camel.types import ModelPlatformType, ModelType
 
 model_gpt = ModelFactory.create(
     ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_3_5_TURBO,
+    model_type=ModelType.GPT_4O,
     model_config_dict={},
 )
 
