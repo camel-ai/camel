@@ -37,6 +37,10 @@ class ModelType(Enum):
     VICUNA = "vicuna"
     VICUNA_16K = "vicuna-16k"
 
+    # Qwen
+    QWEN_7B_CHAT = "Qwen-7B-Chat"
+    BAICHUAN2_13B_CHAT = "Baichuan2-13B-Chat"
+
     # Legacy anthropic models
     # NOTE: anthropic lagecy models only Claude 2.1 has system prompt support
     CLAUDE_2_1 = "claude-2.1"
@@ -71,6 +75,8 @@ class ModelType(Enum):
             ModelType.LLAMA_3,
             ModelType.VICUNA,
             ModelType.VICUNA_16K,
+            ModelType.QWEN_7B_CHAT,
+            ModelType.BAICHUAN2_13B_CHAT
         }
 
     @property
@@ -110,6 +116,10 @@ class ModelType(Enum):
         elif self is ModelType.LLAMA_2:
             return 4096
         elif self is ModelType.LLAMA_3:
+            return 4096
+        elif self is ModelType.QWEN_7B_CHAT:
+            return 8012
+        elif self is ModelType.BAICHUAN2_13B_CHAT:
             return 4096
         elif self is ModelType.VICUNA:
             # reference: https://lmsys.org/blog/2023-03-30-vicuna/
@@ -153,8 +163,7 @@ class ModelType(Enum):
                 or "llama3" in model_name.lower()
             )
         else:
-            return self.value in model_name.lower()
-
+            return self.value.lower() in model_name.lower()
 
 class EmbeddingModelType(Enum):
     ADA_2 = "text-embedding-ada-002"

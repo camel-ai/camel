@@ -153,11 +153,13 @@ class OpenSourceTokenCounter(BaseTokenCounter):
             tokenizer = AutoTokenizer.from_pretrained(
                 model_path,
                 use_fast=True,
+                trust_remote_code=True
             )
         except TypeError:
             tokenizer = AutoTokenizer.from_pretrained(
                 model_path,
                 use_fast=False,
+                trust_remote_code=True
             )
         except Exception:
             raise ValueError(
