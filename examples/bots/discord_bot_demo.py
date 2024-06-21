@@ -13,19 +13,19 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import asyncio
 import os
-from typing import Optional, List, Union
+from typing import List, Optional
 
 import discord
 from discord import Message
 from discord.ext import commands
-from discord.ext.commands import DefaultHelpCommand, Context, errors
+from discord.ext.commands import Context, DefaultHelpCommand, errors
 from pydantic import HttpUrl
 
 LIMITED_CHANNEL = []
 
 
 def check_example(ctx: Context):
-    """ function for commands.check() """
+    """function for commands.check()"""
     global LIMITED_CHANNEL
     return not LIMITED_CHANNEL or ctx.channel in LIMITED_CHANNEL
 
@@ -45,17 +45,17 @@ class BotCog(commands.Cog):
 
 class DiscordBot(commands.Bot):
     def __init__(
-            self,
-            channel_ids: Optional[List[int]] = None,
-            command_prefix: str = "!",
-            discord_guild: str = None,
-            proxy: Optional[HttpUrl] = None
+        self,
+        channel_ids: Optional[List[int]] = None,
+        command_prefix: str = "!",
+        discord_guild: Optional[str] = None,
+        proxy: Optional[HttpUrl] = None,
     ):
         super().__init__(
-            command_prefix, 
-            intents=discord.Intents.all(), 
-            help_command=DefaultHelpCommand(), 
-            proxy=proxy
+            command_prefix,
+            intents=discord.Intents.all(),
+            help_command=DefaultHelpCommand(),
+            proxy=proxy,
         )
 
         self.discord_guild = discord_guild
@@ -101,7 +101,9 @@ class DiscordBot(commands.Bot):
             # send a message to channel
             # await message.channel.send(content)
 
-    async def on_command_error(self, context: Context, exception: errors.CommandError, /) -> None:
+    async def on_command_error(
+        self, context: Context, exception: errors.CommandError, /
+    ) -> None:
         if context.invoked_with == 'help':
             return
         print(context, exception)
@@ -114,7 +116,8 @@ if __name__ == "__main__":
 
     bot = DiscordBot(
         proxy="Your proxy or None",
-        discord_guild="Your discord guild ID or None, slash command will not work if None."
+        discord_guild="Your discord guild ID or None, "
+        + "slash command will not work if None.",
     )
     asyncio.run(bot.add_cog(BotCog(bot)))
     bot.run(token=discord_token)

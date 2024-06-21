@@ -17,7 +17,6 @@ from typing import TYPE_CHECKING, List, Optional, Union
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.retrievers import AutoRetriever
-from camel.types import StorageType
 
 if TYPE_CHECKING:
     from discord import Message
@@ -44,7 +43,7 @@ class DiscordBot:
         channel_ids: Optional[List[int]] = None,
         discord_token: Optional[str] = None,
         auto_retriever: Optional[AutoRetriever] = None,
-        content_input_paths: Union[str, List[str]] = [],
+        content_input_paths: Union[str, List[str]] = "",
         top_k: int = 1,
         return_detailed_info: bool = True,
     ) -> None:
@@ -100,12 +99,18 @@ class DiscordBot:
         Args:
             message (discord.Message): The message object received.
         """
+
+        # If the message author is the bot itself,
+        # do not respond to this message
         if message.author == self.client.user:
             return
 
+        # If allowed channel IDs are provided,
+        # only respond to messages in those channels
         if self.channel_ids and message.channel.id not in self.channel_ids:
             return
 
+        # Only respond to messages that mention the bot
         if not self.client.user or not self.client.user.mentioned_in(message):
             return
 
@@ -133,38 +138,56 @@ if __name__ == "__main__":
         role_name="Assistant",
         content='''
             Objective: 
-                You are a customer service bot designed to assist users with inquiries related to our open-source project. Your responses should be informative, concise, and helpful.
+                You are a customer service bot designed to assist users
+                with inquiries related to our open-source project. 
+                Your responses should be informative, concise, and helpful.
             
             Instructions:
-                Understand User Queries: Carefully read and understand the user's question. Focus on keywords and context to determine the user's intent.
-                Search for Relevant Information: Use the provided dataset and refer to the RAG (file to find answers that closely match the user's query. The RAG file contains detailed interactions and should be your primary resource for crafting responses.
-                Provide Clear and Concise Responses: Your answers should be clear and to the point. Avoid overly technical language unless the user’s query indicates familiarity with technical terms.
-                Encourage Engagement: Where applicable, encourage users to contribute to the project or seek further assistance.
+                Understand User Queries: Carefully read and understand the
+                        user's question. Focus on keywords and context to
+                        determine the user's intent.
+                Search for Relevant Information: Use the provided dataset
+                        and refer to the RAG (file to find answers that 
+                        closely match the user's query. The RAG file contains
+                        detailed interactions and should be your primary 
+                        resource for crafting responses.
+                Provide Clear and Concise Responses: Your answers should 
+                        be clear and to the point. Avoid overly technical
+                        language unless the user's query indicates 
+                        familiarity with technical terms.
+                Encourage Engagement: Where applicable, encourage users
+                        to contribute to the project or seek further
+                        assistance.
             
             Response Structure:
                 Greeting: Begin with a polite greeting or acknowledgment.
                 Main Response: Provide the main answer to the user's query.
-                Additional Information: Offer any extra tips or direct the user to additional resources if necessary.
-                Closing: Close the response politely, encouraging further engagement if appropriate.
+                Additional Information: Offer any extra tips or direct the
+                        user to additional resources if necessary.
+                Closing: Close the response politely, encouraging
+                        further engagement if appropriate.
             bd
             Tone:
-                Professional: Maintain a professional tone that instills confidence in the user.
-                Friendly: Be approachable and friendly to make users feel comfortable.
-                Helpful: Always aim to be as helpful as possible, guiding users to solutions.        
+                Professional: Maintain a professional tone that 
+                        instills confidence in the user.
+                Friendly: Be approachable and friendly to make users 
+                        feel comfortable.
+                Helpful: Always aim to be as helpful as possible,
+                        guiding users to solutions.        
         ''',
     )
 
     agent = ChatAgent(
         assistant_sys_msg,
         message_window_size=10,
-        )
-    auto_retriever = AutoRetriever(
-        url_and_api_key=("Your Milvus URI", "Your Milvus Token"),
-        storage_type=StorageType.MILVUS
     )
+    # auto_retriever = AutoRetriever(
+    #     url_and_api_key=("Your Milvus URI", "Your Milvus Token"),
+    #     storage_type=StorageType.MILVUS,
+    # )
     bot = DiscordBot(
         agent,
-        auto_retriever=auto_retriever,
-        content_input_paths=["local_data/"]
+        # auto_retriever=auto_retriever,
+        # content_input_paths=["local_data/"],
     )
     bot.run()
