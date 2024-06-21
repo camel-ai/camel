@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 
 class DiscordBot:
-    r"""Represents a Discord bot that is powered by an agent.
+    r"""Represents a Discord bot that is powered by a CAMEL `ChatAgent`.
 
     Attributes:
         chat_agent (ChatAgent): Chat agent that will power the bot.
@@ -31,8 +31,8 @@ class DiscordBot:
             listen to.
         discord_token (str, optional): The bot token.
         auto_retriever (AutoRetriever): AutoRetriever instance for RAG.
-        content_input_paths (Union[str, List[str]]): The paths to the contents
-            for RAG.
+        vector_storage_local_path (Union[str, List[str]]): The paths to the
+            contents for RAG.
         top_k (int): Top choice for the RAG response.
         return_detailed_info (bool): If show detailed info of the RAG response.
     """
@@ -43,7 +43,7 @@ class DiscordBot:
         channel_ids: Optional[List[int]] = None,
         discord_token: Optional[str] = None,
         auto_retriever: Optional[AutoRetriever] = None,
-        content_input_paths: Union[str, List[str]] = "",
+        vector_storage_local_path: Union[str, List[str]] = "",
         top_k: int = 1,
         return_detailed_info: bool = True,
     ) -> None:
@@ -51,7 +51,7 @@ class DiscordBot:
         self.token = discord_token or os.getenv('DISCORD_TOKEN')
         self.channel_ids = channel_ids
         self.auto_retriever = auto_retriever
-        self.content_input_paths = content_input_paths
+        self.vector_storage_local_path = vector_storage_local_path
         self.top_k = top_k
         self.return_detailed_info = return_detailed_info
 
@@ -114,16 +114,22 @@ class DiscordBot:
         if not self.client.user or not self.client.user.mentioned_in(message):
             return
 
-        self.chat_agent.reset()
-
         user_raw_msg = message.content
 
         if self.auto_retriever:
-            user_raw_msg = self.auto_retriever.run_vector_retriever(
+            retrieved_content = self.auto_retriever.run_vector_retriever(
                 query=user_raw_msg,
-                content_input_paths=self.content_input_paths,
+                vector_storage_local_path=self.content_input_paths,
                 top_k=self.top_k,
                 return_detailed_info=self.return_detailed_info,
+            )
+            user_raw_msg = '''
+                Here is the query to you: {user_raw_msg}
+                Based on the retrieved content:{retrieved_content}, 
+                answer the query from {name}'''.format(
+                user_raw_msg=user_raw_msg,
+                retrieved_content=retrieved_content,
+                name=message.author.name,
             )
 
         user_msg = BaseMessage.make_user_message(
@@ -181,13 +187,15 @@ if __name__ == "__main__":
         assistant_sys_msg,
         message_window_size=10,
     )
+    # Uncommented the folowing code and offer storage information
+    # for RAG functionality
     # auto_retriever = AutoRetriever(
-    #     url_and_api_key=("Your Milvus URI", "Your Milvus Token"),
-    #     storage_type=StorageType.MILVUS,
+    #     url_and_api_key=("Your QDRANT URI", "Your QDRANT Token"),
+    #     storage_type=StorageType.QDRANT,
     # )
     bot = DiscordBot(
         agent,
         # auto_retriever=auto_retriever,
-        # content_input_paths=["local_data/"],
+        # vector_storage_local_path=["local_data/"],
     )
     bot.run()
