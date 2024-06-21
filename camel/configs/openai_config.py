@@ -41,6 +41,19 @@ class ChatGPTConfig(BaseConfig):
             (default: :obj:`1.0`)
         n (int, optional): How many chat completion choices to generate for
             each input message. (default: :obj:`1`)
+        response_format (object, optional): An object specifying the format
+            that the model must output. Compatible with GPT-4 Turbo and all
+            GPT-3.5 Turbo models newer than gpt-3.5-turbo-1106. Setting to
+            {"type": "json_object"} enables JSON mode, which guarantees the
+            message the model generates is valid JSON. Important: when using
+            JSON mode, you must also instruct the model to produce JSON
+            yourself via a system or user message. Without this, the model
+            may generate an unending stream of whitespace until the generation
+            reaches the token limit, resulting in a long-running and seemingly
+            "stuck" request. Also note that the message content may be
+            partially cut off if finish_reason="length", which indicates the
+            generation exceeded max_tokens or the conversation exceeded the
+            max context length.
         stream (bool, optional): If True, partial message deltas will be sent
             as data-only server-sent events as they become available.
             (default: :obj:`False`)
@@ -95,6 +108,7 @@ class ChatGPTConfig(BaseConfig):
     stop: str | Sequence[str] | NotGiven = NOT_GIVEN
     max_tokens: int | NotGiven = NOT_GIVEN
     presence_penalty: float = 0.0
+    response_format: dict | NotGiven = NOT_GIVEN
     frequency_penalty: float = 0.0
     logit_bias: dict = field(default_factory=dict)
     user: str = ""

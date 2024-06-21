@@ -35,6 +35,7 @@ class OpenAIModel(BaseModelBackend):
         model_type: ModelType,
         model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
+        url: Optional[str] = None,
     ) -> None:
         r"""Constructor for OpenAI backend.
 
@@ -45,12 +46,16 @@ class OpenAIModel(BaseModelBackend):
                 be fed into openai.ChatCompletion.create().
             api_key (Optional[str]): The API key for authenticating with the
                 OpenAI service. (default: :obj:`None`)
+            url (Optional[str]): The url to the OpenAI service.
         """
-        super().__init__(model_type, model_config_dict)
-        url = os.environ.get('OPENAI_API_BASE_URL', None)
+        super().__init__(model_type, model_config_dict, api_key, url)
+        self._url = url or os.environ.get("OPENAI_API_BASE_URL")
         self._api_key = api_key or os.environ.get("OPENAI_API_KEY")
         self._client = OpenAI(
-            timeout=60, max_retries=3, base_url=url, api_key=self._api_key
+            timeout=60,
+            max_retries=3,
+            base_url=self._url,
+            api_key=self._api_key,
         )
         self._token_counter: Optional[BaseTokenCounter] = None
 
