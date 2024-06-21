@@ -15,7 +15,12 @@ from camel.embeddings import OpenAIEmbedding
 
 
 def test_openai_embedding():
-    text = "test embedding text."
     embedding_model = OpenAIEmbedding()
+    text = "test 1."
     vector = embedding_model.embed(text)
     assert len(vector) == embedding_model.get_output_dim()
+
+    embedding_model = OpenAIEmbedding(dimensions=256)
+    text = "test 2"
+    vector = embedding_model.embed(text)
+    assert len(vector) == embedding_model.get_output_dim() == 256
