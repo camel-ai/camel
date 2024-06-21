@@ -15,7 +15,6 @@ from mock import patch
 
 from camel.agents import ChatAgent
 from camel.agents.deductive_reasoner_agent import DeductiveReasonerAgent
-from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.responses import ChatAgentResponse
 from camel.types import RoleType
@@ -38,13 +37,9 @@ def test_deductive_reasoner_agent(mock_step):
 
     starting_state = "I was walking down the street in New York with a Anna."
     target_state = "I remind Anna to pay attention to personal safety."
-    model_config_description = ChatGPTConfig()
 
     # Construct deductive reasoner agent
-    model_type = None
-    deductive_reasoner_agent = DeductiveReasonerAgent(
-        model_type=model_type, model_config=model_config_description
-    )
+    deductive_reasoner_agent = DeductiveReasonerAgent()
 
     # Generate the conditions and quality dictionary based on the mock step
     # function

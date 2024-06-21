@@ -15,7 +15,14 @@
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
-from camel.types import ModelType
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType, ModelType
+
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.ZHIPU,
+    model_type=ModelType.GLM_4,
+    model_config=ChatGPTConfig(temperature=0.2),
+)
 
 # Define system message
 sys_msg = BaseMessage.make_assistant_message(
@@ -23,18 +30,8 @@ sys_msg = BaseMessage.make_assistant_message(
     content="You are a helpful assistant.",
 )
 
-# Set model config
-model_config = ChatGPTConfig(
-    temperature=0.2, top_p=0.9
-)  # temperature=,top_p here can not be 1 or 0.
-
 # Set agent
-camel_agent = ChatAgent(
-    sys_msg,
-    model_config=model_config,
-    model_type=ModelType.GLM_4,
-)
-camel_agent.reset()
+camel_agent = ChatAgent(system_message=sys_msg, model=model)
 
 user_msg = BaseMessage.make_user_message(
     role_name="User",
