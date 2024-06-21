@@ -29,6 +29,9 @@ class ModelType(Enum):
     GPT_4_32K = "gpt-4-32k"
     GPT_4_TURBO = "gpt-4-turbo"
     GPT_4O = "gpt-4o"
+    GLM_4 = "glm-4"
+    GLM_4V = 'glm-4v'
+    GLM_3_TURBO = "glm-3-turbo"
 
     STUB = "stub"
 
@@ -42,14 +45,21 @@ class ModelType(Enum):
     CLAUDE_2_0 = "claude-2.0"
     CLAUDE_INSTANT_1_2 = "claude-instant-1.2"
 
-    #  3 models
+    # Claude3 models
     CLAUDE_3_OPUS = "claude-3-opus-20240229"
     CLAUDE_3_SONNET = "claude-3-sonnet-20240229"
     CLAUDE_3_HAIKU = "claude-3-haiku-20240307"
 
+    # Nvidia models
+    NEMOTRON_4_REWARD = "nvidia/nemotron-4-340b-reward"
+
     @property
     def value_for_tiktoken(self) -> str:
-        return self.value if self is not ModelType.STUB else "gpt-3.5-turbo"
+        return (
+            self.value
+            if self is not ModelType.STUB and not isinstance(self, str)
+            else "gpt-3.5-turbo"
+        )
 
     @property
     def is_openai(self) -> bool:
@@ -60,6 +70,15 @@ class ModelType(Enum):
             ModelType.GPT_4_32K,
             ModelType.GPT_4_TURBO,
             ModelType.GPT_4O,
+        }
+
+    @property
+    def is_zhipuai(self) -> bool:
+        r"""Returns whether this type of models is an ZhipuAI model."""
+        return self in {
+            ModelType.GLM_3_TURBO,
+            ModelType.GLM_4,
+            ModelType.GLM_4V,
         }
 
     @property
@@ -88,6 +107,17 @@ class ModelType(Enum):
         }
 
     @property
+    def is_nvidia(self) -> bool:
+        r"""Returns whether this type of models is Nvidia-released model.
+
+        Returns:
+            bool: Whether this type of models is nvidia.
+        """
+        return self in {
+            ModelType.NEMOTRON_4_REWARD,
+        }
+
+    @property
     def token_limit(self) -> int:
         r"""Returns the maximum token limit for a given model.
         Returns:
@@ -103,6 +133,12 @@ class ModelType(Enum):
             return 128000
         elif self is ModelType.GPT_4O:
             return 128000
+        elif self == ModelType.GLM_4:
+            return 8192
+        elif self == ModelType.GLM_3_TURBO:
+            return 8192
+        elif self == ModelType.GLM_4V:
+            return 1024
         elif self is ModelType.STUB:
             return 4096
         elif self is ModelType.LLAMA_2:
@@ -112,7 +148,7 @@ class ModelType(Enum):
             return 2048
         elif self is ModelType.VICUNA_16K:
             return 16384
-        if self in {ModelType.CLAUDE_2_0, ModelType.CLAUDE_INSTANT_1_2}:
+        elif self in {ModelType.CLAUDE_2_0, ModelType.CLAUDE_INSTANT_1_2}:
             return 100_000
         elif self in {
             ModelType.CLAUDE_2_1,
@@ -121,6 +157,8 @@ class ModelType(Enum):
             ModelType.CLAUDE_3_HAIKU,
         }:
             return 200_000
+        elif self is ModelType.NEMOTRON_4_REWARD:
+            return 4096
         else:
             raise ValueError("Unknown model type")
 
@@ -189,8 +227,10 @@ class TaskType(Enum):
     EVALUATION = "evaluation"
     SOLUTION_EXTRACTION = "solution_extraction"
     ROLE_DESCRIPTION = "role_description"
+    GENERATE_TEXT_EMBEDDING_DATA = "generate_text_embedding_data"
     OBJECT_RECOGNITION = "object_recognition"
     DEFAULT = "default"
+    VIDEO_DESCRIPTION = "video_description"
 
 
 class VectorDistance(Enum):
@@ -238,7 +278,7 @@ class OpenAIImageType(Enum, metaclass=OpenAIImageTypeMeta):
     GIF = "gif"
 
 
-class OpenAIImageDetailType(Enum):
+class OpenAIVisionDetailType(Enum):
     AUTO = "auto"
     LOW = "low"
     HIGH = "high"
@@ -258,6 +298,52 @@ class OpenAPIName(Enum):
     CREATE_QR_CODE = "create_qr_code"
     OUTSCHOOL = "outschool"
     WEB_SCRAPER = "web_scraper"
+
+
+class ModelPlatformType(Enum):
+    OPENAI = "openai"
+    AZURE = "azure"
+    ANTHROPIC = "anthropic"
+    OPENSOURCE = "opensource"
+    OLLAMA = "ollama"
+    LITELLM = "litellm"
+    ZHIPU = "zhipuai"
+    DEFAULT = "default"
+
+    @property
+    def is_openai(self) -> bool:
+        r"""Returns whether this platform is openai."""
+        return self is ModelPlatformType.OPENAI
+
+    @property
+    def is_azure(self) -> bool:
+        r"""Returns whether this platform is azure."""
+        return self is ModelPlatformType.AZURE
+
+    @property
+    def is_anthropic(self) -> bool:
+        r"""Returns whether this platform is anthropic."""
+        return self is ModelPlatformType.ANTHROPIC
+
+    @property
+    def is_ollama(self) -> bool:
+        r"""Returns whether this platform is ollama."""
+        return self is ModelPlatformType.OLLAMA
+
+    @property
+    def is_litellm(self) -> bool:
+        r"""Returns whether this platform is litellm."""
+        return self is ModelPlatformType.LITELLM
+
+    @property
+    def is_zhipuai(self) -> bool:
+        r"""Returns whether this platform is zhipu."""
+        return self is ModelPlatformType.ZHIPU
+
+    @property
+    def is_open_source(self) -> bool:
+        r"""Returns whether this platform is opensource."""
+        return self is ModelPlatformType.OPENSOURCE
 
 
 class AudioModelType(Enum):

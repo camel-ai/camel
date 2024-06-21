@@ -32,7 +32,7 @@ def generate_tasks(
     assistant_sys_msg = sys_msg_generator.from_dict(
         dict(), role_tuple=("Task Generator", RoleType.DEFAULT)
     )
-    assistant_agent = ChatAgent(assistant_sys_msg, model_type=model)
+    assistant_agent = ChatAgent(assistant_sys_msg, model=model)
 
     user_msg = BaseMessage.make_user_message(
         role_name="Task Generator", content=task_generator_prompt
