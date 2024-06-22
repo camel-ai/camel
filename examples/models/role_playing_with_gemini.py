@@ -16,7 +16,7 @@ from colorama import Fore
 from camel.configs import GeminiConfig
 from camel.models import ModelFactory
 from camel.societies import RolePlaying
-from camel.types import ModelPlatformType,ModelType
+from camel.types import ModelPlatformType, ModelType
 from camel.utils import print_text_animated
 
 
@@ -34,12 +34,12 @@ def main(model_type=None) -> None:
 
     role_play_session = RolePlaying(
         assistant_role_name="Python Programmer",
-        assistant_agent_kwargs={'model' :agent_kwargs["assistant"]},
+        assistant_agent_kwargs={'model': agent_kwargs["assistant"]},
         user_role_name="Stock Trader",
-        user_agent_kwargs={'model' :agent_kwargs["assistant"]},
+        user_agent_kwargs={'model': agent_kwargs["assistant"]},
         task_prompt=task_prompt,
         with_task_specify=True,
-        task_specify_agent_kwargs={'model' :agent_kwargs["task-specify"]},
+        task_specify_agent_kwargs={'model': agent_kwargs["task-specify"]},
     )
 
     print(
