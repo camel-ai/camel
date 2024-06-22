@@ -125,6 +125,9 @@ class GeminiConfig(BaseConfig):
     tool_config: Optional[content_types.ToolConfigType] = None
     request_options: Optional[helper_types.RequestOptionsType] = None
 
+    def to_dict(self):
+        return asdict(self)
+
 
 @dataclass(frozen=True)
 class Gemini_Gen_Config(BaseConfig):

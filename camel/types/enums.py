@@ -316,6 +316,7 @@ class ModelPlatformType(Enum):
     LITELLM = "litellm"
     ZHIPU = "zhipuai"
     DEFAULT = "default"
+    GEMINI = "gemini"
 
     @property
     def is_openai(self) -> bool:
@@ -351,6 +352,11 @@ class ModelPlatformType(Enum):
     def is_open_source(self) -> bool:
         r"""Returns whether this platform is opensource."""
         return self is ModelPlatformType.OPENSOURCE
+
+    @property
+    def is_gemini(self) -> bool:
+        r"""Returns whether this platform is Gemini."""
+        return self is ModelPlatformType.GEMINI
 
 
 class AudioModelType(Enum):
