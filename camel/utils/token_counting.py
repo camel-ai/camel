@@ -20,7 +20,6 @@ from io import BytesIO
 from math import ceil
 from typing import TYPE_CHECKING, List, Optional
 
-import google.generativeai as genai
 from anthropic import Anthropic
 from PIL import Image
 
@@ -307,6 +306,8 @@ class AnthropicTokenCounter(BaseTokenCounter):
 class GeminiTokenCounter(BaseTokenCounter):
     def __init__(self, model_type: ModelType):
         r"""Constructor for the token counter for Gemini models."""
+        import google.generativeai as genai
+
         self.model_type = model_type
         self._client = genai.GenerativeModel(self.model_type.value)
 

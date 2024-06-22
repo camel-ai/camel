@@ -11,12 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import os
-import time
-import uuid
 from typing import Any, Dict, Optional
-
-import google.generativeai as genai
 
 from camel.configs import Gemini_API_PARAMS, Gemini_Config_PARAMS
 from camel.messages import ContentsType
@@ -55,6 +50,10 @@ class GeminiModel(BaseModelBackend):
             api_key (Optional[str]): The API key for authenticating with the
                 gemini service. (default: :obj:`None`)
         """
+        import os
+
+        import google.generativeai as genai
+
         super().__init__(model_type, model_config_dict, api_key)
         self._api_key = api_key or os.environ.get("GOOGLE_API_KEY")
         genai.configure(api_key=self._api_key)
@@ -148,6 +147,9 @@ class GeminiModel(BaseModelBackend):
         return converted_messages
 
     def to_openai_response(self, res: GenerateContentResponse):
+        import time
+        import uuid
+
         openai_res = ChatCompletion(
             id=f"chatcmpl-{uuid.uuid4().hex!s}",
             object="chat.completion",
