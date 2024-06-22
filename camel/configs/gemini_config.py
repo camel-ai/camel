@@ -98,15 +98,15 @@ class GeminiConfig(BaseConfig):
                 Optional. Specifies the format of the JSON requested
                 if response_mime_type is `application/json`.
 
-            safety_settings: 
+            safety_settings:
                 Overrides for the model's safety settings.
-            stream: 
+            stream:
                 If True, yield response chunks as they are generated.
-            tools: 
+            tools:
                 `protos.Tools` more info coming soon.
             tool_config:
                 more info coming soon.
-            request_options: 
+            request_options:
                 Options for the request.
 
     """

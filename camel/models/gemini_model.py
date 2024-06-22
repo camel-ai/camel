@@ -12,6 +12,8 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
+import time
+import uuid
 from typing import Any, Dict, Optional
 
 import google.generativeai as genai
@@ -19,7 +21,13 @@ import google.generativeai as genai
 from camel.configs import Gemini_API_PARAMS, Gemini_Config_PARAMS
 from camel.messages import ContentsType
 from camel.models import BaseModelBackend
-from camel.types import GenerateContentResponse, ModelType
+from camel.types import (
+    ChatCompletion,
+    ChatCompletionMessage,
+    Choice,
+    GenerateContentResponse,
+    ModelType,
+)
 from camel.utils import (
     BaseTokenCounter,
     GeminiTokenCounter,
@@ -51,20 +59,16 @@ class GeminiModel(BaseModelBackend):
         genai.configure(api_key=self._api_key)
         self._client = genai.GenerativeModel(model_type.value)
         self._token_counter: Optional[BaseTokenCounter] = None
+        keys = list(self.model_config_dict.keys())
         generation_config_dict = {
-            k: v
-            for k, v in model_config_dict.items()
+            k: self.model_config_dict.pop(k)
+            for k in keys
             if k in Gemini_Config_PARAMS
-        }
-        self.gemini_config_dict = {
-            k: v
-            for k, v in model_config_dict.items()
-            if k not in Gemini_Config_PARAMS
         }
         generation_config = genai.types.GenerationConfig(
             **generation_config_dict
         )
-        self.gemini_config_dict["generation_config"] = generation_config
+        self.model_config_dict["generation_config"] = generation_config
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -93,10 +97,11 @@ class GeminiModel(BaseModelBackend):
         you can iterate over the response chunks as they become available.
         """
         response = self._client.generate_content(
-            contents=self.convertor(contents),
+            contents=self.to_gemini_req(contents),
             **self.model_config_dict,
         )
-        return response
+        response.resolve()
+        return self.to_openai_response(response)
 
     def check_model_config(self):
         r"""Check whether the model configuration contains any
@@ -123,18 +128,42 @@ class GeminiModel(BaseModelBackend):
         """
         return self.model_config_dict.get('stream', False)
 
-    def convertor(self, messages):
+    def to_gemini_req(self, req):
         converted_messages = []
-        for message in messages:
+        for message in req:
             role = message.get('role')
-            if role != 'user':
+            if role == 'assistant':
                 role = 'model'
+            else:
+                role = 'user'
             if 'content' in message:
                 converted_message = {
                     "role": role,
-                    "parts": message.get("content")
+                    "parts": message.get("content"),
                 }
                 converted_messages.append(converted_message)
             else:
                 converted_messages.append(message)
         return converted_messages
+
+    def to_openai_response(self, res: GenerateContentResponse):
+        openai_res = ChatCompletion(
+            id=f"chatcmpl-{uuid.uuid4().hex!s}",
+            object="chat.completion",
+            created=int(time.time()),
+            model="gemini",
+            choices=[],
+        )
+        for i, candidate in enumerate(res.candidates):
+            content = ""
+            if candidate.content and len(candidate.content.parts) > 0:
+                content = candidate.content.parts[0].text
+            choice = Choice(
+                index=i,
+                message=ChatCompletionMessage(
+                    role="assistant", content=content
+                ),
+                finish_reason='stop',
+            )
+        openai_res.choices.append(choice)
+        return openai_res
