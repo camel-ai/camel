@@ -297,8 +297,11 @@ class AnthropicTokenCounter(BaseTokenCounter):
         Returns:
             int: Number of tokens in the messages.
         """
-        prompt = messages_to_prompt(messages, self.model_type)
-        return self.client.count_tokens(prompt)
+        num_tokens = 0
+        for message in messages:
+            content = str(message["content"])
+            num_tokens += self.client.count_tokens(content)
+        return num_tokens
 
 
 class GeminiTokenCounter(BaseTokenCounter):

@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "camel-ai"
-version = "0.1.5.1"
+version = "0.1.5.3"
 authors = ["CAMEL-AI.org"]
 description = "Communicative Agents for AI Society Study"
 readme = "README.md"
@@ -35,7 +35,7 @@ colorama = "^0"
 jsonschema = "^4"
 protobuf = "^4"
 pathlib = "^1.0.1"   
-anthropic = "^0.28.0"
+anthropic = "^0.29.0"
 docstring-parser = "^0.15"
 pydantic = ">=1.9,<3"
 curl_cffi = "0.6.2"
@@ -77,7 +77,7 @@ pyTelegramBotAPI = { version = "^4.18.0", optional = true }
 "discord.py" = { version = "^2.3.2", optional = true }
 
 # encoders
-sentence-transformers = { version = "^2.2.2", optional = true }
+sentence-transformers = { version = "^3.0.1", optional = true }
 
 # vector-databases
 qdrant-client = { version = "^1.9.0", optional = true }
