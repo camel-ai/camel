@@ -25,12 +25,14 @@ parser.add_argument(
     "--image_path",
     type=str,
     help="Path to the image for object detection.",
+    required=True,
 )
 
 
 def detect_image_obj(image_path: str) -> None:
     sys_msg = PromptTemplateGenerator().get_prompt_from_key(
-        TaskType.OBJECT_RECOGNITION, RoleType.ASSISTANT)
+        TaskType.OBJECT_RECOGNITION, RoleType.ASSISTANT
+    )
     print("=" * 20 + " SYS MSG " + "=" * 20)
     print(sys_msg)
     print("=" * 49)
@@ -41,12 +43,13 @@ def detect_image_obj(image_path: str) -> None:
     )
     agent = ChatAgent(
         assistant_sys_msg,
-        model_type=ModelType.GPT_4_TURBO_VISION,
+        model_type=ModelType.GPT_4_TURBO,
     )
+    image_list = [Image.open(image_path)]
     user_msg = BaseMessage.make_user_message(
         role_name="User",
         content="Please start the object detection for following image!",
-        image=Image.open(image_path),
+        image_list=image_list,
         image_detail="high",
     )
     assistant_response = agent.step(user_msg)

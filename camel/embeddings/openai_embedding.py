@@ -11,21 +11,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, List
+from __future__ import annotations
 
-from openai import OpenAI
+import os
+from typing import Any
 
-from camel.embeddings import BaseEmbedding
+from openai import NOT_GIVEN, NotGiven, OpenAI
+
+from camel.embeddings.base import BaseEmbedding
 from camel.types import EmbeddingModelType
-from camel.utils import api_key_required
+from camel.utils import model_api_key_required
 
 
 class OpenAIEmbedding(BaseEmbedding[str]):
     r"""Provides text embedding functionalities using OpenAI's models.
 
     Args:
-        model (OpenAiEmbeddingModel, optional): The model type to be used for
-            generating embeddings. (default: :obj:`ModelType.ADA_2`)
+        model_type (EmbeddingModelType, optional): The model type to be
+            used for text embeddings.
+            (default: :obj:`TEXT_EMBEDDING_3_SMALL`)
+        api_key (str, optional): The API key for authenticating with the
+            OpenAI service. (default: :obj:`None`)
+        dimensions (int, optional): The text embedding output dimensions.
+            (default: :obj:`NOT_GIVEN`)
 
     Raises:
         RuntimeError: If an unsupported model type is specified.
@@ -33,34 +41,44 @@ class OpenAIEmbedding(BaseEmbedding[str]):
 
     def __init__(
         self,
-        model_type: EmbeddingModelType = EmbeddingModelType.ADA_2,
+        model_type: EmbeddingModelType = (
+            EmbeddingModelType.TEXT_EMBEDDING_3_SMALL
+        ),
+        api_key: str | None = None,
+        dimensions: int | NotGiven = NOT_GIVEN,
     ) -> None:
         if not model_type.is_openai:
             raise ValueError("Invalid OpenAI embedding model type.")
         self.model_type = model_type
-        self.output_dim = model_type.output_dim
-        self.client = OpenAI()
+        if dimensions == NOT_GIVEN:
+            self.output_dim = model_type.output_dim
+        else:
+            assert isinstance(dimensions, int)
+            self.output_dim = dimensions
+        self._api_key = api_key or os.environ.get("OPENAI_API_KEY")
+        self.client = OpenAI(timeout=60, max_retries=3, api_key=self._api_key)
 
-    @api_key_required
+    @model_api_key_required
     def embed_list(
         self,
-        objs: List[str],
+        objs: list[str],
         **kwargs: Any,
-    ) -> List[List[float]]:
+    ) -> list[list[float]]:
         r"""Generates embeddings for the given texts.
 
         Args:
-            objs (List[str]): The texts for which to generate the embeddings.
+            objs (list[str]): The texts for which to generate the embeddings.
             **kwargs (Any): Extra kwargs passed to the embedding API.
 
         Returns:
-            List[List[float]]: A list that represents the generated embedding
+            list[list[float]]: A list that represents the generated embedding
                 as a list of floating-point numbers.
         """
         # TODO: count tokens
         response = self.client.embeddings.create(
             input=objs,
             model=self.model_type.value,
+            dimensions=self.output_dim,
             **kwargs,
         )
         return [data.embedding for data in response.data]

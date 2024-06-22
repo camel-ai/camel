@@ -16,23 +16,23 @@ import json
 from colorama import Fore
 
 from camel.agents.deductive_reasoner_agent import DeductiveReasonerAgent
-from camel.configs import ChatGPTConfig
 
 
-def main(model_type=None) -> None:
+def main(model=None) -> None:
     # Construct deductive reasoner agent
-    model_config_description = ChatGPTConfig()
-    insight_agent = \
-        DeductiveReasonerAgent(model_type=model_type,
-                               model_config=model_config_description)
+    insight_agent = DeductiveReasonerAgent(model=model)
 
     starting_state = "The current empty website."
     target_state = "A website with search capabilities."
     conditions_and_quality = insight_agent.deduce_conditions_and_quality(
-        starting_state=starting_state, target_state=target_state)
+        starting_state=starting_state, target_state=target_state
+    )
     print(
-        Fore.GREEN + "Conditions and quality from the starting state:\n" +
-        f"{json.dumps(conditions_and_quality, indent=4)}", Fore.RESET)
+        Fore.GREEN
+        + "Conditions and quality from the starting state:\n"
+        + f"{json.dumps(conditions_and_quality, indent=4)}",
+        Fore.RESET,
+    )
 
 
 if __name__ == "__main__":

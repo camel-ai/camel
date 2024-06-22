@@ -20,10 +20,22 @@ In this section, we will take a spite of the task-oriented `RolyPlaying()` class
 ```python
 # Import necessary classes
 from camel.societies import RolePlaying
-from camel.types import TaskType, ModelType
+from camel.types import TaskType, ModelType, ModelPlatformType
+from camel.models import ModelFactory
 
-# Set the LLM model type to use
+# Set the LLM model type and model config
+model_platform = ModelPlatformType.OPENAI
 model_type = ModelType.GPT_3_5_TURBO
+model_config = ChatGPTConfig(
+    temperature=0.8,  # the sampling temperature; the higher the more random
+    n=3,              # the no. of completion choices to generate for each input
+    )
+
+# Create the backend model
+model = ModelFactory.create(
+    model_platform=model_platform,
+    model_type=model_type,
+    model_config=model_config)
 ```
 
 ### Step 1: Configure the Role-Playing Session
@@ -32,7 +44,7 @@ model_type = ModelType.GPT_3_5_TURBO
 task_kwargs = {
     'task_prompt': 'Develop a plan to TRAVEL TO THE PAST and make changes.',
     'with_task_specify': True,
-    'task_specify_agent_kwargs': {'model_type': model_type}
+    'task_specify_agent_kwargs': {'model': model}
 }
 ```
 
@@ -41,7 +53,7 @@ You may think the user as the `instruction sender`.
 ```python
 user_role_kwargs = {
     'user_role_name': 'an ambitious aspiring TIME TRAVELER',
-    'user_agent_kwargs': {'model_type': model_type}
+    'user_agent_kwargs': {'model': model}
 }
 ```
 
@@ -50,7 +62,7 @@ Again, you may think the assistant as the `instruction executor`.
 ```python
 assistant_role_kwargs = {
     'assistant_role_name': 'the best-ever experimental physicist',
-    'assistant_agent_kwargs': {'model_type': model_type}
+    'assistant_agent_kwargs': {'model': model}
 }
 ```
 

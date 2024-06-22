@@ -14,7 +14,8 @@
 from dataclasses import dataclass
 from typing import List, Tuple
 
-from camel.memories import BaseContextCreator, ContextRecord
+from camel.memories.base import BaseContextCreator
+from camel.memories.records import ContextRecord
 from camel.messages import OpenAIMessage
 from camel.utils import BaseTokenCounter
 
@@ -42,8 +43,9 @@ class ScoreBasedContextCreator(BaseContextCreator):
             generated context.
     """
 
-    def __init__(self, token_counter: BaseTokenCounter,
-                 token_limit: int) -> None:
+    def __init__(
+        self, token_counter: BaseTokenCounter, token_limit: int
+    ) -> None:
         self._token_counter = token_counter
         self._token_limit = token_limit
 
@@ -89,8 +91,10 @@ class ScoreBasedContextCreator(BaseContextCreator):
                         idx,
                         record,
                         self.token_counter.count_tokens_from_messages(
-                            [record.memory_record.to_openai_message()]),
-                    ))
+                            [record.memory_record.to_openai_message()]
+                        ),
+                    )
+                )
 
         # TODO: optimize the process, may give information back to memory
 
@@ -100,8 +104,9 @@ class ScoreBasedContextCreator(BaseContextCreator):
             return self._create_output(context_units)
 
         # Sort by score
-        context_units = sorted(context_units,
-                               key=lambda unit: unit.record.score)
+        context_units = sorted(
+            context_units, key=lambda unit: unit.record.score
+        )
 
         # Remove the least score messages until total token number is smaller
         # than token limit
@@ -109,18 +114,20 @@ class ScoreBasedContextCreator(BaseContextCreator):
         for i, unit in enumerate(context_units):
             if unit.record.score == 1:
                 raise RuntimeError(
-                    "Cannot create context: exceed token limit.", total_tokens)
+                    "Cannot create context: exceed token limit.", total_tokens
+                )
             total_tokens -= unit.num_tokens
             if total_tokens <= self.token_limit:
                 truncate_idx = i
                 break
         if truncate_idx is None:
-            raise RuntimeError("Cannot create context: exceed token limit.",
-                               total_tokens)
-        return self._create_output(context_units[truncate_idx + 1:])
+            raise RuntimeError(
+                "Cannot create context: exceed token limit.", total_tokens
+            )
+        return self._create_output(context_units[truncate_idx + 1 :])
 
     def _create_output(
-            self, context_units: List[_ContextUnit]
+        self, context_units: List[_ContextUnit]
     ) -> Tuple[List[OpenAIMessage], int]:
         r"""Helper method to generate output from context units.
 

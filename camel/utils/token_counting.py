@@ -11,17 +11,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+
+from __future__ import annotations
+
 import base64
 from abc import ABC, abstractmethod
 from io import BytesIO
 from math import ceil
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from anthropic import Anthropic
 from PIL import Image
 
-from camel.messages import OpenAIMessage
-from camel.types import ModelType, OpenAIImageDetailType, OpenAIImageType
+from camel.types import ModelType, OpenAIImageType, OpenAIVisionDetailType
+
+if TYPE_CHECKING:
+    from camel.messages import OpenAIMessage
 
 LOW_DETAIL_TOKENS = 85
 FIT_SQUARE_PIXELS = 2048
@@ -58,8 +63,10 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
             content = msg["content"]
             if content:
                 if not isinstance(content, str):
-                    raise ValueError("Currently multimodal context is not "
-                                     "supported by the token counter.")
+                    raise ValueError(
+                        "Currently multimodal context is not "
+                        "supported by the token counter."
+                    )
                 if i == 0:
                     ret += system_prompt + content
                 else:
@@ -77,8 +84,10 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
             role = role_map[msg["role"]]
             content = msg["content"]
             if not isinstance(content, str):
-                raise ValueError("Currently multimodal context is not "
-                                 "supported by the token counter.")
+                raise ValueError(
+                    "Currently multimodal context is not "
+                    "supported by the token counter."
+                )
             if content:
                 ret += role + ": " + content + seps[i % 2]
             else:
@@ -98,6 +107,7 @@ def get_model_encoding(value_for_tiktoken: str):
         tiktoken.Encoding: Model encoding.
     """
     import tiktoken
+
     try:
         encoding = tiktoken.encoding_for_model(value_for_tiktoken)
     except KeyError:
@@ -124,7 +134,6 @@ class BaseTokenCounter(ABC):
 
 
 class OpenSourceTokenCounter(BaseTokenCounter):
-
     def __init__(self, model_type: ModelType, model_path: str):
         r"""Constructor for the token counter for open-source models.
 
@@ -139,6 +148,7 @@ class OpenSourceTokenCounter(BaseTokenCounter):
         # If a fast tokenizer is not available for a given model,
         # a normal Python-based tokenizer is returned instead.
         from transformers import AutoTokenizer
+
         try:
             tokenizer = AutoTokenizer.from_pretrained(
                 model_path,
@@ -149,10 +159,11 @@ class OpenSourceTokenCounter(BaseTokenCounter):
                 model_path,
                 use_fast=False,
             )
-        except:
+        except Exception:
             raise ValueError(
                 f"Invalid `model_path` ({model_path}) is provided. "
-                "Tokenizer loading failed.")
+                "Tokenizer loading failed."
+            )
 
         self.tokenizer = tokenizer
         self.model_type = model_type
@@ -175,7 +186,6 @@ class OpenSourceTokenCounter(BaseTokenCounter):
 
 
 class OpenAITokenCounter(BaseTokenCounter):
-
     def __init__(self, model: ModelType):
         r"""Constructor for the token counter for OpenAI models.
 
@@ -204,7 +214,8 @@ class OpenAITokenCounter(BaseTokenCounter):
                 "for information on how messages are converted to tokens. "
                 "See https://platform.openai.com/docs/models/gpt-4"
                 "or https://platform.openai.com/docs/models/gpt-3-5"
-                "for information about openai chat models.")
+                "for information about openai chat models."
+            )
 
         self.encoding = get_model_encoding(self.model)
 
@@ -229,25 +240,30 @@ class OpenAITokenCounter(BaseTokenCounter):
                     for item in value:
                         if item["type"] == "text":
                             num_tokens += len(
-                                self.encoding.encode(str(item["text"])))
+                                self.encoding.encode(str(item["text"]))
+                            )
                         elif item["type"] == "image_url":
                             image_str: str = item["image_url"]["url"]
                             detail = item["image_url"]["detail"]
+
                             image_prefix_format = "data:image/{};base64,"
                             image_prefix: Optional[str] = None
                             for image_type in list(OpenAIImageType):
                                 # Find the correct image format
                                 image_prefix = image_prefix_format.format(
-                                    image_type.value)
+                                    image_type.value
+                                )
                                 if image_prefix in image_str:
                                     break
                             assert isinstance(image_prefix, str)
                             encoded_image = image_str.split(image_prefix)[1]
                             image_bytes = BytesIO(
-                                base64.b64decode(encoded_image))
+                                base64.b64decode(encoded_image)
+                            )
                             image = Image.open(image_bytes)
                             num_tokens += count_tokens_from_image(
-                                image, OpenAIImageDetailType(detail))
+                                image, OpenAIVisionDetailType(detail)
+                            )
                 if key == "name":
                     num_tokens += self.tokens_per_name
 
@@ -257,7 +273,6 @@ class OpenAITokenCounter(BaseTokenCounter):
 
 
 class AnthropicTokenCounter(BaseTokenCounter):
-
     def __init__(self, model_type: ModelType):
         r"""Constructor for the token counter for Anthropic models.
 
@@ -281,13 +296,68 @@ class AnthropicTokenCounter(BaseTokenCounter):
         Returns:
             int: Number of tokens in the messages.
         """
-        prompt = messages_to_prompt(messages, self.model_type)
+        num_tokens = 0
+        for message in messages:
+            content = str(message["content"])
+            num_tokens += self.client.count_tokens(content)
+        return num_tokens
 
-        return self.client.count_tokens(prompt)
+
+class LiteLLMTokenCounter:
+    def __init__(self, model_type: str):
+        r"""Constructor for the token counter for LiteLLM models.
+
+        Args:
+            model_type (str): Model type for which tokens will be counted.
+        """
+        self.model_type = model_type
+        self._token_counter = None
+        self._completion_cost = None
+
+    @property
+    def token_counter(self):
+        if self._token_counter is None:
+            from litellm import token_counter
+
+            self._token_counter = token_counter
+        return self._token_counter
+
+    @property
+    def completion_cost(self):
+        if self._completion_cost is None:
+            from litellm import completion_cost
+
+            self._completion_cost = completion_cost
+        return self._completion_cost
+
+    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
+        r"""Count number of tokens in the provided message list using
+        the tokenizer specific to this type of model.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in LiteLLM API format.
+
+        Returns:
+            int: Number of tokens in the messages.
+        """
+        return self.token_counter(model=self.model_type, messages=messages)
+
+    def calculate_cost_from_response(self, response: dict) -> float:
+        r"""Calculate the cost of the given completion response.
+
+        Args:
+            response (dict): The completion response from LiteLLM.
+
+        Returns:
+            float: The cost of the completion call in USD.
+        """
+        return self.completion_cost(completion_response=response)
 
 
-def count_tokens_from_image(image: Image.Image,
-                            detail: OpenAIImageDetailType) -> int:
+def count_tokens_from_image(
+    image: Image.Image, detail: OpenAIVisionDetailType
+) -> int:
     r"""Count image tokens for OpenAI vision model. An :obj:`"auto"`
     resolution model will be treated as :obj:`"high"`. All images with
     :obj:`"low"` detail cost 85 tokens each. Images with :obj:`"high"` detail
@@ -300,13 +370,13 @@ def count_tokens_from_image(image: Image.Image,
 
     Args:
         image (PIL.Image.Image): Image to count number of tokens.
-        detail (OpenAIImageDetailType): Image detail type to count
+        detail (OpenAIVisionDetailType): Image detail type to count
             number of tokens.
 
     Returns:
         int: Number of tokens for the image given a detail type.
     """
-    if detail == OpenAIImageDetailType.LOW:
+    if detail == OpenAIVisionDetailType.LOW:
         return LOW_DETAIL_TOKENS
 
     width, height = image.size

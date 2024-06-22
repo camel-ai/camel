@@ -12,36 +12,65 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
-from anthropic import Anthropic
-from anthropic._types import NOT_GIVEN
+from anthropic import NOT_GIVEN, Anthropic
 
 from camel.configs import ANTHROPIC_API_PARAMS
-from camel.models import BaseModelBackend
+from camel.messages import OpenAIMessage
+from camel.models.base_model import BaseModelBackend
 from camel.types import ChatCompletion, ModelType
-from camel.utils import AnthropicTokenCounter, BaseTokenCounter
+from camel.utils import (
+    AnthropicTokenCounter,
+    BaseTokenCounter,
+    model_api_key_required,
+)
 
 
 class AnthropicModel(BaseModelBackend):
     r"""Anthropic API in a unified BaseModelBackend interface."""
 
-    def __init__(self, model_type: ModelType,
-                 model_config_dict: Dict[str, Any]) -> None:
-        super().__init__(model_type, model_config_dict)
-        self.client = Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+    def __init__(
+        self,
+        model_type: ModelType,
+        model_config_dict: Dict[str, Any],
+        api_key: Optional[str] = None,
+        url: Optional[str] = None,
+    ) -> None:
+        r"""Constructor for Anthropic backend.
+
+        Args:
+            model_type (ModelType): Model for which a backend is created,
+                one of CLAUDE_* series.
+            model_config_dict (Dict[str, Any]): A dictionary that will
+                be fed into Anthropic.messages.create().
+            api_key (Optional[str]): The API key for authenticating with the
+                Anthropic service. (default: :obj:`None`)
+            url (Optional[str]): The url to the model service.
+        """
+        super().__init__(model_type, model_config_dict, api_key, url)
+        self._api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
+        self.client = Anthropic(api_key=self._api_key, base_url=url)
         self._token_counter: Optional[BaseTokenCounter] = None
 
     def _convert_response_from_anthropic_to_openai(self, response):
         # openai ^1.0.0 format, reference openai/types/chat/chat_completion.py
         obj = ChatCompletion.construct(
-            id=None, choices=[
+            id=None,
+            choices=[
                 dict(
-                    index=0, message={
+                    index=0,
+                    message={
                         "role": "assistant",
-                        "content": response.content[0].text
-                    }, finish_reason=response.stop_reason)
-            ], created=None, model=response.model, object="chat.completion")
+                        "content": response.content[0].text,
+                    },
+                    finish_reason=response.stop_reason,
+                )
+            ],
+            created=None,
+            model=response.model,
+            object="chat.completion",
+        )
         return obj
 
     @property
@@ -67,27 +96,31 @@ class AnthropicModel(BaseModelBackend):
         """
         return self.client.count_tokens(prompt)
 
+    @model_api_key_required
     def run(
         self,
-        messages,
+        messages: List[OpenAIMessage],
     ):
         r"""Run inference of Anthropic chat completion.
 
         Args:
-            messages (List[Dict]): Message list with the chat history
+            messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
 
         Returns:
-            Dict[str, Any]: Response in the OpenAI API format.
+            ChatCompletion: Response in the OpenAI API format.
         """
 
         if messages[0]["role"] == "system":
-            sys_msg = messages.pop(0)["content"]  # type: ignore
+            sys_msg = str(messages.pop(0)["content"])
         else:
-            sys_msg = NOT_GIVEN
-        response = self.client.messages.create(  # type: ignore
-            model=self.model_type.value, system=sys_msg, messages=messages,
-            **self.model_config_dict)
+            sys_msg = NOT_GIVEN  # type: ignore[assignment]
+        response = self.client.messages.create(
+            model=self.model_type.value,
+            system=sys_msg,
+            messages=messages,  # type: ignore[arg-type]
+            **self.model_config_dict,
+        )
 
         # format response to openai format
         response = self._convert_response_from_anthropic_to_openai(response)
@@ -105,13 +138,16 @@ class AnthropicModel(BaseModelBackend):
         """
         for param in self.model_config_dict:
             if param not in ANTHROPIC_API_PARAMS:
-                raise ValueError(f"Unexpected argument `{param}` is "
-                                 "input into Anthropic model backend.")
+                raise ValueError(
+                    f"Unexpected argument `{param}` is "
+                    "input into Anthropic model backend."
+                )
 
     @property
     def stream(self) -> bool:
-        r"""Returns whether the model is in stream mode,
-            which sends partial results each time.
+        r"""Returns whether the model is in stream mode, which sends partial
+        results each time.
+
         Returns:
             bool: Whether the model is in stream mode.
         """

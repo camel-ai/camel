@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 from openai import Stream
 
@@ -26,17 +26,27 @@ class BaseModelBackend(ABC):
     May be OpenAI API, a local LLM, a stub for unit tests, etc.
     """
 
-    def __init__(self, model_type: ModelType,
-                 model_config_dict: Dict[str, Any]) -> None:
+    def __init__(
+        self,
+        model_type: ModelType,
+        model_config_dict: Dict[str, Any],
+        api_key: Optional[str] = None,
+        url: Optional[str] = None,
+    ) -> None:
         r"""Constructor for the model backend.
 
         Args:
             model_type (ModelType): Model for which a backend is created.
             model_config_dict (Dict[str, Any]): A config dictionary.
+            api_key (Optional[str]): The API key for authenticating with the
+                model service.
+            url (Optional[str]): The url to the model service.
         """
         self.model_type = model_type
 
         self.model_config_dict = model_config_dict
+        self._api_key = api_key
+        self._url = url
         self.check_model_config()
 
     @property
@@ -95,6 +105,7 @@ class BaseModelBackend(ABC):
     @property
     def token_limit(self) -> int:
         r"""Returns the maximum token limit for a given model.
+
         Returns:
             int: The maximum token limit for the given model.
         """
@@ -104,6 +115,7 @@ class BaseModelBackend(ABC):
     def stream(self) -> bool:
         r"""Returns whether the model is in stream mode,
             which sends partial results each time.
+
         Returns:
             bool: Whether the model is in stream mode.
         """

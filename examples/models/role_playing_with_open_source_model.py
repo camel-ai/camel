@@ -14,22 +14,35 @@
 from colorama import Fore
 
 from camel.configs import ChatGPTConfig, OpenSourceConfig
+from camel.models import ModelFactory
 from camel.societies import RolePlaying
-from camel.types import ModelType
+from camel.types import ModelPlatformType, ModelType
 from camel.utils import print_text_animated
 
 
-def main(model_type=None, chat_turn_limit=50, model_path=" ",
-         server_url=" ") -> None:
+# Here :obj:`model_type` can be any of the supported open-source
+# model types and :obj:`model_path` should be set corresponding to
+# model type. For example, to use Vicuna, we can set:
+# model_path = "lmsys/vicuna-7b-v1.5"
+def main(
+    chat_turn_limit=50,
+    model_platform=ModelPlatformType.OPENSOURCE,
+    model_type=ModelType.STUB,
+    model_path="meta-llama/Llama-2-7b-chat-hf",
+    server_url="http://localhost:8000/v1",
+) -> None:
     task_prompt = "Develop a trading bot for the stock market"
 
     agent_kwargs = {
         role: dict(
-            model_type=model_type,
-            model_config=OpenSourceConfig(
-                model_path=model_path,
-                server_url=server_url,
-                api_params=ChatGPTConfig(temperature=0),
+            model=ModelFactory.create(
+                model_platform=model_platform,
+                model_type=model_type,
+                model_config_dict=OpenSourceConfig(
+                    model_path=model_path,
+                    server_url=server_url,
+                    api_params=ChatGPTConfig(temperature=0),
+                ).__dict__,
             ),
         )
         for role in ["assistant", "user", "task-specify"]
@@ -46,15 +59,19 @@ def main(model_type=None, chat_turn_limit=50, model_path=" ",
     )
 
     print(
-        Fore.GREEN +
-        f"AI Assistant sys message:\n{role_play_session.assistant_sys_msg}\n")
-    print(Fore.BLUE +
-          f"AI User sys message:\n{role_play_session.user_sys_msg}\n")
+        Fore.GREEN
+        + f"AI Assistant sys message:\n{role_play_session.assistant_sys_msg}\n"
+    )
+    print(
+        Fore.BLUE + f"AI User sys message:\n{role_play_session.user_sys_msg}\n"
+    )
 
     print(Fore.YELLOW + f"Original task prompt:\n{task_prompt}\n")
     print(
-        Fore.CYAN +
-        f"Specified task prompt:\n{role_play_session.specified_task_prompt}\n")
+        Fore.CYAN
+        + "Specified task prompt:"
+        + f"\n{role_play_session.specified_task_prompt}\n"
+    )
     print(Fore.RED + f"Final task prompt:\n{role_play_session.task_prompt}\n")
 
     n = 0
@@ -64,20 +81,31 @@ def main(model_type=None, chat_turn_limit=50, model_path=" ",
         assistant_response, user_response = role_play_session.step(input_msg)
 
         if assistant_response.terminated:
-            print(Fore.GREEN +
-                  ("AI Assistant terminated. Reason: "
-                   f"{assistant_response.info['termination_reasons']}."))
+            print(
+                Fore.GREEN
+                + (
+                    "AI Assistant terminated. Reason: "
+                    f"{assistant_response.info['termination_reasons']}."
+                )
+            )
             break
         if user_response.terminated:
-            print(Fore.GREEN +
-                  ("AI User terminated. "
-                   f"Reason: {user_response.info['termination_reasons']}."))
+            print(
+                Fore.GREEN
+                + (
+                    "AI User terminated. "
+                    f"Reason: {user_response.info['termination_reasons']}."
+                )
+            )
             break
 
-        print_text_animated(Fore.BLUE +
-                            f"AI User:\n\n{user_response.msg.content}\n")
-        print_text_animated(Fore.GREEN + "AI Assistant:\n\n"
-                            f"{assistant_response.msg.content}\n")
+        print_text_animated(
+            Fore.BLUE + f"AI User:\n\n{user_response.msg.content}\n"
+        )
+        print_text_animated(
+            Fore.GREEN + "AI Assistant:\n\n"
+            f"{assistant_response.msg.content}\n"
+        )
 
         if "CAMEL_TASK_DONE" in user_response.msg.content:
             break
@@ -86,12 +114,4 @@ def main(model_type=None, chat_turn_limit=50, model_path=" ",
 
 
 if __name__ == "__main__":
-    # Here :obj:`model_type` can be any of the supported open-source
-    # model types and :obj:`model_path` should be set corresponding to
-    # model type. For example, to use Vicuna, we can set:
-    # model_path = "lmsys/vicuna-7b-v1.5"
-    main(
-        model_type=ModelType.LLAMA_2,
-        model_path="meta-llama/Llama-2-7b-chat-hf",
-        server_url="http://localhost:8000/v1",
-    )
+    main()

@@ -1,0 +1,34 @@
+{
+  "id": "plugin-da9afb50-fc07-4d30-b606-51ed1b105bfc",
+  "domain": "biztoc.com",
+  "namespace": "biztoc",
+  "status": "approved",
+  "manifest": {
+    "schema_version": "v1",
+    "name_for_model": "biztoc",
+    "name_for_human": "BizToc",
+    "description_for_model": "Plugin for querying BizToc for business news.",
+    "description_for_human": "Search BizToc for business & finance news.",
+    "auth": {
+      "type": null
+    },
+    "api": {
+      "type": "openapi",
+      "url": "https://ai.biztoc.com/openapi.yaml"
+    },
+    "logo_url": "https://biztoc.com/favicon.png",
+    "contact_email": "mail@biztoc.com",
+    "legal_info_url": "https://biztoc.com/s/legal"
+  },
+  "oauth_client_id": null,
+  "user_settings": {
+    "is_installed": false,
+    "is_authenticated": true
+  },
+  "categories": [
+    {
+      "id": "newly_added",
+      "title": "New"
+    }
+  ]
+}

@@ -64,13 +64,15 @@ class MilvusStorage(BaseVectorStorage):
         except ImportError as exc:
             raise ImportError(
                 "Please install `pymilvus` first. You can install it by "
-                "running `pip install pymilvus`.") from exc
+                "running `pip install pymilvus`."
+            ) from exc
 
         self._client: MilvusClient
         self._create_client(url_and_api_key, **kwargs)
         self.vector_dim = vector_dim
-        self.collection_name = (collection_name
-                                or self._generate_collection_name())
+        self.collection_name = (
+            collection_name or self._generate_collection_name()
+        )
         self._check_and_create_collection()
 
     def _create_client(
@@ -98,16 +100,20 @@ class MilvusStorage(BaseVectorStorage):
         if it doesn't, ensuring it matches the specified vector dimensionality.
         """
         if self._collection_exists(self.collection_name):
-            in_dim = self._get_collection_info(
-                self.collection_name)["vector_dim"]
+            in_dim = self._get_collection_info(self.collection_name)[
+                "vector_dim"
+            ]
             if in_dim != self.vector_dim:
                 # The name of collection has to be confirmed by the user
                 raise ValueError(
                     "Vector dimension of the existing collection "
                     f'"{self.collection_name}" ({in_dim}) is different from '
-                    f"the given embedding dim ({self.vector_dim}).")
+                    f"the given embedding dim ({self.vector_dim})."
+                )
         else:
-            self._create_collection(collection_name=self.collection_name, )
+            self._create_collection(
+                collection_name=self.collection_name,
+            )
 
     def _create_collection(
         self,
@@ -125,22 +131,34 @@ class MilvusStorage(BaseVectorStorage):
         from pymilvus import DataType
 
         # Set the schema
-        schema = self._client.create_schema(auto_id=False,
-                                            enable_dynamic_field=True,
-                                            description='collection schema')
+        schema = self._client.create_schema(
+            auto_id=False,
+            enable_dynamic_field=True,
+            description='collection schema',
+        )
 
-        schema.add_field(field_name="id", datatype=DataType.VARCHAR,
-                         descrition='A unique identifier for the vector',
-                         is_primary=True, max_length=65535)
+        schema.add_field(
+            field_name="id",
+            datatype=DataType.VARCHAR,
+            descrition='A unique identifier for the vector',
+            is_primary=True,
+            max_length=65535,
+        )
         # max_length reference: https://milvus.io/docs/limitations.md
         schema.add_field(
-            field_name="vector", datatype=DataType.FLOAT_VECTOR,
+            field_name="vector",
+            datatype=DataType.FLOAT_VECTOR,
             description='The numerical representation of the vector',
-            dim=self.vector_dim)
+            dim=self.vector_dim,
+        )
         schema.add_field(
-            field_name="payload", datatype=DataType.JSON,
-            description=('Any additional metadata or information related'
-                         'to the vector'))
+            field_name="payload",
+            datatype=DataType.JSON,
+            description=(
+                'Any additional metadata or information related'
+                'to the vector'
+            ),
+        )
 
         # Create the collection
         self._client.create_collection(
@@ -152,12 +170,16 @@ class MilvusStorage(BaseVectorStorage):
         # Set the index of the parameters
         index_params = self._client.prepare_index_params()
 
-        index_params.add_index(field_name="vector", metric_type="COSINE",
-                               index_type="AUTOINDEX",
-                               index_name="vector_index")
+        index_params.add_index(
+            field_name="vector",
+            metric_type="COSINE",
+            index_type="AUTOINDEX",
+            index_name="vector_index",
+        )
 
-        self._client.create_index(collection_name=collection_name,
-                                  index_params=index_params)
+        self._client.create_index(
+            collection_name=collection_name, index_params=index_params
+        )
 
     def _delete_collection(
         self,
@@ -205,15 +227,21 @@ class MilvusStorage(BaseVectorStorage):
             Dict[str, Any]: A dictionary containing details about the
                 collection.
         """
-        vector_count = self._client.get_collection_stats(
-            collection_name)['row_count']
+        vector_count = self._client.get_collection_stats(collection_name)[
+            'row_count'
+        ]
         collection_info = self._client.describe_collection(collection_name)
         collection_id = collection_info['collection_id']
 
         dim_value = next(
-            (field['params']['dim']
-             for field in collection_info['fields'] if field['description'] ==
-             'The numerical representation of the vector'), None)
+            (
+                field['params']['dim']
+                for field in collection_info['fields']
+                if field['description']
+                == 'The numerical representation of the vector'
+            ),
+            None,
+        )
 
         return {
             "id": collection_id,  # the id of the collection
@@ -222,7 +250,8 @@ class MilvusStorage(BaseVectorStorage):
         }
 
     def _validate_and_convert_vectors(
-            self, records: List[VectorRecord]) -> List[dict]:
+        self, records: List[VectorRecord]
+    ) -> List[dict]:
         r"""Validates and converts VectorRecord instances to the format
         expected by Milvus.
 
@@ -239,8 +268,9 @@ class MilvusStorage(BaseVectorStorage):
         for record in records:
             record_dict = {
                 "id": record.id,
-                "payload":
-                record.payload if record.payload is not None else '',
+                "payload": record.payload
+                if record.payload is not None
+                else '',
                 "vector": record.vector,
             }
             validated_data.append(record_dict)
@@ -288,8 +318,9 @@ class MilvusStorage(BaseVectorStorage):
             RuntimeError: If there is an error during the deletion process.
         """
 
-        op_info = self._client.delete(collection_name=self.collection_name,
-                                      pks=ids, **kwargs)
+        op_info = self._client.delete(
+            collection_name=self.collection_name, pks=ids, **kwargs
+        )
         logger.debug(f"Successfully deleted vectors in Milvus: {op_info}")
 
     def status(self) -> VectorDBStatus:
@@ -334,10 +365,13 @@ class MilvusStorage(BaseVectorStorage):
         query_results = []
         for point in search_result:
             query_results.append(
-                VectorDBQueryResult.construct(  # type: ignore
-                    similarity=(point[0]['distance']), id=str(point[0]['id']),
+                VectorDBQueryResult.construct(
+                    similarity=(point[0]['distance']),
+                    id=str(point[0]['id']),
                     payload=(point[0]['entity'].get('payload')),
-                    vector=point[0]['entity'].get('vector')))
+                    vector=point[0]['entity'].get('vector'),
+                )
+            )
 
         return query_results
 

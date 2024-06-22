@@ -29,9 +29,11 @@ def test_get_action_space_prompt():
     meta_dict = dict(role=role_name, task="Drawing")
     sys_msg = SystemMessageGenerator().from_dict(
         meta_dict=meta_dict,
-        role_tuple=(f"{role_name}'s Embodiment", RoleType.EMBODIMENT))
+        role_tuple=(f"{role_name}'s Embodiment", RoleType.EMBODIMENT),
+    )
     agent = EmbodiedAgent(
-        sys_msg, tool_agents=[HuggingFaceToolAgent('hugging_face_tool_agent')])
+        sys_msg, tool_agents=[HuggingFaceToolAgent('hugging_face_tool_agent')]
+    )
     assert 'hugging_face_tool_agent' in agent.get_tool_agent_names()
 
 
@@ -44,7 +46,8 @@ def test_step():
     meta_dict = dict(role=role_name, task="Drawing")
     sys_msg = SystemMessageGenerator().from_dict(
         meta_dict=meta_dict,
-        role_tuple=(f"{role_name}'s Embodiment", RoleType.EMBODIMENT))
+        role_tuple=(f"{role_name}'s Embodiment", RoleType.EMBODIMENT),
+    )
     embodied_agent = EmbodiedAgent(sys_msg, verbose=True)
     user_msg = BaseMessage.make_user_message(
         role_name=role_name,
@@ -53,8 +56,10 @@ def test_step():
     try:
         response = embodied_agent.step(user_msg)
     except (binascii.Error, requests.exceptions.ConnectionError) as ex:
-        print("Warning: caught an exception, ignoring it since "
-              f"it is a known issue of Huggingface ({str(ex)})")
+        print(
+            "Warning: caught an exception, ignoring it since "
+            f"it is a known issue of Huggingface ({ex!s})"
+        )
         return
     assert isinstance(response.msg, BaseMessage)
     assert not response.terminated

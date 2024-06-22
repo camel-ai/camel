@@ -11,48 +11,63 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, List, Union
+from __future__ import annotations
 
-from camel.embeddings import BaseEmbedding
+from typing import Any
+
+from numpy import ndarray
+
+from camel.embeddings.base import BaseEmbedding
 
 
 class SentenceTransformerEncoder(BaseEmbedding[str]):
-    r"""This class provides functionalities to generate embeddings
-    using a specified model from `Sentence Transformers`.
+    r"""This class provides functionalities to generate text
+    embeddings using `Sentence Transformers`.
 
     References:
         https://www.sbert.net/
     """
 
-    def __init__(self, model_name: str = 'intfloat/e5-large-v2'):
+    def __init__(
+        self,
+        model_name: str = "intfloat/e5-large-v2",
+        **kwargs,
+    ):
         r"""Initializes the: obj: `SentenceTransformerEmbedding` class
         with the specified transformer model.
 
         Args:
             model_name (str, optional): The name of the model to use.
-                                        Defaults to `intfloat/e5-large-v2`.
+                (default: :obj:`intfloat/e5-large-v2`)
+            **kwargs (optional): Additional arguments of
+                :class:`SentenceTransformer`, such as :obj:`prompts` etc.
         """
         from sentence_transformers import SentenceTransformer
-        self.model = SentenceTransformer(model_name)
+
+        self.model = SentenceTransformer(model_name, **kwargs)
 
     def embed_list(
         self,
-        objs: Union[str, List[str]],
+        objs: list[str],
         **kwargs: Any,
-    ) -> list:
+    ) -> list[list[float]]:
         r"""Generates embeddings for the given texts using the model.
 
         Args:
-            objs (str | List[str]): The texts for which to generate the
-            embeddings.
+            objs (list[str]): The texts for which to generate the
+                embeddings.
 
         Returns:
-            list: A list of float representing embeddings.
+            list[list[float]]: A list that represents the generated embedding
+                as a list of floating-point numbers.
         """
         if not objs:
             raise ValueError("Input text list is empty")
-        return self.model.encode(objs, normalize_embeddings=True,
-                                 **kwargs).tolist()
+        embeddings = self.model.encode(
+            objs, normalize_embeddings=True, **kwargs
+        )
+        assert isinstance(embeddings, ndarray)
+        return embeddings.tolist()
 
     def get_output_dim(self) -> int:
         r"""Returns the output dimension of the embeddings.
@@ -60,4 +75,6 @@ class SentenceTransformerEncoder(BaseEmbedding[str]):
         Returns:
             int: The dimensionality of the embeddings.
         """
-        return self.model.get_sentence_embedding_dimension()
+        output_dim = self.model.get_sentence_embedding_dimension()
+        assert isinstance(output_dim, int)
+        return output_dim

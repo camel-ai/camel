@@ -15,7 +15,8 @@
 from typing import List, Optional
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
-from camel.memories import ContextRecord, MemoryBlock, MemoryRecord
+from camel.memories.base import MemoryBlock
+from camel.memories.records import ContextRecord, MemoryRecord
 from camel.storages.vectordb_storages import (
     BaseVectorStorage,
     QdrantStorage,
@@ -71,7 +72,9 @@ class VectorDBBlock(MemoryBlock):
             ContextRecord(
                 memory_record=MemoryRecord.from_dict(result.record.payload),
                 score=result.similarity,
-            ) for result in results if result.record.payload is not None
+            )
+            for result in results
+            if result.record.payload is not None
         ]
 
     def write_records(self, records: List[MemoryRecord]) -> None:
@@ -88,7 +91,8 @@ class VectorDBBlock(MemoryBlock):
                 vector=self.embedding.embed(record.message.content),
                 payload=record.to_dict(),
                 id=str(record.uuid),
-            ) for record in records
+            )
+            for record in records
         ]
         self.storage.add(v_records)
 
