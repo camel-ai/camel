@@ -123,13 +123,10 @@ class DiscordBot:
                 top_k=self.top_k,
                 return_detailed_info=self.return_detailed_info,
             )
-            user_raw_msg = '''
-                Here is the query to you: {user_raw_msg}
-                Based on the retrieved content:{retrieved_content}, 
-                answer the query from {name}'''.format(
-                user_raw_msg=user_raw_msg,
-                retrieved_content=retrieved_content,
-                name=message.author.name,
+            user_raw_msg = (
+                f"Here is the query to you: {user_raw_msg}\n"
+                f"Based on the retrieved content: {retrieved_content}, \n"
+                f"answer the query from {message.author.name}"
             )
 
         user_msg = BaseMessage.make_user_message(
