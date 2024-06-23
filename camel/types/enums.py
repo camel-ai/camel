@@ -312,3 +312,10 @@ class VoiceType(Enum):
             VoiceType.NOVA,
             VoiceType.SHIMMER,
         }
+
+
+class ReturnFormat(Enum):
+    DEFAULT = None
+    MARKDOWN = "markdown"
+    HTML = "html"
+    TEXT = "text"
