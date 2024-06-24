@@ -76,36 +76,41 @@ Our `RolePlaying()` class provide a simple way for you to add the critic in the 
 # Import necessary classes
 from camel.societies import RolePlaying
 from camel.configs import ChatGPTConfig
-from camel.types import TaskType, ModelType
+from camel.types import TaskType, ModelType, ModelPlatformType
 from colorama import Fore
 from camel.utils import print_text_animated
+from camel.models import ModelFactory
 
 # Set the LLM model type and model config
+model_platform = ModelPlatformType.OPENAI
 model_type = ModelType.GPT_3_5_TURBO
 model_config = ChatGPTConfig(
     temperature=0.8,  # the sampling temperature; the higher the more random
     n=3,              # the no. of completion choices to generate for each input
     )
+
+# Create the backend model
+model = ModelFactory.create(
+    model_platform=model_platform,
+    model_type=model_type,
+    model_config=model_config)
 ```
 We then need to set the kwargs for the task and each agent:
 ```python
 task_kwargs = {
     'task_prompt': 'Develop a plan to TRAVEL TO THE PAST and make changes.',
     'with_task_specify': True,
-    'task_specify_agent_kwargs': {'model_type': model_type,
-                                  'model_config': model_config}
+    'task_specify_agent_kwargs': {'model': model}
 }
 
 user_role_kwargs = {
     'user_role_name': 'an ambitious aspiring TIME TRAVELER',
-    'user_agent_kwargs': {'model_type': model_type,
-                          'model_config': model_config}
+    'user_agent_kwargs': {'model': model}
 }
 
 assistant_role_kwargs = {
     'assistant_role_name': 'the best-ever experimental physicist',
-    'assistant_agent_kwargs': {'model_type': model_type,
-                               'model_config': model_config}
+    'assistant_agent_kwargs': {'model': model}
 }
 
 critic_role_kwargs = {

@@ -181,9 +181,7 @@ class OpenSourceTokenCounter(BaseTokenCounter):
         """
         if self.model_type == ModelType.QWEN_2:
             text = self.tokenizer.apply_chat_template(
-                messages,
-                tokenize=False,
-                add_generation_prompt=True
+                messages, tokenize=False, add_generation_prompt=True
             )
             input_ids = self.tokenizer([text], return_tensors="pt").input_ids
         elif self.model_type == ModelType.GLM_4_OPEN_SOURCE:
@@ -192,7 +190,7 @@ class OpenSourceTokenCounter(BaseTokenCounter):
                 add_generation_prompt=True,
                 tokenize=True,
                 return_tensors="pt",
-                return_dict=True
+                return_dict=True,
             )
             input_ids = inputs["input_ids"]
         else:
@@ -313,9 +311,11 @@ class AnthropicTokenCounter(BaseTokenCounter):
         Returns:
             int: Number of tokens in the messages.
         """
-        prompt = messages_to_prompt(messages, self.model_type)
-
-        return self.client.count_tokens(prompt)
+        num_tokens = 0
+        for message in messages:
+            content = str(message["content"])
+            num_tokens += self.client.count_tokens(content)
+        return num_tokens
 
 
 class LiteLLMTokenCounter:
