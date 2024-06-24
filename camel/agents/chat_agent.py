@@ -43,7 +43,7 @@ if TYPE_CHECKING:
     from openai import Stream
 
     from camel.terminators import ResponseTerminator
-    from camel.toolkits.functions import OpenAIFunction
+    from camel.toolkits import OpenAIFunction
 
 
 @dataclass(frozen=True)

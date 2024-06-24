@@ -14,7 +14,7 @@
 from typing import List, Union
 
 from camel.retrievers import AutoRetriever
-from camel.toolkits.functions import OpenAIFunction
+from camel.toolkits import OpenAIFunction
 from camel.types import StorageType
 
 

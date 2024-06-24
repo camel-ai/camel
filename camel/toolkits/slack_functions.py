@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
     from slack_sdk import WebClient
 
-from camel.toolkits.functions import OpenAIFunction
+from camel.toolkits import OpenAIFunction
 
 logger = logging.getLogger(__name__)
 

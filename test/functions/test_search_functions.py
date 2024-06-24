@@ -17,7 +17,7 @@ from unittest.mock import MagicMock, patch
 import requests
 import wikipedia
 
-from camel.toolkits.functions.search_functions import (
+from camel.toolkits.search_functions import (
     query_wolfram_alpha,
     search_duckduckgo,
     search_google,

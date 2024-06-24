@@ -14,7 +14,7 @@
 from camel.agents import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
 from camel.messages import BaseMessage
-from camel.toolkits.functions import OPENAPI_FUNCS
+from camel.toolkits import OPENAPI_FUNCS
 
 # Define system message
 sys_msg = BaseMessage.make_assistant_message(

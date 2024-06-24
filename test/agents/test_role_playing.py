@@ -19,7 +19,7 @@ from camel.human import Human
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.societies import RolePlaying
-from camel.toolkits.functions import MATH_FUNCS
+from camel.toolkits import MATH_FUNCS
 from camel.types import ModelPlatformType, ModelType, RoleType, TaskType
 
 model = ModelFactory.create(

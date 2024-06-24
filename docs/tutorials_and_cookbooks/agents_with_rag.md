@@ -195,7 +195,7 @@ In this section we will show how to combine the `AutoRetriever` with `RolePlayin
 First, we need to set a retriever function with well-written docstring for LLM to understand what this function is used for, the main code is the same with the Auto RAG section.
 ```python
 from typing import List
-from camel.toolkits.functions import OpenAIFunction
+from camel.toolkits import OpenAIFunction
 from camel.retrievers import AutoRetriever
 from camel.types import StorageType
 
@@ -239,7 +239,7 @@ RETRIEVER_FUNCS: List[OpenAIFunction] = [
 Run the role-playing with defined retriever function:
 ```python
 from camel.utils import role_playing_with_function
-from camel.toolkits.functions import MATH_FUNCS  # import another function from camel
+from camel.toolkits import MATH_FUNCS  # import another function from camel
 
 role_playing_with_function(
     task_prompt=(

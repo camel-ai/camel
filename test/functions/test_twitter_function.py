@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from unittest.mock import MagicMock, patch
 
-from camel.toolkits.functions.twitter_function import (
+from camel.toolkits.twitter_function import (
     create_tweet,
     delete_tweet,
     get_my_user_profile,
@@ -40,7 +40,7 @@ def test_create_tweet(monkeypatch):
     monkeypatch.setattr('builtins.print', lambda x: captured_output.append(x))
 
     # Use patch to mock the get_oauth_session method
-    patch_path = 'camel.toolkits.functions.twitter_function.get_oauth_session'
+    patch_path = 'camel.toolkits.twitter_function.get_oauth_session'
     with patch(patch_path) as mock_get_oauth_session:
         # Configure the mock OAuth session's post method
         # to return the mock response object
@@ -76,7 +76,7 @@ def test_delete_tweet(monkeypatch):
     monkeypatch.setattr('builtins.print', lambda x: captured_output.append(x))
 
     # Use patch to mock the get_oauth_session method
-    patch_path = 'camel.toolkits.functions.twitter_function.get_oauth_session'
+    patch_path = 'camel.toolkits.twitter_function.get_oauth_session'
     with patch(patch_path) as mock_get_oauth_session:
         # Configure the mock OAuth session's delete method
         # to return the mock response object
@@ -131,7 +131,7 @@ def test_get_user_me(monkeypatch):
     }
 
     # Use patch to mock the get_oauth_session method
-    patch_path = 'camel.toolkits.functions.twitter_function.get_oauth_session'
+    patch_path = 'camel.toolkits.twitter_function.get_oauth_session'
     with patch(patch_path) as mock_get_oauth_session:
         mock_response = MagicMock()
         mock_response.json.return_value = mock_json_response

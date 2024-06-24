@@ -19,8 +19,7 @@ from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
-from camel.toolkits import GithubToolkit
-from camel.toolkits.functions import OpenAIFunction
+from camel.toolkits import GithubToolkit, OpenAIFunction
 from camel.types import ModelPlatformType, ModelType
 from camel.utils import print_text_animated
 

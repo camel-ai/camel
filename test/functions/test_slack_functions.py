@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from unittest.mock import MagicMock, patch
 
-from camel.toolkits.functions.slack_functions import (
+from camel.toolkits.slack_functions import (
     create_slack_channel,
     delete_slack_message,
     get_slack_channel_information,
@@ -26,7 +26,7 @@ from camel.toolkits.functions.slack_functions import (
 
 def test_create_slack_channel():
     with patch(
-        'camel.toolkits.functions.slack_functions._login_slack'
+        'camel.toolkits.slack_functions._login_slack'
     ) as mock_login_slack:
         mock_client = MagicMock()
         mock_login_slack.return_value = mock_client
@@ -49,9 +49,7 @@ def test_create_slack_channel():
 
 
 def test_join_slack_channel():
-    with patch(
-        "camel.toolkits.functions.slack_functions._login_slack"
-    ) as mock_login:
+    with patch("camel.toolkits.slack_functions._login_slack") as mock_login:
         mock_client = MagicMock()
         mock_login.return_value = mock_client
         mock_client.conversations_join.return_value = {}
@@ -60,9 +58,7 @@ def test_join_slack_channel():
 
 
 def test_leave_slack_channel():
-    with patch(
-        "camel.toolkits.functions.slack_functions._login_slack"
-    ) as mock_login:
+    with patch("camel.toolkits.slack_functions._login_slack") as mock_login:
         mock_client = MagicMock()
         mock_login.return_value = mock_client
         mock_client.conversations_leave.return_value = {}
@@ -71,9 +67,7 @@ def test_leave_slack_channel():
 
 
 def test_get_slack_channel_information():
-    with patch(
-        "camel.toolkits.functions.slack_functions._login_slack"
-    ) as mock_login:
+    with patch("camel.toolkits.slack_functions._login_slack") as mock_login:
         mock_client = MagicMock()
         mock_login.return_value = mock_client
         mock_client.conversations_list.return_value = {
@@ -92,9 +86,7 @@ def test_get_slack_channel_information():
 
 
 def test_get_slack_channel_message():
-    with patch(
-        "camel.toolkits.functions.slack_functions._login_slack"
-    ) as mock_login:
+    with patch("camel.toolkits.slack_functions._login_slack") as mock_login:
         mock_client = MagicMock()
         mock_login.return_value = mock_client
         mock_client.conversations_history.return_value = {
@@ -110,9 +102,7 @@ def test_get_slack_channel_message():
 
 
 def test_send_slack_message():
-    with patch(
-        "camel.toolkits.functions.slack_functions._login_slack"
-    ) as mock_login:
+    with patch("camel.toolkits.slack_functions._login_slack") as mock_login:
         mock_client = MagicMock()
         mock_login.return_value = mock_client
         mock_client.chat_postMessage.return_value = {}
@@ -121,9 +111,7 @@ def test_send_slack_message():
 
 
 def test_delete_slack_message():
-    with patch(
-        "camel.toolkits.functions.slack_functions._login_slack"
-    ) as mock_login:
+    with patch("camel.toolkits.slack_functions._login_slack") as mock_login:
         mock_client = MagicMock()
         mock_login.return_value = mock_client
         mock_client.chat_delete.return_value = {}

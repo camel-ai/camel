@@ -19,7 +19,7 @@ from typing import List
 import pytest
 from jsonschema.exceptions import SchemaError
 
-from camel.toolkits.functions import OpenAIFunction, get_openai_tool_schema
+from camel.toolkits import OpenAIFunction, get_openai_tool_schema
 from camel.types import RoleType
 from camel.utils import PYDANTIC_V2
 

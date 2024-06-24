@@ -14,7 +14,7 @@
 
 from typing import List
 
-from camel.toolkits.functions.openai_function import OpenAIFunction
+from camel.toolkits.openai_function import OpenAIFunction
 
 
 def add(a: int, b: int) -> int:

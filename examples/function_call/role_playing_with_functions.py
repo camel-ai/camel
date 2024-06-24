@@ -20,7 +20,7 @@ from camel.agents.chat_agent import FunctionCallingRecord
 from camel.configs import ChatGPTConfig
 from camel.models import ModelFactory
 from camel.societies import RolePlaying
-from camel.toolkits.functions import (
+from camel.toolkits import (
     MAP_FUNCS,
     MATH_FUNCS,
     SEARCH_FUNCS,

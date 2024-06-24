@@ -30,8 +30,8 @@ from camel.memories import MemoryRecord
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.terminators import ResponseWordsTerminator
-from camel.toolkits.functions import MATH_FUNCS
-from camel.toolkits.functions.openai_function import OpenAIFunction
+from camel.toolkits import MATH_FUNCS
+from camel.toolkits.openai_function import OpenAIFunction
 from camel.types import (
     ChatCompletion,
     ModelPlatformType,
