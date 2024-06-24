@@ -13,14 +13,12 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Dict, Optional
 
-from camel.configs import Gemini_API_PARAMS, Gemini_Config_PARAMS
-from camel.messages import ContentsType
+from camel.configs import Gemini_API_PARAMS
 from camel.models import BaseModelBackend
 from camel.types import (
     ChatCompletion,
     ChatCompletionMessage,
     Choice,
-    GenerateContentResponse,
     ModelType,
 )
 from camel.utils import (
@@ -43,8 +41,7 @@ class GeminiModel(BaseModelBackend):
         r"""Constructor for Gemini backend.
 
         Args:
-            model_type (ModelType): Model for which a backend is created,
-                Gemini-1.5-flash or Gemini-1.5-pro.
+            model_type (ModelType): Model for which a backend is created
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into generate_content().
             api_key (Optional[str]): The API key for authenticating with the
@@ -53,8 +50,9 @@ class GeminiModel(BaseModelBackend):
         import os
 
         import google.generativeai as genai
+        from google.generativeai.types.generation_types import GenerationConfig
 
-        super().__init__(model_type, model_config_dict, api_key)
+        super().__init__(model_type, model_config_dict, api_key, url)
         self._api_key = api_key or os.environ.get("GOOGLE_API_KEY")
         genai.configure(api_key=self._api_key)
         self._client = genai.GenerativeModel(model_type.value)
@@ -63,7 +61,7 @@ class GeminiModel(BaseModelBackend):
         generation_config_dict = {
             k: self.model_config_dict.pop(k)
             for k in keys
-            if k in Gemini_Config_PARAMS
+            if hasattr(GenerationConfig, k)
         }
         generation_config = genai.types.GenerationConfig(
             **generation_config_dict
@@ -77,18 +75,18 @@ class GeminiModel(BaseModelBackend):
         return self._token_counter
 
     @model_api_key_required
-    def run(self, contents: ContentsType) -> GenerateContentResponse:
+    def run(self, contents):
         r"""Runs inference of Gemini model.
         This method can handle multimodal input
 
         Args:
             contents: Message list or Message with the chat history
-            in Gemini API format.
+            in Gemini API format or OpenAi format.
             example: contents = [{'role':'user', 'parts': ['hello']}]
 
 
         Returns:
-            response(GenerateContentResponse)
+            response: A ChatCompletion object formatted for the OpenAI API.
 
         If it is not in streaming mode,
         you can directly output the response.text.
@@ -129,6 +127,14 @@ class GeminiModel(BaseModelBackend):
         return self.model_config_dict.get('stream', False)
 
     def to_gemini_req(self, req):
+        r"""Converts the request from the OpenAI API format to
+            the Gemini API request format.
+
+        Args:
+            req: The request object from the OpenAI API.
+        Returns:
+            converted_messages: A list of messages formatted for Gemini API.
+        """
         converted_messages = []
         for message in req:
             role = message.get('role')
@@ -146,7 +152,14 @@ class GeminiModel(BaseModelBackend):
                 converted_messages.append(message)
         return converted_messages
 
-    def to_openai_response(self, res: GenerateContentResponse):
+    def to_openai_response(self, res):
+        r"""Converts the response from the Gemini API to the OpenAI API
+        response format.
+        Args:
+            res: The response object returned by the Gemini API
+        Returns:
+            openai_res: A ChatCompletion object formatted for the OpenAI API.
+        """
         import time
         import uuid
 

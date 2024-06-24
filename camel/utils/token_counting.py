@@ -316,11 +316,22 @@ class GeminiTokenCounter(BaseTokenCounter):
         Returns:
         response(CountTokensResponse), use response.text to get output
         """
-        if isinstance(messages, list):
-            for msg in messages:
-                if isinstance(msg, dict) and 'content' in msg:
-                    msg['parts'] = msg.pop('content')
-        return self._client.count_tokens(messages).total_tokens
+        converted_messages = []
+        for message in messages:
+            role = message.get('role')
+            if role == 'assistant':
+                role = 'model'
+            else:
+                role = 'user'
+            if 'content' in message:
+                converted_message = {
+                    "role": role,
+                    "parts": message.get("content"),
+                }
+                converted_messages.append(converted_message)
+            else:
+                converted_messages.append(message)
+        return self._client.count_tokens(converted_messages).total_tokens
 
 
 class LiteLLMTokenCounter:
