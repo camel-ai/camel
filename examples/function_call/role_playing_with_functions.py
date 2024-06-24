@@ -18,15 +18,15 @@ from colorama import Fore
 
 from camel.agents.chat_agent import FunctionCallingRecord
 from camel.configs import ChatGPTConfig
-from camel.functions import (
+from camel.models import ModelFactory
+from camel.societies import RolePlaying
+from camel.toolkits.functions import (
     MAP_FUNCS,
     MATH_FUNCS,
     SEARCH_FUNCS,
     TWITTER_FUNCS,
     WEATHER_FUNCS,
 )
-from camel.models import ModelFactory
-from camel.societies import RolePlaying
 from camel.types import ModelPlatformType, ModelType
 from camel.utils import print_text_animated
 

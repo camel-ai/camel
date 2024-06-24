@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from camel.functions.weather_functions import get_weather_data
+from camel.toolkits.functions.weather_functions import get_weather_data
 
 
 @pytest.fixture(scope="module")

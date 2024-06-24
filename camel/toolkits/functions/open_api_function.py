@@ -17,7 +17,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import requests
 
-from camel.functions import OpenAIFunction, openapi_security_config
+from camel.toolkits.functions import OpenAIFunction, openapi_security_config
 from camel.types import OpenAPIName
 
 

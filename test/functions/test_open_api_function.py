@@ -15,7 +15,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from camel.functions import (
+from camel.toolkits.functions import (
     apinames_filepaths_to_funs_schemas,
     generate_apinames_filepaths,
 )

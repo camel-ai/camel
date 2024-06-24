@@ -14,7 +14,7 @@
 import os
 from typing import Any, Dict, List
 
-from camel.functions.openai_function import OpenAIFunction
+from camel.toolkits.functions.openai_function import OpenAIFunction
 
 
 def search_wiki(entity: str) -> str:

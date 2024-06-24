@@ -25,13 +25,13 @@ from PIL import Image
 from camel.agents import ChatAgent
 from camel.agents.chat_agent import FunctionCallingRecord
 from camel.configs import ChatGPTConfig
-from camel.functions import MATH_FUNCS
-from camel.functions.openai_function import OpenAIFunction
 from camel.generators import SystemMessageGenerator
 from camel.memories import MemoryRecord
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.terminators import ResponseWordsTerminator
+from camel.toolkits.functions import MATH_FUNCS
+from camel.toolkits.functions.openai_function import OpenAIFunction
 from camel.types import (
     ChatCompletion,
     ModelPlatformType,

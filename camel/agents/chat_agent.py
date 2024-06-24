@@ -42,8 +42,8 @@ from camel.utils import get_model_encoding
 if TYPE_CHECKING:
     from openai import Stream
 
-    from camel.functions import OpenAIFunction
     from camel.terminators import ResponseTerminator
+    from camel.toolkits.functions import OpenAIFunction
 
 
 @dataclass(frozen=True)

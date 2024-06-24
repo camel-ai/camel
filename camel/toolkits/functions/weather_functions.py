@@ -14,7 +14,7 @@
 import os
 from typing import List, Literal
 
-from camel.functions.openai_function import OpenAIFunction
+from camel.toolkits.functions.openai_function import OpenAIFunction
 
 
 def get_openweathermap_api_key() -> str:

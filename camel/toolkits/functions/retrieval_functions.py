@@ -13,8 +13,8 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import List, Union
 
-from camel.functions import OpenAIFunction
 from camel.retrievers import AutoRetriever
+from camel.toolkits.functions import OpenAIFunction
 from camel.types import StorageType
 
 

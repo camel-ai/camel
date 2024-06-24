@@ -15,7 +15,7 @@ import os
 from functools import wraps
 from typing import Any, Callable, List, Optional, Tuple, Union
 
-from camel.functions.openai_function import OpenAIFunction
+from camel.toolkits.functions.openai_function import OpenAIFunction
 
 
 def import_googlemaps_or_raise() -> Any:

@@ -19,7 +19,7 @@ from typing import List, Optional, Tuple, Union
 
 import requests
 
-from camel.functions import OpenAIFunction
+from camel.toolkits.functions import OpenAIFunction
 
 TWEET_TEXT_LIMIT = 280
 

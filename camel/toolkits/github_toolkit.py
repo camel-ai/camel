@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import List, Optional
 
-from camel.functions import OpenAIFunction
+from camel.toolkits.functions import OpenAIFunction
 
 from .base import BaseToolkit
 

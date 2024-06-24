@@ -14,7 +14,7 @@
 from functools import wraps
 from unittest.mock import MagicMock, patch
 
-from camel.functions.google_maps_function import (
+from camel.toolkits.functions.google_maps_function import (
     get_address_description,
     get_elevation,
     get_timezone,

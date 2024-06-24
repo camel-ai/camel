@@ -21,7 +21,7 @@ from openai._types import NOT_GIVEN, NotGiven
 from camel.configs.base_config import BaseConfig
 
 if TYPE_CHECKING:
-    from camel.functions import OpenAIFunction
+    from camel.toolkits.functions import OpenAIFunction
 
 
 @dataclass(frozen=True)

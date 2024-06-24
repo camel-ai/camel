@@ -15,11 +15,11 @@ import pytest
 
 from camel.agents import ChatAgent, CriticAgent
 from camel.configs import ChatGPTConfig
-from camel.functions import MATH_FUNCS
 from camel.human import Human
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.societies import RolePlaying
+from camel.toolkits.functions import MATH_FUNCS
 from camel.types import ModelPlatformType, ModelType, RoleType, TaskType
 
 model = ModelFactory.create(
