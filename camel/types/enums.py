@@ -122,8 +122,6 @@ class ModelType(Enum):
             return 128000
         elif self is ModelType.GPT_4O:
             return 128000
-        elif self == ModelType.GLM_4:
-            return 8192
         elif self == ModelType.GLM_4_OPEN_SOURCE:
             return 8192
         elif self == ModelType.GLM_3_TURBO:
