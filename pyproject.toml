@@ -87,6 +87,8 @@ pymilvus = { version = "^2.4.0", optional = true }
 
 # serve
 fastapi = "^0.109.0"
+vllm = "^0.3.3"
+ray = "2.9.3"
 uvicorn = "^0.27.0"
 
 # cli-tools
@@ -104,7 +106,6 @@ cohere = { version = "^4.56", optional = true }
 pytest = { version = "^7", optional = true}
 pytest-asyncio = { version = "^0.23.0", optional = true }
 mock = { version = "^5", optional = true}
-vllm = "^0.3.3"
 
 [tool.poetry.extras]
 test = ["pytest", "mock", "pytest-asyncio"]
