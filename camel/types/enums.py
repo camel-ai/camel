@@ -186,7 +186,7 @@ class ModelType(Enum):
                 self.value in model_name.lower()
                 or "qwen2" in model_name.lower()
             )
-        elif self is ModelType.GLM_4:
+        elif self is ModelType.GLM_4_OPEN_SOURCE:
             return (
                 'glm-4' in model_name.lower()
                 or "glm4" in model_name.lower()
