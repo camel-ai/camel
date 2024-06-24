@@ -100,7 +100,9 @@ def hf_fetch_commit_hash(repo_id) -> Optional[str]:
     return None
 
 
-def hf_download_model(repo_id: str, ) -> None:
+def hf_download_model(
+    repo_id: str,
+) -> None:
     """
     Download a pre-trained model from HuggingFace model hub
 
@@ -112,8 +114,12 @@ def hf_download_model(repo_id: str, ) -> None:
         "_raise_exceptions_for_gated_repo": False,
         "_raise_exceptions_for_missing_entries": False,
     }
-    file_type_list = (SAFE_WEIGHTS_NAME, SAFE_WEIGHTS_INDEX_NAME, WEIGHTS_NAME,
-                      WEIGHTS_INDEX_NAME)
+    file_type_list = (
+        SAFE_WEIGHTS_NAME,
+        SAFE_WEIGHTS_INDEX_NAME,
+        WEIGHTS_NAME,
+        WEIGHTS_INDEX_NAME,
+    )
     for file_type in file_type_list:
         resolved_archive_file = cached_file(
             repo_id,
@@ -123,12 +129,16 @@ def hf_download_model(repo_id: str, ) -> None:
         if resolved_archive_file is not None:
             break
     if resolved_archive_file is None:
-        ui.error(f"Failed to download model {repo_id}."
-                 f"No valid `.bin` or `.safetensors` file found on"
-                 f"https://huggingface.co/{repo_id}")
+        ui.error(
+            f"Failed to download model {repo_id}."
+            f"No valid `.bin` or `.safetensors` file found on"
+            f"https://huggingface.co/{repo_id}"
+        )
 
 
-def hf_download_generation_config(repo_id: str, ) -> None:
+def hf_download_generation_config(
+    repo_id: str,
+) -> None:
     """
     Download the generation_config.json file of a pre-trained model from
     HuggingFace model hub
@@ -139,9 +149,11 @@ def hf_download_generation_config(repo_id: str, ) -> None:
             GENERATION_CONFIG_NAME,
         )
     except Exception:
-        ui.error(f"Failed to download generation_config.json for {repo_id}."
-                 f"No valid `generation_config.json` file found on"
-                 f"https://huggingface.co/{repo_id}")
+        ui.error(
+            f"Failed to download generation_config.json for {repo_id}."
+            f"No valid `generation_config.json` file found on"
+            f"https://huggingface.co/{repo_id}"
+        )
         raise
 
 
@@ -158,8 +170,7 @@ def hf_download_tokenizer(
 
     additional_files_names = {
         "added_tokens_file": ADDED_TOKENS_FILE,  # kept only for legacy
-        "special_tokens_map_file":
-        SPECIAL_TOKENS_MAP_FILE,  # kept only for legacy
+        "special_tokens_map_file": SPECIAL_TOKENS_MAP_FILE,  # kept for legacy
         "tokenizer_config_file": TOKENIZER_CONFIG_FILE,
         # tokenizer_file used to initialize a slow from a fast.
         # Properly copy the `addedTokens` instead of adding in random orders
@@ -167,14 +178,15 @@ def hf_download_tokenizer(
     }
     model_type = config_class_to_model_type(type(config).__name__)
     if model_type is not None:
-        tokenizer_class_py, tokenizer_class_fast = TOKENIZER_MAPPING[type(
-            config)]
+        tokenizer_class_py, tokenizer_class_fast = TOKENIZER_MAPPING[
+            type(config)
+        ]
 
     for tokenizer in (tokenizer_class_fast, tokenizer_class_py):
         if tokenizer is not None:
             vocab_files = {
                 **tokenizer.vocab_files_names,
-                **additional_files_names
+                **additional_files_names,
             }
             for _, file_name in vocab_files.items():
                 cached_file(

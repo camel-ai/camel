@@ -14,8 +14,10 @@
 
 import click
 import requests
+
 from camel.cli.utils import get_service_laddr
 from camel.termui import ui
+
 
 @click.command()
 @click.argument("alias")

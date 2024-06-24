@@ -33,8 +33,9 @@ def load_model(
         llm, tokenizer = load_vllm_model(model)
     else:
         # device input check
-        hf_param_json = hf_param.model_dump(
-        ) if PYDANTIC_V2 else hf_param.dict()  # type: ignore
+        hf_param_json = (
+            hf_param.model_dump() if PYDANTIC_V2 else hf_param.dict()
+        )
         device = hf_param_json["device_map"]
         if isinstance(device, str):
             if device not in {"cuda", "cpu"}:
@@ -44,8 +45,10 @@ def load_model(
         if isinstance(device, int):
             gpu_nums = get_gpu_nums()
             if device >= gpu_nums:
-                raise ValueError(f"Invalid device number {device}, "
-                                 f"only have {tuple(range(gpu_nums))}.")
+                raise ValueError(
+                    f"Invalid device number {device}, "
+                    f"only have {tuple(range(gpu_nums))}."
+                )
 
         llm, tokenizer = load_HF_model(model, hf_param_json)
     return llm, tokenizer

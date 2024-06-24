@@ -13,24 +13,20 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from __future__ import annotations
+
+from typing import Dict, List, Literal, Optional, Union
+
 import torch
-from typing import (Dict,
-                    List,
-                    Optional,
-                    Union,
-                    Literal,
-                    Any
-)
-from pydantic import BaseModel
 from openai.types.chat.chat_completion import (
     ChatCompletion,
-    Choice,
 )
 from openai.types.chat.chat_completion_message_param import (
     ChatCompletionMessageParam,
 )
+from pydantic import BaseModel
 
 DEFAULT_HF_DTYPE = torch.float16
+
 
 class ListModelResponse(BaseModel):
     alias: str
@@ -47,6 +43,7 @@ class ListModelResponse(BaseModel):
     r"""
     Model launching framework, either "Huggingface" or "VLLM"
     """
+
 
 class ChatCompletionRequest(BaseModel):
     r"""Base class for completion create parameters.
@@ -84,7 +81,7 @@ class ChatCompletionRequest(BaseModel):
     should result in a ban or exclusive selection of the relevant token.
     """
 
-    #TODO: fix -inf output score from HF model
+    # TODO: fix -inf output score from HF model
     # logprobs: Optional[bool] = False
     r""""
     Whether to return log probabilities of the output tokens or not. If true, 
@@ -128,7 +125,9 @@ class ChatCompletionRequest(BaseModel):
     # tool_choice: None
     # user:
 
+
 ChatCompletionResponse = ChatCompletion
+
 
 class HFModelLoadingParam(BaseModel):
     class Config:
@@ -137,37 +136,43 @@ class HFModelLoadingParam(BaseModel):
 
     low_cpu_mem_usage: bool = True
     r"""
-    Tries to not use more than 1x model size in CPU memory (including peak memory) while loading the model. 
-    When passing a device_map, low_cpu_mem_usage is automatically set to True
+    Tries to not use more than 1x model size in CPU memory (including peak 
+    memory) while loading the model. When passing a device_map, 
+    low_cpu_mem_usage is automatically set to True
     #ref: https://huggingface.co/docs/transformers/main_classes/model
     """
     trust_remote_code: bool = True
     r"""
-    Whether or not to allow for custom models defined on the Hub in their own modeling files. 
-    This option should only be set to True for repositories you trust and in which you have 
-    read the code, as it will execute code present on the Hub on your local machine.
+    Whether or not to allow for custom models defined on the Hub in their own 
+    modeling files. This option should only be set to True for repositories you
+    trust and in which you have read the code, as it will execute code present 
+    on the Hub on your local machine.
 
-    Need to be set to 'True' if the model hasn't been added to huggingface/transformers 
-    yet. (e.g. internlm/internlm-chat-7b as of Feb 2024)
+    Need to be set to 'True' if the model hasn't been added to 
+    huggingface/transformers yet. (e.g. internlm/internlm-chat-7b as Feb 2024)
     """
     device_map: Union[str, Dict[str, Union[int, str, torch.device]]] = "cuda"
     r"""
-    A map that specifies where each submodule should go. It doesn’t need to be refined to each 
-    parameter/buffer name, once a given module name is inside, every submodule of it will be sent to the 
-    same device. If we only pass the device (e.g., "cpu", "cuda:1", "mps", or a GPU ordinal rank like 1) 
-    on which the model will be allocated, the device map will map the entire model to this device. 
-    Passing device_map = 0 means put the whole model on GPU 0.
+    A map that specifies where each submodule should go. It doesn't need to be 
+    refined to each parameter/buffer name, once a given module name is inside, 
+    every submodule of it will be sent to the same device. If we only pass the 
+    device (e.g., "cpu", "cuda:1", "mps", or a GPU ordinal rank like 1) 
+    on which the model will be allocated, the device map will map the entire 
+    model to this device. Passing device_map = 0 means put the whole model on 
+    GPU 0.
     """
     torch_dtype: torch.dtype = DEFAULT_HF_DTYPE
     r"""
     data type of the model
     """
 
+
 class ModelRegistrationRequest(BaseModel):
     model: str
     r"""
     Can be either:
-        - A string, the *model id* of a predefined model hosted inside a repo on huggingface.co.
+        - A string, the *model id* of a predefined model hosted inside a repo 
+          on huggingface.co.
         - A path to a *directory* containing model weights saved using
           [`~PreTrainedModel.save_pretrained`], e.g., `./my_model_directory/`.
     """
@@ -180,6 +185,7 @@ class ModelRegistrationRequest(BaseModel):
     Enable vllm framework
     """
     hf_param: HFModelLoadingParam = HFModelLoadingParam()
+
 
 class ModelRemovalRequest(BaseModel):
     alias: str

@@ -11,13 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any
 import enum
-from rich.box import ROUNDED
+from typing import Any
+
 from rich.console import Console
-from rich.progress import Progress, ProgressColumn
-from rich.prompt import Confirm, IntPrompt, Prompt
-from rich.table import Table
 from rich.theme import Theme
 
 DEFAULT_THEME = {
@@ -32,16 +29,19 @@ DEFAULT_THEME = {
 _console = Console(highlight=False, theme=Theme(DEFAULT_THEME))
 _err_console = Console(stderr=True, theme=Theme(DEFAULT_THEME))
 
+
 class Verbosity(enum.IntEnum):
     QUIET = -1
     NORMAL = 0
     DETAIL = 1
     DEBUG = 2
 
+
 class UI:
     """
     Rich text terminal UI object.
     """
+
     def __init__(self, verbosity: Verbosity = Verbosity.NORMAL) -> None:
         self.verbosity = verbosity
         self.console = _console
@@ -73,16 +73,29 @@ class UI:
 
     # TODO: add a logging method
 
-    def info(self, message: str, verbosity: Verbosity = Verbosity.QUIET) -> None:
+    def info(
+        self, message: str, verbosity: Verbosity = Verbosity.QUIET
+    ) -> None:
         """Print a message as info to stdout."""
-        self.echo(f"[info]INFO:[/] [dim]{message}[/]", err=True, verbosity=verbosity)
-        
-    def warn(self, message: str, verbosity: Verbosity = Verbosity.QUIET) -> None:
-        """Print a message as warning to stdout."""
-        self.echo(f"[error]WARNING:[/] {message}", err=True, verbosity=verbosity)
+        self.echo(
+            f"[info]INFO:[/] [dim]{message}[/]", err=True, verbosity=verbosity
+        )
 
-    def error(self, message: str, verbosity: Verbosity = Verbosity.QUIET) -> None:
+    def warn(
+        self, message: str, verbosity: Verbosity = Verbosity.QUIET
+    ) -> None:
+        """Print a message as warning to stdout."""
+        self.echo(
+            f"[error]WARNING:[/] {message}", err=True, verbosity=verbosity
+        )
+
+    def error(
+        self, message: str, verbosity: Verbosity = Verbosity.QUIET
+    ) -> None:
         """Print a message as error to stdout."""
-        self.echo(f"[error]WARNING:[/] {message}", err=True, verbosity=verbosity)
+        self.echo(
+            f"[error]WARNING:[/] {message}", err=True, verbosity=verbosity
+        )
+
 
 ui = UI()

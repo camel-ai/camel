@@ -12,48 +12,55 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from typing import Any, List, Dict
+from typing import Any, Dict, List
+
 import torch
+from transformers import GenerationConfig
+
 # Compatible with openai sampling parameters
 from vllm import SamplingParams
-from transformers import GenerationConfig
+
 
 def chat_completion_vllm(
     model: Any,
     tokenizer: Any,
     messages: List[Dict[str, str]],
-    vllm_params: SamplingParams
+    vllm_params: SamplingParams,
 ):
-    formatted_messages = [tokenizer.apply_chat_template(
-        messages, tokenize=False)]
+    formatted_messages = [
+        tokenizer.apply_chat_template(messages, tokenize=False)
+    ]
     output = model.generate(formatted_messages, vllm_params)
     return output
+
 
 @torch.inference_mode()
 def chat_completion_hf(
     model: Any,
     tokenizer: Any,
     messages: List[Dict[str, str]],
-    hf_params: Dict[str, Any]
+    hf_params: Dict[str, Any],
 ):
-
     # tokenizer hosted in huggingface hub may not have chat_template configed
     if tokenizer.chat_template is not None:
         input_ids = tokenizer.apply_chat_template(
-            messages, return_tensors="pt").to("cuda")
+            messages, return_tensors="pt"
+        ).to("cuda")
     else:
         raise AttributeError(
-            "Chat template not found in tokenizer, please provide a template")
+            "Chat template not found in tokenizer, please provide a template"
+        )
 
     prefix_length = input_ids.shape[-1]
-    out_ids = model.generate(input_ids=input_ids,
-                             **hf_params)
+    out_ids = model.generate(input_ids=input_ids, **hf_params)
 
-    decoded = tokenizer.batch_decode(out_ids[:, prefix_length:],
-                                     skip_special_tokens=True)
+    decoded = tokenizer.batch_decode(
+        out_ids[:, prefix_length:], skip_special_tokens=True
+    )
     print(hf_params, flush=True)
     print(out_ids.shape, flush=True)
     return decoded
+
 
 def extract_vllm_param(request) -> SamplingParams:
     """
@@ -85,13 +92,14 @@ def extract_vllm_param(request) -> SamplingParams:
         "prompt_logprobs",
         "skip_special_tokens",
         "spaces_between_special_tokens",
-        "logits_processors",         
+        "logits_processors",
     )
     for param in vllm_params:
         if param in request:
             kwargs[param] = request[param]
 
     return SamplingParams(**kwargs)
+
 
 def extract_hf_param(model_repo_name, request) -> Dict[str, Any]:
     """
@@ -105,21 +113,19 @@ def extract_hf_param(model_repo_name, request) -> Dict[str, Any]:
 
     kwargs = dict()
     hf_params = (
-    # NOTE: Parameters that control the length of the output
+        # NOTE: Parameters that control the length of the output
         "max_new_tokens",
         "min_length",
         "min_new_tokens",
         "early_stopping",
         "max_time",
-
-    # NOTE: Parameters that control the generation strategy used
+        # NOTE: Parameters that control the generation strategy used
         "do_sample",
-        "num_beams" 
+        "num_beams"
         "num_beam_groups"
         "penalty_alpha"
         "use_cache"
-
-    # NOTE: Parameters for manipulation of the model output logits
+        # NOTE: Parameters for manipulation of the model output logits
         "temperature",
         "top_k",
         "top_p",
@@ -145,33 +151,28 @@ def extract_hf_param(model_repo_name, request) -> Dict[str, Any]:
         "sequence_bias",
         "guidance_scale",
         "low_memory",
-
-    # NOTE: Parameters that define the output variables of `generate`
+        # NOTE: Parameters that define the output variables of `generate`
         "num_return_sequences",
         "output_attentions",
         "output_hidden_states",
         "output_scores",
         "output_logits",
         "return_dict_in_generate",
-
-    # NOTE: Special tokens that can be used at generation time
+        # NOTE: Special tokens that can be used at generation time
         "pad_token_id",
         "bos_token_id",
         "eos_token_id",
-
-    # NOTE: Generation parameters exclusive to encoder-decoder models
+        # NOTE: Generation parameters exclusive to encoder-decoder models
         "encoder_no_repeat_ngram_size",
         "decoder_start_token_id",
-
-    # NOTE: Generation parameters exclusive to [assistant generatio
+        # NOTE: Generation parameters exclusive to [assistant generatio
         "num_assistant_tokens",
         "num_assistant_tokens_schedule",
-
-    # NOTE: Parameters specific to the caching mechanism
+        # NOTE: Parameters specific to the caching mechanism
         "cache_implementation",
     )
     params_map = {
-        "max_new_tokens": "max_tokens", 
+        "max_new_tokens": "max_tokens",
         "num_return_sequences": "n",
     }
 

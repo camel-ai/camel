@@ -13,7 +13,6 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 import os
-import time
 from argparse import ArgumentParser
 from typing import Dict, List
 
@@ -29,8 +28,6 @@ from camel.serve.inference import (
 from camel.serve.model_manager import create_LLM_manager
 from camel.serve.utils import load_model
 from camel.types.server_types import (
-    ChatCompletionRequest,
-    ChatCompletionResponse,
     ListModelResponse,
     ModelRegistrationRequest,
     ModelRemovalRequest,
@@ -47,7 +44,7 @@ async def list_models():
     return model_list
 
 
-#TODO: make the return match the openai api
+# TODO: make the return match the openai api
 @app.post("/v1/chat/completions", status_code=status.HTTP_200_OK)
 async def chat_completions(request: Request):
     """
@@ -60,8 +57,10 @@ async def chat_completions(request: Request):
     check_model_availability(model_alias)  # eheck if model is launched
 
     messages: List[Dict[str, str]] = body.get("messages", None)
-    model, tokenizer = LLM_MGR.get_model(model_alias), LLM_MGR.get_tokenizer(
-        model_alias)
+    model, tokenizer = (
+        LLM_MGR.get_model(model_alias),
+        LLM_MGR.get_tokenizer(model_alias),
+    )
     serving_engine = LLM_MGR.get_serving_engine(model_alias)
     if serving_engine == "VLLM":
         vllm_params = extract_vllm_param(body)
@@ -76,18 +75,23 @@ async def chat_completions(request: Request):
 
 @app.post("/v1/register", status_code=status.HTTP_201_CREATED)
 async def add_model(request: ModelRegistrationRequest) -> None:
-
     # load model
-    model, tokenizer = load_model(request.model, request.vllm,
-                                  request.hf_param)
+    model, tokenizer = load_model(
+        request.model, request.vllm, request.hf_param
+    )
 
     basename = os.path.basename(request.model)
     if request.alias is not None:
         alias = request.alias
     else:
         alias = basename
-    LLM_MGR.register_model(alias=alias, repo_name=request.model, model=model,
-                           tokenizer=tokenizer, vllm=request.vllm)
+    LLM_MGR.register_model(
+        alias=alias,
+        repo_name=request.model,
+        model=model,
+        tokenizer=tokenizer,
+        vllm=request.vllm,
+    )
 
 
 @app.delete("/v1/delete")
@@ -108,11 +112,17 @@ def check_model_availability(alias) -> None:
 if __name__ == "__main__":
     parser = ArgumentParser("CAMEL Openai compatible API Server")
     parser.add_argument("--host", type=str, default=None, help="host name")
-    parser.add_argument("-p", "--port", type=int, default=8000,
-                        help="port number")
+    parser.add_argument(
+        "-p", "--port", type=int, default=8000, help="port number"
+    )
 
     args = parser.parse_args()
 
     LLM_MGR = create_LLM_manager()
-    uvicorn.run(app, host=args.host, port=args.port, log_level="debug",
-                timeout_keep_alive=5)
+    uvicorn.run(
+        app,
+        host=args.host,
+        port=args.port,
+        log_level="debug",
+        timeout_keep_alive=5,
+    )

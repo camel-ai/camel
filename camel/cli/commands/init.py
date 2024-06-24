@@ -12,21 +12,29 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-import os
-import sys
-import socket
 import configparser
-from pathlib import Path
+import os
+import socket
 import subprocess
+import sys
+from pathlib import Path
+
 import click
-from camel.termui import ui
+
 from camel.cli.utils import get_service_pid, service_is_alive
+from camel.termui import ui
 
 
 @click.command()
 @click.option("--host", type=str, default=None, help='host address')
 @click.option("--port", "-p", type=str, default=None, help='port number')
-@click.option("--daemon", "-d", default=False, is_flag=True, help="run as systemd daemon in background")
+@click.option(
+    "--daemon",
+    "-d",
+    default=False,
+    is_flag=True,
+    help="run as systemd daemon in background",
+)
 def init(host, port, daemon):
     """
     start camel openai api-compatible server
@@ -51,12 +59,13 @@ def init(host, port, daemon):
     if daemon:
         # check if camel.service unit file exists
         dot_config_dir = os.path.expanduser("~/.config/systemd/user/")
-        if not any(os.path.exists(parent + "camel.service")
-                for parent in (dot_config_dir,
-                               "/etc/systemd/user/")
-            ):
+        if not any(
+            os.path.exists(parent + "camel.service")
+            for parent in (dot_config_dir, "/etc/systemd/user/")
+        ):
             raise FileNotFoundError(
-                "Deamon mode enabled but systemd unit file `camel.service` file not found"
+                "Deamon mode enabled but systemd unit file `camel.service`"
+                "file not found"
             )
         # check if log directory exists
         local_dir = os.path.expanduser("~/.local")
@@ -73,22 +82,32 @@ def init(host, port, daemon):
         # TODO: check whether the service start successfully before move on
         subprocess.run(["systemctl", "--user", "start", "camel"])
         pid = get_service_pid()
-        ui.info(f"camel service (pid {pid}) running on [link=http://{host}:{port}]{host}:{port}[/link]")
+        ui.info(
+            f"camel service (pid {pid}) running on [link=http://{host}:{port}]{host}:{port}[/link]"
+        )
 
-        with open(config_dir, "w") as f:  #be careful configparser convert all keys to lower case
+        with open(
+            config_dir, "w"
+        ) as f:  # be careful configparser convert all keys to lower case
             local_config["Service"]["host"] = host
             local_config["Service"]["port"] = str(port)
             local_config.write(f)
         f.close()
     else:
-        subprocess.run([
-            f"{sys.executable}", f"{file_dir.parents[2]}/serve/openai_api_server.py",
-            "--host", host,
-            "--port", str(port)
-        ])
+        subprocess.run(
+            [
+                f"{sys.executable}",
+                f"{file_dir.parents[2]}/serve/openai_api_server.py",
+                "--host",
+                host,
+                "--port",
+                str(port),
+            ]
+        )
 
     # write to local config file
-        
+
+
 def if_port_in_use(host: str, port: int) -> bool:
     """
     Check if the port (in our project, usually the default 8000) is
@@ -96,6 +115,7 @@ def if_port_in_use(host: str, port: int) -> bool:
     """
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         return s.connect_ex((host, port)) == 0
+
 
 def find_available_port(host: str) -> int:
     """

@@ -37,6 +37,7 @@ def add(repo_id):
         hf_download_tokenizer,
         hf_download_tokenizer_config,
     )
+
     hf_download_config(repo_id)
     hf_download_model(repo_id)
     hf_download_generation_config(repo_id)

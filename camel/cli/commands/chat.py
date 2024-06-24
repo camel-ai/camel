@@ -29,11 +29,8 @@ def chat(model, messages):
     url = f"http://{laddr}/v1/chat/completions"
     json_data = {
         "model": model,
-        "messages": [{
-            "role": "user",
-            "content": messages
-        }]
+        "messages": [{"role": "user", "content": messages}],
     }
     resp = requests.post(url, json=json_data)
-    # TODO: output format need to be unified, this one is not compatible with vllm output
+    # TODO: unify output format, this one is not compatible with vllm output
     ui.echo(resp.json()[0])

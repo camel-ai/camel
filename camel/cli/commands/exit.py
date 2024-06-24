@@ -11,9 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import click
 import subprocess
+
+import click
+
 from camel.termui import ui
+
 
 @click.command()
 def exit():
@@ -21,11 +24,13 @@ def exit():
     Exits the camel daemon, closing all running LLMs
     """
     try:
-        subprocess.run([
-            "systemctl", "--user",
-            "stop", "camel"
-        ], check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        subprocess.run(
+            ["systemctl", "--user", "stop", "camel"],
+            check=True,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
     except subprocess.CalledProcessError as e:
         ui.error(f"An error occurred: {e}")
         ui.error(f"Error output: {e.stderr}")
-            

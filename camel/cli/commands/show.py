@@ -15,18 +15,23 @@
 
 import click
 from rich.table import Table
-from camel.termui import ui
+
 from camel.cli.utils import (
-    sizeof_fmt,
-    get_service_pid,
+    get_models,
     get_service_laddr,
-    get_models
-    )
-    
+    get_service_pid,
+    sizeof_fmt,
+)
+from camel.termui import ui
+
 
 @click.command()
-@click.argument("property",
-                type=click.Choice(["pid", "address", "local-models"], case_sensitive=False))
+@click.argument(
+    "property",
+    type=click.Choice(
+        ["pid", "address", "local-models"], case_sensitive=False
+    ),
+)
 def show(property):
     """
     show service properties
@@ -39,11 +44,12 @@ def show(property):
     elif property == "address":
         laddr = get_service_laddr()
         ui.echo(f"[link=http://{laddr}]{laddr}[/link]")
-    
+
     if property == "local-models":
         repo_dic = get_models()
         repo_dic = dict(sorted(repo_dic.items()))
         display_models_in_table(repo_dic)
+
 
 def display_models_in_table(repo_dic):
     table = Table(title="Available local models")
@@ -51,9 +57,6 @@ def display_models_in_table(repo_dic):
     table.add_column("Size", justify="right", style="green")
 
     for repo in repo_dic.values():
-        table.add_row(
-            repo["repo_id"],
-            sizeof_fmt(repo["size_on_disk"])
-        )
+        table.add_row(repo["repo_id"], sizeof_fmt(repo["size_on_disk"]))
 
     ui.echo(table)

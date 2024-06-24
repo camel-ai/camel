@@ -19,7 +19,6 @@ import torch
 
 
 class ModelManager:
-
     def __init__(self):
         self.models: Dict[str, model_info] = {}
 
@@ -31,7 +30,7 @@ class ModelManager:
             model: {
                 "alias": self.models[model].alias,
                 "basename": self.models[model].basename,
-                "serving_engine": self.models[model].serving_engine
+                "serving_engine": self.models[model].serving_engine,
             }
             for model in self.models
         }
@@ -52,16 +51,24 @@ class ModelManager:
     def get_serving_engine(self, alias):
         return self.models[alias].serving_engine
 
-    def register_model(self, alias: str, repo_name: str, model: Any,
-                       tokenizer: Any, vllm: bool) -> None:
-
+    def register_model(
+        self,
+        alias: str,
+        repo_name: str,
+        model: Any,
+        tokenizer: Any,
+        vllm: bool,
+    ) -> None:
         serving_engine: Literal["Huggingface", "VLLM"]
         serving_engine = "Huggingface" if not vllm else "VLLM"
-        self.models[alias] = model_info(alias=alias,
-                                        basename=os.path.basename(repo_name),
-                                        repo_name=repo_name,
-                                        serving_engine=serving_engine,
-                                        model=model, tokenizer=tokenizer)
+        self.models[alias] = model_info(
+            alias=alias,
+            basename=os.path.basename(repo_name),
+            repo_name=repo_name,
+            serving_engine=serving_engine,
+            model=model,
+            tokenizer=tokenizer,
+        )
 
     def delete_model(self, model_name: str) -> None:
         del self.models[model_name]
@@ -69,7 +76,7 @@ class ModelManager:
 
 
 @dataclass
-class model_info():
+class model_info:
     alias: str
     basename: str
     repo_name: str

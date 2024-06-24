@@ -12,9 +12,11 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-import click
 import subprocess
 from pathlib import Path
+
+import click
+
 from camel.termui import ui
 
 
@@ -25,15 +27,13 @@ def setup():
     """
     file_dir = Path(__file__)
     ui.info("Configuring CAMEL CLI...")
-    systemd_setup_script_dir = f"{file_dir.parents[2]}/.script/setup_systemd_service.sh"
+    systemd_setup_script_dir = (
+        f"{file_dir.parents[2]}/.script/setup_systemd_service.sh"
+    )
     print(systemd_setup_script_dir)
     try:
-        subprocess.run([
-            "bash",
-            f"{systemd_setup_script_dir}"
-        ])
-    except:
+        subprocess.run(["bash", f"{systemd_setup_script_dir}"])
+    except Exception:
         ui.error("Failed to configure CAMEL CLI")
     else:
         ui.info("CAMEL CLI configured successfully")
-        

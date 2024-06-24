@@ -13,14 +13,22 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 import os
+
 import click
 import requests
+
 from camel.cli.utils import get_service_laddr
 from camel.termui import ui
 
+
 @click.command()
 @click.option("--alias", type=str, help="custom model name")
-@click.option("--vllm", is_flag=True, default=False, help="launch model using VLLM framework")
+@click.option(
+    "--vllm",
+    is_flag=True,
+    default=False,
+    help="launch model using VLLM framework",
+)
 @click.argument("model")
 def launch(model, alias, vllm):
     """
@@ -38,6 +46,9 @@ def launch(model, alias, vllm):
     if resp.status_code == 201:
         basename = os.path.basename(model)
         # TODO: add highlight
-        ui.info(f"Model {basename} {f'(renamed as {alias})' if alias else ''} launched successfully")
+        ui.info(
+            f"Model {basename} {f'(renamed as {alias})' if alias else ''}"
+            "launched successfully"
+        )
     else:
         ui.error(f"Failed to launch model {model}")

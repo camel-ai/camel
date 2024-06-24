@@ -18,7 +18,6 @@ import click
 
 
 class LazyGroup(click.Group):
-
     def __init__(self, *args, lazy_subcommands=None, **kwargs):
         super().__init__(*args, **kwargs)
         # lazy_subcommands is a map of the form:
@@ -49,5 +48,6 @@ class LazyGroup(click.Group):
         if not isinstance(cmd_object, click.BaseCommand):
             raise ValueError(
                 f"Lazy loading of {import_path} failed by returning "
-                "a non-command object")
+                "a non-command object"
+            )
         return cmd_object

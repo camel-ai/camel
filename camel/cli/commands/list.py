@@ -15,6 +15,7 @@
 import click
 import requests
 from rich.table import Table
+
 from camel.cli.utils import get_service_laddr
 from camel.termui import ui
 
@@ -35,6 +36,7 @@ def list():
     else:
         ui.error("Failed to fetch running model list")
 
+
 def display_models_in_table(model_list):
     table = Table(title="Running models")
     table.add_column("Model", justify="left", style="cyan", no_wrap=True)
@@ -43,9 +45,7 @@ def display_models_in_table(model_list):
 
     for model in model_list.values():
         table.add_row(
-            model["alias"],
-            model["basename"],
-            model["serving_engine"]
+            model["alias"], model["basename"], model["serving_engine"]
         )
 
     ui.echo(table)

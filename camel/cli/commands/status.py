@@ -12,8 +12,14 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import click
-from camel.cli.utils import service_is_alive, get_service_pid, get_service_laddr
+
+from camel.cli.utils import (
+    get_service_laddr,
+    get_service_pid,
+    service_is_alive,
+)
 from camel.termui import ui
+
 
 @click.command()
 def status():
@@ -23,6 +29,8 @@ def status():
     if service_is_alive():
         pid = get_service_pid()
         laddr = get_service_laddr()
-        ui.info(f"camel service (pid {pid}) running on [link=http://{laddr}]{laddr}[/link]")
+        ui.info(
+            f"camel service (pid {pid}) running on [link=http://{laddr}]{laddr}[/link]"
+        )
     else:
         ui.info("camel is inactive")

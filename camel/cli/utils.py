@@ -11,15 +11,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import os
-import sys
-import subprocess
 import configparser
+import os
+import subprocess
+import sys
 from typing import Union
+
 from huggingface_hub import scan_cache_dir
+
 from camel.termui import ui
 
-SERVICE_INACTIVE_ERROR_MSG = "The camel daemon is inactive. Please initiate the service by running 'camel init --daemon'"
+SERVICE_INACTIVE_ERROR_MSG = (
+    "The camel daemon is inactive. "
+    "Please initiate the service by running 'camel init --daemon'"
+)
+
 
 def sizeof_fmt(num, suffix="B"):
     for unit in ("", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"):
@@ -28,28 +34,43 @@ def sizeof_fmt(num, suffix="B"):
         num /= 1024.0
     return f"{num:.1f}Yi{suffix}"
 
+
 def service_is_alive() -> bool:
-    service_status = subprocess.run([
-        "systemctl", "--user",
-        "is-active", "camel"
-    ], capture_output=True).stdout.decode("utf-8").strip()
+    service_status = (
+        subprocess.run(
+            ["systemctl", "--user", "is-active", "camel"], capture_output=True
+        )
+        .stdout.decode("utf-8")
+        .strip()
+    )
 
     return service_status == "active"
 
+
 def get_service_pid() -> Union[int, None]:
     if service_is_alive():
-        pid = subprocess.check_output([
-            "systemctl", "--user",
-            "show",
-            "--property", "MainPID",
-            "--value", "camel"
-        ]).decode("utf-8").strip()
+        pid = (
+            subprocess.check_output(
+                [
+                    "systemctl",
+                    "--user",
+                    "show",
+                    "--property",
+                    "MainPID",
+                    "--value",
+                    "camel",
+                ]
+            )
+            .decode("utf-8")
+            .strip()
+        )
 
         return int(pid)
     else:
         ui.error(SERVICE_INACTIVE_ERROR_MSG)
         # TODO: or raise an OSError here?
         sys.exit(1)
+
 
 def get_models():
     """
@@ -59,12 +80,14 @@ def get_models():
     res = {
         repo.repo_id: {
             "repo_id": repo.repo_id,
-            "repo_path": repo.repo_path, 
+            "repo_path": repo.repo_path,
             "size_on_disk": repo.size_on_disk,
-        } 
-            for repo in scan_cache_dir().repos if repo.repo_type=="model"
+        }
+        for repo in scan_cache_dir().repos
+        if repo.repo_type == "model"
     }
     return res
+
 
 def get_service_laddr() -> Union[str, None]:
     if service_is_alive():
@@ -77,4 +100,3 @@ def get_service_laddr() -> Union[str, None]:
     else:
         ui.error(SERVICE_INACTIVE_ERROR_MSG)
         sys.exit(1)
-
