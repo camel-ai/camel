@@ -14,16 +14,18 @@
 
 import json
 import logging
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, List, Dict
 
-from redis.asyncio import Redis
 
-from camel.storages.cache_storages.base import BaseCacheStorage
+from camel.storages.key_value_storages import BaseKeyValueStorage
+
+if TYPE_CHECKING:
+    from redis.asyncio import Redis
 
 logger = logging.getLogger(__name__)
 
 
-class RedisStorage(BaseCacheStorage):
+class RedisStorage(BaseKeyValueStorage):
     r"""A concrete implementation of the :obj:`BaseCacheStorage` using Redis as
     the backend. This is suitable for distributed cache systems that require
     persistence and high availability.
@@ -31,12 +33,14 @@ class RedisStorage(BaseCacheStorage):
 
     def __init__(
             self,
+            sid: str,
             url: str = "redis://localhost:6379",
             **kwargs
     ) -> None:
         r"""Initializes the RedisStorage instance with the provided URL and options.
 
         Args:
+            sid (str): The ID for the storage instance to identify the record space.
             url (str): The URL for connecting to the Redis server.
             **kwargs: Additional keyword arguments for Redis client configuration.
 
@@ -52,9 +56,11 @@ class RedisStorage(BaseCacheStorage):
             )
             raise exc
 
-        self._client: aredis.Redis
+        self._client: Optional[aredis.Redis] = None
+        self._url = url
+        self._sid = sid
 
-        self._create_client(url, **kwargs)
+        self._create_client(**kwargs)
 
     async def __aenter__(self):
         return self
@@ -68,21 +74,19 @@ class RedisStorage(BaseCacheStorage):
 
     def _create_client(
             self,
-            url: str = "redis://localhost:6379",
             **kwargs
     ) -> None:
         r"""Creates the Redis client with the provided URL and options.
 
         Args:
-            url (str): The URL for connecting to the Redis server.
             **kwargs: Additional keyword arguments for Redis client configuration.
         """
         import redis.asyncio as aredis
 
-        self._client = aredis.from_url(url, **kwargs)
+        self._client = aredis.from_url(self._url, **kwargs)
 
     @property
-    def client(self) -> Redis:
+    def client(self) -> "Redis":
         r"""Returns the Redis client instance.
 
         Returns:
@@ -90,72 +94,43 @@ class RedisStorage(BaseCacheStorage):
         """
         return self._client
 
-    async def set_cache(self, key: str, value: Any, expire: Optional[int] = None) -> bool:
-        r"""Sets a cache entry with an optional expiration time.
+    async def save(self, records: List[Dict[str, Any]], expire: Optional[int] = None) -> None:
+        r"""Saves a batch of records to the key-value storage system.
 
         Args:
-            key (str): The key for the cache entry.
-            value (Any): The value to be stored in the cache.
+            records (List[Dict[str, Any]]): A list of dictionaries, where each
+                dictionary represents a unique record to be stored.
             expire (Optional[int]): The expiration time in seconds. If None,
                 the cache entry does not expire.
-
-        Returns:
-            bool: True if the entry was successfully set, False otherwise.
         """
         try:
-            value = json.dumps(value)
+            value = json.dumps(records)
             if expire:
-                await self.client.setex(key, expire, value)
+                await self.client.setex(self._sid, expire, value)
             else:
-                await self.client.set(key, value)
-            return True
+                await self.client.set(self._sid, value)
         except Exception as e:
-            logger.error(f"Error setting cache: {e}")
-            return False
+            logger.error(f"Error saving records: {e}")
 
-    async def get_cache(self, key: str) -> Optional[Any]:
-        r"""Retrieves a cache entry by its key.
-
-        Args:
-            key (str): The key for the cache entry.
+    async def load(self) -> List[Dict[str, Any]]:
+        r"""Loads all stored records from the key-value storage system.
 
         Returns:
-            Optional[Any]: The value of the cache entry if found, None otherwise.
+            List[Dict[str, Any]]: A list of dictionaries, where each dictionary
+                represents a stored record.
         """
         try:
-            value = await self.client.get(key)
+            value = await self.client.get(self._sid)
             if value:
                 return json.loads(value)
-            return None
+            return []
         except Exception as e:
-            logger.error(f"Error getting cache: {e}")
-            return None
+            logger.error(f"Error loading records: {e}")
+            return []
 
-    async def delete_cache(self, key: str) -> bool:
-        r"""Deletes a cache entry by its key.
-
-        Args:
-            key (str): The key for the cache entry to be deleted.
-
-        Returns:
-            bool: True if the entry was successfully deleted, False otherwise.
-        """
+    async def clear(self) -> None:
+        r"""Removes all records from the key-value storage system."""
         try:
-            await self.client.delete(key)
-            return True
+            await self.client.delete(self._sid)
         except Exception as e:
-            logger.error(f"Error deleting cache: {e}")
-            return False
-
-    async def clear_cache(self) -> bool:
-        r"""Removes all entries from the cache storage.
-
-        Returns:
-            bool: True if the cache was successfully cleared, False otherwise.
-        """
-        try:
-            await self.client.flushdb()
-            return True
-        except Exception as e:
-            logger.error(f"Error clearing cache: {e}")
-            return False
+            logger.error(f"Error clearing records: {e}")

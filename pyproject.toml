@@ -39,7 +39,6 @@ anthropic = "^0.28.0"
 docstring-parser = "^0.15"
 pydantic = ">=1.9,<3"
 curl_cffi = "0.6.2"
-redis = "^5.0.6"
 
 # model-platforms
 litellm = { version = "^1.38.1", optional = true }
@@ -85,6 +84,9 @@ pymilvus = { version = "^2.4.0", optional = true }
 
 # graph-storages
 neo4j = { version = "^5.18.0", optional = true }
+
+# key-value-storages
+redis = { version = "^5.0.6", optional = true }
 
 # retrievers
 rank-bm25 = { version = "^0.2.2", optional = true }
@@ -149,6 +151,10 @@ graph-storages = [
     "neo4j",
 ]
 
+kv-stroages = [
+    "redis",
+]
+
 retrievers = [
     "rank-bm25",
     "cohere",
@@ -198,6 +204,8 @@ all = [
     "rank-bm25",
     # model platforms
     "litellm",
+    # kv-storages
+    "redis",
 ]
 
 [tool.poetry.group.dev]
