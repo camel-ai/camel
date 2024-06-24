@@ -211,8 +211,7 @@ class ModelType(Enum):
             )
         elif self is ModelType.GLM_4_OPEN_SOURCE:
             return (
-                'glm-4' in model_name.lower()
-                or "glm4" in model_name.lower()
+                'glm-4' in model_name.lower() or "glm4" in model_name.lower()
             )
         else:
             return self.value in model_name.lower()

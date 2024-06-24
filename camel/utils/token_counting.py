@@ -181,9 +181,7 @@ class OpenSourceTokenCounter(BaseTokenCounter):
         """
         if self.model_type == ModelType.QWEN_2:
             text = self.tokenizer.apply_chat_template(
-                messages,
-                tokenize=False,
-                add_generation_prompt=True
+                messages, tokenize=False, add_generation_prompt=True
             )
             input_ids = self.tokenizer([text], return_tensors="pt").input_ids
         elif self.model_type == ModelType.GLM_4_OPEN_SOURCE:
@@ -192,7 +190,7 @@ class OpenSourceTokenCounter(BaseTokenCounter):
                 add_generation_prompt=True,
                 tokenize=True,
                 return_tensors="pt",
-                return_dict=True
+                return_dict=True,
             )
             input_ids = inputs["input_ids"]
         else:
