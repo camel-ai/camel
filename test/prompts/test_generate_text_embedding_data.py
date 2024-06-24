@@ -11,16 +11,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from camel.embeddings import OpenAIEmbedding
+from camel.prompts import (
+    GenerateTextEmbeddingDataPromptTemplateDict,
+    TextPrompt,
+)
+from camel.types import RoleType
 
 
-def test_openai_embedding():
-    embedding_model = OpenAIEmbedding()
-    text = "test 1."
-    vector = embedding_model.embed(text)
-    assert len(vector) == embedding_model.get_output_dim()
+def test_generate_text_embedding_data_prompt_template_dict():
+    template_dict = GenerateTextEmbeddingDataPromptTemplateDict()
 
-    embedding_model = OpenAIEmbedding(dimensions=256)
-    text = "test 2"
-    vector = embedding_model.embed(text)
-    assert len(vector) == embedding_model.get_output_dim() == 256
+    # Test if the prompts are of the correct type
+    assert isinstance(template_dict.ASSISTANT_PROMPT, TextPrompt)
+
+    # Test if the prompts are correctly added to the dictionary
+    assert template_dict[RoleType.ASSISTANT] == template_dict.ASSISTANT_PROMPT

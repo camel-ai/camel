@@ -17,7 +17,6 @@ import os
 from typing import Any, Dict
 
 from camel.agents import ChatAgent, TaskSpecifyAgent
-from camel.configs import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
 from camel.messages import BaseMessage
 from camel.types import RoleType, TaskType
@@ -66,7 +65,6 @@ def generate_data(
 
     task_specify_agent = TaskSpecifyAgent(
         task_type=TaskType.CODE,
-        model_config=ChatGPTConfig(temperature=1.4),
     )
     specified_task_prompt = task_specify_agent.run(
         original_task_prompt,
