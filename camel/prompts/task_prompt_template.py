@@ -24,6 +24,9 @@ from camel.prompts.descripte_video_prompt import (
 from camel.prompts.evaluation import (
     EvaluationPromptTemplateDict,
 )
+from camel.prompts.generate_text_embedding_data import (
+    GenerateTextEmbeddingDataPromptTemplateDict,
+)
 from camel.prompts.misalignment import MisalignmentPromptTemplateDict
 from camel.prompts.object_recognition import (
     ObjectRecognitionPromptTemplateDict,
@@ -60,6 +63,7 @@ class TaskPromptTemplateDict(Dict[Any, TextPromptDict]):
                 TaskType.SOLUTION_EXTRACTION: SolutionExtractionPromptTemplateDict(),  # noqa: E501
                 TaskType.ROLE_DESCRIPTION: RoleDescriptionPromptTemplateDict(),
                 TaskType.OBJECT_RECOGNITION: ObjectRecognitionPromptTemplateDict(),  # noqa: E501
-                TaskType.DESCRIPTE_VIDEO: DescriptionVideoPromptTemplateDict(),
+                TaskType.GENERATE_TEXT_EMBEDDING_DATA: GenerateTextEmbeddingDataPromptTemplateDict(),  # noqa: E501
+                TaskType.VIDEO_DESCRIPTION: DescriptionVideoPromptTemplateDict(),  # noqa: E501
             }
         )

@@ -11,22 +11,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-
-from camel.agents import ChatAgent
-from camel.bots.discord_bot import DiscordBot
-from camel.messages import BaseMessage
-
-
-def main(model=None) -> None:
-    assistant_sys_msg = BaseMessage.make_assistant_message(
-        role_name="Assistant",
-        content="You are a helpful assistant.",
-    )
-
-    agent = ChatAgent(assistant_sys_msg, model_type=model)
-    bot = DiscordBot(agent)
-    bot.run()
+from camel.prompts import (
+    GenerateTextEmbeddingDataPromptTemplateDict,
+    TextPrompt,
+)
+from camel.types import RoleType
 
 
-if __name__ == "__main__":
-    main()
+def test_generate_text_embedding_data_prompt_template_dict():
+    template_dict = GenerateTextEmbeddingDataPromptTemplateDict()
+
+    # Test if the prompts are of the correct type
+    assert isinstance(template_dict.ASSISTANT_PROMPT, TextPrompt)
+
+    # Test if the prompts are correctly added to the dictionary
+    assert template_dict[RoleType.ASSISTANT] == template_dict.ASSISTANT_PROMPT

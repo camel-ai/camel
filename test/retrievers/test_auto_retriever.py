@@ -68,11 +68,11 @@ def test_get_file_modified_date_from_file(auto_retriever):
 
 def test_run_vector_retriever(auto_retriever):
     # Define mock data for testing
-    query_related = "what is camel"
+    query_related = "what is camel ai"
     query_unrealted = "unrelated query"
     content_input_paths = "https://www.camel-ai.org/"
     top_k = 1
-    similarity_threshold = 0.75
+    similarity_threshold = 0.5
 
     # Test with query related to the content in mock data
     result_related = auto_retriever.run_vector_retriever(

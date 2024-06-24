@@ -31,6 +31,7 @@ from camel.utils import AnthropicTokenCounter
         ModelType.CLAUDE_3_OPUS,
         ModelType.CLAUDE_3_SONNET,
         ModelType.CLAUDE_3_HAIKU,
+        ModelType.CLAUDE_3_5_SONNET,
     ],
 )
 def test_anthropic_model(model_type):
