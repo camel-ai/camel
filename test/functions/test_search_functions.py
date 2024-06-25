@@ -17,12 +17,7 @@ from unittest.mock import MagicMock, patch
 import requests
 import wikipedia
 
-from camel.toolkits.search_functions import (
-    query_wolfram_alpha,
-    search_duckduckgo,
-    search_google,
-    search_wiki,
-)
+from camel.toolkits import SearchToolkit
 
 
 def test_search_wiki_normal():
@@ -32,11 +27,13 @@ def test_search_wiki_normal():
         "recognized and classified in 1892."
     )
 
-    assert search_wiki("Erygia sigillata") == expected_output
+    assert SearchToolkit().search_wiki("Erygia sigillata") == expected_output
 
 
 def test_search_wiki_not_found():
-    search_output = search_wiki("South Africa Women Football Team")
+    search_output = SearchToolkit().search_wiki(
+        "South Africa Women Football Team"
+    )
     assert search_output.startswith(
         "There is no page in Wikipedia corresponding to entity South Africa "
         "Women Football Team, please specify another word to describe the "
@@ -48,7 +45,7 @@ def test_search_wiki_with_ambiguity():
     expected_output = wikipedia.summary(
         "Google", sentences=5, auto_suggest=False
     )
-    assert search_wiki("Google LLC") == expected_output
+    assert SearchToolkit().search_wiki("Google LLC") == expected_output
 
 
 def test_google_api():
@@ -80,9 +77,9 @@ def test_duckduckgo_api():
 
 def test_web_search():
     query = "What big things are happening in 2023?"
-    answer = search_google(query)
+    answer = SearchToolkit().search_google(query)
     assert answer is not None
-    answer = search_duckduckgo(query)
+    answer = SearchToolkit().search_duckduckgo(query)
     assert answer is not None
 
 
@@ -125,7 +122,9 @@ def test_query_wolfram_alpha(mock_get, mock_client):
     mock_instance.query.return_value = mock_res
     mock_client.return_value = mock_instance
 
-    result = query_wolfram_alpha("calculate limit of sinx^2/x", True)
+    result = SearchToolkit().query_wolfram_alpha(
+        "calculate limit of sinx^2/x", True
+    )
     expected_output = (
         "Assumption:\n"
         "lim_(x->0) (sin^2(x))/x = 0\n\n"

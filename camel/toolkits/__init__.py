@@ -19,19 +19,14 @@ from .openai_function import (
 )
 from .open_api_specs.security_config import openapi_security_config
 
-from .google_maps_function import MAP_FUNCS
-from .math_functions import MATH_FUNCS
-from .open_api_function import OPENAPI_FUNCS
-from .retrieval_functions import RETRIEVAL_FUNCS
-from .search_functions import SEARCH_FUNCS
-from .twitter_function import TWITTER_FUNCS
-from .weather_functions import WEATHER_FUNCS
-from .slack_functions import SLACK_FUNCS
-
-from .open_api_function import (
-    apinames_filepaths_to_funs_schemas,
-    generate_apinames_filepaths,
-)
+from .google_maps_toolkit import MAP_FUNCS, GoogleMapsToolkit
+from .math_toolkit import MATH_FUNCS, MathToolkit
+from .open_api_toolkit import OPENAPI_FUNCS, OpenAPIToolkit
+from .retrieval_toolkit import RETRIEVAL_FUNCS, RetrievalToolkit
+from .search_toolkit import SEARCH_FUNCS, SearchToolkit
+from .twitter_toolkit import TWITTER_FUNCS, TwitterToolkit
+from .weather_toolkit import WEATHER_FUNCS, WeatherToolkit
+from .slack_toolkit import SLACK_FUNCS, SlackToolkit
 
 from .base import BaseToolkit
 from .github_toolkit import GithubToolkit
@@ -41,10 +36,8 @@ __all__ = [
     'get_openai_function_schema',
     'get_openai_tool_schema',
     'openapi_security_config',
-    'apinames_filepaths_to_funs_schemas',
-    'generate_apinames_filepaths',
-    'MAP_FUNCS',
     'MATH_FUNCS',
+    'MAP_FUNCS',
     'OPENAPI_FUNCS',
     'RETRIEVAL_FUNCS',
     'SEARCH_FUNCS',
@@ -53,4 +46,12 @@ __all__ = [
     'SLACK_FUNCS',
     'BaseToolkit',
     'GithubToolkit',
+    'MathToolkit',
+    'GoogleMapsToolkit',
+    'SearchToolkit',
+    'SlackToolkit',
+    'TwitterToolkit',
+    'WeatherToolkit',
+    'RetrievalToolkit',
+    'OpenAPIToolkit',
 ]

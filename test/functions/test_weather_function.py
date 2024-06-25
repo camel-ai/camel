@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from camel.toolkits.weather_functions import get_weather_data
+from camel.toolkits import WeatherToolkit
 
 
 @pytest.fixture(scope="module")
@@ -37,7 +37,7 @@ def test_weather(api_key):
         'fahrenheit': (-148, 140),
     }
     for temp_units, (temp_min, temp_max) in temp_units_options.items():
-        report = get_weather_data(
+        report = WeatherToolkit().get_weather_data(
             city, temp_units, 'meters_sec', 'meters', 'iso'
         )
         # Parse temperature
@@ -63,7 +63,9 @@ def test_weather(api_key):
         'beaufort': (0, 12),
     }
     for wind_units, (wind_min, wind_max) in wind_units_options.items():
-        report = get_weather_data(city, 'celsius', wind_units, 'meters', 'iso')
+        report = WeatherToolkit().get_weather_data(
+            city, 'celsius', wind_units, 'meters', 'iso'
+        )
         # Parse wind speed
         pattern = re.compile(rf"Wind: (-?\d+\.?\d*) {wind_units} at")
         match = pattern.search(report)
@@ -81,7 +83,7 @@ def test_weather(api_key):
     visibility_units_options = {'meters': (0, 400000), 'miles': (0, 250)}
     for visibility_units, visibility_range in visibility_units_options.items():
         visibility_min, visibility_max = visibility_range
-        report = get_weather_data(
+        report = WeatherToolkit().get_weather_data(
             city, 'celsius', 'meters_sec', visibility_units, 'iso'
         )
         # Parse visibility
@@ -103,7 +105,7 @@ def test_weather(api_key):
     # Test each time_units option
     time_units_options = ['unix', 'iso', 'date']
     for time_units in time_units_options:
-        report = get_weather_data(
+        report = WeatherToolkit().get_weather_data(
             city, 'celsius', 'meters_sec', 'meters', time_units
         )
         # Regex to extract sunrise and sunset times based on time_units
