@@ -64,9 +64,7 @@ def retrieve_tools(
         return []
 
     # Check not all descriptions are None
-    if not any(
-        func.func.__doc__ is not None for func in tools
-    ):
+    if not any(func.func.__doc__ is not None for func in tools):
         print("Warning: All docstrings are None")
 
     # Check if sim_thres is between 0 and 1
