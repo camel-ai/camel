@@ -49,6 +49,7 @@ class ModelType(Enum):
     CLAUDE_3_OPUS = "claude-3-opus-20240229"
     CLAUDE_3_SONNET = "claude-3-sonnet-20240229"
     CLAUDE_3_HAIKU = "claude-3-haiku-20240307"
+    CLAUDE_3_5_SONNET = "claude-3-5-sonnet-20240620"
 
     # Nvidia models
     NEMOTRON_4_REWARD = "nvidia/nemotron-4-340b-reward"
@@ -104,6 +105,7 @@ class ModelType(Enum):
             ModelType.CLAUDE_3_OPUS,
             ModelType.CLAUDE_3_SONNET,
             ModelType.CLAUDE_3_HAIKU,
+            ModelType.CLAUDE_3_5_SONNET,
         }
 
     @property
@@ -155,6 +157,7 @@ class ModelType(Enum):
             ModelType.CLAUDE_3_OPUS,
             ModelType.CLAUDE_3_SONNET,
             ModelType.CLAUDE_3_HAIKU,
+            ModelType.CLAUDE_3_5_SONNET,
         }:
             return 200_000
         elif self is ModelType.NEMOTRON_4_REWARD:
@@ -186,35 +189,27 @@ class ModelType(Enum):
 
 
 class EmbeddingModelType(Enum):
-    ADA_2 = "text-embedding-ada-002"
-    ADA_1 = "text-embedding-ada-001"
-    BABBAGE_1 = "text-embedding-babbage-001"
-    CURIE_1 = "text-embedding-curie-001"
-    DAVINCI_1 = "text-embedding-davinci-001"
+    TEXT_EMBEDDING_ADA_2 = "text-embedding-ada-002"
+    TEXT_EMBEDDING_3_SMALL = "text-embedding-3-small"
+    TEXT_EMBEDDING_3_LARGE = "text-embedding-3-large"
 
     @property
     def is_openai(self) -> bool:
         r"""Returns whether this type of models is an OpenAI-released model."""
         return self in {
-            EmbeddingModelType.ADA_2,
-            EmbeddingModelType.ADA_1,
-            EmbeddingModelType.BABBAGE_1,
-            EmbeddingModelType.CURIE_1,
-            EmbeddingModelType.DAVINCI_1,
+            EmbeddingModelType.TEXT_EMBEDDING_ADA_2,
+            EmbeddingModelType.TEXT_EMBEDDING_3_SMALL,
+            EmbeddingModelType.TEXT_EMBEDDING_3_LARGE,
         }
 
     @property
     def output_dim(self) -> int:
-        if self is EmbeddingModelType.ADA_2:
+        if self is EmbeddingModelType.TEXT_EMBEDDING_ADA_2:
             return 1536
-        elif self is EmbeddingModelType.ADA_1:
-            return 1024
-        elif self is EmbeddingModelType.BABBAGE_1:
-            return 2048
-        elif self is EmbeddingModelType.CURIE_1:
-            return 4096
-        elif self is EmbeddingModelType.DAVINCI_1:
-            return 12288
+        elif self is EmbeddingModelType.TEXT_EMBEDDING_3_SMALL:
+            return 1536
+        elif self is EmbeddingModelType.TEXT_EMBEDDING_3_LARGE:
+            return 3072
         else:
             raise ValueError(f"Unknown model type {self}.")
 
