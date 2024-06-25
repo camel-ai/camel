@@ -21,7 +21,7 @@ from camel.types import ModelPlatformType, ModelType
 model = ModelFactory.create(
     model_platform=ModelPlatformType.ZHIPU,
     model_type=ModelType.GLM_4,
-    model_config=ChatGPTConfig(temperature=0.2),
+    model_config_dict=ChatGPTConfig(temperature=0.2).__dict__,
 )
 
 # Define system message

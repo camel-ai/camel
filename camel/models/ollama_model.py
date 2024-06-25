@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
 
-from camel.configs import OPENAI_API_PARAMS
+from camel.configs import OLLAMA_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
 from camel.utils import BaseTokenCounter, OpenAITokenCounter
@@ -24,9 +24,6 @@ from camel.utils import BaseTokenCounter, OpenAITokenCounter
 
 class OllamaModel:
     r"""Ollama service interface."""
-
-    # NOTE: Current `ModelType and `TokenCounter` desigen is not suitable,
-    # stream mode is not supported
 
     def __init__(
         self,
@@ -74,14 +71,14 @@ class OllamaModel:
 
     def check_model_config(self):
         r"""Check whether the model configuration contains any
-        unexpected arguments to OpenAI API.
+        unexpected arguments to Ollama API.
 
         Raises:
             ValueError: If the model configuration dictionary contains any
                 unexpected arguments to OpenAI API.
         """
         for param in self.model_config_dict:
-            if param not in OPENAI_API_PARAMS:
+            if param not in OLLAMA_API_PARAMS:
                 raise ValueError(
                     f"Unexpected argument `{param}` is "
                     "input into OpenAI model backend."

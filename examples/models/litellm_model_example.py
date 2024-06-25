@@ -11,99 +11,57 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from colorama import Fore
+from camel.agents import ChatAgent
+from camel.configs import LiteLLMConfig
+from camel.messages import BaseMessage
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType
 
-from camel.models.litellm_model import LiteLLMModel
-from camel.utils import print_text_animated
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.LITELLM,
+    model_type="gpt-4o",
+    model_config_dict=LiteLLMConfig(temperature=0.2).__dict__,
+)
 
-# Define model type and configuration
-model_type = "gpt-3.5-turbo"
-model_config_dict = {
-    "temperature": 0.7,
-    "max_tokens": 500,
-    "stream": False,  # Set to True to enable stream mode
-}
+# Define system message
+sys_msg = BaseMessage.make_assistant_message(
+    role_name="Assistant",
+    content="You are a helpful assistant.",
+)
 
-# Create an instance of LiteLLMModel
-model = LiteLLMModel(model_type, model_config_dict)
+# Set agent
+camel_agent = ChatAgent(system_message=sys_msg, model=model, token_limit=500)
 
-# Define test messages
-messages = [
-    {"content": "You are a helpful assistant.", "role": "system"},
-    {
-        "content": "Can you explain what is the LiteLLMModel",
-        "role": "user",
-    },
-]
+user_msg = BaseMessage.make_user_message(
+    role_name="User",
+    content="""CAMEL AI integrate LiteLLM into their multi agent framework,
+    write a short post to announce it!""",
+)
 
-# Run the model
-response = model.run(messages)
-
-# Print the response
-print(response)
-
-# Print the cost
-cost = model.token_counter.calculate_cost_from_response(response)
-print(f"The cost is ${cost}")
-
-output_messages = ""
-
-for choice in response.choices:
-    chat_message = choice.message.content or ""
-    output_messages += chat_message
-
-print(model.token_counter.count_tokens_from_messages(messages))
-
-messages.append({"content": output_messages, "role": "assistant"})
-
-# Print the number of token consumed
-token_consumed = model.token_counter.count_tokens_from_messages(messages)
-print(f"The token consumed is {token_consumed}")
-
-# Print the response
-print_text_animated(Fore.GREEN + "AI Assistant:\n\n" f"{output_messages}\n")
-"""
+# Get response information
+response = camel_agent.step(user_msg)
+print(response.msgs[0].content)
+'''
 ===============================================================================
-ModelResponse(id='chatcmpl-9ZIkZBUVvRPU80osTkzoPxrLINB7S', choices=[Choices
-(finish_reason='stop', index=0, message=Message(content='The `LiteLLMModel` is
-a type of language model developed by OpenAI, specifically designed to be
-lightweight and efficient for tasks such as text generation and natural
-language processing. It is a smaller and simplified version of the larger GPT
-(Generative Pre-trained Transformer) models, making it more accessible for
-applications with limited computational resources. The LiteLLMModel is trained
-on a large corpus of text data and can generate coherent and contextually
-relevant text based on the input it receives. Its compact size makes it
-suitable for deployment on devices with constraints on memory and processing
-power.', role='assistant'))], created=1718200583, model='gpt-3.5-turbo-0125',
-object='chat.completion', system_fingerprint=None, usage=Usage
-(completion_tokens=116, prompt_tokens=27, total_tokens=143))
-===============================================================================
-"""
+🚀 Exciting News from CAMEL AI! 🚀
 
-"""
-===============================================================================
-The cost is $0.0001875
-===============================================================================
-"""
+We are thrilled to announce the integration of LiteLLM into our multi-agent 
+framework! 🎉
 
-"""
-===============================================================================
-The token consumed is 147
-===============================================================================
-"""
+At CAMEL AI, we are committed to pushing the boundaries of artificial 
+intelligence and enhancing the capabilities of our multi-agent systems. With 
+LiteLLM, we are taking a significant leap forward in delivering more 
+efficient, scalable, and intelligent solutions.
 
-"""
-===============================================================================
-AI Assistant:
+LiteLLM, known for its lightweight and high-performance language models, will 
+empower our agents to process and understand natural language with 
+unprecedented speed and accuracy. This integration will not only boost the 
+performance of our AI agents but also open up new possibilities for innovative 
+applications across various industries.
 
-The `LiteLLMModel` is a type of language model developed by OpenAI,
-specifically designed to be lightweight and efficient for tasks such as text
-generation and natural language processing. It is a smaller and simplified
-version of the larger GPT (Generative Pre-trained Transformer) models, making
-it more accessible for applications with limited computational resources. The
-LiteLLMModel is trained on a large corpus of text data and can generate
-coherent and contextually relevant text based on the input it receives. Its
-compact size makes it suitable for deployment on devices with constraints on
-memory and processing power.
+Stay tuned for more updates as we continue to innovate and bring you the best 
+in AI technology. Thank you for your continued support!
+
+#CAMELAI #LiteLLM #AI #Innovation #MultiAgentSystems #TechNews
 ===============================================================================
-"""
+'''

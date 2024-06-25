@@ -11,24 +11,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from camel.configs import LITELLM_API_PARAMS
 from camel.messages import OpenAIMessage
+from camel.types import ChatCompletion
 from camel.utils import LiteLLMTokenCounter
-
-if TYPE_CHECKING:
-    from litellm.utils import CustomStreamWrapper, ModelResponse
 
 
 class LiteLLMModel:
     r"""Constructor for LiteLLM backend with OpenAI compatibility."""
 
-    # NOTE: Currently "stream": True is not supported with LiteLLM due to the
-    # limitation of the current camel design.
+    # NOTE: Currently stream mode is not supported.
 
     def __init__(
-        self, model_type: str, model_config_dict: Dict[str, Any]
+        self,
+        model_type: str,
+        model_config_dict: Dict[str, Any],
+        api_key: Optional[str] = None,
+        url: Optional[str] = None,
     ) -> None:
         r"""Constructor for LiteLLM backend.
 
@@ -37,12 +38,47 @@ class LiteLLMModel:
                 such as GPT-3.5-turbo, Claude-2, etc.
             model_config_dict (Dict[str, Any]): A dictionary of parameters for
                 the model configuration.
+            api_key (Optional[str]): The API key for authenticating with the
+                model service. (default: :obj:`None`)
+            url (Optional[str]): The url to the model service.
         """
         self.model_type = model_type
         self.model_config_dict = model_config_dict
         self._client = None
         self._token_counter: Optional[LiteLLMTokenCounter] = None
         self.check_model_config()
+        self._url = url
+        self._api_key = api_key
+
+    def _convert_response_from_litellm_to_openai(
+        self, response
+    ) -> ChatCompletion:
+        r"""Converts a response from the LiteLLM format to the OpenAI format.
+
+        Parameters:
+            response (LiteLLMResponse): The response object from LiteLLM.
+
+        Returns:
+            ChatCompletion: The response object in OpenAI's format.
+        """
+        return ChatCompletion.construct(
+            id=response.id,
+            choices=[
+                {
+                    "index": response.choices[0].index,
+                    "message": {
+                        "role": response.choices[0].message.role,
+                        "content": response.choices[0].message.content,
+                    },
+                    "finish_reason": response.choices[0].finish_reason,
+                }
+            ],
+            created=response.created,
+            model=response.model,
+            object=response.object,
+            system_fingerprint=response.system_fingerprint,
+            usage=response.usage,
+        )
 
     @property
     def client(self):
@@ -67,7 +103,7 @@ class LiteLLMModel:
     def run(
         self,
         messages: List[OpenAIMessage],
-    ) -> Union['ModelResponse', 'CustomStreamWrapper']:
+    ) -> ChatCompletion:
         r"""Runs inference of LiteLLM chat completion.
 
         Args:
@@ -75,15 +111,16 @@ class LiteLLMModel:
                 in OpenAI format.
 
         Returns:
-            Union[ModelResponse, CustomStreamWrapper]:
-                `ModelResponse` in the non-stream mode, or
-                `CustomStreamWrapper` in the stream mode.
+            ChatCompletion
         """
         response = self.client(
+            api_key=self._api_key,
+            base_url=self._url,
             model=self.model_type,
             messages=messages,
             **self.model_config_dict,
         )
+        response = self._convert_response_from_litellm_to_openai(response)
         return response
 
     def check_model_config(self):
@@ -100,13 +137,3 @@ class LiteLLMModel:
                     f"Unexpected argument `{param}` is "
                     "input into LiteLLM model backend."
                 )
-
-    @property
-    def stream(self) -> bool:
-        r"""Returns whether the model is in stream mode, which sends partial
-        results each time.
-
-        Returns:
-            bool: Whether the model is in stream mode.
-        """
-        return self.model_config_dict.get('stream', False)

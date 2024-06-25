@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
 
-from camel.configs import OPENAI_API_PARAMS
+from camel.configs import ZHIPUAI_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
@@ -107,7 +107,7 @@ class ZhipuAIModel(BaseModelBackend):
                 unexpected arguments to OpenAI API.
         """
         for param in self.model_config_dict:
-            if param not in OPENAI_API_PARAMS:
+            if param not in ZHIPUAI_API_PARAMS:
                 raise ValueError(
                     f"Unexpected argument `{param}` is "
                     "input into OpenAI model backend."
