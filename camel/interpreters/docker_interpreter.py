@@ -21,7 +21,6 @@ from typing import Any, ClassVar, Dict, List
 
 import docker
 from colorama import Fore
-from docker import errors
 
 from camel.interpreters.base import BaseInterpreter
 from camel.interpreters.interpreter_error import InterpreterError
@@ -57,10 +56,10 @@ class DockerInterpreter(BaseInterpreter):
     }
 
     def __init__(
-            self,
-            require_confirm: bool = True,
-            print_stdout: bool = False,
-            print_stderr: bool = True,
+        self,
+        require_confirm: bool = True,
+        print_stdout: bool = False,
+        print_stderr: bool = True,
     ) -> None:
         """Initializes a DockerInterpreter class with one docker container
         attached to it. All the code execution will be done in this container.
@@ -89,9 +88,7 @@ class DockerInterpreter(BaseInterpreter):
     def __del__(self):
         self._container.remove(force=True)
 
-    def _create_file_in_container(
-            self, content: str
-    ) -> Path:
+    def _create_file_in_container(self, content: str) -> Path:
         # get a random name for the file
         filename = str(uuid.uuid4())
         # create a tar in memory
@@ -106,9 +103,9 @@ class DockerInterpreter(BaseInterpreter):
         return Path(f"/tmp/{filename}")
 
     def _run_file_in_container(
-            self,
-            file: Path,
-            code_type: str,
+        self,
+        file: Path,
+        code_type: str,
     ) -> str:
         code_type = self._check_code_type(code_type)
         commands = shlex.split(
@@ -136,9 +133,9 @@ class DockerInterpreter(BaseInterpreter):
         return exec_result
 
     def run(
-            self,
-            code: str,
-            code_type: str,
+        self,
+        code: str,
+        code_type: str,
     ) -> str:
         r"""Executes the given code in the conatiner attached to the
         interpreter, and captures the stdout and stderr streams.
@@ -176,9 +173,7 @@ class DockerInterpreter(BaseInterpreter):
 
         try:
             temp_file_path = self._create_file_in_container(code)
-            result = self._run_file_in_container(
-                temp_file_path, code_type
-            )
+            result = self._run_file_in_container(temp_file_path, code_type)
         except docker.errors.APIError as e:
             raise InterpreterError(
                 f"Execution halted due to docker API error: {e.explanation}. "
