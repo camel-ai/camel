@@ -17,7 +17,6 @@ import os
 from typing import Any, Dict
 
 from camel.agents import ChatAgent, TaskSpecifyAgent
-from camel.configs import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
 from camel.messages import BaseMessage
 from camel.types import RoleType, TaskType
@@ -66,7 +65,6 @@ def generate_data(
 
     task_specify_agent = TaskSpecifyAgent(
         task_type=TaskType.CODE,
-        model_config=ChatGPTConfig(temperature=1.4),
     )
     specified_task_prompt = task_specify_agent.run(
         original_task_prompt,
@@ -195,14 +193,18 @@ def generate_data(
             ):
                 repeat_word_counter += 1
                 if repeat_word_counter == repeat_word_threshold:
-                    message_dict['termination_reason'] = "repeat_word_threshold"
+                    message_dict['termination_reason'] = (
+                        "repeat_word_threshold"
+                    )
                     break
             else:
                 repeat_word_counter = 0
 
         # Save user message
         message_counter += 1
-        message_dict[f"message_{message_counter}"] = user_response.msg.to_dict()
+        message_dict[f"message_{message_counter}"] = (
+            user_response.msg.to_dict()
+        )
 
         # Condition 5: End token observed
         if "<CAMEL_TASK_DONE>" in user_response.msg.content:
@@ -222,7 +224,9 @@ def generate_data(
     if message_dict["num_messages"] == max_num_messages:
         message_dict["termination_reason"] = "max_num_messages"
 
-    with open(f"./camel_data/code/{message_dict['id']}.json", "w") as json_file:
+    with open(
+        f"./camel_data/code/{message_dict['id']}.json", "w"
+    ) as json_file:
         json.dump(message_dict, json_file)
 
 

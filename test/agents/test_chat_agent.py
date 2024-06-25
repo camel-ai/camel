@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import asyncio
 from io import BytesIO
 from typing import List
 from unittest.mock import Mock
@@ -25,12 +26,15 @@ from camel.agents import ChatAgent
 from camel.agents.chat_agent import FunctionCallingRecord
 from camel.configs import ChatGPTConfig
 from camel.functions import MATH_FUNCS
+from camel.functions.openai_function import OpenAIFunction
 from camel.generators import SystemMessageGenerator
 from camel.memories import MemoryRecord
 from camel.messages import BaseMessage
+from camel.models import ModelFactory
 from camel.terminators import ResponseWordsTerminator
 from camel.types import (
     ChatCompletion,
+    ModelPlatformType,
     ModelType,
     OpenAIBackendRole,
     RoleType,
@@ -40,28 +44,29 @@ from camel.types import (
 parametrize = pytest.mark.parametrize(
     'model',
     [
-        ModelType.STUB,
-        pytest.param(ModelType.GPT_3_5_TURBO, marks=pytest.mark.model_backend),
-        pytest.param(ModelType.GPT_4, marks=pytest.mark.model_backend),
+        ModelFactory.create(
+            model_platform=ModelPlatformType.OPENAI,
+            model_type=ModelType.GPT_3_5_TURBO,
+            model_config_dict=ChatGPTConfig().__dict__,
+        ),
+        pytest.param(None, marks=pytest.mark.model_backend),
     ],
 )
 
 
 @parametrize
-def test_chat_agent(model: ModelType):
-    model_config = ChatGPTConfig()
+def test_chat_agent(model):
+    model = model
     system_msg = SystemMessageGenerator(
         task_type=TaskType.AI_SOCIETY
     ).from_dict(
         dict(assistant_role="doctor"),
         role_tuple=("doctor", RoleType.ASSISTANT),
     )
-    assistant = ChatAgent(
-        system_msg, model_type=model, model_config=model_config
-    )
+    assistant = ChatAgent(system_msg, model=model)
 
     assert str(assistant) == (
-        "ChatAgent(doctor, " f"RoleType.ASSISTANT, {model!s})"
+        "ChatAgent(doctor, " f"RoleType.ASSISTANT, {ModelType.GPT_3_5_TURBO})"
     )
 
     assistant.reset()
@@ -119,7 +124,6 @@ def test_chat_agent_messages_window():
     )
     assistant = ChatAgent(
         system_message=system_msg,
-        model_type=ModelType.GPT_3_5_TURBO,
         message_window_size=2,
     )
 
@@ -153,7 +157,6 @@ def test_chat_agent_step_exceed_token_number():
     )
     assistant = ChatAgent(
         system_message=system_msg,
-        model_type=ModelType.GPT_3_5_TURBO,
         token_limit=1,
     )
 
@@ -173,13 +176,18 @@ def test_chat_agent_step_exceed_token_number():
 @pytest.mark.parametrize('n', [1, 2, 3])
 def test_chat_agent_multiple_return_messages(n):
     model_config = ChatGPTConfig(temperature=1.4, n=n)
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_3_5_TURBO,
+        model_config_dict=model_config.__dict__,
+    )
     system_msg = BaseMessage(
         "Assistant",
         RoleType.ASSISTANT,
         meta_dict=None,
         content="You are a helpful assistant.",
     )
-    assistant = ChatAgent(system_msg, model_config=model_config)
+    assistant = ChatAgent(system_msg, model=model)
     assistant.reset()
     user_msg = BaseMessage(
         role_name="User",
@@ -196,6 +204,11 @@ def test_chat_agent_multiple_return_messages(n):
 @pytest.mark.parametrize('n', [2])
 def test_chat_agent_multiple_return_message_error(n):
     model_config = ChatGPTConfig(temperature=1.4, n=n)
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_3_5_TURBO,
+        model_config_dict=model_config.__dict__,
+    )
     system_msg = BaseMessage(
         "Assistant",
         RoleType.ASSISTANT,
@@ -203,7 +216,7 @@ def test_chat_agent_multiple_return_message_error(n):
         content="You are a helpful assistant.",
     )
 
-    assistant = ChatAgent(system_msg, model_config=model_config)
+    assistant = ChatAgent(system_msg, model=model)
     assistant.reset()
 
     user_msg = BaseMessage(
@@ -239,7 +252,12 @@ def test_chat_agent_stream_output():
     )
 
     stream_model_config = ChatGPTConfig(temperature=0, n=2, stream=True)
-    stream_assistant = ChatAgent(system_msg, model_config=stream_model_config)
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_3_5_TURBO,
+        model_config_dict=stream_model_config.__dict__,
+    )
+    stream_assistant = ChatAgent(system_msg, model=model)
     stream_assistant.reset()
     stream_assistant_response = stream_assistant.step(user_msg)
 
@@ -263,9 +281,7 @@ def test_set_output_language():
         meta_dict=None,
         content="You are a help assistant.",
     )
-    agent = ChatAgent(
-        system_message=system_message, model_type=ModelType.GPT_3_5_TURBO
-    )
+    agent = ChatAgent(system_message=system_message)
     assert agent.output_language is None
 
     # Set the output language to "Arabic"
@@ -294,9 +310,7 @@ def test_set_multiple_output_language():
         meta_dict=None,
         content="You are a help assistant.",
     )
-    agent = ChatAgent(
-        system_message=system_message, model_type=ModelType.GPT_3_5_TURBO
-    )
+    agent = ChatAgent(system_message=system_message)
 
     # Verify that the length of the system message is kept constant even when
     # multiple set_output_language operations are called
@@ -321,9 +335,7 @@ def test_token_exceed_return():
         meta_dict=None,
         content="You are a help assistant.",
     )
-    agent = ChatAgent(
-        system_message=system_message, model_type=ModelType.GPT_3_5_TURBO
-    )
+    agent = ChatAgent(system_message=system_message)
 
     expect_info = {
         "id": None,
@@ -348,15 +360,15 @@ def test_function_enabled():
         content="You are a help assistant.",
     )
     model_config = ChatGPTConfig(tools=[*MATH_FUNCS])
-    agent_no_func = ChatAgent(
-        system_message=system_message,
-        model_config=model_config,
-        model_type=ModelType.GPT_4,
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_3_5_TURBO,
+        model_config_dict=model_config.__dict__,
     )
+    agent_no_func = ChatAgent(system_message=system_message)
     agent_with_funcs = ChatAgent(
         system_message=system_message,
-        model_config=model_config,
-        model_type=ModelType.GPT_4,
+        model=model,
         tools=MATH_FUNCS,
     )
 
@@ -365,7 +377,7 @@ def test_function_enabled():
 
 
 @pytest.mark.model_backend
-def test_tool_calling():
+def test_tool_calling_sync():
     system_message = BaseMessage(
         role_name="assistant",
         role_type=RoleType.ASSISTANT,
@@ -373,10 +385,14 @@ def test_tool_calling():
         content="You are a help assistant.",
     )
     model_config = ChatGPTConfig(tools=[*MATH_FUNCS])
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_3_5_TURBO,
+        model_config_dict=model_config.__dict__,
+    )
     agent = ChatAgent(
         system_message=system_message,
-        model_config=model_config,
-        model_type=ModelType.GPT_4,
+        model=model,
         tools=MATH_FUNCS,
     )
 
@@ -404,6 +420,65 @@ def test_tool_calling():
     assert tool_calls[0].result == 16
 
 
+@pytest.mark.model_backend
+@pytest.mark.asyncio
+async def test_tool_calling_async():
+    system_message = BaseMessage(
+        role_name="assistant",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
+        content="You are a help assistant.",
+    )
+
+    async def async_sleep(second: int) -> int:
+        r"""Async sleep function.
+
+        Args:
+            second (int): Number of seconds to sleep.
+
+        Returns:
+            integer: Number of seconds sleeped.
+        """
+        await asyncio.sleep(second)
+        return second
+
+    model_config = ChatGPTConfig(tools=[OpenAIFunction(async_sleep)])
+
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_3_5_TURBO,
+        model_config_dict=model_config.__dict__,
+    )
+
+    agent = ChatAgent(
+        system_message=system_message,
+        model=model,
+        tools=[OpenAIFunction(async_sleep)],
+    )
+
+    assert len(agent.func_dict) == 1
+
+    user_msg = BaseMessage(
+        role_name="User",
+        role_type=RoleType.USER,
+        meta_dict=dict(),
+        content="Call the async sleep which is specified in function list with"
+        " 1 second.",
+    )
+    agent_response = await agent.step_async(user_msg)
+
+    tool_calls: List[FunctionCallingRecord] = agent_response.info['tool_calls']
+    for called_func in tool_calls:
+        print(str(called_func))
+
+    assert len(tool_calls) > 0
+    assert str(tool_calls[0]).startswith("Function Execution")
+
+    assert tool_calls[0].func_name == "async_sleep"
+    assert tool_calls[0].args == {'second': 1}
+    assert tool_calls[0].result == 1
+
+
 def test_response_words_termination():
     system_message = BaseMessage(
         role_name="assistant",
@@ -412,11 +487,8 @@ def test_response_words_termination():
         content="You are a help assistant.",
     )
     response_terminator = ResponseWordsTerminator(words_dict=dict(goodbye=1))
-    model_config = ChatGPTConfig(temperature=0, n=2)
     agent = ChatAgent(
         system_message=system_message,
-        model_type=ModelType.GPT_3_5_TURBO,
-        model_config=model_config,
         response_terminators=[response_terminator],
     )
     user_msg = BaseMessage(
@@ -440,24 +512,30 @@ def test_chat_agent_vision():
         content="You are a help assistant.",
     )
     model_config = ChatGPTConfig(temperature=0, max_tokens=200, stop="")
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_4O,
+        model_config_dict=model_config.__dict__,
+    )
     agent = ChatAgent(
         system_message=system_message,
-        model_type=ModelType.GPT_4_TURBO,
-        model_config=model_config,
+        model=model,
     )
 
     # Create an all blue PNG image:
     image = Image.new("RGB", (100, 100), "blue")
+    image_list = []
     img_byte_arr = BytesIO()
     image.save(img_byte_arr, format='PNG')
     image = Image.open(img_byte_arr)
+    image_list.append(image)
 
     user_msg = BaseMessage(
         role_name="User",
         role_type=RoleType.USER,
         meta_dict=dict(),
         content="Is this image blue? Just answer yes or no.",
-        image=image,
+        image_list=image_list,
         image_detail="low",
     )
     # Mock the OpenAI model return value:

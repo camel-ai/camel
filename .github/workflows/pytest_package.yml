@@ -29,6 +29,8 @@ jobs:
         OPENWEATHERMAP_API_KEY: "${{ secrets.OPENWEATHERMAP_API_KEY }}"
         ANTHROPIC_API_KEY: "${{ secrets.ANTHROPIC_API_KEY }}"
         COHERE_API_KEY: "${{ secrets.COHERE_API_KEY }}"
+        NVIDIA_API_BASE_URL: "${{ secrets.NVIDIA_API_BASE_URL }}"
+        NVIDIA_API_KEY: "${{ secrets.NVIDIA_API_KEY }}"
       run: poetry run pytest --fast-test-mode test/
 
   pytest_package_llm_test:
@@ -47,6 +49,8 @@ jobs:
         OPENWEATHERMAP_API_KEY: "${{ secrets.OPENWEATHERMAP_API_KEY }}"
         ANTHROPIC_API_KEY: "${{ secrets.ANTHROPIC_API_KEY }}"
         COHERE_API_KEY: "${{ secrets.COHERE_API_KEY }}"
+        NVIDIA_API_BASE_URL: "${{ secrets.NVIDIA_API_BASE_URL }}"
+        NVIDIA_API_KEY: "${{ secrets.NVIDIA_API_KEY }}"
       run: poetry run pytest --llm-test-only test/
 
   pytest_package_very_slow_test:
@@ -65,4 +69,6 @@ jobs:
         OPENWEATHERMAP_API_KEY: "${{ secrets.OPENWEATHERMAP_API_KEY }}"
         ANTHROPIC_API_KEY: "${{ secrets.ANTHROPIC_API_KEY }}"
         COHERE_API_KEY: "${{ secrets.COHERE_API_KEY }}"
+        NVIDIA_API_BASE_URL: "${{ secrets.NVIDIA_API_BASE_URL }}"
+        NVIDIA_API_KEY: "${{ secrets.NVIDIA_API_KEY }}"
       run: poetry run pytest --very-slow-test-only test/

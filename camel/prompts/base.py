@@ -208,7 +208,8 @@ class TextPromptDict(Dict[Any, TextPrompt]):
     EMBODIMENT_PROMPT = TextPrompt(
         "System information :"
         + "\n".join(
-            f"{key}: {value}" for key, value in get_system_information().items()
+            f"{key}: {value}"
+            for key, value in get_system_information().items()
         )
         + "\n"
         + """You are the physical embodiment of the {role} who is working on solving a task: {task}.

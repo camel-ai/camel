@@ -24,7 +24,7 @@ import numpy as np
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.prompts import SolutionExtractionPromptTemplateDict
-from camel.types import ModelType, RoleType
+from camel.types import RoleType
 
 parser = argparse.ArgumentParser(
     description='Arguments for conversation summarization.'
@@ -135,7 +135,7 @@ def solution_extraction(
     )
 
     # We use GPT4 because it has a longer context length
-    agent = ChatAgent(assistant_sys_msg, model_type=ModelType.GPT_4)
+    agent = ChatAgent(assistant_sys_msg)
     agent.reset()
 
     prompt = "Here is the conversation:" + flattened_conversation
@@ -194,7 +194,9 @@ def main():
 
     # Formatting is needed to match the names of the original
     # generated JSON files xxx_xxx_xxx.json
-    file_names = [format_combination(combination) for combination in file_names]
+    file_names = [
+        format_combination(combination) for combination in file_names
+    ]
 
     # Check that all files exist
     for file_name in file_names:

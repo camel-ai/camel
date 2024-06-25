@@ -42,7 +42,7 @@ class AutoRetriever:
         vector_storage_local_path (Optional[str]): Local path for vector
             storage, if applicable.
         storage_type (Optional[StorageType]): The type of vector storage to
-            use. Defaults to `StorageType.MILVUS`.
+            use. Defaults to `StorageType.QDRANT`.
         embedding_model (Optional[BaseEmbedding]): Model used for embedding
             queries and documents. Defaults to `OpenAIEmbedding()`.
     """
@@ -54,7 +54,7 @@ class AutoRetriever:
         storage_type: Optional[StorageType] = None,
         embedding_model: Optional[BaseEmbedding] = None,
     ):
-        self.storage_type = storage_type or StorageType.MILVUS
+        self.storage_type = storage_type or StorageType.QDRANT
         self.embedding_model = embedding_model or OpenAIEmbedding()
         self.vector_storage_local_path = vector_storage_local_path
         self.url_and_api_key = url_and_api_key
@@ -101,8 +101,8 @@ class AutoRetriever:
         r"""Generates a valid collection name from a given file path or URL.
 
         Args:
-        content_input_path: str. The input URL or file path from which to
-            generate the collection name.
+            content_input_path: str. The input URL or file path from which to
+                generate the collection name.
 
         Returns:
             str: A sanitized, valid collection name suitable for use.
@@ -134,7 +134,9 @@ class AutoRetriever:
         collection_name = collection_name[:30]
         return collection_name
 
-    def _get_file_modified_date_from_file(self, content_input_path: str) -> str:
+    def _get_file_modified_date_from_file(
+        self, content_input_path: str
+    ) -> str:
         r"""Retrieves the last modified date and time of a given file. This
         function takes a file path as input and returns the last modified date
         and time of that file.
@@ -147,9 +149,9 @@ class AutoRetriever:
             str: The last modified time from file.
         """
         mod_time = os.path.getmtime(content_input_path)
-        readable_mod_time = datetime.datetime.fromtimestamp(mod_time).isoformat(
-            timespec='seconds'
-        )
+        readable_mod_time = datetime.datetime.fromtimestamp(
+            mod_time
+        ).isoformat(timespec='seconds')
         return readable_mod_time
 
     def _get_file_modified_date_from_storage(
@@ -157,11 +159,11 @@ class AutoRetriever:
     ) -> str:
         r"""Retrieves the last modified date and time of a given file. This
         function takes vector storage instance as input and returns the last
-        modified date from the meta data.
+        modified date from the metadata.
 
         Args:
             vector_storage_instance (BaseVectorStorage): The vector storage
-                where modified date is to be retrieved from meta data.
+                where modified date is to be retrieved from metadata.
 
         Returns:
             str: The last modified date from vector storage.
@@ -211,7 +213,7 @@ class AutoRetriever:
                 `DEFAULT_SIMILARITY_THRESHOLD`.
             return_detailed_info (bool, optional): Whether to return detailed
                 information including similarity score, content path and
-                metadata. Defaults to False.
+                metadata. Defaults to `False`.
 
         Returns:
             string: By default, returns only the text information. If
@@ -321,8 +323,15 @@ class AutoRetriever:
             info['text'] for info in all_retrieved_info if 'text' in info
         )
 
-        detailed_info = f"Original Query:\n{{ {query} }}\nRetrieved Context:\n{retrieved_infos}"
-        text_info = f"Original Query:\n{{ {query} }}\nRetrieved Context:\n{retrieved_infos_text}"
+        detailed_info = (
+            f"Original Query:\n{{ {query} }}\n"
+            f"Retrieved Context:\n{retrieved_infos}"
+        )
+
+        text_info = (
+            f"Original Query:\n{{ {query} }}\n"
+            f"Retrieved Context:\n{retrieved_infos_text}"
+        )
 
         if return_detailed_info:
             return detailed_info

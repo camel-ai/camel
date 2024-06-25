@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.abspath('..'))
 project = 'CAMEL'
 copyright = '2023, CAMEL-AI.org'
 author = 'CAMEL-AI.org'
-release = '0.1.5.1'
+release = '0.1.5.3'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

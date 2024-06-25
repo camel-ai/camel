@@ -13,16 +13,15 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import json
 import os
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
-import prance
 import requests
 
-from camel.functions import OpenAIFunction
+from camel.functions import OpenAIFunction, openapi_security_config
 from camel.types import OpenAPIName
 
 
-def parse_openapi_file(openapi_spec_path: str) -> Dict[str, Any]:
+def parse_openapi_file(openapi_spec_path: str) -> Optional[Dict[str, Any]]:
     r"""Load and parse an OpenAPI specification file.
 
     This function utilizes the `prance.ResolvingParser` to parse and resolve
@@ -34,11 +33,30 @@ def parse_openapi_file(openapi_spec_path: str) -> Dict[str, Any]:
             specification.
 
     Returns:
-        Dict[str, Any]: The parsed OpenAPI specification as a dictionary.
+        Optional[Dict[str, Any]]: The parsed OpenAPI specification
+            as a dictionary. :obj:`None` if the package is not installed.
     """
+    try:
+        import prance
+    except Exception:
+        return None
+
     # Load the OpenAPI spec
-    parser = prance.ResolvingParser(openapi_spec_path)
+    parser = prance.ResolvingParser(
+        openapi_spec_path, backend="openapi-spec-validator", strict=False
+    )
     openapi_spec = parser.specification
+    version = openapi_spec.get('openapi', {})
+    if not version:
+        raise ValueError(
+            "OpenAPI version not specified in the spec. "
+            "Only OPENAPI 3.0.x and 3.1.x are supported."
+        )
+    if not (version.startswith('3.0') or version.startswith('3.1')):
+        raise ValueError(
+            f"Unsupported OpenAPI version: {version}. "
+            f"Only OPENAPI 3.0.x and 3.1.x are supported."
+        )
     return openapi_spec
 
 
@@ -176,22 +194,33 @@ def openapi_spec_to_openai_schemas(
 
 
 def openapi_function_decorator(
-    base_url: str, path: str, method: str, operation: Dict[str, Any]
+    api_name: str,
+    base_url: str,
+    path: str,
+    method: str,
+    openapi_security: List[Dict[str, Any]],
+    sec_schemas: Dict[str, Dict[str, Any]],
+    operation: Dict[str, Any],
 ) -> Callable:
-    r"""Decorate a function to make HTTP requests based on OpenAPI operation
-    details.
+    r"""Decorate a function to make HTTP requests based on OpenAPI
+    specification details.
 
-    This decorator takes the base URL, path, HTTP method, and operation details
-    from an OpenAPI specification, and returns a decorator. The decorated
-    function can then be called with keyword arguments corresponding to the
-    operation's parameters. The decorator handles constructing the request URL,
-    setting headers, query parameters, and the request body as specified by the
-    operation details.
+    This decorator dynamically constructs and executes an API request based on
+    the provided OpenAPI operation specifications, security requirements, and
+    parameters.  It supports operations secured with `apiKey` type security
+    schemes and automatically injects the necessary API keys from environment
+    variables. Parameters in `path`, `query`, `header`, and `cookie` are also
+    supported.
 
     Args:
+        api_name (str): The name of the API, used to retrieve API key names
+            and URLs from the configuration.
         base_url (str): The base URL for the API.
         path (str): The path for the API endpoint, relative to the base URL.
         method (str): The HTTP method (e.g., 'get', 'post') for the request.
+        openapi_security (List[Dict[str, Any]]): The global security
+            definitions as specified in the OpenAPI specs.
+        sec_schemas (Dict[str, Dict[str, Any]]): Detailed security schemes.
         operation (Dict[str, Any]): A dictionary containing the OpenAPI
             operation details, including parameters and request body
             definitions.
@@ -200,6 +229,12 @@ def openapi_function_decorator(
         Callable: A decorator that, when applied to a function, enables the
             function to make HTTP requests based on the provided OpenAPI
             operation details.
+
+    Raises:
+        TypeError: If the security requirements include unsupported types.
+        ValueError: If required API keys are missing from environment
+            variables or if the content type of the request body is
+            unsupported.
     """
 
     def inner_decorator(openapi_function: Callable) -> Callable:
@@ -208,6 +243,51 @@ def openapi_function_decorator(
             headers = {}
             params = {}
             cookies = {}
+
+            # Security definition of operation overrides any declared
+            # top-level security.
+            sec_requirements = operation.get('security', openapi_security)
+            avail_sec_requirement = {}
+            # Write to avaliable_security_requirement only if all the
+            # security_type are "apiKey"
+            for security_requirement in sec_requirements:
+                have_unsupported_type = False
+                for sec_scheme_name, _ in security_requirement.items():
+                    sec_type = sec_schemas.get(sec_scheme_name).get('type')
+                    if sec_type != "apiKey":
+                        have_unsupported_type = True
+                        break
+                if have_unsupported_type is False:
+                    avail_sec_requirement = security_requirement
+                    break
+
+            if sec_requirements and not avail_sec_requirement:
+                raise TypeError(
+                    "Only security schemas of type `apiKey` are supported."
+                )
+
+            for sec_scheme_name, _ in avail_sec_requirement.items():
+                try:
+                    API_KEY_NAME = openapi_security_config.get(api_name).get(
+                        sec_scheme_name
+                    )
+                    api_key_value = os.environ[API_KEY_NAME]
+                except Exception:
+                    api_key_url = openapi_security_config.get(api_name).get(
+                        'get_api_key_url'
+                    )
+                    raise ValueError(
+                        f"`{API_KEY_NAME}` not found in environment "
+                        f"variables. Get `{API_KEY_NAME}` here: {api_key_url}"
+                    )
+                request_key_name = sec_schemas.get(sec_scheme_name).get('name')
+                request_key_in = sec_schemas.get(sec_scheme_name).get('in')
+                if request_key_in == 'query':
+                    params[request_key_name] = api_key_value
+                elif request_key_in == 'header':
+                    headers[request_key_name] = api_key_value
+                elif request_key_in == 'coolie':
+                    cookies[request_key_name] = api_key_value
 
             # Assign parameters to the correct position
             for param in operation.get('parameters', []):
@@ -307,6 +387,10 @@ def generate_openapi_funcs(
         raise ValueError("No server information found in OpenAPI spec.")
     base_url = servers[0].get('url')  # Use the first server URL
 
+    # Security requirement objects for all methods
+    openapi_security = openapi_spec.get('security', {})
+    # Security schemas which can be reused by different methods
+    sec_schemas = openapi_spec.get('components', {}).get('securitySchemes', {})
     functions = []
 
     # Traverse paths and methods
@@ -321,7 +405,15 @@ def generate_openapi_funcs(
                 sanitized_path = path.replace('/', '_').strip('_')
                 function_name = f"{api_name}_{method}_{sanitized_path}"
 
-            @openapi_function_decorator(base_url, path, method, operation)
+            @openapi_function_decorator(
+                api_name,
+                base_url,
+                path,
+                method,
+                openapi_security,
+                sec_schemas,
+                operation,
+            )
             def openapi_function(**kwargs):
                 pass
 
@@ -332,13 +424,22 @@ def generate_openapi_funcs(
     return functions
 
 
-def combine_all_funcs_schemas() -> Tuple[List[Callable], List[Dict[str, Any]]]:
-    r"""Combines functions and schemas from multiple OpenAPI specifications.
+def apinames_filepaths_to_funs_schemas(
+    apinames_filepaths: List[Tuple[str, str]],
+) -> Tuple[List[Callable], List[Dict[str, Any]]]:
+    r"""Combines functions and schemas from multiple OpenAPI specifications,
+    using API names as keys.
 
-    Iterates over a list of OpenAPI specs, parses each, and generates functions
-    and schemas based on the defined operations and schemas respectively.
-    Assumes specification files are named 'openapi.yaml' located in
-    `open_api_specs/<api_name>/`.
+    This function iterates over tuples of API names and OpenAPI spec file
+    paths, parsing each spec to generate callable functions and schema
+    dictionaries, all organized by API name.
+
+    Args:
+    apinames_filepaths (List[Tuple[str, str]]): A list of tuples, where each
+        tuple consists of:
+        - The API name (str) as the first element.
+        - The file path (str) to the API's OpenAPI specification file as the
+            second element.
 
     Returns:
         Tuple[List[Callable], List[Dict[str, Any]]]:: one of callable
@@ -347,34 +448,61 @@ def combine_all_funcs_schemas() -> Tuple[List[Callable], List[Dict[str, Any]]]:
     """
     combined_func_lst = []
     combined_schemas_list = []
-
-    for api_name in OpenAPIName:
+    for api_name, file_path in apinames_filepaths:
         # Parse the OpenAPI specification for each API
         current_dir = os.path.dirname(__file__)
-        spec_file_path = os.path.join(
-            current_dir, 'open_api_specs', f'{api_name.value}', 'openapi.yaml'
+        file_path = os.path.join(
+            current_dir, 'open_api_specs', f'{api_name}', 'openapi.yaml'
         )
 
-        openapi_spec = parse_openapi_file(spec_file_path)
+        openapi_spec = parse_openapi_file(file_path)
+        if openapi_spec is None:
+            return [], []
 
         # Generate and merge function schemas
         openapi_functions_schemas = openapi_spec_to_openai_schemas(
-            api_name.value, openapi_spec
+            api_name, openapi_spec
         )
         combined_schemas_list.extend(openapi_functions_schemas)
 
         # Generate and merge function lists
-        openapi_functions_list = generate_openapi_funcs(
-            api_name.value, openapi_spec
-        )
+        openapi_functions_list = generate_openapi_funcs(api_name, openapi_spec)
         combined_func_lst.extend(openapi_functions_list)
 
     return combined_func_lst, combined_schemas_list
 
 
-combined_funcs_lst, combined_schemas_list = combine_all_funcs_schemas()
+def generate_apinames_filepaths() -> List[Tuple[str, str]]:
+    """Generates a list of tuples containing API names and their corresponding
+    file paths.
+
+    This function iterates over the OpenAPIName enum, constructs the file path
+    for each API's OpenAPI specification file, and appends a tuple of the API
+    name and its file path to the list. The file paths are relative to the
+    'open_api_specs' directory located in the same directory as this script.
+
+    Returns:
+        List[Tuple[str, str]]: A list of tuples where each tuple contains two
+            elements. The first element of each tuple is a string representing
+            the name of an API, and the second element is a string that
+            specifies the file path to that API's OpenAPI specification file.
+    """
+    apinames_filepaths = []
+    current_dir = os.path.dirname(__file__)
+    for api_name in OpenAPIName:
+        file_path = os.path.join(
+            current_dir, 'open_api_specs', f'{api_name.value}', 'openapi.yaml'
+        )
+        apinames_filepaths.append((api_name.value, file_path))
+    return apinames_filepaths
+
+
+apinames_filepaths = generate_apinames_filepaths()
+all_funcs_lst, all_schemas_lst = apinames_filepaths_to_funs_schemas(
+    apinames_filepaths
+)
 
 OPENAPI_FUNCS: List[OpenAIFunction] = [
     OpenAIFunction(a_func, a_schema)
-    for a_func, a_schema in zip(combined_funcs_lst, combined_schemas_list)
+    for a_func, a_schema in zip(all_funcs_lst, all_schemas_lst)
 ]

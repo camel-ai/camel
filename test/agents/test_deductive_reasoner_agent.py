@@ -15,7 +15,6 @@ from mock import patch
 
 from camel.agents import ChatAgent
 from camel.agents.deductive_reasoner_agent import DeductiveReasonerAgent
-from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.responses import ChatAgentResponse
 from camel.types import RoleType
@@ -38,13 +37,9 @@ def test_deductive_reasoner_agent(mock_step):
 
     starting_state = "I was walking down the street in New York with a Anna."
     target_state = "I remind Anna to pay attention to personal safety."
-    model_config_description = ChatGPTConfig()
 
     # Construct deductive reasoner agent
-    model_type = None
-    deductive_reasoner_agent = DeductiveReasonerAgent(
-        model_type=model_type, model_config=model_config_description
-    )
+    deductive_reasoner_agent = DeductiveReasonerAgent()
 
     # Generate the conditions and quality dictionary based on the mock step
     # function
@@ -75,18 +70,26 @@ None
     condition 3:
         The website needs to have a search algorithm or function implemented.
     condition 4:
-        The website needs to have a user interface that allows users to input search queries.
+        The website needs to have a user interface that allows users to input
+        search queries.
     condition 5:
-        The website needs to have a backend system that processes search queries and retrieves relevant results.
+        The website needs to have a backend system that processes search
+        queries and retrieves relevant results.
 
 - Entity/Label Recognition of Conditions:
-["Website search bar", "Indexed content database", "Search algorithm/function", "User interface for search queries", "Backend system for query processing"]
+["Website search bar", "Indexed content database", "Search algorithm/
+function", "User interface for search queries", "Backend system for query
+processing"]
 
 - Quality Assessment ($Q$) (do not use symbols):
-    The transition from $A$ to $B$ would be considered efficient if the search capabilities are implemented with minimal resource usage.
-    The transition would be considered effective if the website successfully provides accurate search results.
-    Safety and risks should be assessed to ensure user privacy and data security during the transition.
-    Feedback mechanisms should be incorporated to continuously improve the search capabilities based on user feedback.
+    The transition from $A$ to $B$ would be considered efficient if the search
+    capabilities are implemented with minimal resource usage.
+    The transition would be considered effective if the website successfully
+    provides accurate search results.
+    Safety and risks should be assessed to ensure user privacy and data
+    security during the transition.
+    Feedback mechanisms should be incorporated to continuously improve the
+    search capabilities based on user feedback.
 
 - Iterative Evaluation:
 None"""
@@ -106,28 +109,29 @@ def generate_expected_content():
             ),
             "condition 4": (
                 "The website needs to have a user interface that allows users "
-                "to input search queries."
+                "to input\n        search queries."
             ),
             "condition 5": (
                 "The website needs to have a backend system that processes "
-                "search queries and retrieves relevant results."
+                "search\n        queries and retrieves relevant results."
             ),
         },
         "labels": [
             "Website search bar",
             "Indexed content database",
-            "Search algorithm/function",
+            "Search algorithm/\nfunction",
             "User interface for search queries",
-            "Backend system for query processing",
+            "Backend system for query\nprocessing",
         ],
         "evaluate_quality": (
             "The transition from $A$ to $B$ would be considered efficient if "
-            "the search capabilities are implemented with minimal resource "
-            "usage.\n    The transition would be considered effective if the "
-            "website successfully provides accurate search results.\n    "
-            "Safety and risks should be assessed to ensure user privacy and "
-            "data security during the transition.\n    Feedback mechanisms "
-            "should be incorporated to continuously improve the search "
-            "capabilities based on user feedback."
+            "the search\n    capabilities are implemented with minimal "
+            "resource usage.\n    The transition would be considered "
+            "effective if the website successfully\n    provides accurate "
+            "search results.\n    Safety and risks should be assessed to"
+            " ensure user privacy and data\n    security during the "
+            "transition.\n    Feedback mechanisms should be incorporated "
+            "to continuously improve the\n    search capabilities based on"
+            " user feedback."
         ),
     }

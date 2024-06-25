@@ -113,7 +113,10 @@ def test_base_message():
     assert openai_user_message == {"role": "user", "content": content}
 
     openai_assistant_message = message.to_openai_assistant_message()
-    assert openai_assistant_message == {"role": "assistant", "content": content}
+    assert openai_assistant_message == {
+        "role": "assistant",
+        "content": content,
+    }
 
     dictionary = message.to_dict()
     assert dictionary == {
