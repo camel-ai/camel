@@ -55,6 +55,7 @@ class OllamaModel:
             api_key=self._api_key,
         )
         self._token_counter: Optional[BaseTokenCounter] = None
+        self.check_model_config()
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -81,7 +82,7 @@ class OllamaModel:
             if param not in OLLAMA_API_PARAMS:
                 raise ValueError(
                     f"Unexpected argument `{param}` is "
-                    "input into OpenAI model backend."
+                    "input into Ollama model backend."
                 )
 
     def run(
