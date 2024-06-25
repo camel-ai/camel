@@ -72,9 +72,9 @@ class WeatherToolkit(BaseToolkit):
                 same name exist.
             temp_units (Literal['kelvin', 'celsius', 'fahrenheit']): Units for
                 temperature. (default: :obj:`kelvin`)
-            wind_units (Literal['meters_sec', 'miles_hour', 'knots',
-                'beaufort']): Units for wind speed.
-                (default: :obj:`meters_sec`)
+            wind_units
+                (Literal['meters_sec', 'miles_hour', 'knots', 'beaufort']):
+                Units for wind speed. (default: :obj:`meters_sec`)
             visibility_units (Literal['meters', 'miles']): Units for visibility
                 distance. (default: :obj:`meters`)
             time_units (Literal['unix', 'iso', 'date']): Format for sunrise and
