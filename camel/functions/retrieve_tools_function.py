@@ -22,14 +22,13 @@ from camel.functions.openai_function import OpenAIFunction
 
 
 def cosine_similarity(vec1: List[float], vec2: List[float]) -> float:
-    r"""
-    Compute the cosine similarity between two sentence embedding vectors.
+    r"""Compute the cosine similarity between two sentence embedding vectors.
 
     Args:
         vec1 (List): the first sentence embedding vector.
         vec2 (List): the second sentence embedding vector.
     """
-    if np.linalg.norm(vec1) * np.linalg.norm(vec2) == 0:
+    if np.linalg.norm(vec1) * np.linalg.norm(vec2) == 0.0:
         return 0
     else:
         return np.dot(vec1, vec2) / (
@@ -40,37 +39,42 @@ def cosine_similarity(vec1: List[float], vec2: List[float]) -> float:
 def retrieve_tools(
     query: str, tools: List[OpenAIFunction], k: int = 3, sim_thres: float = 0.71
 ) -> Optional[List[OpenAIFunction]]:
-    r"""
-    Using semantic search to retrieve relevent tools
-    OpenAI / Open source Embedding models to embed the query
-    and the schemas / docstring of `OpenAIFunction`
-    Find the most relevent ones based on their embedding vectors
+    r"""Using semantic search to retrieve relevent tools. OpenAI / Open source
+    Embedding models to embed the query and the schemas / docstring of
+    `OpenAIFunction`. Find the most relevent ones based on their embedding vectors.
 
     Args:
-        query (str): input question
+        query (str): input question.
         tools (List): The tools to be searched.
         k (int): how many answers the user wants to get.
-        sim_thres (int): 0.4 # The threshold above which we want to accept a tool
+        sim_thres (int): 0.4 # The threshold above which we want to accept a tool.
 
     Returns:
         retrieved_tools (List): List of retrieved (most relevant) tools.
     """
     # Check if k is greater than 0
-    assert k > 0, "k must be greater than 0"
+    if k <= 0:
+        print("Illegal input, k must be greater than 0")
+        # Set k to default value
+        k = 3
 
     # Check if tools is not empty
-    assert tools, "tools is empty"
+    if not tools:
+        print("Illegal input, tools is empty")
+        return []
 
     # Check not all descriptions are None
-    assert any(
+    if not any(
         func.func.__doc__ is not None for func in tools
-    ), "All docstrings are None"
+    ):
+        print("Warning: All docstrings are None")
 
     # Check if sim_thres is between 0 and 1
-    assert sim_thres > 0 and sim_thres < 1, "sim_thres must be between 0 and 1"
+    if sim_thres <= 0 or sim_thres > 1:
+        print("Illegal input, sim_thres must be between 0 and 1")
+        # Set sim_thres to default value
+        sim_thres = 0.71
 
-    # tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
-    # model = AutoModel.from_pretrained("bert-base-uncased")
     encoder = SentenceTransformerEncoder()
 
     query_embedding = encoder.embed(query)
