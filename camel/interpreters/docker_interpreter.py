@@ -17,16 +17,14 @@ import shlex
 import tarfile
 import uuid
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, List
+from typing import Any, ClassVar, Dict, List
 
 import docker
 from colorama import Fore
+from docker import errors
 
 from camel.interpreters.base import BaseInterpreter
 from camel.interpreters.interpreter_error import InterpreterError
-
-if TYPE_CHECKING:
-    from docker.models.containers import Container
 
 
 class DockerInterpreter(BaseInterpreter):
@@ -59,10 +57,10 @@ class DockerInterpreter(BaseInterpreter):
     }
 
     def __init__(
-        self,
-        require_confirm: bool = True,
-        print_stdout: bool = False,
-        print_stderr: bool = True,
+            self,
+            require_confirm: bool = True,
+            print_stdout: bool = False,
+            print_stderr: bool = True,
     ) -> None:
         """Initializes a DockerInterpreter class with one docker container
         attached to it. All the code execution will be done in this container.
@@ -80,17 +78,19 @@ class DockerInterpreter(BaseInterpreter):
         self._print_stderr = print_stderr
         self._client = docker.from_env()
 
-    def _create_new_container(self) -> Container:
-        name = f"camel-interpreter-{uuid.uuid4()}"
-        return self._client.containers.run(
+        # create a new container for executing codes
+        self._container = self._client.containers.run(
             "python:3.10",
             detach=True,
-            name=name,
+            name=f"camel-interpreter-{uuid.uuid4()}",
             command="tail -f /dev/null",
         )
 
+    def __del__(self):
+        self._container.remove(force=True)
+
     def _create_file_in_container(
-        self, content: str, container: Container
+            self, content: str
     ) -> Path:
         # get a random name for the file
         filename = str(uuid.uuid4())
@@ -102,14 +102,13 @@ class DockerInterpreter(BaseInterpreter):
             tar.addfile(tarinfo, io.BytesIO(content.encode('utf-8')))
         tar_stream.seek(0)
         # copy the tar into the container
-        container.put_archive("/tmp", tar_stream)
+        self._container.put_archive("/tmp", tar_stream)
         return Path(f"/tmp/{filename}")
 
     def _run_file_in_container(
-        self,
-        container: Container,
-        file: Path,
-        code_type: str,
+            self,
+            file: Path,
+            code_type: str,
     ) -> str:
         code_type = self._check_code_type(code_type)
         commands = shlex.split(
@@ -117,7 +116,7 @@ class DockerInterpreter(BaseInterpreter):
                 file_name=str(file)
             )
         )
-        stdout, stderr = container.exec_run(
+        stdout, stderr = self._container.exec_run(
             commands,
             stdout=self._print_stdout,
             stderr=self._print_stderr,
@@ -137,13 +136,12 @@ class DockerInterpreter(BaseInterpreter):
         return exec_result
 
     def run(
-        self,
-        code: str,
-        code_type: str,
+            self,
+            code: str,
+            code_type: str,
     ) -> str:
-        r"""Creates a temporary container, executes the given code in it, and
-        captures the stdout and stderr streams. The container is removed after
-        the code execution.
+        r"""Executes the given code in the conatiner attached to the
+        interpreter, and captures the stdout and stderr streams.
 
         Args:
             code (str): The code string to execute.
@@ -155,42 +153,44 @@ class DockerInterpreter(BaseInterpreter):
                 executed code.
 
         Raises:
-            InterpreterError: If the user declines to run the code or if the
-                code type is unsupported.
+            InterpreterError: If the user declines to run the code, or the
+                code type is unsupported, or t
         """
         code_type = self._check_code_type(code_type)
 
         # Print code for security checking
         if self._require_confirm:
-            print(f"The following {code_type} code will run on your computer:")
+            print(f"The following {code_type} code will run in container:")
             print(Fore.CYAN + code + Fore.RESET)
             while True:
                 choice = input("Running code? [Y/n]:").lower()
                 if choice in ["y", "yes", "ye", ""]:
                     break
-                elif choice in ["no", "n"]:
-                    raise InterpreterError(
-                        "Execution halted: User opted not to run the code. "
-                        "This choice stops the current operation and any "
-                        "further code execution."
-                    )
+                elif choice not in ["no", "n"]:
+                    continue
+                raise InterpreterError(
+                    "Execution halted: User opted not to run the code. "
+                    "This choice stops the current operation and any "
+                    "further code execution."
+                )
 
-        container = None
         try:
-            container = self._create_new_container()
-            temp_file_path = self._create_file_in_container(code, container)
+            temp_file_path = self._create_file_in_container(code)
             result = self._run_file_in_container(
-                container, temp_file_path, code_type
+                temp_file_path, code_type
             )
-        except Exception as e:
+        except docker.errors.APIError as e:
             raise InterpreterError(
-                f"Execution halted: {e}. "
+                f"Execution halted due to docker API error: {e.explanation}. "
                 "This choice stops the current operation and any "
                 "further code execution."
             ) from e
-        finally:
-            if container:
-                container.remove(force=True)
+        except docker.errors.DockerException as e:
+            raise InterpreterError(
+                f"Execution halted due to docker exceptoin: {e}. "
+                "This choice stops the current operation and any "
+                "further code execution."
+            ) from e
         return result
 
     def _check_code_type(self, code_type: str) -> str:
