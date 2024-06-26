@@ -51,7 +51,7 @@ class AnthropicModel(BaseModelBackend):
         """
         super().__init__(model_type, model_config_dict, api_key, url)
         self._api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
-        self._url = url or os.environ.get('ANTHROPIC_API_BASE_URL', None)
+        self._url = url or os.environ.get("ANTHROPIC_API_BASE_URL")
         self.client = Anthropic(api_key=self._api_key, base_url=self._url)
         self._token_counter: Optional[BaseTokenCounter] = None
 

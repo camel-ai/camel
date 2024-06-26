@@ -45,14 +45,17 @@ class NemotronModel:
                 :obj:`None`)
         """
         self.model_type = model_type
-        self._url = url or os.environ.get('NVIDIA_API_BASE_URL', None)
+        self._url = url or os.environ.get("NVIDIA_API_BASE_URL")
         self._api_key = api_key or os.environ.get("NVIDIA_API_KEY")
         if not self._url or not self._api_key:
             raise ValueError(
                 "NVIDIA_API_BASE_URL and NVIDIA_API_KEY should be set."
             )
         self._client = OpenAI(
-            timeout=60, max_retries=3, base_url=url, api_key=self._api_key
+            timeout=60,
+            max_retries=3,
+            base_url=self._url,
+            api_key=self._api_key,
         )
         self._token_counter: Optional[BaseTokenCounter] = None
 
