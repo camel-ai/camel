@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import os
 from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
@@ -29,31 +28,30 @@ class OllamaModel:
         self,
         model_type: str,
         model_config_dict: Dict[str, Any],
-        api_key: Optional[str] = None,
+        api_key: Optional[str] = "ollama",
         url: Optional[str] = None,
     ) -> None:
         r"""Constructor for Ollama backend with OpenAI compatibility.
+
+        # Reference: https://github.com/ollama/ollama/blob/main/docs/openai.md
 
         Args:
             model_type (str): Model for which a backend is created.
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into openai.ChatCompletion.create().
-            api_key (Optional[str]): The API key for authenticating with the
-                model service. (default: :obj:`None`)
+            api_key (Optional[str]): The API key for required by OpenAI
+                client, but will be ignored. (default: :obj:`ollama`)
             url (Optional[str]): The url to the model service. (default:
                 :obj:`None`)
         """
         self.model_type = model_type
         self.model_config_dict = model_config_dict
-        self._url = url or os.environ.get('OPENAI_API_BASE_URL')
-        self._api_key = api_key or os.environ.get("OPENAI_API_KEY")
         # Use OpenAI cilent as interface call Ollama
-        # Reference: https://github.com/ollama/ollama/blob/main/docs/openai.md
         self._client = OpenAI(
             timeout=60,
             max_retries=3,
-            base_url=self._url,
-            api_key=self._api_key,
+            base_url=url,
+            api_key=api_key,
         )
         self._token_counter: Optional[BaseTokenCounter] = None
         self.check_model_config()
