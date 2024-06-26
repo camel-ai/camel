@@ -2769,13 +2769,13 @@ files = [
 
 [[package]]
 name = "litellm"
-version = "1.40.20"
+version = "1.40.26"
 description = "Library to easily interface with LLM API providers"
 optional = true
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "litellm-1.40.20-py3-none-any.whl", hash = "sha256:6f142d69ac46450163a24d9d42cb949f72b1ffde4e074bb1d91b70d1e08b1045"},
-    {file = "litellm-1.40.20.tar.gz", hash = "sha256:7510116f2f9f833ffc6395f4840ff94e3ad84640a574cb62c7e64d69d0f0e20b"},
+    {file = "litellm-1.40.26-py3-none-any.whl", hash = "sha256:5daedec00a3a8e32f55b3099190ccd9d550177f6e516823002831e6620ae771c"},
+    {file = "litellm-1.40.26.tar.gz", hash = "sha256:4dfd4ca3eb50a62600e60303c4975ba9fe7c52d07882d0d2b6bad2d474d88758"},
 ]
 
 [package.dependencies]
@@ -7868,5 +7868,5 @@ vector-databases = ["pymilvus", "qdrant-client"]
 
 [metadata]
 lock-version = "2.0"
-python-versions = ">=3.8.1,<3.12"
-content-hash = "21adba18eafa5a5ebe06249225548680380aa8d5ab740890015e78d03c06892a"
+python-versions = ">=3.9.0,<3.12"
+content-hash = "8b0bd350bc011a3fdcc6043a979c32d5ea4b6c8655e971d76c331cc16c759a32"
