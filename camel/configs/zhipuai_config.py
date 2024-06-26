@@ -26,8 +26,8 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True)
 class ZhipuAIConfig(BaseConfig):
-    r"""Defines the parameters for generating chat completions using the
-    ZhipuAI API.
+    r"""Defines the parameters for generating chat completions using OpenAI
+    compatibility
 
     Reference: https://open.bigmodel.cn/dev/api#glm-4v
 

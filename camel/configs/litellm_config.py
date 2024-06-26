@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, List, Optional, Union
 
 from camel.configs.base_config import BaseConfig
@@ -84,7 +84,7 @@ class LiteLLMConfig(BaseConfig):
     max_tokens: Optional[int] = None
     presence_penalty: Optional[float] = None
     frequency_penalty: Optional[float] = None
-    logit_bias: Optional[dict] = field(default_factory=dict)
+    logit_bias: Optional[dict] = None
     user: Optional[str] = None
     response_format: Optional[dict] = None
     seed: Optional[int] = None
@@ -93,7 +93,7 @@ class LiteLLMConfig(BaseConfig):
     logprobs: Optional[bool] = None
     top_logprobs: Optional[int] = None
     deployment_id: Optional[str] = None
-    extra_headers: Optional[dict] = field(default_factory=dict)
+    extra_headers: Optional[dict] = None
     api_version: Optional[str] = None
     mock_response: Optional[str] = None
     custom_llm_provider: Optional[str] = None

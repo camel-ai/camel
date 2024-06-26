@@ -28,7 +28,6 @@ class OllamaModel:
         self,
         model_type: str,
         model_config_dict: Dict[str, Any],
-        api_key: Optional[str] = "ollama",
         url: Optional[str] = None,
     ) -> None:
         r"""Constructor for Ollama backend with OpenAI compatibility.
@@ -39,8 +38,6 @@ class OllamaModel:
             model_type (str): Model for which a backend is created.
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into openai.ChatCompletion.create().
-            api_key (Optional[str]): The API key for required by OpenAI
-                client, but will be ignored. (default: :obj:`ollama`)
             url (Optional[str]): The url to the model service. (default:
                 :obj:`None`)
         """
@@ -51,7 +48,7 @@ class OllamaModel:
             timeout=60,
             max_retries=3,
             base_url=url,
-            api_key=api_key,
+            api_key="ollama",  # required but ignored
         )
         self._token_counter: Optional[BaseTokenCounter] = None
         self.check_model_config()

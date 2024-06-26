@@ -54,7 +54,7 @@ def test_zhipuai_model_unexpected_argument():
         match=re.escape(
             (
                 "Unexpected argument `model_path` is "
-                "input into OpenAI model backend."
+                "input into ZhipuAI model backend."
             )
         ),
     ):

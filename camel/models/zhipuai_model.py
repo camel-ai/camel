@@ -110,13 +110,13 @@ class ZhipuAIModel(BaseModelBackend):
 
         Raises:
             ValueError: If the model configuration dictionary contains any
-                unexpected arguments to OpenAI API.
+                unexpected arguments to ZhipuAI API.
         """
         for param in self.model_config_dict:
             if param not in ZHIPUAI_API_PARAMS:
                 raise ValueError(
                     f"Unexpected argument `{param}` is "
-                    "input into OpenAI model backend."
+                    "input into ZhipuAI model backend."
                 )
         pass
 

@@ -23,8 +23,8 @@ from camel.configs.base_config import BaseConfig
 
 @dataclass(frozen=True)
 class OllamaConfig(BaseConfig):
-    r"""Defines the parameters for generating chat completions using the
-    Ollama API.
+    r"""Defines the parameters for generating chat completions using OpenAI
+    compatibility
 
     Reference: https://github.com/ollama/ollama/blob/main/docs/openai.md
 
