@@ -324,6 +324,6 @@ module = [
     "litellm",
     "pyTelegramBotAPI",
     "discord.py",
-    "docker",
+    "docker.*",
 ]
 ignore_missing_imports = true

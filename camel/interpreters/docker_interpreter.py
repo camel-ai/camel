@@ -17,13 +17,16 @@ import shlex
 import tarfile
 import uuid
 from pathlib import Path
-from typing import Any, ClassVar, Dict, List
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional
 
 import docker
 from colorama import Fore
 
 from camel.interpreters.base import BaseInterpreter
 from camel.interpreters.interpreter_error import InterpreterError
+
+if TYPE_CHECKING:
+    from docker.models.containers import Container
 
 
 class DockerInterpreter(BaseInterpreter):
@@ -75,18 +78,24 @@ class DockerInterpreter(BaseInterpreter):
         self._require_confirm = require_confirm
         self._print_stdout = print_stdout
         self._print_stderr = print_stderr
-        self._client = docker.from_env()
 
-        # create a new container for executing codes
-        self._container = self._client.containers.run(
-            "python:3.10",
-            detach=True,
-            name=f"camel-interpreter-{uuid.uuid4()}",
-            command="tail -f /dev/null",
-        )
+        # lazy initialization of docker client and container
+        self._container: Optional[Container] = None
 
-    def __del__(self):
+    def __del__(self) -> None:
+        if self._container is None:
+            return
         self._container.remove(force=True)
+
+    def _initialize_if_needed(self) -> None:
+        if self._container is None:
+            client = docker.from_env()
+            self._container = client.containers.run(
+                "python:3.10",
+                detach=True,
+                name=f"camel-interpreter-{uuid.uuid4()}",
+                command="tail -f /dev/null",
+            )
 
     def _create_file_in_container(self, content: str) -> Path:
         # get a random name for the file
@@ -98,7 +107,12 @@ class DockerInterpreter(BaseInterpreter):
             tarinfo.size = len(content)
             tar.addfile(tarinfo, io.BytesIO(content.encode('utf-8')))
         tar_stream.seek(0)
+
         # copy the tar into the container
+        if self._container is None:
+            raise InterpreterError(
+                "Container is not initialized. Try running the code again."
+            )
         self._container.put_archive("/tmp", tar_stream)
         return Path(f"/tmp/{filename}")
 
@@ -113,10 +127,12 @@ class DockerInterpreter(BaseInterpreter):
                 file_name=str(file)
             )
         )
+        if self._container is None:
+            raise InterpreterError(
+                "Container is not initialized. Try running the code again."
+            )
         stdout, stderr = self._container.exec_run(
             commands,
-            stdout=self._print_stdout,
-            stderr=self._print_stderr,
             demux=True,
         ).output
 
@@ -128,7 +144,7 @@ class DockerInterpreter(BaseInterpreter):
             print("======stderr======")
             print(Fore.RED + stderr.decode() + Fore.RESET)
             print("==================")
-        exec_result = f"{stdout.decode()}"
+        exec_result = f"{stdout.decode()}" if stdout else ""
         exec_result += f"(stderr: {stderr.decode()})" if stderr else ""
         return exec_result
 
@@ -170,6 +186,8 @@ class DockerInterpreter(BaseInterpreter):
                     "This choice stops the current operation and any "
                     "further code execution."
                 )
+
+        self._initialize_if_needed()
 
         try:
             temp_file_path = self._create_file_in_container(code)
