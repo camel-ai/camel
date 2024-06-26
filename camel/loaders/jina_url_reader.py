@@ -15,7 +15,7 @@
 import os
 from typing import Optional
 
-from camel.types.enums import ReturnFormat
+from camel.types.enums import JinaReturnFormat
 
 JINA_ENDPOINT = "https://r.jina.ai/"
 
@@ -25,6 +25,22 @@ class JinaURLReader:
     LLM-friendly than the URL Reader of UnstructuredIO. Can be configured to
     replace the UnstructuredIO URL Reader in the pipeline.
 
+    Args:
+        api_key (Optional[str], optional): The API key for Jina AI. If not
+            provided, the reader will have a lower rate limit. Defaults to
+            None.
+        return_format (ReturnFormat, optional): The level of detail
+            of the returned content, which is optimized for LLMs. For
+            now screenshots are not supported. Defaults to
+            ReturnFormat.DEFAULT.
+        json_response (bool, optional): Whether to return the response
+            in JSON format. Defaults to False.
+        timeout (int, optional): The maximum time in seconds to wait for
+            the page to be rendered. Defaults to 30.
+        **kwargs (str): Additional keyword arguments, including proxies,
+            cookies, etc. It should align with the HTTP Header field and
+            value pairs listed in the reference.
+
     References:
         https://jina.ai/reader
     """
@@ -32,35 +48,11 @@ class JinaURLReader:
     def __init__(
         self,
         api_key: Optional[str] = None,
-        return_format: ReturnFormat = ReturnFormat.DEFAULT,
+        return_format: JinaReturnFormat = JinaReturnFormat.DEFAULT,
         json_response: bool = False,
         timeout: int = 30,
         **kwargs: str,
     ) -> None:
-        r"""
-        Initializes an instance of the JinaURLReader according to the provided
-        configurations.
-
-        Args:
-            api_key (Optional[str], optional): The API key for Jina AI. If not
-                provided, the reader will have a lower rate limit. Defaults to
-                None.
-            return_format (ReturnFormat, optional): The level of detail
-                of the returned content, which is optimized for LLMs. For
-                now screenshots are not supported. Defaults to
-                ReturnFormat.DEFAULT.
-            json_response (bool, optional): Whether to return the response
-                in JSON format. Defaults to False.
-            timeout (int, optional): The maximum time in seconds to wait for
-                the page to be rendered. Defaults to 30.
-            **kwargs (str): Additional keyword arguments, including proxies,
-                cookies, etc. It should align with the HTTP Header field and
-                value pairs listed in the reference.
-
-        Notes:
-             See https://jina.ai/reader for additional configurations.
-        """
-
         api_key = api_key or os.getenv('JINA_API_KEY')
         if not api_key:
             print(

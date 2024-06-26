@@ -14,7 +14,7 @@
 
 
 from camel.loaders import JinaURLReader
-from camel.types.enums import ReturnFormat
+from camel.types.enums import JinaReturnFormat
 
 
 def read_with_different_format(return_format, json_response):
@@ -28,10 +28,10 @@ def read_with_different_format(return_format, json_response):
 
 def main():
     formats = [
-        ReturnFormat.DEFAULT,
-        ReturnFormat.TEXT,
-        ReturnFormat.HTML,
-        ReturnFormat.MARKDOWN,
+        JinaReturnFormat.DEFAULT,
+        JinaReturnFormat.TEXT,
+        JinaReturnFormat.HTML,
+        JinaReturnFormat.MARKDOWN,
     ]
 
     print("Choose a return format of read content:")

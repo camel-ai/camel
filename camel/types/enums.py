@@ -376,7 +376,7 @@ class VoiceType(Enum):
         }
 
 
-class ReturnFormat(Enum):
+class JinaReturnFormat(Enum):
     DEFAULT = None
     MARKDOWN = "markdown"
     HTML = "html"

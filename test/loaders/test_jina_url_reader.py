@@ -16,7 +16,7 @@ import json
 import pytest
 
 from camel.loaders import JinaURLReader
-from camel.types.enums import ReturnFormat
+from camel.types.enums import JinaReturnFormat
 
 
 @pytest.fixture
@@ -43,21 +43,21 @@ def test_read_content_no_protocol(default_reader: JinaURLReader):
 
 def test_read_content_markdown():
     test_url = "https://en.wikipedia.org/wiki/Hollow_Knight"
-    markdown_reader = JinaURLReader(return_format=ReturnFormat.MARKDOWN)
+    markdown_reader = JinaURLReader(return_format=JinaReturnFormat.MARKDOWN)
     content = markdown_reader.read_content(test_url)
     assert "_Hollow Knight_" in content
 
 
 def test_read_content_html():
     test_url = "https://en.wikipedia.org/wiki/Hollow_Knight"
-    html_reader = JinaURLReader(return_format=ReturnFormat.HTML)
+    html_reader = JinaURLReader(return_format=JinaReturnFormat.HTML)
     content = html_reader.read_content(test_url)
     assert "<title>Hollow Knight - Wikipedia</title>" in content
 
 
 def test_read_content_text():
     test_url = "https://en.wikipedia.org/wiki/Hollow_Knight"
-    text_reader = JinaURLReader(return_format=ReturnFormat.TEXT)
+    text_reader = JinaURLReader(return_format=JinaReturnFormat.TEXT)
     content = text_reader.read_content(test_url)
     assert "Hollow Knight" in content
 
@@ -74,7 +74,7 @@ def test_read_content_json():
 
 def test_read_content_json_webpage():
     test_url = "https://httpbin.org/json"
-    json_reader = JinaURLReader(return_format=ReturnFormat.TEXT)
+    json_reader = JinaURLReader(return_format=JinaReturnFormat.TEXT)
     content = json_reader.read_content(test_url)
     content_json = json.loads(content)
     assert "slideshow" in content_json
