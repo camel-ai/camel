@@ -34,8 +34,8 @@ camel_agent = ChatAgent(system_message=sys_msg, model=model, token_limit=500)
 
 user_msg = BaseMessage.make_user_message(
     role_name="User",
-    content="""CAMEL AI integrate LiteLLM into their multi agent framework,
-    write a short post to announce it!""",
+    content="""Say hi to CAMEL AI, one open-source community dedicated to the 
+    study of autonomous and communicative agents.""",
 )
 
 # Get response information
@@ -43,25 +43,8 @@ response = camel_agent.step(user_msg)
 print(response.msgs[0].content)
 '''
 ===============================================================================
-🚀 Exciting News from CAMEL AI! 🚀
-
-We are thrilled to announce the integration of LiteLLM into our multi-agent 
-framework! 🎉
-
-At CAMEL AI, we are committed to pushing the boundaries of artificial 
-intelligence and enhancing the capabilities of our multi-agent systems. With 
-LiteLLM, we are taking a significant leap forward in delivering more 
-efficient, scalable, and intelligent solutions.
-
-LiteLLM, known for its lightweight and high-performance language models, will 
-empower our agents to process and understand natural language with 
-unprecedented speed and accuracy. This integration will not only boost the 
-performance of our AI agents but also open up new possibilities for innovative 
-applications across various industries.
-
-Stay tuned for more updates as we continue to innovate and bring you the best 
-in AI technology. Thank you for your continued support!
-
-#CAMELAI #LiteLLM #AI #Innovation #MultiAgentSystems #TechNews
+Hello CAMEL AI! It's great to see a community dedicated to the study of 
+autonomous and communicative agents. Your work in advancing open-source AI is 
+incredibly important and inspiring. Keep up the fantastic work!
 ===============================================================================
 '''

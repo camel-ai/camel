@@ -72,7 +72,7 @@ class OllamaConfig(BaseConfig):
             about frequency and presence penalties. (default: :obj:`0.0`)
     """
 
-    temperature: float = 0.2  # openai default: 1.0
+    temperature: float = 0.2
     top_p: float = 1.0
     stream: bool = False
     stop: str | Sequence[str] | NotGiven = NOT_GIVEN

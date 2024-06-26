@@ -40,7 +40,7 @@ class ZhipuAIConfig(BaseConfig):
             called nucleus sampling, where the model considers the results of
             the tokens with top_p probability mass. So :obj:`0.1` means only
             the tokens comprising the top 10% probability mass are considered.
-            (default: :obj:`1.0`)
+            (default: :obj:`0.6`)
         stream (bool, optional): If True, partial message deltas will be sent
             as data-only server-sent events as they become available.
             (default: :obj:`False`)
@@ -50,9 +50,6 @@ class ZhipuAIConfig(BaseConfig):
             in the chat completion. The total length of input tokens and
             generated tokens is limited by the model's context length.
             (default: :obj:`None`)
-        user_id (str, optional): A unique identifier representing your
-            end-user, which can help OpenAI to monitor and detect abuse.
-            (default: :obj:`""`)
         tools (list[OpenAIFunction], optional): A list of tools the model may
             call. Currently, only functions are supported as a tool. Use this
             to provide a list of functions the model may generate JSON inputs
@@ -69,12 +66,11 @@ class ZhipuAIConfig(BaseConfig):
             are present.
     """
 
-    temperature: float = 0.2  # openai default: 1.0
-    top_p: float = 1.0
+    temperature: float = 0.2
+    top_p: float = 0.6
     stream: bool = False
     stop: str | Sequence[str] | NotGiven = NOT_GIVEN
     max_tokens: int | NotGiven = NOT_GIVEN
-    user_id: str = ""
     tools: Optional[list[OpenAIFunction]] = None
     tool_choice: Optional[dict[str, str] | str] = None
 

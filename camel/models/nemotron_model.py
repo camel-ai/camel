@@ -33,6 +33,7 @@ class NemotronModel:
         self,
         model_type: ModelType,
         api_key: Optional[str] = None,
+        url: Optional[str] = None,
     ) -> None:
         r"""Constructor for Nvidia backend.
 
@@ -40,12 +41,16 @@ class NemotronModel:
             model_type (ModelType): Model for which a backend is created.
             api_key (Optional[str]): The API key for authenticating with the
                 Nvidia service. (default: :obj:`None`)
+            url (Optional[str]): The url to the Nvidia service. (default:
+                :obj:`None`)
         """
         self.model_type = model_type
-        url = os.environ.get('NVIDIA_API_BASE_URL', None)
+        self._url = url or os.environ.get('NVIDIA_API_BASE_URL', None)
         self._api_key = api_key or os.environ.get("NVIDIA_API_KEY")
-        if not url or not self._api_key:
-            raise ValueError("The NVIDIA API base url and key should be set.")
+        if not self._url or not self._api_key:
+            raise ValueError(
+                "NVIDIA_API_BASE_URL and NVIDIA_API_KEY should be set."
+            )
         self._client = OpenAI(
             timeout=60, max_retries=3, base_url=url, api_key=self._api_key
         )

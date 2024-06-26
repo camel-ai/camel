@@ -47,10 +47,16 @@ class ZhipuAIModel(BaseModelBackend):
                 be fed into openai.ChatCompletion.create().
             api_key (Optional[str]): The API key for authenticating with the
                 ZhipuAI service. (default: :obj:`None`)
+            url (Optional[str]): The url to the ZhipuAI service. (default:
+                :obj:`None`)
         """
         super().__init__(model_type, model_config_dict)
         self._url = url or os.environ.get("ZHIPUAI_API_BASE_URL")
         self._api_key = api_key or os.environ.get("ZHIPUAI_API_KEY")
+        if not self._url or not self._api_key:
+            raise ValueError(
+                "ZHIPUAI_API_BASE_URL and ZHIPUAI_API_KEY should be set."
+            )
         self._client = OpenAI(
             timeout=60,
             max_retries=3,

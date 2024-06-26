@@ -40,7 +40,8 @@ class OllamaModel:
                 be fed into openai.ChatCompletion.create().
             api_key (Optional[str]): The API key for authenticating with the
                 model service. (default: :obj:`None`)
-            url (Optional[str]): The url to the model service.
+            url (Optional[str]): The url to the model service. (default:
+                :obj:`None`)
         """
         self.model_type = model_type
         self.model_config_dict = model_config_dict
