@@ -12,7 +12,7 @@ Consider two sentences:
 
 - "A child is kicking a football on a playground."
 
-Text embedding models would transform these sentences into two high-dimensional vector (*e.g.*, 1536 dimension if using `text-embedding-ada-002`). Despite different wordings, the vectors will be similar, capturing the shared concept of a child playing a ball game outdoors. This transformation into vectors allows machines to understand and compare the semantic similarities between the context.
+Text embedding models would transform these sentences into two high-dimensional vector (*e.g.*, 1536 dimension if using `text-embedding-3-small`). Despite different wordings, the vectors will be similar, capturing the shared concept of a child playing a ball game outdoors. This transformation into vectors allows machines to understand and compare the semantic similarities between the context.
 
 ### 1.2. Image Embeddings (WIP)
 Image embeddings convert images into numerical vectors, capturing essential features like shapes, colors, textures, and spatial hierarchies. This transformation is typically performed by Convolutional Neural Networks (CNNs) or other advanced neural network architectures designed for image processing. The resulting embeddings can be used for tasks like image classification, similarity comparison, and retrieval.
@@ -39,7 +39,7 @@ from camel.embeddings import OpenAIEmbedding
 from camel.types import EmbeddingModelType
 
 # Initialize the OpenAI embedding with a specific model
-openai_embedding = OpenAIEmbedding(model_type=EmbeddingModelType.ADA_2)
+openai_embedding = OpenAIEmbedding(model_type=EmbeddingModelType.TEXT_EMBEDDING_3_SMALL)
 
 # Generate embeddings for a list of texts
 embeddings = openai_embedding.embed_list(["Hello, world!", "Another example"])
