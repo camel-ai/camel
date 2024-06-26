@@ -13,6 +13,8 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 import asyncio
+import json
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -32,31 +34,44 @@ def sid():
 
 
 @pytest.fixture
-def redis_storage(sid):
-    return RedisStorage(sid=sid, loop=asyncio.get_event_loop())
+def mock_redis_client():
+    client = AsyncMock()
+    client.get = AsyncMock(return_value=None)
+    client.set = AsyncMock()
+    client.setex = AsyncMock()
+    client.delete = AsyncMock()
+    return client
 
 
-def test_save(redis_storage):
+@pytest.fixture
+def redis_storage(sid, mock_redis_client):
+    with patch(
+        'camel.storages.key_value_storages.RedisStorage._create_client'
+    ) as create_client_mock:
+        create_client_mock.return_value = None
+        storage = RedisStorage(sid=sid, loop=asyncio.get_event_loop())
+        storage._client = mock_redis_client
+        yield storage
+
+
+def test_save(sid, redis_storage, mock_redis_client):
     records_to_save = [{"key1": "value1"}, {"key2": "value2"}]
     redis_storage.save(records_to_save)
 
-    loaded_records = redis_storage.load()
-    assert loaded_records == records_to_save
+    mock_redis_client.set.assert_called_once_with(
+        sid, json.dumps(records_to_save)
+    )
 
 
-def test_load(redis_storage):
+def test_load(redis_storage, mock_redis_client):
     records_to_save = [{"key3": "value3"}, {"key4": "value4"}]
-    redis_storage.save(records_to_save)
+    mock_redis_client.get.return_value = json.dumps(records_to_save)
 
     loaded_records = redis_storage.load()
     assert loaded_records == records_to_save
 
 
-def test_clear(redis_storage):
-    records_to_save = [{"key5": "value5"}, {"key6": "value6"}]
-    redis_storage.save(records_to_save)
-
+def test_clear(sid, redis_storage, mock_redis_client):
     redis_storage.clear()
 
-    loaded_records_after_clear = redis_storage.load()
-    assert loaded_records_after_clear == []
+    mock_redis_client.delete.assert_called_once_with(sid)
