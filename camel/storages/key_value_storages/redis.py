@@ -12,10 +12,10 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
+import asyncio
 import json
 import logging
-from typing import TYPE_CHECKING, Any, Optional, List, Dict
-
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from camel.storages.key_value_storages import BaseKeyValueStorage
 
@@ -32,17 +32,21 @@ class RedisStorage(BaseKeyValueStorage):
     """
 
     def __init__(
-            self,
-            sid: str,
-            url: str = "redis://localhost:6379",
-            **kwargs
+        self,
+        sid: str,
+        url: str = "redis://localhost:6379",
+        loop: Optional[asyncio.AbstractEventLoop] = None,
+        **kwargs,
     ) -> None:
-        r"""Initializes the RedisStorage instance with the provided URL and options.
+        r"""Initializes the RedisStorage instance with the provided URL and
+        options.
 
         Args:
-            sid (str): The ID for the storage instance to identify the record space.
+            sid (str): The ID for the storage instance to identify the
+                       record space.
             url (str): The URL for connecting to the Redis server.
-            **kwargs: Additional keyword arguments for Redis client configuration.
+            **kwargs: Additional keyword arguments for Redis client
+                      configuration.
 
         Raises:
             ImportError: If the `redis.asyncio` module is not installed.
@@ -59,34 +63,34 @@ class RedisStorage(BaseKeyValueStorage):
         self._client: Optional[aredis.Redis] = None
         self._url = url
         self._sid = sid
+        self._loop = loop or asyncio.get_event_loop()
 
         self._create_client(**kwargs)
 
-    async def __aenter__(self):
+    def __enter__(self):
         return self
 
-    async def __aexit__(self, exc_type, exc, tb):
-        await self.close()
+    def __exit__(self, exc_type, exc, tb):
+        self._run_async(self.close())
 
     async def close(self) -> None:
         r"""Closes the Redis client asynchronously."""
-        await self.client.close()
+        if self._client:
+            await self._client.close()
 
-    def _create_client(
-            self,
-            **kwargs
-    ) -> None:
+    def _create_client(self, **kwargs) -> None:
         r"""Creates the Redis client with the provided URL and options.
 
         Args:
-            **kwargs: Additional keyword arguments for Redis client configuration.
+            **kwargs: Additional keyword arguments for Redis client
+                      configuration.
         """
         import redis.asyncio as aredis
 
         self._client = aredis.from_url(self._url, **kwargs)
 
     @property
-    def client(self) -> "Redis":
+    def client(self) -> Optional["Redis"]:
         r"""Returns the Redis client instance.
 
         Returns:
@@ -94,25 +98,16 @@ class RedisStorage(BaseKeyValueStorage):
         """
         return self._client
 
-    async def save(self, records: List[Dict[str, Any]], expire: Optional[int] = None) -> None:
-        r"""Saves a batch of records to the key-value storage system.
-
-        Args:
-            records (List[Dict[str, Any]]): A list of dictionaries, where each
-                dictionary represents a unique record to be stored.
-            expire (Optional[int]): The expiration time in seconds. If None,
-                the cache entry does not expire.
-        """
+    def save(
+        self, records: List[Dict[str, Any]], expire: Optional[int] = None
+    ) -> None:
+        r"""Saves a batch of records to the key-value storage system."""
         try:
-            value = json.dumps(records)
-            if expire:
-                await self.client.setex(self._sid, expire, value)
-            else:
-                await self.client.set(self._sid, value)
+            self._run_async(self._async_save(records, expire))
         except Exception as e:
-            logger.error(f"Error saving records: {e}")
+            logger.error(f"Error in save: {e}")
 
-    async def load(self) -> List[Dict[str, Any]]:
+    def load(self) -> List[Dict[str, Any]]:
         r"""Loads all stored records from the key-value storage system.
 
         Returns:
@@ -120,7 +115,37 @@ class RedisStorage(BaseKeyValueStorage):
                 represents a stored record.
         """
         try:
-            value = await self.client.get(self._sid)
+            return self._run_async(self._async_load())
+        except Exception as e:
+            logger.error(f"Error in load: {e}")
+            return []
+
+    def clear(self) -> None:
+        r"""Removes all records from the key-value storage system."""
+        try:
+            self._run_async(self._async_clear())
+        except Exception as e:
+            logger.error(f"Error in clear: {e}")
+
+    async def _async_save(
+        self, records: List[Dict[str, Any]], expire: Optional[int] = None
+    ) -> None:
+        if self._client is None:
+            raise ValueError("Redis client is not initialized")
+        try:
+            value = json.dumps(records)
+            if expire:
+                await self._client.setex(self._sid, expire, value)
+            else:
+                await self._client.set(self._sid, value)
+        except Exception as e:
+            logger.error(f"Error saving records: {e}")
+
+    async def _async_load(self) -> List[Dict[str, Any]]:
+        if self._client is None:
+            raise ValueError("Redis client is not initialized")
+        try:
+            value = await self._client.get(self._sid)
             if value:
                 return json.loads(value)
             return []
@@ -128,9 +153,17 @@ class RedisStorage(BaseKeyValueStorage):
             logger.error(f"Error loading records: {e}")
             return []
 
-    async def clear(self) -> None:
-        r"""Removes all records from the key-value storage system."""
+    async def _async_clear(self) -> None:
+        if self._client is None:
+            raise ValueError("Redis client is not initialized")
         try:
-            await self.client.delete(self._sid)
+            await self._client.delete(self._sid)
         except Exception as e:
             logger.error(f"Error clearing records: {e}")
+
+    def _run_async(self, coro):
+        if not self._loop.is_running():
+            return self._loop.run_until_complete(coro)
+        else:
+            future = asyncio.run_coroutine_threadsafe(coro, self._loop)
+            return future.result()

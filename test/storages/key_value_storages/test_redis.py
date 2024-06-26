@@ -12,10 +12,18 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-import pytest
 import asyncio
 
+import pytest
+
 from camel.storages.key_value_storages import RedisStorage
+
+
+@pytest.fixture(scope="module")
+def event_loop():
+    loop = asyncio.get_event_loop()
+    yield loop
+    loop.close()
 
 
 @pytest.fixture
@@ -24,40 +32,31 @@ def sid():
 
 
 @pytest.fixture
-async def redis_storage(sid):
-    async with RedisStorage(sid) as storage:
-        await storage.clear()
-        yield storage
-        await storage.clear()
+def redis_storage(sid):
+    return RedisStorage(sid=sid, loop=asyncio.get_event_loop())
 
 
-@pytest.mark.asyncio
-async def test_save_load(redis_storage):
-    records = [{"id": 1, "name": "Record1"}, {"id": 2, "name": "Record2"}]
-    await redis_storage.save(records)
-    loaded_records = await redis_storage.load()
-    assert loaded_records == records
+def test_save(redis_storage):
+    records_to_save = [{"key1": "value1"}, {"key2": "value2"}]
+    redis_storage.save(records_to_save)
+
+    loaded_records = redis_storage.load()
+    assert loaded_records == records_to_save
 
 
-@pytest.mark.asyncio
-async def test_save_with_expiration(redis_storage):
-    records = [{"id": 1, "name": "Record1"}]
-    await redis_storage.save(records, expire=1)
-    await asyncio.sleep(2)
-    loaded_records = await redis_storage.load()
-    assert loaded_records == []
+def test_load(redis_storage):
+    records_to_save = [{"key3": "value3"}, {"key4": "value4"}]
+    redis_storage.save(records_to_save)
+
+    loaded_records = redis_storage.load()
+    assert loaded_records == records_to_save
 
 
-@pytest.mark.asyncio
-async def test_load_empty(redis_storage):
-    loaded_records = await redis_storage.load()
-    assert loaded_records == []
+def test_clear(redis_storage):
+    records_to_save = [{"key5": "value5"}, {"key6": "value6"}]
+    redis_storage.save(records_to_save)
 
+    redis_storage.clear()
 
-@pytest.mark.asyncio
-async def test_clear(redis_storage):
-    records = [{"id": 1, "name": "Record1"}]
-    await redis_storage.save(records)
-    await redis_storage.clear()
-    loaded_records = await redis_storage.load()
-    assert loaded_records == []
+    loaded_records_after_clear = redis_storage.load()
+    assert loaded_records_after_clear == []

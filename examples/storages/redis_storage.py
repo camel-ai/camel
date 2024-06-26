@@ -12,13 +12,13 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-import asyncio
 import logging
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
 from camel.storages import RedisStorage
 
 
-async def main():
+def main():
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
 
@@ -26,33 +26,36 @@ async def main():
     url = "redis://localhost:6379"
     storage = RedisStorage(sid=sid, url=url)
 
-    async with storage:
+    with storage:
         records: List[Dict[str, Any]] = [
             {"id": 1, "name": "Record1"},
-            {"id": 2, "name": "Record2"}
+            {"id": 2, "name": "Record2"},
         ]
 
-        await storage.save(records)
+        storage.save(records)
         logger.info("Records saved successfully.")
 
-        loaded_records = await storage.load()
+        loaded_records = storage.load()
         logger.info(f"Loaded records: {loaded_records}")
         """
-        Loaded records: [{'id': 1, 'name': 'Record1'}, {'id': 2, 'name': 'Record2'}]
+        Loaded records: [{'id': 1, 'name': 'Record1'}, {'id': 2, 'name': 
+        'Record2'}]
         """
 
-        await storage.clear()
+        storage.clear()
         logger.info("Records cleared successfully.")
         """
         Records cleared successfully.
         """
 
-        loaded_records_after_clear = await storage.load()
-        logger.info(f"Loaded records after clear: {loaded_records_after_clear}")
+        loaded_records_after_clear = storage.load()
+        logger.info(
+            f"Loaded records after clear: {loaded_records_after_clear}"
+        )
         """
         Loaded records after clear: []
         """
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
