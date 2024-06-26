@@ -104,7 +104,7 @@ exit
 Install `CAMEL` from source with conda and pip:
 ```sh
 # Create a conda virtual environment
-conda create --name camel python=3.10
+conda create --name camel python=3.9
 
 # Activate CAMEL conda environment
 conda activate camel
