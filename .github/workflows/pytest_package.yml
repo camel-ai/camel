@@ -20,7 +20,7 @@ jobs:
     - name: Set up Python environment and install dependencies
       uses: ./.github/actions/camel_install
       with:
-        python-version: "3.8"
+        python-version: "3.9"
     - name: Run pytest
       env:
         OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
@@ -42,7 +42,7 @@ jobs:
     - name: Set up Python environment and install dependencies
       uses: ./.github/actions/camel_install
       with:
-        python-version: "3.8"
+        python-version: "3.9"
     - name: Run pytest
       env:
         OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
@@ -64,7 +64,7 @@ jobs:
     - name: Set up Python environment and install dependencies
       uses: ./.github/actions/camel_install
       with:
-        python-version: "3.8"
+        python-version: "3.9"
     - name: Run pytest
       env:
         OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
