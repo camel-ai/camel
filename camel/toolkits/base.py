@@ -14,7 +14,7 @@
 
 from typing import List
 
-from camel.functions import OpenAIFunction
+from .openai_function import OpenAIFunction
 
 
 class BaseToolkit:

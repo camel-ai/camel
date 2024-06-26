@@ -67,7 +67,7 @@ Woohoo, your first agent is ready to play with you!
 ### Tool Usage
 ```python
 # Import the necessary functions
-from camel.functions import MATH_FUNCS, SEARCH_FUNCS
+from camel.toolkits import MATH_FUNCS, SEARCH_FUNCS
 
 # Initialize the agent with list of tools
 agent = ChatAgent(

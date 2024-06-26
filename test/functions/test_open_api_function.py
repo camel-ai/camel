@@ -15,16 +15,14 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from camel.functions import (
-    apinames_filepaths_to_funs_schemas,
-    generate_apinames_filepaths,
-)
+from camel.toolkits import OpenAPIToolkit
 
 
 @pytest.fixture(scope="module")
 def functions_dict():
-    apinames_filepaths = generate_apinames_filepaths()
-    openapi_functions_list, _ = apinames_filepaths_to_funs_schemas(
+    toolkit = OpenAPIToolkit()
+    apinames_filepaths = toolkit.generate_apinames_filepaths()
+    openapi_functions_list, _ = toolkit.apinames_filepaths_to_funs_schemas(
         apinames_filepaths
     )
     functions_dict = {func.__name__: func for func in openapi_functions_list}
