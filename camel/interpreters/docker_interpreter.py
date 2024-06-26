@@ -36,6 +36,14 @@ class DockerInterpreter(BaseInterpreter):
     (currently Python and Bash) within a docker container, capturing their
     stdout and stderr streams, and allowing user checking before executing code
     strings.
+
+    Args:
+        require_confirm (bool, optional): If True, prompt user before
+            running code strings for security. Defaults to True.
+        print_stdout (bool, optional): If True, print the standard
+            output of the executed code. Defaults to False.
+        print_stderr (bool, optional): If True, print the standard error
+            of the executed code. Defaults to True.
     """
 
     _CODE_EXECUTE_CMD_MAPPING: ClassVar[Dict[str, str]] = {
@@ -64,22 +72,11 @@ class DockerInterpreter(BaseInterpreter):
         print_stdout: bool = False,
         print_stderr: bool = True,
     ) -> None:
-        """Initializes a DockerInterpreter class with one docker container
-        attached to it. All the code execution will be done in this container.
+        self.require_confirm = require_confirm
+        self.print_stdout = print_stdout
+        self.print_stderr = print_stderr
 
-        Args:
-            require_confirm (bool, optional): If True, prompt user before
-                running code strings for security. (default: True)
-            print_stdout (bool, optional): If True, print the standard
-                output of the executed code. (default: False)
-            print_stderr (bool, optional): If True, print the standard error
-                of the executed code. (default: True)
-        """
-        self._require_confirm = require_confirm
-        self._print_stdout = print_stdout
-        self._print_stderr = print_stderr
-
-        # lazy initialization of docker client and container
+        # lazy initialization of container
         self._container: Optional[Container] = None
 
     def __del__(self) -> None:
@@ -136,11 +133,11 @@ class DockerInterpreter(BaseInterpreter):
             demux=True,
         ).output
 
-        if self._print_stdout and stdout:
+        if self.print_stdout and stdout:
             print("======stdout======")
             print(Fore.GREEN + stdout.decode() + Fore.RESET)
             print("==================")
-        if self._print_stderr and stderr:
+        if self.print_stderr and stderr:
             print("======stderr======")
             print(Fore.RED + stderr.decode() + Fore.RESET)
             print("==================")
@@ -167,12 +164,13 @@ class DockerInterpreter(BaseInterpreter):
 
         Raises:
             InterpreterError: If the user declines to run the code, or the
-                code type is unsupported, or t
+                code type is unsupported, or there is an error in the docker
+                API/container
         """
         code_type = self._check_code_type(code_type)
 
         # Print code for security checking
-        if self._require_confirm:
+        if self.require_confirm:
             print(f"The following {code_type} code will run in container:")
             print(Fore.CYAN + code + Fore.RESET)
             while True:
