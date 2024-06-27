@@ -13,6 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .anthropic_model import AnthropicModel
 from .base_model import BaseModelBackend
+from .fastchat_model import FastChatModel
 from .litellm_model import LiteLLMModel
 from .model_factory import ModelFactory
 from .nemotron_model import NemotronModel
@@ -22,7 +23,6 @@ from .openai_audio_models import OpenAIAudioModels
 from .openai_model import OpenAIModel
 from .stub_model import StubModel
 from .zhipuai_model import ZhipuAIModel
-from .fastchat_model import FastChatModel
 
 __all__ = [
     'BaseModelBackend',

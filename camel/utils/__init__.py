@@ -32,10 +32,10 @@ from .constants import Constants
 from .token_counting import (
     AnthropicTokenCounter,
     BaseTokenCounter,
+    FastChatChatTokenCounter,
     LiteLLMTokenCounter,
     OpenAITokenCounter,
     OpenSourceTokenCounter,
-    FastChatChatTokenCounter,
     get_model_encoding,
 )
 

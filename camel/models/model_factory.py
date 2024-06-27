@@ -15,13 +15,13 @@ from typing import Any, Dict, Optional, Union
 
 from camel.models.anthropic_model import AnthropicModel
 from camel.models.base_model import BaseModelBackend
+from camel.models.fastchat_model import FastChatModel
 from camel.models.litellm_model import LiteLLMModel
 from camel.models.ollama_model import OllamaModel
 from camel.models.open_source_model import OpenSourceModel
 from camel.models.openai_model import OpenAIModel
 from camel.models.stub_model import StubModel
 from camel.models.zhipuai_model import ZhipuAIModel
-from camel.models.fastchat_model import FastChatModel
 from camel.types import ModelPlatformType, ModelType
 
 
