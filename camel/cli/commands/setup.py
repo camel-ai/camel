@@ -30,7 +30,7 @@ def setup():
     systemd_setup_script_dir = (
         f"{file_dir.parents[2]}/.script/setup_systemd_service.sh"
     )
-    print(systemd_setup_script_dir)
+
     try:
         subprocess.run(["bash", f"{systemd_setup_script_dir}"])
     except Exception:
