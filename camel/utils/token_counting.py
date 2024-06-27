@@ -93,6 +93,38 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
             else:
                 ret += role + ":"
         return ret
+    elif model == ModelType.GLM_4_OPEN_SOURCE:
+        system_prompt = f"[gMASK]<sop><|system|>\n{system_message}"
+        ret = system_prompt
+        for msg in messages[1:]:
+            role = msg["role"]
+            content = msg["content"]
+            if not isinstance(content, str):
+                raise ValueError(
+                    "Currently multimodal context is not "
+                    "supported by the token counter."
+                )
+            if content:
+                ret += "<|" + role + "|>" + "\n" + content
+            else:
+                ret += "<|" + role + "|>" + "\n"
+        return ret
+    elif model == ModelType.QWEN_2:
+        system_prompt = f"<|im_start|>system\n{system_message}<|im_end|>"
+        ret = system_prompt + "\n"
+        for msg in messages[1:]:
+            role = msg["role"]
+            content = msg["content"]
+            if not isinstance(content, str):
+                raise ValueError(
+                    "Currently multimodal context is not "
+                    "supported by the token counter."
+                )
+            if content:
+                ret += '<|im_start|>' + role + '\n' + content + '<|im_end|>' + '\n'
+            else:
+                ret += '<|im_start|>' + role + '\n'
+        return ret
     else:
         raise ValueError(f"Invalid model type: {model}")
 
@@ -179,23 +211,8 @@ class OpenSourceTokenCounter(BaseTokenCounter):
         Returns:
             int: Number of tokens in the messages.
         """
-        if self.model_type == ModelType.QWEN_2:
-            text = self.tokenizer.apply_chat_template(
-                messages, tokenize=False, add_generation_prompt=True
-            )
-            input_ids = self.tokenizer([text], return_tensors="pt").input_ids
-        elif self.model_type == ModelType.GLM_4_OPEN_SOURCE:
-            inputs = self.tokenizer.apply_chat_template(
-                messages,
-                add_generation_prompt=True,
-                tokenize=True,
-                return_tensors="pt",
-                return_dict=True,
-            )
-            input_ids = inputs["input_ids"]
-        else:
-            prompt = messages_to_prompt(messages, self.model_type)
-            input_ids = self.tokenizer(prompt).input_ids
+        prompt = messages_to_prompt(messages, self.model_type)
+        input_ids = self.tokenizer(prompt).input_ids
 
         return len(input_ids)
 
