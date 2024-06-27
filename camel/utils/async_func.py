@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import asyncio
+from copy import deepcopy
 
 from camel.functions.openai_function import OpenAIFunction
 
@@ -28,11 +29,14 @@ def sync_funcs_to_async(funcs: list[OpenAIFunction]) -> list[OpenAIFunction]:
         list[OpenAIFunction]: List of Python asynchronous functions
             in the :obj:`OpenAIFunction` format.
     """
+    async_funcs = []
     for func in funcs:
         sync_func = func.func
 
         def async_callable(*args, **kwargs):
             return asyncio.to_thread(sync_func, *args, **kwargs)  # noqa: B023
 
-        func.func = async_callable
-    return funcs
+        async_funcs.append(
+            OpenAIFunction(async_callable, deepcopy(func.openai_tool_schema))
+        )
+    return async_funcs
