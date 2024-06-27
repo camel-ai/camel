@@ -16,7 +16,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import List, Union
 
-from unstructured.documents.elements import Element
+try:
+    from unstructured.documents.elements import Element
+except ImportError:
+    Element = None
 
 
 @dataclass
@@ -72,3 +75,8 @@ class GraphElement:
     nodes: List[Node]
     relationships: List[Relationship]
     source: Element
+
+    def __post_init__(self):
+        if Element is None:
+            raise ImportError("""The 'unstructured' package is required to use
+                              the 'source' attribute.""")
