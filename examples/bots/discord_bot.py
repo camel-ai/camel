@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, List, Optional, Union
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.retrievers import AutoRetriever
+from camel.types import StorageType
 
 if TYPE_CHECKING:
     from discord import Message
@@ -119,7 +120,7 @@ class DiscordBot:
         if self.auto_retriever:
             retrieved_content = self.auto_retriever.run_vector_retriever(
                 query=user_raw_msg,
-                vector_storage_local_path=self.content_input_paths,
+                content_input_paths=self.vector_storage_local_path,
                 top_k=self.top_k,
                 return_detailed_info=self.return_detailed_info,
             )
@@ -186,13 +187,15 @@ if __name__ == "__main__":
     )
     # Uncommented the folowing code and offer storage information
     # for RAG functionality
-    # auto_retriever = AutoRetriever(
-    #     url_and_api_key=("Your QDRANT URI", "Your QDRANT Token"),
-    #     storage_type=StorageType.QDRANT,
-    # )
+    auto_retriever = AutoRetriever(
+        vector_storage_local_path="examples/bots",
+        storage_type=StorageType.QDRANT,
+    )
     bot = DiscordBot(
         agent,
-        # auto_retriever=auto_retriever,
-        # vector_storage_local_path=["local_data/"],
+        auto_retriever=auto_retriever,
+        vector_storage_local_path=[
+            "examples/bots/customer_support_bot_dataset_v2.csv"
+        ],
     )
     bot.run()

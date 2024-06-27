@@ -1,0 +1,16 @@
+User,Output
+How do I verify everything is set up correctly?,"To verify that everything is set up correctly, run pytest . This will ensure that all tests pass successfully. ✅"
+How can I contribute to the CAMEL project?,"If you're eager to contribute to this project, that's fantastic! Follow the Fork-and-Pull-Request workflow when opening your pull requests if you are a community contributor. If you are a member of CAMEL-AI.org, follow the Checkout-and-Pull-Request workflow."
+What should I do before my pull request can be merged?,"Before your pull request can be merged, it must pass the formatting, linting, and testing checks. Ensuring excellent documentation and thorough testing is crucial."
+What should I include if I fix a bug?,Add a relevant unit test when possible. These can be found in the test directory.
+How do I update dependencies?,"Whenever you add, update, or delete any dependencies in pyproject.toml, run poetry lock to synchronize the dependencies with the lock file."
+How do I handle linting and formatting?,"Use flake8 and isort for linting and formatting. For type hints validation, use mypy."
+How can I generate a coverage report?,"To generate a coverage report, use coverage erase, coverage run, and coverage html commands. The report will be at htmlcov/index.html."
+How do I run tests?,"To run all tests, including those using OpenAI API, use pytest. For quick tests, use pytest --fast-test-mode."
+How can I contribute to documentation?,Provide comprehensive documentation for all classes and methods. Build documentation locally using Sphinx.
+How is versioning handled in CAMEL?,"CAMEL follows the semver versioning standard. As pre-1.0 software, even patch releases may contain non-backwards-compatible changes."
+What is the license for the CAMEL project?,The CAMEL project is licensed under Apache 2.0. Contributed code will also be licensed under Apache 2.0 by default. Use update_license.py to add or update licenses in files.
+How can I get credit for my contributions?,"If your contribution is included in a release, we’d love to give you credit on Twitter. Let us know your Twitter handle if you’d like to be mentioned."
+How do I get help with the developer setup?,"If you encounter any challenges during the setup process, don't hesitate to reach out to a maintainer. We're here to assist you and ensure a smooth experience."
+What should I do if I find the guidelines difficult?,"We have specific guidelines for code linting, formatting, and documentation. If these requirements are difficult, please contact a maintainer for support."
+How do I get started with CAMEL?,"To get started with CAMEL, clone the GitHub repo, change to the project directory, activate the virtual environment, and install dependencies using poetry. Run unit tests to verify setup."
