@@ -29,7 +29,9 @@ copyright = '2023, CAMEL-AI.org'
 author = 'CAMEL-AI.org'
 release = '0.1.5.3'
 
-html_favicon = 'https://raw.githubusercontent.com/camel-ai/camel/master/misc/favicon.png'
+html_favicon = (
+    'https://raw.githubusercontent.com/camel-ai/camel/master/misc/favicon.png'
+)
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
