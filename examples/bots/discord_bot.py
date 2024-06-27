@@ -186,10 +186,12 @@ if __name__ == "__main__":
     )
     # Uncommented the folowing code and offer storage information
     # for RAG functionality
+
     # auto_retriever = AutoRetriever(
-    #     url_and_api_key=("Your QDRANT URI", "Your QDRANT Token"),
+    #     vector_storage_local_path="examples/bots",
     #     storage_type=StorageType.QDRANT,
     # )
+
     bot = DiscordBot(
         agent,
         # auto_retriever=auto_retriever,
