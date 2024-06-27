@@ -54,8 +54,6 @@ class ModelType(Enum):
     # Nvidia models
     NEMOTRON_4_REWARD = "nvidia/nemotron-4-340b-reward"
 
-    FSCHAT = "fastchat"
-
     @property
     def value_for_tiktoken(self) -> str:
         return (
@@ -91,7 +89,6 @@ class ModelType(Enum):
             ModelType.LLAMA_2,
             ModelType.VICUNA,
             ModelType.VICUNA_16K,
-            ModelType.FSCHAT,
         }
 
     @property
@@ -187,9 +184,6 @@ class ModelType(Enum):
                 self.value in model_name.lower()
                 or "llama2" in model_name.lower()
             )
-        elif self is ModelType.FSCHAT:
-            # Fastchat deploying Open Source Models a model name can be specified, so this type does not check the model name
-            return True
         else:
             return self.value in model_name.lower()
 
