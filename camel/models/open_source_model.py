@@ -19,7 +19,12 @@ from camel.configs import OPENAI_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
-from camel.utils import BaseTokenCounter, OpenSourceTokenCounter, FsChatTokenCounter
+from camel.utils import (
+    BaseTokenCounter,
+    FsChatTokenCounter,
+    OpenSourceTokenCounter,
+)
+from camel.utils.token_counting import get_fschat_tokens
 
 
 class OpenSourceModel(BaseModelBackend):
@@ -31,8 +36,6 @@ class OpenSourceModel(BaseModelBackend):
         self,
         model_type: ModelType,
         model_config_dict: Dict[str, Any],
-        api_key: Optional[str] = None,
-        url: Optional[str] = None,
     ) -> None:
         r"""Constructor for model backends of Open-source models.
 
@@ -40,11 +43,8 @@ class OpenSourceModel(BaseModelBackend):
             model_type (ModelType): Model for which a backend is created.
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into :obj:`openai.ChatCompletion.create()`.
-            api_key (Optional[str]): The API key for authenticating with the
-                model service. (ignored for open-source models)
-            url (Optional[str]): The url to the model service.
         """
-        super().__init__(model_type, model_config_dict, api_key, url)
+        super().__init__(model_type, model_config_dict)
         self._token_counter: Optional[BaseTokenCounter] = None
 
         # Check whether the input model type is open-source
@@ -70,7 +70,7 @@ class OpenSourceModel(BaseModelBackend):
             )
 
         # Load the server URL and check whether it is None
-        server_url: Optional[str] = url or self.model_config_dict.get(
+        server_url: Optional[str] = self.model_config_dict.get(
             "server_url", None
         )
         if not server_url:
@@ -98,7 +98,9 @@ class OpenSourceModel(BaseModelBackend):
                 tokenization style.
         """
         if self.model_type == ModelType.FSCHAT:
-            self._token_counter = FsChatTokenCounter(self.model_type, self.model_name, self.server_url)
+            self._token_counter = FsChatTokenCounter(
+                self.model_type, self.model_name, self.server_url
+            )
 
         if not self._token_counter:
             self._token_counter = OpenSourceTokenCounter(
@@ -158,8 +160,22 @@ class OpenSourceModel(BaseModelBackend):
     def stream(self) -> bool:
         r"""Returns whether the model is in stream mode,
             which sends partial results each time.
-
         Returns:
             bool: Whether the model is in stream mode.
         """
         return self.model_config_dict.get('stream', False)
+
+    @property
+    def token_limit(self) -> int:
+        r"""Returns the token limit of the model.
+        Returns:
+            int: The token limit of the model.
+        """
+        if self.model_type == ModelType.FSCHAT:
+            _, max_tokens = get_fschat_tokens(
+                server_url=self.server_url,
+                model_name=self.model_name,
+                prompt="",
+            )
+            return max_tokens
+        return self.model_type.token_limit

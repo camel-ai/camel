@@ -15,11 +15,13 @@
 from __future__ import annotations
 
 import base64
+import json
 from abc import ABC, abstractmethod
 from io import BytesIO
 from math import ceil
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Tuple
 
+import requests
 from anthropic import Anthropic
 from PIL import Image
 
@@ -34,6 +36,28 @@ SHORTEST_SIDE_PIXELS = 768
 SQUARE_PIXELS = 512
 SQUARE_TOKENS = 170
 EXTRA_TOKENS = 85
+
+
+def get_fschat_tokens(
+    server_url: str, model_name: str, prompt: str = ""
+) -> Tuple[int, int]:
+    token_check_url = server_url.replace("v1", "api/v1/token_check")
+    r = requests.post(
+        token_check_url,
+        json={
+            "prompts": [
+                {"model": model_name, "prompt": prompt, "max_tokens": 0}
+            ]
+        },
+    )
+    if r.status_code != 200:
+        raise ValueError(
+            f"Token check failed: {r.text}, status code: {r.status_code}"
+        )
+    r_data = json.loads(r.text)
+    return r_data["prompts"][0]["tokenCount"], r_data["prompts"][0][
+        "contextLength"
+    ]
 
 
 def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
@@ -93,6 +117,22 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
             else:
                 ret += role + ":"
         return ret
+    elif model == ModelType.FSCHAT:
+        # Simple processing and return
+        ret = ""
+        for msg in messages:
+            role = msg["role"]
+            content = msg["content"]
+            if not isinstance(content, str):
+                raise ValueError(
+                    "Currently multimodal context is not "
+                    "supported by the token counter."
+                )
+            if content:
+                ret += role + ": " + content + "\n"
+            else:
+                ret += role + ":"
+        return ret
     else:
         raise ValueError(f"Invalid model type: {model}")
 
@@ -131,6 +171,31 @@ class BaseTokenCounter(ABC):
             int: Number of tokens in the messages.
         """
         pass
+
+
+class FsChatTokenCounter(BaseTokenCounter):
+    def __init__(self, model_type: ModelType, model_name: str, server_url: str):
+        self.model_type = model_type
+        self.model_name = model_name
+        self.server_url = server_url
+
+    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
+        r"""Count number of tokens in the provided message list.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+
+        Returns:
+            int: Number of tokens in the messages.
+        """
+        # In general, the system placeholder 1 token
+        placeholder_tokens = len(messages) * 3
+        prompt = messages_to_prompt(messages, self.model_type)
+        tokens_length, _ = get_fschat_tokens(
+            self.server_url, self.model_name, prompt
+        )
+        return tokens_length + placeholder_tokens
 
 
 class OpenSourceTokenCounter(BaseTokenCounter):
