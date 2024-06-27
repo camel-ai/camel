@@ -54,7 +54,7 @@ class JinaURLReader:
         **kwargs: str,
     ) -> None:
         api_key = api_key or os.getenv('JINA_API_KEY')
-        if not api_key:
+        if api_key is None:
             print(
                 "[JinaURLReader] JINA_API_KEY not set. This will result in a "
                 "low rate limit of Jina URL Reader. Get API key here: "
