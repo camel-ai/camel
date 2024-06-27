@@ -35,6 +35,7 @@ from .token_counting import (
     LiteLLMTokenCounter,
     OpenAITokenCounter,
     OpenSourceTokenCounter,
+    FastChatChatTokenCounter,
     get_model_encoding,
 )
 
@@ -54,6 +55,7 @@ __all__ = [
     'BaseTokenCounter',
     'OpenAITokenCounter',
     'OpenSourceTokenCounter',
+    'FastChatChatTokenCounter',
     'LiteLLMTokenCounter',
     'Constants',
     'text_extract_from_web',
