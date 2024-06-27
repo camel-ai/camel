@@ -21,6 +21,7 @@ from camel.models.open_source_model import OpenSourceModel
 from camel.models.openai_model import OpenAIModel
 from camel.models.stub_model import StubModel
 from camel.models.zhipuai_model import ZhipuAIModel
+from camel.models.fastchat_model import FastChatModel
 from camel.types import ModelPlatformType, ModelType
 
 
@@ -82,6 +83,8 @@ class ModelFactory:
                 model_class = OllamaModel
             elif model_platform.is_litellm:
                 model_class = LiteLLMModel
+            elif model_platform.FASTCHAT:
+                model_class = FastChatModel
             else:
                 raise ValueError(
                     f"Unknown pair of model platform `{model_platform}` "

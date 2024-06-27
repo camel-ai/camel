@@ -22,6 +22,7 @@ from .openai_audio_models import OpenAIAudioModels
 from .openai_model import OpenAIModel
 from .stub_model import StubModel
 from .zhipuai_model import ZhipuAIModel
+from .fastchat_model import FastChatModel
 
 __all__ = [
     'BaseModelBackend',
@@ -35,4 +36,5 @@ __all__ = [
     'OpenAIAudioModels',
     'NemotronModel',
     'OllamaModel',
+    'FastChatModel',
 ]
