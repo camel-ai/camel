@@ -170,7 +170,8 @@ python examples/ai_society/role_playing.py
 Please note that the environment variable is session-specific. If you open a new terminal window or tab, you will need to set the API key again in that new session.
 
 
-## Use Open-Source Models as Backends (ex. using Ollama to set Llama 3 locally)
+## Use Open-Source Models as Backends 
+## Using Ollama to set Llama 3 locally
 
 - Download [Ollama](https://ollama.com/download).
 - After setting up Ollama, pull the Llama3 model by typing the following command into the terminal:
@@ -231,6 +232,40 @@ Please note that the environment variable is session-specific. If you open a new
     assistant_response = agent.step(user_msg)
     print(assistant_response.msg.content)
     ```
+## Using FastChat
+- Install [FastChat](https://github.com/lm-sys/FastChat)
+- [Launch](https://github.com/lm-sys/FastChat/blob/main/docs/openai_api.md)
+- Example code
+  ```python
+  from camel.agents import ChatAgent
+  from camel.messages import BaseMessage
+  from camel.models import ModelFactory
+  from camel.types import ModelPlatformType
+  
+  fastchat_model = ModelFactory.create(
+      model_platform=ModelPlatformType.FASTCHAT,
+      model_type="qwen",
+      url="http://127.0.0.1:8000/v1",
+      model_config_dict={
+          "model_name": "Qwen2-72B-Instruct",
+          "api_params": {"temperature": 0.4},
+      },
+  )
+  
+  assistant_sys_msg = BaseMessage.make_assistant_message(
+      role_name="Assistant",
+      content="You are a helpful assistant.",
+  )
+  agent = ChatAgent(assistant_sys_msg, model=fastchat_model, token_limit=4096)
+  agent.reset()
+  
+  user_msg = BaseMessage.make_user_message(
+      role_name="User", content="who are you?"
+  )
+  assistant_response = agent.step(user_msg)
+  print(assistant_response.msg.content)
+  ```
+
 
 ## Data (Hosted on Hugging Face)
 | Dataset        | Chat format                                                                                         | Instruction format                                                                                               | Chat format (translated)                                                                   |
