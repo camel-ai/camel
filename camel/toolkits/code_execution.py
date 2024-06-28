@@ -22,7 +22,7 @@ from .base import BaseToolkit
 class CodeExecutionToolkit(BaseToolkit):
     r"""A tookit for code execution.
 
-    Attributes:
+    Args:
         sandbox (str): the environment type used to execute code.
     """
 
@@ -43,7 +43,7 @@ class CodeExecutionToolkit(BaseToolkit):
             )
 
     def execute_code(self, code: str) -> str:
-        r"""Execute a giving code snippet.
+        r"""Execute a given code snippet.
 
         Args:
             code (str): The input code to the Code Interpreter tool call.
