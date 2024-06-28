@@ -5,7 +5,7 @@ services:
     container_name: camel
     build:
       context: ../
-      dockerfile: Dockerfile
+      dockerfile: ./docker/Dockerfile
     env_file:
       - .env
     command: ["python", "ai_society/role_playing.py"]
