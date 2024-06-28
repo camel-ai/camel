@@ -20,6 +20,12 @@ from .base import BaseToolkit
 
 
 class CodeExecutionToolkit(BaseToolkit):
+    r"""A tookit for code execution.
+
+    Attributes:
+        sandbox (str): the environment type used to execute code.
+    """
+
     def __init__(
         self,
         sandbox: Literal[
@@ -27,6 +33,7 @@ class CodeExecutionToolkit(BaseToolkit):
         ] = "internal_python",
         verbose: bool = False,
     ) -> None:
+        # TODO: Add support for docker and jupyter.
         self.verbose = verbose
         if sandbox == "internal_python":
             self.interpreter = InternalPythonInterpreter()
@@ -36,7 +43,7 @@ class CodeExecutionToolkit(BaseToolkit):
             )
 
     def execute_code(self, code: str) -> str:
-        r"""execute a giving code snippet.
+        r"""Execute a giving code snippet.
 
         Args:
             code (str): The input code to the Code Interpreter tool call.
