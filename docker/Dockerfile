@@ -10,7 +10,9 @@ RUN poetry config virtualenvs.create false
 COPY . /app/camel
 WORKDIR /app/camel
 
-RUN poetry install -E all
+RUN poetry install --with dev,docs -E all
+
+RUN poetry run pre-commit install
 
 # Set the working directory to the examples folder
 WORKDIR /app/camel/examples
