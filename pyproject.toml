@@ -99,8 +99,8 @@ camel-object-recognizer = {reference = "examples.vision.object_recognizer:main",
 camel-video-describer = {reference = "examples.vision.video_describer:main", type = "console"}
 camel-translator = {reference = "examples.translation.translator:main", type = "console"}
 camel-knowledge-graph-constructor = {reference = "examples.knowledge_graph.knowledge_graph_constructor:main", type = "console"}
-camel-telegram-bot = {reference = "examples.bots.telegram_bot:main", type = "console"}
-camel-discord-bot = {reference = "examples.bots.discord_bot:main", type = "console"}
+camel-telegram-bot = {reference = "examples.bots.telegram_bot_launcher:main", type = "console"}
+camel-discord-bot = {reference = "examples.bots.discord_bot_launcher:main", type = "console"}
 
 [tool.poetry.extras]
 test = ["pytest", "mock", "pytest-asyncio"]

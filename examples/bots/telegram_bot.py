@@ -11,40 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import argparse
 import os
 from typing import TYPE_CHECKING, Optional
 
 from camel.agents import ChatAgent
-from camel.configs.openai_config import ChatGPTConfig
 from camel.messages import BaseMessage
-from camel.models import OpenAIModel
-from camel.types import ModelType
 
 # Conditionally import telebot types only for type checking
 if TYPE_CHECKING:
     from telebot.types import Message  # type: ignore[import-untyped]
-
-
-parser = argparse.ArgumentParser(
-    description="Arguments for telegram bot.",
-)
-parser.add_argument(
-    "--sys_msg",
-    type=str,
-    help="System message for the telegram bot.",
-    required=False,
-    default="You are a helpful assistant.",
-)
-parser.add_argument(
-    "--model_type",
-    type=str,
-    help="Model type for the telegram bot.",
-    required=False,
-    default=ModelType.GPT_3_5_TURBO.value,
-)
-
-args = parser.parse_args()
 
 
 class TelegramBot:
@@ -107,24 +82,3 @@ class TelegramBot:
         assistant_response = self.chat_agent.step(user_msg)
 
         self.bot.reply_to(message, assistant_response.msg.content)
-
-
-def main():
-    assistant_sys_msg = BaseMessage.make_assistant_message(
-        role_name="Assistant",
-        content=args.sys_msg,
-    )
-    model = OpenAIModel(
-        model_type=ModelType(args.model_type),
-        model_config_dict=ChatGPTConfig().__dict__,
-    )
-    agent = ChatAgent(
-        assistant_sys_msg,
-        model=model,
-    )
-    bot = TelegramBot(agent)
-    bot.run()
-
-
-if __name__ == "__main__":
-    main()
