@@ -11,30 +11,112 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from __future__ import annotations
+
+import argparse
+
 from camel.agents import KnowledgeGraphAgent
-from camel.loaders import UnstructuredIO
+from camel.configs.openai_config import ChatGPTConfig
+from camel.models import OpenAIModel
+from camel.types import ModelType
 
-# Set instance
-uio = UnstructuredIO()
-kg_agent = KnowledgeGraphAgent()
+parser = argparse.ArgumentParser(
+    description="Arguments for knowledge graph constructor.",
+)
+parser.add_argument(
+    "--text",
+    type=str,
+    help="Text data or path to a file for knowledge graph constructor.",
+    required=False,
+    default=None,
+)
+parser.add_argument(
+    "--path_or_url",
+    type=str,
+    help="Path to a file or a URL for knowledge graph constructor.",
+    required=False,
+    default=None,
+)
+parser.add_argument(
+    "--model_type",
+    type=str,
+    help="Model type for knowledge graph constructor.",
+    required=False,
+    default=ModelType.GPT_3_5_TURBO.value,
+)
+parser.add_argument(
+    "--temperature",
+    type=float,
+    help="Model temperature.",
+    required=False,
+    default=1.0,
+)
+parser.add_argument(
+    "--parse_graph_elements",
+    help="Whether to parse the graph elements.",
+    action="store_true",
+)
+parser.add_argument(
+    "--output_path",
+    type=str,
+    help=(
+        "Output path for LLM knowledge graph constructor. "
+        "If not specified, results will be printed out."
+    ),
+    required=False,
+    default=None,
+)
 
-# Set example text input
-text_example = """CAMEL-AI.org is an open-source community dedicated to the 
-study of autonomous and communicative agents. 
-"""
+args = parser.parse_args()
 
-# Create an element from given text
-element_example = uio.create_element_from_text(text=text_example)
 
-# Let KnowledgeGraph Agent extract node and relationship information
-ans_str = kg_agent.run(element_example, parse_graph_elements=False)
-ans_GraphElement = kg_agent.run(element_example, parse_graph_elements=True)
+def construct(
+    text: str | None,
+    path_or_url: str | None,
+    model_type: ModelType,
+    temperature: float,
+    parse_graph_elements: bool,
+    output_path: str | None,
+) -> None:
+    model_config = ChatGPTConfig(temperature=temperature)
+    model = OpenAIModel(
+        model_type=model_type, model_config_dict=model_config.__dict__
+    )
+    kg_agent = KnowledgeGraphAgent(model=model)
 
-# Get str output
-print(ans_str)
+    if text is not None:
+        element = text
+    elif path_or_url is not None:
+        from camel.loaders import UnstructuredIO
 
-# Get GraphElement output
-print(ans_GraphElement)
+        uio = UnstructuredIO()
+        element = uio.parse_file_or_url(path_or_url)
+    else:
+        raise ValueError("Either text or path_or_url should be specified")
+
+    # Let KnowledgeGraph Agent extract node and relationship information
+    out = kg_agent.run(element, parse_graph_elements=parse_graph_elements)
+
+    if not output_path:
+        print(out)
+    else:
+        with open(output_path, "w") as f:
+            f.write(str(out))
+
+
+def main() -> None:
+    construct(
+        args.text,
+        args.path_or_url,
+        ModelType(args.model_type),
+        args.temperature,
+        args.parse_graph_elements,
+        args.output_path,
+    )
+
+
+if __name__ == "__main__":
+    main()
 
 """
 ===============================================================================
