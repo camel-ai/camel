@@ -90,7 +90,7 @@ def construct(
         from camel.loaders import UnstructuredIO
 
         uio = UnstructuredIO()
-        element = uio.parse_file_or_url(path_or_url)
+        element = uio.parse_file_or_url(path_or_url)[0]
     else:
         raise ValueError("Either text or path_or_url should be specified")
 
