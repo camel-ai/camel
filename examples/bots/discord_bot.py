@@ -66,7 +66,7 @@ class DiscordBot:
         except ImportError:
             raise ImportError(
                 "Please install `discord` first. You can install it by running"
-                " `python3 -m pip install -U discord.py`."
+                " `python3 -m pip install -U discord`."
             )
         intents = discord.Intents.default()
         intents.message_content = True
