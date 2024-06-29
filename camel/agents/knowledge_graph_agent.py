@@ -13,7 +13,10 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Optional, Union
 
-from unstructured.documents.elements import Element
+try:
+    from unstructured.documents.elements import Element
+except ImportError:
+    Element = None
 
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
