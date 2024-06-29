@@ -11,16 +11,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import base64
 import os
 import uuid
-import base64
+from io import BytesIO
 from typing import List, Literal
-from openai import OpenAI
-from diskcache import Cache
-from camel.functions import OpenAIFunction
+
 from openai import OpenAI
 from PIL import Image
-from io import BytesIO
+
+from camel.functions import OpenAIFunction
 
 
 def base64_to_image(base64_string):
@@ -35,8 +35,8 @@ def base64_to_image(base64_string):
 
 
 def image_path_to_base64(image_path):
-  with open(image_path, "rb") as image_file:
-    return base64.b64encode(image_file.read()).decode('utf-8')
+    with open(image_path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode('utf-8')
 
 
 def image_to_base64(image):
@@ -52,23 +52,30 @@ def image_to_base64(image):
         return None
 
 
-def get_dalle_img(model: str, prompt: str, size: str, quality: str, n: int) -> str:
+def get_dalle_img(
+    model: str,
+    prompt: str,
+    size: Literal['256x256', '512x512', '1024x1024', '1792x1024', '1024x1792'],
+    quality: Literal['standard', 'hd'],
+    n: int,
+    image_path: str,
+) -> str:
     """Generate an image using OpenAI's DALL-E model.
     Args:
-        model (str): The specific DALL-E model to use for image generation, including "dall-e-3" and "dall-e-2". Defaults to "dall-e-3".
+        model (str): The specific DALL-E model to use for image generation,
+            including "dall-e-3" and "dall-e-2". Defaults to "dall-e-3".
         prompt (str): The text prompt based on which the image is generated.
-        size (str): The size specification of the image. Must be one of "256x256", "512x512", or "1024x1024" for "dall-e-2". Must be one of "1024x1024", "1792x1024", or "1024x1792" for "dall-e-3".
-        quality (str): The quality setting for the image generation, including "standard" and "hd". Defaults to "standard".
-        n (int): The number of images to generate. Must be between 1 and 10. For "dall-e-3", only n=1 is supported. Defaults to 1.
+        size (str): The size specification of the image.
+            Must be one of "256x256","512x512", or "1024x1024" for
+            "dall-e-2". Must be one of "1024x1024",
+            "1792x1024", or "1024x1792" for "dall-e-3".
+        quality (str): The quality setting for the image generation,
+            including "standard" and "hd". Defaults to "standard".
+        n (int): The number of images to generate. Must be between 1 and 10.
+            For "dall-e-3", only n=1 is supported. Defaults to 1.
     Returns:
     str: The image data as a base64 string.
     """
-
-    # use local path
-    cache = Cache(".cache/")
-    key = (model, prompt, size, quality, n)
-    if key in cache:
-        return cache[key]
 
     dalle_client = OpenAI()
     response = dalle_client.images.generate(
@@ -77,16 +84,14 @@ def get_dalle_img(model: str, prompt: str, size: str, quality: str, n: int) -> s
         size=size,
         quality=quality,
         n=n,
-        response_format="b64_json"
+        response_format="b64_json",
     )
     image_b64 = response.data[0].b64_json
     image = base64_to_image(image_b64)
 
     os.makedirs("img", exist_ok=True)
-    image_path = f"img/{str(uuid.uuid4())}.png"
+    image_path = f"img/{uuid.uuid4()!s}.png"
     image.save(image_path)
-
-    cache[key] = image_path
 
     return f"{image_path}"
 

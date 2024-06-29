@@ -22,14 +22,18 @@ from camel.utils import AnthropicTokenCounter
 
 
 @pytest.mark.model_backend
-@pytest.mark.parametrize("model_type", [
-    ModelType.CLAUDE_INSTANT_1_2,
-    ModelType.CLAUDE_2_0,
-    ModelType.CLAUDE_2_1,
-    ModelType.CLAUDE_3_OPUS,
-    ModelType.CLAUDE_3_SONNET,
-    ModelType.CLAUDE_3_HAIKU,
-])
+@pytest.mark.parametrize(
+    "model_type",
+    [
+        ModelType.CLAUDE_INSTANT_1_2,
+        ModelType.CLAUDE_2_0,
+        ModelType.CLAUDE_2_1,
+        ModelType.CLAUDE_3_OPUS,
+        ModelType.CLAUDE_3_SONNET,
+        ModelType.CLAUDE_3_HAIKU,
+        ModelType.CLAUDE_3_5_SONNET,
+    ],
+)
 def test_anthropic_model(model_type):
     model_config_dict = AnthropicConfig().__dict__
     model = AnthropicModel(model_type, model_config_dict)
@@ -50,7 +54,12 @@ def test_anthropic_model_unexpected_argument():
     model_config_dict = model_config.__dict__
 
     with pytest.raises(
-            ValueError, match=re.escape(
-                ("Unexpected argument `model_path` is "
-                 "input into Anthropic model backend."))):
+        ValueError,
+        match=re.escape(
+            (
+                "Unexpected argument `model_path` is "
+                "input into Anthropic model backend."
+            )
+        ),
+    ):
         _ = AnthropicModel(model_type, model_config_dict)

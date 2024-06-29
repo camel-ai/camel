@@ -13,19 +13,35 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Dict
 
-from camel.prompts import (
+from camel.prompts.ai_society import (
     AISocietyPromptTemplateDict,
-    CodePromptTemplateDict,
-    EvaluationPromptTemplateDict,
-    MisalignmentPromptTemplateDict,
-    ObjectRecognitionPromptTemplateDict,
-    RoleDescriptionPromptTemplateDict,
-    SolutionExtractionPromptTemplateDict,
     TextPromptDict,
-    TranslationPromptTemplateDict,
-    ImageCraftPromptTemplateDict,
+)
+from camel.prompts.code import CodePromptTemplateDict
+from camel.prompts.descripte_video_prompt import (
+    DescriptionVideoPromptTemplateDict,
+)
+from camel.prompts.evaluation import (
+    EvaluationPromptTemplateDict,
+)
+from camel.prompts.generate_text_embedding_data import (
+    GenerateTextEmbeddingDataPromptTemplateDict,
+)
+from camel.prompts.image_craft import ImageCraftPromptTemplateDict
+from camel.prompts.misalignment import MisalignmentPromptTemplateDict
+from camel.prompts.multi_condition_image_craft import (
     MultiConditionImageCraftPromptTemplateDict,
 )
+from camel.prompts.object_recognition import (
+    ObjectRecognitionPromptTemplateDict,
+)
+from camel.prompts.role_description_prompt_template import (
+    RoleDescriptionPromptTemplateDict,
+)
+from camel.prompts.solution_extraction import (
+    SolutionExtractionPromptTemplateDict,
+)
+from camel.prompts.translation import TranslationPromptTemplateDict
 from camel.types import TaskType
 
 
@@ -41,25 +57,19 @@ class TaskPromptTemplateDict(Dict[Any, TextPromptDict]):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.update({
-            TaskType.AI_SOCIETY:
-            AISocietyPromptTemplateDict(),
-            TaskType.CODE:
-            CodePromptTemplateDict(),
-            TaskType.MISALIGNMENT:
-            MisalignmentPromptTemplateDict(),
-            TaskType.TRANSLATION:
-            TranslationPromptTemplateDict(),
-            TaskType.EVALUATION:
-            EvaluationPromptTemplateDict(),
-            TaskType.SOLUTION_EXTRACTION:
-            SolutionExtractionPromptTemplateDict(),
-            TaskType.ROLE_DESCRIPTION:
-            RoleDescriptionPromptTemplateDict(),
-            TaskType.OBJECT_RECOGNITION:
-            ObjectRecognitionPromptTemplateDict(),
-            TaskType.IMAGE_CRAFT:
-            ImageCraftPromptTemplateDict(),
-            TaskType.MULTI_CONDITION_IMAGE_CRAFT:
-            MultiConditionImageCraftPromptTemplateDict(),
-        })
+        self.update(
+            {
+                TaskType.AI_SOCIETY: AISocietyPromptTemplateDict(),
+                TaskType.CODE: CodePromptTemplateDict(),
+                TaskType.MISALIGNMENT: MisalignmentPromptTemplateDict(),
+                TaskType.TRANSLATION: TranslationPromptTemplateDict(),
+                TaskType.EVALUATION: EvaluationPromptTemplateDict(),
+                TaskType.SOLUTION_EXTRACTION: SolutionExtractionPromptTemplateDict(),  # noqa: E501
+                TaskType.ROLE_DESCRIPTION: RoleDescriptionPromptTemplateDict(),
+                TaskType.OBJECT_RECOGNITION: ObjectRecognitionPromptTemplateDict(),  # noqa: E501
+                TaskType.GENERATE_TEXT_EMBEDDING_DATA: GenerateTextEmbeddingDataPromptTemplateDict(),  # noqa: E501
+                TaskType.VIDEO_DESCRIPTION: DescriptionVideoPromptTemplateDict(),  # noqa: E501
+                TaskType.IMAGE_CRAFT: ImageCraftPromptTemplateDict(),
+                TaskType.MULTI_CONDITION_IMAGE_CRAFT: MultiConditionImageCraftPromptTemplateDict(),  # noqa: E501
+            }
+        )

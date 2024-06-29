@@ -30,7 +30,6 @@ from camel.utils import BaseTokenCounter
 
 
 class StubTokenCounter(BaseTokenCounter):
-
     def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
         r"""Token counting for STUB models, directly returning a constant.
 
@@ -47,13 +46,21 @@ class StubTokenCounter(BaseTokenCounter):
 
 class StubModel(BaseModelBackend):
     r"""A dummy model used for unit tests."""
+
     model_type = ModelType.STUB
 
-    def __init__(self, model_type: ModelType,
-                 model_config_dict: Dict[str, Any]) -> None:
+    def __init__(
+        self,
+        model_type: ModelType,
+        model_config_dict: Dict[str, Any],
+        api_key: Optional[str] = None,
+        url: Optional[str] = None,
+    ) -> None:
         r"""All arguments are unused for the dummy model."""
-        super().__init__(model_type, model_config_dict)
+        super().__init__(model_type, model_config_dict, api_key, url)
         self._token_counter: Optional[BaseTokenCounter] = None
+        self._api_key = api_key
+        self._url = url
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -102,6 +109,5 @@ class StubModel(BaseModelBackend):
         return response
 
     def check_model_config(self):
-        r"""Directly pass the check on arguments to STUB model.
-        """
+        r"""Directly pass the check on arguments to STUB model."""
         pass

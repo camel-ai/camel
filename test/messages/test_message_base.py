@@ -49,11 +49,14 @@ def test_base_message_contains_operator(base_message: BaseMessage):
 
 def test_extract_text_and_code_prompts():
     base_message = BaseMessage(
-        role_name="test_role_name", role_type=RoleType.USER, meta_dict=dict(),
+        role_name="test_role_name",
+        role_type=RoleType.USER,
+        meta_dict=dict(),
         content="This is a text prompt.\n\n"
         "```python\nprint('This is a code prompt')\n```\n"
         "This is another text prompt.\n\n"
-        "```c\nprintf(\"This is another code prompt\");\n```")
+        "```c\nprintf(\"This is another code prompt\");\n```",
+    )
     text_prompts, code_prompts = base_message.extract_text_and_code_prompts()
 
     assert len(text_prompts) == 2
@@ -88,8 +91,12 @@ def test_base_message():
     backend_role = OpenAIBackendRole.USER
     content = "test_content"
 
-    message = BaseMessage(role_name=role_name, role_type=role_type,
-                          meta_dict=meta_dict, content=content)
+    message = BaseMessage(
+        role_name=role_name,
+        role_type=role_type,
+        meta_dict=meta_dict,
+        content=content,
+    )
 
     assert message.role_name == role_name
     assert message.role_type == role_type
@@ -108,12 +115,13 @@ def test_base_message():
     openai_assistant_message = message.to_openai_assistant_message()
     assert openai_assistant_message == {
         "role": "assistant",
-        "content": content
+        "content": content,
     }
 
     dictionary = message.to_dict()
     assert dictionary == {
         "role_name": role_name,
         "role_type": role_type.name,
-        **(meta_dict or {}), "content": content
+        **(meta_dict or {}),
+        "content": content,
     }

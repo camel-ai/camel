@@ -27,7 +27,11 @@ sys.path.insert(0, os.path.abspath('..'))
 project = 'CAMEL'
 copyright = '2023, CAMEL-AI.org'
 author = 'CAMEL-AI.org'
-release = '0.1.0'
+release = '0.1.5.4'
+
+html_favicon = (
+    'https://raw.githubusercontent.com/camel-ai/camel/master/misc/favicon.png'
+)
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -51,3 +55,11 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = 'sphinx_book_theme'
+
+html_theme_options = {
+    "logo": {
+        "text": f"CAMEL {release}",
+        "image_light": "https://raw.githubusercontent.com/camel-ai/camel/master/misc/primary_logo.png",
+        "image_dark": "https://raw.githubusercontent.com/camel-ai/camel/master/misc/primary_logo.png",
+    }
+}

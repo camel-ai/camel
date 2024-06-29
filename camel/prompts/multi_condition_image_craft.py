@@ -19,10 +19,16 @@ from camel.types import RoleType
 
 class MultiConditionImageCraftPromptTemplateDict(TextPromptDict):
     ASSISTANT_PROMPT = TextPrompt(
-        """You are tasked with creating an image based on the provided text and images conditions. Please use your imagination and artistic capabilities to visualize and draw the images and explain what you are thinking about.""")
+        """You are tasked with creating an image based on
+        the provided text and images conditions. Please use your
+        imagination and artistic capabilities to visualize and
+        draw the images and explain what you are thinking about."""
+    )
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.update({
-            RoleType.ASSISTANT: self.ASSISTANT_PROMPT,
-        })
+        self.update(
+            {
+                RoleType.ASSISTANT: self.ASSISTANT_PROMPT,
+            }
+        )

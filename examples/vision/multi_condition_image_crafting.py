@@ -12,14 +12,15 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import argparse
+
 from PIL import Image
-from camel.types import ModelType
+
 from camel.agents.chat_agent import ChatAgent
 from camel.configs import FunctionCallingVisionConfig
+from camel.functions import DALLE_FUNCS
 from camel.generators import PromptTemplateGenerator
 from camel.messages.base import BaseMessage
 from camel.types import ModelType, RoleType, TaskType
-from camel.functions import DALLE_FUNCS
 
 parser = argparse.ArgumentParser(description="Arguments for Image Condition.")
 parser.add_argument(
@@ -28,12 +29,14 @@ parser.add_argument(
     type=str,
     nargs='+',
     help="Path to the images as conditions.",
-    default=None
+    default=None,
 )
 
 
 def multi_condition_image_craft(image_paths: str) -> list[str]:
-    sys_msg = PromptTemplateGenerator().get_prompt_from_key(TaskType.MULTI_CONDITION_IMAGE_CRAFT, RoleType.ASSISTANT)
+    sys_msg = PromptTemplateGenerator().get_prompt_from_key(
+        TaskType.MULTI_CONDITION_IMAGE_CRAFT, RoleType.ASSISTANT
+    )
     print("=" * 20 + " SYS MSG " + "=" * 20)
     print(sys_msg)
     print("=" * 49)
@@ -44,9 +47,11 @@ def multi_condition_image_craft(image_paths: str) -> list[str]:
     )
 
     function_list = [*DALLE_FUNCS]
-    assistant_model_config = FunctionCallingVisionConfig.from_openai_function_list(
-        function_list=function_list,
-        kwargs=dict(temperature=0.0),
+    assistant_model_config = (
+        FunctionCallingVisionConfig.from_openai_function_list(
+            function_list=function_list,
+            kwargs=dict(temperature=0.0),
+        )
     )
 
     dalle_agent = ChatAgent(
@@ -60,7 +65,10 @@ def multi_condition_image_craft(image_paths: str) -> list[str]:
 
     user_msg = BaseMessage.make_user_message(
         role_name="User",
-        content="Please generate an image based on the provided images and text, ensuring that the image meets the textual requirements and includes all the visual subjects from the images.",
+        content='''Please generate an image based on
+        the provided images and text, ensuring that the image meets the
+        textual requirements and includes all the visual subjects from
+        the images.''',
         image_list=image_list,
         image_detail="high",
     )

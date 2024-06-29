@@ -11,8 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-
+import uuid
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+
+from unstructured.documents.elements import Element
 
 
 class UnstructuredIO:
@@ -68,37 +70,83 @@ class UnstructuredIO:
         installed_ver = version.parse(__version__)
 
         if installed_ver < min_ver:
-            raise ValueError(f"Require `unstructured>={min_version}`, "
-                             f"you have {__version__}.")
+            raise ValueError(
+                f"Require `unstructured>={min_version}`, "
+                f"you have {__version__}."
+            )
+
+    def create_element_from_text(
+        self,
+        text: str,
+        element_id: Optional[Union[str, uuid.UUID]] = None,
+        embeddings: Optional[List[float]] = None,
+        filename: Optional[str] = None,
+        file_directory: Optional[str] = None,
+        last_modified: Optional[str] = None,
+        filetype: Optional[str] = None,
+        parent_id: Optional[Union[str, uuid.UUID]] = None,
+    ) -> Element:
+        r"""Creates a Text element from a given text input, with optional
+        metadata and embeddings.
+
+        Args:
+            text (str): The text content for the element.
+            element_id (Union[str, uuid.UUID], optional): Unique identifier
+                forthe element. Defaults to an empty string.
+            embeddings (Optional[List[float]], optional): A list of float
+                numbers representing the text embeddings. Defaults to `None`.
+            filename (Optional[str], optional): The name of the file the
+                element is associated with. Defaults to `None`.
+            file_directory (Optional[str], optional): The directory path where
+                the file is located. Defaults to `None`.
+            last_modified (Optional[str], optional): The last modified date of
+                the file. Defaults to `None`.
+            filetype (Optional[str], optional): The type of the file. Defaults
+                to `None`.
+            parent_id (Optional[Union[str, uuid.UUID]], optional): The
+                identifier of the parent element. Defaults to `None`.
+
+        Returns:
+            Element: An instance of Text with the provided content and
+                metadata.
+        """
+        from unstructured.documents.elements import ElementMetadata, Text
+
+        metadata = ElementMetadata(
+            filename=filename,
+            file_directory=file_directory,
+            last_modified=last_modified,
+            filetype=filetype,
+            parent_id=parent_id,
+        )
+
+        return Text(
+            text=text,
+            element_id=element_id if element_id else str(uuid.uuid4()),
+            metadata=metadata,
+            embeddings=embeddings,
+        )
 
     def parse_file_or_url(
         self,
         input_path: str,
         **kwargs: Any,
-    ) -> Union[Any, List[Any]]:
-        r"""Loads a file or a URL and parses its contents as unstructured data.
+    ) -> List[Element]:
+        r"""Loads a file or a URL and parses its contents into elements.
 
         Args:
             input_path (str): Path to the file or URL to be parsed.
             **kwargs: Extra kwargs passed to the partition function.
 
         Returns:
-            List[Any]: The elements after parsing the file or URL, could be a
-                dict, list, etc., depending on the content. If return_str is
-                True, returns a tuple with a string representation of the
-                elements and the elements themselves.
+            List[Element]: List of elements after parsing the file or URL.
 
         Raises:
-            FileNotFoundError: If the file does not exist
-                at the path specified.
+            FileNotFoundError: If the file does not exist at the path
+                specified.
             Exception: For any other issues during file or URL parsing.
 
         Notes:
-            By default we use the basic "unstructured" library,
-            if you are processing document types beyond the basics,
-            you can install the necessary extras like:
-                `pip install "unstructured[docx,pptx]"` or
-                `pip install "unstructured[all-docs]"`.
             Available document types:
                 "csv", "doc", "docx", "epub", "image", "md", "msg", "odt",
                 "org", "pdf", "ppt", "pptx", "rtf", "rst", "tsv", "xlsx".
@@ -130,7 +178,8 @@ class UnstructuredIO:
             # Check if the file exists
             if not os.path.exists(input_path):
                 raise FileNotFoundError(
-                    f"The file {input_path} was not found.")
+                    f"The file {input_path} was not found."
+                )
 
             # Read the file
             try:
@@ -139,7 +188,8 @@ class UnstructuredIO:
                     return elements
             except Exception as e:
                 raise Exception(
-                    "Failed to parse the unstructured file.") from e
+                    "Failed to parse the unstructured file."
+                ) from e
 
     def clean_text_data(
         self,
@@ -233,8 +283,9 @@ class UnstructuredIO:
         cleaned_text = text
         for func_name, params in clean_options:
             if func_name in cleaning_functions:
-                cleaned_text = cleaning_functions[func_name](cleaned_text,
-                                                             **params)
+                cleaned_text = cleaning_functions[func_name](
+                    cleaned_text, **params
+                )
             else:
                 raise ValueError(
                     f"'{func_name}' is not a valid function in `unstructured`."
@@ -245,11 +296,17 @@ class UnstructuredIO:
     def extract_data_from_text(
         self,
         text: str,
-        extract_type: Literal['extract_datetimetz', 'extract_email_address',
-                              'extract_ip_address', 'extract_ip_address_name',
-                              'extract_mapi_id', 'extract_ordered_bullets',
-                              'extract_text_after', 'extract_text_before',
-                              'extract_us_phone_number'],
+        extract_type: Literal[
+            'extract_datetimetz',
+            'extract_email_address',
+            'extract_ip_address',
+            'extract_ip_address_name',
+            'extract_mapi_id',
+            'extract_ordered_bullets',
+            'extract_text_after',
+            'extract_text_before',
+            'extract_us_phone_number',
+        ],
         **kwargs,
     ) -> Any:
         r"""Extracts various types of data from text using functions from
@@ -305,12 +362,19 @@ class UnstructuredIO:
     def stage_elements(
         self,
         elements: List[Any],
-        stage_type: Literal['convert_to_csv', 'convert_to_dataframe',
-                            'convert_to_dict', 'dict_to_elements',
-                            'stage_csv_for_prodigy', 'stage_for_prodigy',
-                            'stage_for_baseplate', 'stage_for_datasaur',
-                            'stage_for_label_box', 'stage_for_label_studio',
-                            'stage_for_weaviate'],
+        stage_type: Literal[
+            'convert_to_csv',
+            'convert_to_dataframe',
+            'convert_to_dict',
+            'dict_to_elements',
+            'stage_csv_for_prodigy',
+            'stage_for_prodigy',
+            'stage_for_baseplate',
+            'stage_for_datasaur',
+            'stage_for_label_box',
+            'stage_for_label_studio',
+            'stage_for_weaviate',
+        ],
         **kwargs,
     ) -> Union[str, List[Dict], Any]:
         r"""Stages elements for various platforms based on the
@@ -355,31 +419,23 @@ class UnstructuredIO:
         )
 
         staging_functions = {
-            "convert_to_csv":
-            base.convert_to_csv,
-            "convert_to_dataframe":
-            base.convert_to_dataframe,
-            "convert_to_dict":
-            base.convert_to_dict,
-            "dict_to_elements":
-            base.dict_to_elements,
-            "stage_csv_for_prodigy":
-            lambda els, **kw: prodigy.stage_csv_for_prodigy(
-                els, kw.get('metadata', [])),
-            "stage_for_prodigy":
-            lambda els, **kw: prodigy.stage_for_prodigy(
-                els, kw.get('metadata', [])),
-            "stage_for_baseplate":
-            baseplate.stage_for_baseplate,
-            "stage_for_datasaur":
-            lambda els, **kw: datasaur.stage_for_datasaur(
-                els, kw.get('entities', [])),
-            "stage_for_label_box":
-            lambda els, **kw: label_box.stage_for_label_box(els, **kw),
-            "stage_for_label_studio":
-            lambda els, **kw: label_studio.stage_for_label_studio(els, **kw),
-            "stage_for_weaviate":
-            weaviate.stage_for_weaviate,
+            "convert_to_csv": base.convert_to_csv,
+            "convert_to_dataframe": base.convert_to_dataframe,
+            "convert_to_dict": base.convert_to_dict,
+            "dict_to_elements": base.dict_to_elements,
+            "stage_csv_for_prodigy": lambda els,
+            **kw: prodigy.stage_csv_for_prodigy(els, kw.get('metadata', [])),
+            "stage_for_prodigy": lambda els, **kw: prodigy.stage_for_prodigy(
+                els, kw.get('metadata', [])
+            ),
+            "stage_for_baseplate": baseplate.stage_for_baseplate,
+            "stage_for_datasaur": lambda els,
+            **kw: datasaur.stage_for_datasaur(els, kw.get('entities', [])),
+            "stage_for_label_box": lambda els,
+            **kw: label_box.stage_for_label_box(els, **kw),
+            "stage_for_label_studio": lambda els,
+            **kw: label_studio.stage_for_label_studio(els, **kw),
+            "stage_for_weaviate": weaviate.stage_for_weaviate,
         }
 
         if stage_type not in staging_functions:
@@ -387,12 +443,13 @@ class UnstructuredIO:
 
         return staging_functions[stage_type](elements, **kwargs)
 
-    def chunk_elements(self, elements: List[Any], chunk_type: str,
-                       **kwargs) -> List[Any]:
+    def chunk_elements(
+        self, elements: List[Any], chunk_type: str, **kwargs
+    ) -> List[Element]:
         r"""Chunks elements by titles.
 
         Args:
-            elements (List[Any]): List of Element objects to be chunked.
+            elements (List[Element]): List of Element objects to be chunked.
             chunk_type (str): Type chunk going to apply. Supported types:
                 'chunk_by_title'.
             **kwargs: Additional keyword arguments for chunking.
@@ -416,8 +473,13 @@ class UnstructuredIO:
         # Format chunks into a list of dictionaries (or your preferred format)
         return chunking_functions[chunk_type](elements, **kwargs)
 
-    def run_s3_ingest(self, s3_url: str, output_dir: str,
-                      num_processes: int = 2, anonymous: bool = True) -> None:
+    def run_s3_ingest(
+        self,
+        s3_url: str,
+        output_dir: str,
+        num_processes: int = 2,
+        anonymous: bool = True,
+    ) -> None:
         r"""Processes documents from an S3 bucket and stores structured
         outputs locally.
 
@@ -457,10 +519,14 @@ class UnstructuredIO:
         )
         runner.run(anonymous=anonymous)
 
-    def run_azure_ingest(self, azure_url: str, output_dir: str,
-                         account_name: str, num_processes: int = 2) -> None:
-        """
-        Processes documents from an Azure storage container and stores
+    def run_azure_ingest(
+        self,
+        azure_url: str,
+        output_dir: str,
+        account_name: str,
+        num_processes: int = 2,
+    ) -> None:
+        r"""Processes documents from an Azure storage container and stores
         structured outputs locally.
 
         Args:
@@ -497,8 +563,13 @@ class UnstructuredIO:
         )
         runner.run(account_name=account_name)
 
-    def run_github_ingest(self, repo_url: str, git_branch: str,
-                          output_dir: str, num_processes: int = 2) -> None:
+    def run_github_ingest(
+        self,
+        repo_url: str,
+        git_branch: str,
+        output_dir: str,
+        num_processes: int = 2,
+    ) -> None:
         r"""Processes documents from a GitHub repository and stores
         structured outputs locally.
 
@@ -534,9 +605,15 @@ class UnstructuredIO:
         )
         runner.run(url=repo_url, git_branch=git_branch)
 
-    def run_slack_ingest(self, channels: List[str], token: str,
-                         start_date: str, end_date: str, output_dir: str,
-                         num_processes: int = 2) -> None:
+    def run_slack_ingest(
+        self,
+        channels: List[str],
+        token: str,
+        start_date: str,
+        end_date: str,
+        output_dir: str,
+        num_processes: int = 2,
+    ) -> None:
         r"""Processes documents from specified Slack channels and stores
         structured outputs locally.
 
@@ -572,11 +649,20 @@ class UnstructuredIO:
             read_config=ReadConfig(),
             partition_config=PartitionConfig(),
         )
-        runner.run(channels=channels, token=token, start_date=start_date,
-                   end_date=end_date)
+        runner.run(
+            channels=channels,
+            token=token,
+            start_date=start_date,
+            end_date=end_date,
+        )
 
-    def run_discord_ingest(self, channels: List[str], token: str,
-                           output_dir: str, num_processes: int = 2) -> None:
+    def run_discord_ingest(
+        self,
+        channels: List[str],
+        token: str,
+        output_dir: str,
+        num_processes: int = 2,
+    ) -> None:
         r"""Processes messages from specified Discord channels and stores
         structured outputs locally.
 

@@ -22,12 +22,13 @@ jobs:
     - name: Set up Python environment and install dependencies
       uses: ./.github/actions/camel_install
       with:
-        python-version: "3.8"
+        python-version: "3.9"
     - name: Run pytest
       env:
         OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
         GOOGLE_API_KEY: "${{ secrets.GOOGLE_API_KEY }}"
         SEARCH_ENGINE_ID: "${{ secrets.SEARCH_ENGINE_ID }}"
+        COHERE_API_KEY: "${{ secrets.COHERE_API_KEY }}"
       run: poetry run pytest -v apps/
 
   pytest_examples:
@@ -39,10 +40,11 @@ jobs:
     - name: Set up Python environment and install dependencies
       uses: ./.github/actions/camel_install
       with:
-        python-version: "3.8"
+        python-version: "3.9"
     - name: Run pytest
       env:
         OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
         GOOGLE_API_KEY: "${{ secrets.GOOGLE_API_KEY }}"
         SEARCH_ENGINE_ID: "${{ secrets.SEARCH_ENGINE_ID }}"
+        COHERE_API_KEY: "${{ secrets.COHERE_API_KEY }}"
       run: poetry run pytest -v examples/

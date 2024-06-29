@@ -15,7 +15,6 @@ from camel.agents import BaseToolAgent
 
 
 class DummyToolAgent(BaseToolAgent):
-
     def reset(self):
         pass
 

@@ -17,7 +17,6 @@ from camel.agents import BaseAgent
 
 
 class DummyAgent(BaseAgent):
-
     def __init__(self):
         self.step_count = 0
 

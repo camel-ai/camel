@@ -17,7 +17,7 @@ from camel.agents import EmbodiedAgent, HuggingFaceToolAgent
 from camel.agents.tool_agents.base import BaseToolAgent
 from camel.generators import SystemMessageGenerator
 from camel.messages import BaseMessage
-from camel.types import ModelType, RoleType
+from camel.types import RoleType
 
 
 def main():
@@ -26,11 +26,11 @@ def main():
     meta_dict = dict(role=role_name, task="Drawing")
     sys_msg = SystemMessageGenerator().from_dict(
         meta_dict=meta_dict,
-        role_tuple=(f"{role_name}'s Embodiment", RoleType.EMBODIMENT))
+        role_tuple=(f"{role_name}'s Embodiment", RoleType.EMBODIMENT),
+    )
     tool_agents = [
         HuggingFaceToolAgent(
             'hugging_face_tool_agent',
-            model_type=ModelType.GPT_4.value,
             remote=True,
         )
     ]
@@ -42,9 +42,11 @@ def main():
     )
     user_msg = BaseMessage.make_user_message(
         role_name=role_name,
-        content=("Draw all the Camelidae species, "
-                 "caption the image content, "
-                 "save the images by species name."),
+        content=(
+            "Draw all the Camelidae species, "
+            "caption the image content, "
+            "save the images by species name."
+        ),
     )
     response = embodied_agent.step(user_msg)
     print(response.msg.content)

@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any
 
-from camel.prompts import TextPrompt, TextPromptDict
+from camel.prompts.base import TextPrompt, TextPromptDict
 from camel.types import RoleType
 
 
@@ -23,10 +23,13 @@ class ObjectRecognitionPromptTemplateDict(TextPromptDict):
         """You have been assigned an object recognition task.
 Your mission is to list all detected objects in following image.
 Your output should always be a list of strings starting with `1.`, `2.` etc.
-Do not explain yourself or output anything else.""")
+Do not explain yourself or output anything else."""
+    )
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.update({
-            RoleType.ASSISTANT: self.ASSISTANT_PROMPT,
-        })
+        self.update(
+            {
+                RoleType.ASSISTANT: self.ASSISTANT_PROMPT,
+            }
+        )

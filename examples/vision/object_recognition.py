@@ -27,13 +27,15 @@ parser.add_argument(
     type=str,
     nargs='+',
     help="Path to the images for object detection.",
-    default=None
+    default=None,
+    required=True,
 )
 
 
 def detect_image_obj(image_paths: str) -> None:
     sys_msg = PromptTemplateGenerator().get_prompt_from_key(
-        TaskType.OBJECT_RECOGNITION, RoleType.ASSISTANT)
+        TaskType.OBJECT_RECOGNITION, RoleType.ASSISTANT
+    )
     print("=" * 20 + " SYS MSG " + "=" * 20)
     print(sys_msg)
     print("=" * 49)
@@ -44,9 +46,8 @@ def detect_image_obj(image_paths: str) -> None:
     )
     agent = ChatAgent(
         assistant_sys_msg,
-        model_type=ModelType.GPT_4_TURBO_VISION,
+        model_type=ModelType.GPT_4_TURBO,
     )
-
     image_list = [Image.open(image_path) for image_path in image_paths]
 
     user_msg = BaseMessage.make_user_message(

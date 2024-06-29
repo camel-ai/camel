@@ -12,31 +12,31 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import re
-from typing import Any, Dict, Optional, Union
+from typing import Dict, Optional, Union
 
-from camel.agents import ChatAgent
+from camel.agents.chat_agent import ChatAgent
 from camel.messages import BaseMessage
+from camel.models import BaseModelBackend
 from camel.prompts import TextPrompt
-from camel.types import ModelType, RoleType
+from camel.types import RoleType
 
 
 class RoleAssignmentAgent(ChatAgent):
     r"""An agent that generates role names based on the task prompt.
+
+    Args:
+        model (BaseModelBackend, optional): The model backend to use for
+            generating responses. (default: :obj:`OpenAIModel` with
+            `GPT_3_5_TURBO`)
+
     Attributes:
         role_assignment_prompt (TextPrompt): A prompt for the agent to generate
         role names.
-
-    Args:
-        model_type (ModelType, optional): The type of model to use for the
-            agent. (default: :obj:`ModelType.GPT_3_5_TURBO`)
-        model_config (Any, optional): The configuration for the model.
-            (default: :obj:`None`)
     """
 
     def __init__(
         self,
-        model_type: ModelType = ModelType.GPT_3_5_TURBO,
-        model_config: Optional[Any] = None,
+        model: Optional[BaseModelBackend] = None,
     ) -> None:
         system_message = BaseMessage(
             role_name="Role Assigner",
@@ -44,7 +44,7 @@ class RoleAssignmentAgent(ChatAgent):
             meta_dict=None,
             content="You assign roles based on tasks.",
         )
-        super().__init__(system_message, model_type, model_config)
+        super().__init__(system_message, model=model)
 
     def run(
         self,
@@ -68,21 +68,27 @@ class RoleAssignmentAgent(ChatAgent):
         expert_prompt = "===== ANSWER PROMPT =====\n" + "\n".join(
             f"Domain expert {i + 1}: <BLANK>\n"
             f"Associated competencies, characteristics, duties "
-            f"and workflows: <BLANK>. End." for i in range(num_roles or 0))
+            f"and workflows: <BLANK>. End."
+            for i in range(num_roles or 0)
+        )
         role_assignment_generation_prompt = TextPrompt(
-            "You are a role assignment agent, and you're in charge of " +
-            "recruiting {num_roles} experts for the following task." +
-            "\n==== TASK =====\n {task}\n\n" +
-            "Identify the domain experts you'd recruit and detail their " +
-            "associated competencies, characteristics, duties and workflows " +
-            "to complete the task.\n " +
-            "Your answer MUST adhere to the format of ANSWER PROMPT, and " +
-            "ONLY answer the BLANKs.\n" + expert_prompt)
+            "You are a role assignment agent, and you're in charge of "
+            + "recruiting {num_roles} experts for the following task."
+            + "\n==== TASK =====\n {task}\n\n"
+            + "Identify the domain experts you'd recruit and detail their "
+            + "associated competencies, characteristics, duties and workflows "
+            + "to complete the task.\n "
+            + "Your answer MUST adhere to the format of ANSWER PROMPT, and "
+            + "ONLY answer the BLANKs.\n"
+            + expert_prompt
+        )
         role_assignment_generation = role_assignment_generation_prompt.format(
-            num_roles=num_roles, task=task_prompt)
+            num_roles=num_roles, task=task_prompt
+        )
 
         role_assignment_generation_msg = BaseMessage.make_user_message(
-            role_name="Role Assigner", content=role_assignment_generation)
+            role_name="Role Assigner", content=role_assignment_generation
+        )
 
         response = self.step(input_message=role_assignment_generation_msg)
 
@@ -91,21 +97,27 @@ class RoleAssignmentAgent(ChatAgent):
 
         # Distribute the output completions into role names and descriptions
         role_names = [
-            desc.replace("<|", "").replace("|>", "") for desc in re.findall(
+            desc.replace("<|", "").replace("|>", "")
+            for desc in re.findall(
                 r"Domain expert \d: (.+?)\nAssociated competencies,",
                 msg.content,
                 re.DOTALL,
             )
         ]
         role_descriptions = [
-            desc.replace("<|", "").replace("|>", "") for desc in re.findall(
+            desc.replace("<|", "").replace("|>", "")
+            for desc in re.findall(
                 r"Associated competencies, characteristics, "
-                r"duties and workflows: (.+?) End.", msg.content, re.DOTALL)
+                r"duties and workflows: (.+?) End.",
+                msg.content,
+                re.DOTALL,
+            )
         ]
 
         if len(role_names) != num_roles or len(role_descriptions) != num_roles:
             raise RuntimeError(
-                "Got None or insufficient information of roles.")
+                "Got None or insufficient information of roles."
+            )
         if terminated:
             raise RuntimeError("Role assignment failed.")
 

@@ -15,31 +15,31 @@ import pytest
 from mock import patch
 
 from camel.agents import ChatAgent, RoleAssignmentAgent
-from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.responses import ChatAgentResponse
-from camel.types import ModelType, RoleType
+from camel.types import RoleType
 
 
 @patch.object(ChatAgent, 'step')
-@pytest.mark.parametrize("model_type", [None, ModelType.GPT_3_5_TURBO])
 @pytest.mark.parametrize("num_roles", [1, 2, 3])
-def test_role_assignment_agent(mock_step, model_type, num_roles):
+def test_role_assignment_agent(mock_step, num_roles):
     mock_content = generate_mock_content(num_roles)
-    mock_msg = BaseMessage(role_name="Role Assigner",
-                           role_type=RoleType.ASSISTANT, meta_dict=None,
-                           content=mock_content)
+    mock_msg = BaseMessage(
+        role_name="Role Assigner",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
+        content=mock_content,
+    )
 
     # Mock the step function
-    mock_step.return_value = ChatAgentResponse(msgs=[mock_msg],
-                                               terminated=False, info={})
+    mock_step.return_value = ChatAgentResponse(
+        msgs=[mock_msg], terminated=False, info={}
+    )
 
     task_prompt = "Develop a trading bot for the stock market."
-    model_config_description = ChatGPTConfig()
 
     # Construct role assignment agent
-    role_description_agent = RoleAssignmentAgent(
-        model_type=model_type, model_config=model_config_description)
+    role_description_agent = RoleAssignmentAgent()
 
     # Generate the role description dictionary based on the mock step function
     role_description_dict = role_description_agent.run(task_prompt, num_roles)
@@ -55,7 +55,7 @@ def generate_mock_content(num_roles):
     roles_with_descriptions = [
         ("Trading Strategist", "Design trading strategies. End."),
         ("Data Scientist", "Analyze market data. End."),
-        ("Software Developer", "Implement trading algorithms. End.")
+        ("Software Developer", "Implement trading algorithms. End."),
     ]
 
     content = []
@@ -64,7 +64,8 @@ def generate_mock_content(num_roles):
         content.append(
             f"Domain expert {i + 1}: {role_name}\n"
             f"Associated competencies, characteristics, duties and workflows: "
-            f"{role_desc}. End.")
+            f"{role_desc}. End."
+        )
 
     return "\n".join(content)
 
@@ -75,7 +76,7 @@ def generate_expected_dict(num_roles):
     roles_with_descriptions = {
         "Trading Strategist": "Design trading strategies.",
         "Data Scientist": "Analyze market data.",
-        "Software Developer": "Implement trading algorithms."
+        "Software Developer": "Implement trading algorithms.",
     }
 
     return {

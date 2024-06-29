@@ -59,12 +59,15 @@ class File(ABC):
         """
 
     def __repr__(self) -> str:
-        return (f"File(name={self.name}, id={self.id}, "
-                f"metadata={self.metadata}, docs={self.docs})")
+        return (
+            f"File(name={self.name}, id={self.id}, "
+            f"metadata={self.metadata}, docs={self.docs})"
+        )
 
     def __str__(self) -> str:
         return (
-            f"File(name={self.name}, id={self.id}, metadata={self.metadata})")
+            f"File(name={self.name}, id={self.id}, metadata={self.metadata})"
+        )
 
     def copy(self) -> "File":
         r"""Create a deep copy of this File"""
@@ -90,7 +93,6 @@ def strip_consecutive_newlines(text: str) -> str:
 
 
 class DocxFile(File):
-
     @classmethod
     def from_bytes(cls, file: BytesIO) -> "DocxFile":
         r"""Creates a DocxFile object from a BytesIO object.
@@ -106,9 +108,11 @@ class DocxFile(File):
         try:
             import docx2txt
         except ImportError:
-            raise ImportError("Please install `docx2txt` first. "
-                              "You can install it by running "
-                              "`pip install docx2txt`.")
+            raise ImportError(
+                "Please install `docx2txt` first. "
+                "You can install it by running "
+                "`pip install docx2txt`."
+            )
         text = docx2txt.process(file)
         text = strip_consecutive_newlines(text)
         # Create a dictionary with the extracted text
@@ -121,7 +125,6 @@ class DocxFile(File):
 
 
 class PdfFile(File):
-
     @classmethod
     def from_bytes(cls, file: BytesIO) -> "PdfFile":
         r"""Creates a PdfFile object from a BytesIO object.
@@ -137,9 +140,11 @@ class PdfFile(File):
         try:
             import fitz
         except ImportError:
-            raise ImportError("Please install `PyMuPDF` first. "
-                              "You can install it by running "
-                              "`pip install PyMuPDF`.")
+            raise ImportError(
+                "Please install `PyMuPDF` first. "
+                "You can install it by running "
+                "`pip install PyMuPDF`."
+            )
         pdf = fitz.open(stream=file.read(), filetype="pdf")
         docs = []
         for i, page in enumerate(pdf):
@@ -156,7 +161,6 @@ class PdfFile(File):
 
 
 class TxtFile(File):
-
     @classmethod
     def from_bytes(cls, file: BytesIO) -> "TxtFile":
         r"""Creates a TxtFile object from a BytesIO object.
@@ -181,7 +185,6 @@ class TxtFile(File):
 
 
 class JsonFile(File):
-
     @classmethod
     def from_bytes(cls, file: BytesIO) -> "JsonFile":
         r"""Creates a JsonFile object from a BytesIO object.
@@ -205,7 +208,6 @@ class JsonFile(File):
 
 
 class HtmlFile(File):
-
     @classmethod
     def from_bytes(cls, file: BytesIO) -> "HtmlFile":
         r"""Creates a HtmlFile object from a BytesIO object.
@@ -221,9 +223,11 @@ class HtmlFile(File):
         try:
             from bs4 import BeautifulSoup
         except ImportError:
-            raise ImportError("Please install `beautifulsoup4` first. "
-                              "You can install it by running "
-                              "`pip install beautifulsoup4`.")
+            raise ImportError(
+                "Please install `beautifulsoup4` first. "
+                "You can install it by running "
+                "`pip install beautifulsoup4`."
+            )
         soup = BeautifulSoup(file, "html.parser")
         text = soup.get_text()
         text = strip_consecutive_newlines(text)
@@ -258,4 +262,5 @@ def read_file(file: BytesIO) -> File:
         return HtmlFile.from_bytes(file)
     else:
         raise NotImplementedError(
-            f"File type {file.name.split('.')[-1]} not supported")
+            f"File type {file.name.split('.')[-1]} not supported"
+        )

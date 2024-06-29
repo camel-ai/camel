@@ -11,16 +11,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from camel.types import ModelType
 from camel.agents.chat_agent import ChatAgent
 from camel.configs import FunctionCallingConfig
-from camel.messages.base import BaseMessage
-from camel.types import ModelType, RoleType, TaskType
 from camel.functions import DALLE_FUNCS
+from camel.messages.base import BaseMessage
+from camel.prompts import PromptTemplateGenerator
+from camel.types import ModelType, RoleType, TaskType
 
 
 def main():
-    sys_msg = PromptTemplateGenerator().get_prompt_from_key(TaskType.IMAGE_CRAFT, RoleType.ASSISTANT)
+    sys_msg = PromptTemplateGenerator().get_prompt_from_key(
+        TaskType.IMAGE_CRAFT, RoleType.ASSISTANT
+    )
     print("=" * 20 + " SYS MSG " + "=" * 20)
     print(sys_msg)
     print("=" * 49)
@@ -35,7 +37,7 @@ def main():
         content="Draw a picture of a camel.",
     )
 
-    function_list=[*DALLE_FUNCS]
+    function_list = [*DALLE_FUNCS]
     assistant_model_config = FunctionCallingConfig.from_openai_function_list(
         function_list=function_list,
         kwargs=dict(temperature=0.0),

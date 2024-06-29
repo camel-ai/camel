@@ -31,6 +31,7 @@ class VectorRecord:
         payload (Optional[Dict[str, Any]], optional): Any additional metadata
             or information related to the vector. (default: :obj:`None`)
     """
+
     vector: List[float]
     id: str = field(default_factory=lambda: str(uuid4()))
     payload: Optional[Dict[str, Any]] = None
@@ -46,6 +47,7 @@ class VectorDBQuery:
         top_k (int, optional): The number of top similar vectors to retrieve
             from the database. (default: :obj:`1`)
     """
+
     query_vector: List[float]
     top_k: int = 1
 
@@ -59,6 +61,7 @@ class VectorDBQueryResult:
         similarity (float): The similarity score between the query vector and
             the record.
     """
+
     record: VectorRecord
     similarity: float
 
@@ -86,6 +89,7 @@ class VectorDBStatus:
         vector_count (int): The number of stored vectors.
 
     """
+
     vector_dim: int
     vector_count: int
 
@@ -143,7 +147,8 @@ class BaseVectorStorage(ABC):
         query: VectorDBQuery,
         **kwargs: Any,
     ) -> List[VectorDBQueryResult]:
-        r"""Searches for similar vectors in the storage based on the provided query.
+        r"""Searches for similar vectors in the storage based on the provided
+        query.
 
         Args:
             query (VectorDBQuery): The query object containing the search
@@ -192,6 +197,7 @@ class BaseVectorStorage(ABC):
         """
         results = self.query(VectorDBQuery(vector, top_k))
         return [
-            result.record.payload for result in results
+            result.record.payload
+            for result in results
             if result.record.payload is not None
         ]
