@@ -51,7 +51,7 @@ class JinaURLReader:
         return_format: JinaReturnFormat = JinaReturnFormat.DEFAULT,
         json_response: bool = False,
         timeout: int = 30,
-        **kwargs: str,
+        **kwargs: Any,
     ) -> None:
         api_key = api_key or os.getenv('JINA_API_KEY')
         if api_key is None:
