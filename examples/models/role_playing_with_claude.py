@@ -27,7 +27,7 @@ def main(model_type=None) -> None:
         role: ModelFactory.create(
             model_platform=ModelPlatformType.ANTHROPIC,
             model_type=model_type,
-            model_config=AnthropicConfig(),
+            model_config_dict=AnthropicConfig().__dict__,
         )
         for role in ["assistant", "user", "task-specify"]
     }

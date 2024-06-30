@@ -11,12 +11,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import os
 from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
 
-from camel.configs import OPENAI_API_PARAMS
+from camel.configs import OLLAMA_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
 from camel.utils import BaseTokenCounter, OpenAITokenCounter
@@ -25,39 +24,34 @@ from camel.utils import BaseTokenCounter, OpenAITokenCounter
 class OllamaModel:
     r"""Ollama service interface."""
 
-    # NOTE: Current `ModelType and `TokenCounter` desigen is not suitable,
-    # stream mode is not supported
-
     def __init__(
         self,
         model_type: str,
         model_config_dict: Dict[str, Any],
-        api_key: Optional[str] = None,
         url: Optional[str] = None,
     ) -> None:
         r"""Constructor for Ollama backend with OpenAI compatibility.
+
+        # Reference: https://github.com/ollama/ollama/blob/main/docs/openai.md
 
         Args:
             model_type (str): Model for which a backend is created.
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into openai.ChatCompletion.create().
-            api_key (Optional[str]): The API key for authenticating with the
-                model service. (default: :obj:`None`)
-            url (Optional[str]): The url to the model service.
+            url (Optional[str]): The url to the model service. (default:
+                :obj:`None`)
         """
         self.model_type = model_type
         self.model_config_dict = model_config_dict
-        self._url = url or os.environ.get('OPENAI_API_BASE_URL')
-        self._api_key = api_key or os.environ.get("OPENAI_API_KEY")
         # Use OpenAI cilent as interface call Ollama
-        # Reference: https://github.com/ollama/ollama/blob/main/docs/openai.md
         self._client = OpenAI(
             timeout=60,
             max_retries=3,
-            base_url=self._url,
-            api_key=self._api_key,
+            base_url=url,
+            api_key="ollama",  # required but ignored
         )
         self._token_counter: Optional[BaseTokenCounter] = None
+        self.check_model_config()
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -74,17 +68,17 @@ class OllamaModel:
 
     def check_model_config(self):
         r"""Check whether the model configuration contains any
-        unexpected arguments to OpenAI API.
+        unexpected arguments to Ollama API.
 
         Raises:
             ValueError: If the model configuration dictionary contains any
                 unexpected arguments to OpenAI API.
         """
         for param in self.model_config_dict:
-            if param not in OPENAI_API_PARAMS:
+            if param not in OLLAMA_API_PARAMS:
                 raise ValueError(
                     f"Unexpected argument `{param}` is "
-                    "input into OpenAI model backend."
+                    "input into Ollama model backend."
                 )
 
     def run(

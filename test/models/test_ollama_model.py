@@ -15,10 +15,10 @@ import re
 
 import pytest
 
-from camel.configs import LiteLLMConfig, OpenSourceConfig
-from camel.models import LiteLLMModel
+from camel.configs import OllamaConfig
+from camel.models import OllamaModel
 from camel.types import ModelType
-from camel.utils import LiteLLMTokenCounter
+from camel.utils import OpenAITokenCounter
 
 
 @pytest.mark.model_backend
@@ -32,32 +32,28 @@ from camel.utils import LiteLLMTokenCounter
         ModelType.GPT_4O,
     ],
 )
-def test_litellm_model(model_type):
-    model_config_dict = LiteLLMConfig().__dict__
-    model = LiteLLMModel(model_type, model_config_dict)
+def test_ollama_model(model_type):
+    model_config_dict = OllamaConfig().__dict__
+    model = OllamaModel(model_type, model_config_dict)
     assert model.model_type == model_type
     assert model.model_config_dict == model_config_dict
-    assert isinstance(model.token_counter, LiteLLMTokenCounter)
+    assert isinstance(model.token_counter, OpenAITokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
 
 
 @pytest.mark.model_backend
-def test_litellm_model_unexpected_argument():
+def test_ollama_model_unexpected_argument():
     model_type = ModelType.GPT_4
-    model_config = OpenSourceConfig(
-        model_path="vicuna-7b-v1.5",
-        server_url="http://localhost:8000/v1",
-    )
-    model_config_dict = model_config.__dict__
+    model_config_dict = {"model_path": "vicuna-7b-v1.5"}
 
     with pytest.raises(
         ValueError,
         match=re.escape(
             (
                 "Unexpected argument `model_path` is "
-                "input into LiteLLM model backend."
+                "input into Ollama model backend."
             )
         ),
     ):
-        _ = LiteLLMModel(model_type, model_config_dict)
+        _ = OllamaModel(model_type, model_config_dict)
