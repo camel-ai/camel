@@ -23,6 +23,7 @@ from camel.storages.vectordb_storages import (
     VectorDBStatus,
     VectorRecord,
 )
+from camel.utils import dependencies_required
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +53,7 @@ class MilvusStorage(BaseVectorStorage):
         ImportError: If `pymilvus` package is not installed.
     """
 
+    @dependencies_required('pymilvus')
     def __init__(
         self,
         vector_dim: int,
@@ -59,13 +61,7 @@ class MilvusStorage(BaseVectorStorage):
         collection_name: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
-        try:
-            from pymilvus import MilvusClient
-        except ImportError as exc:
-            raise ImportError(
-                "Please install `pymilvus` first. You can install it by "
-                "running `pip install pymilvus`."
-            ) from exc
+        from pymilvus import MilvusClient
 
         self._client: MilvusClient
         self._create_client(url_and_api_key, **kwargs)
