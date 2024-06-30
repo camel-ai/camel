@@ -70,19 +70,25 @@ def test_api_keys_required():
     os.environ['API_KEY_1'] = 'API_KEY_1_VALUE'
     os.environ['API_KEY_2'] = 'API_KEY_2_VALUE'
 
-    @api_keys_required('API_KEY_1', 'API_KEY_2')
-    def mock_api_keys_exist():
-        return True
+    class MockClass:
+        _api_key = None
 
-    assert True if mock_api_keys_exist() else False
+        @api_keys_required('API_KEY_1', 'API_KEY_2')
+        def mock_api_keys_exist(self):
+            return True
 
-    @api_keys_required('API_KEY_1', 'API_KEY_2', 'API_KEY_3')
-    def mock_api_keys_not_exist():
-        return True
+        @api_keys_required('API_KEY_1', 'API_KEY_2', 'API_KEY_3')
+        def mock_api_keys_not_exist(self):
+            return True
 
+    mock_instance = MockClass()
+
+    # Test case where all required API keys are present
+    assert mock_instance.mock_api_keys_exist() is True
+
+    # Test case where some required API keys are missing
     with pytest.raises(ValueError) as exc:
-        mock_api_keys_not_exist()
-
+        mock_instance.mock_api_keys_not_exist()
     assert "Missing API keys: API_KEY_3" in str(exc.value)
 
 
