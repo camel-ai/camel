@@ -12,12 +12,14 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from .base import BaseToolkit
-from .code_execution import CodeExecutionToolkit
-from .github_toolkit import GithubToolkit
+from camel.toolkits.code_execution import CodeExecutionToolkit
 
-__all__ = [
-    'BaseToolkit',
-    'GithubToolkit',
-    'CodeExecutionToolkit',
-]
+
+def test_execute_code():
+    toolkit = CodeExecutionToolkit()
+    code = "x = 'a'\ny = 'b'\nx + y"
+    result = toolkit.execute_code(code)
+
+    # ruff: noqa: E501
+    expected_result = f"Executed the code below:\n```py\n{code}\n```\n> Executed Results:\nab"
+    assert expected_result == result
