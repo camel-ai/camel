@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 import os
-from typing import Optional
+from typing import Any, Optional
 
 from camel.types.enums import JinaReturnFormat
 
@@ -37,7 +37,7 @@ class JinaURLReader:
             in JSON format. Defaults to False.
         timeout (int, optional): The maximum time in seconds to wait for
             the page to be rendered. Defaults to 30.
-        **kwargs (str): Additional keyword arguments, including proxies,
+        **kwargs (Any): Additional keyword arguments, including proxies,
             cookies, etc. It should align with the HTTP Header field and
             value pairs listed in the reference.
 
