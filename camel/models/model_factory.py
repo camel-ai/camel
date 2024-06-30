@@ -15,6 +15,7 @@ from typing import Any, Dict, Optional, Union
 
 from camel.models.anthropic_model import AnthropicModel
 from camel.models.base_model import BaseModelBackend
+from camel.models.fastchat_model import FastChatModel
 from camel.models.litellm_model import LiteLLMModel
 from camel.models.ollama_model import OllamaModel
 from camel.models.open_source_model import OpenSourceModel
@@ -82,6 +83,8 @@ class ModelFactory:
                 model_class = OllamaModel
             elif model_platform.is_litellm:
                 model_class = LiteLLMModel
+            elif model_platform.FASTCHAT:
+                model_class = FastChatModel
             else:
                 raise ValueError(
                     f"Unknown pair of model platform `{model_platform}` "

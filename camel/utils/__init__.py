@@ -32,6 +32,7 @@ from .constants import Constants
 from .token_counting import (
     AnthropicTokenCounter,
     BaseTokenCounter,
+    FastChatChatTokenCounter,
     LiteLLMTokenCounter,
     OpenAITokenCounter,
     OpenSourceTokenCounter,
@@ -54,6 +55,7 @@ __all__ = [
     'BaseTokenCounter',
     'OpenAITokenCounter',
     'OpenSourceTokenCounter',
+    'FastChatChatTokenCounter',
     'LiteLLMTokenCounter',
     'Constants',
     'text_extract_from_web',
