@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 class TelegramBot:
     r"""Represents a Telegram bot that is powered by an agent.
 
-    Attributes:
+    Args:
         chat_agent (ChatAgent): Chat agent that will power the bot.
         telegram_token (str, optional): The bot token.
     """
@@ -51,7 +51,7 @@ class TelegramBot:
             import telebot  # type: ignore[import-untyped]
         except ImportError:
             raise ImportError(
-                "Please install `telegram_bot` first. "
+                "Please install `telebot` first. "
                 "You can install it by running "
                 "`pip install pyTelegramBotAPI`."
             )
