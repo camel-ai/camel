@@ -19,6 +19,8 @@ import logging
 import os
 from typing import TYPE_CHECKING, List, Optional
 
+from camel.utils import dependencies_required
+
 if TYPE_CHECKING:
     from ssl import SSLContext
 
@@ -29,6 +31,7 @@ from camel.functions import OpenAIFunction
 logger = logging.getLogger(__name__)
 
 
+@dependencies_required('slack_sdk')
 def _login_slack(
     slack_token: Optional[str] = None,
     ssl: Optional[SSLContext] = None,
@@ -50,13 +53,8 @@ def _login_slack(
         KeyError: If SLACK_BOT_TOKEN or SLACK_USER_TOKEN environment variables
             are not set.
     """
-    try:
-        from slack_sdk import WebClient
-    except ImportError as e:
-        raise ImportError(
-            "Cannot import slack_sdk. Please install the package with \
-            `pip install slack_sdk`."
-        ) from e
+    from slack_sdk import WebClient
+
     if not slack_token:
         slack_token = os.environ.get("SLACK_BOT_TOKEN") or os.environ.get(
             "SLACK_USER_TOKEN"

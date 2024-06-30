@@ -16,6 +16,8 @@ from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 from unstructured.documents.elements import Element
 
+from camel.utils import dependencies_required
+
 
 class UnstructuredIO:
     r"""A class to handle various functionalities provided by the
@@ -37,6 +39,7 @@ class UnstructuredIO:
         """
         self._ensure_unstructured_version(self.UNSTRUCTURED_MIN_VERSION)
 
+    @dependencies_required('unstructured')
     def _ensure_unstructured_version(self, min_version: str) -> None:
         r"""Validates that the installed 'Unstructured' library version
         satisfies the specified minimum version requirement. This function is
@@ -58,12 +61,7 @@ class UnstructuredIO:
                 strings.
         """
         from packaging import version
-
-        try:
-            from unstructured.__version__ import __version__
-
-        except ImportError as e:
-            raise ImportError("Package `unstructured` not installed.") from e
+        from unstructured.__version__ import __version__
 
         # Use packaging.version to compare versions
         min_ver = version.parse(min_version)

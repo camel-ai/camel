@@ -15,8 +15,10 @@ import os
 from typing import Any, Dict, List
 
 from camel.functions.openai_function import OpenAIFunction
+from camel.utils import dependencies_required
 
 
+@dependencies_required('wikipedia')
 def search_wiki(entity: str) -> str:
     r"""Search the entity in WikiPedia and return the summary of the required
         page, containing factual information about the given entity.
@@ -28,13 +30,7 @@ def search_wiki(entity: str) -> str:
         str: The search result. If the page corresponding to the entity
             exists, return the summary of this entity in a string.
     """
-    try:
-        import wikipedia
-    except ImportError:
-        raise ImportError(
-            "Please install `wikipedia` first. You can install it by running "
-            "`pip install wikipedia`."
-        )
+    import wikipedia
 
     result: str
 
@@ -241,6 +237,7 @@ def search_google(
     return responses
 
 
+@dependencies_required('wolframalpha')
 def query_wolfram_alpha(query: str, is_detailed: bool) -> str:
     r"""Queries Wolfram|Alpha and returns the result. Wolfram|Alpha is an
     answer engine developed by Wolfram Research. It is offered as an online
@@ -255,13 +252,7 @@ def query_wolfram_alpha(query: str, is_detailed: bool) -> str:
     Returns:
         str: The result from Wolfram Alpha, formatted as a string.
     """
-    try:
-        import wolframalpha
-    except ImportError:
-        raise ImportError(
-            "Please install `wolframalpha` first. You can install it by"
-            " running `pip install wolframalpha`."
-        )
+    import wolframalpha
 
     WOLFRAMALPHA_APP_ID = os.environ.get('WOLFRAMALPHA_APP_ID')
     if not WOLFRAMALPHA_APP_ID:

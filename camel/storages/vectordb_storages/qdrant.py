@@ -23,6 +23,7 @@ from camel.storages.vectordb_storages import (
     VectorRecord,
 )
 from camel.types import VectorDistance
+from camel.utils import dependencies_required
 
 _qdrant_local_client_map: Dict[str, Tuple[Any, int]] = {}
 
@@ -62,6 +63,7 @@ class QdrantStorage(BaseVectorStorage):
           be initialized with an in-memory storage (`":memory:"`).
     """
 
+    @dependencies_required('qdrant_client')
     def __init__(
         self,
         vector_dim: int,
@@ -72,13 +74,7 @@ class QdrantStorage(BaseVectorStorage):
         delete_collection_on_del: bool = False,
         **kwargs: Any,
     ) -> None:
-        try:
-            from qdrant_client import QdrantClient
-        except ImportError as exc:
-            raise ImportError(
-                "Please install `qdrant-client` first. You can install it by "
-                "running `pip install qdrant-client`."
-            ) from exc
+        from qdrant_client import QdrantClient
 
         self._client: QdrantClient
         self._local_path: Optional[str] = None
