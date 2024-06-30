@@ -12,10 +12,7 @@ WORKDIR /app/camel
 
 RUN poetry install --with dev,docs -E all
 
-RUN poetry run pre-commit install
-
-# Set the working directory to the examples folder
-WORKDIR /app/camel/examples
+RUN pre-commit install
 
 # Running a empty command to keep the container running
 CMD ["tail", "-f", "/dev/null"]

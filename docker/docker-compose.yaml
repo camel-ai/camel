@@ -1,11 +1,10 @@
-version: "3.9"
 services:
   camel:
     image: camel:py3.10
-    container_name: camel
+    container_name: camel-example
     build:
       context: ../
       dockerfile: ./docker/Dockerfile
     env_file:
       - .env
-    command: ["python", "ai_society/role_playing.py"]
+    command: ["python", "examples/ai_society/role_playing.py"]
