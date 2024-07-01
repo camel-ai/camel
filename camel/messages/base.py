@@ -13,11 +13,10 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import base64
 import io
-from dataclasses import dataclass
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 import numpy as np
-from PIL import Image
+from pydantic import BaseModel
 
 from camel.messages import (
     OpenAIAssistantMessage,
@@ -28,15 +27,12 @@ from camel.messages import (
 from camel.prompts import CodePrompt, TextPrompt
 from camel.types import (
     OpenAIBackendRole,
-    OpenAIImageType,
-    OpenAIVisionDetailType,
     RoleType,
 )
 from camel.utils import Constants
 
 
-@dataclass
-class BaseMessage:
+class BaseMessage(BaseModel):
     r"""Base class for message objects used in CAMEL chat system.
 
     Args:
@@ -46,10 +42,10 @@ class BaseMessage:
         meta_dict (Optional[Dict[str, str]]): Additional metadata dictionary
             for the message.
         content (str): The content of the message.
-        video_bytes (Optional[bytes]): Optional bytes of a video associated
+        video_bytes (Optional[str]): Optional bytes of a video associated
             with the message. Default is None.
-        image_list (Optional[List[Image.Image]]): Optional list of PIL Image
-            objects associated with the message. Default is None.
+        image_bytes_list (Optional[List[str]]): Optional list of image base64
+            bytes associated with the message. Default is None.
         image_detail (Literal["auto", "low", "high"]): Detail level of the
             images associated with the message. Default is "auto".
         video_detail (Literal["auto", "low", "high"]): Detail level of the
@@ -60,8 +56,8 @@ class BaseMessage:
     role_type: RoleType
     meta_dict: Optional[Dict[str, str]]
     content: str
-    video_bytes: Optional[bytes] = None
-    image_list: Optional[List[Image.Image]] = None
+    video_bytes: Optional[str] = None
+    image_bytes_list: Optional[List[str]] = None
     image_detail: Literal["auto", "low", "high"] = "auto"
     video_detail: Literal["auto", "low", "high"] = "low"
 
@@ -71,24 +67,20 @@ class BaseMessage:
         role_name: str,
         content: str,
         meta_dict: Optional[Dict[str, str]] = None,
-        video_bytes: Optional[bytes] = None,
-        image_list: Optional[List[Image.Image]] = None,
-        image_detail: Union[
-            OpenAIVisionDetailType, str
-        ] = OpenAIVisionDetailType.AUTO,
-        video_detail: Union[
-            OpenAIVisionDetailType, str
-        ] = OpenAIVisionDetailType.LOW,
+        video_bytes: Optional[str] = None,
+        image_bytes_list: Optional[List[str]] = None,
+        image_detail: Literal["auto", "low", "high"] = "auto",
+        video_detail: Literal["auto", "low", "high"] = "low",
     ) -> "BaseMessage":
         return cls(
-            role_name,
-            RoleType.USER,
-            meta_dict,
-            content,
-            video_bytes,
-            image_list,
-            OpenAIVisionDetailType(image_detail).value,
-            OpenAIVisionDetailType(video_detail).value,
+            role_name=role_name,
+            role_type=RoleType.USER,
+            meta_dict=meta_dict,
+            content=content,
+            video_bytes=video_bytes,
+            image_bytes_list=image_bytes_list,
+            image_detail=image_detail,
+            video_detail=video_detail,
         )
 
     @classmethod
@@ -97,24 +89,20 @@ class BaseMessage:
         role_name: str,
         content: str,
         meta_dict: Optional[Dict[str, str]] = None,
-        video_bytes: Optional[bytes] = None,
-        image_list: Optional[List[Image.Image]] = None,
-        image_detail: Union[
-            OpenAIVisionDetailType, str
-        ] = OpenAIVisionDetailType.AUTO,
-        video_detail: Union[
-            OpenAIVisionDetailType, str
-        ] = OpenAIVisionDetailType.LOW,
+        video_bytes: Optional[str] = None,
+        image_bytes_list: Optional[List[str]] = None,
+        image_detail: Literal["auto", "low", "high"] = "auto",
+        video_detail: Literal["auto", "low", "high"] = "low",
     ) -> "BaseMessage":
         return cls(
-            role_name,
-            RoleType.ASSISTANT,
-            meta_dict,
-            content,
-            video_bytes,
-            image_list,
-            OpenAIVisionDetailType(image_detail).value,
-            OpenAIVisionDetailType(video_detail).value,
+            role_name=role_name,
+            role_type=RoleType.USER,
+            meta_dict=meta_dict,
+            content=content,
+            video_bytes=video_bytes,
+            image_bytes_list=image_bytes_list,
+            image_detail=image_detail,
+            video_detail=video_detail,
         )
 
     def create_new_instance(self, content: str) -> "BaseMessage":
@@ -277,33 +265,13 @@ class BaseMessage:
             }
         )
 
-        if self.image_list and len(self.image_list) > 0:
-            for image in self.image_list:
-                if image.format is None:
-                    raise ValueError(
-                        f"Image's `format` is `None`, please "
-                        f"transform the `PIL.Image.Image` to  one of "
-                        f"following supported formats, such as "
-                        f"{list(OpenAIImageType)}"
-                    )
-
-                image_type: str = image.format.lower()
-                if image_type not in OpenAIImageType:
-                    raise ValueError(
-                        f"Image type {image.format} "
-                        f"is not supported by OpenAI vision model"
-                    )
-                with io.BytesIO() as buffer:
-                    image.save(fp=buffer, format=image.format)
-                    encoded_image = base64.b64encode(buffer.getvalue()).decode(
-                        "utf-8"
-                    )
-                image_prefix = f"data:image/{image_type};base64,"
+        if self.image_bytes_list and len(self.image_bytes_list) > 0:
+            for encoded_image in self.image_bytes_list:
                 hybird_content.append(
                     {
                         "type": "image_url",
                         "image_url": {
-                            "url": f"{image_prefix}{encoded_image}",
+                            "url": f"data:image/jpeg;base64,{encoded_image}",
                             "detail": self.image_detail,
                         },
                     }
@@ -311,6 +279,7 @@ class BaseMessage:
 
         if self.video_bytes:
             import imageio.v3 as iio
+            from PIL import Image
 
             base64Frames: List[str] = []
             frame_count = 0
@@ -340,9 +309,7 @@ class BaseMessage:
 
                     # encode the image to base64
                     with io.BytesIO() as buffer:
-                        image_format = OpenAIImageType.JPEG.value
-                        image_format = image_format.upper()
-                        resized_img.save(fp=buffer, format=image_format)
+                        resized_img.save(fp=buffer, format="JPEG")
                         encoded_image = base64.b64encode(
                             buffer.getvalue()
                         ).decode("utf-8")

@@ -30,8 +30,8 @@ def test_score_based_context_creator():
         ContextRecord(
             memory_record=MemoryRecord(
                 message=BaseMessage(
-                    "test",
-                    RoleType.ASSISTANT,
+                    role_name="test",
+                    role_type=RoleType.ASSISTANT,
                     meta_dict=None,
                     content="Hello world!",  # 10
                 ),
@@ -42,8 +42,8 @@ def test_score_based_context_creator():
         ContextRecord(
             memory_record=MemoryRecord(
                 message=BaseMessage(
-                    "test",
-                    RoleType.ASSISTANT,
+                    role_name="test",
+                    role_type=RoleType.ASSISTANT,
                     meta_dict=None,
                     content="Nice to meet you.",  # 12
                 ),
@@ -54,8 +54,8 @@ def test_score_based_context_creator():
         ContextRecord(
             memory_record=MemoryRecord(
                 message=BaseMessage(
-                    "test",
-                    RoleType.ASSISTANT,
+                    role_name="test",
+                    role_type=RoleType.ASSISTANT,
                     meta_dict=None,
                     content="How are you?",  # 11
                 ),

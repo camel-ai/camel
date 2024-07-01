@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 from camel.messages import (
@@ -23,7 +22,6 @@ from camel.messages import (
 from camel.types import OpenAIBackendRole
 
 
-@dataclass
 class FunctionCallingMessage(BaseMessage):
     r"""Class for message objects used specifically for
     function-related messages.
