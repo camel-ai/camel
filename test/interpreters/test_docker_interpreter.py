@@ -15,6 +15,12 @@
 import pytest
 
 from camel.interpreters import DockerInterpreter, InterpreterError
+from camel.utils import is_docker_running
+
+docker_running = is_docker_running()
+pytestmark = pytest.mark.skipif(
+    not docker_running, reason="Docker daemon is not running."
+)
 
 
 @pytest.fixture

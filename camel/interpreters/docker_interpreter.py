@@ -20,10 +20,12 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional
 
 import docker
+import docker.errors
 from colorama import Fore
 
 from camel.interpreters.base import BaseInterpreter
 from camel.interpreters.interpreter_error import InterpreterError
+from camel.utils import is_docker_running
 
 if TYPE_CHECKING:
     from docker.models.containers import Container
@@ -85,14 +87,22 @@ class DockerInterpreter(BaseInterpreter):
         self._container.remove(force=True)
 
     def _initialize_if_needed(self) -> None:
-        if self._container is None:
-            client = docker.from_env()
-            self._container = client.containers.run(
-                "python:3.10",
-                detach=True,
-                name=f"camel-interpreter-{uuid.uuid4()}",
-                command="tail -f /dev/null",
+        if self._container is not None:
+            return
+
+        if not is_docker_running():
+            raise InterpreterError(
+                "Docker daemon is not running. Please install/start docker "
+                "and try again."
             )
+
+        client = docker.from_env()
+        self._container = client.containers.run(
+            "python:3.10",
+            detach=True,
+            name=f"camel-interpreter-{uuid.uuid4()}",
+            command="tail -f /dev/null",
+        )
 
     def _create_file_in_container(self, content: str) -> Path:
         # get a random name for the file
