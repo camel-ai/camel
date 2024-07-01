@@ -66,6 +66,10 @@ def model_api_key_required(func: F) -> F:
             if not self._api_key and 'NVIDIA_API_KEY' not in os.environ:
                 raise ValueError('NVIDIA API key not found.')
             return func(self, *args, **kwargs)
+        elif self.model_type.is_gemini:
+            if not self._api_key and 'GOOGLE_API_KEY' not in os.environ:
+                raise ValueError('Gemini API key not found.')
+            return func(self, *args, **kwargs)
         else:
             raise ValueError('Unsupported model type.')
 

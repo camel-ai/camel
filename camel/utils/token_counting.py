@@ -303,6 +303,37 @@ class AnthropicTokenCounter(BaseTokenCounter):
         return num_tokens
 
 
+class GeminiTokenCounter(BaseTokenCounter):
+    def __init__(self, model_type: ModelType):
+        r"""Constructor for the token counter for Gemini models."""
+        import google.generativeai as genai
+
+        self.model_type = model_type
+        self._client = genai.GenerativeModel(self.model_type.value)
+
+    def count_tokens_from_messages(self, messages) -> int:
+        r"""
+        Returns:
+        response(CountTokensResponse), use response.text to get output
+        """
+        converted_messages = []
+        for message in messages:
+            role = message.get('role')
+            if role == 'assistant':
+                role = 'model'
+            else:
+                role = 'user'
+            if 'content' in message:
+                converted_message = {
+                    "role": role,
+                    "parts": message.get("content"),
+                }
+                converted_messages.append(converted_message)
+            else:
+                converted_messages.append(message)
+        return self._client.count_tokens(converted_messages).total_tokens
+
+
 class LiteLLMTokenCounter:
     def __init__(self, model_type: str):
         r"""Constructor for the token counter for LiteLLM models.
