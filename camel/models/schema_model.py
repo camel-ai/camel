@@ -115,7 +115,8 @@ class SchemaModel(BaseModelBackend):
 
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
-                in OpenAI API format.
+                in OpenAI API format. Only the last message is used for the
+                completion to generate the formatted response.
             pydantic_class (Optional[Type[T]]): Pydantic class schema to
                 generate the response. (default: :obj:`None`)
 
@@ -135,13 +136,14 @@ class SchemaModel(BaseModelBackend):
         rng = torch.Generator(device=self.device)
         rng.manual_seed(789001)
 
-        messages_str = "\n".join(
-            [
-                f"{msg.get('role', 'user')}: {msg.get('content', '')}"
-                for msg in messages
-            ]
+        if not messages:
+            raise ValueError("The messages list should not be empty.")
+        message = messages[-1]
+        message_str = (
+            f"{message.get('role', '')}: {message.get('content', '')}"
         )
-        parsed_response = generator(messages_str, rng=rng)
+
+        parsed_response = generator(message_str, rng=rng)
 
         print(repr(parsed_response))  # TODO: Remove this line
 
@@ -156,7 +158,8 @@ class SchemaModel(BaseModelBackend):
                 Choice(
                     index=0,
                     message=ChatCompletionMessage(
-                        role="assistant", content=str(parsed_response)
+                        role="assistant",
+                        content=str(parsed_response),
                     ),
                     finish_reason="stop",
                 )
