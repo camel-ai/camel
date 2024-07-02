@@ -74,7 +74,7 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
             else:
                 ret += role
         return ret
-    elif model == ModelType.VICUNA or model == ModelType.VICUNA_16K:
+    elif model.is_open_source:
         seps = [" ", "</s>"]
         role_map = {"user": "USER", "assistant": "ASSISTANT"}
 

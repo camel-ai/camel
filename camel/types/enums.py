@@ -38,8 +38,14 @@ class ModelType(Enum):
     VICUNA_16K = "vicuna-16k"
 
     # Qwen
-    QWEN_7B_CHAT = "Qwen-7B-Chat"
-    BAICHUAN2_13B_CHAT = "Baichuan2-13B-Chat"
+    QWEN = "Qwen-7B-Chat"
+
+    BAICHUAN2 = "Baichuan2-13B-Chat"
+
+    CHATGLM3 = "chatglm3-6b"
+
+    # Internlm
+    INTERNLM = "internlm-chat-20b"
 
     # Legacy anthropic models
     # NOTE: anthropic lagecy models only Claude 2.1 has system prompt support
@@ -75,8 +81,10 @@ class ModelType(Enum):
             ModelType.LLAMA_3,
             ModelType.VICUNA,
             ModelType.VICUNA_16K,
-            ModelType.QWEN_7B_CHAT,
-            ModelType.BAICHUAN2_13B_CHAT
+            ModelType.QWEN,
+            ModelType.BAICHUAN2,
+            ModelType.CHATGLM3,
+            ModelType.INTERNLM
         }
 
     @property
@@ -117,10 +125,16 @@ class ModelType(Enum):
             return 4096
         elif self is ModelType.LLAMA_3:
             return 4096
-        elif self is ModelType.QWEN_7B_CHAT:
+        elif self is ModelType.QWEN:
             return 8012
-        elif self is ModelType.BAICHUAN2_13B_CHAT:
+        elif self is ModelType.BAICHUAN2:
             return 4096
+        elif self is ModelType.CHATGLM3:
+            return 2048
+        elif self is ModelType.INTERNLM:
+            return 16_000
+        elif self is ModelType.INTERNLM_2:
+            return 200_000
         elif self is ModelType.VICUNA:
             # reference: https://lmsys.org/blog/2023-03-30-vicuna/
             return 2048
