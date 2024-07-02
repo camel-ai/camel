@@ -26,7 +26,9 @@ from .retrieval_functions import RETRIEVAL_FUNCS
 from .search_functions import SEARCH_FUNCS
 from .twitter_function import TWITTER_FUNCS
 from .weather_functions import WEATHER_FUNCS
+from .dalle_functions import DALLE_FUNCS
 from .slack_functions import SLACK_FUNCS
+from ..loaders.unstructured_io import UnstructuredIO
 
 from .open_api_function import (
     apinames_filepaths_to_funs_schemas,
@@ -47,5 +49,7 @@ __all__ = [
     'SEARCH_FUNCS',
     'TWITTER_FUNCS',
     'WEATHER_FUNCS',
+    'DALLE_FUNCS',
     'SLACK_FUNCS',
+    'UnstructuredIO',
 ]
