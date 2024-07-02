@@ -54,6 +54,15 @@ class ModelType(Enum):
     # Nvidia models
     NEMOTRON_4_REWARD = "nvidia/nemotron-4-340b-reward"
 
+    # Transformers models
+    TRANSFORMERS = "transformers"
+
+    # llamacpp models
+    LLAMACPP = "llamacpp"
+
+    # vllm models
+    VLLM = "vllm"
+
     @property
     def value_for_tiktoken(self) -> str:
         return (
