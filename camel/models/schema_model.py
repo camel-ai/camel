@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import os
 from typing import Any, Dict, List, Optional, Type, TypeVar, Union
 
 import torch
@@ -19,7 +18,6 @@ from openai import Stream
 from outlines import generate, models
 from pydantic import BaseModel
 
-from camel.configs import OPENAI_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import (
@@ -60,11 +58,11 @@ class SchemaModel(BaseModelBackend):
             url (Optional[str]): The url to the OpenAI service.
         """
         super().__init__(model_type, model_config_dict, api_key, url)
-        self._url = url or os.environ.get("OPENAI_API_BASE_URL")
-        self._api_key = api_key or os.environ.get("OPENAI_API_KEY")
+        self._url = url
+        self._api_key = api_key
         self._client = Union[models.Transformers, models.LlamaCpp, models.VLLM]
         self.device: str = "cuda"
-        match self.model_type:
+        match self.model_type:  # match the requested model type
             case ModelType.TRANSFORMERS:
                 model_name = self.model_config_dict.get(
                     "model_name", "mistralai/Mistral-7B-v0.3"
@@ -168,19 +166,19 @@ class SchemaModel(BaseModelBackend):
         return response
 
     def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to OpenAI API.
+        r"""Check whether the model configuration contains the required
+        arguments for the schema-based model.
 
         Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to OpenAI API.
+            Warning: If the model configuration dictionary does not contain
+                the required arguments for the schema-based model, the warnings
+                are raised.
         """
-        for param in self.model_config_dict:
-            if param not in OPENAI_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into OpenAI model backend."
-                )
+        # Check the model_name, WarningError if not found
+        if "model_name" not in self.model_config_dict:
+            raise Warning("The model_name is set to the default value.")
+        if "device" not in self.model_config_dict:
+            raise Warning("The device is set to the default value cuda.")
 
     @property
     def stream(self) -> bool:
