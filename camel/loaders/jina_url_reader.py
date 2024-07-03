@@ -94,6 +94,7 @@ class JinaURLReader:
         full_url = f"{JINA_ENDPOINT}{url}"
         try:
             resp = requests.get(full_url, headers=self._headers)
+            resp.raise_for_status()
         except Exception as e:
             raise Exception(f"Failed to read content from {url}") from e
 
