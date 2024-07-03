@@ -64,12 +64,17 @@ class SchemaModel(BaseModelBackend):
         self.device: str = "cuda"
         match self.model_type:  # match the requested model type
             case ModelType.TRANSFORMERS:
-                model_name = self.model_config_dict.get(
+                self.model_name = self.model_config_dict.get(
                     "model_name", "mistralai/Mistral-7B-v0.3"
                 )
                 self.device = self.model_config_dict.get("device", "cuda")
+
+                # Remove the model_name and the device from dict
+                self.model_config_dict.pop("model_name", None)
+                self.model_config_dict.pop("device", None)
+
                 self._client = models.transformers(
-                    model_name=model_name,
+                    model_name=self.model_name,
                     device=self.device,
                     model_kwargs=self.model_config_dict,
                 )
@@ -81,6 +86,11 @@ class SchemaModel(BaseModelBackend):
                 filename = self.model_config_dict.get(
                     "filename", "phi-2.Q4_K_M.gguf"
                 )
+
+                # Remove the repo_id and the filename from dict
+                self.model_config_dict.pop("repo_id", None)
+                self.model_config_dict.pop("filename", None)
+
                 self._client = models.llamacpp(
                     repo_id=repo_id,
                     filename=filename,
@@ -88,11 +98,15 @@ class SchemaModel(BaseModelBackend):
                 )
             case ModelType.VLLM:
                 self.device = self.model_config_dict.get("device", "cuda")
-                model_name = self.model_config_dict.get(
+                self.model_name = self.model_config_dict.get(
                     "model_name", "mistralai/Mistral-7B-v0.3"
                 )
+
+                # Remove the model_name and the device from dict
+                self.model_config_dict.pop("model_name", None)
+
                 self._client = models.vllm(
-                    model_name=model_name,
+                    model_name=self.model_name,
                     vllm_model_params=self.model_config_dict,
                 )
             case _:
