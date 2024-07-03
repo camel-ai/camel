@@ -71,6 +71,7 @@ class SchemaModel(BaseModelBackend):
                 self._client = models.transformers(
                     model_name=model_name,
                     device=self.device,
+                    model_kwargs=self.model_config_dict,
                 )
             case ModelType.LLAMACPP:
                 self.device = self.model_config_dict.get("device", "cuda")
@@ -81,14 +82,19 @@ class SchemaModel(BaseModelBackend):
                     "filename", "phi-2.Q4_K_M.gguf"
                 )
                 self._client = models.llamacpp(
-                    repo_id=repo_id, filename=filename
+                    repo_id=repo_id,
+                    filename=filename,
+                    llamacpp_model_params=self.model_config_dict,
                 )
             case ModelType.VLLM:
                 self.device = self.model_config_dict.get("device", "cuda")
                 model_name = self.model_config_dict.get(
                     "model_name", "mistralai/Mistral-7B-v0.3"
                 )
-                self._client = models.vllm(model_name=model_name)
+                self._client = models.vllm(
+                    model_name=model_name,
+                    vllm_model_params=self.model_config_dict,
+                )
             case _:
                 raise ValueError(f"Unsupported model type: {self.model_type}")
 
