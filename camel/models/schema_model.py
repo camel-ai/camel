@@ -103,7 +103,9 @@ class SchemaModel(BaseModelBackend):
                 tokenization style.
         """
         if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(self.model_type)
+            # The default model type is GPT_3_5_TURBO, since the self hosted
+            # models are not supported in the token counter.
+            self._token_counter = OpenAITokenCounter(ModelType.GPT_3_5_TURBO)
         return self._token_counter
 
     def run(
