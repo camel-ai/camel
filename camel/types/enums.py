@@ -401,3 +401,10 @@ class VoiceType(Enum):
             VoiceType.NOVA,
             VoiceType.SHIMMER,
         }
+
+
+class JinaReturnFormat(Enum):
+    DEFAULT = None
+    MARKDOWN = "markdown"
+    HTML = "html"
+    TEXT = "text"
