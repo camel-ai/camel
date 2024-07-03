@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 import re
-from typing import Dict, List, Literal, Optional
+from typing import Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel
 
@@ -106,7 +106,7 @@ class Task(BaseModel):
         task.parent = self
         self.subtasks.append(task)
 
-    def get_running_task(self) -> "Task" | None:
+    def get_running_task(self) -> Optional["Task"]:
         for sub in self.subtasks:
             if sub.state == "RUNNING":
                 return sub.get_running_task()
@@ -121,7 +121,7 @@ class Task(BaseModel):
         return _str
 
 
-def parse_response(response: str, task_id: str | None) -> List[Task]:
+def parse_response(response: str, task_id: Optional[str]) -> List[Task]:
     pattern = "<task>(.*?)</task>"
     tasks_content = re.findall(pattern, response, re.DOTALL)
 
@@ -154,7 +154,7 @@ class TaskManager:
         return task_id in self.task_map
 
     @property
-    def current_task(self) -> Task | None:
+    def current_task(self) -> Optional[Task]:
         return self.task_map.get(self.current_task_id, None)
 
     @staticmethod
@@ -180,7 +180,7 @@ class TaskManager:
 
         return stack
 
-    def add_tasks(self, tasks: Task | List[Task]) -> None:
+    def add_tasks(self, tasks: Union[Task, List[Task]]) -> None:
         r"""
         self.tasks and self.task_map will be updated by the input tasks.
         """
@@ -200,7 +200,7 @@ class TaskManager:
         task: Task,
         agent: ChatAgent,
         template: Optional[TextPrompt] = None,
-    ) -> Task | None:
+    ) -> Optional[Task]:
         r"""Evolve a task to a new task.
 
         Args:
