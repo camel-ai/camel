@@ -57,8 +57,8 @@ def get_dalle_img(
     prompt: str,
     size: Literal['256x256', '512x512', '1024x1024', '1792x1024', '1024x1792'],
     quality: Literal['standard', 'hd'],
-    n: int,
     image_path: str,
+    n: int = 1,
 ) -> str:
     """Generate an image using OpenAI's DALL-E model.
     Args:
@@ -71,6 +71,7 @@ def get_dalle_img(
             "1792x1024", or "1024x1792" for "dall-e-3".
         quality (str): The quality setting for the image generation,
             including "standard" and "hd". Defaults to "standard".
+        image_path (str): The path to save the generated image.
         n (int): The number of images to generate. Must be between 1 and 10.
             For "dall-e-3", only n=1 is supported. Defaults to 1.
     Returns:

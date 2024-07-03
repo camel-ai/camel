@@ -18,12 +18,18 @@ from colorama import Fore
 from PIL import Image
 
 from camel.agents import ChatAgent
-from camel.configs import FunctionCallingConfig
+from camel.configs import ChatGPTConfig
 from camel.functions import DALLE_FUNCS
 from camel.messages import BaseMessage
+from camel.models import ModelFactory
 from camel.prompts import PromptTemplateGenerator
 from camel.responses import ChatAgentResponse
-from camel.types import ModelType, RoleType, TaskType
+from camel.types import (
+    ModelPlatformType,
+    ModelType,
+    RoleType,
+    TaskType,
+)
 from camel.utils import print_text_animated
 
 
@@ -58,25 +64,24 @@ PROMPT: here is the updated prompt!
     def init_agents(self):
         r"""Initialize artist and critic agents with their system messages."""
 
-        function_list = [*DALLE_FUNCS]
-        assistant_model_config = (
-            FunctionCallingConfig.from_openai_function_list(
-                function_list=function_list,
-                kwargs=dict(temperature=0.0),
-            )
+        model_config = ChatGPTConfig(tools=[*DALLE_FUNCS])
+
+        model = ModelFactory.create(
+            model_platform=ModelPlatformType.OPENAI,
+            model_type=ModelType.GPT_4_TURBO_VISION,
+            model_config_dict=model_config.__dict__,
         )
 
         self.artist = ChatAgent(
             system_message=self.artist_sys_msg,
-            model_type=ModelType.GPT_4_TURBO,
-            model_config=assistant_model_config,
-            function_list=[*DALLE_FUNCS],
+            model=model,
+            tools=DALLE_FUNCS,
         )
+
         self.artist.reset()
 
         self.critic = ChatAgent(
-            system_message=self.critic_sys_msg,
-            model_type=ModelType.GPT_4_TURBO_VISION,
+            system_message=self.critic_sys_msg, model=model
         )
         self.critic.reset()
 

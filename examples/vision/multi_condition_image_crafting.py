@@ -16,11 +16,17 @@ import argparse
 from PIL import Image
 
 from camel.agents.chat_agent import ChatAgent
-from camel.configs import FunctionCallingVisionConfig
+from camel.configs import ChatGPTConfig
 from camel.functions import DALLE_FUNCS
 from camel.generators import PromptTemplateGenerator
 from camel.messages.base import BaseMessage
-from camel.types import ModelType, RoleType, TaskType
+from camel.models import ModelFactory
+from camel.types import (
+    ModelPlatformType,
+    ModelType,
+    RoleType,
+    TaskType,
+)
 
 parser = argparse.ArgumentParser(description="Arguments for Image Condition.")
 parser.add_argument(
@@ -46,19 +52,18 @@ def multi_condition_image_craft(image_paths: str) -> list[str]:
         content=sys_msg,
     )
 
-    function_list = [*DALLE_FUNCS]
-    assistant_model_config = (
-        FunctionCallingVisionConfig.from_openai_function_list(
-            function_list=function_list,
-            kwargs=dict(temperature=0.0),
-        )
+    model_config = ChatGPTConfig(tools=[*DALLE_FUNCS])
+
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_4_TURBO_VISION,
+        model_config_dict=model_config.__dict__,
     )
 
     dalle_agent = ChatAgent(
         system_message=assistant_sys_msg,
-        model_type=ModelType.GPT_4_TURBO_VISION,
-        model_config=assistant_model_config,
-        function_list=[*DALLE_FUNCS],
+        model=model,
+        tools=DALLE_FUNCS,
     )
 
     image_list = [Image.open(image_path) for image_path in image_paths]

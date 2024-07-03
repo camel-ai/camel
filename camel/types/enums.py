@@ -71,6 +71,7 @@ class ModelType(Enum):
             ModelType.GPT_4,
             ModelType.GPT_4_32K,
             ModelType.GPT_4_TURBO,
+            ModelType.GPT_4_TURBO_VISION,
             ModelType.GPT_4O,
         }
 
@@ -133,6 +134,8 @@ class ModelType(Enum):
         elif self is ModelType.GPT_4_32K:
             return 32768
         elif self is ModelType.GPT_4_TURBO:
+            return 128000
+        elif self is ModelType.GPT_4_TURBO_VISION:
             return 128000
         elif self is ModelType.GPT_4O:
             return 128000

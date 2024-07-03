@@ -16,9 +16,16 @@ import argparse
 from PIL import Image
 
 from camel.agents import ChatAgent
+from camel.configs import ChatGPTConfig
 from camel.generators import PromptTemplateGenerator
 from camel.messages import BaseMessage
-from camel.types import ModelType, RoleType, TaskType
+from camel.models import ModelFactory
+from camel.types import (
+    ModelPlatformType,
+    ModelType,
+    RoleType,
+    TaskType,
+)
 
 parser = argparse.ArgumentParser(description="Arguments for object detection.")
 parser.add_argument(
@@ -44,9 +51,16 @@ def detect_image_obj(image_paths: str) -> None:
         role_name="Assistant",
         content=sys_msg,
     )
+    model_config = ChatGPTConfig(temperature=0)
+
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_4_TURBO_VISION,
+        model_config_dict=model_config.__dict__,
+    )
     agent = ChatAgent(
         assistant_sys_msg,
-        model_type=ModelType.GPT_4_TURBO,
+        model=model,
     )
     image_list = [Image.open(image_path) for image_path in image_paths]
 
