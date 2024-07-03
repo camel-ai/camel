@@ -40,6 +40,7 @@ docstring-parser = "^0.15"
 pydantic = ">=1.9,<3"
 curl_cffi = "0.6.2"
 pillow ="^10.2.0"
+outlines = "0.0.46"
 
 # model-platforms
 litellm = { version = "^1.38.1", optional = true }
