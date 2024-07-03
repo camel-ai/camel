@@ -24,11 +24,6 @@ def default_reader():
     return JinaURLReader()
 
 
-@pytest.fixture
-def short_timeout_reader():
-    return JinaURLReader(timeout=2)
-
-
 def test_read_content_default(default_reader: JinaURLReader):
     test_url = "https://en.wikipedia.org/wiki/Hollow_Knight"
     content = default_reader.read_content(test_url)
@@ -79,22 +74,3 @@ def test_read_content_json_webpage():
     content_json = json.loads(content)
     assert "slideshow" in content_json
     assert "slides" in content_json["slideshow"]
-
-
-def test_read_content_invalid_url(short_timeout_reader: JinaURLReader):
-    invalid_url = "some_invalid_url"
-    with pytest.raises(Exception, match="timeout"):
-        short_timeout_reader.read_content(invalid_url)
-
-
-def test_read_content_timeout(short_timeout_reader: JinaURLReader):
-    slow_url = "https://httpbin.org/delay/5"
-    with pytest.raises(Exception, match="timeout"):
-        short_timeout_reader.read_content(slow_url)
-
-
-def test_read_content_json_timeout():
-    slow_url = "https://httpbin.org/delay/5"
-    json_slow_reader = JinaURLReader(json_response=True, timeout=2)
-    with pytest.raises(Exception, match="timeout"):
-        json_slow_reader.read_content(slow_url)

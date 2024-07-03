@@ -77,7 +77,7 @@ class JinaURLReader:
         self._headers = {k: v for k, v in raw_headers.items() if v}
 
     def read_content(self, url: str) -> str:
-        r"""Reads the content of a URL and returns it as a plaintext with
+        r"""Reads the content of a URL and returns it as a string with
         given form.
 
         Args:
@@ -87,8 +87,6 @@ class JinaURLReader:
             str: The content of the URL.
         """
 
-        import json
-
         import requests
 
         full_url = f"{JINA_ENDPOINT}{url}"
@@ -96,23 +94,6 @@ class JinaURLReader:
             resp = requests.get(full_url, headers=self._headers)
             resp.raise_for_status()
         except Exception as e:
-            raise Exception(f"Failed to read content from {url}") from e
-
-        try:
-            resp_json = resp.json()
-        except json.JSONDecodeError:
-            # if the response is not JSON, return the text
-            return resp.text
-
-        # if the result is json, means whether the user has chosen to return
-        # json, *or there is any error*, or the webpage is json itself
-        # check the code to see if it's an error returned by Jina API
-
-        # if "code" or "data" not in resp_json, it's not a Jina API response
-        if "code" not in resp_json or "data" not in resp_json:
-            return resp.text
-
-        if resp_json["code"] != 200 and resp_json["data"] is None:
-            raise Exception(f"{resp_json['message']}")
+            raise Exception(f"Failed to read content from {url}: {e}") from e
 
         return resp.text
