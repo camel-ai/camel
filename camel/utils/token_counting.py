@@ -121,7 +121,14 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
                     "supported by the token counter."
                 )
             if content:
-                ret += '<|im_start|>' + role + '\n' + content + '<|im_end|>' + '\n'
+                ret += (
+                    '<|im_start|>'
+                    + role
+                    + '\n'
+                    + content
+                    + '<|im_end|>'
+                    + '\n'
+                )
             else:
                 ret += '<|im_start|>' + role + '\n'
         return ret
