@@ -12,21 +12,14 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from camel.agents import ChatAgent
-from camel.bots.discord_bot import DiscordBot
-from camel.messages import BaseMessage
+from camel.toolkits.code_execution import CodeExecutionToolkit
 
 
-def main(model=None) -> None:
-    assistant_sys_msg = BaseMessage.make_assistant_message(
-        role_name="Assistant",
-        content="You are a helpful assistant.",
-    )
+def test_execute_code():
+    toolkit = CodeExecutionToolkit()
+    code = "x = 'a'\ny = 'b'\nx + y"
+    result = toolkit.execute_code(code)
 
-    agent = ChatAgent(assistant_sys_msg, model_type=model)
-    bot = DiscordBot(agent)
-    bot.run()
-
-
-if __name__ == "__main__":
-    main()
+    # ruff: noqa: E501
+    expected_result = f"Executed the code below:\n```py\n{code}\n```\n> Executed Results:\nab"
+    assert expected_result == result
