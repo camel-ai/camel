@@ -12,7 +12,7 @@ jobs:
       - name: set up python environment and install dependencies
         uses: ./.github/actions/camel_install
         with:
-          python-version: "3.8"
+          python-version: "3.9"
       - name: Build
         shell: bash
         run: poetry build

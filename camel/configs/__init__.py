@@ -14,6 +14,7 @@
 from .anthropic_config import ANTHROPIC_API_PARAMS, AnthropicConfig
 from .base_config import BaseConfig
 from .groq_llama3_config import GROQ_LLAMA3_API_PARAMS, GroqLLAMA3Config
+from .litellm_config import LITELLM_API_PARAMS, LiteLLMConfig
 from .openai_config import (
     OPENAI_API_PARAMS,
     ChatGPTConfig,
@@ -29,4 +30,6 @@ __all__ = [
     'GROQ_LLAMA3_API_PARAMS',
     'GroqLLAMA3Config',
     'OpenSourceConfig',
+    'LiteLLMConfig',
+    'LITELLM_API_PARAMS',
 ]

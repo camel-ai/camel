@@ -25,7 +25,7 @@ from groq import Groq
 from PIL import Image
 from transformers import AutoTokenizer
 
-from camel.types import ModelType, OpenAIImageDetailType, OpenAIImageType
+from camel.types import ModelType, OpenAIImageType, OpenAIVisionDetailType
 
 if TYPE_CHECKING:
     from camel.messages import OpenAIMessage
@@ -247,6 +247,7 @@ class OpenAITokenCounter(BaseTokenCounter):
                         elif item["type"] == "image_url":
                             image_str: str = item["image_url"]["url"]
                             detail = item["image_url"]["detail"]
+
                             image_prefix_format = "data:image/{};base64,"
                             image_prefix: Optional[str] = None
                             for image_type in list(OpenAIImageType):
@@ -263,7 +264,7 @@ class OpenAITokenCounter(BaseTokenCounter):
                             )
                             image = Image.open(image_bytes)
                             num_tokens += count_tokens_from_image(
-                                image, OpenAIImageDetailType(detail)
+                                image, OpenAIVisionDetailType(detail)
                             )
                 if key == "name":
                     num_tokens += self.tokens_per_name
@@ -297,9 +298,63 @@ class AnthropicTokenCounter(BaseTokenCounter):
         Returns:
             int: Number of tokens in the messages.
         """
-        prompt = messages_to_prompt(messages, self.model_type)
+        num_tokens = 0
+        for message in messages:
+            content = str(message["content"])
+            num_tokens += self.client.count_tokens(content)
+        return num_tokens
 
-        return self.client.count_tokens(prompt)
+
+class LiteLLMTokenCounter:
+    def __init__(self, model_type: str):
+        r"""Constructor for the token counter for LiteLLM models.
+
+        Args:
+            model_type (str): Model type for which tokens will be counted.
+        """
+        self.model_type = model_type
+        self._token_counter = None
+        self._completion_cost = None
+
+    @property
+    def token_counter(self):
+        if self._token_counter is None:
+            from litellm import token_counter
+
+            self._token_counter = token_counter
+        return self._token_counter
+
+    @property
+    def completion_cost(self):
+        if self._completion_cost is None:
+            from litellm import completion_cost
+
+            self._completion_cost = completion_cost
+        return self._completion_cost
+
+    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
+        r"""Count number of tokens in the provided message list using
+        the tokenizer specific to this type of model.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in LiteLLM API format.
+
+        Returns:
+            int: Number of tokens in the messages.
+        """
+        return self.token_counter(model=self.model_type, messages=messages)
+
+    def calculate_cost_from_response(self, response: dict) -> float:
+        r"""Calculate the cost of the given completion response.
+
+        Args:
+            response (dict): The completion response from LiteLLM.
+
+        Returns:
+            float: The cost of the completion call in USD.
+        """
+        return self.completion_cost(completion_response=response)
 
 
 class GroqLlama3TokenCounter(BaseTokenCounter):
@@ -336,7 +391,7 @@ class GroqLlama3TokenCounter(BaseTokenCounter):
 
 
 def count_tokens_from_image(
-    image: Image.Image, detail: OpenAIImageDetailType
+    image: Image.Image, detail: OpenAIVisionDetailType
 ) -> int:
     r"""Count image tokens for OpenAI vision model. An :obj:`"auto"`
     resolution model will be treated as :obj:`"high"`. All images with
@@ -350,13 +405,13 @@ def count_tokens_from_image(
 
     Args:
         image (PIL.Image.Image): Image to count number of tokens.
-        detail (OpenAIImageDetailType): Image detail type to count
+        detail (OpenAIVisionDetailType): Image detail type to count
             number of tokens.
 
     Returns:
         int: Number of tokens for the image given a detail type.
     """
-    if detail == OpenAIImageDetailType.LOW:
+    if detail == OpenAIVisionDetailType.LOW:
         return LOW_DETAIL_TOKENS
 
     width, height = image.size

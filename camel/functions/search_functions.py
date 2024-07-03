@@ -14,15 +14,12 @@
 import os
 from typing import Any, Dict, List
 
-from camel.agents import ChatAgent
 from camel.functions.openai_function import OpenAIFunction
-from camel.messages import BaseMessage
-from camel.prompts import TextPrompt
 
 
 def search_wiki(entity: str) -> str:
-    r"""Search the entity in WikiPedia and return the summary of the
-    required page, containing factual information about the given entity.
+    r"""Search the entity in WikiPedia and return the summary of the required
+        page, containing factual information about the given entity.
 
     Args:
         entity (str): The entity to be searched.
@@ -59,11 +56,101 @@ def search_wiki(entity: str) -> str:
     return result
 
 
-def search_google(query: str) -> List[Dict[str, Any]]:
+def search_duckduckgo(
+    query: str, source: str = "text", max_results: int = 10
+) -> List[Dict[str, Any]]:
+    r"""Use DuckDuckGo search engine to search information for the given query.
+
+    This function queries the DuckDuckGo API for related topics to the given
+    search term. The results are formatted into a list of dictionaries, each
+    representing a search result.
+
+    Args:
+        query (str): The query to be searched.
+        source (str): The type of information to query (e.g., "text",
+            "images", "videos"). Defaults to "text".
+        max_results (int): Max number of results, defaults to `10`.
+
+    Returns:
+        List[Dict[str, Any]]: A list of dictionaries where each dictionary
+            represents a search result.
+    """
+    from duckduckgo_search import DDGS
+    from requests.exceptions import RequestException
+
+    ddgs = DDGS()
+    responses: List[Dict[str, Any]] = []
+
+    if source == "text":
+        try:
+            results = ddgs.text(keywords=query, max_results=max_results)
+        except RequestException as e:
+            # Handle specific exceptions or general request exceptions
+            responses.append({"error": f"duckduckgo search failed.{e}"})
+
+        # Iterate over results found
+        for i, result in enumerate(results, start=1):
+            # Creating a response object with a similar structure
+            response = {
+                "result_id": i,
+                "title": result["title"],
+                "description": result["body"],
+                "url": result["href"],
+            }
+            responses.append(response)
+
+    elif source == "images":
+        try:
+            results = ddgs.images(keywords=query, max_results=max_results)
+        except RequestException as e:
+            # Handle specific exceptions or general request exceptions
+            responses.append({"error": f"duckduckgo search failed.{e}"})
+
+        # Iterate over results found
+        for i, result in enumerate(results, start=1):
+            # Creating a response object with a similar structure
+            response = {
+                "result_id": i,
+                "title": result["title"],
+                "image": result["image"],
+                "url": result["url"],
+                "source": result["source"],
+            }
+            responses.append(response)
+
+    elif source == "videos":
+        try:
+            results = ddgs.videos(keywords=query, max_results=max_results)
+        except RequestException as e:
+            # Handle specific exceptions or general request exceptions
+            responses.append({"error": f"duckduckgo search failed.{e}"})
+
+        # Iterate over results found
+        for i, result in enumerate(results, start=1):
+            # Creating a response object with a similar structure
+            response = {
+                "result_id": i,
+                "title": result["title"],
+                "description": result["description"],
+                "embed_url": result["embed_url"],
+                "publisher": result["publisher"],
+                "duration": result["duration"],
+                "published": result["published"],
+            }
+            responses.append(response)
+
+    # If no answer found, return an empty list
+    return responses
+
+
+def search_google(
+    query: str, num_result_pages: int = 10
+) -> List[Dict[str, Any]]:
     r"""Use Google search engine to search information for the given query.
 
     Args:
         query (str): The query to be searched.
+        num_result_pages (int): The number of result pages to retrieve.
 
     Returns:
         List[Dict[str, Any]]: A list of dictionaries where each dictionary
@@ -82,7 +169,7 @@ def search_google(query: str) -> List[Dict[str, Any]]:
                 'description': 'An organization focused on ensuring that
                 artificial general intelligence benefits all of humanity.',
                 'long_description': 'OpenAI is a non-profit artificial
-                 intelligence research company. Our goal is to advance digital
+                intelligence research company. Our goal is to advance digital
                 intelligence in the way that is most likely to benefit humanity
                 as a whole',
                 'url': 'https://www.openai.com'
@@ -148,170 +235,10 @@ def search_google(query: str) -> List[Dict[str, Any]]:
             responses.append({"error": "google search failed."})
 
     except requests.RequestException:
+        # Handle specific exceptions or general request exceptions
         responses.append({"error": "google search failed."})
-
+    # If no answer found, return an empty list
     return responses
-
-
-def text_extract_from_web(url: str) -> str:
-    r"""Get the text information from given url.
-
-    Args:
-        url (str): The website you want to search.
-
-    Returns:
-        str: All texts extract from the web.
-    """
-    import requests
-    from bs4 import BeautifulSoup
-
-    try:
-        # Request the target page
-        response_text = requests.get(url).text
-
-        # Parse the obtained page
-        soup = BeautifulSoup(response_text, features="html.parser")
-
-        for script in soup(["script", "style"]):
-            script.extract()
-
-        text = soup.get_text()
-        # Strip text
-        lines = (line.strip() for line in text.splitlines())
-        chunks = (
-            phrase.strip() for line in lines for phrase in line.split("  ")
-        )
-        text = ".".join(chunk for chunk in chunks if chunk)
-
-    except requests.RequestException:
-        text = f"can't access {url}"
-
-    return text
-
-
-# Split a text into smaller chunks of size n
-def create_chunks(text: str, n: int) -> List[str]:
-    r"""Returns successive n-sized chunks from provided text."
-
-    Args:
-        text (str): The text to be split.
-        n (int): The max length of a single chunk.
-
-    Returns:
-        List[str]: A list of split texts.
-    """
-
-    chunks = []
-    i = 0
-    while i < len(text):
-        # Find the nearest end of sentence within a range of 0.5 * n
-        # and 1.5 * n tokens
-        j = min(i + int(1.2 * n), len(text))
-        while j > i + int(0.8 * n):
-            # Decode the tokens and check for full stop or newline
-            chunk = text[i:j]
-            if chunk.endswith(".") or chunk.endswith("\n"):
-                break
-            j -= 1
-        # If no end of sentence found, use n tokens as the chunk size
-        if j == i + int(0.8 * n):
-            j = min(i + n, len(text))
-        chunks.append(text[i:j])
-        i = j
-    return chunks
-
-
-def prompt_single_step_agent(prompt: str) -> str:
-    """Prompt a single-step agent to summarize texts or answer a question."""
-
-    assistant_sys_msg = BaseMessage.make_assistant_message(
-        role_name="Assistant",
-        content="You are a helpful assistant.",
-    )
-    agent = ChatAgent(assistant_sys_msg)
-    agent.reset()
-
-    user_msg = BaseMessage.make_user_message(
-        role_name="User",
-        content=prompt,
-    )
-    assistant_response = agent.step(user_msg)
-    if assistant_response.msgs is not None:
-        return assistant_response.msg.content
-    return ""
-
-
-def summarize_text(text: str, query: str) -> str:
-    r"""Summarize the information from the text, base on the query if query is
-    given.
-
-    Args:
-        text (str): Text to summarize.
-        query (str): What information you want.
-
-    Returns:
-        str: Strings with information.
-    """
-    summary_prompt = TextPrompt(
-        '''Gather information from this text that relative to the question, but
-         do not directly answer the question.\nquestion: {query}\ntext '''
-    )
-    summary_prompt = summary_prompt.format(query=query)
-    # Max length of each chunk
-    max_len = 3000
-    results = ""
-    chunks = create_chunks(text, max_len)
-    # Summarize
-    for i, chunk in enumerate(chunks, start=1):
-        prompt = summary_prompt + str(i) + ": " + chunk
-        result = prompt_single_step_agent(prompt)
-        results += result + "\n"
-
-    # Final summarise
-    final_prompt = TextPrompt(
-        '''Here are some summarized texts which split from one text, Using the
-        information to answer the question: {query}.\n\nText: '''
-    )
-    final_prompt = final_prompt.format(query=query)
-    prompt = final_prompt + results
-
-    response = prompt_single_step_agent(prompt)
-
-    return response
-
-
-def search_google_and_summarize(query: str) -> str:
-    r"""Search webs for information. Given a query, this function will use
-    the Google search engine to search for related information from the
-    internet, and then return a summarized answer.
-
-    Args:
-        query (str): Question you want to be answered.
-
-    Returns:
-        str: Summarized information from webs.
-    """
-    # Google search will return a list of urls
-    responses = search_google(query)
-    for item in responses:
-        if "url" in item:
-            url = item.get("url")
-            # Extract text
-            text = text_extract_from_web(str(url))
-            # Using chatgpt summarise text
-            answer = summarize_text(text, query)
-
-            # Let chatgpt decide whether to continue search or not
-            prompt = TextPrompt(
-                '''Do you think the answer: {answer} can answer the query:
-                {query}. Use only 'yes' or 'no' to answer.'''
-            )
-            prompt = prompt.format(answer=answer, query=query)
-            reply = prompt_single_step_agent(prompt)
-            if "yes" in str(reply).lower():
-                return answer
-
-    return "Failed to find the answer from google search."
 
 
 def query_wolfram_alpha(query: str, is_detailed: bool) -> str:
@@ -332,7 +259,8 @@ def query_wolfram_alpha(query: str, is_detailed: bool) -> str:
         import wolframalpha
     except ImportError:
         raise ImportError(
-            "Please install `wolframalpha` first. You can install it by running `pip install wolframalpha`."
+            "Please install `wolframalpha` first. You can install it by"
+            " running `pip install wolframalpha`."
         )
 
     WOLFRAMALPHA_APP_ID = os.environ.get('WOLFRAMALPHA_APP_ID')
@@ -370,5 +298,10 @@ def query_wolfram_alpha(query: str, is_detailed: bool) -> str:
 
 SEARCH_FUNCS: List[OpenAIFunction] = [
     OpenAIFunction(func)  # type: ignore[arg-type]
-    for func in [search_wiki, search_google_and_summarize, query_wolfram_alpha]
+    for func in [
+        search_wiki,
+        search_google,
+        search_duckduckgo,
+        query_wolfram_alpha,
+    ]
 ]

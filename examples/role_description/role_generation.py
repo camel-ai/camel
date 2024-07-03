@@ -14,16 +14,12 @@
 from colorama import Fore
 
 from camel.agents import RoleAssignmentAgent
-from camel.configs import ChatGPTConfig
 
 
-def main(model_type=None, num_roles=3) -> None:
+def main(model=None, num_roles=3) -> None:
     task_prompt = "Develop a trading bot for the stock market."
 
-    model_config_description = ChatGPTConfig()
-    role_description_agent = RoleAssignmentAgent(
-        model_type=model_type, model_config=model_config_description
-    )
+    role_description_agent = RoleAssignmentAgent(model=model)
 
     role_description_dict = role_description_agent.run(
         task_prompt=task_prompt, num_roles=num_roles

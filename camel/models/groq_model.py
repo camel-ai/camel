@@ -29,7 +29,7 @@ from camel.types import (
 from camel.utils import (
     BaseTokenCounter,
     GroqLlama3TokenCounter,
-    api_key_required,
+    model_api_key_required,
 )
 
 
@@ -69,7 +69,7 @@ class GroqModel(BaseModelBackend):
                     message=ChatCompletionMessage.construct(
                         content=response.choices[0].message.content,
                         role=response.choices[0].message.role,
-                        function_call=None,  # It does not provide function call
+                        function_call=None,  # function calling not supported
                         tool_calls=response.choices[0].message.tool_calls,
                     ),
                 )
@@ -99,7 +99,7 @@ class GroqModel(BaseModelBackend):
             self._token_counter = GroqLlama3TokenCounter(self.model_type)
         return self._token_counter
 
-    @api_key_required
+    @model_api_key_required
     def run(
         self,
         messages: List[OpenAIMessage],

@@ -17,16 +17,16 @@ from camel.societies import RolePlaying
 from camel.utils import print_text_animated
 
 
-def main(model_type=None) -> None:
+def main(model=None) -> None:
     task_prompt = "Develop a trading bot for the stock market"
     role_play_session = RolePlaying(
         assistant_role_name="Python Programmer",
-        assistant_agent_kwargs=dict(model_type=model_type),
+        assistant_agent_kwargs=dict(model=model),
         user_role_name="Stock Trader",
-        user_agent_kwargs=dict(model_type=ModelType.GPT_3_5_TURBO),
+        user_agent_kwargs=dict(model=model),
         task_prompt=task_prompt,
         with_task_specify=True,
-        task_specify_agent_kwargs=dict(model_type=model_type),
+        task_specify_agent_kwargs=dict(model=model),
         output_language="Chinese",  # Arabic, French, Spanish, ...
     )
 
@@ -41,7 +41,8 @@ def main(model_type=None) -> None:
     print(Fore.YELLOW + f"Original task prompt:\n{task_prompt}\n")
     print(
         Fore.CYAN
-        + f"Specified task prompt:\n{role_play_session.specified_task_prompt}\n"
+        + "Specified task prompt:"
+        + f"\n{role_play_session.specified_task_prompt}\n"
     )
     print(Fore.RED + f"Final task prompt:\n{role_play_session.task_prompt}\n")
 

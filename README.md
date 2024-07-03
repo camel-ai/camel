@@ -55,6 +55,10 @@ To install the base CAMEL library:
 pip install camel-ai
 ```
 Some features require extra dependencies:
+- To install with all dependencies:
+    ```bash
+    pip install 'camel-ai[all]'
+    ```
 - To use the HuggingFace agents:
     ```bash
     pip install 'camel-ai[huggingface-agent]'
@@ -62,10 +66,6 @@ Some features require extra dependencies:
 - To enable RAG or use agent memory:
     ```bash
     pip install 'camel-ai[tools]'
-    ```
-- To install with all dependencies:
-    ```bash
-    pip install 'camel-ai[all]'
     ```
 
 ### From Source
@@ -81,14 +81,20 @@ git clone https://github.com/camel-ai/camel.git
 # Change directory into project directory
 cd camel
 
-# Activate camel virtual environment
+# If you didn't install peotry before
+pip install poetry  # (Optional)
+
+# We suggest using python 3.10
+poetry env use python3.10  # (Optional)
+
+# Activate CAMEL virtual environment
 poetry shell
 
-# Install camel from source
-# It takes about 90 seconds to resolve dependencies
+# Install the base CAMEL library
+# It takes about 90 seconds
 poetry install
 
-# Or if you want to use all other extra packages
+# Install CAMEL with all dependencies
 poetry install -E all  # (Optional)
 
 # Exit the virtual environment
@@ -98,18 +104,18 @@ exit
 Install `CAMEL` from source with conda and pip:
 ```sh
 # Create a conda virtual environment
-conda create --name camel python=3.10
+conda create --name camel python=3.9
 
-# Activate camel conda environment
+# Activate CAMEL conda environment
 conda activate camel
 
 # Clone github repo
-git clone -b v0.1.5.1 https://github.com/camel-ai/camel.git
+git clone -b v0.1.5.4 https://github.com/camel-ai/camel.git
 
 # Change directory into project directory
 cd camel
 
-# Install camel from source
+# Install CAMEL from source
 pip install -e .
 
 # Or if you want to use all other extra packages
@@ -164,54 +170,67 @@ python examples/ai_society/role_playing.py
 Please note that the environment variable is session-specific. If you open a new terminal window or tab, you will need to set the API key again in that new session.
 
 
-## Use Open-Source Models as Backends
+## Use Open-Source Models as Backends (ex. using Ollama to set Llama 3 locally)
 
-The basic workflow of using an open-sourced model as the backend is based on an external server running LLM inference service, e.g. during the development we chose [FastChat](https://github.com/lm-sys/FastChat) to run the service.
+- Download [Ollama](https://ollama.com/download).
+- After setting up Ollama, pull the Llama3 model by typing the following command into the terminal:
+    ```bash
+    ollama pull llama3
+    ```
+- Create a ModelFile similar the one below in your project directory.
+    ```bash
+    FROM llama3
 
-We do not fix the choice of server to decouple the implementation of any specific LLM inference server with CAMEL (indicating the server needs to be deployed by the user himself). But the server to be deployed must satisfy that **it supports OpenAI-compatible APIs, especially the method `openai.ChatCompletion.create`**.
+    # Set parameters
+    PARAMETER temperature 0.8
+    PARAMETER stop Result
 
-Here are some instructions for enabling open-source backends, where we use the [FastChat](https://github.com/lm-sys/FastChat) and a LLaMA2-based model ([`meta-llama/Llama-2-7b-chat-hf`](https://huggingface.co/meta-llama/Llama-2-7b-chat-hf)) in the example. Please install FastChat in advance following their installation guidance.
+    # Sets a custom system message to specify the behavior of the chat assistant
 
-1. Before running CAMEL, we should firstly launch FastChat server following the guidance on https://github.com/lm-sys/FastChat/blob/main/docs/openai_api.md. The instructions summarized below should be kept running **in separate processes**:
+    # Leaving it blank for now.
 
-```sh
-# Launch the controller
-python -m fastchat.serve.controller
+    SYSTEM """ """
+    ```
+- Create a script to get the base model (llama3) and create a custom model using the ModelFile above. Save this as a .sh file:
+    ```bash
+    #!/bin/zsh
 
-# Launch the model worker(s)
-python3 -m fastchat.serve.model_worker --model-path meta-llama/Llama-2-7b-chat-hf
+    # variables
+    model_name="llama3"
+    custom_model_name="camel-llama3"
 
-# Launch the RESTful API server
-python3 -m fastchat.serve.openai_api_server --host localhost --port 8000
-```
+    #get the base model
+    ollama pull $model_name
 
-2. After observing the controller successfully receiving the heart beat signal from the worker, the server should be ready for use at http://localhost:8000/v1.
+    #create the model file
+    ollama create $custom_model_name -f ./Llama3ModelFile
+    ```
+- Navigate to the directory where the script and ModelFile are located and run the script. Enjoy your Llama3 model, enhanced by CAMEL's excellent agents.
+    ```python
+    from camel.agents import ChatAgent
+    from camel.messages import BaseMessage
+    from camel.models import ModelFactory
+    from camel.types import ModelPlatformType
 
-3. Then we can try on running `role_playing_with_open_source_model.py`, where each agent in this example is initialized with specifying the `model_path` and `server_url`, similar to the example code below:
+    ollama_model = ModelFactory.create(
+        model_platform=ModelPlatformType.OLLAMA,
+        model_type="llama3",
+        url="http://localhost:11434/v1",
+        model_config_dict={"temperature": 0.4},
+    )
 
-```python
-system_message = # ...
+    assistant_sys_msg = BaseMessage.make_assistant_message(
+        role_name="Assistant",
+        content="You are a helpful assistant.",
+    )
+    agent = ChatAgent(assistant_sys_msg, model=ollama_model, token_limit=4096)
 
-agent_kwargs = dict(
-    model=model_type,
-    model_config=OpenSourceConfig(
-        model_path="meta-llama/Llama-2-7b-chat-hf",
-        server_url="http://localhost:8000/v1",
-    ),
-)
-
-agent = ChatAgent(
-    system_message,
-    **agent_kwargs,
-)
-```
-
-### Supported Models
-
-- LLaMA2-based models
-  - example: [meta-llama/Llama-2-7b-chat-hf](https://huggingface.co/meta-llama/Llama-2-7b-chat-hf)
-- Vicuna-based models
-  - example: [lmsys/vicuna-7b-v1.5](https://huggingface.co/lmsys/vicuna-7b-v1.5)
+    user_msg = BaseMessage.make_user_message(
+        role_name="User", content="Say hi to CAMEL"
+    )
+    assistant_response = agent.step(user_msg)
+    print(assistant_response.msg.content)
+    ```
 
 ## Data (Hosted on Hugging Face)
 | Dataset        | Chat format                                                                                         | Instruction format                                                                                               | Chat format (translated)                                                                   |

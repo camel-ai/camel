@@ -17,6 +17,7 @@ from .graph_storages.neo4j_graph import Neo4jGraph
 from .key_value_storages.base import BaseKeyValueStorage
 from .key_value_storages.in_memory import InMemoryKeyValueStorage
 from .key_value_storages.json import JsonStorage
+from .key_value_storages.redis import RedisStorage
 from .vectordb_storages.base import (
     BaseVectorStorage,
     VectorDBQuery,
@@ -30,6 +31,7 @@ __all__ = [
     'BaseKeyValueStorage',
     'InMemoryKeyValueStorage',
     'JsonStorage',
+    'RedisStorage',
     'VectorRecord',
     'BaseVectorStorage',
     'VectorDBQuery',

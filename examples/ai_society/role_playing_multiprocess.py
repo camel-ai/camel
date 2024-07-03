@@ -134,7 +134,8 @@ def generate_data(
             break
 
         assert (
-            user_response.msg is not None and assistant_response.msg is not None
+            user_response.msg is not None
+            and assistant_response.msg is not None
         )
 
         if verbose:
@@ -171,14 +172,18 @@ def generate_data(
             ):
                 repeat_word_counter += 1
                 if repeat_word_counter == repeat_word_threshold:
-                    message_dict['termination_reason'] = "repeat_word_threshold"
+                    message_dict['termination_reason'] = (
+                        "repeat_word_threshold"
+                    )
                     break
             else:
                 repeat_word_counter = 0
 
         # Save user message
         message_counter += 1
-        message_dict[f"message_{message_counter}"] = user_response.msg.to_dict()
+        message_dict[f"message_{message_counter}"] = (
+            user_response.msg.to_dict()
+        )
 
         # Condition 5: End token observed
         if "<CAMEL_TASK_DONE>" in user_response.msg.content:
