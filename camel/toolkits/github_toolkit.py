@@ -19,7 +19,7 @@ from typing import List, Optional
 
 from camel.functions import OpenAIFunction
 
-from ..utils import dependencies_required
+from .utils import dependencies_required
 from .base import BaseToolkit
 
 
