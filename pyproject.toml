@@ -34,7 +34,7 @@ tiktoken = "^0.7.0"
 colorama = "^0"
 jsonschema = "^4"
 protobuf = "^4"
-pathlib = "^1.0.1"   
+pathlib = "^1.0.1"
 anthropic = "^0.29.0"
 docstring-parser = "^0.15"
 pydantic = ">=1.9,<3"
@@ -84,6 +84,9 @@ pymilvus = { version = "^2.4.0", optional = true }
 
 # graph-storages
 neo4j = { version = "^5.18.0", optional = true }
+
+# key-value-storages
+redis = { version = "^5.0.6", optional = true }
 
 # retrievers
 rank-bm25 = { version = "^0.2.2", optional = true }
@@ -148,6 +151,10 @@ graph-storages = [
     "neo4j",
 ]
 
+kv-stroages = [
+    "redis",
+]
+
 retrievers = [
     "rank-bm25",
     "cohere",
@@ -197,6 +204,8 @@ all = [
     "rank-bm25",
     # model platforms
     "litellm",
+    # kv-storages
+    "redis",
 ]
 
 [tool.poetry.group.dev]
