@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, Optional
 
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
+from camel.utils import dependencies_required
 
 # Conditionally import telebot types only for type checking
 if TYPE_CHECKING:
@@ -30,6 +31,7 @@ class TelegramBot:
         telegram_token (str, optional): The bot token.
     """
 
+    @dependencies_required('telebot')
     def __init__(
         self,
         chat_agent: ChatAgent,
@@ -47,14 +49,8 @@ class TelegramBot:
         else:
             self.token = telegram_token
 
-        try:
-            import telebot  # type: ignore[import-untyped]
-        except ImportError:
-            raise ImportError(
-                "Please install `telegram_bot` first. "
-                "You can install it by running "
-                "`pip install pyTelegramBotAPI`."
-            )
+        import telebot  # type: ignore[import-untyped]
+
         self.bot = telebot.TeleBot(token=self.token)
 
         # Register the message handler within the constructor
