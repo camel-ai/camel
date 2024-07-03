@@ -14,6 +14,7 @@
 
 
 import logging
+import os
 import sys
 
 # Create a private logger
@@ -28,7 +29,7 @@ def _configure_library_logging():
 
     if not logging.root.handlers and not _logger.handlers:
         logging.basicConfig(
-            level=logging.INFO,
+            level=os.environ.get('LOGLEVEL', 'INFO').upper(),
             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
             stream=sys.stdout,
         )
