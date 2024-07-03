@@ -15,10 +15,13 @@ import re
 from typing import Dict, List, Optional, Union
 
 from camel.agents.chat_agent import ChatAgent
+from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.models import BaseModelBackend
 from camel.prompts import TextPrompt
 from camel.types import RoleType
+
+logger = get_logger(__name__)
 
 
 class DeductiveReasonerAgent(ChatAgent):
@@ -241,10 +244,10 @@ square brackets)
                 "Deduction failed. Error:\n" + f"{response.info}"
             )
         msg: BaseMessage = response.msg
-        print(f"Message content:\n{msg.content}")
+        logger.info(f"Message content:\n{msg.content}")
 
         # Extract the conditions from the message
-        condistions_dict = {
+        conditions_dict = {
             f"condition {i}": cdt.replace("<", "")
             .replace(">", "")
             .strip()
@@ -281,7 +284,7 @@ square brackets)
         conditions_and_quality_json: Dict[
             str, Union[List[str], Dict[str, str]]
         ] = {}
-        conditions_and_quality_json["conditions"] = condistions_dict
+        conditions_and_quality_json["conditions"] = conditions_dict
         conditions_and_quality_json["labels"] = labels
         conditions_and_quality_json["evaluate_quality"] = quality
 

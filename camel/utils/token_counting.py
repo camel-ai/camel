@@ -23,6 +23,7 @@ from typing import TYPE_CHECKING, List, Optional
 from anthropic import Anthropic
 from PIL import Image
 
+from camel.logger import get_logger
 from camel.types import ModelType, OpenAIImageType, OpenAIVisionDetailType
 
 if TYPE_CHECKING:
@@ -34,6 +35,9 @@ SHORTEST_SIDE_PIXELS = 768
 SQUARE_PIXELS = 512
 SQUARE_TOKENS = 170
 EXTRA_TOKENS = 85
+
+
+logger = get_logger(__name__)
 
 
 def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
@@ -150,7 +154,7 @@ def get_model_encoding(value_for_tiktoken: str):
     try:
         encoding = tiktoken.encoding_for_model(value_for_tiktoken)
     except KeyError:
-        print("Model not found. Using cl100k_base encoding.")
+        logger.info("Model not found. Using cl100k_base encoding.")
         encoding = tiktoken.get_encoding("cl100k_base")
     return encoding
 

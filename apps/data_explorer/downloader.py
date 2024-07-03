@@ -17,13 +17,17 @@ import urllib.request
 from huggingface_hub import hf_hub_download
 from huggingface_hub.utils._errors import RepositoryNotFoundError
 
+from camel.logger import get_logger
+
 REPO_ROOT = os.path.realpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..")
 )
 
+logger = get_logger(__name__)
+
 
 def download_data():
-    print("Downloading...")
+    logger.info("Downloading...")
 
     data_dir = os.path.join(REPO_ROOT, "datasets/")
 
@@ -61,7 +65,7 @@ def download_data():
     file_path = os.path.join(data_dir, os.path.split(data_url)[1])
     urllib.request.urlretrieve(data_url, file_path)
 
-    print("Download done")
+    logger.info("Download done")
 
 
 if __name__ == "__main__":

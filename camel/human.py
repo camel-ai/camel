@@ -15,9 +15,12 @@ from typing import Any, Dict, Sequence
 
 from colorama import Fore
 
+from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.responses import ChatAgentResponse
 from camel.utils import print_text_animated
+
+logger = get_logger(__name__)
 
 
 class Human:
@@ -85,7 +88,7 @@ class Human:
                 self.logger_color
                 + f"Please enter your choice ([1-{len(self.options_dict)}]): "
             )
-            print("\n")
+            logger.info("\n")
             if human_input in self.options_dict:
                 break
             print_text_animated(

@@ -20,8 +20,11 @@ from typing import List, Optional, Tuple, Union
 import requests
 
 from camel.functions import OpenAIFunction
+from camel.logger import get_logger
 
 TWEET_TEXT_LIMIT = 280
+
+logger = get_logger(__name__)
 
 
 def get_twitter_api_key() -> Tuple[str, str]:
@@ -106,7 +109,7 @@ def get_oauth_session() -> requests.Session:
     # Get authorization
     base_authorization_url = "https://api.twitter.com/oauth/authorize"
     authorization_url = oauth.authorization_url(base_authorization_url)
-    print("Please go here and authorize: %s" % authorization_url)
+    logger.info("Please go here and authorize: %s" % authorization_url)
     verifier = input("Paste the PIN here: ")
 
     # Get the access token
@@ -229,10 +232,10 @@ def create_tweet(
         "poll_duration_minutes": poll_duration_minutes,
         "quote_tweet_id": quote_tweet_id,
     }
-    print("You are going to create a tweet with following parameters:")
+    logger.info("You are going to create a tweet with following parameters:")
     for key, value in params.items():
         if value is not None:
-            print(f"{key}: {value}")
+            logger.info(f"{key}: {value}")
 
     # Add a confirmation prompt at the beginning of the function
     confirm = input("Are you sure you want to create this tweet? (yes/no): ")
@@ -307,7 +310,7 @@ def delete_tweet(tweet_id: str) -> str:
     """
     # Print the parameters that are not None
     if tweet_id is not None:
-        print(
+        logger.info(
             f"You are going to delete a tweet with the following "
             f"ID: {tweet_id}"
         )

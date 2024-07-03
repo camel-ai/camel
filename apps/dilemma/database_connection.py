@@ -14,15 +14,19 @@
 import sqlalchemy
 from google.cloud.sql.connector import Connector, IPTypes
 
+from camel.logger import get_logger
+
 # import os
 # os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = \
 #     "/path/to/camel-lm-XXXXXXXXX.json"
+
+logger = get_logger(__name__)
 
 
 class DatabaseConnection:
     def __init__(self):
         INSTANCE_CONNECTION_NAME = "camel-lm:me-central1:camel-dilemma"
-        print(f"Instance connection name is: {INSTANCE_CONNECTION_NAME}")
+        logger.info(f"Instance connection name is: {INSTANCE_CONNECTION_NAME}")
         DB_USER = "dkuser"
         DB_PASS = "camel230509"
         DB_NAME = "dilemma_choices"

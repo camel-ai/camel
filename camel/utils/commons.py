@@ -25,9 +25,13 @@ from urllib.parse import urlparse
 import pydantic
 import requests
 
+from camel.logger import get_logger
 from camel.types import TaskType
 
 F = TypeVar('F', bound=Callable[..., Any])
+
+
+logger = get_logger(__name__)
 
 
 def model_api_key_required(func: F) -> F:
@@ -83,9 +87,9 @@ def print_text_animated(text, delay: float = 0.02, end: str = ""):
             character of text. (default: :obj:`""`)
     """
     for char in text:
-        print(char, end=end, flush=True)
+        logger.info(char, end=end, flush=True)
         time.sleep(delay)
-    print('\n')
+    logger.info('\n')
 
 
 def get_prompt_template_key_words(template: str) -> Set[str]:
