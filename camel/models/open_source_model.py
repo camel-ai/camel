@@ -19,7 +19,7 @@ from camel.configs import OPENAI_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
-from camel.utils import BaseTokenCounter, OpenSourceTokenCounter
+from camel.utils import BaseTokenCounter, OpenAITokenCounter
 
 
 class OpenSourceModel(BaseModelBackend):
@@ -95,9 +95,7 @@ class OpenSourceModel(BaseModelBackend):
                 tokenization style.
         """
         if not self._token_counter:
-            self._token_counter = OpenSourceTokenCounter(
-                self.model_type, self.model_path
-            )
+            self._token_counter = OpenAITokenCounter(ModelType.GPT_3_5_TURBO)
         return self._token_counter
 
     def run(
