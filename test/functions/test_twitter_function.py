@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import logging
 from unittest.mock import MagicMock, patch
 
 from camel.functions.twitter_function import (
@@ -19,16 +18,12 @@ from camel.functions.twitter_function import (
     delete_tweet,
     get_my_user_profile,
 )
+from camel.logger import get_logger
 
 
 def test_create_tweet(monkeypatch):
-    # Configure logging to print only the message for easier testing
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(message)s',
-        datefmt='',
-        handlers=[logging.StreamHandler()],
-    )
+    # Get the logger for the module being tested
+    logger = get_logger('camel.functions.twitter_function')
 
     # Create a mock response object
     mock_response = MagicMock()
@@ -44,9 +39,17 @@ def test_create_tweet(monkeypatch):
     # Mock user input to confirm creating a tweet
     monkeypatch.setattr('builtins.input', lambda _: 'yes')
 
-    # Capture the output of the print function
+    # Capture the output of the logger
     captured_output = []
-    monkeypatch.setattr('builtins.print', lambda x: captured_output.append(x))
+    original_log_info = logger.info
+
+    def capturing_log(msg, *args, **kwargs):
+        captured_output.append(
+            msg if not args else f"{msg} {' '.join(map(str, args))}"
+        )
+        original_log_info(msg, *args, **kwargs)
+
+    monkeypatch.setattr(logger, 'info', capturing_log)
 
     # Use patch to mock the get_oauth_session method
     patch_path = 'camel.functions.twitter_function.get_oauth_session'
@@ -62,8 +65,8 @@ def test_create_tweet(monkeypatch):
         expected_start = (
             "You are going to create a tweet with following parameters:"
         )
-        assert expected_start in captured_output
-        assert "text: Test tweet." in captured_output
+        assert any(expected_start in output for output in captured_output)
+        assert any("text: Test tweet." in output for output in captured_output)
         expected_response = (
             "Create tweet successful. The tweet ID is: "
             "12345. The tweet text is: 'Test tweet'."
@@ -72,13 +75,8 @@ def test_create_tweet(monkeypatch):
 
 
 def test_delete_tweet(monkeypatch):
-    # Configure logging to print only the message for easier testing
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(message)s',
-        datefmt='',
-        handlers=[logging.StreamHandler()],
-    )
+    # Get the logger for the module being tested
+    logger = get_logger('camel.functions.twitter_function')
 
     # Delete a mock response object
     mock_response = MagicMock()
@@ -88,9 +86,17 @@ def test_delete_tweet(monkeypatch):
     # Mock user input to confirm creating a tweet
     monkeypatch.setattr('builtins.input', lambda _: 'yes')
 
-    # Capture the output of the print function
+    # Capture the output of the logger
     captured_output = []
-    monkeypatch.setattr('builtins.print', lambda x: captured_output.append(x))
+    original_log_info = logger.info
+
+    def capturing_log(msg, *args, **kwargs):
+        captured_output.append(
+            msg if not args else f"{msg} {' '.join(map(str, args))}"
+        )
+        original_log_info(msg, args, **kwargs)
+
+    monkeypatch.setattr(logger, 'info', capturing_log)
 
     # Use patch to mock the get_oauth_session method
     patch_path = 'camel.functions.twitter_function.get_oauth_session'
@@ -106,7 +112,7 @@ def test_delete_tweet(monkeypatch):
         expected_start = (
             "You are going to delete a tweet with the following ID: 11111"
         )
-        assert expected_start in captured_output
+        assert any(expected_start in output for output in captured_output)
         expected_response = (
             "Delete tweet successful: True. The tweet ID is: " "11111. "
         )
