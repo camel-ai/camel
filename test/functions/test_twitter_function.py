@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import logging
 from unittest.mock import MagicMock, patch
 
 from camel.functions.twitter_function import (
@@ -21,6 +22,14 @@ from camel.functions.twitter_function import (
 
 
 def test_create_tweet(monkeypatch):
+    # Configure logging to print only the message for easier testing
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(message)s',
+        datefmt='',
+        handlers=[logging.StreamHandler()],
+    )
+
     # Create a mock response object
     mock_response = MagicMock()
     mock_response.json.return_value = {
@@ -63,6 +72,14 @@ def test_create_tweet(monkeypatch):
 
 
 def test_delete_tweet(monkeypatch):
+    # Configure logging to print only the message for easier testing
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(message)s',
+        datefmt='',
+        handlers=[logging.StreamHandler()],
+    )
+
     # Delete a mock response object
     mock_response = MagicMock()
     mock_response.json.return_value = {'data': {'deleted': True}}
