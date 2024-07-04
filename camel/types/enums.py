@@ -31,14 +31,18 @@ class ModelType(Enum):
     GPT_4_TURBO_VISION = "gpt-4-turbo-2024-04-09"
     GPT_4O = "gpt-4o"
     GLM_4 = "glm-4"
+    GLM_4_OPEN_SOURCE = "glm-4-open-source"
     GLM_4V = 'glm-4v'
     GLM_3_TURBO = "glm-3-turbo"
 
     STUB = "stub"
 
     LLAMA_2 = "llama-2"
+    LLAMA_3 = "llama-3"
     VICUNA = "vicuna"
     VICUNA_16K = "vicuna-16k"
+
+    QWEN_2 = "qwen-2"
 
     # Legacy anthropic models
     # NOTE: anthropic lagecy models only Claude 2.1 has system prompt support
@@ -89,6 +93,9 @@ class ModelType(Enum):
         r"""Returns whether this type of models is open-source."""
         return self in {
             ModelType.LLAMA_2,
+            ModelType.LLAMA_3,
+            ModelType.QWEN_2,
+            ModelType.GLM_4_OPEN_SOURCE,
             ModelType.VICUNA,
             ModelType.VICUNA_16K,
         }
@@ -139,7 +146,7 @@ class ModelType(Enum):
             return 128000
         elif self is ModelType.GPT_4O:
             return 128000
-        elif self == ModelType.GLM_4:
+        elif self == ModelType.GLM_4_OPEN_SOURCE:
             return 8192
         elif self == ModelType.GLM_3_TURBO:
             return 8192
@@ -149,6 +156,12 @@ class ModelType(Enum):
             return 4096
         elif self is ModelType.LLAMA_2:
             return 4096
+        elif self is ModelType.LLAMA_3:
+            return 8192
+        elif self is ModelType.QWEN_2:
+            return 128000
+        elif self is ModelType.GLM_4:
+            return 8192
         elif self is ModelType.VICUNA:
             # reference: https://lmsys.org/blog/2023-03-30-vicuna/
             return 2048
@@ -187,6 +200,20 @@ class ModelType(Enum):
             return (
                 self.value in model_name.lower()
                 or "llama2" in model_name.lower()
+            )
+        elif self is ModelType.LLAMA_3:
+            return (
+                self.value in model_name.lower()
+                or "llama3" in model_name.lower()
+            )
+        elif self is ModelType.QWEN_2:
+            return (
+                self.value in model_name.lower()
+                or "qwen2" in model_name.lower()
+            )
+        elif self is ModelType.GLM_4_OPEN_SOURCE:
+            return (
+                'glm-4' in model_name.lower() or "glm4" in model_name.lower()
             )
         else:
             return self.value in model_name.lower()
@@ -380,3 +407,10 @@ class VoiceType(Enum):
             VoiceType.NOVA,
             VoiceType.SHIMMER,
         }
+
+
+class JinaReturnFormat(Enum):
+    DEFAULT = None
+    MARKDOWN = "markdown"
+    HTML = "html"
+    TEXT = "text"
