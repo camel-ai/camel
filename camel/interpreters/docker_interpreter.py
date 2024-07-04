@@ -82,9 +82,8 @@ class DockerInterpreter(BaseInterpreter):
         self._container: Optional[Container] = None
 
     def __del__(self) -> None:
-        if self._container is None:
-            return
-        self._container.remove(force=True)
+        if self._container is not None:
+            self._container.remove(force=True)
 
     def _initialize_if_needed(self) -> None:
         if self._container is not None:
