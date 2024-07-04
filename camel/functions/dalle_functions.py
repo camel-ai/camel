@@ -24,22 +24,60 @@ from camel.functions import OpenAIFunction
 
 
 def base64_to_image(base64_string):
+    r"""
+    Converts a base64 encoded string into a PIL Image object.
+
+    Parameters:
+    base64_string (str): The base64 encoded string of the image.
+
+    Returns:
+    Image or None: Returns the PIL Image object
+        if the conversion is successful, otherwise returns None.
+    """
     try:
+        # Decode the base64 string to get the image data
         image_data = base64.b64decode(base64_string)
+        # Create a memory buffer for the image data
         image_buffer = BytesIO(image_data)
+        # Open the image using the PIL library
         image = Image.open(image_buffer)
         return image
     except Exception as e:
+        # Print the error message if an exception occurs during the conversion
         print(f"An error occurred: {e}")
         return None
 
 
 def image_path_to_base64(image_path):
+    r"""
+    Converts the file path of an image to a Base64 encoded string.
+
+    Parameters:
+    image_path (str): The path to the image file.
+
+    Returns:
+    str: A Base64 encoded string representing the content of the image file.
+    """
     with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode('utf-8')
 
 
 def image_to_base64(image):
+    r"""
+    Converts an image into a base64-encoded string.
+
+    This function takes an image object as input, encodes the image into a
+        PNG format base64 string, and returns it.
+    If the encoding process encounters an error, it prints the error
+        message and returns None.
+
+    Parameters:
+    image: The image object to be encoded, supports any image format
+        that can be saved in PNG format.
+
+    Returns:
+    A base64-encoded string of the image, or None if an error occurs.
+    """
     try:
         buffered_image = BytesIO()
         image.save(buffered_image, format="PNG")
