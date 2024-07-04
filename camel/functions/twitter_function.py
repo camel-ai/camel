@@ -21,6 +21,7 @@ import requests
 
 from camel.functions import OpenAIFunction
 from camel.logger import get_logger
+from camel.utils import dependencies_required
 
 TWEET_TEXT_LIMIT = 280
 
@@ -58,6 +59,7 @@ def get_twitter_api_key() -> Tuple[str, str]:
     return TWITTER_CONSUMER_KEY, TWITTER_CONSUMER_SECRET
 
 
+@dependencies_required('requests_oauthlib')
 def get_oauth_session() -> requests.Session:
     r'''Initiates an OAuth1Session with Twitter's API and returns it.
 
@@ -78,14 +80,7 @@ def get_oauth_session() -> requests.Session:
         https://github.com/twitterdev/Twitter-API-v2-sample-code/blob/main/Manage-Tweets/create_tweet.py
         https://github.com/twitterdev/Twitter-API-v2-sample-code/blob/main/User-Lookup/get_users_me_user_context.py
     '''
-    try:
-        from requests_oauthlib import OAuth1Session
-    except ImportError:
-        raise ImportError(
-            "Please install `requests_oauthlib` first. You can "
-            "install it by running `pip install "
-            "requests_oauthlib`."
-        )
+    from requests_oauthlib import OAuth1Session
 
     consumer_key, consumer_secret = get_twitter_api_key()
 
