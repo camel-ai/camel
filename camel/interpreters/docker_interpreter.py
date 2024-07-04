@@ -40,12 +40,12 @@ class DockerInterpreter(BaseInterpreter):
     strings.
 
     Args:
-        require_confirm (bool, optional): If True, prompt user before
-            running code strings for security. Defaults to True.
-        print_stdout (bool, optional): If True, print the standard
-            output of the executed code. Defaults to False.
-        print_stderr (bool, optional): If True, print the standard error
-            of the executed code. Defaults to True.
+        require_confirm (bool, optional): If `True`, prompt user before
+            running code strings for security. Defaults to `True`.
+        print_stdout (bool, optional): If `True`, print the standard
+            output of the executed code. Defaults to `False`.
+        print_stderr (bool, optional): If `True`, print the standard error
+            of the executed code. Defaults to `True`.
     """
 
     _CODE_EXECUTE_CMD_MAPPING: ClassVar[Dict[str, str]] = {
