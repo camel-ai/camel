@@ -73,7 +73,10 @@ progress, committing and pushing your changes to a remote repository is a
 must before deleting the container, and this is also recommended each time 
 before you exit the container.
 
-## Stop and Delete the Container
+## Exit, Stop and Delete the Container
+You can simply press `Ctrl + D` or use the `exit` command to exit the
+container.
+
 After exiting the container, under normal cases the container will still be 
 running in the background. If you don't need the container anymore, you can 
 stop and delete the container with the following command.
