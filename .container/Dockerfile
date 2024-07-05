@@ -1,4 +1,4 @@
-FROM python:3.10.10-bullseye
+FROM python:3.10-bullseye
 
 # Install Poetry
 RUN curl -sSL https://install.python-poetry.org | python3 - && \
@@ -8,11 +8,9 @@ RUN curl -sSL https://install.python-poetry.org | python3 - && \
 RUN poetry config virtualenvs.create false
 
 COPY . /app/camel
+
 WORKDIR /app/camel
 
 RUN poetry install --with dev,docs -E all
 
 RUN pre-commit install
-
-# Running a empty command to keep the container running
-CMD ["tail", "-f", "/dev/null"]
