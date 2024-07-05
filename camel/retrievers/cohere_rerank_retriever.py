@@ -15,6 +15,7 @@ import os
 from typing import Any, Dict, List, Optional
 
 from camel.retrievers import BaseRetriever
+from camel.utils import dependencies_required
 
 DEFAULT_TOP_K_RESULTS = 1
 
@@ -32,6 +33,7 @@ class CohereRerankRetriever(BaseRetriever):
         https://txt.cohere.com/rerank/
     """
 
+    @dependencies_required('cohere')
     def __init__(
         self,
         model_name: str = "rerank-multilingual-v2.0",
@@ -56,11 +58,7 @@ class CohereRerankRetriever(BaseRetriever):
             ValueError: If the API key is neither passed as an argument nor
                 set in the environment variable.
         """
-
-        try:
-            import cohere
-        except ImportError as e:
-            raise ImportError("Package 'cohere' is not installed") from e
+        import cohere
 
         try:
             self.api_key = api_key or os.environ["COHERE_API_KEY"]
