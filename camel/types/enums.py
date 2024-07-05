@@ -314,6 +314,7 @@ class ModelPlatformType(Enum):
     OPENAI = "openai"
     AZURE = "azure"
     ANTHROPIC = "anthropic"
+    GROQLLAMA3 = "groq-llama3"
     OPENSOURCE = "opensource"
     OLLAMA = "ollama"
     LITELLM = "litellm"
@@ -334,6 +335,11 @@ class ModelPlatformType(Enum):
     def is_anthropic(self) -> bool:
         r"""Returns whether this platform is anthropic."""
         return self is ModelPlatformType.ANTHROPIC
+
+    @property
+    def is_groq_llama3(self) -> bool:
+        r"""Returns whether this platform is groq-llama3."""
+        return self is ModelPlatformType.GROQLLAMA3
 
     @property
     def is_ollama(self) -> bool:
