@@ -18,8 +18,10 @@ from typing import Any, Dict
 
 from colorama import Fore
 
+from camel.configs import ChatGPTConfig
+from camel.models import ModelFactory
 from camel.societies import RolePlaying
-from camel.types import TaskType
+from camel.types import ModelPlatformType, ModelType, TaskType
 
 
 def generate_data(
@@ -42,7 +44,13 @@ def generate_data(
         with_task_specify=True,
         with_task_planner=False,
         task_type=TaskType.MISALIGNMENT,
-        task_specify_agent_kwargs=dict(),
+        task_specify_agent_kwargs=dict(
+            model=ModelFactory.create(
+                model_platform=ModelPlatformType.OPENAI,
+                model_type=ModelType.GPT_3_5_TURBO,
+                model_config_dict=ChatGPTConfig(temperature=1.4).__dict__,
+            )
+        ),
     )
 
     input_msg = role_play_session.init_chat()

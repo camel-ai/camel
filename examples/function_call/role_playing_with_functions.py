@@ -31,7 +31,11 @@ from camel.types import ModelPlatformType, ModelType
 from camel.utils import print_text_animated
 
 
-def main(model_type=ModelType.GPT_3_5_TURBO, chat_turn_limit=10) -> None:
+def main(
+    model_platform=ModelPlatformType.OPENAI,
+    model_type=ModelType.GPT_3_5_TURBO,
+    chat_turn_limit=10,
+) -> None:
     task_prompt = (
         "Assume now is 2024 in the Gregorian calendar, "
         "estimate the current age of University of Oxford "
@@ -59,7 +63,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO, chat_turn_limit=10) -> None:
         user_role_name="Professor",
         assistant_agent_kwargs=dict(
             model=ModelFactory.create(
-                model_platform=ModelPlatformType.OPENAI,
+                model_platform=model_platform,
                 model_type=model_type,
                 model_config_dict=assistant_model_config.__dict__,
             ),
@@ -67,7 +71,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO, chat_turn_limit=10) -> None:
         ),
         user_agent_kwargs=dict(
             model=ModelFactory.create(
-                model_platform=ModelPlatformType.OPENAI,
+                model_platform=model_platform,
                 model_type=model_type,
                 model_config_dict=user_model_config.__dict__,
             ),
