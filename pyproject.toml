@@ -74,6 +74,7 @@ pygithub = { version = "^2.3.0", optional = true }
 imageio = {extras = ["pyav"], version = "^2.34.2"}
 pyTelegramBotAPI = { version = "^4.18.0", optional = true }
 "discord.py" = { version = "^2.3.2", optional = true }
+docker = { version="^7.1.0", optional = true }
 
 # encoders
 sentence-transformers = { version = "^3.0.1", optional = true }
@@ -141,6 +142,7 @@ tools = [
     "pygithub",
     "pyTelegramBotAPI",
     "discord.py",
+    "docker",
 ]
 
 vector-databases = [
@@ -192,6 +194,7 @@ all = [
     "slack-sdk",
     "pydub",
     "pillow",
+    "docker",
     # vector-database
     "qdrant-client",
     "pymilvus",
@@ -331,5 +334,6 @@ module = [
     "litellm",
     "pyTelegramBotAPI",
     "discord.py",
+    "docker.*",
 ]
 ignore_missing_imports = true
