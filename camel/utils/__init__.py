@@ -23,6 +23,7 @@ from .commons import (
     get_prompt_template_key_words,
     get_system_information,
     get_task_list,
+    is_docker_running,
     model_api_key_required,
     print_text_animated,
     text_extract_from_web,
@@ -61,5 +62,6 @@ __all__ = [
     'create_chunks',
     'dependencies_required',
     'api_keys_required',
+    'is_docker_running',
     'GeminiTokenCounter',
 ]

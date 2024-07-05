@@ -82,6 +82,7 @@ class ModelFactory:
         elif isinstance(model_type, str):
             if model_platform.is_ollama:
                 model_class = OllamaModel
+                return model_class(model_type, model_config_dict, url)
             elif model_platform.is_litellm:
                 model_class = LiteLLMModel
             else:

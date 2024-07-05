@@ -16,6 +16,7 @@ import os
 import platform
 import re
 import socket
+import subprocess
 import time
 import zipfile
 from functools import wraps
@@ -404,3 +405,21 @@ def create_chunks(text: str, n: int) -> List[str]:
         chunks.append(text[i:j])
         i = j
     return chunks
+
+
+def is_docker_running() -> bool:
+    r"""Check if the Docker daemon is running.
+
+    Returns:
+        bool: True if the Docker daemon is running, False otherwise.
+    """
+    try:
+        result = subprocess.run(
+            ["docker", "info"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        return result.returncode == 0
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return False
