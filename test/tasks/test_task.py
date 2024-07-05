@@ -58,7 +58,7 @@ def test_task_management():
         sub_task_3,
     ]
 
-    sorted_tasks = manager._topological_sort(new_tasks)
+    sorted_tasks = manager.topological_sort(new_tasks)
     sorted_tasks_ids = [task.id for task in sorted_tasks]
     print(sorted_tasks_ids)
     assert sorted_tasks_ids == ["1", "2.1", "2.2", "2", "3"]
