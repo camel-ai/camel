@@ -51,7 +51,7 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
     system_message = messages[0]["content"]
 
     ret: str
-    if model == ModelType.LLAMA_2:
+    if model == ModelType.LLAMA_2 or model == ModelType.LLAMA_3:
         # reference: https://github.com/facebookresearch/llama/blob/cfc3fc8c1968d390eb830e65c63865e980873a06/llama/generation.py#L212
         seps = [" ", " </s><s>"]
         role_map = {"user": "[INST]", "assistant": "[/INST]"}
@@ -92,6 +92,45 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
                 ret += role + ": " + content + seps[i % 2]
             else:
                 ret += role + ":"
+        return ret
+    elif model == ModelType.GLM_4_OPEN_SOURCE:
+        system_prompt = f"[gMASK]<sop><|system|>\n{system_message}"
+        ret = system_prompt
+        for msg in messages[1:]:
+            role = msg["role"]
+            content = msg["content"]
+            if not isinstance(content, str):
+                raise ValueError(
+                    "Currently multimodal context is not "
+                    "supported by the token counter."
+                )
+            if content:
+                ret += "<|" + role + "|>" + "\n" + content
+            else:
+                ret += "<|" + role + "|>" + "\n"
+        return ret
+    elif model == ModelType.QWEN_2:
+        system_prompt = f"<|im_start|>system\n{system_message}<|im_end|>"
+        ret = system_prompt + "\n"
+        for msg in messages[1:]:
+            role = msg["role"]
+            content = msg["content"]
+            if not isinstance(content, str):
+                raise ValueError(
+                    "Currently multimodal context is not "
+                    "supported by the token counter."
+                )
+            if content:
+                ret += (
+                    '<|im_start|>'
+                    + role
+                    + '\n'
+                    + content
+                    + '<|im_end|>'
+                    + '\n'
+                )
+            else:
+                ret += '<|im_start|>' + role + '\n'
         return ret
     else:
         raise ValueError(f"Invalid model type: {model}")
