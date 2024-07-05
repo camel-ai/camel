@@ -19,8 +19,6 @@ import uuid
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional
 
-import docker
-import docker.errors
 from colorama import Fore
 
 from camel.interpreters.base import BaseInterpreter
@@ -94,6 +92,8 @@ class DockerInterpreter(BaseInterpreter):
                 "Docker daemon is not running. Please install/start docker "
                 "and try again."
             )
+
+        import docker
 
         client = docker.from_env()
         self._container = client.containers.run(
@@ -176,6 +176,8 @@ class DockerInterpreter(BaseInterpreter):
                 code type is unsupported, or there is an error in the docker
                 API/container
         """
+        import docker.errors
+
         code_type = self._check_code_type(code_type)
 
         # Print code for security checking
