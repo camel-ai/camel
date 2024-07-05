@@ -60,7 +60,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO, chat_turn_limit=10) -> None:
         assistant_agent_kwargs=dict(
             model=ModelFactory.create(
                 model_platform=ModelPlatformType.OPENAI,
-                model_type=ModelType.GPT_3_5_TURBO,
+                model_type=model_type,
                 model_config_dict=assistant_model_config.__dict__,
             ),
             tools=function_list,
@@ -68,7 +68,7 @@ def main(model_type=ModelType.GPT_3_5_TURBO, chat_turn_limit=10) -> None:
         user_agent_kwargs=dict(
             model=ModelFactory.create(
                 model_platform=ModelPlatformType.OPENAI,
-                model_type=ModelType.GPT_3_5_TURBO,
+                model_type=model_type,
                 model_config_dict=user_model_config.__dict__,
             ),
         ),

@@ -18,7 +18,6 @@ from typing import Any, Dict
 
 from colorama import Fore
 
-from camel.configs import ChatGPTConfig
 from camel.societies import RolePlaying
 from camel.types import TaskType
 
@@ -43,9 +42,7 @@ def generate_data(
         with_task_specify=True,
         with_task_planner=False,
         task_type=TaskType.MISALIGNMENT,
-        task_specify_agent_kwargs=dict(
-            model_config=ChatGPTConfig(temperature=1.4)
-        ),
+        task_specify_agent_kwargs=dict(),
     )
 
     input_msg = role_play_session.init_chat()
