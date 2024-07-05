@@ -212,7 +212,7 @@ class TaskManager:
         task_parser: Optional[Callable[[str, str], List[Task]]] = None,
     ) -> Optional[Task]:
         r"""Evolve a task to a new task.
-
+            Evolve is only used for data generation.
         Args:
             task (Task): A given task.
             agent (ChatAgent): An agent that used to evolve the task.
@@ -249,7 +249,7 @@ class TaskManager:
         task_parser: Optional[Callable[[str, str], List[Task]]] = None,
     ) -> List[Task]:
         r"""Decompose a task to a list of sub-tasks.
-
+            It can be used for data generation and planner of agent.
         Args:
             task (Task): A given task.
             agent (ChatAgent): An agent that used to evolve the task.
