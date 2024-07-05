@@ -17,13 +17,6 @@ from collections.abc import Iterable
 from dataclasses import asdict, dataclass
 from typing import Optional
 
-from google.generativeai import protos
-from google.generativeai.types import (
-    content_types,
-    helper_types,
-    safety_types,
-)
-
 from camel.configs.base_config import BaseConfig
 
 
@@ -67,20 +60,26 @@ class GeminiConfig(BaseConfig):
             generated candidate text. Supported mimetype:
             `text/plain`: (default) Text output.
             `application/json`: JSON response in the candidates.
-        response_schema (protos.Schema, optional): Specifies the format of the
+        response_schema (Schema, optional): Specifies the format of the
             JSON requested if response_mime_type is `application/json`.
-        safety_settings (safety_types.SafetySettingOptions, optional):
+        safety_settings (SafetySettingOptions, optional):
             Overrides for the model's safety settings.
-        stream (bool, optional): If True, yield response chunks as they are
-            generated.
-        tools (content_types.FunctionLibraryType, optional):
+        tools (FunctionLibraryType, optional):
             `protos.Tools` more info coming soon.
-        tool_config (content_types.ToolConfigType, optional):
+        tool_config (ToolConfigType, optional):
             more info coming soon.
-        request_options (helper_types.RequestOptionsType, optional):
+        request_options (RequestOptionsType, optional):
             Options for the request.
     """
 
+    from google.generativeai.protos import Schema
+    from google.generativeai.types.content_types import (
+        FunctionLibraryType,
+        ToolConfigType,
+    )
+    from google.generativeai.types.helper_types import RequestOptionsType
+    from google.generativeai.types.safety_types import SafetySettingOptions
+
     candidate_count: Optional[int] = None
     stop_sequences: Optional[Iterable[str]] = None
     max_output_tokens: Optional[int] = None
@@ -88,24 +87,11 @@ class GeminiConfig(BaseConfig):
     top_p: Optional[float] = None
     top_k: Optional[int] = None
     response_mime_type: Optional[str] = None
-    response_schema: Optional[protos.Schema] = None
-    safety_settings: Optional[safety_types.SafetySettingOptions] = None
-    stream: bool = False
-    tools: Optional[content_types.FunctionLibraryType] = None
-    tool_config: Optional[content_types.ToolConfigType] = None
-    request_options: Optional[helper_types.RequestOptionsType] = None
-
-
-@dataclass(frozen=True)
-class Gemini_Gen_Config(BaseConfig):
-    candidate_count: Optional[int] = None
-    stop_sequences: Optional[Iterable[str]] = None
-    max_output_tokens: Optional[int] = None
-    temperature: Optional[float] = None
-    top_p: Optional[float] = None
-    top_k: Optional[int] = None
-    response_mime_type: Optional[str] = None
-    response_schema: Optional[protos.Schema] = None
+    response_schema: Optional[Schema] = None
+    safety_settings: Optional[SafetySettingOptions] = None
+    tools: Optional[FunctionLibraryType] = None
+    tool_config: Optional[ToolConfigType] = None
+    request_options: Optional[RequestOptionsType] = None
 
 
 Gemini_API_PARAMS = {param for param in asdict(GeminiConfig()).keys()}

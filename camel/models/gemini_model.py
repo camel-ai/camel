@@ -11,9 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from camel.configs import Gemini_API_PARAMS
+from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import (
     ChatCompletion,
@@ -27,9 +28,15 @@ from camel.utils import (
     model_api_key_required,
 )
 
+if TYPE_CHECKING:
+    from google.generativeai.types import ContentsType, GenerateContentResponse
+
 
 class GeminiModel(BaseModelBackend):
     r"""Gemini API in a unified BaseModelBackend interface."""
+
+    # NOTE: Currently "stream": True is not supported with Gemini due to the
+    # limitation of the current camel design.
 
     def __init__(
         self,
@@ -41,11 +48,12 @@ class GeminiModel(BaseModelBackend):
         r"""Constructor for Gemini backend.
 
         Args:
-            model_type (ModelType): Model for which a backend is created
+            model_type (ModelType): Model for which a backend is created.
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into generate_content().
             api_key (Optional[str]): The API key for authenticating with the
                 gemini service. (default: :obj:`None`)
+            url (Optional[str]): The url to the gemini service.
         """
         import os
 
@@ -55,7 +63,7 @@ class GeminiModel(BaseModelBackend):
         super().__init__(model_type, model_config_dict, api_key, url)
         self._api_key = api_key or os.environ.get("GOOGLE_API_KEY")
         genai.configure(api_key=self._api_key)
-        self._client = genai.GenerativeModel(model_type.value)
+        self._client = genai.GenerativeModel(self.model_type.value)
         self._token_counter: Optional[BaseTokenCounter] = None
         keys = list(self.model_config_dict.keys())
         generation_config_dict = {
@@ -75,27 +83,22 @@ class GeminiModel(BaseModelBackend):
         return self._token_counter
 
     @model_api_key_required
-    def run(self, contents):
+    def run(
+        self,
+        messages: List[OpenAIMessage],
+    ) -> ChatCompletion:
         r"""Runs inference of Gemini model.
         This method can handle multimodal input
 
         Args:
-            contents: Message list or Message with the chat history
-            in Gemini API format or OpenAi format.
-            example: contents = [{'role':'user', 'parts': ['hello']}]
-
+            messages: Message list or Message with the chat history
+                in OpenAi format.
 
         Returns:
             response: A ChatCompletion object formatted for the OpenAI API.
-
-        If it is not in streaming mode,
-        you can directly output the response.text.
-
-        If it is in streaming mode,
-        you can iterate over the response chunks as they become available.
         """
         response = self._client.generate_content(
-            contents=self.to_gemini_req(contents),
+            contents=self.to_gemini_req(messages),
             **self.model_config_dict,
         )
         response.resolve()
@@ -121,65 +124,80 @@ class GeminiModel(BaseModelBackend):
     def stream(self) -> bool:
         r"""Returns whether the model is in stream mode,
             which sends partial results each time.
+
         Returns:
             bool: Whether the model is in stream mode.
         """
         return self.model_config_dict.get('stream', False)
 
-    def to_gemini_req(self, req):
+    def to_gemini_req(self, messages: List[OpenAIMessage]) -> 'ContentsType':
         r"""Converts the request from the OpenAI API format to
             the Gemini API request format.
 
         Args:
-            req: The request object from the OpenAI API.
+            messages: The request object from the OpenAI API.
+
         Returns:
             converted_messages: A list of messages formatted for Gemini API.
         """
+        # role reference
+        # https://ai.google.dev/api/python/google/generativeai/protos/Content
         converted_messages = []
-        for message in req:
+        for message in messages:
             role = message.get('role')
             if role == 'assistant':
                 role = 'model'
             else:
                 role = 'user'
-            if 'content' in message:
-                converted_message = {
-                    "role": role,
-                    "parts": message.get("content"),
-                }
-                converted_messages.append(converted_message)
-            else:
-                converted_messages.append(message)
+            converted_message = {
+                "role": role,
+                "parts": message.get("content"),
+            }
+            converted_messages.append(converted_message)
         return converted_messages
 
-    def to_openai_response(self, res):
+    def to_openai_response(
+        self,
+        response: 'GenerateContentResponse',
+    ) -> ChatCompletion:
         r"""Converts the response from the Gemini API to the OpenAI API
         response format.
+
         Args:
-            res: The response object returned by the Gemini API
+            response: The response object returned by the Gemini API
+
         Returns:
-            openai_res: A ChatCompletion object formatted for the OpenAI API.
+            openai_response: A ChatCompletion object formatted for
+                the OpenAI API.
         """
         import time
         import uuid
 
-        openai_res = ChatCompletion(
+        openai_response = ChatCompletion(
             id=f"chatcmpl-{uuid.uuid4().hex!s}",
             object="chat.completion",
             created=int(time.time()),
             model="gemini",
             choices=[],
         )
-        for i, candidate in enumerate(res.candidates):
+        for i, candidate in enumerate(response.candidates):
             content = ""
             if candidate.content and len(candidate.content.parts) > 0:
                 content = candidate.content.parts[0].text
+            finish_reason = candidate.finish_reason
+            finish_reason_mapping = {
+                "FinishReason.STOP": "stop",
+                "FinishReason.SAFETY": "content_filter",
+                "FinishReason.RECITATION": "content_filter",
+                "FinishReason.MAX_TOKENS": "length",
+            }
+            finish_reason = finish_reason_mapping.get(finish_reason, "stop")
             choice = Choice(
                 index=i,
                 message=ChatCompletionMessage(
                     role="assistant", content=content
                 ),
-                finish_reason='stop',
+                finish_reason=finish_reason,
             )
-        openai_res.choices.append(choice)
-        return openai_res
+        openai_response.choices.append(choice)
+        return openai_response

@@ -350,10 +350,16 @@ class GeminiTokenCounter(BaseTokenCounter):
         self.model_type = model_type
         self._client = genai.GenerativeModel(self.model_type.value)
 
-    def count_tokens_from_messages(self, messages) -> int:
-        r"""
+    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
+        r"""Count number of tokens in the provided message list using
+        loaded tokenizer specific for this type of model.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+
         Returns:
-        response(CountTokensResponse), use response.text to get output
+            int: Number of tokens in the messages.
         """
         converted_messages = []
         for message in messages:
@@ -362,14 +368,11 @@ class GeminiTokenCounter(BaseTokenCounter):
                 role = 'model'
             else:
                 role = 'user'
-            if 'content' in message:
-                converted_message = {
-                    "role": role,
-                    "parts": message.get("content"),
-                }
-                converted_messages.append(converted_message)
-            else:
-                converted_messages.append(message)
+            converted_message = {
+                "role": role,
+                "parts": message.get("content"),
+            }
+            converted_messages.append(converted_message)
         return self._client.count_tokens(converted_messages).total_tokens
 
 

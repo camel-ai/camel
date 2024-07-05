@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import dataclasses
 
 from colorama import Fore
 
@@ -29,7 +28,7 @@ def main(model_type=None) -> None:
         role: ModelFactory.create(
             model_platform=ModelPlatformType.GEMINI,
             model_type=model_type,
-            model_config_dict=dataclasses.asdict(GeminiConfig()),
+            model_config_dict=GeminiConfig().__dict__,
         )
         for role in ["assistant", "user", "task-specify"]
     }
