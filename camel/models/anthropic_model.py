@@ -46,11 +46,13 @@ class AnthropicModel(BaseModelBackend):
                 be fed into Anthropic.messages.create().
             api_key (Optional[str]): The API key for authenticating with the
                 Anthropic service. (default: :obj:`None`)
-            url (Optional[str]): The url to the model service.
+            url (Optional[str]): The url to the Anthropic service. (default:
+                :obj:`None`)
         """
         super().__init__(model_type, model_config_dict, api_key, url)
         self._api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
-        self.client = Anthropic(api_key=self._api_key, base_url=url)
+        self._url = url or os.environ.get("ANTHROPIC_API_BASE_URL")
+        self.client = Anthropic(api_key=self._api_key, base_url=self._url)
         self._token_counter: Optional[BaseTokenCounter] = None
 
     def _convert_response_from_anthropic_to_openai(self, response):
