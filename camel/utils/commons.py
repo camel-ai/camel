@@ -19,11 +19,12 @@ import socket
 import time
 import zipfile
 from functools import wraps
-from typing import Any, Callable, List, Optional, Set, TypeVar, cast
+from typing import Any, Callable, List, Optional, Set, TypeVar, cast, Dict
 from urllib.parse import urlparse
 
-import pydantic
 import requests
+import pydantic
+from pydantic import BaseModel
 
 from camel.types import TaskType
 
@@ -70,7 +71,6 @@ def model_api_key_required(func: F) -> F:
             raise ValueError('Unsupported model type.')
 
     return cast(F, wrapper)
-
 
 def print_text_animated(text, delay: float = 0.02, end: str = ""):
     r"""Prints the given text with an animated effect.
@@ -338,9 +338,123 @@ def to_pascal(snake: str) -> str:
         snake.title(),
     )
 
+def find_and_check_subset(small, big) -> bool:
+    r"""
+    Recursively searches 'big' to find if 'small' is a subset at any level.
 
-PYDANTIC_V2 = pydantic.VERSION.startswith("2.")
+    Args:
+        small (dict or list or any): The potential subset.
+        big (dict or list or any): The larger set to compare against.
 
+    Returns:
+        bool: True if 'small' is a subset of 'big' at any level, False otherwise.
+    """
+    # First, check if 'small' is a subset of 'big' directly
+    if is_subset(small, big):
+        return True
+
+    # If 'big' is a dictionary, recursively check its values
+    if isinstance(big, dict):
+        for key, value in big.items():
+            if find_and_check_subset(small, value):
+                return True
+
+    # If 'big' is a list, recursively check its items
+    elif isinstance(big, list):
+        for item in big:
+            if find_and_check_subset(small, item):
+                return True
+
+    # If no match is found, return False
+    return False
+
+def is_subset(small, big) -> bool:
+    r"""
+        Checks if 'small' is a subset of 'big'.
+
+    Args:
+        small (dict or list or any): The potential subset.
+        big (dict or list or any): The larger set to compare against.
+
+    Returns:
+        bool: True if 'small' is a subset of 'big', False otherwise.
+    """
+    if isinstance(small, dict) and isinstance(big, dict):
+        # If both are dictionaries, check if all key-value pairs in 'small' exist in 'big'
+        for key, value in small.items():
+            if key not in big or not is_subset(value, big[key]):
+                return False
+        return True
+    elif isinstance(small, list) and isinstance(big, list):
+        # If both are lists, check if each item in 'small' is a subset of any item in 'big'
+        for item in small:
+            if not any(is_subset(item, big_item) for big_item in big):
+                return False
+        return True
+    else:
+        # For all other types, directly compare the values
+        return small == big
+
+def parse_pydantic_model_as_openai_tools_schema(pydantic_params: BaseModel) \
+-> Dict[str, Any]:
+    r"""Parse Pydantic model into a JSON schema format.
+
+    Args:
+        pydantic_params (BaseModel): A Pydantic model instance.
+
+    Returns:
+        dict: A dictionary representing the JSON schema of the Pydantic model.
+    """
+    # the source dict  format follows the OpenAPI format
+    source_dict = {
+        "type": "function",
+        "function": {
+            "name": "return_json_format_response",
+            "description": "Return the response in JSON format",
+            "parameters": {
+                "type": "object",
+                "properties": {},
+            },
+            "required": [],
+        }
+    }
+    pydantic_params_schema = get_pydantic_object_schema(pydantic_params)
+    source_dict["function"]["parameters"]["properties"] = \
+    pydantic_params_schema["properties"]
+    source_dict["function"]["required"] = \
+    pydantic_params_schema["required"]
+    return source_dict
+
+def get_pydantic_object_schema(pydantic_params: BaseModel) \
+-> Dict[str, Any]:
+    r"""Get the JSON schema of a Pydantic model.
+
+    Args:
+        pydantic_params (BaseModel): A Pydantic model instance.
+
+    Returns:
+        dict: The JSON schema of the given Pydantic model.
+    """
+    PYDANTIC_MAJOR_VERSION = get_pydantic_major_version()
+    
+    if PYDANTIC_MAJOR_VERSION == 2:
+        if issubclass(pydantic_params, pydantic.BaseModel):
+            return pydantic_params.model_json_schema()
+        elif issubclass(pydantic_params, pydantic.v1.BaseModel):
+            return pydantic_params.schema()
+    
+    return pydantic_params.schema()
+
+def get_pydantic_major_version() -> int:
+    r"""Get the major version of Pydantic.
+
+    Returns:
+        int: The major version number of Pydantic if installed, otherwise 0.
+    """
+    try:
+        return int(pydantic.__version__.split(".")[0])
+    except ImportError:
+        return 0
 
 def text_extract_from_web(url: str) -> str:
     r"""Get the text information from given url.

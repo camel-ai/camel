@@ -13,7 +13,6 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from .commons import (
-    PYDANTIC_V2,
     api_keys_required,
     check_server_running,
     create_chunks,
@@ -27,6 +26,11 @@ from .commons import (
     print_text_animated,
     text_extract_from_web,
     to_pascal,
+    find_and_check_subset,
+    is_subset,
+    get_pydantic_object_schema,
+    get_pydantic_major_version,
+    parse_pydantic_model_as_openai_tools_schema,
 )
 from .constants import Constants
 from .token_counting import (
@@ -49,13 +53,17 @@ __all__ = [
     'AnthropicTokenCounter',
     'get_system_information',
     'to_pascal',
-    'PYDANTIC_V2',
+    'get_pydantic_object_schema',
+    'get_pydantic_major_version',
+    'parse_pydantic_model_as_openai_tools_schema',
     'get_model_encoding',
     'BaseTokenCounter',
     'OpenAITokenCounter',
     'OpenSourceTokenCounter',
     'LiteLLMTokenCounter',
     'Constants',
+    'find_and_check_subset',
+    'is_subset',
     'text_extract_from_web',
     'create_chunks',
     'dependencies_required',

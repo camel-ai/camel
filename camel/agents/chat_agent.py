@@ -14,12 +14,14 @@
 from __future__ import annotations
 
 import json
+from pydantic import BaseModel
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
 from camel.agents.base import BaseAgent
 from camel.configs import ChatGPTConfig
+from camel.functions import OpenAIFunction
 from camel.memories import (
     AgentMemory,
     ChatHistoryMemory,
@@ -38,7 +40,10 @@ from camel.types import (
     RoleType,
 )
 from camel.utils import get_model_encoding
-
+from camel.utils.commons import (
+    parse_pydantic_model_as_openai_tools_schema, 
+    find_and_check_subset
+)
 if TYPE_CHECKING:
     from openai import Stream
 
@@ -110,6 +115,7 @@ class ChatAgent(BaseAgent):
         system_message: BaseMessage,
         model: Optional[BaseModelBackend] = None,
         api_key: Optional[str] = None,
+        output_schema: Optional[BaseModel] = None,
         memory: Optional[AgentMemory] = None,
         message_window_size: Optional[int] = None,
         token_limit: Optional[int] = None,
@@ -142,6 +148,21 @@ class ChatAgent(BaseAgent):
         if tools is not None:
             for func in tools:
                 self.func_dict[func.get_function_name()] = func.func
+
+        if output_schema is not None and \
+        self.model_backend.model_type.is_openai:
+            tools = [OpenAIFunction(parse_pydantic_model_as_openai_tools_schema, \
+                                    openai_tool_schema = \
+                                    parse_pydantic_model_as_openai_tools_schema
+                                        (output_schema))]
+            
+            self.model_backend.model_config_dict = ChatGPTConfig(
+            tools = tools,
+            tool_choice = {'type': 'function', 'function': {'name': 'return_json_format_response' } }
+            ).__dict__
+
+            self.func_dict['return_json_format_response'] = \
+                parse_pydantic_model_as_openai_tools_schema
 
         self.model_config_dict = self.model_backend.model_config_dict
 
@@ -345,7 +366,10 @@ class ChatAgent(BaseAgent):
                 self.update_memory(func_result_msg, OpenAIBackendRole.FUNCTION)
 
                 # Record the function calling
-                tool_calls.append(func_record)
+                if func_record in tool_calls:
+                    tool_calls.append(func_record)
+                else:
+                    break
 
             else:
                 # Function calling disabled or not a function calling
@@ -649,9 +673,14 @@ class ChatAgent(BaseAgent):
         args_str: str = choice.message.tool_calls[0].function.arguments
         args = json.loads(args_str)
 
-        # Pass the extracted arguments to the indicated function
         try:
-            result = func(**args)
+            # If the func name is return_json_format_response, 
+            # the result is openai tools function args
+            if func_name == 'return_json_format_response':
+                result = args
+            else:
+                result = func(**args)
+
         except Exception:
             raise ValueError(
                 f"Execution of function {func.__name__} failed with "
