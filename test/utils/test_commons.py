@@ -68,24 +68,63 @@ def test_dependencies_required(monkeypatch):
     assert "Missing required modules: some_module_not_exist" in str(exc.value)
 
 
-def test_api_keys_required():
+@pytest.fixture
+def setup_env_vars():
+    original_env = os.environ.copy()
     os.environ['API_KEY_1'] = 'API_KEY_1_VALUE'
     os.environ['API_KEY_2'] = 'API_KEY_2_VALUE'
+    yield
+    os.environ.clear()
+    os.environ.update(original_env)
 
-    @api_keys_required('API_KEY_1', 'API_KEY_2')
-    def mock_api_keys_exist():
-        return True
 
-    assert True if mock_api_keys_exist() else False
+def test_api_keys_required(setup_env_vars):
+    class MockClass:
+        @api_keys_required('API_KEY_1', 'API_KEY_2')
+        def mock_api_keys_exist(self):
+            return True
 
-    @api_keys_required('API_KEY_1', 'API_KEY_2', 'API_KEY_3')
-    def mock_api_keys_not_exist():
-        return True
+        @api_keys_required('API_KEY_1', 'API_KEY_2', 'API_KEY_3')
+        def mock_api_keys_not_exist(self):
+            return True
 
+    mock_instance = MockClass()
+
+    # Test case where all required API keys are present
+    assert mock_instance.mock_api_keys_exist() is True
+
+    # Test case where some required API keys are missing
     with pytest.raises(ValueError) as exc:
-        mock_api_keys_not_exist()
-
+        mock_instance.mock_api_keys_not_exist()
     assert "Missing API keys: API_KEY_3" in str(exc.value)
+
+    # Test case with no API keys set
+    os.environ.clear()
+    with pytest.raises(ValueError) as exc:
+        mock_instance.mock_api_keys_exist()
+    assert "Missing API keys: API_KEY_1, API_KEY_2" in str(exc.value)
+
+
+def test_api_keys_required_empty(setup_env_vars):
+    class MockClass:
+        @api_keys_required()
+        def mock_no_keys_required(self):
+            return True
+
+    mock_instance = MockClass()
+    assert mock_instance.mock_no_keys_required() is True
+
+
+def test_api_keys_required_non_existent(setup_env_vars):
+    class MockClass:
+        @api_keys_required('NON_EXISTENT_KEY')
+        def mock_non_existent_key(self):
+            return True
+
+    mock_instance = MockClass()
+    with pytest.raises(ValueError) as exc:
+        mock_instance.mock_non_existent_key()
+    assert "Missing API keys: NON_EXISTENT_KEY" in str(exc.value)
 
 
 def test_get_system_information():

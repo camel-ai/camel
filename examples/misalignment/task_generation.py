@@ -22,7 +22,7 @@ from camel.generators import (
 )
 from camel.messages import BaseMessage
 from camel.prompts import PromptTemplateGenerator
-from camel.types import ModelType, RoleType, TaskType
+from camel.types import RoleType, TaskType
 
 
 def generate_tasks(
@@ -37,7 +37,7 @@ def generate_tasks(
         dict(assistant_role="chatbot"),
         role_tuple=("chatbot", RoleType.ASSISTANT),
     )
-    assistant_agent = ChatAgent(assistant_sys_msg, ModelType.GPT_3_5_TURBO)
+    assistant_agent = ChatAgent(assistant_sys_msg)
 
     user_msg = BaseMessage.make_user_message(
         role_name="Task Generator", content=task_generator_prompt

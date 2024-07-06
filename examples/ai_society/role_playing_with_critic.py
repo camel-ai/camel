@@ -14,15 +14,21 @@
 from colorama import Fore
 
 from camel.configs import ChatGPTConfig
+from camel.models import ModelFactory
 from camel.societies import RolePlaying
+from camel.types import ModelPlatformType, ModelType
 from camel.utils import print_text_animated
 
 
 def main() -> None:
     task_prompt = "Write a research proposal for large-scale language models"
-    model_config = ChatGPTConfig(temperature=0.8, n=3)
-    assistant_agent_kwargs = dict(model_config=model_config)
-    user_agent_kwargs = dict(model_config=model_config)
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_3_5_TURBO,
+        model_config_dict=ChatGPTConfig(temperature=0.8, n=3).__dict__,
+    )
+    assistant_agent_kwargs = dict(model=model)
+    user_agent_kwargs = dict(model=model)
     critic_kwargs = dict(verbose=True)
     role_play_session = RolePlaying(
         "PhD Student",
