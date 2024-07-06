@@ -13,6 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from .base import BaseInterpreter
+from .docker_interpreter import DockerInterpreter
 from .internal_python_interpreter import InternalPythonInterpreter
 from .interpreter_error import InterpreterError
 from .subprocess_interpreter import SubprocessInterpreter
@@ -22,4 +23,5 @@ __all__ = [
     'InterpreterError',
     'InternalPythonInterpreter',
     'SubprocessInterpreter',
+    'DockerInterpreter',
 ]
