@@ -14,6 +14,7 @@
 import base64
 import os
 
+import pytest
 from PIL import Image
 
 from camel.functions.dalle_functions import (
@@ -21,6 +22,24 @@ from camel.functions.dalle_functions import (
     image_path_to_base64,
     image_to_base64,
 )
+
+
+@pytest.fixture(scope="function")
+def test_image_path():
+    # Prepare the path for the test image
+    test_image_path = 'test_image.png'
+    # Create a test image file (or ensure it exists for the test)
+    with open(test_image_path, 'wb') as f:
+        f.write(b'This is a test image placeholder content.')
+
+    # Provide the path to the temp file for the test to use
+    yield test_image_path
+
+    # Teardown: Clean up the temporary file
+    try:
+        os.remove(test_image_path)
+    except OSError as e:
+        print(f"Error: {e.strerror}")
 
 
 def test_base64_to_image_valid():
@@ -48,12 +67,7 @@ def test_base64_to_image_invalid():
     ), "The function should return None for an invalid base64 string"
 
 
-def test_image_path_to_base64():
-    # Prepare the path for the test image
-    test_image_path = 'test_image.png'
-    # Create a test image file (or ensure it exists for the test)
-    with open(test_image_path, 'wb') as f:
-        f.write(b'This is a test image placeholder content.')
+def test_image_path_to_base64(test_image_path):
     # Obtain the Base64 encoded string of the test image
     base64_encoded_string = image_path_to_base64(test_image_path)
     # Decode the Base64 string back to binary data for validation
@@ -62,9 +76,6 @@ def test_image_path_to_base64():
     # the test image
     with open(test_image_path, 'rb') as f:
         original_binary_data = f.read()
-
-    # Clean up by removing the test image file after the test
-    os.remove(test_image_path)
 
     assert (
         decoded_binary_data == original_binary_data

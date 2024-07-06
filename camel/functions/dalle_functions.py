@@ -15,7 +15,7 @@ import base64
 import os
 import uuid
 from io import BytesIO
-from typing import List
+from typing import List, Optional
 
 from openai import OpenAI
 from PIL import Image
@@ -23,7 +23,7 @@ from PIL import Image
 from camel.functions import OpenAIFunction
 
 
-def base64_to_image(base64_string):
+def base64_to_image(base64_string) -> Image.Image:
     r"""
     Converts a base64 encoded string into a PIL Image object.
 
@@ -34,21 +34,16 @@ def base64_to_image(base64_string):
     Image or None: Returns the PIL Image object
         if the conversion is successful, otherwise returns None.
     """
-    try:
-        # Decode the base64 string to get the image data
-        image_data = base64.b64decode(base64_string)
-        # Create a memory buffer for the image data
-        image_buffer = BytesIO(image_data)
-        # Open the image using the PIL library
-        image = Image.open(image_buffer)
-        return image
-    except Exception as e:
-        # Print the error message if an exception occurs during the conversion
-        print(f"An error occurred: {e}")
-        return None
+    # Decode the base64 string to get the image data
+    image_data = base64.b64decode(base64_string)
+    # Create a memory buffer for the image data
+    image_buffer = BytesIO(image_data)
+    # Open the image using the PIL library
+    image = Image.open(image_buffer)
+    return image
 
 
-def image_path_to_base64(image_path):
+def image_path_to_base64(image_path) -> str:
     r"""
     Converts the file path of an image to a Base64 encoded string.
 
@@ -62,7 +57,7 @@ def image_path_to_base64(image_path):
         return base64.b64encode(image_file.read()).decode('utf-8')
 
 
-def image_to_base64(image):
+def image_to_base64(image) -> Optional[str]:
     r"""
     Converts an image into a base64-encoded string.
 
@@ -79,12 +74,12 @@ def image_to_base64(image):
     A base64-encoded string of the image, or None if an error occurs.
     """
     try:
-        buffered_image = BytesIO()
-        image.save(buffered_image, format="PNG")
-        buffered_image.seek(0)
-        image_bytes = buffered_image.read()
-        base64_str = base64.b64encode(image_bytes).decode('utf-8')
-        return base64_str
+        with BytesIO() as buffered_image:
+            image.save(buffered_image, format="PNG")
+            buffered_image.seek(0)
+            image_bytes = buffered_image.read()
+            base64_str = base64.b64encode(image_bytes).decode('utf-8')
+            return base64_str
     except Exception as e:
         print(f"An error occurred: {e}")
         return None
@@ -110,8 +105,7 @@ def get_dalle_img(
         prompt=prompt,
         size="1024x1792",
         quality="standard",
-        # NOTE  For "dall-e-3", only n=1 is supported.
-        n=1,
+        n=1,  # Note: now dall-e-3 only supports n=1
         response_format="b64_json",
     )
     image_b64 = response.data[0].b64_json

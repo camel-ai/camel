@@ -20,9 +20,9 @@ from camel.types import RoleType
 class ImageCraftPromptTemplateDict(TextPromptDict):
     ASSISTANT_PROMPT = TextPrompt(
         """You are tasked with creating an original image based on
-        the provided descriptive captions. Please use your imagination
-        and artistic capabilities to visualize and draw the images and
-        explain what you are thinking about."""
+        the provided descriptive captions. Use your imagination
+        and artistic skills to visualize and draw the images and
+        explain your thought process."""
     )
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
