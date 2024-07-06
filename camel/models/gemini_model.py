@@ -25,7 +25,7 @@ from camel.types import (
 from camel.utils import (
     BaseTokenCounter,
     GeminiTokenCounter,
-    model_api_key_required,
+    api_keys_required,
 )
 
 if TYPE_CHECKING:
@@ -82,7 +82,7 @@ class GeminiModel(BaseModelBackend):
             self._token_counter = GeminiTokenCounter(self.model_type)
         return self._token_counter
 
-    @model_api_key_required
+    @api_keys_required("GOOGLE_API_KEY")
     def run(
         self,
         messages: List[OpenAIMessage],

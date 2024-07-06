@@ -20,7 +20,7 @@ from camel.messages import OpenAIMessage
 from camel.types import ChatCompletion, ModelType
 from camel.utils import (
     BaseTokenCounter,
-    model_api_key_required,
+    api_keys_required,
 )
 
 
@@ -59,7 +59,7 @@ class NemotronModel:
         )
         self._token_counter: Optional[BaseTokenCounter] = None
 
-    @model_api_key_required
+    @api_keys_required("NVIDIA_API_KEY")
     def run(
         self,
         messages: List[OpenAIMessage],

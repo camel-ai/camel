@@ -110,7 +110,7 @@ conda create --name camel python=3.9
 conda activate camel
 
 # Clone github repo
-git clone -b v0.1.5.4 https://github.com/camel-ai/camel.git
+git clone -b v0.1.5.5 https://github.com/camel-ai/camel.git
 
 # Change directory into project directory
 cd camel
@@ -121,6 +121,10 @@ pip install -e .
 # Or if you want to use all other extra packages
 pip install -e .[all] # (Optional)
 ```
+
+### From Docker
+
+Detailed guidance can be find [here](https://github.com/camel-ai/camel/blob/master/.container/README.md)
 
 ## Documentation
 

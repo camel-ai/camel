@@ -31,52 +31,6 @@ from camel.types import TaskType
 F = TypeVar('F', bound=Callable[..., Any])
 
 
-def model_api_key_required(func: F) -> F:
-    r"""Decorator that checks if the API key is available either as an
-    environment variable or passed directly for a model.
-
-    Args:
-        func (callable): The function to be wrapped.
-
-    Returns:
-        callable: The decorated function.
-
-    Raises:
-        ValueError: If the API key is not found, either as an environment
-            variable or directly passed.
-
-    Note:
-        Supported model type: `OpenAI` and `Anthropic`.
-    """
-
-    @wraps(func)
-    def wrapper(self, *args, **kwargs):
-        if self.model_type.is_openai:
-            if not self._api_key and 'OPENAI_API_KEY' not in os.environ:
-                raise ValueError('OpenAI API key not found.')
-            return func(self, *args, **kwargs)
-        elif self.model_type.is_zhipuai:
-            if 'ZHIPUAI_API_KEY' not in os.environ:
-                raise ValueError('ZhiPuAI API key not found.')
-            return func(self, *args, **kwargs)
-        elif self.model_type.is_anthropic:
-            if not self._api_key and 'ANTHROPIC_API_KEY' not in os.environ:
-                raise ValueError('Anthropic API key not found.')
-            return func(self, *args, **kwargs)
-        elif self.model_type.is_nvidia:
-            if not self._api_key and 'NVIDIA_API_KEY' not in os.environ:
-                raise ValueError('NVIDIA API key not found.')
-            return func(self, *args, **kwargs)
-        elif self.model_type.is_gemini:
-            if not self._api_key and 'GOOGLE_API_KEY' not in os.environ:
-                raise ValueError('Gemini API key not found.')
-            return func(self, *args, **kwargs)
-        else:
-            raise ValueError('Unsupported model type.')
-
-    return cast(F, wrapper)
-
-
 def print_text_animated(text, delay: float = 0.02, end: str = ""):
     r"""Prints the given text with an animated effect.
 
@@ -265,7 +219,7 @@ def is_module_available(module_name: str) -> bool:
 
 def api_keys_required(*required_keys: str) -> Callable[[F], F]:
     r"""A decorator to check if the required API keys are
-    present in the environment variables.
+    presented in the environment variables or as an instance attribute.
 
     Args:
         required_keys (str): The required API keys to be checked.
@@ -276,7 +230,7 @@ def api_keys_required(*required_keys: str) -> Callable[[F], F]:
 
     Raises:
         ValueError: If any of the required API keys are missing in the
-            environment variables.
+            environment variables and the instance attribute.
 
     Example:
         ::
@@ -288,13 +242,18 @@ def api_keys_required(*required_keys: str) -> Callable[[F], F]:
 
     def decorator(func: F) -> F:
         @wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
-            missing_keys = [k for k in required_keys if k not in os.environ]
-            if missing_keys:
+        def wrapper(self, *args: Any, **kwargs: Any) -> Any:
+            missing_environment_keys = [
+                k for k in required_keys if k not in os.environ
+            ]
+            if (
+                not getattr(self, '_api_key', None)
+                and missing_environment_keys
+            ):
                 raise ValueError(
-                    f"Missing API keys: {', '.join(missing_keys)}"
+                    f"Missing API keys: {', '.join(missing_environment_keys)}"
                 )
-            return func(*args, **kwargs)
+            return func(self, *args, **kwargs)
 
         return cast(F, wrapper)
 
