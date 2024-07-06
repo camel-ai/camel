@@ -331,6 +331,7 @@ class ModelPlatformType(Enum):
     LITELLM = "litellm"
     ZHIPU = "zhipuai"
     DEFAULT = "default"
+    FASTCHAT = "fastchat"
 
     @property
     def is_openai(self) -> bool:
@@ -366,6 +367,11 @@ class ModelPlatformType(Enum):
     def is_open_source(self) -> bool:
         r"""Returns whether this platform is opensource."""
         return self is ModelPlatformType.OPENSOURCE
+
+    @property
+    def is_fastchat(self) -> bool:
+        r"""Returns whether this platform is opensource."""
+        return self is ModelPlatformType.FASTCHAT
 
 
 class AudioModelType(Enum):
