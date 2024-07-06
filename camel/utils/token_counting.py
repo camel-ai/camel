@@ -365,11 +365,11 @@ class GeminiTokenCounter(BaseTokenCounter):
         for message in messages:
             role = message.get('role')
             if role == 'assistant':
-                role = 'model'
+                role_to_gemini = 'model'
             else:
-                role = 'user'
+                role_to_gemini = 'user'
             converted_message = {
-                "role": role,
+                "role": role_to_gemini,
                 "parts": message.get("content"),
             }
             converted_messages.append(converted_message)
