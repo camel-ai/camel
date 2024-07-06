@@ -19,7 +19,8 @@ from camel.embeddings import VisionLanguageEmbedding
 
 # Set the VLM instance
 VLM_instance = VisionLanguageEmbedding(
-    model_name="openai/clip-vit-base-patch32")
+    model_name="openai/clip-vit-base-patch32"
+)
 
 # Set example image to embed
 url = "http://images.cocodataset.org/val2017/000000039769.jpg"

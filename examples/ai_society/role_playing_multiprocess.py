@@ -20,8 +20,9 @@ from typing import Any, Dict
 from colorama import Fore
 
 from camel.configs import ChatGPTConfig
+from camel.models import ModelFactory
 from camel.societies import RolePlaying
-from camel.types import TaskType
+from camel.types import ModelPlatformType, ModelType, TaskType
 from camel.utils import download_tasks
 
 
@@ -38,15 +39,19 @@ def generate_data(
 
     original_task_prompt = task_prompt.replace(f"{task_idx+1}. ", "")
 
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_3_5_TURBO,
+        model_config_dict=ChatGPTConfig(temperature=1.4).__dict__,
+    )
+
     role_play_session = RolePlaying(
         assistant_role_name,
         user_role_name,
         task_prompt=original_task_prompt,
         with_task_specify=True,
         with_task_planner=False,
-        task_specify_agent_kwargs=dict(
-            model_config=ChatGPTConfig(temperature=1.4)
-        ),
+        task_specify_agent_kwargs=dict(model=model),
     )
 
     input_msg = role_play_session.init_chat()
