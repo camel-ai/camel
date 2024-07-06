@@ -124,7 +124,7 @@ pip install -e .[all] # (Optional)
 
 ### From Docker
 
-Detailed guidance can be find [here](https://github.com/camel-ai/camel/blob/master/camel/.container/README.md)
+Detailed guidance can be find [here](https://github.com/camel-ai/camel/blob/master/.container/README.md)
 
 ## Documentation
 
