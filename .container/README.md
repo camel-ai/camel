@@ -27,7 +27,7 @@ cp .env.example .env
 ## Start Container
 After configuring the API keys, simply run the following command to start 
 up the working container. This will automatically set up the environment and
-dependencies for CAMEL.
+dependencies for CAMEL. It may take some time, please be patient.
 
 ```bash
 docker compose up -d
@@ -87,5 +87,3 @@ docker compose down
 
 As mentioned in the previous section, all the local changes you made will be
 lost after deleting the container. So remember to save your progress!
-
-
