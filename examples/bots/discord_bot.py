@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, List, Optional, Union
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.retrievers import AutoRetriever
+from camel.utils import dependencies_required
 
 if TYPE_CHECKING:
     from discord import Message
@@ -37,6 +38,7 @@ class DiscordBot:
         return_detailed_info (bool): If show detailed info of the RAG response.
     """
 
+    @dependencies_required('discord')
     def __init__(
         self,
         chat_agent: ChatAgent,
@@ -61,13 +63,8 @@ class DiscordBot:
                 " here: `https://discord.com/developers/applications`."
             )
 
-        try:
-            import discord
-        except ImportError:
-            raise ImportError(
-                "Please install `discord` first. You can install it by running"
-                " `python3 -m pip install -U discord.py`."
-            )
+        import discord
+
         intents = discord.Intents.default()
         intents.message_content = True
         self.client = discord.Client(intents=intents)
@@ -186,10 +183,12 @@ if __name__ == "__main__":
     )
     # Uncommented the folowing code and offer storage information
     # for RAG functionality
+
     # auto_retriever = AutoRetriever(
-    #     url_and_api_key=("Your QDRANT URI", "Your QDRANT Token"),
+    #     vector_storage_local_path="examples/bots",
     #     storage_type=StorageType.QDRANT,
     # )
+
     bot = DiscordBot(
         agent,
         # auto_retriever=auto_retriever,

@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
+from unittest.mock import patch
 
 import pytest
 
@@ -20,6 +21,7 @@ from camel.utils import (
     dependencies_required,
     get_system_information,
     get_task_list,
+    is_docker_running,
     to_pascal,
 )
 
@@ -187,3 +189,15 @@ def test_to_pascal_with_multiple_underscores():
 
 def test_to_pascal_with_trailing_underscore():
     assert to_pascal("snake_case_") == "SnakeCase"
+
+
+@patch('camel.utils.commons.subprocess.run')
+def test_is_docker_running(mock_subprocess_run):
+    mock_subprocess_run.return_value.returncode = 0
+    assert is_docker_running()
+
+    mock_subprocess_run.return_value.returncode = 1
+    assert not is_docker_running()
+
+    mock_subprocess_run.side_effect = FileNotFoundError
+    assert not is_docker_running()

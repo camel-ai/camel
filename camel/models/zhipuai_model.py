@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
 
-from camel.configs import OPENAI_API_PARAMS
+from camel.configs import ZHIPUAI_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
@@ -47,10 +47,16 @@ class ZhipuAIModel(BaseModelBackend):
                 be fed into openai.ChatCompletion.create().
             api_key (Optional[str]): The API key for authenticating with the
                 ZhipuAI service. (default: :obj:`None`)
+            url (Optional[str]): The url to the ZhipuAI service. (default:
+                :obj:`None`)
         """
         super().__init__(model_type, model_config_dict)
         self._url = url or os.environ.get("ZHIPUAI_API_BASE_URL")
         self._api_key = api_key or os.environ.get("ZHIPUAI_API_KEY")
+        if not self._url or not self._api_key:
+            raise ValueError(
+                "ZHIPUAI_API_BASE_URL and ZHIPUAI_API_KEY should be set."
+            )
         self._client = OpenAI(
             timeout=60,
             max_retries=3,
@@ -104,13 +110,13 @@ class ZhipuAIModel(BaseModelBackend):
 
         Raises:
             ValueError: If the model configuration dictionary contains any
-                unexpected arguments to OpenAI API.
+                unexpected arguments to ZhipuAI API.
         """
         for param in self.model_config_dict:
-            if param not in OPENAI_API_PARAMS:
+            if param not in ZHIPUAI_API_PARAMS:
                 raise ValueError(
                     f"Unexpected argument `{param}` is "
-                    "input into OpenAI model backend."
+                    "input into ZhipuAI model backend."
                 )
         pass
 

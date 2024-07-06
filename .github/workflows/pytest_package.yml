@@ -20,7 +20,7 @@ jobs:
     - name: Set up Python environment and install dependencies
       uses: ./.github/actions/camel_install
       with:
-        python-version: "3.8"
+        python-version: "3.9"
     - name: Run pytest
       env:
         OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
@@ -31,6 +31,8 @@ jobs:
         COHERE_API_KEY: "${{ secrets.COHERE_API_KEY }}"
         NVIDIA_API_BASE_URL: "${{ secrets.NVIDIA_API_BASE_URL }}"
         NVIDIA_API_KEY: "${{ secrets.NVIDIA_API_KEY }}"
+        ZHIPUAI_API_BASE_URL: "${{ secrets.ZHIPUAI_API_BASE_URL }}"
+        ZHIPUAI_API_KEY: "${{ secrets.ZHIPUAI_API_KEY }}"
       run: poetry run pytest --fast-test-mode test/
 
   pytest_package_llm_test:
@@ -40,7 +42,7 @@ jobs:
     - name: Set up Python environment and install dependencies
       uses: ./.github/actions/camel_install
       with:
-        python-version: "3.8"
+        python-version: "3.9"
     - name: Run pytest
       env:
         OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
@@ -51,6 +53,8 @@ jobs:
         COHERE_API_KEY: "${{ secrets.COHERE_API_KEY }}"
         NVIDIA_API_BASE_URL: "${{ secrets.NVIDIA_API_BASE_URL }}"
         NVIDIA_API_KEY: "${{ secrets.NVIDIA_API_KEY }}"
+        ZHIPUAI_API_BASE_URL: "${{ secrets.ZHIPUAI_API_BASE_URL }}"
+        ZHIPUAI_API_KEY: "${{ secrets.ZHIPUAI_API_KEY }}"
       run: poetry run pytest --llm-test-only test/
 
   pytest_package_very_slow_test:
@@ -60,7 +64,7 @@ jobs:
     - name: Set up Python environment and install dependencies
       uses: ./.github/actions/camel_install
       with:
-        python-version: "3.8"
+        python-version: "3.9"
     - name: Run pytest
       env:
         OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
@@ -71,4 +75,6 @@ jobs:
         COHERE_API_KEY: "${{ secrets.COHERE_API_KEY }}"
         NVIDIA_API_BASE_URL: "${{ secrets.NVIDIA_API_BASE_URL }}"
         NVIDIA_API_KEY: "${{ secrets.NVIDIA_API_KEY }}"
+        ZHIPUAI_API_BASE_URL: "${{ secrets.ZHIPUAI_API_BASE_URL }}"
+        ZHIPUAI_API_KEY: "${{ secrets.ZHIPUAI_API_KEY }}"
       run: poetry run pytest --very-slow-test-only test/

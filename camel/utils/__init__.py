@@ -23,6 +23,7 @@ from .commons import (
     get_prompt_template_key_words,
     get_system_information,
     get_task_list,
+    is_docker_running,
     print_text_animated,
     text_extract_from_web,
     to_pascal,
@@ -58,4 +59,5 @@ __all__ = [
     'create_chunks',
     'dependencies_required',
     'api_keys_required',
+    'is_docker_running',
 ]

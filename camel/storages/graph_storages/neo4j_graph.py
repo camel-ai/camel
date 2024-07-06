@@ -16,6 +16,7 @@ from hashlib import md5
 from typing import Any, Dict, List, Optional
 
 from camel.storages.graph_storages import BaseGraphStorage, GraphElement
+from camel.utils import dependencies_required
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +82,7 @@ class Neo4jGraph(BaseGraphStorage):
             than `LIST_LIMIT` elements from results. Defaults to `False`.
     """
 
+    @dependencies_required('neo4j')
     def __init__(
         self,
         url: str,
@@ -91,13 +93,7 @@ class Neo4jGraph(BaseGraphStorage):
         truncate: bool = False,
     ) -> None:
         r"""Create a new Neo4j graph instance."""
-        try:
-            import neo4j
-        except ImportError:
-            raise ValueError(
-                "Could not import neo4j python package. "
-                "Please install it with `pip install neo4j`."
-            )
+        import neo4j
 
         self.driver = neo4j.GraphDatabase.driver(
             url, auth=(username, password)
