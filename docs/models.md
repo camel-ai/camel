@@ -21,7 +21,25 @@ The following table lists currently supported models by CAMEL.
 
 | Model Platform | Model Name | Maximum Token | Vision Modality |
 | ----- | ----- | ----- | ----- |
-| ---- | ---- | ---- | ---- |
+| OpenAI-released model | GPT_3_5_TURBO | 16385 | N |
+|OpenAI-released model| GPT_4 | 8192 | N |
+| OpenAI-released model | GPT_4_32K | 32768 | N |
+| OpenAI-released model | GPT_4_TURBO | 128000 | Y |
+| OpenAI-released model | GPT_4O | 128000 | Y |
+| Open-source model | LLAMA_2 | 4096 | N |
+| Open-source model | VICUNA | 2048 | N |
+| Open-source model | VICUNA_16K | 16384 | N |
+| Anthropic-released model | CLAUDE_2_1 | 200000 | N |
+| Anthropic-released model | CLAUDE_2_0 | 100000 | N |
+| Anthropic-released model | CLAUDE_INSTANT_1_2 | 100000 | N |
+| Anthropic-released model | CLAUDE_3_OPUS | 200000 | N |
+| Anthropic-released model | CLAUDE_3_SONNET | 200000 | N |
+| Anthropic-released model | CLAUDE_3_HAIKU | 200000 | N |
+| Zhipu | ----- | ----- | N |
+| HuggingFace | ----- | ----- | N |
+| Ollama | ----- | ----- | N |
+| LiteLLM | 100+ Opensource Models | ----- | N |
+| Azure | ----- | ----- | N |
 
 
 ### Model calling template
