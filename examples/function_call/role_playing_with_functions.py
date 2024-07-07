@@ -25,12 +25,17 @@ from camel.functions import (
     TWITTER_FUNCS,
     WEATHER_FUNCS,
 )
+from camel.models import ModelFactory
 from camel.societies import RolePlaying
-from camel.types import ModelType
+from camel.types import ModelPlatformType, ModelType
 from camel.utils import print_text_animated
 
 
-def main(model_type=ModelType.GPT_3_5_TURBO, chat_turn_limit=10) -> None:
+def main(
+    model_platform=ModelPlatformType.OPENAI,
+    model_type=ModelType.GPT_3_5_TURBO,
+    chat_turn_limit=10,
+) -> None:
     task_prompt = (
         "Assume now is 2024 in the Gregorian calendar, "
         "estimate the current age of University of Oxford "
@@ -57,13 +62,19 @@ def main(model_type=ModelType.GPT_3_5_TURBO, chat_turn_limit=10) -> None:
         assistant_role_name="Searcher",
         user_role_name="Professor",
         assistant_agent_kwargs=dict(
-            model_type=model_type,
-            model_config=assistant_model_config,
+            model=ModelFactory.create(
+                model_platform=model_platform,
+                model_type=model_type,
+                model_config_dict=assistant_model_config.__dict__,
+            ),
             tools=function_list,
         ),
         user_agent_kwargs=dict(
-            model_type=model_type,
-            model_config=user_model_config,
+            model=ModelFactory.create(
+                model_platform=model_platform,
+                model_type=model_type,
+                model_config_dict=user_model_config.__dict__,
+            ),
         ),
         task_prompt=task_prompt,
         with_task_specify=False,

@@ -23,7 +23,7 @@ from camel.types import ChatCompletion, ModelType
 from camel.utils import (
     AnthropicTokenCounter,
     BaseTokenCounter,
-    model_api_key_required,
+    api_keys_required,
 )
 
 
@@ -35,6 +35,7 @@ class AnthropicModel(BaseModelBackend):
         model_type: ModelType,
         model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
+        url: Optional[str] = None,
     ) -> None:
         r"""Constructor for Anthropic backend.
 
@@ -45,10 +46,13 @@ class AnthropicModel(BaseModelBackend):
                 be fed into Anthropic.messages.create().
             api_key (Optional[str]): The API key for authenticating with the
                 Anthropic service. (default: :obj:`None`)
+            url (Optional[str]): The url to the Anthropic service. (default:
+                :obj:`None`)
         """
-        super().__init__(model_type, model_config_dict)
+        super().__init__(model_type, model_config_dict, api_key, url)
         self._api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
-        self.client = Anthropic(api_key=self._api_key)
+        self._url = url or os.environ.get("ANTHROPIC_API_BASE_URL")
+        self.client = Anthropic(api_key=self._api_key, base_url=self._url)
         self._token_counter: Optional[BaseTokenCounter] = None
 
     def _convert_response_from_anthropic_to_openai(self, response):
@@ -94,7 +98,7 @@ class AnthropicModel(BaseModelBackend):
         """
         return self.client.count_tokens(prompt)
 
-    @model_api_key_required
+    @api_keys_required("ANTHROPIC_API_KEY")
     def run(
         self,
         messages: List[OpenAIMessage],

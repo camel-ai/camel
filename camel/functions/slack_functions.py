@@ -19,18 +19,19 @@ import logging
 import os
 from typing import TYPE_CHECKING, List, Optional
 
+from camel.utils import dependencies_required
+
 if TYPE_CHECKING:
     from ssl import SSLContext
 
     from slack_sdk import WebClient
-
-from slack_sdk.errors import SlackApiError
 
 from camel.functions import OpenAIFunction
 
 logger = logging.getLogger(__name__)
 
 
+@dependencies_required('slack_sdk')
 def _login_slack(
     slack_token: Optional[str] = None,
     ssl: Optional[SSLContext] = None,
@@ -52,13 +53,8 @@ def _login_slack(
         KeyError: If SLACK_BOT_TOKEN or SLACK_USER_TOKEN environment variables
             are not set.
     """
-    try:
-        from slack_sdk import WebClient
-    except ImportError as e:
-        raise ImportError(
-            "Cannot import slack_sdk. Please install the package with \
-            `pip install slack_sdk`."
-        ) from e
+    from slack_sdk import WebClient
+
     if not slack_token:
         slack_token = os.environ.get("SLACK_BOT_TOKEN") or os.environ.get(
             "SLACK_USER_TOKEN"
@@ -89,6 +85,8 @@ def create_slack_channel(name: str, is_private: Optional[bool] = True) -> str:
         SlackApiError: If there is an error during get slack channel
             information.
     """
+    from slack_sdk.errors import SlackApiError
+
     try:
         slack_client = _login_slack()
         response = slack_client.conversations_create(
@@ -115,6 +113,8 @@ def join_slack_channel(channel_id: str) -> str:
         SlackApiError: If there is an error during get slack channel
             information.
     """
+    from slack_sdk.errors import SlackApiError
+
     try:
         slack_client = _login_slack()
         response = slack_client.conversations_join(channel=channel_id)
@@ -137,6 +137,8 @@ def leave_slack_channel(channel_id: str) -> str:
         SlackApiError: If there is an error during get slack channel
             information.
     """
+    from slack_sdk.errors import SlackApiError
+
     try:
         slack_client = _login_slack()
         response = slack_client.conversations_leave(channel=channel_id)
@@ -155,6 +157,8 @@ def get_slack_channel_information() -> str:
         SlackApiError: If there is an error during get slack channel
             information.
     """
+    from slack_sdk.errors import SlackApiError
+
     try:
         slack_client = _login_slack()
         response = slack_client.conversations_list()
@@ -189,6 +193,8 @@ def get_slack_channel_message(channel_id: str) -> str:
     Raises:
         SlackApiError: If there is an error during get slack channel message.
     """
+    from slack_sdk.errors import SlackApiError
+
     try:
         slack_client = _login_slack()
         result = slack_client.conversations_history(channel=channel_id)
@@ -222,6 +228,8 @@ def send_slack_message(
     Raises:
         SlackApiError: If an error occurs while sending the message.
     """
+    from slack_sdk.errors import SlackApiError
+
     try:
         slack_client = _login_slack()
         if user:
@@ -254,6 +262,8 @@ def delete_slack_message(
     Raises:
         SlackApiError: If an error occurs while sending the message.
     """
+    from slack_sdk.errors import SlackApiError
+
     try:
         slack_client = _login_slack()
         response = slack_client.chat_delete(channel=channel_id, ts=time_stamp)

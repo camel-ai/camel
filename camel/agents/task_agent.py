@@ -14,10 +14,10 @@
 from typing import Any, Dict, List, Optional, Union
 
 from camel.agents.chat_agent import ChatAgent
-from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
+from camel.models import BaseModelBackend
 from camel.prompts import PromptTemplateGenerator, TextPrompt
-from camel.types import ModelType, RoleType, TaskType
+from camel.types import RoleType, TaskType
 from camel.utils import get_task_list
 
 
@@ -30,27 +30,25 @@ class TaskSpecifyAgent(ChatAgent):
         task_specify_prompt (TextPrompt): The prompt for specifying the task.
 
     Args:
-        model_type (ModelType, optional): The type of model to use for the
-            agent. (default: :obj:`ModelType.GPT_3_5_TURBO`)
+        model (BaseModelBackend, optional): The model backend to use for
+            generating responses. (default: :obj:`OpenAIModel` with
+            `GPT_3_5_TURBO`)
         task_type (TaskType, optional): The type of task for which to generate
             a prompt. (default: :obj:`TaskType.AI_SOCIETY`)
-        model_config (Any, optional): The configuration for the model.
-            (default: :obj:`None`)
         task_specify_prompt (Union[str, TextPrompt], optional): The prompt for
             specifying the task. (default: :obj:`None`)
         word_limit (int, optional): The word limit for the task prompt.
             (default: :obj:`50`)
         output_language (str, optional): The language to be output by the
-        agent. (default: :obj:`None`)
+            agent. (default: :obj:`None`)
     """
 
     DEFAULT_WORD_LIMIT = 50
 
     def __init__(
         self,
-        model_type: Optional[ModelType] = None,
+        model: Optional[BaseModelBackend] = None,
         task_type: TaskType = TaskType.AI_SOCIETY,
-        model_config: Optional[Any] = None,
         task_specify_prompt: Optional[Union[str, TextPrompt]] = None,
         word_limit: int = DEFAULT_WORD_LIMIT,
         output_language: Optional[str] = None,
@@ -67,8 +65,6 @@ class TaskSpecifyAgent(ChatAgent):
         else:
             self.task_specify_prompt = TextPrompt(task_specify_prompt)
 
-        model_config = model_config or ChatGPTConfig(temperature=1.0)
-
         system_message = BaseMessage(
             role_name="Task Specifier",
             role_type=RoleType.ASSISTANT,
@@ -78,8 +74,7 @@ class TaskSpecifyAgent(ChatAgent):
 
         super().__init__(
             system_message,
-            model_type=model_type,
-            model_config=model_config,
+            model=model,
             output_language=output_language,
         )
 
@@ -105,7 +100,6 @@ class TaskSpecifyAgent(ChatAgent):
 
         if meta_dict is not None:
             task_specify_prompt = task_specify_prompt.format(**meta_dict)
-
         task_msg = BaseMessage.make_user_message(
             role_name="Task Specifier", content=task_specify_prompt
         )
@@ -130,18 +124,16 @@ class TaskPlannerAgent(ChatAgent):
             the task into subtasks.
 
     Args:
-        model_type (ModelType, optional): The type of model to use for the
-            agent. (default: :obj:`ModelType.GPT_3_5_TURBO`)
-        model_config (Any, optional): The configuration for the model.
-            (default: :obj:`None`)
+        model (BaseModelBackend, optional): The model backend to use for
+            generating responses. (default: :obj:`OpenAIModel` with
+            `GPT_3_5_TURBO`)
         output_language (str, optional): The language to be output by the
-        agent. (default: :obj:`None`)
+            agent. (default: :obj:`None`)
     """
 
     def __init__(
         self,
-        model_type: Optional[ModelType] = None,
-        model_config: Optional[Any] = None,
+        model: Optional[BaseModelBackend] = None,
         output_language: Optional[str] = None,
     ) -> None:
         self.task_planner_prompt = TextPrompt(
@@ -156,8 +148,7 @@ class TaskPlannerAgent(ChatAgent):
 
         super().__init__(
             system_message,
-            model_type,
-            model_config,
+            model=model,
             output_language=output_language,
         )
 
@@ -208,10 +199,9 @@ class TaskCreationAgent(ChatAgent):
         role_name (str): The role name of the Agent to create the task.
         objective (Union[str, TextPrompt]): The objective of the Agent to
             perform the task.
-        model_type (ModelType, optional): The type of model to use for the
-            agent. (default: :obj:`ModelType.GPT_3_5_TURBO`)
-        model_config (Any, optional): The configuration for the model.
-            (default: :obj:`None`)
+        model (BaseModelBackend, optional): The LLM backend to use for
+            generating responses. (default: :obj:`OpenAIModel` with
+            `GPT_3_5_TURBO`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
         message_window_size (int, optional): The maximum number of previous
@@ -225,8 +215,7 @@ class TaskCreationAgent(ChatAgent):
         self,
         role_name: str,
         objective: Union[str, TextPrompt],
-        model_type: Optional[ModelType] = None,
-        model_config: Optional[Any] = None,
+        model: Optional[BaseModelBackend] = None,
         output_language: Optional[str] = None,
         message_window_size: Optional[int] = None,
         max_task_num: Optional[int] = 3,
@@ -266,8 +255,7 @@ Be concrete.
 
         super().__init__(
             system_message,
-            model_type,
-            model_config,
+            model=model,
             output_language=output_language,
             message_window_size=message_window_size,
         )
@@ -282,6 +270,7 @@ Be concrete.
         Args:
             task_list (List[str]): The completed or in-progress
                 tasks which should not overlap with new created tasks.
+
         Returns:
             List[str]: The new task list generated by the Agent.
         """
@@ -321,10 +310,9 @@ class TaskPrioritizationAgent(ChatAgent):
     Args:
         objective (Union[str, TextPrompt]): The objective of the Agent to
             perform the task.
-        model_type (ModelType, optional): The type of model to use for the
-            agent. (default: :obj:`ModelType.GPT_3_5_TURBO`)
-        model_config (Any, optional): The configuration for the model.
-            (default: :obj:`None`)
+        model (BaseModelBackend, optional): The LLM backend to use for
+            generating responses. (default: :obj:`OpenAIModel` with
+            `GPT_3_5_TURBO`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
         message_window_size (int, optional): The maximum number of previous
@@ -335,8 +323,7 @@ class TaskPrioritizationAgent(ChatAgent):
     def __init__(
         self,
         objective: Union[str, TextPrompt],
-        model_type: Optional[ModelType] = None,
-        model_config: Optional[Any] = None,
+        model: Optional[BaseModelBackend] = None,
         output_language: Optional[str] = None,
         message_window_size: Optional[int] = None,
     ) -> None:
@@ -372,8 +359,7 @@ with any other output."""
 
         super().__init__(
             system_message,
-            model_type,
-            model_config,
+            model=model,
             output_language=output_language,
             message_window_size=message_window_size,
         )
@@ -386,6 +372,7 @@ with any other output."""
 
         Args:
             task_list (List[str]): The unprioritized tasks of agent.
+
         Returns:
             List[str]: The new prioritized task list generated by the Agent.
         """

@@ -11,19 +11,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, Optional, Union
+from typing import Optional, Union
 
-from unstructured.documents.elements import Element
+try:
+    from unstructured.documents.elements import Element
+except ImportError:
+    Element = None
 
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
+from camel.models import BaseModelBackend
 from camel.prompts import TextPrompt
 from camel.storages.graph_storages.graph_element import (
     GraphElement,
     Node,
     Relationship,
 )
-from camel.types import ModelType, RoleType
+from camel.types import RoleType
 
 text_prompt = """
 You are tasked with extracting nodes and relationships from given content and 
@@ -105,16 +109,14 @@ class KnowledgeGraphAgent(ChatAgent):
 
     def __init__(
         self,
-        model_type: ModelType = ModelType.GPT_3_5_TURBO,
-        model_config: Optional[Any] = None,
+        model: Optional[BaseModelBackend] = None,
     ) -> None:
         r"""Initialize the `KnowledgeGraphAgent`.
 
         Args:
-            model_type (ModelType, optional): The type of model to use for the
-                agent. Defaults to `ModelType.GPT_3_5_TURBO`.
-            model_config (Any, optional): The configuration for the model.
-                Defaults to `None`.
+        model (BaseModelBackend, optional): The model backend to use for
+            generating responses. (default: :obj:`OpenAIModel` with
+            `GPT_3_5_TURBO`)
         """
         system_message = BaseMessage(
             role_name="Graphify",
@@ -126,7 +128,7 @@ class KnowledgeGraphAgent(ChatAgent):
             "illuminate the hidden connections within the chaos of "
             "information.",
         )
-        super().__init__(system_message, model_type, model_config)
+        super().__init__(system_message, model=model)
 
     def run(
         self,

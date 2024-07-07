@@ -16,6 +16,9 @@ from .base import CodePrompt, TextPrompt, TextPromptDict
 from .code import CodePromptTemplateDict
 from .descripte_video_prompt import DescriptionVideoPromptTemplateDict
 from .evaluation import EvaluationPromptTemplateDict
+from .generate_text_embedding_data import (
+    GenerateTextEmbeddingDataPromptTemplateDict,
+)
 from .misalignment import MisalignmentPromptTemplateDict
 from .object_recognition import ObjectRecognitionPromptTemplateDict
 from .prompt_templates import PromptTemplateGenerator
@@ -37,6 +40,7 @@ __all__ = [
     'TaskPromptTemplateDict',
     'PromptTemplateGenerator',
     'SolutionExtractionPromptTemplateDict',
+    'GenerateTextEmbeddingDataPromptTemplateDict',
     'ObjectRecognitionPromptTemplateDict',
     'DescriptionVideoPromptTemplateDict',
 ]

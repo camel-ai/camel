@@ -61,7 +61,7 @@ conda create --name camel python=3.10
 conda activate camel
 
 # Clone github repo
-git clone -b v0.1.5.1 https://github.com/camel-ai/camel.git
+git clone -b v0.1.5.5 https://github.com/camel-ai/camel.git
 
 # Change directory into project directory
 cd camel
@@ -112,47 +112,66 @@ These commands on Windows will set the environment variable for the duration of 
 
 
 ### [Option 2] Using Local Models
-The high-level idea is to deploy a server with the local model in the backend and use it as a local drop-in replacement for the API. We here use [FastChat](https://github.com/lm-sys/FastChat/blob/main/docs/openai_api.md) as an example.
+In the current landscape, for those seeking highly stable content generation, OpenAI's GPT-3.5 turbo,  GPT-4o are often recommended. However, the field is rich with many other outstanding open-source models that also yield commendable results. CAMEL can support developers to delve into integrating these open-source large language models (LLMs) to achieve project outputs based on unique input ideas.
 
-0. Install the FastChat package with the following command, or see [here](https://github.com/lm-sys/FastChat/tree/main#install) for other options.
-    ```bash
-    pip3 install "fschat[model_worker,webui]"
-    ```
+#### Example: Using Ollama to set Llama 3 locally
 
-1. Starting the FastChat server in the backend.
-    ```python
-    # Launch the fastchat controller
-    python -m fastchat.serve.controller
+- Download [Ollama](https://ollama.com/download).
+- After setting up Ollama, pull the Llama3 model by typing the following command into the terminal:
+```bash
+ollama pull llama3
+```
+- Create a ModelFile similar the one below in your project directory.
+```bash
+FROM llama3
 
-    # Launch the model worker
-    python -m fastchat.serve.model_worker \
-        --model-path meta-llama/Llama-2-7b-chat-hf  # a local folder or HuggingFace repo Name
+# Set parameters
+PARAMETER temperature 0.8
+PARAMETER stop Result
 
-    # Launch the API server
-    python -m fastchat.serve.openai_api_server \
-        --host localhost \
-        --port 8000
-    ```
+# Sets a custom system message to specify the behavior of the chat assistant
 
+# Leaving it blank for now.
 
-2. Initialize the agent.
-    ```python
-    # Import the necessary classes
-    from camel.configs import ChatGPTConfig, OpenSourceConfig
-    from camel.types import ModelType
+SYSTEM """ """
+```
+- Create a script to get the base model (llama3) and create a custom model using the ModelFile above. Save this as a .sh file:
+```bash
+#!/bin/zsh
 
-    # Set the arguments
-    agent_kwargs = dict(
-        model_type=ModelType.LLAMA_2,                    # Specify the model type
+# variables
+model_name="llama3"
+custom_model_name="camel-llama3"
 
-        model_config=OpenSourceConfig(
-            model_path='meta-llama/Llama-2-7b-chat-hf',  # a local folder or HuggingFace repo Name
-            server_url='http://localhost:8000/v1',       # The url with the set port number
-        ),
+#get the base model
+ollama pull $model_name
 
-        token_limit=2046,                                # [Optional] Choose the ideal limit
-    )
+#create the model file
+ollama create $custom_model_name -f ./Llama3ModelFile
+```
+- Navigate to the directory where the script and ModelFile are located and run the script. Enjoy your Llama3 model, enhanced by CAMEL's excellent agents.
+```python
+from camel.agents import ChatAgent
+from camel.messages import BaseMessage
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType
 
-    # Now your agent is ready to play
-    agent = ChatAgent(sys_msg, **agent_kwargs)
-    ```
+ollama_model = ModelFactory.create(
+    model_platform=ModelPlatformType.OLLAMA,
+    model_type="llama3",
+    url="http://localhost:11434/v1",
+    model_config_dict={"temperature": 0.4},
+)
+
+assistant_sys_msg = BaseMessage.make_assistant_message(
+    role_name="Assistant",
+    content="You are a helpful assistant.",
+)
+agent = ChatAgent(assistant_sys_msg, model=ollama_model, token_limit=4096)
+
+user_msg = BaseMessage.make_user_message(
+    role_name="User", content="Say hi to CAMEL"
+)
+assistant_response = agent.step(user_msg)
+print(assistant_response.msg.content)
+```
