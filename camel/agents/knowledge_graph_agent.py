@@ -210,10 +210,10 @@ class KnowledgeGraphAgent(ChatAgent):
         import re
 
         # Regular expressions to extract nodes and relationships
-        node_pattern = r"Node\(id='(.*?)', type='(.*?)\)"
+        node_pattern = r"Node\(id='(.*?)', type='(.*?)'\)"
         rel_pattern = (
             r"Relationship\(subj=Node\(id='(.*?)', type='(.*?)'\), "
-            r"obj=Node\(id='(.*?)', type='(.*?)'\), type='(.*?)\)"
+            r"obj=Node\(id='(.*?)', type='(.*?)'\), type='(.*?)'\)"
         )
 
         nodes = {}
@@ -222,7 +222,7 @@ class KnowledgeGraphAgent(ChatAgent):
         # Extract nodes
         for match in re.finditer(node_pattern, input_string):
             id, type = match.groups()
-            properties = {"source":"agent_created"}
+            properties = {'source': 'agent_created'}
             if id not in nodes:
                 node = Node(id, type, properties)
                 if self._validate_node(node):
@@ -230,10 +230,8 @@ class KnowledgeGraphAgent(ChatAgent):
 
         # Extract relationships
         for match in re.finditer(rel_pattern, input_string):
-            subj_id, subj_type, obj_id, obj_type, rel_type = (
-                match.groups()
-            )
-            properties = {"source":"agent_created"}
+            subj_id, subj_type, obj_id, obj_type, rel_type = match.groups()
+            properties = {'source': 'agent_created'}
             if subj_id in nodes and obj_id in nodes:
                 subj = nodes[subj_id]
                 obj = nodes[obj_id]
