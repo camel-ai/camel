@@ -32,6 +32,7 @@ from .constants import Constants
 from .token_counting import (
     AnthropicTokenCounter,
     BaseTokenCounter,
+    GeminiTokenCounter,
     LiteLLMTokenCounter,
     OpenAITokenCounter,
     OpenSourceTokenCounter,
@@ -60,4 +61,5 @@ __all__ = [
     'dependencies_required',
     'api_keys_required',
     'is_docker_running',
+    'GeminiTokenCounter',
 ]
