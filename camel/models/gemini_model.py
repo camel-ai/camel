@@ -177,7 +177,7 @@ class GeminiModel(BaseModelBackend):
             id=f"chatcmpl-{uuid.uuid4().hex!s}",
             object="chat.completion",
             created=int(time.time()),
-            model="gemini",
+            model=self.model_type.value,
             choices=[],
         )
         for i, candidate in enumerate(response.candidates):
