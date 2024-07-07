@@ -43,6 +43,7 @@ pillow ="^10.2.0"
 
 # model-platforms
 litellm = { version = "^1.38.1", optional = true }
+google-generativeai = { version = "^0.6.0", optional = true }
 
 # huggingface-agent
 transformers = { version = "^4", optional = true }
@@ -104,6 +105,7 @@ test = ["pytest", "mock", "pytest-asyncio"]
 
 model-platforms = [
     "litellm",
+    "google-generativeai",
 ]
 
 huggingface-agent = [
@@ -210,6 +212,7 @@ all = [
     "litellm",
     # kv-storages
     "redis",
+    "google-generativeai",
 ]
 
 [tool.poetry.group.dev]
@@ -335,5 +338,7 @@ module = [
     "pyTelegramBotAPI",
     "discord.py",
     "docker.*",
+    "google.*",
+    "google-generativeai",
 ]
 ignore_missing_imports = true
