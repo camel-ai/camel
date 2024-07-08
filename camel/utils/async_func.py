@@ -14,7 +14,7 @@
 import asyncio
 from copy import deepcopy
 
-from camel.functions.openai_function import OpenAIFunction
+from camel.toolkits import OpenAIFunction
 
 
 def sync_funcs_to_async(funcs: list[OpenAIFunction]) -> list[OpenAIFunction]:

@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING, List, Optional, Union
 from camel.configs.base_config import BaseConfig
 
 if TYPE_CHECKING:
-    from camel.functions import OpenAIFunction
+    from camel.toolkits import OpenAIFunction
 
 
 @dataclass(frozen=True)

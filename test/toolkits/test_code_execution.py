@@ -12,13 +12,19 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
+import pytest
+
 from camel.toolkits.code_execution import CodeExecutionToolkit
 
 
-def test_execute_code():
-    toolkit = CodeExecutionToolkit()
+@pytest.fixture
+def code_execution_toolkit():
+    return CodeExecutionToolkit()
+
+
+def test_execute_code(code_execution_toolkit):
     code = "x = 'a'\ny = 'b'\nx + y"
-    result = toolkit.execute_code(code)
+    result = code_execution_toolkit.execute_code(code)
 
     # ruff: noqa: E501
     expected_result = f"Executed the code below:\n```py\n{code}\n```\n> Executed Results:\nab"
