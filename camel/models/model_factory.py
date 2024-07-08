@@ -15,6 +15,7 @@ from typing import Any, Dict, Optional, Union
 
 from camel.models.anthropic_model import AnthropicModel
 from camel.models.base_model import BaseModelBackend
+from camel.models.gemini_model import GeminiModel
 from camel.models.groq_model import GroqModel
 from camel.models.litellm_model import LiteLLMModel
 from camel.models.ollama_model import OllamaModel
@@ -60,7 +61,6 @@ class ModelFactory:
             BaseModelBackend: The initialized backend.
         """
         model_class: Any
-
         if isinstance(model_type, ModelType):
             if model_platform.is_open_source and model_type.is_open_source:
                 model_class = OpenSourceModel
@@ -73,6 +73,8 @@ class ModelFactory:
                 model_class = GroqModel
             elif model_platform.is_zhipuai and model_type.is_zhipuai:
                 model_class = ZhipuAIModel
+            elif model_platform.is_gemini and model_type.is_gemini:
+                model_class = GeminiModel
             elif model_type == ModelType.STUB:
                 model_class = StubModel
             else:
@@ -83,6 +85,7 @@ class ModelFactory:
         elif isinstance(model_type, str):
             if model_platform.is_ollama:
                 model_class = OllamaModel
+                return model_class(model_type, model_config_dict, url)
             elif model_platform.is_litellm:
                 model_class = LiteLLMModel
             else:
@@ -92,5 +95,4 @@ class ModelFactory:
                 )
         else:
             raise ValueError(f"Invalid model type `{model_type}` provided.")
-
         return model_class(model_type, model_config_dict, api_key, url)

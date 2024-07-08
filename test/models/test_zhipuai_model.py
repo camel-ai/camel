@@ -15,7 +15,7 @@ import re
 
 import pytest
 
-from camel.configs import ChatGPTConfig, OpenSourceConfig
+from camel.configs import OpenSourceConfig, ZhipuAIConfig
 from camel.models import ZhipuAIModel
 from camel.types import ModelType
 from camel.utils import OpenAITokenCounter
@@ -31,7 +31,7 @@ from camel.utils import OpenAITokenCounter
     ],
 )
 def test_zhipuai_model(model_type):
-    model_config_dict = ChatGPTConfig().__dict__
+    model_config_dict = ZhipuAIConfig().__dict__
     model = ZhipuAIModel(model_type, model_config_dict)
     assert model.model_type == model_type
     assert model.model_config_dict == model_config_dict
@@ -54,7 +54,7 @@ def test_zhipuai_model_unexpected_argument():
         match=re.escape(
             (
                 "Unexpected argument `model_path` is "
-                "input into OpenAI model backend."
+                "input into ZhipuAI model backend."
             )
         ),
     ):

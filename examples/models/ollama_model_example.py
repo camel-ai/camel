@@ -29,44 +29,22 @@ assistant_sys_msg = BaseMessage.make_assistant_message(
     content="You are a helpful assistant.",
 )
 agent = ChatAgent(assistant_sys_msg, model=ollama_model, token_limit=4096)
-agent.reset()
 
 user_msg = BaseMessage.make_user_message(
-    role_name="User", content="say hi to me"
+    role_name="User",
+    content="""Say hi to CAMEL AI, one open-source community 
+    dedicated to the study of autonomous and communicative agents.""",
 )
 assistant_response = agent.step(user_msg)
 print(assistant_response.msg.content)
 
-""" Content in Llama3ModelFile:
-===============================================================================
-FROM llama3
-
-# Set parameters
-
-PARAMETER temperature 0.8
-PARAMETER stop Result
-
-# Sets a custom system message to specify the behavior of the chat assistant
-
-# Leaving it blank for now.
-
-SYSTEM """ """
-===============================================================================
 """
-
-
-""" Content in .sh file:
 ===============================================================================
-#!/bin/zsh
-
-# variables
-model_name="llama3"
-custom_model_name="camel-llama3"
-
-#get the base model
-ollama pull $model_name
-
-#create the model file
-ollama create $custom_model_name -f ./Llama3ModelFile
+Hi there! *waves* Hi to the amazing team at CAMEL AI - Autonomous and 
+Communicative Agents Laboratory! It's great to connect with you all. I'm 
+excited to learn more about your work in developing autonomous and 
+communicative agents, exploring the intersection of artificial intelligence, 
+robotics, and human-computer interaction. Keep pushing the boundaries of 
+what's possible!
 ===============================================================================
 """

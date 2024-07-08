@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import os
 from typing import Any, Dict, List, Optional
 
 from groq import Groq
@@ -29,7 +28,7 @@ from camel.types import (
 from camel.utils import (
     BaseTokenCounter,
     GroqLlama3TokenCounter,
-    model_api_key_required,
+    api_keys_required,
 )
 
 
@@ -41,6 +40,7 @@ class GroqModel(BaseModelBackend):
         model_type: ModelType,
         model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
+        url: Optional[str] = None,
     ) -> None:
         r"""Constructor for Groq backend.
 
@@ -50,11 +50,13 @@ class GroqModel(BaseModelBackend):
                 be fed into groq.ChatCompletion.create().
             api_key (Optional[str]): The API key for authenticating with the
                 Anthropic service. (default: :obj:`None`).
+            url (Optional[str]): The url to the Anthropic service. (default:
+                :obj:`None`)
         """
-        super().__init__(model_type, model_config_dict)
-        url = os.environ.get('GROQ_API_BASE_URL', None)
-        api_key = os.environ.get('GROQ_API_KEY')
-        self._client = Groq(api_key=api_key, base_url=url)
+        super().__init__(model_type, model_config_dict, api_key)
+        self.url = url or None
+        self.api_key = api_key or None
+        self._client = Groq(api_key=self.api_key, base_url=self.url)
         self._token_counter: Optional[BaseTokenCounter] = None
 
     def _convert_response_from_anthropic_to_openai(self, response):
@@ -99,7 +101,7 @@ class GroqModel(BaseModelBackend):
             self._token_counter = GroqLlama3TokenCounter(self.model_type)
         return self._token_counter
 
-    @model_api_key_required
+    @api_keys_required("GROQ_API_KEY")
     def run(
         self,
         messages: List[OpenAIMessage],

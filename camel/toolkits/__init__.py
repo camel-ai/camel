@@ -13,9 +13,11 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from .base import BaseToolkit
+from .code_execution import CodeExecutionToolkit
 from .github_toolkit import GithubToolkit
 
 __all__ = [
     'BaseToolkit',
     'GithubToolkit',
+    'CodeExecutionToolkit',
 ]

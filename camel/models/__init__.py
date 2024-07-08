@@ -13,6 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .anthropic_model import AnthropicModel
 from .base_model import BaseModelBackend
+from .gemini_model import GeminiModel
 from .groq_model import GroqModel
 from .litellm_model import LiteLLMModel
 from .model_factory import ModelFactory
@@ -37,4 +38,5 @@ __all__ = [
     'OpenAIAudioModels',
     'NemotronModel',
     'OllamaModel',
+    'GeminiModel',
 ]
