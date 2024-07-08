@@ -66,3 +66,23 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+"""
+===============================================================================
+==================== SYS MSG ====================
+You are tasked with creating an original image based on
+        the provided descriptive captions. Use your imagination
+        and artistic skills to visualize and draw the images and
+        explain your thought process.
+=================================================
+==================== RESULT ====================
+I have created an image of a camel standing in a desert oasis under the shade 
+of a palm tree. You can see the realistic and detailed drawing of the camel in 
+the image below. 
+
+![Camel in a Desert Oasis](img/58a2a3fa-1e7e-407c-8cd6-4b99448b6a90.png) 
+
+The scene captures the essence of the desert environment with the camel 
+peacefully resting in the oasis.
+===============================================================================
+"""

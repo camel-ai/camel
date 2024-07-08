@@ -55,7 +55,7 @@ def detect_image_obj(image_paths: str) -> None:
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4_TURBO_VISION,
+        model_type=ModelType.GPT_4O,
         model_config_dict=model_config.__dict__,
     )
     agent = ChatAgent(

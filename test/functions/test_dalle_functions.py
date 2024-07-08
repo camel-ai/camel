@@ -90,4 +90,4 @@ def test_image_to_base64_with_invalid_input():
     result = image_to_base64(invalid_input)
 
     # Assert that the function correctly returns None for invalid inputs
-    assert result is None
+    assert result == ""

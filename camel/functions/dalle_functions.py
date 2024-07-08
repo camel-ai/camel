@@ -23,55 +23,61 @@ from PIL import Image
 from camel.functions import OpenAIFunction
 
 
-def base64_to_image(base64_string) -> Image.Image:
-    r"""
-    Converts a base64 encoded string into a PIL Image object.
+def base64_to_image(base64_string: str) -> Optional[Image.Image]:
+    r"""Converts a base64 encoded string into a PIL Image object.
 
-    Parameters:
-    base64_string (str): The base64 encoded string of the image.
-
-    Returns:
-    Image or None: Returns the PIL Image object
-        if the conversion is successful, otherwise returns None.
-    """
-    # Decode the base64 string to get the image data
-    image_data = base64.b64decode(base64_string)
-    # Create a memory buffer for the image data
-    image_buffer = BytesIO(image_data)
-    # Open the image using the PIL library
-    image = Image.open(image_buffer)
-    return image
-
-
-def image_path_to_base64(image_path) -> str:
-    r"""
-    Converts the file path of an image to a Base64 encoded string.
-
-    Parameters:
-    image_path (str): The path to the image file.
+    Args:
+        base64_string (str): The base64 encoded string of the image.
 
     Returns:
-    str: A Base64 encoded string representing the content of the image file.
+        Optional[Image.Image]: The PIL Image object or None if conversion
+            fails.
     """
-    with open(image_path, "rb") as image_file:
-        return base64.b64encode(image_file.read()).decode('utf-8')
+    try:
+        # Decode the base64 string to get the image data
+        image_data = base64.b64decode(base64_string)
+        # Create a memory buffer for the image data
+        image_buffer = BytesIO(image_data)
+        # Open the image using the PIL library
+        image = Image.open(image_buffer)
+        return image
+    except Exception as e:
+        print(f"An error occurred while converting base64 to image: {e}")
+        return None
 
 
-def image_to_base64(image) -> Optional[str]:
-    r"""
-    Converts an image into a base64-encoded string.
+def image_path_to_base64(image_path: str) -> str:
+    r"""Converts the file path of an image to a Base64 encoded string.
+
+    Args:
+        image_path (str): The path to the image file.
+
+    Returns:
+        str: A Base64 encoded string representing the content of the image
+            file.
+    """
+    try:
+        with open(image_path, "rb") as image_file:
+            return base64.b64encode(image_file.read()).decode('utf-8')
+    except Exception as e:
+        print(f"An error occurred while converting image path to base64: {e}")
+        return ""
+
+
+def image_to_base64(image: Image.Image) -> str:
+    r"""Converts an image into a base64-encoded string.
 
     This function takes an image object as input, encodes the image into a
-        PNG format base64 string, and returns it.
+    PNG format base64 string, and returns it.
     If the encoding process encounters an error, it prints the error
-        message and returns None.
+    message and returns None.
 
-    Parameters:
-    image: The image object to be encoded, supports any image format
-        that can be saved in PNG format.
+    Args:
+        image: The image object to be encoded, supports any image format that
+            can be saved in PNG format.
 
     Returns:
-    A base64-encoded string of the image, or None if an error occurs.
+        str: A base64-encoded string of the image.
     """
     try:
         with BytesIO() as buffered_image:
@@ -82,21 +88,19 @@ def image_to_base64(image) -> Optional[str]:
             return base64_str
     except Exception as e:
         print(f"An error occurred: {e}")
-        return None
+        return ""
 
 
-def get_dalle_img(
-    prompt: str,
-    image_path: str,
-) -> str:
+def get_dalle_img(prompt: str, image_dir: str = "img") -> str:
     r"""Generate an image using OpenAI's DALL-E model.
 
     Args:
         prompt (str): The text prompt based on which the image is generated.
-        image_path (str): The path to save the generated image.
+        image_dir (str): The directory to save the generated image. Defaults
+            to 'img'.
 
     Returns:
-        str: The image data as a base64 string.
+        str: The path to the saved image.
     """
 
     dalle_client = OpenAI()
@@ -105,17 +109,20 @@ def get_dalle_img(
         prompt=prompt,
         size="1024x1792",
         quality="standard",
-        n=1,  # Note: now dall-e-3 only supports n=1
+        n=1,  # NOTE: now dall-e-3 only supports n=1
         response_format="b64_json",
     )
     image_b64 = response.data[0].b64_json
-    image = base64_to_image(image_b64)
+    image = base64_to_image(image_b64)  # type: ignore[arg-type]
 
-    os.makedirs("img", exist_ok=True)
-    image_path = f"img/{uuid.uuid4()!s}.png"
+    if image is None:
+        raise ValueError("Failed to convert base64 string to image.")
+
+    os.makedirs(image_dir, exist_ok=True)
+    image_path = os.path.join(image_dir, f"{uuid.uuid4()}.png")
     image.save(image_path)
 
-    return f"{image_path}"
+    return image_path
 
 
 DALLE_FUNCS: List[OpenAIFunction] = [
