@@ -35,50 +35,9 @@ F = TypeVar('F', bound=Callable[..., Any])
 logger = get_logger(__name__)
 
 
-def model_api_key_required(func: F) -> F:
-    r"""Decorator that checks if the API key is available either as an
-    environment variable or passed directly for a model.
-
-    Args:
-        func (callable): The function to be wrapped.
-
-    Returns:
-        callable: The decorated function.
-
-    Raises:
-        ValueError: If the API key is not found, either as an environment
-            variable or directly passed.
-
-    Note:
-        Supported model type: `OpenAI` and `Anthropic`.
-    """
-
-    @wraps(func)
-    def wrapper(self, *args, **kwargs):
-        if self.model_type.is_openai:
-            if not self._api_key and 'OPENAI_API_KEY' not in os.environ:
-                raise ValueError('OpenAI API key not found.')
-            return func(self, *args, **kwargs)
-        elif self.model_type.is_zhipuai:
-            if 'ZHIPUAI_API_KEY' not in os.environ:
-                raise ValueError('ZhiPuAI API key not found.')
-            return func(self, *args, **kwargs)
-        elif self.model_type.is_anthropic:
-            if not self._api_key and 'ANTHROPIC_API_KEY' not in os.environ:
-                raise ValueError('Anthropic API key not found.')
-            return func(self, *args, **kwargs)
-        elif self.model_type.is_nvidia:
-            if not self._api_key and 'NVIDIA_API_KEY' not in os.environ:
-                raise ValueError('NVIDIA API key not found.')
-            return func(self, *args, **kwargs)
-        else:
-            raise ValueError('Unsupported model type.')
-
-    return cast(F, wrapper)
-
-
 def print_text_animated(
-    text, delay: float = 0.02, end: str = "", log_level: int = logging.INFO):
+    text, delay: float = 0.02, end: str = "", log_level: int = logging.INFO
+):
     r"""Prints the given text with an animated effect.
 
     Args:
