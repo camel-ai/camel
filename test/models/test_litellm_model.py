@@ -15,7 +15,7 @@ import re
 
 import pytest
 
-from camel.configs import ChatGPTConfig, OpenSourceConfig
+from camel.configs import LiteLLMConfig, OpenSourceConfig
 from camel.models import LiteLLMModel
 from camel.types import ModelType
 from camel.utils import LiteLLMTokenCounter
@@ -33,7 +33,7 @@ from camel.utils import LiteLLMTokenCounter
     ],
 )
 def test_litellm_model(model_type):
-    model_config_dict = ChatGPTConfig().__dict__
+    model_config_dict = LiteLLMConfig().__dict__
     model = LiteLLMModel(model_type, model_config_dict)
     assert model.model_type == model_type
     assert model.model_config_dict == model_config_dict

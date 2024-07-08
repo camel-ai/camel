@@ -59,14 +59,19 @@ def write_weekly_pr_summary(repo_name, model=None):
         of an open source project {repo_name} on the project's blog.
         """,
     )
-    assistant_model_config = ChatGPTConfig(
-        tools=[OpenAIFunction(toolkit.retrieve_pull_requests)],
-        temperature=0.0,
+    assistant_model_config_dict = ChatGPTConfig(
+        tools=[OpenAIFunction(toolkit.retrieve_pull_requests)], temperature=0.0
+    ).__dict__
+
+    assistant_model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_4O,
+        model_config_dict=assistant_model_config_dict,
     )
+
     agent = ChatAgent(
         assistant_sys_msg,
-        model_type=model,
-        model_config=assistant_model_config,
+        model=assistant_model,
         tools=[OpenAIFunction(toolkit.retrieve_pull_requests)],
     )
     agent.reset()
@@ -108,15 +113,17 @@ def solve_issue(
         content="""You are an experienced software engineer who 
         specializes on data structures and algorithms tasks.""",
     )
-    assistant_model_config = ChatGPTConfig(
+    assistant_model_config_dict = ChatGPTConfig(
         tools=toolkit.get_tools(),
         temperature=0.0,
-    )
+    ).__dict__
+
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OpenAI,
         model_type=ModelType.GPT_3_5_TURBO,
-        model_config=assistant_model_config,
+        model_config_dict=assistant_model_config_dict,
     )
+
     agent = ChatAgent(
         assistant_sys_msg,
         model=model,

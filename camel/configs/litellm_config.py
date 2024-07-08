@@ -13,10 +13,13 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
-from typing import List, Optional, Union
+from dataclasses import asdict, dataclass
+from typing import TYPE_CHECKING, List, Optional, Union
 
 from camel.configs.base_config import BaseConfig
+
+if TYPE_CHECKING:
+    from camel.toolkits import OpenAIFunction
 
 
 @dataclass(frozen=True)
@@ -25,9 +28,6 @@ class LiteLLMConfig(BaseConfig):
     LiteLLM API.
 
     Args:
-        model (str): The name of the language model to use for text completion.
-        messages (List): A list of message objects representing the
-            conversation context. (default: [])
         timeout (Optional[Union[float, str]], optional): Request timeout.
             (default: None)
         temperature (Optional[float], optional): Temperature parameter for
@@ -65,12 +65,7 @@ class LiteLLMConfig(BaseConfig):
         deployment_id (Optional[str], optional): Deployment ID. (default: None)
         extra_headers (Optional[dict], optional): Additional headers for the
             request. (default: None)
-        base_url (Optional[str], optional): Base URL for the API. (default:
-            None)
         api_version (Optional[str], optional): API version. (default: None)
-        api_key (Optional[str], optional): API key. (default: None)
-        model_list (Optional[list], optional): List of API base, version,
-            keys. (default: None)
         mock_response (Optional[str], optional): Mock completion response for
             testing or debugging. (default: None)
         custom_llm_provider (Optional[str], optional): Non-OpenAI LLM
@@ -79,8 +74,6 @@ class LiteLLMConfig(BaseConfig):
             (default: None)
     """
 
-    model: str = "gpt-3.5-turbo"
-    messages: List = field(default_factory=list)
     timeout: Optional[Union[float, str]] = None
     temperature: Optional[float] = None
     top_p: Optional[float] = None
@@ -91,20 +84,17 @@ class LiteLLMConfig(BaseConfig):
     max_tokens: Optional[int] = None
     presence_penalty: Optional[float] = None
     frequency_penalty: Optional[float] = None
-    logit_bias: Optional[dict] = field(default_factory=dict)
+    logit_bias: Optional[dict] = None
     user: Optional[str] = None
     response_format: Optional[dict] = None
     seed: Optional[int] = None
-    tools: Optional[List] = field(default_factory=list)
+    tools: Optional[list[OpenAIFunction]] = None
     tool_choice: Optional[Union[str, dict]] = None
     logprobs: Optional[bool] = None
     top_logprobs: Optional[int] = None
     deployment_id: Optional[str] = None
-    extra_headers: Optional[dict] = field(default_factory=dict)
-    base_url: Optional[str] = None
+    extra_headers: Optional[dict] = None
     api_version: Optional[str] = None
-    api_key: Optional[str] = None
-    model_list: Optional[list] = field(default_factory=list)
     mock_response: Optional[str] = None
     custom_llm_provider: Optional[str] = None
     max_retries: Optional[int] = None

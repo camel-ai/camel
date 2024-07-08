@@ -29,6 +29,7 @@ from .weather_toolkit import WEATHER_FUNCS, WeatherToolkit
 from .slack_toolkit import SLACK_FUNCS, SlackToolkit
 
 from .base import BaseToolkit
+from .code_execution import CodeExecutionToolkit
 from .github_toolkit import GithubToolkit
 
 __all__ = [
@@ -54,4 +55,5 @@ __all__ = [
     'WeatherToolkit',
     'RetrievalToolkit',
     'OpenAPIToolkit',
+    'CodeExecutionToolkit',
 ]
