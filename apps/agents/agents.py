@@ -98,7 +98,7 @@ def parse_arguments():
     )
     args, unknown = parser.parse_known_args()
     if len(unknown) > 0:
-        logger.warning("Unknown args: ", unknown)
+        logger.warning("Unknown args: %s", unknown)
     return args
 
 
