@@ -14,24 +14,30 @@
 import os
 from unittest.mock import MagicMock, patch
 
+import pytest
 import requests
 import wikipedia
 
 from camel.toolkits import SearchToolkit
 
 
-def test_search_wiki_normal():
+@pytest.fixture
+def search_toolkit():
+    return SearchToolkit()
+
+
+def test_search_wiki_normal(search_toolkit):
     expected_output = (
         "Erygia sigillata is a species of moth in the family Erebidae found "
         "in Himachal Pradesh, Northern India. The moth was officially "
         "recognized and classified in 1892."
     )
 
-    assert SearchToolkit().search_wiki("Erygia sigillata") == expected_output
+    assert search_toolkit.search_wiki("Erygia sigillata") == expected_output
 
 
-def test_search_wiki_not_found():
-    search_output = SearchToolkit().search_wiki(
+def test_search_wiki_not_found(search_toolkit):
+    search_output = search_toolkit.search_wiki(
         "South Africa Women Football Team"
     )
     assert search_output.startswith(
@@ -41,11 +47,11 @@ def test_search_wiki_not_found():
     )
 
 
-def test_search_wiki_with_ambiguity():
+def test_search_wiki_with_ambiguity(search_toolkit):
     expected_output = wikipedia.summary(
         "Google", sentences=5, auto_suggest=False
     )
-    assert SearchToolkit().search_wiki("Google LLC") == expected_output
+    assert search_toolkit.search_wiki("Google LLC") == expected_output
 
 
 def test_google_api():
@@ -75,17 +81,17 @@ def test_duckduckgo_api():
     assert result.status_code == 200
 
 
-def test_web_search():
+def test_web_search(search_toolkit):
     query = "What big things are happening in 2023?"
-    answer = SearchToolkit().search_google(query)
+    answer = search_toolkit.search_google(query)
     assert answer is not None
-    answer = SearchToolkit().search_duckduckgo(query)
+    answer = search_toolkit.search_duckduckgo(query)
     assert answer is not None
 
 
 @patch('wolframalpha.Client')
 @patch('os.environ.get')
-def test_query_wolfram_alpha(mock_get, mock_client):
+def test_query_wolfram_alpha(mock_get, mock_client, search_toolkit):
     mock_get.return_value = 'FAKE_APP_ID'
 
     # Create mock subpods objects
@@ -122,7 +128,7 @@ def test_query_wolfram_alpha(mock_get, mock_client):
     mock_instance.query.return_value = mock_res
     mock_client.return_value = mock_instance
 
-    result = SearchToolkit().query_wolfram_alpha(
+    result = search_toolkit.query_wolfram_alpha(
         "calculate limit of sinx^2/x", True
     )
     expected_output = (

@@ -25,147 +25,6 @@ from camel.toolkits.base import BaseToolkit
 TWEET_TEXT_LIMIT = 280
 
 
-def get_twitter_api_key() -> Tuple[str, str]:
-    r"""Retrieve the Twitter API key and secret from environment variables.
-
-    Returns:
-        Tuple[str, str]: A tuple containing the Twitter API key and secret.
-
-    Raises:
-        ValueError: If the API key or secret is not found in the environment
-            variables.
-    """
-    # Get `TWITTER_CONSUMER_KEY` and `TWITTER_CONSUMER_SECRET` here:
-    # https://developer.twitter.com/en/portal/products/free
-    TWITTER_CONSUMER_KEY = os.environ.get("TWITTER_CONSUMER_KEY")
-    TWITTER_CONSUMER_SECRET = os.environ.get("TWITTER_CONSUMER_SECRET")
-
-    if not TWITTER_CONSUMER_KEY or not TWITTER_CONSUMER_SECRET:
-        missing_keys = ", ".join(
-            [
-                "TWITTER_CONSUMER_KEY" if not TWITTER_CONSUMER_KEY else "",
-                "TWITTER_CONSUMER_SECRET"
-                if not TWITTER_CONSUMER_SECRET
-                else "",
-            ]
-        ).strip(", ")
-        raise ValueError(
-            f"{missing_keys} not found in environment variables. Get them "
-            "here: `https://developer.twitter.com/en/portal/products/free`."
-        )
-    return TWITTER_CONSUMER_KEY, TWITTER_CONSUMER_SECRET
-
-
-def get_oauth_session() -> requests.Session:
-    r'''Initiates an OAuth1Session with Twitter's API and returns it.
-
-    The function first fetches a request token, then prompts the user to
-    authorize the application. After the user has authorized the application
-    and provided a verifier (PIN), the function fetches an access token.
-    Finally, a new OAuth1Session is created with the access token and returned.
-
-    Raises:
-        RuntimeError: If an error occurs while fetching the OAuth access token
-            or the OAuth request token.
-
-    Returns:
-        requests_oauthlib.OAuth1Session: An OAuth1Session object authenticated
-            with the user's access token.
-
-    Reference:
-        https://github.com/twitterdev/Twitter-API-v2-sample-code/blob/main/
-        Manage-Tweets/create_tweet.py
-        https://github.com/twitterdev/Twitter-API-v2-sample-code/blob/main/
-        User-Lookup/get_users_me_user_context.py
-    '''
-    try:
-        from requests_oauthlib import OAuth1Session
-    except ImportError:
-        raise ImportError(
-            "Please install `requests_oauthlib` first. You can "
-            "install it by running `pip install "
-            "requests_oauthlib`."
-        )
-
-    consumer_key, consumer_secret = get_twitter_api_key()
-
-    # Get request token
-    request_token_url = (
-        "https://api.twitter.com/oauth/request_token"
-        "?oauth_callback=oob&x_auth_access_type=write"
-    )
-    oauth = OAuth1Session(consumer_key, client_secret=consumer_secret)
-
-    try:
-        fetch_response = oauth.fetch_request_token(request_token_url)
-    except Exception as e:
-        raise RuntimeError(
-            f"Error occurred while fetching the OAuth access token: {e}"
-        )
-
-    resource_owner_key = fetch_response.get("oauth_token")
-    resource_owner_secret = fetch_response.get("oauth_token_secret")
-
-    # Get authorization
-    base_authorization_url = "https://api.twitter.com/oauth/authorize"
-    authorization_url = oauth.authorization_url(base_authorization_url)
-    print("Please go here and authorize: %s" % authorization_url)
-    verifier = input("Paste the PIN here: ")
-
-    # Get the access token
-    access_token_url = "https://api.twitter.com/oauth/access_token"
-    oauth = OAuth1Session(
-        consumer_key,
-        client_secret=consumer_secret,
-        resource_owner_key=resource_owner_key,
-        resource_owner_secret=resource_owner_secret,
-        verifier=verifier,
-    )
-
-    try:
-        oauth_tokens = oauth.fetch_access_token(access_token_url)
-    except Exception as e:
-        raise RuntimeError(
-            f"Error occurred while fetching the OAuth request token: {e}"
-        )
-
-    # Create a new OAuth1Session with the access token
-    oauth = OAuth1Session(
-        consumer_key,
-        client_secret=consumer_secret,
-        resource_owner_key=oauth_tokens["oauth_token"],
-        resource_owner_secret=oauth_tokens["oauth_token_secret"],
-    )
-    return oauth
-
-
-def handle_http_error(response: requests.Response) -> str:
-    r"""Handles the HTTP response by checking the status code and returning an
-    appropriate message if there is an error.
-
-    Args:
-        response (requests.Response): The HTTP response to handle.
-
-    Returns:
-        str: A string describing the error, if any. If there is no error, the
-            function returns an "Unexpected Exception" message.
-
-    Reference:
-        https://github.com/tweepy/tweepy/blob/master/tweepy/client.py#L64
-    """
-    if response.status_code in responses:
-        # For 5xx server errors, return "Twitter Server Error"
-        if 500 <= response.status_code < 600:
-            return "Twitter Server Error"
-        else:
-            error_message = responses[response.status_code] + " Error"
-            return error_message
-    elif not 200 <= response.status_code < 300:
-        return "HTTP Exception"
-    else:
-        return "Unexpected Exception"
-
-
 class TwitterToolkit(BaseToolkit):
     r"""A class representing a toolkit for Twitter operations.
 
@@ -257,7 +116,7 @@ class TwitterToolkit(BaseToolkit):
         if confirm.lower() != "yes":
             return "Execution cancelled by the user."
 
-        oauth = get_oauth_session()
+        oauth = self._get_oauth_session()
         json_data = {}
 
         if poll_options is not None and poll_duration_minutes is not None:
@@ -278,7 +137,7 @@ class TwitterToolkit(BaseToolkit):
         )
 
         if response.status_code != HTTPStatus.CREATED:
-            error_type = handle_http_error(response)
+            error_type = self._handle_http_error(response)
             # use string concatenation to satisfy flake8
             return (
                 "Request returned a(n) "
@@ -303,7 +162,7 @@ class TwitterToolkit(BaseToolkit):
 
         return response_str
 
-    def delete_tweet(sefl, tweet_id: str) -> str:
+    def delete_tweet(self, tweet_id: str) -> str:
         r"""Deletes a tweet with the specified ID for an authorized user.
 
         This function sends a DELETE request to the Twitter API to delete
@@ -337,7 +196,7 @@ class TwitterToolkit(BaseToolkit):
         if confirm.lower() != "yes":
             return "Execution cancelled by the user."
 
-        oauth = get_oauth_session()
+        oauth = self._get_oauth_session()
 
         # Making the request
         response = oauth.delete(
@@ -345,7 +204,7 @@ class TwitterToolkit(BaseToolkit):
         )
 
         if response.status_code != HTTPStatus.OK:
-            error_type = handle_http_error(response)
+            error_type = self._handle_http_error(response)
             # use string concatenation to satisfy flake8
             return (
                 "Request returned a(n) "
@@ -388,7 +247,7 @@ class TwitterToolkit(BaseToolkit):
             https://developer.twitter.com/en/docs/twitter-api/users/lookup/
             api-reference/get-users-me
         """
-        oauth = get_oauth_session()
+        oauth = self._get_oauth_session()
 
         tweet_fields = ["created_at", "text"]
         user_fields = [
@@ -417,7 +276,7 @@ class TwitterToolkit(BaseToolkit):
         )
 
         if response.status_code != HTTPStatus.OK:
-            error_type = handle_http_error(response)
+            error_type = self._handle_http_error(response)
             error_message = "Request returned a(n) {}: {} {}".format(
                 error_type, response.status_code, response.text
             )
@@ -519,6 +378,145 @@ class TwitterToolkit(BaseToolkit):
             OpenAIFunction(self.delete_tweet),
             OpenAIFunction(self.get_my_user_profile),
         ]
+
+    def _get_twitter_api_key(self) -> Tuple[str, str]:
+        r"""Retrieve the Twitter API key and secret from environment variables.
+
+        Returns:
+            Tuple[str, str]: A tuple containing the Twitter API key and secret.
+
+        Raises:
+            ValueError: If the API key or secret is not found in the
+                environment variables.
+        """
+        # Get `TWITTER_CONSUMER_KEY` and `TWITTER_CONSUMER_SECRET` here:
+        # https://developer.twitter.com/en/portal/products/free
+        TWITTER_CONSUMER_KEY = os.environ.get("TWITTER_CONSUMER_KEY")
+        TWITTER_CONSUMER_SECRET = os.environ.get("TWITTER_CONSUMER_SECRET")
+
+        if not TWITTER_CONSUMER_KEY or not TWITTER_CONSUMER_SECRET:
+            missing_keys = ", ".join(
+                [
+                    "TWITTER_CONSUMER_KEY" if not TWITTER_CONSUMER_KEY else "",
+                    "TWITTER_CONSUMER_SECRET"
+                    if not TWITTER_CONSUMER_SECRET
+                    else "",
+                ]
+            ).strip(", ")
+            raise ValueError(
+                f"{missing_keys} not found in environment variables. Get them "
+                "here: `https://developer.twitter.com/en/portal/products/free`."
+            )
+        return TWITTER_CONSUMER_KEY, TWITTER_CONSUMER_SECRET
+
+    def _get_oauth_session(self) -> requests.Session:
+        r'''Initiates an OAuth1Session with Twitter's API and returns it.
+
+        The function first fetches a request token, then prompts the user to
+        authorize the application. After the user has authorized the
+        application and provided a verifier (PIN), the function fetches an
+        access token. Finally, a new OAuth1Session is created with the access
+        token and returned.
+
+        Raises:
+            RuntimeError: If an error occurs while fetching the OAuth access
+                token or the OAuth request token.
+
+        Returns:
+            requests_oauthlib.OAuth1Session: An OAuth1Session object
+                authenticated with the user's access token.
+
+        Reference:
+            https://github.com/twitterdev/Twitter-API-v2-sample-code/blob/main/
+            Manage-Tweets/create_tweet.py
+            https://github.com/twitterdev/Twitter-API-v2-sample-code/blob/main/
+            User-Lookup/get_users_me_user_context.py
+        '''
+        try:
+            from requests_oauthlib import OAuth1Session
+        except ImportError:
+            raise ImportError(
+                "Please install `requests_oauthlib` first. You can "
+                "install it by running `pip install "
+                "requests_oauthlib`."
+            )
+
+        consumer_key, consumer_secret = self._get_twitter_api_key()
+
+        # Get request token
+        request_token_url = (
+            "https://api.twitter.com/oauth/request_token"
+            "?oauth_callback=oob&x_auth_access_type=write"
+        )
+        oauth = OAuth1Session(consumer_key, client_secret=consumer_secret)
+
+        try:
+            fetch_response = oauth.fetch_request_token(request_token_url)
+        except Exception as e:
+            raise RuntimeError(
+                f"Error occurred while fetching the OAuth access token: {e}"
+            )
+
+        resource_owner_key = fetch_response.get("oauth_token")
+        resource_owner_secret = fetch_response.get("oauth_token_secret")
+
+        # Get authorization
+        base_authorization_url = "https://api.twitter.com/oauth/authorize"
+        authorization_url = oauth.authorization_url(base_authorization_url)
+        print("Please go here and authorize: %s" % authorization_url)
+        verifier = input("Paste the PIN here: ")
+
+        # Get the access token
+        access_token_url = "https://api.twitter.com/oauth/access_token"
+        oauth = OAuth1Session(
+            consumer_key,
+            client_secret=consumer_secret,
+            resource_owner_key=resource_owner_key,
+            resource_owner_secret=resource_owner_secret,
+            verifier=verifier,
+        )
+
+        try:
+            oauth_tokens = oauth.fetch_access_token(access_token_url)
+        except Exception as e:
+            raise RuntimeError(
+                f"Error occurred while fetching the OAuth request token: {e}"
+            )
+
+        # Create a new OAuth1Session with the access token
+        oauth = OAuth1Session(
+            consumer_key,
+            client_secret=consumer_secret,
+            resource_owner_key=oauth_tokens["oauth_token"],
+            resource_owner_secret=oauth_tokens["oauth_token_secret"],
+        )
+        return oauth
+
+    def _handle_http_error(self, response: requests.Response) -> str:
+        r"""Handles the HTTP response by checking the status code and
+        returning an appropriate message if there is an error.
+
+        Args:
+            response (requests.Response): The HTTP response to handle.
+
+        Returns:
+            str: A string describing the error, if any. If there is no error,
+                the function returns an "Unexpected Exception" message.
+
+        Reference:
+            https://github.com/tweepy/tweepy/blob/master/tweepy/client.py#L64
+        """
+        if response.status_code in responses:
+            # For 5xx server errors, return "Twitter Server Error"
+            if 500 <= response.status_code < 600:
+                return "Twitter Server Error"
+            else:
+                error_message = responses[response.status_code] + " Error"
+                return error_message
+        elif not 200 <= response.status_code < 300:
+            return "HTTP Exception"
+        else:
+            return "Unexpected Exception"
 
 
 TWITTER_FUNCS: List[OpenAIFunction] = TwitterToolkit().get_tools()
