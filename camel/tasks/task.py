@@ -166,6 +166,9 @@ class TaskManager:
         self.tasks: List[Task] = [task]
         self.task_map: Dict[str, Task] = {task.id: task}
 
+    def gen_task_id(self) -> str:
+        return f"{len(self.tasks)}"
+
     def exist(self, task_id: str) -> bool:
         return task_id in self.task_map
 
@@ -221,12 +224,12 @@ class TaskManager:
             return
         if type == "parallel":
             for other in others:
-                other.parent = root
+                root.add_subtask(other)
         else:
-            pre = others[0]
-            for next in others[1:]:
-                next.parent = pre
-                pre = next
+            parent = root
+            for child in others:
+                parent.add_subtask(child)
+                parent = child
 
     def add_tasks(self, tasks: Union[Task, List[Task]]) -> None:
         r"""
