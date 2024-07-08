@@ -44,6 +44,7 @@ class Task(BaseModel):
         content: string content for task.
         id: A unique id.
         state: The state which should be OPEN, RUNNING, DONE or DELETED.
+        type: task type
         parent: The parent task, None for root task.
         subtasks: The childrent sub-tasks for the task.
         result: The answer for the task.
@@ -58,6 +59,10 @@ class Task(BaseModel):
 
     state: TaskSate = TaskSate.OPEN
     """The task state.
+    """
+
+    type: Optional[str] = None
+    """The type of a task.
     """
 
     parent: Optional["Task"] = None
