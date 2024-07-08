@@ -11,35 +11,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+
 from colorama import Fore
 
-from camel.configs import ChatGPTConfig
+from camel.configs import GeminiConfig
 from camel.models import ModelFactory
 from camel.societies import RolePlaying
 from camel.types import ModelPlatformType, ModelType
 from camel.utils import print_text_animated
 
 
-def main() -> None:
-    task_prompt = "Write a research proposal for large-scale language models"
-    model = ModelFactory.create(
-        model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_3_5_TURBO,
-        model_config_dict=ChatGPTConfig(temperature=0.8, n=3).__dict__,
-    )
-    assistant_agent_kwargs = dict(model=model)
-    user_agent_kwargs = dict(model=model)
-    critic_kwargs = dict(verbose=True)
+def main(model_type=None) -> None:
+    task_prompt = "Develop a trading bot for the stock market"
+
+    agent_kwargs = {
+        role: ModelFactory.create(
+            model_platform=ModelPlatformType.GEMINI,
+            model_type=model_type,
+            model_config_dict=GeminiConfig().__dict__,
+        )
+        for role in ["assistant", "user", "task-specify"]
+    }
+
     role_play_session = RolePlaying(
-        "PhD Student",
-        "Postdoc",
-        critic_role_name="Professor",
+        assistant_role_name="Python Programmer",
+        assistant_agent_kwargs={'model': agent_kwargs["assistant"]},
+        user_role_name="Stock Trader",
+        user_agent_kwargs={'model': agent_kwargs["assistant"]},
         task_prompt=task_prompt,
         with_task_specify=True,
-        with_critic_in_the_loop=True,
-        assistant_agent_kwargs=assistant_agent_kwargs,
-        user_agent_kwargs=user_agent_kwargs,
-        critic_kwargs=critic_kwargs,
+        task_specify_agent_kwargs={'model': agent_kwargs["task-specify"]},
     )
 
     print(
@@ -48,10 +49,6 @@ def main() -> None:
     )
     print(
         Fore.BLUE + f"AI User sys message:\n{role_play_session.user_sys_msg}\n"
-    )
-    print(
-        Fore.MAGENTA
-        + f"Critic sys message:\n{role_play_session.critic_sys_msg}\n"
     )
 
     print(Fore.YELLOW + f"Original task prompt:\n{task_prompt}\n")
@@ -91,7 +88,8 @@ def main() -> None:
             Fore.BLUE + f"AI User:\n\n{user_response.msg.content}\n"
         )
         print_text_animated(
-            Fore.GREEN + f"AI Assistant:\n\n{assistant_response.msg.content}\n"
+            Fore.GREEN + "AI Assistant:\n\n"
+            f"{assistant_response.msg.content}\n"
         )
 
         if "CAMEL_TASK_DONE" in user_response.msg.content:
@@ -101,4 +99,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    main(model_type=ModelType.GEMINI_1_5_FLASH)

@@ -15,36 +15,33 @@ import re
 
 import pytest
 
-from camel.configs import LiteLLMConfig, OpenSourceConfig
-from camel.models import LiteLLMModel
+from camel.configs import GeminiConfig, OpenSourceConfig
+from camel.models import GeminiModel
 from camel.types import ModelType
-from camel.utils import LiteLLMTokenCounter
+from camel.utils import GeminiTokenCounter
 
 
 @pytest.mark.model_backend
 @pytest.mark.parametrize(
     "model_type",
     [
-        ModelType.GPT_3_5_TURBO,
-        ModelType.GPT_4,
-        ModelType.GPT_4_32K,
-        ModelType.GPT_4_TURBO,
-        ModelType.GPT_4O,
+        ModelType.GEMINI_1_5_FLASH,
+        ModelType.GEMINI_1_5_PRO,
     ],
 )
-def test_litellm_model(model_type):
-    model_config_dict = LiteLLMConfig().__dict__
-    model = LiteLLMModel(model_type, model_config_dict)
+def test_gemini_model(model_type):
+    model_config_dict = GeminiConfig().__dict__
+    model = GeminiModel(model_type, model_config_dict)
     assert model.model_type == model_type
     assert model.model_config_dict == model_config_dict
-    assert isinstance(model.token_counter, LiteLLMTokenCounter)
+    assert isinstance(model.token_counter, GeminiTokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
 
 
 @pytest.mark.model_backend
-def test_litellm_model_unexpected_argument():
-    model_type = ModelType.GPT_4
+def test_gemini_model_unexpected_argument():
+    model_type = ModelType.GEMINI_1_5_FLASH
     model_config = OpenSourceConfig(
         model_path="vicuna-7b-v1.5",
         server_url="http://localhost:8000/v1",
@@ -56,8 +53,8 @@ def test_litellm_model_unexpected_argument():
         match=re.escape(
             (
                 "Unexpected argument `model_path` is "
-                "input into LiteLLM model backend."
+                "input into Gemini model backend."
             )
         ),
     ):
-        _ = LiteLLMModel(model_type, model_config_dict)
+        _ = GeminiModel(model_type, model_config_dict)

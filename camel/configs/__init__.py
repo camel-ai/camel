@@ -13,12 +13,18 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .anthropic_config import ANTHROPIC_API_PARAMS, AnthropicConfig
 from .base_config import BaseConfig
+from .gemini_config import (
+    Gemini_API_PARAMS,
+    GeminiConfig,
+)
 from .litellm_config import LITELLM_API_PARAMS, LiteLLMConfig
+from .ollama_config import OLLAMA_API_PARAMS, OllamaConfig
 from .openai_config import (
     OPENAI_API_PARAMS,
     ChatGPTConfig,
     OpenSourceConfig,
 )
+from .zhipuai_config import ZHIPUAI_API_PARAMS, ZhipuAIConfig
 
 __all__ = [
     'BaseConfig',
@@ -29,4 +35,10 @@ __all__ = [
     'OpenSourceConfig',
     'LiteLLMConfig',
     'LITELLM_API_PARAMS',
+    'OllamaConfig',
+    'OLLAMA_API_PARAMS',
+    'ZhipuAIConfig',
+    'ZHIPUAI_API_PARAMS',
+    'GeminiConfig',
+    'Gemini_API_PARAMS',
 ]

@@ -17,6 +17,7 @@ import os
 import platform
 import re
 import socket
+import subprocess
 import time
 import zipfile
 from functools import wraps
@@ -77,8 +78,7 @@ def model_api_key_required(func: F) -> F:
 
 
 def print_text_animated(
-    text, delay: float = 0.02, end: str = "", log_level: int = logging.INFO
-):
+    text, delay: float = 0.02, end: str = "", log_level: int = logging.INFO):
     r"""Prints the given text with an animated effect.
 
     Args:
@@ -276,7 +276,7 @@ def is_module_available(module_name: str) -> bool:
 
 def api_keys_required(*required_keys: str) -> Callable[[F], F]:
     r"""A decorator to check if the required API keys are
-    present in the environment variables.
+    presented in the environment variables or as an instance attribute.
 
     Args:
         required_keys (str): The required API keys to be checked.
@@ -287,7 +287,7 @@ def api_keys_required(*required_keys: str) -> Callable[[F], F]:
 
     Raises:
         ValueError: If any of the required API keys are missing in the
-            environment variables.
+            environment variables and the instance attribute.
 
     Example:
         ::
@@ -299,13 +299,18 @@ def api_keys_required(*required_keys: str) -> Callable[[F], F]:
 
     def decorator(func: F) -> F:
         @wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
-            missing_keys = [k for k in required_keys if k not in os.environ]
-            if missing_keys:
+        def wrapper(self, *args: Any, **kwargs: Any) -> Any:
+            missing_environment_keys = [
+                k for k in required_keys if k not in os.environ
+            ]
+            if (
+                not getattr(self, '_api_key', None)
+                and missing_environment_keys
+            ):
                 raise ValueError(
-                    f"Missing API keys: {', '.join(missing_keys)}"
+                    f"Missing API keys: {', '.join(missing_environment_keys)}"
                 )
-            return func(*args, **kwargs)
+            return func(self, *args, **kwargs)
 
         return cast(F, wrapper)
 
@@ -416,3 +421,21 @@ def create_chunks(text: str, n: int) -> List[str]:
         chunks.append(text[i:j])
         i = j
     return chunks
+
+
+def is_docker_running() -> bool:
+    r"""Check if the Docker daemon is running.
+
+    Returns:
+        bool: True if the Docker daemon is running, False otherwise.
+    """
+    try:
+        result = subprocess.run(
+            ["docker", "info"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        return result.returncode == 0
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return False

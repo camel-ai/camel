@@ -12,15 +12,15 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from camel.agents import ChatAgent
-from camel.configs import LiteLLMConfig
+from camel.configs import GeminiConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType
+from camel.types import ModelPlatformType, ModelType
 
 model = ModelFactory.create(
-    model_platform=ModelPlatformType.LITELLM,
-    model_type="gpt-4o",
-    model_config_dict=LiteLLMConfig(temperature=0.2).__dict__,
+    model_platform=ModelPlatformType.GEMINI,
+    model_type=ModelType.GEMINI_1_5_PRO,
+    model_config_dict=GeminiConfig(temperature=0.2).__dict__,
 )
 
 # Define system message
@@ -30,7 +30,7 @@ sys_msg = BaseMessage.make_assistant_message(
 )
 
 # Set agent
-camel_agent = ChatAgent(system_message=sys_msg, model=model, token_limit=500)
+camel_agent = ChatAgent(system_message=sys_msg, model=model)
 
 user_msg = BaseMessage.make_user_message(
     role_name="User",
@@ -43,8 +43,10 @@ response = camel_agent.step(user_msg)
 print(response.msgs[0].content)
 '''
 ===============================================================================
-Hello CAMEL AI! It's great to see a community dedicated to the study of 
-autonomous and communicative agents. Your work in advancing open-source AI is 
-incredibly important and inspiring. Keep up the fantastic work!
+Hi CAMEL AI! 👋
+
+It's great to see a community dedicated to the fascinating field of autonomous 
+and communicative agents. I'm excited to see what groundbreaking work you're 
+doing in this area. Keep up the great work! 🤖 
 ===============================================================================
 '''
