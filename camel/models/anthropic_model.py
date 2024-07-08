@@ -23,7 +23,7 @@ from camel.types import ChatCompletion, ModelType
 from camel.utils import (
     AnthropicTokenCounter,
     BaseTokenCounter,
-    model_api_key_required,
+    api_keys_required,
 )
 
 
@@ -98,7 +98,7 @@ class AnthropicModel(BaseModelBackend):
         """
         return self.client.count_tokens(prompt)
 
-    @model_api_key_required
+    @api_keys_required("ANTHROPIC_API_KEY")
     def run(
         self,
         messages: List[OpenAIMessage],

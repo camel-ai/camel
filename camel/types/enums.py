@@ -58,6 +58,10 @@ class ModelType(Enum):
     # Nvidia models
     NEMOTRON_4_REWARD = "nvidia/nemotron-4-340b-reward"
 
+    # Gemini models
+    GEMINI_1_5_FLASH = "gemini-1.5-flash"
+    GEMINI_1_5_PRO = "gemini-1.5-pro"
+
     @property
     def value_for_tiktoken(self) -> str:
         return (
@@ -127,6 +131,10 @@ class ModelType(Enum):
         }
 
     @property
+    def is_gemini(self) -> bool:
+        return self in {ModelType.GEMINI_1_5_FLASH, ModelType.GEMINI_1_5_PRO}
+
+    @property
     def token_limit(self) -> int:
         r"""Returns the maximum token limit for a given model.
         Returns:
@@ -142,6 +150,10 @@ class ModelType(Enum):
             return 128000
         elif self is ModelType.GPT_4O:
             return 128000
+        elif self == ModelType.GEMINI_1_5_FLASH:
+            return 1048576
+        elif self == ModelType.GEMINI_1_5_PRO:
+            return 1048576
         elif self == ModelType.GLM_4_OPEN_SOURCE:
             return 8192
         elif self == ModelType.GLM_3_TURBO:
@@ -333,6 +345,7 @@ class ModelPlatformType(Enum):
     LITELLM = "litellm"
     ZHIPU = "zhipuai"
     DEFAULT = "default"
+    GEMINI = "gemini"
 
     @property
     def is_openai(self) -> bool:
@@ -368,6 +381,11 @@ class ModelPlatformType(Enum):
     def is_open_source(self) -> bool:
         r"""Returns whether this platform is opensource."""
         return self is ModelPlatformType.OPENSOURCE
+
+    @property
+    def is_gemini(self) -> bool:
+        r"""Returns whether this platform is Gemini."""
+        return self is ModelPlatformType.GEMINI
 
 
 class AudioModelType(Enum):

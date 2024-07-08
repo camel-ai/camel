@@ -24,7 +24,6 @@ from .commons import (
     get_system_information,
     get_task_list,
     is_docker_running,
-    model_api_key_required,
     print_text_animated,
     text_extract_from_web,
     to_pascal,
@@ -33,6 +32,7 @@ from .constants import Constants
 from .token_counting import (
     AnthropicTokenCounter,
     BaseTokenCounter,
+    GeminiTokenCounter,
     LiteLLMTokenCounter,
     OpenAITokenCounter,
     OpenSourceTokenCounter,
@@ -40,7 +40,6 @@ from .token_counting import (
 )
 
 __all__ = [
-    'model_api_key_required',
     'print_text_animated',
     'get_prompt_template_key_words',
     'get_first_int',
@@ -62,4 +61,5 @@ __all__ = [
     'dependencies_required',
     'api_keys_required',
     'is_docker_running',
+    'GeminiTokenCounter',
 ]
