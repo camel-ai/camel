@@ -443,9 +443,7 @@ class GroqLlama3TokenCounter(BaseTokenCounter):
         self.client = Groq()
         # Since Groq API does not provide any token counter, we use the
         # openao source tokenizer as a placeholder.
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            "meta-llama/Meta-Llama-3-8B"
-        )
+        self.tokenizer = AutoTokenizer.from_pretrained("lmsys/vicuna-7b-v1.5")
 
     def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
         r"""Count number of tokens in the provided message list using
