@@ -14,7 +14,7 @@
 
 import re
 from enum import Enum
-from typing import Callable, Dict, List, Optional, Union
+from typing import Callable, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel
 
@@ -90,12 +90,12 @@ class Task(BaseModel):
 
     def reset(self):
         r"""Reset Task to initial state."""
-        self.state = "OPEN"
+        self.state = TaskSate.OPEN
         self.result = ""
 
-    def update_task_result(self, message: BaseMessage):
-        self.result = message.content
-        self.state = TaskSate.OPEN
+    def update_result(self, result: str):
+        self.result = result
+        self.set_state(TaskSate.DONE)
 
     def set_id(self, id: str):
         self.id = id
@@ -190,6 +190,38 @@ class TaskManager:
             visit(task)
 
         return stack
+
+    @staticmethod
+    def set_tasks_dependence(
+        root: Task,
+        others: List[Task],
+        type: Literal["serial", "parallel"] = "parallel",
+    ):
+        r"""Set relationship between root task and other tasks.
+        Two relationships are currently supported: serial and parallel.
+        `serial` :  root -> other1 -> other2
+        `parallel`: root -> other1
+                         -> other2
+        Args:
+            root (Task): A root task.
+            others (List[Task]): A list of tasks.
+
+        Returns:
+            None
+        """
+        # filter the root task in the others to void self-loop dependence.
+        others = [other for other in others if other != root]
+
+        if len(others) == 0:
+            return
+        if type == "parallel":
+            for other in others:
+                other.parent = root
+        else:
+            pre = others[0]
+            for next in others[1:]:
+                next.parent = pre
+                pre = next
 
     def add_tasks(self, tasks: Union[Task, List[Task]]) -> None:
         r"""
