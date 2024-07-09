@@ -18,6 +18,7 @@ import pytest
 from camel.messages import BaseMessage
 from camel.personas.persona import Persona
 from camel.personas.persona_group import PersonaGroup
+from camel.types import RoleType
 
 # Mock responses
 MOCK_TEXT_TO_PERSONA_RESPONSE = """
@@ -107,7 +108,9 @@ def test_text_to_persona(mock_step, persona_group):
     mock_response.terminated = False
     mock_response.msg = BaseMessage(
         role_name="Assistant",
+        role_type=RoleType.ASSISTANT,
         content=MOCK_TEXT_TO_PERSONA_RESPONSE,
+        meta_dict={},
     )
     mock_step.return_value = mock_response
 
@@ -124,7 +127,9 @@ def test_persona_to_persona(mock_step, persona_group):
     mock_response.terminated = False
     mock_response.msg = BaseMessage(
         role_name="Assistant",
+        role_type=RoleType.ASSISTANT,
         content=MOCK_PERSONA_TO_PERSONA_RESPONSE,
+        meta_dict={},
     )
     mock_step.return_value = mock_response
 
