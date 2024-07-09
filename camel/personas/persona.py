@@ -15,6 +15,9 @@
 from typing import Optional
 
 from camel.agents import ChatAgent
+from camel.messages.base import BaseMessage
+from camel.models.base_model import BaseModelBackend
+from camel.types import RoleType
 
 
 class Persona(ChatAgent):
@@ -24,16 +27,23 @@ class Persona(ChatAgent):
         index (int): The index of the persona.
         name (str): The name of the persona.
         description (str): A description of the persona.
+        model (BaseModelBackend, optional): The model to use for the persona.
     """
 
     def __init__(
         self,
         index: int,
-        name: Optional[str],
+        name: str,
         description: str,
-        **kwargs,
+        model: Optional[BaseModelBackend] = None,
     ):
-        super().__init__(**kwargs)
+        system_message = BaseMessage(
+            role_name="Persona Group Manager",
+            role_type=RoleType.ASSISTANT,
+            meta_dict=None,
+            content="You assign roles based on tasks.",
+        )
+        super().__init__(model=model, system_message=system_message)
         self.index = index
         self.name = name
         self.description = description

@@ -11,17 +11,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .persona_to_persona import persona_to_persona
-from .text_to_persona import text_to_persona
 
-# Example usage
-if __name__ == "__main__":
+from camel.personas.persona_group import PersonaGroup
+
+
+def test_persona_group():
+    persona_group = PersonaGroup()
+
+    # Use the text_to_persona method
     example_text = """Clinical Guideline: Administration of Injections in 
     Pediatric Patients Purpose: To provide standardized care for pediatric 
     patients requiring injections, ensuring safety, ..."""
 
-    inferred_persona = text_to_persona(example_text, action="read")
-    print(f"Inferred Persona:\n{inferred_persona}\n")
+    inferred_persona = persona_group.text_to_persona(
+        example_text, action="read"
+    )
+    print(
+        f"Inferred Persona:\n{inferred_persona.role_name}"
+        f"\n{inferred_persona.description}\n"
+    )
 
-    related_personas = persona_to_persona(inferred_persona)
-    print(f"Related Personas:\n{related_personas}")
+    # Use the persona_to_persona method
+    related_personas = persona_group.persona_to_persona(
+        persona=inferred_persona
+    )
+    print("Related Personas:\n")
+    for persona in related_personas:
+        print(persona.role_name)
+        print(persona.description)
+        print()
+
+
+if __name__ == "__main__":
+    test_persona_group()
