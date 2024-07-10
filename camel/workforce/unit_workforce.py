@@ -16,6 +16,7 @@ from __future__ import annotations
 from typing import Union
 
 from camel.agents.base import BaseAgent
+from camel.societies import RolePlaying
 from camel.tasks.task import Task
 from camel.utils.channel import Channel
 from camel.workforce.base import BaseWorkforce
@@ -26,14 +27,14 @@ class UnitWorkforce(BaseWorkforce):
         self,
         workforce_id: str,
         description: str,
-        agent: BaseAgent,
+        worker: Union[BaseAgent, RolePlaying],
         channel: Channel,
     ) -> None:
         super().__init__(workforce_id, description, channel)
-        self.agent = agent
+        self.worker = worker
 
     async def process_task(self, task: Task) -> Union[str, None]:
         """Processes a given task, serving as an entry point for task
         processing."""
-        task_result = self.agent.step(task)
+        task_result = self.worker.step(task)
         return task_result

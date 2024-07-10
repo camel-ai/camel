@@ -11,3 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+
+from .base import BaseWorkforce
+from .unit_workforce import UnitWorkforce
+from .workforce import Workforce
+
+__all__ = [
+    "BaseWorkforce",
+    "UnitWorkforce",
+    "Workforce",
+]

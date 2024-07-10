@@ -13,8 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import List, Union
 
-from camel.workforce.unit_workforce import UnitWorkforce
-from camel.workforce.workforce import Workforce
+from camel.workforce import UnitWorkforce, Workforce
 
 
 def get_workforces_info(

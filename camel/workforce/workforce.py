@@ -14,12 +14,12 @@
 from __future__ import annotations
 
 from typing import List, Optional, Union
+from uuid import uuid4
 
-from camel.agents import BaseAgent
 from camel.agents.manager_agent import ManagerAgent
 from camel.tasks.task import Task
 from camel.utils.channel import Channel
-from camel.workforce.base import BaseWorkforce
+from camel.workforce import BaseWorkforce, UnitWorkforce
 from camel.workforce.utils import compose, get_workforces_info
 
 
@@ -32,9 +32,8 @@ class Workforce(BaseWorkforce):
     Args:
         workforce_id (str): ID for the workforce.
         description (str): Description of the workforce.
-        workforces (List[BaseWorkforce]): List of workforces under this
-            workforce.
-        agents (List[BaseAgent]): List of agents under this workforce.
+        workforces (List[Union[UnitWorkforce, Workforce]]): List of workforces
+            under this workforce.
         manager_agent_config (dict): Configuration parameters for the
             manager agent.
         channel (Channel): Communication channel for the workforce.
@@ -44,14 +43,16 @@ class Workforce(BaseWorkforce):
         self,
         workforce_id: str,
         description: str,
-        workforces: List[BaseWorkforce],
-        agents: List[BaseAgent],
+        workforces: List[Union[UnitWorkforce, Workforce]],
         manager_agent_config: dict,
         channel: Channel,
     ) -> None:
         super().__init__(workforce_id, description, channel)
         self.workforces = workforces
-        manager_agent = ManagerAgent(manager_agent_config)
+        manager_agent = ManagerAgent()
+        self.manager = UnitWorkforce(
+            str(uuid4()), "manager", manager_agent, channel
+        )
         self.workforce_info = get_workforces_info(workforces)
 
     def assign_other_workforce(
@@ -84,7 +85,7 @@ class Workforce(BaseWorkforce):
                 processed.
         """
         chosen_workforce = await self.send_message_receive_result(
-            self.manager_workforce.id,
+            self.manager_agent.id,
             "assign_other_workforce",
             (current_task, None, self.workforce_info),
         )

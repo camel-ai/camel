@@ -47,8 +47,8 @@ class BaseWorkforce(ABC):
         message_id = await self.channel.write_to_receive_queue(
             workforce_id, func_name, params
         )
-        excu_result = await self.channel.read_from_send_queue(message_id)
-        return excu_result
+        exec_result = await self.channel.read_from_send_queue(message_id)
+        return exec_result
 
     async def listening(self):
         """Continuously listens for incoming messages and processes them
