@@ -118,7 +118,6 @@ class ZhipuAIModel(BaseModelBackend):
                     f"Unexpected argument `{param}` is "
                     "input into ZhipuAI model backend."
                 )
-        pass
 
     @property
     def stream(self) -> bool:
