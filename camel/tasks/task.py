@@ -13,7 +13,8 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 import re
-from typing import Dict, List, Literal, Optional, Union
+from enum import Enum
+from typing import Callable, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel
 
@@ -23,7 +24,16 @@ from camel.prompts import TextPrompt
 
 from .task_prompt import TASK_DECOMPOSE_PROMPT, TASK_EVOLVE_PROMPT
 
-TASK_STATES = {"OPEN", "RUNNING", "DONE", "DELETED"}
+
+class TaskSate(str, Enum):
+    OPEN = "OPEN"
+    RUNNING = "RUNNING"
+    DONE = "DONE"
+    DELETED = "DELETED"
+
+    @classmethod
+    def states(cls):
+        return [s.value for s in cls]
 
 
 class Task(BaseModel):
@@ -34,6 +44,7 @@ class Task(BaseModel):
         content: string content for task.
         id: A unique id.
         state: The state which should be OPEN, RUNNING, DONE or DELETED.
+        type: task type
         parent: The parent task, None for root task.
         subtasks: The childrent sub-tasks for the task.
         result: The answer for the task.
@@ -46,8 +57,12 @@ class Task(BaseModel):
     """An unique string identifier for the task. This should ideally be
     provided by the provider/model which created the task."""
 
-    state: Literal["OPEN", "RUNNING", "DONE", "DELETED"] = "OPEN"
+    state: TaskSate = TaskSate.OPEN
     """The task state.
+    """
+
+    type: Optional[str] = None
+    """The type of a task.
     """
 
     parent: Optional["Task"] = None
@@ -80,25 +95,23 @@ class Task(BaseModel):
 
     def reset(self):
         r"""Reset Task to initial state."""
-        self.state = "OPEN"
+        self.state = TaskSate.OPEN
         self.result = ""
 
-    def update_task_result(self, message: BaseMessage):
-        self.result = message.content
-        self.state = "DONE"
+    def update_result(self, result: str):
+        self.result = result
+        self.set_state(TaskSate.DONE)
 
     def set_id(self, id: str):
         self.id = id
 
-    def set_state(self, state: Literal["OPEN", "RUNNING", "DONE", "DELETED"]):
-        assert state in TASK_STATES, f"Invalid state `{state}`"
-
+    def set_state(self, state: TaskSate):
         self.state = state
-        if state == "DONE":
+        if state == TaskSate.DONE:
             for subtask in self.subtasks:
-                if subtask.state != "DELETED":
+                if subtask.state != TaskSate.DELETED:
                     subtask.set_state(state)
-        elif state == "RUNNING":
+        elif state == TaskSate.RUNNING:
             if self.parent is not None:
                 self.parent.set_state(state)
 
@@ -108,9 +121,9 @@ class Task(BaseModel):
 
     def get_running_task(self) -> Optional["Task"]:
         for sub in self.subtasks:
-            if sub.state == "RUNNING":
+            if sub.state == TaskSate.RUNNING:
                 return sub.get_running_task()
-        if self.state == "RUNNING":
+        if self.state == TaskSate.RUNNING:
             return self
         return None
 
@@ -121,7 +134,7 @@ class Task(BaseModel):
         return _str
 
 
-def parse_response(response: str, task_id: Optional[str]) -> List[Task]:
+def parse_response(response: str, task_id: Optional[str] = None) -> List[Task]:
     pattern = "<task>(.*?)</task>"
     tasks_content = re.findall(pattern, response, re.DOTALL)
 
@@ -142,6 +155,9 @@ class TaskManager:
         tasks: The ordered tasks.
         task_map: A map for task.id to Task.
         current_task_id: The current "RUNNING" task.id.
+
+    Args:
+        task (Task): The root Task.
     """
 
     def __init__(self, task: Task):
@@ -150,7 +166,10 @@ class TaskManager:
         self.tasks: List[Task] = [task]
         self.task_map: Dict[str, Task] = {task.id: task}
 
-    def is_taskid_existed(self, task_id: str) -> bool:
+    def gen_task_id(self) -> str:
+        return f"{len(self.tasks)}"
+
+    def exist(self, task_id: str) -> bool:
         return task_id in self.task_map
 
     @property
@@ -158,7 +177,7 @@ class TaskManager:
         return self.task_map.get(self.current_task_id, None)
 
     @staticmethod
-    def _topological_sort(tasks: List[Task]) -> List[Task]:
+    def topological_sort(tasks: List[Task]) -> List[Task]:
         stack = []
         visited = set()
 
@@ -180,6 +199,38 @@ class TaskManager:
 
         return stack
 
+    @staticmethod
+    def set_tasks_dependence(
+        root: Task,
+        others: List[Task],
+        type: Literal["serial", "parallel"] = "parallel",
+    ):
+        r"""Set relationship between root task and other tasks.
+        Two relationships are currently supported: serial and parallel.
+        `serial` :  root -> other1 -> other2
+        `parallel`: root -> other1
+                         -> other2
+        Args:
+            root (Task): A root task.
+            others (List[Task]): A list of tasks.
+
+        Returns:
+            None
+        """
+        # filter the root task in the others to void self-loop dependence.
+        others = [other for other in others if other != root]
+
+        if len(others) == 0:
+            return
+        if type == "parallel":
+            for other in others:
+                root.add_subtask(other)
+        else:
+            parent = root
+            for child in others:
+                parent.add_subtask(child)
+                parent = child
+
     def add_tasks(self, tasks: Union[Task, List[Task]]) -> None:
         r"""
         self.tasks and self.task_map will be updated by the input tasks.
@@ -189,10 +240,8 @@ class TaskManager:
         if not isinstance(tasks, List):
             tasks = [tasks]
         for task in tasks:
-            assert not self.is_taskid_existed(
-                task.id
-            ), f"`{task.id}` already existed."
-        self.tasks = self._topological_sort(self.tasks + tasks)
+            assert not self.exist(task.id), f"`{task.id}` already existed."
+        self.tasks = self.topological_sort(self.tasks + tasks)
         self.task_map = {task.id: task for task in self.tasks}
 
     def evolve(
@@ -200,13 +249,17 @@ class TaskManager:
         task: Task,
         agent: ChatAgent,
         template: Optional[TextPrompt] = None,
+        task_parser: Optional[Callable[[str, str], List[Task]]] = None,
     ) -> Optional[Task]:
         r"""Evolve a task to a new task.
-
+            Evolve is only used for data generation.
         Args:
-            task (Task): A giving task.
+            task (Task): A given task.
             agent (ChatAgent): An agent that used to evolve the task.
-            template (TextPrompt or None): a prompt template to evolve task.
+            template (TextPrompt, optional): A prompt template to evolve task.
+                If not provided, the default template will be used.
+            task_parser (Callable, optional): A function to extract Task from
+                response. If not provided, the default parser will be used.
 
         Returns:
             Task: The created :obj:`Task` instance or None.
@@ -221,8 +274,9 @@ class TaskManager:
             role_name=role_name, content=content
         )
         response = agent.step(msg)
-
-        tasks = parse_response(response.msg.content, task_id=task.id)
+        if task_parser is None:
+            task_parser = parse_response
+        tasks = task_parser(response.msg.content, task.id)
         if tasks:
             return tasks[0]
         return None
@@ -232,13 +286,18 @@ class TaskManager:
         task: Task,
         agent: ChatAgent,
         template: Optional[TextPrompt] = None,
+        task_parser: Optional[Callable[[str, str], List[Task]]] = None,
     ) -> List[Task]:
         r"""Decompose a task to a list of sub-tasks.
-
+            It can be used for data generation and planner of agent.
         Args:
-            task (Task): A giving task.
+            task (Task): A given task.
             agent (ChatAgent): An agent that used to evolve the task.
-            template (TextPrompt or None): a prompt template to evolve task.
+            template (TextPrompt, optional): The prompt template to evolve
+                task. If not provided, the default template will be used.
+            task_parser (Callable[[str, str], List[Task]], optional): A
+                function to extract Task from response. If not provided,
+                the default parse_response will be used.
 
         Returns:
             List[Task]: A list of tasks which is :obj:`Task` instance.
@@ -248,10 +307,15 @@ class TaskManager:
             template = TASK_DECOMPOSE_PROMPT
 
         role_name = agent.role_name
-        content = template.format(role_name=role_name, content=task.content)
+        content = template.format(
+            role_name=role_name,
+            content=task.content,
+        )
         msg = BaseMessage.make_user_message(
             role_name=role_name, content=content
         )
         response = agent.step(msg)
-        tasks = parse_response(response.msg.content, task_id=task.id)
+        if task_parser is None:
+            task_parser = parse_response
+        tasks = task_parser(response.msg.content, task.id)
         return tasks
