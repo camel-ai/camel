@@ -13,43 +13,64 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from typing import List, Union
+from typing import List, Optional, Union
 
+from camel.agents import BaseAgent
 from camel.agents.manager_agent import ManagerAgent
 from camel.tasks.task import Task
 from camel.utils.channel import Channel
 from camel.workforce.base import BaseWorkforce
-from camel.workforce.unit_workforce import UnitWorkforce
 from camel.workforce.utils import compose, get_workforces_info
 
 
 class Workforce(BaseWorkforce):
+    r"""A workforce that manages multiple workforces and agents. It will
+    split the task it receives into subtasks and assign them to the
+    workforces/agents under it, and also handles the situation when the task
+    fails.
+
+    Args:
+        workforce_id (str): ID for the workforce.
+        description (str): Description of the workforce.
+        workforces (List[BaseWorkforce]): List of workforces under this
+            workforce.
+        agents (List[BaseAgent]): List of agents under this workforce.
+        manager_agent_config (dict): Configuration parameters for the
+            manager agent.
+        channel (Channel): Communication channel for the workforce.
+    """
+
     def __init__(
         self,
         workforce_id: str,
         description: str,
-        workforces: List[UnitWorkforce],
+        workforces: List[BaseWorkforce],
+        agents: List[BaseAgent],
         manager_agent_config: dict,
         channel: Channel,
     ) -> None:
-        """Initializes a new instance of the Workforce class. Only have one
-        layer structure first.
-
-        Args:
-            workforce_id (str): ID for the workforce.
-            description (str): Description of the workforce.
-            workforces (List[UnitWorkforce]): List of unit workforces under
-                this workforce.
-            manager_agent_config (dict): Configuration parameters for the
-                manager agent.
-            channel (Channel): Communication channel for the workforce.
-        """
         super().__init__(workforce_id, description, channel)
         self.workforces = workforces
         manager_agent = ManagerAgent(manager_agent_config)
-        self.manager_workforce = UnitWorkforce(manager_agent)
-
         self.workforce_info = get_workforces_info(workforces)
+
+    def assign_other_workforce(
+        self, task: Task, failed_log: Optional[str], workforce_info: str
+    ) -> Union[int, None]:
+        r"""Assigns a task to an internal workforce if capable, otherwise
+        returns None.
+
+        Parameters:
+            task (Task): The task to be assigned.
+            failed_log (Optional[str]): Optional log of a previous failed
+                attempt.
+            workforce_info (str): Information about the internal workforce.
+
+        Returns:
+            Union[int, None]: ID of the assigned workforce, or None if not
+                assignable.
+        """
+        pass
 
     async def process_current_task(self, current_task: Task):
         """Processes the current task, managing task assignment and result
@@ -62,7 +83,7 @@ class Workforce(BaseWorkforce):
             The result of the task processing, or None if the task cannot be
                 processed.
         """
-        chosen_workforce = await self.send_messgae_receive_result(
+        chosen_workforce = await self.send_message_receive_result(
             self.manager_workforce.id,
             "assign_other_workforce",
             (current_task, None, self.workforce_info),

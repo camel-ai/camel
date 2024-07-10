@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Union
+from typing import Any, Union
 
 from camel.tasks.task import Task
 from camel.utils.channel import Channel
@@ -30,25 +30,7 @@ class BaseWorkforce(ABC):
         """Resets the workforce to its initial state."""
         pass
 
-    def assign_other_workforce(
-        self, task: Task, failed_log: Optional[str], workforce_info: str
-    ) -> Union[int, None]:
-        r'''Assigns a task to an internal workforce if capable, otherwise
-        returns None.
-
-        Parameters:
-            task (Task): The task to be assigned.
-            failed_log (Optional[str]): Optional log of a previous failed
-                attempt.
-            workforce_info (str): Information about the internal workforce.
-
-        Returns:
-            Union[int, None]: ID of the assigned workforce, or None if not
-                assignable.
-        '''
-        pass
-
-    async def send_messgae_receive_result(
+    async def send_message_receive_result(
         self, workforce_id, func_name, params
     ):
         """Sends a message to a specified workforce and waits for the result.
