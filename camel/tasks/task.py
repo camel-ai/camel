@@ -338,7 +338,7 @@ class TaskManager:
         template: TextPrompt = TASK_COMPOSE_PROMPT,
         result_parser: Optional[Callable[[str], str]] = None,
     ):
-        r"""compose a task result by the sub-tasks.
+        r"""compose task result by the sub-tasks.
         Args:
             task (Task): A given task.
             agent (ChatAgent): An agent that used to compose the task result.
@@ -348,8 +348,12 @@ class TaskManager:
                 function to extract Task from response.
 
         Returns:
-            List[Task]: A list of tasks which is :obj:`Task` instance.
+            None
         """
+
+        if not task.subtasks:
+            return
+
         sub_tasks_result = task.get_result()
 
         role_name = agent.role_name
@@ -366,3 +370,5 @@ class TaskManager:
         if result_parser:
             result = result_parser(result)
         task.update_result(result)
+
+        return None
