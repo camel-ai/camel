@@ -50,34 +50,28 @@ def test_init(persona_generator):
 
 def test_add_persona(persona_generator):
     persona = Persona(
-        index=1,
         name="Test Persona",
         description="Test Description",
-        model=None,
     )
     persona_generator.add_persona(persona)
-    assert len(persona_generator.personas) == 1
+    assert persona_generator.__len__() == 1
     assert persona_generator.personas[0] == persona
 
 
 def test_remove_persona(persona_generator):
     persona1 = Persona(
-        index=1,
         name="Test Persona 1",
         description="Test Description 1",
-        model=None,
     )
     persona2 = Persona(
-        index=2,
         name="Test Persona 2",
         description="Test Description 2",
-        model=None,
     )
     persona_generator.add_persona(persona1)
     persona_generator.add_persona(persona2)
 
     persona_generator.remove_persona(0)
-    assert len(persona_generator.personas) == 1
+    assert persona_generator.__len__() == 1
     assert persona_generator.personas[0] == persona2
 
     with pytest.raises(IndexError):
@@ -86,10 +80,8 @@ def test_remove_persona(persona_generator):
 
 def test_get_persona(persona_generator):
     persona = Persona(
-        index=1,
         name="Test Persona",
         description="Test Description",
-        model=None,
     )
     persona_generator.add_persona(persona)
 
@@ -146,16 +138,12 @@ def test_deduplicate(persona_generator):
     # This test is a placeholder and should be expanded when the actual
     # deduplication logic is implemented
     persona1 = Persona(
-        index=1,
         name="Test Persona 1",
         description="Test Description 1",
-        model=None,
     )
     persona2 = Persona(
-        index=2,
         name="Test Persona 2",
         description="Test Description 2",
-        model=None,
     )
     persona_generator.add_persona(persona1)
     persona_generator.add_persona(persona2)
@@ -169,35 +157,27 @@ def test_deduplicate(persona_generator):
 
 def test_len(persona_generator):
     persona1 = Persona(
-        index=1,
         name="Test Persona 1",
         description="Test Description 1",
-        model=None,
     )
     persona2 = Persona(
-        index=2,
         name="Test Persona 2",
         description="Test Description 2",
-        model=None,
     )
     persona_generator.add_persona(persona1)
     persona_generator.add_persona(persona2)
 
-    assert len(persona_generator) == 2
+    assert persona_generator.__len__() == 2
 
 
 def test_iter(persona_generator):
     persona1 = Persona(
-        index=1,
         name="Test Persona 1",
         description="Test Description 1",
-        model=None,
     )
     persona2 = Persona(
-        index=2,
         name="Test Persona 2",
         description="Test Description 2",
-        model=None,
     )
     persona_generator.add_persona(persona1)
     persona_generator.add_persona(persona2)
