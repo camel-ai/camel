@@ -11,3 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from .persona import Persona
+from .persona_group import PersonaGroup
+
+__all__ = ['Persona', 'PersonaGroup']
