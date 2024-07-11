@@ -22,10 +22,14 @@ from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
 
-from .task_prompt import TASK_DECOMPOSE_PROMPT, TASK_EVOLVE_PROMPT
+from .task_prompt import (
+    TASK_COMPOSE_PROMPT,
+    TASK_DECOMPOSE_PROMPT,
+    TASK_EVOLVE_PROMPT,
+)
 
 
-class TaskSate(str, Enum):
+class TaskState(str, Enum):
     OPEN = "OPEN"
     RUNNING = "RUNNING"
     DONE = "DONE"
@@ -53,11 +57,11 @@ class Task(BaseModel):
     content: str
     """The content of the task."""
 
-    id: str
+    id: str = ""
     """An unique string identifier for the task. This should ideally be
     provided by the provider/model which created the task."""
 
-    state: TaskSate = TaskSate.OPEN
+    state: TaskState = TaskState.OPEN
     """The task state.
     """
 
@@ -73,7 +77,7 @@ class Task(BaseModel):
     """A list of sub tasks.
     """
 
-    result: str = ""
+    result: Optional[str] = ""
 
     @classmethod
     def from_message(cls, message: BaseMessage) -> "Task":
@@ -95,23 +99,23 @@ class Task(BaseModel):
 
     def reset(self):
         r"""Reset Task to initial state."""
-        self.state = TaskSate.OPEN
+        self.state = TaskState.OPEN
         self.result = ""
 
     def update_result(self, result: str):
         self.result = result
-        self.set_state(TaskSate.DONE)
+        self.set_state(TaskState.DONE)
 
     def set_id(self, id: str):
         self.id = id
 
-    def set_state(self, state: TaskSate):
+    def set_state(self, state: TaskState):
         self.state = state
-        if state == TaskSate.DONE:
+        if state == TaskState.DONE:
             for subtask in self.subtasks:
-                if subtask.state != TaskSate.DELETED:
+                if subtask.state != TaskState.DELETED:
                     subtask.set_state(state)
-        elif state == TaskSate.RUNNING:
+        elif state == TaskState.RUNNING:
             if self.parent is not None:
                 self.parent.set_state(state)
 
@@ -119,18 +123,30 @@ class Task(BaseModel):
         task.parent = self
         self.subtasks.append(task)
 
+    def remove_subtask(self, id: str):
+        self.subtasks = [task for task in self.subtasks if task.id != id]
+
     def get_running_task(self) -> Optional["Task"]:
         for sub in self.subtasks:
-            if sub.state == TaskSate.RUNNING:
+            if sub.state == TaskState.RUNNING:
                 return sub.get_running_task()
-        if self.state == TaskSate.RUNNING:
+        if self.state == TaskState.RUNNING:
             return self
         return None
 
-    def to_string(self, indent="") -> str:
-        _str = f"{indent}Task {self.id}: {self.content}\n"
+    def to_string(self, indent="", state=False) -> str:
+        if state:
+            _str = f"{indent}[{self.state}] Task {self.id}: {self.content}\n"
+        else:
+            _str = f"{indent}Task {self.id}: {self.content}\n"
         for subtask in self.subtasks:
-            _str += subtask.to_string(indent + "  ")
+            _str += subtask.to_string(indent + "  ", state)
+        return _str
+
+    def get_result(self, indent="") -> str:
+        _str = f"{indent}Task {self.id} result: {self.result}\n"
+        for subtask in self.subtasks:
+            _str += subtask.get_result(indent + "  ")
         return _str
 
 
@@ -285,15 +301,15 @@ class TaskManager:
         self,
         task: Task,
         agent: ChatAgent,
-        template: Optional[TextPrompt] = None,
-        task_parser: Optional[Callable[[str, str], List[Task]]] = None,
+        template: TextPrompt = TASK_DECOMPOSE_PROMPT,
+        task_parser: Callable[[str, str], List[Task]] = parse_response,
     ) -> List[Task]:
         r"""Decompose a task to a list of sub-tasks.
             It can be used for data generation and planner of agent.
         Args:
             task (Task): A given task.
-            agent (ChatAgent): An agent that used to evolve the task.
-            template (TextPrompt, optional): The prompt template to evolve
+            agent (ChatAgent): An agent that used to decompose the task.
+            template (TextPrompt): The prompt template to decompose
                 task. If not provided, the default template will be used.
             task_parser (Callable[[str, str], List[Task]], optional): A
                 function to extract Task from response. If not provided,
@@ -302,9 +318,6 @@ class TaskManager:
         Returns:
             List[Task]: A list of tasks which is :obj:`Task` instance.
         """
-
-        if template is None:
-            template = TASK_DECOMPOSE_PROMPT
 
         role_name = agent.role_name
         content = template.format(
@@ -315,7 +328,41 @@ class TaskManager:
             role_name=role_name, content=content
         )
         response = agent.step(msg)
-        if task_parser is None:
-            task_parser = parse_response
         tasks = task_parser(response.msg.content, task.id)
         return tasks
+
+    def compose(
+        self,
+        task: Task,
+        agent: ChatAgent,
+        template: TextPrompt = TASK_COMPOSE_PROMPT,
+        result_parser: Optional[Callable[[str], str]] = None,
+    ):
+        r"""compose a task result by the sub-tasks.
+        Args:
+            task (Task): A given task.
+            agent (ChatAgent): An agent that used to compose the task result.
+            template (TextPrompt, optional): The prompt template to compose
+                task. If not provided, the default template will be used.
+            result_parser (Callable[[str, str], List[Task]], optional): A
+                function to extract Task from response.
+
+        Returns:
+            List[Task]: A list of tasks which is :obj:`Task` instance.
+        """
+        sub_tasks_result = task.get_result()
+
+        role_name = agent.role_name
+        content = template.format(
+            role_name=role_name,
+            content=task.content,
+            other_results=sub_tasks_result,
+        )
+        msg = BaseMessage.make_user_message(
+            role_name=role_name, content=content
+        )
+        response = agent.step(msg)
+        result = response.msg.content
+        if result_parser:
+            result = result_parser(result)
+        task.update_result(result)
