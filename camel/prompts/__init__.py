@@ -21,6 +21,7 @@ from .generate_text_embedding_data import (
 )
 from .misalignment import MisalignmentPromptTemplateDict
 from .object_recognition import ObjectRecognitionPromptTemplateDict
+from .persona import PersonaGeneratorPrompt
 from .prompt_templates import PromptTemplateGenerator
 from .role_description_prompt_template import RoleDescriptionPromptTemplateDict
 from .solution_extraction import SolutionExtractionPromptTemplateDict
@@ -39,6 +40,7 @@ __all__ = [
     'RoleDescriptionPromptTemplateDict',
     'TaskPromptTemplateDict',
     'PromptTemplateGenerator',
+    'PersonaGeneratorPrompt',
     'SolutionExtractionPromptTemplateDict',
     'GenerateTextEmbeddingDataPromptTemplateDict',
     'ObjectRecognitionPromptTemplateDict',

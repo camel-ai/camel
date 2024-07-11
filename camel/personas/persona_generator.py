@@ -22,8 +22,8 @@ from camel.prompts import TextPrompt
 from camel.types import RoleType
 
 
-class PersonaGroup(ChatAgent):
-    r"""A group of personas. This class manages a collection of Persona
+class PersonaGenerator(ChatAgent):
+    r"""A generator of personas. This class manages a collection of Persona
     instances and provides methods for adding, removing, and manipulating
     personas within the group.
 
@@ -36,19 +36,15 @@ class PersonaGroup(ChatAgent):
     def __init__(
         self,
         model: Optional[BaseModelBackend] = None,
-        group_name: Optional[str] = None,
-        group_description: Optional[str] = None,
     ):
         system_message = BaseMessage(
-            role_name="Persona Group Manager",
+            role_name="",
             role_type=RoleType.ASSISTANT,
             meta_dict=None,
-            content="You assign roles based on tasks.",
+            content="",
         )
         self.model = model if model else None
         super().__init__(system_message, model=model)
-        self.group_name = group_name or "Persona Group"
-        self.group_description = group_description or ""
         self.personas: List[Persona] = []
 
     def add_persona(self, persona: Persona):
@@ -91,18 +87,18 @@ class PersonaGroup(ChatAgent):
         """
         super().reset()
 
-        t2p_prompt = TextPrompt(
-            "Who is likely to [read|write|like|dislike|...] the "
-            "following text? Provide a detailed and specific persona "
-            "description.\n\nText: {text}"
-        )
+        persona = Persona()
+
+        t2p_prompt: TextPrompt | str = persona.t2p_prompt
         answer_template = """
 You MUST answer the question according to the format of the ANSWER TEMPLATE, and you can only modify the content within <BLANK>.
 ===== ANSWER TEMPLATE =====
 persona_name: <BLANK>
 persona_description: <BLANK>
 """  # noqa: E501
-        t2p_prompt_instruction = t2p_prompt.format(text=text) + answer_template
+        t2p_prompt_instruction = (
+            t2p_prompt.format(action=action, text=text) + answer_template
+        )
 
         t2p_prompt_instruction_msg = BaseMessage.make_user_message(
             role_name="User",
@@ -115,7 +111,7 @@ persona_description: <BLANK>
             raise RuntimeError("Text to persona step failed.")
         msg: BaseMessage = response.msg
 
-        # Structured output
+        # Structured output (TODO: Use a more robust parser)
         pattern = (
             r"\s*persona_name:\s*(.*?)\s*persona_description:\s*(.*?)\s*$"
         )
@@ -124,12 +120,9 @@ persona_description: <BLANK>
             persona_name = match.group(1).strip()
             persona_description = match.group(2).strip()
 
-        persona = Persona(
-            index=self.__len__() + 1,
-            name=persona_name,
-            description=persona_description,
-            model=self.model,
-        )
+        persona.name = persona_name
+        persona.description = persona_description
+
         return persona
 
     def persona_to_persona(self, persona: Persona) -> List[Persona]:
@@ -146,11 +139,7 @@ persona_description: <BLANK>
         """
         super().reset()
 
-        p2p_prompt = TextPrompt(
-            "Given the following persona: \"{persona}\", who is likely to be |"
-            "in a close relationship with this persona? Describe the related "
-            "personas and their relationships."
-        )
+        p2p_prompt: TextPrompt | str = persona.p2p_prompt
         answer_template = """
 You MUST answer the question according to the format of the ANSWER TEMPLATE, and you can only modify the content within <BLANK>.
 ===== ANSWER TEMPLATE =====
@@ -161,7 +150,11 @@ n. persona_name: <BLANK>
 persona_description: <BLANK>
 """  # noqa: E501
         p2p_prompt_instruction = (
-            p2p_prompt.format(persona=persona.description) + answer_template
+            p2p_prompt.format(
+                persona_name=persona.name,
+                persona_description=persona.description,
+            )
+            + answer_template
         )
 
         p2p_prompt_instruction_msg = BaseMessage.make_user_message(
@@ -175,20 +168,18 @@ persona_description: <BLANK>
             raise RuntimeError("Persona to persona step failed.")
         msg: BaseMessage = response.msg
 
+        # Structured output (TODO: Use a more robust parser)
         pattern = r"(\d+)\.\s*persona_name:\s*(.*?)\s*persona_description:\s*(.*?)\s*(?=\d+\.|$)"  # noqa: E501
         matches = re.findall(pattern, msg.content, re.DOTALL)
 
         personas: List[Persona] = []
         for match in matches:
-            index = int(match[0])
             name = match[1].strip()
             description = match[2].strip()
             personas.append(
                 Persona(
-                    index=index,
                     name=name,
                     description=description,
-                    model=self.model,
                 )
             )
 
@@ -204,13 +195,13 @@ persona_description: <BLANK>
         unique_personas: List[Persona] = []
         for persona in self.personas:
             if not any(
-                self._is_similar(persona, up, similarity_threshold)
+                self.is_similar(persona, up, similarity_threshold)
                 for up in unique_personas
             ):
                 unique_personas.append(persona)
         self.personas = unique_personas
 
-    def _is_similar(
+    def is_similar(
         self, persona1: Persona, persona2: Persona, threshold: float
     ) -> bool:
         r"""Check if two personas are similar."""

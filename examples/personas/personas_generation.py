@@ -12,11 +12,11 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from camel.personas.persona_group import PersonaGroup
+from camel.personas.persona_generator import PersonaGenerator
 
 
 def generate_personas():
-    persona_group = PersonaGroup()
+    persona_group = PersonaGenerator()
 
     # Use the text_to_persona method
     example_text = """Clinical Guideline: Administration of Injections in 
@@ -27,7 +27,7 @@ def generate_personas():
         example_text, action="read"
     )
     print(
-        f"Inferred Persona:\n{inferred_persona.role_name}"
+        f"Inferred Persona:\n{inferred_persona.name}"
         f"\n{inferred_persona.description}\n"
     )
 
@@ -37,9 +37,33 @@ def generate_personas():
     )
     print("Related Personas:\n")
     for persona in related_personas:
-        print(persona.role_name)
+        print(persona.name)
         print(persona.description)
         print()
+
+    # Example output:
+    """
+Inferred Persona:
+Pediatric Nurse
+A healthcare professional specializing in the care of children, with expertise in administering medications and following clinical guidelines for pediatric patients.
+
+Related Personas:
+
+Pediatrician
+A medical doctor who specializes in the care of infants, children, and adolescents. They work closely with pediatric nurses to ensure proper treatment and medication administration for young patients.
+
+Child Life Specialist
+A professional who helps children and families cope with the challenges of hospitalization, illness, and disability. They often collaborate with medical staff to make medical procedures less stressful for pediatric patients.
+
+Pediatric Pharmacist
+A pharmacist who specializes in medications for children, ensuring proper dosing and formulations. They work with the medical team to optimize medication regimens for pediatric patients.
+
+Parent or Guardian
+The primary caregiver of a pediatric patient, who needs to understand and consent to medical procedures, including injections. They often have concerns and questions about their child's treatment.
+
+Pediatric Hospital Administrator
+A healthcare manager responsible for overseeing pediatric departments or hospitals. They ensure that clinical guidelines are implemented and followed to maintain high standards of care for young patients.
+    """  # noqa: E501
 
 
 if __name__ == "__main__":

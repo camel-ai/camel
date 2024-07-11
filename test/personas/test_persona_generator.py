@@ -16,8 +16,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from camel.messages import BaseMessage
-from camel.personas.persona import Persona
-from camel.personas.persona_group import PersonaGroup
+from camel.personas import Persona, PersonaGenerator
 from camel.types import RoleType
 
 # Mock responses
@@ -39,31 +38,29 @@ persona_description: A professional responsible for designing, building, and mai
 
 
 @pytest.fixture
-def persona_group():
-    return PersonaGroup(model=MagicMock())
+def persona_generator():
+    return PersonaGenerator(model=MagicMock())
 
 
-def test_init(persona_group):
-    assert isinstance(persona_group, PersonaGroup)
-    assert persona_group.group_name == "Persona Group"
-    assert persona_group.group_description == ""
-    assert isinstance(persona_group.personas, list)
-    assert len(persona_group.personas) == 0
+def test_init(persona_generator):
+    assert isinstance(persona_generator, PersonaGenerator)
+    assert isinstance(persona_generator.personas, list)
+    assert len(persona_generator.personas) == 0
 
 
-def test_add_persona(persona_group):
+def test_add_persona(persona_generator):
     persona = Persona(
         index=1,
         name="Test Persona",
         description="Test Description",
         model=None,
     )
-    persona_group.add_persona(persona)
-    assert len(persona_group.personas) == 1
-    assert persona_group.personas[0] == persona
+    persona_generator.add_persona(persona)
+    assert len(persona_generator.personas) == 1
+    assert persona_generator.personas[0] == persona
 
 
-def test_remove_persona(persona_group):
+def test_remove_persona(persona_generator):
     persona1 = Persona(
         index=1,
         name="Test Persona 1",
@@ -76,34 +73,34 @@ def test_remove_persona(persona_group):
         description="Test Description 2",
         model=None,
     )
-    persona_group.add_persona(persona1)
-    persona_group.add_persona(persona2)
+    persona_generator.add_persona(persona1)
+    persona_generator.add_persona(persona2)
 
-    persona_group.remove_persona(0)
-    assert len(persona_group.personas) == 1
-    assert persona_group.personas[0] == persona2
+    persona_generator.remove_persona(0)
+    assert len(persona_generator.personas) == 1
+    assert persona_generator.personas[0] == persona2
 
     with pytest.raises(IndexError):
-        persona_group.remove_persona(5)
+        persona_generator.remove_persona(5)
 
 
-def test_get_persona(persona_group):
+def test_get_persona(persona_generator):
     persona = Persona(
         index=1,
         name="Test Persona",
         description="Test Description",
         model=None,
     )
-    persona_group.add_persona(persona)
+    persona_generator.add_persona(persona)
 
-    assert persona_group.get_persona(0) == persona
+    assert persona_generator.get_persona(0) == persona
 
     with pytest.raises(IndexError):
-        persona_group.get_persona(5)
+        persona_generator.get_persona(5)
 
 
-@patch.object(PersonaGroup, 'step')
-def test_text_to_persona(mock_step, persona_group):
+@patch.object(PersonaGenerator, 'step')
+def test_text_to_persona(mock_step, persona_generator):
     mock_response = MagicMock()
     mock_response.terminated = False
     mock_response.msg = BaseMessage(
@@ -114,15 +111,15 @@ def test_text_to_persona(mock_step, persona_group):
     )
     mock_step.return_value = mock_response
 
-    persona = persona_group.text_to_persona("Test text")
+    persona = persona_generator.text_to_persona("Test text")
 
     assert isinstance(persona, Persona)
     assert persona.name == "Data Scientist"
     assert "expertise in statistical analysis" in persona.description
 
 
-@patch.object(PersonaGroup, 'step')
-def test_persona_to_persona(mock_step, persona_group):
+@patch.object(PersonaGenerator, 'step')
+def test_persona_to_persona(mock_step, persona_generator):
     mock_response = MagicMock()
     mock_response.terminated = False
     mock_response.msg = BaseMessage(
@@ -136,7 +133,7 @@ def test_persona_to_persona(mock_step, persona_group):
     base_persona = Persona(
         index=1, name="Data Scientist", description="A data expert", model=None
     )
-    related_personas = persona_group.persona_to_persona(base_persona)
+    related_personas = persona_generator.persona_to_persona(base_persona)
 
     assert isinstance(related_personas, list)
     assert len(related_personas) == 3
@@ -145,7 +142,7 @@ def test_persona_to_persona(mock_step, persona_group):
     assert related_personas[2].name == "Data Engineer"
 
 
-def test_deduplicate(persona_group):
+def test_deduplicate(persona_generator):
     # This test is a placeholder and should be expanded when the actual
     # deduplication logic is implemented
     persona1 = Persona(
@@ -160,17 +157,17 @@ def test_deduplicate(persona_group):
         description="Test Description 2",
         model=None,
     )
-    persona_group.add_persona(persona1)
-    persona_group.add_persona(persona2)
+    persona_generator.add_persona(persona1)
+    persona_generator.add_persona(persona2)
 
-    persona_group.deduplicate()
+    persona_generator.deduplicate()
 
     # As the current implementation always returns False for similarity, both
     # personas should remain
-    assert len(persona_group.personas) == 2
+    assert len(persona_generator.personas) == 2
 
 
-def test_len(persona_group):
+def test_len(persona_generator):
     persona1 = Persona(
         index=1,
         name="Test Persona 1",
@@ -183,13 +180,13 @@ def test_len(persona_group):
         description="Test Description 2",
         model=None,
     )
-    persona_group.add_persona(persona1)
-    persona_group.add_persona(persona2)
+    persona_generator.add_persona(persona1)
+    persona_generator.add_persona(persona2)
 
-    assert len(persona_group) == 2
+    assert len(persona_generator) == 2
 
 
-def test_iter(persona_group):
+def test_iter(persona_generator):
     persona1 = Persona(
         index=1,
         name="Test Persona 1",
@@ -202,10 +199,10 @@ def test_iter(persona_group):
         description="Test Description 2",
         model=None,
     )
-    persona_group.add_persona(persona1)
-    persona_group.add_persona(persona2)
+    persona_generator.add_persona(persona1)
+    persona_generator.add_persona(persona2)
 
-    personas = list(persona_group)
+    personas = list(persona_generator)
     assert len(personas) == 2
     assert personas[0] == persona1
     assert personas[1] == persona2
