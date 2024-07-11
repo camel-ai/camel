@@ -1,96 +1,92 @@
-"""GAIA 2023 dataset."""
-
-
-import json
 import os
+import json
+from camel.agents import ChatAgent
+from camel.configs import GeminiConfig
+from camel.messages import BaseMessage
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType, ModelType
 
-import datasets
+from huggingface_hub import snapshot_download
 
+SCRIPT_PATH = os.path.realpath(__file__)
+SCRIPT_NAME = os.path.basename(SCRIPT_PATH)
+SCRIPT_DIR = os.path.dirname(SCRIPT_PATH)
 
-_CITATION = """ """
+DATASET_DIR = os.path.join(SCRIPT_DIR, "Dataset")
 
-_DESCRIPTION = """ """
+def get_gaia():
+    r"""
+    Please using huggingface-cli login to get authorization
+    From Hugging Face download GAIA dataset
+    This function will create a folder to cache GAIA dataset
+    """
 
-_HOMEPAGE = ""
+    if not os.path.isdir(DATASET_DIR):
+        os.mkdir(DATASET_DIR)
+    snapshot_download(
+        repo_id="gaia-benchmark/GAIA",
+        repo_type="dataset",
+        local_dir= DATASET_DIR,
+        local_dir_use_symlinks=True,
+    )
 
-_LICENSE = ""
+def main():
+    get_gaia()
+    validation = os.path.join(DATASET_DIR, "2023", "validation")
+    test = os.path.join(DATASET_DIR, "2023", "test")
+    validation_tasks = [[],[],[]]
+    with open(os.path.join(validation, "metadata.jsonl")) as f:
+        for line in f:
+            data = json.loads(line)
+            validation_tasks[data["Level"] - 1].append(data)
+    
+    test_tasks = [[],[],[]]
+    with open(os.path.join(test, "metadata.jsonl")) as f:
+        for line in f:
+            data = json.loads(line)
+            if data["task_id"] == "0-0-0-0-0":
+                continue
+            test_tasks[data["Level"] - 1].append(data)
+    
+    # prepare prompts
+    task_prompt = (
+    """
+    You are a general AI assistant. I will ask you a question. Report your thoughts, and
+    finish your answer with the following template: FINAL ANSWER: [YOUR FINAL ANSWER].
+    YOUR FINAL ANSWER should be a number OR as few words as possible OR a comma separated
+    list of numbers and/or strings.
+    If you are asked for a number, don’t use comma to write your number neither use units such as $ or
+    percent sign unless specified otherwise.
+    If you are asked for a string, don’t use articles, neither abbreviations (e.g. for cities), and write the
+    digits in plain text unless specified otherwise.
+    If you are asked for a comma separated list, apply the above rules depending of whether the element
+    to be put in the list is a number or a string.""".strip()
+    )
 
-_NAMES = [
-    "2023_all",
-    "2023_level1",
-    "2023_level2",
-    "2023_level3",
-]
+    gaia_question = validation_tasks[0][1]['Question']
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.GEMINI,
+        model_type=ModelType.GEMINI_1_5_PRO,
+        model_config_dict=GeminiConfig(temperature=0.2).__dict__,
+    )
+    sys_msg = BaseMessage.make_assistant_message(
+        role_name="Assistant",
+        content=task_prompt,
+    )
 
-YEAR_TO_LEVELS = {"2023": [1, 2, 3]}
+    # Set agent
+    camel_agent = ChatAgent(system_message=sys_msg, model=model)
 
-separator = "_"
-
-
-class GAIA_dataset(datasets.GeneratorBasedBuilder):
-    VERSION = datasets.Version("0.0.1")
-
-    BUILDER_CONFIGS = [
-        datasets.BuilderConfig(name=name, version=version, description=name)
-        for name, version in zip(_NAMES, [VERSION] * len(_NAMES))
-    ]
-
-    def _info(self):
-        features = datasets.Features(
-            {
-                "task_id": datasets.Value("string"),
-                "Question": datasets.Value("string"),
-                "Level": datasets.Value("string"),
-                "Final answer": datasets.Value("string"), # ? for test values
-                "file_name": datasets.Value("string"),
-                "file_path": datasets.Value("string"),  # generated here
-                "Annotator Metadata": {k: datasets.Value("string") for k in ["Steps", "Number of steps", "How long did this take?", "Tools", "Number of tools"]} # "", 
-            }
-        )
-        return datasets.DatasetInfo(
-            description=_DESCRIPTION,
-            features=features,
-            homepage=_HOMEPAGE,
-            license=_LICENSE,
-            citation=_CITATION,
-        )
-
-    def _split_generators(self, dl_manager):
-        year, level_name = self.config.name.split(separator)
-        if level_name == "all":
-            levels = YEAR_TO_LEVELS[year]
-        else:
-            level_name = int(level_name.split("level")[1])
-            levels = [level_name]
-        print(year, level_name)
-
-        output = []
-        for split in ["test", "validation"]:
-            root_file = dl_manager.download(os.path.join(year, split, "metadata.jsonl"))
-            test_attached_files = {"": ""}
-            with open(root_file, "r", encoding="utf-8") as f:
-                for line in f:
-                    cur_line = json.loads(line)
-                    if cur_line["Level"] in levels and cur_line["file_name"] != "":
-                        attached_file_name = cur_line["file_name"]
-                        attached_file = dl_manager.download(os.path.join(year, split, attached_file_name))
-                        test_attached_files[attached_file_name] = attached_file
-
-            output.append(
-                datasets.SplitGenerator(
-                    name=getattr(datasets.Split, split.upper()),
-                    gen_kwargs={"root_file": root_file, "attached_files": test_attached_files, "levels": levels},
-                )
-            )
-        return output
-
-    # method parameters are unpacked from `gen_kwargs` as given in `_split_generators`
-    def _generate_examples(self, root_file: str, attached_files: dict, levels: list[int]):
-        with open(root_file, "r", encoding="utf-8") as f:
-            for key, line in enumerate(f):
-                cur_line = json.loads(line)
-                if cur_line["Level"] in levels:
-                    cur_line["file_path"] = attached_files[cur_line["file_name"]]
-                    yield key, cur_line
+    user_msg = BaseMessage.make_user_message(
+        role_name="User",
+        content= gaia_question,
+    )
+    response = camel_agent.step(user_msg)
+    print(response.msgs[0].content)
+    print(validation_tasks[0][1]['Final answer'])
+    print(gaia_question)
 
 
+
+if __name__ == "__main__":
+    main()
