@@ -30,48 +30,6 @@ class BaseWorkforce(ABC):
         """Resets the workforce to its initial state."""
         pass
 
-    async def send_message_receive_result(
-        self, workforce_id, func_name, params
-    ):
-        """Sends a message to a specified workforce and waits for the result.
-
-        Args:
-            workforce_id: The ID of the workforce to which the message should
-                be sent.
-            func_name: The name of the function to be invoked.
-            params: The parameters to be passed to the function.
-
-        Returns:
-            The result of the function execution.
-        """
-        message_id = await self.channel.write_to_receive_queue(
-            workforce_id, func_name, params
-        )
-        exec_result = await self.channel.read_from_send_queue(message_id)
-        return exec_result
-
-    async def listening(self):
-        """Continuously listens for incoming messages and processes them
-        accordingly.
-
-        This method should be run in an event loop, as it will run
-            indefinitely.
-        """
-        while True:
-            message_id, data = await self.channel.receive_from()
-            Workforce_id, func_name, params = data
-            if Workforce_id == self.workforce_id:
-                if func_name == "process_task":
-                    process_result = await self.process_task(params)
-                    await self.channel.send_to((message_id, process_result))
-                elif func_name == "assign_other_workforce":
-                    assign_result = await self.process_task(params)
-                    await self.channel.send_to((message_id, assign_result))
-                elif func_name == "exit":
-                    break
-                else:
-                    raise ValueError("Unsupported function.")
-
     @abstractmethod
-    async def process_task(self, task: Task) -> Union[str, None]:
+    async def listening(self):
         pass

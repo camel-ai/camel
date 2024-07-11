@@ -23,12 +23,24 @@ from camel.workforce.base import BaseWorkforce
 
 
 class UnitWorkforce(BaseWorkforce):
+    r"""A unit workforce that consists of a single worker. It is the basic unit
+    of task processing in the workforce system.
+
+    Args:
+        workforce_id (str): ID for the workforce.
+        description (str): Description of the workforce.
+        worker (Union[BaseAgent, RolePlaying]): Worker of the workforce.
+            Could be a single agent or a role playing system.
+        channel (Channel): Communication channel for the workforce.
+
+    """
+
     def __init__(
-        self,
-        workforce_id: str,
-        description: str,
-        worker: Union[BaseAgent, RolePlaying],
-        channel: Channel,
+            self,
+            workforce_id: str,
+            description: str,
+            worker: Union[BaseAgent, RolePlaying],
+            channel: Channel,
     ) -> None:
         super().__init__(workforce_id, description, channel)
         self.worker = worker
@@ -38,3 +50,19 @@ class UnitWorkforce(BaseWorkforce):
         processing."""
         task_result = self.worker.step(task)
         return task_result
+
+    async def listening(self):
+        """Continuously listen to the channel, process the task that are
+        assigned to this workforce, and update the result and status of the
+        task.
+
+        This method should be run in an event loop, as it will run
+            indefinitely.
+        """
+        # TODO: Check the first task in the channel that are assigned to
+        #  this workforce and status is not 'done'
+
+        # TODO: Process the task, no need to remove it from the channel
+
+        # TODO: Update the result and status of the task in the channel
+        raise NotImplementedError()

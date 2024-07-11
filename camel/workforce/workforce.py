@@ -14,13 +14,12 @@
 from __future__ import annotations
 
 from typing import List, Optional, Union
-from uuid import uuid4
 
 from camel.agents.manager_agent import ManagerAgent
 from camel.tasks.task import Task
 from camel.utils.channel import Channel
 from camel.workforce import BaseWorkforce, UnitWorkforce
-from camel.workforce.utils import compose, get_workforces_info
+from camel.workforce.utils import get_workforces_info
 
 
 class Workforce(BaseWorkforce):
@@ -40,23 +39,20 @@ class Workforce(BaseWorkforce):
     """
 
     def __init__(
-        self,
-        workforce_id: str,
-        description: str,
-        workforces: List[Union[UnitWorkforce, Workforce]],
-        manager_agent_config: dict,
-        channel: Channel,
+            self,
+            workforce_id: str,
+            description: str,
+            workforces: List[Union[UnitWorkforce, Workforce]],
+            manager_agent_config: dict,
+            channel: Channel,
     ) -> None:
         super().__init__(workforce_id, description, channel)
         self.workforces = workforces
         manager_agent = ManagerAgent()
-        self.manager = UnitWorkforce(
-            str(uuid4()), "manager", manager_agent, channel
-        )
         self.workforce_info = get_workforces_info(workforces)
 
-    def assign_other_workforce(
-        self, task: Task, failed_log: Optional[str], workforce_info: str
+    def assign_task(
+            self, task: Task, failed_log: Optional[str], workforce_info: str
     ) -> Union[int, None]:
         r"""Assigns a task to an internal workforce if capable, otherwise
         returns None.
@@ -73,35 +69,16 @@ class Workforce(BaseWorkforce):
         """
         pass
 
-    async def process_current_task(self, current_task: Task):
-        """Processes the current task, managing task assignment and result
-            aggregation.
+    def create_workforce_for_task(self, task: Task) -> UnitWorkforce:
+        r"""Creates a workforce for a given task.
 
         Args:
-            current_task (Task): The task to be processed.
+            task (Task): The task for which the workforce is created.
 
         Returns:
-            The result of the task processing, or None if the task cannot be
-                processed.
+            UnitWorkforce: The created workforce.
         """
-        chosen_workforce = await self.send_message_receive_result(
-            self.manager_agent.id,
-            "assign_other_workforce",
-            (current_task, None, self.workforce_info),
-        )
-        if not chosen_workforce:
-            return None
-        else:
-            task_result = await chosen_workforce.process_task(current_task)
-            if not task_result:
-                current_subtasks = current_task.decompose()
-                subtask_result = []
-                for subtask in current_subtasks:
-                    subtask_result.append
-                    (await self.process_current_task(subtask))
-                return compose(subtask_result)
-            else:
-                return task_result
+        pass
 
     async def process_task(self, task: Task) -> Union[str, None]:
         r"""Processes a given task, serving as an entry point for task
@@ -114,8 +91,16 @@ class Workforce(BaseWorkforce):
             Union[str, None]: The result of the task processing, or None if
                 the task cannot be processed.
         """
-        return await self.process_current_task(task)
+        # TODO: Split the task into subtasks
 
-    async def start(self):
-        for workforce in self.workforces:
-            workforce.listening()
+        # TODO: In a loop, assign the subtasks to the workforces under this
+        #  workforce then wait for the result. Need to handle the situation
+        #  when the task fails
+
+        raise NotImplementedError()
+
+    async def listening(self):
+        r"""Continuously listen to the channel, post task to the channel and
+        track the status of posted tasks.
+        """
+        pass
