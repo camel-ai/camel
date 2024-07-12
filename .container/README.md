@@ -9,7 +9,7 @@ develop on it, with Docker.
 - Docker：https://docs.docker.com/engine/install/
 - Docker Compose：https://docs.docker.com/compose/install/
 
-## Cnfigure Environment
+## Configure Environment
 Before starting the container, you need to navigate into the
 [.container](../.container) folder and create a `.env` file **with your own 
 API 
