@@ -42,13 +42,13 @@ def persona_generator():
     return PersonaGenerator(model=MagicMock())
 
 
-def test_init(persona_generator):
+def test_init(persona_generator: PersonaGenerator):
     assert isinstance(persona_generator, PersonaGenerator)
     assert isinstance(persona_generator.personas, list)
     assert len(persona_generator.personas) == 0
 
 
-def test_add_persona(persona_generator):
+def test_add_persona(persona_generator: PersonaGenerator):
     persona = Persona(
         name="Test Persona",
         description="Test Description",
@@ -58,7 +58,7 @@ def test_add_persona(persona_generator):
     assert persona_generator.personas[0] == persona
 
 
-def test_remove_persona(persona_generator):
+def test_remove_persona(persona_generator: PersonaGenerator):
     persona1 = Persona(
         name="Test Persona 1",
         description="Test Description 1",
@@ -70,29 +70,31 @@ def test_remove_persona(persona_generator):
     persona_generator.add_persona(persona1)
     persona_generator.add_persona(persona2)
 
-    persona_generator.remove_persona(0)
+    persona_generator.__delitem__(0)
     assert persona_generator.__len__() == 1
     assert persona_generator.personas[0] == persona2
 
     with pytest.raises(IndexError):
-        persona_generator.remove_persona(5)
+        persona_generator.__delitem__(5)
 
 
-def test_get_persona(persona_generator):
+def test_get_persona(persona_generator: PersonaGenerator):
     persona = Persona(
         name="Test Persona",
         description="Test Description",
     )
     persona_generator.add_persona(persona)
 
-    assert persona_generator.get_persona(0) == persona
+    assert persona_generator.__getitem__(0) == persona
 
     with pytest.raises(IndexError):
-        persona_generator.get_persona(5)
+        persona_generator.__getitem__(5)
 
 
 @patch.object(PersonaGenerator, 'step')
-def test_text_to_persona(mock_step, persona_generator):
+def test_text_to_persona(
+    mock_step: MagicMock, persona_generator: PersonaGenerator
+):
     mock_response = MagicMock()
     mock_response.terminated = False
     mock_response.msg = BaseMessage(
@@ -107,11 +109,16 @@ def test_text_to_persona(mock_step, persona_generator):
 
     assert isinstance(persona, Persona)
     assert persona.name == "Data Scientist"
-    assert "expertise in statistical analysis" in persona.description
+    assert (
+        persona.description
+        and "expertise in statistical analysis" in persona.description
+    )
 
 
 @patch.object(PersonaGenerator, 'step')
-def test_persona_to_persona(mock_step, persona_generator):
+def test_persona_to_persona(
+    mock_step: MagicMock, persona_generator: PersonaGenerator
+):
     mock_response = MagicMock()
     mock_response.terminated = False
     mock_response.msg = BaseMessage(
@@ -122,9 +129,7 @@ def test_persona_to_persona(mock_step, persona_generator):
     )
     mock_step.return_value = mock_response
 
-    base_persona = Persona(
-        index=1, name="Data Scientist", description="A data expert", model=None
-    )
+    base_persona = Persona(name="Data Scientist", description="A data expert")
     related_personas = persona_generator.persona_to_persona(base_persona)
 
     assert isinstance(related_personas, list)
@@ -134,7 +139,7 @@ def test_persona_to_persona(mock_step, persona_generator):
     assert related_personas[2].name == "Data Engineer"
 
 
-def test_deduplicate(persona_generator):
+def test_deduplicate(persona_generator: PersonaGenerator):
     # This test is a placeholder and should be expanded when the actual
     # deduplication logic is implemented
     persona1 = Persona(
@@ -155,7 +160,7 @@ def test_deduplicate(persona_generator):
     assert len(persona_generator.personas) == 2
 
 
-def test_len(persona_generator):
+def test_len(persona_generator: PersonaGenerator):
     persona1 = Persona(
         name="Test Persona 1",
         description="Test Description 1",
@@ -170,7 +175,7 @@ def test_len(persona_generator):
     assert persona_generator.__len__() == 2
 
 
-def test_iter(persona_generator):
+def test_iter(persona_generator: PersonaGenerator):
     persona1 = Persona(
         name="Test Persona 1",
         description="Test Description 1",

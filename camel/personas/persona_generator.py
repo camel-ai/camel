@@ -51,7 +51,7 @@ class PersonaGenerator(ChatAgent):
         r"""Add a persona to the group."""
         self.personas.append(persona)
 
-    def remove_persona(self, index: int):
+    def __delitem__(self, index: int):
         r"""Remove a persona from the group by index.
 
         Args:
@@ -62,7 +62,7 @@ class PersonaGenerator(ChatAgent):
         else:
             raise IndexError("Persona index out of range")
 
-    def get_persona(self, index: int) -> Persona:
+    def __getitem__(self, index: int) -> Persona:
         r"""Get a persona by index.
 
         Args:
