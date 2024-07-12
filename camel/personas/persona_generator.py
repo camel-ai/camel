@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import re
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from camel.agents import ChatAgent
 from camel.messages.base import BaseMessage
@@ -89,7 +89,7 @@ class PersonaGenerator(ChatAgent):
 
         persona = Persona()
 
-        t2p_prompt: TextPrompt | str = persona.t2p_prompt
+        t2p_prompt: Union[TextPrompt, str] = persona.t2p_prompt
         answer_template = """
 You MUST answer the question according to the format of the ANSWER TEMPLATE, and you can only modify the content within <BLANK>.
 ===== ANSWER TEMPLATE =====
@@ -139,7 +139,7 @@ persona_description: <BLANK>
         """
         super().reset()
 
-        p2p_prompt: TextPrompt | str = persona.p2p_prompt
+        p2p_prompt: Union[TextPrompt, str] = persona.p2p_prompt
         answer_template = """
 You MUST answer the question according to the format of the ANSWER TEMPLATE, and you can only modify the content within <BLANK>.
 ===== ANSWER TEMPLATE =====
