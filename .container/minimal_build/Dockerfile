@@ -7,12 +7,10 @@ RUN curl -sSL https://install.python-poetry.org | python3 - && \
 # Configurate Poetry
 RUN poetry config virtualenvs.create false
 
-COPY dev /app/camel
+COPY . /app/camel
 
 WORKDIR /app/camel
 
-RUN poetry install --with dev,docs -E all
+RUN poetry install
 
-RUN pre-commit install
-
-RUN rm -rf /app/camel
+CMD ["tail", "-f", "/dev/null"]
