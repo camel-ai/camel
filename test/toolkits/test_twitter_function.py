@@ -13,18 +13,20 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from unittest.mock import MagicMock, patch
 
-from camel.functions.twitter_function import (
-    create_tweet,
-    delete_tweet,
-    get_my_user_profile,
-)
+import pytest
+
 from camel.logger import get_logger
+from camel.toolkits import TwitterToolkit
 
 
-def test_create_tweet(monkeypatch):
+@pytest.fixture
+def twitter_toolkit():
+    return TwitterToolkit()
+
+
+def test_create_tweet(monkeypatch, twitter_toolkit):
     # Get the logger for the module being tested
     logger = get_logger('camel.functions.twitter_function')
-
     # Create a mock response object
     mock_response = MagicMock()
     mock_response.json.return_value = {
@@ -52,14 +54,16 @@ def test_create_tweet(monkeypatch):
     monkeypatch.setattr(logger, 'info', capturing_log)
 
     # Use patch to mock the get_oauth_session method
-    patch_path = 'camel.functions.twitter_function.get_oauth_session'
+    patch_path = (
+        'camel.toolkits.twitter_toolkit.TwitterToolkit._get_oauth_session'
+    )
     with patch(patch_path) as mock_get_oauth_session:
         # Configure the mock OAuth session's post method
         # to return the mock response object
         mock_get_oauth_session.return_value.post.return_value = mock_response
 
         # Call the create_tweet function
-        response = create_tweet(text="Test tweet.")
+        response = twitter_toolkit.create_tweet(text="Test tweet.")
 
         # Verify the output
         expected_start = (
@@ -74,10 +78,9 @@ def test_create_tweet(monkeypatch):
         assert response == expected_response
 
 
-def test_delete_tweet(monkeypatch):
+def test_delete_tweet(monkeypatch, twitter_toolkit):
     # Get the logger for the module being tested
     logger = get_logger('camel.functions.twitter_function')
-
     # Delete a mock response object
     mock_response = MagicMock()
     mock_response.json.return_value = {'data': {'deleted': True}}
@@ -99,14 +102,16 @@ def test_delete_tweet(monkeypatch):
     monkeypatch.setattr(logger, 'info', capturing_log)
 
     # Use patch to mock the get_oauth_session method
-    patch_path = 'camel.functions.twitter_function.get_oauth_session'
+    patch_path = (
+        'camel.toolkits.twitter_toolkit.TwitterToolkit._get_oauth_session'
+    )
     with patch(patch_path) as mock_get_oauth_session:
         # Configure the mock OAuth session's delete method
         # to return the mock response object
         mock_get_oauth_session.return_value.delete.return_value = mock_response
 
         # Call the delete_tweet function
-        response = delete_tweet(tweet_id="11111")
+        response = twitter_toolkit.delete_tweet(tweet_id="11111")
 
         # Verify the output
         expected_start = (
@@ -119,7 +124,7 @@ def test_delete_tweet(monkeypatch):
         assert response == expected_response
 
 
-def test_get_user_me(monkeypatch):
+def test_get_user_me(monkeypatch, twitter_toolkit):
     # Mocked JSON response, anonymized
     mock_json_response = {
         'data': {
@@ -154,7 +159,9 @@ def test_get_user_me(monkeypatch):
     }
 
     # Use patch to mock the get_oauth_session method
-    patch_path = 'camel.functions.twitter_function.get_oauth_session'
+    patch_path = (
+        'camel.toolkits.twitter_toolkit.TwitterToolkit._get_oauth_session'
+    )
     with patch(patch_path) as mock_get_oauth_session:
         mock_response = MagicMock()
         mock_response.json.return_value = mock_json_response
@@ -162,7 +169,7 @@ def test_get_user_me(monkeypatch):
         mock_get_oauth_session.return_value.get.return_value = mock_response
 
         # Call the get_user_me function
-        response = get_my_user_profile()
+        response = twitter_toolkit.get_my_user_profile()
 
         # Verify the returned user information report
         expected_report = (

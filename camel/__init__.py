@@ -18,7 +18,7 @@ from .logger import (
 
 _configure_library_logging()
 
-__version__ = '0.1.5.6'
+__version__ = '0.1.5.7'
 
 __all__ = [
     '__version__',

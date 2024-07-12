@@ -15,9 +15,18 @@
 
 from collections.abc import Iterable
 from dataclasses import asdict, dataclass
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from camel.configs.base_config import BaseConfig
+
+if TYPE_CHECKING:
+    from google.generativeai.protos import Schema
+    from google.generativeai.types.content_types import (
+        FunctionLibraryType,
+        ToolConfigType,
+    )
+    from google.generativeai.types.helper_types import RequestOptionsType
+    from google.generativeai.types.safety_types import SafetySettingOptions
 
 
 @dataclass(frozen=True)
@@ -72,14 +81,6 @@ class GeminiConfig(BaseConfig):
             Options for the request.
     """
 
-    from google.generativeai.protos import Schema
-    from google.generativeai.types.content_types import (
-        FunctionLibraryType,
-        ToolConfigType,
-    )
-    from google.generativeai.types.helper_types import RequestOptionsType
-    from google.generativeai.types.safety_types import SafetySettingOptions
-
     candidate_count: Optional[int] = None
     stop_sequences: Optional[Iterable[str]] = None
     max_output_tokens: Optional[int] = None
@@ -87,11 +88,11 @@ class GeminiConfig(BaseConfig):
     top_p: Optional[float] = None
     top_k: Optional[int] = None
     response_mime_type: Optional[str] = None
-    response_schema: Optional[Schema] = None
-    safety_settings: Optional[SafetySettingOptions] = None
-    tools: Optional[FunctionLibraryType] = None
-    tool_config: Optional[ToolConfigType] = None
-    request_options: Optional[RequestOptionsType] = None
+    response_schema: Optional['Schema'] = None
+    safety_settings: Optional['SafetySettingOptions'] = None
+    tools: Optional['FunctionLibraryType'] = None
+    tool_config: Optional['ToolConfigType'] = None
+    request_options: Optional['RequestOptionsType'] = None
 
 
 Gemini_API_PARAMS = {param for param in asdict(GeminiConfig()).keys()}
