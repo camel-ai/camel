@@ -109,7 +109,10 @@ class BaseModelBackend(ABC):
         Returns:
             int: The maximum token limit for the given model.
         """
-        return self.model_type.token_limit
+        return (
+            self.model_config_dict.get("max_tokens")
+            or self.model_type.token_limit
+        )
 
     @property
     def stream(self) -> bool:

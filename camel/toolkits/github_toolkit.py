@@ -17,9 +17,10 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import List, Optional
 
-from camel.functions import OpenAIFunction
+from camel.utils import dependencies_required
 
 from .base import BaseToolkit
+from .openai_function import OpenAIFunction
 
 
 @dataclass
@@ -130,6 +131,7 @@ class GithubToolkit(BaseToolkit):
             `get_github_access_token` method.
     """
 
+    @dependencies_required('github')
     def __init__(
         self, repo_name: str, access_token: Optional[str] = None
     ) -> None:
@@ -144,13 +146,8 @@ class GithubToolkit(BaseToolkit):
         if access_token is None:
             access_token = self.get_github_access_token()
 
-        try:
-            from github import Auth, Github
-        except ImportError:
-            raise ImportError(
-                "Please install `github` first. You can install it by running "
-                "`pip install pygithub`."
-            )
+        from github import Auth, Github
+
         self.github = Github(auth=Auth.Token(access_token))
         self.repo = self.github.get_repo(repo_name)
 

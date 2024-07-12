@@ -78,17 +78,16 @@ Expected Output:
 
 Nodes:
 
-Node(id='John', type='Person', properties={'agent_generated'})
-Node(id='XYZ Corporation', type='Organization', properties={'agent_generated'})
-Node(id='New York City', type='Location', properties={'agent_generated'})
+Node(id='John', type='Person')
+Node(id='XYZ Corporation', type='Organization')
+Node(id='New York City', type='Location')
 
 Relationships:
 
 Relationship(subj=Node(id='John', type='Person'), obj=Node(id='XYZ 
-Corporation', type='Organization'), type='WorksAt', properties=
-{'agent_generated'})
+Corporation', type='Organization'), type='WorksAt')
 Relationship(subj=Node(id='John', type='Person'), obj=Node(id='New York City', 
-type='Location'), type='ResidesIn', properties={'agent_generated'})
+type='Location'), type='ResidesIn')
 
 ===== TASK =====
 Please extracts nodes and relationships from given content and structures them 
@@ -211,11 +210,10 @@ class KnowledgeGraphAgent(ChatAgent):
         import re
 
         # Regular expressions to extract nodes and relationships
-        node_pattern = r"Node\(id='(.*?)', type='(.*?)', properties=(.*?)\)"
+        node_pattern = r"Node\(id='(.*?)', type='(.*?)'\)"
         rel_pattern = (
             r"Relationship\(subj=Node\(id='(.*?)', type='(.*?)'\), "
-            r"obj=Node\(id='(.*?)', type='(.*?)'\), type='(.*?)', "
-            r"properties=\{(.*?)\}\)"
+            r"obj=Node\(id='(.*?)', type='(.*?)'\), type='(.*?)'\)"
         )
 
         nodes = {}
@@ -223,8 +221,8 @@ class KnowledgeGraphAgent(ChatAgent):
 
         # Extract nodes
         for match in re.finditer(node_pattern, input_string):
-            id, type, properties = match.groups()
-            properties = eval(properties)
+            id, type = match.groups()
+            properties = {'source': 'agent_created'}
             if id not in nodes:
                 node = Node(id, type, properties)
                 if self._validate_node(node):
@@ -232,10 +230,8 @@ class KnowledgeGraphAgent(ChatAgent):
 
         # Extract relationships
         for match in re.finditer(rel_pattern, input_string):
-            subj_id, subj_type, obj_id, obj_type, rel_type, properties_str = (
-                match.groups()
-            )
-            properties = eval(properties_str)
+            subj_id, subj_type, obj_id, obj_type, rel_type = match.groups()
+            properties = {'source': 'agent_created'}
             if subj_id in nodes and obj_id in nodes:
                 subj = nodes[subj_id]
                 obj = nodes[obj_id]

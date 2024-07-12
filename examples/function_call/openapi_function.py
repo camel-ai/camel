@@ -13,9 +13,9 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from camel.agents import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
-from camel.functions import OPENAPI_FUNCS
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
+from camel.toolkits import OPENAPI_FUNCS
 from camel.types import ModelPlatformType, ModelType
 
 # Define system message
