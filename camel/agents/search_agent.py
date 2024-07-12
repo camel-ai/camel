@@ -76,7 +76,7 @@ class SearchAgent(ChatAgent):
             result = self.step(user_msg).msg.content
             results += result + "\n"
 
-        # Final summarise
+        # Final summarization
         final_prompt = TextPrompt(
             '''Here are some summarized texts which split from one text. Using
             the information to answer the question. If can't find the answer,
