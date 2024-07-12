@@ -123,7 +123,7 @@ class KnowledgeGraphAgent(ChatAgent):
             role_type=RoleType.ASSISTANT,
             meta_dict=None,
             content="Your mission is to transform unstructured content "
-            "intostructured graph data. Extract nodes and relationships with "
+            "into structured graph data. Extract nodes and relationships with "
             "precision, and let the connections unfold. Your graphs will "
             "illuminate the hidden connections within the chaos of "
             "information.",
