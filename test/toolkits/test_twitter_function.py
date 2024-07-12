@@ -80,7 +80,7 @@ def test_create_tweet(monkeypatch, twitter_toolkit):
 
 def test_delete_tweet(monkeypatch, twitter_toolkit):
     # Get the logger for the module being tested
-    logger = get_logger('camel.functions.twitter_function')
+    logger = get_logger('camel.toolkits.twitter_toolkit')
     # Delete a mock response object
     mock_response = MagicMock()
     mock_response.json.return_value = {'data': {'deleted': True}}
