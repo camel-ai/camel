@@ -27,6 +27,10 @@ from .commons import (
     print_text_animated,
     text_extract_from_web,
     to_pascal,
+    get_pydantic_object_schema,
+    get_pydantic_major_version,
+    func_string_to_callable,
+    json_to_function_code,
 )
 from .constants import Constants
 from .token_counting import (
@@ -60,4 +64,8 @@ __all__ = [
     'create_chunks',
     'dependencies_required',
     'api_keys_required',
+    'get_pydantic_object_schema',
+    'get_pydantic_major_version',
+    'func_string_to_callable',
+    'json_to_function_code',
 ]

@@ -14,6 +14,7 @@
 from __future__ import annotations
 
 import json
+from pydantic import BaseModel
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
@@ -37,12 +38,16 @@ from camel.types import (
     OpenAIBackendRole,
     RoleType,
 )
-from camel.utils import get_model_encoding
+from camel.utils import (
+    get_model_encoding, 
+    get_pydantic_object_schema, 
+    func_string_to_callable,
+    json_to_function_code
+)
+from camel.functions import OpenAIFunction
 
 if TYPE_CHECKING:
     from openai import Stream
-
-    from camel.functions import OpenAIFunction
     from camel.terminators import ResponseTerminator
 
 
@@ -287,6 +292,7 @@ class ChatAgent(BaseAgent):
     def step(
         self,
         input_message: BaseMessage,
+        output_schema: Optional[BaseModel] = None,
     ) -> ChatAgentResponse:
         r"""Performs a single step in the chat session by generating a response
         to the input message.
@@ -298,6 +304,10 @@ class ChatAgent(BaseAgent):
                 anyway since for the self agent any incoming message is
                 external.
 
+            output_schema (Optional[BaseModel]): An optional pydantic model 
+                that includes value types and field descriptions used to 
+                generate a structured response by LLM. This schema helps
+                in defining the expected output format.
         Returns:
             ChatAgentResponse: A struct containing the output messages,
                 a boolean indicating whether the chat session has terminated,
@@ -318,6 +328,10 @@ class ChatAgent(BaseAgent):
                 return self.step_token_exceed(
                     e.args[1], tool_calls, "max_tokens_exceeded"
                 )
+            
+            if output_schema is not None and self.model_type.is_openai:
+                self._structured_output_openai_response(output_schema)
+
             (
                 response,
                 output_messages,
@@ -358,21 +372,34 @@ class ChatAgent(BaseAgent):
                     num_tokens,
                 )
                 break
+        
+        # if use structure response, set structure result as content of
+        # BaseMessage
+        if output_schema:
+            for base_message_item in output_messages:
+                base_message_item.content = str(info['tool_calls'][0].result)
 
         return ChatAgentResponse(output_messages, self.terminated, info)
 
     async def step_async(
         self,
         input_message: BaseMessage,
+        output_schema: Optional[BaseModel] = None,
     ) -> ChatAgentResponse:
         r"""Performs a single step in the chat session by generating a response
         to the input message. This agent step can call async function calls.
 
         Args:
             input_message (BaseMessage): The input message to the agent.
-            Its `role` field that specifies the role at backend may be either
-            `user` or `assistant` but it will be set to `user` anyway since
-            for the self agent any incoming message is external.
+                Its `role` field that specifies the role at backend may be
+                either `user` or `assistant` but it will be set to `user`
+                anyway since for the self agent any incoming message is
+                external.
+
+            output_schema (Optional[BaseModel]): An optional pydantic model 
+                that includes value types and field descriptions used to 
+                generate a structured response by LLM. This schema helps
+                in defining the expected output format.
 
         Returns:
             ChatAgentResponse: A struct containing the output messages,
@@ -394,6 +421,9 @@ class ChatAgent(BaseAgent):
                 return self.step_token_exceed(
                     e.args[1], tool_calls, "max_tokens_exceeded"
                 )
+            if output_schema is not None and self.model_type.is_openai:
+                self._structured_output_openai_response(output_schema)
+
             (
                 response,
                 output_messages,
@@ -436,9 +466,43 @@ class ChatAgent(BaseAgent):
                     num_tokens,
                 )
                 break
+        
+        # if use structure response, set structure result as content of
+        # BaseMessage
+        if output_schema:
+            for base_message_item in output_messages:
+                base_message_item.content = str(info['tool_calls'][0].result)
 
         return ChatAgentResponse(output_messages, self.terminated, info)
+    
+    def _structured_output_openai_response(self, output_schema: BaseModel):
+        r"""Handles the structured output response for OpenAI.
 
+        This method processes the given output schema and integrates the resulting function 
+        into the tools for the OpenAI model configuration.
+
+        Args:
+            output_schema (BaseModel): The schema representing the expected output structure.
+
+        Returns:
+            None
+        """
+        # step 1 extract the output_schema infos as json.
+        output_schema_json = get_pydantic_object_schema(output_schema)
+
+        # step 2 convert output schema json as callable string
+        output_schema_callable_str = json_to_function_code(output_schema_json)
+
+        # step 3 get function from callable string
+        return_json_func = func_string_to_callable(output_schema_callable_str) 
+
+        # step 4 add return_json_func into tools
+        func = OpenAIFunction(return_json_func)
+        tools = [func]
+        self.func_dict[func.get_function_name()] = func.func
+        self.model_backend.model_config_dict=ChatGPTConfig(tools = tools).__dict__
+
+    
     def _step_model_response(
         self,
         openai_messages: list[OpenAIMessage],

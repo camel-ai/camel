@@ -19,10 +19,11 @@ import socket
 import time
 import zipfile
 from functools import wraps
-from typing import Any, Callable, List, Optional, Set, TypeVar, cast
+from typing import Any, Callable, List, Optional, Set, TypeVar, cast, Dict
 from urllib.parse import urlparse
 
 import pydantic
+from pydantic import BaseModel
 import requests
 
 from camel.types import TaskType
@@ -340,6 +341,97 @@ def to_pascal(snake: str) -> str:
 
 
 PYDANTIC_V2 = pydantic.VERSION.startswith("2.")
+
+def get_pydantic_object_schema(pydantic_params: BaseModel) -> Dict:
+    r"""Get the JSON schema of a Pydantic model.
+
+    Args:
+        pydantic_params (BaseModel): The Pydantic model to retrieve the schema for.
+
+    Returns:
+        dict: The JSON schema of the Pydantic model.
+    """
+    PYDANTIC_MAJOR_VERSION = get_pydantic_major_version()
+    if PYDANTIC_MAJOR_VERSION == 2:
+            if issubclass(pydantic_params, pydantic.BaseModel):
+                return pydantic_params.model_json_schema()
+            elif issubclass(pydantic_params, pydantic.v1.BaseModel):
+                return pydantic_params.schema()
+    return pydantic_params.schema()
+
+
+def get_pydantic_major_version() -> int:
+    r"""Get the major version of Pydantic.
+
+    Returns:
+        int: The major version number of Pydantic. Returns 0 if Pydantic is not installed.
+    """
+    try:
+        import pydantic
+
+        return int(pydantic.__version__.split(".")[0])
+    except ImportError:
+        return 0
+
+
+def func_string_to_callable(code: str):
+    r"""Convert a function code string to a callable function object.
+
+    Args:
+        code (str): The function code as a string.
+
+    Returns:
+        callable: The callable function object extracted from the code string.
+    """
+    local_vars = {}
+    exec(code, globals(), local_vars)
+    return local_vars.get('return_json_response')
+
+
+def json_to_function_code(json_obj):
+    r"""Generate a Python function code from a JSON schema.
+
+    Args:
+        json_obj (dict): The JSON schema object containing properties and required fields, and json format is follow openai tools schema
+
+    Returns:
+        str: The generated Python function code as a string.
+    """
+    properties = json_obj['properties']
+    required = json_obj['required']
+
+    args = []
+    docstring_args = []
+    return_keys = []
+
+    for prop in required:
+        description = properties[prop]['description']
+        prop_type = properties[prop]['type']
+        python_type = 'str' if prop_type == 'string' else prop_type
+        args.append(f"{prop}: {python_type}")
+        docstring_args.append(f"        {prop} ({python_type}): {description}.")
+        return_keys.append(prop)
+
+    # extract entity of schema
+    args_str = ", ".join(args)
+    docstring_args_str = "\n".join(docstring_args)
+    return_keys_str = ", ".join(return_keys)
+
+    # function template
+    function_code = f'''
+def return_json_response({args_str}):
+    r"""Return response with a specified json format.
+
+    Args:
+{docstring_args_str}
+
+    Returns:
+        Dict: A dictionary containing {return_keys_str}.
+    """
+    return {{{", ".join([f'"{prop}": {prop}' for prop in required])}}}
+    '''
+
+    return function_code
 
 
 def text_extract_from_web(url: str) -> str:
