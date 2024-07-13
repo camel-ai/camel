@@ -28,6 +28,7 @@ class LiteLLMModel:
         self,
         model_type: str,
         model_config_dict: Dict[str, Any],
+        token_counter: Optional[LiteLLMTokenCounter] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
     ) -> None:
@@ -46,7 +47,7 @@ class LiteLLMModel:
         self.model_type = model_type
         self.model_config_dict = model_config_dict
         self._client = None
-        self._token_counter: Optional[LiteLLMTokenCounter] = None
+        self._token_counter = token_counter
         self.check_model_config()
         self._url = url
         self._api_key = api_key

@@ -19,7 +19,11 @@ from camel.configs import OPENAI_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
-from camel.utils import BaseTokenCounter, OpenSourceTokenCounter
+from camel.utils import (
+    BaseTokenCounter,
+    OpenAITokenCounter,
+    OpenSourceTokenCounter,
+)
 
 
 class OpenSourceModel(BaseModelBackend):
@@ -31,6 +35,7 @@ class OpenSourceModel(BaseModelBackend):
         self,
         model_type: ModelType,
         model_config_dict: Dict[str, Any],
+        token_counter: Optional[BaseTokenCounter] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
     ) -> None:
@@ -45,7 +50,7 @@ class OpenSourceModel(BaseModelBackend):
             url (Optional[str]): The url to the model service.
         """
         super().__init__(model_type, model_config_dict, api_key, url)
-        self._token_counter: Optional[BaseTokenCounter] = None
+        self._token_counter = token_counter
 
         # Check whether the input model type is open-source
         if not model_type.is_open_source:
@@ -98,9 +103,16 @@ class OpenSourceModel(BaseModelBackend):
                 tokenization style.
         """
         if not self._token_counter:
-            self._token_counter = OpenSourceTokenCounter(
-                self.model_type, self.model_path
-            )
+            try:
+                self._token_counter = OpenSourceTokenCounter(
+                    self.model_type, self.model_path
+                )
+            except Exception as e:
+                print(f"Retrieve model token counter failed: {e}. \n \
+                      Use default GPT 3.5-turbo token counter instead.")
+                self._token_counter = OpenAITokenCounter(
+                    ModelType.GPT_3_5_TURBO
+                )
         return self._token_counter
 
     def run(

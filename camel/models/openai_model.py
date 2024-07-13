@@ -34,6 +34,7 @@ class OpenAIModel(BaseModelBackend):
         self,
         model_type: ModelType,
         model_config_dict: Dict[str, Any],
+        token_counter: Optional[BaseTokenCounter] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
     ) -> None:
@@ -58,7 +59,7 @@ class OpenAIModel(BaseModelBackend):
             base_url=self._url,
             api_key=self._api_key,
         )
-        self._token_counter: Optional[BaseTokenCounter] = None
+        self._token_counter = token_counter
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -69,7 +70,14 @@ class OpenAIModel(BaseModelBackend):
                 tokenization style.
         """
         if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(self.model_type)
+            try:
+                self._token_counter = OpenAITokenCounter(self.model_type)
+            except Exception as e:
+                print(f"Retrieve model token counter failed: {e}. \n \
+                      Use default GPT 3.5-turbo token counter instead.")
+                self._token_counter = OpenAITokenCounter(
+                    ModelType.GPT_3_5_TURBO
+                )
         return self._token_counter
 
     @api_keys_required("OPENAI_API_KEY")

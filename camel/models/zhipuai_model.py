@@ -35,6 +35,7 @@ class ZhipuAIModel(BaseModelBackend):
         self,
         model_type: ModelType,
         model_config_dict: Dict[str, Any],
+        token_counter: Optional[BaseTokenCounter] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
     ) -> None:
@@ -63,7 +64,7 @@ class ZhipuAIModel(BaseModelBackend):
             api_key=self._api_key,
             base_url=self._url,
         )
-        self._token_counter: Optional[BaseTokenCounter] = None
+        self._token_counter = token_counter
 
     @api_keys_required("ZHIPUAI_API_KEY")
     def run(
@@ -100,7 +101,7 @@ class ZhipuAIModel(BaseModelBackend):
         """
 
         if not self._token_counter:
-            # It's a temporary setting for token counter.
+            # NOTE: It's a temporary setting for token counter. If other token counter is used for ZhipuAIModel in the future, OpenAITokenCounter(ModelType.GPT_3_5_TURBO) will be the default token counter if the specific token counter is not provided.
             self._token_counter = OpenAITokenCounter(ModelType.GPT_3_5_TURBO)
         return self._token_counter
 
