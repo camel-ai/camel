@@ -11,13 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import List, Union
+from typing import List
 
-from camel.workforce import UnitWorkforce, Workforce
+from camel.workforce import BaseWorkforce
 
 
 def get_workforces_info(
-    workforces: List[Union[Workforce, UnitWorkforce]],
+    workforces: List[BaseWorkforce],
 ) -> dict:
     workforce_info = {}
     for workforce in workforces:

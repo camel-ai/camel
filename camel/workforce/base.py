@@ -12,24 +12,32 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from abc import ABC, abstractmethod
-from typing import Any, Union
+from typing import Any
 
-from camel.tasks.task import Task
-from camel.utils.channel import Channel
+from camel.workforce.task_channel import _TaskChannel
 
 
 class BaseWorkforce(ABC):
     def __init__(
-        self, workforce_id: str, description: str, channel: Channel
+        self, workforce_id: str, description: str, channel: _TaskChannel
     ) -> None:
         self.workforce_id = workforce_id
         self.description = description
         self.channel = channel
+        self.running = True
 
     def reset(self, *args: Any, **kwargs: Any) -> Any:
         """Resets the workforce to its initial state."""
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     async def listening(self):
+        pass
+
+    @abstractmethod
+    async def start(self):
+        pass
+
+    @abstractmethod
+    async def stop(self):
         pass

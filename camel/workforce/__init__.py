@@ -13,11 +13,11 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from .base import BaseWorkforce
-from .unit_workforce import UnitWorkforce
-from .workforce import Workforce
+from .internal_workforce import InternalWorkforce
+from .leaf_workforce import LeafWorkforce
 
 __all__ = [
     "BaseWorkforce",
-    "UnitWorkforce",
-    "Workforce",
+    "LeafWorkforce",
+    "InternalWorkforce",
 ]

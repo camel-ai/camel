@@ -14,15 +14,15 @@
 from camel.agents.chat_agent import ChatAgent
 from camel.messages.base import BaseMessage
 from camel.tasks.task import Task
-from camel.utils.channel import Channel
-from camel.workforce.unit_workforce import UnitWorkforce
-from camel.workforce.workforce import Workforce
+from camel.workforce.internal_workforce import InternalWorkforce
+from camel.workforce.leaf_workforce import LeafWorkforce
+from camel.workforce.task_channel import _TaskChannel
 
 
 def main():
     human_task = Task(content='develop a python program of investing stock.')
 
-    public_channel = Channel()
+    public_channel = _TaskChannel()
 
     sys_msg_1 = BaseMessage.make_assistant_message(
         role_name="programmer",
@@ -40,11 +40,11 @@ def main():
     agent_2 = ChatAgent(sys_msg_2)
     agent_3 = ChatAgent(sys_msg_3)
 
-    unit_workforce_1 = UnitWorkforce(1, 'agent1', agent_1, public_channel)
-    unit_workforce_2 = UnitWorkforce(2, 'agent2', agent_2, public_channel)
-    unit_workforce_3 = UnitWorkforce(3, 'agent3', agent_3, public_channel)
+    unit_workforce_1 = LeafWorkforce(1, 'agent1', agent_1, public_channel)
+    unit_workforce_2 = LeafWorkforce(2, 'agent2', agent_2, public_channel)
+    unit_workforce_3 = LeafWorkforce(3, 'agent3', agent_3, public_channel)
 
-    workforces = Workforce(
+    workforces = InternalWorkforce(
         4,
         'a software group',
         [unit_workforce_1, unit_workforce_2, unit_workforce_3],

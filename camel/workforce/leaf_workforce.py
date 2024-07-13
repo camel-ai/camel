@@ -18,11 +18,11 @@ from typing import Union
 from camel.agents.base import BaseAgent
 from camel.societies import RolePlaying
 from camel.tasks.task import Task
-from camel.utils.channel import Channel
 from camel.workforce.base import BaseWorkforce
+from camel.workforce.task_channel import _TaskChannel
 
 
-class UnitWorkforce(BaseWorkforce):
+class LeafWorkforce(BaseWorkforce):
     r"""A unit workforce that consists of a single worker. It is the basic unit
     of task processing in the workforce system.
 
@@ -31,16 +31,18 @@ class UnitWorkforce(BaseWorkforce):
         description (str): Description of the workforce.
         worker (Union[BaseAgent, RolePlaying]): Worker of the workforce.
             Could be a single agent or a role playing system.
-        channel (Channel): Communication channel for the workforce.
+        channel (_TaskChannel): Communication channel for the workforce.
 
     """
 
     def __init__(
-            self,
-            workforce_id: str,
-            description: str,
-            worker: Union[BaseAgent, RolePlaying],
-            channel: Channel,
+        self,
+        workforce_id: str,
+        description: str,
+        # TODO: here we should have a superclass for BaseAgent and
+        #  RolePlaying
+        worker: Union[BaseAgent, RolePlaying],
+        channel: _TaskChannel,
     ) -> None:
         super().__init__(workforce_id, description, channel)
         self.worker = worker
@@ -48,8 +50,7 @@ class UnitWorkforce(BaseWorkforce):
     async def process_task(self, task: Task) -> Union[str, None]:
         """Processes a given task, serving as an entry point for task
         processing."""
-        task_result = self.worker.step(task)
-        return task_result
+        raise NotImplementedError()
 
     async def listening(self):
         """Continuously listen to the channel, process the task that are
@@ -66,3 +67,9 @@ class UnitWorkforce(BaseWorkforce):
 
         # TODO: Update the result and status of the task in the channel
         raise NotImplementedError()
+
+    async def start(self):
+        await self.listening()
+
+    async def stop(self):
+        self.running = False

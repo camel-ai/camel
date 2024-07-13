@@ -22,10 +22,10 @@ class ManagerAgent(ChatAgent):
     r"""An agent that has ability to manager tasks in workforce."""
 
     def __init__(
-            self,
-            model: Optional[BaseModelBackend] = None,
-            task_type: TaskType = TaskType.AI_SOCIETY,
-            assign_task_prompt: Optional[str] = None,
+        self,
+        model: Optional[BaseModelBackend] = None,
+        task_type: TaskType = TaskType.AI_SOCIETY,
+        assign_task_prompt: Optional[str] = None,
     ):
         pass
 
