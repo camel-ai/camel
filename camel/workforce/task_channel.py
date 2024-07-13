@@ -13,13 +13,12 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import asyncio
 from enum import Enum
-from typing import Dict, List
+from typing import Dict, List, Optional, Tuple
 
 from camel.tasks import Task
-from camel.workforce import BaseWorkforce
 
 
-class _TaskStatus(Enum):
+class Taskstatus(Enum):
     r"""The status of a task. The task can be in one of the following states:
 
     - ``ASSIGNED``: The task has been assigned to a worker.
@@ -36,67 +35,88 @@ class _TaskStatus(Enum):
     CLOSED = "closed"
 
 
-class _Packet:
+class Packet:
     r"""The basic element inside the channel. A task is wrapped inside a
     packet. The packet will contain the task, along with the task's assignee,
     and the task's status.
 
     Args:
         task (Task): The task that is wrapped inside the packet.
+        publisher (InternalWorkforce): The workforce that published the task.
+        assignee (BaseWorkforce): The ID of the worker that is assigned to the
+            task.
+        dependencies (Optional[Tuple[str]], optional): The list of task IDs
+            that the task depends on. Defaults to None.
 
     Attributes:
         task (Task): The task that is wrapped inside the packet.
+        publisher (InternalWorkforce): The workforce that published the task.
         assignee (BaseWorkforce): The ID of the worker that is assigned to the
             task.
-        status (_TaskStatus): The status of the task.
+        status (Taskstatus): The status of the task.
+        dependencies (Optional[Tuple[str]]): The list of task IDs that the
+            task depends on.
     """
 
-    def __init__(self, task: Task, assignee: BaseWorkforce):
+    def __init__(
+        self,
+        task: Task,
+        publisher_id: str,
+        assignee_id: str,
+        dependencies: Optional[Tuple[str]] = None,
+    ):
         self.task = task
-        self.assignee = assignee
-        self.status = _TaskStatus.ASSIGNED
+        self.publisher_id = publisher_id
+        self.assignee_id = assignee_id
+        self.dependencies = dependencies
+        self.status = Taskstatus.ASSIGNED
 
 
-class _TaskChannel:
+class TaskChannel:
     r"""An internal class used by Workforce to manage tasks."""
 
     def __init__(self):
         self._task_id_list: List[str] = []
         self._condition = asyncio.Condition()
-        self._task_dict: Dict[str, _Packet] = {}
+        self._task_dict: Dict[str, Packet] = {}
 
-    async def get_finished_task(self) -> _Packet:
+    async def get_finished_task_by_publisher(
+        self, publisher_id: str
+    ) -> Packet:
         async with self._condition:
             while True:
                 for id in self._task_id_list:
                     packet = self._task_dict[id]
-                    if packet.status in [
-                        _TaskStatus.COMPLETED,
-                        _TaskStatus.FAILED,
+                    if packet.publisher_id != publisher_id:
+                        continue
+                    if packet.status not in [
+                        Taskstatus.COMPLETED,
+                        Taskstatus.FAILED,
                     ]:
-                        return packet
+                        continue
+                    return packet
                 await self._condition.wait()
 
-    async def post_task(self, packet: _Packet) -> None:
+    async def post_task(self, packet: Packet) -> None:
         async with self._condition:
             self._task_id_list.append(packet.task.id)
             self._task_dict[packet.task.id] = packet
             self._condition.notify_all()
 
-    async def update_task(self, task_id: str, status: _TaskStatus) -> None:
+    async def update_task(self, task_id: str, status: Taskstatus) -> None:
         async with self._condition:
             packet = self._task_dict[task_id]
             packet.status = status
             self._condition.notify_all()
 
-    async def get_assigned_task(self, worker: BaseWorkforce) -> _Packet:
+    async def get_assigned_task_by_assignee(self, assignee_id: str) -> Packet:
         async with self._condition:
             while True:
                 for id in self._task_id_list:
                     packet = self._task_dict[id]
                     if (
-                        packet.assignee == worker
-                        and packet.status == _TaskStatus.ASSIGNED
+                        packet.assignee_id == assignee_id
+                        and packet.status == Taskstatus.ASSIGNED
                     ):
                         return packet
                 await self._condition.wait()
@@ -107,6 +127,6 @@ class _TaskChannel:
             self._task_dict.pop(task_id)
             self._condition.notify_all()
 
-    async def get_task_by_id(self, task_id: str) -> _Packet:
+    async def get_task_by_id(self, task_id: str) -> Packet:
         async with self._condition:
             return self._task_dict[task_id]

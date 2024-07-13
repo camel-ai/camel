@@ -14,12 +14,12 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-from camel.workforce.task_channel import _TaskChannel
+from camel.workforce.task_channel import TaskChannel
 
 
 class BaseWorkforce(ABC):
     def __init__(
-        self, workforce_id: str, description: str, channel: _TaskChannel
+        self, workforce_id: str, description: str, channel: TaskChannel
     ) -> None:
         self.workforce_id = workforce_id
         self.description = description

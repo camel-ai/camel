@@ -19,7 +19,7 @@ from camel.agents.base import BaseAgent
 from camel.societies import RolePlaying
 from camel.tasks.task import Task
 from camel.workforce.base import BaseWorkforce
-from camel.workforce.task_channel import _TaskChannel
+from camel.workforce.task_channel import Packet, TaskChannel
 
 
 class LeafWorkforce(BaseWorkforce):
@@ -31,7 +31,7 @@ class LeafWorkforce(BaseWorkforce):
         description (str): Description of the workforce.
         worker (Union[BaseAgent, RolePlaying]): Worker of the workforce.
             Could be a single agent or a role playing system.
-        channel (_TaskChannel): Communication channel for the workforce.
+        channel (TaskChannel): Communication channel for the workforce.
 
     """
 
@@ -42,7 +42,7 @@ class LeafWorkforce(BaseWorkforce):
         # TODO: here we should have a superclass for BaseAgent and
         #  RolePlaying
         worker: Union[BaseAgent, RolePlaying],
-        channel: _TaskChannel,
+        channel: TaskChannel,
     ) -> None:
         super().__init__(workforce_id, description, channel)
         self.worker = worker
@@ -52,6 +52,12 @@ class LeafWorkforce(BaseWorkforce):
         processing."""
         raise NotImplementedError()
 
+    async def get_assigned_task(self) -> Packet:
+        r"""Get the task assigned to this workforce from the channel."""
+        return await self.channel.get_assigned_task_by_assignee(
+            self.workforce_id
+        )
+
     async def listening(self):
         """Continuously listen to the channel, process the task that are
         assigned to this workforce, and update the result and status of the
@@ -60,13 +66,14 @@ class LeafWorkforce(BaseWorkforce):
         This method should be run in an event loop, as it will run
             indefinitely.
         """
-        # TODO: Check the first task in the channel that are assigned to
-        #  this workforce and status is not 'done'
-
-        # TODO: Process the task, no need to remove it from the channel
-
-        # TODO: Update the result and status of the task in the channel
-        raise NotImplementedError()
+        while self.running:
+            # get the earliest task assigned to this workforce
+            # packet = await self.get_assigned_task()
+            # TODO: check if the task can be done. If not, fail the task.
+            # TODO: fetch the info of dependencies
+            # TODO: process the task
+            # TODO: update the result and status of the task
+            raise NotImplementedError()
 
     async def start(self):
         await self.listening()

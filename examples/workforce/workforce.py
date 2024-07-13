@@ -16,13 +16,13 @@ from camel.messages.base import BaseMessage
 from camel.tasks.task import Task
 from camel.workforce.internal_workforce import InternalWorkforce
 from camel.workforce.leaf_workforce import LeafWorkforce
-from camel.workforce.task_channel import _TaskChannel
+from camel.workforce.task_channel import TaskChannel
 
 
 def main():
     human_task = Task(content='develop a python program of investing stock.')
 
-    public_channel = _TaskChannel()
+    public_channel = TaskChannel()
 
     sys_msg_1 = BaseMessage.make_assistant_message(
         role_name="programmer",
