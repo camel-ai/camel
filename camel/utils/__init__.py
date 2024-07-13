@@ -19,18 +19,18 @@ from .commons import (
     create_chunks,
     dependencies_required,
     download_tasks,
+    func_string_to_callable,
     get_first_int,
     get_prompt_template_key_words,
+    get_pydantic_major_version,
+    get_pydantic_object_schema,
     get_system_information,
     get_task_list,
+    json_to_function_code,
     model_api_key_required,
     print_text_animated,
     text_extract_from_web,
     to_pascal,
-    get_pydantic_object_schema,
-    get_pydantic_major_version,
-    func_string_to_callable,
-    json_to_function_code,
 )
 from .constants import Constants
 from .token_counting import (

@@ -19,12 +19,22 @@ import socket
 import time
 import zipfile
 from functools import wraps
-from typing import Any, Callable, List, Optional, Set, TypeVar, cast, Dict
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Set,
+    TypeVar,
+    cast,
+)
 from urllib.parse import urlparse
 
 import pydantic
-from pydantic import BaseModel
 import requests
+from pydantic import BaseModel
 
 from camel.types import TaskType
 
@@ -342,6 +352,7 @@ def to_pascal(snake: str) -> str:
 
 PYDANTIC_V2 = pydantic.VERSION.startswith("2.")
 
+
 def get_pydantic_object_schema(pydantic_params: BaseModel) -> Dict:
     r"""Get the JSON schema of a Pydantic model.
 
@@ -353,11 +364,9 @@ def get_pydantic_object_schema(pydantic_params: BaseModel) -> Dict:
     """
     PYDANTIC_MAJOR_VERSION = get_pydantic_major_version()
     if PYDANTIC_MAJOR_VERSION == 2:
-            if issubclass(pydantic_params, pydantic.BaseModel):
-                return pydantic_params.model_json_schema()
-            elif issubclass(pydantic_params, pydantic.v1.BaseModel):
-                return pydantic_params.schema()
-    return pydantic_params.schema()
+        return pydantic_params.model_json_schema()
+    else:
+        return pydantic_params.schema()
 
 
 def get_pydantic_major_version() -> int:
@@ -383,9 +392,10 @@ def func_string_to_callable(code: str):
     Returns:
         callable: The callable function object extracted from the code string.
     """
-    local_vars = {}
+    local_vars: Mapping[str, object] = {}
     exec(code, globals(), local_vars)
-    return local_vars.get('return_json_response')
+    func = local_vars.get('return_json_response')
+    return func
 
 
 def json_to_function_code(json_obj):
@@ -409,7 +419,9 @@ def json_to_function_code(json_obj):
         prop_type = properties[prop]['type']
         python_type = 'str' if prop_type == 'string' else prop_type
         args.append(f"{prop}: {python_type}")
-        docstring_args.append(f"        {prop} ({python_type}): {description}.")
+        docstring_args.append(
+            f"        {prop} ({python_type}): {description}."
+        )
         return_keys.append(prop)
 
     # extract entity of schema

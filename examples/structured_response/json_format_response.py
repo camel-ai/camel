@@ -12,17 +12,18 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
+from pydantic import BaseModel, Field
+
 from camel.agents import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
-from pydantic import BaseModel, Field
 
 # Define system message
 assistant_sys_msg = BaseMessage.make_assistant_message(
-        role_name="Assistant",
-        content="You are a helpful assistant.",
+    role_name="Assistant",
+    content="You are a helpful assistant.",
 )
 
 model = ModelFactory.create(
@@ -34,10 +35,12 @@ model = ModelFactory.create(
 # Set agent
 camel_agent = ChatAgent(assistant_sys_msg, model=model)
 
+
 # pydantic basemodel as input params format
 class JokeResponse(BaseModel):
     joke: str = Field(description="a joke")
     funny_level: str = Field(description="Funny level, from 1 to 10")
+
 
 user_msg = BaseMessage.make_user_message(
     role_name="User",
