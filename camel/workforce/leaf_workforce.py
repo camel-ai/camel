@@ -13,13 +13,13 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from typing import Union
+from typing import List, Union
 
 from camel.agents.base import BaseAgent
 from camel.societies import RolePlaying
 from camel.tasks.task import Task
 from camel.workforce.base import BaseWorkforce
-from camel.workforce.task_channel import Packet, TaskChannel
+from camel.workforce.task_channel import Packet, TaskChannel, Taskstatus
 
 
 class LeafWorkforce(BaseWorkforce):
@@ -47,9 +47,13 @@ class LeafWorkforce(BaseWorkforce):
         super().__init__(workforce_id, description, channel)
         self.worker = worker
 
-    async def process_task(self, task: Task) -> Union[str, None]:
-        """Processes a given task, serving as an entry point for task
-        processing."""
+    def process_task(self, task: Task, dependencies: List[Task]) -> Taskstatus:
+        r"""Processes a task based on its dependencies.
+
+        Returns:
+            'COMPLETE' if the task is successfully processed,
+            'FAILED' if the processing fails.
+        """
         raise NotImplementedError()
 
     async def get_assigned_task(self) -> Packet:
@@ -68,14 +72,32 @@ class LeafWorkforce(BaseWorkforce):
         """
         while self.running:
             # get the earliest task assigned to this workforce
-            # packet = await self.get_assigned_task()
+            packet = await self.get_assigned_task()
+            # get the Task instance of dependencies
+            task_dependencies = []
+            for dep_task_id in packet.dependencies:
+                task_dependency = await self.channel.get_task_by_id(
+                    dep_task_id
+                )
+                task_dependencies.append(task_dependency)
+
+            # Q: Will `task.result` be modified in the `process_task` function
+            # and referenced by packet in the channel, do we need to provide
+            # the `update_task_result` function for TaskChannel?
+
+            task_state = await self.process_task(
+                packet.task, task_dependencies
+            )
+
+            await self.channel.update_task(packet.task.id, task_state)
+
             # TODO: check if the task can be done. If not, fail the task.
             # TODO: fetch the info of dependencies
             # TODO: process the task
             # TODO: update the result and status of the task
-            raise NotImplementedError()
 
     async def start(self):
+        self.running = True
         await self.listening()
 
     async def stop(self):
