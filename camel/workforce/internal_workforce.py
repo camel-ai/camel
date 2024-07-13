@@ -15,9 +15,10 @@ from __future__ import annotations
 
 import asyncio
 from collections import deque
-from typing import List, Optional, boolean
+from typing import List, Optional
 
 from camel.agents.manager_agent import ChatAgent, ManagerAgent
+from camel.messages.base import BaseMessage
 from camel.tasks.task import Task, TaskManager
 from camel.workforce import BaseWorkforce, LeafWorkforce
 from camel.workforce.task_channel import Packet, TaskChannel, Taskstatus
@@ -47,19 +48,26 @@ class InternalWorkforce(BaseWorkforce):
         workforces: List[BaseWorkforce],
         manager_agent_config: dict,
         task_agent_config: dict,
-        initial_task: Optional[Task],
+        initial_task: Task,
         channel: TaskChannel,
     ) -> None:
         super().__init__(workforce_id, description, channel)
         self.workforces = workforces
-        self.manager_agent = ManagerAgent(manager_agent_config)
-        self.task_agent = ChatAgent(task_agent_config)
+        self.manager_agent = ManagerAgent()
+        sys_msg = BaseMessage.make_assistant_message(
+            role_name="task_planner",
+            content="You are going to decompose tasks.",
+        )
+        self.task_agent = ChatAgent(sys_msg)
         self.workforce_info = get_workforces_info(workforces)
         self.initial_task = initial_task
         self.task_collection = TaskManager(self.initial_task)
 
     def assign_task(
-        self, task: Task, failed_log: Optional[str], workforce_info: str
+        self,
+        task: Task,
+        workforce_info: dict,
+        failed_log: Optional[str] = None,
     ) -> str:
         r"""Assigns a task to an internal workforce if capable, otherwise
         create a new workforce.
@@ -88,10 +96,11 @@ class InternalWorkforce(BaseWorkforce):
         raise NotImplementedError()
 
     def decompose_task_to_packets(
-        self, task: Task, failed: boolean
+        self, task: Task, failed: bool
     ) -> List[Packet]:
         r"""Decompose a task into a packet and set dependencies."""
-        packet_lst, dependencies = [], []
+        packet_lst: List[Packet] = []
+        dependencies: List[str] = []
         subtasks = self.task_collection.decompose(task, self.task_agent)
 
         for subtask in subtasks:
@@ -102,11 +111,14 @@ class InternalWorkforce(BaseWorkforce):
                     subtask
                 ).workforce_id
             else:
-                assign_id = self.assign_task(subtask)
+                assign_id = self.assign_task(
+                    task=subtask, workforce_info=self.workforce_info
+                )
             # set status as Taskstatus.ASSIGNED
             packet = Packet(
                 subtask, self.workforce_id, assign_id, dependencies
             )
+
             packet_lst.append(packet)
             # get dependencies via the index of the subtask list
             dependencies.append(subtask.id)
@@ -135,7 +147,7 @@ class InternalWorkforce(BaseWorkforce):
             )
             # Insert packets at the tail of the queue and send to channel
             self.pending_packets.extend(packets)
-            self.send_packet()
+            await self.send_packet()
 
         while self.running and self.pending_packets:
             finished_task = await self.get_finished_task()
@@ -168,7 +180,7 @@ class InternalWorkforce(BaseWorkforce):
     async def start(self) -> None:
         r"""Start the internal workforce and all the workforces under it."""
         self.running = True
-        self.pending_packets = deque()
+        self.pending_packets: deque = deque()
         tasks = [
             asyncio.create_task(workforce.start())
             for workforce in self.workforces

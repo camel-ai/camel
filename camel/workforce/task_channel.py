@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import asyncio
 from enum import Enum
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 from camel.tasks import Task
 
@@ -54,7 +54,7 @@ class Packet:
         assignee (BaseWorkforce): The ID of the worker that is assigned to the
             task.
         status (Taskstatus): The status of the task.
-        dependencies (Optional[Tuple[str]]): The list of task IDs that the
+        dependencies (Optional[List[str]]): The list of task IDs that the
             task depends on.
     """
 
@@ -63,7 +63,7 @@ class Packet:
         task: Task,
         publisher_id: str,
         assignee_id: str,
-        dependencies: Optional[Tuple[str]] = None,
+        dependencies: Optional[List[str]] = None,
     ):
         self.task = task
         self.publisher_id = publisher_id
