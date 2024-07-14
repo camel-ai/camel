@@ -47,15 +47,26 @@ def test_validate_relationship_invalid():
 def test_parse_graph_elements():
     agent.element = Mock()
     input_string = """
-    Node(id='node_id', type='node_type', properties={})
-    Relationship(subj=Node(id='subj_id', type='subj_type', properties={}), 
-    obj=Node(id='obj_id', type='obj_type', properties={}), type='test_type', 
-    properties={})
+    Node(id='node_id', type='node_type')
+    Relationship(subj=Node(id='subj_id', type='subj_type'), 
+    obj=Node(id='obj_id', type='obj_type'), type='test_type')
     """
     expected_nodes = [
-        Node(id='node_id', type='node_type', properties={}),
-        Node(id='subj_id', type='subj_type', properties={}),
-        Node(id='obj_id', type='obj_type', properties={}),
+        Node(
+            id='node_id',
+            type='node_type',
+            properties={'source': 'agent_created'},
+        ),
+        Node(
+            id='subj_id',
+            type='subj_type',
+            properties={'source': 'agent_created'},
+        ),
+        Node(
+            id='obj_id',
+            type='obj_type',
+            properties={'source': 'agent_created'},
+        ),
     ]
 
     result = agent._parse_graph_elements(input_string)
