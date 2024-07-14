@@ -62,6 +62,12 @@ parameterize_token_counter = pytest.mark.parametrize(
          OpenAITokenCounter(ModelType.GPT_4), OpenAITokenCounter, ModelType.GPT_4
         ),
 
+        # Test OpenSource model (take VICUNA as an example)
+        (ModelPlatformType.GEMINI, ModelType.GEMINI_1_5_FLASH,
+         GeminiConfig().__dict__,
+         OpenAITokenCounter(ModelType.GPT_4), OpenAITokenCounter, ModelType.GPT_4
+        ),
+
         # Test Ollama model
         (ModelPlatformType.OLLAMA, "gpt-3.5-turbo", OllamaConfig().__dict__, None, OpenAITokenCounter, ModelType.GPT_3_5_TURBO),
         (ModelPlatformType.OLLAMA, "gpt-3.5-turbo", OllamaConfig().__dict__, OpenAITokenCounter(ModelType.GPT_4), OpenAITokenCounter, ModelType.GPT_4),
