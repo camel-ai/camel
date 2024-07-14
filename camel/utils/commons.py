@@ -38,6 +38,8 @@ from pydantic import BaseModel
 
 from camel.types import TaskType
 
+from .constants import Constants
+
 F = TypeVar('F', bound=Callable[..., Any])
 
 
@@ -355,9 +357,9 @@ PYDANTIC_V2 = pydantic.VERSION.startswith("2.")
 
 def get_pydantic_object_schema(pydantic_params: BaseModel) -> Dict:
     r"""Get the JSON schema of a Pydantic model.
-
     Args:
-        pydantic_params (BaseModel): The Pydantic model to retrieve the schema for.
+        pydantic_params (BaseModel): The Pydantic model to retrieve
+        the schema for.
 
     Returns:
         dict: The JSON schema of the Pydantic model.
@@ -373,7 +375,8 @@ def get_pydantic_major_version() -> int:
     r"""Get the major version of Pydantic.
 
     Returns:
-        int: The major version number of Pydantic. Returns 0 if Pydantic is not installed.
+        int: The major version number of Pydantic. Returns 0 if Pydantic is
+        not installed.
     """
     try:
         import pydantic
@@ -394,13 +397,12 @@ def func_string_to_callable(code: str):
     """
     local_vars: Mapping[str, object] = {}
     exec(code, globals(), local_vars)
-    func = local_vars.get('return_json_response')
+    func = local_vars.get(Constants.RETURN_JSON_STRUCTURE_RESPONSE)
     return func
 
 
 def json_to_function_code(json_obj):
     r"""Generate a Python function code from a JSON schema.
-
     Args:
         json_obj (dict): The JSON schema object containing properties and required fields, and json format is follow openai tools schema
 
@@ -431,7 +433,7 @@ def json_to_function_code(json_obj):
 
     # function template
     function_code = f'''
-def return_json_response({args_str}):
+def {Constants.RETURN_JSON_STRUCTURE_RESPONSE}({args_str}):
     r"""Return response with a specified json format.
 
     Args:

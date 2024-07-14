@@ -24,3 +24,6 @@ class Constants:
 
     # default plug of imageio to read video
     VIDEO_DEFAULT_PLUG_PYAV = "pyav"
+
+    # return response with json format
+    RETURN_JSON_STRUCTURE_RESPONSE = "return_json_response"

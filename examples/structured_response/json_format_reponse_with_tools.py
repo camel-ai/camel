@@ -12,45 +12,58 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from pydantic import BaseModel, Field
-
 from camel.agents import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
+from pydantic import BaseModel, Field
+from camel.functions import (
+    MATH_FUNCS,
+    SEARCH_FUNCS,
+
+)
+function_list = [
+        *MATH_FUNCS,
+        *SEARCH_FUNCS,
+    ]
+assistant_model_config = ChatGPTConfig(
+        tools=function_list,
+        temperature=0.0,
+    )
 
 # Define system message
 assistant_sys_msg = BaseMessage.make_assistant_message(
-    role_name="Assistant",
-    content="You are a helpful assistant.",
+        role_name="Assistant",
+        content="You are a helpful assistant.",
 )
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
     model_type=ModelType.GPT_3_5_TURBO,
-    model_config_dict=ChatGPTConfig().__dict__,
+    model_config_dict=assistant_model_config.__dict__,
 )
 
 # Set agent
-camel_agent = ChatAgent(assistant_sys_msg, model=model)
-
+camel_agent = ChatAgent(assistant_sys_msg, 
+                        model=model,
+                        tools=function_list,)
 
 # pydantic basemodel as input params format
-class JokeResponse(BaseModel):
-    joke: str = Field(description="a joke")
-    funny_level: str = Field(description="Funny level, from 1 to 10")
-
+class Response(BaseModel):
+    current_age: str = Field(description=" the current age of University of Oxford")
+    calculated_age: str = Field(description="the add more years of age")
 
 user_msg = BaseMessage.make_user_message(
     role_name="User",
-    content="Tell a jokes.",
+    content="Assume now is 2024 in the Gregorian calendar, " + \
+        "estimate the current age of University of Oxford " + \
+        "and then add 10 more years to this age, " 
 )
 
 # Get response information
-response = camel_agent.step(user_msg, output_schema=JokeResponse)
+response = camel_agent.step(user_msg, output_schema=Response)
 print(response.msgs[0].content)
 """
-{'joke': "Why couldn't the bicycle find its way home? It lost its bearings!"
-, 'funny_level': '8'}
+{'current_age': '928', 'calculated_age': '938'}
 """
