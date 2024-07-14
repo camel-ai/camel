@@ -141,7 +141,7 @@ class ModelType(Enum):
             int: The maximum token limit for the given model.
         """
         if self is ModelType.GPT_3_5_TURBO:
-            return 16385
+            return 4096
         elif self is ModelType.GPT_4:
             return 8192
         elif self is ModelType.GPT_4_32K:
