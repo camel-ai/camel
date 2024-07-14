@@ -18,7 +18,7 @@ from camel.types import RoleType
 
 
 # flake8: noqa :E501
-class DescriptionVideoPromptTemplateDict(TextPromptDict):
+class VideoDescriptionPromptTemplateDict(TextPromptDict):
     ASSISTANT_PROMPT = TextPrompt(
         """You are a master of video analysis. 
         Please provide a shot description of the content of the current video."""
