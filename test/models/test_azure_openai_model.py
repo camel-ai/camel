@@ -14,8 +14,10 @@
 """
 please set the below os environment:
 export AZURE_OPENAI_ENDPOINT=""
+
+# if not set, `AZURE_API_VERSION` will be used as api version
 export AZURE_OPENAI_API_KEY=""
-export OPENAI_API_VERSION=""
+export AZURE_DEPLOYMENT=""
 """
 
 import re
@@ -23,8 +25,8 @@ import re
 import pytest
 
 from camel.configs import ChatGPTConfig, OpenSourceConfig
-from camel.models import AzureOpenAIModel
-from camel.types import ModelType
+from camel.models import AzureOpenAIModel, ModelFactory
+from camel.types import ModelPlatformType, ModelType
 from camel.utils import OpenAITokenCounter
 
 
@@ -47,6 +49,26 @@ def test_openai_model(model_type):
     assert isinstance(model.token_counter, OpenAITokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
+
+
+@pytest.mark.model_backend
+@pytest.mark.parametrize(
+    "model_type",
+    [
+        ModelType.GPT_3_5_TURBO,
+        ModelType.GPT_4,
+        ModelType.GPT_4_32K,
+        ModelType.GPT_4_TURBO,
+        ModelType.GPT_4O,
+    ],
+)
+def test_openai_model_create(model_type):
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.AZURE,
+        model_type=ModelType.GPT_3_5_TURBO,
+        model_config_dict=ChatGPTConfig(temperature=0.8, n=3).__dict__,
+    )
+    assert model.model_type == model_type
 
 
 @pytest.mark.model_backend

@@ -50,8 +50,16 @@ class AzureOpenAIModel(BaseModelBackend):
         super().__init__(model_type, model_config_dict, api_key, url)
         self._url = url or os.environ.get("AZURE_OPENAI_ENDPOINT")
         self._api_key = api_key or os.environ.get("AZURE_OPENAI_API_KEY")
+        self.api_version = os.environ.get("AZURE_API_VERSION", None)
+        self.azure_deployment = os.environ.get("AZURE_DEPLOYMENT", "")
+
+        if self.azure_deployment is None:
+            raise ValueError("`AZURE_DEPLOYMENT` is not provided.")
+        self.model = str(self.azure_deployment)
+
         self._client = AzureOpenAI(
             azure_endpoint=str(self._url),
+            api_version=self.api_version,
             api_key=self._api_key,
             timeout=60,
             max_retries=3,
@@ -70,7 +78,7 @@ class AzureOpenAIModel(BaseModelBackend):
             self._token_counter = OpenAITokenCounter(self.model_type)
         return self._token_counter
 
-    @api_keys_required("AZURE_OPENAI_API_KEY")
+    @api_keys_required("AZURE_OPENAI_API_KEY", "AZURE_API_VERSION")
     def run(
         self,
         messages: List[OpenAIMessage],
@@ -88,7 +96,7 @@ class AzureOpenAIModel(BaseModelBackend):
         """
         response = self._client.chat.completions.create(
             messages=messages,
-            model=self.model_type.value,
+            model=self.model,
             **self.model_config_dict,
         )
         return response
