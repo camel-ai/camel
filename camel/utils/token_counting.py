@@ -442,8 +442,8 @@ class GroqLlama3TokenCounter(BaseTokenCounter):
         self.model_type = model_type
         self.client = Groq()
         # Since Groq API does not provide any token counter, we use the
-        # openao source tokenizer as a placeholder.
-        self.tokenizer = AutoTokenizer.from_pretrained("lmsys/vicuna-7b-v1.5")
+        # open source tokenizer as a placeholder.
+        self.tokenizer = AutoTokenizer.from_pretrained("huggyllama/llama-7b")
 
     def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
         r"""Count number of tokens in the provided message list using
@@ -456,9 +456,18 @@ class GroqLlama3TokenCounter(BaseTokenCounter):
         Returns:
             int: Number of tokens in the messages.
         """
-        prompt = messages_to_prompt(messages, self.model_type)
+        prompt = ""
+        for i, message in enumerate(messages):
+            # Use the llama2 format to count the tokens
+            if message['role'] == 'system' and i == 0:
+                prompt += f"[INST] <<SYS>>\n{message['content']}\n<</SYS>>\n\n"
+            elif message['role'] == 'user':
+                prompt += f"[INST] {message['content']} [/INST]\n"
+            elif message['role'] == 'assistant':
+                prompt += f"{message['content']}\n"
+        prompt.strip()
 
-        return self.tokenizer.encode(prompt, return_length=True)[1]
+        return len(self.tokenizer.encode(prompt))
 
 
 def count_tokens_from_image(
