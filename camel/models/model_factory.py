@@ -86,7 +86,7 @@ class ModelFactory:
                 return model_class(model_type, model_config_dict, url)
             elif model_platform.is_vllm:
                 model_class = VLLMModel
-                return model_class(model_type, model_config_dict, url)
+                return model_class(model_type, model_config_dict, url, api_key)
             elif model_platform.is_litellm:
                 model_class = LiteLLMModel
             else:

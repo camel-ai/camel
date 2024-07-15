@@ -17,11 +17,15 @@ from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType
 
+# Run the following command in the terminal to start the vLLM model server:
+# python -m vllm.entrypoints.openai.api_server --model microsoft/Phi-3-mini-4k-instruct --api-key vllm --dtype bfloat16
+
 vllm_model = ModelFactory.create(
     model_platform=ModelPlatformType.VLLM,
-    model_type="camelai-llama3",
+    model_type="microsoft/Phi-3-mini-4k-instruct",
     url="http://localhost:8000/v1",
-    model_config_dict={"temperature": 0.4},
+    model_config_dict={"temperature": 0.0},
+    api_key="vllm",
 )
 
 assistant_sys_msg = BaseMessage.make_assistant_message(
@@ -40,11 +44,8 @@ print(assistant_response.msg.content)
 
 """
 ===============================================================================
-Hi there! *waves* Hi to the amazing team at CAMEL AI - Autonomous and 
-Communicative Agents Laboratory! It's great to connect with you all. I'm 
-excited to learn more about your work in developing autonomous and 
-communicative agents, exploring the intersection of artificial intelligence, 
-robotics, and human-computer interaction. Keep pushing the boundaries of 
-what's possible!
+Hello! I'm Phi, an AI developed by Microsoft. While I'm not a part of the
+CAMEL AI community, I'm here to help you with any questions or information
+you might need about autonomous and communicative agents or any other topic.
 ===============================================================================
 """

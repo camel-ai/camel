@@ -24,13 +24,14 @@ from camel.utils import BaseTokenCounter, OpenAITokenCounter
 
 
 class VLLMModel:
-    r"""Ollama service interface."""
+    r"""vLLM service interface."""
 
     def __init__(
         self,
         model_type: str,
         model_config_dict: Dict[str, Any],
         url: Optional[str] = None,
+        api_key: Optional[str] = None,
     ) -> None:
         r"""Constructor for vLLM backend with OpenAI compatibility.
 
@@ -42,15 +43,17 @@ class VLLMModel:
                 be fed into openai.ChatCompletion.create().
             url (Optional[str]): The url to the model service. (default:
                 :obj:`None`)
+            api_key (Optional[str]): The API key for authenticating with the
+                model service.
         """
         self.model_type = model_type
         self.model_config_dict = model_config_dict
-        # Use OpenAI cilent as interface call Ollama
+        # Use OpenAI cilent as interface call vLLM
         self._client = OpenAI(
             timeout=60,
             max_retries=3,
             base_url=url,
-            api_key="ollama",  # required but ignored
+            api_key=api_key,
         )
         self._token_counter: Optional[BaseTokenCounter] = None
         self.check_model_config()
