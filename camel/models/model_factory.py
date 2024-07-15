@@ -67,7 +67,7 @@ class ModelFactory:
                 return model_class(model_type, model_config_dict, url)
             if model_platform.is_openai and model_type.is_openai:
                 model_class = OpenAIModel
-            if model_platform.is_azure and model_type.is_azure_openai:
+            elif model_platform.is_azure and model_type.is_azure_openai:
                 model_class = AzureOpenAIModel
             elif model_platform.is_anthropic and model_type.is_anthropic:
                 model_class = AnthropicModel
