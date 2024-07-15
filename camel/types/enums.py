@@ -36,6 +36,9 @@ class ModelType(Enum):
 
     GROQ_LLAMA_3_8_B = "llama3-8b-8192"
     GROQ_LLAMA_3_70_B = "llama3-70b-8192"
+    GROQ_MIXTRAL_8_7_B = "mixtral-8x7b-32768"
+    GROQ_GEMMA_7_B_IT = "gemma-7b-it"
+    GROQ_GEMMA_2_9_B_IT = "gemma2-9b-it"
 
     STUB = "stub"
 
@@ -128,6 +131,9 @@ class ModelType(Enum):
         return self in {
             ModelType.GROQ_LLAMA_3_8_B,
             ModelType.GROQ_LLAMA_3_70_B,
+            ModelType.GROQ_MIXTRAL_8_7_B,
+            ModelType.GROQ_GEMMA_7_B_IT,
+            ModelType.GROQ_GEMMA_2_9_B_IT,
         }
 
     @property
@@ -174,6 +180,12 @@ class ModelType(Enum):
         elif self is ModelType.GROQ_LLAMA_3_8_B:
             return 8192
         elif self is ModelType.GROQ_LLAMA_3_70_B:
+            return 8192
+        elif self is ModelType.GROQ_MIXTRAL_8_7_B:
+            return 32768
+        elif self is ModelType.GROQ_GEMMA_7_B_IT:
+            return 8192
+        elif self is ModelType.GROQ_GEMMA_2_9_B_IT:
             return 8192
         elif self is ModelType.STUB:
             return 4096

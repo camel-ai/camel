@@ -51,12 +51,12 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
     system_message = messages[0]["content"]
 
     ret: str
-    if (
-        model == ModelType.LLAMA_2
-        or model == ModelType.LLAMA_3
-        or model == ModelType.GROQ_LLAMA_3_8_B
-        or model == ModelType.GROQ_LLAMA_3_70_B
-    ):
+    if model in [
+        ModelType.LLAMA_2,
+        ModelType.LLAMA_3,
+        ModelType.GROQ_LLAMA_3_8_B,
+        ModelType.GROQ_LLAMA_3_70_B,
+    ]:
         # reference: https://github.com/facebookresearch/llama/blob/cfc3fc8c1968d390eb830e65c63865e980873a06/llama/generation.py#L212
         seps = [" ", " </s><s>"]
         role_map = {"user": "[INST]", "assistant": "[/INST]"}
@@ -136,6 +136,40 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
                 )
             else:
                 ret += '<|im_start|>' + role + '\n'
+        return ret
+    elif model == ModelType.GROQ_MIXTRAL_8_7_B:
+        # Mistral/Mixtral format
+        system_prompt = f"<s>[INST] {system_message} [/INST]\n"
+        ret = system_prompt
+
+        for msg in messages[1:]:
+            if msg["role"] == "user":
+                ret += f"[INST] {msg['content']} [/INST]\n"
+            elif msg["role"] == "assistant":
+                ret += f"{msg['content']}</s>\n"
+
+            if not isinstance(msg['content'], str):
+                raise ValueError(
+                    "Currently multimodal context is not "
+                    "supported by the token counter."
+                )
+
+        return ret.strip()
+    elif model in [ModelType.GROQ_GEMMA_7_B_IT, ModelType.GROQ_GEMMA_2_9_B_IT]:
+        # Gemma format
+        ret = f"<bos>{system_message}\n"
+        for msg in messages:
+            if msg["role"] == "user":
+                ret += f"Human: {msg['content']}\n"
+            elif msg["role"] == "assistant":
+                ret += f"Assistant: {msg['content']}\n"
+
+            if not isinstance(msg['content'], str):
+                raise ValueError(
+                    "Currently multimodal context is not supported by the token counter."
+                )
+
+        ret += "<eos>"
         return ret
     else:
         raise ValueError(f"Invalid model type: {model}")
