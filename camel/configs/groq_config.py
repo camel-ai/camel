@@ -22,9 +22,9 @@ from camel.configs.base_config import BaseConfig
 
 
 @dataclass(frozen=True)
-class GroqLLAMA3Config(BaseConfig):
+class GroqConfig(BaseConfig):
     r"""Defines the parameters for generating chat completions using the
-    Anthropic API. And Camel does not support stream mode for GroqLLAMA3.
+    Anthropic API. And Camel does not support stream mode for Groq.
 
     See: https://console.groq.com/docs/text-chat
     Args:
@@ -56,4 +56,4 @@ class GroqLLAMA3Config(BaseConfig):
     stream: Literal[False] = False
 
 
-GROQ_LLAMA3_API_PARAMS = {param for param in asdict(GroqLLAMA3Config()).keys()}
+GROQ_API_PARAMS = {param for param in asdict(GroqConfig()).keys()}

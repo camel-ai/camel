@@ -15,7 +15,7 @@ import re
 
 import pytest
 
-from camel.configs import GroqLLAMA3Config, OpenSourceConfig
+from camel.configs import GroqConfig, OpenSourceConfig
 from camel.models import GroqModel
 from camel.types import ModelType
 from camel.utils import GroqLlama3TokenCounter
@@ -30,7 +30,7 @@ from camel.utils import GroqLlama3TokenCounter
     ],
 )
 def test_groq_llama3_model(model_type):
-    model_config_dict = GroqLLAMA3Config().__dict__
+    model_config_dict = GroqConfig().__dict__
     model = GroqModel(model_type, model_config_dict)
     assert model.model_type == model_type
     assert model.model_config_dict == model_config_dict

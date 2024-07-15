@@ -85,14 +85,6 @@ class ModelType(Enum):
         }
 
     @property
-    def is_groq(self) -> bool:
-        r"""Returns whether this type of models is served by Groq."""
-        return self in {
-            ModelType.GROQ_LLAMA_3_8_B,
-            ModelType.GROQ_LLAMA_3_70_B,
-        }
-
-    @property
     def is_zhipuai(self) -> bool:
         r"""Returns whether this type of models is an ZhipuAI model."""
         return self in {
@@ -128,6 +120,14 @@ class ModelType(Enum):
             ModelType.CLAUDE_3_SONNET,
             ModelType.CLAUDE_3_HAIKU,
             ModelType.CLAUDE_3_5_SONNET,
+        }
+
+    @property
+    def is_groq(self) -> bool:
+        r"""Returns whether this type of models is served by Groq."""
+        return self in {
+            ModelType.GROQ_LLAMA_3_8_B,
+            ModelType.GROQ_LLAMA_3_70_B,
         }
 
     @property
@@ -353,7 +353,7 @@ class ModelPlatformType(Enum):
     OPENAI = "openai"
     AZURE = "azure"
     ANTHROPIC = "anthropic"
-    GROQLLAMA3 = "groq-llama3"
+    GROQ = "groq"
     OPENSOURCE = "opensource"
     OLLAMA = "ollama"
     LITELLM = "litellm"
@@ -377,9 +377,9 @@ class ModelPlatformType(Enum):
         return self is ModelPlatformType.ANTHROPIC
 
     @property
-    def is_groq_llama3(self) -> bool:
-        r"""Returns whether this platform is groq-llama3."""
-        return self is ModelPlatformType.GROQLLAMA3
+    def is_groq(self) -> bool:
+        r"""Returns whether this platform is groq."""
+        return self is ModelPlatformType.GROQ
 
     @property
     def is_ollama(self) -> bool:

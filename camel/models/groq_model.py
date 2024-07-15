@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Optional
 
 from groq import Groq
 
-from camel.configs import GROQ_LLAMA3_API_PARAMS
+from camel.configs import GROQ_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import (
@@ -137,7 +137,7 @@ class GroqModel(BaseModelBackend):
                 unexpected arguments to Groq API.
         """
         for param in self.model_config_dict:
-            if param not in GROQ_LLAMA3_API_PARAMS:
+            if param not in GROQ_API_PARAMS:
                 raise ValueError(
                     f"Unexpected argument `{param}` is "
                     "input into Groq Llama3 model backend."

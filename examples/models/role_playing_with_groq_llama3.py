@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from colorama import Fore
 
-from camel.configs import GroqLLAMA3Config
+from camel.configs import GroqConfig
 from camel.models import ModelFactory
 from camel.societies import RolePlaying
 from camel.types import ModelPlatformType, ModelType
@@ -25,9 +25,10 @@ def main(model_type=None) -> None:
 
     agent_kwargs = {
         role: ModelFactory.create(
-            model_platform=ModelPlatformType.GROQLLAMA3,
+            model_platform=ModelPlatformType.GROQ,
             model_type=model_type,
-            model_config_dict=GroqLLAMA3Config().__dict__,
+            # ex. ModelType.GROQ_LLAMA_3_70_B
+            model_config_dict=GroqConfig().__dict__,
         )
         for role in ["assistant", "user", "task-specify"]
     }
