@@ -50,12 +50,12 @@ def main(
 
     role_play_session = RolePlaying(
         assistant_role_name="Python Programmer",
-        assistant_agent_kwargs={'model': agent_kwargs["assistant"]},
+        assistant_agent_kwargs=agent_kwargs["assistant"],
         user_role_name="Stock Trader",
-        user_agent_kwargs={'model': agent_kwargs["assistant"]},
+        user_agent_kwargs=agent_kwargs["user"],
         task_prompt=task_prompt,
         with_task_specify=True,
-        task_specify_agent_kwargs={'model': agent_kwargs["task-specify"]},
+        task_specify_agent_kwargs=agent_kwargs["task-specify"],
     )
 
     print(
