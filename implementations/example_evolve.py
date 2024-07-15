@@ -11,19 +11,38 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import argparse
+
 from synthetic_datagen.agent_systems.single_agent import SingleAgent
+from synthetic_datagen.evolve_instruct.evolve_instruct_generator import (
+    EvolveInstructGenerator,
+)
 from synthetic_datagen.evolve_instruct.evolve_instruct_spec import (
     EvolveInstructSpec,
 )
-from synthetic_datagen.method_factory import SyntheticDataGeneratorMethodType
-from synthetic_datagen.pipeline import DataGeneratorPipeline
+from synthetic_datagen.pipeline import ChatGPTPipeline
 
-spec = EvolveInstructSpec()
-spec.agent_system = SingleAgent()
-generator = DataGeneratorPipeline(
-    spec,
-    method_type=SyntheticDataGeneratorMethodType.SELFINSTRUCT,
-)
-generator.run_generate()
-generator.run_curate()
-generator.run_evaluate()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Options')
+    parser.add_argument("--seed_file", type=str, default="")
+    parser.add_argument("--column_names", nargs='+', default="instruction")
+    parser.add_argument("--num_rows", type=int, default=5)
+    parser.add_argument("--min_len_chars", type=int, default=32)
+    parser.add_argument("--max_len_chars", type=int, default=2048)
+    parser.add_argument("--openai_model", type=str, default="gpt-3.5-turbo")
+
+    args = parser.parse_args()
+    spec = EvolveInstructSpec()
+    spec.agent_system = SingleAgent()
+    llm_pipeline = ChatGPTPipeline(args.openai_model)
+
+    generator = EvolveInstructGenerator(
+        llm_pipeline=llm_pipeline,
+        seed_data=args.seed_file,
+        column_names=args.column_names,
+        num_rows=args.num_rows,
+        min_len_chars=args.min_len_chars,
+        max_len_chars=args.max_len_chars,
+        verbose=True,
+    )
+    generator.run()

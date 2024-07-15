@@ -18,6 +18,9 @@ import string
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
+import markdown
+from bs4 import BeautifulSoup
+
 
 def load_jsonl(file_path: Union[Path, str]) -> List[Dict[Any, Any]]:
     """
@@ -213,3 +216,12 @@ def post_process_agent_system_response(
         instructions.append(inst)
 
     return instructions
+
+
+def md_to_text(md, do_md_to_text=True):
+    if not do_md_to_text:
+        return md
+    assert md is not None, "Markdown is None"
+    html = markdown.markdown(md)
+    soup = BeautifulSoup(html, features='html.parser')
+    return soup.get_text()
