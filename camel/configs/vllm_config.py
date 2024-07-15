@@ -20,9 +20,8 @@ from openai._types import NOT_GIVEN, NotGiven
 
 from camel.configs.base_config import BaseConfig
 
+
 # flake8: noqa: E501
-
-
 @dataclass(frozen=True)
 class VLLMConfig(BaseConfig):
     r"""Defines the parameters for generating chat completions using the

@@ -17,9 +17,6 @@ from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType
 
-# Run the following command in the terminal to start the vLLM model server:
-# python -m vllm.entrypoints.openai.api_server --model microsoft/Phi-3-mini-4k-instruct --api-key vllm --dtype bfloat16
-
 vllm_model = ModelFactory.create(
     model_platform=ModelPlatformType.VLLM,
     model_type="microsoft/Phi-3-mini-4k-instruct",
@@ -36,8 +33,7 @@ agent = ChatAgent(assistant_sys_msg, model=vllm_model, token_limit=4096)
 
 user_msg = BaseMessage.make_user_message(
     role_name="User",
-    content="""Say hi to CAMEL AI, one open-source community 
-    dedicated to the study of autonomous and communicative agents.""",
+    content="Say hi to CAMEL AI",
 )
 assistant_response = agent.step(user_msg)
 print(assistant_response.msg.content)

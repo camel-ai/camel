@@ -20,9 +20,8 @@ from camel.messages import OpenAIMessage
 from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
 from camel.utils import BaseTokenCounter, OpenAITokenCounter
 
+
 # flake8: noqa: E501
-
-
 class VLLMModel:
     r"""vLLM service interface."""
 
