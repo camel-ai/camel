@@ -15,7 +15,8 @@
 please set the below os environment:
 export AZURE_OPENAI_ENDPOINT=""
 
-# if not set, `AZURE_API_VERSION` will be used as api version
+# if `AZURE_API_VERSION` is not set, `OPENAI_API_VERSION` will be used as api version
+export AZURE_API_VERSION=""
 export AZURE_OPENAI_API_KEY=""
 export AZURE_DEPLOYMENT=""
 """
@@ -65,7 +66,7 @@ def test_openai_model(model_type):
 def test_openai_model_create(model_type):
     model = ModelFactory.create(
         model_platform=ModelPlatformType.AZURE,
-        model_type=ModelType.GPT_3_5_TURBO,
+        model_type=model_type,
         model_config_dict=ChatGPTConfig(temperature=0.8, n=3).__dict__,
     )
     assert model.model_type == model_type
