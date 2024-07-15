@@ -12,9 +12,13 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import logging
+import time
 from enum import Enum
 from typing import Optional
 
+import numpy as np
+import pandas as pd
+from datasets import Dataset, DatasetDict, load_dataset
 from synthetic_datagen.base_generator import BaseDataGenerator
 from synthetic_datagen.evolve_instruct.evolve_instruct_spec import (
     EvolveInstructSpec,
@@ -44,7 +48,7 @@ class Mutation(Enum):
 
 class EvolveInstructGenerator(BaseDataGenerator):
     """
-    A generator for self-instructed synthetic data.
+    A generator for evolve-instructed synthetic data.
 
     This class orchestrates the process of generating synthetic
     instructions and instances,
@@ -53,7 +57,7 @@ class EvolveInstructGenerator(BaseDataGenerator):
     generation, instance generation, and curation.
 
     Attributes:
-        spec (SelfInstructSpec): Specification object containing
+        spec (EvolveInstructSpec): Specification object containing
         configuration details.
         instruction_generator (InstructionGenerator): Component for
         generating instructions.
@@ -128,6 +132,39 @@ Translate #Given Prompt# to #New Prompt# in Korean."
 """
         )
 
+        self.prompt_templates[Mutation.CONCRETIZE] = (
+            self.prompt_templates['base']
+            + f"""Make #Given Prompt# slightly more concrete, \
+            and create #New Prompt#. {write_in_korean}
+
+#Given Prompt#:
+<PROMPT>
+"""
+        )
+
+        self.prompt_templates[Mutation.INCREASE_REASONING] = (
+            self.prompt_templates['base']
+            + f"""If #Given Prompt# can be solved with just a \
+            few simple thinking processes, rewrite it to explicitly \
+                request multi-step reasoning, and create #New Prompt#. \
+                {write_in_korean}
+
+#Given Prompt#:
+<PROMPT>
+"""
+        )
+
+        self.prompt_templates[Mutation.SWITCH_TOPIC] = (
+            self.prompt_templates['base']
+            + f"""Rewrite #Given Prompt# by switching the topic, \
+            keeping the domain and difficulty level similar, \
+                and create #New Prompt#. {write_in_korean}
+
+#Given Prompt#:
+<PROMPT>
+"""
+        )
+
     def generate(self):
         """
         Generate synthetic instructions and instances.
@@ -156,3 +193,91 @@ Translate #Given Prompt# to #New Prompt# in Korean."
             "Evaluation not implemented for SelfInstructGenerator yet "
             " - use an LLM to evaluate the quality of the generations."
         )
+
+    def run(self):
+        self.create_seed_prompts()
+        self.create_prompts()
+        self.create_answers()
+
+        list_qa = []
+        for i in range(len(self.final_prompts)):
+            if len(self.final_answers[i]) > 10:
+                list_qa.append(
+                    {
+                        'input': self.final_prompts[i],
+                        'output': self.final_answers[i],
+                    }
+                )
+        import json
+        import uuid
+
+        with open(
+            f"{
+                self.seed_data.replace('.jsonl', '').replace('json', '')
+                }.%s.json"
+            % str(uuid.uuid4())[:4],
+            "wt",
+        ) as f:
+            f.write(json.dumps(list_qa, indent=2, ensure_ascii=False))
+
+    def create_seed_prompts(self):
+        """
+        Turn self.seed_data into a list of strings of text
+        self.source_text_list
+        Each text string can represent as little as a word,
+        or as much as document.
+        Just has to be representative of some concept or body of text.
+
+        :return: None
+        """
+
+        import os
+
+        if isinstance(self.seed_data, str) and os.path.exists(self.seed_data):
+            data = load_dataset("json", data_files=self.seed_data)
+            self.seed_text_list = []
+            for d in data['train']:
+                s = ""
+                if isinstance(self.column_names, str):
+                    s = d[self.column_names]
+                else:
+                    for col in self.column_names:
+                        s += d[col] + "\n"
+                self.seed_text_list.append(s.strip())
+            assert self.seed_text_list, "data import failed, got empty list"
+
+    def create_prompts(self):
+        print("Creating %d prompts." % self.num_rows)
+        assert self.seed_text_list, "must have seed text list"
+        t0 = time.time()
+        self.prompts.clear()
+        for _ in range(self.num_rows):
+            new_prompt = np.random.choice(self.seed_text_list)
+            self.prompts.append(new_prompt)
+        i = 0
+        while self.mutate(i):
+            print("Iteration: %d" % i)
+            i += 1
+        t1 = time.time()
+        print(
+            "Done creating %d prompts in %.4f seconds."
+            % (len(self.final_prompts), t1 - t0)
+        )
+        print(self.final_prompts)
+
+    def create_answers(self):
+        print("Creating answers for %d prompts." % len(self.final_prompts))
+        t0 = time.time()
+        ds = self.convert_list_to_dataset(self.final_prompts)
+        self.final_answers = self.llm_pipeline(ds['train'])
+        t1 = time.time()
+        print(
+            "Done creating answers for %d prompts in %.4f seconds."
+            % (ds['train'].num_rows, t1 - t0)
+        )
+
+    def convert_list_to_dataset(self, text_list):
+        df = pd.DataFrame({'text': text_list})
+        ds = DatasetDict()
+        ds['train'] = Dataset.from_pandas(df)
+        return ds
