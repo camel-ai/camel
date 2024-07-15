@@ -59,7 +59,7 @@ class GroqModel(BaseModelBackend):
         self._client = Groq(api_key=self.api_key, base_url=self.url)
         self._token_counter: Optional[BaseTokenCounter] = None
 
-    def _convert_response_from_anthropic_to_openai(self, response):
+    def _convert_response_from_groq_to_openai(self, response):
         # openai ^1.0.0 format, reference openai/types/chat/chat_completion.py
         obj = ChatCompletion.construct(
             id=response.id,
@@ -97,10 +97,36 @@ class GroqModel(BaseModelBackend):
             BaseTokenCounter: The token counter following the model's
                 tokenization style.
         """
+        # Make sure you have the access to these open-source model in
+        # HuggingFace
         if not self._token_counter:
-            self._token_counter = OpenSourceTokenCounter(
-                self.model_type, model_path="huggyllama/llama-7b"
-            )
+            if self.model_type == ModelType.GROQ_LLAMA_3_8_B:
+                self._token_counter = OpenSourceTokenCounter(
+                    self.model_type,
+                    model_path="meta-llama/Meta-Llama-3-8B-Instruct",
+                )
+            elif self.model_type == ModelType.GROQ_LLAMA_3_70_B:
+                self._token_counter = OpenSourceTokenCounter(
+                    self.model_type,
+                    model_path="meta-llama/Meta-Llama-3-70B-Instruct",
+                )
+            elif self.model_type == ModelType.GROQ_MIXTRAL_8_7_B:
+                self._token_counter = OpenSourceTokenCounter(
+                    self.model_type, model_path="mistralai/Mixtral-8x7B-v0.1"
+                )
+            elif self.model_type == ModelType.GROQ_GEMMA_7_B_IT:
+                self._token_counter = OpenSourceTokenCounter(
+                    self.model_type, model_path="google/gemma-1.1-7b-it"
+                )
+            elif self.model_type == ModelType.GROQ_GEMMA_2_9_B_IT:
+                self._token_counter = OpenSourceTokenCounter(
+                    self.model_type, model_path="google/gemma-2-9b"
+                )
+            else:
+                raise ValueError(
+                    f"Model `{self.model_type}` is not a supported Groq model."
+                )
+
         return self._token_counter
 
     @api_keys_required("GROQ_API_KEY")
@@ -125,7 +151,7 @@ class GroqModel(BaseModelBackend):
         )
 
         # Format response to OpenAI format
-        response = self._convert_response_from_anthropic_to_openai(_response)
+        response = self._convert_response_from_groq_to_openai(_response)
 
         return response
 

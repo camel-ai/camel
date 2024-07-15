@@ -26,7 +26,7 @@ def main(model_type=None) -> None:
     agent_kwargs = {
         role: ModelFactory.create(
             model_platform=ModelPlatformType.GROQ,
-            model_type=ModelType.GROQ_GEMMA_7_B_IT,
+            model_type=model_type,
             # ex. model_type=ModelType.GROQ_LLAMA_3_70_B
             model_config_dict=GroqConfig().__dict__,
         )
