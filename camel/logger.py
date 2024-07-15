@@ -49,6 +49,13 @@ def _configure_library_logging():
 
 
 def disable_logging():
+    """
+    Disable all logging for the Camel library.
+
+    This function sets the log level to a value higher than CRITICAL,
+    effectively disabling all log messages, and adds a NullHandler to
+    suppress any potential warnings about no handlers being found.
+    """
     global _logging_disabled
     _logging_disabled = True
     _logger.setLevel(logging.CRITICAL + 1)
@@ -56,15 +63,39 @@ def disable_logging():
 
 
 def enable_logging():
+    """
+    Enable logging for the Camel library.
+
+    This function re-enables logging if it was previously disabled,
+    and configures the library logging using the default settings.
+    If the logging is already configured,
+        this function does not change its configuration.
+    """
     global _logging_disabled
     _logging_disabled = False
     _configure_library_logging()
 
 
 def set_log_level(level):
+    """
+    Set the logging level for the Camel library.
+
+    Args:
+        level: The logging level to set. This can be a string (e.g., 'INFO')
+               or a logging level constant (e.g., logging.INFO, logging.DEBUG).
+               See https://docs.python.org/3/library/logging.html#levels
+    """
     _logger.setLevel(level)
 
 
-# Function to get a logger for a specific module
 def get_logger(name):
+    """
+    Get a logger with the specified name, prefixed with 'camel.'.
+
+    Args:
+        name (str): The name to be appended to 'camel.' to create the logger.
+
+    Returns:
+        logging.Logger: A logger instance with the name 'camel.{name}'.
+    """
     return logging.getLogger(f'camel.{name}')
