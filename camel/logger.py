@@ -11,8 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-
-
 import logging
 import os
 import sys
@@ -99,3 +97,6 @@ def get_logger(name):
         logging.Logger: A logger instance with the name 'camel.{name}'.
     """
     return logging.getLogger(f'camel.{name}')
+
+
+_configure_library_logging()
