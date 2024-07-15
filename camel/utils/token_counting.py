@@ -21,7 +21,6 @@ from math import ceil
 from typing import TYPE_CHECKING, List, Optional
 
 from anthropic import Anthropic
-from groq import Groq
 from PIL import Image
 
 from camel.types import ModelType, OpenAIImageType, OpenAIVisionDetailType
@@ -52,7 +51,12 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
     system_message = messages[0]["content"]
 
     ret: str
-    if model == ModelType.LLAMA_2 or model == ModelType.LLAMA_3:
+    if (
+        model == ModelType.LLAMA_2
+        or model == ModelType.LLAMA_3
+        or model == ModelType.GROQ_LLAMA_3_8_B
+        or model == ModelType.GROQ_LLAMA_3_70_B
+    ):
         # reference: https://github.com/facebookresearch/llama/blob/cfc3fc8c1968d390eb830e65c63865e980873a06/llama/generation.py#L212
         seps = [" ", " </s><s>"]
         role_map = {"user": "[INST]", "assistant": "[/INST]"}
@@ -427,47 +431,6 @@ class LiteLLMTokenCounter:
             float: The cost of the completion call in USD.
         """
         return self.completion_cost(completion_response=response)
-
-
-class GroqLlama3TokenCounter(BaseTokenCounter):
-    def __init__(self, model_type: ModelType):
-        r"""Constructor for the token counter for Llama3 models served by Groq.
-
-        Args:
-            model_type (ModelType): Model type for which tokens will be
-                counted.
-        """
-        from transformers import AutoTokenizer
-
-        self.model_type = model_type
-        self.client = Groq()
-        # Since Groq API does not provide any token counter, we use the
-        # open source tokenizer as a placeholder.
-        self.tokenizer = AutoTokenizer.from_pretrained("huggyllama/llama-7b")
-
-    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
-        r"""Count number of tokens in the provided message list using
-        loaded tokenizer specific for this type of model.
-
-        Args:
-            messages (List[OpenAIMessage]): Message list with the chat history
-                in Groq llama3 API format.
-
-        Returns:
-            int: Number of tokens in the messages.
-        """
-        prompt = ""
-        for i, message in enumerate(messages):
-            # Use the llama2 format to count the tokens
-            if message['role'] == 'system' and i == 0:
-                prompt += f"[INST] <<SYS>>\n{message['content']}\n<</SYS>>\n\n"
-            elif message['role'] == 'user':
-                prompt += f"[INST] {message['content']} [/INST]\n"
-            elif message['role'] == 'assistant':
-                prompt += f"{message['content']}\n"
-        prompt.strip()
-
-        return len(self.tokenizer.encode(prompt))
 
 
 def count_tokens_from_image(

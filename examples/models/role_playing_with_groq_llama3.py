@@ -27,7 +27,7 @@ def main(model_type=None) -> None:
         role: ModelFactory.create(
             model_platform=ModelPlatformType.GROQ,
             model_type=model_type,
-            # ex. ModelType.GROQ_LLAMA_3_70_B
+            # ex. model_type=ModelType.GROQ_LLAMA_3_70_B
             model_config_dict=GroqConfig().__dict__,
         )
         for role in ["assistant", "user", "task-specify"]

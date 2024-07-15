@@ -31,27 +31,24 @@ class GroqConfig(BaseConfig):
         max_tokens (int, optional): The maximum number of tokens to generate
             before stopping. Note that Anthropic models may stop before
             reaching this maximum. This parameter only specifies the absolute
-            maximum number of tokens to generate.
-            (default: :obj:`256`)
+            maximum number of tokens to generate. (default: :obj:`256`)
         stop (str or List[str], optional): Up to 4 sequences where the API will
             stop generating further tokens. The returned text will not contain
             the stop sequence. (default: :obj:`None)
         temperature (float, optional): Amount of randomness injected into the
             response. Defaults to 1. Ranges from 0 to 1. Use temp closer to 0
             for analytical / multiple choice, and closer to 1 for creative
-            and generative tasks.
-            (default: :obj:`1`)
+            and generative tasks. (default: :obj:`1`)
         stream (bool, optional): Whether to incrementally stream the response
             using server-sent events. Camel does not support stream mode for
-            Groq Llama3.
-            (default: :obj:`False`)
+            Groq. (default: :obj:`False`)
     """
 
-    max_tokens: int = 4096  # since the Llama3 usually has a context
+    max_tokens: int = 4096  # since the usually has a context
     # window of 8192 tokens, the default is set to 4096
     stop: Optional[Union[str, List[str]]] = None
     temperature: float = 1  # Camel does not suggest modifying the `top_p`
-    # Camel does not support stream mode for Groq Llama3, the default value of
+    # Camel does not support stream mode for Groq, the default value of
     # `stream` is False
     stream: Literal[False] = False
 

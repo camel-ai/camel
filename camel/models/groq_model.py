@@ -27,7 +27,7 @@ from camel.types import (
 )
 from camel.utils import (
     BaseTokenCounter,
-    GroqLlama3TokenCounter,
+    OpenSourceTokenCounter,
     api_keys_required,
 )
 
@@ -98,7 +98,9 @@ class GroqModel(BaseModelBackend):
                 tokenization style.
         """
         if not self._token_counter:
-            self._token_counter = GroqLlama3TokenCounter(self.model_type)
+            self._token_counter = OpenSourceTokenCounter(
+                self.model_type, model_path="huggyllama/llama-7b"
+            )
         return self._token_counter
 
     @api_keys_required("GROQ_API_KEY")
@@ -140,7 +142,7 @@ class GroqModel(BaseModelBackend):
             if param not in GROQ_API_PARAMS:
                 raise ValueError(
                     f"Unexpected argument `{param}` is "
-                    "input into Groq Llama3 model backend."
+                    "input into Groq model backend."
                 )
 
     @property
