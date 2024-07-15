@@ -26,9 +26,6 @@ from synthetic_datagen.evolve_instruct.evolve_instruct_spec import (
 from synthetic_datagen.self_instruct.utils.instance_generator import (
     InstanceGenerator,
 )
-from synthetic_datagen.self_instruct.utils.instruction_curator import (
-    InstructionCurator,
-)
 from synthetic_datagen.self_instruct.utils.instruction_generator import (
     InstructionGenerator,
 )
@@ -63,7 +60,7 @@ class EvolveInstructGenerator(BaseDataGenerator):
         generating instructions.
         instance_generator (InstanceGenerator): Component for
         generating instances.
-        curator (InstructionCurator): Component for curating generated data.
+
     """
 
     def __init__(self, spec: Optional[EvolveInstructSpec] = None):
@@ -78,7 +75,6 @@ class EvolveInstructGenerator(BaseDataGenerator):
         self.spec = spec or EvolveInstructSpec()
         self.instruction_generator = InstructionGenerator(self.spec)
         self.instance_generator = InstanceGenerator(self.spec)
-        self.curator = InstructionCurator(self.spec)
         self.prompt_templates = dict()
         self.prompt_templates['base'] = ""
         write_in_korean = "Write in Korean."
@@ -178,19 +174,9 @@ Translate #Given Prompt# to #New Prompt# in Korean."
         logging.info("Generating synthetic instances...")
         self.instance_generator.generate()
 
-    def curate(self):
-        """
-        Curate the generated synthetic data.
-
-        This method initiates the curation process for the generated
-        instructions
-        and instances, typically involving filtering and quality checks.
-        """
-        self.curator.curate()
-
     def evaluate(self):
         raise RuntimeError(
-            "Evaluation not implemented for SelfInstructGenerator yet "
+            "Evaluation not implemented for EvolveInstructGenerator yet "
             " - use an LLM to evaluate the quality of the generations."
         )
 
