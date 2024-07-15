@@ -40,8 +40,6 @@ print(assistant_response.msg.content)
 
 """
 ===============================================================================
-Hello! I'm Phi, an AI developed by Microsoft. While I'm not a part of the
-CAMEL AI community, I'm here to help you with any questions or information
-you might need about autonomous and communicative agents or any other topic.
+Hello! I'm Phi, an AI developed by Microsoft. How can I help you today?
 ===============================================================================
 """
