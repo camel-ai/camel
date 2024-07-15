@@ -34,12 +34,12 @@ from camel.utils import OpenAITokenCounter
 )
 def test_vllm_model(model_type: ModelType):
     model_config_dict = VLLMConfig().__dict__
-    model = VLLMModel(model_type, model_config_dict, api_key="vllm")
-    assert model.model_type == model_type
+    model = VLLMModel(model_type.value, model_config_dict, api_key="vllm")
+    assert model.model_type == model_type.value
     assert model.model_config_dict == model_config_dict
     assert isinstance(model.token_counter, OpenAITokenCounter)
-    assert isinstance(model.model_type.value_for_tiktoken, str)
-    assert isinstance(model.model_type.token_limit, int)
+    assert isinstance(model.model_type, str)
+    assert isinstance(model.token_limit, int)
 
 
 @pytest.mark.model_backend
