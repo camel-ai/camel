@@ -23,7 +23,6 @@ from typing import TYPE_CHECKING, List, Optional
 from anthropic import Anthropic
 from groq import Groq
 from PIL import Image
-from transformers import AutoTokenizer
 
 from camel.types import ModelType, OpenAIImageType, OpenAIVisionDetailType
 
@@ -332,7 +331,7 @@ class AnthropicTokenCounter(BaseTokenCounter):
 
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
-                in Anthropic API format.
+                in OpenAI API format.
 
         Returns:
             int: Number of tokens in the messages.
@@ -438,6 +437,7 @@ class GroqLlama3TokenCounter(BaseTokenCounter):
             model_type (ModelType): Model type for which tokens will be
                 counted.
         """
+        from transformers import AutoTokenizer
 
         self.model_type = model_type
         self.client = Groq()
