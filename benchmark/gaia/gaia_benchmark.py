@@ -1,8 +1,8 @@
-import os, json, re, string, warnings, requests
+import os, json, re, string, warnings
 from camel.agents import ChatAgent
+from typing import Literal, List, Union
 from camel.messages import BaseMessage
-
-
+import time
 SCRIPT_PATH = os.path.realpath(__file__)
 SCRIPT_DIR = os.path.dirname(SCRIPT_PATH)
 DATASET_DIR = os.path.join(SCRIPT_DIR, "Dataset")
@@ -14,32 +14,14 @@ class GAIABenchmark:
     From Hugging Face download GAIA dataset
     This Class will create a folder to cache GAIA dataset
     """
-    def __init__(self):
+    def __init__(self) -> None:
         self.validation_tasks = [[], [], []]
         self.test_tasks = [[], [], []]
 
-        self.task_prompt = (
+    def download(self) -> None:
+        r"""
+        download GAIA dataset
         """
-        You are a general AI assistant. I will ask you a question. Report your 
-        thoughts, and finish your answer with the following template: 
-        FINAL ANSWER: [YOUR FINAL ANSWER].
-        YOUR FINAL ANSWER should be a number OR as few words as possible OR a 
-        comma separated list of numbers and/or strings.
-        If you are asked for a number, don’t use comma to write your number 
-        neither use units such as $ or percent sign unless specified otherwise.
-        If you are asked for a string, don’t use articles, neither 
-        abbreviations (e.g. for cities), and write the digits in plain text 
-        unless specified otherwise.
-        If you are asked for a comma separated list, apply the above rules 
-        depending of whether the element to be put in the list is a number or 
-        a string.
-        """.strip()
-        )
-        self.sys_msg = BaseMessage.make_user_message(
-            role_name="User",
-            content=self.task_prompt,
-        )
-    def download(self):
         from huggingface_hub import snapshot_download
         snapshot_download(
             repo_id="gaia-benchmark/GAIA",
@@ -60,18 +42,19 @@ class GAIABenchmark:
                     continue
                 self.test_tasks[data["Level"] - 1].append(data)
 
-    def eval(self, val_or_test, level, model):
+    def eval(self, 
+            agent: ChatAgent,
+            val_or_test : Literal['validation', 'test'] = "validation", 
+            level: Union[List[Literal[1, 2, 3]], Literal["all"]] = [1], 
+            ) -> float:
         results = []
         scores = []
-        agent = ChatAgent(system_message=self.sys_msg, model=model)
         if val_or_test == "validation":
             tasks = self.validation_tasks
         elif val_or_test == "test":
             tasks = self.test_tasks
-        else:
-            raise ValueError("Please use validation or test")
-        levels = [0, 1, 2] if level == "all" else [level - 1]
         
+        levels = [0, 1, 2] if level == "all" else [level - 1]
         for lvl in levels:
             for task in tasks[lvl]:
                 final_answer = task['Final answer']
@@ -79,18 +62,42 @@ class GAIABenchmark:
                     role_name="User",
                     content=task['Question'],
                 )
-                response = agent.step(user_msg)
-                model_answer = self.get_final_answer(response.msgs[0].content)
-                results.append({
-                    "task_id": task['task_id'],
-                    "model_answer": model_answer,
-                })
-                score = self.question_scorer(model_answer, final_answer)
-                scores.append(score)
+                retries = 0
+                max_retries = 5
+                initial_backoff = 1
+                max_backoff = 100
+                backoff = initial_backoff
+                while retries < max_retries:
+                    try:
+                        response = agent.step(user_msg)
+                        model_answer = self.get_final_answer(response.msgs[0].content)
+                        results.append({
+                            "task_id": task['task_id'],
+                            "model_answer": model_answer,
+                        })
+                        score = self.question_scorer(model_answer, final_answer)
+                        scores.append(score)
+                        break
+                    except Exception as e:
+                        if retries < max_retries:
+                            wait_time = min(backoff, max_backoff)
+                            print(f"error: {e}. Retrying in {wait_time} seconds")
+                            time.sleep(wait_time)
+                            backoff *= 4
+                            retries += 1
+                        else:
+                            print(f"failed, error: {e}")
+                            break
         self.save_results(results)
-        return scores
+        true_count = scores.count(True)
+        total_count = len(scores)
+        eval_score = (true_count / total_count) * 100 if total_count > 0 else 0
+        return eval_score
 
-    def save_results(self, results):
+    def save_results(
+        self, 
+        results : List,
+        ) -> None:
         results_file = os.path.join(SCRIPT_DIR, "results.jsonl")
         with open(results_file, 'w') as f:
             for result in results:
@@ -98,12 +105,13 @@ class GAIABenchmark:
         print(f"Results saved to {results_file}")
 
     def submit(self, 
-               file_path, 
-               model_name, 
-               val_or_test,
-               url,
-               organisation,
-               mail):
+               file_path: str, 
+               model_name: str,
+               url: str,
+               organisation: str,
+               mail: str,
+               val_or_test: Literal['validation', 'test'] = "validation",
+               ) -> str:
         from gradio_client import Client, handle_file
         client = Client("gaia-benchmark/leaderboard")
         result = client.predict(
@@ -119,6 +127,7 @@ class GAIABenchmark:
         )
         return result
 
+#https://huggingface.co/spaces/gaia-benchmark/leaderboard/blob/main/scorer.py
     def question_scorer(self, model_answer: str, ground_truth: str) -> bool:
         def is_float(element: any) -> bool:
             try:
