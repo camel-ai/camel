@@ -84,11 +84,13 @@ def main(model_type=None) -> None:
             break
 
         print_text_animated(
-            Fore.BLUE + f"AI User:\n\n{user_response.msg.content}\n"
+            Fore.BLUE + f"AI User:\n\n{user_response.msg.content}\n",
+            delay=0.001,
         )
         print_text_animated(
             Fore.GREEN + "AI Assistant:\n\n"
-            f"{assistant_response.msg.content}\n"
+            f"{assistant_response.msg.content}\n",
+            delay=0.001,
         )
 
         if "CAMEL_TASK_DONE" in user_response.msg.content:
