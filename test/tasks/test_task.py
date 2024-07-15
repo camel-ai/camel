@@ -25,6 +25,11 @@ def test_task():
     print(task.to_string())
     assert task.state == "DONE"
 
+    task.set_state("RUNNING")
+    print(task.to_string(state=True))
+
+    print(task.get_result())
+
 
 def test_task_management():
     """

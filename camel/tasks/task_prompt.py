@@ -33,6 +33,21 @@ Be specific and clear.
 )
 
 
+TASK_COMPOSE_PROMPT = TextPrompt(
+    """As a Task composer with the role of {role_name}, your objective is to gather result from all sub tasks to get the final answer.
+The root task is:
+
+{content}
+
+The related tasks result and status:
+
+{other_results}
+
+so, the final answer of the root task is: 
+"""
+)
+
+
 TASK_EVOLVE_PROMPT = TextPrompt(
     """As a Task Creator for {role_name}, your objective is to draw inspiration from the provided task to develop an entirely new one.
 The new task should fall within the same domain as the given task but be more complex and unique.
