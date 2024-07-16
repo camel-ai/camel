@@ -57,22 +57,15 @@ login(token="your_token")  # Hugging Face token
 
 # Create SchemaModel instance
 cache_dir = None  # Path to the cache directory
-# schema_model = SchemaModel(
-#     model_type=ModelType.TRANSFORMERS,
-#     model_config_dict={
-#         "model_name": "mistralai/Mistral-7B-v0.3",
-#         "device": "cuda",
-#         "cache_dir": cache_dir,
-#     },
-# )
 schema_model = SchemaModel(
-    model_type=ModelType.LLAMACPP,
+    model_type=ModelType.TRANSFORMERS,
+    # ex. ModelType.LLAMACPP, ModelType.VLLM
     model_config_dict={
         "model_name": "mistralai/Mistral-7B-v0.3",
-        "device": "cuda",
-        "cache_dir": "D:/",
+        "cache_dir": cache_dir,
     },
 )
+
 # Define user message
 user_msg = {
     "role": "user",

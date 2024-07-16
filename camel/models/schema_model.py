@@ -60,27 +60,30 @@ class SchemaModel(BaseModelBackend):
         self._url = url
         self._api_key = api_key
         self._client = Union[models.Transformers, models.LlamaCpp, models.VLLM]
-        self.device: str = "cuda"
         match self.model_type:  # match the requested model type
             case ModelType.TRANSFORMERS:
                 self.model_name = self.model_config_dict.get(
                     "model_name", "mistralai/Mistral-7B-v0.3"
                 )
-                self.device = self.model_config_dict.get("device", "cuda")
+                device = self.model_config_dict.get("device", None)
+                tokenizer_kwargs = self.model_config_dict.get(
+                    "tokenizer_kwargs", None
+                )
 
                 # Remove the model_name and the device from dict
                 self.model_config_dict.pop("model_name", None)
                 self.model_config_dict.pop("device", None)
+                self.model_config_dict.pop("tokenizer_kwargs", None)
 
                 self._client = models.transformers(
                     model_name=self.model_name,
-                    device=self.device,
+                    device=device,
                     model_kwargs=self.model_config_dict,
+                    tokenizer_kwargs=tokenizer_kwargs,
                 )
             case ModelType.LLAMACPP:
                 from llama_cpp import llama_tokenizer
 
-                self.device = self.model_config_dict.get("device", "cuda")
                 repo_id = self.model_config_dict.get(
                     "repo_id", "TheBloke/phi-2-GGUF"
                 )
@@ -92,6 +95,7 @@ class SchemaModel(BaseModelBackend):
                 # Remove the repo_id and the filename from dict
                 self.model_config_dict.pop("repo_id", None)
                 self.model_config_dict.pop("filename", None)
+                self.model_config_dict.pop("cache_dir", None)
 
                 tokenizer = llama_tokenizer.LlamaHFTokenizer.from_pretrained(
                     repo_id
@@ -104,7 +108,6 @@ class SchemaModel(BaseModelBackend):
                     **self.model_config_dict,
                 )
             case ModelType.VLLM:
-                self.device = self.model_config_dict.get("device", "cuda")
                 self.model_name = self.model_config_dict.get(
                     "model_name", "mistralai/Mistral-7B-v0.3"
                 )
@@ -115,7 +118,6 @@ class SchemaModel(BaseModelBackend):
 
                 # Remove the model_name and the device from dict
                 self.model_config_dict.pop("model_name", None)
-                self.model_config_dict.pop("device", None)
                 self.model_config_dict.pop("cache_dir", None)
 
                 self._client = models.vllm(
@@ -215,8 +217,6 @@ class SchemaModel(BaseModelBackend):
         # Check the model_name, WarningError if not found
         if "model_name" not in self.model_config_dict:
             raise Warning("The model_name is set to the default value.")
-        if "device" not in self.model_config_dict:
-            raise Warning("The device is set to the default value cuda.")
 
     @property
     def stream(self) -> bool:
