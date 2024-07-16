@@ -53,7 +53,7 @@ class FitnessPlan(BaseModel):
     hydration_tip: str
 
 
-login(token="your_token_here")  # Hugging Face token
+login(token="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")  # Hugging Face token
 
 # Create SchemaModel instance
 cache_dir = None  # Path to the cache directory
@@ -70,7 +70,7 @@ schema_model = SchemaModel(
     model_config_dict={
         "model_name": "mistralai/Mistral-7B-v0.3",
         "device": "cuda",
-        "cache_dir": cache_dir,
+        "cache_dir": "D:/",
     },
 )
 # Define user message
