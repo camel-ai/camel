@@ -94,7 +94,7 @@ class SchemaModel(BaseModelBackend):
                 self._client = models.llamacpp(
                     repo_id=repo_id,
                     filename=filename,
-                    llamacpp_model_params=self.model_config_dict,
+                    **self.model_config_dict,
                 )
             case ModelType.VLLM:
                 import os
@@ -103,13 +103,16 @@ class SchemaModel(BaseModelBackend):
                 self.model_name = self.model_config_dict.get(
                     "model_name", "mistralai/Mistral-7B-v0.3"
                 )
-                self.model_config_dict["model"] = os.path.join(
-                    self.model_config_dict.get("cache_dir", None),
-                    self.model_name,
+                self.model_config_dict["pretrained_model_name_or_path"] = (
+                    os.path.join(
+                        self.model_config_dict.get("cache_dir", None),
+                        self.model_name,
+                    )
                 )
                 self.model_config_dict["download_dir"] = (
                     self.model_config_dict.get("cache_dir", None)
                 )
+                self.model_config_dict["trust_remote_code"] = True
 
                 # Remove the model_name and the device from dict
                 self.model_config_dict.pop("model_name", None)
@@ -118,7 +121,7 @@ class SchemaModel(BaseModelBackend):
 
                 self._client = models.vllm(
                     model_name=self.model_name,
-                    vllm_model_params=self.model_config_dict,
+                    **self.model_config_dict,
                 )
             case _:
                 raise ValueError(f"Unsupported model type: {self.model_type}")
