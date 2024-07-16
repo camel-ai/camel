@@ -70,7 +70,7 @@ class SchemaModel(BaseModelBackend):
                     "tokenizer_kwargs", None
                 )
 
-                # Remove the model_name and the device from dict
+                # Remove the unused keys from dict
                 self.model_config_dict.pop("model_name", None)
                 self.model_config_dict.pop("device", None)
                 self.model_config_dict.pop("tokenizer_kwargs", None)
@@ -92,7 +92,7 @@ class SchemaModel(BaseModelBackend):
                 )
                 cache_dir = self.model_config_dict.get("cache_dir", None)
 
-                # Remove the repo_id and the filename from dict
+                # Remove the unused keys from dict
                 self.model_config_dict.pop("repo_id", None)
                 self.model_config_dict.pop("filename", None)
                 self.model_config_dict.pop("cache_dir", None)
@@ -116,7 +116,7 @@ class SchemaModel(BaseModelBackend):
                 )
                 self.model_config_dict["trust_remote_code"] = True
 
-                # Remove the model_name and the device from dict
+                # Remove the unused keys from dict
                 self.model_config_dict.pop("model_name", None)
                 self.model_config_dict.pop("cache_dir", None)
 
