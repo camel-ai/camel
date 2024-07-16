@@ -53,7 +53,7 @@ class FitnessPlan(BaseModel):
     hydration_tip: str
 
 
-login(token="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")  # Hugging Face token
+login(token="your_token")  # Hugging Face token
 
 # Create SchemaModel instance
 cache_dir = None  # Path to the cache directory
