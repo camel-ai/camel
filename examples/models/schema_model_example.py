@@ -66,7 +66,7 @@ cache_dir = None  # Path to the cache directory
 #     },
 # )
 schema_model = SchemaModel(
-    model_type=ModelType.VLLM,
+    model_type=ModelType.LLAMACPP,
     model_config_dict={
         "model_name": "mistralai/Mistral-7B-v0.3",
         "device": "cuda",

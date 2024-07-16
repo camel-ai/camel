@@ -13,7 +13,6 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Dict, List, Optional, Type, TypeVar, Union
 
-import torch
 from openai import Stream
 from outlines import generate, models
 from pydantic import BaseModel
@@ -86,6 +85,7 @@ class SchemaModel(BaseModelBackend):
                 filename = self.model_config_dict.get(
                     "filename", "phi-2.Q4_K_M.gguf"
                 )
+                cache_dir = self.model_config_dict.get("cache_dir", None)
 
                 # Remove the repo_id and the filename from dict
                 self.model_config_dict.pop("repo_id", None)
@@ -94,6 +94,7 @@ class SchemaModel(BaseModelBackend):
                 self._client = models.llamacpp(
                     repo_id=repo_id,
                     filename=filename,
+                    download_dir=cache_dir,
                     **self.model_config_dict,
                 )
             case ModelType.VLLM:
@@ -161,8 +162,8 @@ class SchemaModel(BaseModelBackend):
         generator = generate.json(self._client, class_schema)
 
         # Set seed for reproducibility
-        rng = torch.Generator(device=self.device)
-        rng.manual_seed(789001)
+        # rng = torch.Generator(device=self.device)
+        # rng.manual_seed(789001)
 
         if not messages:
             raise ValueError("The messages list should not be empty.")
@@ -171,7 +172,7 @@ class SchemaModel(BaseModelBackend):
             f"{message.get('role', '')}: {message.get('content', '')}"
         )
 
-        parsed_response = generator(message_str, rng=rng)
+        parsed_response = generator(message_str)
 
         print(repr(parsed_response))  # TODO: Remove this line
 
