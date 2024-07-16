@@ -78,6 +78,8 @@ class SchemaModel(BaseModelBackend):
                     model_kwargs=self.model_config_dict,
                 )
             case ModelType.LLAMACPP:
+                from llama_cpp import llama_tokenizer
+
                 self.device = self.model_config_dict.get("device", "cuda")
                 repo_id = self.model_config_dict.get(
                     "repo_id", "TheBloke/phi-2-GGUF"
@@ -91,10 +93,14 @@ class SchemaModel(BaseModelBackend):
                 self.model_config_dict.pop("repo_id", None)
                 self.model_config_dict.pop("filename", None)
 
+                tokenizer = llama_tokenizer.LlamaHFTokenizer.from_pretrained(
+                    repo_id
+                )
                 self._client = models.llamacpp(
                     repo_id=repo_id,
                     filename=filename,
                     download_dir=cache_dir,
+                    tokenizer=tokenizer,
                     **self.model_config_dict,
                 )
             case ModelType.VLLM:
