@@ -97,13 +97,24 @@ class SchemaModel(BaseModelBackend):
                     llamacpp_model_params=self.model_config_dict,
                 )
             case ModelType.VLLM:
+                import os
+
                 self.device = self.model_config_dict.get("device", "cuda")
                 self.model_name = self.model_config_dict.get(
                     "model_name", "mistralai/Mistral-7B-v0.3"
                 )
+                self.model_config_dict["model"] = os.path.join(
+                    self.model_config_dict.get("cache_dir", None),
+                    self.model_name,
+                )
+                self.model_config_dict["download_dir"] = (
+                    self.model_config_dict.get("cache_dir", None)
+                )
 
                 # Remove the model_name and the device from dict
                 self.model_config_dict.pop("model_name", None)
+                self.model_config_dict.pop("device", None)
+                self.model_config_dict.pop("cache_dir", None)
 
                 self._client = models.vllm(
                     model_name=self.model_name,
