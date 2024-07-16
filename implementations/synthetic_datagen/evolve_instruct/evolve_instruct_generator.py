@@ -23,10 +23,10 @@ from synthetic_datagen.base_generator import BaseDataGenerator
 from synthetic_datagen.evolve_instruct.evolve_instruct_spec import (
     EvolveInstructSpec,
 )
-from synthetic_datagen.self_instruct.utils.instance_generator import (
+from synthetic_datagen.utils.instance_generator import (
     InstanceGenerator,
 )
-from synthetic_datagen.self_instruct.utils.instruction_generator import (
+from synthetic_datagen.utils.instruction_generator import (
     InstructionGenerator,
 )
 

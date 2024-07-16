@@ -18,9 +18,11 @@ from typing import Dict, List
 
 from tqdm import tqdm
 
-from synthetic_datagen.self_instruct import input_first_template_for_gen
 from synthetic_datagen.self_instruct.self_instruct_spec import SelfInstructSpec
-from synthetic_datagen.self_instruct.utils.generate_utils import load_jsonl
+from synthetic_datagen.self_instruct.templates import (
+    input_first_template_for_gen,
+)
+from synthetic_datagen.utils.generate_utils import load_jsonl
 
 logger = logging.getLogger(__name__)
 

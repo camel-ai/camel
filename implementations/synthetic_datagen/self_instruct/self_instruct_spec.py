@@ -13,12 +13,13 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, List
 
 from rouge_score import rouge_scorer
 
 from synthetic_datagen.agent_systems.base_agent_system import BaseAgentSystem
 from synthetic_datagen.agent_systems.single_agent import SingleAgent
+from synthetic_datagen.utils.seed_instruction import SeedInstruction
 
 
 @dataclass
@@ -35,7 +36,8 @@ class SelfInstructSpec:
         generated instructions.
         agent_system (BaseAgentSystem): The agent system used for generation,
         default is SingleAgent.
-        seed_tasks_path (str): File path for the seed tasks used in generation.
+        seed_instructions (List[SeedInstruction]): List of SeedInstruction
+        representing seed tasks
         include_seed_tasks (bool): Whether to include seed tasks in the
         final output.
         synthetic_data_dir (str): Directory path for storing all synthetic
@@ -68,7 +70,7 @@ class SelfInstructSpec:
         )
     )
     agent_system: BaseAgentSystem = field(default_factory=SingleAgent)
-    seed_tasks_path: str = Path("data/seed_tasks.jsonl")
+    seed_instructions: List[SeedInstruction] = field(default=list)
     include_seed_tasks: bool = False
     synthetic_data_dir: str = Path("data/gpt4_generations/")
     num_prompt_instructions: int = 3

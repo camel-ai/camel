@@ -21,7 +21,7 @@ from typing import Any, Dict, List
 from tqdm import tqdm
 
 from synthetic_datagen.self_instruct.self_instruct_spec import SelfInstructSpec
-from synthetic_datagen.self_instruct.utils.generate_utils import load_jsonl
+from synthetic_datagen.utils.generate_utils import load_jsonl
 
 logger = logging.getLogger(__name__)
 
@@ -203,7 +203,8 @@ class InstructionCurator:
         spec (SelfInstructSpec): Specification object containing
         configuration details.
         synthetic_data_dir (Path): Directory for synthetic data output.
-        seed_tasks_path (str): Path to the seed tasks file.
+        seed_instructions (List[SeedInstruction]): List of SeedInstruction
+        representing seed tasks
         num_instructions_to_generate (int): Number of instructions to generate.
         include_seed_tasks (bool): Flag to include seed tasks in
         the final output.
@@ -221,7 +222,7 @@ class InstructionCurator:
         """
         self.spec = spec
         self.synthetic_data_dir = Path(spec.synthetic_data_dir)
-        self.seed_tasks_path = spec.seed_tasks_path
+        self.seed_instructions = spec.seed_instructions
         self.num_instructions_to_generate = spec.num_instructions_to_generate
         self.include_seed_tasks = spec.include_seed_tasks
         self.all_instances_file = (
@@ -320,15 +321,14 @@ class InstructionCurator:
         Returns:
             List[tuple]: Updated list of instances including seed tasks.
         """
-        seed_tasks = load_jsonl(self.seed_tasks_path)
-        for task in seed_tasks:
-            for instance in task["instances"]:
+        for seed in self.seed_instructions:
+            for instance in seed.instances:
                 instances.append(
                     (
-                        task["instruction"],
-                        instance["input"],
-                        instance["output"],
+                        seed.instruction,
+                        instance.input,
+                        instance.output,
                     )
                 )
-        logger.info(f"Included {len(seed_tasks)} seed tasks")
+        logger.info(f"Included {len(self.seed_instructions)} seed tasks")
         return instances

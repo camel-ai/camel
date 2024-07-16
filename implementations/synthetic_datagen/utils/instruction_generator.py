@@ -22,7 +22,7 @@ import numpy as np
 import tqdm
 
 from synthetic_datagen.self_instruct.self_instruct_spec import SelfInstructSpec
-from synthetic_datagen.self_instruct.utils.generate_utils import (
+from synthetic_datagen.utils.generate_utils import (
     encode_prompt,
     post_process_agent_system_response,
     sample_machine_instructions,
@@ -43,7 +43,8 @@ class InstructionGenerator:
 
     Attributes:
         agent_system: The system used for generating new instructions.
-        seed_tasks_path (str): Path to the file containing seed tasks.
+        seed_instructions (List[SeedInstruction]): List of SeedInstruction
+        representing seed tasks
         instructions_out_dir (str): Directory where generated instructions
         will be saved.
         num_instructions_to_generate (int): Total number of instructions
@@ -65,7 +66,9 @@ class InstructionGenerator:
             configuration details.
         """
         self.agent_system = spec.agent_system
-        self.seed_tasks_path = spec.seed_tasks_path
+        self.seed_instructions = [
+            seed.instruction for seed in spec.seed_instructions
+        ]
         self.instructions_out_dir = spec.instructions_out_dir
         self.num_instructions_to_generate = spec.num_instructions_to_generate
         self.num_prompt_instructions = spec.num_prompt_instructions
@@ -81,7 +84,6 @@ class InstructionGenerator:
         """
         os.makedirs(os.path.dirname(self.instructions_out_dir), exist_ok=True)
 
-        seed_instructions = self._load_seed_instructions()
         machine_instructions = self._load_machine_instructions()
 
         progress_bar = tqdm.tqdm(total=self.num_instructions_to_generate)
@@ -93,12 +95,12 @@ class InstructionGenerator:
                 len(machine_instructions) < self.num_instructions_to_generate
             ):
                 new_instructions = self._generate_new_instructions(
-                    seed_instructions, machine_instructions
+                    self.seed_instructions, machine_instructions
                 )
                 for inst, _metadata in new_instructions:
                     instruction_data = (
                         self._filter_synthetic_instruction_by_rouge_score(
-                            inst, seed_instructions, machine_instructions
+                            inst, self.seed_instructions, machine_instructions
                         )
                     )
                     if instruction_data is None:
@@ -129,26 +131,6 @@ class InstructionGenerator:
         )
 
         return machine_instructions
-
-    def _load_seed_instructions(self) -> List[str]:
-        """
-        Load seed instructions from the specified seed tasks file.
-
-        Returns:
-            List[str]: A list of seed instructions extracted from
-            non-classification tasks.
-        """
-        seed_tasks = [
-            json.loads(line) for line in open(self.seed_tasks_path, "r")
-        ]
-        seed_tasks = [t for t in seed_tasks if not t["is_classification"]]
-        seed_instructions = [t["instruction"] for t in seed_tasks]
-
-        logger.info(
-            f"Loaded {len(seed_instructions)} human-written seed instructions"
-        )
-
-        return seed_instructions
 
     def _generate_new_instructions(
         self, seed_instructions: List[str], machine_instructions: List[str]

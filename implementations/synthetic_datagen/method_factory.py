@@ -36,13 +36,13 @@ class SyntheticDataGeneratorFactory:
         *args,
         **kwargs,
     ) -> BaseDataGenerator:
-        model_class: Type[BaseDataGenerator] = (
-            SyntheticDataGeneratorFactory._get_model_class(method_type)
+        method_class: Type[BaseDataGenerator] = (
+            SyntheticDataGeneratorFactory._get_method_class(method_type)
         )
-        return model_class(spec, *args, **kwargs)
+        return method_class(spec, *args, **kwargs)
 
     @staticmethod
-    def _get_model_class(
+    def _get_method_class(
         method_type: Union[SyntheticDataGeneratorMethodType, str],
     ) -> Type[BaseDataGenerator]:
         if isinstance(method_type, str):
@@ -59,6 +59,6 @@ class SyntheticDataGeneratorFactory:
             if method_type == SyntheticDataGeneratorMethodType.SELFINSTRUCT:
                 return SelfInstructGenerator
             else:
-                raise ValueError(f"Unknown model type: {method_type}")
+                raise ValueError(f"Unknown method type: {method_type}")
         else:
             raise ValueError(f"Invalid method type: {method_type}")
