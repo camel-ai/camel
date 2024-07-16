@@ -25,7 +25,7 @@ from camel.utils import BaseTokenCounter, OpenAITokenCounter, api_keys_required
 
 class AzureOpenAIModel(BaseModelBackend):
     r"""Azure OpenAI API in a unified BaseModelBackend interface.
-    doc: https://learn.microsoft.com/en-us/azure/ai-services/openai/
+    Doc: https://learn.microsoft.com/en-us/azure/ai-services/openai/
     """
 
     def __init__(
@@ -50,8 +50,8 @@ class AzureOpenAIModel(BaseModelBackend):
         super().__init__(model_type, model_config_dict, api_key, url)
         self._url = url or os.environ.get("AZURE_OPENAI_ENDPOINT")
         self._api_key = api_key or os.environ.get("AZURE_OPENAI_API_KEY")
-        self.api_version = os.environ.get("AZURE_API_VERSION", None)
-        self.azure_deployment = os.environ.get("AZURE_DEPLOYMENT", "")
+        self.api_version = os.environ.get("AZURE_API_VERSION")
+        self.azure_deployment = os.environ.get("AZURE_DEPLOYMENT")
 
         if self.azure_deployment is None:
             raise ValueError("`AZURE_DEPLOYMENT` is not provided.")
