@@ -103,11 +103,9 @@ class SchemaModel(BaseModelBackend):
                 self.model_name = self.model_config_dict.get(
                     "model_name", "mistralai/Mistral-7B-v0.3"
                 )
-                self.model_config_dict["pretrained_model_name_or_path"] = (
-                    os.path.join(
-                        self.model_config_dict.get("cache_dir", None),
-                        self.model_name,
-                    )
+                self.model_config_dict["model"] = os.path.join(
+                    self.model_config_dict.get("cache_dir", None),
+                    self.model_name,
                 )
                 self.model_config_dict["download_dir"] = (
                     self.model_config_dict.get("cache_dir", None)
