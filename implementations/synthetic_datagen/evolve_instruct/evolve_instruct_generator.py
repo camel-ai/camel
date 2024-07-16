@@ -15,9 +15,12 @@ import logging
 import time
 from enum import Enum
 from typing import Optional
-
+import json
+import uuid
+import os
 import numpy as np
 import pandas as pd
+
 from datasets import Dataset, DatasetDict, load_dataset
 from synthetic_datagen.base_generator import BaseDataGenerator
 from synthetic_datagen.evolve_instruct.evolve_instruct_spec import (
@@ -194,8 +197,7 @@ Translate #Given Prompt# to #New Prompt# in Korean."
                         'output': self.final_answers[i],
                     }
                 )
-        import json
-        import uuid
+        
 
         with open(
             f"{
@@ -217,7 +219,7 @@ Translate #Given Prompt# to #New Prompt# in Korean."
         :return: None
         """
 
-        import os
+        
 
         if isinstance(self.seed_data, str) and os.path.exists(self.seed_data):
             data = load_dataset("json", data_files=self.seed_data)
