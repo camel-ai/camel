@@ -17,7 +17,6 @@ from typing import List
 from huggingface_hub import login
 from pydantic import BaseModel, Field
 
-from camel.messages import OpenAIMessage
 from camel.models import SchemaModel
 from camel.types import ModelType
 
@@ -68,13 +67,13 @@ schema_model = SchemaModel(
 )
 
 # Define user message
-user_msg = OpenAIMessage(
-    role="user",
-    content=(
-        "I want to practice my legs today. "
-        "Help me make a fitness and diet plan."
+user_msg = {
+    "role": "user",
+    "content": (
+        "I want to practice my legs today. Help me make a fitness and "
+        "diet plan."
     ),
-)
+}
 
 # Get response using SchemaModel
 response = schema_model.run([user_msg], FitnessPlan)
