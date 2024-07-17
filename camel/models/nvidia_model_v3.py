@@ -20,7 +20,12 @@ from openai import OpenAI, Stream
 from camel.configs import OPENAI_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
-from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
+from camel.types import (
+    ChatCompletion,
+    ChatCompletionChunk,
+    ChatCompletionMessage,
+    ModelType,
+)
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
@@ -87,10 +92,9 @@ class NvidiaModel(BaseModelBackend):
             Union[ChatCompletion, Stream[ChatCompletionChunk]]:
                 `ChatCompletion` in the non-stream mode.
         """
-        # print(messages)
         if messages[0]['role'] == 'system':
-            messages[0]['role'] = 'user'
             self.system_message = messages[0]
+            # messages[0]['role'] = 'user'
 
         # Nemotron model only accept 'user' or 'assistant' as role.
         messages = [messages[0], messages[-1]]
@@ -99,9 +103,10 @@ class NvidiaModel(BaseModelBackend):
                 message['role'] = 'user'  # type: ignore[arg-type]
 
         # Split options
+        message_options = str(messages[1]['content'])
         options = [
             op.split('\nInput:')[0][3:]
-            for op in messages[1]['content'].split('\nOption ')[1:]
+            for op in message_options.split('\nOption ')[1:]
         ]
 
         # Then for each option
@@ -114,13 +119,20 @@ class NvidiaModel(BaseModelBackend):
                 ],
                 model=self.model_type.value,
             )
-            scores = response.choices[0].message[0].content
-            pattern = r'[-+]?[0-9]*\.?[0-9]+'
-            numbers = re.findall(pattern, scores)
-            numbers = [float(num) for num in numbers]
+
+            match = re.search(r"content='(.*?)'", str(response))
+            if match:
+                scores_str = match.group(1)
+                scores = dict(
+                    item.split(":") for item in scores_str.split(",")
+                )
+
+            numbers = [float(num) for num in scores.values()]
             # Modify chat message
-            response.choices[0].message[0].content = (
-                f'I choose option {i+1}: "{option}" with scores: ' + scores
+            response.choices[0].message = ChatCompletionMessage(
+                content=f'I choose option {i+1}: "{option}" with scores: '
+                + scores_str,
+                role='assistant',
             )
             responses.append((response, sum(numbers)))
 
