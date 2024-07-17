@@ -218,7 +218,6 @@ Translate #Given Prompt# to #New Prompt# in Korean."
 
         :return: None
         """
-
         
 
         if isinstance(self.seed_data, str) and os.path.exists(self.seed_data):
