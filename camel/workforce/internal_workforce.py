@@ -21,7 +21,7 @@ from camel.agents.manager_agent import ChatAgent, ManagerAgent
 from camel.messages.base import BaseMessage
 from camel.tasks.task import Task
 from camel.workforce import BaseWorkforce, LeafWorkforce
-from camel.workforce.task_channel import Packet, TaskChannel, Taskstatus
+from camel.workforce.task_channel import Packet, TaskChannel, PacketStatus
 from camel.workforce.utils import get_workforces_info
 
 
@@ -128,7 +128,7 @@ class InternalWorkforce(BaseWorkforce):
     async def get_finished_task(self) -> Packet:
         r"""Get the task that's published by the workforce and just get
         finished from the channel."""
-        return await self.channel.get_finished_task_by_publisher(
+        return await self.channel.get_returned_task_by_publisher(
             self.workforce_id
         )
 
@@ -138,12 +138,12 @@ class InternalWorkforce(BaseWorkforce):
 
     async def send_packet(self) -> None:
         next_packet = self.pending_packets[0]
-        if next_packet.status == Taskstatus.FAILED:
+        if next_packet.status == PacketStatus.FAILED:
             next_packet.task.compose(self.task_agent)
-            next_packet.status = Taskstatus.COMPLETED
+            next_packet.status = PacketStatus.COMPLETED
             await self.delete_composed_subtask(next_packet)
 
-        await self.channel.post_task(next_packet)
+        await self.channel.send_task(next_packet)
 
     async def listening(self) -> Dict[str, Packet]:
         r"""Continuously listen to the channel, post task to the channel and
@@ -165,23 +165,23 @@ class InternalWorkforce(BaseWorkforce):
                 self.workforce_id,
                 self.workforce_id,
                 None,
-                Taskstatus.FAILED,
+                PacketStatus.FAILED,
             )
             self.pending_packets.append(initial_packet)
 
         while self.running and self.pending_packets:
             finished_task = await self.get_finished_task()
-            if finished_task.status == Taskstatus.COMPLETED:
+            if finished_task.status == PacketStatus.COMPLETED:
                 # close the task, indicating that the task is completed and
                 # known by the manager
                 self.pending_packets.popleft()
-                await self.channel.update_task(
-                    finished_task.task.id, Taskstatus.CLOSED
+                await self.channel.return_task(
+                    finished_task.task.id, PacketStatus.CLOSED
                 )
                 # TODO: mark the task as completed, assign the next task
                 await self.send_packet()
 
-            elif finished_task.status == Taskstatus.FAILED:
+            elif finished_task.status == PacketStatus.FAILED:
                 # remove the failed task from the channel
                 await self.channel.remove_task(finished_task.task.id)
                 # TODO: apply action when the task fails

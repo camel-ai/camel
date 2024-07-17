@@ -19,7 +19,7 @@ from camel.agents.base import BaseAgent
 from camel.societies import RolePlaying
 from camel.tasks.task import Task
 from camel.workforce.base import BaseWorkforce
-from camel.workforce.task_channel import Packet, TaskChannel, Taskstatus
+from camel.workforce.task_channel import Packet, TaskChannel, PacketStatus
 
 
 class LeafWorkforce(BaseWorkforce):
@@ -47,7 +47,9 @@ class LeafWorkforce(BaseWorkforce):
         super().__init__(workforce_id, description, channel)
         self.worker = worker
 
-    def process_task(self, task: Task, dependencies: List[Task]) -> Taskstatus:
+    def process_task(
+        self, task: Task, dependencies: List[Task]
+    ) -> PacketStatus:
         r"""Processes a task based on its dependencies.
 
         Returns:
@@ -85,7 +87,7 @@ class LeafWorkforce(BaseWorkforce):
                 packet.task, task_dependencies
             )
 
-            await self.channel.update_task(packet.task.id, task_state)
+            await self.channel.return_task(packet.task.id, task_state)
 
             # TODO: check if the task can be done. If not, fail the task.
             # TODO: fetch the info of dependencies
