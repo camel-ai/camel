@@ -105,9 +105,9 @@ Translate #Given Prompt# to #New Prompt# in Korean."
 
         self.prompt_templates[Mutation.COMPLICATE] = (
             self.prompt_templates['base']
-            + f"""Rewrite #Given Prompt# to make it slightly \
-            more complicated, and create #New Prompt#. \
-            {write_in_korean}
+            + f"""Rewrite #Given Prompt# to make it slightly"""
+            """ more complicated, and create #New Prompt#."""
+            """ {write_in_korean}
 
 #Given Prompt#:
 <PROMPT>
@@ -160,9 +160,9 @@ Translate #Given Prompt# to #New Prompt# in Korean."
 
         self.prompt_templates[Mutation.SWITCH_TOPIC] = (
             self.prompt_templates['base']
-            + f"""Rewrite #Given Prompt# by switching the topic, \
-            keeping the domain and difficulty level similar, \
-                and create #New Prompt#. {write_in_korean}
+            + f"""Rewrite #Given Prompt# by switching the topic,"""
+            """ keeping the domain and difficulty level similar,"""
+            """ and create #New Prompt#. {write_in_korean}
 
 #Given Prompt#:
 <PROMPT>
