@@ -81,10 +81,6 @@ class LeafWorkforce(BaseWorkforce):
                 )
                 task_dependencies.append(task_dependency)
 
-            # Q: Will `task.result` be modified in the `process_task` function
-            # and referenced by packet in the channel, do we need to provide
-            # the `update_task_result` function for TaskChannel?
-
             task_state = await self.process_task(
                 packet.task, task_dependencies
             )

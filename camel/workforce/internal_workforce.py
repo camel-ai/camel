@@ -15,11 +15,11 @@ from __future__ import annotations
 
 import asyncio
 from collections import deque
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from camel.agents.manager_agent import ChatAgent, ManagerAgent
 from camel.messages.base import BaseMessage
-from camel.tasks.task import Task, TaskManager
+from camel.tasks.task import Task
 from camel.workforce import BaseWorkforce, LeafWorkforce
 from camel.workforce.task_channel import Packet, TaskChannel, Taskstatus
 from camel.workforce.utils import get_workforces_info
@@ -61,7 +61,7 @@ class InternalWorkforce(BaseWorkforce):
         self.task_agent = ChatAgent(sys_msg)
         self.workforce_info = get_workforces_info(workforces)
         self.initial_task = initial_task
-        self.task_collection = TaskManager(self.initial_task)
+        # self.task_collection = TaskManager(self.initial_task)
 
     def assign_task(
         self,
@@ -101,7 +101,7 @@ class InternalWorkforce(BaseWorkforce):
         r"""Decompose a task into a packet and set dependencies."""
         packet_lst: List[Packet] = []
         dependencies: List[str] = []
-        subtasks = self.task_collection.decompose(task, self.task_agent)
+        subtasks = task.decompose(self.task_agent)
 
         for subtask in subtasks:
             # get assign_id by calling assign_task function.
@@ -132,10 +132,20 @@ class InternalWorkforce(BaseWorkforce):
             self.workforce_id
         )
 
-    async def send_packet(self) -> None:
-        await self.channel.post_task(self.pending_packets.popleft())
+    async def delete_composed_subtask(self, parent_packet: Packet) -> None:
+        for subtask in parent_packet.task.subtasks:
+            await self.channel.remove_task(subtask.id)
 
-    async def listening(self) -> None:
+    async def send_packet(self) -> None:
+        next_packet = self.pending_packets[0]
+        if next_packet.status == Taskstatus.FAILED:
+            next_packet.task.compose(self.task_agent)
+            next_packet.status = Taskstatus.COMPLETED
+            await self.delete_composed_subtask(next_packet)
+
+        await self.channel.post_task(next_packet)
+
+    async def listening(self) -> Dict[str, Packet]:
         r"""Continuously listen to the channel, post task to the channel and
         track the status of posted tasks.
         """
@@ -149,11 +159,22 @@ class InternalWorkforce(BaseWorkforce):
             self.pending_packets.extend(packets)
             await self.send_packet()
 
+            # initial_packet is set to failed to trigger the compose
+            initial_packet = Packet(
+                self.initial_task,
+                self.workforce_id,
+                self.workforce_id,
+                None,
+                Taskstatus.FAILED,
+            )
+            self.pending_packets.append(initial_packet)
+
         while self.running and self.pending_packets:
             finished_task = await self.get_finished_task()
             if finished_task.status == Taskstatus.COMPLETED:
                 # close the task, indicating that the task is completed and
                 # known by the manager
+                self.pending_packets.popleft()
                 await self.channel.update_task(
                     finished_task.task.id, Taskstatus.CLOSED
                 )
@@ -172,10 +193,9 @@ class InternalWorkforce(BaseWorkforce):
                 self.pending_packets.extendleft(packets)
 
                 await self.send_packet()
-        # Q: When does the manager compose the results of all subtasks?
-        # After all tasks are closed, or does the process continue
-        # when it detects that subtasks are completed?
+
         await self.stop()
+        return self.channel._task_dict
 
     async def start(self) -> None:
         r"""Start the internal workforce and all the workforces under it."""

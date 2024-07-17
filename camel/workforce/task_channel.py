@@ -64,12 +64,13 @@ class Packet:
         publisher_id: str,
         assignee_id: str,
         dependencies: Optional[List[str]] = None,
+        status: Taskstatus = Taskstatus.ASSIGNED,
     ):
         self.task = task
         self.publisher_id = publisher_id
         self.assignee_id = assignee_id
         self.dependencies = dependencies
-        self.status = Taskstatus.ASSIGNED
+        self.status = status
 
 
 class TaskChannel:
