@@ -75,6 +75,9 @@ class ChatGPTPipeline:
             response = None
             count = 0
             while not response and count < 3:
+                import pdb
+
+                pdb.set_trace()
                 try:
                     response = openai.ChatCompletion.create(
                         # model="gpt-3.5-turbo-0613",

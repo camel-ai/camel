@@ -23,10 +23,10 @@ class BaseDataGenerator(ABC):
     def generate(self):
         pass
 
-    @abstractmethod
-    def curate(self):
-        pass
+    # @abstractmethod
+    # def curate(self):
+    #     pass
 
-    @abstractmethod
-    def evaluate(self):
-        pass
+    # @abstractmethod
+    # def evaluate(self):
+    #     pass
