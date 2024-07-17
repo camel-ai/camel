@@ -22,13 +22,23 @@ from pydantic import BaseModel
 
 from camel.agents.base import BaseAgent
 from camel.configs import ChatGPTConfig
-from camel.functions import OpenAIFunction
+from camel.configs.gemini_config import GeminiConfig
+from camel.toolkits import OpenAIFunction
 from camel.memories import (
     AgentMemory,
     ChatHistoryMemory,
     MemoryRecord,
     ScoreBasedContextCreator,
 )
+
+from vertexai.generative_models import (
+    Content,
+    FunctionDeclaration,
+    GenerativeModel,
+    Part,
+    Tool,
+)
+
 from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.responses import ChatAgentResponse
@@ -152,21 +162,6 @@ class ChatAgent(BaseAgent):
         if tools is not None:
             for func in tools:
                 self.func_dict[func.get_function_name()] = func.func
-
-        if output_schema is not None and \
-        self.model_backend.model_type.is_openai:
-            tools = [OpenAIFunction(parse_pydantic_model_as_openai_tools_schema, \
-                                    openai_tool_schema = \
-                                    parse_pydantic_model_as_openai_tools_schema
-                                        (output_schema))]
-            
-            self.model_backend.model_config_dict = ChatGPTConfig(
-            tools = tools,
-            tool_choice = {'type': 'function', 'function': {'name': 'return_json_format_response' } }
-            ).__dict__
-
-            self.func_dict['return_json_format_response'] = \
-                parse_pydantic_model_as_openai_tools_schema
 
         self.model_config_dict = self.model_backend.model_config_dict
 
@@ -449,7 +444,7 @@ class ChatAgent(BaseAgent):
                 return self.step_token_exceed(
                     e.args[1], tool_calls, "max_tokens_exceeded"
                 )
-            if output_schema is not None and self.model_type.is_openai:
+            if output_schema is not None:
                 self._structured_output_openai_response(output_schema)
 
             (
@@ -484,6 +479,26 @@ class ChatAgent(BaseAgent):
                 tool_calls.append(func_record)
 
             else:
+                # use structed output response without tools
+                if output_schema is not None and all(
+                    record.func_name
+                    != Constants.RETURN_JSON_STRUCTURE_RESPONSE
+                    for record in tool_calls
+                ):
+                    self._structured_output_openai_response(output_schema)
+
+                    (
+                        response,
+                        output_messages,
+                        finish_reasons,
+                        usage_dict,
+                        response_id,
+                    ) = self._step_model_response(openai_messages, num_tokens)
+
+                    tool_calls = self._add_tools_for_func_call(
+                        response, tool_calls
+                    )
+                    
                 # Function calling disabled or not a function calling
                 info = self._step_get_info(
                     output_messages,
@@ -565,9 +580,14 @@ class ChatAgent(BaseAgent):
         func = OpenAIFunction(return_json_func)
         tools = [func]
         self.func_dict[func.get_function_name()] = func.func
-        self.model_backend.model_config_dict = ChatGPTConfig(
-            tools=tools
-        ).__dict__
+        if self.model_type.is_openai:
+            self.model_backend.model_config_dict = ChatGPTConfig(
+                tools=tools
+            ).__dict__
+        elif self.model_type.is_gemini:
+            self.model_backend.model_config_dict = GeminiConfig(
+                tools=tools
+            ).__dict__
 
     def _step_model_response(
         self,

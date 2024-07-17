@@ -26,7 +26,6 @@ from .commons import (
     get_system_information,
     get_task_list,
     json_to_function_code,
-    model_api_key_required,
     is_docker_running,
     print_text_animated,
     text_extract_from_web,

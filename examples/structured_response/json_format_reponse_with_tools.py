@@ -18,7 +18,7 @@ from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 from pydantic import BaseModel, Field
-from camel.functions import (
+from camel.toolkits import (
     MATH_FUNCS,
     SEARCH_FUNCS,
 
