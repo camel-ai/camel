@@ -19,7 +19,7 @@ from camel.agents.base import BaseAgent
 from camel.societies import RolePlaying
 from camel.tasks.task import Task
 from camel.workforce.base import BaseWorkforce
-from camel.workforce.task_channel import Packet, TaskChannel, PacketStatus
+from camel.workforce.task_channel import Packet, PacketStatus, TaskChannel
 
 
 class LeafWorkforce(BaseWorkforce):
@@ -47,7 +47,7 @@ class LeafWorkforce(BaseWorkforce):
         super().__init__(workforce_id, description, channel)
         self.worker = worker
 
-    def process_task(
+    async def process_task(
         self, task: Task, dependencies: List[Task]
     ) -> PacketStatus:
         r"""Processes a task based on its dependencies.
@@ -56,7 +56,17 @@ class LeafWorkforce(BaseWorkforce):
             'COMPLETE' if the task is successfully processed,
             'FAILED' if the processing fails.
         """
-        raise NotImplementedError()
+        # Note: The following are mock outputs for workforce example
+        if self.workforce_id == '1':
+            task.result = 'pip install numpy'
+        elif self.workforce_id == '2':
+            task.result = 'google is a good company'
+        elif self.workforce_id == '3':
+            task.result = 'I can not deal with it.'
+            return Taskstatus.FAILED
+        else:
+            return "This is result from new agent"
+        return Taskstatus.COMPLETED
 
     async def get_assigned_task(self) -> Packet:
         r"""Get the task assigned to this workforce from the channel."""
@@ -75,6 +85,7 @@ class LeafWorkforce(BaseWorkforce):
         while self.running:
             # get the earliest task assigned to this workforce
             packet = await self.get_assigned_task()
+            print(f'workforce-{self.workforce_id} get packet:', packet.task)
             # get the Task instance of dependencies
             task_dependencies = []
             for dep_task_id in packet.dependencies:
@@ -93,6 +104,7 @@ class LeafWorkforce(BaseWorkforce):
             # TODO: fetch the info of dependencies
             # TODO: process the task
             # TODO: update the result and status of the task
+        print(f'workforce-{self.workforce_id} stoped.')
 
     async def start(self):
         self.running = True

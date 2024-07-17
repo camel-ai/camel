@@ -211,7 +211,6 @@ class Task(BaseModel):
         Returns:
             None
         """
-
         if not self.subtasks:
             return
 

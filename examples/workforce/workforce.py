@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import asyncio
+
 from camel.agents.chat_agent import ChatAgent
 from camel.messages.base import BaseMessage
 from camel.tasks.task import Task
@@ -19,8 +21,10 @@ from camel.workforce.leaf_workforce import LeafWorkforce
 from camel.workforce.task_channel import TaskChannel
 
 
-def main():
-    human_task = Task(content='develop a python program of investing stock.')
+async def main():
+    human_task = Task(
+        content='develop a python program of investing stock.', id='0'
+    )
 
     public_channel = TaskChannel()
 
@@ -40,18 +44,21 @@ def main():
     agent_2 = ChatAgent(sys_msg_2)
     agent_3 = ChatAgent(sys_msg_3)
 
-    unit_workforce_1 = LeafWorkforce(1, 'agent1', agent_1, public_channel)
-    unit_workforce_2 = LeafWorkforce(2, 'agent2', agent_2, public_channel)
-    unit_workforce_3 = LeafWorkforce(3, 'agent3', agent_3, public_channel)
+    unit_workforce_1 = LeafWorkforce('1', 'agent1', agent_1, public_channel)
+    unit_workforce_2 = LeafWorkforce('2', 'agent2', agent_2, public_channel)
+    unit_workforce_3 = LeafWorkforce('3', 'agent3', agent_3, public_channel)
 
     workforces = InternalWorkforce(
-        4,
-        'a software group',
-        [unit_workforce_1, unit_workforce_2, unit_workforce_3],
-        None,
-        public_channel,
+        workforce_id='0',
+        description='a software group',
+        workforces=[unit_workforce_1, unit_workforce_2, unit_workforce_3],
+        manager_agent_config=None,
+        task_agent_config=None,
+        initial_task=human_task,
+        channel=public_channel,
     )
+    await workforces.start()
 
-    workforces.start()
 
-    workforces.process_task(human_task)
+if __name__ == "__main__":
+    asyncio.run(main())

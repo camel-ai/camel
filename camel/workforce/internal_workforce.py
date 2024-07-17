@@ -14,6 +14,7 @@
 from __future__ import annotations
 
 import asyncio
+import random
 from collections import deque
 from typing import Dict, List, Optional
 
@@ -21,7 +22,7 @@ from camel.agents.manager_agent import ChatAgent, ManagerAgent
 from camel.messages.base import BaseMessage
 from camel.tasks.task import Task
 from camel.workforce import BaseWorkforce, LeafWorkforce
-from camel.workforce.task_channel import Packet, TaskChannel, PacketStatus
+from camel.workforce.task_channel import Packet, PacketStatus, TaskChannel
 from camel.workforce.utils import get_workforces_info
 
 
@@ -81,9 +82,10 @@ class InternalWorkforce(BaseWorkforce):
         Returns:
             str: ID of the assigned workforce.
         """
-        raise NotImplementedError()
+        # Note: The following are mock outputs for workforce example
+        return random.choice(['1', '2', '3'])
 
-    def create_workforce_for_task(self, task: Task) -> LeafWorkforce:
+    async def create_workforce_for_task(self, task: Task) -> LeafWorkforce:
         r"""Creates a new workforce for a given task. One of the actions that
         the manager agent can take when a task has failed.
 
@@ -93,31 +95,46 @@ class InternalWorkforce(BaseWorkforce):
         Returns:
             LeafWorkforce: The created workforce.
         """
-        raise NotImplementedError()
+        # Note: The following are mock outputs for workforce example
+        sys_msg = BaseMessage.make_assistant_message(
+            role_name="product owner",
+            content="You are familiar with internet.",
+        )
+        new_agent = ChatAgent(sys_msg)
+        new_workforce = LeafWorkforce(
+            str(len(self.workforces) + 1), 'new_agent', new_agent, self.channel
+        )
+        self.workforces.append(new_workforce)
+        task = [asyncio.create_task(new_workforce.start())]
+        print('start listening...')
+        await asyncio.gather(*task)
+        return new_workforce
 
-    def decompose_task_to_packets(
+    async def decompose_task_to_packets(
         self, task: Task, failed: bool
     ) -> List[Packet]:
         r"""Decompose a task into a packet and set dependencies."""
         packet_lst: List[Packet] = []
         dependencies: List[str] = []
         subtasks = task.decompose(self.task_agent)
+        task.subtasks = subtasks
 
         for subtask in subtasks:
             # get assign_id by calling assign_task function.
             # If failed, create a workforce.
             if failed:
-                assign_id = self.create_workforce_for_task(
-                    subtask
-                ).workforce_id
+                create_result = await self.create_workforce_for_task(subtask)
+                assign_id = create_result.workforce_id
+                print('assign_id:', assign_id)
             else:
                 assign_id = self.assign_task(
                     task=subtask, workforce_info=self.workforce_info
                 )
             # set status as Taskstatus.ASSIGNED
             packet = Packet(
-                subtask, self.workforce_id, assign_id, dependencies
+                subtask, self.workforce_id, assign_id, list(dependencies)
             )
+            print(subtask, 'dependencies:', dependencies)
 
             packet_lst.append(packet)
             # get dependencies via the index of the subtask list
@@ -149,10 +166,11 @@ class InternalWorkforce(BaseWorkforce):
         r"""Continuously listen to the channel, post task to the channel and
         track the status of posted tasks.
         """
+        print(f'listening {self.workforce_id}')
         if self.initial_task is not None:
             # TODO: split the initial task into subtasks and assign the
             #  first one to the workforces
-            packets = self.decompose_task_to_packets(
+            packets = await self.decompose_task_to_packets(
                 task=self.initial_task, failed=False
             )
             # Insert packets at the tail of the queue and send to channel
@@ -178,6 +196,8 @@ class InternalWorkforce(BaseWorkforce):
                 await self.channel.return_task(
                     finished_task.task.id, PacketStatus.CLOSED
                 )
+                if not self.pending_packets:
+                    break
                 # TODO: mark the task as completed, assign the next task
                 await self.send_packet()
 
@@ -186,14 +206,13 @@ class InternalWorkforce(BaseWorkforce):
                 await self.channel.remove_task(finished_task.task.id)
                 # TODO: apply action when the task fails
 
-                packets = self.decompose_task_to_packets(
+                packets = await self.decompose_task_to_packets(
                     task=finished_task.task, failed=True
                 )
                 # Insert packets at the head of the queue
-                self.pending_packets.extendleft(packets)
+                self.pending_packets.extendleft(reversed(packets))
 
                 await self.send_packet()
-
         await self.stop()
         return self.channel._task_dict
 
@@ -205,8 +224,11 @@ class InternalWorkforce(BaseWorkforce):
             asyncio.create_task(workforce.start())
             for workforce in self.workforces
         ]
+        print('start listening...')
         tasks.append(asyncio.create_task(self.listening()))
-        await asyncio.gather(*tasks)
+        results = await asyncio.gather(*tasks)
+        listening_result = results[-1]
+        print(listening_result['0'].result)
 
     async def stop(self) -> None:
         r"""Stop the internal workforce and all the workforces under it."""
