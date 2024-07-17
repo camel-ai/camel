@@ -13,8 +13,8 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import List, Literal
 
-from camel.functions import OpenAIFunction
 from camel.interpreters import InternalPythonInterpreter
+from camel.toolkits import OpenAIFunction
 
 from .base import BaseToolkit
 

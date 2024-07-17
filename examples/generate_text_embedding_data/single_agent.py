@@ -19,7 +19,8 @@ from camel.agents import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
 from camel.messages import BaseMessage
-from camel.types import ModelType, RoleType, TaskType
+from camel.models import ModelFactory
+from camel.types import ModelPlatformType, ModelType, RoleType, TaskType
 
 QUERY_TYPE_LIST = ["extremely long-tail", "long-tail", "common"]
 QUERY_LENGTH_LIST = ["less than 5 words", "5 to 15 words", "at least 10 words"]
@@ -59,13 +60,17 @@ def main() -> None:
         user_msg = BaseMessage.make_user_message(
             role_name="User", content="Start to generate!"
         )
-        model_config = ChatGPTConfig(
-            temperature=0.0, response_format={"type": "json_object"}
+        model = ModelFactory.create(
+            model_platform=ModelPlatformType.OPENAI,
+            model_type=ModelType.GPT_3_5_TURBO,
+            model_config_dict=ChatGPTConfig(
+                temperature=0.0, response_format={"type": "json_object"}
+            ).__dict__,
         )
+
         assistant_agent = ChatAgent(
             system_message=assistant_sys_msg,
-            model_type=ModelType.GPT_4O,
-            model_config=model_config,
+            model=model,
         )
         print(f"Generating positive and negative documents for '{task}'")
         assistant_response = assistant_agent.step(user_msg)
