@@ -553,7 +553,7 @@ class ChatAgent(BaseAgent):
         into the tools for the OpenAI model configuration.
 
         Args:
-            output_schema (BaseModel): The schema representing the expected 
+            output_schema (BaseModel): The schema representing the expected
             output structure.
 
         Returns:

@@ -325,7 +325,7 @@ def find_and_check_subset(small, big) -> bool:
         big (dict or list or any): The larger set to compare against.
 
     Returns:
-        bool: True if 'small' is a subset of 'big' at any level, False 
+        bool: True if 'small' is a subset of 'big' at any level, False
         otherwise.
     """
     # First, check if 'small' is a subset of 'big' directly
@@ -360,14 +360,14 @@ def is_subset(small, big) -> bool:
         bool: True if 'small' is a subset of 'big', False otherwise.
     """
     if isinstance(small, dict) and isinstance(big, dict):
-        # If both are dictionaries, check if all key-value pairs in 'small' 
+        # If both are dictionaries, check if all key-value pairs in 'small'
         # exist in 'big'
         for key, value in small.items():
             if key not in big or not is_subset(value, big[key]):
                 return False
         return True
     elif isinstance(small, list) and isinstance(big, list):
-        # If both are lists, check if each item in 'small' is a subset of any 
+        # If both are lists, check if each item in 'small' is a subset of any
         # item in 'big'
         for item in small:
             if not any(is_subset(item, big_item) for big_item in big):
@@ -410,26 +410,6 @@ def parse_pydantic_model_as_openai_tools_schema(
     return source_dict
 
 
-def get_pydantic_object_schema(pydantic_params: BaseModel) -> Dict[str, Any]:
-    r"""Get the JSON schema of a Pydantic model.
-
-    Args:
-        pydantic_params (BaseModel): A Pydantic model instance.
-
-    Returns:
-        dict: The JSON schema of the given Pydantic model.
-    """
-    PYDANTIC_MAJOR_VERSION = get_pydantic_major_version()
-
-    if PYDANTIC_MAJOR_VERSION == 2:
-        if issubclass(pydantic_params, pydantic.BaseModel):
-            return pydantic_params.model_json_schema()
-        elif issubclass(pydantic_params, pydantic.v1.BaseModel):
-            return pydantic_params.schema()
-
-    return pydantic_params.schema()
-
-
 def get_pydantic_major_version() -> int:
     r"""Get the major version of Pydantic.
 
@@ -456,21 +436,6 @@ def get_pydantic_object_schema(pydantic_params: BaseModel) -> Dict:
         return pydantic_params.model_json_schema()
 
 
-def get_pydantic_major_version() -> int:
-    r"""Get the major version of Pydantic.
-
-    Returns:
-        int: The major version number of Pydantic. Returns 0 if Pydantic is
-        not installed.
-    """
-    try:
-        import pydantic
-
-        return int(pydantic.__version__.split(".")[0])
-    except ImportError:
-        return 0
-
-
 def func_string_to_callable(code: str):
     r"""Convert a function code string to a callable function object.
 
@@ -488,9 +453,9 @@ def func_string_to_callable(code: str):
 
 def json_to_function_code(json_obj):
     r"""Generate a Python function code from a JSON schema.
-    
+
     Args:
-        json_obj (dict): The JSON schema object containing properties and 
+        json_obj (dict): The JSON schema object containing properties and
         required fields, and json format is follow openai tools schema
 
     Returns:
