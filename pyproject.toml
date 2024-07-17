@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "camel-ai"
-version = "0.1.5.4"
+version = "0.1.5.7"
 authors = ["CAMEL-AI.org"]
 description = "Communicative Agents for AI Society Study"
 readme = "README.md"
@@ -44,13 +44,14 @@ outlines = "0.0.46"
 
 # model-platforms
 litellm = { version = "^1.38.1", optional = true }
+google-generativeai = { version = "^0.6.0", optional = true }
 
 # huggingface-agent
 transformers = { version = "^4", optional = true }
 diffusers = { version = "^0", optional = true }
 accelerate = { version = "^0", optional = true }
 datasets = { version = "^2", optional = true }
-torch = { version = "^1", optional = true }
+torch = { version = "^2", optional = true }
 soundfile = { version = "^0", optional = true }
 sentencepiece = { version = "^0", optional = true }
 opencv-python = { version = "^4", optional = true }
@@ -75,6 +76,7 @@ pygithub = { version = "^2.3.0", optional = true }
 imageio = {extras = ["pyav"], version = "^2.34.2"}
 pyTelegramBotAPI = { version = "^4.18.0", optional = true }
 "discord.py" = { version = "^2.3.2", optional = true }
+docker = { version="^7.1.0", optional = true }
 
 # encoders
 sentence-transformers = { version = "^3.0.1", optional = true }
@@ -82,6 +84,7 @@ sentence-transformers = { version = "^3.0.1", optional = true }
 # vector-databases
 qdrant-client = { version = "^1.9.0", optional = true }
 pymilvus = { version = "^2.4.0", optional = true }
+milvus-lite = { version = "^2.4.0, <=2.4.7", optional = true }
 
 # graph-storages
 neo4j = { version = "^5.18.0", optional = true }
@@ -103,6 +106,7 @@ test = ["pytest", "mock", "pytest-asyncio"]
 
 model-platforms = [
     "litellm",
+    "google-generativeai",
 ]
 
 huggingface-agent = [
@@ -141,6 +145,7 @@ tools = [
     "pygithub",
     "pyTelegramBotAPI",
     "discord.py",
+    "docker",
 ]
 
 vector-databases = [
@@ -192,6 +197,7 @@ all = [
     "slack-sdk",
     "pydub",
     "pillow",
+    "docker",
     # vector-database
     "qdrant-client",
     "pymilvus",
@@ -207,6 +213,7 @@ all = [
     "litellm",
     # kv-storages
     "redis",
+    "google-generativeai",
 ]
 
 [tool.poetry.group.dev]
@@ -331,5 +338,8 @@ module = [
     "litellm",
     "pyTelegramBotAPI",
     "discord.py",
+    "docker.*",
+    "google.*",
+    "google-generativeai",
 ]
 ignore_missing_imports = true

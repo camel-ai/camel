@@ -126,7 +126,7 @@ $B$.
     - Direct Path Analysis: What are the immediate and direct conditions 
     required to move from $A$ to $B$?
     - Intermediate States: Are there states between $A$ and $B$ that must be 
-    transversed or can be used to make the transition smoother or more 
+    traversed or can be used to make the transition smoother or more 
     efficient? If yes, what is the content?
     - Constraints & Limitations: Identify potential barriers or restrictions 
     in moving from $A$ to $B$. These can be external (e.g., environmental 
@@ -244,7 +244,7 @@ square brackets)
         print(f"Message content:\n{msg.content}")
 
         # Extract the conditions from the message
-        condistions_dict = {
+        conditions_dict = {
             f"condition {i}": cdt.replace("<", "")
             .replace(">", "")
             .strip()
@@ -281,7 +281,7 @@ square brackets)
         conditions_and_quality_json: Dict[
             str, Union[List[str], Dict[str, str]]
         ] = {}
-        conditions_and_quality_json["conditions"] = condistions_dict
+        conditions_and_quality_json["conditions"] = conditions_dict
         conditions_and_quality_json["labels"] = labels
         conditions_and_quality_json["evaluate_quality"] = quality
 

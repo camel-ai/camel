@@ -100,7 +100,6 @@ class TaskSpecifyAgent(ChatAgent):
 
         if meta_dict is not None:
             task_specify_prompt = task_specify_prompt.format(**meta_dict)
-
         task_msg = BaseMessage.make_user_message(
             role_name="Task Specifier", content=task_specify_prompt
         )
@@ -234,7 +233,7 @@ The result must be a numbered list in the format:
     #. Third Task
 
 You can only give me up to {max_task_num} tasks at a time. \
-Each task shoud be concise, concrete and doable for a {role_name}.
+Each task should be concise, concrete and doable for a {role_name}.
 You should make task plan and not ask me questions.
 If you think no new tasks are needed right now, write "No tasks to add."
 Now start to give me new tasks one by one. No more than three tasks.

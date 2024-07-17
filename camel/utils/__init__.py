@@ -27,6 +27,7 @@ from .commons import (
     get_task_list,
     json_to_function_code,
     model_api_key_required,
+    is_docker_running,
     print_text_animated,
     text_extract_from_web,
     to_pascal,
@@ -40,6 +41,7 @@ from .constants import Constants
 from .token_counting import (
     AnthropicTokenCounter,
     BaseTokenCounter,
+    GeminiTokenCounter,
     LiteLLMTokenCounter,
     OpenAITokenCounter,
     OpenSourceTokenCounter,
@@ -47,7 +49,6 @@ from .token_counting import (
 )
 
 __all__ = [
-    'model_api_key_required',
     'print_text_animated',
     'get_prompt_template_key_words',
     'get_first_int',
@@ -76,4 +77,6 @@ __all__ = [
     'get_pydantic_major_version',
     'func_string_to_callable',
     'json_to_function_code',
+    'is_docker_running',
+    'GeminiTokenCounter',
 ]
