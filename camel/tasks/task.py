@@ -34,6 +34,7 @@ class TaskState(str, Enum):
     OPEN = "OPEN"
     RUNNING = "RUNNING"
     DONE = "DONE"
+    FAILED = "FAILED"
     DELETED = "DELETED"
 
     @classmethod

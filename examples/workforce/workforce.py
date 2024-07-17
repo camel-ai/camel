@@ -51,10 +51,14 @@ async def main():
     workforces = InternalWorkforce(
         workforce_id='0',
         description='a software group',
-        workforces=[unit_workforce_1, unit_workforce_2, unit_workforce_3],
+        child_workforces=[
+            unit_workforce_1,
+            unit_workforce_2,
+            unit_workforce_3,
+        ],
         manager_agent_config=None,
         task_agent_config=None,
-        initial_task=human_task,
+        main_task=human_task,
         channel=public_channel,
     )
     await workforces.start()

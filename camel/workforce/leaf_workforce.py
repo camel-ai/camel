@@ -17,9 +17,9 @@ from typing import List, Union
 
 from camel.agents.base import BaseAgent
 from camel.societies import RolePlaying
-from camel.tasks.task import Task
+from camel.tasks.task import Task, TaskState
 from camel.workforce.base import BaseWorkforce
-from camel.workforce.task_channel import Packet, PacketStatus, TaskChannel
+from camel.workforce.task_channel import TaskChannel
 
 
 class LeafWorkforce(BaseWorkforce):
@@ -49,11 +49,11 @@ class LeafWorkforce(BaseWorkforce):
 
     async def process_task(
         self, task: Task, dependencies: List[Task]
-    ) -> PacketStatus:
+    ) -> TaskState:
         r"""Processes a task based on its dependencies.
 
         Returns:
-            'COMPLETE' if the task is successfully processed,
+            'DONE' if the task is successfully processed,
             'FAILED' if the processing fails.
         """
         # Note: The following are mock outputs for workforce example
@@ -63,12 +63,12 @@ class LeafWorkforce(BaseWorkforce):
             task.result = 'google is a good company'
         elif self.workforce_id == '3':
             task.result = 'I can not deal with it.'
-            return Taskstatus.FAILED
+            return TaskState.FAILED
         else:
-            return "This is result from new agent"
-        return Taskstatus.COMPLETED
+            task.result = "This is result from new agent"
+        return TaskState.DONE
 
-    async def get_assigned_task(self) -> Packet:
+    async def _get_assigned_task(self) -> Task:
         r"""Get the task assigned to this workforce from the channel."""
         return await self.channel.get_assigned_task_by_assignee(
             self.workforce_id
@@ -84,31 +84,25 @@ class LeafWorkforce(BaseWorkforce):
         """
         while self.running:
             # get the earliest task assigned to this workforce
-            packet = await self.get_assigned_task()
-            print(f'workforce-{self.workforce_id} get packet:', packet.task)
+            task = await self._get_assigned_task()
+            print(f'workforce-{self.workforce_id} get task:', task.id)
             # get the Task instance of dependencies
-            task_dependencies = []
-            for dep_task_id in packet.dependencies:
-                task_dependency = await self.channel.get_task_by_id(
-                    dep_task_id
-                )
-                task_dependencies.append(task_dependency)
+            dependency_ids = await self.channel.get_dependency_ids()
+            task_dependencies = [
+                await self.channel.get_task_by_id(dep_id)
+                for dep_id in dependency_ids
+            ]
 
-            task_state = await self.process_task(
-                packet.task, task_dependencies
-            )
+            # process the task
+            task_state = await self.process_task(task, task_dependencies)
 
-            await self.channel.return_task(packet.task.id, task_state)
+            # update the result and status of the task
+            task.set_state(task_state)
 
-            # TODO: check if the task can be done. If not, fail the task.
-            # TODO: fetch the info of dependencies
-            # TODO: process the task
-            # TODO: update the result and status of the task
-        print(f'workforce-{self.workforce_id} stoped.')
+            await self.channel.return_task(task.id)
 
     async def start(self):
-        self.running = True
         await self.listening()
 
     async def stop(self):
-        self.running = False
+        return

@@ -24,15 +24,13 @@ class PacketStatus(Enum):
     - ``SENT``: The packet has been sent to a worker.
     - ``RETURNED``: The packet has been returned by the worker, meaning that
             the status of the task inside has been updated.
-    - ``HANGING``: The packet is temporarily unavailable. This may due to
-            reasons like failed tasks.
     - ``ARCHIVED``: The packet has been archived, meaning that the content of
-            the task inside will not be changed.
+            the task inside will not be changed. The task is considered
+            as a dependency.
     """
 
     SENT = "SENT"
     RETURNED = "RETURNED"
-    HANGING = "HANGING"
     ARCHIVED = "ARCHIVED"
 
 
@@ -44,40 +42,35 @@ class Packet:
     Args:
         task (Task): The task that is wrapped inside the packet.
         publisher_id (str): The ID of the workforce that published the task.
-        assignee_id (str): The ID of the workforce that is assigned to the
-            task.
-        dependencies (Optional[Tuple[str]], optional): The list of task IDs
-            that the task depends on. Defaults to None.
+        assignee_id (Optional[str]): The ID of the workforce that is assigned
+            to the task. Defaults to None, meaning that the task is posted as
+            a dependency in the channel.
 
     Attributes:
         task (Task): The task that is wrapped inside the packet.
         publisher_id (str): The ID of the workforce that published the task.
-        assignee_id (str): The ID of the workforce that is assigned to the
-            task.
+        assignee_id (Optional[str]): The ID of the workforce that is assigned
+            to the task.
         status (PacketStatus): The status of the task.
-        dependencies (Optional[List[str]]): The list of task IDs that the
-            task depends on.
     """
 
     def __init__(
         self,
         task: Task,
         publisher_id: str,
-        assignee_id: str,
-        dependencies: Optional[List[str]] = None,
+        assignee_id: Optional[str] = None,
         status: PacketStatus = PacketStatus.SENT,
     ):
         self.task = task
         self.publisher_id = publisher_id
         self.assignee_id = assignee_id
-        self.dependencies = dependencies
         self.status = status
 
 
 class TaskChannel:
     r"""An internal class used by Workforce to manage tasks."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._task_id_list: List[str] = []
         self._condition = asyncio.Condition()
         self._task_dict: Dict[str, Packet] = {}
@@ -100,24 +93,33 @@ class TaskChannel:
                 for task_id in self._task_id_list:
                     packet = self._task_dict[task_id]
                     if (
-                        packet.assignee_id == assignee_id
-                        and packet.status == PacketStatus.SENT
+                        packet.status == PacketStatus.SENT
+                        and packet.assignee_id == assignee_id
                     ):
                         return packet.task
                 await self._condition.wait()
 
-    async def send_task(
-        self,
-        task: Task,
-        publisher_id: str,
-        assignee_id: str,
-        dependencies: Optional[List[str]] = None,
+    async def post_task(
+        self, task: Task, publisher_id: str, assignee_id: str
     ) -> None:
         r"""Send a task to the channel with specified publisher and assignee,
         along with the dependency of the task."""
         async with self._condition:
             self._task_id_list.append(task.id)
-            packet = Packet(task, publisher_id, assignee_id, dependencies)
+            packet = Packet(task, publisher_id, assignee_id)
+            self._task_dict[packet.task.id] = packet
+            self._condition.notify_all()
+
+    async def post_dependency(
+        self, dependency: Task, publisher_id: str
+    ) -> None:
+        r"""Post a dependency to the channel. A dependency is a task that is
+        archived, and will be referenced by other tasks."""
+        async with self._condition:
+            self._task_id_list.append(dependency.id)
+            packet = Packet(
+                dependency, publisher_id, status=PacketStatus.ARCHIVED
+            )
             self._task_dict[packet.task.id] = packet
             self._condition.notify_all()
 
@@ -129,11 +131,27 @@ class TaskChannel:
             packet.status = PacketStatus.RETURNED
             self._condition.notify_all()
 
+    async def archive_task(self, task_id: str) -> None:
+        r"""Archive a task in channel, making it to become a dependency."""
+        async with self._condition:
+            packet = self._task_dict[task_id]
+            packet.status = PacketStatus.ARCHIVED
+            self._condition.notify_all()
+
     async def remove_task(self, task_id: str) -> None:
         async with self._condition:
             self._task_id_list.remove(task_id)
             self._task_dict.pop(task_id)
             self._condition.notify_all()
+
+    async def get_dependency_ids(self) -> List[str]:
+        async with self._condition:
+            dependency_ids = []
+            for task_id in self._task_id_list:
+                packet = self._task_dict[task_id]
+                if packet.status == PacketStatus.ARCHIVED:
+                    dependency_ids.append(task_id)
+            return dependency_ids
 
     async def get_task_by_id(self, task_id: str) -> Task:
         async with self._condition:
