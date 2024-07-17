@@ -325,7 +325,8 @@ def find_and_check_subset(small, big) -> bool:
         big (dict or list or any): The larger set to compare against.
 
     Returns:
-        bool: True if 'small' is a subset of 'big' at any level, False otherwise.
+        bool: True if 'small' is a subset of 'big' at any level, False 
+        otherwise.
     """
     # First, check if 'small' is a subset of 'big' directly
     if is_subset(small, big):
@@ -333,7 +334,7 @@ def find_and_check_subset(small, big) -> bool:
 
     # If 'big' is a dictionary, recursively check its values
     if isinstance(big, dict):
-        for key, value in big.items():
+        for value in big.values():
             if find_and_check_subset(small, value):
                 return True
 
@@ -359,13 +360,15 @@ def is_subset(small, big) -> bool:
         bool: True if 'small' is a subset of 'big', False otherwise.
     """
     if isinstance(small, dict) and isinstance(big, dict):
-        # If both are dictionaries, check if all key-value pairs in 'small' exist in 'big'
+        # If both are dictionaries, check if all key-value pairs in 'small' 
+        # exist in 'big'
         for key, value in small.items():
             if key not in big or not is_subset(value, big[key]):
                 return False
         return True
     elif isinstance(small, list) and isinstance(big, list):
-        # If both are lists, check if each item in 'small' is a subset of any item in 'big'
+        # If both are lists, check if each item in 'small' is a subset of any 
+        # item in 'big'
         for item in small:
             if not any(is_subset(item, big_item) for big_item in big):
                 return False
@@ -451,8 +454,6 @@ def get_pydantic_object_schema(pydantic_params: BaseModel) -> Dict:
     PYDANTIC_MAJOR_VERSION = get_pydantic_major_version()
     if PYDANTIC_MAJOR_VERSION == 2:
         return pydantic_params.model_json_schema()
-    else:
-        return pydantic_params.schema()
 
 
 def get_pydantic_major_version() -> int:
@@ -487,8 +488,10 @@ def func_string_to_callable(code: str):
 
 def json_to_function_code(json_obj):
     r"""Generate a Python function code from a JSON schema.
+    
     Args:
-        json_obj (dict): The JSON schema object containing properties and required fields, and json format is follow openai tools schema
+        json_obj (dict): The JSON schema object containing properties and 
+        required fields, and json format is follow openai tools schema
 
     Returns:
         str: The generated Python function code as a string.
