@@ -95,8 +95,8 @@ Translate #Given Prompt# to #New Prompt# in Korean."
 
         self.prompt_templates[Mutation.FRESH_START] = (
             self.prompt_templates['base']
-            + f"""Rewrite #Given Prompt# by switching the locale into \
-            Korea and create #New Prompt#. {write_in_korean}
+            + """Rewrite #Given Prompt# by switching the locale into"""
+            """ Korea and create #New Prompt#. {write_in_korean}
 
 #Given Prompt#:
 <PROMPT>
@@ -116,9 +116,9 @@ Translate #Given Prompt# to #New Prompt# in Korean."
 
         self.prompt_templates[Mutation.ADD_CONSTRAINTS] = (
             self.prompt_templates['base']
-            + f"""Add a few more constraints or requirements \
-                to #Given Prompt#, and create #New Prompt#. \
-                {write_in_korean}
+            + """Add a few more constraints or requirements"""
+            """ to #Given Prompt#, and create #New Prompt#."""
+            """ {write_in_korean}
 
 #Given Prompt#:
 <PROMPT>
@@ -127,9 +127,9 @@ Translate #Given Prompt# to #New Prompt# in Korean."
 
         self.prompt_templates[Mutation.DEEPEN] = (
             self.prompt_templates['base']
-            + f"""Slightly increase the depth and breadth \
-                of #Given Prompt#, and create #New Prompt#. \
-                {write_in_korean}
+            + """Slightly increase the depth and breadth"""
+            """ of #Given Prompt#, and create #New Prompt#."""
+            """ {write_in_korean}
 
 #Given Prompt#:
 <PROMPT>
@@ -138,8 +138,8 @@ Translate #Given Prompt# to #New Prompt# in Korean."
 
         self.prompt_templates[Mutation.CONCRETIZE] = (
             self.prompt_templates['base']
-            + f"""Make #Given Prompt# slightly more concrete, \
-            and create #New Prompt#. {write_in_korean}
+            + """Make #Given Prompt# slightly more concrete,"""
+            """ and create #New Prompt#. {write_in_korean}
 
 #Given Prompt#:
 <PROMPT>
@@ -148,10 +148,10 @@ Translate #Given Prompt# to #New Prompt# in Korean."
 
         self.prompt_templates[Mutation.INCREASE_REASONING] = (
             self.prompt_templates['base']
-            + f"""If #Given Prompt# can be solved with just a \
-            few simple thinking processes, rewrite it to explicitly \
-                request multi-step reasoning, and create #New Prompt#. \
-                {write_in_korean}
+            + """If #Given Prompt# can be solved with just a"""
+            """ few simple thinking processes, rewrite it to explicitly"""
+            """ request multi-step reasoning, and create #New Prompt#."""
+            """ {write_in_korean}
 
 #Given Prompt#:
 <PROMPT>
@@ -205,10 +205,8 @@ Translate #Given Prompt# to #New Prompt# in Korean."
                 )
 
         with open(
-            f"{self.seed_data.replace('.jsonl', '')\
-               .replace('json', '')}.%s.json"
-            % str(uuid.uuid4())[:4],
-            "wt",
+            f"{self.seed_data.replace('.jsonl', '').replace('json', '')}."
+            f"{str(uuid.uuid4())[:4]}.json"
         ) as f:
             f.write(json.dumps(list_qa, indent=2, ensure_ascii=False))
 
