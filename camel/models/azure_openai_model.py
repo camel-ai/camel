@@ -53,6 +53,14 @@ class AzureOpenAIModel(BaseModelBackend):
         self.api_version = os.environ.get("AZURE_API_VERSION")
         self.azure_deployment = os.environ.get("AZURE_DEPLOYMENT")
 
+        if self._url is None:
+            raise ValueError("url or `AZURE_OPENAI_ENDPOINT` is not provided.")
+        if self._api_key is None:
+            raise ValueError(
+                "api_key or `AZURE_OPENAI_API_KEY` is not provided."
+            )
+        if self.api_version is None:
+            raise ValueError("`AZURE_API_VERSION` is not provided.")
         if self.azure_deployment is None:
             raise ValueError("`AZURE_DEPLOYMENT` is not provided.")
         self.model = str(self.azure_deployment)

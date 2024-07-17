@@ -35,8 +35,8 @@ jobs:
           OPENWEATHERMAP_API_KEY: "${{ secrets.OPENWEATHERMAP_API_KEY }}"
           ANTHROPIC_API_KEY: "${{ secrets.ANTHROPIC_API_KEY }}"
           COHERE_API_KEY: "${{ secrets.COHERE_API_KEY }}"
-          AZURE_OPENAI_API_KEY: "to-be-filled"
-          AZURE_API_VERSION: "to-be-filled"
-          AZURE_DEPLOYMENT: "to-be-filled"
-          AZURE_OPENAI_ENDPOINT: "https://camel.openai.azure.com/"
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}"
+          AZURE_API_VERSION: ${{ secrets.AZURE_API_VERSION }}"
+          AZURE_DEPLOYMENT: ${{ secrets.AZURE_DEPLOYMENT }}"
+          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}"
         run: pytest --fast-test-mode ./test
