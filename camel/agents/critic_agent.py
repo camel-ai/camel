@@ -180,6 +180,8 @@ class CriticAgent(ChatAgent):
             )
         input_msg = meta_chat_message.create_new_instance(flatten_options)
 
+        print('=========================================================')
+        print(input_msg)
         option = self.get_option(input_msg)
         output_msg = meta_chat_message.create_new_instance(option)
 

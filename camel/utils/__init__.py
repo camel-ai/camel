@@ -24,6 +24,7 @@ from .commons import (
     get_system_information,
     get_task_list,
     is_docker_running,
+    model_api_key_required,
     print_text_animated,
     text_extract_from_web,
     to_pascal,
@@ -62,4 +63,5 @@ __all__ = [
     'api_keys_required',
     'is_docker_running',
     'GeminiTokenCounter',
+    'model_api_key_required',
 ]

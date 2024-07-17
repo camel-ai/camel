@@ -11,47 +11,51 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import os
 from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
 
-from camel.configs import OLLAMA_API_PARAMS
+from camel.configs import OPENAI_API_PARAMS
 from camel.messages import OpenAIMessage
+from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
-from camel.utils import BaseTokenCounter, OpenAITokenCounter
+from camel.utils import (
+    BaseTokenCounter,
+    OpenAITokenCounter,
+    model_api_key_required,
+)
 
 
-class OllamaModel:
-    r"""Ollama service interface."""
+class NvidiaModel(BaseModelBackend):
+    r"""Nvidia API in a unified BaseModelBackend interface."""
+
+    # NOTE: Nemotron model doesn't support additional model config like OpenAI.
 
     def __init__(
         self,
-        model_type: str,
+        model_type: ModelType,
         model_config_dict: Dict[str, Any],
-        url: Optional[str] = None,
+        api_key: Optional[str] = None,
     ) -> None:
-        r"""Constructor for Ollama backend with OpenAI compatibility.
-
-        # Reference: https://github.com/ollama/ollama/blob/main/docs/openai.md
+        r"""Constructor for Nvidia backend.
 
         Args:
-            model_type (str): Model for which a backend is created.
+            model_type (ModelType): Model for which a backend is created.
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into openai.ChatCompletion.create().
-            url (Optional[str]): The url to the model service. (default:
-                :obj:`None`)
+            api_key (Optional[str]): The API key for authenticating with the
+                Nvidia service. (default: :obj:`None`)
         """
-        self.model_type = model_type
-        self.model_config_dict = model_config_dict
-        # Use OpenAI cilent as interface call Ollama
+        super().__init__(model_type, model_config_dict)
+        url = os.environ.get('NVIDIA_API_BASE_URL', None)
+        self._api_key = api_key or os.environ.get("NVIDIA_API_KEY")
+        if not url or not self._api_key:
+            raise ValueError("The NVIDIA API base url and key should be set.")
         self._client = OpenAI(
-            timeout=60,
-            max_retries=3,
-            base_url=url,
-            api_key="ollama",  # required but ignored
+            timeout=60, max_retries=3, base_url=url, api_key=self._api_key
         )
         self._token_counter: Optional[BaseTokenCounter] = None
-        self.check_model_config()
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -61,26 +65,12 @@ class OllamaModel:
             BaseTokenCounter: The token counter following the model's
                 tokenization style.
         """
-        # NOTE: Use OpenAITokenCounter temporarily
         if not self._token_counter:
+            # NOTE: It's a temporary setting for token counter.
             self._token_counter = OpenAITokenCounter(ModelType.GPT_3_5_TURBO)
         return self._token_counter
 
-    def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to Ollama API.
-
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to OpenAI API.
-        """
-        for param in self.model_config_dict:
-            if param not in OLLAMA_API_PARAMS:
-                raise ValueError(
-                    f"Unexpected argument `{param}` is "
-                    "input into Ollama model backend."
-                )
-
+    @model_api_key_required
     def run(
         self,
         messages: List[OpenAIMessage],
@@ -93,32 +83,36 @@ class OllamaModel:
 
         Returns:
             Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-                `ChatCompletion` in the non-stream mode, or
-                `Stream[ChatCompletionChunk]` in the stream mode.
+                `ChatCompletion` in the non-stream mode.
         """
+        print(messages)
+        # Nemotron model only accept 'user' or 'assistant' as role.
+        for message in messages:
+            if message['role'] not in ['user', 'assistant']:
+                message['role'] = 'assistant'  # type: ignore[arg-type]
+        # user/assistant messages should alternate starting with `user`.
+        messages[0], messages[1] = messages[1], messages[0]
 
         response = self._client.chat.completions.create(
             messages=messages,
-            model=self.model_type,
-            **self.model_config_dict,
+            model=self.model_type.value,
         )
         return response
 
-    @property
-    def token_limit(self) -> int:
-        """Returns the maximum token limit for the given model.
+    def check_model_config(self):
+        r"""Check whether the model configuration contains any
+        unexpected arguments to OpenAI API.
 
-        Returns:
-            int: The maximum token limit for the given model.
+        Raises:
+            ValueError: If the model configuration dictionary contains any
+                unexpected arguments to OpenAI API.
         """
-        max_tokens = self.model_config_dict.get("max_tokens")
-        if isinstance(max_tokens, int):
-            return max_tokens
-        print(
-            "Must set `max_tokens` as an integer in `model_config_dict` when"
-            " setting up the model. Using 4096 as default value."
-        )
-        return 4096
+        for param in self.model_config_dict:
+            if param not in OPENAI_API_PARAMS:
+                raise ValueError(
+                    f"Unexpected argument `{param}` is "
+                    "input into OpenAI model backend."
+                )
 
     @property
     def stream(self) -> bool:

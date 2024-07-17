@@ -43,5 +43,5 @@ def test_role_playing_with_function_example():
 def test_role_playing_with_open_source_model():
     with patch('time.sleep', return_value=None):
         examples.models.role_playing_with_open_source_model.main(
-            chat_turn_limit=2
+            ModelType.STUB, chat_turn_limit=2
         )
