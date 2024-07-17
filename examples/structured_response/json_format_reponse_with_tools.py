@@ -12,30 +12,31 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
+from pydantic import BaseModel, Field
+
 from camel.agents import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType
-from pydantic import BaseModel, Field
 from camel.toolkits import (
     MATH_FUNCS,
     SEARCH_FUNCS,
-
 )
+from camel.types import ModelPlatformType, ModelType
+
 function_list = [
-        *MATH_FUNCS,
-        *SEARCH_FUNCS,
-    ]
+    *MATH_FUNCS,
+    *SEARCH_FUNCS,
+]
 assistant_model_config = ChatGPTConfig(
-        tools=function_list,
-        temperature=0.0,
-    )
+    tools=function_list,
+    temperature=0.0,
+)
 
 # Define system message
 assistant_sys_msg = BaseMessage.make_assistant_message(
-        role_name="Assistant",
-        content="You are a helpful assistant.",
+    role_name="Assistant",
+    content="You are a helpful assistant.",
 )
 
 model = ModelFactory.create(
@@ -45,20 +46,26 @@ model = ModelFactory.create(
 )
 
 # Set agent
-camel_agent = ChatAgent(assistant_sys_msg, 
-                        model=model,
-                        tools=function_list,)
+camel_agent = ChatAgent(
+    assistant_sys_msg,
+    model=model,
+    tools=function_list,
+)
+
 
 # pydantic basemodel as input params format
 class Response(BaseModel):
-    current_age: str = Field(description=" the current age of University of Oxford")
+    current_age: str = Field(
+        description=" the current age of University of Oxford"
+    )
     calculated_age: str = Field(description="the add more years of age")
+
 
 user_msg = BaseMessage.make_user_message(
     role_name="User",
-    content="Assume now is 2024 in the Gregorian calendar, " + \
-        "estimate the current age of University of Oxford " + \
-        "and then add 10 more years to this age, " 
+    content="Assume now is 2024 in the Gregorian calendar, "
+    + "estimate the current age of University of Oxford "
+    + "and then add 10 more years to this age, ",
 )
 
 # Get response information

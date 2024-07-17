@@ -23,25 +23,16 @@ from pydantic import BaseModel
 from camel.agents.base import BaseAgent
 from camel.configs import ChatGPTConfig
 from camel.configs.gemini_config import GeminiConfig
-from camel.toolkits import OpenAIFunction
 from camel.memories import (
     AgentMemory,
     ChatHistoryMemory,
     MemoryRecord,
     ScoreBasedContextCreator,
 )
-
-from vertexai.generative_models import (
-    Content,
-    FunctionDeclaration,
-    GenerativeModel,
-    Part,
-    Tool,
-)
-
 from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.responses import ChatAgentResponse
+from camel.toolkits import OpenAIFunction
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -498,7 +489,7 @@ class ChatAgent(BaseAgent):
                     tool_calls = self._add_tools_for_func_call(
                         response, tool_calls
                     )
-                    
+
                 # Function calling disabled or not a function calling
                 info = self._step_get_info(
                     output_messages,
@@ -537,7 +528,7 @@ class ChatAgent(BaseAgent):
             function calls.
 
         Returns:
-            List[FunctionCallingRecord]: The updated list of function call 
+            List[FunctionCallingRecord]: The updated list of function call
             records.
         """
         # Do function calling
@@ -554,10 +545,10 @@ class ChatAgent(BaseAgent):
         return tool_calls
 
     def _structured_output_openai_response(self, output_schema: BaseModel):
-        r"""Handles the structured output response 
+        r"""Handles the structured output response
         for OpenAI.
 
-        This method processes the given output schema and integrates the 
+        This method processes the given output schema and integrates the
         resulting function
         into the tools for the OpenAI model configuration.
 
@@ -800,7 +791,7 @@ class ChatAgent(BaseAgent):
         args = json.loads(args_str)
 
         try:
-            # If the func name is return_json_format_response, 
+            # If the func name is return_json_format_response,
             # the result is openai tools function args
             if func_name == 'return_json_format_response':
                 result = args

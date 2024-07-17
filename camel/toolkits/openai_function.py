@@ -20,7 +20,7 @@ from jsonschema.validators import Draft202012Validator as JSONValidator
 from pydantic import create_model
 from pydantic.fields import FieldInfo
 
-from camel.utils import to_pascal, get_pydantic_object_schema
+from camel.utils import get_pydantic_object_schema, to_pascal
 
 
 def _remove_a_key(d: Dict, remove_key: Any) -> None:

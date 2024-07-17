@@ -315,6 +315,7 @@ def to_pascal(snake: str) -> str:
         snake.title(),
     )
 
+
 def find_and_check_subset(small, big) -> bool:
     r"""
     Recursively searches 'big' to find if 'small' is a subset at any level.
@@ -345,6 +346,7 @@ def find_and_check_subset(small, big) -> bool:
     # If no match is found, return False
     return False
 
+
 def is_subset(small, big) -> bool:
     r"""
         Checks if 'small' is a subset of 'big'.
@@ -372,8 +374,10 @@ def is_subset(small, big) -> bool:
         # For all other types, directly compare the values
         return small == big
 
-def parse_pydantic_model_as_openai_tools_schema(pydantic_params: BaseModel) \
--> Dict[str, Any]:
+
+def parse_pydantic_model_as_openai_tools_schema(
+    pydantic_params: BaseModel,
+) -> Dict[str, Any]:
     r"""Parse Pydantic model into a JSON schema format.
 
     Args:
@@ -393,17 +397,17 @@ def parse_pydantic_model_as_openai_tools_schema(pydantic_params: BaseModel) \
                 "properties": {},
             },
             "required": [],
-        }
+        },
     }
     pydantic_params_schema = get_pydantic_object_schema(pydantic_params)
-    source_dict["function"]["parameters"]["properties"] = \
-    pydantic_params_schema["properties"]
-    source_dict["function"]["required"] = \
-    pydantic_params_schema["required"]
+    source_dict["function"]["parameters"]["properties"] = (
+        pydantic_params_schema["properties"]
+    )
+    source_dict["function"]["required"] = pydantic_params_schema["required"]
     return source_dict
 
-def get_pydantic_object_schema(pydantic_params: BaseModel) \
--> Dict[str, Any]:
+
+def get_pydantic_object_schema(pydantic_params: BaseModel) -> Dict[str, Any]:
     r"""Get the JSON schema of a Pydantic model.
 
     Args:
@@ -413,14 +417,15 @@ def get_pydantic_object_schema(pydantic_params: BaseModel) \
         dict: The JSON schema of the given Pydantic model.
     """
     PYDANTIC_MAJOR_VERSION = get_pydantic_major_version()
-    
+
     if PYDANTIC_MAJOR_VERSION == 2:
         if issubclass(pydantic_params, pydantic.BaseModel):
             return pydantic_params.model_json_schema()
         elif issubclass(pydantic_params, pydantic.v1.BaseModel):
             return pydantic_params.schema()
-    
+
     return pydantic_params.schema()
+
 
 def get_pydantic_major_version() -> int:
     r"""Get the major version of Pydantic.
@@ -432,6 +437,7 @@ def get_pydantic_major_version() -> int:
         return int(pydantic.__version__.split(".")[0])
     except ImportError:
         return 0
+
 
 def get_pydantic_object_schema(pydantic_params: BaseModel) -> Dict:
     r"""Get the JSON schema of a Pydantic model.

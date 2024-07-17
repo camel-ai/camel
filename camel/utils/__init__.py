@@ -18,6 +18,7 @@ from .commons import (
     create_chunks,
     dependencies_required,
     download_tasks,
+    find_and_check_subset,
     func_string_to_callable,
     get_first_int,
     get_prompt_template_key_words,
@@ -25,16 +26,13 @@ from .commons import (
     get_pydantic_object_schema,
     get_system_information,
     get_task_list,
-    json_to_function_code,
     is_docker_running,
+    is_subset,
+    json_to_function_code,
+    parse_pydantic_model_as_openai_tools_schema,
     print_text_animated,
     text_extract_from_web,
     to_pascal,
-    find_and_check_subset,
-    is_subset,
-    get_pydantic_object_schema,
-    get_pydantic_major_version,
-    parse_pydantic_model_as_openai_tools_schema,
 )
 from .constants import Constants
 from .token_counting import (
