@@ -15,8 +15,9 @@
 from camel.agents import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
 from camel.messages import BaseMessage
+from camel.models import ModelFactory
 from camel.prompts.prompt_templates import PromptTemplateGenerator
-from camel.types import ModelType
+from camel.types import ModelPlatformType, ModelType
 from camel.types.enums import RoleType, TaskType
 
 # Define system message
@@ -28,17 +29,14 @@ sys_msg = BaseMessage.make_assistant_message(
     content=sys_msg_prompt,
 )
 
-# Set model config
-model_config = ChatGPTConfig(
-    temperature=0.0,
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.OPENAI,
+    model_type=ModelType.GPT_4O,
+    model_config_dict=ChatGPTConfig().__dict__,
 )
 
 # Set agent
-camel_agent = ChatAgent(
-    sys_msg,
-    model_config=model_config,
-    model_type=ModelType.GPT_4O,
-)
+camel_agent = ChatAgent(sys_msg, model=model)
 
 # The video from YouTube can be found at the following link:
 # https://www.youtube.com/watch?v=kQ_7GtE529M

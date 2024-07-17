@@ -15,16 +15,14 @@ import pytest
 from mock import patch
 
 from camel.agents import ChatAgent, RoleAssignmentAgent
-from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.responses import ChatAgentResponse
-from camel.types import ModelType, RoleType
+from camel.types import RoleType
 
 
 @patch.object(ChatAgent, 'step')
-@pytest.mark.parametrize("model_type", [None, ModelType.GPT_3_5_TURBO])
 @pytest.mark.parametrize("num_roles", [1, 2, 3])
-def test_role_assignment_agent(mock_step, model_type, num_roles):
+def test_role_assignment_agent(mock_step, num_roles):
     mock_content = generate_mock_content(num_roles)
     mock_msg = BaseMessage(
         role_name="Role Assigner",
@@ -39,12 +37,9 @@ def test_role_assignment_agent(mock_step, model_type, num_roles):
     )
 
     task_prompt = "Develop a trading bot for the stock market."
-    model_config_description = ChatGPTConfig()
 
     # Construct role assignment agent
-    role_description_agent = RoleAssignmentAgent(
-        model_type=model_type, model_config=model_config_description
-    )
+    role_description_agent = RoleAssignmentAgent()
 
     # Generate the role description dictionary based on the mock step function
     role_description_dict = role_description_agent.run(task_prompt, num_roles)

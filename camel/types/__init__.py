@@ -14,6 +14,7 @@
 from .enums import (
     AudioModelType,
     EmbeddingModelType,
+    ModelPlatformType,
     ModelType,
     OpenAIBackendRole,
     OpenAIImageType,
@@ -62,6 +63,7 @@ __all__ = [
     'OpenAIImageType',
     'OpenAIVisionDetailType',
     'OpenAPIName',
+    'ModelPlatformType',
     'AudioModelType',
     'VoiceType',
 ]

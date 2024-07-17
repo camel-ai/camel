@@ -14,8 +14,9 @@
 from colorama import Fore
 
 from camel.configs import AnthropicConfig
+from camel.models import ModelFactory
 from camel.societies import RolePlaying
-from camel.types import ModelType
+from camel.types import ModelPlatformType, ModelType
 from camel.utils import print_text_animated
 
 
@@ -23,9 +24,10 @@ def main(model_type=None) -> None:
     task_prompt = "Develop a trading bot for the stock market"
 
     agent_kwargs = {
-        role: dict(
+        role: ModelFactory.create(
+            model_platform=ModelPlatformType.ANTHROPIC,
             model_type=model_type,
-            model_config=AnthropicConfig(),
+            model_config_dict=AnthropicConfig().__dict__,
         )
         for role in ["assistant", "user", "task-specify"]
     }

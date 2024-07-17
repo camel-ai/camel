@@ -32,6 +32,7 @@ from camel.responses import ChatAgentResponse
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
+    ModelPlatformType,
     ModelType,
     OpenAIBackendRole,
     RoleType,
@@ -41,9 +42,8 @@ from camel.utils import get_model_encoding
 if TYPE_CHECKING:
     from openai import Stream
 
-    from camel.configs import BaseConfig
-    from camel.functions import OpenAIFunction
     from camel.terminators import ResponseTerminator
+    from camel.toolkits import OpenAIFunction
 
 
 @dataclass(frozen=True)
@@ -80,10 +80,9 @@ class ChatAgent(BaseAgent):
 
     Args:
         system_message (BaseMessage): The system message for the chat agent.
-        model_type (ModelType, optional): The LLM model to use for generating
-            responses. (default :obj:`ModelType.GPT_3_5_TURBO`)
-        model_config (BaseConfig, optional): Configuration options for the
-            LLM model. (default: :obj:`None`)
+        model (BaseModelBackend, optional): The model backend to use for
+            generating responses. (default: :obj:`OpenAIModel` with
+            `GPT_3_5_TURBO`)
         api_key (str, optional): The API key for authenticating with the
             LLM service. Only OpenAI and Anthropic model supported (default:
             :obj:`None`)
@@ -109,8 +108,7 @@ class ChatAgent(BaseAgent):
     def __init__(
         self,
         system_message: BaseMessage,
-        model_type: Optional[ModelType] = None,
-        model_config: Optional[BaseConfig] = None,
+        model: Optional[BaseModelBackend] = None,
         api_key: Optional[str] = None,
         memory: Optional[AgentMemory] = None,
         message_window_size: Optional[int] = None,
@@ -123,24 +121,30 @@ class ChatAgent(BaseAgent):
         self.system_message = system_message
         self.role_name: str = system_message.role_name
         self.role_type: RoleType = system_message.role_type
+        self._api_key = api_key
+        self.model_backend: BaseModelBackend = (
+            model
+            if model is not None
+            else ModelFactory.create(
+                model_platform=ModelPlatformType.OPENAI,
+                model_type=ModelType.GPT_3_5_TURBO,
+                model_config_dict=ChatGPTConfig().__dict__,
+                api_key=self._api_key,
+            )
+        )
         self.output_language: Optional[str] = output_language
         if self.output_language is not None:
             self.set_output_language(self.output_language)
 
-        self.model_type: ModelType = (
-            model_type if model_type is not None else ModelType.GPT_3_5_TURBO
-        )
+        self.model_type: ModelType = self.model_backend.model_type
 
         self.func_dict: Dict[str, Callable] = {}
         if tools is not None:
             for func in tools:
                 self.func_dict[func.get_function_name()] = func.func
 
-        self.model_config = model_config or ChatGPTConfig()
-        self._api_key = api_key
-        self.model_backend: BaseModelBackend = ModelFactory.create(
-            self.model_type, self.model_config.__dict__, self._api_key
-        )
+        self.model_config_dict = self.model_backend.model_config_dict
+
         self.model_token_limit = token_limit or self.model_backend.token_limit
         context_creator = ScoreBasedContextCreator(
             self.model_backend.token_counter,
@@ -651,7 +655,7 @@ class ChatAgent(BaseAgent):
         func = self.func_dict[func_name]
 
         args_str: str = choice.message.tool_calls[0].function.arguments
-        args = json.loads(args_str.replace("'", "\""))
+        args = json.loads(args_str)
 
         # Pass the extracted arguments to the indicated function
         try:
@@ -710,7 +714,7 @@ class ChatAgent(BaseAgent):
         func = self.func_dict[func_name]
 
         args_str: str = choice.message.tool_calls[0].function.arguments
-        args = json.loads(args_str.replace("'", "\""))
+        args = json.loads(args_str)
 
         # Pass the extracted arguments to the indicated function
         try:

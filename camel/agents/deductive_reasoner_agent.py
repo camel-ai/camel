@@ -15,10 +15,10 @@ import re
 from typing import Dict, List, Optional, Union
 
 from camel.agents.chat_agent import ChatAgent
-from camel.configs import BaseConfig
 from camel.messages import BaseMessage
+from camel.models import BaseModelBackend
 from camel.prompts import TextPrompt
-from camel.types import ModelType, RoleType
+from camel.types import RoleType
 
 
 class DeductiveReasonerAgent(ChatAgent):
@@ -33,16 +33,14 @@ class DeductiveReasonerAgent(ChatAgent):
         - L represents the path or process from A to B.
 
     Args:
-        model_type (ModelType, optional): The type of model to use for the
-            agent. (default: :obj: `None`)
-        model_config (BaseConfig, optional): The configuration for the model.
-            (default: :obj:`None`)
+        model (BaseModelBackend, optional): The model backend to use for
+            generating responses. (default: :obj:`OpenAIModel` with
+            `GPT_3_5_TURBO`)
     """
 
     def __init__(
         self,
-        model_type: Optional[ModelType] = None,
-        model_config: Optional[BaseConfig] = None,
+        model: Optional[BaseModelBackend] = None,
     ) -> None:
         system_message = BaseMessage(
             role_name="Insight Agent",
@@ -50,7 +48,7 @@ class DeductiveReasonerAgent(ChatAgent):
             meta_dict=None,
             content="You assign roles based on tasks.",
         )
-        super().__init__(system_message, model_type, model_config)
+        super().__init__(system_message, model=model)
 
     def deduce_conditions_and_quality(
         self,
@@ -128,7 +126,7 @@ $B$.
     - Direct Path Analysis: What are the immediate and direct conditions 
     required to move from $A$ to $B$?
     - Intermediate States: Are there states between $A$ and $B$ that must be 
-    transversed or can be used to make the transition smoother or more 
+    traversed or can be used to make the transition smoother or more 
     efficient? If yes, what is the content?
     - Constraints & Limitations: Identify potential barriers or restrictions 
     in moving from $A$ to $B$. These can be external (e.g., environmental 
@@ -246,7 +244,7 @@ square brackets)
         print(f"Message content:\n{msg.content}")
 
         # Extract the conditions from the message
-        condistions_dict = {
+        conditions_dict = {
             f"condition {i}": cdt.replace("<", "")
             .replace(">", "")
             .strip()
@@ -283,7 +281,7 @@ square brackets)
         conditions_and_quality_json: Dict[
             str, Union[List[str], Dict[str, str]]
         ] = {}
-        conditions_and_quality_json["conditions"] = condistions_dict
+        conditions_and_quality_json["conditions"] = conditions_dict
         conditions_and_quality_json["labels"] = labels
         conditions_and_quality_json["evaluate_quality"] = quality
 

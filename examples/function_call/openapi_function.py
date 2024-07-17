@@ -13,9 +13,10 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from camel.agents import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
-from camel.functions import OPENAPI_FUNCS
 from camel.messages import BaseMessage
-from camel.types import ModelType
+from camel.models import ModelFactory
+from camel.toolkits import OPENAPI_FUNCS
+from camel.types import ModelPlatformType, ModelType
 
 # Define system message
 sys_msg = BaseMessage.make_assistant_message(
@@ -24,17 +25,22 @@ sys_msg = BaseMessage.make_assistant_message(
 
 # Set model config
 tools = [*OPENAPI_FUNCS]
-model_config = ChatGPTConfig(
+model_config_dict = ChatGPTConfig(
     tools=tools,
     temperature=0.0,
+).__dict__
+
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.OPENAI,
+    model_type=ModelType.GPT_4O,
+    model_config_dict=model_config_dict,
 )
 
 # Set agent
 camel_agent = ChatAgent(
     system_message=sys_msg,
-    model_config=model_config,
+    model=model,
     tools=OPENAPI_FUNCS,
-    model_type=ModelType.GPT_4O,
 )
 camel_agent.reset()
 

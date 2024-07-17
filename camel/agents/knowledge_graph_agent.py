@@ -11,19 +11,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, Optional, Union
+from typing import Optional, Union
 
-from unstructured.documents.elements import Element
+try:
+    from unstructured.documents.elements import Element
+except ImportError:
+    Element = None
 
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
+from camel.models import BaseModelBackend
 from camel.prompts import TextPrompt
 from camel.storages.graph_storages.graph_element import (
     GraphElement,
     Node,
     Relationship,
 )
-from camel.types import ModelType, RoleType
+from camel.types import RoleType
 
 text_prompt = """
 You are tasked with extracting nodes and relationships from given content and 
@@ -74,17 +78,16 @@ Expected Output:
 
 Nodes:
 
-Node(id='John', type='Person', properties={'agent_generated'})
-Node(id='XYZ Corporation', type='Organization', properties={'agent_generated'})
-Node(id='New York City', type='Location', properties={'agent_generated'})
+Node(id='John', type='Person')
+Node(id='XYZ Corporation', type='Organization')
+Node(id='New York City', type='Location')
 
 Relationships:
 
 Relationship(subj=Node(id='John', type='Person'), obj=Node(id='XYZ 
-Corporation', type='Organization'), type='WorksAt', properties=
-{'agent_generated'})
+Corporation', type='Organization'), type='WorksAt')
 Relationship(subj=Node(id='John', type='Person'), obj=Node(id='New York City', 
-type='Location'), type='ResidesIn', properties={'agent_generated'})
+type='Location'), type='ResidesIn')
 
 ===== TASK =====
 Please extracts nodes and relationships from given content and structures them 
@@ -105,28 +108,26 @@ class KnowledgeGraphAgent(ChatAgent):
 
     def __init__(
         self,
-        model_type: ModelType = ModelType.GPT_3_5_TURBO,
-        model_config: Optional[Any] = None,
+        model: Optional[BaseModelBackend] = None,
     ) -> None:
         r"""Initialize the `KnowledgeGraphAgent`.
 
         Args:
-            model_type (ModelType, optional): The type of model to use for the
-                agent. Defaults to `ModelType.GPT_3_5_TURBO`.
-            model_config (Any, optional): The configuration for the model.
-                Defaults to `None`.
+        model (BaseModelBackend, optional): The model backend to use for
+            generating responses. (default: :obj:`OpenAIModel` with
+            `GPT_3_5_TURBO`)
         """
         system_message = BaseMessage(
             role_name="Graphify",
             role_type=RoleType.ASSISTANT,
             meta_dict=None,
             content="Your mission is to transform unstructured content "
-            "intostructured graph data. Extract nodes and relationships with "
+            "into structured graph data. Extract nodes and relationships with "
             "precision, and let the connections unfold. Your graphs will "
             "illuminate the hidden connections within the chaos of "
             "information.",
         )
-        super().__init__(system_message, model_type, model_config)
+        super().__init__(system_message, model=model)
 
     def run(
         self,
@@ -209,11 +210,10 @@ class KnowledgeGraphAgent(ChatAgent):
         import re
 
         # Regular expressions to extract nodes and relationships
-        node_pattern = r"Node\(id='(.*?)', type='(.*?)', properties=(.*?)\)"
+        node_pattern = r"Node\(id='(.*?)', type='(.*?)'\)"
         rel_pattern = (
             r"Relationship\(subj=Node\(id='(.*?)', type='(.*?)'\), "
-            r"obj=Node\(id='(.*?)', type='(.*?)'\), type='(.*?)', "
-            r"properties=\{(.*?)\}\)"
+            r"obj=Node\(id='(.*?)', type='(.*?)'\), type='(.*?)'\)"
         )
 
         nodes = {}
@@ -221,8 +221,8 @@ class KnowledgeGraphAgent(ChatAgent):
 
         # Extract nodes
         for match in re.finditer(node_pattern, input_string):
-            id, type, properties = match.groups()
-            properties = eval(properties)
+            id, type = match.groups()
+            properties = {'source': 'agent_created'}
             if id not in nodes:
                 node = Node(id, type, properties)
                 if self._validate_node(node):
@@ -230,10 +230,8 @@ class KnowledgeGraphAgent(ChatAgent):
 
         # Extract relationships
         for match in re.finditer(rel_pattern, input_string):
-            subj_id, subj_type, obj_id, obj_type, rel_type, properties_str = (
-                match.groups()
-            )
-            properties = eval(properties_str)
+            subj_id, subj_type, obj_id, obj_type, rel_type = match.groups()
+            properties = {'source': 'agent_created'}
             if subj_id in nodes and obj_id in nodes:
                 subj = nodes[subj_id]
                 obj = nodes[obj_id]

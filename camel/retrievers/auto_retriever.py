@@ -159,11 +159,11 @@ class AutoRetriever:
     ) -> str:
         r"""Retrieves the last modified date and time of a given file. This
         function takes vector storage instance as input and returns the last
-        modified date from the meta data.
+        modified date from the metadata.
 
         Args:
             vector_storage_instance (BaseVectorStorage): The vector storage
-                where modified date is to be retrieved from meta data.
+                where modified date is to be retrieved from metadata.
 
         Returns:
             str: The last modified date from vector storage.
