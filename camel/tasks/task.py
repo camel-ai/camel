@@ -29,10 +29,25 @@ from .task_prompt import (
 )
 
 
+def parse_response(
+    response: str, task_id: Optional[str] = None
+) -> List["Task"]:
+    pattern = "<task>(.*?)</task>"
+    tasks_content = re.findall(pattern, response, re.DOTALL)
+
+    tasks = []
+    if task_id is None:
+        task_id = "0"
+    for i, content in enumerate(tasks_content):
+        tasks.append(Task(content=content.strip(), id=f"{task_id}.{i}"))
+    return tasks
+
+
 class TaskState(str, Enum):
     OPEN = "OPEN"
     RUNNING = "RUNNING"
     DONE = "DONE"
+    FAILED = "FAILED"
     DELETED = "DELETED"
 
     @classmethod
@@ -149,17 +164,83 @@ class Task(BaseModel):
             _str += subtask.get_result(indent + "  ")
         return _str
 
+    def decompose(
+        self,
+        agent: ChatAgent,
+        template: TextPrompt = TASK_DECOMPOSE_PROMPT,
+        task_parser: Callable[[str, str], List["Task"]] = parse_response,
+    ) -> List["Task"]:
+        r"""Decompose a task to a list of sub-tasks.
+            It can be used for data generation and planner of agent.
+        Args:
+            task (Task): A given task.
+            agent (ChatAgent): An agent that used to decompose the task.
+            template (TextPrompt): The prompt template to decompose
+                task. If not provided, the default template will be used.
+            task_parser (Callable[[str, str], List[Task]], optional): A
+                function to extract Task from response. If not provided,
+                the default parse_response will be used.
 
-def parse_response(response: str, task_id: Optional[str] = None) -> List[Task]:
-    pattern = "<task>(.*?)</task>"
-    tasks_content = re.findall(pattern, response, re.DOTALL)
+        Returns:
+            List[Task]: A list of tasks which is :obj:`Task` instance.
+        """
 
-    tasks = []
-    if task_id is None:
-        task_id = "0"
-    for i, content in enumerate(tasks_content):
-        tasks.append(Task(content=content.strip(), id=f"{task_id}.{i}"))
-    return tasks
+        role_name = agent.role_name
+        content = template.format(
+            role_name=role_name,
+            content=self.content,
+        )
+        msg = BaseMessage.make_user_message(
+            role_name=role_name, content=content
+        )
+        response = agent.step(msg)
+        tasks = task_parser(response.msg.content, self.id)
+        return tasks
+
+    def compose(
+        self,
+        agent: ChatAgent,
+        template: TextPrompt = TASK_COMPOSE_PROMPT,
+        result_parser: Optional[Callable[[str], str]] = None,
+    ):
+        r"""compose task result by the sub-tasks.
+        Args:
+            agent (ChatAgent): An agent that used to compose the task result.
+            template (TextPrompt, optional): The prompt template to compose
+                task. If not provided, the default template will be used.
+            result_parser (Callable[[str, str], List[Task]], optional): A
+                function to extract Task from response.
+
+        Returns:
+            None
+        """
+
+        if not self.subtasks:
+            return
+
+        sub_tasks_result = self.get_result()
+
+        role_name = agent.role_name
+        content = template.format(
+            role_name=role_name,
+            content=self.content,
+            other_results=sub_tasks_result,
+        )
+        msg = BaseMessage.make_user_message(
+            role_name=role_name, content=content
+        )
+        response = agent.step(msg)
+        result = response.msg.content
+        if result_parser:
+            result = result_parser(result)
+        self.update_result(result)
+
+        return None
+
+    def get_depth(self) -> int:
+        if self.parent is None:
+            return 1
+        return 1 + self.parent.get_depth()
 
 
 class TaskManager:
@@ -295,80 +376,4 @@ class TaskManager:
         tasks = task_parser(response.msg.content, task.id)
         if tasks:
             return tasks[0]
-        return None
-
-    def decompose(
-        self,
-        task: Task,
-        agent: ChatAgent,
-        template: TextPrompt = TASK_DECOMPOSE_PROMPT,
-        task_parser: Callable[[str, str], List[Task]] = parse_response,
-    ) -> List[Task]:
-        r"""Decompose a task to a list of sub-tasks.
-            It can be used for data generation and planner of agent.
-        Args:
-            task (Task): A given task.
-            agent (ChatAgent): An agent that used to decompose the task.
-            template (TextPrompt): The prompt template to decompose
-                task. If not provided, the default template will be used.
-            task_parser (Callable[[str, str], List[Task]], optional): A
-                function to extract Task from response. If not provided,
-                the default parse_response will be used.
-
-        Returns:
-            List[Task]: A list of tasks which is :obj:`Task` instance.
-        """
-
-        role_name = agent.role_name
-        content = template.format(
-            role_name=role_name,
-            content=task.content,
-        )
-        msg = BaseMessage.make_user_message(
-            role_name=role_name, content=content
-        )
-        response = agent.step(msg)
-        tasks = task_parser(response.msg.content, task.id)
-        return tasks
-
-    def compose(
-        self,
-        task: Task,
-        agent: ChatAgent,
-        template: TextPrompt = TASK_COMPOSE_PROMPT,
-        result_parser: Optional[Callable[[str], str]] = None,
-    ):
-        r"""compose task result by the sub-tasks.
-        Args:
-            task (Task): A given task.
-            agent (ChatAgent): An agent that used to compose the task result.
-            template (TextPrompt, optional): The prompt template to compose
-                task. If not provided, the default template will be used.
-            result_parser (Callable[[str, str], List[Task]], optional): A
-                function to extract Task from response.
-
-        Returns:
-            None
-        """
-
-        if not task.subtasks:
-            return
-
-        sub_tasks_result = task.get_result()
-
-        role_name = agent.role_name
-        content = template.format(
-            role_name=role_name,
-            content=task.content,
-            other_results=sub_tasks_result,
-        )
-        msg = BaseMessage.make_user_message(
-            role_name=role_name, content=content
-        )
-        response = agent.step(msg)
-        result = response.msg.content
-        if result_parser:
-            result = result_parser(result)
-        task.update_result(result)
-
         return None
