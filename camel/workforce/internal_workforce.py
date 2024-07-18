@@ -21,7 +21,8 @@ from typing import Deque, List, Optional
 from camel.agents.manager_agent import ChatAgent, ManagerAgent
 from camel.messages.base import BaseMessage
 from camel.tasks.task import Task, TaskState
-from camel.workforce import BaseWorkforce, LeafWorkforce
+from camel.workforce.base import BaseWorkforce
+from camel.workforce.leaf_workforce import LeafWorkforce
 from camel.workforce.task_channel import TaskChannel
 
 
@@ -154,6 +155,7 @@ class InternalWorkforce(BaseWorkforce):
                 await self.channel.remove_task(subtask.id)
             # send the task to the channel as a dependency
             await self._post_dependency(ready_task)
+            self.pending_tasks.popleft()
             # try to send the next task in the pending list
             await self.post_ready_tasks()
         else:

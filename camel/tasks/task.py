@@ -234,6 +234,11 @@ class Task(BaseModel):
 
         return None
 
+    def get_layer(self):
+        if self.parent is None:
+            return 1
+        return self.parent.get_layer() + 1
+
 
 class TaskManager:
     """
