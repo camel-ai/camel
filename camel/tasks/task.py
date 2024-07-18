@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from __future__ import annotations
 
 import re
 from enum import Enum
@@ -30,6 +29,20 @@ from .task_prompt import (
 )
 
 
+def parse_response(
+    response: str, task_id: Optional[str] = None
+) -> List["Task"]:
+    pattern = "<task>(.*?)</task>"
+    tasks_content = re.findall(pattern, response, re.DOTALL)
+
+    tasks = []
+    if task_id is None:
+        task_id = "0"
+    for i, content in enumerate(tasks_content):
+        tasks.append(Task(content=content.strip(), id=f"{task_id}.{i}"))
+    return tasks
+
+
 class TaskState(str, Enum):
     OPEN = "OPEN"
     RUNNING = "RUNNING"
@@ -40,18 +53,6 @@ class TaskState(str, Enum):
     @classmethod
     def states(cls):
         return [s.value for s in cls]
-
-
-def parse_response(response: str, task_id: Optional[str] = None) -> List[Task]:
-    pattern = "<task>(.*?)</task>"
-    tasks_content = re.findall(pattern, response, re.DOTALL)
-
-    tasks = []
-    if task_id is None:
-        task_id = "0"
-    for i, content in enumerate(tasks_content):
-        tasks.append(Task(content=content.strip(), id=f"{task_id}.{i}"))
-    return tasks
 
 
 class Task(BaseModel):
@@ -167,11 +168,12 @@ class Task(BaseModel):
         self,
         agent: ChatAgent,
         template: TextPrompt = TASK_DECOMPOSE_PROMPT,
-        task_parser: Callable[[str, str], List[Task]] = parse_response,
-    ) -> List[Task]:
-        r"""Decompose self task to a list of sub-tasks.
+        task_parser: Callable[[str, str], List["Task"]] = parse_response,
+    ) -> List["Task"]:
+        r"""Decompose a task to a list of sub-tasks.
             It can be used for data generation and planner of agent.
         Args:
+            task (Task): A given task.
             agent (ChatAgent): An agent that used to decompose the task.
             template (TextPrompt): The prompt template to decompose
                 task. If not provided, the default template will be used.
@@ -201,7 +203,7 @@ class Task(BaseModel):
         template: TextPrompt = TASK_COMPOSE_PROMPT,
         result_parser: Optional[Callable[[str], str]] = None,
     ):
-        r"""compose self task result by the sub-tasks.
+        r"""compose task result by the sub-tasks.
         Args:
             agent (ChatAgent): An agent that used to compose the task result.
             template (TextPrompt, optional): The prompt template to compose
@@ -212,6 +214,7 @@ class Task(BaseModel):
         Returns:
             None
         """
+
         if not self.subtasks:
             return
 
@@ -234,10 +237,10 @@ class Task(BaseModel):
 
         return None
 
-    def get_layer(self):
+    def get_depth(self) -> int:
         if self.parent is None:
             return 1
-        return self.parent.get_layer() + 1
+        return 1 + self.parent.get_depth()
 
 
 class TaskManager:

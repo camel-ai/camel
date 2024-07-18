@@ -57,7 +57,7 @@ evolved_task = task_manager.evolve(task, agent=agent)
 print(evolved_task.to_string())
 
 
-new_tasks = task_manager.decompose(task, agent=agent)
+new_tasks = task.decompose(agent=agent)
 for t in new_tasks:
     print(t.to_string())
 
