@@ -309,7 +309,6 @@ class ChatAgent(BaseAgent):
                 either `user` or `assistant` but it will be set to `user`
                 anyway since for the self agent any incoming message is
                 external.
-
             output_schema (Optional[BaseModel]): An optional pydantic model
                 that includes value types and field descriptions used to
                 generate a structured response by LLM. This schema helps
@@ -357,7 +356,7 @@ class ChatAgent(BaseAgent):
                     response, tool_calls
                 )
             else:
-                # use structed output response without tools
+                # Use structed output response without tools
                 if output_schema is not None and all(
                     record.func_name
                     != Constants.RETURN_JSON_STRUCTURE_RESPONSE
@@ -792,12 +791,8 @@ class ChatAgent(BaseAgent):
         args = json.loads(args_str)
 
         try:
-            # If the func name is return_json_format_response,
             # the result is openai tools function args
-            if func_name == 'return_json_format_response':
-                result = args
-            else:
-                result = func(**args)
+            result = func(**args)
 
         except Exception:
             raise ValueError(
