@@ -11,7 +11,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, Dict, List, Optional, Type, TypeVar, Union
+import json
+from typing import (
+    Any,
+    Dict,
+    List,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    overload,
+)
 
 from openai import Stream
 from outlines import generate, models
@@ -24,6 +34,7 @@ from camel.types import (
     ChatCompletionChunk,
     ChatCompletionMessage,
     Choice,
+    ModelPlatformType,
     ModelType,
 )
 from camel.utils import (
@@ -40,92 +51,90 @@ class SchemaModel(BaseModelBackend):
 
     def __init__(
         self,
-        model_type: ModelType,
+        model_platform: ModelPlatformType,
+        model_type: str,
         model_config_dict: Dict[str, Any],
-        api_key: Optional[str] = None,
         url: Optional[str] = None,
     ) -> None:
         r"""Constructor for OpenAI backend.
 
         Args:
-            model_type (ModelType): Model for which a backend is created,
-                one of GPT_* series.
+            model_platform (ModelPlatformType): Platform from which the model
+                originates, including transformers, llama_cpp, and vllm.
+            model_type (str): Model for which a backend is created, for
+                example, "mistralai/Mistral-7B-v0.3".
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into openai.ChatCompletion.create().
-            api_key (Optional[str]): The API key for authenticating with the
-                OpenAI service. (default: :obj:`None`)
             url (Optional[str]): The url to the OpenAI service.
         """
-        super().__init__(model_type, model_config_dict, api_key, url)
-        self._url = url
-        self._api_key = api_key
+        self.model_platform = model_platform
+        self.model_name = model_type
+        self.model_config_dict = model_config_dict
         self._client = Union[models.Transformers, models.LlamaCpp, models.VLLM]
-        match self.model_type:  # match the requested model type
-            case ModelType.TRANSFORMERS:
-                self.model_name = self.model_config_dict.get(
-                    "model_name", "mistralai/Mistral-7B-v0.3"
-                )
-                device = self.model_config_dict.get("device", None)
+        self._url = url
+
+        # If model_path is not provided, the system will download the model
+        # from the platform and store it in the default directory.
+        model_path: str = model_config_dict.get("model_path", None)
+        model_kwargs: Dict = self.model_config_dict.get("model_kwargs", None)
+
+        # Since Outlines suports multiple model types, it is necessary to
+        # read the documentation to learn about the model kwargs:
+        # https://outlines-dev.github.io/outlines/reference/models/transformers/
+        match self.model_platform:  # match the requested model type
+            case ModelPlatformType.OUTLINES_TRANSFORMERS:
+                device = model_kwargs.get("device", None)
                 tokenizer_kwargs = self.model_config_dict.get(
                     "tokenizer_kwargs", None
                 )
 
                 # Remove the unused keys from dict
-                self.model_config_dict.pop("model_name", None)
-                self.model_config_dict.pop("device", None)
-                self.model_config_dict.pop("tokenizer_kwargs", None)
+                model_kwargs.pop("device", None)
+                model_kwargs.pop("tokenizer_kwargs", None)
 
                 self._client = models.transformers(
                     model_name=self.model_name,
                     device=device,
-                    model_kwargs=self.model_config_dict,
+                    model_kwargs=model_kwargs,
                     tokenizer_kwargs=tokenizer_kwargs,
                 )
-            case ModelType.LLAMACPP:
+            case ModelPlatformType.OUTLINES_LLAMACPP:
                 from llama_cpp import llama_tokenizer
 
-                repo_id = self.model_config_dict.get(
-                    "repo_id", "TheBloke/phi-2-GGUF"
-                )
-                filename = self.model_config_dict.get(
-                    "filename", "phi-2.Q4_K_M.gguf"
-                )
-                cache_dir = self.model_config_dict.get("cache_dir", None)
+                repo_id = model_kwargs.get("repo_id", "TheBloke/phi-2-GGUF")
+                filename = model_kwargs.get("filename", "phi-2.Q4_K_M.gguf")
 
                 # Remove the unused keys from dict
-                self.model_config_dict.pop("repo_id", None)
-                self.model_config_dict.pop("filename", None)
-                self.model_config_dict.pop("cache_dir", None)
+                model_kwargs.pop("repo_id", None)
+                model_kwargs.pop("filename", None)
 
+                # Initialize the tokenizer
                 tokenizer = llama_tokenizer.LlamaHFTokenizer.from_pretrained(
                     repo_id
                 )
                 self._client = models.llamacpp(
                     repo_id=repo_id,
                     filename=filename,
-                    download_dir=cache_dir,
+                    download_dir=model_path,
                     tokenizer=tokenizer,
-                    **self.model_config_dict,
+                    **model_kwargs,
                 )
-            case ModelType.VLLM:
-                self.model_name = self.model_config_dict.get(
-                    "model_name", "mistralai/Mistral-7B-v0.3"
+            case ModelPlatformType.OUTLINES_VLLM:
+                model_kwargs["download_dir"] = model_path
+                # When loading the model, the system will trust and execute
+                # custom code in the model repository.
+                model_kwargs["trust_remote_code"] = model_kwargs.get(
+                    "trust_remote_code", True
                 )
-                self.model_config_dict["download_dir"] = (
-                    self.model_config_dict.get("cache_dir", None)
-                )
-                self.model_config_dict["trust_remote_code"] = True
-
-                # Remove the unused keys from dict
-                self.model_config_dict.pop("model_name", None)
-                self.model_config_dict.pop("cache_dir", None)
 
                 self._client = models.vllm(
                     model_name=self.model_name,
-                    **self.model_config_dict,
+                    **model_kwargs,
                 )
             case _:
-                raise ValueError(f"Unsupported model type: {self.model_type}")
+                raise ValueError(
+                    f"Unsupported model by Outlines: {self.model_name}"
+                )
 
         self._token_counter: Optional[BaseTokenCounter] = None
 
@@ -138,40 +147,35 @@ class SchemaModel(BaseModelBackend):
                 tokenization style.
         """
         if not self._token_counter:
-            # The default model type is GPT_3_5_TURBO, since the self hosted
+            # The default model type is GPT_3_5_TURBO, since the self-hosted
             # models are not supported in the token counter.
             self._token_counter = OpenAITokenCounter(ModelType.GPT_3_5_TURBO)
         return self._token_counter
 
+    @overload
     def run(
         self,
         messages: List[OpenAIMessage],
-        class_schema: Optional[Type[T]] = None,
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]: ...
+
+    @overload
+    def run(
+        self,
+        messages: List[OpenAIMessage],
+        output_schema: Type[T],
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]: ...
+
+    def run(
+        self,
+        messages: List[OpenAIMessage],
+        output_schema: Optional[Type[T]] = None,
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        r"""Runs inference of schema-based chat completion.
-
-        Args:
-            messages (List[OpenAIMessage]): Message list with the chat history
-                in OpenAI API format. Only the last message is used for the
-                completion to generate the formatted response.
-            pydantic_class (Optional[Type[T]]): Pydantic class schema to
-                generate the response. (default: :obj:`None`)
-
-        Returns:
-            Union[ChatCompletion, Stream[ChatCompletionChunk], T]:
-                `ChatCompletion` in the non-stream mode, or
-                `Stream[ChatCompletionChunk]` in the stream mode.
-        """
-        if class_schema is None:  # class_schema is required
-            raise ValueError(
-                "Pydantic class schema is required for schema-based model."
+        if output_schema is None:
+            raise NotImplementedError(
+                "run without output_schema is not implemented"
             )
 
-        generator = generate.json(self._client, class_schema)
-
-        # Set seed for reproducibility
-        # rng = torch.Generator(device=self.device)
-        # rng.manual_seed(789001)
+        generator = generate.json(self._client, output_schema)
 
         if not messages:
             raise ValueError("The messages list should not be empty.")
@@ -182,24 +186,24 @@ class SchemaModel(BaseModelBackend):
 
         parsed_response = generator(message_str)
 
-        print(repr(parsed_response))  # TODO: Remove this line
+        json_response = json.dumps(str(parsed_response))
 
         import time
 
         response = ChatCompletion(
             id=f"chatcmpl-{time.time()}",
             created=int(time.time()),
-            model=str(self.model_type),
+            model=self.model_name,
             object="chat.completion",
             choices=[
                 Choice(
                     index=0,
                     message=ChatCompletionMessage(
                         role="assistant",
-                        content=str(parsed_response),
+                        content=json_response,
                     ),
                     finish_reason="stop",
-                )
+                ),
             ],
         )
 

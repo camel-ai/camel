@@ -139,8 +139,11 @@ class OpenSourceConfig(BaseConfig):
             which will be used as the API base of OpenAI API.
         api_params (ChatGPTConfig): An instance of :obj:ChatGPTConfig to
             contain the arguments to be passed to OpenAI API.
+        model_kwargs (dict, optional): Additional keyword arguments to pass
+            to the model constructor. (default: :obj:`{}`)
     """
 
     model_path: str
     server_url: str
     api_params: ChatGPTConfig = field(default_factory=ChatGPTConfig)
+    model_kwargs: Optional[dict] = field(default_factory=dict)
