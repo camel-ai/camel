@@ -521,7 +521,7 @@ class ChatAgent(BaseAgent):
 
     def _add_tools_for_func_call(
         self,
-        response: ChatCompletion | Stream[ChatCompletionChunk],
+        response: ChatCompletion,
         tool_calls: List[FunctionCallingRecord],
     ) -> List[FunctionCallingRecord]:
         r"""Handles adding tools for function calls based on the response.
