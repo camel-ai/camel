@@ -383,9 +383,10 @@ class ChatAgent(BaseAgent):
                         response_id,
                     ) = self._step_model_response(openai_messages, num_tokens)
 
-                    tool_calls = self._add_tools_for_func_call(
-                        response, tool_calls
-                    )
+                    if isinstance(response, ChatCompletion):
+                        tool_calls = self._add_tools_for_func_call(
+                            response, tool_calls
+                        )
 
                 info = self._step_get_info(
                     output_messages,
@@ -496,9 +497,10 @@ class ChatAgent(BaseAgent):
                         response_id,
                     ) = self._step_model_response(openai_messages, num_tokens)
 
-                    tool_calls = self._add_tools_for_func_call(
-                        response, tool_calls
-                    )
+                    if isinstance(response, ChatCompletion):
+                        tool_calls = self._add_tools_for_func_call(
+                            response, tool_calls
+                        )
 
                 # Function calling disabled or not a function calling
                 info = self._step_get_info(
