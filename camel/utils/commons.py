@@ -390,6 +390,11 @@ def parse_pydantic_model_as_openai_tools_schema(
         dict: A dictionary representing the JSON schema of the Pydantic model.
     """
     # the source dict  format follows the OpenAPI format
+    pydantic_params_schema = get_pydantic_object_schema(pydantic_params)
+    # Ensure 'properties' and 'required' keys exist
+    properties = pydantic_params_schema.get("properties", {})
+    required_fields = pydantic_params_schema.get("required", [])
+
     source_dict = {
         "type": "function",
         "function": {
@@ -397,18 +402,11 @@ def parse_pydantic_model_as_openai_tools_schema(
             "description": "Return the response in JSON format",
             "parameters": {
                 "type": "object",
-                "properties": {},
+                "properties": properties,
             },
-            "required": [],
+            "required": required_fields,
         },
     }
-    pydantic_params_schema = get_pydantic_object_schema(pydantic_params)
-    # Ensure 'properties' and 'required' keys exist
-    properties = pydantic_params_schema.get("properties", {})
-    required_fields = pydantic_params_schema.get("required", [])
-
-    source_dict["function"]["parameters"]["properties"] = properties
-    source_dict["function"]["required"] = required_fields
     return source_dict
 
 

@@ -776,7 +776,7 @@ class ChatAgent(BaseAgent):
 
     def step_tool_call(
         self,
-        response: ChatCompletion | Stream[ChatCompletionChunk],
+        response: ChatCompletion,
     ) -> Tuple[
         FunctionCallingMessage, FunctionCallingMessage, FunctionCallingRecord
     ]:
