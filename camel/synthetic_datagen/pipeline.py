@@ -21,7 +21,7 @@ from tqdm.auto import tqdm
 from transformers import pipeline
 from transformers.pipelines.pt_utils import KeyDataset
 
-from synthetic_datagen.method_factory import (
+from camel.synthetic_datagen.method_factory import (
     SyntheticDataGeneratorFactory,
     SyntheticDataGeneratorMethodType,
 )

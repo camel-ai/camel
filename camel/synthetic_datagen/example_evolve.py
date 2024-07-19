@@ -14,13 +14,13 @@
 import argparse
 
 from synthetic_datagen.agent_systems.single_agent import SingleAgent
-from synthetic_datagen.evolve_instruct.evolve_instruct_generator import (
+from synthetic_datagen.evolve_instruct.evolve_instruct_pipeline import (
     EvolveInstructGenerator,
 )
 from synthetic_datagen.evolve_instruct.evolve_instruct_spec import (
     EvolveInstructSpec,
 )
-from synthetic_datagen.pipeline import ChatGPTPipeline
+from camel.synthetic_datagen.pipeline import ChatGPTPipeline
 from synthetic_datagen.utils.seed_instruction import Instance, SeedInstruction
 
 
@@ -29,7 +29,7 @@ def main():
     parser.add_argument(
         "--seed_file",
         type=str,
-        default="implementations/data/seed_files/alpaca_data.json",
+        default="./data/seed_files/alpaca_data.json",
     )
     parser.add_argument("--column_names", nargs='+', default="instruction")
     parser.add_argument("--num_rows", type=int, default=5)

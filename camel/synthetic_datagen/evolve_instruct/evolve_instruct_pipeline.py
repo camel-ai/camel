@@ -22,7 +22,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 from datasets import Dataset, DatasetDict, load_dataset
-from synthetic_datagen.base_generator import BaseDataGenerator
+from camel.synthetic_datagen.base_generator import BaseDataGenerator
 from synthetic_datagen.evolve_instruct.evolve_instruct_spec import (
     EvolveInstructSpec,
 )
