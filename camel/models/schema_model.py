@@ -81,7 +81,6 @@ class SchemaModel(BaseModelBackend):
         # Since Outlines suports multiple model types, it is necessary to
         # read the documentation to learn about the model kwargs:
         # https://outlines-dev.github.io/outlines/reference/models/transformers
-        # Match the requested model type
         if self.model_platform == ModelPlatformType.OUTLINES_TRANSFORMERS:
             device = model_kwargs.get("device", None)
             tokenizer_kwargs = self.model_config_dict.get(
