@@ -18,6 +18,7 @@ from typing import Any, List
 from rouge_score import rouge_scorer
 from synthetic_datagen.agent_systems.base_agent_system import BaseAgentSystem
 from synthetic_datagen.agent_systems.single_agent import SingleAgent
+from transformers import pipeline
 
 from implementations.synthetic_datagen.utils.seed_instruction import (
     SeedInstruction,
@@ -72,7 +73,14 @@ class EvolveInstructSpec:
         )
     )
     agent_system: BaseAgentSystem = field(default_factory=SingleAgent)
+    llm_pipeline: pipeline = None
+    seed_data: List[str] = None
     seed_instructions: List[SeedInstruction] = field(default=list)
+    column_names: List[str] = field(default_factory=list)  # ["instruction"]
+    num_rows: int = 10
+    min_len_chars: int = 512
+    max_len_chars: int = 1024
+    verbose: bool = False
     include_seed_tasks: bool = False
     synthetic_data_dir: str = Path("data/gpt4_generations/")
     num_prompt_instructions: int = 3
