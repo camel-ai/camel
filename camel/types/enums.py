@@ -357,6 +357,7 @@ class ModelPlatformType(Enum):
     ZHIPU = "zhipuai"
     DEFAULT = "default"
     GEMINI = "gemini"
+    VLLM = "vllm"
 
     @property
     def is_openai(self) -> bool:
@@ -377,6 +378,11 @@ class ModelPlatformType(Enum):
     def is_ollama(self) -> bool:
         r"""Returns whether this platform is ollama."""
         return self is ModelPlatformType.OLLAMA
+
+    @property
+    def is_vllm(self) -> bool:
+        r"""Returns whether this platform is vllm."""
+        return self is ModelPlatformType.VLLM
 
     @property
     def is_litellm(self) -> bool:

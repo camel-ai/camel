@@ -24,6 +24,7 @@ from .openai_config import (
     ChatGPTConfig,
     OpenSourceConfig,
 )
+from .vllm_config import VLLM_API_PARAMS, VLLMConfig
 from .zhipuai_config import ZHIPUAI_API_PARAMS, ZhipuAIConfig
 
 __all__ = [
@@ -41,4 +42,6 @@ __all__ = [
     'ZHIPUAI_API_PARAMS',
     'GeminiConfig',
     'Gemini_API_PARAMS',
+    'VLLMConfig',
+    'VLLM_API_PARAMS',
 ]
