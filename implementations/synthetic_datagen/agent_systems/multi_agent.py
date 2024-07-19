@@ -32,7 +32,7 @@ class MultiAgent(BaseAgentSystem):
         ChatAgent. Defaults to "You are a helpful assistant." if not provided.
 
     Example:
-        agent = SingleAgent("You are an expert in Python programming.")
+        agent = MultiAgent("You are an expert in Python programming.")
         response = agent.run("What are the benefits of using decorators?")
     """
 

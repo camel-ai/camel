@@ -71,9 +71,7 @@ class ChatGPTPipeline:
     def __call__(self, dataset):
         ret = []
         gen_count = 0
-        import pdb
 
-        pdb.set_trace()
         for d in dataset:
             response = None
             count = 0

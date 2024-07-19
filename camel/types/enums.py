@@ -62,6 +62,10 @@ class ModelType(Enum):
     GEMINI_1_5_FLASH = "gemini-1.5-flash"
     GEMINI_1_5_PRO = "gemini-1.5-pro"
 
+    # DeepSeek models
+    DeepSeek_math = "deepseek-ai/deepseek-math-7b-instruct"
+    DeepSeek_code = "deepseek-ai/deepseek-coder-6.7b-instruct"
+
     @property
     def value_for_tiktoken(self) -> str:
         return (

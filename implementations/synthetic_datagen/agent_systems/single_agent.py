@@ -14,8 +14,9 @@
 from typing import Optional
 
 from camel.agents import ChatAgent
+from camel.configs import OllamaConfig
 from camel.messages import BaseMessage
-from camel.models import OpenAIModel
+from camel.models import OllamaModel
 from camel.types import ModelType
 from synthetic_datagen.agent_systems.base_agent_system import BaseAgentSystem
 
@@ -36,17 +37,25 @@ class SingleAgent(BaseAgentSystem):
         response = agent.run("What are the benefits of using decorators?")
     """
 
-    def __init__(self, system_message: Optional[str] = None) -> None:
+    def __init__(
+        self, system_message: Optional[str] = None, model_type=ModelType.GPT_4
+    ) -> None:
         self.system_message = system_message or "You are a helpful assistant."
         assistant_sys_msg = BaseMessage.make_assistant_message(
             role_name="Assistant",
             content=self.system_message,
         )
+        # model = OpenAIModel(
+        #         model_type, model_config_dict={"max_tokens": 1000}
+        #     )
+
+        model_config_dict = OllamaConfig().__dict__
+        model_config_dict["max_tokens"] = 1000
+        model = OllamaModel(model_type, model_config_dict)
+
         self.agent = ChatAgent(
             assistant_sys_msg,
-            model=OpenAIModel(
-                ModelType.GPT_4, model_config_dict={"max_tokens": 1000}
-            ),
+            model=model,
             message_window_size=20,
             token_limit=5000,
         )

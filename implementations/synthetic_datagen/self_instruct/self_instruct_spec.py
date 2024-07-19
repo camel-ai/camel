@@ -17,10 +17,10 @@ from typing import Any, List
 
 from rouge_score import rouge_scorer
 
-from synthetic_datagen.agent_systems.base_agent_system import BaseAgentSystem
-from synthetic_datagen.agent_systems.nemotron_reward_eval_agent import (
+from implementations.synthetic_datagen.agent_systems.eval_agent import (
     NemotronRewardEvalAgent,
 )
+from synthetic_datagen.agent_systems.base_agent_system import BaseAgentSystem
 from synthetic_datagen.agent_systems.single_agent import SingleAgent
 from synthetic_datagen.utils.seed_instruction import SeedInstruction
 
