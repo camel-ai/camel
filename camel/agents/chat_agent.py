@@ -335,6 +335,11 @@ class ChatAgent(BaseAgent):
                 )
 
             # use structed output response without tools
+            # If the user provides the output_schema parameter and does not 
+            # specify the use of tools, then in the model config of the 
+            # chatgent, call the model specified by tools with 
+            # return_json_response of OpenAIFunction format, and return a 
+            # structured response with the user-specified output schema.
             if output_schema is not None and len(self.func_dict) == 0:
                 self._structured_output_openai_response(output_schema)
 
@@ -356,7 +361,13 @@ class ChatAgent(BaseAgent):
                     response, tool_calls
                 )
             else:
-                # Use structed output response without tools
+                # If the user specifies tools, it is necessary to wait for the 
+                # model to complete all tools' calls. Finally, use the 
+                # generated response as the input for the structure, 
+                # simultaneously calling the return_json_response function. 
+                # Call the model again with return_json_response in the format 
+                # of OpenAIFunction as the last tool, returning a structured # 
+                # response with the user-specified output schema.
                 if output_schema is not None and all(
                     record.func_name
                     != Constants.RETURN_JSON_STRUCTURE_RESPONSE
