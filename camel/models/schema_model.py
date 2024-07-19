@@ -81,60 +81,60 @@ class SchemaModel(BaseModelBackend):
         # Since Outlines suports multiple model types, it is necessary to
         # read the documentation to learn about the model kwargs:
         # https://outlines-dev.github.io/outlines/reference/models/transformers
-        match self.model_platform:  # match the requested model type
-            case ModelPlatformType.OUTLINES_TRANSFORMERS:
-                device = model_kwargs.get("device", None)
-                tokenizer_kwargs = self.model_config_dict.get(
-                    "tokenizer_kwargs", None
-                )
+        # Match the requested model type
+        if self.model_platform == ModelPlatformType.OUTLINES_TRANSFORMERS:
+            device = model_kwargs.get("device", None)
+            tokenizer_kwargs = self.model_config_dict.get(
+                "tokenizer_kwargs", None
+            )
 
-                # Remove the unused keys from dict
-                model_kwargs.pop("device", None)
-                model_kwargs.pop("tokenizer_kwargs", None)
+            # Remove the unused keys from dict
+            model_kwargs.pop("device", None)
+            model_kwargs.pop("tokenizer_kwargs", None)
 
-                self._client = models.transformers(
-                    model_name=self.model_name,
-                    device=device,
-                    model_kwargs=model_kwargs,
-                    tokenizer_kwargs=tokenizer_kwargs,
-                )
-            case ModelPlatformType.OUTLINES_LLAMACPP:
-                from llama_cpp import llama_tokenizer
+            self._client = models.transformers(
+                model_name=self.model_name,
+                device=device,
+                model_kwargs=model_kwargs,
+                tokenizer_kwargs=tokenizer_kwargs,
+            )
+        elif self.model_platform == ModelPlatformType.OUTLINES_LLAMACPP:
+            from llama_cpp import llama_tokenizer
 
-                repo_id = model_kwargs.get("repo_id", "TheBloke/phi-2-GGUF")
-                filename = model_kwargs.get("filename", "phi-2.Q4_K_M.gguf")
+            repo_id = model_kwargs.get("repo_id", "TheBloke/phi-2-GGUF")
+            filename = model_kwargs.get("filename", "phi-2.Q4_K_M.gguf")
 
-                # Remove the unused keys from dict
-                model_kwargs.pop("repo_id", None)
-                model_kwargs.pop("filename", None)
+            # Remove the unused keys from dict
+            model_kwargs.pop("repo_id", None)
+            model_kwargs.pop("filename", None)
 
-                # Initialize the tokenizer
-                tokenizer = llama_tokenizer.LlamaHFTokenizer.from_pretrained(
-                    repo_id
-                )
-                self._client = models.llamacpp(
-                    repo_id=repo_id,
-                    filename=filename,
-                    download_dir=model_path,
-                    tokenizer=tokenizer,
-                    **model_kwargs,
-                )
-            case ModelPlatformType.OUTLINES_VLLM:
-                model_kwargs["download_dir"] = model_path
-                # When loading the model, the system will trust and execute
-                # custom code in the model repository.
-                model_kwargs["trust_remote_code"] = model_kwargs.get(
-                    "trust_remote_code", True
-                )
+            # Initialize the tokenizer
+            tokenizer = llama_tokenizer.LlamaHFTokenizer.from_pretrained(
+                repo_id
+            )
+            self._client = models.llamacpp(
+                repo_id=repo_id,
+                filename=filename,
+                download_dir=model_path,
+                tokenizer=tokenizer,
+                **model_kwargs,
+            )
+        elif self.model_platform == ModelPlatformType.OUTLINES_VLLM:
+            model_kwargs["download_dir"] = model_path
+            # When loading the model, the system will trust and execute
+            # custom code in the model repository.
+            model_kwargs["trust_remote_code"] = model_kwargs.get(
+                "trust_remote_code", True
+            )
 
-                self._client = models.vllm(
-                    model_name=self.model_name,
-                    **model_kwargs,
-                )
-            case _:
-                raise ValueError(
-                    f"Unsupported model by Outlines: {self.model_name}"
-                )
+            self._client = models.vllm(
+                model_name=self.model_name,
+                **model_kwargs,
+            )
+        else:
+            raise ValueError(
+                f"Unsupported model by Outlines: {self.model_name}"
+            )
 
         self._token_counter: Optional[BaseTokenCounter] = None
 
