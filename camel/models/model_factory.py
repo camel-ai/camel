@@ -22,6 +22,7 @@ from camel.models.open_source_model import OpenSourceModel
 from camel.models.openai_model import OpenAIModel
 from camel.models.schema_model import SchemaModel
 from camel.models.stub_model import StubModel
+from camel.models.vllm_model import VLLMModel
 from camel.models.zhipuai_model import ZhipuAIModel
 from camel.types import ModelPlatformType, ModelType
 
@@ -84,6 +85,9 @@ class ModelFactory:
             if model_platform.is_ollama:
                 model_class = OllamaModel
                 return model_class(model_type, model_config_dict, url)
+            elif model_platform.is_vllm:
+                model_class = VLLMModel
+                return model_class(model_type, model_config_dict, url, api_key)
             elif model_platform.is_litellm:
                 model_class = LiteLLMModel
             elif model_platform.is_outlines:
