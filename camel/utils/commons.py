@@ -403,10 +403,12 @@ def parse_pydantic_model_as_openai_tools_schema(
         },
     }
     pydantic_params_schema = get_pydantic_object_schema(pydantic_params)
-    source_dict["function"]["parameters"]["properties"] = (
-        pydantic_params_schema["properties"]
-    )
-    source_dict["function"]["required"] = pydantic_params_schema["required"]
+    # Ensure 'properties' and 'required' keys exist
+    properties = pydantic_params_schema.get("properties", {})
+    required_fields = pydantic_params_schema.get("required", [])
+
+    source_dict["function"]["parameters"]["properties"] = properties
+    source_dict["function"]["required"] = required_fields
     return source_dict
 
 
@@ -431,9 +433,7 @@ def get_pydantic_object_schema(pydantic_params: BaseModel) -> Dict:
     Returns:
         dict: The JSON schema of the Pydantic model.
     """
-    PYDANTIC_MAJOR_VERSION = get_pydantic_major_version()
-    if PYDANTIC_MAJOR_VERSION == 2:
-        return pydantic_params.model_json_schema()
+    return pydantic_params.model_json_schema()
 
 
 def func_string_to_callable(code: str):
