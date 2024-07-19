@@ -24,7 +24,7 @@ class NewWorkforceConf:
 def parse_create_wf_resp(response: str) -> NewWorkforceConf:
     r"""Parses the response of the new workforce creation from the manager
     agent."""
-    config = re.search(r"<workforce>(.*)</workforce>", response, re.DOTALL)
+    config = re.search(r"(<workforce>.*</workforce>)", response, re.DOTALL)
     if config is None:
         raise ValueError("No workforce configuration found in the response.")
     config_raw = config.group(1)
