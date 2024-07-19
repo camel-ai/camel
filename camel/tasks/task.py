@@ -193,8 +193,11 @@ class Task(BaseModel):
             role_name=role_name, content=content
         )
         response = agent.step(msg)
-        tasks = task_parser(response.msg.content, self.id)
-        return tasks
+        subtasks = task_parser(response.msg.content, self.id)
+        self.subtasks = subtasks
+        for subtask in subtasks:
+            subtask.parent = self
+        return subtasks
 
     def compose(
         self,

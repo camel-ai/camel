@@ -56,8 +56,6 @@ async def main():
             unit_workforce_2,
             unit_workforce_3,
         ],
-        manager_agent_config=None,
-        task_agent_config=None,
         main_task=human_task,
         channel=public_channel,
     )

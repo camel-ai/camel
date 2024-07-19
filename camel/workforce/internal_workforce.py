@@ -219,10 +219,15 @@ class InternalWorkforce(BaseWorkforce):
             elif returned_task.state == TaskState.FAILED:
                 # remove the failed task from the channel
                 await self.channel.remove_task(returned_task.id)
+                print(
+                    f"{returned_task.id} have {returned_task.get_depth()}"
+                    f" depth."
+                )
                 if returned_task.get_depth() >= 3:
                     # create a new WF and reassign
                     # TODO: add a state for reassign?
                     assignee = self._create_workforce_for_task(returned_task)
+                    # print('create_new_assignee:', assignee)
                     await self._post_task(returned_task, assignee.workforce_id)
                 else:
                     subtasks = returned_task.decompose(self.task_agent)

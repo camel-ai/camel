@@ -59,9 +59,9 @@ class LeafWorkforce(BaseWorkforce):
         # Note: The following are mock outputs for workforce example
         if self.workforce_id == '1':
             task.result = 'pip install numpy'
-        elif self.workforce_id == '2':
-            task.result = 'google is a good company'
         elif self.workforce_id == '3':
+            task.result = 'google is a good company'
+        elif self.workforce_id == '2':
             task.result = 'I can not deal with it.'
             return TaskState.FAILED
         else:
