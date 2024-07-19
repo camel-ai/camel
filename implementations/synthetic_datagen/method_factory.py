@@ -15,8 +15,8 @@ from enum import Enum
 from typing import Any, Type, Union
 
 from synthetic_datagen.base_generator import BaseDataGenerator
-from synthetic_datagen.self_instruct.self_instruct_generator import (
-    SelfInstructGenerator,
+from synthetic_datagen.self_instruct.self_instruct_pipeline import (
+    SelfInstructPipeline,
 )
 
 
@@ -57,7 +57,7 @@ class SyntheticDataGeneratorFactory:
 
         if isinstance(method_type, SyntheticDataGeneratorMethodType):
             if method_type == SyntheticDataGeneratorMethodType.SELFINSTRUCT:
-                return SelfInstructGenerator
+                return SelfInstructPipeline
             else:
                 raise ValueError(f"Unknown method type: {method_type}")
         else:

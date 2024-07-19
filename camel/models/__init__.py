@@ -19,6 +19,7 @@ from .model_factory import ModelFactory
 from .nemotron_model import NemotronModel
 from .nvidia_model import NvidiaModel
 from .nvidia_model_v2 import NvidiaModelV2
+from .nvidia_model_v3 import NvidiaModelV3
 from .ollama_model import OllamaModel
 from .open_source_model import OpenSourceModel
 from .openai_audio_models import OpenAIAudioModels
@@ -38,6 +39,7 @@ __all__ = [
     'OpenAIAudioModels',
     'NvidiaModel',
     'NvidiaModelV2',
+    'NvidiaModelV3',
     'NemotronModel',
     'OllamaModel',
     'GeminiModel',

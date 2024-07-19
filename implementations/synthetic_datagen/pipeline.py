@@ -60,7 +60,7 @@ class DataGeneratorPipeline:
 
     def run_evaluate(self):
         """Execute the data evaluation step of the pipeline."""
-        self.generator.evaluate()
+        return self.generator.evaluate()
 
 
 class ChatGPTPipeline:

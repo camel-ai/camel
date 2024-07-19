@@ -13,10 +13,10 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Optional
 
-from camel.agents.chat_agent import ChatAgent
-from camel.messages.base import BaseMessage
-from camel.models.openai_model import OpenAIModel
-from camel.types.enums import ModelType
+from camel.agents import ChatAgent
+from camel.messages import BaseMessage
+from camel.models import OpenAIModel
+from camel.types import ModelType
 from synthetic_datagen.agent_systems.base_agent_system import BaseAgentSystem
 
 
@@ -47,6 +47,8 @@ class SingleAgent(BaseAgentSystem):
             model=OpenAIModel(
                 ModelType.GPT_4, model_config_dict={"max_tokens": 1000}
             ),
+            message_window_size=20,
+            token_limit=5000,
         )
 
     def run(self, prompt: str) -> str:
@@ -63,6 +65,7 @@ class SingleAgent(BaseAgentSystem):
         user_msg = BaseMessage.make_user_message(
             role_name="User", content=prompt
         )
+
         assistant_response = self.agent.step(user_msg)
 
         return assistant_response.msg

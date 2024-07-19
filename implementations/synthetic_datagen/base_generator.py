@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from abc import ABC, abstractmethod
+from typing import Any, Dict
 
 
 class BaseDataGenerator(ABC):
@@ -21,12 +22,18 @@ class BaseDataGenerator(ABC):
 
     @abstractmethod
     def generate(self):
-        pass
+        raise NotImplementedError(
+            "This method must be implemented by subclasses."
+        )
 
     @abstractmethod
     def curate(self):
-        pass
+        raise NotImplementedError(
+            "This method must be implemented by subclasses."
+        )
 
     @abstractmethod
-    def evaluate(self):
-        pass
+    def evaluate(self) -> Dict[str, Any]:
+        raise NotImplementedError(
+            "This method must be implemented by subclasses."
+        )

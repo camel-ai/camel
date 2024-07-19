@@ -18,6 +18,9 @@ from typing import Any, List
 from rouge_score import rouge_scorer
 
 from synthetic_datagen.agent_systems.base_agent_system import BaseAgentSystem
+from synthetic_datagen.agent_systems.nemotron_reward_eval_agent import (
+    NemotronRewardEvalAgent,
+)
 from synthetic_datagen.agent_systems.single_agent import SingleAgent
 from synthetic_datagen.utils.seed_instruction import SeedInstruction
 
@@ -34,6 +37,8 @@ class SelfInstructSpec:
     Attributes:
         scorer (Any): The scoring system used for evaluating
         generated instructions.
+        eval_agent_system (BaseAgentSystem): The agent system used to
+        evaluate the synthetic data.
         agent_system (BaseAgentSystem): The agent system used for generation,
         default is SingleAgent.
         seed_instructions (List[SeedInstruction]): List of SeedInstruction
@@ -69,22 +74,30 @@ class SelfInstructSpec:
             ["rougeL"], use_stemmer=False
         )
     )
+    eval_agent_system: BaseAgentSystem = field(
+        default_factory=NemotronRewardEvalAgent
+    )
     agent_system: BaseAgentSystem = field(default_factory=SingleAgent)
     seed_instructions: List[SeedInstruction] = field(default=list)
     include_seed_tasks: bool = False
     synthetic_data_dir: str = Path("data/gpt4_generations/")
-    num_prompt_instructions: int = 3
-    num_instructions_to_generate: int = 20
+    num_prompt_instructions: int = 2
+    num_instructions_to_generate: int = 2
     SYNTHETIC_INSTANCES_FILE: str = "machine_generated_instances.jsonl"
     SYNTHETIC_INSTRUCTIONS_FILE: str = "machine_generated_instructions.jsonl"
     CURATED_SYNTHETIC_DATA_FILE: str = "curated_synthetic_data.jsonl"
 
     @property
-    def instructions_out_dir(self) -> Path:
+    def instructions_out_file(self) -> Path:
         """Full path for the file storing generated instructions."""
         return self.synthetic_data_dir / self.SYNTHETIC_INSTRUCTIONS_FILE
 
     @property
-    def instances_out_dir(self) -> Path:
+    def instances_out_file(self) -> Path:
         """Full path for the file storing generated instances."""
         return self.synthetic_data_dir / self.SYNTHETIC_INSTANCES_FILE
+
+    @property
+    def curated_data_out_file(self) -> Path:
+        """Full path for the file storing curated synthetic data."""
+        return self.synthetic_data_dir / self.CURATED_SYNTHETIC_DATA_FILE

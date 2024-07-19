@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 
 
 class BaseAgentSystem(ABC):
@@ -29,4 +30,17 @@ class BaseAgentSystem(ABC):
         Raises:
             NotImplementedError: This method must be implemented by subclasses.
         """
+        pass
+
+
+@dataclass
+class SyntheticDatum:
+    instruction: str
+    input: str
+    output: str
+
+
+class BaseEvalAgentSystem(ABC):
+    @abstractmethod
+    def run_eval(self, instruction: SyntheticDatum) -> str:
         pass

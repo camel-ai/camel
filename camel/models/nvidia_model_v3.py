@@ -33,7 +33,7 @@ from camel.utils import (
 )
 
 
-class NvidiaModel(BaseModelBackend):
+class NvidiaModelV3(BaseModelBackend):
     r"""Nvidia API in a unified BaseModelBackend interface."""
 
     # NOTE: Nemotron model doesn't support additional model config like OpenAI.

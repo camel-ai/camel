@@ -213,6 +213,8 @@ all = [
     # kv-storages
     "redis",
     "google-generativeai",
+    # synthetic-datagen,
+    "rouge-score",
 ]
 
 [tool.poetry.group.dev]

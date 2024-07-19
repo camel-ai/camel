@@ -105,6 +105,8 @@ def sample_machine_instructions(
         If n is greater than the length of machine_instructions,
         all instructions will be returned.
     """
+    if len(machine_instructions) < min(n, len(machine_instructions)):
+        return []
     return random.sample(
         machine_instructions, min(n, len(machine_instructions))
     )

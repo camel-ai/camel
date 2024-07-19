@@ -166,27 +166,48 @@ def parse_instances_for_generation_task(
     """
     instances = []
     raw_text = raw_text.strip()
+    logger.debug(f"Stripped raw_text: {raw_text[:50]}...")
+
     if re.findall("Example\s?\d*\.?", raw_text):
+        logger.debug("Found 'Example' pattern in raw_text")
         instance_texts = re.split(r"Example\s?\d*\.?", raw_text)
         instance_texts = [
             it.strip() for it in instance_texts if it.strip() != ""
         ]
-        for instance_text in instance_texts:
+        logger.debug(f"Split into {len(instance_texts)} instance_texts")
+
+        for i, instance_text in enumerate(instance_texts):
+            logger.debug(
+                f"Processing instance_text {i+1}: {instance_text[:50]}..."
+            )
             inst_input, inst_output = parse_input_output(instance_text)
             instances.append(
                 (instruction.strip(), inst_input.strip(), inst_output.strip())
             )
+        logger.debug(f"Processed {len(instances)} instances")
+
     elif re.findall(r"Output\s*\d*\s*:", raw_text):
+        logger.debug("Found 'Output' pattern in raw_text")
         # we assume only one input/output pair in this case
         inst_input, inst_output = parse_input_output(raw_text)
         instances.append(
             (instruction.strip(), inst_input.strip(), inst_output.strip())
         )
+        logger.debug("Processed single instance")
+
     else:
+        logger.debug("No recognized pattern found in raw_text")
         return []
 
+    logger.debug("Filtering invalid instances")
     instances = filter_invalid_instances(instances)
+    logger.debug(f"After filtering invalid: {len(instances)} instances")
+
+    logger.debug("Filtering duplicate instances")
     instances = filter_duplicate_instances(instances)
+    logger.debug(f"After filtering duplicates: {len(instances)} instances")
+
+    logger.debug(f"Returning {len(instances)} instances")
 
     return instances
 
@@ -240,16 +261,14 @@ class InstructionCurator:
         """
 
         logger.info("Curating synthetic data...")
-        generated_tasks = self._load_generated_tasks()
+        generated_tasks = self._load_tasks(self.spec.instances_out_file)
         training_instances = self._curate_instances(generated_tasks)
 
         if self.include_seed_tasks:
             training_instances = self._include_seed_tasks(training_instances)
 
-        out_file = self.synthetic_data_dir
-        out_file = out_file / self.spec.CURATED_SYNTHETIC_DATA_FILE
         with open(
-            out_file,
+            self.all_instances_file,
             "w",
         ) as fout:
             for instance in training_instances:
@@ -263,10 +282,11 @@ class InstructionCurator:
                 )
                 fout.write("\n")
         logger.info(
-            f"Saved {len(training_instances)} instances to " f"{out_file}"
+            f"Saved {len(training_instances)} instances to "
+            f"{self.all_instances_file}"
         )
 
-    def _load_generated_tasks(self) -> List[Dict[str, Any]]:
+    def _load_tasks(self, file: str) -> List[Dict[str, Any]]:
         """
         Load the generated tasks from the specified file.
 
@@ -274,8 +294,8 @@ class InstructionCurator:
             List[Dict[str, Any]]: A list of dictionaries,
             each representing a generated task.
         """
-        generated_tasks = load_jsonl(self.spec.instances_out_dir)
-        logger.info(f"Loaded {len(generated_tasks)} raw generated tasks")
+        generated_tasks = load_jsonl(file)
+        logger.info(f"Loaded {len(generated_tasks)} tasks")
         return generated_tasks
 
     def _curate_instances(

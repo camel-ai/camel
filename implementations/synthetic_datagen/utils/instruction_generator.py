@@ -45,7 +45,7 @@ class InstructionGenerator:
         agent_system: The system used for generating new instructions.
         seed_instructions (List[SeedInstruction]): List of SeedInstruction
         representing seed tasks
-        instructions_out_dir (str): Directory where generated instructions
+        instructions_out_file (str): Directory where generated instructions
         will be saved.
         num_instructions_to_generate (int): Total number of instructions
         to generate.
@@ -65,11 +65,12 @@ class InstructionGenerator:
             spec (SelfInstructSpec): Specification object containing
             configuration details.
         """
+        self.spec = spec
         self.agent_system = spec.agent_system
         self.seed_instructions = [
             seed.instruction for seed in spec.seed_instructions
         ]
-        self.instructions_out_dir = spec.instructions_out_dir
+        self.instructions_out_file = spec.instructions_out_file
         self.num_instructions_to_generate = spec.num_instructions_to_generate
         self.num_prompt_instructions = spec.num_prompt_instructions
         self.scorer = spec.scorer
@@ -82,7 +83,7 @@ class InstructionGenerator:
         including loading existing instructions, generating new ones,
         filtering them, and saving the results to a file.
         """
-        os.makedirs(os.path.dirname(self.instructions_out_dir), exist_ok=True)
+        os.makedirs(os.path.dirname(self.instructions_out_file), exist_ok=True)
 
         machine_instructions = self._load_machine_instructions()
 
@@ -90,7 +91,7 @@ class InstructionGenerator:
         if machine_instructions:
             progress_bar.update(len(machine_instructions))
 
-        with open(self.instructions_out_dir, "a") as fout:
+        with open(self.instructions_out_file, "a") as fout:
             while (
                 len(machine_instructions) < self.num_instructions_to_generate
             ):
@@ -117,11 +118,11 @@ class InstructionGenerator:
         Returns:
             List[str]: A list of previously generated machine instructions.
         """
-        if not os.path.exists(self.instructions_out_dir):
+        if not os.path.exists(self.instructions_out_file):
             return []
 
         machine_instructions = []
-        with open(self.instructions_out_dir, "r") as fin:
+        with open(self.instructions_out_file, "r") as fin:
             for line in fin:
                 instruction_info = json.loads(line)
                 machine_instructions.append(instruction_info["instruction"])
@@ -153,16 +154,26 @@ class InstructionGenerator:
             instruction and its metadata.
         """
         res = []
-        for _ in range(
-            self.num_instructions_to_generate - len(machine_instructions)
-        ):
+        logger.debug(f"Initialized empty result list: {res}")
+
+        num_sampling_steps = self.num_instructions_to_generate - len(
+            machine_instructions
+        )
+        logger.debug(f"Calculated num_sampling_steps: {num_sampling_steps}")
+
+        logger.debug(f"Generating {num_sampling_steps} new instructions")
+
+        for _ in range(num_sampling_steps):
             prompt_instructions = sample_machine_instructions(
-                machine_instructions, similarities=None, n=2
+                machine_instructions,
+                similarities=None,
+                n=self.num_prompt_instructions,
             )
             prompt_instructions += random.sample(
                 seed_instructions,
                 self.num_prompt_instructions - len(prompt_instructions),
             )
+
             random.shuffle(prompt_instructions)
             prompt = encode_prompt(prompt_instructions)
             result = self.agent_system.run(prompt)

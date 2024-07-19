@@ -63,8 +63,8 @@ class InstanceGenerator:
             the necessary configuration for instance generation.
         """
         self.agent_system = spec.agent_system
-        self.instructions_out_dir = spec.instructions_out_dir
-        self.instances_out_dir = spec.instances_out_dir
+        self.instructions_out_dir = spec.instructions_out_file
+        self.instances_out_dir = spec.instances_out_file
 
     def generate(self):
         """
@@ -79,7 +79,7 @@ class InstanceGenerator:
 
         with open(self.instances_out_dir, "w") as fout:
             with tqdm(total=total_tasks, desc="Generating instances") as pbar:
-                for batch in self._batch_tasks(tasks, batch_size=5):
+                for batch in self._batch_tasks(tasks, batch_size=10):
                     results = self._generate_instances_for_batch(batch)
                     for task, result in zip(batch, results):
                         task["instruction"] = task['instruction'].strip()
@@ -132,6 +132,6 @@ class InstanceGenerator:
                 )
                 result = self.agent_system.run(prompt)
                 results.append(result)
-                pbar.update(1)
+            pbar.update(len(batch))
 
         return results

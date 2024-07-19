@@ -16,6 +16,7 @@ from typing import Optional
 
 from synthetic_datagen.base_generator import BaseDataGenerator
 from synthetic_datagen.self_instruct.self_instruct_spec import SelfInstructSpec
+from synthetic_datagen.utils.evaluator import Evaluator
 from synthetic_datagen.utils.instance_generator import (
     InstanceGenerator,
 )
@@ -29,7 +30,7 @@ from synthetic_datagen.utils.instruction_generator import (
 logger = logging.getLogger(__name__)
 
 
-class SelfInstructGenerator(BaseDataGenerator):
+class SelfInstructPipeline(BaseDataGenerator):
     """
     A generator for self-instructed synthetic data.
 
@@ -62,6 +63,7 @@ class SelfInstructGenerator(BaseDataGenerator):
         self.instruction_generator = InstructionGenerator(self.spec)
         self.instance_generator = InstanceGenerator(self.spec)
         self.curator = InstructionCurator(self.spec)
+        self.evaluator = Evaluator(self.spec)
 
     def generate(self):
         """
@@ -87,7 +89,12 @@ class SelfInstructGenerator(BaseDataGenerator):
         self.curator.curate()
 
     def evaluate(self):
-        raise RuntimeError(
-            "Evaluation not implemented for SelfInstructGenerator yet "
-            " - use an LLM to evaluate the quality of the generations."
-        )
+        """
+        Evaluate the generated synthetic data.
+
+        This method evaluates the generated synthetic data using a
+        reward evaluation
+        agent. The evaluation results are used to assess the quality of
+        the generated data.
+        """
+        return self.evaluator.evaluate()
