@@ -31,10 +31,10 @@ def test_validate_node_invalid():
 
 def test_validate_relationship_valid():
     valid_relationship = Relationship(
-        Node(id='subj_id', type='subj_type', properties={}),
-        Node(id='obj_id', type='obj_type', properties={}),
-        'test_type',
-        {},
+        subj=Node(id='subj_id', type='subj_type', properties={}),
+        obj=Node(id='obj_id', type='obj_type', properties={}),
+        type='test_type',
+        properties={},
     )
     assert agent._validate_relationship(valid_relationship)
 

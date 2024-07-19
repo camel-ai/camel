@@ -13,8 +13,9 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 from typing import List, Union
+
+from pydantic import BaseModel, ConfigDict, Field
 
 try:
     from unstructured.documents.elements import Element
@@ -22,59 +23,61 @@ except ImportError:
     Element = None
 
 
-@dataclass
-class Node:
-    r"""Represents a node in a graph with associated properties.
-
-    Attributes:
-        id (Union[str, int]): A unique identifier for the node.
-        type (str):  The type of the relationship.
-        properties (dict): Additional properties and metadata associated with
-            the node.
-    """
+class Node(BaseModel):
+    r"""Represents a node in a graph with associated properties."""
 
     id: Union[str, int]
+    """A unique identifier for the node."""
+
     type: str = "Node"
-    properties: dict = field(default_factory=dict)
+    """The type of the relationship."""
+
+    properties: dict = Field(default_factory=dict)
+    """Additional properties and metadata associated with the node."""
+
+    # def __init__(
+    #     self, id: Union[str, int], type: str, properties: dict
+    # ) -> None:
+    #     """Pass in id, type and properties as positional arg.
+    #     Args:
+    #         id (Union[str, int]): A unique identifier for the node.
+    #         type (str):  The type of the relationship.
+    #         properties (dict): Additional properties and metadata associated
+    #         with the node.
+    #     """
+    #     super().__init__(id=id, type=type, properties=properties)
 
 
-@dataclass
-class Relationship:
-    r"""Represents a directed relationship between two nodes in a graph.
-
-    Attributes:
-        subj (Node): The subject/source node of the relationship.
-        obj (Node): The object/target node of the relationship.
-        type (str):  The type of the relationship.
-        properties (dict): Additional properties associated with the
-            relationship.
-    """
+class Relationship(BaseModel):
+    r"""Represents a directed relationship between two nodes in a graph."""
 
     subj: Node
+    """The subject/source node of the relationship."""
+
     obj: Node
+    """The object/target node of the relationship."""
+
     type: str = "Relationship"
-    properties: dict = field(default_factory=dict)
+    """The type of the relationship."""
+
+    properties: dict = Field(default_factory=dict)
+    """Additional properties associated with the relationship."""
 
 
-@dataclass
-class GraphElement:
-    r"""A graph element with lists of nodes and relationships.
-
-    Attributes:
-        nodes (List[Node]): A list of nodes in the graph.
-        relationships (List[Relationship]): A list of relationships in the
-        graph.
-        source (Element): The element from which the graph information is
-        derived.
-    """
+class GraphElement(BaseModel):
+    r"""A graph element with lists of nodes and relationships."""
 
     # Allow arbitrary types for Element
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     nodes: List[Node]
+    """A list of nodes in the graph."""
+
     relationships: List[Relationship]
+    """A list of relationships in the graph."""
+
     source: Element
+    """The element from which the graph information is derived."""
 
     def __post_init__(self):
         if Element is None:

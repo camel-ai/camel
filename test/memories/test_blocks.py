@@ -142,7 +142,7 @@ class TestVectorDBBlock:
 
         # Create VectorDBQueryResult list using mock_records
         mock_query_results = [
-            VectorDBQueryResult.construct(
+            VectorDBQueryResult.create(
                 similarity=0.9,
                 vector=[0.1] * 128,  # Example vector
                 id=record["uuid"],

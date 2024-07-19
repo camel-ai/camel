@@ -224,7 +224,7 @@ class KnowledgeGraphAgent(ChatAgent):
             id, type = match.groups()
             properties = {'source': 'agent_created'}
             if id not in nodes:
-                node = Node(id, type, properties)
+                node = Node(id=id, type=type, properties=properties)
                 if self._validate_node(node):
                     nodes[id] = node
 
@@ -235,8 +235,14 @@ class KnowledgeGraphAgent(ChatAgent):
             if subj_id in nodes and obj_id in nodes:
                 subj = nodes[subj_id]
                 obj = nodes[obj_id]
-                relationship = Relationship(subj, obj, rel_type, properties)
+                relationship = Relationship(
+                    subj=subj, obj=obj, type=rel_type, properties=properties
+                )
                 if self._validate_relationship(relationship):
                     relationships.append(relationship)
 
-        return GraphElement(list(nodes.values()), relationships, self.element)
+        return GraphElement(
+            nodes=list(nodes.values()),
+            relationships=relationships,
+            source=self.element,
+        )
