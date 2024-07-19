@@ -98,7 +98,7 @@ class SchemaModel(BaseModelBackend):
                 tokenizer_kwargs=tokenizer_kwargs,
             )
         elif self.model_platform == ModelPlatformType.OUTLINES_LLAMACPP:
-            from llama_cpp import llama_tokenizer
+            from llama_cpp import llama_tokenizer  # type: ignore[import]
 
             repo_id = model_kwargs.get("repo_id", "TheBloke/phi-2-GGUF")
             filename = model_kwargs.get("filename", "phi-2.Q4_K_M.gguf")
@@ -110,8 +110,8 @@ class SchemaModel(BaseModelBackend):
             # Initialize the tokenizer
             tokenizer = llama_tokenizer.LlamaHFTokenizer.from_pretrained(
                 repo_id
-            )
-            self._client = models.llamacpp(
+            )  # type: ignore[attr-defined]
+            self._client = models.llamacpp(  # type: ignore[attr-defined]
                 repo_id=repo_id,
                 filename=filename,
                 download_dir=model_path,
