@@ -137,8 +137,8 @@ def test_chat_agent_messages_window():
     assistant.memory.write_records(
         [
             MemoryRecord(
-                user_msg,
-                OpenAIBackendRole.USER,
+                message=user_msg,
+                role_at_backend=OpenAIBackendRole.USER,
             )
             for _ in range(5)
         ]
