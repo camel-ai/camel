@@ -47,7 +47,7 @@ class LeafWorkforce(BaseWorkforce):
         super().__init__(workforce_id, description, channel)
         self.worker = worker
 
-    async def process_task(
+    async def _process_task(
         self, task: Task, dependencies: List[Task]
     ) -> TaskState:
         r"""Processes a task based on its dependencies.
@@ -74,7 +74,7 @@ class LeafWorkforce(BaseWorkforce):
             self.workforce_id
         )
 
-    async def listening(self):
+    async def _listen_to_channel(self):
         """Continuously listen to the channel, process the task that are
         assigned to this workforce, and update the result and status of the
         task.
@@ -94,7 +94,7 @@ class LeafWorkforce(BaseWorkforce):
             ]
 
             # process the task
-            task_state = await self.process_task(task, task_dependencies)
+            task_state = await self._process_task(task, task_dependencies)
 
             # update the result and status of the task
             task.set_state(task_state)
@@ -102,7 +102,7 @@ class LeafWorkforce(BaseWorkforce):
             await self.channel.return_task(task.id)
 
     async def start(self):
-        await self.listening()
+        await self._listen_to_channel()
 
     async def stop(self):
         return

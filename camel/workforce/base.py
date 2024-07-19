@@ -31,10 +31,6 @@ class BaseWorkforce(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    async def listening(self):
-        pass
-
-    @abstractmethod
     async def start(self):
         pass
 

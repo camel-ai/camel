@@ -173,7 +173,6 @@ class Task(BaseModel):
         r"""Decompose a task to a list of sub-tasks.
             It can be used for data generation and planner of agent.
         Args:
-            task (Task): A given task.
             agent (ChatAgent): An agent that used to decompose the task.
             template (TextPrompt): The prompt template to decompose
                 task. If not provided, the default template will be used.
