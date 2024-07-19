@@ -15,6 +15,4 @@ RUN poetry install --with dev,docs -E all
 
 RUN pre-commit install
 
-RUN rm -rf /app/camel
-
 CMD ["tail", "-f", "/dev/null"]
