@@ -66,7 +66,7 @@ def test_chat_agent(model):
     assistant = ChatAgent(system_msg, model=model)
 
     assert str(assistant) == (
-        "ChatAgent(doctor, " f"RoleType.ASSISTANT, {ModelType.GPT_3_5_TURBO})"
+        "ChatAgent(doctor, " f"RoleType.ASSISTANT, {ModelType.GPT_4O_MINI})"
     )
 
     assistant.reset()
