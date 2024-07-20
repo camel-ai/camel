@@ -115,7 +115,7 @@ class KnowledgeGraphAgent(ChatAgent):
         Args:
         model (BaseModelBackend, optional): The model backend to use for
             generating responses. (default: :obj:`OpenAIModel` with
-            `GPT_3_5_TURBO`)
+            `GPT_4O_MINI`)
         """
         system_message = BaseMessage(
             role_name="Graphify",
