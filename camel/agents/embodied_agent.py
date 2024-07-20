@@ -120,7 +120,7 @@ class EmbodiedAgent(ChatAgent):
         else:
             return []
 
-    def step(
+    def run(
         self,
         input_message: BaseMessage,
     ) -> ChatAgentResponse:
