@@ -122,16 +122,15 @@ class ChatAgent(BaseAgent):
         self.role_name: str = system_message.role_name
         self.role_type: RoleType = system_message.role_type
         self._api_key = api_key
-        self.model_backend: BaseModelBackend = (
-            model
-            if model is not None
-            else ModelFactory.create(
+        if model is not None:
+            self.model_backend: BaseModelBackend = model
+        else:
+            self.model_backend: BaseModelBackend = ModelFactory.create(
                 model_platform=ModelPlatformType.OPENAI,
-                model_type=ModelType.GPT_3_5_TURBO,
+                model_type=ModelType.GPT_4O_MINI,
                 model_config_dict=ChatGPTConfig().__dict__,
                 api_key=self._api_key,
             )
-        )
         self.output_language: Optional[str] = output_language
         if self.output_language is not None:
             self.set_output_language(self.output_language)
