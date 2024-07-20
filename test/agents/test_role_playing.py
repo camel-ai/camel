@@ -69,9 +69,9 @@ def test_role_playing_init(model, critic_role_name, with_critic_in_the_loop):
     assert isinstance(user_agent, ChatAgent)
     if model is None:
         assert (
-            assistant_agent.model_backend.model_type == ModelType.GPT_3_5_TURBO
+            assistant_agent.model_backend.model_type == ModelType.GPT_4O_MINI
         )
-        assert user_agent.model_backend.model_type == ModelType.GPT_3_5_TURBO
+        assert user_agent.model_backend.model_type == ModelType.GPT_4O_MINI
     else:
         assert assistant_agent.model_backend.model_type == ModelType.GPT_4O
         assert user_agent.model_backend.model_type == ModelType.GPT_4O
@@ -86,9 +86,7 @@ def test_role_playing_init(model, critic_role_name, with_critic_in_the_loop):
             assert isinstance(critic, CriticAgent)
             assert role_playing.critic_sys_msg is not None
             if model is None:
-                assert (
-                    critic.model_backend.model_type == ModelType.GPT_3_5_TURBO
-                )
+                assert critic.model_backend.model_type == ModelType.GPT_4O_MINI
             else:
                 assert critic.model_backend.model_type == ModelType.GPT_4O
 
@@ -186,9 +184,9 @@ def test_role_playing_role_sequence(model=None):
     user_role_sequence = []
 
     input_msg = role_playing.init_chat()
-    assistant_response, user_response = role_playing.step(input_msg)
+    assistant_response, _ = role_playing.step(input_msg)
     input_msg = assistant_response.msg
-    assistant_response, user_response = role_playing.step(input_msg)
+    assistant_response, _ = role_playing.step(input_msg)
 
     for record in role_playing.user_agent.memory.get_context()[0]:
         user_role_sequence.append(record["role"])
