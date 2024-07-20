@@ -22,6 +22,7 @@ from camel.messages.base import BaseMessage
 from camel.tasks.task import Task, TaskState
 from camel.workforce.base import BaseWorkforce
 from camel.workforce.leaf_workforce import LeafWorkforce
+from camel.workforce.single_agent_workforce import SingleAgentWorforce
 from camel.workforce.task_channel import TaskChannel
 from camel.workforce.utils import parse_assign_task_resp, parse_create_wf_resp
 from camel.workforce.workforce_prompt import (
@@ -153,7 +154,7 @@ class InternalWorkforce(BaseWorkforce):
 
         worker = ChatAgent(worker_msg)
 
-        new_workforce = LeafWorkforce(
+        new_workforce = SingleAgentWorforce(
             workforce_id=str(len(self.child_workforces) + 1),
             description=new_wf_conf.description,
             worker=worker,
@@ -219,10 +220,6 @@ class InternalWorkforce(BaseWorkforce):
             elif returned_task.state == TaskState.FAILED:
                 # remove the failed task from the channel
                 await self.channel.remove_task(returned_task.id)
-                print(
-                    f"{returned_task.id} have {returned_task.get_depth()}"
-                    f" depth."
-                )
                 if returned_task.get_depth() >= 3:
                     # create a new WF and reassign
                     # TODO: add a state for reassign?

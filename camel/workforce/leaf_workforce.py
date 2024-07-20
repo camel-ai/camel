@@ -13,6 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from typing import List, Union
 
 from camel.agents.base import BaseAgent
@@ -22,7 +23,7 @@ from camel.workforce.base import BaseWorkforce
 from camel.workforce.task_channel import TaskChannel
 
 
-class LeafWorkforce(BaseWorkforce):
+class LeafWorkforce(BaseWorkforce, ABC):
     r"""A unit workforce that consists of a single worker. It is the basic unit
     of task processing in the workforce system.
 
@@ -47,6 +48,7 @@ class LeafWorkforce(BaseWorkforce):
         super().__init__(workforce_id, description, channel)
         self.worker = worker
 
+    @abstractmethod
     async def _process_task(
         self, task: Task, dependencies: List[Task]
     ) -> TaskState:
@@ -56,23 +58,22 @@ class LeafWorkforce(BaseWorkforce):
             'DONE' if the task is successfully processed,
             'FAILED' if the processing fails.
         """
-        # Note: The following are mock outputs for workforce example
-        if self.workforce_id == '1':
-            task.result = 'pip install numpy'
-        elif self.workforce_id == '3':
-            task.result = 'google is a good company'
-        elif self.workforce_id == '2':
-            task.result = 'I can not deal with it.'
-            return TaskState.FAILED
-        else:
-            task.result = "This is result from new agent"
-        return TaskState.DONE
+        pass
 
     async def _get_assigned_task(self) -> Task:
         r"""Get the task assigned to this workforce from the channel."""
         return await self.channel.get_assigned_task_by_assignee(
             self.workforce_id
         )
+
+    def _get_dep_tasks_info(self, dependencies: List[Task]) -> str:
+        result_lines = [
+            f"id: {dep_task.id}, content: {dep_task.content}. "
+            f"result: {dep_task.result}."
+            for dep_task in dependencies
+        ]
+        result_str = "\n".join(result_lines)
+        return result_str
 
     async def _listen_to_channel(self):
         """Continuously listen to the channel, process the task that are
@@ -85,7 +86,11 @@ class LeafWorkforce(BaseWorkforce):
         while self.running:
             # get the earliest task assigned to this workforce
             task = await self._get_assigned_task()
-            print(f'workforce-{self.workforce_id} get task:', task.id)
+            print(
+                f'workforce-{self.workforce_id} get task:',
+                task.id,
+                task.content,
+            )
             # get the Task instance of dependencies
             dependency_ids = await self.channel.get_dependency_ids()
             task_dependencies = [

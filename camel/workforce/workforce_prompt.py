@@ -58,3 +58,25 @@ You must return the ID of the workforce that you think is most capable of doing 
 <id>1</id>
 """
 )
+
+PROCESS_TASK_PROMPT = TextPrompt(
+    """You need to process the task. It is recommended that tools be actively called when needed.
+The content of the task is:
+
+{content}
+
+The type of the task is:
+
+{type}
+
+To process this task, here is some information on several dependent tasks:
+
+{dependency_task_info}
+
+You must return the result of the given task. The result should be enclosed within the <result></result> tags, for example:
+
+<result>Today, you requested information about the current weather conditions. The weather today in New York City is partly cloudy with a high of 75°F (24°C) and a low of 59°F (15°C). There is a 10 percent chance of rain with winds coming from the northeast at 5 mph. Humidity levels are at 60%. It's a perfect day to spend some time outdoors, perhaps in one of the city's beautiful parks.</result>
+
+if you are not able to process the task, you need to return <failed></failed> tags.
+"""
+)

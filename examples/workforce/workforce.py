@@ -14,43 +14,79 @@
 import asyncio
 
 from camel.agents.chat_agent import ChatAgent
+from camel.configs.openai_config import ChatGPTConfig
 from camel.messages.base import BaseMessage
+from camel.models import ModelFactory
 from camel.tasks.task import Task
+from camel.toolkits import MAP_FUNCS, SEARCH_FUNCS, WEATHER_FUNCS
+from camel.types import ModelPlatformType, ModelType
 from camel.workforce.internal_workforce import InternalWorkforce
-from camel.workforce.leaf_workforce import LeafWorkforce
+from camel.workforce.single_agent_workforce import SingleAgentWorforce
 from camel.workforce.task_channel import TaskChannel
 
 
 async def main():
-    human_task = Task(
-        content='develop a python program of investing stock.', id='0'
-    )
-
     public_channel = TaskChannel()
 
     sys_msg_1 = BaseMessage.make_assistant_message(
-        role_name="programmer",
-        content="You are a python programmer.",
+        role_name="tour guide",
+        content="You have to lead everyone to have fun",
     )
-    sys_msg_2 = BaseMessage.make_assistant_message(
-        role_name="researcher",
-        content="You are good at marketing",
+    sys_msg_tools = BaseMessage.make_assistant_message(
+        role_name="Tools calling opertor",
+        content="You are a helpful assistant",
     )
     sys_msg_3 = BaseMessage.make_assistant_message(
-        role_name="product owner",
-        content="You are familiar with internet.",
+        role_name="Traveler",
+        content="You can ask questions about your travel plans",
+    )
+    function_list = [
+        *SEARCH_FUNCS,
+        *WEATHER_FUNCS,
+        *MAP_FUNCS,
+    ]
+    model_config_dict = ChatGPTConfig(
+        tools=function_list,
+        temperature=0.0,
+    ).__dict__
+
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_3_5_TURBO,
+        model_config_dict=model_config_dict,
+    )
+
+    # Set agent
+    agent_2 = ChatAgent(
+        system_message=sys_msg_tools,
+        model=model,
+        tools=function_list,
+    )
+
+    human_task = Task(
+        content=(
+            "Plan a Paris tour itinerary for today"
+            "taking into account the weather now."
+        ),
+        id='0',
     )
     agent_1 = ChatAgent(sys_msg_1)
-    agent_2 = ChatAgent(sys_msg_2)
+    agent_2 = ChatAgent(sys_msg_tools)
     agent_3 = ChatAgent(sys_msg_3)
 
-    unit_workforce_1 = LeafWorkforce('1', 'agent1', agent_1, public_channel)
-    unit_workforce_2 = LeafWorkforce('2', 'agent2', agent_2, public_channel)
-    unit_workforce_3 = LeafWorkforce('3', 'agent3', agent_3, public_channel)
+    unit_workforce_1 = SingleAgentWorforce(
+        '1', 'tour guide', agent_1, public_channel
+    )
+    unit_workforce_2 = SingleAgentWorforce(
+        '2', 'Tools(eg.weather tools) calling opertor', agent_2, public_channel
+    )
+    unit_workforce_3 = SingleAgentWorforce(
+        '3', 'Traveler', agent_3, public_channel
+    )
 
     workforces = InternalWorkforce(
         workforce_id='0',
-        description='a software group',
+        description='a travel group',
         child_workforces=[
             unit_workforce_1,
             unit_workforce_2,

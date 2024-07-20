@@ -57,3 +57,14 @@ def parse_assign_task_resp(response: str) -> str:
     if assignee_id is None:
         raise ValueError("No assignee found in the response.")
     return assignee_id.group(1)
+
+
+def parse_task_result_resp(response: str) -> str:
+    r"""Parses the result of the task from the signle agent workforce."""
+    task_result = re.search(r"<result>(.*)</result>", response, re.DOTALL)
+    failed_tag = re.search(r"<failed></failed>", response)
+    if failed_tag:
+        task_result = None
+    if task_result is None:
+        raise ValueError("No result found in the response.")
+    return task_result.group(1)
