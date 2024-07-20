@@ -68,7 +68,7 @@ class SingleAgentWorforce(LeafWorkforce):
                 role_name="User",
                 content=prompt,
             )
-            response: ChatAgentResponse = self.worker.step(req)
+            response: ChatAgentResponse = self.worker.step(req)[0]
             print("response.info['tool_calls']:", response.info['tool_calls'])
             task.result = parse_task_result_resp(response.msg.content)
             print('task.result:', task.result)
