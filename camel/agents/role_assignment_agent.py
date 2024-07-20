@@ -27,7 +27,7 @@ class RoleAssignmentAgent(ChatAgent):
     Args:
         model (BaseModelBackend, optional): The model backend to use for
             generating responses. (default: :obj:`OpenAIModel` with
-            `GPT_3_5_TURBO`)
+            `GPT_4O_MINI`)
 
     Attributes:
         role_assignment_prompt (TextPrompt): A prompt for the agent to generate
