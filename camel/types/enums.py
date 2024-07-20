@@ -29,6 +29,8 @@ class ModelType(Enum):
     GPT_4_32K = "gpt-4-32k"
     GPT_4_TURBO = "gpt-4-turbo"
     GPT_4O = "gpt-4o"
+    GPT_4O_MINI = "gpt-4o-mini"
+
     GLM_4 = "glm-4"
     GLM_4_OPEN_SOURCE = "glm-4-open-source"
     GLM_4V = 'glm-4v'
@@ -79,6 +81,7 @@ class ModelType(Enum):
             ModelType.GPT_4_32K,
             ModelType.GPT_4_TURBO,
             ModelType.GPT_4O,
+            ModelType.GPT_4O_MINI,
         }
 
     @property
@@ -149,6 +152,8 @@ class ModelType(Enum):
         elif self is ModelType.GPT_4_TURBO:
             return 128000
         elif self is ModelType.GPT_4O:
+            return 128000
+        elif self is ModelType.GPT_4O_MINI:
             return 128000
         elif self == ModelType.GEMINI_1_5_FLASH:
             return 1048576

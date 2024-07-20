@@ -433,7 +433,7 @@ async def test_tool_calling_math_async():
     model_config = ChatGPTConfig(tools=[*math_funcs])
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_3_5_TURBO,
+        model_type=ModelType.GPT_4O_MINI,
         model_config_dict=model_config.__dict__,
     )
     agent = ChatAgent(
@@ -483,7 +483,7 @@ async def test_tool_calling_async():
             second (int): Number of seconds to sleep.
 
         Returns:
-            integer: Number of seconds sleeped.
+            integer: Number of seconds to sleep.
         """
         await asyncio.sleep(second)
         return second
@@ -492,7 +492,7 @@ async def test_tool_calling_async():
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_3_5_TURBO,
+        model_type=ModelType.GPT_4O_MINI,
         model_config_dict=model_config.__dict__,
     )
 
@@ -560,7 +560,7 @@ def test_chat_agent_vision():
     model_config = ChatGPTConfig(temperature=0, max_tokens=200, stop="")
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O,
+        model_type=ModelType.GPT_4O_MINI,
         model_config_dict=model_config.__dict__,
     )
     agent = ChatAgent(
