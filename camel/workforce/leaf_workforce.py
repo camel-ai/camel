@@ -14,10 +14,8 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import List, Union
+from typing import List
 
-from camel.agents.base import BaseAgent
-from camel.societies import RolePlaying
 from camel.tasks.task import Task, TaskState
 from camel.workforce.base import BaseWorkforce
 from camel.workforce.task_channel import TaskChannel
@@ -42,11 +40,11 @@ class LeafWorkforce(BaseWorkforce, ABC):
         description: str,
         # TODO: here we should have a superclass for BaseAgent and
         #  RolePlaying
-        worker: Union[BaseAgent, RolePlaying],
+        # worker: Union[BaseAgent, RolePlaying],
         channel: TaskChannel,
     ) -> None:
         super().__init__(workforce_id, description, channel)
-        self.worker = worker
+        # self.worker = worker
 
     @abstractmethod
     async def _process_task(

@@ -117,7 +117,11 @@ class InternalWorkforce(BaseWorkforce):
             content=prompt,
         )
         response = self.manager_agent.step(req)
-        return parse_assign_task_resp(response.msg.content)
+        try:
+            assign_id = parse_assign_task_resp(response.msg.content)
+        except Exception:
+            assign_id = self._create_workforce_for_task(task).workforce_id
+        return assign_id
 
     async def _post_task(self, task: Task, assignee_id: str) -> None:
         await self.channel.post_task(task, self.workforce_id, assignee_id)

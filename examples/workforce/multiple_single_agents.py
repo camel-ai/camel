@@ -96,6 +96,7 @@ async def main():
         channel=public_channel,
     )
     await workforces.start()
+    print('Final Result of Origin task:\n', human_task.result)
 
 
 if __name__ == "__main__":

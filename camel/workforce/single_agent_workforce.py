@@ -17,7 +17,6 @@ from typing import List
 
 from camel.agents.base import BaseAgent
 from camel.messages.base import BaseMessage
-from camel.responses import ChatAgentResponse
 from camel.tasks.task import Task, TaskState
 from camel.workforce.leaf_workforce import LeafWorkforce
 from camel.workforce.task_channel import TaskChannel
@@ -26,14 +25,13 @@ from camel.workforce.workforce_prompt import PROCESS_TASK_PROMPT
 
 
 class SingleAgentWorforce(LeafWorkforce):
-    r"""A unit workforce that consists of a single worker. It is the basic unit
+    r"""A unit workforce that consists of a single agent. It is the basic unit
     of task processing in the workforce system.
 
     Args:
         workforce_id (str): ID for the workforce.
         description (str): Description of the workforce.
-        worker (Union[BaseAgent, RolePlaying]): Worker of the workforce.
-            Could be a single agent or a role playing system.
+        worker (BaseAgent): Worker of the workforce. A single agent.
         channel (TaskChannel): Communication channel for the workforce.
 
     """
@@ -45,17 +43,26 @@ class SingleAgentWorforce(LeafWorkforce):
         worker: BaseAgent,
         channel: TaskChannel,
     ) -> None:
-        super().__init__(workforce_id, description, worker, channel)
+        super().__init__(workforce_id, description, channel)
         self.worker = worker
 
     async def _process_task(
         self, task: Task, dependencies: List[Task]
     ) -> TaskState:
-        r"""Processes a task based on its dependencies.
+        r"""Processes a task with its dependencies.
+
+        This method asynchronously processes a given task, considering its
+        dependencies, by sending a generated prompt to a worker. It updates
+        the task's result based on the agent's response.
+
+        Args:
+            task (Task): The task to process, which includes necessary details
+                like content and type.
+            dependencies (List[Task]): Tasks that the given task depends on.
 
         Returns:
-            'DONE' if the task is successfully processed,
-            'FAILED' if the processing fails.
+            TaskState: `TaskState.DONE` if processed successfully, otherwise
+                `TaskState.FAILED`.
         """
         try:
             dependency_tasks_info = self._get_dep_tasks_info(dependencies)
@@ -68,11 +75,10 @@ class SingleAgentWorforce(LeafWorkforce):
                 role_name="User",
                 content=prompt,
             )
-            response: ChatAgentResponse = self.worker.step(req)[0]
-            print("response.info['tool_calls']:", response.info['tool_calls'])
+            response = self.worker.step(req)
+            # print("info['tool_calls']:", response.info['tool_calls'])
             task.result = parse_task_result_resp(response.msg.content)
-            print('task.result:', task.result)
+            print('Task result:', task.result, '\n')
             return TaskState.DONE
         except Exception:
             return TaskState.FAILED
-        # return parse_assign_task_resp(response.msg.content)
