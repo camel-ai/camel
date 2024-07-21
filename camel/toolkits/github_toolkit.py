@@ -13,9 +13,10 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 import os
-from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import List, Optional
+
+from pydantic import BaseModel
 
 from camel.utils import dependencies_required
 
@@ -23,8 +24,7 @@ from .base import BaseToolkit
 from .openai_function import OpenAIFunction
 
 
-@dataclass
-class GithubIssue:
+class GithubIssue(BaseModel):
     r"""Represents a GitHub issue.
 
     Attributes:
@@ -35,29 +35,11 @@ class GithubIssue:
         file_content (str): The content of the file associated with the issue.
     """
 
-    def __init__(
-        self,
-        title: str,
-        body: str,
-        number: int,
-        file_path: str,
-        file_content: str,
-    ) -> None:
-        r"""Initialize a GithubIssue object.
-
-        Args:
-            title (str): The title of the GitHub issue.
-            body (str): The body/content of the GitHub issue.
-            number (int): The issue number.
-            file_path (str): The path of the file associated with the issue.
-            file_content (str): The content of the file associated with the
-                issue.
-        """
-        self.title = title
-        self.body = body
-        self.number = number
-        self.file_path = file_path
-        self.file_content = file_content
+    title: str
+    body: str
+    number: int
+    file_path: str
+    file_content: str
 
     def __str__(self) -> str:
         r"""Returns a string representation of the issue.
@@ -75,8 +57,7 @@ class GithubIssue:
         )
 
 
-@dataclass
-class GithubPullRequestDiff:
+class GithubPullRequestDiff(BaseModel):
     r"""Represents a single diff of a pull request on Github.
 
     Attributes:
@@ -92,8 +73,7 @@ class GithubPullRequestDiff:
         return f"Filename: {self.filename}\nPatch: {self.patch}"
 
 
-@dataclass
-class GithubPullRequest:
+class GithubPullRequest(BaseModel):
     r"""Represents a pull request on Github.
 
     Attributes:
@@ -251,13 +231,17 @@ class GithubToolkit(BaseToolkit):
                 and pr.merged_at is not None
                 and pr.merged_at.timestamp() > earliest_date.timestamp()
             ):
-                pr_details = GithubPullRequest(pr.title, pr.body, [])
+                pr_details = GithubPullRequest(
+                    title=pr.title, body=pr.body, diffs=[]
+                )
 
                 # Get files changed in the PR
                 files = pr.get_files()
 
                 for file in files:
-                    diff = GithubPullRequestDiff(file.filename, file.patch)
+                    diff = GithubPullRequestDiff(
+                        filename=file.filename, patch=file.patch
+                    )
                     pr_details.diffs.append(diff)
 
                 merged_prs.append(str(pr_details))
