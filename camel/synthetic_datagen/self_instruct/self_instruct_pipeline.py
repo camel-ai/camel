@@ -14,19 +14,19 @@
 import logging
 from typing import Optional
 
-from synthetic_datagen.self_instruct.self_instruct_spec import SelfInstructSpec
-from synthetic_datagen.utils.evaluator import Evaluator
-from synthetic_datagen.utils.instance_generator import (
+from .self_instruct_spec import SelfInstructSpec
+from ..utils.evaluator import Evaluator
+from ..utils.instance_generator import (
     InstanceGenerator,
 )
-from synthetic_datagen.utils.instruction_curator import (
+from ..utils.instruction_curator import (
     InstructionCurator,
 )
-from synthetic_datagen.utils.instruction_generator import (
+from ..utils.instruction_generator import (
     InstructionGenerator,
 )
 
-from camel.synthetic_datagen.base_generator import BaseDataGenerator
+from ..base_generator import BaseDataGenerator
 
 logger = logging.getLogger(__name__)
 

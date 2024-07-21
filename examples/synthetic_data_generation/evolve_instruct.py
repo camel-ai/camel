@@ -15,7 +15,7 @@ import argparse
 
 from camel.synthetic_datagen.agent_systems.single_agent import SingleAgent
 from camel.synthetic_datagen.evolve_instruct.evolve_instruct_pipeline import (
-    EvolveInstructGenerator,
+    EvolveInstructPipeline,
 )
 from camel.synthetic_datagen.evolve_instruct.evolve_instruct_spec import (
     EvolveInstructSpec,
@@ -80,9 +80,6 @@ def main():
     ]
 
     spec.agent_system = SingleAgent()
-    llm_pipeline = ChatGPTPipeline(args.openai_model)
-
-    spec.llm_pipeline = llm_pipeline
     spec.seed_data = args.seed_file
     spec.column_names = args.column_names
     spec.num_rows = args.num_rows
@@ -90,7 +87,7 @@ def main():
     spec.max_len_chars = args.max_len_chars
     spec.verbose = True
 
-    generator = EvolveInstructGenerator(spec)
+    generator = EvolveInstructPipeline(spec)
     generator.run()
 
 

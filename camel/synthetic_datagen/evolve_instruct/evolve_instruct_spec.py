@@ -57,7 +57,7 @@ class EvolveInstructSpec:
         curated synthetic data.
 
     Properties:
-        instructions_out_dir (Path): Full path for the generated
+        instructions_out_file (Path): Full path for the generated
         instructions file.
         instances_out_dir (Path): Full path for the generated
         instances file.
@@ -90,11 +90,11 @@ class EvolveInstructSpec:
     CURATED_SYNTHETIC_DATA_FILE: str = "curated_synthetic_data.jsonl"
 
     @property
-    def instructions_out_dir(self) -> Path:
+    def instructions_out_file(self) -> Path:
         """Full path for the file storing generated instructions."""
         return self.synthetic_data_dir / self.SYNTHETIC_INSTRUCTIONS_FILE
 
     @property
-    def instances_out_dir(self) -> Path:
+    def instances_out_file(self) -> Path:
         """Full path for the file storing generated instances."""
         return self.synthetic_data_dir / self.SYNTHETIC_INSTANCES_FILE

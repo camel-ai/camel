@@ -79,7 +79,6 @@ class ChatGPTPipeline:
             while not response and count < 3:
                 try:
                     response = openai.ChatCompletion.create(
-                        # model="gpt-3.5-turbo-0613",
                         model=self.model,
                         messages=[{"role": "user", "content": d['text']}],
                     )

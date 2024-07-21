@@ -48,7 +48,7 @@ class Mutation(Enum):
     SWITCH_TOPIC = 6
 
 
-class EvolveInstructGenerator(BaseDataGenerator):
+class EvolveInstructPipeline(BaseDataGenerator):
     """
     A generator for evolve-instructed synthetic data.
 
@@ -382,3 +382,14 @@ Answer with 'Equal' or 'Not Equal'. No need to explain the reason.""" % (
             if 'not equal' not in answer.lower():
                 return False, "equal"
         return True, "ok"
+    
+
+    def curate(self):
+        """
+        Curate the generated synthetic data.
+
+        This method initiates the curation process for the generated
+        instructions
+        and instances, typically involving filtering and quality checks.
+        """
+        self.curator.curate()

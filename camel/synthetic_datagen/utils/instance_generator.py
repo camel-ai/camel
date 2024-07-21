@@ -16,11 +16,11 @@ import logging
 from collections import OrderedDict
 from typing import Dict, List
 
-from synthetic_datagen.self_instruct.self_instruct_spec import SelfInstructSpec
-from synthetic_datagen.self_instruct.templates import (
+from ..self_instruct.self_instruct_spec import SelfInstructSpec
+from ..self_instruct.templates import (
     input_first_template_for_gen,
 )
-from synthetic_datagen.utils.generate_utils import load_jsonl
+from .generate_utils import load_jsonl
 from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
@@ -47,7 +47,7 @@ class InstanceGenerator:
 
     Attributes:
         agent_system: The AI agent system used for generating instances.
-        instructions_out_dir: The directory containing the input
+        instructions_out_file: The directory containing the input
         instructions file.
         instances_out_dir: The directory where the generated instances
         will be saved.
@@ -62,7 +62,7 @@ class InstanceGenerator:
             the necessary configuration for instance generation.
         """
         self.agent_system = spec.agent_system
-        self.instructions_out_dir = spec.instructions_out_file
+        self.instructions_out_file = spec.instructions_out_file
         self.instances_out_dir = spec.instances_out_file
 
     def generate(self):
@@ -73,7 +73,7 @@ class InstanceGenerator:
         This method reads tasks from the input file, generates instances
         for each task in batches, and writes the results to the output file.
         """
-        tasks = load_jsonl(self.instructions_out_dir)
+        tasks = load_jsonl(self.instructions_out_file)
         total_tasks = len(tasks)
 
         with open(self.instances_out_dir, "w") as fout:
