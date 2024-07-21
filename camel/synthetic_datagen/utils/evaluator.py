@@ -13,10 +13,11 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import logging
 
+from tqdm import tqdm
+
 from ..agent_systems.base_agent_system import SyntheticDatum
 from ..self_instruct.self_instruct_spec import SelfInstructSpec
 from .generate_utils import load_jsonl
-from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 

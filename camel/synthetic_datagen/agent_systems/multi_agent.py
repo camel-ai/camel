@@ -13,10 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Optional
 
-from camel.agents.chat_agent import ChatAgent
 from camel.messages.base import BaseMessage
-from camel.models.openai_model import OpenAIModel
-from camel.types.enums import ModelType
 
 from .base_agent_system import BaseAgentSystem
 
@@ -50,8 +47,6 @@ class MultiAgent(BaseAgentSystem):
         #     ),
         # )
 
-
-
     def run(self, prompt: str) -> str:
         """
         Execute the single agent system with the given prompt.
@@ -64,7 +59,7 @@ class MultiAgent(BaseAgentSystem):
         """
         for agent in self.agents:
             agent.reset()
-            
+
         user_msg = BaseMessage.make_user_message(
             role_name="User", content=prompt
         )

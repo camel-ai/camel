@@ -14,11 +14,10 @@
 from enum import Enum
 from typing import Any, Type, Union
 
+from .base_generator import BaseDataGenerator
 from .self_instruct.self_instruct_pipeline import (
     SelfInstructPipeline,
 )
-
-from .base_generator import BaseDataGenerator
 
 
 class SyntheticDataGeneratorMethodType(Enum):

@@ -382,7 +382,6 @@ Answer with 'Equal' or 'Not Equal'. No need to explain the reason.""" % (
             if 'not equal' not in answer.lower():
                 return False, "equal"
         return True, "ok"
-    
 
     def curate(self):
         """

@@ -20,6 +20,7 @@ from typing import Any, Dict, List
 
 import numpy as np
 import tqdm
+
 from ..self_instruct.self_instruct_spec import SelfInstructSpec
 from .generate_utils import (
     encode_prompt,

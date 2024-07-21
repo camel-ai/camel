@@ -22,11 +22,12 @@ from ..agent_systems.eval_agent import (
     NemotronRewardEvalAgent,
 )
 from ..agent_systems.single_agent import SingleAgent
+from ..utils.instruct_spec import InstructSpec
 from ..utils.seed_instruction import SeedInstruction
 
 
 @dataclass
-class SelfInstructSpec:
+class SelfInstructSpec(InstructSpec):
     """
     Specification for the Self-Instruct process of generating synthetic data.
 
@@ -59,7 +60,7 @@ class SelfInstructSpec:
         curated synthetic data.
 
     Properties:
-        instructions_out_dir (Path): Full path for the generated
+        instructions_out_file (Path): Full path for the generated
         instructions file.
         instances_out_dir (Path): Full path for the generated
         instances file.

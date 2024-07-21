@@ -14,7 +14,7 @@
 import logging
 from typing import Optional
 
-from .self_instruct_spec import SelfInstructSpec
+from ..base_generator import BaseDataGenerator
 from ..utils.evaluator import Evaluator
 from ..utils.instance_generator import (
     InstanceGenerator,
@@ -25,8 +25,7 @@ from ..utils.instruction_curator import (
 from ..utils.instruction_generator import (
     InstructionGenerator,
 )
-
-from ..base_generator import BaseDataGenerator
+from .self_instruct_spec import SelfInstructSpec
 
 logger = logging.getLogger(__name__)
 

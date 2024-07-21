@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+
 import logging
 
 from camel.synthetic_datagen.agent_systems.eval_agent import (
@@ -30,6 +31,9 @@ from camel.synthetic_datagen.utils.seed_instruction import (
 )
 
 logging.basicConfig(level=logging.INFO)
+
+# Examples from HuggingFace dataset: "iamtarun/python_code_instructions_18k_alpaca"
+# https://huggingface.co/datasets/iamtarun/python_code_instructions_18k_alpaca
 
 spec = SelfInstructSpec()
 spec.seed_instructions = [

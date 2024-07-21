@@ -20,8 +20,10 @@ from camel.synthetic_datagen.evolve_instruct.evolve_instruct_pipeline import (
 from camel.synthetic_datagen.evolve_instruct.evolve_instruct_spec import (
     EvolveInstructSpec,
 )
-from camel.synthetic_datagen.pipeline import ChatGPTPipeline
-from camel.synthetic_datagen.utils.seed_instruction import Instance, SeedInstruction
+from camel.synthetic_datagen.utils.seed_instruction import (
+    Instance,
+    SeedInstruction,
+)
 
 
 def main():
