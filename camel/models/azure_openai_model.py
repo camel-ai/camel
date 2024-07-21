@@ -34,6 +34,8 @@ class AzureOpenAIModel(BaseModelBackend):
         model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        api_version: Optional[str] = None,
+        azure_deployment: Optional[str] = None,
     ) -> None:
         r"""Constructor for OpenAI backend.
 
@@ -46,27 +48,43 @@ class AzureOpenAIModel(BaseModelBackend):
                 OpenAI service. (default: :obj:`None`)
             url (Optional[str]): The url to the OpenAI service. (default:
                 :obj:`None`)
+            api_version (Optional[str]): The api version for the model.
+            azure_deployment (Optional[str]): The deployment name you chose
+                when you deployed an azure model. (default: :obj:`None`)
         """
         super().__init__(model_type, model_config_dict, api_key, url)
         self._url = url or os.environ.get("AZURE_OPENAI_ENDPOINT")
         self._api_key = api_key or os.environ.get("AZURE_OPENAI_API_KEY")
-        self.api_version = os.environ.get("AZURE_API_VERSION")
-        self.azure_deployment = os.environ.get("AZURE_DEPLOYMENT")
+        self.api_version = api_version or os.environ.get("AZURE_API_VERSION")
+        self.azure_deployment = azure_deployment or os.environ.get(
+            "AZURE_DEPLOYMENT"
+        )
 
         if self._url is None:
-            raise ValueError("url or `AZURE_OPENAI_ENDPOINT` is not provided.")
+            raise ValueError(
+                "Must provide either the `url` argument "
+                "or `AZURE_OPENAI_ENDPOINT` environment variable."
+            )
         if self._api_key is None:
             raise ValueError(
-                "api_key or `AZURE_OPENAI_API_KEY` is not provided."
+                "Must provide either the `api_key` argument "
+                "or `AZURE_OPENAI_API_KEY` environment variable."
             )
         if self.api_version is None:
-            raise ValueError("`AZURE_API_VERSION` is not provided.")
+            raise ValueError(
+                "Must provide either the `api_version` argument "
+                "or `AZURE_API_VERSION` environment variable."
+            )
         if self.azure_deployment is None:
-            raise ValueError("`AZURE_DEPLOYMENT` is not provided.")
+            raise ValueError(
+                "Must provide either the `azure_deployment` argument "
+                "or `AZURE_DEPLOYMENT` environment variable."
+            )
         self.model = str(self.azure_deployment)
 
         self._client = AzureOpenAI(
             azure_endpoint=str(self._url),
+            azure_deployment=self.azure_deployment,
             api_version=self.api_version,
             api_key=self._api_key,
             timeout=60,
