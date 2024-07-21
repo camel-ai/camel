@@ -37,6 +37,6 @@ jobs:
           COHERE_API_KEY: "${{ secrets.COHERE_API_KEY }}"
           AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}"
           AZURE_API_VERSION: ${{ secrets.AZURE_API_VERSION }}"
-          AZURE_DEPLOYMENT: ${{ secrets.AZURE_DEPLOYMENT }}"
+          AZURE_DEPLOYMENT_NAME: ${{ secrets.AZURE_DEPLOYMENT_NAME }}"
           AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}"
         run: pytest --fast-test-mode ./test
