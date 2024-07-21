@@ -33,29 +33,31 @@ def main(
 ) -> None:
     task_prompt = "Develop a trading bot for the stock market"
 
+    model = ModelFactory.create(
+        model_platform=model_platform,
+        model_type=model_type,
+        model_config_dict=OpenSourceConfig(
+            model_path=model_path,
+            server_url=server_url,
+            api_params=ChatGPTConfig(temperature=0),
+        ).__dict__,
+    )
+
+    # Update agent_kwargs to use the created models
     agent_kwargs = {
-        role: dict(
-            model=ModelFactory.create(
-                model_platform=model_platform,
-                model_type=model_type,
-                model_config_dict=OpenSourceConfig(
-                    model_path=model_path,
-                    server_url=server_url,
-                    api_params=ChatGPTConfig(temperature=0),
-                ).__dict__,
-            ),
-        )
-        for role in ["assistant", "user", "task-specify"]
+        "assistant": {"model": model},
+        "user": {"model": model},
+        "task-specify": {"model": model},
     }
 
     role_play_session = RolePlaying(
         assistant_role_name="Python Programmer",
-        assistant_agent_kwargs={'model': agent_kwargs["assistant"]},
+        assistant_agent_kwargs=agent_kwargs["assistant"],
         user_role_name="Stock Trader",
-        user_agent_kwargs={'model': agent_kwargs["user"]},
+        user_agent_kwargs=agent_kwargs["user"],
         task_prompt=task_prompt,
         with_task_specify=True,
-        task_specify_agent_kwargs={'model': agent_kwargs["task-specify"]},
+        task_specify_agent_kwargs=agent_kwargs["task-specify"],
     )
 
     print(
