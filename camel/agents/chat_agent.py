@@ -362,7 +362,9 @@ class ChatAgent(BaseAgent):
                 )
                 break
 
-        return ChatAgentResponse(output_messages, self.terminated, info)
+        return ChatAgentResponse(
+            msgs=output_messages, terminated=self.terminated, info=info
+        )
 
     async def step_async(
         self,
@@ -440,7 +442,9 @@ class ChatAgent(BaseAgent):
                 )
                 break
 
-        return ChatAgentResponse(output_messages, self.terminated, info)
+        return ChatAgentResponse(
+            msgs=output_messages, terminated=self.terminated, info=info
+        )
 
     def _step_model_response(
         self,
@@ -620,9 +624,9 @@ class ChatAgent(BaseAgent):
         )
 
         return ChatAgentResponse(
-            output_messages,
-            self.terminated,
-            info,
+            msgs=output_messages,
+            terminated=self.terminated,
+            info=info,
         )
 
     def step_tool_call(

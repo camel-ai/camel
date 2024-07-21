@@ -11,14 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from dataclasses import dataclass
 from typing import Any, Dict, List
+
+from pydantic import BaseModel
 
 from camel.messages import BaseMessage
 
 
-@dataclass(frozen=True)
-class ChatAgentResponse:
+class ChatAgentResponse(BaseModel):
     r"""Response of a ChatAgent.
 
     Attributes:
