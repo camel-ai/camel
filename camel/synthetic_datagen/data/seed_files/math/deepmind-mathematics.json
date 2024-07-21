@@ -1,0 +1,4002 @@
+[
+  {
+    "question": "What is 451 to the power of 1/10, to the nearest integer?",
+    "answer": "2"
+  },
+  {
+    "question": "Let h be ((-8)/(-3))/((-10)/(-15)). Let w be (0 + -2)/2 - -4. Suppose 4*y = 5*s + 84 - 33, -w*y + h*s = -39. List the prime factors of y.",
+    "answer": "[3]"
+  },
+  {
+    "question": "What is the third root of 574688643 to the nearest integer?",
+    "answer": "831"
+  },
+  {
+    "question": "What is the second biggest value in -6244, -2, 2/23?",
+    "answer": "-2"
+  },
+  {
+    "question": "Solve -2*d = m - 17, 2466*d - 27 = m + 2464*d for m.",
+    "answer": "-5"
+  },
+  {
+    "question": "What is the square root of 628069819 to the nearest integer?",
+    "answer": "25061"
+  },
+  {
+    "question": "Solve -2*d - 7 = -3*i, -4*i + 13 = 15*d - 2*d - 12*d for i.",
+    "answer": "3"
+  },
+  {
+    "question": "Which is the closest to 517?  (a) 6  (b) -3  (c) 0",
+    "answer": "6"
+  },
+  {
+    "question": "What is the remainder when 34925 is divided by 53?",
+    "answer": "51"
+  },
+  {
+    "question": "-11023944 divided by -8088",
+    "answer": "1363.0"
+  },
+  {
+    "question": "What is the fifth root of 1010 to the nearest integer?",
+    "answer": "4"
+  },
+  {
+    "question": "What is the nearest to -11/4 in -225.7, 0.4, -2/21, -2/5, 0.3?",
+    "answer": "-0.4"
+  },
+  {
+    "question": "Which is the closest to -32?  (a) 0.2  (b) 1  (c) -0.1",
+    "answer": "-0.1"
+  },
+  {
+    "question": "Let l = 1376 + -6881/5. What is the nearest to 1 in 0.042, l, -1?",
+    "answer": "0.042"
+  },
+  {
+    "question": "Let q = -2 + 10. Suppose 4*l - q - 6 = -b, -5*l + 130 = 5*b. What is the units digit of b?",
+    "answer": "0"
+  },
+  {
+    "question": "Which is the closest to -0.3?  (a) 0.1  (b) 0.4  (c) 54  (d) 4/5",
+    "answer": "0.1"
+  },
+  {
+    "question": "What is the cube root of 163143705 to the nearest integer?",
+    "answer": "546"
+  },
+  {
+    "question": "Suppose 5*g - 17 = -j, -3*j - 2 = -4*g + 4. Let l be 3 - (5 + -1 - j). Let a(p) = -5*p - p**2 - 2 + 0*p**2 - l. Calculate a(-6).",
+    "answer": "-9"
+  },
+  {
+    "question": "What is the units digit of 6079632?",
+    "answer": "2"
+  },
+  {
+    "question": "Let q = 8809 + -1214. What is the highest common factor of 868 and q?",
+    "answer": "217"
+  },
+  {
+    "question": "What is the fifth biggest value in -1, 0.3, 4, -122, 8/5?",
+    "answer": "-122"
+  },
+  {
+    "question": "Let p = 88 + -36. Suppose -24*c - 233 - 1231 = 0. Let s = p - c. What are the prime factors of s?",
+    "answer": "[113]"
+  },
+  {
+    "question": "Let l = -162 + 227. Calculate the highest common divisor of 13 and l.",
+    "answer": "13"
+  },
+  {
+    "question": "What is the fifth smallest value in 0.24, 0, 7, 607, 4, -1?",
+    "answer": "7"
+  },
+  {
+    "question": "What is the highest common divisor of 168 and 129712884?",
+    "answer": "84"
+  },
+  {
+    "question": "Let d = -0.9 + 0.5. Let l = -0.25 + -0.75. Which is the second smallest value?  (a) l  (b) d  (c) -0.5",
+    "answer": "-0.5"
+  },
+  {
+    "question": "What is the square root of 4147 to the nearest integer?",
+    "answer": "64"
+  },
+  {
+    "question": "Calculate the greatest common divisor of 4150 and 512350.",
+    "answer": "50"
+  },
+  {
+    "question": "What is the remainder when 345134 is divided by 8481?",
+    "answer": "5894"
+  },
+  {
+    "question": "Let u(r) = r**3 + 6*r**2 - 10*r - 55. Let q be u(-4). Solve 0 = q*k + 173 - 156 for k.",
+    "answer": "-1"
+  },
+  {
+    "question": "Let d(i) = 17*i + 153. Let s be (-1)/(-2) - (-7 + (-66)/(-4)). Let z be d(s). Which is the closest to 1/3?  (a) z  (b) -1  (c) -7",
+    "answer": "0.0"
+  },
+  {
+    "question": "What is the value of 8 - (2 + -17 + (0 - -4 - -8) - 14)?",
+    "answer": "25"
+  },
+  {
+    "question": "What is the value of (10 - 4 - (18 + -14)) + -6?",
+    "answer": "-4"
+  },
+  {
+    "question": "What is the value of ((-12)/(-60))/((-4)/840*-6)?",
+    "answer": "7.0"
+  },
+  {
+    "question": "What is (78/104)/(3/(-11))?",
+    "answer": "-2.75"
+  },
+  {
+    "question": "What is 1084 to the power of 1/2, to the nearest integer?",
+    "answer": "33"
+  },
+  {
+    "question": "Evaluate 57 + 18 + (-98 - -79).",
+    "answer": "56"
+  },
+  {
+    "question": "What is the remainder when 1087 is divided by 64?",
+    "answer": "63"
+  },
+  {
+    "question": "Let o = 195 + -129. Let t be (o/(-2))/((-1)/(-5)). Let k = 233 + t. What is the tens digit of k?",
+    "answer": "6"
+  },
+  {
+    "question": "-1 + (-10 - -11 - 7) + -70 + 5",
+    "answer": "-72"
+  },
+  {
+    "question": "Let k = 10.2 + -10. What is the biggest value in k, 2/9, 4?",
+    "answer": "4"
+  },
+  {
+    "question": "Suppose -48 = 7*d + 5*d. List the prime factors of (d - 1934/(-5)) + (-5)/(-25).",
+    "answer": "[383]"
+  },
+  {
+    "question": "Simplify (-2 + (sqrt(700) - (sqrt(700) + 0 - sqrt(700)) - sqrt(700)))**2.",
+    "answer": "4"
+  },
+  {
+    "question": "Let v = -9 - -14. Suppose -m - 7*p + 2*p = v, -10 = 5*p. Suppose 3*y = 5*a - 9, a = -3*y + 14 - m. Calculate the greatest common factor of 27 and a.",
+    "answer": "3"
+  },
+  {
+    "question": "Solve 67*u - 2105 = -164 + 605 for u.",
+    "answer": "38"
+  },
+  {
+    "question": "Solve -2*r + 2*l = 0, 0 = -50*l + 49*l + 1 for r.",
+    "answer": "1"
+  },
+  {
+    "question": "What is the closest to 40 in 25.81, 5, -1/8?",
+    "answer": "25.81"
+  },
+  {
+    "question": "Calculate the greatest common divisor of 14 and 223654.",
+    "answer": "2"
+  },
+  {
+    "question": "Let n be ((-12)/32)/(-15*(-2)/8). Let w = 0.42 - 0.62. Which is the biggest value?  (a) w  (b) 5  (c) n",
+    "answer": "5"
+  },
+  {
+    "question": "Let y = -2 - 1. What is the units digit of (-1)/y + (-35)/(-3)?",
+    "answer": "2"
+  },
+  {
+    "question": "Solve 3576*t + 336 = 3562*t for t.",
+    "answer": "-24"
+  },
+  {
+    "question": "What is the ten thousands digit of 2321313?",
+    "answer": "2"
+  },
+  {
+    "question": "Suppose -3*r + 2090 = 2*r. Suppose -640 = 6*g - 868. Calculate the greatest common divisor of r and g.",
+    "answer": "38"
+  },
+  {
+    "question": "Suppose -f + 442 = -169. What is the units digit of f?",
+    "answer": "1"
+  },
+  {
+    "question": "-62 divided by 31",
+    "answer": "-2.0"
+  },
+  {
+    "question": "Let j = 0.207 - 0.007. What is the fourth biggest value in -3, j, 19, 27?",
+    "answer": "-3"
+  },
+  {
+    "question": "Evaluate 1008/(-2940)*-70 - (-86)/(-2).",
+    "answer": "-19.0"
+  },
+  {
+    "question": "What is the second derivative of -24593*j**2 + 3 + 48939*j**2 - 27671*j**2 - 37*j wrt j?",
+    "answer": "-6650"
+  },
+  {
+    "question": "Let f be (2 + (-33)/3)/(-1). Let o(m) be the second derivative of -1/6*m**3 + 2*m + 5 + 9/2*m**2. Determine o(f).",
+    "answer": "0"
+  },
+  {
+    "question": "Let s(r) = 9*r**2 - r. Let w be s(2). Let n = 18 + -13. Suppose 5*v - 2*c = -5*c + 440, -n*c = 5*v - 450. What is the greatest common factor of v and w?",
+    "answer": "17"
+  },
+  {
+    "question": "Solve 65*t - 72 = 57*t for t.",
+    "answer": "9"
+  },
+  {
+    "question": "Let d(m) = -27*m**2 - 623*m - 33. Let a(q) = 74*q**3 - q**2 + q. Calculate the remainder when a(1) is divided by d(-23).",
+    "answer": "9"
+  },
+  {
+    "question": "Let v(c) = c - 51. Let w be v(-7). Let s = 59 + w. Solve -q + s + 3 = 0 for q.",
+    "answer": "4"
+  },
+  {
+    "question": "-0.025 times -131260",
+    "answer": "3281.5"
+  },
+  {
+    "question": "Calculate the remainder when 173962 is divided by 1596.",
+    "answer": "1594"
+  },
+  {
+    "question": "What is the thousands digit of 1524?",
+    "answer": "1"
+  },
+  {
+    "question": "What is 86003450 to the power of 1/4, to the nearest integer?",
+    "answer": "96"
+  },
+  {
+    "question": "Suppose 87 = -67*j + 70*j. Solve 0 = -4*f + b + b + 24, 5*f - 2*b = j for f.",
+    "answer": "5"
+  },
+  {
+    "question": "Let w = -90 - -86. Let x(n) = -2*n**3 - 8*n**2 - n - 1. Let b be x(w). Solve 0 = b*i + 2*i for i.",
+    "answer": "0"
+  },
+  {
+    "question": "Find the third derivative of -1698*a**3 - 472*a**2 wrt a.",
+    "answer": "-10188"
+  },
+  {
+    "question": "Suppose 4*u - 21 - 14 = 1. Suppose 2*w = 4*w - 42. What is the highest common divisor of w and u?",
+    "answer": "3"
+  },
+  {
+    "question": "Let c = 24832 - 21439. Solve 2*m - c + 3383 = 0 for m.",
+    "answer": "5"
+  },
+  {
+    "question": "Which is the smallest value?  (a) 2/3  (b) 3/5  (c) 27/8  (d) 0.4  (e) -6",
+    "answer": "-6"
+  },
+  {
+    "question": "Suppose 13*a + 2*a = 345. What is the remainder when a is divided by 4?",
+    "answer": "3"
+  },
+  {
+    "question": "Solve 17016*v = 17145*v - 1677 for v.",
+    "answer": "13"
+  },
+  {
+    "question": "What is the fourth biggest value in -1/2, -4, -4/5, 24421?",
+    "answer": "-4"
+  },
+  {
+    "question": "What is 87766 to the power of 1/3, to the nearest integer?",
+    "answer": "44"
+  },
+  {
+    "question": "Which is the biggest value?  (a) 0  (b) -3/49  (c) 370  (d) 0.3",
+    "answer": "370"
+  },
+  {
+    "question": "Let g(u) = -60*u - 109. List the prime factors of g(-2).",
+    "answer": "[11]"
+  },
+  {
+    "question": "Let x = -767 + 768. What is the second smallest value in -38.3, x, -0.1?",
+    "answer": "-0.1"
+  },
+  {
+    "question": "Solve 3*f = 9*v + 18, -10002*v + 3*f - 6 + 0 = -10001*v + 20 for v.",
+    "answer": "1"
+  },
+  {
+    "question": "What is the nearest to 0.7 in -3, 2.4, 0.1?",
+    "answer": "0.1"
+  },
+  {
+    "question": "Suppose 0 = 2*j - 3*j. Suppose -3*l + 3 + 6 = j. Suppose f = l + 10. What is the greatest common factor of f and 104?",
+    "answer": "13"
+  },
+  {
+    "question": "Let q(y) = -y**2 + 414*y - 12216. Give q(32).",
+    "answer": "8"
+  },
+  {
+    "question": "Calculate the remainder when 516 is divided by 65.",
+    "answer": "61"
+  },
+  {
+    "question": "Suppose a - 4*c - 3 = 0, -4*a - 2*c - 11 = 13. Let w = a - -7. Let m be (w + 1)/3 + 153. What is the highest common factor of 14 and m?",
+    "answer": "14"
+  },
+  {
+    "question": "What is the greatest common divisor of 1691354 and 98?",
+    "answer": "14"
+  },
+  {
+    "question": "Suppose -5*q + 4 = -2*u - 2, 4*q + 2 = 5*u. Let s(y) be the first derivative of y**3 + 3*y**2/2 - 3*y + 1. What are the prime factors of s(u)?",
+    "answer": "[3, 5]"
+  },
+  {
+    "question": "Suppose -4*x = -5*p - 143 - 165, 0 = -2*x - 2*p + 136. Calculate the greatest common divisor of x and 9.",
+    "answer": "9"
+  },
+  {
+    "question": "Let k(z) be the first derivative of -2*z**3/3 + 42*z**2 - 882*z - 120. Let k(f) = 0. What is f?",
+    "answer": "[21]"
+  },
+  {
+    "question": "Let c(o) be the second derivative of -5*o**4/6 - 51*o**2 - 4*o + 1. What is the first derivative of c(x) wrt x?",
+    "answer": "-20*x"
+  },
+  {
+    "question": "What is the remainder when 7241 is divided by 1034?",
+    "answer": "3"
+  },
+  {
+    "question": "Which is smaller: -8 or 0.6517?",
+    "answer": "-8"
+  },
+  {
+    "question": "Which is greater: -993 or -990?",
+    "answer": "-990"
+  },
+  {
+    "question": "Let k(w) = 20528*w + 84. Let z be k(7). What is the remainder when z/336 - -1*2/24 is divided by 10?",
+    "answer": "8.0"
+  },
+  {
+    "question": "Solve 71*g - 365*g - 747*g = 2364*g + 228135 for g.",
+    "answer": "-67"
+  },
+  {
+    "question": "What is the remainder when 558 is divided by 158?",
+    "answer": "84"
+  },
+  {
+    "question": "What is the remainder when 1949 is divided by 279?",
+    "answer": "275"
+  },
+  {
+    "question": "Let p = 98 + -89. Solve -3*o - 5*y + 24 = 0, 0 = -o + 2*y - 4*y + p for o.",
+    "answer": "3"
+  },
+  {
+    "question": "What is the hundreds digit of 220?",
+    "answer": "2"
+  },
+  {
+    "question": "What is the third smallest value in 3, -39, -4, -160, 11?",
+    "answer": "-4"
+  },
+  {
+    "question": "Let i(u) be the first derivative of -u**3/3 - 5*u**2/2 + 16*u + 3. Let b be i(-7). Solve -10 = b*z - 0*z for z.",
+    "answer": "-5"
+  },
+  {
+    "question": "What is -9 - ((1 - 0) + -1 - (-43 - -52))?",
+    "answer": "0"
+  },
+  {
+    "question": "Which is the nearest to 7?  (a) -1/240  (b) -5  (c) 3/4  (d) 40",
+    "answer": "0.75"
+  },
+  {
+    "question": "1 + (2 - 9) + (-5 - 16) + 58 + -1",
+    "answer": "30"
+  },
+  {
+    "question": "Let k(o) = -12*o + 27*o - 38 - 11*o - 6*o. Let a be k(-21). Solve a*x + 7 = -3*m, 4*m = -0*x - 3*x - 7 for m.",
+    "answer": "-1"
+  },
+  {
+    "question": "Calculate the greatest common factor of 19200 and 45.",
+    "answer": "15"
+  },
+  {
+    "question": "What is the highest common factor of 618 and 8175728?",
+    "answer": "206"
+  },
+  {
+    "question": "74/(-8) - 12/16",
+    "answer": "-10.0"
+  },
+  {
+    "question": "Suppose -27223 = 63*n - 82842 - 162172. What are the prime factors of n?",
+    "answer": "[3457]"
+  },
+  {
+    "question": "Let w = -2 + 5. Suppose -3 - w = -3*u. Suppose l = -4 + 12. Solve l*f - 3*f + 16 = -y, u*f + 20 = 3*y for f.",
+    "answer": "-4"
+  },
+  {
+    "question": "(-3 + -1)*68/(-136)",
+    "answer": "2.0"
+  },
+  {
+    "question": "Suppose -13*r + 10*r + 153 = 0. What is the units digit of r?",
+    "answer": "1"
+  },
+  {
+    "question": "Solve -3*s + 4*r - 15 = 0, -s = -r - 2092 + 2097 for s.",
+    "answer": "-5"
+  },
+  {
+    "question": "Let i(m) = 797*m - 48923. What is i(63)?",
+    "answer": "1288"
+  },
+  {
+    "question": "What is the value of (4/2)/(3/(-3))?",
+    "answer": "-2.0"
+  },
+  {
+    "question": "Solve -16 = -4*a - r, -13*a - 2*r - 1692 + 1744 = 0 for a.",
+    "answer": "4"
+  },
+  {
+    "question": "What is the remainder when 117 is divided by 10?",
+    "answer": "7"
+  },
+  {
+    "question": "Solve -7*u = 2*u - 45 for u.",
+    "answer": "5"
+  },
+  {
+    "question": "What is the greatest common divisor of 10141938 and 2610?",
+    "answer": "522"
+  },
+  {
+    "question": "Calculate 5 + ((-4)/((-96)/15) - 73344/1024).",
+    "answer": "-66.0"
+  },
+  {
+    "question": "What is the units digit of 1110?",
+    "answer": "0"
+  },
+  {
+    "question": "What is the third root of 173500921 to the nearest integer?",
+    "answer": "558"
+  },
+  {
+    "question": "List the prime factors of 9/15 - (-548)/20.",
+    "answer": "[2, 7]"
+  },
+  {
+    "question": "Let x(u) = -u**2 - 142*u + 46024. Determine x(-297).",
+    "answer": "-11"
+  },
+  {
+    "question": "Let t(w) = 3*w**2 - 23*w + 9. Let p be t(12). Let m = 251 - p. What is the remainder when m is divided by 23?",
+    "answer": "17"
+  },
+  {
+    "question": "Let n = 55/7 - 167/21. What is the smallest value in 2, n, -1/2, -4?",
+    "answer": "-4"
+  },
+  {
+    "question": "Suppose -14*q + 68 = -16. Calculate the greatest common factor of 18 and q.",
+    "answer": "6"
+  },
+  {
+    "question": "What is the nearest to -1/1049 in 3, -79/8, -5, 71?",
+    "answer": "3"
+  },
+  {
+    "question": "Solve 4*k + q + 3 = 0, 2*k + k - q + 4 = 0 for k.",
+    "answer": "-1"
+  },
+  {
+    "question": "Suppose 0 = -2*c - o - 4*o + 10, -c - 3*o + 7 = 0. What is the units digit of -5 - (-171 - (5 + c))?",
+    "answer": "6"
+  },
+  {
+    "question": "Let c(n) = 16*n + 2. Let b = -5 + 2. Let l = -1 - b. Calculate the remainder when c(l) is divided by 12.",
+    "answer": "10"
+  },
+  {
+    "question": "Solve 0 = -p - 5*r + 3 + 8, 0 = 4*p - 3*r + 25 for p.",
+    "answer": "-4"
+  },
+  {
+    "question": "Solve 7*t + 8*t + 320 - 395 = 0 for t.",
+    "answer": "5"
+  },
+  {
+    "question": "Let s = 55 + -38. Suppose 0 = -4*i - 8*y + 36, 2*i - 43*y + 45*y = 16. Which is bigger: s or i?",
+    "answer": "17"
+  },
+  {
+    "question": "What is the remainder when (-162)/486 + (-14434)/(-3) is divided by 12?",
+    "answer": "11.0"
+  },
+  {
+    "question": "Suppose -3*m + 0*m + 15 = 5*f, 0 = -m - 3*f + 5. Suppose 0 = -9*h + m*h + 16. Suppose h*i - i = 9. Solve 2*n + i = d, 3*d = -0*d + 5*n + 10 for d.",
+    "answer": "5"
+  },
+  {
+    "question": "Find the second derivative of -2494*p**2 - 4497*p wrt p.",
+    "answer": "-4988"
+  },
+  {
+    "question": "Which is the closest to -0.1?  (a) 48546  (b) -46  (c) -5  (d) 0.4",
+    "answer": "0.4"
+  },
+  {
+    "question": "What is -0.5 take away -325.96?",
+    "answer": "325.46"
+  },
+  {
+    "question": "Which is smaller: -6 or -3996/713?",
+    "answer": "-6"
+  },
+  {
+    "question": "What is the millions digit of 15941470?",
+    "answer": "5"
+  },
+  {
+    "question": "What is the thousands digit of 29209?",
+    "answer": "9"
+  },
+  {
+    "question": "Calculate the remainder when 507 is divided by 73.",
+    "answer": "69"
+  },
+  {
+    "question": "Which is greater: 1 or 1/83616349?",
+    "answer": "1"
+  },
+  {
+    "question": "Calculate 1 - (8 - 8 - (1 + 2)).",
+    "answer": "4"
+  },
+  {
+    "question": "Let a be (-1 - -3)*-2*(-3)/(-6). Let n be 2/(a/3) - -5. Suppose -l = n*l - l. Solve l*g + 2 = -2*g for g.",
+    "answer": "-1"
+  },
+  {
+    "question": "0.72 * 112",
+    "answer": "80.64"
+  },
+  {
+    "question": "Solve 237 + 390 = -57*c for c.",
+    "answer": "-11"
+  },
+  {
+    "question": "Let f be 75/12 + (-2)/8. Let m = f - -2. Which is the third smallest value?  (a) m  (b) -1/4  (c) -3",
+    "answer": "8.0"
+  },
+  {
+    "question": "Let l(k) = 3 + 2 + k - 3 - 14. Give l(6).",
+    "answer": "-6"
+  },
+  {
+    "question": "What is the remainder when 93 is divided by (-62)/(-4) + 4/8?",
+    "answer": "13.0"
+  },
+  {
+    "question": "Evaluate (-3 + 24)/3 + 20/((-15)/(-3)).",
+    "answer": "11.0"
+  },
+  {
+    "question": "What is the hundred millions digit of 1880250616?",
+    "answer": "8"
+  },
+  {
+    "question": "Let u = 4 + -2. Suppose -2*a + 5*s = 1, -3*a = -2*a - 4*s + u. Let y(f) = 4*f**2 - 4*f**2 + f**a - 1 + 4*f. What is y(-2)?",
+    "answer": "-5"
+  },
+  {
+    "question": "Suppose 2*t + 55 = 65. Solve 3*h + 18 = 6, -h = -g + t for g.",
+    "answer": "1"
+  },
+  {
+    "question": "Solve 30010 + 30052 = 509*s for s.",
+    "answer": "118"
+  },
+  {
+    "question": "Let p be 2/7 + -2*37/112. What is the third biggest value in p, -2/3, -3?",
+    "answer": "-3"
+  },
+  {
+    "question": "Suppose 2*m - 2754 = 2*v - 742, 3*m = -5*v + 3074. Which is smaller: 1011 or m?",
+    "answer": "1011"
+  },
+  {
+    "question": "Solve 12*a + 9 = -3 for a.",
+    "answer": "-1"
+  },
+  {
+    "question": "What is the value of (-12 + 224/40)*10/4?",
+    "answer": "-16.0"
+  },
+  {
+    "question": "Which is the third biggest value?  (a) -0.5  (b) -3  (c) 114582  (d) 0.4",
+    "answer": "-0.5"
+  },
+  {
+    "question": "Simplify ((sqrt(132)/sqrt(3)*2 - sqrt(44))/(sqrt(24)/sqrt(486)))**2.",
+    "answer": "891"
+  },
+  {
+    "question": "Let l = -166 + 176. What is the remainder when 46 is divided by l?",
+    "answer": "6"
+  },
+  {
+    "question": "Let c = 23 + -67. Let u be (3*1)/((-33)/c). What is the second derivative of u*t - 5*t**2 + 0 + 0 - 7*t wrt t?",
+    "answer": "-10"
+  },
+  {
+    "question": "What is the thousands digit of 207596?",
+    "answer": "7"
+  },
+  {
+    "question": "Let r(s) = s**2 - 61*s + 272. What is r(0)?",
+    "answer": "272"
+  },
+  {
+    "question": "Let z = 0.95 + -1. Let h = 35.05 + -36. Let j = z + h. What is the second smallest value in -0.1, j, 4?",
+    "answer": "-0.1"
+  },
+  {
+    "question": "What is the square root of 95088 to the nearest integer?",
+    "answer": "308"
+  },
+  {
+    "question": "Which is the nearest to 0.2665?  (a) 12  (b) -0.3  (c) 0  (d) 0.013",
+    "answer": "0.013"
+  },
+  {
+    "question": "Solve 0 = -a - 4*r - 9 + 29, -5*r + 16 = -a for a.",
+    "answer": "4"
+  },
+  {
+    "question": "Let j(l) = l**3 + 7*l**2 - 3*l - 62. Let f be j(-5). Suppose -f*u = 5*r - 1261, -4*u + 4*r + 1716 = 2*r. What is the units digit of u?",
+    "answer": "7"
+  },
+  {
+    "question": "Let g = 0.28 - 2.28. Let v = 0.3 + -1.3. Which is greater: v or g?",
+    "answer": "-1.0"
+  },
+  {
+    "question": "Which is greater: 1 or -1/730?",
+    "answer": "1"
+  },
+  {
+    "question": "Let a = -86.31 - 7.69. What is the fourth biggest value in -2/7, a, 12, -5?",
+    "answer": "-94.0"
+  },
+  {
+    "question": "What is the distance between 14.5 and -958?",
+    "answer": "972.5"
+  },
+  {
+    "question": "Let f(i) = 9*i**2 - 2*i - 6. What is the remainder when f(3) is divided by 14?",
+    "answer": "13"
+  },
+  {
+    "question": "Which is the third smallest value?  (a) 1/5  (b) -5  (c) 1.4  (d) 9  (e) 11",
+    "answer": "1.4"
+  },
+  {
+    "question": "Calculate 9 - (9 + 8 + 0 + (-5 - 1)).",
+    "answer": "-2"
+  },
+  {
+    "question": "Let x(v) = v**2 - 2*v + 39. What is the units digit of x(0)?",
+    "answer": "9"
+  },
+  {
+    "question": "What is the biggest value in -1/9, 33307, -32?",
+    "answer": "33307"
+  },
+  {
+    "question": "Find the third derivative of -18*p**3 + 34*p**2 + 16*p**2 - 26*p**2 wrt p.",
+    "answer": "-108"
+  },
+  {
+    "question": "Let j = -21 - -9. Let w be (-2 + j/(-1))/2. Suppose -c + 78 = w*v - 12, 2*c = -4*v + 72. List the prime factors of v.",
+    "answer": "[2, 3]"
+  },
+  {
+    "question": "What is the square root of 334 to the nearest integer?",
+    "answer": "18"
+  },
+  {
+    "question": "Let r(t) = -t**3 + 173*t**2 + 2402*t - 469232. Give r(171).",
+    "answer": "-8"
+  },
+  {
+    "question": "Let u(f) = f + 1 + f - 3*f. Calculate the remainder when 18 is divided by u(-9).",
+    "answer": "8"
+  },
+  {
+    "question": "What is the remainder when 124 is divided by 19?",
+    "answer": "10"
+  },
+  {
+    "question": "What is the units digit of 1777?",
+    "answer": "7"
+  },
+  {
+    "question": "Which is the nearest to 2?  (a) 3/4  (b) -0.3  (c) -4  (d) 7  (e) -2/13",
+    "answer": "0.75"
+  },
+  {
+    "question": "Which is smaller: 1/7 or -14?",
+    "answer": "-14"
+  },
+  {
+    "question": "What is the highest common divisor of 10573 and 2533543?",
+    "answer": "97"
+  },
+  {
+    "question": "Solve 171*q - 588 = 465*q for q.",
+    "answer": "-2"
+  },
+  {
+    "question": "Suppose -x = -3*n + 1058, -4*x + 1735 = -n + 6*n. What is the units digit of n?",
+    "answer": "1"
+  },
+  {
+    "question": "Let d = -3.37 + 3.36. Which is smaller: d or -1/2?",
+    "answer": "-0.5"
+  },
+  {
+    "question": "-1591 divided by 5",
+    "answer": "-318.2"
+  },
+  {
+    "question": "What is the smallest value in 0.22, 1.34, -2?",
+    "answer": "-2"
+  },
+  {
+    "question": "168/112*(-24 - -22)",
+    "answer": "-3.0"
+  },
+  {
+    "question": "Let u(d) = -d**3 - 12*d**2 + d + 12. Calculate u(-12).",
+    "answer": "0"
+  },
+  {
+    "question": "Let d be (-6)/(66/(-253)) - 13. What is the third smallest value in d, 0.3, -168?",
+    "answer": "10.0"
+  },
+  {
+    "question": "Let a = -2 - -6. Suppose t = -a*t - 35. Let l = -1 - t. What is the units digit of l?",
+    "answer": "6"
+  },
+  {
+    "question": "Let t(q) be the third derivative of -q**5/20 + q**4/12 + q**3/6 + 9*q**2. What is t(-1)?",
+    "answer": "-4"
+  },
+  {
+    "question": "Solve -270 = 58*g - 53*g + 5*m, 3*m = -4*g - 159 + 56 - 64 for g.",
+    "answer": "-5"
+  },
+  {
+    "question": "Which is the nearest to 1?  (a) -0.1  (b) 4  (c) 418  (d) 0",
+    "answer": "0"
+  },
+  {
+    "question": "What is (-8)/16*0/(-2)?",
+    "answer": "0.0"
+  },
+  {
+    "question": "Which is the biggest value?  (a) 0.2  (b) 2  (c) -3  (d) 2.3",
+    "answer": "2.3"
+  },
+  {
+    "question": "What is the cube root of 2631015 to the nearest integer?",
+    "answer": "138"
+  },
+  {
+    "question": "Simplify (1*(sqrt(77) + sqrt(77)*-1))/sqrt(11).",
+    "answer": "0"
+  },
+  {
+    "question": "What is the highest common factor of 162 and 1728?",
+    "answer": "54"
+  },
+  {
+    "question": "Let b(w) = -w**3 + w**2 + w - 1. Let c(s) = 13*s**4 - s**3 - 7*s**2 + s - 1. Let h(g) = b(g) - c(g). What is the third derivative of h(u) wrt u?",
+    "answer": "-312*u"
+  },
+  {
+    "question": "What is the hundreds digit of 2213502?",
+    "answer": "5"
+  },
+  {
+    "question": "Let h = -0.11 - -5.11. Which is the third smallest value?  (a) 2  (b) h  (c) 1",
+    "answer": "5.0"
+  },
+  {
+    "question": "Let g(z) = -z**3 + 13*z**2 - 35*z - 5. Let c = 3 - 2. What is the remainder when (-6)/7*(c + -8) is divided by g(9)?",
+    "answer": "2.0"
+  },
+  {
+    "question": "What is the remainder when 50851 is divided by 1498?",
+    "answer": "1417"
+  },
+  {
+    "question": "Solve -5*r + 37 = l + 64, 0 = -8*l - r - 21 for l.",
+    "answer": "-2"
+  },
+  {
+    "question": "Calculate ((-11264)/(-132))/16*(9/(-2))/3.",
+    "answer": "-8.0"
+  },
+  {
+    "question": "Solve 1718 = 117*a - 769 - 2661 for a.",
+    "answer": "44"
+  },
+  {
+    "question": "Solve -5*x = -3*g + 4, 5*g + 3*x + 0*x + 16 = 0 for g.",
+    "answer": "-2"
+  },
+  {
+    "question": "Let o(n) = -n**3 + 2*n**2. Let c be o(1). Let d be 2 - (c - (0 - -2)). Solve d + 2 = -m for m.",
+    "answer": "-5"
+  },
+  {
+    "question": "What is 1134508901 to the power of 1/4, to the nearest integer?",
+    "answer": "184"
+  },
+  {
+    "question": "Which is greater: -9 or 0?",
+    "answer": "0"
+  },
+  {
+    "question": "Suppose 11*w = 19*w. Let p(g) = 14 + g**2 + w*g**2 - 3*g - 23*g + 11*g. Calculate p(12).",
+    "answer": "-22"
+  },
+  {
+    "question": "What is the fourth root of 10096 to the nearest integer?",
+    "answer": "10"
+  },
+  {
+    "question": "Solve 3*y + 21 = 5*s, 14*y - 9*y + 5*s = 5 for y.",
+    "answer": "-2"
+  },
+  {
+    "question": "Let h(c) = -3*c**3 - c**2 + 141*c + 90. Calculate the remainder when h(-12) is divided by 46.",
+    "answer": "34"
+  },
+  {
+    "question": "What is the third root of 264405262 to the nearest integer?",
+    "answer": "642"
+  },
+  {
+    "question": "Solve -s = 3*f + 8, -5*f + 4*f = -3*s + 6 for s.",
+    "answer": "1"
+  },
+  {
+    "question": "Suppose 5*d = -f + 14817, 10387 + 4409 = 5*d - 2*f. Calculate the remainder when d is divided by 90.",
+    "answer": "82"
+  },
+  {
+    "question": "Solve 1065*z + 125096 = 404*z - 985*z for z.",
+    "answer": "-76"
+  },
+  {
+    "question": "What is the fifth root of 144251 to the nearest integer?",
+    "answer": "11"
+  },
+  {
+    "question": "Suppose 14 = 3*a - 4*t, -5*a + 30 = 5*t - 5. Let v be (28/a)/7*1125/6. Let j = v + 136. What is the tens digit of j?",
+    "answer": "6"
+  },
+  {
+    "question": "Suppose 4*b + 5*j + 38 = 0, j + 0*j + 10 = -b. Let l be (-30)/b*(-4)/(-5). Solve -3*n + l*p - 7*p = -11, -4 = -p for n.",
+    "answer": "-3"
+  },
+  {
+    "question": "Suppose -9*i - 84 - 33 = 0. Which is the smallest value?  (a) i  (b) 2  (c) -0.2",
+    "answer": "-13"
+  },
+  {
+    "question": "Evaluate (7/((-35)/(-15)))/(-3).",
+    "answer": "-1.0"
+  },
+  {
+    "question": "What is -4 - ((8 - -5) + -19)?",
+    "answer": "2"
+  },
+  {
+    "question": "What is the highest common factor of 6489 and 189?",
+    "answer": "63"
+  },
+  {
+    "question": "Solve -51*g = -9*g - 294 for g.",
+    "answer": "7"
+  },
+  {
+    "question": "Let z(x) = 38*x**2 + 646*x + 1477. Give z(-13).",
+    "answer": "-499"
+  },
+  {
+    "question": "Let q(s) = 2075*s - 29052. What is q(14)?",
+    "answer": "-2"
+  },
+  {
+    "question": "4/6*(-21)/(-28)",
+    "answer": "0.5"
+  },
+  {
+    "question": "Product of -0.66 and -31.",
+    "answer": "20.46"
+  },
+  {
+    "question": "What is 2612 divided by 1306?",
+    "answer": "2.0"
+  },
+  {
+    "question": "Which is smaller: -97190 or -97212?",
+    "answer": "-97212"
+  },
+  {
+    "question": "Calculate (((-154)/(-28))/11)/((-1)/20).",
+    "answer": "-10.0"
+  },
+  {
+    "question": "What is the closest to -4/7 in -29, 3/7, 0?",
+    "answer": "0"
+  },
+  {
+    "question": "What is the sixth root of 268163237 to the nearest integer?",
+    "answer": "25"
+  },
+  {
+    "question": "Suppose 163*o + 4615 = 158*o. Let i = o - -1458. What is the units digit of i?",
+    "answer": "5"
+  },
+  {
+    "question": "Solve 2*v + 762843*d = 762846*d + 59, -d + 7 = -14*v for v.",
+    "answer": "-2"
+  },
+  {
+    "question": "Suppose b - 4*j = 75, 4 = -2*j - 2. What is the remainder when b is divided by 23?",
+    "answer": "17"
+  },
+  {
+    "question": "Calculate 28383 divided by 10.",
+    "answer": "2838.3"
+  },
+  {
+    "question": "Let d = -0.02 - -11.02. Let i = d + -6. Let l = -5 + i. What is the closest to l in 0.4, 3/4, 2?",
+    "answer": "0.4"
+  },
+  {
+    "question": "Let k(f) = -4*f**3 - 10*f**2 - 11*f - 14. What is k(-3)?",
+    "answer": "37"
+  },
+  {
+    "question": "What is the remainder when 29105714 is divided by 954?",
+    "answer": "128"
+  },
+  {
+    "question": "Let d(z) = 120*z - 928. Determine d(8).",
+    "answer": "32"
+  },
+  {
+    "question": "Solve -23*n + 1629*n + 7738 = -1740 - 13006 for n.",
+    "answer": "-14"
+  },
+  {
+    "question": "What is 2*1*(-5)/(-4)?",
+    "answer": "2.5"
+  },
+  {
+    "question": "What is (-72)/(-1)*(-3842)/7684?",
+    "answer": "-36.0"
+  },
+  {
+    "question": "Evaluate (5890/(-76))/5*8/(-4).",
+    "answer": "31.0"
+  },
+  {
+    "question": "Calculate the highest common divisor of 90 and 945.",
+    "answer": "45"
+  },
+  {
+    "question": "Let z(w) = 2*w**3 - 380*w**2 + 368*w + 2299. Calculate z(189).",
+    "answer": "409"
+  },
+  {
+    "question": "What is the value of (153 - -12)*(-280)/(-840)?",
+    "answer": "55.0"
+  },
+  {
+    "question": "What is the highest common divisor of 4991 and 136927?",
+    "answer": "217"
+  },
+  {
+    "question": "Which is the fifth biggest value?  (a) -1  (b) -2/5  (c) -5  (d) 2  (e) -109",
+    "answer": "-109"
+  },
+  {
+    "question": "What is the thousands digit of 5468597?",
+    "answer": "8"
+  },
+  {
+    "question": "What is the fifth root of 3226 to the nearest integer?",
+    "answer": "5"
+  },
+  {
+    "question": "Let j = -70 - -87. Suppose 5*z + 1122 = 11*z. What is the greatest common factor of z and j?",
+    "answer": "17"
+  },
+  {
+    "question": "What is (-2 + 4 + -38 - 5) + 5 - (-4 + -1)?",
+    "answer": "-31"
+  },
+  {
+    "question": "Which is greater: 4 or 179?",
+    "answer": "179"
+  },
+  {
+    "question": "Let a = -0.922 + -0.078. What is the closest to 10 in 1/3, 0.4, a?",
+    "answer": "0.4"
+  },
+  {
+    "question": "What is the highest common factor of 2535 and 60?",
+    "answer": "15"
+  },
+  {
+    "question": "Calculate 218/218*2*(-10)/8.",
+    "answer": "-2.5"
+  },
+  {
+    "question": "Let z(b) = -b**3 + 2*b**2 + b - 2. Suppose -3*h = -18 - 0. Let f(s) = 6 - 2*s. Let y be f(h). Let p be 3 + (y/2)/3. What is z(p)?",
+    "answer": "0"
+  },
+  {
+    "question": "Let s = -60 - -171. What is the remainder when s is divided by 15?",
+    "answer": "6"
+  },
+  {
+    "question": "Solve -6450*y + 139 = 3*k - 6452*y, -k + 5*y + 55 = 0 for k.",
+    "answer": "45"
+  },
+  {
+    "question": "Let c(s) = -s**2 - 71*s + 2807. Give c(29).",
+    "answer": "-93"
+  },
+  {
+    "question": "Let o(i) = -3*i**2 - 2. Let d be o(3). Let l = d + 34. Let b(m) = -m**3 + 5*m**2 + 2*m. What is b(l)?",
+    "answer": "10"
+  },
+  {
+    "question": "Let b = 31 - 27. Suppose -5 = -2*p - t + 35, 2*p = -b*t + 46. What is the highest common factor of 152 and p?",
+    "answer": "19"
+  },
+  {
+    "question": "Simplify (2*((sqrt(6) - (sqrt(84)/sqrt(2))/sqrt(7)) + -2*sqrt(486))/(sqrt(54)/sqrt(2)*-1))**2*-2*1.",
+    "answer": "-576"
+  },
+  {
+    "question": "Evaluate (342/((-342)/19))/1.",
+    "answer": "-19.0"
+  },
+  {
+    "question": "Let o be (-5)/(-8)*1650/1375. Which is the fifth smallest value?  (a) -5  (b) -3  (c) -2  (d) 3/2  (e) o",
+    "answer": "1.5"
+  },
+  {
+    "question": "-29 - (-21 + 8) - (-5 + 1)",
+    "answer": "-12"
+  },
+  {
+    "question": "What is the hundreds digit of 973?",
+    "answer": "9"
+  },
+  {
+    "question": "What is -6 divided by 12?",
+    "answer": "-0.5"
+  },
+  {
+    "question": "Calculate (22/(-4) + 5)*2.",
+    "answer": "-1.0"
+  },
+  {
+    "question": "What is the second smallest value in -3/4, 1065125, 13?",
+    "answer": "13"
+  },
+  {
+    "question": "Solve 0 = -2*b - 22*b for b.",
+    "answer": "0"
+  },
+  {
+    "question": "Let w(b) = -18*b**2 + 46*b + 46. What is w(-1)?",
+    "answer": "-18"
+  },
+  {
+    "question": "Let a be (-7)/(-2) + 2/4. Let p be 0 + 3/((-9)/(-12)). Let h be a/p*(-1 - -1). Solve h*t - 5*t = 20 for t.",
+    "answer": "-4"
+  },
+  {
+    "question": "Calculate the remainder when 2694514 is divided by 9910.",
+    "answer": "8904"
+  },
+  {
+    "question": "Let k(a) = a + 7. Let d(n) = n + 3. Let m be d(4). What is the units digit of k(m)?",
+    "answer": "4"
+  },
+  {
+    "question": "Let c = -11 + 22. Suppose 19*q - 8 = 258. Suppose 3*k = 9 + 6. Solve -q - c = -k*i for i.",
+    "answer": "5"
+  },
+  {
+    "question": "What is -7477062 divided by -8014?",
+    "answer": "933.0"
+  },
+  {
+    "question": "Let o(u) be the first derivative of 26*u**3/3 + 35*u + 26. What is the first derivative of o(f) wrt f?",
+    "answer": "52*f"
+  },
+  {
+    "question": "Suppose 4*q - 3*s = 48, -3*q = 5*s - 5 - 31. Sort 3, 0, q in decreasing order.",
+    "answer": "12 3 0"
+  },
+  {
+    "question": "What is the ten thousands digit of 1841503?",
+    "answer": "4"
+  },
+  {
+    "question": "Let u(g) = 2*g + g**3 - 5*g**2 + 3*g - 1 + 0*g. Let o be u(4). Suppose 0 = -f + 4*f - 21. Solve -f*i + 12 = -o*i for i.",
+    "answer": "3"
+  },
+  {
+    "question": "Solve q = 5*y + 22, 3*q - 693*y = -691*y + 1 for q.",
+    "answer": "-3"
+  },
+  {
+    "question": "Calculate -110 + (2 - 0 - (11 + -42)).",
+    "answer": "-77"
+  },
+  {
+    "question": "Which is greater: 79 or 80?",
+    "answer": "80"
+  },
+  {
+    "question": "Let b = 172 + 96. Let a = b + -265. Solve 4*o + 5*t = 2*o + 16, 2*o + a*t - 12 = 0 for o.",
+    "answer": "3"
+  },
+  {
+    "question": "Let p = -71.2 + -391.8. Let i = 463 + p. Which is the third smallest value?  (a) i  (b) -2/11  (c) 0.048",
+    "answer": "0.048"
+  },
+  {
+    "question": "Let l(b) be the second derivative of b**4/12 + 7*b**3/6 + 7*b**2 - 7*b. Let r be l(-5). Solve -y + 6 = -r*g + 8*g, 3*y - 5 = g for y.",
+    "answer": "2"
+  },
+  {
+    "question": "Calculate 4 + -3 + 5 + -4.",
+    "answer": "2"
+  },
+  {
+    "question": "Let x = -0.026 - 0.074. What is the closest to x in -0.4, -1, 1?",
+    "answer": "-0.4"
+  },
+  {
+    "question": "Let h = 1/140 + -289/1260. Let m = -324.3 + 198.4. Let o = 126 + m. Which is the nearest to -7?  (a) -5  (b) o  (c) h",
+    "answer": "-5"
+  },
+  {
+    "question": "Calculate (-6)/15*11/(-11).",
+    "answer": "0.4"
+  },
+  {
+    "question": "Let q(l) = -l - 26. Let h(t) = 5. Let g(o) = -11*h(o) - 2*q(o). Suppose 5*z - 12*c = -56, z + 43 = 5*c + 11. Determine g(z).",
+    "answer": "13"
+  },
+  {
+    "question": "Solve 108*x - 1724 = -88*x - 156 for x.",
+    "answer": "8"
+  },
+  {
+    "question": "Let s(z) = -6 + 3 + 7*z**2 + 4 + 3*z + z**3. Let g be s(-3). Suppose -10 = 2*h - g. Calculate the remainder when 16 is divided by h.",
+    "answer": "7"
+  },
+  {
+    "question": "Let b = 3 + 1. Let w(q) = 52*q**2 + 260*q + 5. Let c be w(-5). Solve m - 22 = b*o - 2, -25 = 3*m + c*o for m.",
+    "answer": "0"
+  },
+  {
+    "question": "Suppose 3*z + 49 = 5*i - 4, -z = -5*i + 51. Suppose 14*d = -i*d + 264. Calculate the greatest common factor of d and 88.",
+    "answer": "11"
+  },
+  {
+    "question": "Let r be (5 - 6)/(5 - 0). Which is the smallest value?  (a) r  (b) -1/2  (c) 4/3",
+    "answer": "-0.5"
+  },
+  {
+    "question": "Solve 3*w + 9 = -3*d, -4*d = -4*w + 5*w + 18 for w.",
+    "answer": "2"
+  },
+  {
+    "question": "Suppose -2*z = -5*t - 28 - 1, 3*t - 4*z + 9 = 0. Let b(f) be the second derivative of -f**4/12 - 7*f**3/6 - 2*f. What is b(t)?",
+    "answer": "0"
+  },
+  {
+    "question": "What is 156500 to the power of 1/3, to the nearest integer?",
+    "answer": "54"
+  },
+  {
+    "question": "What is the hundred thousands digit of 368669530?",
+    "answer": "6"
+  },
+  {
+    "question": "Suppose -5*t + 65 + 0 = 5*j, 6 = 2*j - 3*t. Let n(q) = -6 - j - 2*q + 7 + 3*q**2. What is the tens digit of n(6)?",
+    "answer": "8"
+  },
+  {
+    "question": "Calculate the highest common factor of 23323469 and 2470.",
+    "answer": "247"
+  },
+  {
+    "question": "Suppose 3*t + 3*i + 156 = 0, t = -4*i - 31 - 33. Let o(c) = 5*c + c**3 - 7 + 0*c**3 + 0*c**3 - 8*c**2. Let j be o(6). Which is greater: j or t?",
+    "answer": "-48"
+  },
+  {
+    "question": "What is the value of (-50)/8 + (-238)/(-272)*8?",
+    "answer": "0.75"
+  },
+  {
+    "question": "Suppose x - 2*d + 0 = -5, 4*d = -20. Let u be (-5)/(x/34) + (-13)/39. Let b(z) = z**2 - 5*z + 5. What is the tens digit of b(u)?",
+    "answer": "7"
+  },
+  {
+    "question": "What is the ten thousands digit of 1835096829?",
+    "answer": "9"
+  },
+  {
+    "question": "What is 122431609 to the power of 1/2, to the nearest integer?",
+    "answer": "11065"
+  },
+  {
+    "question": "Calculate the remainder when 15981 is divided by 11.",
+    "answer": "9"
+  },
+  {
+    "question": "Solve -2*x + 15*p - 71 = 0, -3*x = -39*p + 38*p - 1 for x.",
+    "answer": "2"
+  },
+  {
+    "question": "Let f = 14 + -8. Let y be (f/(-4))/((-15)/140). Suppose -y + 3 = -r. What are the prime factors of r?",
+    "answer": "[11]"
+  },
+  {
+    "question": "What is the smallest value in -5, 5, -58/5, 3, 2/7?",
+    "answer": "-11.6"
+  },
+  {
+    "question": "-206632 divided by 8984",
+    "answer": "-23.0"
+  },
+  {
+    "question": "Suppose 46 = 5*o - 14. Let p be (2/(-2))/((-4)/o). What is the third derivative of 9*u**3 + p*u**2 + 0*u**4 - 9*u**3 - 4*u**4 wrt u?",
+    "answer": "-96*u"
+  },
+  {
+    "question": "Evaluate -3 + -8 + 2 + 4.",
+    "answer": "-5"
+  },
+  {
+    "question": "What is 9597007 to the power of 1/2, to the nearest integer?",
+    "answer": "3098"
+  },
+  {
+    "question": "Let n(k) = 2*k**3 + 14*k**2 + 20*k - 2. Let f(u) = -u**3 - 7*u**2 - 9*u. Let h(t) = -9*f(t) - 4*n(t). Give h(-7).",
+    "answer": "1"
+  },
+  {
+    "question": "Calculate -1 + -3 + 7 + 4.",
+    "answer": "7"
+  },
+  {
+    "question": "What is the smallest value in -1/5, 4/7, -86, -2/13?",
+    "answer": "-86"
+  },
+  {
+    "question": "Evaluate (((-2)/14)/(126/(-294)))/(9*10/10260).",
+    "answer": "38.0"
+  },
+  {
+    "question": "Suppose 0 = 3*r - 2*l - 15, 2*l + 3 = -r - 0. Let v(w) = 2*w**3 + 7*w**2 - 29*w - 46. Let o be v(-5). Calculate the highest common divisor of r and o.",
+    "answer": "3"
+  },
+  {
+    "question": "Suppose -2*c - 10 = 4*k, -3*c + 17 = -k - 3. What is the nearest to k in 2/23, -5, -1/2?",
+    "answer": "-5"
+  },
+  {
+    "question": "Let f(a) = a**2 + 49*a - 766. Give f(-56).",
+    "answer": "-374"
+  },
+  {
+    "question": "Let p = -6 - -9. Suppose 7*x = -1227 + 1241. Suppose -19 - 156 = -a - 2*k, p*a + x*k = 545. What is the hundreds digit of a?",
+    "answer": "1"
+  },
+  {
+    "question": "Suppose 98 = -0*w + w + 2*t, -5*w + 446 = -t. Suppose 3*o = -3*o + w. Suppose 20*q - 375 = o*q. Calculate the remainder when q is divided by 19.",
+    "answer": "18"
+  },
+  {
+    "question": "Let t = -72 + 66. Which is the third biggest value?  (a) 1/3  (b) t  (c) 3",
+    "answer": "-6"
+  },
+  {
+    "question": "Suppose 4*n = -2*o, -4*n = 4*o - 7*o. Solve 4*s - 2*u + 16 = o, 2*s + 2*u + 12 = -s for s.",
+    "answer": "-4"
+  },
+  {
+    "question": "Let s(o) = -2 + 4*o - 3*o - 2 - 5. Determine s(6).",
+    "answer": "-3"
+  },
+  {
+    "question": "Let j(q) = -5*q - 1553*q**2 + 4 + 1552*q**2 - 3. Let x be j(-5). What is the tens digit of (0 - x/6) + 3465/54?",
+    "answer": "6"
+  },
+  {
+    "question": "Solve 98 = 3*p - 20*y, 188*y - 184*y = 5*p - 1 - 45 for p.",
+    "answer": "6"
+  },
+  {
+    "question": "Suppose -2*r + 12 = -4*f, -4*r + 20 = -4*f - 0*r. Let w = -7 - -6. Let v = -0.259 - -0.059. Which is the closest to f?  (a) w  (b) 3  (c) v",
+    "answer": "-1"
+  },
+  {
+    "question": "Which is greater: -29 or -0.1?",
+    "answer": "-0.1"
+  },
+  {
+    "question": "Let i = 62.0059 - 17.0059. Let z = 7/6 + -3/2. Which is the biggest value?  (a) z  (b) i  (c) -3",
+    "answer": "45.0"
+  },
+  {
+    "question": "Suppose 4*x - 2*i - 1312 = 0, -2*x + 5*i + 346 = -x. What is the hundreds digit of x?",
+    "answer": "3"
+  },
+  {
+    "question": "Let q = -15 - -14. Suppose -2*j = 5*x + 4, -240*x + 241*x = 2*j + 16. Which is smaller: q or x?",
+    "answer": "-1"
+  },
+  {
+    "question": "Let q(n) = 3*n**2 - 2*n - 1. Let i be q(2). Let g(t) = -153 - 2*t + 169 + t - t. Let v be g(i). Solve v*l + 10 = 4 for l.",
+    "answer": "-3"
+  },
+  {
+    "question": "Let t(p) = 13*p**2 - 151*p + 151. Determine t(1).",
+    "answer": "13"
+  },
+  {
+    "question": "Evaluate (2871/3509)/((-2)/(-22)).",
+    "answer": "9.0"
+  },
+  {
+    "question": "What is the highest common factor of 80 and 3920?",
+    "answer": "80"
+  },
+  {
+    "question": "Suppose 6 = -2*y + 3*h + 13, -3*y + 4*h = -11. Suppose z - 3 = -3*z + y*i, 0 = z + i - 12. Calculate the highest common divisor of 77 and z.",
+    "answer": "7"
+  },
+  {
+    "question": "Let y(s) = -70*s - 61. Let r be y(-1). Solve -r*h + 8*h = i, -3*i + h = 20 for i.",
+    "answer": "-5"
+  },
+  {
+    "question": "Let o = -186 + 240. Let d = 53 - o. Let w = -5.09 + 0.09. Which is the third biggest value?  (a) d  (b) -0.6  (c) w",
+    "answer": "-5.0"
+  },
+  {
+    "question": "What is -2*2*231/308?",
+    "answer": "-3.0"
+  },
+  {
+    "question": "Solve -f + 25*c - 102 = 0, -2*f - 2195*c = -2196*c + 8 for f.",
+    "answer": "-2"
+  },
+  {
+    "question": "Suppose -2*f + 48 = 2*f. Let r(q) = 29055 - 447*q. Let h be r(65). Solve -4*p = f - h for p.",
+    "answer": "-3"
+  },
+  {
+    "question": "Let y = -2766.17 + 2766. Which is the third biggest value?  (a) 0.5  (b) -2  (c) y",
+    "answer": "-2"
+  },
+  {
+    "question": "Suppose 40*k - 36*k = 32. Find the third derivative of k*g + 4*g**2 - 18*g + 10*g - 2*g**4 wrt g.",
+    "answer": "-48*g"
+  },
+  {
+    "question": "(-3 + 5)*(-6)/(-30)*10/(-4)",
+    "answer": "-1.0"
+  },
+  {
+    "question": "Suppose -7*g + 28 = -0*g. Let j be (-1)/(2/((-426)/(-9))). Let y = j + 23. Which is the smallest value?  (a) g  (b) -3  (c) y",
+    "answer": "-3"
+  },
+  {
+    "question": "Let m = 11 + 3. Let h be (-4)/m*-11 + -3. Which is the third smallest value?  (a) -0.5  (b) h  (c) 4",
+    "answer": "4"
+  },
+  {
+    "question": "What is 133366684 divided by 133366684?",
+    "answer": "1.0"
+  },
+  {
+    "question": "Let s(f) = 4*f + 17 + 10 - 3*f. Let q be s(-17). Let y(a) = -1 + 14*a**2 - q*a + 2*a - 15*a**2. What is y(-6)?",
+    "answer": "11"
+  },
+  {
+    "question": "What is the units digit of 544901?",
+    "answer": "1"
+  },
+  {
+    "question": "Suppose 5*b + 24 = 11*b. Suppose b*l + 2*w = 20, -w = -2*l + 3*w. Suppose -4*y = -l*t - 592, 7 + 18 = -5*t. What is the hundreds digit of y?",
+    "answer": "1"
+  },
+  {
+    "question": "What is the hundreds digit of 12580?",
+    "answer": "5"
+  },
+  {
+    "question": "Let c(w) = 2*w**2 + 17*w - 27. Let p be c(-12). Calculate the highest common divisor of p and 3.",
+    "answer": "3"
+  },
+  {
+    "question": "Solve 17146 + 15629 = -12*l + 33975 for l.",
+    "answer": "100"
+  },
+  {
+    "question": "Evaluate -14 - (18 - (44 - 15)).",
+    "answer": "-3"
+  },
+  {
+    "question": "Suppose 0 = -3*f + 2 + 10. Suppose -f*s - s + 30 = 0. Let w(q) be the third derivative of -q**6/120 + q**5/12 + 7*q**4/24 - 2*q**3/3 - 6*q**2. Calculate w(s).",
+    "answer": "2"
+  },
+  {
+    "question": "Calculate the remainder when 16567 is divided by 610.",
+    "answer": "97"
+  },
+  {
+    "question": "Let d(l) = -l**2 + 4*l + 5. Let q be d(4). Suppose -q*o + 4*u + 85 = 0, -2*o + 4*u + 28 = -6. Calculate the highest common factor of 102 and o.",
+    "answer": "17"
+  },
+  {
+    "question": "Suppose 2*z - 118 = 174. Suppose -f = f - z. What is the units digit of f?",
+    "answer": "3"
+  },
+  {
+    "question": "Evaluate (623 + -595 - (8 - 0)) + -102.",
+    "answer": "-82"
+  },
+  {
+    "question": "Let y(g) = 42860 - 2857*g. What is y(15)?",
+    "answer": "5"
+  },
+  {
+    "question": "Suppose 47*o - 17 = 171. What is the second smallest value in 0.2, o, 1.8?",
+    "answer": "1.8"
+  },
+  {
+    "question": "0 divided by -209620",
+    "answer": "-0.0"
+  },
+  {
+    "question": "Let s(y) = -y**2 - 4*y - 4. Let c be s(-4). Let r be ((-18)/24)/((-1)/c). Let u(a) = -a**3 - 2*a**2 + 4*a + 4. Determine u(r).",
+    "answer": "1.0"
+  },
+  {
+    "question": "Calculate the remainder when 209 is divided by 30.",
+    "answer": "29"
+  },
+  {
+    "question": "Let y = 41 + 86. What is the tens digit of y?",
+    "answer": "2"
+  },
+  {
+    "question": "What is the nearest to -6/5 in -0.5, -5, 0.3, -115?",
+    "answer": "-0.5"
+  },
+  {
+    "question": "Solve 14*g + 24 = 26*g for g.",
+    "answer": "2"
+  },
+  {
+    "question": "Let i(z) = 2*z**2 - z + 51. Give i(0).",
+    "answer": "51"
+  },
+  {
+    "question": "Let b(p) = p**2 - 22865*p - 182986. Give b(-8).",
+    "answer": "-2"
+  },
+  {
+    "question": "What is the product of -0.13 and -1120?",
+    "answer": "145.6"
+  },
+  {
+    "question": "Let i be (54 - 1) + -2 - (-6 - -10). Solve i*n = 52*n + 20 for n.",
+    "answer": "-4"
+  },
+  {
+    "question": "Let m = 7 + -3. Let r = 4.99 - -0.01. Let x = r + -10. Which is the nearest to 2/3?  (a) -0.3  (b) x  (c) m",
+    "answer": "-0.3"
+  },
+  {
+    "question": "Let v = 3 + -2. Let z be ((1 - -1)*-1)/((-114)/741). Let k(x) = v - 7*x**2 - 5*x**2 - 3*x + z*x**2. What is k(2)?",
+    "answer": "-1.0"
+  },
+  {
+    "question": "What is the tens digit of 17471?",
+    "answer": "7"
+  },
+  {
+    "question": "What is the nearest to 42/71 in 96.3, 8, 4, 0.3?",
+    "answer": "0.3"
+  },
+  {
+    "question": "Calculate the remainder when 15957 is divided by 155.",
+    "answer": "147"
+  },
+  {
+    "question": "Which is the third biggest value?  (a) -17  (b) 2  (c) -26/11",
+    "answer": "-17"
+  },
+  {
+    "question": "Multiply 1715 and -5.",
+    "answer": "-8575"
+  },
+  {
+    "question": "What is (36/(-108))/((-3)/621*3)?",
+    "answer": "23.0"
+  },
+  {
+    "question": "Let v(t) = -5*t + 0*t - t + 4*t + 2*t**2 + 1. Suppose 5*r - 7 = z + 14, 5*z = 3*r + 5. Suppose 5*h - 18 = -c, 27 = r*h + 6*c - 2*c. Give v(h).",
+    "answer": "13"
+  },
+  {
+    "question": "Solve -10056*h + 10096*h - 520 = 0 for h.",
+    "answer": "13"
+  },
+  {
+    "question": "What is 416185228 to the power of 1/3, to the nearest integer?",
+    "answer": "747"
+  },
+  {
+    "question": "What is (-2964)/(-26)*(2/16)/(183/244)?",
+    "answer": "19.0"
+  },
+  {
+    "question": "Let b = 3281 - 2226. What is the units digit of b?",
+    "answer": "5"
+  },
+  {
+    "question": "Suppose -6 = 5*z - 21. Suppose -z*o = 2*h + 6, -4*h + 7*o = 2*o - 32. Suppose -5*u + 0*y + y = 0, -22 = h*u - 5*y. Which is greater: u or 2/13?",
+    "answer": "1"
+  },
+  {
+    "question": "Calculate the remainder when 134198 is divided by 12191.",
+    "answer": "97"
+  },
+  {
+    "question": "Suppose -2*q = 4*v - 16, -4*v + v + 11 = 2*q. Solve 2*p = -3*b, v*b - 13 = 4*p - 3*p for b.",
+    "answer": "2"
+  },
+  {
+    "question": "Suppose 0 = -5*d - 3*p + 12, 5*p - 4*p - 4 = 4*d. Suppose d = 5*v + 19 - 54. Put 1, -1, v in descending order.",
+    "answer": "7 1 -1"
+  },
+  {
+    "question": "What is the value of 4 - ((3 - 9) + 11) - (19 + (5 - -50))?",
+    "answer": "-75"
+  },
+  {
+    "question": "What is the hundreds digit of 2281?",
+    "answer": "2"
+  },
+  {
+    "question": "Calculate the remainder when 345 is divided by 48.",
+    "answer": "9"
+  },
+  {
+    "question": "(-3)/9*-9*(-3)/18",
+    "answer": "-0.5"
+  },
+  {
+    "question": "Let z(l) = 4884*l - 3922. Calculate z(1).",
+    "answer": "962"
+  },
+  {
+    "question": "Calculate the greatest common divisor of 210 and 462.",
+    "answer": "42"
+  },
+  {
+    "question": "What is 4 - (6 + -3 - 2)?",
+    "answer": "3"
+  },
+  {
+    "question": "Which is the fourth biggest value?  (a) 74  (b) -2  (c) -0.2  (d) -2/13  (e) -2/1417",
+    "answer": "-0.2"
+  },
+  {
+    "question": "Solve 769*r = -545*r + 91*r - 1343*r + 205280 for r.",
+    "answer": "80"
+  },
+  {
+    "question": "Let u = 170 - 170.1. What is the third biggest value in -3/2, u, -0.21?",
+    "answer": "-1.5"
+  },
+  {
+    "question": "Which is the nearest to -0.3?  (a) 1  (b) 12  (c) 7",
+    "answer": "1"
+  },
+  {
+    "question": "What is the tenth root of 1366434 to the nearest integer?",
+    "answer": "4"
+  },
+  {
+    "question": "What is the units digit of 188?",
+    "answer": "8"
+  },
+  {
+    "question": "Solve -781*t - 5186 = 15120 for t.",
+    "answer": "-26"
+  },
+  {
+    "question": "Let w(d) = -46*d. Let i be w(-1). Calculate the greatest common factor of 69 and i.",
+    "answer": "23"
+  },
+  {
+    "question": "Evaluate (-4)/28*7/(-2).",
+    "answer": "0.5"
+  },
+  {
+    "question": "Solve 7486*a - 7481*a + 17 - 2 = -2*w, w + 2*a + 7 = 0 for w.",
+    "answer": "-5"
+  },
+  {
+    "question": "Which is the nearest to 4?  (a) -2  (b) -1  (c) 5  (d) -2/19",
+    "answer": "5"
+  },
+  {
+    "question": "Solve 72*p + 112 + 824 = 0 for p.",
+    "answer": "-13"
+  },
+  {
+    "question": "Let k(w) = 23*w - 30. Let u(m) = -3 - 59 + 89*m - 32*m - 13. Let c(g) = -12*k(g) + 5*u(g). Find the first derivative of c(p) wrt p.",
+    "answer": "9"
+  },
+  {
+    "question": "Let c(h) = 1 - h. Let d(n) be the third derivative of -n**5/10 - 2*n**4/3 + n**3 - 19*n**2. Let p(o) = 6*c(o) - d(o). Find the second derivative of p(f) wrt f.",
+    "answer": "12"
+  },
+  {
+    "question": "Suppose -5*m - 58 = -6*m. What is the tens digit of m?",
+    "answer": "5"
+  },
+  {
+    "question": "Suppose 13 = 4*b - 10*z + 5*z, -4*z = 4. Suppose 0 = -2*h - 5*k + k - 16, -2*k = -3*h + 8. Solve 3*j - 5*o + h*o = 25, -b*j + 4*o + 18 = 0 for j.",
+    "answer": "5"
+  },
+  {
+    "question": "Let c be 1 + (-2 - -1) - 0. Let h(j) be the first derivative of -j**4/4 + j + 92. Give h(c).",
+    "answer": "1"
+  },
+  {
+    "question": "Calculate the remainder when 5179 is divided by 49.",
+    "answer": "34"
+  },
+  {
+    "question": "Which is smaller: -355 or -357?",
+    "answer": "-357"
+  },
+  {
+    "question": "Calculate the greatest common divisor of 16 and 484.",
+    "answer": "4"
+  },
+  {
+    "question": "Let i(h) be the first derivative of 6*h**3 + 3. List the prime factors of i(1).",
+    "answer": "[2, 3]"
+  },
+  {
+    "question": "What is the units digit of 1632?",
+    "answer": "2"
+  },
+  {
+    "question": "What is (-2 - 22) + 34 + 18 + -8 + -35?",
+    "answer": "-15"
+  },
+  {
+    "question": "-10271604 divided by -122281",
+    "answer": "84.0"
+  },
+  {
+    "question": "Let q(z) = 16 + 0*z + 7*z + 23 + 6. Let s be q(-3). Solve -c - s = 5*c for c.",
+    "answer": "-4"
+  },
+  {
+    "question": "What is the third biggest value in 2/3, -0.3, -2/7, -69605, -0.5, -1?",
+    "answer": "-0.3"
+  },
+  {
+    "question": "Which is the smallest value?  (a) -0.5  (b) 0  (c) 1  (d) -10",
+    "answer": "-10"
+  },
+  {
+    "question": "What is the square root of 253468392 to the nearest integer?",
+    "answer": "15921"
+  },
+  {
+    "question": "What is the square root of 227892 to the nearest integer?",
+    "answer": "477"
+  },
+  {
+    "question": "Let b(s) = -s**3 - 18*s**2 - 35*s + 20. Let o be b(-16). What is the greatest common factor of o and 4?",
+    "answer": "4"
+  },
+  {
+    "question": "What is the third root of 30282 to the nearest integer?",
+    "answer": "31"
+  },
+  {
+    "question": "Suppose -28 = -4*d + 4*f, -d + 4*f - 2 + 3 = 0. Let r be 3*(d/(-3) + 2). What is the units digit of (-6)/4*2/r?",
+    "answer": "1"
+  },
+  {
+    "question": "(-44)/55*1/(-2)*2",
+    "answer": "0.8"
+  },
+  {
+    "question": "Calculate the remainder when 42 is divided by 23.",
+    "answer": "19"
+  },
+  {
+    "question": "Calculate -1*-0.358.",
+    "answer": "0.358"
+  },
+  {
+    "question": "Let r(m) = m**3 + 8*m**2 + 10*m + 5. What is r(-7)?",
+    "answer": "-16"
+  },
+  {
+    "question": "Suppose -2*z - 5*u + 16 = -u, -z - 3*u + 11 = 0. Solve -v = -z*v for v.",
+    "answer": "0"
+  },
+  {
+    "question": "What is the hundreds digit of 2797190?",
+    "answer": "1"
+  },
+  {
+    "question": "Let u(l) = -l**2 + 8*l - 4. Let s be u(3). Suppose 3*i + 4*j = -37, 2*i + 7 = 4*j - s. Let z = 0 - i. What is the units digit of z?",
+    "answer": "1"
+  },
+  {
+    "question": "What is the greatest common divisor of 3269 and 21?",
+    "answer": "7"
+  },
+  {
+    "question": "What is the tens digit of 937238588?",
+    "answer": "8"
+  },
+  {
+    "question": "What is the greatest common factor of 41436 and 184068?",
+    "answer": "36"
+  },
+  {
+    "question": "Solve -k = 3*f - 4, 2*f + 7*k + 31 = 2 for f.",
+    "answer": "3"
+  },
+  {
+    "question": "Let g(y) = 9*y**4 + 25*y**2 + 6. Let s(d) = 1 - d**4. Let x(t) = -g(t) + 6*s(t). What is the third derivative of x(f) wrt f?",
+    "answer": "-360*f"
+  },
+  {
+    "question": "Suppose 7*x + 5*x - 144 = 0. Let f(r) = 6*r**2 - 3*r - 3. Let d be f(-1). What is the greatest common divisor of x and d?",
+    "answer": "6"
+  },
+  {
+    "question": "Let f be 8/(-40*2/(-32))*(-5)/(-1). Which is the closest to -0.1?  (a) -1  (b) -17/11  (c) f",
+    "answer": "-1"
+  },
+  {
+    "question": "(-6 + (4 - 1))*-3 + (-8 - -9)",
+    "answer": "10"
+  },
+  {
+    "question": "Let i = 827 + -824. What is the remainder when (-2)/(-4) - 17/(-2) is divided by i?",
+    "answer": "0.0"
+  },
+  {
+    "question": "Simplify ((sqrt(3200) + sqrt(3200) + -2*sqrt(3200) + sqrt(3200))/(1*sqrt(10)*2))**2.",
+    "answer": "80"
+  },
+  {
+    "question": "What is 441563 to the power of 1/2, to the nearest integer?",
+    "answer": "665"
+  },
+  {
+    "question": "Which is the smallest value?  (a) 5  (b) -3  (c) 0  (d) 1",
+    "answer": "-3"
+  },
+  {
+    "question": "What is 63217 to the power of 1/10, to the nearest integer?",
+    "answer": "3"
+  },
+  {
+    "question": "Suppose -3*t + 2*k = -28, 4*t - 4*k + 2*k - 34 = 0. Suppose t*c = 9*c - 84. What is the units digit of c?",
+    "answer": "8"
+  },
+  {
+    "question": "What is 1883 to the power of 1/2, to the nearest integer?",
+    "answer": "43"
+  },
+  {
+    "question": "Which is greater: -1337 or 1/2?",
+    "answer": "0.5"
+  },
+  {
+    "question": "Let j = 0 - -5. Suppose h - 6*h = 3*i - 75, -5*i = j*h - 75. Let x = h - 14. Calculate the greatest common factor of x and 7.",
+    "answer": "1"
+  },
+  {
+    "question": "Let w(m) = m**3 + m**2 + 1. Let j(p) = 4*p**3 - 3*p**2 - 10*p + 12. Let c(f) = -j(f) + 3*w(f). What are the prime factors of c(7)?",
+    "answer": "[2, 3]"
+  },
+  {
+    "question": "Let i(l) = l**2 + 9*l - 28. Let h be i(-12). Suppose 0 = -4*b + 242 + 366. What is the greatest common factor of h and b?",
+    "answer": "8"
+  },
+  {
+    "question": "Let g(c) = c**2 + 12. Let k = 3 - 3. Let y be g(k). What is the remainder when (-1 - -1 - -1) + y is divided by 4?",
+    "answer": "1"
+  },
+  {
+    "question": "Evaluate 42*8*32/1024*8.",
+    "answer": "84.0"
+  },
+  {
+    "question": "Evaluate 27 + -245 + 232 + (0 + -1 - -15).",
+    "answer": "28"
+  },
+  {
+    "question": "What is the nearest to -1 in 24.68, 31/3, -3?",
+    "answer": "-3"
+  },
+  {
+    "question": "Solve 7*v = -v + 8 for v.",
+    "answer": "1"
+  },
+  {
+    "question": "What is the hundred thousands digit of 57166438?",
+    "answer": "1"
+  },
+  {
+    "question": "Let v = 32 - 40. Let c(f) = 4 - f. Let k be c(v). Calculate the remainder when 76 is divided by 2/((-2)/3) + (k - -2).",
+    "answer": "10.0"
+  },
+  {
+    "question": "What is the millions digit of 3165730?",
+    "answer": "3"
+  },
+  {
+    "question": "What is 378069438 to the power of 1/7, to the nearest integer?",
+    "answer": "17"
+  },
+  {
+    "question": "Let o(y) = 9*y**2 - 94*y + 3. Determine o(11).",
+    "answer": "58"
+  },
+  {
+    "question": "Solve 2341*f = 2819*f + 10038 for f.",
+    "answer": "-21"
+  },
+  {
+    "question": "Let y(j) = 458 - 33*j. What is y(14)?",
+    "answer": "-4"
+  },
+  {
+    "question": "What is the hundreds digit of 150921?",
+    "answer": "9"
+  },
+  {
+    "question": "Let w = -38.148 - -38.148. Which is the third smallest value?  (a) -4  (b) w  (c) -0.3  (d) -48",
+    "answer": "-0.3"
+  },
+  {
+    "question": "Calculate the remainder when 156453 is divided by 1757.",
+    "answer": "80"
+  },
+  {
+    "question": "Calculate the remainder when 112263 is divided by 16027.",
+    "answer": "74"
+  },
+  {
+    "question": "Evaluate -6 - -4 - 24 - -19.",
+    "answer": "-7"
+  },
+  {
+    "question": "Which is the nearest to 1?  (a) 4  (b) 3/17  (c) 31532  (d) 1",
+    "answer": "1"
+  },
+  {
+    "question": "Solve 0 = 7*m + b - 39, 5*b = 6*b + 4*b + 15 for m.",
+    "answer": "6"
+  },
+  {
+    "question": "Calculate the remainder when 335 is divided by 28.",
+    "answer": "27"
+  },
+  {
+    "question": "Divide 125740 by 6287.",
+    "answer": "20.0"
+  },
+  {
+    "question": "What is 105082967 to the power of 1/9, to the nearest integer?",
+    "answer": "8"
+  },
+  {
+    "question": "Suppose 0 = -0*x - 4*x + 216. Suppose -2*m - s = -0*m - 57, -4*s - 69 = -3*m. Let z = x - m. What are the prime factors of z?",
+    "answer": "[3]"
+  },
+  {
+    "question": "5429 + -5413 + (-2 - 35)",
+    "answer": "-21"
+  },
+  {
+    "question": "Which is greater: -296784/37 or -8021?",
+    "answer": "-8021"
+  },
+  {
+    "question": "Calculate the remainder when 8563504 is divided by 4281707.",
+    "answer": "90"
+  },
+  {
+    "question": "Calculate 9/((-45)/188) + (-3)/10*280/210.",
+    "answer": "-38.0"
+  },
+  {
+    "question": "What is the cube root of 4053 to the nearest integer?",
+    "answer": "16"
+  },
+  {
+    "question": "Let y(z) = -11*z**2 - 1015*z + 5345. What is y(5)?",
+    "answer": "-5"
+  },
+  {
+    "question": "(-9 - -7) + 0 + 3 + 35 + -37",
+    "answer": "-1"
+  },
+  {
+    "question": "Which is bigger: -2/2699 or 0?",
+    "answer": "0"
+  },
+  {
+    "question": "What is the value of 7 + -34 + 7 - -14 - 10?",
+    "answer": "-16"
+  },
+  {
+    "question": "Calculate the highest common factor of 3712 and 10408.",
+    "answer": "8"
+  },
+  {
+    "question": "What is the thousands digit of 101493549?",
+    "answer": "3"
+  },
+  {
+    "question": "What is -24092 divided by -4?",
+    "answer": "6023.0"
+  },
+  {
+    "question": "Suppose z - 2*o - 21 = 10, -93 = -3*z - 4*o. Suppose 7 = -3*k + z. What is the remainder when 1*((1 - -1) + 21) is divided by k?",
+    "answer": "7"
+  },
+  {
+    "question": "Let h be 17 - (-11 - -16)*-53. Which is smaller: h or 1409/5?",
+    "answer": "281.8"
+  },
+  {
+    "question": "Suppose -j + n + 9 = 0, 4*j - 2*n = -8 + 34. Let t = j - 1. Suppose t*i - 14 - 25 = 0. What is the remainder when i is divided by 7?",
+    "answer": "6"
+  },
+  {
+    "question": "Solve 98*r = 4065 - 439 for r.",
+    "answer": "37"
+  },
+  {
+    "question": "Suppose -4*g + 26 = -6. Suppose -4*p + 4*m + g = 0, 0 = -4*p + 2*m + 5 + 5. Suppose -2*y - 24 = -p*y. What is the tens digit of y?",
+    "answer": "2"
+  },
+  {
+    "question": "Calculate -108160 divided by -338.",
+    "answer": "320.0"
+  },
+  {
+    "question": "Let i = 0.11 - 0.31. Let j = i + 0.2. Let r = 2279/9 + -253. Which is the third biggest value?  (a) r  (b) j  (c) 1/2",
+    "answer": "0.0"
+  },
+  {
+    "question": "What is the greatest common divisor of 76 and 15922?",
+    "answer": "38"
+  },
+  {
+    "question": "Calculate the remainder when 80904 is divided by 26788.",
+    "answer": "540"
+  },
+  {
+    "question": "Solve -2*c - 51*i = c + 252 + 63, -5*c - 5*i - 45 = 0 for c.",
+    "answer": "-3"
+  },
+  {
+    "question": "Suppose 5*m + 5 = h - 80, 2*m - 4 = 0. Calculate the highest common factor of 38 and h.",
+    "answer": "19"
+  },
+  {
+    "question": "Let q = 0.622 - 1.622. Which is the nearest to 0.1?  (a) -0.5  (b) 3  (c) q  (d) -4",
+    "answer": "-0.5"
+  },
+  {
+    "question": "Calculate the remainder when 613 is divided by 197.",
+    "answer": "22"
+  },
+  {
+    "question": "Suppose -4*i = -3*i - 3. Suppose i*m = 2*c - 63, 0 = -5*c + m - 5*m + 146. Calculate the greatest common factor of c and 20.",
+    "answer": "10"
+  },
+  {
+    "question": "What is the nearest to -0.02065 in -0.05, 1/44, -0.5, 3/4?",
+    "answer": "-0.05"
+  },
+  {
+    "question": "Let j = 54 - 0. List the prime factors of j.",
+    "answer": "[2, 3]"
+  },
+  {
+    "question": "Let c(b) = -6*b**2 + b + 96. Let p(o) = o**2 - 19. Let a(w) = -2*c(w) - 11*p(w). Let f be a(-16). Suppose f + 206 = 7*m. What are the prime factors of m?",
+    "answer": "[73]"
+  },
+  {
+    "question": "Suppose -2*s + 5*s = f + 5, -4 = -4*s + 4*f. Solve 0 = -s*w - l - 9 + 1, 3*l = 4*w - 4 for w.",
+    "answer": "-2"
+  },
+  {
+    "question": "Solve 83*i - 4*d = 102, 3*d + d + 18 - 59 = i + 21 for i.",
+    "answer": "2"
+  },
+  {
+    "question": "Let v(m) = m + 1. Let y be v(6). Let b be 12/y + (-8)/(-28). Suppose 0 = -0*j - b*j. Let x(w) = -w**3 + w**2 - w + 2. Determine x(j).",
+    "answer": "2"
+  },
+  {
+    "question": "What is -3335553 divided by 3335553?",
+    "answer": "-1.0"
+  },
+  {
+    "question": "Solve -93*h + 593 + 810 = -717 - 484 for h.",
+    "answer": "28"
+  },
+  {
+    "question": "What is -8 + (-8 - (-16 - -17))?",
+    "answer": "-17"
+  },
+  {
+    "question": "Solve -284*r + 560*r - 241*r - 176*r = 14100 for r.",
+    "answer": "-100"
+  },
+  {
+    "question": "Let d = -6 - 10. What is the units digit of 55 + d - (0 - 4)?",
+    "answer": "3"
+  },
+  {
+    "question": "What is the highest common divisor of 120 and 12680?",
+    "answer": "40"
+  },
+  {
+    "question": "Let n = 45269 - 45265. Suppose l - 18 = 3*o + 2*l, 0 = o - 5*l - 10. Which is the smallest value?  (a) o  (b) -0.4  (c) n  (d) 0.4",
+    "answer": "-5"
+  },
+  {
+    "question": "What is 4 times -2774?",
+    "answer": "-11096"
+  },
+  {
+    "question": "Calculate the highest common divisor of 1449 and 3703.",
+    "answer": "161"
+  },
+  {
+    "question": "What is the smallest value in -0.24, 85, 4?",
+    "answer": "-0.24"
+  },
+  {
+    "question": "Suppose u = -2*w - 5, -5*u = 4*w + 1 - 0. Suppose -7 + 10 = u*r. Let v(z) = 15*z - 19*z + z**2 - r + 1. Calculate v(5).",
+    "answer": "5"
+  },
+  {
+    "question": "-2948 - -2956 - ((0 - -4) + -3 + -22)",
+    "answer": "29"
+  },
+  {
+    "question": "Evaluate (-40 - 0) + 84 - 12.",
+    "answer": "32"
+  },
+  {
+    "question": "Which is the closest to -2/3?  (a) 0.1  (b) -0.5  (c) 3  (d) -15/11  (e) 20",
+    "answer": "-0.5"
+  },
+  {
+    "question": "Suppose 0 = -2*q - 3*q + 120. Calculate the highest common factor of q and 12.",
+    "answer": "12"
+  },
+  {
+    "question": "Solve w + 13*m + 25 = 0, -391*w + 2*m = -395*w for w.",
+    "answer": "1"
+  },
+  {
+    "question": "Which is smaller: -19342 or -19243?",
+    "answer": "-19342"
+  },
+  {
+    "question": "Let a(x) = -x**3 - x**2 + 3*x + 2. Let d be (-6)/2*4/6. Let q be a(d). Suppose 3*j - j - 88 = q. Calculate the highest common divisor of 11 and j.",
+    "answer": "11"
+  },
+  {
+    "question": "Let t = 130.0148 + -0.0148. Let f = 132 - t. Which is smaller: f or 182?",
+    "answer": "2.0"
+  },
+  {
+    "question": "Suppose 202 = 19*a - 64. Solve 16*q - 8 = a*q for q.",
+    "answer": "4"
+  },
+  {
+    "question": "What is the remainder when 10855 is divided by 18?",
+    "answer": "1"
+  },
+  {
+    "question": "Let j(q) = -2*q**3 - 205*q**2 - 1068*q - 6. Let s be j(-97). Suppose -2*c - 52 = -6*c. Calculate the highest common divisor of s and c.",
+    "answer": "13"
+  },
+  {
+    "question": "Calculate ((-16)/48)/(1/(-9)) + -2.",
+    "answer": "1.0"
+  },
+  {
+    "question": "Evaluate ((-30)/(-4))/(360/96)*-7.",
+    "answer": "-14.0"
+  },
+  {
+    "question": "Let t(v) be the third derivative of -v**4/24 + 3*v**2. Let u(q) = 2*q - 2. Let k(z) = -3*t(z) - u(z). Find the first derivative of k(l) wrt l.",
+    "answer": "1"
+  },
+  {
+    "question": "Let l(p) = -p**3 - 4*p**2 - p + 9. Let t be (-2)/((-114)/(-12) - 9). Determine l(t).",
+    "answer": "13.0"
+  },
+  {
+    "question": "Let p be (-198)/12 - 1/(-2). Let z be 2/p*-2 + 2025/12. Suppose 13*d = -0*d + z. What is the units digit of d?",
+    "answer": "3"
+  },
+  {
+    "question": "What is the remainder when 954 is divided by 460?",
+    "answer": "34"
+  },
+  {
+    "question": "Let x = -0.048 + -0.052. Which is the closest to x?  (a) -0.1  (b) 5  (c) 1.4",
+    "answer": "-0.1"
+  },
+  {
+    "question": "Let h(f) = 2*f**2 + 20*f + 35. What is h(-8)?",
+    "answer": "3"
+  },
+  {
+    "question": "Which is the third biggest value?  (a) 1.7  (b) 149  (c) -3  (d) -18",
+    "answer": "-3"
+  },
+  {
+    "question": "Let q(c) = c + 7. Let f be (-68)/11 + 6 + (-64)/11. Determine q(f).",
+    "answer": "1.0"
+  },
+  {
+    "question": "Which is bigger: -4223 or -4218?",
+    "answer": "-4218"
+  },
+  {
+    "question": "What is the value of -3 - (-1 + (-6 - -1 - -5))?",
+    "answer": "-2"
+  },
+  {
+    "question": "What is the nearest to -0.1 in 654, 751, 1/2?",
+    "answer": "0.5"
+  },
+  {
+    "question": "Calculate 127161660 divided by 4238722.",
+    "answer": "30.0"
+  },
+  {
+    "question": "What is the hundreds digit of 13451?",
+    "answer": "4"
+  },
+  {
+    "question": "What is the hundreds digit of 2352?",
+    "answer": "3"
+  },
+  {
+    "question": "Suppose -8*j = -619 + 483. Let c = -95 - -146. Calculate the highest common factor of c and j.",
+    "answer": "17"
+  },
+  {
+    "question": "Evaluate (4 + -5)*8 + (-4)/(16/20).",
+    "answer": "-13.0"
+  },
+  {
+    "question": "Let i(o) = -13*o**2 + o - 4. Let c(d) = 13*d**2 - d + 5. Let h(s) = -3*c(s) - 4*i(s). Let m be h(2). What is the greatest common divisor of m and 17?",
+    "answer": "17"
+  },
+  {
+    "question": "Let g = 79 + -83. Suppose 15 = -0*j - 3*j + 5*s, 0 = -3*s. Which is the closest to j?  (a) 5  (b) g  (c) -1/3",
+    "answer": "-4"
+  },
+  {
+    "question": "Solve -3 - 21 = -3*q for q.",
+    "answer": "8"
+  },
+  {
+    "question": "What is 4 minus -43?",
+    "answer": "47"
+  },
+  {
+    "question": "Solve 0 = -h - 4*q + 6, 30*h - 18 = 33*h - 6*q for h.",
+    "answer": "-2"
+  },
+  {
+    "question": "Which is the closest to 0.652859?  (a) -4/7  (b) 0.3  (c) 5",
+    "answer": "0.3"
+  },
+  {
+    "question": "Let z(w) = -4*w**2 + 64*w + 13856. Give z(-52).",
+    "answer": "-288"
+  },
+  {
+    "question": "Solve 5*k + 8 = -2, 0 = -q - k - 6 for q.",
+    "answer": "-4"
+  },
+  {
+    "question": "What is the remainder when 27805 is divided by 31?",
+    "answer": "29"
+  },
+  {
+    "question": "Solve 2*c - 25 = 5*v + 4, -4*v - 10 = 5*c for c.",
+    "answer": "2"
+  },
+  {
+    "question": "Solve 84205 - 81789 = 151*j for j.",
+    "answer": "16"
+  },
+  {
+    "question": "Solve 6*n - 10*n - z - 12 = 0, 3*n + 3*z + 18 = 0 for n.",
+    "answer": "-2"
+  },
+  {
+    "question": "Let y = 1216 - 1209. What is the greatest common divisor of 553 and y?",
+    "answer": "7"
+  },
+  {
+    "question": "Suppose -4*m + 0*m = 0. Suppose m = -6*n + 2*n + 32. Let d(y) = 12 - y. Let j be d(n). Solve 2*b = -4*x + j*b + 20, 0 = b + 2 for x.",
+    "answer": "4"
+  },
+  {
+    "question": "What is the units digit of 22084?",
+    "answer": "4"
+  },
+  {
+    "question": "What is the seventh root of 722 to the nearest integer?",
+    "answer": "3"
+  },
+  {
+    "question": "What is (-2157840)/72900*5*(-1)/(-2)?",
+    "answer": "-74.0"
+  },
+  {
+    "question": "Let y = -7 - -23. Let c(w) = w**2 + w + 2. Let v = 1 - -5. Calculate the remainder when c(v) is divided by y.",
+    "answer": "12"
+  },
+  {
+    "question": "Solve 0 = 28473*n - 28519*n + 506 for n.",
+    "answer": "11"
+  },
+  {
+    "question": "What is 87256 to the power of 1/9, to the nearest integer?",
+    "answer": "4"
+  },
+  {
+    "question": "Solve -386*t = -385*t - 2 for t.",
+    "answer": "2"
+  },
+  {
+    "question": "Calculate -3 + 3 + 5 - (-2 - -2).",
+    "answer": "5"
+  },
+  {
+    "question": "Suppose -2*k + 3*b + 11 = 2, -3*k = 2*b - 20. Suppose 207 + 411 = k*a. What are the prime factors of a?",
+    "answer": "[103]"
+  },
+  {
+    "question": "Solve -25*j + 3*i = -20*j + 31, -5*i - 15 = 5*j for j.",
+    "answer": "-5"
+  },
+  {
+    "question": "What is the third biggest value in -2, 83, -133, 0, -0.5?",
+    "answer": "-0.5"
+  },
+  {
+    "question": "What is the greatest common divisor of 1132 and 243346040?",
+    "answer": "1132"
+  },
+  {
+    "question": "What is the nearest to 3 in -274, 0.4, 31/3, 1?",
+    "answer": "1"
+  },
+  {
+    "question": "What is the third biggest value in 0.06, -12, 0, -2/13789, 0.5?",
+    "answer": "0"
+  },
+  {
+    "question": "Let k(w) = 12*w**2 - 973*w - 460. What is k(82)?",
+    "answer": "442"
+  },
+  {
+    "question": "Subtract 9.4 from -0.18.",
+    "answer": "-9.58"
+  },
+  {
+    "question": "What is the remainder when 86 is divided by 19?",
+    "answer": "10"
+  },
+  {
+    "question": "What is the fourth biggest value in -0.4, 4, 65, -0.05?",
+    "answer": "-0.4"
+  },
+  {
+    "question": "What is the fourth smallest value in -5, 0.2, 93/5, 3, 2/7, -17, -0.07?",
+    "answer": "0.2"
+  },
+  {
+    "question": "Let y = -17765 - -17822. Calculate the remainder when (-1)/2 - (-223)/2 is divided by y.",
+    "answer": "54.0"
+  },
+  {
+    "question": "Let w = 37 - 13. What is the greatest common divisor of w and 16?",
+    "answer": "8"
+  },
+  {
+    "question": "Which is the biggest value?  (a) -3  (b) 0.5  (c) 74  (d) -4/7",
+    "answer": "74"
+  },
+  {
+    "question": "What is the tens digit of 1350?",
+    "answer": "5"
+  },
+  {
+    "question": "Let s be 3/2*12/(-9). Let h = s + 6. Suppose 5*y - 50 = -5*k, h*k - y = y + 22. What are the prime factors of k?",
+    "answer": "[7]"
+  },
+  {
+    "question": "Let a = -21 - -44. Suppose -a = -3*k + 2*b, -k = -b - 2*b - 3. Suppose -4*w + 56 = 4*u, -k = 3*w - u - 47. What are the prime factors of w?",
+    "answer": "[13]"
+  },
+  {
+    "question": "What is (18/(-108))/(4/84)?",
+    "answer": "-3.5"
+  },
+  {
+    "question": "What is the square root of 108859292 to the nearest integer?",
+    "answer": "10434"
+  },
+  {
+    "question": "What is the value of (3 - -2) + ((-6)/(-16))/(39/260)?",
+    "answer": "7.5"
+  },
+  {
+    "question": "Evaluate (-15 - 0) + 32 + -8.",
+    "answer": "9"
+  },
+  {
+    "question": "Evaluate 11 - ((38 - 28) + 20 + -9).",
+    "answer": "-10"
+  },
+  {
+    "question": "Solve 154*i + 582 - 257 + 753 = 0 for i.",
+    "answer": "-7"
+  },
+  {
+    "question": "Let s be 207*-3*(-1)/12. Let j = 52 - s. Which is bigger: -1 or j?",
+    "answer": "0.25"
+  },
+  {
+    "question": "What is the hundreds digit of 11723?",
+    "answer": "7"
+  },
+  {
+    "question": "Let n = 1.8903 + -4.8903. What is the fifth biggest value in -5, -0.044, 5, 2, n?",
+    "answer": "-5"
+  },
+  {
+    "question": "What is the ten thousands digit of 14015354?",
+    "answer": "1"
+  },
+  {
+    "question": "Let s = -183 - -116. Let p = s - -508. Find the third derivative of -441*i + p*i - 12*i**3 - 6*i**2 wrt i.",
+    "answer": "-72"
+  },
+  {
+    "question": "Calculate the greatest common divisor of 344984768 and 854.",
+    "answer": "122"
+  },
+  {
+    "question": "Let s = -35 - -89. Let j = s + -29. Solve i - 2*i + 21 = -4*m, 5*i - j = 4*m for i.",
+    "answer": "1"
+  },
+  {
+    "question": "(8 + 1 - 13) + -2",
+    "answer": "-6"
+  },
+  {
+    "question": "What is the value of 2 + -14 + 40/(13 + -5) + (-8 - -2)?",
+    "answer": "-13.0"
+  },
+  {
+    "question": "What is the units digit of 118324?",
+    "answer": "4"
+  },
+  {
+    "question": "Evaluate (-6)/(-5)*(-210)/(-336).",
+    "answer": "0.75"
+  },
+  {
+    "question": "Let c(w) = w + 2. Let q be c(1). Suppose o - 9 = -q*l, -2*o = -3*l + l - 10. Let f be (-2 + 1)/(o/(-18)). Solve f*b - j + 4 = 3*j, 2*j + 12 = -2*b for b.",
+    "answer": "-4"
+  },
+  {
+    "question": "Solve -80 = y - 5*i - 60, 7*y = 2*i + 25 for y.",
+    "answer": "5"
+  },
+  {
+    "question": "What is the fourth biggest value in -2/3, -30, -8/7, -10.26?",
+    "answer": "-30"
+  },
+  {
+    "question": "What is the cube root of 4328 to the nearest integer?",
+    "answer": "16"
+  },
+  {
+    "question": "Let s(z) = 2*z**3 - 45*z**2 + 29*z - 154. Determine s(22).",
+    "answer": "0"
+  },
+  {
+    "question": "Which is the biggest value?  (a) -1/432  (b) 1.02  (c) 1  (d) -32/69",
+    "answer": "1.02"
+  },
+  {
+    "question": "Solve 35017 - 111549 = 1444*y for y.",
+    "answer": "-53"
+  },
+  {
+    "question": "Which is the closest to -15/4?  (a) -0.1  (b) 0.2  (c) 0.3  (d) -2  (e) -1/7",
+    "answer": "-2"
+  },
+  {
+    "question": "What is 10 + (-4 + 6 - (-3 - -6) - 43)?",
+    "answer": "-34"
+  },
+  {
+    "question": "Let j = -863 + 954. Let k be (-7 - j/(-14))*136. What is the closest to k in 4, -0.4, 0.1?",
+    "answer": "-0.4"
+  },
+  {
+    "question": "Let t(n) = n**2 - 2*n - 11. What is the remainder when t(-6) is divided by 10?",
+    "answer": "7"
+  },
+  {
+    "question": "What is the tens digit of 136292805?",
+    "answer": "0"
+  },
+  {
+    "question": "Solve 0 = -733*a - 9666 + 48515 for a.",
+    "answer": "53"
+  },
+  {
+    "question": "Let w = 889 + -596. What is the hundreds digit of w?",
+    "answer": "2"
+  },
+  {
+    "question": "Let c = 6554 + -2439. Suppose -3963 = -7*w + c. What is the thousands digit of w?",
+    "answer": "1"
+  },
+  {
+    "question": "Solve -236 = 5*k + k - 15*f + 54*f + 61, 1 = -2*k + f for k.",
+    "answer": "-4"
+  },
+  {
+    "question": "What is the ten thousands digit of (16 - 3680/16)/(1/(-47))?",
+    "answer": "1"
+  },
+  {
+    "question": "Solve -v - 21 = -5*r, v + 4*r + 5258 = 5264 for v.",
+    "answer": "-6"
+  },
+  {
+    "question": "What is 9 - (9 + -5 - 0) - -6?",
+    "answer": "11"
+  },
+  {
+    "question": "Which is the biggest value?  (a) -5  (b) -2/35  (c) -0.04  (d) 5  (e) 4  (f) 31",
+    "answer": "31"
+  },
+  {
+    "question": "Let i = -37 - -40. Put 5, i, -2 in increasing order.",
+    "answer": "-2 3 5"
+  },
+  {
+    "question": "Let f(g) = g**2 + 25*g + 111. Determine f(-8).",
+    "answer": "-25"
+  },
+  {
+    "question": "What is 56724 to the power of 1/3, to the nearest integer?",
+    "answer": "38"
+  },
+  {
+    "question": "Solve 2*x = 28*l - 23*l - 9, l - 9 = 4*x for x.",
+    "answer": "-2"
+  },
+  {
+    "question": "Let n(j) = -1 - 22*j**3 + 6*j**2 + 21*j**3 - 4*j - j. Let z be n(5). What is the units digit of 2 - 0 - (-4 - z)?",
+    "answer": "5"
+  },
+  {
+    "question": "Let o = -127/188 + 5/564. Let u be (4 - 3)*(1 + -1). Suppose 2*j = -u*j. Which is the closest to -6?  (a) -3  (b) o  (c) j",
+    "answer": "-3"
+  },
+  {
+    "question": "What is the value of (128/256)/(((-4)/5)/(30/75))?",
+    "answer": "-0.25"
+  },
+  {
+    "question": "What is the biggest value in 0.2069, -0.1, 4?",
+    "answer": "4"
+  },
+  {
+    "question": "Suppose -3*j + 134 = -2*r, 0 = 4*j - 0*r + 3*r - 156. What is the highest common divisor of 168 and j?",
+    "answer": "42"
+  },
+  {
+    "question": "What is 8/20*31/((-248)/780)?",
+    "answer": "-39.0"
+  },
+  {
+    "question": "What is the tens digit of ((-6606)/15)/(14/(-1225))?",
+    "answer": "3"
+  },
+  {
+    "question": "Let k(w) = -2*w**3 + 3*w**2 - 4*w + 22. Let p be k(3). Let u(y) = y**3 + 15*y**2 - 40*y - 72. Let o be u(p). What is the greatest common divisor of 190 and o?",
+    "answer": "10"
+  },
+  {
+    "question": "Let i(x) be the third derivative of -5*x**6/24 + 35*x**4/24 + 8*x**2. What is the second derivative of i(y) wrt y?",
+    "answer": "-150*y"
+  },
+  {
+    "question": "What is the ten thousands digit of 2465212?",
+    "answer": "6"
+  },
+  {
+    "question": "What is the greatest common divisor of 736 and 391?",
+    "answer": "23"
+  },
+  {
+    "question": "Let q(b) = -b**3 + 2*b**2 + 7*b - 2. Let h be q(3). Solve -t + 3*t = h for t.",
+    "answer": "5"
+  },
+  {
+    "question": "Let s = 15552 + -8381. What is the thousands digit of s?",
+    "answer": "7"
+  },
+  {
+    "question": "Which is the fourth biggest value?  (a) -2  (b) 5/7  (c) 1  (d) 7  (e) 0",
+    "answer": "0"
+  },
+  {
+    "question": "Let v be 344/10 - (-2)/(-5). Suppose 0*u - v = -5*u + 4*l, 3*u + l = 17. Let c(m) = 6 - m. Let i be c(u). Solve 0 = 5*w - 5 - i for w.",
+    "answer": "1"
+  },
+  {
+    "question": "Solve 0 = -55*k + 4022 - 1809 + 2627 for k.",
+    "answer": "88"
+  },
+  {
+    "question": "What is the value of -11*((-3)/12)/((84/(-16))/(-21))?",
+    "answer": "11.0"
+  },
+  {
+    "question": "Let k be ((-6)/(-9))/((-4)/6). Let t = 7 - k. What are the prime factors of t?",
+    "answer": "[2]"
+  },
+  {
+    "question": "What is the nearest to 1/5 in 1, -1, 21?",
+    "answer": "1"
+  },
+  {
+    "question": "Let h = 20 - 16. Put 0, 6, h in decreasing order.",
+    "answer": "6 4 0"
+  },
+  {
+    "question": "Let k(u) = -3*u - 10. Let y(n) = 4*n**2 - 7*n + 3. Calculate the remainder when y(5) is divided by k(-8).",
+    "answer": "12"
+  },
+  {
+    "question": "Which is the fifth smallest value?  (a) 24  (b) -5  (c) -1  (d) 1148  (e) 9",
+    "answer": "1148"
+  },
+  {
+    "question": "Which is the closest to 1?  (a) -0.3  (b) -2738/9  (c) 1/5  (d) 3/10",
+    "answer": "0.3"
+  },
+  {
+    "question": "Calculate the highest common divisor of 572964 and 1710.",
+    "answer": "114"
+  },
+  {
+    "question": "Let n(w) be the first derivative of 15/2*w**2 - 1/3*w**3 + 6 - w. What are the prime factors of n(6)?",
+    "answer": "[53]"
+  },
+  {
+    "question": "What is the remainder when 177585 is divided by 621?",
+    "answer": "600"
+  },
+  {
+    "question": "Solve -3*h = 2*f + 54, -f - 126 = 137*h + 26 + 146 for f.",
+    "answer": "-24"
+  },
+  {
+    "question": "Calculate -12.409*-0.5.",
+    "answer": "6.2045"
+  },
+  {
+    "question": "Solve -27*t = 28*t + 11*t + 151 - 547 for t.",
+    "answer": "6"
+  },
+  {
+    "question": "What is 62751540 to the power of 1/3, to the nearest integer?",
+    "answer": "397"
+  },
+  {
+    "question": "Let c = 36 - 36. Suppose 2*i = -c*i + 1954. Suppose 6*y + 323 = i. What is the hundreds digit of y?",
+    "answer": "1"
+  },
+  {
+    "question": "What is the tens digit of 637?",
+    "answer": "3"
+  },
+  {
+    "question": "Evaluate -4 + 9 + -30 + 4 + 11 + -20.",
+    "answer": "-30"
+  },
+  {
+    "question": "Let h(y) = 91*y**2 - 2*y - 1. Let u be h(-1). Calculate the highest common divisor of 253 and u.",
+    "answer": "23"
+  },
+  {
+    "question": "Let b(z) = 122*z - 6947. Determine b(57).",
+    "answer": "7"
+  },
+  {
+    "question": "What is the closest to -1/4 in 3, -1, -6, 0.3?",
+    "answer": "0.3"
+  },
+  {
+    "question": "What is 4/((-8)/(-6))*((-5312)/24)/83?",
+    "answer": "-8.0"
+  },
+  {
+    "question": "Divide 12948 by 3237.",
+    "answer": "4.0"
+  },
+  {
+    "question": "Solve 8*b = -8650 + 8722 for b.",
+    "answer": "9"
+  },
+  {
+    "question": "Let j = -17 - -20. Suppose -j*u + 4 = f + 1, 0 = 2*u + 4*f - 12. Suppose u = -0*h - 5*h + 75. Solve c + h = -2*c for c.",
+    "answer": "-5"
+  },
+  {
+    "question": "Let n = -96 - -100. Suppose -t - n*y = -3*y + 56, 3*y - 210 = 4*t. Let g be t/(-4)*11/((-99)/(-6)). What is the smallest value in -5, g, -7?",
+    "answer": "-7"
+  },
+  {
+    "question": "Which is the fourth biggest value?  (a) 0.2  (b) 70  (c) 4  (d) 0  (e) 4/9",
+    "answer": "0.2"
+  },
+  {
+    "question": "Calculate the remainder when 246 is divided by 12.",
+    "answer": "6"
+  },
+  {
+    "question": "Calculate the remainder when 267196 is divided by 41.",
+    "answer": "40"
+  },
+  {
+    "question": "Calculate the highest common factor of 56511 and 144846.",
+    "answer": "117"
+  },
+  {
+    "question": "Let p = -16 - -32. What is the units digit of (p*-3)/(-3) - 1?",
+    "answer": "5"
+  },
+  {
+    "question": "Let w be (-1)/(((-3)/9)/(-1)). What is the remainder when 28 - (0/w)/1 is divided by 15?",
+    "answer": "13.0"
+  },
+  {
+    "question": "Which is the nearest to -0.046?  (a) 9/5  (b) 75  (c) 2",
+    "answer": "1.8"
+  },
+  {
+    "question": "Suppose 0 = 2*x - 3 + 1. Calculate the remainder when x is divided by 1.",
+    "answer": "0"
+  },
+  {
+    "question": "Let t(r) = -2*r**2 - 52*r - 301. Calculate t(-14).",
+    "answer": "35"
+  },
+  {
+    "question": "Let l = 0.4 + 0.1. Let r be 1/(2/(-4))*1. What is the closest to r in -2, 3, l?",
+    "answer": "-2"
+  },
+  {
+    "question": "Let i = -7630 - -7635. Solve 5*v = 2*h - i, v + 26 = -3*h + 8 for v.",
+    "answer": "-3"
+  },
+  {
+    "question": "Let f(y) = y**3 - 9*y**2 - 9*y - 9. Let v be f(10). Let h(d) = 4*d**2 + 1. Let c be h(v). Put 3, c, -2 in decreasing order.",
+    "answer": "5 3 -2"
+  },
+  {
+    "question": "Let p = -6589 - -6620. Calculate the remainder when 364 is divided by p.",
+    "answer": "23"
+  },
+  {
+    "question": "Calculate the highest common divisor of 138 and 8211.",
+    "answer": "69"
+  },
+  {
+    "question": "Let h = 1817 - 427. What is the highest common factor of 60 and h?",
+    "answer": "10"
+  },
+  {
+    "question": "Suppose 0 = 2*a + 2*a + 32. Let s(b) = 26*b - 26. Let f(l) = 17 - 17*l. Let g(o) = a*f(o) - 5*s(o). What is the first derivative of g(c) wrt c?",
+    "answer": "6"
+  },
+  {
+    "question": "Let x(k) be the first derivative of -k**4/4 + 10*k**3/3 + 25*k**2/2 + 7*k - 3. What is the tens digit of x(11)?",
+    "answer": "6"
+  },
+  {
+    "question": "Let y be ((-3)/1)/(3/(-494)). Suppose y = -2*f - 11*f. What is the hundreds digit of (-6 + 2)*(f - -3)?",
+    "answer": "1"
+  },
+  {
+    "question": "What is the remainder when 85/3 - (-16)/24 is divided by 8?",
+    "answer": "5.0"
+  },
+  {
+    "question": "What is the value of ((-30)/32*-1)/((-330)/440)?",
+    "answer": "-1.25"
+  },
+  {
+    "question": "Let l be 1/(-12)*3 + (-21)/(-4). Suppose -5*c + 36 = 4*j, c + 3*c - 4*j = 0. Which is smaller: l or c?",
+    "answer": "4"
+  },
+  {
+    "question": "Suppose -10*o + 20 = -5*o. Let q be o*-1*(-30)/(-20). Which is bigger: -7 or q?",
+    "answer": "-6"
+  },
+  {
+    "question": "What is the value of (-31500)/225*(-6)/(-63)*-1*(-18)/(-6)?",
+    "answer": "40.0"
+  },
+  {
+    "question": "Let j = 56 + -112. Let f = j - -56. Suppose 2*n + 15 = -3*b + 2*b, f = 4*n - 4*b. Let m(d) = -d - 2. Give m(n).",
+    "answer": "3"
+  },
+  {
+    "question": "Let m(w) = 5*w**2 - 72264*w - 289048. Calculate m(-4).",
+    "answer": "88"
+  },
+  {
+    "question": "Let v(u) = -27*u**3 + 16*u**2 + 27*u - 2. Let f be v(-2). What is the greatest common divisor of 14 and f?",
+    "answer": "14"
+  },
+  {
+    "question": "Let q(m) be the second derivative of m**5/20 - m**4/4 - m**3/3 + m**2/2 + 23*m + 1. Suppose 6*d - 2*d = 8. Give q(d).",
+    "answer": "-7"
+  },
+  {
+    "question": "Let z(j) = j**3 - 2*j**2 - 20*j - 21. Let b be z(6). Solve b*l = -p - 18, 4*l + 11 = -4*p - 21 for l.",
+    "answer": "-5"
+  },
+  {
+    "question": "Calculate 11 + (10 - (-8 - (-3 - (3 - 7 - 6)))).",
+    "answer": "36"
+  },
+  {
+    "question": "Solve 0 = 8*w + 4*u - 176, -16*u + 12*u + 168 = 73*w - 69*w for w.",
+    "answer": "2"
+  },
+  {
+    "question": "Solve 133*b - 6904 + 1135 = 1147 for b.",
+    "answer": "52"
+  },
+  {
+    "question": "What is the remainder when 1292157 is divided by 423?",
+    "answer": "315"
+  },
+  {
+    "question": "What is the remainder when 8158 is divided by 51?",
+    "answer": "49"
+  },
+  {
+    "question": "Let w(c) = 4*c**2 - c + 7. What is the remainder when 238 is divided by w(3)?",
+    "answer": "38"
+  },
+  {
+    "question": "Let a(i) = 7*i**2 + 4*i + 2. What is the remainder when a(-3) is divided by 18?",
+    "answer": "17"
+  },
+  {
+    "question": "Let w = 3 - 1. Let z = -106 - -102. Sort 1, z, w in increasing order.",
+    "answer": "-4 1 2"
+  },
+  {
+    "question": "Let r = -5 - -4. Let l = 3 + 0. Sort r, 4, l in decreasing order.",
+    "answer": "4 3 -1"
+  },
+  {
+    "question": "Suppose 3*n + 3*y - 2*y = 512, 2*n - 4*y = 332. Let p = n + -165. Calculate the remainder when 47 is divided by p.",
+    "answer": "2"
+  },
+  {
+    "question": "Let v = 158 + -54. Let m = v + -58. Suppose -32 = -2*i - 4*h, 0*i - 4*i + m = -h. What is the tens digit of i?",
+    "answer": "1"
+  },
+  {
+    "question": "Calculate the highest common factor of 715 and 2653079.",
+    "answer": "143"
+  },
+  {
+    "question": "Let r(u) = -u**2 - 6*u - 4. Let j be (-4)/6*(-18)/(-4). Let z be r(j). List the prime factors of ((-30)/z)/((-3)/8).",
+    "answer": "[2]"
+  },
+  {
+    "question": "Calculate -38214 divided by -33.",
+    "answer": "1158.0"
+  },
+  {
+    "question": "Let j(v) = -2*v**2 - 2735*v + 162363. Give j(57).",
+    "answer": "-30"
+  },
+  {
+    "question": "What is the greatest common divisor of 61864 and 684?",
+    "answer": "76"
+  },
+  {
+    "question": "Let d(z) = -2*z**3 + 54*z**2 + 44*z + 52. Calculate d(28).",
+    "answer": "-284"
+  },
+  {
+    "question": "Let l = -2411 + 2419. Solve l*f + 56 = 80 for f.",
+    "answer": "3"
+  },
+  {
+    "question": "Let u(n) = -n**3 + 7*n**2 - 7*n + 4. Let k be u(6). Let t be -2*k*2/28. Which is the closest to t?  (a) -3/4  (b) -1/2  (c) -1",
+    "answer": "-0.5"
+  },
+  {
+    "question": "Which is the third biggest value?  (a) -2/5  (b) 21584/11  (c) 2",
+    "answer": "-0.4"
+  },
+  {
+    "question": "Calculate the remainder when 100 is divided by 2 - (4 + 1) - (-435)/15.",
+    "answer": "22.0"
+  },
+  {
+    "question": "Calculate -67 + 67 - (-3 - (0 + -5)).",
+    "answer": "-2"
+  },
+  {
+    "question": "What is the remainder when 2701487 is divided by 1636?",
+    "answer": "451"
+  },
+  {
+    "question": "Solve -21014*n + 21057*n - 688 = 0 for n.",
+    "answer": "16"
+  },
+  {
+    "question": "What is the value of -16 - (-15 - (6 + -7 - 6))?",
+    "answer": "-8"
+  },
+  {
+    "question": "Suppose -24*d - 4*q = -25*d + 57, d = -5*q + 3. Solve -d*s = -46*s - 78 for s.",
+    "answer": "-6"
+  },
+  {
+    "question": "-5 + -7 + (-1 - -7)",
+    "answer": "-6"
+  },
+  {
+    "question": "Let c(b) = -16457*b - 164574. What is c(-10)?",
+    "answer": "-4"
+  },
+  {
+    "question": "Suppose 4*o + 178 = 2*i, 0*o = -3*i - 5*o + 223. Calculate the highest common factor of 6 and i.",
+    "answer": "3"
+  },
+  {
+    "question": "What is the third smallest value in -1/6, 0, 13.1, -0.4, 752?",
+    "answer": "0"
+  },
+  {
+    "question": "Let o = 0.0001999 - 3.0001999. Suppose 3*h - 7*h = 4*z, 0 = 3*z - 4*h + 28. Let w be (0 - -3)/((-6)/z). What is the fourth biggest value in 0, w, 2/7, o?",
+    "answer": "-3.0"
+  },
+  {
+    "question": "Which is the closest to 0.14?  (a) 0.28  (b) -3.8  (c) -2  (d) -3  (e) 7",
+    "answer": "0.28"
+  },
+  {
+    "question": "Let f = -2 - -20. Let u be (-4)/10*(-3 + f). What is the remainder when (u - -5)/((-2)/50) is divided by 9?",
+    "answer": "7.0"
+  },
+  {
+    "question": "Suppose 4*j = -q - 12, 43 - 34 = q - 3*j. Solve 9*o + o = q for o.",
+    "answer": "0"
+  },
+  {
+    "question": "What is the remainder when 836 is divided by 210?",
+    "answer": "206"
+  },
+  {
+    "question": "Which is the nearest to 19?  (a) -2  (b) 1  (c) 53  (d) 1/3  (e) -8",
+    "answer": "1"
+  },
+  {
+    "question": "What is 115046 to the power of 1/2, to the nearest integer?",
+    "answer": "339"
+  },
+  {
+    "question": "Calculate the highest common factor of 19120 and 1673.",
+    "answer": "239"
+  },
+  {
+    "question": "Solve -6 + 1 = -5*f for f.",
+    "answer": "1"
+  },
+  {
+    "question": "Let i = 22 + -14. Let p = i + -13. Let h = p + 9. Solve 2 = 2*z + h for z.",
+    "answer": "-1"
+  },
+  {
+    "question": "What is the ten thousands digit of 771982370?",
+    "answer": "8"
+  },
+  {
+    "question": "Let s(t) = t**2 - 30*t + 83. Calculate s(6).",
+    "answer": "-61"
+  },
+  {
+    "question": "Calculate the greatest common factor of 1029958 and 15839.",
+    "answer": "47"
+  },
+  {
+    "question": "Let x = 2.3 + -3. Let q = 0.2 + x. Let c(m) = -m**2 - 2*m - 1. Let k be c(-2). What is the third biggest value in q, -2, k?",
+    "answer": "-2"
+  },
+  {
+    "question": "Let j(l) = 29*l - 1. Let i be j(1). Suppose -i - 8 = -2*p. Solve -3*k + 6 = 2*k + 3*t, -4*t = -2*k + p for k.",
+    "answer": "3"
+  },
+  {
+    "question": "Suppose 3*l = -h - 8, 5*h + 2*l = 1 - 2. Let x be 1 + -11 - ((-416)/26 - -6). Solve x = -m + 2*m + h for m.",
+    "answer": "-1"
+  },
+  {
+    "question": "Let s(u) = -u**3 + u**2 - 6. Suppose -7 = -21*b + 20*b. Suppose -4*g - 2*h = -10, 3*g - b*g = -3*h + 15. Give s(g).",
+    "answer": "-6"
+  },
+  {
+    "question": "What is 63785106 to the power of 1/2, to the nearest integer?",
+    "answer": "7987"
+  },
+  {
+    "question": "Suppose 14293 = 96*c - 41483. What is the remainder when c is divided by 189?",
+    "answer": "14"
+  },
+  {
+    "question": "What is the units digit of 888360365?",
+    "answer": "5"
+  },
+  {
+    "question": "What is the highest common divisor of 1 and 53?",
+    "answer": "1"
+  },
+  {
+    "question": "Let c(i) be the second derivative of 2*i**3/3 - i**2/2 + 2*i. Let d be c(6). Let o be (0 - -1 - 0)*115. Calculate the greatest common divisor of o and d.",
+    "answer": "23"
+  },
+  {
+    "question": "Let s = -10 + 14. Suppose c + s = -3*c. Let h = 4 + c. What are the prime factors of h?",
+    "answer": "[3]"
+  },
+  {
+    "question": "What is the thousands digit of 54643?",
+    "answer": "4"
+  },
+  {
+    "question": "Solve -227363*n - 5346 = -226877*n for n.",
+    "answer": "-11"
+  },
+  {
+    "question": "Solve 37 = -5*a + 52 for a.",
+    "answer": "3"
+  },
+  {
+    "question": "Which is bigger: 859 or -1.437?",
+    "answer": "859"
+  },
+  {
+    "question": "What is the hundred thousands digit of 113368?",
+    "answer": "1"
+  },
+  {
+    "question": "Let n(q) = 0 - 5 + 5*q + 0. Let k be n(6). Suppose -2458 = -273*f + 4367. What is the highest common factor of f and k?",
+    "answer": "25"
+  },
+  {
+    "question": "What is the fourth root of 522094552 to the nearest integer?",
+    "answer": "151"
+  },
+  {
+    "question": "What is the highest common divisor of 175 and 475?",
+    "answer": "25"
+  },
+  {
+    "question": "Let l(x) be the second derivative of 11*x**6/10 - 9*x**4/4 + 41*x. Find the third derivative of l(r) wrt r.",
+    "answer": "792*r"
+  },
+  {
+    "question": "Solve -4165 + 47402 = 648*m + 402*m - 17663 for m.",
+    "answer": "58"
+  },
+  {
+    "question": "Solve -13752*b + 13753*b - 10 = -2*h, 3*h - 2*b = 29 for h.",
+    "answer": "7"
+  },
+  {
+    "question": "What is the closest to -1 in -17, -26, 2/11, -12, -1?",
+    "answer": "-1"
+  },
+  {
+    "question": "Let m = 478 + -478. Let u be (-4)/20 - (-2)/5. Which is the second smallest value?  (a) -3  (b) 4  (c) m  (d) u",
+    "answer": "0"
+  },
+  {
+    "question": "Let z(c) = 3*c**2 - 1715*c + 25507. Calculate z(15).",
+    "answer": "457"
+  },
+  {
+    "question": "Let y = 73 + -64. Suppose 22 = -4*u + y*u + 2*r, 0 = -2*r + 2. Solve -u = 4*h - 0 for h.",
+    "answer": "-1"
+  },
+  {
+    "question": "Let u(v) = -v**3 + 10*v**2 - 7*v - 3. Let x be u(9). Calculate the highest common factor of x and 165.",
+    "answer": "15"
+  },
+  {
+    "question": "What is the third smallest value in 1, 1.3, -0.14?",
+    "answer": "1.3"
+  },
+  {
+    "question": "What is the value of (183/(-427))/((-12)/56)?",
+    "answer": "2.0"
+  },
+  {
+    "question": "Calculate the highest common factor of 1225 and 14455.",
+    "answer": "245"
+  },
+  {
+    "question": "Which is the second biggest value?  (a) 15/8  (b) 1  (c) 0",
+    "answer": "1"
+  },
+  {
+    "question": "Let s(r) = 2*r**3 + 5*r**2 + 2*r - 10. Calculate s(-4).",
+    "answer": "-66"
+  },
+  {
+    "question": "What is the cube root of 11635 to the nearest integer?",
+    "answer": "23"
+  },
+  {
+    "question": "Solve 161 - 162 = -z for z.",
+    "answer": "1"
+  },
+  {
+    "question": "Solve 5*z = -3*f - 47, -10*f + 14*f = 3*z + 5 for f.",
+    "answer": "-4"
+  },
+  {
+    "question": "Solve 3*r - 7*u + 11*u = -14, r - 2*u - 2 = 0 for r.",
+    "answer": "-2"
+  },
+  {
+    "question": "Calculate 1*16/(1200/45).",
+    "answer": "0.6"
+  },
+  {
+    "question": "-156 divided by 52",
+    "answer": "-3.0"
+  },
+  {
+    "question": "Suppose -228*x + 4128 = -220*x. Let q = x - 512. Solve 0 = 3*k - g - 9, -q*k + 3*g + 17 = -0*k for k.",
+    "answer": "2"
+  },
+  {
+    "question": "Let x(l) = -l**3 + 5*l**2 + 5*l + 7. Suppose -5*p + 7 = 4*o - 3, -3*o = 2*p + 3. What is the units digit of x(p)?",
+    "answer": "1"
+  },
+  {
+    "question": "Let v(a) = -39*a - 1170. Let h be v(-30). Let f = -4 + 3.75. Let n = -0.05 + f. What is the closest to -2/5 in h, n, 3/2?",
+    "answer": "-0.3"
+  },
+  {
+    "question": "Which is the nearest to 0?  (a) -1/10  (b) -4  (c) -3",
+    "answer": "-0.1"
+  },
+  {
+    "question": "Let u(w) be the third derivative of w**6/120 + 11*w**5/30 + 19*w**4/24 - 10*w**3/3 + 21*w**2. Let i be u(-21). What is the highest common factor of 11 and i?",
+    "answer": "11"
+  },
+  {
+    "question": "What is the value of 24/12*((-160)/(-10))/(-2)?",
+    "answer": "-16.0"
+  },
+  {
+    "question": "What is 3906 divided by -10?",
+    "answer": "-390.6"
+  },
+  {
+    "question": "Solve 171*t + 5375 = -170*t + 260 for t.",
+    "answer": "-15"
+  },
+  {
+    "question": "Solve -18*q + 14*q = -8 for q.",
+    "answer": "2"
+  },
+  {
+    "question": "Calculate the greatest common factor of 62227827 and 3378.",
+    "answer": "1689"
+  },
+  {
+    "question": "What is the greatest common factor of 191217 and 897?",
+    "answer": "39"
+  },
+  {
+    "question": "Let u = 553 + -178. Suppose 23*a = 18*a + u. List the prime factors of a.",
+    "answer": "[3, 5]"
+  },
+  {
+    "question": "Let f = 32.7 + -34.7. What is the third biggest value in -5, -0.4, -16, f?",
+    "answer": "-5"
+  },
+  {
+    "question": "Which is the closest to 3?  (a) -4  (b) -15  (c) 0.2  (d) 300  (e) -2",
+    "answer": "0.2"
+  },
+  {
+    "question": "What is the remainder when 30398127 is divided by 1470?",
+    "answer": "1467"
+  },
+  {
+    "question": "(5/40)/((-1)/((-7888)/34))",
+    "answer": "29.0"
+  },
+  {
+    "question": "Let j be (-1)/1*94/(-2). Let d = j + 13. Let f be 5*8/d - 4/6. Solve f = -0*m + 3*m + 15 for m.",
+    "answer": "-5"
+  },
+  {
+    "question": "Let k(r) = -7 - 5*r + 2*r**2 - r - 3*r**2. Let v(p) = -p**3 - 5*p**2 - 3*p - 1. Let c be v(-4). Calculate k(c).",
+    "answer": "-2"
+  },
+  {
+    "question": "Let f = -1 + 1. Let p be 2*(-3)/((-6)/(-8)). Let u be 10/p*(10 - 6). Which is the nearest to f?  (a) -0.3  (b) 3  (c) u",
+    "answer": "-0.3"
+  },
+  {
+    "question": "What is -18706464 divided by -3093?",
+    "answer": "6048.0"
+  },
+  {
+    "question": "-5 - (-3)/(8 + -5)",
+    "answer": "-4.0"
+  },
+  {
+    "question": "Solve o + 4*s - 1022 = -1014, -26 = -6*o - 2*s for o.",
+    "answer": "4"
+  },
+  {
+    "question": "Let p(k) = k + 11. Let i be p(9). Suppose -556*f + 559*f - 90 = 0. Calculate the highest common divisor of i and f.",
+    "answer": "10"
+  },
+  {
+    "question": "Suppose 5*p + 3*p - 16 = 0. Solve 2*z + 8 = -5*w + 1, -3*z + p*w = -18 for z.",
+    "answer": "4"
+  },
+  {
+    "question": "What is (9*(-5)/(-10))/((-282)/1316)?",
+    "answer": "-21.0"
+  },
+  {
+    "question": "Let i(u) = -411 + 4*u + 339 + u - u. Determine i(0).",
+    "answer": "-72"
+  },
+  {
+    "question": "Solve 0 = 107*o + 338*o + 4895 for o.",
+    "answer": "-11"
+  },
+  {
+    "question": "Suppose 10 = -5*t + 55. Calculate the remainder when 76 is divided by t.",
+    "answer": "4"
+  },
+  {
+    "question": "Calculate -3 - ((-156 + 15 - -20) + -4 + 22).",
+    "answer": "100"
+  },
+  {
+    "question": "Calculate the highest common divisor of 972 and 11421.",
+    "answer": "243"
+  },
+  {
+    "question": "Let y(k) be the second derivative of k**5/20 - 5*k**4/12 - 7*k**3/3 - 5*k**2 + 3*k + 63. Determine y(7).",
+    "answer": "-10"
+  },
+  {
+    "question": "Let l = -10 + -5. Let a = 52 + l. List the prime factors of a.",
+    "answer": "[37]"
+  },
+  {
+    "question": "Let z = -1284 - -1318. Which is the closest to -1?  (a) 3/4  (b) z  (c) 5/2",
+    "answer": "0.75"
+  },
+  {
+    "question": "Let b be (20/8)/((-2)/(-4)). Suppose 0 = 4*r - 11 - b. What is the units digit of r?",
+    "answer": "4"
+  },
+  {
+    "question": "What is the second biggest value in -1/5, 0.11, 6, -10, -3?",
+    "answer": "0.11"
+  },
+  {
+    "question": "Let f(g) = 3376 - 281*g. Let d be f(12). Solve d*h = -5*p - 4, -h = 3*p - 0*p + 8 for h.",
+    "answer": "4"
+  },
+  {
+    "question": "Suppose 2*g + 2*t - 8 = 0, 4*g + 5*t - 2 - 13 = 0. Suppose 0 = g*s - 0*s. Solve s = 5*z - 11 - 9 for z.",
+    "answer": "4"
+  },
+  {
+    "question": "Which is the nearest to 5/2?  (a) 2/7  (b) 1779  (c) 0  (d) 0.5  (e) -24",
+    "answer": "0.5"
+  },
+  {
+    "question": "Let x(a) = -a**2 + 783*a + 783. What is x(-1)?",
+    "answer": "-1"
+  },
+  {
+    "question": "Calculate the greatest common factor of 314 and 22554463.",
+    "answer": "157"
+  },
+  {
+    "question": "Divide 0 by 22809164.",
+    "answer": "0.0"
+  },
+  {
+    "question": "Calculate the remainder when 55249 is divided by 560.",
+    "answer": "369"
+  },
+  {
+    "question": "What is the units digit of 54?",
+    "answer": "4"
+  },
+  {
+    "question": "Let f(j) = -j**3 + 10*j**2 + 2*j - 15. Let g be f(10). Suppose -g*y + 2*z + 62 - 6 = 0, y = 4*z + 4. Solve 5*w + 3 = -y for w.",
+    "answer": "-3"
+  },
+  {
+    "question": "Solve 5*s + i = 25, 4*s - 3*i = -5*i + 26 for s.",
+    "answer": "4"
+  },
+  {
+    "question": "Calculate (18 + -12 - 14) + -11 + 12.",
+    "answer": "-7"
+  },
+  {
+    "question": "Let l(q) = 3*q**2 + 4*q + 5. Let r(w) = 4*w - 2*w**2 + w**2 - 1 - 5*w. Suppose -5*c + s - 23 = 0, -c = -3*c - 4*s + 4. Let o(b) = c*r(b) - l(b). Calculate o(3).",
+    "answer": "8"
+  },
+  {
+    "question": "What is the cube root of 8719 to the nearest integer?",
+    "answer": "21"
+  },
+  {
+    "question": "Suppose 0 = -4*k - k + 15. Differentiate -1 + 0*z + k*z + 0 - 1 wrt z.",
+    "answer": "3"
+  },
+  {
+    "question": "(-2 - (0 + 8 - (14 + -4))) + -6",
+    "answer": "-6"
+  },
+  {
+    "question": "Which is the smallest value?  (a) 0.2  (b) -1812  (c) -2/3",
+    "answer": "-1812"
+  },
+  {
+    "question": "-6 + (25 + -7 - -6)",
+    "answer": "18"
+  },
+  {
+    "question": "Calculate the remainder when 10496 is divided by 327.",
+    "answer": "32"
+  },
+  {
+    "question": "What is the closest to -1 in -3/4, -164/19, -3, -1/5, 5?",
+    "answer": "-0.75"
+  },
+  {
+    "question": "Calculate -3 - 2 - (-6 + 3).",
+    "answer": "-2"
+  },
+  {
+    "question": "What is the value of 0 - -5 - (133 - 114)?",
+    "answer": "-14"
+  },
+  {
+    "question": "Solve 260 = -10*w + 15*w + 4*l, -5*l + 340 = -3*w - 22 for w.",
+    "answer": "-4"
+  },
+  {
+    "question": "What is the remainder when 716837 is divided by 7467?",
+    "answer": "5"
+  },
+  {
+    "question": "Suppose 0 = 4*v - 0*a + 2*a + 812, -16 = 4*a. Let g = 29 - v. Let j(k) = 3*k**2 - 15*k + 92. Let c be j(5). What is the highest common divisor of c and g?",
+    "answer": "46"
+  },
+  {
+    "question": "Let x(c) = -6*c**3 - 2*c**2 - c + 5. Determine x(2).",
+    "answer": "-53"
+  },
+  {
+    "question": "What is the second smallest value in -5, 0.1981, -11?",
+    "answer": "-5"
+  },
+  {
+    "question": "What is the remainder when 4706 is divided by 781?",
+    "answer": "20"
+  },
+  {
+    "question": "Let a = 16 - 15. Suppose g = -0*g + a. Let n(r) = -r**3 + 2*r**2 - r - 3. Let d be n(2). What is the nearest to g in 1/4, -0.4, d?",
+    "answer": "0.25"
+  },
+  {
+    "question": "Evaluate (10/15)/((-76)/(-2394)*14).",
+    "answer": "1.5"
+  },
+  {
+    "question": "Let n be (0 + 1)*(-2 - -1)*-7. Let f = 2 + n. Solve 1 = 5*g - f for g.",
+    "answer": "2"
+  },
+  {
+    "question": "Solve -f - 277 + 267 = d + 4*d + 2*f + 2*f, 5*d + f + 18 = 0 for d.",
+    "answer": "-4"
+  },
+  {
+    "question": "Solve -5*r = -x - 16, r = 23*x - 16*x - 6*x + 4 for r.",
+    "answer": "3"
+  },
+  {
+    "question": "Suppose 2*b - 5*d = -b + 33, -3*d - 23 = -2*b. What is the remainder when 45 is divided by b?",
+    "answer": "13"
+  },
+  {
+    "question": "What is the nearest to -4 in -3.8, -0.05, 40?",
+    "answer": "-3.8"
+  },
+  {
+    "question": "Which is smaller: -395 or 7394?",
+    "answer": "-395"
+  },
+  {
+    "question": "Let z(n) = -n**2 - 39*n - 268. Let i be z(-9). Solve 4*v = i*r - 6, v - r = -4*v for v.",
+    "answer": "1"
+  },
+  {
+    "question": "Let b(h) = h**3 - 3*h**2 - 44*h - 49. What is the tens digit of b(11)?",
+    "answer": "3"
+  },
+  {
+    "question": "Solve 368*q = 360*q + 16 for q.",
+    "answer": "2"
+  },
+  {
+    "question": "What is the remainder when 133702 is divided by 52?",
+    "answer": "10"
+  },
+  {
+    "question": "Let p(j) = 2*j + 5. Suppose -7*h + 12 = -6*h + 5*r, -5*h + 12 = r. Suppose -4*u + 3*i + h*i = -215, -5*i - 265 = -5*u. Let z = -46 + u. Give p(z).",
+    "answer": "13"
+  },
+  {
+    "question": "What is the closest to 0 in -12, -5, -272?",
+    "answer": "-5"
+  },
+  {
+    "question": "Calculate the remainder when 3297 is divided by 29.",
+    "answer": "20"
+  },
+  {
+    "question": "Suppose -2*r + 2*c + 16 = -0*r, 2*c = -r - 1. Solve -4*u + 3*x - r*x - 24 = 0, -5*u + 3*x - 19 = 0 for u.",
+    "answer": "-5"
+  },
+  {
+    "question": "Calculate the remainder when 22622 is divided by 796.",
+    "answer": "334"
+  },
+  {
+    "question": "Solve -5 = -42649*v + 42650*v - 4*n + 3, 4*n - 24 = -3*v for v.",
+    "answer": "4"
+  },
+  {
+    "question": "Calculate the remainder when 160 is divided by 125.",
+    "answer": "35"
+  },
+  {
+    "question": "Which is the biggest value?  (a) -0.3  (b) 1  (c) -1919/16  (d) -1",
+    "answer": "1"
+  },
+  {
+    "question": "Calculate the highest common divisor of 117 and 676.",
+    "answer": "13"
+  },
+  {
+    "question": "Suppose -v + 2*t = -2*t - 3, -4*v + 5*t + 12 = 0. Suppose -v*a = -4*a + 13. What is the remainder when 36 is divided by a?",
+    "answer": "10"
+  },
+  {
+    "question": "What is 453 to the power of 1/4, to the nearest integer?",
+    "answer": "5"
+  },
+  {
+    "question": "Let x(q) = -q**3 - 7*q**2 + 24*q + 143. Determine x(-7).",
+    "answer": "-25"
+  },
+  {
+    "question": "Let k = 0.2 + 0.8. Let l = k - 1. Let b = 0.042 + -0.042. What is the nearest to b in l, -5, -4/9?",
+    "answer": "0.0"
+  },
+  {
+    "question": "Let f(l) = 5*l**3 + 54*l**2 - 27*l - 139. Let n be f(-11). Solve s + 5 = -3*k, n*k - 39*k - 5*s - 12 = 0 for k.",
+    "answer": "-1"
+  },
+  {
+    "question": "Suppose 57 + 8 = 5*c. What is the remainder when 38 is divided by c?",
+    "answer": "12"
+  },
+  {
+    "question": "(-1)/2 - 1 - (-15)/(-2)",
+    "answer": "-9.0"
+  },
+  {
+    "question": "Calculate the highest common divisor of 57 and 1444.",
+    "answer": "19"
+  },
+  {
+    "question": "What is the units digit of 6737?",
+    "answer": "7"
+  },
+  {
+    "question": "Suppose -2*t = 5*k - 62, 5*k + 2*t = -t + 63. Suppose -4*j + 3 = -3*j. Suppose -24 = -j*y - 6. Calculate the highest common factor of y and k.",
+    "answer": "6"
+  },
+  {
+    "question": "Let l(x) = 19*x**2 + 724*x - 722. Give l(1).",
+    "answer": "21"
+  },
+  {
+    "question": "Let w = 0.11 - 0.04. Let j = 0.47 - w. Let p = -3932 + 3929. Which is the nearest to -0.3?  (a) p  (b) 0  (c) j",
+    "answer": "0"
+  },
+  {
+    "question": "961/124 - 328/41",
+    "answer": "-0.25"
+  },
+  {
+    "question": "Suppose -96 = -4*j - 3*l, -3*j + j + 48 = -3*l. What is the remainder when j is divided by 17?",
+    "answer": "7"
+  },
+  {
+    "question": "Solve 20 = -25*g + 30*g for g.",
+    "answer": "4"
+  },
+  {
+    "question": "Find the first derivative of 8951 - 9826*d wrt d.",
+    "answer": "-9826"
+  },
+  {
+    "question": "Suppose -n + 2*l = -34218, 2*l - 396 = -404. What is the thousands digit of n?",
+    "answer": "4"
+  },
+  {
+    "question": "Let o(z) = -z**3 + 2*z**2 - z - 1. Let h(i) = 19*i**3 - 3*i**2 + i - 32. Let u(y) = h(y) + o(y). What is the third derivative of u(x) wrt x?",
+    "answer": "108"
+  },
+  {
+    "question": "Calculate the remainder when 24365 is divided by 5824.",
+    "answer": "1069"
+  },
+  {
+    "question": "Which is the nearest to 0?  (a) 1/3  (b) -1  (c) -0.1",
+    "answer": "-0.1"
+  },
+  {
+    "question": "(-2 - 6 - -1) + 28",
+    "answer": "21"
+  },
+  {
+    "question": "Let j = -409 + 409. Solve j = 2*l - 2*y - 16, -4*l - 3*y = -4*y - 23 for l.",
+    "answer": "5"
+  },
+  {
+    "question": "What is the remainder when 600 is divided by 300?",
+    "answer": "0"
+  },
+  {
+    "question": "What is the value of -4 - 0 - (-4 + -1 + 4)?",
+    "answer": "-3"
+  },
+  {
+    "question": "Solve -1129*k - 27 = -1138*k for k.",
+    "answer": "3"
+  },
+  {
+    "question": "Solve -2*v + 28 = 14*p - 32, -5*p = -20*v - 23*v + 38*v + 30 for p.",
+    "answer": "3"
+  },
+  {
+    "question": "Let n(d) = -d**2 - 972*d + 10826. What is the remainder when (-2 + -460)*(-8)/12 is divided by n(11)?",
+    "answer": "9.0"
+  },
+  {
+    "question": "Solve 6*s - 66456 = -66420 for s.",
+    "answer": "6"
+  },
+  {
+    "question": "Let r be -4 + ((-201)/(-16))/3. Which is the closest to 2/7?  (a) -3/8  (b) 0.4  (c) r",
+    "answer": "0.1875"
+  },
+  {
+    "question": "Let x(v) be the second derivative of -v**4/3 + 5*v**3/6 - 3*v**2/2 - 118*v + 2. Give x(2).",
+    "answer": "-9"
+  },
+  {
+    "question": "What is -42 + -93 + -11 + 69?",
+    "answer": "-77"
+  },
+  {
+    "question": "What is the fifth smallest value in 0.07, 0.2, -0.3, -61, 0.1?",
+    "answer": "0.2"
+  },
+  {
+    "question": "Suppose 4*m - 5*h + 29 = 0, -3*m = -0*m - 4*h + 23. Let v be ((-1)/m)/(3/(-21)). Which is smaller: -8 or v?",
+    "answer": "-8"
+  },
+  {
+    "question": "42120 divided by 520",
+    "answer": "81.0"
+  },
+  {
+    "question": "What is the fourth smallest value in 88, 2/17, -3, 1/8?",
+    "answer": "88"
+  },
+  {
+    "question": "Suppose -67 - 7 = -5*u + w, -u + 5*w = -10. Suppose a - 2*a + 3*l = -26, 2*l = -5*a + 147. What is the remainder when a is divided by u?",
+    "answer": "14"
+  },
+  {
+    "question": "Solve -4762*f + 288 + 41 = -4769*f for f.",
+    "answer": "-47"
+  },
+  {
+    "question": "What is 2 + -7 + (2 + 2 - 1)?",
+    "answer": "-2"
+  },
+  {
+    "question": "Evaluate 13/((-1521)/(-52))*3*18/4.",
+    "answer": "6.0"
+  },
+  {
+    "question": "What is the second smallest value in -0.2, -9, -0.527?",
+    "answer": "-0.527"
+  },
+  {
+    "question": "What is the millions digit of 6778699?",
+    "answer": "6"
+  },
+  {
+    "question": "Suppose 13*s - 1811725 = -19*s + 37491. What is the hundreds digit of s?",
+    "answer": "7"
+  },
+  {
+    "question": "Which is the third biggest value?  (a) -3  (b) -0.76489  (c) 2",
+    "answer": "-3"
+  },
+  {
+    "question": "Let z = -19229 - -19382. Solve -69*r + 330 = -z for r.",
+    "answer": "7"
+  },
+  {
+    "question": "Suppose 0 = 2*a - 0*a - 160. Suppose -4*v + 4*n + n = -a, 27 = v - 3*n. What is the second derivative of v*y - 7*y - 4*y**2 - 9*y wrt y?",
+    "answer": "-8"
+  },
+  {
+    "question": "45 divided by -2",
+    "answer": "-22.5"
+  },
+  {
+    "question": "Divide -2840 by 2840.",
+    "answer": "-1.0"
+  },
+  {
+    "question": "Let y(t) = -t**3 - 86*t**2 + 168*t + 6255. Give y(-87).",
+    "answer": "-792"
+  },
+  {
+    "question": "8 + 19 - -5 - 16",
+    "answer": "16"
+  },
+  {
+    "question": "Let w(a) = 65 - 8770*a. Give w(0).",
+    "answer": "65"
+  },
+  {
+    "question": "Calculate the remainder when 152131 is divided by 911.",
+    "answer": "905"
+  },
+  {
+    "question": "What is the hundreds digit of ((-18903)/4)/(9/(-60))?",
+    "answer": "5"
+  },
+  {
+    "question": "What is the sixth smallest value in 0, -573, 1/2, -47, -3, -5?",
+    "answer": "0.5"
+  },
+  {
+    "question": "Solve 0 = -4*g + c - 3*c - 12, 2*g = 2*c - 12 for g.",
+    "answer": "-4"
+  },
+  {
+    "question": "0 * 2.06",
+    "answer": "0.0"
+  },
+  {
+    "question": "Calculate the remainder when 34311 is divided by 138.",
+    "answer": "87"
+  },
+  {
+    "question": "What is the value of (80/(-360))/((-24)/(-756))?",
+    "answer": "-7.0"
+  },
+  {
+    "question": "Let z = 738 + -735. Suppose -4*b - 16 = 0, -2*b = 2*p + 7 - 29. Suppose 0 = z*k - 12 - p. What is the remainder when k is divided by 3?",
+    "answer": "0"
+  },
+  {
+    "question": "Let d be (-8*4/(-20))/(4/50). Calculate the remainder when (-30)/(-25)*d/3 is divided by 4.",
+    "answer": "0.0"
+  },
+  {
+    "question": "Let i(d) = 3*d**2 + 38*d - 14. Calculate the remainder when i(-14) is divided by 30.",
+    "answer": "12"
+  },
+  {
+    "question": "Let j = 63 - 60. Let r = -8 + 1. Let v = r + 9. What is the remainder when j is divided by v?",
+    "answer": "1"
+  },
+  {
+    "question": "Let j(w) = -2*w**2 - 85*w + 37. Calculate j(-43).",
+    "answer": "-6"
+  },
+  {
+    "question": "Let y = 62 + -37. Let n = y - 35. Let r be 20*1 + 6 + n. Which is greater: 17 or r?",
+    "answer": "17"
+  },
+  {
+    "question": "Let a(i) = -81*i - 9. Let x be a(-1). What is the greatest common divisor of 48 and x?",
+    "answer": "24"
+  },
+  {
+    "question": "What is the hundred thousands digit of 68432683?",
+    "answer": "4"
+  },
+  {
+    "question": "What is the cube root of 114 to the nearest integer?",
+    "answer": "5"
+  },
+  {
+    "question": "Let n(y) be the first derivative of -y**3/3 + 2*y**2 - 2*y + 41. Give n(2).",
+    "answer": "2"
+  },
+  {
+    "question": "What is (0 - -3) + (-3 - 3) - 2?",
+    "answer": "-5"
+  },
+  {
+    "question": "Let n = 356 - -9395. What is the tens digit of n?",
+    "answer": "5"
+  },
+  {
+    "question": "What is the highest common divisor of 693 and 24015537?",
+    "answer": "63"
+  },
+  {
+    "question": "Simplify (sqrt(171) + 2*(-4*sqrt(171) - sqrt(171)))**2 + -2.",
+    "answer": "13849"
+  },
+  {
+    "question": "Let x be 15/6 - (-3)/6. What is the tens digit of x/18 + 142/12?",
+    "answer": "1"
+  },
+  {
+    "question": "Which is the fourth smallest value?  (a) -15  (b) -0.049  (c) -7  (d) -4",
+    "answer": "-0.049"
+  },
+  {
+    "question": "Suppose -24*t = -733 - 6539. What is the units digit of t?",
+    "answer": "3"
+  },
+  {
+    "question": "Solve -73*q + 74*q = 2 for q.",
+    "answer": "2"
+  },
+  {
+    "question": "Suppose 6384 - 2034 = 50*z. What is the highest common divisor of z and 12?",
+    "answer": "3"
+  },
+  {
+    "question": "What is the square root of 5694908 to the nearest integer?",
+    "answer": "2386"
+  },
+  {
+    "question": "(-8 + 7 - -5) + -20 - (-3 - 3)",
+    "answer": "-10"
+  },
+  {
+    "question": "What is the nearest to -0.1 in -14, 2, -0.16, 1/8, -4?",
+    "answer": "-0.16"
+  },
+  {
+    "question": "Let x(i) = 3*i**2 + 77*i - 156. Calculate x(2).",
+    "answer": "10"
+  },
+  {
+    "question": "What is the fifth root of 707214 to the nearest integer?",
+    "answer": "15"
+  },
+  {
+    "question": "What is the third root of 479403953 to the nearest integer?",
+    "answer": "783"
+  },
+  {
+    "question": "Let y(w) = 2*w**3 - 58*w**2 + 10*w + 22. Calculate the remainder when y(29) is divided by 85.",
+    "answer": "57"
+  },
+  {
+    "question": "Evaluate -3 - (-6 + 1 + 2 + 4).",
+    "answer": "-4"
+  },
+  {
+    "question": "Solve 0 = -5*s + 5*w - 15, -s = -27*w + 29*w + 6 for s.",
+    "answer": "-4"
+  },
+  {
+    "question": "Let f = -2 + 5. Let p(w) be the first derivative of w**3/3 - w**2 + w + 24. Let k be p(f). Let o(h) = -h**3 + 3*h**2 + 3*h - 3. Determine o(k).",
+    "answer": "-7"
+  },
+  {
+    "question": "Calculate 0/(-5)*(-15)/(-45).",
+    "answer": "-0.0"
+  },
+  {
+    "question": "Let u(j) = j**3 - 16*j**2 - 13*j - 33. Let x be u(8). Let h = -648 - x. Let f = -2.6 - 0.4. Which is the second smallest value?  (a) 4/5  (b) f  (c) h  (d) -5",
+    "answer": "-3.0"
+  },
+  {
+    "question": "What is 13 divided by -20?",
+    "answer": "-0.65"
+  },
+  {
+    "question": "Suppose 11*q - 475 - 1021 = 0. Let f = q - 136. Solve 3*t - 2 - 7 = f for t.",
+    "answer": "3"
+  },
+  {
+    "question": "Let c = 443 - 363.6. Let s = c - 79. What is the nearest to 0 in s, -0.2, -3/2?",
+    "answer": "-0.2"
+  },
+  {
+    "question": "Let r(x) = x - 1. Let s(j) = 1 - 4*j. Let c(d) = -3*r(d) - s(d). What are the prime factors of c(1)?",
+    "answer": "[3]"
+  },
+  {
+    "question": "Calculate (15/(-4))/((-513)/114)*6.",
+    "answer": "5.0"
+  },
+  {
+    "question": "Let j = -9 - -11. Let o(d) = -3*d + 2*d**2 + 4 - d**j + 0*d**2. Calculate the remainder when 40 is divided by o(5).",
+    "answer": "12"
+  },
+  {
+    "question": "-4 - (-10 - (8 + -4)) - (-1 - -2)",
+    "answer": "9"
+  },
+  {
+    "question": "Calculate the highest common divisor of 27148 and 80060686.",
+    "answer": "1234"
+  },
+  {
+    "question": "Determine q, given that -q**2/5 + q/5 = 0.",
+    "answer": "[0, 1]"
+  },
+  {
+    "question": "40 times 5",
+    "answer": "200"
+  },
+  {
+    "question": "Calculate -156680 divided by -31336.",
+    "answer": "5.0"
+  },
+  {
+    "question": "Solve -4*d = 5*l + 19, -4*d - 25 = -225*l + 232*l for l.",
+    "answer": "-3"
+  },
+  {
+    "question": "Which is the smallest value?  (a) 80796/4813  (b) 2  (c) -0.4",
+    "answer": "-0.4"
+  },
+  {
+    "question": "Suppose -6 = -w + 1. Let o = 9 - w. Suppose 3*h - 18 = -o*f + 5*f, 0 = -5*h + 2*f + 33. What is the units digit of h?",
+    "answer": "7"
+  },
+  {
+    "question": "What is the greatest common factor of 411 and 959?",
+    "answer": "137"
+  },
+  {
+    "question": "What is the hundred thousands digit of 2976716?",
+    "answer": "9"
+  },
+  {
+    "question": "1/((-30)/12)*(-15)/12",
+    "answer": "0.5"
+  },
+  {
+    "question": "What is the product of -222.6 and -0.6?",
+    "answer": "133.56"
+  },
+  {
+    "question": "Let l = 30 - 30. Suppose l = -5*t + 7 + 8. Suppose -15 = -5*g, -2*i - 2*i - 31 = -5*g. Sort t, i, 1 in decreasing order.",
+    "answer": "3 1 -4"
+  },
+  {
+    "question": "What is the highest common factor of 1281 and 73479?",
+    "answer": "21"
+  },
+  {
+    "question": "Let j(b) be the second derivative of b**5/20 + 7*b**4/12 + b**2 - 2*b. Let y = -27 + 28. Calculate the remainder when j(-7) is divided by y.",
+    "answer": "0"
+  },
+  {
+    "question": "Calculate (-9 - -23) + (-8 - -29 - 5) + -7.",
+    "answer": "23"
+  },
+  {
+    "question": "Calculate the highest common factor of 65 and 1941017.",
+    "answer": "13"
+  },
+  {
+    "question": "Suppose 0*v = 2*v + 10. Let w = 417 + -1083. Let o = 664 + w. What is the nearest to 2 in o, -0.1, v?",
+    "answer": "-0.1"
+  },
+  {
+    "question": "Calculate the highest common factor of 1197 and 66519.",
+    "answer": "171"
+  },
+  {
+    "question": "Suppose 44 = 2*k - 0*k. Suppose v = 39 + 53. Let q = -51 + v. What is the remainder when q is divided by k?",
+    "answer": "19"
+  },
+  {
+    "question": "Let s(z) = 8*z**2 - 8*z - 3. Let f(i) = -26*i**2 + 24*i + 10. Let q(w) = 3*f(w) + 10*s(w). Let v be q(5). Solve -3*t + v = -2 for t.",
+    "answer": "4"
+  },
+  {
+    "question": "Solve 177*n + 4328 - 1850 = 0 for n.",
+    "answer": "-14"
+  },
+  {
+    "question": "Suppose u - 15 = 11. Differentiate u - 15 + 8*l + 5*l - 22 with respect to l.",
+    "answer": "13"
+  },
+  {
+    "question": "What is the fourth root of 3273 to the nearest integer?",
+    "answer": "8"
+  },
+  {
+    "question": "What is the value of 6 + 6 + (10 + -31 - 3) + 11?",
+    "answer": "-1"
+  },
+  {
+    "question": "What is the value of -4 - 5 - -12 - -5?",
+    "answer": "8"
+  },
+  {
+    "question": "What is the value of 2 + 16 - (-8 + -14 + 30)?",
+    "answer": "10"
+  },
+  {
+    "question": "What is the eighth root of 1228 to the nearest integer?",
+    "answer": "2"
+  }
+]

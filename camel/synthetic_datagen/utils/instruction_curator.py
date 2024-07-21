@@ -20,8 +20,8 @@ from typing import Any, Dict, List
 
 from tqdm import tqdm
 
-from synthetic_datagen.self_instruct.self_instruct_spec import SelfInstructSpec
-from synthetic_datagen.utils.generate_utils import load_jsonl
+from ..self_instruct.self_instruct_spec import SelfInstructSpec
+from ..utils.generate_utils import load_jsonl
 
 logger = logging.getLogger(__name__)
 

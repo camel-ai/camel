@@ -22,15 +22,17 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 from datasets import Dataset, DatasetDict, load_dataset
+
 from camel.synthetic_datagen.base_generator import BaseDataGenerator
-from synthetic_datagen.evolve_instruct.evolve_instruct_spec import (
-    EvolveInstructSpec,
-)
-from synthetic_datagen.utils.instance_generator import (
+
+from ..utils.instance_generator import (
     InstanceGenerator,
 )
-from synthetic_datagen.utils.instruction_generator import (
+from ..utils.instruction_generator import (
     InstructionGenerator,
+)
+from .evolve_instruct_spec import (
+    EvolveInstructSpec,
 )
 
 logger = logging.getLogger(__name__)
@@ -79,10 +81,10 @@ class EvolveInstructGenerator(BaseDataGenerator):
         self.spec = spec or EvolveInstructSpec()
         self.instruction_generator = InstructionGenerator(self.spec)
         self.instance_generator = InstanceGenerator(self.spec)
-        self.seed_text_list = []
-        self.prompts = []
-        self.final_prompts = []
-        self.final_answers = []
+        self.seed_text_list = list[str]
+        self.prompts = list[str]
+        self.final_prompts = list[str]
+        self.final_answers = list[str]
         self.prompt_templates = dict()
         self.prompt_templates['base'] = ""
         write_in_korean = "Write in Korean."

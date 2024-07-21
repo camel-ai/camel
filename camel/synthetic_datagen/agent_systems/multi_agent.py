@@ -17,7 +17,8 @@ from camel.agents.chat_agent import ChatAgent
 from camel.messages.base import BaseMessage
 from camel.models.openai_model import OpenAIModel
 from camel.types.enums import ModelType
-from synthetic_datagen.agent_systems.base_agent_system import BaseAgentSystem
+
+from .base_agent_system import BaseAgentSystem
 
 
 class MultiAgent(BaseAgentSystem):

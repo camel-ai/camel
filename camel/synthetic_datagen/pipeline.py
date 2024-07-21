@@ -25,7 +25,8 @@ from camel.synthetic_datagen.method_factory import (
     SyntheticDataGeneratorFactory,
     SyntheticDataGeneratorMethodType,
 )
-from synthetic_datagen.utils.generate_utils import md_to_text
+
+from .utils.generate_utils import md_to_text
 
 
 class DataGeneratorPipeline:

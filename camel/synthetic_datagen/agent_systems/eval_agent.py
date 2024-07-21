@@ -17,7 +17,8 @@ from typing import Any, Dict, Optional
 
 from camel.models import NvidiaModelV2
 from camel.types import ModelType
-from synthetic_datagen.agent_systems.base_agent_system import (
+
+from .base_agent_system import (
     BaseEvalAgentSystem,
     SyntheticDatum,
 )

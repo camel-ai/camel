@@ -20,7 +20,6 @@ from typing import Any, Dict, List
 
 import numpy as np
 import tqdm
-
 from synthetic_datagen.self_instruct.self_instruct_spec import SelfInstructSpec
 from synthetic_datagen.utils.generate_utils import (
     encode_prompt,

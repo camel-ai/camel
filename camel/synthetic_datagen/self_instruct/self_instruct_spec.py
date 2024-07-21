@@ -17,12 +17,12 @@ from typing import Any, List
 
 from rouge_score import rouge_scorer
 
-from implementations.synthetic_datagen.agent_systems.eval_agent import (
+from ..agent_systems.base_agent_system import BaseAgentSystem
+from ..agent_systems.eval_agent import (
     NemotronRewardEvalAgent,
 )
-from synthetic_datagen.agent_systems.base_agent_system import BaseAgentSystem
-from synthetic_datagen.agent_systems.single_agent import SingleAgent
-from synthetic_datagen.utils.seed_instruction import SeedInstruction
+from ..agent_systems.single_agent import SingleAgent
+from ..utils.seed_instruction import SeedInstruction
 
 
 @dataclass
@@ -80,7 +80,7 @@ class SelfInstructSpec:
     agent_system: BaseAgentSystem = field(default_factory=SingleAgent)
     seed_instructions: List[SeedInstruction] = field(default=list)
     include_seed_tasks: bool = False
-    synthetic_data_dir: str = Path("data/gpt4_generations/")
+    synthetic_data_dir: Path = Path("data/gpt4_generations/")
     num_prompt_instructions: int = 2
     num_instructions_to_generate: int = 2
     SYNTHETIC_INSTANCES_FILE: str = "machine_generated_instances.jsonl"

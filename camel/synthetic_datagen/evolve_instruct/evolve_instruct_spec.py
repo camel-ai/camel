@@ -16,11 +16,11 @@ from pathlib import Path
 from typing import Any, List
 
 from rouge_score import rouge_scorer
-from synthetic_datagen.agent_systems.base_agent_system import BaseAgentSystem
-from synthetic_datagen.agent_systems.single_agent import SingleAgent
 from transformers import pipeline
 
-from implementations.synthetic_datagen.utils.seed_instruction import (
+from ..agent_systems.base_agent_system import BaseAgentSystem
+from ..agent_systems.single_agent import SingleAgent
+from ..utils.seed_instruction import (
     SeedInstruction,
 )
 

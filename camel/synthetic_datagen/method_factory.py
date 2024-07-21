@@ -14,10 +14,11 @@
 from enum import Enum
 from typing import Any, Type, Union
 
-from camel.synthetic_datagen.base_generator import BaseDataGenerator
 from synthetic_datagen.self_instruct.self_instruct_pipeline import (
     SelfInstructPipeline,
 )
+
+from camel.synthetic_datagen.base_generator import BaseDataGenerator
 
 
 class SyntheticDataGeneratorMethodType(Enum):

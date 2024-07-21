@@ -18,7 +18,8 @@ from camel.configs import OllamaConfig
 from camel.messages import BaseMessage
 from camel.models import OllamaModel
 from camel.types import ModelType
-from synthetic_datagen.agent_systems.base_agent_system import BaseAgentSystem
+
+from .base_agent_system import BaseAgentSystem
 
 
 class SingleAgent(BaseAgentSystem):
