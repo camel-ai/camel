@@ -22,7 +22,7 @@ please set the below os environment:
 export AZURE_OPENAI_ENDPOINT=""
 export AZURE_API_VERSION=""
 export AZURE_OPENAI_API_KEY=""
-export AZURE_DEPLOYMENT=""
+export AZURE_DEPLOYMENT_NAME=""
 """
 
 model = ModelFactory.create(

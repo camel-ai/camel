@@ -18,7 +18,7 @@ export AZURE_OPENAI_ENDPOINT=""
 # if `AZURE_API_VERSION` is not set, `OPENAI_API_VERSION` will be used as api version
 export AZURE_API_VERSION=""
 export AZURE_OPENAI_API_KEY=""
-export AZURE_DEPLOYMENT=""
+export AZURE_DEPLOYMENT_NAME=""
 """
 
 import re
