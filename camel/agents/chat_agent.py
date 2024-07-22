@@ -22,7 +22,6 @@ from pydantic import BaseModel
 
 from camel.agents.base import BaseAgent
 from camel.configs import ChatGPTConfig
-from camel.configs.gemini_config import GeminiConfig
 from camel.memories import (
     AgentMemory,
     ChatHistoryMemory,
@@ -313,6 +312,7 @@ class ChatAgent(BaseAgent):
                 that includes value types and field descriptions used to
                 generate a structured response by LLM. This schema helps
                 in defining the expected output format.
+
         Returns:
             ChatAgentResponse: A struct containing the output messages,
                 a boolean indicating whether the chat session has terminated,
@@ -340,8 +340,8 @@ class ChatAgent(BaseAgent):
             # chatgent, call the model specified by tools with
             # return_json_response of OpenAIFunction format, and return a
             # structured response with the user-specified output schema.
-            if output_schema is not None and len(self.func_dict) == 0:
-                self._structured_output_openai_response(output_schema)
+            if output_schema and not self.is_tools_added():
+                self._add_output_schema_to_tool_list(output_schema)
 
             (
                 response,
@@ -366,14 +366,14 @@ class ChatAgent(BaseAgent):
                 # generated response as the input for the structure,
                 # simultaneously calling the return_json_response function.
                 # Call the model again with return_json_response in the format
-                # of OpenAIFunction as the last tool, returning a structured #
+                # of OpenAIFunction as the last tool, returning a structured
                 # response with the user-specified output schema.
                 if output_schema is not None and all(
                     record.func_name
                     != Constants.RETURN_JSON_STRUCTURE_RESPONSE
                     for record in tool_calls
                 ):
-                    self._structured_output_openai_response(output_schema)
+                    self._add_output_schema_to_tool_list(output_schema)
 
                     (
                         response,
@@ -447,7 +447,7 @@ class ChatAgent(BaseAgent):
                     e.args[1], tool_calls, "max_tokens_exceeded"
                 )
             if output_schema is not None:
-                self._structured_output_openai_response(output_schema)
+                self._add_output_schema_to_tool_list(output_schema)
 
             (
                 response,
@@ -487,7 +487,7 @@ class ChatAgent(BaseAgent):
                     != Constants.RETURN_JSON_STRUCTURE_RESPONSE
                     for record in tool_calls
                 ):
-                    self._structured_output_openai_response(output_schema)
+                    self._add_output_schema_to_tool_list(output_schema)
 
                     (
                         response,
@@ -527,22 +527,23 @@ class ChatAgent(BaseAgent):
         tool_calls: List[FunctionCallingRecord],
     ) -> List[FunctionCallingRecord]:
         r"""Handles adding tools for function calls based on the response.
+
         This method processes a function call within the chat completion
-        response,
-        updates the memory with the assistant's message and the function
-        result message,
-        and records the function call in the provided list of tool calls.
+        response, updates the memory with the assistant's message and the
+        function result message, and records the function call in the provided
+        list of tool calls.
 
         Args:
             response (ChatCompletion): The response object from the chat
-            completion.
+                completion.
             tool_calls (List[FunctionCallingRecord]): The list to record
-            function calls.
+                function calls.
 
         Returns:
             List[FunctionCallingRecord]: The updated list of function call
-            records.
+                records.
         """
+
         # Do function calling
         func_assistant_msg, func_result_msg, func_record = self.step_tool_call(
             response
@@ -554,44 +555,34 @@ class ChatAgent(BaseAgent):
 
         # Record the function calling
         tool_calls.append(func_record)
+
         return tool_calls
 
-    def _structured_output_openai_response(self, output_schema: BaseModel):
-        r"""Handles the structured output response
-        for OpenAI.
+    def _add_output_schema_to_tool_list(self, output_schema: BaseModel):
+        r"""Handles the structured output response for OpenAI.
 
         This method processes the given output schema and integrates the
-        resulting function
-        into the tools for the OpenAI model configuration.
+        resulting function into the tools for the OpenAI model configuration.
 
         Args:
             output_schema (BaseModel): The schema representing the expected
-            output structure.
-
-        Returns:
-            None
+                output structure.
         """
-        # step 1 extract the output_schema infos as json.
-        output_schema_json = get_pydantic_object_schema(output_schema)
+
+        # step 1 extract the output_schema info as json.
+        schema_json = get_pydantic_object_schema(output_schema)
 
         # step 2 convert output schema json as callable string
-        output_schema_callable_str = json_to_function_code(output_schema_json)
+        func_str = json_to_function_code(schema_json)
 
-        # step 3 get function from callable string
-        return_json_func = func_string_to_callable(output_schema_callable_str)
+        # step 3 get callable function from string
+        func_callable = func_string_to_callable(func_str)
 
         # step 4 add return_json_func into tools
-        func = OpenAIFunction(return_json_func)
-        tools = [func]
+        func = OpenAIFunction(func_callable)
         self.func_dict[func.get_function_name()] = func.func
-        if self.model_type.is_openai:
-            self.model_backend.model_config_dict = ChatGPTConfig(
-                tools=tools
-            ).__dict__
-        elif self.model_type.is_gemini:
-            self.model_backend.model_config_dict = GeminiConfig(
-                tools=tools
-            ).__dict__
+        if self.model_type.is_openai or self.model_type.is_gemini:
+            self.model_backend.model_config_dict = {"tools": [func]}
 
     def _step_model_response(
         self,

@@ -424,9 +424,10 @@ def get_pydantic_major_version() -> int:
 
 def get_pydantic_object_schema(pydantic_params: BaseModel) -> Dict:
     r"""Get the JSON schema of a Pydantic model.
+
     Args:
-        pydantic_params (BaseModel): The Pydantic model to retrieve
-        the schema for.
+        pydantic_params (BaseModel): The Pydantic model to retrieve the schema
+            for.
 
     Returns:
         dict: The JSON schema of the Pydantic model.
@@ -441,7 +442,8 @@ def func_string_to_callable(code: str):
         code (str): The function code as a string.
 
     Returns:
-        callable: The callable function object extracted from the code string.
+        Callable[..., Any]: The callable function object extracted from the
+            code string.
     """
     local_vars: Mapping[str, object] = {}
     exec(code, globals(), local_vars)
@@ -449,18 +451,23 @@ def func_string_to_callable(code: str):
     return func
 
 
-def json_to_function_code(json_obj):
+def json_to_function_code(json_obj: Dict) -> str:
     r"""Generate a Python function code from a JSON schema.
 
     Args:
         json_obj (dict): The JSON schema object containing properties and
-        required fields, and json format is follow openai tools schema
+            required fields, and json format is follow openai tools schema
 
     Returns:
         str: The generated Python function code as a string.
     """
-    properties = json_obj['properties']
-    required = json_obj['required']
+    properties = json_obj.get('properties', {})
+    required = json_obj.get('required', [])
+
+    if not properties or not required:
+        raise ValueError(
+            "JSON schema must contain 'properties' and 'required' fields"
+        )
 
     args = []
     docstring_args = []
