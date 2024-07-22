@@ -199,6 +199,7 @@ all = [
     "pydub",
     "pillow",
     "docker",
+    "jupyter_client",
     # vector-database
     "qdrant-client",
     "pymilvus",
