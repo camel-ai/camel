@@ -236,6 +236,7 @@ class OpenAITokenCounter(BaseTokenCounter):
             model (ModelType): Model type for which tokens will be counted.
         """
         self.model: str = model.value_for_tiktoken
+        self.model_type = model
 
         self.tokens_per_message: int
         self.tokens_per_name: int
