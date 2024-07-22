@@ -21,7 +21,6 @@ from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
 from camel.utils import (
     BaseTokenCounter,
-    OpenAITokenCounter,
     OpenSourceTokenCounter,
 )
 
@@ -35,9 +34,9 @@ class OpenSourceModel(BaseModelBackend):
         self,
         model_type: ModelType,
         model_config_dict: Dict[str, Any],
-        token_counter: Optional[BaseTokenCounter] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
         r"""Constructor for model backends of Open-source models.
 
@@ -48,9 +47,13 @@ class OpenSourceModel(BaseModelBackend):
             api_key (Optional[str]): The API key for authenticating with the
                 model service. (ignored for open-source models)
             url (Optional[str]): The url to the model service.
+            token_counter (Optional[BaseTokenCounter]): Token counter to use
+                for the model. If not provided, `OpenSourceTokenCounter` will
+                be used.
         """
-        super().__init__(model_type, model_config_dict, api_key, url)
-        self._token_counter = token_counter
+        super().__init__(
+            model_type, model_config_dict, api_key, url, token_counter
+        )
 
         # Check whether the input model type is open-source
         if not model_type.is_open_source:
@@ -103,16 +106,9 @@ class OpenSourceModel(BaseModelBackend):
                 tokenization style.
         """
         if not self._token_counter:
-            try:
-                self._token_counter = OpenSourceTokenCounter(
-                    self.model_type, self.model_path
-                )
-            except Exception as e:
-                print(f"Retrieve model token counter failed: {e}. \n \
-                      Use default GPT 3.5-turbo token counter instead.")
-                self._token_counter = OpenAITokenCounter(
-                    ModelType.GPT_3_5_TURBO
-                )
+            self._token_counter = OpenSourceTokenCounter(
+                self.model_type, self.model_path
+            )
         return self._token_counter
 
     def run(

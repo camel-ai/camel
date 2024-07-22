@@ -23,7 +23,6 @@ from camel.types import ChatCompletion, ModelType
 from camel.utils import (
     AnthropicTokenCounter,
     BaseTokenCounter,
-    OpenAITokenCounter,
     api_keys_required,
 )
 
@@ -35,9 +34,9 @@ class AnthropicModel(BaseModelBackend):
         self,
         model_type: ModelType,
         model_config_dict: Dict[str, Any],
-        token_counter: Optional[BaseTokenCounter] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
         r"""Constructor for Anthropic backend.
 
@@ -50,12 +49,16 @@ class AnthropicModel(BaseModelBackend):
                 Anthropic service. (default: :obj:`None`)
             url (Optional[str]): The url to the Anthropic service. (default:
                 :obj:`None`)
+            token_counter (Optional[BaseTokenCounter]): Token counter to use
+                for the model. If not provided, `AnthropicTokenCounter` will
+                be used.
         """
-        super().__init__(model_type, model_config_dict, api_key, url)
+        super().__init__(
+            model_type, model_config_dict, api_key, url, token_counter
+        )
         self._api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
         self._url = url or os.environ.get("ANTHROPIC_API_BASE_URL")
         self.client = Anthropic(api_key=self._api_key, base_url=self._url)
-        self._token_counter = token_counter
 
     def _convert_response_from_anthropic_to_openai(self, response):
         # openai ^1.0.0 format, reference openai/types/chat/chat_completion.py
@@ -86,15 +89,7 @@ class AnthropicModel(BaseModelBackend):
                 tokenization style.
         """
         if not self._token_counter:
-            try:
-                self._token_counter = AnthropicTokenCounter(self.model_type)
-            # Currently this branch will never be executed. It is here in case of future changes of AnthropicTokenCounter.
-            except Exception as e:
-                print(f"Retrieve model token counter failed: {e}. \n \
-                      Use default GPT 3.5-turbo token counter instead.")
-                self._token_counter = OpenAITokenCounter(
-                    ModelType.GPT_3_5_TURBO
-                )
+            self._token_counter = AnthropicTokenCounter(self.model_type)
         return self._token_counter
 
     def count_tokens_from_prompt(self, prompt: str) -> int:

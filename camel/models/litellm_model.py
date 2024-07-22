@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional
 from camel.configs import LITELLM_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.types import ChatCompletion
-from camel.utils import LiteLLMTokenCounter
+from camel.utils import BaseTokenCounter, LiteLLMTokenCounter
 
 
 class LiteLLMModel:
@@ -28,9 +28,9 @@ class LiteLLMModel:
         self,
         model_type: str,
         model_config_dict: Dict[str, Any],
-        token_counter: Optional[LiteLLMTokenCounter] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
         r"""Constructor for LiteLLM backend.
 
@@ -43,6 +43,9 @@ class LiteLLMModel:
                 model service. (default: :obj:`None`)
             url (Optional[str]): The url to the model service. (default:
                 :obj:`None`)
+            token_counter (Optional[BaseTokenCounter]): Token counter to use
+                for the model. If not provided, `LiteLLMTokenCounter` will
+                be used.
         """
         self.model_type = model_type
         self.model_config_dict = model_config_dict
@@ -99,8 +102,10 @@ class LiteLLMModel:
                 tokenization style.
         """
         if not self._token_counter:
-            self._token_counter = LiteLLMTokenCounter(self.model_type)
-        return self._token_counter
+            self._token_counter = LiteLLMTokenCounter(  # type: ignore[assignment]
+                self.model_type
+            )
+        return self._token_counter  # type: ignore[return-value]
 
     def run(
         self,

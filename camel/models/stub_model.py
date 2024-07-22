@@ -26,7 +26,7 @@ from camel.types import (
     CompletionUsage,
     ModelType,
 )
-from camel.utils import BaseTokenCounter, OpenAITokenCounter
+from camel.utils import BaseTokenCounter
 
 
 class StubTokenCounter(BaseTokenCounter):
@@ -53,13 +53,14 @@ class StubModel(BaseModelBackend):
         self,
         model_type: ModelType,
         model_config_dict: Dict[str, Any],
-        token_counter: Optional[BaseTokenCounter] = None,
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
         r"""All arguments are unused for the dummy model."""
-        super().__init__(model_type, model_config_dict, api_key, url)
-        self._token_counter = token_counter
+        super().__init__(
+            model_type, model_config_dict, api_key, url, token_counter
+        )
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -70,15 +71,7 @@ class StubModel(BaseModelBackend):
                 tokenization style.
         """
         if not self._token_counter:
-            try:
-                self._token_counter = StubTokenCounter()
-            # Currently this branch will never be executed. It is here in case of future changes of StubTokenCounter.
-            except Exception as e:
-                print(f"Retrieve model token counter failed: {e}. \n \
-                      Use default GPT 3.5-turbo token counter instead.")
-                self._token_counter = OpenAITokenCounter(
-                    ModelType.GPT_3_5_TURBO
-                )
+            self._token_counter = StubTokenCounter()
         return self._token_counter
 
     def run(
