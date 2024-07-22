@@ -36,6 +36,7 @@ class AnthropicModel(BaseModelBackend):
         model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
         r"""Constructor for Anthropic backend.
 
@@ -48,12 +49,16 @@ class AnthropicModel(BaseModelBackend):
                 Anthropic service. (default: :obj:`None`)
             url (Optional[str]): The url to the Anthropic service. (default:
                 :obj:`None`)
+            token_counter (Optional[BaseTokenCounter]): Token counter to use
+                for the model. If not provided, `AnthropicTokenCounter` will
+                be used.
         """
-        super().__init__(model_type, model_config_dict, api_key, url)
+        super().__init__(
+            model_type, model_config_dict, api_key, url, token_counter
+        )
         self._api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
         self._url = url or os.environ.get("ANTHROPIC_API_BASE_URL")
         self.client = Anthropic(api_key=self._api_key, base_url=self._url)
-        self._token_counter: Optional[BaseTokenCounter] = None
 
     def _convert_response_from_anthropic_to_openai(self, response):
         # openai ^1.0.0 format, reference openai/types/chat/chat_completion.py
