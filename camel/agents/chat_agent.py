@@ -340,7 +340,7 @@ class ChatAgent(BaseAgent):
             # chatgent, call the model specified by tools with
             # return_json_response of OpenAIFunction format, and return a
             # structured response with the user-specified output schema.
-            if output_schema and not self.is_tools_added():
+            if output_schema is not None and len(self.func_dict) == 0:
                 self._add_output_schema_to_tool_list(output_schema)
 
             (
@@ -580,9 +580,18 @@ class ChatAgent(BaseAgent):
 
         # step 4 add return_json_func into tools
         func = OpenAIFunction(func_callable)
+        tools = [func]
         self.func_dict[func.get_function_name()] = func.func
-        if self.model_type.is_openai or self.model_type.is_gemini:
-            self.model_backend.model_config_dict = {"tools": [func]}
+        if self.model_type.is_openai:
+            self.model_backend.model_config_dict = ChatGPTConfig(
+                tools=tools
+            ).__dict__
+        elif self.model_type.is_gemini:
+            from camel.configs.gemini_config import GeminiConfig
+
+            self.model_backend.model_config_dict = GeminiConfig(
+                tools=tools
+            ).__dict__
 
     def _step_model_response(
         self,
