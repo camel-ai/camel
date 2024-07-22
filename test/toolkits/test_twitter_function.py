@@ -24,7 +24,20 @@ def twitter_toolkit():
     return TwitterToolkit()
 
 
-def test_create_tweet(monkeypatch, twitter_toolkit):
+@pytest.mark.parametrize(
+    "user_input, expected_output",
+    [
+        (
+            'yes',
+            "Create tweet successful. The tweet ID is: 12345."
+            " The tweet text is: 'Test tweet'.",
+        ),
+        ('no', "Execution cancelled by the user."),
+    ],
+)
+def test_create_tweet(
+    monkeypatch, twitter_toolkit, user_input, expected_output
+):
     # Get the logger for the module being tested
     logger = get_logger('camel.toolkits.twitter_toolkit')
     # Create a mock response object
@@ -39,7 +52,7 @@ def test_create_tweet(monkeypatch, twitter_toolkit):
     mock_response.status_code = 201
 
     # Mock user input to confirm creating a tweet
-    monkeypatch.setattr('builtins.input', lambda _: 'yes')
+    monkeypatch.setattr('builtins.input', lambda _: user_input)
 
     # Capture the output of the logger
     captured_output = []
@@ -71,11 +84,8 @@ def test_create_tweet(monkeypatch, twitter_toolkit):
         )
         assert any(expected_start in output for output in captured_output)
         assert any("text: Test tweet." in output for output in captured_output)
-        expected_response = (
-            "Create tweet successful. The tweet ID is: "
-            "12345. The tweet text is: 'Test tweet'."
-        )
-        assert response == expected_response
+
+        assert response == expected_output
 
 
 def test_delete_tweet(monkeypatch, twitter_toolkit):
