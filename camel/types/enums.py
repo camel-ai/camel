@@ -85,6 +85,19 @@ class ModelType(Enum):
         }
 
     @property
+    def is_azure_openai(self) -> bool:
+        r"""Returns whether this type of models is an OpenAI-released model
+        from Azure.
+        """
+        return self in {
+            ModelType.GPT_3_5_TURBO,
+            ModelType.GPT_4,
+            ModelType.GPT_4_32K,
+            ModelType.GPT_4_TURBO,
+            ModelType.GPT_4O,
+        }
+
+    @property
     def is_zhipuai(self) -> bool:
         r"""Returns whether this type of models is an ZhipuAI model."""
         return self in {
