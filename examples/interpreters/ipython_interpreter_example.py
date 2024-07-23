@@ -14,8 +14,8 @@
 from camel.interpreters import JupyterKernelInterpreter
 
 interpreter = JupyterKernelInterpreter(
-        require_confirm=False, print_stdout=True, print_stderr=True
-    )
+    require_confirm=False, print_stdout=True, print_stderr=True
+)
 
 
 code = """
@@ -46,5 +46,3 @@ print(result)
 -10
 ===============================================================================
 '''
-
-
