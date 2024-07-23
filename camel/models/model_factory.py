@@ -14,6 +14,7 @@
 from typing import Any, Dict, Optional, Union
 
 from camel.models.anthropic_model import AnthropicModel
+from camel.models.azure_openai_model import AzureOpenAIModel
 from camel.models.base_model import BaseModelBackend
 from camel.models.gemini_model import GeminiModel
 from camel.models.litellm_model import LiteLLMModel
@@ -75,6 +76,8 @@ class ModelFactory:
                 )
             if model_platform.is_openai and model_type.is_openai:
                 model_class = OpenAIModel
+            elif model_platform.is_azure and model_type.is_azure_openai:
+                model_class = AzureOpenAIModel
             elif model_platform.is_anthropic and model_type.is_anthropic:
                 model_class = AnthropicModel
             elif model_platform.is_zhipuai and model_type.is_zhipuai:
