@@ -36,11 +36,14 @@ class ModelType(Enum):
     GLM_4V = 'glm-4v'
     GLM_3_TURBO = "glm-3-turbo"
 
-    GROQ_LLAMA_3_8_B = "llama3-8b-8192"
-    GROQ_LLAMA_3_70_B = "llama3-70b-8192"
-    GROQ_MIXTRAL_8_7_B = "mixtral-8x7b-32768"
-    GROQ_GEMMA_7_B_IT = "gemma-7b-it"
-    GROQ_GEMMA_2_9_B_IT = "gemma2-9b-it"
+    GROQ_LLAMA_3_1_8B = "llama-3.1-8b-instant"
+    GROQ_LLAMA_3_1_70B = "llama-3.1-70b-versatile"
+    GROQ_LLAMA_3_1_405B = "llama-3.1-405b-reasoning"
+    GROQ_LLAMA_3_8B = "llama3-8b-8192"
+    GROQ_LLAMA_3_70B = "llama3-70b-8192"
+    GROQ_MIXTRAL_8_7B = "mixtral-8x7b-32768"
+    GROQ_GEMMA_7B_IT = "gemma-7b-it"
+    GROQ_GEMMA_2_9B_IT = "gemma2-9b-it"
 
     STUB = "stub"
 
@@ -145,11 +148,14 @@ class ModelType(Enum):
     def is_groq(self) -> bool:
         r"""Returns whether this type of models is served by Groq."""
         return self in {
-            ModelType.GROQ_LLAMA_3_8_B,
-            ModelType.GROQ_LLAMA_3_70_B,
-            ModelType.GROQ_MIXTRAL_8_7_B,
-            ModelType.GROQ_GEMMA_7_B_IT,
-            ModelType.GROQ_GEMMA_2_9_B_IT,
+            ModelType.GROQ_LLAMA_3_1_8B,
+            ModelType.GROQ_LLAMA_3_1_70B,
+            ModelType.GROQ_LLAMA_3_1_405B,
+            ModelType.GROQ_LLAMA_3_8B,
+            ModelType.GROQ_LLAMA_3_70B,
+            ModelType.GROQ_MIXTRAL_8_7B,
+            ModelType.GROQ_GEMMA_7B_IT,
+            ModelType.GROQ_GEMMA_2_9B_IT,
         }
 
     @property
@@ -195,15 +201,21 @@ class ModelType(Enum):
             return 8192
         elif self == ModelType.GLM_4V:
             return 1024
-        elif self is ModelType.GROQ_LLAMA_3_8_B:
+        elif self is ModelType.GROQ_LLAMA_3_1_8B:
+            return 131072
+        elif self is ModelType.GROQ_LLAMA_3_1_70B:
+            return 131072
+        elif self is ModelType.GROQ_LLAMA_3_1_405B:
+            return 131072
+        elif self is ModelType.GROQ_LLAMA_3_8B:
             return 8192
-        elif self is ModelType.GROQ_LLAMA_3_70_B:
+        elif self is ModelType.GROQ_LLAMA_3_70B:
             return 8192
-        elif self is ModelType.GROQ_MIXTRAL_8_7_B:
+        elif self is ModelType.GROQ_MIXTRAL_8_7B:
             return 32768
-        elif self is ModelType.GROQ_GEMMA_7_B_IT:
+        elif self is ModelType.GROQ_GEMMA_7B_IT:
             return 8192
-        elif self is ModelType.GROQ_GEMMA_2_9_B_IT:
+        elif self is ModelType.GROQ_GEMMA_2_9B_IT:
             return 8192
         elif self is ModelType.STUB:
             return 4096

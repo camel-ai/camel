@@ -27,7 +27,6 @@ def main(model_type=None) -> None:
         role: ModelFactory.create(
             model_platform=ModelPlatformType.GROQ,
             model_type=model_type,
-            # ex. model_type=ModelType.GROQ_LLAMA_3_70_B
             model_config_dict=GroqConfig().__dict__,
         )
         for role in ["assistant", "user", "task-specify"]
@@ -86,12 +85,12 @@ def main(model_type=None) -> None:
 
         print_text_animated(
             Fore.BLUE + f"AI User:\n\n{user_response.msg.content}\n",
-            delay=0.001,
+            delay=0.005,
         )
         print_text_animated(
             Fore.GREEN + "AI Assistant:\n\n"
             f"{assistant_response.msg.content}\n",
-            delay=0.001,
+            delay=0.005,
         )
 
         if "CAMEL_TASK_DONE" in user_response.msg.content:
@@ -101,4 +100,4 @@ def main(model_type=None) -> None:
 
 
 if __name__ == "__main__":
-    main(model_type=ModelType.GROQ_LLAMA_3_70_B)
+    main(model_type=ModelType.GROQ_LLAMA_3_1_70B)

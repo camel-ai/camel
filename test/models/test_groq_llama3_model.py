@@ -18,15 +18,15 @@ import pytest
 from camel.configs import GroqConfig, OpenSourceConfig
 from camel.models import GroqModel
 from camel.types import ModelType
-from camel.utils import OpenSourceTokenCounter
+from camel.utils import OpenAITokenCounter
 
 
 @pytest.mark.model_backend
 @pytest.mark.parametrize(
     "model_type",
     [
-        ModelType.GROQ_LLAMA_3_8_B,
-        ModelType.GROQ_LLAMA_3_70_B,
+        ModelType.GROQ_LLAMA_3_8B,
+        ModelType.GROQ_LLAMA_3_70B,
     ],
 )
 def test_groq_llama3_model(model_type):
@@ -36,14 +36,14 @@ def test_groq_llama3_model(model_type):
     assert model.model_config_dict == model_config_dict
     # LLM served by Groq does not support token counter, so Camel uses
     # OpenSourceTokenCounter as a placeholder.
-    assert isinstance(model.token_counter, OpenSourceTokenCounter)
+    assert isinstance(model.token_counter, OpenAITokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
 
 
 @pytest.mark.model_backend
 def test_groq_llama3_model_unexpected_argument():
-    model_type = ModelType.GROQ_LLAMA_3_70_B
+    model_type = ModelType.GROQ_LLAMA_3_70B
     model_config = OpenSourceConfig(
         model_path="vicuna-7b-v1.5",
         server_url="http://localhost:8000/v1",

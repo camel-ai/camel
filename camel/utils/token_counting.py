@@ -54,8 +54,8 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
     if model in [
         ModelType.LLAMA_2,
         ModelType.LLAMA_3,
-        ModelType.GROQ_LLAMA_3_8_B,
-        ModelType.GROQ_LLAMA_3_70_B,
+        ModelType.GROQ_LLAMA_3_8B,
+        ModelType.GROQ_LLAMA_3_70B,
     ]:
         # reference: https://github.com/facebookresearch/llama/blob/cfc3fc8c1968d390eb830e65c63865e980873a06/llama/generation.py#L212
         seps = [" ", " </s><s>"]
@@ -137,7 +137,7 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
             else:
                 ret += '<|im_start|>' + role + '\n'
         return ret
-    elif model == ModelType.GROQ_MIXTRAL_8_7_B:
+    elif model == ModelType.GROQ_MIXTRAL_8_7B:
         # Mistral/Mixtral format
         system_prompt = f"<s>[INST] {system_message} [/INST]\n"
         ret = system_prompt
@@ -155,7 +155,7 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
                 )
 
         return ret.strip()
-    elif model in [ModelType.GROQ_GEMMA_7_B_IT, ModelType.GROQ_GEMMA_2_9_B_IT]:
+    elif model in [ModelType.GROQ_GEMMA_7B_IT, ModelType.GROQ_GEMMA_2_9B_IT]:
         # Gemma format
         ret = f"<bos>{system_message}\n"
         for msg in messages:
