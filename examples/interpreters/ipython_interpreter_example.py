@@ -11,19 +11,38 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from camel.interpreters import JupyterKernelInterpreter
 
-from .base import BaseInterpreter
-from .docker_interpreter import DockerInterpreter
-from .internal_python_interpreter import InternalPythonInterpreter
-from .interpreter_error import InterpreterError
-from .ipython_interpreter import JupyterKernelInterpreter
-from .subprocess_interpreter import SubprocessInterpreter
+interpreter = JupyterKernelInterpreter(
+    require_confirm=False, print_stdout=True, print_stderr=True
+)
 
-__all__ = [
-    'BaseInterpreter',
-    'InterpreterError',
-    'InternalPythonInterpreter',
-    'SubprocessInterpreter',
-    'DockerInterpreter',
-    'JupyterKernelInterpreter',
-]
+
+code = """
+def add(a, b):
+    return a + b
+    
+def multiply(a, b):
+    return a * b
+
+def subtract(a, b):
+    return a - b
+
+def main():
+    a = 10
+    b = 20
+    operation = subtract
+    result = operation(a, b)
+    print(result)
+    
+if __name__ == "__main__":
+    main()
+"""
+result = interpreter.run(code, "python")
+print(result)
+
+'''
+===============================================================================
+-10
+===============================================================================
+'''
