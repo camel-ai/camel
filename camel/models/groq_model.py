@@ -11,18 +11,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import os
 from typing import Any, Dict, List, Optional
 
-from groq import Groq
+from openai import OpenAI
 
 from camel.configs import GROQ_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import (
     ChatCompletion,
-    ChatCompletionMessage,
-    Choice,
-    CompletionUsage,
     ModelType,
 )
 from camel.utils import (
@@ -53,40 +51,16 @@ class GroqModel(BaseModelBackend):
             url (Optional[str]): The url to the Anthropic service. (default:
                 :obj:`None`)
         """
-        super().__init__(model_type, model_config_dict, api_key)
-        self.url = url or None
-        self.api_key = api_key or None
-        self._client = Groq(api_key=self.api_key, base_url=self.url)
-        self._token_counter: Optional[BaseTokenCounter] = None
-
-    def _convert_response_from_groq_to_openai(self, response):
-        # openai ^1.0.0 format, reference openai/types/chat/chat_completion.py
-        obj = ChatCompletion.construct(
-            id=response.id,
-            choices=[
-                Choice.construct(
-                    finish_reason=response.choices[0].finish_reason,
-                    index=response.choices[0].index,
-                    logprobs=response.choices[0].logprobs,
-                    message=ChatCompletionMessage.construct(
-                        content=response.choices[0].message.content,
-                        role=response.choices[0].message.role,
-                        function_call=None,  # function calling not supported
-                        tool_calls=response.choices[0].message.tool_calls,
-                    ),
-                )
-            ],
-            created=response.created,
-            model=response.model,
-            object="chat.completion",
-            system_fingerprint=response.system_fingerprint,
-            usage=CompletionUsage.construct(
-                completion_tokens=response.usage.completion_tokens,
-                prompt_tokens=response.usage.prompt_tokens,
-                total_tokens=response.usage.total_tokens,
-            ),
+        super().__init__(model_type, model_config_dict, api_key, url)
+        self._url = url or "https://api.groq.com/openai/v1"
+        self._api_key = api_key or os.environ.get("GROQ_API_KEY")
+        self._client = OpenAI(
+            timeout=60,
+            max_retries=3,
+            api_key=self._api_key,
+            base_url=self._url,
         )
-        return obj
+        self._token_counter: Optional[BaseTokenCounter] = None
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -144,14 +118,11 @@ class GroqModel(BaseModelBackend):
             ChatCompletion: Response in the OpenAI API format (non-stream\
                 mode).
         """
-        _response = self._client.chat.completions.create(
-            messages=messages,  # type: ignore[arg-type]
+        response = self._client.chat.completions.create(
+            messages=messages,
             model=self.model_type.value,
             **self.model_config_dict,
         )
-
-        # Format response to OpenAI format
-        response = self._convert_response_from_groq_to_openai(_response)
 
         return response
 
