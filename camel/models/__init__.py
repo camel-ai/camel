@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .anthropic_model import AnthropicModel
+from .azure_openai_model import AzureOpenAIModel
 from .base_model import BaseModelBackend
 from .gemini_model import GeminiModel
 from .litellm_model import LiteLLMModel
@@ -22,11 +23,13 @@ from .open_source_model import OpenSourceModel
 from .openai_audio_models import OpenAIAudioModels
 from .openai_model import OpenAIModel
 from .stub_model import StubModel
+from .vllm_model import VLLMModel
 from .zhipuai_model import ZhipuAIModel
 
 __all__ = [
     'BaseModelBackend',
     'OpenAIModel',
+    'AzureOpenAIModel',
     'AnthropicModel',
     'StubModel',
     'ZhipuAIModel',
@@ -36,5 +39,6 @@ __all__ = [
     'OpenAIAudioModels',
     'NemotronModel',
     'OllamaModel',
+    'VLLMModel',
     'GeminiModel',
 ]

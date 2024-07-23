@@ -32,6 +32,7 @@ class BaseModelBackend(ABC):
         model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
         r"""Constructor for the model backend.
 
@@ -41,13 +42,16 @@ class BaseModelBackend(ABC):
             api_key (Optional[str]): The API key for authenticating with the
                 model service.
             url (Optional[str]): The url to the model service.
+            token_counter (Optional[BaseTokenCounter]): Token counter to use
+                for the model. If not provided, `OpenAITokenCounter` will
+                be used.
         """
         self.model_type = model_type
-
         self.model_config_dict = model_config_dict
         self._api_key = api_key
         self._url = url
         self.check_model_config()
+        self._token_counter = token_counter
 
     @property
     @abstractmethod
@@ -109,7 +113,10 @@ class BaseModelBackend(ABC):
         Returns:
             int: The maximum token limit for the given model.
         """
-        return self.model_type.token_limit
+        return (
+            self.model_config_dict.get("max_tokens")
+            or self.model_type.token_limit
+        )
 
     @property
     def stream(self) -> bool:

@@ -11,23 +11,38 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any
+from camel.interpreters import JupyterKernelInterpreter
 
-from camel.prompts.base import TextPrompt, TextPromptDict
-from camel.types import RoleType
+interpreter = JupyterKernelInterpreter(
+    require_confirm=False, print_stdout=True, print_stderr=True
+)
 
 
-# flake8: noqa :E501
-class DescriptionVideoPromptTemplateDict(TextPromptDict):
-    ASSISTANT_PROMPT = TextPrompt(
-        """You are a master of video analysis. 
-        Please provide a shot description of the content of the current video."""
-    )
+code = """
+def add(a, b):
+    return a + b
+    
+def multiply(a, b):
+    return a * b
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.update(
-            {
-                RoleType.ASSISTANT: self.ASSISTANT_PROMPT,
-            }
-        )
+def subtract(a, b):
+    return a - b
+
+def main():
+    a = 10
+    b = 20
+    operation = subtract
+    result = operation(a, b)
+    print(result)
+    
+if __name__ == "__main__":
+    main()
+"""
+result = interpreter.run(code, "python")
+print(result)
+
+'''
+===============================================================================
+-10
+===============================================================================
+'''
