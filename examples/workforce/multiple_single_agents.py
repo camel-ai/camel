@@ -26,25 +26,17 @@ from camel.workforce.task_channel import TaskChannel
 
 
 async def main():
+    # Note that it is essential to instantiate the channel and pass it to each
+    # workforce.
     public_channel = TaskChannel()
 
-    sys_msg_1 = BaseMessage.make_assistant_message(
-        role_name="tour guide",
-        content="You have to lead everyone to have fun",
-    )
-    sys_msg_tools = BaseMessage.make_assistant_message(
-        role_name="Tools calling opertor",
-        content="You are a helpful assistant",
-    )
-    sys_msg_3 = BaseMessage.make_assistant_message(
-        role_name="Traveler",
-        content="You can ask questions about your travel plans",
-    )
+    # Set the tools for the tool_agent
     function_list = [
         *SEARCH_FUNCS,
         *WEATHER_FUNCS,
         *MAP_FUNCS,
     ]
+    # Configure the model of tool_agent
     model_config_dict = ChatGPTConfig(
         tools=function_list,
         temperature=0.0,
@@ -56,13 +48,50 @@ async def main():
         model_config_dict=model_config_dict,
     )
 
-    # Set agent
-    agent_2 = ChatAgent(
-        system_message=sys_msg_tools,
+    # Set tool_agent
+    tool_agent = ChatAgent(
+        system_message=BaseMessage.make_assistant_message(
+            role_name="Tools calling opertor",
+            content="You are a helpful assistant",
+        ),
         model=model,
         tools=function_list,
     )
+    # Set tour_guide_agent
+    tour_guide_agent = ChatAgent(
+        BaseMessage.make_assistant_message(
+            role_name="tour guide",
+            content="You have to lead everyone to have fun",
+        )
+    )
+    # traveler_agent
+    traveler_agent = ChatAgent(
+        BaseMessage.make_assistant_message(
+            role_name="Traveler",
+            content="You can ask questions about your travel plans",
+        )
+    )
 
+    # Wrap the single agent into the SingleAgentWorkforce
+    tour_guide_workforce = SingleAgentWorforce(
+        workforce_id='1',
+        description='tour guide',
+        worker=tour_guide_agent,
+        channel=public_channel,
+    )
+    traveler_workforce = SingleAgentWorforce(
+        workforce_id='2',
+        description='Traveler',
+        worker=traveler_agent,
+        channel=public_channel,
+    )
+    tool_workforce = SingleAgentWorforce(
+        workforce_id='3',
+        description='Tools(eg.weather tools) calling opertor',
+        worker=tool_agent,
+        channel=public_channel,
+    )
+    # Specify the task to be solved
     human_task = Task(
         content=(
             "Plan a Paris tour itinerary for today"
@@ -70,31 +99,19 @@ async def main():
         ),
         id='0',
     )
-    agent_1 = ChatAgent(sys_msg_1)
-    agent_2 = ChatAgent(sys_msg_tools)
-    agent_3 = ChatAgent(sys_msg_3)
-
-    unit_workforce_1 = SingleAgentWorforce(
-        '1', 'tour guide', agent_1, public_channel
-    )
-    unit_workforce_2 = SingleAgentWorforce(
-        '2', 'Tools(eg.weather tools) calling opertor', agent_2, public_channel
-    )
-    unit_workforce_3 = SingleAgentWorforce(
-        '3', 'Traveler', agent_3, public_channel
-    )
-
+    # create a InternalWorkforce to combine all SignleAgentWorkforces
     workforces = InternalWorkforce(
         workforce_id='0',
-        description='a travel group',
+        description='A travel group',
         child_workforces=[
-            unit_workforce_1,
-            unit_workforce_2,
-            unit_workforce_3,
+            tour_guide_workforce,
+            traveler_workforce,
+            tool_workforce,
         ],
         main_task=human_task,
         channel=public_channel,
     )
+    # start InternalWorkforce and task
     await workforces.start()
     print('Final Result of Origin task:\n', human_task.result)
 
