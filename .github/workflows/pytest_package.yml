@@ -35,7 +35,7 @@ jobs:
         ZHIPUAI_API_KEY: "${{ secrets.ZHIPUAI_API_KEY }}"
         AZURE_OPENAI_API_KEY: "to-be-filled"
         AZURE_API_VERSION: "to-be-filled"
-        AZURE_DEPLOYMENT: "to-be-filled"
+        AZURE_DEPLOYMENT_NAME: "to-be-filled"
         AZURE_OPENAI_ENDPOINT: "https://camel.openai.azure.com/"
       run: poetry run pytest --fast-test-mode test/
 
@@ -61,7 +61,7 @@ jobs:
         ZHIPUAI_API_KEY: "${{ secrets.ZHIPUAI_API_KEY }}"
         AZURE_OPENAI_API_KEY: "to-be-filled"
         AZURE_API_VERSION: "to-be-filled"
-        AZURE_DEPLOYMENT: "to-be-filled"
+        AZURE_DEPLOYMENT_NAME: "to-be-filled"
         AZURE_OPENAI_ENDPOINT: "https://camel.openai.azure.com/"
       run: poetry run pytest --llm-test-only test/
 
