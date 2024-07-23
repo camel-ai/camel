@@ -25,11 +25,6 @@ if TYPE_CHECKING:
 TIMEOUT = 30
 
 
-def clean_ipython_output(output: str) -> str:
-    ansi_escape = re.compile(r'\x1B[@-_][0-?]*[ -/]*[@-~]')
-    return ansi_escape.sub('', output)
-
-
 class JupyterKernelInterpreter(BaseInterpreter):
     r"""A class for executing code strings in a Jupyter Kernel.
 
@@ -68,6 +63,11 @@ class JupyterKernelInterpreter(BaseInterpreter):
         from jupyter_client.manager import start_new_kernel
 
         self.kernel_manager, self.client = start_new_kernel()
+
+    @staticmethod
+    def _clean_ipython_output(output: str) -> str:
+        ansi_escape = re.compile(r'\x1B[@-_][0-?]*[ -/]*[@-~]')
+        return ansi_escape.sub('', output)
 
     def _execute(self, code: str, timeout: float) -> str:
         outputs = []
@@ -110,7 +110,7 @@ class JupyterKernelInterpreter(BaseInterpreter):
             pass
         exec_result = "\n".join(outputs)
 
-        exec_result = clean_ipython_output(exec_result)
+        exec_result = self._clean_ipython_output(exec_result)
         return exec_result
 
     def run(self, code: str, code_type: str) -> str:
