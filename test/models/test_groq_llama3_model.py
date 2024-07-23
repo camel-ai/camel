@@ -35,7 +35,7 @@ def test_groq_llama3_model(model_type):
     assert model.model_type == model_type
     assert model.model_config_dict == model_config_dict
     # LLM served by Groq does not support token counter, so Camel uses
-    # OpenSourceTokenCounter as a placeholder.
+    # OpenAITokenCounter as a placeholder.
     assert isinstance(model.token_counter, OpenAITokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)

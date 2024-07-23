@@ -52,6 +52,9 @@ class GroqModel(BaseModelBackend):
                 Groq service. (default: :obj:`None`).
             url (Optional[str]): The url to the Groq service. (default:
                 :obj:`None`)
+            token_counter (Optional[BaseTokenCounter]): Token counter to use
+                for the model. If not provided, `OpenAITokenCounter(ModelType.
+                GPT_3_5_TURBO)` will be used.
         """
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
@@ -64,7 +67,7 @@ class GroqModel(BaseModelBackend):
             api_key=self._api_key,
             base_url=self._url,
         )
-        self._token_counter: Optional[BaseTokenCounter] = None
+        self._token_counter = token_counter
 
     @property
     def token_counter(self) -> BaseTokenCounter:
