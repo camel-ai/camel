@@ -29,6 +29,8 @@ class ModelType(Enum):
     GPT_4_32K = "gpt-4-32k"
     GPT_4_TURBO = "gpt-4-turbo"
     GPT_4O = "gpt-4o"
+    GPT_4O_MINI = "gpt-4o-mini"
+
     GLM_4 = "glm-4"
     GLM_4_OPEN_SOURCE = "glm-4-open-source"
     GLM_4V = 'glm-4v'
@@ -44,7 +46,7 @@ class ModelType(Enum):
     QWEN_2 = "qwen-2"
 
     # Legacy anthropic models
-    # NOTE: anthropic lagecy models only Claude 2.1 has system prompt support
+    # NOTE: anthropic legacy models only Claude 2.1 has system prompt support
     CLAUDE_2_1 = "claude-2.1"
     CLAUDE_2_0 = "claude-2.0"
     CLAUDE_INSTANT_1_2 = "claude-instant-1.2"
@@ -73,6 +75,20 @@ class ModelType(Enum):
     @property
     def is_openai(self) -> bool:
         r"""Returns whether this type of models is an OpenAI-released model."""
+        return self in {
+            ModelType.GPT_3_5_TURBO,
+            ModelType.GPT_4,
+            ModelType.GPT_4_32K,
+            ModelType.GPT_4_TURBO,
+            ModelType.GPT_4O,
+            ModelType.GPT_4O_MINI,
+        }
+
+    @property
+    def is_azure_openai(self) -> bool:
+        r"""Returns whether this type of models is an OpenAI-released model
+        from Azure.
+        """
         return self in {
             ModelType.GPT_3_5_TURBO,
             ModelType.GPT_4,
@@ -150,6 +166,8 @@ class ModelType(Enum):
             return 128000
         elif self is ModelType.GPT_4O:
             return 128000
+        elif self is ModelType.GPT_4O_MINI:
+            return 128000
         elif self == ModelType.GEMINI_1_5_FLASH:
             return 1048576
         elif self == ModelType.GEMINI_1_5_PRO:
@@ -196,7 +214,7 @@ class ModelType(Enum):
         Args:
             model_name (str): The name of the model, e.g. "vicuna-7b-v1.5".
         Returns:
-            bool: Whether the model type mathches the model name.
+            bool: Whether the model type matches the model name.
         """
         if self is ModelType.VICUNA:
             pattern = r'^vicuna-\d+b-v\d+\.\d+$'
@@ -344,6 +362,7 @@ class ModelPlatformType(Enum):
     ZHIPU = "zhipuai"
     DEFAULT = "default"
     GEMINI = "gemini"
+    VLLM = "vllm"
 
     @property
     def is_openai(self) -> bool:
@@ -364,6 +383,11 @@ class ModelPlatformType(Enum):
     def is_ollama(self) -> bool:
         r"""Returns whether this platform is ollama."""
         return self is ModelPlatformType.OLLAMA
+
+    @property
+    def is_vllm(self) -> bool:
+        r"""Returns whether this platform is vllm."""
+        return self is ModelPlatformType.VLLM
 
     @property
     def is_litellm(self) -> bool:
