@@ -39,6 +39,9 @@ anthropic = "^0.29.0"
 docstring-parser = "^0.15"
 pydantic = ">=1.9,<3"
 curl_cffi = "0.6.2"
+jupyter_client = "^8.6.2"
+ipykernel = "^6.0.0"
+
 pillow ="^10.2.0"
 
 # model-platforms
@@ -145,6 +148,7 @@ tools = [
     "pyTelegramBotAPI",
     "discord.py",
     "docker",
+    "jupyter_client",
 ]
 
 vector-databases = [
@@ -197,6 +201,7 @@ all = [
     "pydub",
     "pillow",
     "docker",
+    "jupyter_client",
     # vector-database
     "qdrant-client",
     "pymilvus",
