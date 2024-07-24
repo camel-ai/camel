@@ -17,6 +17,7 @@ from .gemini_config import (
     Gemini_API_PARAMS,
     GeminiConfig,
 )
+from .groq_config import GROQ_API_PARAMS, GroqConfig
 from .litellm_config import LITELLM_API_PARAMS, LiteLLMConfig
 from .ollama_config import OLLAMA_API_PARAMS, OllamaConfig
 from .openai_config import (
@@ -33,6 +34,8 @@ __all__ = [
     'OPENAI_API_PARAMS',
     'AnthropicConfig',
     'ANTHROPIC_API_PARAMS',
+    'GROQ_API_PARAMS',
+    'GroqConfig',
     'OpenSourceConfig',
     'LiteLLMConfig',
     'LITELLM_API_PARAMS',

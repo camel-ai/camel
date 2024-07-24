@@ -15,6 +15,7 @@ from .anthropic_model import AnthropicModel
 from .azure_openai_model import AzureOpenAIModel
 from .base_model import BaseModelBackend
 from .gemini_model import GeminiModel
+from .groq_model import GroqModel
 from .litellm_model import LiteLLMModel
 from .model_factory import ModelFactory
 from .nemotron_model import NemotronModel
@@ -31,6 +32,7 @@ __all__ = [
     'OpenAIModel',
     'AzureOpenAIModel',
     'AnthropicModel',
+    'GroqModel',
     'StubModel',
     'ZhipuAIModel',
     'OpenSourceModel',
