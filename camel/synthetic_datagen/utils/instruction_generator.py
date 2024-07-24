@@ -21,12 +21,12 @@ from typing import Any, Dict, List
 import numpy as np
 import tqdm
 
-from ..self_instruct.self_instruct_spec import SelfInstructSpec
 from .generate_utils import (
     encode_prompt,
     post_process_agent_system_response,
     sample_machine_instructions,
 )
+from .instruct_spec import InstructSpec
 
 logger = logging.getLogger(__name__)
 
@@ -56,13 +56,13 @@ class InstructionGenerator:
 
     def __init__(
         self,
-        spec: SelfInstructSpec,
+        spec: InstructSpec,
     ):
         """
         Initialize the InstructionGenerator with the given specification.
 
         Args:
-            spec (SelfInstructSpec): Specification object containing
+            spec (InstructSpec): Specification object containing
             configuration details.
         """
         self.spec = spec

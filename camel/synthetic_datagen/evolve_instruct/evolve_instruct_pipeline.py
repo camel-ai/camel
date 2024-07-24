@@ -70,12 +70,12 @@ class EvolveInstructPipeline(BaseDataGenerator):
 
     def __init__(self, spec: Optional[EvolveInstructSpec] = None):
         """
-        Initialize the SelfInstructGenerator with the given specification.
+        Initialize the InstructGenerator with the given specification.
 
         Args:
-            spec (Optional[SelfInstructSpec]): Specification object
+            spec (Optional[InstructSpec]): Specification object
             for the generator. If not provided,
-            a default SelfInstructSpec is used.
+            a default InstructSpec is used.
         """
 
         self.spec = spec or EvolveInstructSpec()
@@ -185,17 +185,6 @@ Translate #Given Prompt# to #New Prompt# in Korean."
         logging.info("Generating synthetic instances...")
         self.create_answers()
 
-    def evaluate(self):
-        raise RuntimeError(
-            "Evaluation not implemented for EvolveInstructGenerator yet "
-            " - use an LLM to evaluate the quality of the generations."
-        )
-
-    def run(self):
-        self.create_seed_prompts()
-        self.create_prompts()
-        self.create_answers()
-
         list_qa = []
         for i in range(len(self.final_prompts)):
             if len(self.final_answers[i]) > 10:
@@ -211,6 +200,12 @@ Translate #Given Prompt# to #New Prompt# in Korean."
             f"{str(uuid.uuid4())[:4]}.json"
         ) as f:
             f.write(json.dumps(list_qa, indent=2, ensure_ascii=False))
+
+    def evaluate(self):
+        raise RuntimeError(
+            "Evaluation not implemented for EvolveInstructGenerator yet "
+            " - use an LLM to evaluate the quality of the generations."
+        )
 
     def create_seed_prompts(self):
         """

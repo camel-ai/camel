@@ -96,7 +96,9 @@ class OllamaModel:
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        import pdb; pdb.set_trace()
+        import pdb
+
+        pdb.set_trace()
         response = self._client.chat.completions.create(
             messages=messages,
             model=self.model_type,

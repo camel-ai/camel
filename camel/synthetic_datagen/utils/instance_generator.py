@@ -18,11 +18,11 @@ from typing import Dict, List
 
 from tqdm import tqdm
 
-from ..self_instruct.self_instruct_spec import SelfInstructSpec
 from ..self_instruct.templates import (
     input_first_template_for_gen,
 )
 from .generate_utils import load_jsonl
+from .instruct_spec import InstructSpec
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,7 @@ class InstanceGenerator:
     A class for generating instances based on given instructions using
     an AI agent system.
 
-    This class takes a SelfInstructSpec object as input, which provides
+    This class takes a InstructSpec object as input, which provides
     the necessary
     configuration for generating instances. It reads instructions from a
     file, generates instances for each instruction using an AI agent system,
@@ -54,12 +54,12 @@ class InstanceGenerator:
         will be saved.
     """
 
-    def __init__(self, spec: SelfInstructSpec):
+    def __init__(self, spec: InstructSpec):
         """
-        Initialize the InstanceGenerator with the given SelfInstructSpec.
+        Initialize the InstanceGenerator with the given InstructSpec.
 
         Args:
-            spec (SelfInstructSpec): A specification object containing
+            spec (InstructSpec): A specification object containing
             the necessary configuration for instance generation.
         """
         self.agent_system = spec.agent_system

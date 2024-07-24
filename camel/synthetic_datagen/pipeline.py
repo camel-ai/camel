@@ -17,8 +17,9 @@ from typing import Any
 
 import openai
 import torch
+from gradio_client import Client
 from tqdm.auto import tqdm
-from transformers import pipeline
+from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from transformers.pipelines.pt_utils import KeyDataset
 
 from camel.synthetic_datagen.method_factory import (
@@ -97,8 +98,6 @@ class ChatGPTPipeline:
 
 class GradioClientPipeline:
     def __init__(self, host, **kwargs):
-        from gradio_client import Client
-
         self.client = Client(host)
         self.kwargs = kwargs
 
@@ -115,8 +114,6 @@ class GradioClientPipeline:
 
 class HFPipeline:
     def __init__(self, model, max_new_tokens=None, batch_size=None, **kwargs):
-        from transformers import AutoModelForCausalLM, AutoTokenizer
-
         print("loading tokenizer")
         tokenizer = AutoTokenizer.from_pretrained(model, padding_side="left")
         print("loading model")

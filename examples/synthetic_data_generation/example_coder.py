@@ -59,15 +59,16 @@ spec.seed_instructions = [
         "a website for a specific type of data.",
         instances=[
             Instance(
-                "website: www.example.com data to crawl: phone numbers", 
+                "website: www.example.com data to crawl: phone numbers",
                 "import requests "
                 "import re "
                 "def crawl_website_for_phone_numbers(website):"
                 " response = requests.get(website)"
-                " phone_numbers = re.findall('\d{3}-\d{3}-\d{4}', response.text)"
+                " phone_numbers = re.findall('\d{3}-\d{3}-\d{4}',"
+                " response.text)"
                 " return phone_numbers "
                 "if __name__ == '__main__':"
-                " print(crawl_website_for_phone_numbers('www.example.com'))"
+                " print(crawl_website_for_phone_numbers('www.example.com'))",
             )
         ],
     ),
@@ -75,23 +76,27 @@ spec.seed_instructions = [
         instruction="Create a Python list comprehension to"
         " get the squared values of a list"
         " [1, 2, 3, 5, 8, 13].",
-        instances=[Instance("", 
-                            "[x*x for x in [1, 2, 3, 5, 8, 13]]")],
+        instances=[Instance("", "[x*x for x in [1, 2, 3, 5, 8, 13]]")],
     ),
     SeedInstruction(
         instruction="Generate a python script to perform this action. "
-                    "Given a string, remove all the consecutive duplicates from the string.",
-        instances=[Instance("AAABBCCCD", 
-                            "def remove_duplicates(string):"
-                            " result = ''"
-                            " prev = ''"
-                            " for char in string:"
-                            " if char != prev:"
-                            " result += char"
-                            " prev = char"
-                            " return result "
-                            "result = remove_duplicates('AAABBCCCD') "
-                            "print(result)")],
+        "Given a string, "
+        "remove all the consecutive duplicates from the string.",
+        instances=[
+            Instance(
+                "AAABBCCCD",
+                "def remove_duplicates(string):"
+                " result = ''"
+                " prev = ''"
+                " for char in string:"
+                " if char != prev:"
+                " result += char"
+                " prev = char"
+                " return result "
+                "result = remove_duplicates('AAABBCCCD') "
+                "print(result)",
+            )
+        ],
     ),
     SeedInstruction(
         instruction="Write a python script to generates random "
