@@ -14,9 +14,12 @@
 from __future__ import annotations
 
 from abc import ABC
-from dataclasses import dataclass
+
+from pydantic import BaseModel
 
 
-@dataclass(frozen=True)
-class BaseConfig(ABC):  # noqa: B024
-    pass
+class BaseConfig(ABC, BaseModel):
+    class Config:
+        arbitrary_types_allowed = True
+        extra = 'forbid'
+        frozen = True

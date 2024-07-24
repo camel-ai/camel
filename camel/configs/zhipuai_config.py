@@ -13,8 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, Optional, Sequence
+from typing import TYPE_CHECKING, Optional, Sequence, Union
 
 from openai._types import NOT_GIVEN, NotGiven
 
@@ -24,7 +23,6 @@ if TYPE_CHECKING:
     from camel.toolkits import OpenAIFunction
 
 
-@dataclass(frozen=True)
 class ZhipuAIConfig(BaseConfig):
     r"""Defines the parameters for generating chat completions using OpenAI
     compatibility
@@ -69,10 +67,10 @@ class ZhipuAIConfig(BaseConfig):
     temperature: float = 0.2
     top_p: float = 0.6
     stream: bool = False
-    stop: str | Sequence[str] | NotGiven = NOT_GIVEN
-    max_tokens: int | NotGiven = NOT_GIVEN
+    stop: Union[str, Sequence[str], NotGiven] = NOT_GIVEN
+    max_tokens: Union[int, NotGiven] = NOT_GIVEN
     tools: Optional[list[OpenAIFunction]] = None
     tool_choice: Optional[dict[str, str] | str] = None
 
 
-ZHIPUAI_API_PARAMS = {param for param in asdict(ZhipuAIConfig()).keys()}
+ZHIPUAI_API_PARAMS = {param for param in ZhipuAIConfig.model_fields.keys()}

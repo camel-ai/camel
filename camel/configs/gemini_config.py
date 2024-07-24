@@ -14,7 +14,6 @@
 
 
 from collections.abc import Iterable
-from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, Optional
 
 from camel.configs.base_config import BaseConfig
@@ -29,7 +28,6 @@ if TYPE_CHECKING:
     from google.generativeai.types.safety_types import SafetySettingOptions
 
 
-@dataclass(frozen=True)
 class GeminiConfig(BaseConfig):
     r"""A simple dataclass used to configure the generation parameters of
     `GenerativeModel.generate_content`.
@@ -95,4 +93,4 @@ class GeminiConfig(BaseConfig):
     request_options: Optional['RequestOptionsType'] = None
 
 
-Gemini_API_PARAMS = {param for param in asdict(GeminiConfig()).keys()}
+Gemini_API_PARAMS = {param for param in GeminiConfig().model_fields.keys()}

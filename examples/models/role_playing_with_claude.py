@@ -26,7 +26,7 @@ def main(model_type=None) -> None:
     model = ModelFactory.create(
         model_platform=ModelPlatformType.ANTHROPIC,
         model_type=model_type,
-        model_config_dict=AnthropicConfig().__dict__,
+        model_config_dict=AnthropicConfig().model_dump(),
     )
 
     # Update agent_kwargs to use the created models

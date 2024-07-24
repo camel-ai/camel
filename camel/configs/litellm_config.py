@@ -13,7 +13,6 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, List, Optional, Union
 
 from camel.configs.base_config import BaseConfig
@@ -22,7 +21,6 @@ if TYPE_CHECKING:
     from camel.toolkits import OpenAIFunction
 
 
-@dataclass(frozen=True)
 class LiteLLMConfig(BaseConfig):
     r"""Defines the parameters for generating chat completions using the
     LiteLLM API.
@@ -100,4 +98,4 @@ class LiteLLMConfig(BaseConfig):
     max_retries: Optional[int] = None
 
 
-LITELLM_API_PARAMS = {param for param in asdict(LiteLLMConfig()).keys()}
+LITELLM_API_PARAMS = {param for param in LiteLLMConfig.model_fields.keys()}
