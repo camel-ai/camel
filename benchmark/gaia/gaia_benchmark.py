@@ -124,10 +124,11 @@ class GAIABenchmark:
 
         if isinstance(level, int):
             levels = [level]
-        elif level == "all":
+        elif level == ["all"]:
             levels = list(tasks.keys())
         else:
             levels = level
+        print(levels)
 
         for level in levels:
             for task in tasks[level]:

@@ -37,5 +37,5 @@ sys_msg = BaseMessage.make_assistant_message(
 gaia = GAIABenchmark()
 gaia.download()
 agent = ChatAgent(system_message=sys_msg)
-scores = gaia.eval(agent, [1], "validation")
+scores = gaia.eval(agent, ['all'], "validation")
 print(scores)
