@@ -62,9 +62,8 @@ class Persona(BaseModel):
 
     @classmethod
     def model_json_schema(cls):
-        """
-        Customize the model's JSON schema. This method is used by Pydantic v2
-        for advanced JSON schema modifications.
+        r"""Customize the model's JSON schema. This method is used by Pydantic
+        v2 for advanced JSON schema modifications.
         """
         schema = super().model_json_schema()
         # Additional schema customizations can be added here
