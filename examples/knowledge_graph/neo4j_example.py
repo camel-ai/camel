@@ -15,7 +15,7 @@ from camel.storages import Neo4jGraph
 
 # Set Neo4j instance
 n4j = Neo4jGraph(
-    url="neo4j+....", username="neo4j", password="SEK..."
+    url="Your Url", username="Your Username", password="Your Password"
 )
 
 # Add triplet into database
