@@ -44,6 +44,7 @@ class GeminiModel(BaseModelBackend):
         model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
         r"""Constructor for Gemini backend.
 
@@ -54,17 +55,22 @@ class GeminiModel(BaseModelBackend):
             api_key (Optional[str]): The API key for authenticating with the
                 gemini service. (default: :obj:`None`)
             url (Optional[str]): The url to the gemini service.
+            token_counter (Optional[BaseTokenCounter]): Token counter to use
+                for the model. If not provided, `GeminiTokenCounter` will be
+                used.
         """
         import os
 
         import google.generativeai as genai
         from google.generativeai.types.generation_types import GenerationConfig
 
-        super().__init__(model_type, model_config_dict, api_key, url)
+        super().__init__(
+            model_type, model_config_dict, api_key, url, token_counter
+        )
         self._api_key = api_key or os.environ.get("GOOGLE_API_KEY")
         genai.configure(api_key=self._api_key)
         self._client = genai.GenerativeModel(self.model_type.value)
-        self._token_counter: Optional[BaseTokenCounter] = None
+
         keys = list(self.model_config_dict.keys())
         generation_config_dict = {
             k: self.model_config_dict.pop(k)
@@ -78,6 +84,12 @@ class GeminiModel(BaseModelBackend):
 
     @property
     def token_counter(self) -> BaseTokenCounter:
+        r"""Initialize the token counter for the model backend.
+
+        Returns:
+            BaseTokenCounter: The token counter following the model's
+                tokenization style.
+        """
         if not self._token_counter:
             self._token_counter = GeminiTokenCounter(self.model_type)
         return self._token_counter

@@ -11,13 +11,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+"""
+please set the below os environment:
+export AZURE_OPENAI_ENDPOINT=""
+
+# if `AZURE_API_VERSION` is not set, `OPENAI_API_VERSION` will be used as api version
+export AZURE_API_VERSION=""
+export AZURE_OPENAI_API_KEY=""
+export AZURE_DEPLOYMENT_NAME=""
+"""
+
 import re
 
 import pytest
 
 from camel.configs import ChatGPTConfig, OpenSourceConfig
-from camel.models import OpenAIModel
-from camel.types import ModelType
+from camel.models import AzureOpenAIModel, ModelFactory
+from camel.types import ModelPlatformType, ModelType
 from camel.utils import OpenAITokenCounter
 
 
@@ -30,17 +40,36 @@ from camel.utils import OpenAITokenCounter
         ModelType.GPT_4_32K,
         ModelType.GPT_4_TURBO,
         ModelType.GPT_4O,
-        ModelType.GPT_4O_MINI,
     ],
 )
 def test_openai_model(model_type):
     model_config_dict = ChatGPTConfig().__dict__
-    model = OpenAIModel(model_type, model_config_dict)
+    model = AzureOpenAIModel(model_type, model_config_dict)
     assert model.model_type == model_type
     assert model.model_config_dict == model_config_dict
     assert isinstance(model.token_counter, OpenAITokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
+
+
+@pytest.mark.model_backend
+@pytest.mark.parametrize(
+    "model_type",
+    [
+        ModelType.GPT_3_5_TURBO,
+        ModelType.GPT_4,
+        ModelType.GPT_4_32K,
+        ModelType.GPT_4_TURBO,
+        ModelType.GPT_4O,
+    ],
+)
+def test_openai_model_create(model_type):
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.AZURE,
+        model_type=model_type,
+        model_config_dict=ChatGPTConfig(temperature=0.8, n=3).__dict__,
+    )
+    assert model.model_type == model_type
 
 
 @pytest.mark.model_backend
@@ -54,11 +83,11 @@ def test_openai_model_unexpected_argument():
 
     with pytest.raises(
         ValueError,
+        # ruff: noqa: E501
         match=re.escape(
             (
-                "Unexpected argument `model_path` is "
-                "input into OpenAI model backend."
+                "Unexpected argument `model_path` is input into Azure OpenAI model backend."
             )
         ),
     ):
-        _ = OpenAIModel(model_type, model_config_dict)
+        _ = AzureOpenAIModel(model_type, model_config_dict)

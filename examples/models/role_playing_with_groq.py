@@ -11,10 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-
 from colorama import Fore
 
-from camel.configs import GeminiConfig
+from camel.configs import GroqConfig
 from camel.models import ModelFactory
 from camel.societies import RolePlaying
 from camel.types import ModelPlatformType, ModelType
@@ -24,27 +23,23 @@ from camel.utils import print_text_animated
 def main(model_type=None) -> None:
     task_prompt = "Develop a trading bot for the stock market"
 
-    model = ModelFactory.create(
-        model_platform=ModelPlatformType.GEMINI,
-        model_type=model_type,
-        model_config_dict=GeminiConfig().__dict__,
-    )
-
-    # Update agent_kwargs to use the created models
     agent_kwargs = {
-        "assistant": {"model": model},
-        "user": {"model": model},
-        "task-specify": {"model": model},
+        role: ModelFactory.create(
+            model_platform=ModelPlatformType.GROQ,
+            model_type=model_type,
+            model_config_dict=GroqConfig().__dict__,
+        )
+        for role in ["assistant", "user", "task-specify"]
     }
 
     role_play_session = RolePlaying(
         assistant_role_name="Python Programmer",
-        assistant_agent_kwargs=agent_kwargs["assistant"],
+        assistant_agent_kwargs={'model': agent_kwargs["assistant"]},
         user_role_name="Stock Trader",
-        user_agent_kwargs=agent_kwargs["user"],
+        user_agent_kwargs={'model': agent_kwargs["assistant"]},
         task_prompt=task_prompt,
         with_task_specify=True,
-        task_specify_agent_kwargs=agent_kwargs["task-specify"],
+        task_specify_agent_kwargs={'model': agent_kwargs["task-specify"]},
     )
 
     print(
@@ -89,11 +84,13 @@ def main(model_type=None) -> None:
             break
 
         print_text_animated(
-            Fore.BLUE + f"AI User:\n\n{user_response.msg.content}\n"
+            Fore.BLUE + f"AI User:\n\n{user_response.msg.content}\n",
+            delay=0.005,
         )
         print_text_animated(
             Fore.GREEN + "AI Assistant:\n\n"
-            f"{assistant_response.msg.content}\n"
+            f"{assistant_response.msg.content}\n",
+            delay=0.005,
         )
 
         if "CAMEL_TASK_DONE" in user_response.msg.content:
@@ -103,4 +100,4 @@ def main(model_type=None) -> None:
 
 
 if __name__ == "__main__":
-    main(model_type=ModelType.GEMINI_1_5_FLASH)
+    main(model_type=ModelType.GROQ_LLAMA_3_1_70B)
