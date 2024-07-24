@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from dataclasses import asdict
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
@@ -261,7 +260,7 @@ class QdrantStorage(BaseVectorStorage):
         """
         from qdrant_client.http.models import PointStruct, UpdateStatus
 
-        qdrant_points = [PointStruct(**asdict(p)) for p in records]
+        qdrant_points = [PointStruct(**p.model_dump()) for p in records]
         op_info = self._client.upsert(
             collection_name=self.collection_name,
             points=qdrant_points,
@@ -340,7 +339,7 @@ class QdrantStorage(BaseVectorStorage):
         query_results = []
         for point in search_result:
             query_results.append(
-                VectorDBQueryResult.construct(
+                VectorDBQueryResult.create(
                     similarity=point.score,
                     id=str(point.id),
                     payload=point.payload,

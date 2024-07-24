@@ -209,7 +209,9 @@ class ChatAgent(BaseAgent):
                 messages.
             role (OpenAIBackendRole): The backend role type.
         """
-        self.memory.write_record(MemoryRecord(message, role))
+        self.memory.write_record(
+            MemoryRecord(message=message, role_at_backend=role)
+        )
 
     def set_output_language(self, output_language: str) -> BaseMessage:
         r"""Sets the output language for the system message. This method
@@ -268,7 +270,8 @@ class ChatAgent(BaseAgent):
         message.
         """
         system_record = MemoryRecord(
-            self.system_message, OpenAIBackendRole.SYSTEM
+            message=self.system_message,
+            role_at_backend=OpenAIBackendRole.SYSTEM,
         )
         self.memory.clear()
         self.memory.write_record(system_record)
