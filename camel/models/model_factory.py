@@ -17,6 +17,7 @@ from camel.models.anthropic_model import AnthropicModel
 from camel.models.azure_openai_model import AzureOpenAIModel
 from camel.models.base_model import BaseModelBackend
 from camel.models.gemini_model import GeminiModel
+from camel.models.groq_model import GroqModel
 from camel.models.litellm_model import LiteLLMModel
 from camel.models.ollama_model import OllamaModel
 from camel.models.open_source_model import OpenSourceModel
@@ -80,6 +81,8 @@ class ModelFactory:
                 model_class = AzureOpenAIModel
             elif model_platform.is_anthropic and model_type.is_anthropic:
                 model_class = AnthropicModel
+            elif model_type.is_groq:
+                model_class = GroqModel
             elif model_platform.is_zhipuai and model_type.is_zhipuai:
                 model_class = ZhipuAIModel
             elif model_platform.is_gemini and model_type.is_gemini:
