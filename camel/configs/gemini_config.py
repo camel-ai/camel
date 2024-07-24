@@ -93,4 +93,4 @@ class GeminiConfig(BaseConfig):
     request_options: Optional['RequestOptionsType'] = None
 
 
-Gemini_API_PARAMS = {param for param in GeminiConfig().model_fields.keys()}
+Gemini_API_PARAMS = {param for param in GeminiConfig.model_fields.keys()}

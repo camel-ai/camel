@@ -15,11 +15,12 @@ from __future__ import annotations
 
 from abc import ABC
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class BaseConfig(ABC, BaseModel):
-    class Config:
-        arbitrary_types_allowed = True
-        extra = 'forbid'
-        frozen = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+        frozen=True,
+    )

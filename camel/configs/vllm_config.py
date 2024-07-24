@@ -13,16 +13,15 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
 from typing import Sequence
 
 from openai._types import NOT_GIVEN, NotGiven
+from pydantic import Field
 
 from camel.configs.base_config import BaseConfig
 
 
 # flake8: noqa: E501
-@dataclass(frozen=True)
 class VLLMConfig(BaseConfig):
     r"""Defines the parameters for generating chat completions using the
     OpenAI API.
@@ -96,8 +95,8 @@ class VLLMConfig(BaseConfig):
     presence_penalty: float = 0.0
     response_format: dict | NotGiven = NOT_GIVEN
     frequency_penalty: float = 0.0
-    logit_bias: dict = field(default_factory=dict)
+    logit_bias: dict = Field(default_factory=dict)
     user: str = ""
 
 
-VLLM_API_PARAMS = {param for param in asdict(VLLMConfig()).keys()}
+VLLM_API_PARAMS = {param for param in VLLMConfig.model_fields.keys()}

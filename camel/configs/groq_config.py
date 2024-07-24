@@ -13,7 +13,6 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, Optional, Sequence
 
 from openai._types import NOT_GIVEN, NotGiven
@@ -24,7 +23,6 @@ if TYPE_CHECKING:
     from camel.toolkits import OpenAIFunction
 
 
-@dataclass(frozen=True)
 class GroqConfig(BaseConfig):
     r"""Defines the parameters for generating chat completions using OpenAI
     compatibility.
@@ -116,4 +114,4 @@ class GroqConfig(BaseConfig):
             )
 
 
-GROQ_API_PARAMS = {param for param in asdict(GroqConfig()).keys()}
+GROQ_API_PARAMS = {param for param in GroqConfig.model_fields.keys()}
