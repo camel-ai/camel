@@ -28,10 +28,15 @@ from camel.synthetic_datagen.utils.seed_instruction import (
     Instance,
     SeedInstruction,
 )
+from camel.types import (
+    ModelType,
+)
 
 logging.basicConfig(level=logging.INFO)
 
 spec = SelfInstructSpec()
+
+# Examples from GSM8K
 spec.seed_instructions = [
     SeedInstruction(
         instruction="",
@@ -51,7 +56,29 @@ spec.seed_instructions = [
     ),
 ]
 
-spec.agent_system = SingleAgent()
+# Examples from MATH
+spec.seed_instructions = [
+    SeedInstruction(
+        instruction="",
+        instances=[Instance("", "")],
+    ),
+    SeedInstruction(
+        instruction="",
+        instances=[Instance("", "")],
+    ),
+    SeedInstruction(
+        instruction="",
+        instances=[Instance("", "")],
+    ),
+    SeedInstruction(
+        instruction="",
+        instances=[Instance("", "")],
+    ),
+]
+
+spec.agent_system = SingleAgent(
+    model_type=ModelType.DeepSeek_math.value,
+)
 spec.eval_agent_system = NemotronRewardEvalAgent()
 generator = DataGeneratorPipeline(
     spec, SyntheticDataGeneratorMethodType.SELFINSTRUCT

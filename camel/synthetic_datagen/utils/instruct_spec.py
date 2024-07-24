@@ -24,6 +24,7 @@ from ..agent_systems.eval_agent import (
 from ..agent_systems.single_agent import SingleAgent
 from ..utils.seed_instruction import SeedInstruction
 
+
 @dataclass
 class InstructSpec:
     """

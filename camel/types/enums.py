@@ -64,7 +64,7 @@ class ModelType(Enum):
 
     # DeepSeek models
     DeepSeek_math = "deepseek-ai/deepseek-math-7b-instruct"
-    DeepSeek_code = "deepseek-ai/deepseek-coder-6.7b-instruct"
+    DeepSeek_code = "deepseek-coder-v2"
 
     @property
     def value_for_tiktoken(self) -> str:
@@ -137,6 +137,10 @@ class ModelType(Enum):
     @property
     def is_gemini(self) -> bool:
         return self in {ModelType.GEMINI_1_5_FLASH, ModelType.GEMINI_1_5_PRO}
+
+    @property
+    def is_deepseek(self) -> bool:
+        return self in {ModelType.DeepSeek_math, ModelType.DeepSeek_code}
 
     @property
     def token_limit(self) -> int:

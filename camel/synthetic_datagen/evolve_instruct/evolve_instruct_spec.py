@@ -83,7 +83,7 @@ class EvolveInstructSpec(InstructSpec):
     max_len_chars: int = 1024
     verbose: bool = False
     include_seed_tasks: bool = False
-    synthetic_data_dir: str = Path("data/gpt4_generations/")
+    synthetic_data_dir: str = Path("data/evolve_gpt4_generations/")
     num_prompt_instructions: int = 3
     num_instructions_to_generate: int = 20
     SYNTHETIC_INSTANCES_FILE: str = "machine_generated_instances.jsonl"

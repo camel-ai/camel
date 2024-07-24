@@ -28,7 +28,7 @@ class OllamaModel:
         self,
         model_type: str,
         model_config_dict: Dict[str, Any],
-        url: Optional[str] = None,
+        url: Optional[str] = 'http://localhost:11434/v1/',
     ) -> None:
         r"""Constructor for Ollama backend with OpenAI compatibility.
 
@@ -96,7 +96,7 @@ class OllamaModel:
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-
+        import pdb; pdb.set_trace()
         response = self._client.chat.completions.create(
             messages=messages,
             model=self.model_type,

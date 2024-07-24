@@ -29,33 +29,87 @@ from camel.synthetic_datagen.utils.seed_instruction import (
     Instance,
     SeedInstruction,
 )
+from camel.types import (
+    ModelType,
+)
 
 logging.basicConfig(level=logging.INFO)
 
-# Examples from HuggingFace dataset: "iamtarun/python_code_instructions_18k_alpaca"
+# Examples from HuggingFace dataset:
+# "iamtarun/python_code_instructions_18k_alpaca"
 # https://huggingface.co/datasets/iamtarun/python_code_instructions_18k_alpaca
 
 spec = SelfInstructSpec()
 spec.seed_instructions = [
     SeedInstruction(
-        instruction="",
-        instances=[Instance("", "")],
+        instruction="Create a function to calculate the"
+        " sum of a sequence of integers.",
+        instances=[
+            Instance(
+                "[1, 2, 3, 4, 5]",
+                "# Python code "
+                "def sum_sequence(sequence):"
+                " sum = 0 for num in sequence:"
+                " sum += num return sum",
+            )
+        ],
     ),
     SeedInstruction(
-        instruction="",
-        instances=[Instance("", "")],
+        instruction="Generate a Python code for crawling "
+        "a website for a specific type of data.",
+        instances=[
+            Instance(
+                "website: www.example.com data to crawl: phone numbers", 
+                "import requests "
+                "import re "
+                "def crawl_website_for_phone_numbers(website):"
+                " response = requests.get(website)"
+                " phone_numbers = re.findall('\d{3}-\d{3}-\d{4}', response.text)"
+                " return phone_numbers "
+                "if __name__ == '__main__':"
+                " print(crawl_website_for_phone_numbers('www.example.com'))"
+            )
+        ],
     ),
     SeedInstruction(
-        instruction="",
-        instances=[Instance("", "")],
+        instruction="Create a Python list comprehension to"
+        " get the squared values of a list"
+        " [1, 2, 3, 5, 8, 13].",
+        instances=[Instance("", 
+                            "[x*x for x in [1, 2, 3, 5, 8, 13]]")],
     ),
     SeedInstruction(
-        instruction="",
-        instances=[Instance("", "")],
+        instruction="Generate a python script to perform this action. "
+                    "Given a string, remove all the consecutive duplicates from the string.",
+        instances=[Instance("AAABBCCCD", 
+                            "def remove_duplicates(string):"
+                            " result = ''"
+                            " prev = ''"
+                            " for char in string:"
+                            " if char != prev:"
+                            " result += char"
+                            " prev = char"
+                            " return result "
+                            "result = remove_duplicates('AAABBCCCD') "
+                            "print(result)")],
+    ),
+    SeedInstruction(
+        instruction="Write a python script to generates random "
+        "numbers between 0 and 9 that are divisible by 3.",
+        instances=[
+            Instance(
+                "",
+                "def generate_random_divisible_number():"
+                " import random while True:"
+                " # Generate a random number process = random.randint(0, 9)"
+                " # Check if the number is divisible by 3 if process % 3 == 0:"
+                " # If it is divisible, return it return process",
+            )
+        ],
     ),
 ]
 
-spec.agent_system = SingleAgent()
+spec.agent_system = SingleAgent(model_type=ModelType.DeepSeek_code.value)
 spec.eval_agent_system = NemotronRewardEvalAgent()
 generator = DataGeneratorPipeline(
     spec, SyntheticDataGeneratorMethodType.SELFINSTRUCT
