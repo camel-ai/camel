@@ -19,7 +19,7 @@ from camel.prompts import PersonaGeneratorPrompt, TextPrompt
 
 
 class Persona(BaseModel):
-    """A persona is a character in the society.
+    r"""A persona is a character in the society.
 
     Attributes:
         name (Optional[str]): Name of the persona.
