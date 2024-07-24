@@ -3009,13 +3009,13 @@ test = ["coverage", "pytest", "pytest-cov"]
 
 [[package]]
 name = "litellm"
-version = "1.41.27"
+version = "1.41.28"
 description = "Library to easily interface with LLM API providers"
 optional = true
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "litellm-1.41.27-py3-none-any.whl", hash = "sha256:df97e46517129826ae958e6571b22714e79f3eba76af2f0fd812f499b21b7d2c"},
-    {file = "litellm-1.41.27.tar.gz", hash = "sha256:c70996f665be3c40177622afd9c54408a7430ede0e590abd8e9585f0285d6b87"},
+    {file = "litellm-1.41.28-py3-none-any.whl", hash = "sha256:a1f0536abd873b58ddb0320736b355bac01b6d94a137a3963d83b6be05867d59"},
+    {file = "litellm-1.41.28.tar.gz", hash = "sha256:30b30c1ee76d6a378a33395f5d4fccfe204be7c8b63f0a77b6d13bf72fc80942"},
 ]
 
 [package.dependencies]
@@ -7501,13 +7501,13 @@ files = [
 
 [[package]]
 name = "types-docutils"
-version = "0.21.0.20240711"
+version = "0.21.0.20240724"
 description = "Typing stubs for docutils"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "types-docutils-0.21.0.20240711.tar.gz", hash = "sha256:646f239e7afd88304995f444d3ea39639166c9445580ae5dcaf5515974c050ed"},
-    {file = "types_docutils-0.21.0.20240711-py3-none-any.whl", hash = "sha256:149d822bd02d77954f4e04d8e87fcd039db2101dbf564a1cd1b0fabbd543277b"},
+    {file = "types-docutils-0.21.0.20240724.tar.gz", hash = "sha256:29ff7e27660f4fe76ea61d7e54d05ca3ce3b733ca9e8e8721e0fa587dbc10489"},
+    {file = "types_docutils-0.21.0.20240724-py3-none-any.whl", hash = "sha256:bf51c6c488d23c0412f9b3ba10686fb1a6cb0b957ef04b45128d8a55c79ebb00"},
 ]
 
 [[package]]
@@ -7574,13 +7574,13 @@ urllib3 = ">=2"
 
 [[package]]
 name = "types-setuptools"
-version = "71.1.0.20240723"
+version = "71.1.0.20240724"
 description = "Typing stubs for setuptools"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "types-setuptools-71.1.0.20240723.tar.gz", hash = "sha256:8a9349038c7e22d88e6c5d9c6705b347b22930424114a452c1712899e85131ff"},
-    {file = "types_setuptools-71.1.0.20240723-py3-none-any.whl", hash = "sha256:ac9fc263f59d1e02bca49cb7270a12c47ab80b3b911fb4d92f1fecf978bfe88a"},
+    {file = "types-setuptools-71.1.0.20240724.tar.gz", hash = "sha256:ae61c528111a9450e149aedbc1ab0f7874f9bb0dc8f14c3cd200a1f82457050b"},
+    {file = "types_setuptools-71.1.0.20240724-py3-none-any.whl", hash = "sha256:90570f0578ed67bb25ada9b3d1432e6727178d2408a7051b27e4a712731df30a"},
 ]
 
 [[package]]
