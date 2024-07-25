@@ -44,11 +44,15 @@ class PersonaGenerator(ChatAgent):
             meta_dict=None,
             content="",
         )
-        self.model = model if model else ModelFactory.create(
-            model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_4O_MINI,
-            model_config_dict=ChatGPTConfig().__dict__,
-            api_key=self._api_key,
+        self.model = (
+            model
+            if model
+            else ModelFactory.create(
+                model_platform=ModelPlatformType.OPENAI,
+                model_type=ModelType.GPT_4O_MINI,
+                model_config_dict=ChatGPTConfig().__dict__,
+                api_key=self._api_key,
+            )
         )
         super().__init__(system_message, model=model)
         self.personas: List[Persona] = []
