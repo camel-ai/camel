@@ -137,7 +137,7 @@ persona_description: <BLANK>
 
         return persona
 
-    def persona_to_persona(self, persona: Persona) -> List[Persona]:
+    def persona_to_persona(self, persona: Persona) -> Dict[uuid.UUID, Persona]:
         r"""Derives additional personas based on interpersonal relationships
         from this persona.
 
@@ -146,8 +146,7 @@ persona_description: <BLANK>
             personas.
 
         Returns:
-            List[Persona]: A list of related personas with their relationship
-            types.
+            Dict[uuid.UUID, Persona]: A dictionary of related personas.
         """
         super().reset()
 
