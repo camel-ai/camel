@@ -26,13 +26,12 @@ print(n4j.query("""MATCH (n) RETURN n AS node"""))
 
 """
 ===============================================================================
-[{'node': {}}, {'node': {}}, {'node': {'id': 'CAMEL'}}, {'node': {'id': 
-'multi-agent framework'}}]
+[{'node': {'id': 'CAMEL'}}, {'node': {'id': 'multi-agent framework'}}]
 ===============================================================================
 """
 
 # Get schema from database
-print(n4j.get_schema())
+print(n4j.get_schema)
 
 """
 ===============================================================================
@@ -46,7 +45,7 @@ The relationships are the following:
 """
 
 # Get structured schema from database
-print(n4j.get_structured_schema())
+print(n4j.get_structured_schema)
 
 """
 ===============================================================================
