@@ -46,7 +46,7 @@ def detect_image_obj(image_path: str) -> None:
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=ChatGPTConfig().__dict__,
+        model_config_dict=ChatGPTConfig().model_dump(),
     )
     agent = ChatAgent(
         assistant_sys_msg,

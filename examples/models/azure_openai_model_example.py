@@ -28,7 +28,7 @@ export AZURE_DEPLOYMENT_NAME=""
 model = ModelFactory.create(
     model_platform=ModelPlatformType.AZURE,
     model_type=ModelType.GPT_3_5_TURBO,
-    model_config_dict=ChatGPTConfig(temperature=0.2).__dict__,
+    model_config_dict=ChatGPTConfig(temperature=0.2).model_dump(),
 )
 
 # Define system message

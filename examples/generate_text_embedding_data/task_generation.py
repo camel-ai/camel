@@ -38,7 +38,7 @@ def main() -> None:
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_3_5_TURBO,
-        model_config_dict=ChatGPTConfig(temperature=0.0).__dict__,
+        model_config_dict=ChatGPTConfig(temperature=0.0).model_dump(),
     )
     agent = ChatAgent(
         assistant_sys_msg,

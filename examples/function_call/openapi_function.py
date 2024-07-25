@@ -28,7 +28,7 @@ tools = [*OPENAPI_FUNCS]
 model_config_dict = ChatGPTConfig(
     tools=tools,
     temperature=0.0,
-).__dict__
+).model_dump()
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,

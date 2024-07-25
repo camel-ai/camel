@@ -65,7 +65,7 @@ def main(
             model=ModelFactory.create(
                 model_platform=model_platform,
                 model_type=model_type,
-                model_config_dict=assistant_model_config.__dict__,
+                model_config_dict=assistant_model_config.model_dump(),
             ),
             tools=function_list,
         ),
@@ -73,7 +73,7 @@ def main(
             model=ModelFactory.create(
                 model_platform=model_platform,
                 model_type=model_type,
-                model_config_dict=user_model_config.__dict__,
+                model_config_dict=user_model_config.model_dump(),
             ),
         ),
         task_prompt=task_prompt,

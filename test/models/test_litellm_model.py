@@ -49,7 +49,7 @@ def test_litellm_model_unexpected_argument():
         model_path="vicuna-7b-v1.5",
         server_url="http://localhost:8000/v1",
     )
-    model_config_dict = model_config.__dict__
+    model_config_dict = model_config.model_dump()
 
     with pytest.raises(
         ValueError,
