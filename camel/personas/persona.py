@@ -11,9 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import uuid
 from typing import ClassVar, Optional, Union
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
 from camel.prompts import PersonaGeneratorPrompt, TextPrompt
 
@@ -30,6 +31,7 @@ class Persona(BaseModel):
 
     name: Optional[str] = None
     description: Optional[str] = None
+    _id: uuid.UUID = PrivateAttr(default_factory=uuid.uuid4)
 
     # Field with default_factory to avoid circular import issues
     # Union type allows either TextPrompt or str
@@ -47,7 +49,7 @@ class Persona(BaseModel):
     # Class-level configuration for Pydantic model
     # ClassVar indicates this is a class variable, not an instance variable
     model_config: ClassVar[ConfigDict] = ConfigDict(
-        # Allows the use of custom types like TextPrompt
+        # Allow the use of custom types TextPrompt
         arbitrary_types_allowed=True,
         # Custom JSON schema configuration
         json_schema_extra={
@@ -60,11 +62,23 @@ class Persona(BaseModel):
         },
     )
 
+    @property
+    def id(self) -> str:
+        return str(self._id)
+
     @classmethod
     def model_json_schema(cls):
-        r"""Customize the model's JSON schema. This method is used by Pydantic
-        v2 for advanced JSON schema modifications.
-        """
         schema = super().model_json_schema()
-        # Additional schema customizations can be added here
+        schema['properties']['id'] = {'type': 'string', 'format': 'uuid'}
         return schema
+
+    def dict(self, *args, **kwargs):
+        # Output: {'name': 'Alice', 'description': None, 't2p_prompt': '...', 'p2p_prompt': '...', 'id': 'f47ac10b-58cc-4372-a567-0e02b2c3d479'}  # noqa: E501
+        d = super().dict(*args, **kwargs)
+        d['id'] = self.id
+        return d
+
+    def json(self, *args, **kwargs):
+        # Output: '{"name": "Alice", "description": null, "t2p_prompt": "...", "p2p_prompt": "...", "id": "f47ac10b-58cc-4372-a567-0e02b2c3d479"}'  # noqa: E501
+        d = self.dict(*args, **kwargs)
+        return super().json(d, *args, **kwargs)
