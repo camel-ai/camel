@@ -14,36 +14,29 @@
 
 from camel.personas.persona_generator import PersonaGenerator
 
+persona_group = PersonaGenerator()
 
-def generate_personas():
-    persona_group = PersonaGenerator()
+# Use the text_to_persona method
+example_text = """Clinical Guideline: Administration of Injections in 
+Pediatric Patients Purpose: To provide standardized care for pediatric 
+patients requiring injections, ensuring safety, ..."""
 
-    # Use the text_to_persona method
-    example_text = """Clinical Guideline: Administration of Injections in 
-    Pediatric Patients Purpose: To provide standardized care for pediatric 
-    patients requiring injections, ensuring safety, ..."""
+inferred_persona = persona_group.text_to_persona(example_text, action="read")
+print(
+    f"Inferred Persona:\n{inferred_persona.name}"
+    f"\n{inferred_persona.description}\n"
+)
 
-    inferred_persona = persona_group.text_to_persona(
-        example_text, action="read"
-    )
-    print(
-        f"Inferred Persona:\n{inferred_persona.name}"
-        f"\n{inferred_persona.description}\n"
-    )
-
-    # Use the persona_to_persona method
-    related_personas = persona_group.persona_to_persona(
-        persona=inferred_persona
-    )
-    print("Related Personas:\n")
-    for persona_id, persona in related_personas.items():
-        print(f"ID: {persona_id}")
-        print(f"Name: {persona.name}")
-        print(f"Description: {persona.description}")
-        print()
-
-    # Example output:
-    """
+# Use the persona_to_persona method
+related_personas = persona_group.persona_to_persona(persona=inferred_persona)
+print("Related Personas:\n")
+for persona_id, persona in related_personas.items():
+    print(f"ID: {persona_id}")
+    print(f"Name: {persona.name}")
+    print(f"Description: {persona.description}")
+    print()
+'''
+===============================================================================
 Inferred Persona:
 Pediatric Nurse
 A healthcare professional specializing in the care of children, with expertise in administering medications and following clinical guidelines for pediatric patients.
@@ -69,8 +62,5 @@ Description: The primary caregiver of a pediatric patient, who needs to understa
 ID: 123e4567-e89b-12d3-a456-426614174004
 Name: Pediatric Hospital Administrator
 Description: A healthcare manager responsible for overseeing pediatric departments or hospitals. They ensure that clinical guidelines are implemented and followed to maintain high standards of care for young patients.
-"""  # noqa: E501
-
-
-if __name__ == "__main__":
-    generate_personas()
+===============================================================================
+'''  # noqa: E501
