@@ -408,7 +408,10 @@ def test_tool_calling_sync():
     )
     agent_response = agent.step(user_msg)
 
-    tool_calls: List[FunctionCallingRecord] = agent_response.info['tool_calls']
+    tool_calls: List[FunctionCallingRecord] = [
+        FunctionCallingRecord(**call)
+        for call in agent_response.info['tool_calls']
+    ]
     for called_func in tool_calls:
         print(str(called_func))
 
@@ -454,7 +457,10 @@ async def test_tool_calling_math_async():
     )
     agent_response = await agent.step_async(user_msg)
 
-    tool_calls: List[FunctionCallingRecord] = agent_response.info['tool_calls']
+    tool_calls: List[FunctionCallingRecord] = [
+        FunctionCallingRecord(**call)
+        for call in agent_response.info['tool_calls']
+    ]
     for called_func in tool_calls:
         print(str(called_func))
 
@@ -513,7 +519,10 @@ async def test_tool_calling_async():
     )
     agent_response = await agent.step_async(user_msg)
 
-    tool_calls: List[FunctionCallingRecord] = agent_response.info['tool_calls']
+    tool_calls: List[FunctionCallingRecord] = [
+        FunctionCallingRecord(**call)
+        for call in agent_response.info['tool_calls']
+    ]
     for called_func in tool_calls:
         print(str(called_func))
 

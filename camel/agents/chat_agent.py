@@ -15,8 +15,9 @@ from __future__ import annotations
 
 import json
 from collections import defaultdict
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
+
+from pydantic import BaseModel
 
 from camel.agents.base import BaseAgent
 from camel.configs import ChatGPTConfig
@@ -46,8 +47,7 @@ if TYPE_CHECKING:
     from camel.toolkits import OpenAIFunction
 
 
-@dataclass(frozen=True)
-class FunctionCallingRecord:
+class FunctionCallingRecord(BaseModel):
     r"""Historical records of functions called in the conversation.
 
     Attributes:
@@ -67,7 +67,6 @@ class FunctionCallingRecord:
         Returns:
             str: Modified string to represent the function calling.
         """
-
         return (
             f"Function Execution: {self.func_name}\n"
             f"\tArgs: {self.args}\n"
@@ -683,7 +682,9 @@ class ChatAgent(BaseAgent):
         )
 
         # Record information about this function call
-        func_record = FunctionCallingRecord(func_name, args, result)
+        func_record = FunctionCallingRecord(
+            func_name=func_name, args=args, result=result
+        )
         return assist_msg, func_msg, func_record
 
     async def step_tool_call_async(
@@ -742,7 +743,9 @@ class ChatAgent(BaseAgent):
         )
 
         # Record information about this function call
-        func_record = FunctionCallingRecord(func_name, args, result)
+        func_record = FunctionCallingRecord(
+            func_name=func_name, args=args, result=result
+        )
         return assist_msg, func_msg, func_record
 
     def get_usage_dict(
