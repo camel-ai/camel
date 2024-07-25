@@ -20,7 +20,7 @@ from camel.messages import BaseMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.personas import Persona
 from camel.prompts import TextPrompt
-from camel.types import RoleType, ModelPlatformType, ModelType
+from camel.types import ModelPlatformType, ModelType, RoleType
 
 
 class PersonaGenerator(ChatAgent):
