@@ -19,6 +19,7 @@ from .gemini_config import (
 )
 from .groq_config import GROQ_API_PARAMS, GroqConfig
 from .litellm_config import LITELLM_API_PARAMS, LiteLLMConfig
+from .mistral_config import MISTRAL_API_PARAMS, MistralConfig
 from .ollama_config import OLLAMA_API_PARAMS, OllamaConfig
 from .openai_config import (
     OPENAI_API_PARAMS,
@@ -47,4 +48,6 @@ __all__ = [
     'Gemini_API_PARAMS',
     'VLLMConfig',
     'VLLM_API_PARAMS',
+    'MistralConfig',
+    'MISTRAL_API_PARAMS',
 ]

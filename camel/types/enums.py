@@ -164,6 +164,15 @@ class ModelType(Enum):
         }
 
     @property
+    def is_mistral(self) -> bool:
+        r"""Returns whether this type of models is served by Mistral."""
+        return self in {
+            ModelType.MISTRAL_SMALL,
+            ModelType.MISTRAL_MEDIUM,
+            ModelType.MISTRAL_LARGE,
+        }
+
+    @property
     def is_nvidia(self) -> bool:
         r"""Returns whether this type of models is Nvidia-released model.
 
@@ -186,13 +195,13 @@ class ModelType(Enum):
         """
         if self is ModelType.GPT_3_5_TURBO:
             return 16385
-        if self is ModelType.GPT_4:
+        elif self is ModelType.GPT_4:
             return 8192
-        if self is ModelType.GPT_4_32K:
+        elif self is ModelType.GPT_4_32K:
             return 32768
-        if self is ModelType.GPT_4_TURBO:
+        elif self is ModelType.GPT_4_TURBO:
             return 128000
-        if self is ModelType.GPT_4O:
+        elif self is ModelType.GPT_4O:
             return 128000
         elif self is ModelType.GPT_4O_MINI:
             return 128000
@@ -224,7 +233,7 @@ class ModelType(Enum):
             return 8192
         elif self is ModelType.STUB:
             return 4096
-        if self is ModelType.LLAMA_2:
+        elif self is ModelType.LLAMA_2:
             return 4096
         elif self is ModelType.LLAMA_3:
             return 8192
@@ -235,11 +244,11 @@ class ModelType(Enum):
         elif self is ModelType.VICUNA:
             # reference: https://lmsys.org/blog/2023-03-30-vicuna/
             return 2048
-        if self is ModelType.VICUNA_16K:
+        elif self is ModelType.VICUNA_16K:
             return 16384
         elif self in {ModelType.CLAUDE_2_0, ModelType.CLAUDE_INSTANT_1_2}:
             return 100_000
-        if self in {
+        elif self in {
             ModelType.CLAUDE_2_1,
             ModelType.CLAUDE_3_OPUS,
             ModelType.CLAUDE_3_SONNET,
@@ -249,6 +258,12 @@ class ModelType(Enum):
             return 200_000
         elif self is ModelType.NEMOTRON_4_REWARD:
             return 4096
+        elif self in {
+            ModelType.MISTRAL_SMALL,
+            ModelType.MISTRAL_MEDIUM,
+            ModelType.MISTRAL_LARGE,
+        }:
+            return 128000
         else:
             raise ValueError("Unknown model type")
 
@@ -408,6 +423,7 @@ class ModelPlatformType(Enum):
     DEFAULT = "default"
     GEMINI = "gemini"
     VLLM = "vllm"
+    MISTRAL = "mistral"
 
     @property
     def is_openai(self) -> bool:
@@ -448,6 +464,11 @@ class ModelPlatformType(Enum):
     def is_zhipuai(self) -> bool:
         r"""Returns whether this platform is zhipu."""
         return self is ModelPlatformType.ZHIPU
+
+    @property
+    def is_mistral(self) -> bool:
+        r"""Returns whether this platform is mistral."""
+        return self is ModelPlatformType.MISTRAL
 
     @property
     def is_open_source(self) -> bool:

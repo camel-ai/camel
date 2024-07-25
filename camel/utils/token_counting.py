@@ -492,10 +492,14 @@ class MistralTokenCounter(BaseTokenCounter):
         Returns:
             int: Number of tokens in the messages.
         """
+        total_tokens = 0
+        for mistral_message in messages:
+            tokens = self.tokenizer.encode_chat_completion(
+                mistral_message  # type: ignore[arg-type]
+            ).tokens
+            total_tokens += len(tokens)
 
-        FAKE_NUMBER_OF_TOKENS = 100
-
-        return FAKE_NUMBER_OF_TOKENS
+        return total_tokens
 
 
 def count_tokens_from_image(
