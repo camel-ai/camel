@@ -51,7 +51,6 @@ user_msg = BaseMessage.make_user_message(
 response = camel_agent.step(user_msg, output_schema=JokeResponse)
 print(response.msgs[0].content)
 """
-test
 {'joke': "Why couldn't the bicycle find its way home? It lost its bearings!"
 , 'funny_level': '8'}
 """
