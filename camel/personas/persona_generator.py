@@ -15,11 +15,12 @@ import re
 from typing import List, Optional, Union
 
 from camel.agents import ChatAgent
-from camel.messages.base import BaseMessage
-from camel.models.base_model import BaseModelBackend
-from camel.personas.persona import Persona
+from camel.configs import ChatGPTConfig
+from camel.messages import BaseMessage
+from camel.models import BaseModelBackend, ModelFactory
+from camel.personas import Persona
 from camel.prompts import TextPrompt
-from camel.types import RoleType
+from camel.types import RoleType, ModelPlatformType, ModelType
 
 
 class PersonaGenerator(ChatAgent):
@@ -43,7 +44,12 @@ class PersonaGenerator(ChatAgent):
             meta_dict=None,
             content="",
         )
-        self.model = model if model else None
+        self.model = model if model else ModelFactory.create(
+            model_platform=ModelPlatformType.OPENAI,
+            model_type=ModelType.GPT_4O_MINI,
+            model_config_dict=ChatGPTConfig().__dict__,
+            api_key=self._api_key,
+        )
         super().__init__(system_message, model=model)
         self.personas: List[Persona] = []
 
