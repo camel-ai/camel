@@ -13,12 +13,10 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Optional, Union
+from typing import List, Optional, Union
 
 from camel.configs.base_config import BaseConfig
-
-if TYPE_CHECKING:
-    from camel.toolkits import OpenAIFunction
+from camel.toolkits import OpenAIFunction
 
 
 class LiteLLMConfig(BaseConfig):
