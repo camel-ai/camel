@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Dict, List
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from camel.messages import BaseMessage
 
@@ -31,6 +31,7 @@ class ChatAgentResponse(BaseModel):
         info (Dict[str, Any]): Extra information about the chat message.
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     msgs: List[BaseMessage]
     terminated: bool
     info: Dict[str, Any]
