@@ -15,8 +15,8 @@ import re
 
 import pytest
 
-from camel.configs import OllamaConfig
-from camel.models import OllamaModel
+from camel.configs import GroqConfig, OpenSourceConfig
+from camel.models import GroqModel
 from camel.types import ModelType
 from camel.utils import OpenAITokenCounter
 
@@ -25,35 +25,38 @@ from camel.utils import OpenAITokenCounter
 @pytest.mark.parametrize(
     "model_type",
     [
-        ModelType.GPT_3_5_TURBO,
-        ModelType.GPT_4,
-        ModelType.GPT_4_32K,
-        ModelType.GPT_4_TURBO,
-        ModelType.GPT_4O,
+        ModelType.GROQ_LLAMA_3_8B,
+        ModelType.GROQ_LLAMA_3_70B,
     ],
 )
-def test_ollama_model(model_type: ModelType):
-    model_config_dict = OllamaConfig().__dict__
-    model = OllamaModel(model_type.value, model_config_dict)
-    assert model.model_type == model_type.value
+def test_groq_llama3_model(model_type):
+    model_config_dict = GroqConfig().__dict__
+    model = GroqModel(model_type, model_config_dict)
+    assert model.model_type == model_type
     assert model.model_config_dict == model_config_dict
+    # LLM served by Groq does not support token counter, so Camel uses
+    # OpenAITokenCounter as a placeholder.
     assert isinstance(model.token_counter, OpenAITokenCounter)
-    assert isinstance(model.model_type, str)
-    assert isinstance(model.token_limit, int)
+    assert isinstance(model.model_type.value_for_tiktoken, str)
+    assert isinstance(model.model_type.token_limit, int)
 
 
 @pytest.mark.model_backend
-def test_ollama_model_unexpected_argument():
-    model_type = ModelType.GPT_4
-    model_config_dict = {"model_path": "vicuna-7b-v1.5"}
+def test_groq_llama3_model_unexpected_argument():
+    model_type = ModelType.GROQ_LLAMA_3_70B
+    model_config = OpenSourceConfig(
+        model_path="vicuna-7b-v1.5",
+        server_url="http://localhost:8000/v1",
+    )
+    model_config_dict = model_config.__dict__
 
     with pytest.raises(
         ValueError,
         match=re.escape(
             (
                 "Unexpected argument `model_path` is "
-                "input into Ollama model backend."
+                "input into Groq model backend."
             )
         ),
     ):
-        _ = OllamaModel(model_type, model_config_dict)
+        _ = GroqModel(model_type, model_config_dict)

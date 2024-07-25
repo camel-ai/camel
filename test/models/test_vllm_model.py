@@ -15,8 +15,8 @@ import re
 
 import pytest
 
-from camel.configs import OllamaConfig
-from camel.models import OllamaModel
+from camel.configs import VLLMConfig
+from camel.models import VLLMModel
 from camel.types import ModelType
 from camel.utils import OpenAITokenCounter
 
@@ -32,9 +32,9 @@ from camel.utils import OpenAITokenCounter
         ModelType.GPT_4O,
     ],
 )
-def test_ollama_model(model_type: ModelType):
-    model_config_dict = OllamaConfig().__dict__
-    model = OllamaModel(model_type.value, model_config_dict)
+def test_vllm_model(model_type: ModelType):
+    model_config_dict = VLLMConfig().__dict__
+    model = VLLMModel(model_type.value, model_config_dict, api_key="vllm")
     assert model.model_type == model_type.value
     assert model.model_config_dict == model_config_dict
     assert isinstance(model.token_counter, OpenAITokenCounter)
@@ -43,7 +43,7 @@ def test_ollama_model(model_type: ModelType):
 
 
 @pytest.mark.model_backend
-def test_ollama_model_unexpected_argument():
+def test_vllm_model_unexpected_argument():
     model_type = ModelType.GPT_4
     model_config_dict = {"model_path": "vicuna-7b-v1.5"}
 
@@ -52,8 +52,8 @@ def test_ollama_model_unexpected_argument():
         match=re.escape(
             (
                 "Unexpected argument `model_path` is "
-                "input into Ollama model backend."
+                "input into vLLM model backend."
             )
         ),
     ):
-        _ = OllamaModel(model_type, model_config_dict)
+        _ = VLLMModel(model_type, model_config_dict, api_key="vllm")

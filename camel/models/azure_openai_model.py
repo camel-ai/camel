@@ -14,21 +14,19 @@
 import os
 from typing import Any, Dict, List, Optional, Union
 
-from openai import OpenAI, Stream
+from openai import AzureOpenAI, Stream
 
 from camel.configs import OPENAI_API_PARAMS
 from camel.messages import OpenAIMessage
-from camel.models import BaseModelBackend
+from camel.models.base_model import BaseModelBackend
 from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
-from camel.utils import (
-    BaseTokenCounter,
-    OpenAITokenCounter,
-    api_keys_required,
-)
+from camel.utils import BaseTokenCounter, OpenAITokenCounter, api_keys_required
 
 
-class OpenAIModel(BaseModelBackend):
-    r"""OpenAI API in a unified BaseModelBackend interface."""
+class AzureOpenAIModel(BaseModelBackend):
+    r"""Azure OpenAI API in a unified BaseModelBackend interface.
+    Doc: https://learn.microsoft.com/en-us/azure/ai-services/openai/
+    """
 
     def __init__(
         self,
@@ -36,7 +34,8 @@ class OpenAIModel(BaseModelBackend):
         model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
         url: Optional[str] = None,
-        token_counter: Optional[BaseTokenCounter] = None,
+        api_version: Optional[str] = None,
+        azure_deployment_name: Optional[str] = None,
     ) -> None:
         r"""Constructor for OpenAI backend.
 
@@ -49,21 +48,49 @@ class OpenAIModel(BaseModelBackend):
                 OpenAI service. (default: :obj:`None`)
             url (Optional[str]): The url to the OpenAI service. (default:
                 :obj:`None`)
-            token_counter (Optional[BaseTokenCounter]): Token counter to use
-                for the model. If not provided, `OpenAITokenCounter` will
-                be used.
+            api_version (Optional[str]): The api version for the model.
+            azure_deployment_name (Optional[str]): The deployment name you
+                chose when you deployed an azure model. (default: :obj:`None`)
         """
-        super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter
+        super().__init__(model_type, model_config_dict, api_key, url)
+        self._url = url or os.environ.get("AZURE_OPENAI_ENDPOINT")
+        self._api_key = api_key or os.environ.get("AZURE_OPENAI_API_KEY")
+        self.api_version = api_version or os.environ.get("AZURE_API_VERSION")
+        self.azure_deployment_name = azure_deployment_name or os.environ.get(
+            "AZURE_DEPLOYMENT_NAME"
         )
-        self._url = url or os.environ.get("OPENAI_API_BASE_URL")
-        self._api_key = api_key or os.environ.get("OPENAI_API_KEY")
-        self._client = OpenAI(
+
+        if self._url is None:
+            raise ValueError(
+                "Must provide either the `url` argument "
+                "or `AZURE_OPENAI_ENDPOINT` environment variable."
+            )
+        if self._api_key is None:
+            raise ValueError(
+                "Must provide either the `api_key` argument "
+                "or `AZURE_OPENAI_API_KEY` environment variable."
+            )
+        if self.api_version is None:
+            raise ValueError(
+                "Must provide either the `api_version` argument "
+                "or `AZURE_API_VERSION` environment variable."
+            )
+        if self.azure_deployment_name is None:
+            raise ValueError(
+                "Must provide either the `azure_deployment_name` argument "
+                "or `AZURE_DEPLOYMENT_NAME` environment variable."
+            )
+        self.model = str(self.azure_deployment_name)
+
+        self._client = AzureOpenAI(
+            azure_endpoint=str(self._url),
+            azure_deployment=self.azure_deployment_name,
+            api_version=self.api_version,
+            api_key=self._api_key,
             timeout=60,
             max_retries=3,
-            base_url=self._url,
-            api_key=self._api_key,
         )
+        self._token_counter: Optional[BaseTokenCounter] = None
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -77,12 +104,12 @@ class OpenAIModel(BaseModelBackend):
             self._token_counter = OpenAITokenCounter(self.model_type)
         return self._token_counter
 
-    @api_keys_required("OPENAI_API_KEY")
+    @api_keys_required("AZURE_OPENAI_API_KEY", "AZURE_API_VERSION")
     def run(
         self,
         messages: List[OpenAIMessage],
     ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
-        r"""Runs inference of OpenAI chat completion.
+        r"""Runs inference of Azure OpenAI chat completion.
 
         Args:
             messages (List[OpenAIMessage]): Message list with the chat history
@@ -95,24 +122,24 @@ class OpenAIModel(BaseModelBackend):
         """
         response = self._client.chat.completions.create(
             messages=messages,
-            model=self.model_type.value,
+            model=self.model,
             **self.model_config_dict,
         )
         return response
 
     def check_model_config(self):
         r"""Check whether the model configuration contains any
-        unexpected arguments to OpenAI API.
+        unexpected arguments to Azure OpenAI API.
 
         Raises:
             ValueError: If the model configuration dictionary contains any
-                unexpected arguments to OpenAI API.
+                unexpected arguments to Azure OpenAI API.
         """
         for param in self.model_config_dict:
             if param not in OPENAI_API_PARAMS:
                 raise ValueError(
                     f"Unexpected argument `{param}` is "
-                    "input into OpenAI model backend."
+                    "input into Azure OpenAI model backend."
                 )
 
     @property
@@ -122,4 +149,4 @@ class OpenAIModel(BaseModelBackend):
         Returns:
             bool: Whether the model is in stream mode.
         """
-        return self.model_config_dict.get('stream', False)
+        return self.model_config_dict.get("stream", False)

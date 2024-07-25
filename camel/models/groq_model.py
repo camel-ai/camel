@@ -11,16 +11,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-
 import os
 from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
 
-from camel.configs import ZHIPUAI_API_PARAMS
+from camel.configs import GROQ_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
-from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
+from camel.types import (
+    ChatCompletion,
+    ChatCompletionChunk,
+    ModelType,
+)
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
@@ -28,8 +31,8 @@ from camel.utils import (
 )
 
 
-class ZhipuAIModel(BaseModelBackend):
-    r"""ZhipuAI API in a unified BaseModelBackend interface."""
+class GroqModel(BaseModelBackend):
+    r"""LLM API served by Groq in a unified BaseModelBackend interface."""
 
     def __init__(
         self,
@@ -39,16 +42,15 @@ class ZhipuAIModel(BaseModelBackend):
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        r"""Constructor for ZhipuAI backend.
+        r"""Constructor for Groq backend.
 
         Args:
-            model_type (ModelType): Model for which a backend is created,
-                such as GLM_* series.
-            model_config_dict (Dict[str, Any]): A dictionary that will
-                be fed into openai.ChatCompletion.create().
+            model_type (str): Model for which a backend is created.
+            model_config_dict (Dict[str, Any]): A dictionary of parameters for
+                the model configuration.
             api_key (Optional[str]): The API key for authenticating with the
-                ZhipuAI service. (default: :obj:`None`)
-            url (Optional[str]): The url to the ZhipuAI service. (default:
+                Groq service. (default: :obj:`None`).
+            url (Optional[str]): The url to the Groq service. (default:
                 :obj:`None`)
             token_counter (Optional[BaseTokenCounter]): Token counter to use
                 for the model. If not provided, `OpenAITokenCounter(ModelType.
@@ -57,20 +59,31 @@ class ZhipuAIModel(BaseModelBackend):
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
-        self._url = url or os.environ.get("ZHIPUAI_API_BASE_URL")
-        self._api_key = api_key or os.environ.get("ZHIPUAI_API_KEY")
-        if not self._url or not self._api_key:
-            raise ValueError(
-                "ZHIPUAI_API_BASE_URL and ZHIPUAI_API_KEY should be set."
-            )
+        self._url = url or "https://api.groq.com/openai/v1"
+        self._api_key = api_key or os.environ.get("GROQ_API_KEY")
         self._client = OpenAI(
             timeout=60,
             max_retries=3,
             api_key=self._api_key,
             base_url=self._url,
         )
+        self._token_counter = token_counter
 
-    @api_keys_required("ZHIPUAI_API_KEY")
+    @property
+    def token_counter(self) -> BaseTokenCounter:
+        r"""Initialize the token counter for the model backend.
+
+        Returns:
+            BaseTokenCounter: The token counter following the model's
+                tokenization style.
+        """
+        # Make sure you have the access to these open-source model in
+        # HuggingFace
+        if not self._token_counter:
+            self._token_counter = OpenAITokenCounter(ModelType.GPT_3_5_TURBO)
+        return self._token_counter
+
+    @api_keys_required("GROQ_API_KEY")
     def run(
         self,
         messages: List[OpenAIMessage],
@@ -86,49 +99,33 @@ class ZhipuAIModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        # Use OpenAI cilent as interface call ZhipuAI
-        # Reference: https://open.bigmodel.cn/dev/api#openai_sdk
         response = self._client.chat.completions.create(
             messages=messages,
             model=self.model_type.value,
             **self.model_config_dict,
         )
+
         return response
 
-    @property
-    def token_counter(self) -> BaseTokenCounter:
-        r"""Initialize the token counter for the model backend.
-
-        Returns:
-            OpenAITokenCounter: The token counter following the model's
-                tokenization style.
-        """
-
-        if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(ModelType.GPT_3_5_TURBO)
-        return self._token_counter
-
     def check_model_config(self):
-        r"""Check whether the model configuration contains any
-        unexpected arguments to OpenAI API.
+        r"""Check whether the model configuration contains any unexpected
+        arguments to Groq API. But Groq API does not have any additional
+        arguments to check.
 
         Raises:
             ValueError: If the model configuration dictionary contains any
-                unexpected arguments to ZhipuAI API.
+                unexpected arguments to Groq API.
         """
         for param in self.model_config_dict:
-            if param not in ZHIPUAI_API_PARAMS:
+            if param not in GROQ_API_PARAMS:
                 raise ValueError(
                     f"Unexpected argument `{param}` is "
-                    "input into ZhipuAI model backend."
+                    "input into Groq model backend."
                 )
 
     @property
     def stream(self) -> bool:
-        r"""Returns whether the model is in stream mode, which sends partial
-        results each time.
-
-        Returns:
-            bool: Whether the model is in stream mode.
+        r"""Returns whether the model supports streaming. But Groq API does
+        not support streaming.
         """
-        return self.model_config_dict.get('stream', False)
+        return False

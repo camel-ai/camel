@@ -14,19 +14,22 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from typing import Sequence
+from typing import TYPE_CHECKING, Optional, Sequence
 
 from openai._types import NOT_GIVEN, NotGiven
 
 from camel.configs.base_config import BaseConfig
 
+if TYPE_CHECKING:
+    from camel.toolkits import OpenAIFunction
+
 
 @dataclass(frozen=True)
-class OllamaConfig(BaseConfig):
+class GroqConfig(BaseConfig):
     r"""Defines the parameters for generating chat completions using OpenAI
     compatibility.
 
-    Reference: https://github.com/ollama/ollama/blob/main/docs/openai.md
+    Reference: https://console.groq.com/docs/openai
 
     Args:
         temperature (float, optional): Sampling temperature to use, between
@@ -38,6 +41,8 @@ class OllamaConfig(BaseConfig):
             the tokens with top_p probability mass. So :obj:`0.1` means only
             the tokens comprising the top 10% probability mass are considered.
             (default: :obj:`1.0`)
+        n (int, optional): How many chat completion choices to generate for
+            each input message. (default: :obj:`1`)
         response_format (object, optional): An object specifying the format
             that the model must output. Compatible with GPT-4 Turbo and all
             GPT-3.5 Turbo models newer than gpt-3.5-turbo-1106. Setting to
@@ -70,16 +75,45 @@ class OllamaConfig(BaseConfig):
             existing frequency in the text so far, decreasing the model's
             likelihood to repeat the same line verbatim. See more information
             about frequency and presence penalties. (default: :obj:`0.0`)
+        user (str, optional): A unique identifier representing your end-user,
+            which can help OpenAI to monitor and detect abuse.
+            (default: :obj:`""`)
+        tools (list[OpenAIFunction], optional): A list of tools the model may
+            call. Currently, only functions are supported as a tool. Use this
+            to provide a list of functions the model may generate JSON inputs
+            for. A max of 128 functions are supported.
+        tool_choice (Union[dict[str, str], str], optional): Controls which (if
+            any) tool is called by the model. :obj:`"none"` means the model
+            will not call any tool and instead generates a message.
+            :obj:`"auto"` means the model can pick between generating a
+            message or calling one or more tools.  :obj:`"required"` means the
+            model must call one or more tools. Specifying a particular tool
+            via {"type": "function", "function": {"name": "my_function"}}
+            forces the model to call that tool. :obj:`"none"` is the default
+            when no tools are present. :obj:`"auto"` is the default if tools
+            are present.
     """
 
-    temperature: float = 0.2
+    temperature: float = 0.2  # openai default: 1.0
     top_p: float = 1.0
+    n: int = 1
     stream: bool = False
     stop: str | Sequence[str] | NotGiven = NOT_GIVEN
     max_tokens: int | NotGiven = NOT_GIVEN
     presence_penalty: float = 0.0
     response_format: dict | NotGiven = NOT_GIVEN
     frequency_penalty: float = 0.0
+    user: str = ""
+    tools: Optional[list[OpenAIFunction]] = None
+    tool_choice: Optional[dict[str, str] | str] = "none"
+
+    def __post_init__(self):
+        if self.tools is not None:
+            object.__setattr__(
+                self,
+                'tools',
+                [tool.get_openai_tool_schema() for tool in self.tools],
+            )
 
 
-OLLAMA_API_PARAMS = {param for param in asdict(OllamaConfig()).keys()}
+GROQ_API_PARAMS = {param for param in asdict(GroqConfig()).keys()}

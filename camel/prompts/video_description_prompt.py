@@ -11,19 +11,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from typing import Any
 
-from .base import BaseInterpreter
-from .docker_interpreter import DockerInterpreter
-from .internal_python_interpreter import InternalPythonInterpreter
-from .interpreter_error import InterpreterError
-from .ipython_interpreter import JupyterKernelInterpreter
-from .subprocess_interpreter import SubprocessInterpreter
+from camel.prompts.base import TextPrompt, TextPromptDict
+from camel.types import RoleType
 
-__all__ = [
-    'BaseInterpreter',
-    'InterpreterError',
-    'InternalPythonInterpreter',
-    'SubprocessInterpreter',
-    'DockerInterpreter',
-    'JupyterKernelInterpreter',
-]
+
+# flake8: noqa :E501
+class VideoDescriptionPromptTemplateDict(TextPromptDict):
+    ASSISTANT_PROMPT = TextPrompt(
+        """You are a master of video analysis. 
+        Please provide a shot description of the content of the current video."""
+    )
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.update(
+            {
+                RoleType.ASSISTANT: self.ASSISTANT_PROMPT,
+            }
+        )
