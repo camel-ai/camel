@@ -17,7 +17,6 @@ from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
 
-
 model = ModelFactory.create(
     model_platform=ModelPlatformType.MISTRAL,
     model_type=ModelType.MISTRAL_LARGE,
