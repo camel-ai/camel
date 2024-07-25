@@ -27,6 +27,8 @@ from camel.utils import BaseTokenCounter, OpenAITokenCounter, api_keys_required
 class MistralModel(BaseModelBackend):
     r"""Mistral API in a unified BaseModelBackend interface."""
 
+    # TODO: Support tool calling and stream mode.
+
     def __init__(
         self,
         model_type: ModelType,

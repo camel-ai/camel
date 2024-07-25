@@ -14,14 +14,13 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Dict, Optional, Union
 
 from camel.configs.base_config import BaseConfig
 
 if TYPE_CHECKING:
     from mistralai.models.chat_completion import (
         ResponseFormat,
-        ToolChoice,
     )
 
 
@@ -31,7 +30,6 @@ class MistralConfig(BaseConfig):
     Mistral API.
 
     Args:
-        tools (Optional[List[Function]], optional): a list of tools to use.
         temperature (Optional[float], optional): temperature the temperature
             to use for sampling, e.g. 0.5.
         max_tokens (Optional[int], optional): the maximum number of tokens to
@@ -44,28 +42,16 @@ class MistralConfig(BaseConfig):
             Defaults to False.
         safe_prompt (bool, optional): whether to use safe prompt, e.g. true.
             Defaults to False.
-        tool_choice (Union[dict[str, str], str], optional): Controls which (if
-            any) tool is called by the model. :obj:`"none"` means the model
-            will not call any tool and instead generates a message.
-            :obj:`"auto"` means the model can pick between generating a
-            message or calling one or more tools.  :obj:`"required"` means the
-            model must call one or more tools. Specifying a particular tool
-            via {"type": "function", "function": {"name": "my_function"}}
-            forces the model to call that tool. :obj:`"none"` is the default
-            when no tools are present. :obj:`"auto"` is the default if tools
-            are present.
         response_format (Union[Dict[str, str], ResponseFormat): format of the
             response.
     """
 
-    tools: Optional[List[Dict[str, Any]]] = None
     temperature: Optional[float] = None
     max_tokens: Optional[int] = None
     top_p: Optional[float] = None
     random_seed: Optional[int] = None
     safe_mode: bool = False
     safe_prompt: bool = False
-    tool_choice: Optional[Union[str, ToolChoice]] = None
     response_format: Optional[Union[Dict[str, str], ResponseFormat]] = None
 
 

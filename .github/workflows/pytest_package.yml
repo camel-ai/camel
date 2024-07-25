@@ -39,6 +39,7 @@ jobs:
         AZURE_API_VERSION: "to-be-filled"
         AZURE_DEPLOYMENT_NAME: "to-be-filled"
         AZURE_OPENAI_ENDPOINT: "https://camel.openai.azure.com/"
+        MISTRAL_API_KEY: "${{ secrets.MISTRAL_API_KEY }}"
       run: poetry run pytest --fast-test-mode test/
 
   pytest_package_llm_test:
@@ -67,6 +68,7 @@ jobs:
         AZURE_API_VERSION: "to-be-filled"
         AZURE_DEPLOYMENT_NAME: "to-be-filled"
         AZURE_OPENAI_ENDPOINT: "https://camel.openai.azure.com/"
+        MISTRAL_API_KEY: "${{ secrets.MISTRAL_API_KEY }}"
       run: poetry run pytest --llm-test-only test/
 
   pytest_package_very_slow_test:
@@ -95,4 +97,5 @@ jobs:
         AZURE_API_VERSION: ${{ secrets.AZURE_API_VERSION }}"
         AZURE_DEPLOYMENT_NAME: ${{ secrets.AZURE_DEPLOYMENT_NAME }}"
         AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}"
+        MISTRAL_API_KEY: "${{ secrets.MISTRAL_API_KEY }}"
       run: poetry run pytest --very-slow-test-only test/
