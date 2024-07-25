@@ -421,3 +421,6 @@ logs/
 datasets_test/
 evaluation_data/
 camel_data/
+
+# Synthetic data generation
+camel/synthetic_datagen/data/gpt4_generations

@@ -55,7 +55,8 @@ class NemotronRewardEvalAgent(BaseEvalAgentSystem):
             },
         ]
         response = self.nemotron.run(message)
-        print(response)
+        logger.info(f"Response: {response}")
+
         match = re.search(r"content='(.*?)'", str(response))
         if not match:
             logger.error("Failed to parse response from Nemotron. {response}")

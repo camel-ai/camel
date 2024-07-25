@@ -39,8 +39,10 @@ logging.basicConfig(level=logging.INFO)
 # "iamtarun/python_code_instructions_18k_alpaca"
 # https://huggingface.co/datasets/iamtarun/python_code_instructions_18k_alpaca
 
+
+# Part 1: Self-Instruct 
 spec = SelfInstructSpec()
-spec.seed_instructions = [
+seed_instructions = [
     SeedInstruction(
         instruction="Create a function to calculate the"
         " sum of a sequence of integers.",
@@ -113,7 +115,7 @@ spec.seed_instructions = [
         ],
     ),
 ]
-
+spec.seed_instructions = seed_instructions
 spec.agent_system = SingleAgent(model_type=ModelType.DeepSeek_code.value)
 spec.eval_agent_system = NemotronRewardEvalAgent()
 generator = DataGeneratorPipeline(
@@ -126,3 +128,7 @@ generator.run_curate()
 
 scores = generator.run_evaluate()
 print(scores)
+
+
+# Part 2: Evolve-Instruct 
+spec = SelfInstructSpec()
