@@ -11,6 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import uuid
+from typing import Dict
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -44,7 +46,7 @@ def persona_generator():
 
 def test_init(persona_generator: PersonaGenerator):
     assert isinstance(persona_generator, PersonaGenerator)
-    assert isinstance(persona_generator.personas, list)
+    assert isinstance(persona_generator.personas, Dict)
     assert len(persona_generator.personas) == 0
 
 
@@ -55,7 +57,7 @@ def test_add_persona(persona_generator: PersonaGenerator):
     )
     persona_generator.add_persona(persona)
     assert persona_generator.__len__() == 1
-    assert persona_generator.personas[0] == persona
+    assert persona_generator.personas[persona.id] == persona
 
 
 def test_remove_persona(persona_generator: PersonaGenerator):
@@ -70,12 +72,12 @@ def test_remove_persona(persona_generator: PersonaGenerator):
     persona_generator.add_persona(persona1)
     persona_generator.add_persona(persona2)
 
-    persona_generator.__delitem__(0)
+    persona_generator.__delitem__(persona1.id)
     assert persona_generator.__len__() == 1
-    assert persona_generator.personas[0] == persona2
+    assert persona_generator.personas[persona2.id] == persona2
 
-    with pytest.raises(IndexError):
-        persona_generator.__delitem__(5)
+    with pytest.raises(KeyError):
+        persona_generator.__delitem__(uuid.uuid4())
 
 
 def test_get_persona(persona_generator: PersonaGenerator):
@@ -85,10 +87,10 @@ def test_get_persona(persona_generator: PersonaGenerator):
     )
     persona_generator.add_persona(persona)
 
-    assert persona_generator.__getitem__(0) == persona
+    assert persona_generator.__getitem__(persona.id) == persona
 
-    with pytest.raises(IndexError):
-        persona_generator.__getitem__(5)
+    with pytest.raises(KeyError):
+        persona_generator.__getitem__(uuid.uuid4())
 
 
 @patch.object(PersonaGenerator, 'step')
@@ -132,11 +134,14 @@ def test_persona_to_persona(
     base_persona = Persona(name="Data Scientist", description="A data expert")
     related_personas = persona_generator.persona_to_persona(base_persona)
 
-    assert isinstance(related_personas, list)
+    assert isinstance(related_personas, dict)
     assert len(related_personas) == 3
-    assert related_personas[0].name == "Machine Learning Engineer"
-    assert related_personas[1].name == "Business Analyst"
-    assert related_personas[2].name == "Data Engineer"
+    assert any(
+        p.name == "Machine Learning Engineer"
+        for p in related_personas.values()
+    )
+    assert any(p.name == "Business Analyst" for p in related_personas.values())
+    assert any(p.name == "Data Engineer" for p in related_personas.values())
 
 
 def test_deduplicate(persona_generator: PersonaGenerator):
@@ -189,5 +194,24 @@ def test_iter(persona_generator: PersonaGenerator):
 
     personas = list(persona_generator)
     assert len(personas) == 2
-    assert personas[0] == persona1
-    assert personas[1] == persona2
+    assert persona1 in personas
+    assert persona2 in personas
+
+
+def test_get_all_personas(persona_generator: PersonaGenerator):
+    persona1 = Persona(
+        name="Test Persona 1",
+        description="Test Description 1",
+    )
+    persona2 = Persona(
+        name="Test Persona 2",
+        description="Test Description 2",
+    )
+    persona_generator.add_persona(persona1)
+    persona_generator.add_persona(persona2)
+
+    all_personas = persona_generator.get_all_personas()
+    assert isinstance(all_personas, list)
+    assert len(all_personas) == 2
+    assert persona1 in all_personas
+    assert persona2 in all_personas

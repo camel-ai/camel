@@ -63,8 +63,8 @@ class Persona(BaseModel):
     )
 
     @property
-    def id(self) -> str:
-        return str(self._id)
+    def id(self) -> uuid.UUID:
+        return self._id
 
     @classmethod
     def model_json_schema(cls):
