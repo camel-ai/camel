@@ -36,9 +36,10 @@ def generate_personas():
         persona=inferred_persona
     )
     print("Related Personas:\n")
-    for persona in related_personas:
-        print(persona.name)
-        print(persona.description)
+    for persona_id, persona in related_personas.items():
+        print(f"ID: {persona_id}")
+        print(f"Name: {persona.name}")
+        print(f"Description: {persona.description}")
         print()
 
     # Example output:
@@ -49,21 +50,26 @@ A healthcare professional specializing in the care of children, with expertise i
 
 Related Personas:
 
-Pediatrician
-A medical doctor who specializes in the care of infants, children, and adolescents. They work closely with pediatric nurses to ensure proper treatment and medication administration for young patients.
+ID: 123e4567-e89b-12d3-a456-426614174000
+Name: Pediatrician
+Description: A medical doctor who specializes in the care of infants, children, and adolescents. They work closely with pediatric nurses to ensure proper treatment and medication administration for young patients.
 
-Child Life Specialist
-A professional who helps children and families cope with the challenges of hospitalization, illness, and disability. They often collaborate with medical staff to make medical procedures less stressful for pediatric patients.
+ID: 123e4567-e89b-12d3-a456-426614174001
+Name: Child Life Specialist
+Description: A professional who helps children and families cope with the challenges of hospitalization, illness, and disability. They often collaborate with medical staff to make medical procedures less stressful for pediatric patients.
 
-Pediatric Pharmacist
-A pharmacist who specializes in medications for children, ensuring proper dosing and formulations. They work with the medical team to optimize medication regimens for pediatric patients.
+ID: 123e4567-e89b-12d3-a456-426614174002
+Name: Pediatric Pharmacist
+Description: A pharmacist who specializes in medications for children, ensuring proper dosing and formulations. They work with the medical team to optimize medication regimens for pediatric patients.
 
-Parent or Guardian
-The primary caregiver of a pediatric patient, who needs to understand and consent to medical procedures, including injections. They often have concerns and questions about their child's treatment.
+ID: 123e4567-e89b-12d3-a456-426614174003
+Name: Parent or Guardian
+Description: The primary caregiver of a pediatric patient, who needs to understand and consent to medical procedures, including injections. They often have concerns and questions about their child's treatment.
 
-Pediatric Hospital Administrator
-A healthcare manager responsible for overseeing pediatric departments or hospitals. They ensure that clinical guidelines are implemented and followed to maintain high standards of care for young patients.
-    """  # noqa: E501
+ID: 123e4567-e89b-12d3-a456-426614174004
+Name: Pediatric Hospital Administrator
+Description: A healthcare manager responsible for overseeing pediatric departments or hospitals. They ensure that clinical guidelines are implemented and followed to maintain high standards of care for young patients.
+"""  # noqa: E501
 
 
 if __name__ == "__main__":

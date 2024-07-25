@@ -11,8 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import os
 import re
-from typing import List, Optional, Union
+import uuid
+from typing import Dict, List, Optional, Union
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
@@ -51,37 +53,37 @@ class PersonaGenerator(ChatAgent):
                 model_platform=ModelPlatformType.OPENAI,
                 model_type=ModelType.GPT_4O_MINI,
                 model_config_dict=ChatGPTConfig().__dict__,
-                api_key=self._api_key,
+                api_key=os.getenv("OPENAI_API_KEY"),
             )
         )
         super().__init__(system_message, model=model)
-        self.personas: List[Persona] = []
+        self.personas: Dict[uuid.UUID, Persona] = {}
 
     def add_persona(self, persona: Persona):
         r"""Add a persona to the group."""
-        self.personas.append(persona)
+        self.personas[persona.id] = persona
 
-    def __delitem__(self, index: int):
-        r"""Remove a persona from the group by index.
-
-        Args:
-            index (int): The index of the persona to remove.
-        """
-        if 0 <= index < len(self.personas):
-            del self.personas[index]
-        else:
-            raise IndexError("Persona index out of range")
-
-    def __getitem__(self, index: int) -> Persona:
-        r"""Get a persona by index.
+    def __delitem__(self, persona_id: uuid.UUID):
+        r"""Remove a persona from the group by ID.
 
         Args:
-            index (int): The index of the persona to get.
+            persona_id (uuid.UUID): The ID of the persona to remove.
         """
-        if 0 <= index < len(self.personas):
-            return self.personas[index]
+        if persona_id in self.personas:
+            del self.personas[persona_id]
         else:
-            raise IndexError("Persona index out of range")
+            raise KeyError("Persona ID not found")
+
+    def __getitem__(self, persona_id: uuid.UUID) -> Persona:
+        """Get a persona by ID.
+
+        Args:
+            persona_id (uuid.UUID): The ID of the persona to retrieve.
+        """
+        if persona_id in self.personas:
+            return self.personas[persona_id]
+        else:
+            raise KeyError("Persona ID not found")
 
     def text_to_persona(self, text: str, action: str = "read") -> Persona:
         r"""Infers a specific persona who is likely to [read|write|like|dislike
@@ -182,33 +184,31 @@ persona_description: <BLANK>
         pattern = r"(\d+)\.\s*persona_name:\s*(.*?)\s*persona_description:\s*(.*?)\s*(?=\d+\.|$)"  # noqa: E501
         matches = re.findall(pattern, msg.content, re.DOTALL)
 
-        personas: List[Persona] = []
+        personas: Dict[uuid.UUID, Persona] = {}
         for match in matches:
             name = match[1].strip()
             description = match[2].strip()
-            personas.append(
-                Persona(
-                    name=name,
-                    description=description,
-                )
-            )
-
-        for persona in personas:
-            self.add_persona(persona)
+            new_persona = Persona(name=name, description=description)
+            personas[new_persona.id] = new_persona
 
         return personas
 
     def deduplicate(self, similarity_threshold: float = 0.9):
-        r"""Remove similar personas from the group."""
+        r"""Remove similar personas from the group.
+
+        Args:
+            similarity_threshold (float): The similarity threshold for
+            deduplication (default is 0.9).
+        """
         # This is a simplified version. Need to implement a more
         # sophisticated deduplication algorithm as described in the paper.
-        unique_personas: List[Persona] = []
-        for persona in self.personas:
+        unique_personas: Dict[uuid.UUID, Persona] = {}
+        for persona_id, persona in self.personas.items():
             if not any(
                 self.is_similar(persona, up, similarity_threshold)
-                for up in unique_personas
+                for up in unique_personas.values()
             ):
-                unique_personas.append(persona)
+                unique_personas[persona_id] = persona
         self.personas = unique_personas
 
     def is_similar(
@@ -224,4 +224,8 @@ persona_description: <BLANK>
         return len(self.personas)
 
     def __iter__(self):
-        return iter(self.personas)
+        return iter(self.personas.values())
+
+    def get_all_personas(self) -> List[Persona]:
+        r"""Return a list of all personas."""
+        return list(self.personas.values())
