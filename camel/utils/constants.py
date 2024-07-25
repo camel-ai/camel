@@ -26,4 +26,4 @@ class Constants:
     VIDEO_DEFAULT_PLUG_PYAV = "pyav"
 
     # return response with json format
-    RETURN_JSON_STRUCTURE_RESPONSE = "return_json_response"
+    FUNC_NAME_FOR_STRUCTURE_OUTPUT = "return_json_response"

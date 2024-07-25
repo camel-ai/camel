@@ -119,7 +119,6 @@ class ChatAgent(BaseAgent):
         system_message: BaseMessage,
         model: Optional[BaseModelBackend] = None,
         api_key: Optional[str] = None,
-        output_schema: Optional[BaseModel] = None,
         memory: Optional[AgentMemory] = None,
         message_window_size: Optional[int] = None,
         token_limit: Optional[int] = None,
@@ -357,9 +356,16 @@ class ChatAgent(BaseAgent):
                 and response.choices[0].message.tool_calls is not None
             ):
                 # Tools added for function calling and not in stream mode
-                tool_calls = self._add_tools_for_func_call(
-                    response, tool_calls
+                tool_calls, func_assistant_msg, func_result_msg = (
+                    self._add_tools_for_func_call(response, tool_calls)
                 )
+
+                # Update the messages
+                self.update_memory(
+                    func_assistant_msg, OpenAIBackendRole.ASSISTANT
+                )
+                self.update_memory(func_result_msg, OpenAIBackendRole.FUNCTION)
+
             else:
                 # If the user specifies tools, it is necessary to wait for the
                 # model to complete all tools' calls. Finally, use the
@@ -370,7 +376,7 @@ class ChatAgent(BaseAgent):
                 # response with the user-specified output schema.
                 if output_schema is not None and all(
                     record.func_name
-                    != Constants.RETURN_JSON_STRUCTURE_RESPONSE
+                    != Constants.FUNC_NAME_FOR_STRUCTURE_OUTPUT
                     for record in tool_calls
                 ):
                     self._add_output_schema_to_tool_list(output_schema)
@@ -384,8 +390,18 @@ class ChatAgent(BaseAgent):
                     ) = self._step_model_response(openai_messages, num_tokens)
 
                     if isinstance(response, ChatCompletion):
-                        tool_calls = self._add_tools_for_func_call(
-                            response, tool_calls
+                        # Tools added for function calling and not in stream
+                        # mode
+                        tool_calls, func_assistant_msg, func_result_msg = (
+                            self._add_tools_for_func_call(response, tool_calls)
+                        )
+
+                        # Update the messages
+                        self.update_memory(
+                            func_assistant_msg, OpenAIBackendRole.ASSISTANT
+                        )
+                        self.update_memory(
+                            func_result_msg, OpenAIBackendRole.FUNCTION
                         )
 
                 info = self._step_get_info(
@@ -400,7 +416,7 @@ class ChatAgent(BaseAgent):
 
         # if use structure response, set structure result as content of
         # BaseMessage
-        if output_schema:
+        if output_schema and self.model_type.is_openai:
             for base_message_item in output_messages:
                 base_message_item.content = str(info['tool_calls'][-1].result)
 
@@ -484,7 +500,7 @@ class ChatAgent(BaseAgent):
                 # use structed output response without tools
                 if output_schema is not None and all(
                     record.func_name
-                    != Constants.RETURN_JSON_STRUCTURE_RESPONSE
+                    != Constants.FUNC_NAME_FOR_STRUCTURE_OUTPUT
                     for record in tool_calls
                 ):
                     self._add_output_schema_to_tool_list(output_schema)
@@ -498,8 +514,18 @@ class ChatAgent(BaseAgent):
                     ) = self._step_model_response(openai_messages, num_tokens)
 
                     if isinstance(response, ChatCompletion):
-                        tool_calls = self._add_tools_for_func_call(
-                            response, tool_calls
+                        # Tools added for function calling and not in stream
+                        # mode
+                        tool_calls, func_assistant_msg, func_result_msg = (
+                            self._add_tools_for_func_call(response, tool_calls)
+                        )
+
+                        # Update the messages
+                        self.update_memory(
+                            func_assistant_msg, OpenAIBackendRole.ASSISTANT
+                        )
+                        self.update_memory(
+                            func_result_msg, OpenAIBackendRole.FUNCTION
                         )
 
                 # Function calling disabled or not a function calling
@@ -515,7 +541,7 @@ class ChatAgent(BaseAgent):
 
         # if use structure response, set structure result as content of
         # BaseMessage
-        if output_schema:
+        if output_schema and self.model_type.is_openai:
             for base_message_item in output_messages:
                 base_message_item.content = str(info['tool_calls'][0].result)
 
@@ -525,12 +551,16 @@ class ChatAgent(BaseAgent):
         self,
         response: ChatCompletion,
         tool_calls: List[FunctionCallingRecord],
-    ) -> List[FunctionCallingRecord]:
-        r"""Handles adding tools for function calls based on the response.
+    ) -> tuple[
+        List[FunctionCallingRecord],
+        FunctionCallingMessage,
+        FunctionCallingMessage,
+    ]:
+        r"""
+        Handles adding tools for function calls based on the response.
 
         This method processes a function call within the chat completion
-        response, updates the memory with the assistant's message and the
-        function result message, and records the function call in the provided
+        response, and records the function call in the provided
         list of tool calls.
 
         Args:
@@ -540,23 +570,26 @@ class ChatAgent(BaseAgent):
                 function calls.
 
         Returns:
-            List[FunctionCallingRecord]: The updated list of function call
-                records.
+            tuple: A tuple containing:
+                - List[FunctionCallingRecord]: The updated list of function
+                  call records.
+                - FunctionCallingMessage: The assistant's message regarding the
+                  function call.
+                - FunctionCallingMessage: The result message of the function
+                  call.
         """
 
-        # Do function calling
+        # Perform function calling
         func_assistant_msg, func_result_msg, func_record = self.step_tool_call(
             response
         )
 
-        # Update the messages
-        self.update_memory(func_assistant_msg, OpenAIBackendRole.ASSISTANT)
-        self.update_memory(func_result_msg, OpenAIBackendRole.FUNCTION)
-
-        # Record the function calling
+        # Record the function call in the list of tool calls
         tool_calls.append(func_record)
 
-        return tool_calls
+        # Return updated tool calls list, assistant's message, and function
+        # result message
+        return tool_calls, func_assistant_msg, func_result_msg
 
     def _add_output_schema_to_tool_list(self, output_schema: BaseModel):
         r"""Handles the structured output response for OpenAI.

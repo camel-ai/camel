@@ -316,100 +316,6 @@ def to_pascal(snake: str) -> str:
     )
 
 
-def find_and_check_subset(small, big) -> bool:
-    r"""
-    Recursively searches 'big' to find if 'small' is a subset at any level.
-
-    Args:
-        small (dict or list or any): The potential subset.
-        big (dict or list or any): The larger set to compare against.
-
-    Returns:
-        bool: True if 'small' is a subset of 'big' at any level, False
-        otherwise.
-    """
-    # First, check if 'small' is a subset of 'big' directly
-    if is_subset(small, big):
-        return True
-
-    # If 'big' is a dictionary, recursively check its values
-    if isinstance(big, dict):
-        for value in big.values():
-            if find_and_check_subset(small, value):
-                return True
-
-    # If 'big' is a list, recursively check its items
-    elif isinstance(big, list):
-        for item in big:
-            if find_and_check_subset(small, item):
-                return True
-
-    # If no match is found, return False
-    return False
-
-
-def is_subset(small, big) -> bool:
-    r"""
-        Checks if 'small' is a subset of 'big'.
-
-    Args:
-        small (dict or list or any): The potential subset.
-        big (dict or list or any): The larger set to compare against.
-
-    Returns:
-        bool: True if 'small' is a subset of 'big', False otherwise.
-    """
-    if isinstance(small, dict) and isinstance(big, dict):
-        # If both are dictionaries, check if all key-value pairs in 'small'
-        # exist in 'big'
-        for key, value in small.items():
-            if key not in big or not is_subset(value, big[key]):
-                return False
-        return True
-    elif isinstance(small, list) and isinstance(big, list):
-        # If both are lists, check if each item in 'small' is a subset of any
-        # item in 'big'
-        for item in small:
-            if not any(is_subset(item, big_item) for big_item in big):
-                return False
-        return True
-    else:
-        # For all other types, directly compare the values
-        return small == big
-
-
-def parse_pydantic_model_as_openai_tools_schema(
-    pydantic_params: BaseModel,
-) -> Dict[str, Any]:
-    r"""Parse Pydantic model into a JSON schema format.
-
-    Args:
-        pydantic_params (BaseModel): A Pydantic model instance.
-
-    Returns:
-        dict: A dictionary representing the JSON schema of the Pydantic model.
-    """
-    # the source dict  format follows the OpenAPI format
-    pydantic_params_schema = get_pydantic_object_schema(pydantic_params)
-    # Ensure 'properties' and 'required' keys exist
-    properties = pydantic_params_schema.get("properties", {})
-    required_fields = pydantic_params_schema.get("required", [])
-
-    source_dict = {
-        "type": "function",
-        "function": {
-            "name": "return_json_format_response",
-            "description": "Return the response in JSON format",
-            "parameters": {
-                "type": "object",
-                "properties": properties,
-            },
-            "required": required_fields,
-        },
-    }
-    return source_dict
-
-
 def get_pydantic_major_version() -> int:
     r"""Get the major version of Pydantic.
 
@@ -447,7 +353,7 @@ def func_string_to_callable(code: str):
     """
     local_vars: Mapping[str, object] = {}
     exec(code, globals(), local_vars)
-    func = local_vars.get(Constants.RETURN_JSON_STRUCTURE_RESPONSE)
+    func = local_vars.get(Constants.FUNC_NAME_FOR_STRUCTURE_OUTPUT)
     return func
 
 
@@ -490,7 +396,7 @@ def json_to_function_code(json_obj: Dict) -> str:
 
     # function template
     function_code = f'''
-def {Constants.RETURN_JSON_STRUCTURE_RESPONSE}({args_str}):
+def {Constants.FUNC_NAME_FOR_STRUCTURE_OUTPUT}({args_str}):
     r"""Return response with a specified json format.
 
     Args:
