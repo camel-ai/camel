@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from typing import Sequence
+from typing import Sequence, Union
 
 from openai._types import NOT_GIVEN, NotGiven
 from pydantic import Field
@@ -90,10 +90,10 @@ class VLLMConfig(BaseConfig):
     top_p: float = 1.0
     n: int = 1
     stream: bool = False
-    stop: str | Sequence[str] | NotGiven = NOT_GIVEN
-    max_tokens: int | NotGiven = NOT_GIVEN
+    stop: Union[str, Sequence[str], NotGiven] = NOT_GIVEN
+    max_tokens: Union[int, NotGiven] = NOT_GIVEN
     presence_penalty: float = 0.0
-    response_format: dict | NotGiven = NOT_GIVEN
+    response_format: Union[dict, NotGiven] = NOT_GIVEN
     frequency_penalty: float = 0.0
     logit_bias: dict = Field(default_factory=dict)
     user: str = ""

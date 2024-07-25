@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Sequence
+from typing import TYPE_CHECKING, Optional, Sequence, Union
 
 from openai._types import NOT_GIVEN, NotGiven
 
@@ -96,14 +96,14 @@ class GroqConfig(BaseConfig):
     top_p: float = 1.0
     n: int = 1
     stream: bool = False
-    stop: str | Sequence[str] | NotGiven = NOT_GIVEN
-    max_tokens: int | NotGiven = NOT_GIVEN
+    stop: Union[str, Sequence[str], NotGiven] = NOT_GIVEN
+    max_tokens: Union[int, NotGiven] = NOT_GIVEN
     presence_penalty: float = 0.0
-    response_format: dict | NotGiven = NOT_GIVEN
+    response_format: Union[dict, NotGiven] = NOT_GIVEN
     frequency_penalty: float = 0.0
     user: str = ""
     tools: Optional[list[OpenAIFunction]] = None
-    tool_choice: Optional[dict[str, str] | str] = "none"
+    tool_choice: Optional[Union[dict[str, str], str]] = "none"
 
     def __post_init__(self):
         if self.tools is not None:

@@ -110,7 +110,7 @@ class ChatGPTConfig(BaseConfig):
     logit_bias: dict = Field(default_factory=dict)
     user: str = ""
     tools: Optional[list['OpenAIFunction']] = None
-    tool_choice: Optional[dict[str, str] | str] = None
+    tool_choice: Optional[Union[dict[str, str], str]] = None
 
     def __post_init__(self):
         if self.tools is not None:

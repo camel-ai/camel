@@ -70,7 +70,7 @@ class ZhipuAIConfig(BaseConfig):
     stop: Union[str, Sequence[str], NotGiven] = NOT_GIVEN
     max_tokens: Union[int, NotGiven] = NOT_GIVEN
     tools: Optional[list[OpenAIFunction]] = None
-    tool_choice: Optional[dict[str, str] | str] = None
+    tool_choice: Optional[Union[dict[str, str], str]] = None
 
 
 ZHIPUAI_API_PARAMS = {param for param in ZhipuAIConfig.model_fields.keys()}
