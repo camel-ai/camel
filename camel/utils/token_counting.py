@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING, List, Optional
 from anthropic import Anthropic
 from PIL import Image
 
-from camel.types import ModelType, OpenAIImageDetailType, OpenAIImageType
+from camel.types import ModelType, OpenAIImageType, OpenAIVisionDetailType
 
 if TYPE_CHECKING:
     from camel.messages import OpenAIMessage
@@ -51,7 +51,12 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
     system_message = messages[0]["content"]
 
     ret: str
-    if model == ModelType.LLAMA_2:
+    if model in [
+        ModelType.LLAMA_2,
+        ModelType.LLAMA_3,
+        ModelType.GROQ_LLAMA_3_8B,
+        ModelType.GROQ_LLAMA_3_70B,
+    ]:
         # reference: https://github.com/facebookresearch/llama/blob/cfc3fc8c1968d390eb830e65c63865e980873a06/llama/generation.py#L212
         seps = [" ", " </s><s>"]
         role_map = {"user": "[INST]", "assistant": "[/INST]"}
@@ -74,7 +79,7 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
             else:
                 ret += role
         return ret
-    elif model == ModelType.VICUNA or model == ModelType.VICUNA_16K:
+    elif model in [ModelType.VICUNA, ModelType.VICUNA_16K]:
         seps = [" ", "</s>"]
         role_map = {"user": "USER", "assistant": "ASSISTANT"}
 
@@ -92,6 +97,79 @@ def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
                 ret += role + ": " + content + seps[i % 2]
             else:
                 ret += role + ":"
+        return ret
+    elif model == ModelType.GLM_4_OPEN_SOURCE:
+        system_prompt = f"[gMASK]<sop><|system|>\n{system_message}"
+        ret = system_prompt
+        for msg in messages[1:]:
+            role = msg["role"]
+            content = msg["content"]
+            if not isinstance(content, str):
+                raise ValueError(
+                    "Currently multimodal context is not "
+                    "supported by the token counter."
+                )
+            if content:
+                ret += "<|" + role + "|>" + "\n" + content
+            else:
+                ret += "<|" + role + "|>" + "\n"
+        return ret
+    elif model == ModelType.QWEN_2:
+        system_prompt = f"<|im_start|>system\n{system_message}<|im_end|>"
+        ret = system_prompt + "\n"
+        for msg in messages[1:]:
+            role = msg["role"]
+            content = msg["content"]
+            if not isinstance(content, str):
+                raise ValueError(
+                    "Currently multimodal context is not "
+                    "supported by the token counter."
+                )
+            if content:
+                ret += (
+                    '<|im_start|>'
+                    + role
+                    + '\n'
+                    + content
+                    + '<|im_end|>'
+                    + '\n'
+                )
+            else:
+                ret += '<|im_start|>' + role + '\n'
+        return ret
+    elif model == ModelType.GROQ_MIXTRAL_8_7B:
+        # Mistral/Mixtral format
+        system_prompt = f"<s>[INST] {system_message} [/INST]\n"
+        ret = system_prompt
+
+        for msg in messages[1:]:
+            if msg["role"] == "user":
+                ret += f"[INST] {msg['content']} [/INST]\n"
+            elif msg["role"] == "assistant":
+                ret += f"{msg['content']}</s>\n"
+
+            if not isinstance(msg['content'], str):
+                raise ValueError(
+                    "Currently multimodal context is not "
+                    "supported by the token counter."
+                )
+
+        return ret.strip()
+    elif model in [ModelType.GROQ_GEMMA_7B_IT, ModelType.GROQ_GEMMA_2_9B_IT]:
+        # Gemma format
+        ret = f"<bos>{system_message}\n"
+        for msg in messages:
+            if msg["role"] == "user":
+                ret += f"Human: {msg['content']}\n"
+            elif msg["role"] == "assistant":
+                ret += f"Assistant: {msg['content']}\n"
+
+            if not isinstance(msg['content'], str):
+                raise ValueError(
+                    "Currently multimodal context is not supported by the token counter."
+                )
+
+        ret += "<eos>"
         return ret
     else:
         raise ValueError(f"Invalid model type: {model}")
@@ -193,6 +271,7 @@ class OpenAITokenCounter(BaseTokenCounter):
             model (ModelType): Model type for which tokens will be counted.
         """
         self.model: str = model.value_for_tiktoken
+        self.model_type = model
 
         self.tokens_per_message: int
         self.tokens_per_name: int
@@ -245,6 +324,7 @@ class OpenAITokenCounter(BaseTokenCounter):
                         elif item["type"] == "image_url":
                             image_str: str = item["image_url"]["url"]
                             detail = item["image_url"]["detail"]
+
                             image_prefix_format = "data:image/{};base64,"
                             image_prefix: Optional[str] = None
                             for image_type in list(OpenAIImageType):
@@ -261,7 +341,7 @@ class OpenAITokenCounter(BaseTokenCounter):
                             )
                             image = Image.open(image_bytes)
                             num_tokens += count_tokens_from_image(
-                                image, OpenAIImageDetailType(detail)
+                                image, OpenAIVisionDetailType(detail)
                             )
                 if key == "name":
                     num_tokens += self.tokens_per_name
@@ -295,9 +375,97 @@ class AnthropicTokenCounter(BaseTokenCounter):
         Returns:
             int: Number of tokens in the messages.
         """
-        prompt = messages_to_prompt(messages, self.model_type)
+        num_tokens = 0
+        for message in messages:
+            content = str(message["content"])
+            num_tokens += self.client.count_tokens(content)
+        return num_tokens
 
-        return self.client.count_tokens(prompt)
+
+class GeminiTokenCounter(BaseTokenCounter):
+    def __init__(self, model_type: ModelType):
+        r"""Constructor for the token counter for Gemini models."""
+        import google.generativeai as genai
+
+        self.model_type = model_type
+        self._client = genai.GenerativeModel(self.model_type.value)
+
+    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
+        r"""Count number of tokens in the provided message list using
+        loaded tokenizer specific for this type of model.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+
+        Returns:
+            int: Number of tokens in the messages.
+        """
+        converted_messages = []
+        for message in messages:
+            role = message.get('role')
+            if role == 'assistant':
+                role_to_gemini = 'model'
+            else:
+                role_to_gemini = 'user'
+            converted_message = {
+                "role": role_to_gemini,
+                "parts": message.get("content"),
+            }
+            converted_messages.append(converted_message)
+        return self._client.count_tokens(converted_messages).total_tokens
+
+
+class LiteLLMTokenCounter:
+    def __init__(self, model_type: str):
+        r"""Constructor for the token counter for LiteLLM models.
+
+        Args:
+            model_type (str): Model type for which tokens will be counted.
+        """
+        self.model_type = model_type
+        self._token_counter = None
+        self._completion_cost = None
+
+    @property
+    def token_counter(self):
+        if self._token_counter is None:
+            from litellm import token_counter
+
+            self._token_counter = token_counter
+        return self._token_counter
+
+    @property
+    def completion_cost(self):
+        if self._completion_cost is None:
+            from litellm import completion_cost
+
+            self._completion_cost = completion_cost
+        return self._completion_cost
+
+    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
+        r"""Count number of tokens in the provided message list using
+        the tokenizer specific to this type of model.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in LiteLLM API format.
+
+        Returns:
+            int: Number of tokens in the messages.
+        """
+        return self.token_counter(model=self.model_type, messages=messages)
+
+    def calculate_cost_from_response(self, response: dict) -> float:
+        r"""Calculate the cost of the given completion response.
+
+        Args:
+            response (dict): The completion response from LiteLLM.
+
+        Returns:
+            float: The cost of the completion call in USD.
+        """
+        return self.completion_cost(completion_response=response)
 
 
 class MistralTokenCounter(BaseTokenCounter):
@@ -331,7 +499,7 @@ class MistralTokenCounter(BaseTokenCounter):
 
 
 def count_tokens_from_image(
-    image: Image.Image, detail: OpenAIImageDetailType
+    image: Image.Image, detail: OpenAIVisionDetailType
 ) -> int:
     r"""Count image tokens for OpenAI vision model. An :obj:`"auto"`
     resolution model will be treated as :obj:`"high"`. All images with
@@ -345,13 +513,13 @@ def count_tokens_from_image(
 
     Args:
         image (PIL.Image.Image): Image to count number of tokens.
-        detail (OpenAIImageDetailType): Image detail type to count
+        detail (OpenAIVisionDetailType): Image detail type to count
             number of tokens.
 
     Returns:
         int: Number of tokens for the image given a detail type.
     """
-    if detail == OpenAIImageDetailType.LOW:
+    if detail == OpenAIVisionDetailType.LOW:
         return LOW_DETAIL_TOKENS
 
     width, height = image.size

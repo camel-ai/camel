@@ -12,31 +12,31 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import re
-from typing import Any, Dict, Optional, Union
+from typing import Dict, Optional, Union
 
 from camel.agents.chat_agent import ChatAgent
 from camel.messages import BaseMessage
+from camel.models import BaseModelBackend
 from camel.prompts import TextPrompt
-from camel.types import ModelType, RoleType
+from camel.types import RoleType
 
 
 class RoleAssignmentAgent(ChatAgent):
     r"""An agent that generates role names based on the task prompt.
+
+    Args:
+        model (BaseModelBackend, optional): The model backend to use for
+            generating responses. (default: :obj:`OpenAIModel` with
+            `GPT_4O_MINI`)
+
     Attributes:
         role_assignment_prompt (TextPrompt): A prompt for the agent to generate
         role names.
-
-    Args:
-        model_type (ModelType, optional): The type of model to use for the
-            agent. (default: :obj:`ModelType.GPT_3_5_TURBO`)
-        model_config (Any, optional): The configuration for the model.
-            (default: :obj:`None`)
     """
 
     def __init__(
         self,
-        model_type: ModelType = ModelType.GPT_3_5_TURBO,
-        model_config: Optional[Any] = None,
+        model: Optional[BaseModelBackend] = None,
     ) -> None:
         system_message = BaseMessage(
             role_name="Role Assigner",
@@ -44,7 +44,7 @@ class RoleAssignmentAgent(ChatAgent):
             meta_dict=None,
             content="You assign roles based on tasks.",
         )
-        super().__init__(system_message, model_type, model_config)
+        super().__init__(system_message, model=model)
 
     def run(
         self,
@@ -115,7 +115,9 @@ class RoleAssignmentAgent(ChatAgent):
         ]
 
         if len(role_names) != num_roles or len(role_descriptions) != num_roles:
-            raise RuntimeError("Got None or insufficient information of roles.")
+            raise RuntimeError(
+                "Got None or insufficient information of roles."
+            )
         if terminated:
             raise RuntimeError("Role assignment failed.")
 

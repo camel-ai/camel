@@ -12,26 +12,53 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
-from anthropic import Anthropic
-from anthropic._types import NOT_GIVEN
+from anthropic import NOT_GIVEN, Anthropic
 
 from camel.configs import ANTHROPIC_API_PARAMS
+from camel.messages import OpenAIMessage
 from camel.models.base_model import BaseModelBackend
 from camel.types import ChatCompletion, ModelType
-from camel.utils import AnthropicTokenCounter, BaseTokenCounter
+from camel.utils import (
+    AnthropicTokenCounter,
+    BaseTokenCounter,
+    api_keys_required,
+)
 
 
 class AnthropicModel(BaseModelBackend):
     r"""Anthropic API in a unified BaseModelBackend interface."""
 
     def __init__(
-        self, model_type: ModelType, model_config_dict: Dict[str, Any]
+        self,
+        model_type: ModelType,
+        model_config_dict: Dict[str, Any],
+        api_key: Optional[str] = None,
+        url: Optional[str] = None,
+        token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        super().__init__(model_type, model_config_dict)
-        self.client = Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
-        self._token_counter: Optional[BaseTokenCounter] = None
+        r"""Constructor for Anthropic backend.
+
+        Args:
+            model_type (ModelType): Model for which a backend is created,
+                one of CLAUDE_* series.
+            model_config_dict (Dict[str, Any]): A dictionary that will
+                be fed into Anthropic.messages.create().
+            api_key (Optional[str]): The API key for authenticating with the
+                Anthropic service. (default: :obj:`None`)
+            url (Optional[str]): The url to the Anthropic service. (default:
+                :obj:`None`)
+            token_counter (Optional[BaseTokenCounter]): Token counter to use
+                for the model. If not provided, `AnthropicTokenCounter` will
+                be used.
+        """
+        super().__init__(
+            model_type, model_config_dict, api_key, url, token_counter
+        )
+        self._api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
+        self._url = url or os.environ.get("ANTHROPIC_API_BASE_URL")
+        self.client = Anthropic(api_key=self._api_key, base_url=self._url)
 
     def _convert_response_from_anthropic_to_openai(self, response):
         # openai ^1.0.0 format, reference openai/types/chat/chat_completion.py
@@ -76,28 +103,29 @@ class AnthropicModel(BaseModelBackend):
         """
         return self.client.count_tokens(prompt)
 
+    @api_keys_required("ANTHROPIC_API_KEY")
     def run(
         self,
-        messages,
+        messages: List[OpenAIMessage],
     ):
         r"""Run inference of Anthropic chat completion.
 
         Args:
-            messages (List[Dict]): Message list with the chat history
+            messages (List[OpenAIMessage]): Message list with the chat history
                 in OpenAI API format.
 
         Returns:
-            Dict[str, Any]: Response in the OpenAI API format.
+            ChatCompletion: Response in the OpenAI API format.
         """
 
         if messages[0]["role"] == "system":
-            sys_msg = messages.pop(0)["content"]
+            sys_msg = str(messages.pop(0)["content"])
         else:
-            sys_msg = NOT_GIVEN
+            sys_msg = NOT_GIVEN  # type: ignore[assignment]
         response = self.client.messages.create(
             model=self.model_type.value,
             system=sys_msg,
-            messages=messages,
+            messages=messages,  # type: ignore[arg-type]
             **self.model_config_dict,
         )
 
@@ -124,8 +152,9 @@ class AnthropicModel(BaseModelBackend):
 
     @property
     def stream(self) -> bool:
-        r"""Returns whether the model is in stream mode,
-            which sends partial results each time.
+        r"""Returns whether the model is in stream mode, which sends partial
+        results each time.
+
         Returns:
             bool: Whether the model is in stream mode.
         """

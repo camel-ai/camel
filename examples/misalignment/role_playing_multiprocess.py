@@ -19,8 +19,9 @@ from typing import Any, Dict
 from colorama import Fore
 
 from camel.configs import ChatGPTConfig
+from camel.models import ModelFactory
 from camel.societies import RolePlaying
-from camel.types import TaskType
+from camel.types import ModelPlatformType, ModelType, TaskType
 
 
 def generate_data(
@@ -44,7 +45,11 @@ def generate_data(
         with_task_planner=False,
         task_type=TaskType.MISALIGNMENT,
         task_specify_agent_kwargs=dict(
-            model_config=ChatGPTConfig(temperature=1.4)
+            model=ModelFactory.create(
+                model_platform=ModelPlatformType.OPENAI,
+                model_type=ModelType.GPT_3_5_TURBO,
+                model_config_dict=ChatGPTConfig(temperature=1.4).__dict__,
+            )
         ),
     )
 
@@ -163,14 +168,18 @@ def generate_data(
             ):
                 repeat_word_counter += 1
                 if repeat_word_counter == repeat_word_threshold:
-                    message_dict['termination_reason'] = "repeat_word_threshold"
+                    message_dict['termination_reason'] = (
+                        "repeat_word_threshold"
+                    )
                     break
             else:
                 repeat_word_counter = 0
 
         # Save user message
         message_counter += 1
-        message_dict[f"message_{message_counter}"] = user_response.msg.to_dict()
+        message_dict[f"message_{message_counter}"] = (
+            user_response.msg.to_dict()
+        )
 
         # Condition 5: End token observed
         if "<CAMEL_TASK_DONE>" in user_response.msg.content:

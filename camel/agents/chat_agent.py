@@ -32,6 +32,7 @@ from camel.responses import ChatAgentResponse
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
+    ModelPlatformType,
     ModelType,
     OpenAIBackendRole,
     RoleType,
@@ -41,9 +42,8 @@ from camel.utils import get_model_encoding
 if TYPE_CHECKING:
     from openai import Stream
 
-    from camel.configs import BaseConfig
-    from camel.functions import OpenAIFunction
     from camel.terminators import ResponseTerminator
+    from camel.toolkits import OpenAIFunction
 
 
 @dataclass(frozen=True)
@@ -80,10 +80,12 @@ class ChatAgent(BaseAgent):
 
     Args:
         system_message (BaseMessage): The system message for the chat agent.
-        model_type (ModelType, optional): The LLM model to use for generating
-            responses. (default :obj:`ModelType.GPT_3_5_TURBO`)
-        model_config (BaseConfig, optional): Configuration options for the
-            LLM model. (default: :obj:`None`)
+        model (BaseModelBackend, optional): The model backend to use for
+            generating responses. (default: :obj:`OpenAIModel` with
+            `GPT_4O_MINI`)
+        api_key (str, optional): The API key for authenticating with the
+            LLM service. Only OpenAI and Anthropic model supported (default:
+            :obj:`None`)
         memory (AgentMemory, optional): The agent memory for managing chat
             messages. If `None`, a :obj:`ChatHistoryMemory` will be used.
             (default: :obj:`None`)
@@ -96,7 +98,7 @@ class ChatAgent(BaseAgent):
             (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
-        function_list (List[OpenAIFunction], optional): List of available
+        tools (List[OpenAIFunction], optional): List of available
             :obj:`OpenAIFunction`. (default: :obj:`None`)
         response_terminators (List[ResponseTerminator], optional): List of
             :obj:`ResponseTerminator` bind to one chat agent.
@@ -106,45 +108,43 @@ class ChatAgent(BaseAgent):
     def __init__(
         self,
         system_message: BaseMessage,
-        model_type: Optional[ModelType] = None,
-        model_config: Optional[BaseConfig] = None,
+        model: Optional[BaseModelBackend] = None,
+        api_key: Optional[str] = None,
         memory: Optional[AgentMemory] = None,
         message_window_size: Optional[int] = None,
         token_limit: Optional[int] = None,
         output_language: Optional[str] = None,
-        function_list: Optional[List[OpenAIFunction]] = None,
+        tools: Optional[List[OpenAIFunction]] = None,
         response_terminators: Optional[List[ResponseTerminator]] = None,
     ) -> None:
         self.orig_sys_message: BaseMessage = system_message
         self.system_message = system_message
         self.role_name: str = system_message.role_name
         self.role_type: RoleType = system_message.role_type
+        self._api_key = api_key
+        self.model_backend: BaseModelBackend = (
+            model
+            if model is not None
+            else ModelFactory.create(
+                model_platform=ModelPlatformType.OPENAI,
+                model_type=ModelType.GPT_4O_MINI,
+                model_config_dict=ChatGPTConfig().__dict__,
+                api_key=self._api_key,
+            )
+        )
         self.output_language: Optional[str] = output_language
         if self.output_language is not None:
             self.set_output_language(self.output_language)
 
-        self.model_type: ModelType = (
-            model_type if model_type is not None else ModelType.GPT_3_5_TURBO
-        )
+        self.model_type: ModelType = self.model_backend.model_type
 
         self.func_dict: Dict[str, Callable] = {}
-        if function_list is not None:
-            for func in function_list:
+        if tools is not None:
+            for func in tools:
                 self.func_dict[func.get_function_name()] = func.func
 
-        if model_config is None:
-            if self.model_type.is_openai:
-                self.model_config = ChatGPTConfig()
-            if self.model_type.is_anthropic:
-                self.model_config = AnthropicConfig()
-            if self.model_type.is_mistral:
-                self.model_config = MistralConfig()
-        else:
-            self.model_config = model_config
+        self.model_config_dict = self.model_backend.model_config_dict
 
-        self.model_backend: BaseModelBackend = ModelFactory.create(
-            self.model_type, self.model_config.__dict__
-        )
         self.model_token_limit = token_limit or self.model_backend.token_limit
         context_creator = ScoreBasedContextCreator(
             self.model_backend.token_counter,
@@ -189,12 +189,12 @@ class ChatAgent(BaseAgent):
         """
         self._system_message = message
 
-    def is_function_calling_enabled(self) -> bool:
+    def is_tools_added(self) -> bool:
         r"""Whether OpenAI function calling is enabled for this agent.
 
         Returns:
             bool: Whether OpenAI function calling is enabled for this
-                agent, determined by whether the dictionary of functions
+                agent, determined by whether the dictionary of tools
                 is empty.
         """
         return len(self.func_dict) > 0
@@ -237,7 +237,7 @@ class ChatAgent(BaseAgent):
         usage: Optional[Dict[str, int]],
         termination_reasons: List[str],
         num_tokens: int,
-        called_funcs: List[FunctionCallingRecord],
+        tool_calls: List[FunctionCallingRecord],
     ) -> Dict[str, Any]:
         r"""Returns a dictionary containing information about the chat session.
 
@@ -248,9 +248,9 @@ class ChatAgent(BaseAgent):
             termination_reasons (List[str]): The reasons for the termination
                 of the chat session.
             num_tokens (int): The number of tokens used in the chat session.
-            called_funcs (List[FunctionCallingRecord]): The list of function
+            tool_calls (List[FunctionCallingRecord]): The list of function
                 calling records, containing the information of called
-                functions.
+                tools.
 
         Returns:
             Dict[str, Any]: The chat session information.
@@ -260,7 +260,7 @@ class ChatAgent(BaseAgent):
             "usage": usage,
             "termination_reasons": termination_reasons,
             "num_tokens": num_tokens,
-            "called_functions": called_funcs,
+            "tool_calls": tool_calls,
         }
 
     def init_messages(self) -> None:
@@ -293,6 +293,83 @@ class ChatAgent(BaseAgent):
 
         Args:
             input_message (BaseMessage): The input message to the agent.
+                Its `role` field that specifies the role at backend may be
+                either `user` or `assistant` but it will be set to `user`
+                anyway since for the self agent any incoming message is
+                external.
+
+        Returns:
+            ChatAgentResponse: A struct containing the output messages,
+                a boolean indicating whether the chat session has terminated,
+                and information about the chat session.
+        """
+        self.update_memory(input_message, OpenAIBackendRole.USER)
+
+        output_messages: List[BaseMessage]
+        info: Dict[str, Any]
+        tool_calls: List[FunctionCallingRecord] = []
+        while True:
+            # Format messages and get the token number
+            openai_messages: list[OpenAIMessage] | None
+
+            try:
+                openai_messages, num_tokens = self.memory.get_context()
+            except RuntimeError as e:
+                return self.step_token_exceed(
+                    e.args[1], tool_calls, "max_tokens_exceeded"
+                )
+            (
+                response,
+                output_messages,
+                finish_reasons,
+                usage_dict,
+                response_id,
+            ) = self._step_model_response(openai_messages, num_tokens)
+
+            if (
+                self.is_tools_added()
+                and isinstance(response, ChatCompletion)
+                and response.choices[0].message.tool_calls is not None
+            ):
+                # Tools added for function calling and not in stream mode
+
+                # Do function calling
+                func_assistant_msg, func_result_msg, func_record = (
+                    self.step_tool_call(response)
+                )
+
+                # Update the messages
+                self.update_memory(
+                    func_assistant_msg, OpenAIBackendRole.ASSISTANT
+                )
+                self.update_memory(func_result_msg, OpenAIBackendRole.FUNCTION)
+
+                # Record the function calling
+                tool_calls.append(func_record)
+
+            else:
+                # Function calling disabled or not a function calling
+                info = self._step_get_info(
+                    output_messages,
+                    finish_reasons,
+                    usage_dict,
+                    response_id,
+                    tool_calls,
+                    num_tokens,
+                )
+                break
+
+        return ChatAgentResponse(output_messages, self.terminated, info)
+
+    async def step_async(
+        self,
+        input_message: BaseMessage,
+    ) -> ChatAgentResponse:
+        r"""Performs a single step in the chat session by generating a response
+        to the input message. This agent step can call async function calls.
+
+        Args:
+            input_message (BaseMessage): The input message to the agent.
             Its `role` field that specifies the role at backend may be either
             `user` or `assistant` but it will be set to `user` anyway since
             for the self agent any incoming message is external.
@@ -306,39 +383,38 @@ class ChatAgent(BaseAgent):
 
         output_messages: List[BaseMessage]
         info: Dict[str, Any]
-        called_funcs: List[FunctionCallingRecord] = []
+        tool_calls: List[FunctionCallingRecord] = []
         while True:
             # Format messages and get the token number
-            openai_messages: Optional[List[OpenAIMessage]]
+            openai_messages: list[OpenAIMessage] | None
 
             try:
                 openai_messages, num_tokens = self.memory.get_context()
             except RuntimeError as e:
                 return self.step_token_exceed(
-                    e.args[1], called_funcs, "max_tokens_exceeded"
+                    e.args[1], tool_calls, "max_tokens_exceeded"
                 )
-
-            # Obtain the model's response
-            response = self.model_backend.run(openai_messages)
-
-            if isinstance(response, ChatCompletion):
-                output_messages, finish_reasons, usage_dict, response_id = (
-                    self.handle_batch_response(response)
-                )
-            else:
-                output_messages, finish_reasons, usage_dict, response_id = (
-                    self.handle_stream_response(response, num_tokens)
-                )
+            (
+                response,
+                output_messages,
+                finish_reasons,
+                usage_dict,
+                response_id,
+            ) = self._step_model_response(openai_messages, num_tokens)
 
             if (
-                self.is_function_calling_enabled()
-                and finish_reasons[0] == 'function_call'
+                self.is_tools_added()
                 and isinstance(response, ChatCompletion)
+                and response.choices[0].message.tool_calls is not None
             ):
+                # Tools added for function calling and not in stream mode
+
                 # Do function calling
-                func_assistant_msg, func_result_msg, func_record = (
-                    self.step_function_call(response)
-                )
+                (
+                    func_assistant_msg,
+                    func_result_msg,
+                    func_record,
+                ) = await self.step_tool_call_async(response)
 
                 # Update the messages
                 self.update_memory(
@@ -347,40 +423,90 @@ class ChatAgent(BaseAgent):
                 self.update_memory(func_result_msg, OpenAIBackendRole.FUNCTION)
 
                 # Record the function calling
-                called_funcs.append(func_record)
+                tool_calls.append(func_record)
+
             else:
                 # Function calling disabled or not a function calling
-
-                # Loop over responses terminators, get list of termination
-                # tuples with whether the terminator terminates the agent
-                # and termination reason
-                termination = [
-                    terminator.is_terminated(output_messages)
-                    for terminator in self.response_terminators
-                ]
-                # Terminate the agent if any of the terminator terminates
-                self.terminated, termination_reason = next(
-                    (
-                        (terminated, termination_reason)
-                        for terminated, termination_reason in termination
-                        if terminated
-                    ),
-                    (False, None),
-                )
-                # For now only retain the first termination reason
-                if self.terminated and termination_reason is not None:
-                    finish_reasons = [termination_reason] * len(finish_reasons)
-
-                info = self.get_info(
-                    response_id,
-                    usage_dict,
+                info = self._step_get_info(
+                    output_messages,
                     finish_reasons,
+                    usage_dict,
+                    response_id,
+                    tool_calls,
                     num_tokens,
-                    called_funcs,
                 )
                 break
 
         return ChatAgentResponse(output_messages, self.terminated, info)
+
+    def _step_model_response(
+        self,
+        openai_messages: list[OpenAIMessage],
+        num_tokens: int,
+    ) -> tuple[
+        ChatCompletion | Stream[ChatCompletionChunk],
+        list[BaseMessage],
+        list[str],
+        dict[str, int],
+        str,
+    ]:
+        r"""Internal function for agent step model response."""
+        # Obtain the model's response
+        response = self.model_backend.run(openai_messages)
+
+        if isinstance(response, ChatCompletion):
+            output_messages, finish_reasons, usage_dict, response_id = (
+                self.handle_batch_response(response)
+            )
+        else:
+            output_messages, finish_reasons, usage_dict, response_id = (
+                self.handle_stream_response(response, num_tokens)
+            )
+        return (
+            response,
+            output_messages,
+            finish_reasons,
+            usage_dict,
+            response_id,
+        )
+
+    def _step_get_info(
+        self,
+        output_messages: List[BaseMessage],
+        finish_reasons: List[str],
+        usage_dict: Dict[str, int],
+        response_id: str,
+        tool_calls: List[FunctionCallingRecord],
+        num_tokens: int,
+    ) -> Dict[str, Any]:
+        # Loop over responses terminators, get list of termination
+        # tuples with whether the terminator terminates the agent
+        # and termination reason
+        termination = [
+            terminator.is_terminated(output_messages)
+            for terminator in self.response_terminators
+        ]
+        # Terminate the agent if any of the terminator terminates
+        self.terminated, termination_reason = next(
+            (
+                (terminated, termination_reason)
+                for terminated, termination_reason in termination
+                if terminated
+            ),
+            (False, None),
+        )
+        # For now only retain the first termination reason
+        if self.terminated and termination_reason is not None:
+            finish_reasons = [termination_reason] * len(finish_reasons)
+
+        info = self.get_info(
+            response_id,
+            usage_dict,
+            finish_reasons,
+            num_tokens,
+            tool_calls,
+        )
+        return info
 
     def handle_batch_response(
         self, response: ChatCompletion
@@ -463,7 +589,7 @@ class ChatAgent(BaseAgent):
     def step_token_exceed(
         self,
         num_tokens: int,
-        called_funcs: List[FunctionCallingRecord],
+        tool_calls: List[FunctionCallingRecord],
         termination_reason: str,
     ) -> ChatAgentResponse:
         r"""Return trivial response containing number of tokens and information
@@ -471,7 +597,7 @@ class ChatAgent(BaseAgent):
 
         Args:
             num_tokens (int): Number of tokens in the messages.
-            called_funcs (List[FunctionCallingRecord]): List of information
+            tool_calls (List[FunctionCallingRecord]): List of information
                 objects of functions called in the current step.
             termination_reason (str): String of termination reason.
 
@@ -487,7 +613,7 @@ class ChatAgent(BaseAgent):
             None,
             [termination_reason],
             num_tokens,
-            called_funcs,
+            tool_calls,
         )
 
         return ChatAgentResponse(
@@ -496,7 +622,7 @@ class ChatAgent(BaseAgent):
             info,
         )
 
-    def step_function_call(
+    def step_tool_call(
         self,
         response: ChatCompletion,
     ) -> Tuple[
@@ -514,19 +640,77 @@ class ChatAgent(BaseAgent):
                 result, and a struct for logging information about this
                 function call.
         """
-        # Note that when function calling is enabled, `n` is set to 1.
         choice = response.choices[0]
-        if choice.message.function_call is None:
-            raise RuntimeError("Function call is None")
-        func_name = choice.message.function_call.name
+        if choice.message.tool_calls is None:
+            raise RuntimeError("Tool call is None")
+        func_name = choice.message.tool_calls[0].function.name
         func = self.func_dict[func_name]
 
-        args_str: str = choice.message.function_call.arguments
-        args = json.loads(args_str.replace("'", "\""))
+        args_str: str = choice.message.tool_calls[0].function.arguments
+        args = json.loads(args_str)
 
         # Pass the extracted arguments to the indicated function
         try:
             result = func(**args)
+        except Exception:
+            raise ValueError(
+                f"Execution of function {func.__name__} failed with "
+                f"arguments being {args}."
+            )
+
+        assist_msg = FunctionCallingMessage(
+            role_name=self.role_name,
+            role_type=self.role_type,
+            meta_dict=None,
+            content="",
+            func_name=func_name,
+            args=args,
+        )
+        func_msg = FunctionCallingMessage(
+            role_name=self.role_name,
+            role_type=self.role_type,
+            meta_dict=None,
+            content="",
+            func_name=func_name,
+            result=result,
+        )
+
+        # Record information about this function call
+        func_record = FunctionCallingRecord(func_name, args, result)
+        return assist_msg, func_msg, func_record
+
+    async def step_tool_call_async(
+        self,
+        response: ChatCompletion,
+    ) -> Tuple[
+        FunctionCallingMessage, FunctionCallingMessage, FunctionCallingRecord
+    ]:
+        r"""Execute the async function with arguments following the model's
+        response.
+
+        Args:
+            response (Dict[str, Any]): The response obtained by calling the
+                model.
+
+        Returns:
+            tuple: A tuple consisting of two obj:`FunctionCallingMessage`,
+                one about the arguments and the other about the execution
+                result, and a struct for logging information about this
+                function call.
+        """
+        # Note that when function calling is enabled, `n` is set to 1.
+        choice = response.choices[0]
+        if choice.message.tool_calls is None:
+            raise RuntimeError("Tool call is None")
+        func_name = choice.message.tool_calls[0].function.name
+        func = self.func_dict[func_name]
+
+        args_str: str = choice.message.tool_calls[0].function.arguments
+        args = json.loads(args_str)
+
+        # Pass the extracted arguments to the indicated function
+        try:
+            result = await func(**args)
         except Exception:
             raise ValueError(
                 f"Execution of function {func.__name__} failed with "

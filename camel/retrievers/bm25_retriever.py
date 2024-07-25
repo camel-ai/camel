@@ -17,6 +17,7 @@ import numpy as np
 
 from camel.loaders import UnstructuredIO
 from camel.retrievers import BaseRetriever
+from camel.utils import dependencies_required
 
 DEFAULT_TOP_K_RESULTS = 1
 
@@ -40,15 +41,10 @@ class BM25Retriever(BaseRetriever):
         https://github.com/dorianbrown/rank_bm25
     """
 
+    @dependencies_required('rank_bm25')
     def __init__(self) -> None:
         r"""Initializes the BM25Retriever."""
-
-        try:
-            from rank_bm25 import BM25Okapi
-        except ImportError as e:
-            raise ImportError(
-                "Package `rank_bm25` not installed, install by running 'pip install rank_bm25'"
-            ) from e
+        from rank_bm25 import BM25Okapi
 
         self.bm25: BM25Okapi = None
         self.content_input_path: str = ""

@@ -16,6 +16,8 @@ from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 from unstructured.documents.elements import Element
 
+from camel.utils import dependencies_required
+
 
 class UnstructuredIO:
     r"""A class to handle various functionalities provided by the
@@ -37,6 +39,7 @@ class UnstructuredIO:
         """
         self._ensure_unstructured_version(self.UNSTRUCTURED_MIN_VERSION)
 
+    @dependencies_required('unstructured')
     def _ensure_unstructured_version(self, min_version: str) -> None:
         r"""Validates that the installed 'Unstructured' library version
         satisfies the specified minimum version requirement. This function is
@@ -58,12 +61,7 @@ class UnstructuredIO:
                 strings.
         """
         from packaging import version
-
-        try:
-            from unstructured.__version__ import __version__
-
-        except ImportError as e:
-            raise ImportError("Package `unstructured` not installed.") from e
+        from unstructured.__version__ import __version__
 
         # Use packaging.version to compare versions
         min_ver = version.parse(min_version)
@@ -131,30 +129,22 @@ class UnstructuredIO:
         self,
         input_path: str,
         **kwargs: Any,
-    ) -> Union[Any, List[Any]]:
-        r"""Loads a file or a URL and parses its contents as unstructured data.
+    ) -> List[Element]:
+        r"""Loads a file or a URL and parses its contents into elements.
 
         Args:
             input_path (str): Path to the file or URL to be parsed.
             **kwargs: Extra kwargs passed to the partition function.
 
         Returns:
-            List[Any]: The elements after parsing the file or URL, could be a
-                dict, list, etc., depending on the content. If return_str is
-                True, returns a tuple with a string representation of the
-                elements and the elements themselves.
+            List[Element]: List of elements after parsing the file or URL.
 
         Raises:
-            FileNotFoundError: If the file does not exist
-                at the path specified.
+            FileNotFoundError: If the file does not exist at the path
+                specified.
             Exception: For any other issues during file or URL parsing.
 
         Notes:
-            By default we use the basic "unstructured" library,
-            if you are processing document types beyond the basics,
-            you can install the necessary extras like:
-                `pip install "unstructured[docx,pptx]"` or
-                `pip install "unstructured[all-docs]"`.
             Available document types:
                 "csv", "doc", "docx", "epub", "image", "md", "msg", "odt",
                 "org", "pdf", "ppt", "pptx", "rtf", "rst", "tsv", "xlsx".
@@ -185,7 +175,9 @@ class UnstructuredIO:
 
             # Check if the file exists
             if not os.path.exists(input_path):
-                raise FileNotFoundError(f"The file {input_path} was not found.")
+                raise FileNotFoundError(
+                    f"The file {input_path} was not found."
+                )
 
             # Read the file
             try:
@@ -193,7 +185,9 @@ class UnstructuredIO:
                     elements = partition(file=f, **kwargs)
                     return elements
             except Exception as e:
-                raise Exception("Failed to parse the unstructured file.") from e
+                raise Exception(
+                    "Failed to parse the unstructured file."
+                ) from e
 
     def clean_text_data(
         self,
@@ -433,9 +427,8 @@ class UnstructuredIO:
                 els, kw.get('metadata', [])
             ),
             "stage_for_baseplate": baseplate.stage_for_baseplate,
-            "stage_for_datasaur": lambda els, **kw: datasaur.stage_for_datasaur(
-                els, kw.get('entities', [])
-            ),
+            "stage_for_datasaur": lambda els,
+            **kw: datasaur.stage_for_datasaur(els, kw.get('entities', [])),
             "stage_for_label_box": lambda els,
             **kw: label_box.stage_for_label_box(els, **kw),
             "stage_for_label_studio": lambda els,
@@ -450,11 +443,11 @@ class UnstructuredIO:
 
     def chunk_elements(
         self, elements: List[Any], chunk_type: str, **kwargs
-    ) -> List[Any]:
+    ) -> List[Element]:
         r"""Chunks elements by titles.
 
         Args:
-            elements (List[Any]): List of Element objects to be chunked.
+            elements (List[Element]): List of Element objects to be chunked.
             chunk_type (str): Type chunk going to apply. Supported types:
                 'chunk_by_title'.
             **kwargs: Additional keyword arguments for chunking.
@@ -531,8 +524,7 @@ class UnstructuredIO:
         account_name: str,
         num_processes: int = 2,
     ) -> None:
-        """
-        Processes documents from an Azure storage container and stores
+        r"""Processes documents from an Azure storage container and stores
         structured outputs locally.
 
         Args:

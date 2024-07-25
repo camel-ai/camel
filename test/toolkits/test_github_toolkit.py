@@ -67,7 +67,8 @@ def test_retrieve_issue_list(monkeypatch):
     mock_label.name = "path/to/file"
     mock_issue.labels = [mock_label]
 
-    # Mock the get_issues method of the mock_repo instance to return a list containing the mock issue object
+    # Mock the get_issues method of the mock_repo instance to return a list
+    # containing the mock issue object
     github_toolkit.repo.get_issues.return_value = [mock_issue]
     github_toolkit.retrieve_file_content = MagicMock(
         return_value="This is the content of the file"
@@ -107,7 +108,8 @@ def test_retrieve_issue(monkeypatch):
     mock_label.name = "path/to/file"
     mock_issue.labels = [mock_label]
 
-    # Mock the get_issues method of the mock repo instance to return a list containing the mock issue object
+    # Mock the get_issues method of the mock repo instance to return a list
+    # containing the mock issue object
     github_toolkit.repo.get_issues.return_value = [mock_issue]
     github_toolkit.retrieve_file_content = MagicMock(
         return_value="This is the content of the file"
@@ -124,9 +126,9 @@ def test_retrieve_issue(monkeypatch):
         file_path="path/to/file",
         file_content="This is the content of the file",
     )
-    assert (
-        issue == expected_issue.summary()
-    ), f"Expected {expected_issue.summary()}, but got {issue}"
+    assert issue == str(
+        expected_issue
+    ), f"Expected {expected_issue}, but got {issue}"
 
 
 @patch.object(Github, 'get_repo', return_value=MagicMock())
@@ -135,9 +137,11 @@ def test_create_pull_request(monkeypatch):
     # Call the constructor of the GithubToolkit class
     github_toolkit = GithubToolkit("repo_name", "token")
 
-    # Mock the create_pull method of the github_toolkit instance to return a value
+    # Mock the create_pull method of the github_toolkit instance to return a
+    # value
     mock_pr_response = MagicMock()
-    mock_pr_response.title = "[GitHub Agent] Solved issue: Time complexity for product_of_array_except_self.py"
+    mock_pr_response.title = """[GitHub Agent] Solved issue: Time complexity 
+    for product_of_array_except_self.py"""
     mock_pr_response.body = "Fixes #1"
     github_toolkit.repo.create_pull.return_value = mock_pr_response
 
@@ -154,14 +158,13 @@ def test_create_pull_request(monkeypatch):
         file_path="path/to/file",
         branch_name="branch_name",
         new_content="This is the content of the file",
-        pr_title="[GitHub Agent] Solved issue: Time complexity for product_of_array_except_self.py",
+        pr_title="""[GitHub Agent] Solved issue: Time complexity for 
+        product_of_array_except_self.py""",
         body="Fixes #1",
     )
 
-    expected_response = (
-        "Title: [GitHub Agent] Solved issue: Time complexity for product_of_array_except_self.py\n"
-        "Body: Fixes #1\n"
-    )
+    expected_response = """Title: [GitHub Agent] Solved issue: Time complexity 
+    for product_of_array_except_self.py\nBody: Fixes #1\n"""
 
     assert (
         pr == expected_response
@@ -190,13 +193,17 @@ def test_retrieve_pull_requests(monkeypatch):
     mock_file.filename = "path/to/file"
     mock_file.patch = "This is the diff of the file"
 
-    # Mock the get_files method of the mock_pull_request instance to return a list containing the mock file object
+    # Mock the get_files method of the mock_pull_request instance to return a
+    # list containing the mock file object
     mock_pull_request.get_files.return_value = [mock_file]
 
-    # Mock the get_issues method of the mock repo instance to return a list containing the mock issue object
+    # Mock the get_issues method of the mock repo instance to return a list
+    # containing the mock issue object
     github_toolkit.repo.get_pulls.return_value = [mock_pull_request]
 
-    pull_requests = github_toolkit.retrieve_pull_requests(days=7)
+    pull_requests = github_toolkit.retrieve_pull_requests(
+        days=7, state='closed', max_prs=3
+    )
     # Assert the returned issue list
     expected_pull_request = GithubPullRequest(
         title="Test PR",
@@ -208,8 +215,8 @@ def test_retrieve_pull_requests(monkeypatch):
         ],
     )
     assert pull_requests == [
-        expected_pull_request.summary()
-    ], f"Expected {expected_pull_request.summary()}, but got {pull_requests}"
+        str(expected_pull_request)
+    ], f"Expected {expected_pull_request}, but got {pull_requests}"
 
 
 def test_github_issue():
@@ -230,7 +237,7 @@ def test_github_issue():
     assert issue.file_content == "This is the content of the file"
 
     # Test the summary method
-    summary = issue.summary()
+    summary = str(issue)
     expected_summary = (
         f"Title: {issue.title}\n"
         f"Body: {issue.body}\n"

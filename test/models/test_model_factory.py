@@ -13,24 +13,147 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import pytest
 
-from camel.configs import ChatGPTConfig
+from camel.configs import (
+    AnthropicConfig,
+    ChatGPTConfig,
+    GeminiConfig,
+    OllamaConfig,
+    OpenSourceConfig,
+)
 from camel.models import ModelFactory
-from camel.types import ModelType
+from camel.models.stub_model import StubTokenCounter
+from camel.types import ModelPlatformType, ModelType
+from camel.utils import (
+    AnthropicTokenCounter,
+    OpenAITokenCounter,
+    OpenSourceTokenCounter,
+)
 
 parametrize = pytest.mark.parametrize(
-    'model',
+    'model_platform, model_type',
     [
-        pytest.param(ModelType.GPT_3_5_TURBO, marks=pytest.mark.model_backend),
-        pytest.param(ModelType.GPT_4_TURBO, marks=pytest.mark.model_backend),
-        ModelType.STUB,
+        (ModelPlatformType.OPENAI, ModelType.GPT_3_5_TURBO),
+        (ModelPlatformType.OPENAI, ModelType.GPT_4_TURBO),
+        (ModelPlatformType.OPENSOURCE, ModelType.STUB),
+    ],
+)
+
+parameterize_token_counter = pytest.mark.parametrize(
+    'model_platform, model_type, model_config_dict, token_counter,'
+    ' expected_counter_type, expected_model_type',
+    [
+        # Test OpenAI model
+        (
+            ModelPlatformType.OPENAI,
+            ModelType.GPT_3_5_TURBO,
+            ChatGPTConfig().__dict__,
+            None,
+            OpenAITokenCounter,
+            ModelType.GPT_3_5_TURBO,
+        ),
+        (
+            ModelPlatformType.OPENAI,
+            ModelType.GPT_4,
+            ChatGPTConfig().__dict__,
+            None,
+            OpenAITokenCounter,
+            ModelType.GPT_4,
+        ),
+        # Test Stub model
+        # Stub model uses StubTokenCounter as default
+        (
+            ModelPlatformType.OPENSOURCE,
+            ModelType.STUB,
+            ChatGPTConfig().__dict__,
+            None,
+            StubTokenCounter,
+            None,
+        ),
+        (
+            ModelPlatformType.OPENSOURCE,
+            ModelType.STUB,
+            ChatGPTConfig().__dict__,
+            OpenAITokenCounter(ModelType.GPT_4),
+            OpenAITokenCounter,
+            ModelType.GPT_4,
+        ),
+        # Test Anthropic model
+        # Anthropic model uses AnthropicTokenCounter as default
+        (
+            ModelPlatformType.ANTHROPIC,
+            ModelType.CLAUDE_2_0,
+            AnthropicConfig().__dict__,
+            None,
+            AnthropicTokenCounter,
+            ModelType.CLAUDE_2_0,
+        ),
+        (
+            ModelPlatformType.ANTHROPIC,
+            ModelType.CLAUDE_2_0,
+            AnthropicConfig().__dict__,
+            OpenAITokenCounter(ModelType.GPT_3_5_TURBO),
+            OpenAITokenCounter,
+            ModelType.GPT_3_5_TURBO,
+        ),
+        # Test OpenSource model (take VICUNA as an example)
+        (
+            ModelPlatformType.OPENSOURCE,
+            ModelType.VICUNA,
+            OpenSourceConfig(
+                model_path="lmsys/vicuna-7b-v1.5",
+                server_url="http://localhost:8000/v1",
+            ).__dict__,
+            None,
+            OpenSourceTokenCounter,
+            ModelType.VICUNA,
+        ),
+        (
+            ModelPlatformType.OPENSOURCE,
+            ModelType.VICUNA,
+            OpenSourceConfig(
+                model_path="lmsys/vicuna-7b-v1.5",
+                server_url="http://localhost:8000/v1",
+            ).__dict__,
+            OpenAITokenCounter(ModelType.GPT_4),
+            OpenAITokenCounter,
+            ModelType.GPT_4,
+        ),
+        # Test OpenSource model (take VICUNA as an example)
+        (
+            ModelPlatformType.GEMINI,
+            ModelType.GEMINI_1_5_FLASH,
+            GeminiConfig().__dict__,
+            OpenAITokenCounter(ModelType.GPT_4),
+            OpenAITokenCounter,
+            ModelType.GPT_4,
+        ),
+        # Test Ollama model
+        (
+            ModelPlatformType.OLLAMA,
+            "gpt-3.5-turbo",
+            OllamaConfig().__dict__,
+            None,
+            OpenAITokenCounter,
+            ModelType.GPT_3_5_TURBO,
+        ),
+        (
+            ModelPlatformType.OLLAMA,
+            "gpt-3.5-turbo",
+            OllamaConfig().__dict__,
+            OpenAITokenCounter(ModelType.GPT_4),
+            OpenAITokenCounter,
+            ModelType.GPT_4,
+        ),
     ],
 )
 
 
 @parametrize
-def test_model_factory(model):
+def test_model_factory(model_platform, model_type):
     model_config_dict = ChatGPTConfig().__dict__
-    model_inst = ModelFactory.create(model, model_config_dict)
+    model_inst = ModelFactory.create(
+        model_platform, model_type, model_config_dict
+    )
     messages = [
         {
             "role": "system",

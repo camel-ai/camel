@@ -11,7 +11,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from camel.utils import get_system_information, get_task_list, to_pascal
+import os
+from unittest.mock import patch
+
+import pytest
+
+from camel.utils import (
+    api_keys_required,
+    dependencies_required,
+    get_system_information,
+    get_task_list,
+    is_docker_running,
+    to_pascal,
+)
 
 
 def test_get_task_list():
@@ -37,6 +49,82 @@ def test_get_task_list():
     assert isinstance(task_list, list)
     assert isinstance(task_list[0], str)
     assert len(task_list) == 1
+
+
+def test_dependencies_required(monkeypatch):
+    @dependencies_required('os')
+    def mock_dependencies_present():
+        return True
+
+    assert True if mock_dependencies_present() else False
+
+    @dependencies_required('some_module_not_exist')
+    def mock_dependencies_not_present():
+        return True
+
+    with pytest.raises(ImportError) as exc:
+        mock_dependencies_not_present()
+
+    assert "Missing required modules: some_module_not_exist" in str(exc.value)
+
+
+@pytest.fixture
+def setup_env_vars():
+    original_env = os.environ.copy()
+    os.environ['API_KEY_1'] = 'API_KEY_1_VALUE'
+    os.environ['API_KEY_2'] = 'API_KEY_2_VALUE'
+    yield
+    os.environ.clear()
+    os.environ.update(original_env)
+
+
+def test_api_keys_required(setup_env_vars):
+    class MockClass:
+        @api_keys_required('API_KEY_1', 'API_KEY_2')
+        def mock_api_keys_exist(self):
+            return True
+
+        @api_keys_required('API_KEY_1', 'API_KEY_2', 'API_KEY_3')
+        def mock_api_keys_not_exist(self):
+            return True
+
+    mock_instance = MockClass()
+
+    # Test case where all required API keys are present
+    assert mock_instance.mock_api_keys_exist() is True
+
+    # Test case where some required API keys are missing
+    with pytest.raises(ValueError) as exc:
+        mock_instance.mock_api_keys_not_exist()
+    assert "Missing API keys: API_KEY_3" in str(exc.value)
+
+    # Test case with no API keys set
+    os.environ.clear()
+    with pytest.raises(ValueError) as exc:
+        mock_instance.mock_api_keys_exist()
+    assert "Missing API keys: API_KEY_1, API_KEY_2" in str(exc.value)
+
+
+def test_api_keys_required_empty(setup_env_vars):
+    class MockClass:
+        @api_keys_required()
+        def mock_no_keys_required(self):
+            return True
+
+    mock_instance = MockClass()
+    assert mock_instance.mock_no_keys_required() is True
+
+
+def test_api_keys_required_non_existent(setup_env_vars):
+    class MockClass:
+        @api_keys_required('NON_EXISTENT_KEY')
+        def mock_non_existent_key(self):
+            return True
+
+    mock_instance = MockClass()
+    with pytest.raises(ValueError) as exc:
+        mock_instance.mock_non_existent_key()
+    assert "Missing API keys: NON_EXISTENT_KEY" in str(exc.value)
 
 
 def test_get_system_information():
@@ -101,3 +189,15 @@ def test_to_pascal_with_multiple_underscores():
 
 def test_to_pascal_with_trailing_underscore():
     assert to_pascal("snake_case_") == "SnakeCase"
+
+
+@patch('camel.utils.commons.subprocess.run')
+def test_is_docker_running(mock_subprocess_run):
+    mock_subprocess_run.return_value.returncode = 0
+    assert is_docker_running()
+
+    mock_subprocess_run.return_value.returncode = 1
+    assert not is_docker_running()
+
+    mock_subprocess_run.side_effect = FileNotFoundError
+    assert not is_docker_running()

@@ -1,0 +1,12 @@
+services:
+  camel:
+    image: camel:localdev
+    container_name: camel-localdev
+    build:
+      context: ../
+      dockerfile: .container/Dockerfile
+    volumes:
+      - ../:/app/camel
+    env_file:
+      - .env
+    command: ["tail", "-f", "/dev/null"]

@@ -17,9 +17,10 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import List, Optional
 
-from camel.functions import OpenAIFunction
+from camel.utils import dependencies_required
 
 from .base import BaseToolkit
+from .openai_function import OpenAIFunction
 
 
 @dataclass
@@ -49,7 +50,8 @@ class GithubIssue:
             body (str): The body/content of the GitHub issue.
             number (int): The issue number.
             file_path (str): The path of the file associated with the issue.
-            file_content (str): The content of the file associated with the issue.
+            file_content (str): The content of the file associated with the
+                issue.
         """
         self.title = title
         self.body = body
@@ -57,11 +59,12 @@ class GithubIssue:
         self.file_path = file_path
         self.file_content = file_content
 
-    def summary(self) -> str:
-        r"""Returns a summary of the issue.
+    def __str__(self) -> str:
+        r"""Returns a string representation of the issue.
 
         Returns:
-            str: A string containing the title, body, number, file path, and file content of the issue.
+            str: A string containing the title, body, number, file path, and
+                file content of the issue.
         """
         return (
             f"Title: {self.title}\n"
@@ -74,20 +77,18 @@ class GithubIssue:
 
 @dataclass
 class GithubPullRequestDiff:
-    r"""Represents a single diff of a pull request on Github."""
+    r"""Represents a single diff of a pull request on Github.
 
-    def __init__(self, filename: str, patch: str) -> None:
-        r"""Initialize a GithubPullRequestDiff object.
+    Attributes:
+        filename (str): The name of the file that was changed.
+        patch (str): The diff patch for the file.
+    """
 
-        Args:
-            filename (str): The name of the file that was changed.
-            patch (str): The diff patch for the file.
-        """
-        self.filename = filename
-        self.patch = patch
+    filename: str
+    patch: str
 
-    def summary(self) -> str:
-        r"""Returns a summary of this diff."""
+    def __str__(self) -> str:
+        r"""Returns a string representation of this diff."""
         return f"Filename: {self.filename}\nPatch: {self.patch}"
 
 
@@ -96,32 +97,19 @@ class GithubPullRequest:
     r"""Represents a pull request on Github.
 
     Attributes:
-        title (str): The title of the pull request.
-        body (str): The body/content of the pull request.
-        file_path (str): The path of the file associated with the pull request.
-        file_content (str): The content of the file associated with the pull request.
+        title (str): The title of the GitHub pull request.
+        body (str): The body/content of the GitHub pull request.
+        diffs (List[GithubPullRequestDiff]): A list of diffs for the pull
+            request.
     """
 
-    def __init__(
-        self,
-        title: str,
-        body: str,
-        diffs: list[GithubPullRequestDiff],
-    ) -> None:
-        r"""Initialize a GithubPullRequest object.
+    title: str
+    body: str
+    diffs: List[GithubPullRequestDiff]
 
-        Args:
-            title (str): The title of the GitHub pull request.
-            body (str): The body/content of the GitHub pull request.
-            diffs (list[GithubPullRequestDiff]): A list of diffs for the pull request.
-        """
-        self.title = title
-        self.body = body
-        self.diffs = diffs
-
-    def summary(self) -> str:
-        r"""Returns a summary of the pull request."""
-        diff_summaries = '\n'.join(diff.summary() for diff in self.diffs)
+    def __str__(self) -> str:
+        r"""Returns a string representation of the pull request."""
+        diff_summaries = '\n'.join(str(diff) for diff in self.diffs)
         return (
             f"Title: {self.title}\n"
             f"Body: {self.body}\n"
@@ -130,17 +118,20 @@ class GithubPullRequest:
 
 
 class GithubToolkit(BaseToolkit):
-    r"""A class representing a toolkit for interacting with GitHub repositories.
+    r"""A class representing a toolkit for interacting with GitHub
+    repositories.
 
-    This class provides methods for retrieving open issues, retrieving specific issues,
-    and creating pull requests in a GitHub repository.
+    This class provides methods for retrieving open issues, retrieving
+        specific issues, and creating pull requests in a GitHub repository.
 
     Args:
         repo_name (str): The name of the GitHub repository.
-        access_token (str, optional): The access token to authenticate with GitHub.
-            If not provided, it will be obtained using the `get_github_access_token` method.
+        access_token (str, optional): The access token to authenticate with
+            GitHub. If not provided, it will be obtained using the
+            `get_github_access_token` method.
     """
 
+    @dependencies_required('github')
     def __init__(
         self, repo_name: str, access_token: Optional[str] = None
     ) -> None:
@@ -148,27 +139,25 @@ class GithubToolkit(BaseToolkit):
 
         Args:
             repo_name (str): The name of the GitHub repository.
-            access_token (str, optional): The access token to authenticate with GitHub.
-                If not provided, it will be obtained using the `get_github_access_token` method.
+            access_token (str, optional): The access token to authenticate
+                with GitHub. If not provided, it will be obtained using the
+                `get_github_access_token` method.
         """
         if access_token is None:
             access_token = self.get_github_access_token()
 
-        try:
-            from github import Auth, Github
-        except ImportError:
-            raise ImportError(
-                "Please install `github` first. You can install it by running "
-                "`pip install pygithub`."
-            )
+        from github import Auth, Github
+
         self.github = Github(auth=Auth.Token(access_token))
         self.repo = self.github.get_repo(repo_name)
 
     def get_tools(self) -> List[OpenAIFunction]:
-        r"""Returns a list of OpenAIFunction objects representing the functions in the toolkit.
+        r"""Returns a list of OpenAIFunction objects representing the
+        functions in the toolkit.
 
         Returns:
-            List[OpenAIFunction]: A list of OpenAIFunction objects representing the functions in the toolkit.
+            List[OpenAIFunction]: A list of OpenAIFunction objects
+                representing the functions in the toolkit.
         """
         return [
             OpenAIFunction(self.retrieve_issue_list),
@@ -184,15 +173,16 @@ class GithubToolkit(BaseToolkit):
             str: A string containing the GitHub access token.
 
         Raises:
-            ValueError: If the API key or secret is not found in the environment variables.
+            ValueError: If the API key or secret is not found in the
+                environment variables.
         """
         # Get `GITHUB_ACCESS_TOKEN` here: https://github.com/settings/tokens
         GITHUB_ACCESS_TOKEN = os.environ.get("GITHUB_ACCESS_TOKEN")
 
         if not GITHUB_ACCESS_TOKEN:
             raise ValueError(
-                "`GITHUB_ACCESS_TOKEN` not found in environment variables. Get it "
-                "here: `https://github.com/settings/tokens`."
+                "`GITHUB_ACCESS_TOKEN` not found in environment variables. Get"
+                " it here: `https://github.com/settings/tokens`."
             )
         return GITHUB_ACCESS_TOKEN
 
@@ -210,7 +200,7 @@ class GithubToolkit(BaseToolkit):
                 number=issue.number,
                 file_path=issue.labels[
                     0
-                ].name,  # for now we require file path to be the first label in the PR
+                ].name,  # we require file path to be the first label in the PR
                 file_content=self.retrieve_file_content(issue.labels[0].name),
             )
             for issue in issues
@@ -232,22 +222,30 @@ class GithubToolkit(BaseToolkit):
         issues = self.retrieve_issue_list()
         for issue in issues:
             if issue.number == issue_number:
-                return issue.summary()
+                return str(issue)
         return None
 
-    def retrieve_pull_requests(self) -> List:
+    def retrieve_pull_requests(
+        self, days: int, state: str, max_prs: int
+    ) -> List[str]:
         r"""Retrieves a summary of merged pull requests from the repository.
+        The summary will be provided for the last specified number of days.
+
+        Args:
+            days (int): The number of days to retrieve merged pull requests
+                for.
+            state (str): A specific state of PRs to retrieve. Can be open or
+                closed.
+            max_prs (int): The maximum number of PRs to retrieve.
 
         Returns:
-            list: A list of merged pull request summaries.
+             List[str]: A list of merged pull request summaries.
         """
-
-        pull_requests = self.repo.get_pulls(state='closed')
-
+        pull_requests = self.repo.get_pulls(state=state)
         merged_prs = []
-        earliest_date: datetime = datetime.utcnow() - timedelta(days=2)
+        earliest_date: datetime = datetime.utcnow() - timedelta(days=days)
 
-        for pr in pull_requests:
+        for pr in pull_requests[:max_prs]:
             if (
                 pr.merged
                 and pr.merged_at is not None
@@ -259,12 +257,11 @@ class GithubToolkit(BaseToolkit):
                 files = pr.get_files()
 
                 for file in files:
-                    if ".py" in file.filename:
-                        diff = GithubPullRequestDiff(file.filename, file.patch)
-                        pr_details.diffs.append(diff)
+                    diff = GithubPullRequestDiff(file.filename, file.patch)
+                    pr_details.diffs.append(diff)
 
-                merged_prs.append(pr_details.summary())
-        return merged_prs[0:1]
+                merged_prs.append(str(pr_details))
+        return merged_prs
 
     def create_pull_request(
         self,
@@ -276,19 +273,23 @@ class GithubToolkit(BaseToolkit):
     ) -> str:
         r"""Creates a pull request.
 
-        This function creates a pull request in specified repository, which updates a
-        file in the specific path with new content. The pull request description
-        contains information about the issue title and number.
+        This function creates a pull request in specified repository, which
+        updates a file in the specific path with new content. The pull request
+        description contains information about the issue title and number.
 
         Args:
-            file_path (str): The path of the file to be updated in the repository.
+            file_path (str): The path of the file to be updated in the
+                repository.
             new_content (str): The specified new content of the specified file.
-            pr_title (str): The title of the issue that is solved by this pull request.
+            pr_title (str): The title of the issue that is solved by this pull
+                request.
             body (str): The commit message for the pull request.
-            branch_name (str): The name of the branch to create and submit the pull request from.
+            branch_name (str): The name of the branch to create and submit the
+                pull request from.
 
         Returns:
-            str: A formatted report of whether the pull request was created successfully or not.
+            str: A formatted report of whether the pull request was created
+                successfully or not.
         """
         sb = self.repo.get_branch(self.repo.default_branch)
         self.repo.create_git_ref(

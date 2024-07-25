@@ -19,7 +19,10 @@ from camel.configs import OPENAI_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
-from camel.utils import BaseTokenCounter, OpenSourceTokenCounter
+from camel.utils import (
+    BaseTokenCounter,
+    OpenSourceTokenCounter,
+)
 
 
 class OpenSourceModel(BaseModelBackend):
@@ -31,6 +34,9 @@ class OpenSourceModel(BaseModelBackend):
         self,
         model_type: ModelType,
         model_config_dict: Dict[str, Any],
+        api_key: Optional[str] = None,
+        url: Optional[str] = None,
+        token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
         r"""Constructor for model backends of Open-source models.
 
@@ -38,9 +44,16 @@ class OpenSourceModel(BaseModelBackend):
             model_type (ModelType): Model for which a backend is created.
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into :obj:`openai.ChatCompletion.create()`.
+            api_key (Optional[str]): The API key for authenticating with the
+                model service. (ignored for open-source models)
+            url (Optional[str]): The url to the model service.
+            token_counter (Optional[BaseTokenCounter]): Token counter to use
+                for the model. If not provided, `OpenSourceTokenCounter` will
+                be used.
         """
-        super().__init__(model_type, model_config_dict)
-        self._token_counter: Optional[BaseTokenCounter] = None
+        super().__init__(
+            model_type, model_config_dict, api_key, url, token_counter
+        )
 
         # Check whether the input model type is open-source
         if not model_type.is_open_source:
@@ -65,7 +78,7 @@ class OpenSourceModel(BaseModelBackend):
             )
 
         # Load the server URL and check whether it is None
-        server_url: Optional[str] = self.model_config_dict.get(
+        server_url: Optional[str] = url or self.model_config_dict.get(
             "server_url", None
         )
         if not server_url:
@@ -150,6 +163,7 @@ class OpenSourceModel(BaseModelBackend):
     def stream(self) -> bool:
         r"""Returns whether the model is in stream mode,
             which sends partial results each time.
+
         Returns:
             bool: Whether the model is in stream mode.
         """

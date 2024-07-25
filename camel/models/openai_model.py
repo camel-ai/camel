@@ -16,18 +16,27 @@ from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
 
-from camel.configs import OPENAI_API_PARAMS_WITH_FUNCTIONS
+from camel.configs import OPENAI_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
-from camel.utils import BaseTokenCounter, OpenAITokenCounter, api_key_required
+from camel.utils import (
+    BaseTokenCounter,
+    OpenAITokenCounter,
+    api_keys_required,
+)
 
 
 class OpenAIModel(BaseModelBackend):
     r"""OpenAI API in a unified BaseModelBackend interface."""
 
     def __init__(
-        self, model_type: ModelType, model_config_dict: Dict[str, Any]
+        self,
+        model_type: ModelType,
+        model_config_dict: Dict[str, Any],
+        api_key: Optional[str] = None,
+        url: Optional[str] = None,
+        token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
         r"""Constructor for OpenAI backend.
 
@@ -36,11 +45,25 @@ class OpenAIModel(BaseModelBackend):
                 one of GPT_* series.
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into openai.ChatCompletion.create().
+            api_key (Optional[str]): The API key for authenticating with the
+                OpenAI service. (default: :obj:`None`)
+            url (Optional[str]): The url to the OpenAI service. (default:
+                :obj:`None`)
+            token_counter (Optional[BaseTokenCounter]): Token counter to use
+                for the model. If not provided, `OpenAITokenCounter` will
+                be used.
         """
-        super().__init__(model_type, model_config_dict)
-        url = os.environ.get('OPENAI_API_BASE_URL', None)
-        self._client = OpenAI(timeout=60, max_retries=3, base_url=url)
-        self._token_counter: Optional[BaseTokenCounter] = None
+        super().__init__(
+            model_type, model_config_dict, api_key, url, token_counter
+        )
+        self._url = url or os.environ.get("OPENAI_API_BASE_URL")
+        self._api_key = api_key or os.environ.get("OPENAI_API_KEY")
+        self._client = OpenAI(
+            timeout=60,
+            max_retries=3,
+            base_url=self._url,
+            api_key=self._api_key,
+        )
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -54,7 +77,7 @@ class OpenAIModel(BaseModelBackend):
             self._token_counter = OpenAITokenCounter(self.model_type)
         return self._token_counter
 
-    @api_key_required
+    @api_keys_required("OPENAI_API_KEY")
     def run(
         self,
         messages: List[OpenAIMessage],
@@ -86,7 +109,7 @@ class OpenAIModel(BaseModelBackend):
                 unexpected arguments to OpenAI API.
         """
         for param in self.model_config_dict:
-            if param not in OPENAI_API_PARAMS_WITH_FUNCTIONS:
+            if param not in OPENAI_API_PARAMS:
                 raise ValueError(
                     f"Unexpected argument `{param}` is "
                     "input into OpenAI model backend."

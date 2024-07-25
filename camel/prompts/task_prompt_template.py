@@ -21,8 +21,13 @@ from camel.prompts.code import CodePromptTemplateDict
 from camel.prompts.evaluation import (
     EvaluationPromptTemplateDict,
 )
+from camel.prompts.generate_text_embedding_data import (
+    GenerateTextEmbeddingDataPromptTemplateDict,
+)
 from camel.prompts.misalignment import MisalignmentPromptTemplateDict
-from camel.prompts.object_recognition import ObjectRecognitionPromptTemplateDict
+from camel.prompts.object_recognition import (
+    ObjectRecognitionPromptTemplateDict,
+)
 from camel.prompts.role_description_prompt_template import (
     RoleDescriptionPromptTemplateDict,
 )
@@ -30,6 +35,9 @@ from camel.prompts.solution_extraction import (
     SolutionExtractionPromptTemplateDict,
 )
 from camel.prompts.translation import TranslationPromptTemplateDict
+from camel.prompts.video_description_prompt import (
+    VideoDescriptionPromptTemplateDict,
+)
 from camel.types import TaskType
 
 
@@ -52,8 +60,10 @@ class TaskPromptTemplateDict(Dict[Any, TextPromptDict]):
                 TaskType.MISALIGNMENT: MisalignmentPromptTemplateDict(),
                 TaskType.TRANSLATION: TranslationPromptTemplateDict(),
                 TaskType.EVALUATION: EvaluationPromptTemplateDict(),
-                TaskType.SOLUTION_EXTRACTION: SolutionExtractionPromptTemplateDict(),
+                TaskType.SOLUTION_EXTRACTION: SolutionExtractionPromptTemplateDict(),  # noqa: E501
                 TaskType.ROLE_DESCRIPTION: RoleDescriptionPromptTemplateDict(),
-                TaskType.OBJECT_RECOGNITION: ObjectRecognitionPromptTemplateDict(),
+                TaskType.OBJECT_RECOGNITION: ObjectRecognitionPromptTemplateDict(),  # noqa: E501
+                TaskType.GENERATE_TEXT_EMBEDDING_DATA: GenerateTextEmbeddingDataPromptTemplateDict(),  # noqa: E501
+                TaskType.VIDEO_DESCRIPTION: VideoDescriptionPromptTemplateDict(),  # noqa: E501
             }
         )

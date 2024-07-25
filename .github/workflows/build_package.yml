@@ -12,7 +12,7 @@ jobs:
       - name: set up python environment and install dependencies
         uses: ./.github/actions/camel_install
         with:
-          python-version: "3.8"
+          python-version: "3.9"
       - name: Build
         shell: bash
         run: poetry build
@@ -34,5 +34,11 @@ jobs:
           SEARCH_ENGINE_ID: "${{ secrets.SEARCH_ENGINE_ID }}"
           OPENWEATHERMAP_API_KEY: "${{ secrets.OPENWEATHERMAP_API_KEY }}"
           ANTHROPIC_API_KEY: "${{ secrets.ANTHROPIC_API_KEY }}"
+          GROQ_API_KEY: "${{ secrets.GROQ_API_KEY }}"
           COHERE_API_KEY: "${{ secrets.COHERE_API_KEY }}"
+          HF_TOKEN: "${{ secrets.HF_TOKEN }}"
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}"
+          AZURE_API_VERSION: ${{ secrets.AZURE_API_VERSION }}"
+          AZURE_DEPLOYMENT_NAME: ${{ secrets.AZURE_DEPLOYMENT_NAME }}"
+          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}"
         run: pytest --fast-test-mode ./test

@@ -13,24 +13,38 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .anthropic_config import ANTHROPIC_API_PARAMS, AnthropicConfig
 from .base_config import BaseConfig
-from .mistral_config import MISTRAL_API_PARAMS, MistralConfig
+from .gemini_config import (
+    Gemini_API_PARAMS,
+    GeminiConfig,
+)
+from .groq_config import GROQ_API_PARAMS, GroqConfig
+from .litellm_config import LITELLM_API_PARAMS, LiteLLMConfig
+from .ollama_config import OLLAMA_API_PARAMS, OllamaConfig
 from .openai_config import (
     OPENAI_API_PARAMS,
-    OPENAI_API_PARAMS_WITH_FUNCTIONS,
     ChatGPTConfig,
-    FunctionCallingConfig,
     OpenSourceConfig,
 )
+from .vllm_config import VLLM_API_PARAMS, VLLMConfig
+from .zhipuai_config import ZHIPUAI_API_PARAMS, ZhipuAIConfig
 
 __all__ = [
     'BaseConfig',
     'ChatGPTConfig',
-    'FunctionCallingConfig',
     'OPENAI_API_PARAMS',
-    'OPENAI_API_PARAMS_WITH_FUNCTIONS',
     'AnthropicConfig',
     'ANTHROPIC_API_PARAMS',
-    'MISTRAL_API_PARAMS',
-    'MistralConfig',
+    'GROQ_API_PARAMS',
+    'GroqConfig',
     'OpenSourceConfig',
+    'LiteLLMConfig',
+    'LITELLM_API_PARAMS',
+    'OllamaConfig',
+    'OLLAMA_API_PARAMS',
+    'ZhipuAIConfig',
+    'ZHIPUAI_API_PARAMS',
+    'GeminiConfig',
+    'Gemini_API_PARAMS',
+    'VLLMConfig',
+    'VLLM_API_PARAMS',
 ]
