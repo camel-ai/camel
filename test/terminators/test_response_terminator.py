@@ -15,7 +15,7 @@ from typing import List
 
 import pytest
 
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from camel.terminators import ResponseWordsTerminator
 from camel.types import RoleType, TerminationMode
 
@@ -29,7 +29,7 @@ def _create_messages() -> List[BaseMessage]:
             role_name="user",
             role_type=RoleType.USER,
             meta_dict={},
-            content="GoodBye",
+            content=Content(text=["GoodBye"]),
         )
         messages.append(message)
     return messages

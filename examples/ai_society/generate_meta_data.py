@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from camel.agents import ChatAgent
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from camel.prompts import PromptTemplateGenerator
 from camel.types import TaskType
 
@@ -25,18 +25,18 @@ def main(key: str = "generate_users", num_roles: int = 50):
     print(prompt)
     assistant_sys_msg = BaseMessage.make_assistant_message(
         role_name="Assistant",
-        content="You are a helpful assistant.",
+        content=Content(text=["You are a helpful assistant."]),
     )
     agent = ChatAgent(assistant_sys_msg)
     agent.reset()
 
     user_msg = BaseMessage.make_user_message(
         role_name="User",
-        content=prompt,
+        content=Content(text=[prompt]),
     )
     assistant_response = agent.step(user_msg)
     if assistant_response.msgs is not None:
-        print(assistant_response.msg.content)
+        print(assistant_response.msg.content.text)
 
 
 if __name__ == "__main__":

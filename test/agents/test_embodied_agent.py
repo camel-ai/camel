@@ -18,7 +18,7 @@ import requests
 
 from camel.agents import EmbodiedAgent, HuggingFaceToolAgent
 from camel.generators import SystemMessageGenerator
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from camel.types import RoleType
 
 
@@ -51,7 +51,7 @@ def test_step():
     embodied_agent = EmbodiedAgent(sys_msg, verbose=True)
     user_msg = BaseMessage.make_user_message(
         role_name=role_name,
-        content="Draw all the Camelidae species.",
+        content=Content(text=["Draw all the Camelidae species."]),
     )
     try:
         response = embodied_agent.step(user_msg)

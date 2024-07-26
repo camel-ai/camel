@@ -26,7 +26,12 @@ from camel.memories import (
     MemoryRecord,
     ScoreBasedContextCreator,
 )
-from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
+from camel.messages import (
+    BaseMessage,
+    Content,
+    FunctionCallingMessage,
+    OpenAIMessage,
+)
 from camel.models import BaseModelBackend, ModelFactory
 from camel.responses import ChatAgentResponse
 from camel.types import (
@@ -108,6 +113,7 @@ class ChatAgent(BaseAgent):
     def __init__(
         self,
         system_message: BaseMessage,
+        agent_id: Optional[str] = None,
         model: Optional[BaseModelBackend] = None,
         api_key: Optional[str] = None,
         memory: Optional[AgentMemory] = None,
@@ -119,6 +125,7 @@ class ChatAgent(BaseAgent):
     ) -> None:
         self.orig_sys_message: BaseMessage = system_message
         self.system_message = system_message
+        self.agent_id = agent_id
         self.role_name: str = system_message.role_name
         self.role_type: RoleType = system_message.role_type
         self._api_key = api_key
@@ -224,10 +231,13 @@ class ChatAgent(BaseAgent):
             BaseMessage: The updated system message object.
         """
         self.output_language = output_language
-        content = self.orig_sys_message.content + (
-            "\nRegardless of the input language, "
-            f"you must output text in {output_language}."
-        )
+        if self.orig_sys_message.content.text:
+            updated_text = (
+                " ".join(self.orig_sys_message.content.text)
+                + "\nRegardless of the input language, "
+                f"you must output text in {output_language}."
+            )
+        content = Content(text=[updated_text])
         self.system_message = self.system_message.create_new_instance(content)
         return self.system_message
 
@@ -526,7 +536,11 @@ class ChatAgent(BaseAgent):
                 role_name=self.role_name,
                 role_type=self.role_type,
                 meta_dict=dict(),
-                content=choice.message.content or "",
+                content=Content(
+                    text=[choice.message.content]
+                    if choice.message.content is not None
+                    else [""]
+                ),
             )
             output_messages.append(chat_message)
         finish_reasons = [
@@ -577,7 +591,7 @@ class ChatAgent(BaseAgent):
                         role_name=self.role_name,
                         role_type=self.role_type,
                         meta_dict=dict(),
-                        content=content_dict[index],
+                        content=Content(text=[content_dict[index]]),
                     )
                     output_messages.append(chat_message)
         finish_reasons = [
@@ -662,7 +676,7 @@ class ChatAgent(BaseAgent):
             role_name=self.role_name,
             role_type=self.role_type,
             meta_dict=None,
-            content="",
+            content=Content(text=[""]),
             func_name=func_name,
             args=args,
         )
@@ -670,7 +684,7 @@ class ChatAgent(BaseAgent):
             role_name=self.role_name,
             role_type=self.role_type,
             meta_dict=None,
-            content="",
+            content=Content(text=[""]),
             func_name=func_name,
             result=result,
         )
@@ -721,7 +735,7 @@ class ChatAgent(BaseAgent):
             role_name=self.role_name,
             role_type=self.role_type,
             meta_dict=None,
-            content="",
+            content=Content(text=[""]),
             func_name=func_name,
             args=args,
         )
@@ -729,7 +743,7 @@ class ChatAgent(BaseAgent):
             role_name=self.role_name,
             role_type=self.role_type,
             meta_dict=None,
-            content="",
+            content=Content(text=[""]),
             func_name=func_name,
             result=result,
         )
@@ -753,7 +767,9 @@ class ChatAgent(BaseAgent):
         encoding = get_model_encoding(self.model_type.value_for_tiktoken)
         completion_tokens = 0
         for message in output_messages:
-            completion_tokens += len(encoding.encode(message.content))
+            if message.content.text:  # Ensure text is not None
+                for text in message.content.text:
+                    completion_tokens += len(encoding.encode(text))
         usage_dict = dict(
             completion_tokens=completion_tokens,
             prompt_tokens=prompt_tokens,

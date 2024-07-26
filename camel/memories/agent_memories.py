@@ -99,8 +99,13 @@ class VectorDBMemory(AgentMemory):
     def write_records(self, records: List[MemoryRecord]) -> None:
         # Assume the last user input is the current topic.
         for record in records:
-            if record.role_at_backend == OpenAIBackendRole.USER:
-                self._current_topic = record.message.content
+            if (
+                record.role_at_backend == OpenAIBackendRole.USER
+                and record.message.content.text
+            ):
+                self._current_topic = ' '.join(
+                    [text for text in record.message.content.text]
+                )
         self._vectordb_block.write_records(records)
 
     def get_context_creator(self) -> BaseContextCreator:
@@ -147,8 +152,13 @@ class LongtermAgentMemory(AgentMemory):
         self.chat_history_block.write_records(records)
 
         for record in records:
-            if record.role_at_backend == OpenAIBackendRole.USER:
-                self._current_topic = record.message.content
+            if (
+                record.role_at_backend == OpenAIBackendRole.USER
+                and record.message.content.text
+            ):
+                self._current_topic = ' '.join(
+                    [text for text in record.message.content.text]
+                )
 
     def clear(self) -> None:
         r"""Removes all records from the memory."""

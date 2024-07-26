@@ -19,7 +19,7 @@ from colorama import Fore
 
 from camel.agents.chat_agent import ChatAgent
 from camel.memories import AgentMemory
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from camel.models import BaseModelBackend
 from camel.responses import ChatAgentResponse
 from camel.utils import get_first_int, print_text_animated
@@ -74,7 +74,12 @@ class CriticAgent(ChatAgent):
         Returns:
             str: A string containing the flattened options to the critic.
         """
-        options = [message.content for message in messages]
+        options = [
+            ' '.join(message.content.text)
+            for message in messages
+            if message.content.text is not None
+        ]
+
         flatten_options = (
             f"> Proposals from "
             f"{messages[0].role_name} ({messages[0].role_type}). "
@@ -126,8 +131,12 @@ class CriticAgent(ChatAgent):
                     role_name=input_message.role_name,
                     role_type=input_message.role_type,
                     meta_dict=input_message.meta_dict,
-                    content="> Invalid choice. Please choose again.\n"
-                    + msg_content,
+                    content=Content(
+                        text=[
+                            "> Invalid choice. Please choose again.\n"
+                            + ' '.join(text for text in msg_content.text)  # type: ignore[union-attr]
+                        ]
+                    ),
                 )
                 i += 1
         warnings.warn(
@@ -148,7 +157,9 @@ class CriticAgent(ChatAgent):
             Optional[str]: The critic's choice as a string, or None if the
                 message could not be parsed.
         """
-        choice = str(get_first_int(critic_msg.content))
+        choice = str(
+            get_first_int(' '.join(text for text in critic_msg.content.text))  # type: ignore[union-attr]
+        )
         return choice
 
     def reduce_step(
@@ -170,7 +181,7 @@ class CriticAgent(ChatAgent):
             role_name=input_messages[0].role_name,
             role_type=input_messages[0].role_type,
             meta_dict=input_messages[0].meta_dict,
-            content="",
+            content=Content(text=[""]),
         )
 
         flatten_options = self.flatten_options(input_messages)
@@ -178,10 +189,14 @@ class CriticAgent(ChatAgent):
             print_text_animated(
                 self.logger_color + f"\x1b[3m{flatten_options}\x1b[0m\n"
             )
-        input_msg = meta_chat_message.create_new_instance(flatten_options)
+        input_msg = meta_chat_message.create_new_instance(
+            Content(text=[flatten_options])
+        )
 
         option = self.get_option(input_msg)
-        output_msg = meta_chat_message.create_new_instance(option)
+        output_msg = meta_chat_message.create_new_instance(
+            Content(text=[option])
+        )
 
         # TODO: The return `info` can be improved.
         return ChatAgentResponse([output_msg], terminated=False, info={})

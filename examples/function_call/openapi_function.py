@@ -13,14 +13,15 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from camel.agents import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from camel.models import ModelFactory
 from camel.toolkits import OPENAPI_FUNCS
 from camel.types import ModelPlatformType, ModelType
 
 # Define system message
 sys_msg = BaseMessage.make_assistant_message(
-    role_name='Tools calling opertor', content='You are a helpful assistant'
+    role_name='Tools calling opertor',
+    content=Content(text=['You are a helpful assistant']),
 )
 
 # Set model config
@@ -46,7 +47,8 @@ camel_agent.reset()
 
 # Define a user message
 usr_msg = BaseMessage.make_user_message(
-    role_name='CAMEL User', content='help me to select a basketball in klarna.'
+    role_name='CAMEL User',
+    content=Content(text=['help me to select a basketball in klarna.']),
 )
 
 # Get response information

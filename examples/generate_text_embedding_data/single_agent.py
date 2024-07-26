@@ -18,7 +18,7 @@ import random
 from camel.agents import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType, RoleType, TaskType
 
@@ -58,7 +58,7 @@ def main() -> None:
             role_tuple=("Text retrieval example writer:", RoleType.ASSISTANT),
         )
         user_msg = BaseMessage.make_user_message(
-            role_name="User", content="Start to generate!"
+            role_name="User", content=Content(text=["Start to generate!"])
         )
         model = ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
@@ -74,7 +74,7 @@ def main() -> None:
         )
         print(f"Generating positive and negative documents for '{task}'")
         assistant_response = assistant_agent.step(user_msg)
-        content = assistant_response.msg.content
+        content = assistant_response.msg.content.text
         try:
             data = json.loads(content)
             os.makedirs("./text_embedding_data/tasks/", exist_ok=True)

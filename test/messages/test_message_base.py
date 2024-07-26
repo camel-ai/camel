@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import pytest
 
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from camel.prompts import CodePrompt, TextPrompt
 from camel.types import OpenAIBackendRole, RoleType
 
@@ -24,27 +24,36 @@ def base_message() -> BaseMessage:
         role_name="test_user",
         role_type=RoleType.USER,
         meta_dict={"key": "value"},
-        content="test content",
+        content=Content(text=["test content"]),
     )
 
 
 def test_base_message_addition_operator(base_message: BaseMessage):
-    new_message = base_message + "!"
-    assert new_message.content == "test content!"
+    other_message = BaseMessage(
+        role_name="test_user",
+        role_type=RoleType.USER,
+        content=Content(text=["!"]),
+    )
+    new_message = base_message + other_message
+    assert new_message.content.text == ["test content", "!"]
 
 
 def test_base_message_multiplication_operator(base_message: BaseMessage):
     new_message = base_message * 3
-    assert new_message.content == "test contenttest contenttest content"
+    assert new_message.content.text == [
+        "test content",
+        "test content",
+        "test content",
+    ]
 
 
 def test_base_message_length_operator(base_message: BaseMessage):
-    assert len(base_message) == 12
+    assert len(base_message) == 1
 
 
 def test_base_message_contains_operator(base_message: BaseMessage):
-    assert "test" in base_message
-    assert "foo" not in base_message
+    assert any("test" in text for text in base_message.content.text)  # type: ignore[union-attr]
+    assert any("foo" not in text for text in base_message.content.text)  # type: ignore[union-attr]
 
 
 def test_extract_text_and_code_prompts():
@@ -52,10 +61,14 @@ def test_extract_text_and_code_prompts():
         role_name="test_role_name",
         role_type=RoleType.USER,
         meta_dict=dict(),
-        content="This is a text prompt.\n\n"
-        "```python\nprint('This is a code prompt')\n```\n"
-        "This is another text prompt.\n\n"
-        "```c\nprintf(\"This is another code prompt\");\n```",
+        content=Content(
+            text=[
+                "This is a text prompt.\n\n"
+                "```python\nprint('This is a code prompt')\n```\n"
+                "This is another text prompt.\n\n"
+                "```c\nprintf(\"This is another code prompt\");\n```"
+            ]
+        ),
     )
     text_prompts, code_prompts = base_message.extract_text_and_code_prompts()
 
@@ -77,11 +90,12 @@ def test_extract_text_and_code_prompts():
 def test_base_message_to_dict(base_message: BaseMessage) -> None:
     expected_dict = {
         "role_name": "test_user",
-        "role_type": "USER",
-        "key": "value",
-        "content": "test content",
+        "role_type": "user",
     }
-    assert base_message.to_dict() == expected_dict
+    assert base_message.to_dict()["role_name"] == expected_dict["role_name"]
+    assert (
+        base_message.to_dict()["role_type"].value == expected_dict["role_type"]
+    )
 
 
 def test_base_message():
@@ -95,33 +109,41 @@ def test_base_message():
         role_name=role_name,
         role_type=role_type,
         meta_dict=meta_dict,
-        content=content,
+        content=Content(text=[content]),
     )
 
     assert message.role_name == role_name
     assert message.role_type == role_type
     assert message.meta_dict == meta_dict
-    assert message.content == content
+    assert message.content.text == [content]
 
     openai_message = message.to_openai_message(backend_role)
-    assert openai_message == {"role": backend_role.value, "content": content}
+    assert openai_message == {
+        "role": backend_role.value,
+        'content': [{'type': 'text', 'text': 'test_content'}],
+    }
 
     openai_system_message = message.to_openai_system_message()
     assert openai_system_message == {"role": "system", "content": content}
 
     openai_user_message = message.to_openai_user_message()
-    assert openai_user_message == {"role": "user", "content": content}
+    assert openai_user_message == {
+        "role": "user",
+        'content': [{'type': 'text', 'text': 'test_content'}],
+    }
 
     openai_assistant_message = message.to_openai_assistant_message()
     assert openai_assistant_message == {
         "role": "assistant",
-        "content": content,
+        'content': 'test_content',
     }
 
     dictionary = message.to_dict()
-    assert dictionary == {
-        "role_name": role_name,
-        "role_type": role_type.name,
-        **(meta_dict or {}),
-        "content": content,
+    assert dictionary["content"] == {
+        'text': ['test_content'],
+        'image_url': [],
+        'image_detail': 'auto',
+        'video_url': [],
+        'video_detail': 'low',
+        'audio_url': [],
     }

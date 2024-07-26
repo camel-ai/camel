@@ -16,7 +16,7 @@ from colorama import Fore
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from camel.models import ModelFactory
 from camel.toolkits.code_execution import CodeExecutionToolkit
 from camel.types import ModelPlatformType, ModelType
@@ -42,10 +42,12 @@ model = ModelFactory.create(
 # set up agent
 assistant_sys_msg = BaseMessage.make_assistant_message(
     role_name="Teacher",
-    content=(
-        "You are a personal math tutor and programmer. "
-        "When asked a math question, "
-        "write and run Python code to answer the question."
+    content=Content(
+        text=[
+            "You are a personal math tutor and programmer. "
+            "When asked a math question, "
+            "write and run Python code to answer the question."
+        ]
     ),
 )
 
@@ -63,7 +65,9 @@ prompt = (
     "Weng earns $12 an hour for babysitting. "
     "Yesterday, she just did 51 minutes of babysitting. How much did she earn?"
 )
-user_msg = BaseMessage.make_user_message(role_name="User", content=prompt)
+user_msg = BaseMessage.make_user_message(
+    role_name="User", content=Content(text=[prompt])
+)
 print(Fore.YELLOW + f"user prompt:\n{prompt}\n")
 
 response = agent.step(user_msg)

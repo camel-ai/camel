@@ -17,7 +17,7 @@ from colorama import Fore
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from camel.models import ModelFactory
 from camel.toolkits import GithubToolkit, OpenAIFunction
 from camel.types import ModelPlatformType, ModelType
@@ -53,11 +53,15 @@ def write_weekly_pr_summary(repo_name, model=None):
     toolkit = GithubToolkit(repo_name=repo_name)
     assistant_sys_msg = BaseMessage.make_assistant_message(
         role_name="Marketing Manager",
-        content=f"""
+        content=Content(
+            text=[
+                f"""
         You are an experienced marketing manager responsible for posting
         weekly updates about the status 
         of an open source project {repo_name} on the project's blog.
-        """,
+        """
+            ]
+        ),
     )
     assistant_model_config_dict = ChatGPTConfig(
         tools=[OpenAIFunction(toolkit.retrieve_pull_requests)], temperature=0.0
@@ -81,7 +85,8 @@ def write_weekly_pr_summary(repo_name, model=None):
 
     if len(assistant_response.msgs) > 0:
         print_text_animated(
-            Fore.GREEN + f"Agent response:\n{assistant_response.msg.content}\n"
+            Fore.GREEN
+            + f"Agent response:\n{assistant_response.msg.content.text}\n"
         )
 
 
@@ -110,8 +115,13 @@ def solve_issue(
     toolkit = GithubToolkit(repo_name=repo_name)
     assistant_sys_msg = BaseMessage.make_assistant_message(
         role_name="Software Engineer",
-        content="""You are an experienced software engineer who 
-        specializes on data structures and algorithms tasks.""",
+        content=Content(
+            text=[
+                """You are an experienced software engineer who
+                               specializes on data structures and algorithms
+                               tasks."""
+            ]
+        ),
     )
     assistant_model_config_dict = ChatGPTConfig(
         tools=toolkit.get_tools(),
@@ -136,7 +146,8 @@ def solve_issue(
 
     if len(assistant_response.msgs) > 0:
         print_text_animated(
-            Fore.GREEN + f"Agent response:\n{assistant_response.msg.content}\n"
+            Fore.GREEN
+            + f"Agent response:\n{assistant_response.msg.content.text}\n"
         )
 
 

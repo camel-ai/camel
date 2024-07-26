@@ -16,7 +16,7 @@ import pytest
 from camel.agents import ChatAgent, CriticAgent
 from camel.configs import ChatGPTConfig
 from camel.human import Human
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from camel.models import ModelFactory
 from camel.societies import RolePlaying
 from camel.toolkits import MATH_FUNCS
@@ -119,7 +119,7 @@ def test_role_playing_step(
         extend_task_specify_meta_dict=extend_task_specify_meta_dict,
     )
     init_assistant_msg = BaseMessage.make_assistant_message(
-        role_name="AI Assistant", content="Hello"
+        role_name="AI Assistant", content=Content(text=["Hello"])
     )
     print(role_playing.assistant_agent.system_message)
     print(role_playing.user_agent.system_message)

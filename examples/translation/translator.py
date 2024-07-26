@@ -22,7 +22,7 @@ import warnings
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.generators import SystemMessageGenerator
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType, RoleType, TaskType
 
@@ -130,13 +130,14 @@ def translate_content(
         )
 
         user_msg = BaseMessage.make_user_message(
-            role_name="Language Translator", content=msg_i_content
+            role_name="Language Translator",
+            content=Content(text=[msg_i_content]),
         )
 
         assistant_response = assistant_agent.step(user_msg)
         assistant_msg = assistant_response.msg
 
-        json_data[f"message_{i+1}"]["content"] = assistant_msg.content
+        json_data[f"message_{i+1}"]["content"] = assistant_msg.content.text
 
     with codecs.open(save_path, 'w', encoding='utf-8') as f:
         json.dump(json_data, f, ensure_ascii=False, indent=4)

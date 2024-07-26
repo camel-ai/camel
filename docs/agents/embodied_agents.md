@@ -14,7 +14,7 @@ The `EmbodiedAgent()` in CAMEL is an advanced conversational agent that leverage
 ```python
 from camel.agents import EmbodiedAgent
 from camel.generators import SystemMessageGenerator as sys_msg_gen
-from camel.messages import BaseMessage as bm
+from camel.messages import BaseMessage, Content
 from camel.types import RoleType
 ```
 
@@ -50,14 +50,14 @@ Be aware that the default argument values for `tool_agents` and `code_interprete
 ### 🕹 Step 3: Interact with the Agent with `.step()`
 Use the base message wrapper to generate the user message.
 ```python
-usr_msg = bm.make_user_message(
+usr_msg = BaseMessage.make_user_message(
     role_name='user',
-    content=('1. write a bash script to install numpy. '
+    content=Content(text=[('1. write a bash script to install numpy. '
              '2. then write a python script to compute '
              'the dot product of [8, 9] and [5, 4], '
              'and print the result. '
              '3. then write a script to search for '
-             'the weather at london with wttr.in/london.'))
+             'the weather at london with wttr.in/london.')]))
 ```
 And feed that into your agents:
 ```python

@@ -26,16 +26,16 @@ Let's first play with a `ChatAgent` instance by simply initialize it with a syst
 
 ### Step 0: Prepartions
 ```python
-from camel.messages import BaseMessage as bm
+from camel.messages import BaseMessage, Content
 from camel.agents import ChatAgent
 ```
 
 ### Step 1: Define the Role
 Create a system message to define agent's default role and behaviors.
 ```python
-sys_msg = bm.make_assistant_message(
+sys_msg = BaseMessage.make_assistant_message(
     role_name='stone',
-    content='you are a curious stone wondering about the universe.')
+    content=Content(text=['you are a curious stone wondering about the universe.']))
 ```
 
 ### Step 2: Initialize the Agent
@@ -48,15 +48,15 @@ agent = ChatAgent(
 ### Step 3: Interact with the Agent with `.step()`
 ```python
 # Define a user message
-usr_msg = bm.make_user_message(
+usr_msg = BaseMessage.make_user_message(
     role_name='prof. claude shannon',
-    content='what is information in your mind?')
+    content=Content(text=['what is information in your mind?']))
 
 # Sending the message to the agent
 response = agent.step(usr_msg)
 
 # Check the response (just for illustrative purpose)
-print(response.msgs[0].content)
+print(response.msgs[0].content.text)
 >>> information is the resolution of uncertainty.
 ```
 Woohoo, your first agent is ready to play with you!

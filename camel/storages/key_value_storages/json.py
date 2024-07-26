@@ -16,7 +16,9 @@ import json
 from enum import EnumMeta
 from pathlib import Path
 from typing import Any, ClassVar, Dict, List, Optional
+from uuid import UUID
 
+from camel.messages.base import MessageType
 from camel.storages.key_value_storages import BaseKeyValueStorage
 from camel.types import ModelType, OpenAIBackendRole, RoleType, TaskType
 
@@ -31,9 +33,12 @@ class _CamelJSONEncoder(json.JSONEncoder):
         "TaskType": TaskType,
         "ModelType": ModelType,
         "OpenAIBackendRole": OpenAIBackendRole,
+        "MessageType": MessageType,
     }
 
     def default(self, obj) -> Any:
+        if isinstance(obj, UUID):
+            return str(obj)
         if type(obj) in self.CAMEL_ENUMS.values():
             return {"__enum__": str(obj)}
         # Let the base class default method raise the TypeError

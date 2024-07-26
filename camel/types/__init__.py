@@ -14,17 +14,17 @@
 from .enums import (
     AudioModelType,
     EmbeddingModelType,
+    MessageType,
     ModelPlatformType,
     ModelType,
     OpenAIBackendRole,
-    OpenAIImageType,
-    OpenAIVisionDetailType,
     OpenAPIName,
     RoleType,
     StorageType,
     TaskType,
     TerminationMode,
     VectorDistance,
+    VisionDetailType,
     VoiceType,
 )
 from .openai_types import (
@@ -60,10 +60,10 @@ __all__ = [
     'ChatCompletionFunctionMessageParam',
     'CompletionUsage',
     'OpenAIVideoType',
-    'OpenAIImageType',
-    'OpenAIVisionDetailType',
+    'VisionDetailType',
     'OpenAPIName',
     'ModelPlatformType',
     'AudioModelType',
     'VoiceType',
+    'MessageType',
 ]

@@ -23,7 +23,7 @@ from camel.memories import (
     MemoryRecord,
     VectorDBBlock,
 )
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from camel.storages import (
     BaseKeyValueStorage,
     BaseVectorStorage,
@@ -41,7 +41,7 @@ def generate_mock_records(num_records: int):
                 "role_name": "user",
                 "role_type": RoleType.USER,
                 "meta_dict": None,
-                "content": f"test message {i}",
+                "content": Content(text=[f"test message {i}"]),
             },
             "role_at_backend": "user",
             "extra_info": {},
@@ -93,10 +93,10 @@ class TestChatHistoryBlock:
         records_to_write = [
             MemoryRecord(
                 BaseMessage(
-                    "user",
-                    RoleType.USER,
-                    None,
-                    "test message {}".format(i),
+                    role_name="user",
+                    role_type=RoleType.USER,
+                    meta_dict=None,
+                    content=Content(text=["test message {}".format(i)]),
                 ),
                 OpenAIBackendRole.USER,
             )
@@ -158,8 +158,12 @@ class TestVectorDBBlock:
         records = vector_db.retrieve("keyword", limit=2)
         assert len(records) == 2
         assert all(isinstance(record, ContextRecord) for record in records)
-        assert records[0].memory_record.message.content == "test message 0"
-        assert records[1].memory_record.message.content == "test message 1"
+        assert records[0].memory_record.message.content.text == [
+            "test message 0"
+        ]
+        assert records[1].memory_record.message.content.text == [
+            "test message 1"
+        ]
 
     def test_write_records(self, mock_storage, mock_embedding):
         vector_db = VectorDBBlock(
@@ -168,10 +172,10 @@ class TestVectorDBBlock:
         records_to_write = [
             MemoryRecord(
                 BaseMessage(
-                    "user",
-                    RoleType.USER,
-                    None,
-                    "test message {}".format(i),
+                    role_name="user",
+                    role_type=RoleType.USER,
+                    meta_dict=None,
+                    content=Content(text=["test message {}".format(i)]),
                 ),
                 OpenAIBackendRole.USER,
             )

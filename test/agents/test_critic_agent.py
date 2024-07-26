@@ -14,7 +14,7 @@
 import pytest
 
 from camel.agents import CriticAgent
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from camel.types import RoleType
 
 
@@ -22,14 +22,16 @@ from camel.types import RoleType
 def critic_agent() -> CriticAgent:
     return CriticAgent(
         BaseMessage(
-            "critic",
-            RoleType.CRITIC,
-            None,
-            content=(
-                "You are a critic who assists in selecting an option "
-                "and provides explanations. "
-                "Your favorite fruit is Apple. "
-                "You always have to choose an option."
+            role_name="critic",
+            role_type=RoleType.CRITIC,
+            meta_dict=None,
+            content=Content(
+                text=[
+                    "You are a critic who assists in selecting an option "
+                    "and provides explanations. "
+                    "Your favorite fruit is Apple. "
+                    "You always have to choose an option."
+                ]
             ),
         )
     )
@@ -41,13 +43,13 @@ def test_flatten_options(critic_agent: CriticAgent):
             role_name="user",
             role_type=RoleType.USER,
             meta_dict=dict(),
-            content="Apple",
+            content=Content(text=["Apple"]),
         ),
         BaseMessage(
             role_name="user",
             role_type=RoleType.USER,
             meta_dict=dict(),
-            content="Banana",
+            content=Content(text=["Banana"]),
         ),
     ]
     expected_output = (
@@ -68,13 +70,13 @@ def test_get_option(critic_agent: CriticAgent):
             role_name="user",
             role_type=RoleType.USER,
             meta_dict=dict(),
-            content="Apple",
+            content=Content(text=["Apple"]),
         ),
         BaseMessage(
             role_name="user",
             role_type=RoleType.USER,
             meta_dict=dict(),
-            content="Banana",
+            content=Content(text=["Banana"]),
         ),
     ]
     flatten_options = critic_agent.flatten_options(messages)
@@ -82,7 +84,7 @@ def test_get_option(critic_agent: CriticAgent):
         role_name="user",
         role_type=RoleType.USER,
         meta_dict=dict(),
-        content=flatten_options,
+        content=Content(text=[flatten_options]),
     )
     assert critic_agent.options_dict == {"1": "Apple", "2": "Banana"}
     assert (
@@ -96,7 +98,7 @@ def test_parse_critic(critic_agent: CriticAgent):
         role_name="critic",
         role_type=RoleType.CRITIC,
         meta_dict=dict(),
-        content="I choose option 1",
+        content=Content(text=["I choose option 1"]),
     )
     expected_output = "1"
     assert critic_agent.parse_critic(critic_msg) == expected_output
@@ -109,17 +111,17 @@ def test_reduce_step(critic_agent: CriticAgent):
             role_name="user",
             role_type=RoleType.USER,
             meta_dict=dict(),
-            content="Apple",
+            content=Content(text=["Apple"]),
         ),
         BaseMessage(
             role_name="user",
             role_type=RoleType.USER,
             meta_dict=dict(),
-            content="Banana",
+            content=Content(text=["Banana"]),
         ),
     ]
 
     critic_response = critic_agent.reduce_step(messages)
-    assert (critic_response.msg == messages[0]) or (
-        critic_response.msg == messages[1]
+    assert (critic_response.msg.content == messages[0].content) or (
+        critic_response.msg.content == messages[1].content
     )

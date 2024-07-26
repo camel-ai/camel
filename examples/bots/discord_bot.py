@@ -15,7 +15,7 @@ import os
 from typing import TYPE_CHECKING, List, Optional, Union
 
 from camel.agents import ChatAgent
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from camel.retrievers import AutoRetriever
 from camel.utils import dependencies_required
 
@@ -127,7 +127,7 @@ class DiscordBot:
             )
 
         user_msg = BaseMessage.make_user_message(
-            role_name="User", content=user_raw_msg
+            role_name="User", content=Content(text=[user_raw_msg])
         )
         assistant_response = self.chat_agent.step(user_msg)
         await message.channel.send(assistant_response.msg.content)
@@ -136,7 +136,9 @@ class DiscordBot:
 if __name__ == "__main__":
     assistant_sys_msg = BaseMessage.make_assistant_message(
         role_name="Assistant",
-        content='''
+        content=Content(
+            text=[
+                '''
             Objective: 
                 You are a customer service bot designed to assist users
                 with inquiries related to our open-source project. 
@@ -174,7 +176,9 @@ if __name__ == "__main__":
                         feel comfortable.
                 Helpful: Always aim to be as helpful as possible,
                         guiding users to solutions.        
-        ''',
+        '''
+            ]
+        ),
     )
 
     agent = ChatAgent(

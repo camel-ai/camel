@@ -18,12 +18,12 @@ import base64
 from abc import ABC, abstractmethod
 from io import BytesIO
 from math import ceil
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List
 
 from anthropic import Anthropic
 from PIL import Image
 
-from camel.types import ModelType, OpenAIImageType, OpenAIVisionDetailType
+from camel.types import ModelType, VisionDetailType
 
 if TYPE_CHECKING:
     from camel.messages import OpenAIMessage
@@ -324,24 +324,13 @@ class OpenAITokenCounter(BaseTokenCounter):
                         elif item["type"] == "image_url":
                             image_str: str = item["image_url"]["url"]
                             detail = item["image_url"]["detail"]
-
-                            image_prefix_format = "data:image/{};base64,"
-                            image_prefix: Optional[str] = None
-                            for image_type in list(OpenAIImageType):
-                                # Find the correct image format
-                                image_prefix = image_prefix_format.format(
-                                    image_type.value
-                                )
-                                if image_prefix in image_str:
-                                    break
-                            assert isinstance(image_prefix, str)
-                            encoded_image = image_str.split(image_prefix)[1]
+                            encoded_image = image_str.split(",")[1]
                             image_bytes = BytesIO(
                                 base64.b64decode(encoded_image)
                             )
                             image = Image.open(image_bytes)
                             num_tokens += count_tokens_from_image(
-                                image, OpenAIVisionDetailType(detail)
+                                image, VisionDetailType(detail)
                             )
                 if key == "name":
                     num_tokens += self.tokens_per_name
@@ -469,7 +458,7 @@ class LiteLLMTokenCounter:
 
 
 def count_tokens_from_image(
-    image: Image.Image, detail: OpenAIVisionDetailType
+    image: Image.Image, detail: VisionDetailType
 ) -> int:
     r"""Count image tokens for OpenAI vision model. An :obj:`"auto"`
     resolution model will be treated as :obj:`"high"`. All images with
@@ -483,13 +472,13 @@ def count_tokens_from_image(
 
     Args:
         image (PIL.Image.Image): Image to count number of tokens.
-        detail (OpenAIVisionDetailType): Image detail type to count
+        detail (VisionDetailType): Image detail type to count
             number of tokens.
 
     Returns:
         int: Number of tokens for the image given a detail type.
     """
-    if detail == OpenAIVisionDetailType.LOW:
+    if detail == VisionDetailType.LOW:
         return LOW_DETAIL_TOKENS
 
     width, height = image.size

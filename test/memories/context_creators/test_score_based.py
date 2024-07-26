@@ -17,7 +17,7 @@ from camel.memories import (
     MemoryRecord,
     ScoreBasedContextCreator,
 )
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from camel.types import ModelType, OpenAIBackendRole, RoleType
 from camel.utils import OpenAITokenCounter
 
@@ -30,10 +30,10 @@ def test_score_based_context_creator():
         ContextRecord(
             memory_record=MemoryRecord(
                 message=BaseMessage(
-                    "test",
-                    RoleType.ASSISTANT,
+                    role_name="test",
+                    role_type=RoleType.ASSISTANT,
                     meta_dict=None,
-                    content="Hello world!",  # 10
+                    content=Content(text=["Hello world!"]),  # 10
                 ),
                 role_at_backend=OpenAIBackendRole.ASSISTANT,
             ),
@@ -42,10 +42,10 @@ def test_score_based_context_creator():
         ContextRecord(
             memory_record=MemoryRecord(
                 message=BaseMessage(
-                    "test",
-                    RoleType.ASSISTANT,
+                    role_name="test",
+                    role_type=RoleType.ASSISTANT,
                     meta_dict=None,
-                    content="Nice to meet you.",  # 12
+                    content=Content(text=["Nice to meet you."]),  # 12
                 ),
                 role_at_backend=OpenAIBackendRole.ASSISTANT,
             ),
@@ -54,10 +54,10 @@ def test_score_based_context_creator():
         ContextRecord(
             memory_record=MemoryRecord(
                 message=BaseMessage(
-                    "test",
-                    RoleType.ASSISTANT,
+                    role_name="test",
+                    role_type=RoleType.ASSISTANT,
                     meta_dict=None,
-                    content="How are you?",  # 11
+                    content=Content(text=["How are you?"]),  # 11
                 ),
                 role_at_backend=OpenAIBackendRole.ASSISTANT,
             ),

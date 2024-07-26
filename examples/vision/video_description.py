@@ -13,12 +13,11 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from camel.agents import ChatAgent
-from camel.configs.openai_config import ChatGPTConfig
-from camel.messages import BaseMessage
+from camel.configs import ChatGPTConfig
+from camel.messages import BaseMessage, Content
 from camel.models import ModelFactory
 from camel.prompts.prompt_templates import PromptTemplateGenerator
-from camel.types import ModelPlatformType, ModelType
-from camel.types.enums import RoleType, TaskType
+from camel.types import ModelPlatformType, ModelType, RoleType, TaskType
 
 # Define system message
 sys_msg_prompt = PromptTemplateGenerator().get_prompt_from_key(
@@ -26,7 +25,7 @@ sys_msg_prompt = PromptTemplateGenerator().get_prompt_from_key(
 )
 sys_msg = BaseMessage.make_assistant_message(
     role_name="Assistant",
-    content=sys_msg_prompt,
+    content=Content(text=[sys_msg_prompt]),
 )
 
 model = ModelFactory.create(
@@ -40,14 +39,21 @@ camel_agent = ChatAgent(sys_msg, model=model)
 
 # The video from YouTube can be found at the following link:
 # https://www.youtube.com/watch?v=kQ_7GtE529M
-video_path = "bison.mp4"
-with open(video_path, "rb") as video_file:
-    video_bytes = video_file.read()
+# video_path = "bison.mp4"
+# with open(video_path, "rb") as video_file:
+#     video_bytes = video_file.read()
 user_msg = BaseMessage.make_user_message(
     role_name="User",
-    content="These are frames from a video that I want to upload. Generate a"
-    "compelling description that I can upload along with the video.",
-    video_bytes=video_bytes,
+    content=Content(
+        text=[
+            "These are frames from a video that I want to upload. Generate "
+            "a compelling description that I can upload along with the video."
+        ],
+        video_url=[
+            "https://commondatastorage.googleapis.com/gtv-videos-bucket/"
+            "sample/WeAreGoingOnBullrun.mp4"
+        ],
+    ),
 )
 
 # Get response information
@@ -70,3 +76,5 @@ us in observing these incredible animals and the instinctual battles that
 unfold in the heart of winter's grasp.
 ===============================================================================
 """
+
+# https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4

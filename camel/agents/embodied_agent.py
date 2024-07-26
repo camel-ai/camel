@@ -22,7 +22,7 @@ from camel.interpreters import (
     InternalPythonInterpreter,
     SubprocessInterpreter,
 )
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from camel.models import BaseModelBackend
 from camel.responses import ChatAgentResponse
 from camel.utils import print_text_animated
@@ -83,8 +83,13 @@ class EmbodiedAgent(ChatAgent):
     def _set_tool_agents(self, system_message: BaseMessage) -> BaseMessage:
         action_space_prompt = self._get_tool_agents_prompt()
         result_message = system_message.create_new_instance(
-            content=system_message.content.format(
-                action_space=action_space_prompt
+            content=Content(
+                text=[
+                    ' '.join(
+                        text
+                        for text in system_message.content.text  # type: ignore[union-attr]
+                    ).format(action_space=action_space_prompt)
+                ]
             )
         )
         if self.tool_agents is not None:
@@ -177,11 +182,16 @@ class EmbodiedAgent(ChatAgent):
                 )
 
         # TODO: Handle errors
-        content = input_message.content + f"\n> Embodied Actions:\n{content}"
+        content = Content(
+            text=[
+                ' '.join(text for text in input_message.content.text)  # type: ignore[union-attr]
+                + f"\n> Embodied Actions:\n{' '.join(content.text)}"
+            ]
+        )
         message = BaseMessage(
-            input_message.role_name,
-            input_message.role_type,
-            input_message.meta_dict,
-            content,
+            role_name=input_message.role_name,
+            role_type=input_message.role_type,
+            meta_dict=input_message.meta_dict,
+            content=content,
         )
         return ChatAgentResponse([message], response.terminated, response.info)

@@ -19,7 +19,7 @@ import pytest
 
 from camel.memories import ChatHistoryMemory, MemoryRecord
 from camel.memories.context_creators import ScoreBasedContextCreator
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from camel.storages.key_value_storages import (
     InMemoryKeyValueStorage,
     JsonStorage,
@@ -49,22 +49,22 @@ def memory(request):
 @pytest.mark.parametrize("memory", ["in-memory", "json"], indirect=True)
 def test_chat_history_memory(memory: ChatHistoryMemory):
     system_msg = BaseMessage(
-        "system",
+        role_name="system",
         role_type=RoleType.DEFAULT,
         meta_dict=None,
-        content="You are a helpful assistant",
+        content=Content(text=["You are a helpful assistant"]),
     )
     user_msg = BaseMessage(
-        "AI user",
+        role_name="AI user",
         role_type=RoleType.USER,
         meta_dict=None,
-        content="Do a task",
+        content=Content(text=["Do a task"]),
     )
     assistant_msg = BaseMessage(
-        "AI assistant",
+        role_name="AI assistant",
         role_type=RoleType.ASSISTANT,
         meta_dict=None,
-        content="OK",
+        content=Content(text=["OK"]),
     )
     system_record = MemoryRecord(system_msg, OpenAIBackendRole.SYSTEM)
     user_record = MemoryRecord(user_msg, OpenAIBackendRole.USER)

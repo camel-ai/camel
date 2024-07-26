@@ -81,12 +81,19 @@ class ResponseWordsTerminator(ResponseTerminator):
         for word in self.words_dict:
             special_word = word if self.case_sensitive else word.lower()
             for i, message in enumerate(messages):
-                if self.case_sensitive:
-                    content = message.content
+                if message.content.text is not None:
+                    if self.case_sensitive:
+                        content = ' '.join(
+                            [text for text in message.content.text]
+                        )
+                    else:
+                        content = ' '.join(
+                            [text.lower() for text in message.content.text]
+                        )
+                    if special_word in content:
+                        self._word_count_dict[i][word] += 1
                 else:
-                    content = message.content.lower()
-                if special_word in content:
-                    self._word_count_dict[i][word] += 1
+                    raise ValueError("The text content of the message is None")
 
         num_reached: List[int] = []
         all_reasons: List[List[str]] = []

@@ -22,7 +22,7 @@ from typing import Dict, Tuple
 import numpy as np
 
 from camel.agents import ChatAgent
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from camel.prompts import SolutionExtractionPromptTemplateDict
 from camel.types import RoleType
 
@@ -131,7 +131,8 @@ def solution_extraction(
     assistant_sys_msg_prompt = solution_extraction_template[RoleType.ASSISTANT]
 
     assistant_sys_msg = BaseMessage.make_assistant_message(
-        role_name="Solution Extractor", content=assistant_sys_msg_prompt
+        role_name="Solution Extractor",
+        content=Content(text=[assistant_sys_msg_prompt]),
     )
 
     # We use GPT4 because it has a longer context length
@@ -140,16 +141,18 @@ def solution_extraction(
 
     prompt = "Here is the conversation:" + flattened_conversation
 
-    user_msg = BaseMessage.make_user_message(role_name="User", content=prompt)
+    user_msg = BaseMessage.make_user_message(
+        role_name="User", content=Content(text=[prompt])
+    )
     assistant_response = agent.step(user_msg)
-    print(assistant_response.msg.content)
+    print(assistant_response.msg.content.text)
 
     # Create folder to write solution_extraction to
     if not os.path.exists(args.solution_dir):
         os.makedirs(args.solution_dir)
 
     # Append to the original JSON conversation file
-    conversation['solution_extraction'] = assistant_response.msg.content
+    conversation['solution_extraction'] = assistant_response.msg.content.text
 
     # Save new dictionary as JSON file
     save_path = os.path.join(args.solution_dir, f'{file_name}.json')

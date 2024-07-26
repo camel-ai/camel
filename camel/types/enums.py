@@ -15,6 +15,15 @@ import re
 from enum import Enum, EnumMeta
 
 
+class MessageType(Enum):
+    PASS = "pass"
+    REQUEST = "request"
+    NEGOTIATION = "negotiation"
+    ACTION = "action"
+    ERROR = "error"
+    DEFAULT = "default"
+
+
 class RoleType(Enum):
     ASSISTANT = "assistant"
     USER = "user"
@@ -358,18 +367,7 @@ class OpenAIImageTypeMeta(EnumMeta):
         return True
 
 
-class OpenAIImageType(Enum, metaclass=OpenAIImageTypeMeta):
-    r"""Image types supported by OpenAI vision model."""
-
-    # https://platform.openai.com/docs/guides/vision
-    PNG = "png"
-    JPEG = "jpeg"
-    JPG = "jpg"
-    WEBP = "webp"
-    GIF = "gif"
-
-
-class OpenAIVisionDetailType(Enum):
+class VisionDetailType(Enum):
     AUTO = "auto"
     LOW = "low"
     HIGH = "high"

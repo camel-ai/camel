@@ -14,7 +14,7 @@
 from typing import Any, Dict, List, Optional, Union
 
 from camel.agents.chat_agent import ChatAgent
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from camel.models import BaseModelBackend
 from camel.prompts import PromptTemplateGenerator, TextPrompt
 from camel.types import RoleType, TaskType
@@ -69,7 +69,7 @@ class TaskSpecifyAgent(ChatAgent):
             role_name="Task Specifier",
             role_type=RoleType.ASSISTANT,
             meta_dict=None,
-            content="You can make a task more specific.",
+            content=Content(text=["You can make a task more specific."]),
         )
 
         super().__init__(
@@ -101,7 +101,8 @@ class TaskSpecifyAgent(ChatAgent):
         if meta_dict is not None:
             task_specify_prompt = task_specify_prompt.format(**meta_dict)
         task_msg = BaseMessage.make_user_message(
-            role_name="Task Specifier", content=task_specify_prompt
+            role_name="Task Specifier",
+            content=Content(text=[task_specify_prompt]),
         )
         specifier_response = self.step(task_msg)
 
@@ -143,7 +144,7 @@ class TaskPlannerAgent(ChatAgent):
             role_name="Task Planner",
             role_type=RoleType.ASSISTANT,
             meta_dict=None,
-            content="You are a helpful task planner.",
+            content=Content(text=["You are a helpful task planner."]),
         )
 
         super().__init__(
@@ -170,7 +171,8 @@ class TaskPlannerAgent(ChatAgent):
         task_planner_prompt = self.task_planner_prompt.format(task=task_prompt)
 
         task_msg = BaseMessage.make_user_message(
-            role_name="Task Planner", content=task_planner_prompt
+            role_name="Task Planner",
+            content=Content(text=[task_planner_prompt]),
         )
 
         task_response = self.step(task_msg)
@@ -250,7 +252,7 @@ Be concrete.
             role_name="Task Creator",
             role_type=RoleType.ASSISTANT,
             meta_dict=None,
-            content="You are a helpful task creator.",
+            content=Content(text=["You are a helpful task creator."]),
         )
 
         super().__init__(
@@ -285,7 +287,8 @@ Be concrete.
             )
 
         task_msg = BaseMessage.make_user_message(
-            role_name="Task Creator", content=task_creation_prompt
+            role_name="Task Creator",
+            content=Content(text=[task_creation_prompt]),
         )
         task_response = self.step(task_msg)
 
@@ -295,7 +298,12 @@ Be concrete.
             raise RuntimeError("Got no task creation message.")
 
         sub_tasks_msg = task_response.msgs[0]
-        return get_task_list(sub_tasks_msg.content)
+        if sub_tasks_msg.content.text:
+            return get_task_list(
+                ' '.join([text for text in sub_tasks_msg.content.text])
+            )
+        else:
+            raise ValueError("Text content of sub task message is None")
 
 
 class TaskPrioritizationAgent(ChatAgent):
@@ -354,7 +362,7 @@ with any other output."""
             role_name="Task Prioritizer",
             role_type=RoleType.ASSISTANT,
             meta_dict=None,
-            content="You are a helpful task prioritizer.",
+            content=Content(text=["You are a helpful task prioritizer."]),
         )
 
         super().__init__(
@@ -381,7 +389,8 @@ with any other output."""
         )
 
         task_msg = BaseMessage.make_user_message(
-            role_name="Task Prioritizer", content=task_prioritization_prompt
+            role_name="Task Prioritizer",
+            content=Content(text=[task_prioritization_prompt]),
         )
 
         task_response = self.step(task_msg)
@@ -392,4 +401,9 @@ with any other output."""
             raise RuntimeError("Got no task prioritization message.")
 
         sub_tasks_msg = task_response.msgs[0]
-        return get_task_list(sub_tasks_msg.content)
+        if sub_tasks_msg.content.text:
+            return get_task_list(
+                ' '.join([text for text in sub_tasks_msg.content.text])
+            )
+        else:
+            raise ValueError("Text content of sub task message is None")
