@@ -39,17 +39,16 @@ class MistralEmbedding(BaseEmbedding[str]):
 
     def __init__(
         self,
-        model_type: EmbeddingModelType = (
-            EmbeddingModelType.MISTRAL_EMBED
-        ),
+        model_type: EmbeddingModelType = (EmbeddingModelType.MISTRAL_EMBED),
         api_key: str | None = None,
         dimensions: int | None = None,
     ) -> None:
         from mistralai.client import MistralClient
+
         if not model_type.is_mistral:
             raise ValueError("Invalid Mistral embedding model type.")
         self.model_type = model_type
-        if dimensions == None:
+        if dimensions is None:
             self.output_dim = model_type.output_dim
         else:
             assert isinstance(dimensions, int)

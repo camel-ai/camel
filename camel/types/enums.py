@@ -322,7 +322,9 @@ class EmbeddingModelType(Enum):
 
     @property
     def is_mistral(self) -> bool:
-        r"""Returns whether this type of models is an Mistral-released model."""
+        r"""Returns whether this type of models is an Mistral-released
+        model.
+        """
         return self in {
             EmbeddingModelType.MISTRAL_EMBED,
         }
