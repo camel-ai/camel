@@ -332,16 +332,25 @@ def role_playing_chat_cont(state) -> Tuple[State, ChatBotHistory, Dict, Dict]:
 
     state.saved_assistant_msg = a_msg
 
-    state.chat.append((None, split_markdown_code(u_msg.content)))
-    state.chat.append((split_markdown_code(a_msg.content), None))
+    state.chat.append(
+        (
+            None,
+            split_markdown_code(' '.join(text for text in u_msg.content.text)),
+        )
+    )
+    state.chat.append(
+        (
+            split_markdown_code(' '.join(text for text in a_msg.content.text)),
+            None,
+        )
+    )
 
     if len(state.chat) >= state.max_messages:
         state.session = None
 
-    if (
-        "CAMEL_TASK_DONE" in a_msg.content
-        or "CAMEL_TASK_DONE" in u_msg.content
-    ):
+    if "CAMEL_TASK_DONE" in ' '.join(
+        text for text in a_msg.content.text
+    ) or "CAMEL_TASK_DONE" in ' '.join(text for text in u_msg.content.text):
         state.session = None
 
     progress_update = gr.update(

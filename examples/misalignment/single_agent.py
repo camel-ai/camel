@@ -32,7 +32,9 @@ def main(model=None) -> None:
     agent = ChatAgent(assistant_sys_msg, model=model)
     agent.reset()
 
-    user_msg = BaseMessage.make_user_message(role_name="User", content=prompt)
+    user_msg = BaseMessage.make_user_message(
+        role_name="User", content=Content(text=[prompt])
+    )
     assistant_response = agent.step(user_msg)
     print(assistant_response.msg.content.text)
 
