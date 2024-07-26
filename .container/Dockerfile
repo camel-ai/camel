@@ -14,3 +14,5 @@ WORKDIR /app/camel
 RUN poetry install --with dev,docs -E all
 
 RUN pre-commit install
+
+CMD ["tail", "-f", "/dev/null"]

@@ -26,10 +26,9 @@ class SearchAgent(ChatAgent):
     relevance of an answer.
 
     Args:
-        model_type (ModelType, optional): The type of model to use for the
-            agent. (default: :obj:`ModelType.GPT_3_5_TURBO`)
-        model_config (Any, optional): The configuration for the model.
-            (default: :obj:`None`)
+        model (BaseModelBackend, optional): The model backend to use for
+            generating responses. (default: :obj:`OpenAIModel` with
+            `GPT_4O_MINI`)
     """
 
     def __init__(
@@ -76,7 +75,7 @@ class SearchAgent(ChatAgent):
             result = self.step(user_msg).msg.content
             results += result + "\n"
 
-        # Final summarise
+        # Final summarization
         final_prompt = TextPrompt(
             '''Here are some summarized texts which split from one text. Using
             the information to answer the question. If can't find the answer,

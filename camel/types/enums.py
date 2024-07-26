@@ -38,10 +38,21 @@ class ModelType(Enum):
     GPT_4_32K = "gpt-4-32k"
     GPT_4_TURBO = "gpt-4-turbo"
     GPT_4O = "gpt-4o"
+    GPT_4O_MINI = "gpt-4o-mini"
+
     GLM_4 = "glm-4"
     GLM_4_OPEN_SOURCE = "glm-4-open-source"
     GLM_4V = 'glm-4v'
     GLM_3_TURBO = "glm-3-turbo"
+
+    GROQ_LLAMA_3_1_8B = "llama-3.1-8b-instant"
+    GROQ_LLAMA_3_1_70B = "llama-3.1-70b-versatile"
+    GROQ_LLAMA_3_1_405B = "llama-3.1-405b-reasoning"
+    GROQ_LLAMA_3_8B = "llama3-8b-8192"
+    GROQ_LLAMA_3_70B = "llama3-70b-8192"
+    GROQ_MIXTRAL_8_7B = "mixtral-8x7b-32768"
+    GROQ_GEMMA_7B_IT = "gemma-7b-it"
+    GROQ_GEMMA_2_9B_IT = "gemma2-9b-it"
 
     STUB = "stub"
 
@@ -53,7 +64,7 @@ class ModelType(Enum):
     QWEN_2 = "qwen-2"
 
     # Legacy anthropic models
-    # NOTE: anthropic lagecy models only Claude 2.1 has system prompt support
+    # NOTE: anthropic legacy models only Claude 2.1 has system prompt support
     CLAUDE_2_1 = "claude-2.1"
     CLAUDE_2_0 = "claude-2.0"
     CLAUDE_INSTANT_1_2 = "claude-instant-1.2"
@@ -82,6 +93,20 @@ class ModelType(Enum):
     @property
     def is_openai(self) -> bool:
         r"""Returns whether this type of models is an OpenAI-released model."""
+        return self in {
+            ModelType.GPT_3_5_TURBO,
+            ModelType.GPT_4,
+            ModelType.GPT_4_32K,
+            ModelType.GPT_4_TURBO,
+            ModelType.GPT_4O,
+            ModelType.GPT_4O_MINI,
+        }
+
+    @property
+    def is_azure_openai(self) -> bool:
+        r"""Returns whether this type of models is an OpenAI-released model
+        from Azure.
+        """
         return self in {
             ModelType.GPT_3_5_TURBO,
             ModelType.GPT_4,
@@ -129,6 +154,20 @@ class ModelType(Enum):
         }
 
     @property
+    def is_groq(self) -> bool:
+        r"""Returns whether this type of models is served by Groq."""
+        return self in {
+            ModelType.GROQ_LLAMA_3_1_8B,
+            ModelType.GROQ_LLAMA_3_1_70B,
+            ModelType.GROQ_LLAMA_3_1_405B,
+            ModelType.GROQ_LLAMA_3_8B,
+            ModelType.GROQ_LLAMA_3_70B,
+            ModelType.GROQ_MIXTRAL_8_7B,
+            ModelType.GROQ_GEMMA_7B_IT,
+            ModelType.GROQ_GEMMA_2_9B_IT,
+        }
+
+    @property
     def is_nvidia(self) -> bool:
         r"""Returns whether this type of models is Nvidia-released model.
 
@@ -159,6 +198,8 @@ class ModelType(Enum):
             return 128000
         elif self is ModelType.GPT_4O:
             return 128000
+        elif self is ModelType.GPT_4O_MINI:
+            return 128000
         elif self == ModelType.GEMINI_1_5_FLASH:
             return 1048576
         elif self == ModelType.GEMINI_1_5_PRO:
@@ -169,6 +210,22 @@ class ModelType(Enum):
             return 8192
         elif self == ModelType.GLM_4V:
             return 1024
+        elif self is ModelType.GROQ_LLAMA_3_1_8B:
+            return 131072
+        elif self is ModelType.GROQ_LLAMA_3_1_70B:
+            return 131072
+        elif self is ModelType.GROQ_LLAMA_3_1_405B:
+            return 131072
+        elif self is ModelType.GROQ_LLAMA_3_8B:
+            return 8192
+        elif self is ModelType.GROQ_LLAMA_3_70B:
+            return 8192
+        elif self is ModelType.GROQ_MIXTRAL_8_7B:
+            return 32768
+        elif self is ModelType.GROQ_GEMMA_7B_IT:
+            return 8192
+        elif self is ModelType.GROQ_GEMMA_2_9B_IT:
+            return 8192
         elif self is ModelType.STUB:
             return 4096
         elif self is ModelType.LLAMA_2:
@@ -205,7 +262,7 @@ class ModelType(Enum):
         Args:
             model_name (str): The name of the model, e.g. "vicuna-7b-v1.5".
         Returns:
-            bool: Whether the model type mathches the model name.
+            bool: Whether the model type matches the model name.
         """
         if self is ModelType.VICUNA:
             pattern = r'^vicuna-\d+b-v\d+\.\d+$'
@@ -336,12 +393,14 @@ class ModelPlatformType(Enum):
     OPENAI = "openai"
     AZURE = "azure"
     ANTHROPIC = "anthropic"
+    GROQ = "groq"
     OPENSOURCE = "opensource"
     OLLAMA = "ollama"
     LITELLM = "litellm"
     ZHIPU = "zhipuai"
     DEFAULT = "default"
     GEMINI = "gemini"
+    VLLM = "vllm"
 
     @property
     def is_openai(self) -> bool:
@@ -359,9 +418,19 @@ class ModelPlatformType(Enum):
         return self is ModelPlatformType.ANTHROPIC
 
     @property
+    def is_groq(self) -> bool:
+        r"""Returns whether this platform is groq."""
+        return self is ModelPlatformType.GROQ
+
+    @property
     def is_ollama(self) -> bool:
         r"""Returns whether this platform is ollama."""
         return self is ModelPlatformType.OLLAMA
+
+    @property
+    def is_vllm(self) -> bool:
+        r"""Returns whether this platform is vllm."""
+        return self is ModelPlatformType.VLLM
 
     @property
     def is_litellm(self) -> bool:

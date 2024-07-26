@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional
 from camel.configs import LITELLM_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.types import ChatCompletion
-from camel.utils import LiteLLMTokenCounter
+from camel.utils import BaseTokenCounter, LiteLLMTokenCounter
 
 
 class LiteLLMModel:
@@ -30,6 +30,7 @@ class LiteLLMModel:
         model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
         r"""Constructor for LiteLLM backend.
 
@@ -42,11 +43,14 @@ class LiteLLMModel:
                 model service. (default: :obj:`None`)
             url (Optional[str]): The url to the model service. (default:
                 :obj:`None`)
+            token_counter (Optional[BaseTokenCounter]): Token counter to use
+                for the model. If not provided, `LiteLLMTokenCounter` will
+                be used.
         """
         self.model_type = model_type
         self.model_config_dict = model_config_dict
         self._client = None
-        self._token_counter: Optional[LiteLLMTokenCounter] = None
+        self._token_counter = token_counter
         self.check_model_config()
         self._url = url
         self._api_key = api_key
@@ -98,8 +102,10 @@ class LiteLLMModel:
                 tokenization style.
         """
         if not self._token_counter:
-            self._token_counter = LiteLLMTokenCounter(self.model_type)
-        return self._token_counter
+            self._token_counter = LiteLLMTokenCounter(  # type: ignore[assignment]
+                self.model_type
+            )
+        return self._token_counter  # type: ignore[return-value]
 
     def run(
         self,
@@ -138,3 +144,19 @@ class LiteLLMModel:
                     f"Unexpected argument `{param}` is "
                     "input into LiteLLM model backend."
                 )
+
+    @property
+    def token_limit(self) -> int:
+        """Returns the maximum token limit for the given model.
+
+        Returns:
+            int: The maximum token limit for the given model.
+        """
+        max_tokens = self.model_config_dict.get("max_tokens")
+        if isinstance(max_tokens, int):
+            return max_tokens
+        print(
+            "Must set `max_tokens` as an integer in `model_config_dict` when"
+            " setting up the model. Using 4096 as default value."
+        )
+        return 4096

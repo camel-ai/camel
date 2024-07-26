@@ -16,6 +16,7 @@ from camel.configs.openai_config import ChatGPTConfig
 from camel.functions import OPENAPI_FUNCS
 from camel.messages import BaseMessage, Content
 from camel.models import ModelFactory
+from camel.toolkits import OPENAPI_FUNCS
 from camel.types import ModelPlatformType, ModelType
 
 # Define system message
@@ -48,7 +49,7 @@ camel_agent.reset()
 # Define a user message
 usr_msg = BaseMessage.make_user_message(
     role_name='CAMEL User',
-    content=Content(['help me to select a basketball in klarna.']),
+    content=Content(text=['help me to select a basketball in klarna.']),
 )
 
 # Get response information
