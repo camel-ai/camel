@@ -309,6 +309,8 @@ class EmbeddingModelType(Enum):
     TEXT_EMBEDDING_3_SMALL = "text-embedding-3-small"
     TEXT_EMBEDDING_3_LARGE = "text-embedding-3-large"
 
+    MISTRAL_EMBED = "mistral-embed"
+
     @property
     def is_openai(self) -> bool:
         r"""Returns whether this type of models is an OpenAI-released model."""
@@ -319,6 +321,13 @@ class EmbeddingModelType(Enum):
         }
 
     @property
+    def is_mistral(self) -> bool:
+        r"""Returns whether this type of models is an Mistral-released model."""
+        return self in {
+            EmbeddingModelType.MISTRAL_EMBED,
+        }
+
+    @property
     def output_dim(self) -> int:
         if self is EmbeddingModelType.TEXT_EMBEDDING_ADA_2:
             return 1536
@@ -326,6 +335,8 @@ class EmbeddingModelType(Enum):
             return 1536
         elif self is EmbeddingModelType.TEXT_EMBEDDING_3_LARGE:
             return 3072
+        elif self is EmbeddingModelType.MISTRAL_EMBED:
+            return 1024
         else:
             raise ValueError(f"Unknown model type {self}.")
 
