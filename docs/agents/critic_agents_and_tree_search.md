@@ -31,7 +31,6 @@ To put it simply, a critic agent is a helper agents in the role-playing session,
 ```python
 from camel.agents import CriticAgent
 from camel.generators import SystemMessageGenerator as sys_msg_gen
-from camel.messages import BaseMessage as bm
 from camel.types import RoleType
 ```
 
@@ -60,7 +59,7 @@ critic_agent = CriticAgent(system_message=sys_msg,
 ```
 Let's take a look on the default system message:
 ```python
-print(critic_agent.system_message.content)
+print(critic_agent.system_message.content.text)
 
 >>> You are a a picky critic who teams up with a {user_role} and a >>> {assistant_role} to solve a task: {task}.
     Your job is to select an option from their proposals and provides your explanations.
@@ -158,11 +157,11 @@ def run(society, round_limit: int=10):
             break
 
         # Get the results
-        print(f'[AI User] {user_response.msg.content}.\n')
-        print(f'[AI Assistant] {assistant_response.msg.content}.\n')
+        print(f'[AI User] {user_response.msg.content.text}.\n')
+        print(f'[AI Assistant] {assistant_response.msg.content.text}.\n')
 
         # Check if the task is end
-        if 'CAMEL_TASK_DONE' in user_response.msg.content:
+        if 'CAMEL_TASK_DONE' in user_response.msg.content.text:
             break
 
         # Get the input message for the next round

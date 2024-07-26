@@ -15,7 +15,7 @@ import re
 from typing import Dict, List, Optional, Union
 
 from camel.agents.chat_agent import ChatAgent
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from camel.models import BaseModelBackend
 from camel.prompts import TextPrompt
 from camel.types import RoleType
@@ -46,7 +46,7 @@ class DeductiveReasonerAgent(ChatAgent):
             role_name="Insight Agent",
             role_type=RoleType.ASSISTANT,
             meta_dict=None,
-            content="You assign roles based on tasks.",
+            content=Content(text=["You assign roles based on tasks."]),
         )
         super().__init__(system_message, model=model)
 
@@ -229,7 +229,7 @@ square brackets)
         )
 
         conditions_and_quality_generation_msg = BaseMessage.make_user_message(
-            role_name="Deductive Reasoner", content=deduce
+            role_name="Deductive Reasoner", content=Content(text=[deduce])
         )
 
         response = self.step(
@@ -251,7 +251,7 @@ square brackets)
             .strip('\n')
             for i, cdt in re.findall(
                 r"condition (\d+):\s*(.+?)(?=condition \d+|- Entity)",
-                msg.content,
+                ' '.join([text for text in msg.content.text]),  # type: ignore[union-attr]
                 re.DOTALL,
             )
         }
@@ -261,7 +261,7 @@ square brackets)
             label.strip().strip('\n').strip("\"'")
             for label in re.findall(
                 r"Entity/Label Recognition of Conditions:\n\[(.+?)\]",
-                msg.content,
+                ' '.join([text for text in msg.content.text]),  # type: ignore[union-attr]
                 re.DOTALL,
             )[0].split(",")
         ]
@@ -272,7 +272,7 @@ square brackets)
             for q in re.findall(
                 r"Quality Assessment \(\$Q\$\) \(do not use symbols\):"
                 r"\n(.+?)- Iterative",
-                msg.content,
+                ' '.join([text for text in msg.content.text]),  # type: ignore[union-attr]
                 re.DOTALL,
             )
         )

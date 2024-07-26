@@ -21,7 +21,7 @@ from camel.agents import (
 )
 from camel.generators import SystemMessageGenerator
 from camel.human import Human
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from camel.models import BaseModelBackend
 from camel.prompts import TextPrompt
 from camel.responses import ChatAgentResponse
@@ -445,7 +445,7 @@ class RolePlaying:
         # Initialize a message sent by the assistant
         init_msg = BaseMessage.make_assistant_message(
             role_name=self.assistant_sys_msg.role_name,
-            content=init_msg_content,
+            content=Content(text=[init_msg_content]),
         )
 
         return init_msg

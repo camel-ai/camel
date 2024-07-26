@@ -17,7 +17,7 @@ import re
 from typing import Any, Dict, List
 
 from camel.agents import ChatAgent
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from camel.prompts import PromptTemplateGenerator
 from camel.types import TaskType
 
@@ -58,19 +58,21 @@ def generate_questions(
     print(prompt)
     assistant_sys_msg = BaseMessage.make_assistant_message(
         role_name="Assistant",
-        content="You are a helpful assistant.",
+        content=Content(text=["You are a helpful assistant."]),
     )
     agent = ChatAgent(assistant_sys_msg, model=model)
     agent.reset()
 
-    user_msg = BaseMessage.make_user_message(role_name="User", content=prompt)
+    user_msg = BaseMessage.make_user_message(
+        role_name="User", content=Content(text=[prompt])
+    )
     assistant_response = agent.step(user_msg)
 
     if len(assistant_response.msgs) > 0:
-        print(assistant_response.msg.content)
-
+        print(assistant_response.msg.content.text)
         parsed_assistant_msg = parse_question_string(
-            assistant_response.msg.content, category
+            ' '.join([text for text in assistant_response.msg.content.text]),
+            category,
         )
 
         # save json file

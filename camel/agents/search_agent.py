@@ -14,7 +14,7 @@
 from typing import Optional
 
 from camel.agents.chat_agent import ChatAgent
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from camel.models import BaseModelBackend
 from camel.prompts import TextPrompt
 from camel.types import RoleType
@@ -40,7 +40,7 @@ class SearchAgent(ChatAgent):
             role_name="Assistant",
             role_type=RoleType.ASSISTANT,
             meta_dict=None,
-            content="You are a helpful assistant.",
+            content=Content(text=["You are a helpful assistant."]),
         )
         super().__init__(system_message, model=model)
 
@@ -71,7 +71,7 @@ class SearchAgent(ChatAgent):
             prompt = summary_prompt + str(i) + ": " + chunk
             user_msg = BaseMessage.make_user_message(
                 role_name="User",
-                content=prompt,
+                content=Content(text=[prompt]),
             )
             result = self.step(user_msg).msg.content
             results += result + "\n"
@@ -88,7 +88,7 @@ class SearchAgent(ChatAgent):
 
         user_msg = BaseMessage.make_user_message(
             role_name="User",
-            content=prompt,
+            content=Content(text=[prompt]),
         )
         response = self.step(user_msg).msg.content
 
@@ -114,7 +114,7 @@ class SearchAgent(ChatAgent):
         prompt = prompt.format(query=query, answer=answer)
         user_msg = BaseMessage.make_user_message(
             role_name="User",
-            content=prompt,
+            content=Content(text=[prompt]),
         )
         response = self.step(user_msg).msg.content
         if "yes" in str(response).lower():

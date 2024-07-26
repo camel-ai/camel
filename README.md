@@ -212,7 +212,7 @@ Please note that the environment variable is session-specific. If you open a new
 - Navigate to the directory where the script and ModelFile are located and run the script. Enjoy your Llama3 model, enhanced by CAMEL's excellent agents.
     ```python
     from camel.agents import ChatAgent
-    from camel.messages import BaseMessage
+    from camel.messages import BaseMessage, Content
     from camel.models import ModelFactory
     from camel.types import ModelPlatformType
 
@@ -225,12 +225,12 @@ Please note that the environment variable is session-specific. If you open a new
 
     assistant_sys_msg = BaseMessage.make_assistant_message(
         role_name="Assistant",
-        content="You are a helpful assistant.",
+        content=Content(text=["You are a helpful assistant."]),
     )
     agent = ChatAgent(assistant_sys_msg, model=ollama_model, token_limit=4096)
 
     user_msg = BaseMessage.make_user_message(
-        role_name="User", content="Say hi to CAMEL"
+        role_name="User", content=Content(text=["Say hi to CAMEL"])
     )
     assistant_response = agent.step(user_msg)
     print(assistant_response.msg.content)

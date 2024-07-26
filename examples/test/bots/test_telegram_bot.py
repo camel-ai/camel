@@ -15,7 +15,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from camel.agents import ChatAgent
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from examples.bots.telegram_bot import TelegramBot
 
 
@@ -42,9 +42,11 @@ class TestTelegramBot(unittest.TestCase):
         message_mock.text = "Hello, world!"
 
         user_msg_mock = BaseMessage.make_user_message(
-            "User", content="Hello, world!"
+            "User", content=Content(text=["Hello, world!"])
         )
-        response_msg_mock = MagicMock(msg=MagicMock(content="Hello back!"))
+        response_msg_mock = MagicMock(
+            msg=MagicMock(content=Content(text=["Hello back!"]))
+        )
 
         self.chat_agent_mock.reset = MagicMock()
         self.chat_agent_mock.step = MagicMock(return_value=response_msg_mock)

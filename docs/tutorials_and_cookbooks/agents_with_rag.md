@@ -144,7 +144,7 @@ In this section we will show how to combine the `AutoRetriever` with one `ChatAg
 Let's set an agent function, in this function we can get the response by providing a query to this agent.
 ```python
 from camel.agents import ChatAgent
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from camel.types import RoleType
 from camel.retrievers import AutoRetriever
 from camel.types import StorageType
@@ -155,7 +155,7 @@ def single_agent(query: str) ->str :
         role_name="Assistant",
         role_type=RoleType.ASSISTANT,
         meta_dict=None,
-        content="You are a helpful assistant to answer question, I will give you the Original Query and Retrieved Context, answer the Original Query based on the Retrieved Context, if you can't answer the question just say I don't know.",
+        content=Content(text=["You are a helpful assistant to answer question, I will give you the Original Query and Retrieved Context, answer the Original Query based on the Retrieved Context, if you can't answer the question just say I don't know."]),
     )
 
     # Add auto retriever
@@ -176,12 +176,12 @@ def single_agent(query: str) ->str :
     )
 
     # Pass the retrieved infomation to agent
-    user_msg = BaseMessage.make_user_message(role_name="User", content=retrieved_info)
+    user_msg = BaseMessage.make_user_message(role_name="User", content=Content(text=[retrieved_info]))
     agent = ChatAgent(assistant_sys_msg)
 
     # Get response
     assistant_response = agent.step(user_msg)
-    return assistant_response.msg.content
+    return assistant_response.msg.content.text
 
 print(single_agent("What is CAMEL-AI"))
 ```

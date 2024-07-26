@@ -72,9 +72,12 @@ class FunctionCallingMessage(BaseMessage):
                 " due to missing function name or arguments."
             )
 
+        # Convert Content object to a string representation
+        content_str = "\n".join(self.content.text or [])
+
         msg_dict: OpenAIAssistantMessage = {
             "role": "assistant",
-            "content": self.content,
+            "content": content_str,
             "function_call": {
                 "name": self.func_name,
                 "arguments": str(self.args),
@@ -84,13 +87,6 @@ class FunctionCallingMessage(BaseMessage):
         return msg_dict
 
     def to_openai_function_message(self) -> OpenAIFunctionMessage:
-        r"""Converts the message to an :obj:`OpenAIMessage` object
-        with the role being "function".
-
-        Returns:
-            OpenAIMessage: The converted :obj:`OpenAIMessage` object
-                with its role being "function".
-        """
         if (not self.func_name) or (not self.result):
             raise ValueError(
                 "Invalid request for converting into function message"

@@ -18,7 +18,7 @@ from typing import Any, Dict
 
 from camel.agents import ChatAgent, TaskSpecifyAgent
 from camel.generators import SystemMessageGenerator
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from camel.types import RoleType, TaskType
 from camel.utils import download_tasks
 
@@ -35,15 +35,20 @@ def init_chat(
     # Send the system messages again to the agents using chat messages
     assistant_msg = BaseMessage.make_assistant_message(
         role_name=assistant_agent.role_name,
-        content=(
-            f"{user_sys_msg.content}. "
-            "Now start to give me instructions one by one. "
-            "Only reply with Instruction and Input."
+        content=Content(
+            text=[
+                (
+                    f"{user_sys_msg.content}. "
+                    "Now start to give me instructions one by one. "
+                    "Only reply with Instruction and Input."
+                )
+            ]
         ),
     )
 
     user_msg = BaseMessage.make_user_message(
-        role_name=user_agent.role_name, content=f"{assistant_sys_msg.content}"
+        role_name=user_agent.role_name,
+        content=Content(text=[f"{assistant_sys_msg.content}"]),
     )
     assistant_agent.step(user_msg)
 
@@ -148,7 +153,7 @@ def generate_data(
             break
 
         user_agent.record_message(user_response.msg)
-        print(f"User:\n{user_response.msg.content}\n")
+        print(f"User:\n{user_response.msg.content.text}\n")
 
         assistant_response = assistant_agent.step(user_response.msg)
 
@@ -161,7 +166,7 @@ def generate_data(
             break
 
         assistant_agent.record_message(assistant_response.msg)
-        print(f"Assistant:\n{assistant_response.msg.content}\n")
+        print(f"Assistant:\n{assistant_response.msg.content.text}\n")
 
         # Condition 3: Break if user does not give instruction
         if user_no_instruct_word not in user_response.msg.content:

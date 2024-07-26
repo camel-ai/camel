@@ -22,7 +22,7 @@ from camel.agents import (
 )
 from camel.agents.chat_agent import ChatAgentResponse
 from camel.generators import SystemMessageGenerator
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from camel.prompts import TextPrompt
 from camel.types import RoleType, TaskType
 
@@ -238,7 +238,8 @@ class BabyAGI:
 
         task_name = self.subtasks.popleft()
         assistant_msg_msg = BaseMessage.make_user_message(
-            role_name=self.assistant_sys_msg.role_name, content=f"{task_name}"
+            role_name=self.assistant_sys_msg.role_name,
+            content=Content(text=[f"{task_name}"]),
         )
 
         assistant_response = self.assistant_agent.step(assistant_msg_msg)

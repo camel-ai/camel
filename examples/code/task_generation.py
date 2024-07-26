@@ -16,7 +16,7 @@ import os
 
 from camel.agents import ChatAgent
 from camel.generators import CodeTaskPromptGenerator, SystemMessageGenerator
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from camel.types import RoleType, TaskType
 
 
@@ -35,12 +35,13 @@ def generate_tasks(
     assistant_agent = ChatAgent(assistant_sys_msg, model=model)
 
     user_msg = BaseMessage.make_user_message(
-        role_name="Task Generator", content=task_generator_prompt
+        role_name="Task Generator",
+        content=Content(text=[task_generator_prompt]),
     )
 
     assistant_response = assistant_agent.step(user_msg)
 
-    tasks = assistant_response.msg.content.split("\n")
+    tasks = assistant_response.msg.content.text.split("\n")
 
     # Filter out the generated response to include the tasks only
     for i, task in enumerate(tasks):

@@ -12,17 +12,17 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from camel.human import Human
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 
 
 def test_display_options():
     human = Human()
     msgs = [
         BaseMessage.make_assistant_message(
-            role_name="assistant", content="Hello"
+            role_name="assistant", content=Content(text=["Hello"])
         ),
         BaseMessage.make_assistant_message(
-            role_name="assistant", content="World"
+            role_name="assistant", content=Content(text=["World"])
         ),
     ]
     human.display_options(msgs)
@@ -32,10 +32,10 @@ def test_get_input(monkeypatch):
     human = Human()
     msgs = [
         BaseMessage.make_assistant_message(
-            role_name="assistant", content="Hello"
+            role_name="assistant", content=Content(text=["Hello"])
         ),
         BaseMessage.make_assistant_message(
-            role_name="assistant", content="World"
+            role_name="assistant", content=Content(text=["World"])
         ),
     ]
     human.display_options(msgs)
@@ -47,13 +47,13 @@ def test_reduce_step(monkeypatch):
     human = Human()
     msgs = [
         BaseMessage.make_assistant_message(
-            role_name="assistant", content="Hello"
+            role_name="assistant", content=Content(text=["Hello"])
         ),
         BaseMessage.make_assistant_message(
-            role_name="assistant", content="World"
+            role_name="assistant", content=Content(text=["World"])
         ),
     ]
 
     monkeypatch.setattr('builtins.input', lambda _: str(1))
     human_response = human.reduce_step(msgs)
-    assert human_response.msg.content == "Hello"
+    assert human_response.msg.content.text == ["Hello"]

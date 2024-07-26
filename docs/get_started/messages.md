@@ -23,13 +23,13 @@ To create a `BaseMessage` instance, you need to provide the following arguments:
 Here's an example of creating a `BaseMessage` instance:
 
 ```python
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from camel.types import RoleType
 
 message = BaseMessage(
     role_name="test_user",
     role_type=RoleType.USER,
-    content="test content"
+    content=Content(text=["test content"])
 )
 ```
 
@@ -38,22 +38,22 @@ Additionally, the BaseMessage class provides class methods to easily create user
 1. Creating a user agent message:
 
     ```python
-    from camel.messages import BaseMessage
+    from camel.messages import BaseMessage, Content
 
     user_message = BaseMessage.make_user_message(
         role_name="user_name", 
-        content="test content for user",
+        content=Content(text=["test content for user"]),
     )
     ```
 
 2. Creating an assistant agent message:
 
     ```python
-    from camel.messages import BaseMessage
+    from camel.messages import BaseMessage, Content
     
     assistant_message = BaseMessage.make_assistant_message(
         role_name="assistant_name",
-        content="test content for assistant",
+        content=Content(text=["test content for assistant"]),
     )
     ```
 

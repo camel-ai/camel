@@ -15,7 +15,7 @@ import re
 from typing import Dict, Optional, Union
 
 from camel.agents.chat_agent import ChatAgent
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from camel.models import BaseModelBackend
 from camel.prompts import TextPrompt
 from camel.types import RoleType
@@ -42,7 +42,7 @@ class RoleAssignmentAgent(ChatAgent):
             role_name="Role Assigner",
             role_type=RoleType.ASSISTANT,
             meta_dict=None,
-            content="You assign roles based on tasks.",
+            content=Content(text=["You assign roles based on tasks."]),
         )
         super().__init__(system_message, model=model)
 
@@ -87,7 +87,8 @@ class RoleAssignmentAgent(ChatAgent):
         )
 
         role_assignment_generation_msg = BaseMessage.make_user_message(
-            role_name="Role Assigner", content=role_assignment_generation
+            role_name="Role Assigner",
+            content=Content(text=[role_assignment_generation]),
         )
 
         response = self.step(input_message=role_assignment_generation_msg)
@@ -100,7 +101,7 @@ class RoleAssignmentAgent(ChatAgent):
             desc.replace("<|", "").replace("|>", "")
             for desc in re.findall(
                 r"Domain expert \d: (.+?)\nAssociated competencies,",
-                msg.content,
+                ' '.join([text for text in msg.content.text]),  # type: ignore[union-attr]
                 re.DOTALL,
             )
         ]
@@ -109,7 +110,7 @@ class RoleAssignmentAgent(ChatAgent):
             for desc in re.findall(
                 r"Associated competencies, characteristics, "
                 r"duties and workflows: (.+?) End.",
-                msg.content,
+                ' '.join([text for text in msg.content.text]),  # type: ignore[union-attr]
                 re.DOTALL,
             )
         ]

@@ -15,6 +15,15 @@ import re
 from enum import Enum, EnumMeta
 
 
+class MessageType(Enum):
+    PASS = "pass"
+    REQUEST = "request"
+    NEGOTIATION = "negotiation"
+    ACTION = "action"
+    ERROR = "error"
+    DEFAULT = "default"
+
+
 class RoleType(Enum):
     ASSISTANT = "assistant"
     USER = "user"
@@ -301,7 +310,7 @@ class OpenAIImageTypeMeta(EnumMeta):
         return True
 
 
-class OpenAIVisionDetailType(Enum):
+class VisionDetailType(Enum):
     AUTO = "auto"
     LOW = "low"
     HIGH = "high"

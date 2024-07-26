@@ -17,7 +17,7 @@ from PIL import Image
 
 from camel.agents import ChatAgent
 from camel.generators import PromptTemplateGenerator
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType, RoleType, TaskType
 
@@ -40,7 +40,7 @@ def detect_image_obj(image_path: str) -> None:
 
     assistant_sys_msg = BaseMessage.make_assistant_message(
         role_name="Assistant",
-        content=sys_msg,
+        content=Content(text=[sys_msg]),
     )
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
@@ -53,13 +53,15 @@ def detect_image_obj(image_path: str) -> None:
     image_list = [Image.open(image_path)]
     user_msg = BaseMessage.make_user_message(
         role_name="User",
-        content="Please start the object detection for following image!",
+        content=Content(
+            text=["Please start the object detection for following" " image!"]
+        ),
         image_list=image_list,
         image_detail="high",
     )
     assistant_response = agent.step(user_msg)
     print("=" * 20 + " RESULT " + "=" * 20)
-    print(assistant_response.msgs[0].content)
+    print(assistant_response.msgs[0].content.text)
     print("=" * 48)
 
 

@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from camel.agents import ChatAgent
 from camel.configs import LiteLLMConfig
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType
 
@@ -26,7 +26,7 @@ model = ModelFactory.create(
 # Define system message
 sys_msg = BaseMessage.make_assistant_message(
     role_name="Assistant",
-    content="You are a helpful assistant.",
+    content=Content(text=["You are a helpful assistant."]),
 )
 
 # Set agent
@@ -34,13 +34,18 @@ camel_agent = ChatAgent(system_message=sys_msg, model=model, token_limit=500)
 
 user_msg = BaseMessage.make_user_message(
     role_name="User",
-    content="""Say hi to CAMEL AI, one open-source community dedicated to the 
-    study of autonomous and communicative agents.""",
+    content=Content(
+        text=[
+            """Say hi to CAMEL AI, one open-source community 
+                          dedicated to the study of autonomous and 
+                          communicative agents."""
+        ]
+    ),
 )
 
 # Get response information
 response = camel_agent.step(user_msg)
-print(response.msgs[0].content)
+print(response.msgs[0].content.text)
 '''
 ===============================================================================
 Hello CAMEL AI! It's great to see a community dedicated to the study of 

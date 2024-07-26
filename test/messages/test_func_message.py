@@ -15,7 +15,7 @@ from typing import Any, Dict
 
 import pytest
 
-from camel.messages import FunctionCallingMessage
+from camel.messages import Content, FunctionCallingMessage
 from camel.types import RoleType
 
 
@@ -24,7 +24,7 @@ def assistant_func_message() -> FunctionCallingMessage:
     role_name = "test_assistant"
     role_type = RoleType.ASSISTANT
     meta_dict = None
-    content = "test function message"
+    content = Content(text=["test function message"])
 
     return FunctionCallingMessage(
         role_name=role_name,
@@ -41,7 +41,7 @@ def function_func_message() -> FunctionCallingMessage:
     role_name = "test_function"
     role_type = RoleType.ASSISTANT
     meta_dict = None
-    content = "test function message"
+    content = Content(text=["test function message"])
 
     return FunctionCallingMessage(
         role_name=role_name,

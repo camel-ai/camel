@@ -22,7 +22,7 @@ from camel.memories import (
     MemoryRecord,
     VectorDBBlock,
 )
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from camel.types import OpenAIBackendRole, RoleType
 
 
@@ -92,7 +92,7 @@ class TestLongtermAgentMemory:
                     role_name="user",
                     role_type=RoleType.USER,
                     meta_dict=None,
-                    content="test message {}".format(i),
+                    content=Content(text=["test message {}".format(i)]),
                 ),
                 OpenAIBackendRole.USER,
             )

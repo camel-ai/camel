@@ -88,11 +88,14 @@ class VectorDBBlock(MemoryBlock):
         """
         v_records = [
             VectorRecord(
-                vector=self.embedding.embed(record.message.content),
+                vector=self.embedding.embed(
+                    ' '.join([text for text in record.message.content.text])
+                ),
                 payload=record.to_dict(),
                 id=str(record.uuid),
             )
             for record in records
+            if record.message.content.text
         ]
         self.storage.add(v_records)
 

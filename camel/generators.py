@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Dict, Generator, List, Optional, Set, Tuple
 
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from camel.prompts import PromptTemplateGenerator, TextPrompt
 from camel.types import RoleType, TaskType
 
@@ -119,7 +119,7 @@ class SystemMessageGenerator:
             role_name=role_name,
             role_type=role_type,
             meta_dict=meta_dict,
-            content=sys_prompt,
+            content=Content(text=[sys_prompt]),
         )
 
     def from_dicts(

@@ -29,7 +29,7 @@ from camel.functions import MATH_FUNCS
 from camel.functions.openai_function import OpenAIFunction
 from camel.generators import SystemMessageGenerator
 from camel.memories import MemoryRecord
-from camel.messages import BaseMessage
+from camel.messages import BaseMessage, Content
 from camel.models import ModelFactory
 from camel.terminators import ResponseWordsTerminator
 from camel.types import (
@@ -75,7 +75,7 @@ def test_chat_agent(model):
         role_name="Patient",
         role_type=RoleType.USER,
         meta_dict=dict(),
-        content="Hello!",
+        content=Content(text=["Hello!"]),
     )
     assistant_response = assistant.step(user_msg)
 
@@ -92,7 +92,7 @@ def test_chat_agent_stored_messages():
         role_name="assistant",
         role_type=RoleType.ASSISTANT,
         meta_dict=None,
-        content="You are a help assistant.",
+        content=Content(text=["You are a helpful assistant."]),
     )
     assistant = ChatAgent(system_msg)
 
@@ -104,7 +104,7 @@ def test_chat_agent_stored_messages():
         role_name="User",
         role_type=RoleType.USER,
         meta_dict=dict(),
-        content="Tell me a joke.",
+        content=Content(text=["Tell me a joke."]),
     )
     assistant.update_memory(user_msg, OpenAIBackendRole.USER)
     expected_context = [
@@ -121,7 +121,7 @@ def test_chat_agent_messages_window():
         role_name="assistant",
         role_type=RoleType.ASSISTANT,
         meta_dict=None,
-        content="You are a help assistant.",
+        content=Content(text=["You are a helpful assistant."]),
     )
     assistant = ChatAgent(
         system_message=system_msg,
@@ -132,7 +132,7 @@ def test_chat_agent_messages_window():
         role_name="User",
         role_type=RoleType.USER,
         meta_dict=dict(),
-        content="Tell me a joke.",
+        content=Content(text=["Tell me a joke."]),
     )
 
     assistant.memory.write_records(
@@ -154,7 +154,7 @@ def test_chat_agent_step_exceed_token_number():
         role_name="assistant",
         role_type=RoleType.ASSISTANT,
         meta_dict=None,
-        content="You are a help assistant.",
+        content=Content(text=["You are a helpful assistant."]),
     )
     assistant = ChatAgent(
         system_message=system_msg,
@@ -165,7 +165,7 @@ def test_chat_agent_step_exceed_token_number():
         role_name="User",
         role_type=RoleType.USER,
         meta_dict=dict(),
-        content="Tell me a joke.",
+        content=Content(text=["Tell me a joke."]),
     )
 
     response = assistant.step(user_msg)
@@ -183,10 +183,10 @@ def test_chat_agent_multiple_return_messages(n):
         model_config_dict=model_config.__dict__,
     )
     system_msg = BaseMessage(
-        "Assistant",
-        RoleType.ASSISTANT,
+        role_name="Assistant",
+        role_type=RoleType.ASSISTANT,
         meta_dict=None,
-        content="You are a helpful assistant.",
+        content=Content(text=["You are a helpful assistant."]),
     )
     assistant = ChatAgent(system_msg, model=model)
     assistant.reset()
@@ -194,7 +194,7 @@ def test_chat_agent_multiple_return_messages(n):
         role_name="User",
         role_type=RoleType.USER,
         meta_dict=dict(),
-        content="Tell me a joke.",
+        content=Content(text=["Tell me a joke."]),
     )
     assistant_response = assistant.step(user_msg)
     assert assistant_response.msgs is not None
@@ -211,10 +211,10 @@ def test_chat_agent_multiple_return_message_error(n):
         model_config_dict=model_config.__dict__,
     )
     system_msg = BaseMessage(
-        "Assistant",
-        RoleType.ASSISTANT,
+        role_name="Assistant",
+        role_type=RoleType.ASSISTANT,
         meta_dict=None,
-        content="You are a helpful assistant.",
+        content=Content(text=["You are a helpful assistant."]),
     )
 
     assistant = ChatAgent(system_msg, model=model)
@@ -224,7 +224,7 @@ def test_chat_agent_multiple_return_message_error(n):
         role_name="User",
         role_type=RoleType.USER,
         meta_dict=dict(),
-        content="Tell me a joke.",
+        content=Content(text=["Tell me a joke."]),
     )
     assistant_response = assistant.step(user_msg)
 
@@ -240,16 +240,16 @@ def test_chat_agent_multiple_return_message_error(n):
 @pytest.mark.model_backend
 def test_chat_agent_stream_output():
     system_msg = BaseMessage(
-        "Assistant",
-        RoleType.ASSISTANT,
+        role_name="Assistant",
+        role_type=RoleType.ASSISTANT,
         meta_dict=None,
-        content="You are a helpful assistant.",
+        content=Content(text=["You are a helpful assistant."]),
     )
     user_msg = BaseMessage(
         role_name="User",
         role_type=RoleType.USER,
         meta_dict=dict(),
-        content="Tell me a joke.",
+        content=Content(text=["Tell me a joke."]),
     )
 
     stream_model_config = ChatGPTConfig(temperature=0, n=2, stream=True)
@@ -263,7 +263,7 @@ def test_chat_agent_stream_output():
     stream_assistant_response = stream_assistant.step(user_msg)
 
     for msg in stream_assistant_response.msgs:
-        assert len(msg.content) > 0
+        assert len(msg.content.text) > 0
 
     stream_usage = stream_assistant_response.info["usage"]
     assert stream_usage["completion_tokens"] > 0
@@ -280,7 +280,7 @@ def test_set_output_language():
         role_name="assistant",
         role_type=RoleType.ASSISTANT,
         meta_dict=None,
-        content="You are a help assistant.",
+        content=Content(text=["You are a helpful assistant."]),
     )
     agent = ChatAgent(system_message=system_message)
     assert agent.output_language is None
@@ -297,8 +297,13 @@ def test_set_output_language():
         role_name="assistant",
         role_type=RoleType.ASSISTANT,
         meta_dict=None,
-        content="You are a help assistant."
-        "\nRegardless of the input language, you must output text in Arabic.",
+        content=Content(
+            text=[
+                "You are a helpful assistant.\nRegardless of"
+                " the input language, you must output text"
+                " in Arabic."
+            ]
+        ),
     )
     assert agent.system_message.content == updated_system_message.content
 
@@ -309,7 +314,7 @@ def test_set_multiple_output_language():
         role_name="assistant",
         role_type=RoleType.ASSISTANT,
         meta_dict=None,
-        content="You are a help assistant.",
+        content=Content(text=["You are a helpful assistant."]),
     )
     agent = ChatAgent(system_message=system_message)
 
@@ -322,8 +327,13 @@ def test_set_multiple_output_language():
         role_name="assistant",
         role_type=RoleType.ASSISTANT,
         meta_dict=None,
-        content="You are a help assistant."
-        "\nRegardless of the input language, you must output text in French.",
+        content=Content(
+            text=[
+                "You are a helpful assistant.\nRegardless of"
+                " the input language, you must output"
+                " text in French."
+            ]
+        ),
     )
     assert agent.system_message.content == updated_system_message.content
 
@@ -334,7 +344,7 @@ def test_token_exceed_return():
         role_name="assistant",
         role_type=RoleType.ASSISTANT,
         meta_dict=None,
-        content="You are a help assistant.",
+        content=Content(text=["You are a helpful assistant."]),
     )
     agent = ChatAgent(system_message=system_message)
 
@@ -358,7 +368,7 @@ def test_function_enabled():
         role_name="assistant",
         role_type=RoleType.ASSISTANT,
         meta_dict=None,
-        content="You are a help assistant.",
+        content=Content(text=["You are a helpful assistant."]),
     )
     model_config = ChatGPTConfig(tools=[*MATH_FUNCS])
     model = ModelFactory.create(
@@ -383,7 +393,7 @@ def test_tool_calling_sync():
         role_name="assistant",
         role_type=RoleType.ASSISTANT,
         meta_dict=None,
-        content="You are a help assistant.",
+        content=Content(text=["You are a helpful assistant."]),
     )
     model_config = ChatGPTConfig(tools=[*MATH_FUNCS])
     model = ModelFactory.create(
@@ -405,7 +415,7 @@ def test_tool_calling_sync():
         role_name="User",
         role_type=RoleType.USER,
         meta_dict=dict(),
-        content="Calculate the result of: 2*8-10.",
+        content=Content(text=["Calculate the result of: 2*8-10."]),
     )
     agent_response = agent.step(user_msg)
 
@@ -428,7 +438,7 @@ async def test_tool_calling_math_async():
         role_name="assistant",
         role_type=RoleType.ASSISTANT,
         meta_dict=None,
-        content="You are a help assistant.",
+        content=Content(text=["You are a helpful assistant."]),
     )
     math_funcs = sync_funcs_to_async(MATH_FUNCS)
     model_config = ChatGPTConfig(tools=[*math_funcs])
@@ -451,7 +461,7 @@ async def test_tool_calling_math_async():
         role_name="User",
         role_type=RoleType.USER,
         meta_dict=dict(),
-        content="Calculate the result of: 2*8-10.",
+        content=Content(text=["Calculate the result of: 2*8-10."]),
     )
     agent_response = await agent.step_async(user_msg)
 
@@ -474,7 +484,7 @@ async def test_tool_calling_async():
         role_name="assistant",
         role_type=RoleType.ASSISTANT,
         meta_dict=None,
-        content="You are a help assistant.",
+        content=Content(text=["You are a helpful assistant."]),
     )
 
     async def async_sleep(second: int) -> int:
@@ -509,8 +519,12 @@ async def test_tool_calling_async():
         role_name="User",
         role_type=RoleType.USER,
         meta_dict=dict(),
-        content="Call the async sleep which is specified in function list with"
-        " 1 second.",
+        content=Content(
+            text=[
+                "Call the async sleep which is specified in function list with"
+                " 1 second."
+            ]
+        ),
     )
     agent_response = await agent.step_async(user_msg)
 
@@ -531,7 +545,7 @@ def test_response_words_termination():
         role_name="assistant",
         role_type=RoleType.ASSISTANT,
         meta_dict=None,
-        content="You are a help assistant.",
+        content=Content(text=["You are a helpful assistant."]),
     )
     response_terminator = ResponseWordsTerminator(words_dict=dict(goodbye=1))
     agent = ChatAgent(
@@ -542,7 +556,7 @@ def test_response_words_termination():
         role_name="User",
         role_type=RoleType.USER,
         meta_dict=dict(),
-        content="Just say 'goodbye' once.",
+        content=Content(text=["Just say 'goodbye' once."]),
     )
     agent_response = agent.step(user_msg)
 
@@ -556,7 +570,7 @@ def test_chat_agent_vision():
         role_name="assistant",
         role_type=RoleType.ASSISTANT,
         meta_dict=None,
-        content="You are a help assistant.",
+        content=Content(text=["You are a helpful assistant."]),
     )
     model_config = ChatGPTConfig(temperature=0, max_tokens=200, stop="")
     model = ModelFactory.create(
@@ -581,7 +595,7 @@ def test_chat_agent_vision():
         role_name="User",
         role_type=RoleType.USER,
         meta_dict=dict(),
-        content="Is this image blue? Just answer yes or no.",
+        content=Content(text=["Is this image blue? Just answer yes or no."]),
         image_list=image_list,
         image_detail="low",
     )
@@ -612,4 +626,4 @@ def test_chat_agent_vision():
     )
 
     agent_response = agent.step(user_msg)
-    assert agent_response.msgs[0].content == "Yes."
+    assert agent_response.msgs[0].content == Content(text=["Yes."])
