@@ -82,7 +82,19 @@ def set_log_level(level):
         level: The logging level to set. This can be a string (e.g., 'INFO')
                or a logging level constant (e.g., logging.INFO, logging.DEBUG).
                See https://docs.python.org/3/library/logging.html#levels
+
+    Raises:
+        ValueError: If the provided level is not a valid logging level.
     """
+    valid_levels = ['NOTSET', 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
+    if isinstance(level, str):
+        if level.upper() not in valid_levels:
+            raise ValueError(f"Invalid logging level."
+                             f" Choose from: {', '.join(valid_levels)}")
+        level = level.upper()
+    elif not isinstance(level, int):
+        raise ValueError("Logging level must be an option from the logging module.")
+
     _logger.setLevel(level)
 
 
