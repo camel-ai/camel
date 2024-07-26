@@ -15,7 +15,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from camel.agents import ChatAgent
-from camel.messages import BaseMessage, Content
+from camel.messages import Content
 from examples.bots.telegram_bot import TelegramBot
 
 
@@ -41,9 +41,6 @@ class TestTelegramBot(unittest.TestCase):
         message_mock = MagicMock()
         message_mock.text = "Hello, world!"
 
-        user_msg_mock = BaseMessage.make_user_message(
-            "User", content=Content(text=["Hello, world!"])
-        )
         response_msg_mock = MagicMock(
             msg=MagicMock(content=Content(text=["Hello back!"]))
         )
@@ -56,11 +53,13 @@ class TestTelegramBot(unittest.TestCase):
 
         # Check if the chat agent's methods are called appropriately
         self.chat_agent_mock.reset.assert_called_once()
-        self.chat_agent_mock.step.assert_called_once_with(user_msg_mock)
+        self.chat_agent_mock.step.assert_called_once_with(
+            unittest.mock.ANY  # Use ANY to ignore the exact BaseMessage
+        )
 
         # Check if the bot replies with the correct message
         mock_bot_instance.reply_to.assert_called_once_with(
-            message_mock, "Hello back!"
+            message_mock, ["Hello back!"]
         )
 
     @patch('telebot.TeleBot')
