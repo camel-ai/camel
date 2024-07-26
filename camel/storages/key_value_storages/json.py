@@ -14,13 +14,13 @@
 
 import json
 from enum import EnumMeta
-from uuid import UUID
 from pathlib import Path
 from typing import Any, ClassVar, Dict, List, Optional
+from uuid import UUID
 
+from camel.messages.base import MessageType
 from camel.storages.key_value_storages import BaseKeyValueStorage
 from camel.types import ModelType, OpenAIBackendRole, RoleType, TaskType
-from camel.messages.base import MessageType
 
 
 class _CamelJSONEncoder(json.JSONEncoder):
