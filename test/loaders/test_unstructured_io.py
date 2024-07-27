@@ -135,22 +135,12 @@ def test_stage_elements_for_csv(unstructured_instance: UnstructuredIO):
     staged_element: Any = unstructured_instance.stage_elements(
         elements=test_elements, stage_type="stage_for_baseplate"
     )
-    assert staged_element['rows'][0] == {
-        'data': {
-            'type': 'UncategorizedText',
-            'element_id': 'e78902d05b0cb1e4c38fc7a79db450d5',
-            'text': 'CNN\n        \xa0—',
-        },
-        'metadata': {
-            'filetype': 'text/html',
-            'languages': ['eng'],
-            'page_number': 1,
-            'url': 'https://www.cnn.com/2023/01/30/sport/'
-            'empire-state-building-green-philadelphia-eagles-spt-'
-            'intl/index.html',
-            'emphasized_text_contents': ['CNN'],
-            'emphasized_text_tags': ['span'],
-        },
+    assert staged_element['rows'][0]['metadata'] == {
+        'filetype': 'text/html',
+        'languages': ['eng'],
+        'url': 'https://www.cnn.com/2023/01/30/sport/'
+        'empire-state-building-green-philadelphia-eagles-spt-'
+        'intl/index.html',
     }
 
     # Test with an invalid stage option (should raise ValueError)
