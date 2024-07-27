@@ -25,27 +25,17 @@ def unstructured_instance() -> UnstructuredIO:
     return UnstructuredIO()
 
 
-# Test the _ensure_unstructured_version method
-def test__ensure_unstructured_version(unstructured_instance: UnstructuredIO):
-    # Test with a valid version
-    unstructured_instance._ensure_unstructured_version("0.10.30")
-
-    # Test with an invalid version (should raise a ValueError)
-    with pytest.raises(ValueError):
-        unstructured_instance._ensure_unstructured_version("1.0.0")
-
-
 # Test the create_element_from_text method
 def test_create_element_from_text(unstructured_instance: UnstructuredIO):
     # Input parameters
     test_text = "Hello, World!"
-    test_id = uuid.uuid4()
+    test_id = str(uuid.uuid4())
     test_embeddings = [0.1, 0.2, 0.3]
     test_filename = "testfile.txt"
     test_directory = "/test/directory"
     test_modified = "2024-04-01"
     test_filetype = "txt"
-    test_parent_id = uuid.uuid4()
+    test_parent_id = str(uuid.uuid4())
 
     # Expected Metadata construction
     expected_metadata = {

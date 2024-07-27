@@ -23,7 +23,17 @@ from camel.utils import dependencies_required
 
 
 class File(ABC):
-    r"""Represents an uploaded file comprised of Documents"""
+    r"""Represents an uploaded file comprised of Documents.
+
+    Args:
+        name (str): The name of the file.
+        id (str): The unique identifier of the file.
+        metadata (Dict[str, Any], optional): Additional metadata
+            associated with the file. Defaults to None.
+        docs (List[Dict[str, Any]], optional): A list of documents
+            contained within the file. Defaults to None.
+        raw_bytes (bytes, optional): The raw bytes content of the file.
+    """
 
     def __init__(
         self,
@@ -31,21 +41,13 @@ class File(ABC):
         id: str,
         metadata: Optional[Dict[str, Any]] = None,
         docs: Optional[List[Dict[str, Any]]] = None,
+        raw_bytes: Optional[bytes] = None,
     ):
-        r"""
-
-        Args:
-            name (str): The name of the file.
-            id (str): The unique identifier of the file.
-            metadata (Dict[str, Any], optional): Additional metadata
-                associated with the file. Defaults to None.
-            docs (List[Dict[str, Any]], optional): A list of documents
-                contained within the file. Defaults to None.
-        """
         self.name = name
         self.id = id
         self.metadata = metadata or {}
         self.docs = docs or []
+        self.raw_bytes = raw_bytes or b""
 
     @classmethod
     @abstractmethod
@@ -68,7 +70,8 @@ class File(ABC):
 
     def __str__(self) -> str:
         return (
-            f"File(name={self.name}, id={self.id}, metadata={self.metadata})"
+            f"File(name={self.name}, id={self.id}, metadata="
+            f"{self.metadata})"
         )
 
     def copy(self) -> "File":
@@ -79,6 +82,7 @@ class File(ABC):
             id=self.id,
             metadata=deepcopy(self.metadata),
             docs=deepcopy(self.docs),
+            raw_bytes=self.raw_bytes,
         )
 
 
@@ -246,17 +250,20 @@ def read_file(file: BytesIO) -> File:
         File: A File object.
     """
     # Determine the file type based on the file extension
+    out_file: File
     if file.name.lower().endswith(".docx"):
-        return DocxFile.from_bytes(file)
+        out_file = DocxFile.from_bytes(file)
     elif file.name.lower().endswith(".pdf"):
-        return PdfFile.from_bytes(file)
+        out_file = PdfFile.from_bytes(file)
     elif file.name.lower().endswith(".txt"):
-        return TxtFile.from_bytes(file)
+        out_file = TxtFile.from_bytes(file)
     elif file.name.lower().endswith(".json"):
-        return JsonFile.from_bytes(file)
+        out_file = JsonFile.from_bytes(file)
     elif file.name.lower().endswith(".html"):
-        return HtmlFile.from_bytes(file)
+        out_file = HtmlFile.from_bytes(file)
     else:
         raise NotImplementedError(
             f"File type {file.name.split('.')[-1]} not supported"
         )
+    out_file.raw_bytes = file.getvalue()
+    return out_file

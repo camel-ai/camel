@@ -12,7 +12,15 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import uuid
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import (
+    Any,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    Union,
+)
 
 from unstructured.documents.elements import Element
 
@@ -30,21 +38,21 @@ class UnstructuredIO:
     @staticmethod
     def create_element_from_text(
         text: str,
-        element_id: Optional[Union[str, uuid.UUID]] = None,
+        element_id: str = str(uuid.uuid4()),
         embeddings: Optional[List[float]] = None,
         filename: Optional[str] = None,
         file_directory: Optional[str] = None,
         last_modified: Optional[str] = None,
         filetype: Optional[str] = None,
-        parent_id: Optional[Union[str, uuid.UUID]] = None,
+        parent_id: Optional[str] = None,
     ) -> Element:
         r"""Creates a Text element from a given text input, with optional
         metadata and embeddings.
 
         Args:
             text (str): The text content for the element.
-            element_id (Union[str, uuid.UUID], optional): Unique identifier
-                forthe element. Defaults to an empty string.
+            element_id (str, optional): Unique identifier forthe element.
+                Defaults to a random uuid.
             embeddings (Optional[List[float]], optional): A list of float
                 numbers representing the text embeddings. Defaults to `None`.
             filename (Optional[str], optional): The name of the file the
@@ -55,8 +63,8 @@ class UnstructuredIO:
                 the file. Defaults to `None`.
             filetype (Optional[str], optional): The type of the file. Defaults
                 to `None`.
-            parent_id (Optional[Union[str, uuid.UUID]], optional): The
-                identifier of the parent element. Defaults to `None`.
+            parent_id (Optional[str], optional): Theidentifier of the parent
+                element. Defaults to `None`.
 
         Returns:
             Element: An instance of Text with the provided content and
@@ -74,7 +82,7 @@ class UnstructuredIO:
 
         return Text(
             text=text,
-            element_id=element_id if element_id else str(uuid.uuid4()),
+            element_id=element_id,
             metadata=metadata,
             embeddings=embeddings,
         )
@@ -207,7 +215,7 @@ class UnstructuredIO:
         )
         from unstructured.cleaners.translate import translate_text
 
-        cleaning_functions = {
+        cleaning_functions: Any = {
             "clean_extra_whitespace": clean_extra_whitespace,
             "clean_bullets": clean_bullets,
             "clean_ordered_bullets": clean_ordered_bullets,
@@ -294,7 +302,7 @@ class UnstructuredIO:
             extract_us_phone_number,
         )
 
-        extraction_functions = {
+        extraction_functions: Any = {
             "extract_datetimetz": extract_datetimetz,
             "extract_email_address": extract_email_address,
             "extract_ip_address": extract_ip_address,
@@ -370,7 +378,7 @@ class UnstructuredIO:
             weaviate,
         )
 
-        staging_functions = {
+        staging_functions: Any = {
             "convert_to_csv": base.convert_to_csv,
             "convert_to_dataframe": base.convert_to_dataframe,
             "convert_to_dict": base.convert_to_dict,
