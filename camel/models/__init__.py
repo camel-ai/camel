@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from .ai71_model import AI71Model
 from .anthropic_model import AnthropicModel
 from .azure_openai_model import AzureOpenAIModel
 from .base_model import BaseModelBackend
@@ -43,4 +44,5 @@ __all__ = [
     'OllamaModel',
     'VLLMModel',
     'GeminiModel',
+    'AI71Model',
 ]

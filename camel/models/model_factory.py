@@ -13,6 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Dict, Optional, Union
 
+from camel.models.ai71_model import AI71Model
 from camel.models.anthropic_model import AnthropicModel
 from camel.models.azure_openai_model import AzureOpenAIModel
 from camel.models.base_model import BaseModelBackend
@@ -102,6 +103,11 @@ class ModelFactory:
                 )
             elif model_platform.is_vllm:
                 model_class = VLLMModel
+                return model_class(
+                    model_type, model_config_dict, url, api_key, token_counter
+                )
+            elif model_platform.is_ai71:
+                model_class = AI71Model
                 return model_class(
                     model_type, model_config_dict, url, api_key, token_counter
                 )
