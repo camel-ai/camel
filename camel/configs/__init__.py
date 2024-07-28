@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from .ai71_config import AI71_API_PARAMS, AI71Config
 from .anthropic_config import ANTHROPIC_API_PARAMS, AnthropicConfig
 from .base_config import BaseConfig
 from .gemini_config import (
@@ -47,4 +48,6 @@ __all__ = [
     'Gemini_API_PARAMS',
     'VLLMConfig',
     'VLLM_API_PARAMS',
+    'AI71Config',
+    'AI71_API_PARAMS',
 ]
