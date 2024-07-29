@@ -15,8 +15,18 @@ from __future__ import annotations
 
 import json
 from collections import defaultdict
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
+
+from pydantic import BaseModel
 
 from camel.agents.base import BaseAgent
 from camel.configs import ChatGPTConfig
@@ -46,8 +56,7 @@ if TYPE_CHECKING:
     from camel.toolkits import OpenAIFunction
 
 
-@dataclass(frozen=True)
-class FunctionCallingRecord:
+class FunctionCallingRecord(BaseModel):
     r"""Historical records of functions called in the conversation.
 
     Attributes:
@@ -67,7 +76,6 @@ class FunctionCallingRecord:
         Returns:
             str: Modified string to represent the function calling.
         """
-
         return (
             f"Function Execution: {self.func_name}\n"
             f"\tArgs: {self.args}\n"
@@ -128,7 +136,7 @@ class ChatAgent(BaseAgent):
             else ModelFactory.create(
                 model_platform=ModelPlatformType.OPENAI,
                 model_type=ModelType.GPT_4O_MINI,
-                model_config_dict=ChatGPTConfig().__dict__,
+                model_config_dict=ChatGPTConfig().model_dump(),
                 api_key=self._api_key,
             )
         )
@@ -313,7 +321,7 @@ class ChatAgent(BaseAgent):
         tool_calls: List[FunctionCallingRecord] = []
         while True:
             # Format messages and get the token number
-            openai_messages: list[OpenAIMessage] | None
+            openai_messages: Optional[List[OpenAIMessage]]
 
             try:
                 openai_messages, num_tokens = self.memory.get_context()
@@ -362,7 +370,9 @@ class ChatAgent(BaseAgent):
                 )
                 break
 
-        return ChatAgentResponse(output_messages, self.terminated, info)
+        return ChatAgentResponse(
+            msgs=output_messages, terminated=self.terminated, info=info
+        )
 
     async def step_async(
         self,
@@ -389,7 +399,7 @@ class ChatAgent(BaseAgent):
         tool_calls: List[FunctionCallingRecord] = []
         while True:
             # Format messages and get the token number
-            openai_messages: list[OpenAIMessage] | None
+            openai_messages: Optional[List[OpenAIMessage]]
 
             try:
                 openai_messages, num_tokens = self.memory.get_context()
@@ -440,17 +450,19 @@ class ChatAgent(BaseAgent):
                 )
                 break
 
-        return ChatAgentResponse(output_messages, self.terminated, info)
+        return ChatAgentResponse(
+            msgs=output_messages, terminated=self.terminated, info=info
+        )
 
     def _step_model_response(
         self,
-        openai_messages: list[OpenAIMessage],
+        openai_messages: List[OpenAIMessage],
         num_tokens: int,
     ) -> tuple[
-        ChatCompletion | Stream[ChatCompletionChunk],
-        list[BaseMessage],
-        list[str],
-        dict[str, int],
+        Union[ChatCompletion, Stream],
+        List[BaseMessage],
+        List[str],
+        Dict[str, int],
         str,
     ]:
         r"""Internal function for agent step model response."""
@@ -620,9 +632,9 @@ class ChatAgent(BaseAgent):
         )
 
         return ChatAgentResponse(
-            output_messages,
-            self.terminated,
-            info,
+            msgs=output_messages,
+            terminated=self.terminated,
+            info=info,
         )
 
     def step_tool_call(
@@ -679,7 +691,9 @@ class ChatAgent(BaseAgent):
         )
 
         # Record information about this function call
-        func_record = FunctionCallingRecord(func_name, args, result)
+        func_record = FunctionCallingRecord(
+            func_name=func_name, args=args, result=result
+        )
         return assist_msg, func_msg, func_record
 
     async def step_tool_call_async(
@@ -738,7 +752,9 @@ class ChatAgent(BaseAgent):
         )
 
         # Record information about this function call
-        func_record = FunctionCallingRecord(func_name, args, result)
+        func_record = FunctionCallingRecord(
+            func_name=func_name, args=args, result=result
+        )
         return assist_msg, func_msg, func_record
 
     def get_usage_dict(

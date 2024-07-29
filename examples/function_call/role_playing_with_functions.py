@@ -129,8 +129,9 @@ def main(
         # Print output from the assistant, including any function
         # execution information
         print_text_animated(Fore.GREEN + "AI Assistant:")
-        tool_calls: List[FunctionCallingRecord] = assistant_response.info[
-            'tool_calls'
+        tool_calls: List[FunctionCallingRecord] = [
+            FunctionCallingRecord(**call)
+            for call in assistant_response.info['tool_calls']
         ]
         for func_record in tool_calls:
             print_text_animated(f"{func_record}")
