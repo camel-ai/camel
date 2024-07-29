@@ -3401,22 +3401,6 @@ files = [
 tqdm = "*"
 
 [[package]]
-name = "mistralai"
-version = "0.4.2"
-description = ""
-optional = true
-python-versions = "<4.0,>=3.9"
-files = [
-    {file = "mistralai-0.4.2-py3-none-any.whl", hash = "sha256:63c98eea139585f0a3b2c4c6c09c453738bac3958055e6f2362d3866e96b0168"},
-    {file = "mistralai-0.4.2.tar.gz", hash = "sha256:5eb656710517168ae053f9847b0bb7f617eda07f1f93f946ad6c91a4d407fd93"},
-]
-
-[package.dependencies]
-httpx = ">=0.25,<1"
-orjson = ">=3.9.10,<3.11"
-pydantic = ">=2.5.2,<3"
-
-[[package]]
 name = "mock"
 version = "5.1.0"
 description = "Rolling backport of unittest.mock for all Pythons"
@@ -8491,12 +8475,12 @@ doc = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.linke
 test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more-itertools", "pytest (>=6,!=8.1.*)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-ignore-flaky", "pytest-mypy", "pytest-ruff (>=0.2.1)"]
 
 [extras]
-all = ["PyMuPDF", "accelerate", "beautifulsoup4", "cohere", "datasets", "diffusers", "discord.py", "docker", "docx2txt", "duckduckgo-search", "google-generativeai", "googlemaps", "imageio", "jupyter_client", "litellm", "mistralai", "neo4j", "newspaper3k", "openapi-spec-validator", "opencv-python", "pillow", "prance", "pyTelegramBotAPI", "pydub", "pygithub", "pymilvus", "pyowm", "qdrant-client", "rank-bm25", "redis", "requests_oauthlib", "sentence-transformers", "sentencepiece", "slack-sdk", "soundfile", "torch", "transformers", "unstructured", "wikipedia", "wolframalpha"]
+all = ["PyMuPDF", "accelerate", "beautifulsoup4", "cohere", "datasets", "diffusers", "discord.py", "docker", "docx2txt", "duckduckgo-search", "google-generativeai", "googlemaps", "imageio", "jupyter_client", "litellm", "neo4j", "newspaper3k", "openapi-spec-validator", "opencv-python", "pillow", "prance", "pyTelegramBotAPI", "pydub", "pygithub", "pymilvus", "pyowm", "qdrant-client", "rank-bm25", "redis", "requests_oauthlib", "sentence-transformers", "sentencepiece", "slack-sdk", "soundfile", "torch", "transformers", "unstructured", "wikipedia", "wolframalpha"]
 encoders = ["sentence-transformers"]
 graph-storages = ["neo4j"]
 huggingface-agent = ["accelerate", "datasets", "diffusers", "opencv-python", "sentencepiece", "soundfile", "torch", "transformers"]
 kv-stroages = ["redis"]
-model-platforms = ["google-generativeai", "litellm", "mistralai"]
+model-platforms = ["google-generativeai", "litellm"]
 retrievers = ["cohere", "rank-bm25"]
 test = ["mock", "pytest", "pytest-asyncio"]
 tools = ["PyMuPDF", "beautifulsoup4", "discord.py", "docker", "docx2txt", "duckduckgo-search", "googlemaps", "imageio", "jupyter_client", "newspaper3k", "openapi-spec-validator", "pillow", "prance", "pyTelegramBotAPI", "pydub", "pygithub", "pyowm", "requests_oauthlib", "slack-sdk", "unstructured", "wikipedia", "wolframalpha"]
@@ -8505,4 +8489,4 @@ vector-databases = ["pymilvus", "qdrant-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9.0,<3.12"
-content-hash = "40800797361627ed383b87c35288ac1965d1648d1fcec8a9728e5105f4903264"
+content-hash = "135b08b225fdd92d0e67ed036dfe793c5a94d633c603b0571501ce3fc705b55a"
