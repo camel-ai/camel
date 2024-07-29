@@ -23,7 +23,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import gradio as gr
 import openai
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from apps.agents.text_utils import split_markdown_code
 from camel.agents import TaskSpecifyAgent
@@ -39,6 +39,11 @@ ChatBotHistory = List[Tuple[Optional[str], Optional[str]]]
 
 
 class State(BaseModel):
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
+
     session: Optional[RolePlaying]
     max_messages: int
     chat: ChatBotHistory
