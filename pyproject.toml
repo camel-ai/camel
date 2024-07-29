@@ -49,6 +49,8 @@ pillow ="^10.2.0"
 # model-platforms
 litellm = { version = "^1.38.1", optional = true }
 google-generativeai = { version = "^0.6.0", optional = true }
+mistralai = { version = "^0.4.2", optional = true }
+mistral-common = { version = "^1.3.3", optional = true }
 
 # huggingface-agent
 transformers = { version = "^4", optional = true }
@@ -110,6 +112,8 @@ test = ["pytest", "mock", "pytest-asyncio"]
 model-platforms = [
     "litellm",
     "google-generativeai",
+    "mistralai",
+    "mistral-common",
 ]
 
 huggingface-agent = [
@@ -216,9 +220,11 @@ all = [
     "rank-bm25",
     # model platforms
     "litellm",
+    "mistralai",
+    "mistral-common",
+    "google-generativeai",
     # kv-storages
     "redis",
-    "google-generativeai",
 ]
 
 [tool.poetry.group.dev]
@@ -348,5 +354,7 @@ module = [
     "docker.*",
     "google.*",
     "google-generativeai",
+    "mistralai",
+    "mistral_common",
 ]
 ignore_missing_imports = true
