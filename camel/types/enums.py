@@ -74,9 +74,13 @@ class ModelType(Enum):
     GEMINI_1_5_PRO = "gemini-1.5-pro"
 
     # Mistral AI Model
-    MISTRAL_SMALL = "mistral-small-latest"
-    MISTRAL_MEDIUM = "mistral-medium-latest"
     MISTRAL_LARGE = "mistral-large-latest"
+    MISTRAL_NEMO = "open-mistral-nemo"
+    MISTRAL_CODESTRAL = "codestral-latest"
+    MISTRAL_7B = "open-mistral-7b"
+    MISTRAL_MIXTRAL_8x7B = "open-mixtral-8x7b"
+    MISTRAL_MIXTRAL_8x22B = "open-mixtral-8x22b"
+    MISTRAL_CODESTRAL_MAMBA = "open-codestral-mamba"
 
     @property
     def value_for_tiktoken(self) -> str:
@@ -167,9 +171,13 @@ class ModelType(Enum):
     def is_mistral(self) -> bool:
         r"""Returns whether this type of models is served by Mistral."""
         return self in {
-            ModelType.MISTRAL_SMALL,
-            ModelType.MISTRAL_MEDIUM,
             ModelType.MISTRAL_LARGE,
+            ModelType.MISTRAL_NEMO,
+            ModelType.MISTRAL_CODESTRAL,
+            ModelType.MISTRAL_7B,
+            ModelType.MISTRAL_MIXTRAL_8x7B,
+            ModelType.MISTRAL_MIXTRAL_8x22B,
+            ModelType.MISTRAL_CODESTRAL_MAMBA,
         }
 
     @property
@@ -190,64 +198,63 @@ class ModelType(Enum):
     @property
     def token_limit(self) -> int:
         r"""Returns the maximum token limit for a given model.
+
         Returns:
             int: The maximum token limit for the given model.
         """
-        if self is ModelType.GPT_3_5_TURBO:
-            return 16385
-        elif self is ModelType.GPT_4:
-            return 8192
-        elif self is ModelType.GPT_4_32K:
-            return 32768
-        elif self is ModelType.GPT_4_TURBO:
-            return 128000
-        elif self is ModelType.GPT_4O:
-            return 128000
-        elif self is ModelType.GPT_4O_MINI:
-            return 128000
-        elif self == ModelType.GEMINI_1_5_FLASH:
-            return 1048576
-        elif self == ModelType.GEMINI_1_5_PRO:
-            return 1048576
-        elif self == ModelType.GLM_4_OPEN_SOURCE:
-            return 8192
-        elif self == ModelType.GLM_3_TURBO:
-            return 8192
-        elif self == ModelType.GLM_4V:
+        if self is ModelType.GLM_4V:
             return 1024
-        elif self is ModelType.GROQ_LLAMA_3_1_8B:
-            return 131072
-        elif self is ModelType.GROQ_LLAMA_3_1_70B:
-            return 131072
-        elif self is ModelType.GROQ_LLAMA_3_1_405B:
-            return 131072
-        elif self is ModelType.GROQ_LLAMA_3_8B:
-            return 8192
-        elif self is ModelType.GROQ_LLAMA_3_70B:
-            return 8192
-        elif self is ModelType.GROQ_MIXTRAL_8_7B:
-            return 32768
-        elif self is ModelType.GROQ_GEMMA_7B_IT:
-            return 8192
-        elif self is ModelType.GROQ_GEMMA_2_9B_IT:
-            return 8192
-        elif self is ModelType.STUB:
-            return 4096
-        elif self is ModelType.LLAMA_2:
-            return 4096
-        elif self is ModelType.LLAMA_3:
-            return 8192
-        elif self is ModelType.QWEN_2:
-            return 128000
-        elif self is ModelType.GLM_4:
-            return 8192
         elif self is ModelType.VICUNA:
             # reference: https://lmsys.org/blog/2023-03-30-vicuna/
             return 2048
+        elif self in {
+            ModelType.GPT_3_5_TURBO,
+            ModelType.LLAMA_2,
+            ModelType.NEMOTRON_4_REWARD,
+            ModelType.STUB,
+        }:
+            return 4_096
+        elif self in {
+            ModelType.GPT_4,
+            ModelType.GROQ_LLAMA_3_8B,
+            ModelType.GROQ_LLAMA_3_70B,
+            ModelType.GROQ_GEMMA_7B_IT,
+            ModelType.GROQ_GEMMA_2_9B_IT,
+            ModelType.LLAMA_3,
+            ModelType.GLM_3_TURBO,
+            ModelType.GLM_4,
+            ModelType.GLM_4_OPEN_SOURCE,
+        }:
+            return 8_192
         elif self is ModelType.VICUNA_16K:
-            return 16384
+            return 16_384
+        elif self in {
+            ModelType.GPT_4_32K,
+            ModelType.MISTRAL_CODESTRAL,
+            ModelType.MISTRAL_7B,
+            ModelType.MISTRAL_MIXTRAL_8x7B,
+            ModelType.GROQ_MIXTRAL_8_7B,
+        }:
+            return 32_768
+        elif self in {ModelType.MISTRAL_MIXTRAL_8x22B}:
+            return 64_000
         elif self in {ModelType.CLAUDE_2_0, ModelType.CLAUDE_INSTANT_1_2}:
             return 100_000
+        elif self in {
+            ModelType.GPT_4O,
+            ModelType.GPT_4O_MINI,
+            ModelType.GPT_4_TURBO,
+            ModelType.MISTRAL_LARGE,
+            ModelType.MISTRAL_NEMO,
+            ModelType.QWEN_2,
+        }:
+            return 128_000
+        elif self in {
+            ModelType.GROQ_LLAMA_3_1_8B,
+            ModelType.GROQ_LLAMA_3_1_70B,
+            ModelType.GROQ_LLAMA_3_1_405B,
+        }:
+            return 131_072
         elif self in {
             ModelType.CLAUDE_2_1,
             ModelType.CLAUDE_3_OPUS,
@@ -256,14 +263,12 @@ class ModelType(Enum):
             ModelType.CLAUDE_3_5_SONNET,
         }:
             return 200_000
-        elif self is ModelType.NEMOTRON_4_REWARD:
-            return 4096
         elif self in {
-            ModelType.MISTRAL_SMALL,
-            ModelType.MISTRAL_MEDIUM,
-            ModelType.MISTRAL_LARGE,
+            ModelType.MISTRAL_CODESTRAL_MAMBA,
         }:
-            return 128000
+            return 256_000
+        elif self in {ModelType.GEMINI_1_5_FLASH, ModelType.GEMINI_1_5_PRO}:
+            return 1_048_576
         else:
             raise ValueError("Unknown model type")
 
@@ -272,6 +277,7 @@ class ModelType(Enum):
 
         Args:
             model_name (str): The name of the model, e.g. "vicuna-7b-v1.5".
+
         Returns:
             bool: Whether the model type matches the model name.
         """
@@ -375,6 +381,7 @@ class OpenAIBackendRole(Enum):
     SYSTEM = "system"
     USER = "user"
     FUNCTION = "function"
+    TOOL = "tool"
 
 
 class TerminationMode(Enum):

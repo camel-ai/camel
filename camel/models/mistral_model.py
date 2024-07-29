@@ -21,7 +21,11 @@ from camel.configs import MISTRAL_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ModelType
-from camel.utils import BaseTokenCounter, OpenAITokenCounter, api_keys_required
+from camel.utils import (
+    BaseTokenCounter,
+    MistralTokenCounter,
+    api_keys_required,
+)
 
 
 class MistralModel(BaseModelBackend):
@@ -64,7 +68,20 @@ class MistralModel(BaseModelBackend):
     def _convert_response_from_mistral_to_openai(
         self, response: 'ChatCompletionResponse'
     ) -> ChatCompletion:
-        # openai ^1.0.0 format, reference openai/types/chat/chat_completion.py
+        tool_calls = None
+        if response.choices[0].message.tool_calls is not None:
+            tool_calls = [
+                dict(
+                    id=tool_call.id,
+                    function={
+                        "name": tool_call.function.name,
+                        "arguments": tool_call.function.arguments,
+                    },
+                    type=tool_call.type.value,
+                )
+                for tool_call in response.choices[0].message.tool_calls
+            ]
+
         obj = ChatCompletion.construct(
             id=response.id,
             choices=[
@@ -73,26 +90,19 @@ class MistralModel(BaseModelBackend):
                     message={
                         "role": response.choices[0].message.role,
                         "content": response.choices[0].message.content,
-                        "function_call": dict(
-                            name=response.choices[0]
-                            .message.tool_calls[0]
-                            .function.name,
-                            arguments=response.choices[0]
-                            .message.tool_calls[0]
-                            .function.arguments,
-                        )
-                        if response.choices[0].message.tool_calls is not None
-                        else None,
+                        "tool_calls": tool_calls,
                     },
-                    finish_reason=response.choices[0].finish_reason
-                    if response.choices[0].message.tool_calls is None
-                    else "function_call",
+                    finish_reason=response.choices[0].finish_reason.value
+                    if response.choices[0].finish_reason
+                    else None,
                 )
             ],
             created=response.created,
             model=response.model,
             object="chat.completion",
+            usage=response.usage,
         )
+
         return obj
 
     @property
@@ -104,7 +114,9 @@ class MistralModel(BaseModelBackend):
                 tokenization style.
         """
         if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(ModelType.GPT_3_5_TURBO)
+            self._token_counter = MistralTokenCounter(
+                model_type=self.model_type
+            )
         return self._token_counter
 
     @api_keys_required("MISTRAL_API_KEY")

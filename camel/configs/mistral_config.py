@@ -23,6 +23,8 @@ if TYPE_CHECKING:
         ResponseFormat,
     )
 
+    from camel.toolkits import OpenAIFunction
+
 
 @dataclass(frozen=True)
 class MistralConfig(BaseConfig):
@@ -44,6 +46,15 @@ class MistralConfig(BaseConfig):
             Defaults to False.
         response_format (Union[Dict[str, str], ResponseFormat): format of the
             response.
+        tools (Optional[list[OpenAIFunction]], optional): a list of tools to
+            use.
+        tool_choice (str, optional): Controls which (if
+            any) tool is called by the model. :obj:`"none"` means the model
+            will not call any tool and instead generates a message.
+            :obj:`"auto"` means the model can pick between generating a
+            message or calling one or more tools.  :obj:`"any"` means the
+            model must call one or more tools. :obj:`"auto"` is the default
+            value.
     """
 
     temperature: Optional[float] = None
@@ -53,6 +64,16 @@ class MistralConfig(BaseConfig):
     safe_mode: bool = False
     safe_prompt: bool = False
     response_format: Optional[Union[Dict[str, str], ResponseFormat]] = None
+    tools: Optional[list[OpenAIFunction]] = None
+    tool_choice: Optional[str] = "auto"
+
+    def __post_init__(self):
+        if self.tools is not None:
+            object.__setattr__(
+                self,
+                'tools',
+                [tool.get_openai_tool_schema() for tool in self.tools],
+            )
 
 
 MISTRAL_API_PARAMS = {param for param in asdict(MistralConfig()).keys()}
