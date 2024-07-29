@@ -27,8 +27,7 @@ uninstall:
 
 build:
 	$(PYTHON) -m pip install --upgrade pip
-	$(PYTHON) -m pip install --upgrade setuptools wheel build
-	$(PYTHON) -m pip install --no-use-pep517 ffmpy==0.3.2
+	$(PYTHON) -m pip install --upgrade wheel build
 	$(PYTHON) -m build
 
 # Tools Installation
