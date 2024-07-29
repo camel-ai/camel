@@ -3,12 +3,12 @@
 [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1x2FYThMPtQXLzKZAhf_Ry-oeU6oPygdm?authuser=1#scrollTo=6c1kqMDxDodN)
 
 
-## In this notebook, we show the useage of CAMEL `ChatAgent` and `RolePlaying` with Tools from Composio to let agents seamlessly interact with external apps.
+## In this notebook, we demonstrate the usage of CAMEL `ChatAgent` and `RolePlaying` with Tools from Composio, allowing agents to seamlessly interact with external applications.
 
 *Goal: Star a repository on GitHub with natural language & CAMEL Agent*
 
 ## Install Packages & Connect a Tool
-Ensure you have the necessary packages installed and connect your GitHub account to allow your CAMEL-AI agents to utilize GitHub functionalities.
+Ensure you have the necessary packages installed and connect your GitHub account to allow your CAMEL agents to utilize GitHub functionalities.
 ```python
 import composio
 ```
