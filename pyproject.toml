@@ -44,8 +44,6 @@ jupyter_client = "^8.6.2"
 ipykernel = "^6.0.0"
 
 pillow ="^10.2.0"
-setuptools = "^68.0.0"
-ffmpy = "^0.3.2"
 
 # model-platforms
 litellm = { version = "^1.38.1", optional = true }
