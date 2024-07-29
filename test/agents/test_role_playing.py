@@ -25,7 +25,7 @@ from camel.types import ModelPlatformType, ModelType, RoleType, TaskType
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
     model_type=ModelType.GPT_4O,
-    model_config_dict=ChatGPTConfig().model_dump(),
+    model_config_dict=ChatGPTConfig().as_dict(),
 )
 
 
@@ -142,7 +142,7 @@ def test_role_playing_with_function():
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_3_5_TURBO,
-        model_config_dict=assistant_model_config.model_dump(),
+        model_config_dict=assistant_model_config.as_dict(),
     )
 
     role_playing = RolePlaying(

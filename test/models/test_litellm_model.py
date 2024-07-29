@@ -33,7 +33,7 @@ from camel.utils import LiteLLMTokenCounter
     ],
 )
 def test_litellm_model(model_type: ModelType):
-    model_config_dict = LiteLLMConfig().model_dump()
+    model_config_dict = LiteLLMConfig().as_dict()
     model = LiteLLMModel(model_type.value, model_config_dict)
     assert model.model_type == model_type.value
     assert model.model_config_dict == model_config_dict
@@ -49,7 +49,7 @@ def test_litellm_model_unexpected_argument():
         model_path="vicuna-7b-v1.5",
         server_url="http://localhost:8000/v1",
     )
-    model_config_dict = model_config.model_dump()
+    model_config_dict = model_config.as_dict()
 
     with pytest.raises(
         ValueError,

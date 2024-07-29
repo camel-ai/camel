@@ -45,13 +45,13 @@ def test_open_source_model(model_type):
         model_path=model_path,
         server_url=DEFAULT_SERVER_URL,
     )
-    model_config_dict = model_config.model_dump()
+    model_config_dict = model_config.as_dict()
     model = OpenSourceModel(model_type, model_config_dict)
 
     assert model.model_type == model_type
     assert model.model_name == model_name
     assert model.server_url == model_config.server_url
-    assert model.model_config_dict == model_config.api_params.model_dump()
+    assert model.model_config_dict == model_config.api_params.as_dict()
 
     assert isinstance(model.token_counter, OpenSourceTokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
@@ -70,7 +70,7 @@ def test_open_source_model_run(model_type):
         model_path=model_path,
         server_url=DEFAULT_SERVER_URL,
     )
-    model_config_dict = model_config.model_dump()
+    model_config_dict = model_config.as_dict()
     model = OpenSourceModel(model_type, model_config_dict)
 
     messages = [{"role": "user", "content": "Tell me a joke."}]
@@ -87,7 +87,7 @@ def test_open_source_model_close_source_model_type():
         model_path=model_path,
         server_url=DEFAULT_SERVER_URL,
     )
-    model_config_dict = model_config.model_dump()
+    model_config_dict = model_config.as_dict()
 
     with pytest.raises(
         ValueError,
@@ -105,7 +105,7 @@ def test_open_source_model_close_source_model_type():
 def test_open_source_model_mismatched_model_config():
     model_type = ModelType.VICUNA
     model_config = ChatGPTConfig()
-    model_config_dict = model_config.model_dump()
+    model_config_dict = model_config.as_dict()
 
     with pytest.raises(
         ValueError,
@@ -128,7 +128,7 @@ def test_open_source_model_unexpected_argument():
         server_url=DEFAULT_SERVER_URL,
         api_params=ChatGPTConfig(),
     )
-    model_config_dict = model_config.model_dump()
+    model_config_dict = model_config.as_dict()
 
     with pytest.raises(
         TypeError,
@@ -149,7 +149,7 @@ def test_open_source_model_invalid_model_path():
         model_path=model_path,
         server_url=DEFAULT_SERVER_URL,
     )
-    model_config_dict = model_config.model_dump()
+    model_config_dict = model_config.as_dict()
 
     with pytest.raises(
         ValueError,
@@ -172,7 +172,7 @@ def test_open_source_model_unmatched_model_path():
         model_path=model_path,
         server_url=DEFAULT_SERVER_URL,
     )
-    model_config_dict = model_config.model_dump()
+    model_config_dict = model_config.as_dict()
 
     with pytest.raises(
         ValueError,
@@ -191,7 +191,7 @@ def test_open_source_model_missing_model_path():
         model_path="",
         server_url=DEFAULT_SERVER_URL,
     )
-    model_config_dict = model_config.model_dump()
+    model_config_dict = model_config.as_dict()
 
     with pytest.raises(
         ValueError, match=("Path to open-source model is not provided.")
@@ -204,7 +204,7 @@ def test_open_source_model_missing_server_url():
     model_type = ModelType.VICUNA
     model_path = MODEL_PATH_MAP[ModelType.VICUNA]
     model_config = OpenSourceConfig(model_path=model_path, server_url="")
-    model_config_dict = model_config.model_dump()
+    model_config_dict = model_config.as_dict()
 
     with pytest.raises(
         ValueError,

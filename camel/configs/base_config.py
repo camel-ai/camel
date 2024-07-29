@@ -14,6 +14,7 @@
 from __future__ import annotations
 
 from abc import ABC
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
@@ -26,3 +27,6 @@ class BaseConfig(ABC, BaseModel):
         # UserWarning: conflict with protected namespace "model_"
         protected_namespaces=(),
     )
+
+    def as_dict(self) -> dict[str, Any]:
+        return self.model_dump()

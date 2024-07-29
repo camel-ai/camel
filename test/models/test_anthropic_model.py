@@ -35,7 +35,7 @@ from camel.utils import AnthropicTokenCounter
     ],
 )
 def test_anthropic_model(model_type: ModelType):
-    model_config_dict = AnthropicConfig().model_dump()
+    model_config_dict = AnthropicConfig().as_dict()
     model = AnthropicModel(model_type, model_config_dict)
     assert model.model_type == model_type
     assert model.model_config_dict == model_config_dict
@@ -51,7 +51,7 @@ def test_anthropic_model_unexpected_argument():
         model_path="vicuna-7b-v1.5",
         server_url="http://localhost:8000/v1",
     )
-    model_config_dict = model_config.model_dump()
+    model_config_dict = model_config.as_dict()
 
     with pytest.raises(
         ValueError,

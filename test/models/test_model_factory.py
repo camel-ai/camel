@@ -46,7 +46,7 @@ parameterize_token_counter = pytest.mark.parametrize(
         (
             ModelPlatformType.OPENAI,
             ModelType.GPT_3_5_TURBO,
-            ChatGPTConfig().model_dump(),
+            ChatGPTConfig().as_dict(),
             None,
             OpenAITokenCounter,
             ModelType.GPT_3_5_TURBO,
@@ -54,7 +54,7 @@ parameterize_token_counter = pytest.mark.parametrize(
         (
             ModelPlatformType.OPENAI,
             ModelType.GPT_4,
-            ChatGPTConfig().model_dump(),
+            ChatGPTConfig().as_dict(),
             None,
             OpenAITokenCounter,
             ModelType.GPT_4,
@@ -64,7 +64,7 @@ parameterize_token_counter = pytest.mark.parametrize(
         (
             ModelPlatformType.OPENSOURCE,
             ModelType.STUB,
-            ChatGPTConfig().model_dump(),
+            ChatGPTConfig().as_dict(),
             None,
             StubTokenCounter,
             None,
@@ -72,7 +72,7 @@ parameterize_token_counter = pytest.mark.parametrize(
         (
             ModelPlatformType.OPENSOURCE,
             ModelType.STUB,
-            ChatGPTConfig().model_dump(),
+            ChatGPTConfig().as_dict(),
             OpenAITokenCounter(ModelType.GPT_4),
             OpenAITokenCounter,
             ModelType.GPT_4,
@@ -82,7 +82,7 @@ parameterize_token_counter = pytest.mark.parametrize(
         (
             ModelPlatformType.ANTHROPIC,
             ModelType.CLAUDE_2_0,
-            AnthropicConfig().model_dump(),
+            AnthropicConfig().as_dict(),
             None,
             AnthropicTokenCounter,
             ModelType.CLAUDE_2_0,
@@ -90,7 +90,7 @@ parameterize_token_counter = pytest.mark.parametrize(
         (
             ModelPlatformType.ANTHROPIC,
             ModelType.CLAUDE_2_0,
-            AnthropicConfig().model_dump(),
+            AnthropicConfig().as_dict(),
             OpenAITokenCounter(ModelType.GPT_3_5_TURBO),
             OpenAITokenCounter,
             ModelType.GPT_3_5_TURBO,
@@ -102,7 +102,7 @@ parameterize_token_counter = pytest.mark.parametrize(
             OpenSourceConfig(
                 model_path="lmsys/vicuna-7b-v1.5",
                 server_url="http://localhost:8000/v1",
-            ).model_dump(),
+            ).as_dict(),
             None,
             OpenSourceTokenCounter,
             ModelType.VICUNA,
@@ -113,7 +113,7 @@ parameterize_token_counter = pytest.mark.parametrize(
             OpenSourceConfig(
                 model_path="lmsys/vicuna-7b-v1.5",
                 server_url="http://localhost:8000/v1",
-            ).model_dump(),
+            ).as_dict(),
             OpenAITokenCounter(ModelType.GPT_4),
             OpenAITokenCounter,
             ModelType.GPT_4,
@@ -122,7 +122,7 @@ parameterize_token_counter = pytest.mark.parametrize(
         (
             ModelPlatformType.GEMINI,
             ModelType.GEMINI_1_5_FLASH,
-            GeminiConfig().model_dump(),
+            GeminiConfig().as_dict(),
             OpenAITokenCounter(ModelType.GPT_4),
             OpenAITokenCounter,
             ModelType.GPT_4,
@@ -131,7 +131,7 @@ parameterize_token_counter = pytest.mark.parametrize(
         (
             ModelPlatformType.OLLAMA,
             "gpt-3.5-turbo",
-            OllamaConfig().model_dump(),
+            OllamaConfig().as_dict(),
             None,
             OpenAITokenCounter,
             ModelType.GPT_3_5_TURBO,
@@ -139,7 +139,7 @@ parameterize_token_counter = pytest.mark.parametrize(
         (
             ModelPlatformType.OLLAMA,
             "gpt-3.5-turbo",
-            OllamaConfig().model_dump(),
+            OllamaConfig().as_dict(),
             OpenAITokenCounter(ModelType.GPT_4),
             OpenAITokenCounter,
             ModelType.GPT_4,
@@ -150,7 +150,7 @@ parameterize_token_counter = pytest.mark.parametrize(
 
 @parametrize
 def test_model_factory(model_platform, model_type):
-    model_config_dict = ChatGPTConfig().model_dump()
+    model_config_dict = ChatGPTConfig().as_dict()
     model_inst = ModelFactory.create(
         model_platform, model_type, model_config_dict
     )
@@ -164,7 +164,7 @@ def test_model_factory(model_platform, model_type):
             "content": "Hello",
         },
     ]
-    response = model_inst.run(messages).model_dump()
+    response = model_inst.run(messages).as_dict()
     assert isinstance(response, dict)
     assert 'id' in response
     assert isinstance(response['id'], str)

@@ -43,7 +43,7 @@ from camel.utils import OpenAITokenCounter
     ],
 )
 def test_openai_model(model_type):
-    model_config_dict = ChatGPTConfig().model_dump()
+    model_config_dict = ChatGPTConfig().as_dict()
     model = AzureOpenAIModel(model_type, model_config_dict)
     assert model.model_type == model_type
     assert model.model_config_dict == model_config_dict
@@ -67,7 +67,7 @@ def test_openai_model_create(model_type):
     model = ModelFactory.create(
         model_platform=ModelPlatformType.AZURE,
         model_type=model_type,
-        model_config_dict=ChatGPTConfig(temperature=0.8, n=3).model_dump(),
+        model_config_dict=ChatGPTConfig(temperature=0.8, n=3).as_dict(),
     )
     assert model.model_type == model_type
 
@@ -79,7 +79,7 @@ def test_openai_model_unexpected_argument():
         model_path="vicuna-7b-v1.5",
         server_url="http://localhost:8000/v1",
     )
-    model_config_dict = model_config.model_dump()
+    model_config_dict = model_config.as_dict()
 
     with pytest.raises(
         ValueError,
