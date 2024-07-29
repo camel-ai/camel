@@ -29,8 +29,7 @@ runs:
     - name: Install the project dependencies
       run: |
         poetry run pip install "setuptools<72"
-        poetry run pip install git+https://github.com/EuDs63/ffmpy.git
-        poetry install --with dev,docs -E all
+        poetry install --no-cache --with dev,docs -E all
       shell: bash
     - uses: actions/cache/save@v3
       name: Save caches based on poetry.lock 
