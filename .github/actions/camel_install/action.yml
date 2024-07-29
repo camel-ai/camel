@@ -29,6 +29,7 @@ runs:
     - name: Install the project dependencies
       run: |
         poetry run pip install "setuptools<72"
+        poetry run pip install ffmpy==0.3.2
         poetry install --with dev,docs -E all
       shell: bash
     - uses: actions/cache/save@v3
