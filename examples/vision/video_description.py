@@ -32,7 +32,7 @@ sys_msg = BaseMessage.make_assistant_message(
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
     model_type=ModelType.GPT_4O,
-    model_config_dict=ChatGPTConfig().model_dump(),
+    model_config_dict=ChatGPTConfig().as_dict(),
 )
 
 # Set agent

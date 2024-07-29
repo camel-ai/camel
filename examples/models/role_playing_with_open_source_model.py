@@ -40,7 +40,7 @@ def main(
             model_path=model_path,
             server_url=server_url,
             api_params=ChatGPTConfig(temperature=0),
-        ).model_dump(),
+        ).as_dict(),
     )
 
     # Update agent_kwargs to use the created models

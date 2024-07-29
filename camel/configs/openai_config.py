@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from typing import Any, Optional, Sequence, Union
+from typing import Optional, Sequence, Union
 
 from openai._types import NOT_GIVEN, NotGiven
 from pydantic import Field
@@ -111,14 +111,6 @@ class ChatGPTConfig(BaseConfig):
     user: str = ""
     tools: Optional[list['OpenAIFunction']] = None
     tool_choice: Optional[Union[dict[str, str], str]] = None
-
-    def as_dict(self) -> dict[str, Any]:
-        config_dict = self.model_dump()
-        if self.tools:
-            config_dict["tools"] = [
-                tool.get_openai_tool_schema() for tool in self.tools
-            ]
-        return config_dict
 
 
 OPENAI_API_PARAMS = {param for param in ChatGPTConfig.model_fields.keys()}

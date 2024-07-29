@@ -14,9 +14,11 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import Any
+from typing import Any, List, Optional
 
 from pydantic import BaseModel, ConfigDict
+
+from camel.toolkits import OpenAIFunction
 
 
 class BaseConfig(ABC, BaseModel):
@@ -28,5 +30,17 @@ class BaseConfig(ABC, BaseModel):
         protected_namespaces=(),
     )
 
+    tools: Optional[List['OpenAIFunction']] = None
+    """A list of tools the model may
+    call. Currently, only functions are supported as a tool. Use this
+    to provide a list of functions the model may generate JSON inputs
+    for. A max of 128 functions are supported.
+    """
+
     def as_dict(self) -> dict[str, Any]:
-        return self.model_dump()
+        config_dict = self.model_dump()
+        if self.tools:
+            config_dict["tools"] = [
+                tool.get_openai_tool_schema() for tool in self.tools
+            ]
+        return config_dict

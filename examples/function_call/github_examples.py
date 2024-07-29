@@ -61,7 +61,7 @@ def write_weekly_pr_summary(repo_name, model=None):
     )
     assistant_model_config_dict = ChatGPTConfig(
         tools=[OpenAIFunction(toolkit.retrieve_pull_requests)], temperature=0.0
-    ).model_dump()
+    ).as_dict()
 
     assistant_model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
@@ -116,7 +116,7 @@ def solve_issue(
     assistant_model_config_dict = ChatGPTConfig(
         tools=toolkit.get_tools(),
         temperature=0.0,
-    ).model_dump()
+    ).as_dict()
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OpenAI,

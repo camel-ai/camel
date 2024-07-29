@@ -130,7 +130,7 @@ def main(
         # execution information
         print_text_animated(Fore.GREEN + "AI Assistant:")
         tool_calls: List[FunctionCallingRecord] = [
-            FunctionCallingRecord(**call.model_dump())
+            FunctionCallingRecord(**call.as_dict())
             for call in assistant_response.info['tool_calls']
         ]
         for func_record in tool_calls:

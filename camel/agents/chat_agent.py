@@ -82,6 +82,9 @@ class FunctionCallingRecord(BaseModel):
             f"\tResult: {self.result}"
         )
 
+    def as_dict(self) -> dict[str, Any]:
+        return self.model_dump()
+
 
 class ChatAgent(BaseAgent):
     r"""Class for managing conversations of CAMEL Chat Agents.
