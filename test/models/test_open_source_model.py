@@ -188,7 +188,7 @@ def test_open_source_model_unmatched_model_path():
 def test_open_source_model_missing_model_path():
     model_type = ModelType.VICUNA
     model_config = OpenSourceConfig(
-        model_path=None,
+        model_path="",
         server_url=DEFAULT_SERVER_URL,
     )
     model_config_dict = model_config.model_dump()
@@ -203,7 +203,7 @@ def test_open_source_model_missing_model_path():
 def test_open_source_model_missing_server_url():
     model_type = ModelType.VICUNA
     model_path = MODEL_PATH_MAP[ModelType.VICUNA]
-    model_config = OpenSourceConfig(model_path=model_path, server_url=None)
+    model_config = OpenSourceConfig(model_path=model_path, server_url="")
     model_config_dict = model_config.model_dump()
 
     with pytest.raises(

@@ -23,4 +23,6 @@ class BaseConfig(ABC, BaseModel):
         arbitrary_types_allowed=True,
         extra="forbid",
         frozen=True,
+        # UserWarning: conflict with protected namespace "model_"
+        protected_namespaces=(),
     )
