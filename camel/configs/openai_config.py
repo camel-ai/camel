@@ -13,18 +13,15 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
-from typing import TYPE_CHECKING, Optional, Sequence
+from typing import Optional, Sequence, Union
 
 from openai._types import NOT_GIVEN, NotGiven
+from pydantic import Field
 
 from camel.configs.base_config import BaseConfig
-
-if TYPE_CHECKING:
-    from camel.toolkits import OpenAIFunction
+from camel.toolkits import OpenAIFunction
 
 
-@dataclass(frozen=True)
 class ChatGPTConfig(BaseConfig):
     r"""Defines the parameters for generating chat completions using the
     OpenAI API.
@@ -105,15 +102,15 @@ class ChatGPTConfig(BaseConfig):
     top_p: float = 1.0
     n: int = 1
     stream: bool = False
-    stop: str | Sequence[str] | NotGiven = NOT_GIVEN
-    max_tokens: int | NotGiven = NOT_GIVEN
+    stop: Union[str, Sequence[str], NotGiven] = NOT_GIVEN
+    max_tokens: Union[int, NotGiven] = NOT_GIVEN
     presence_penalty: float = 0.0
-    response_format: dict | NotGiven = NOT_GIVEN
+    response_format: Union[dict, NotGiven] = NOT_GIVEN
     frequency_penalty: float = 0.0
-    logit_bias: dict = field(default_factory=dict)
+    logit_bias: dict = Field(default_factory=dict)
     user: str = ""
-    tools: Optional[list[OpenAIFunction]] = None
-    tool_choice: Optional[dict[str, str] | str] = None
+    tools: Optional[list['OpenAIFunction']] = None
+    tool_choice: Optional[Union[dict[str, str], str]] = None
 
     def __post_init__(self):
         if self.tools is not None:
@@ -124,10 +121,9 @@ class ChatGPTConfig(BaseConfig):
             )
 
 
-OPENAI_API_PARAMS = {param for param in asdict(ChatGPTConfig()).keys()}
+OPENAI_API_PARAMS = {param for param in ChatGPTConfig.model_fields.keys()}
 
 
-@dataclass(frozen=True)
 class OpenSourceConfig(BaseConfig):
     r"""Defines parameters for setting up open-source models and includes
     parameters to be passed to chat completion function of OpenAI API.
@@ -141,6 +137,9 @@ class OpenSourceConfig(BaseConfig):
             contain the arguments to be passed to OpenAI API.
     """
 
+    # Maybe the param needs to be renamed.
+    # Warning: Field "model_path" has conflict with protected namespace
+    # "model_".
     model_path: str
     server_url: str
-    api_params: ChatGPTConfig = field(default_factory=ChatGPTConfig)
+    api_params: ChatGPTConfig = Field(default_factory=ChatGPTConfig)

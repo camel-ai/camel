@@ -14,22 +14,19 @@
 
 
 from collections.abc import Iterable
-from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
+
+from google.generativeai.protos import Schema
+from google.generativeai.types.content_types import (
+    FunctionLibraryType,
+    ToolConfigType,
+)
+from google.generativeai.types.helper_types import RequestOptionsType
+from google.generativeai.types.safety_types import SafetySettingOptions
 
 from camel.configs.base_config import BaseConfig
 
-if TYPE_CHECKING:
-    from google.generativeai.protos import Schema
-    from google.generativeai.types.content_types import (
-        FunctionLibraryType,
-        ToolConfigType,
-    )
-    from google.generativeai.types.helper_types import RequestOptionsType
-    from google.generativeai.types.safety_types import SafetySettingOptions
 
-
-@dataclass(frozen=True)
 class GeminiConfig(BaseConfig):
     r"""A simple dataclass used to configure the generation parameters of
     `GenerativeModel.generate_content`.
@@ -95,4 +92,4 @@ class GeminiConfig(BaseConfig):
     request_options: Optional['RequestOptionsType'] = None
 
 
-Gemini_API_PARAMS = {param for param in asdict(GeminiConfig()).keys()}
+Gemini_API_PARAMS = {param for param in GeminiConfig().model_dump().keys()}

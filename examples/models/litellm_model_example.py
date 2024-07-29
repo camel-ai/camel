@@ -20,7 +20,7 @@ from camel.types import ModelPlatformType
 model = ModelFactory.create(
     model_platform=ModelPlatformType.LITELLM,
     model_type="gpt-4o",
-    model_config_dict=LiteLLMConfig(temperature=0.2).__dict__,
+    model_config_dict=LiteLLMConfig(temperature=0.2).model_dump(),
 )
 
 # Define system message

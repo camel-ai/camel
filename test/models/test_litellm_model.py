@@ -32,24 +32,24 @@ from camel.utils import LiteLLMTokenCounter
         ModelType.GPT_4O,
     ],
 )
-def test_litellm_model(model_type):
-    model_config_dict = LiteLLMConfig().__dict__
-    model = LiteLLMModel(model_type, model_config_dict)
-    assert model.model_type == model_type
+def test_litellm_model(model_type: ModelType):
+    model_config_dict = LiteLLMConfig().model_dump()
+    model = LiteLLMModel(model_type.value, model_config_dict)
+    assert model.model_type == model_type.value
     assert model.model_config_dict == model_config_dict
     assert isinstance(model.token_counter, LiteLLMTokenCounter)
-    assert isinstance(model.model_type.value_for_tiktoken, str)
-    assert isinstance(model.model_type.token_limit, int)
+    assert isinstance(model_type.value_for_tiktoken, str)
+    assert isinstance(model_type.token_limit, int)
 
 
 @pytest.mark.model_backend
 def test_litellm_model_unexpected_argument():
-    model_type = ModelType.GPT_4
+    model_type = ModelType.GPT_4.value
     model_config = OpenSourceConfig(
         model_path="vicuna-7b-v1.5",
         server_url="http://localhost:8000/v1",
     )
-    model_config_dict = model_config.__dict__
+    model_config_dict = model_config.model_dump()
 
     with pytest.raises(
         ValueError,

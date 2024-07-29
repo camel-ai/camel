@@ -42,7 +42,7 @@ def generate_data(
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_3_5_TURBO,
-        model_config_dict=ChatGPTConfig(temperature=1.4).__dict__,
+        model_config_dict=ChatGPTConfig(temperature=1.4).model_dump(),
     )
 
     role_play_session = RolePlaying(

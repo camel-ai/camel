@@ -33,19 +33,21 @@ def main(
 ) -> None:
     task_prompt = "Develop a trading bot for the stock market"
 
+    model = ModelFactory.create(
+        model_platform=model_platform,
+        model_type=model_type,
+        model_config_dict=OpenSourceConfig(
+            model_path=model_path,
+            server_url=server_url,
+            api_params=ChatGPTConfig(temperature=0),
+        ).model_dump(),
+    )
+
+    # Update agent_kwargs to use the created models
     agent_kwargs = {
-        role: dict(
-            model=ModelFactory.create(
-                model_platform=model_platform,
-                model_type=model_type,
-                model_config_dict=OpenSourceConfig(
-                    model_path=model_path,
-                    server_url=server_url,
-                    api_params=ChatGPTConfig(temperature=0),
-                ).__dict__,
-            ),
-        )
-        for role in ["assistant", "user", "task-specify"]
+        "assistant": {"model": model},
+        "user": {"model": model},
+        "task-specify": {"model": model},
     }
 
     role_play_session = RolePlaying(

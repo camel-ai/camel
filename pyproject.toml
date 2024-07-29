@@ -30,15 +30,20 @@ documentation = "https://docs.camel-ai.org"
 python = ">=3.9.0,<3.12"
 numpy = "^1"
 openai = "^1.2.3"
+groq = "^0.5.0"
+anthropic = "^0.29.0"
 tiktoken = "^0.7.0"
 colorama = "^0"
 jsonschema = "^4"
 protobuf = "^4"
 pathlib = "^1.0.1"
-anthropic = "^0.29.0"
 docstring-parser = "^0.15"
 pydantic = ">=1.9,<3"
+eval-type-backport = "0.2.0"
 curl_cffi = "0.6.2"
+jupyter_client = "^8.6.2"
+ipykernel = "^6.0.0"
+
 pillow ="^10.2.0"
 
 # model-platforms
@@ -83,7 +88,6 @@ sentence-transformers = { version = "^3.0.1", optional = true }
 # vector-databases
 qdrant-client = { version = "^1.9.0", optional = true }
 pymilvus = { version = "^2.4.0", optional = true }
-milvus-lite = { version = "^2.4.0, <=2.4.7", optional = true }
 
 # graph-storages
 neo4j = { version = "^5.18.0", optional = true }
@@ -145,6 +149,7 @@ tools = [
     "pyTelegramBotAPI",
     "discord.py",
     "docker",
+    "jupyter_client",
 ]
 
 vector-databases = [
@@ -197,6 +202,7 @@ all = [
     "pydub",
     "pillow",
     "docker",
+    "jupyter_client",
     # vector-database
     "qdrant-client",
     "pymilvus",
@@ -298,6 +304,8 @@ module = [
     "tiktoken",
     "openai",
     "openai.error",
+    "groq",
+    "anthropic",
     "pytest",
     "_pytest.config",
     "_pytest.nodes",
