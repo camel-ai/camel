@@ -14,13 +14,13 @@
 
 import os
 from io import BytesIO
-from pathlib import Path
+from pathlib import PurePath
 from typing import Optional
 
 import boto3
 from colorama import Fore
 
-from camel.loaders import File, read_file
+from camel.loaders import File
 from camel.storages.object_storages.base import BaseObjectStorage
 
 
@@ -72,11 +72,11 @@ class S3Storage(BaseObjectStorage):
         try:
             self._s3_client.head_bucket(Bucket=self._bucket_name)
         except Exception as e:
-            raise Exception(
+            raise PermissionError(
                 f"Error: Unable to access the S3 bucket: {e}"
             ) from e
 
-    def put_file(self, file_path: Path, file: File) -> None:
+    def put_file(self, file_path: PurePath, file: File) -> None:
         r"""Upload a file to the S3 bucket.
 
         Args:
@@ -88,54 +88,60 @@ class S3Storage(BaseObjectStorage):
             Bucket=self._bucket_name, Key=file_key, Body=file.raw_bytes
         )
 
-    def get_file(self, file_path: Path) -> File:
+    def get_file(self, file_path: PurePath) -> File:
         r"""Download a file from the S3 bucket.
 
         Args:
-            file_path (Path): The path to the object in the S3 bucket.
+            file_path (PurePath): The path to the object in the S3 bucket.
 
         Returns:
             File: The object from the S3 bucket.
         """
         file_key = self.canonicalize_path(file_path)
-        file_name = file_path.name
+        filename = file_path.name
         response = self._s3_client.get_object(
             Bucket=self._bucket_name, Key=file_key
         )
         raw_bytes = response["Body"].read()
         file = BytesIO(raw_bytes)
-        file.name = file_name
-        return read_file(file)
+        file.name = filename
+        return File.create_file(file, filename)
 
-    def canonicalize_path(self, file_path: Path) -> str:
+    @staticmethod
+    def canonicalize_path(file_path: PurePath) -> str:
         r"""Canonicalize the path for the S3 bucket.
 
         Args:
             file_path (Path): The path to be canonicalized.
 
         Returns:
-            str: The canonicalized S3 object path.
+            str: The canonicalized S3 object key.
         """
         return file_path.as_posix()
 
-    def upload_file(self, local_file_path: Path, s3_file_path: Path) -> None:
+    def upload_file(
+        self, local_file_path: PurePath, s3_file_path: PurePath
+    ) -> None:
         r"""Upload a local file to the S3 bucket.
 
         Args:
-            local_file_path (Path): The path to the local file to be uploaded.
-            s3_file_path (Path): The path to the object in the S3 bucket.
+            local_file_path (PurePath): The path to the local file to be
+                uploaded.
+            s3_file_path (PurePath): The path to the object in the S3 bucket.
         """
         file_key = self.canonicalize_path(s3_file_path)
         self._s3_client.upload_file(
             Filename=local_file_path, Bucket=self._bucket_name, Key=file_key
         )
 
-    def download_file(self, local_file_path: Path, s3_file_path: Path) -> None:
+    def download_file(
+        self, local_file_path: PurePath, s3_file_path: PurePath
+    ) -> None:
         r"""Download a file from the S3 bucket to the local system.
 
         Args:
-            local_file_path (Path): The path to the local file to be saved.
-            s3_file_path (Path): The path to the object in the S3 bucket.
+            local_file_path (PurePath): The path to the local file to be saved.
+            s3_file_path (PurePath): The path to the object in the S3 bucket.
         """
         file_key = self.canonicalize_path(s3_file_path)
         self._s3_client.download_file(

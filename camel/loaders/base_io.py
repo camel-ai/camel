@@ -27,50 +27,79 @@ class File(ABC):
 
     Args:
         name (str): The name of the file.
-        id (str): The unique identifier of the file.
+        file_id (str): The unique identifier of the file.
         metadata (Dict[str, Any], optional): Additional metadata
             associated with the file. Defaults to None.
         docs (List[Dict[str, Any]], optional): A list of documents
             contained within the file. Defaults to None.
         raw_bytes (bytes, optional): The raw bytes content of the file.
+            Defaults to b"".
     """
 
     def __init__(
         self,
         name: str,
-        id: str,
+        file_id: str,
         metadata: Optional[Dict[str, Any]] = None,
         docs: Optional[List[Dict[str, Any]]] = None,
-        raw_bytes: Optional[bytes] = None,
+        raw_bytes: bytes = b"",
     ):
         self.name = name
-        self.id = id
+        self.file_id = file_id
         self.metadata = metadata or {}
         self.docs = docs or []
-        self.raw_bytes = raw_bytes or b""
+        self.raw_bytes = raw_bytes
 
     @classmethod
     @abstractmethod
-    def from_bytes(cls, file: BytesIO) -> "File":
+    def from_bytes(cls, file: BytesIO, filename: str) -> "File":
         r"""Creates a File object from a BytesIO object.
 
         Args:
             file (BytesIO): A BytesIO object representing the contents of the
                 file.
+            filename (str): The name of the file.
 
         Returns:
             File: A File object.
         """
 
+    @staticmethod
+    def create_file(file: BytesIO, filename: str) -> "File":
+        r"""Reads an uploaded file and returns a File object.
+
+        Args:
+            file (BytesIO): A BytesIO object representing the contents of the
+                file.
+            filename (str): The name of the file.
+
+        Returns:
+            File: A File object.
+        """
+        ext_to_cls = {
+            "docx": DocxFile,
+            "pdf": PdfFile,
+            "txt": TxtFile,
+            "json": JsonFile,
+            "html": HtmlFile,
+        }
+
+        ext = filename.split(".")[-1].lower()
+        if ext not in ext_to_cls:
+            raise NotImplementedError(f"File type {ext} not supported")
+
+        out_file = ext_to_cls[ext].from_bytes(file, filename)
+        return out_file
+
     def __repr__(self) -> str:
         return (
-            f"File(name={self.name}, id={self.id}, "
+            f"File(name={self.name}, id={self.file_id}, "
             f"metadata={self.metadata}, docs={self.docs})"
         )
 
     def __str__(self) -> str:
         return (
-            f"File(name={self.name}, id={self.id}, metadata="
+            f"File(name={self.name}, id={self.file_id}, metadata="
             f"{self.metadata})"
         )
 
@@ -79,7 +108,7 @@ class File(ABC):
 
         return self.__class__(
             name=self.name,
-            id=self.id,
+            file_id=self.file_id,
             metadata=deepcopy(self.metadata),
             docs=deepcopy(self.docs),
             raw_bytes=self.raw_bytes,
@@ -101,12 +130,13 @@ def strip_consecutive_newlines(text: str) -> str:
 class DocxFile(File):
     @classmethod
     @dependencies_required('docx2txt')
-    def from_bytes(cls, file: BytesIO) -> "DocxFile":
+    def from_bytes(cls, file: BytesIO, filename: str) -> "DocxFile":
         r"""Creates a DocxFile object from a BytesIO object.
 
         Args:
             file (BytesIO): A BytesIO object representing the contents of the
                 docx file.
+            filename (str): The name of the file.
 
         Returns:
             DocxFile: A DocxFile object.
@@ -121,17 +151,23 @@ class DocxFile(File):
         file_id = md5(file.getvalue()).hexdigest()
         # Reset the file pointer to the beginning
         file.seek(0)
-        return cls(name=file.name, id=file_id, docs=[doc])
+        return cls(
+            name=filename,
+            file_id=file_id,
+            docs=[doc],
+            raw_bytes=file.getvalue(),
+        )
 
 
 class PdfFile(File):
     @classmethod
-    def from_bytes(cls, file: BytesIO) -> "PdfFile":
+    def from_bytes(cls, file: BytesIO, filename: str) -> "PdfFile":
         r"""Creates a PdfFile object from a BytesIO object.
 
         Args:
             file (BytesIO): A BytesIO object representing the contents of the
                 pdf file.
+            filename (str): The name of the file.
 
         Returns:
             PdfFile: A PdfFile object.
@@ -157,17 +193,23 @@ class PdfFile(File):
         file_id = md5(file.getvalue()).hexdigest()
         # Reset the file pointer to the beginning
         file.seek(0)
-        return cls(name=file.name, id=file_id, docs=docs)
+        return cls(
+            name=filename,
+            file_id=file_id,
+            docs=docs,
+            raw_bytes=file.getvalue(),
+        )
 
 
 class TxtFile(File):
     @classmethod
-    def from_bytes(cls, file: BytesIO) -> "TxtFile":
+    def from_bytes(cls, file: BytesIO, filename: str) -> "TxtFile":
         r"""Creates a TxtFile object from a BytesIO object.
 
         Args:
             file (BytesIO): A BytesIO object representing the contents of the
                 txt file.
+            filename (str): The name of the file.
 
         Returns:
             TxtFile: A TxtFile object.
@@ -181,17 +223,23 @@ class TxtFile(File):
         file_id = md5(file.getvalue()).hexdigest()
         # Reset the file pointer to the beginning
         file.seek(0)
-        return cls(name=file.name, id=file_id, docs=[doc])
+        return cls(
+            name=filename,
+            file_id=file_id,
+            docs=[doc],
+            raw_bytes=file.getvalue(),
+        )
 
 
 class JsonFile(File):
     @classmethod
-    def from_bytes(cls, file: BytesIO) -> "JsonFile":
+    def from_bytes(cls, file: BytesIO, filename: str) -> "JsonFile":
         r"""Creates a JsonFile object from a BytesIO object.
 
         Args:
             file (BytesIO): A BytesIO object representing the contents of the
                 json file.
+            filename (str): The name of the file.
 
         Returns:
             JsonFile: A JsonFile object.
@@ -204,17 +252,23 @@ class JsonFile(File):
         file_id = md5(file.getvalue()).hexdigest()
         # Reset the file pointer to the beginning
         file.seek(0)
-        return cls(name=file.name, id=file_id, docs=[doc])
+        return cls(
+            name=filename,
+            file_id=file_id,
+            docs=[doc],
+            raw_bytes=file.getvalue(),
+        )
 
 
 class HtmlFile(File):
     @classmethod
-    def from_bytes(cls, file: BytesIO) -> "HtmlFile":
+    def from_bytes(cls, file: BytesIO, filename: str) -> "HtmlFile":
         r"""Creates a HtmlFile object from a BytesIO object.
 
         Args:
             file (BytesIO): A BytesIO object representing the contents of the
                 html file.
+            filename (str): The name of the file.
 
         Returns:
             HtmlFile: A HtmlFile object.
@@ -237,33 +291,9 @@ class HtmlFile(File):
         file_id = md5(file.getvalue()).hexdigest()
         # Reset the file pointer to the beginning
         file.seek(0)
-        return cls(name=file.name, id=file_id, docs=[doc])
-
-
-def read_file(file: BytesIO) -> File:
-    r"""Reads an uploaded file and returns a File object.
-
-    Args:
-        file (BytesIO): A BytesIO object representing the contents of the file.
-
-    Returns:
-        File: A File object.
-    """
-    # Determine the file type based on the file extension
-    out_file: File
-    if file.name.lower().endswith(".docx"):
-        out_file = DocxFile.from_bytes(file)
-    elif file.name.lower().endswith(".pdf"):
-        out_file = PdfFile.from_bytes(file)
-    elif file.name.lower().endswith(".txt"):
-        out_file = TxtFile.from_bytes(file)
-    elif file.name.lower().endswith(".json"):
-        out_file = JsonFile.from_bytes(file)
-    elif file.name.lower().endswith(".html"):
-        out_file = HtmlFile.from_bytes(file)
-    else:
-        raise NotImplementedError(
-            f"File type {file.name.split('.')[-1]} not supported"
+        return cls(
+            name=filename,
+            file_id=file_id,
+            docs=[doc],
+            raw_bytes=file.getvalue(),
         )
-    out_file.raw_bytes = file.getvalue()
-    return out_file

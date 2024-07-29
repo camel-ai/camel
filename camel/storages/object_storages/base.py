@@ -39,8 +39,9 @@ class BaseObjectStorage(ABC):
             File: The file object get from the storage.
         """
 
+    @staticmethod
     @abstractmethod
-    def canonicalize_path(self, file_path: Path) -> str:
+    def canonicalize_path(file_path: Path) -> str:
         r"""Canonicalize the file path into the file key in the storage.
 
         Args:
