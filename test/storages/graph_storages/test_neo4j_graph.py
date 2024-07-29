@@ -12,6 +12,8 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import pytest
+import os
+
 from unstructured.documents.elements import Element
 
 from camel.storages import Neo4jGraph
@@ -26,6 +28,11 @@ from camel.storages.graph_storages.neo4j_graph import (
     REL_PROPERTY_QUERY,
     REL_QUERY,
 )
+
+url = os.environ.get("NEO4J_URI", "default_url")
+username = os.environ.get("NEO4J_USERNAME", "default_username")
+password = os.environ.get("NEO4J_PASSWORD", "default_password")
+
 
 test_data = [
     GraphElement(
@@ -43,10 +50,6 @@ test_data = [
         source=Element(element_id="a04b820b51c760a41415c57c1eef8f08"),
     )
 ]
-
-url = "neo4j+s://866eb797.databases.neo4j.io"
-username = "neo4j"
-password = "qWPP2DuicLBhzLz4o5C1qGVfdI32vaqECVpqpM9ZrAQ"
 
 
 def test_cypher_return_correct_schema() -> None:
