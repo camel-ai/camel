@@ -18,6 +18,7 @@ runs:
       run: |
         poetry config virtualenvs.create true --local
         poetry config virtualenvs.in-project true --local
+        poetry run pip install "setuptools<72"
       shell: bash
     - uses: actions/cache/restore@v3
       id: cache-restore
@@ -26,7 +27,9 @@ runs:
         path: ./.venv
         key: venv-${{ hashFiles('poetry.lock') }}
     - name: Install the project dependencies
-      run: poetry install --with dev,docs -E all
+      run: |
+        poetry run pip install "setuptools<72"
+        poetry install --with dev,docs -E all
       shell: bash
     - uses: actions/cache/save@v3
       name: Save caches based on poetry.lock 
