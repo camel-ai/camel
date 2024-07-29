@@ -31,6 +31,8 @@ class MistralConfig(BaseConfig):
     r"""Defines the parameters for generating chat completions using the
     Mistral API.
 
+    reference: https://github.com/mistralai/client-python/blob/9d238f88c41689821d7b08570f13b43426f97fd6/src/mistralai/client.py#L195
+
     Args:
         temperature (Optional[float], optional): temperature the temperature
             to use for sampling, e.g. 0.5.
