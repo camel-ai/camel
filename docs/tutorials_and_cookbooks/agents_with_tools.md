@@ -1,10 +1,9 @@
 # 🐫 Agents with Tools
 
-## Philosophical Bits
 [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1DMtHu4v2GqfjgvC9H4jkp49Bv1Fkd3DH?authuser=1#scrollTo=ssX_map8c6mx)
 
 
-In this notebook, we show the useage of CAMEL Tools with `ChatAgent` and `RolePlaying`.
+## In this notebook, we show the useage of CAMEL Tools with `ChatAgent` and `RolePlaying`.
 
 2 main parts included:
 - Using Tools Integrated by CAMEL
