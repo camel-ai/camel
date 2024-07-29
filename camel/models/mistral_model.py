@@ -31,7 +31,7 @@ from camel.utils import (
 class MistralModel(BaseModelBackend):
     r"""Mistral API in a unified BaseModelBackend interface."""
 
-    # TODO: Support tool calling and stream mode.
+    # TODO: Support tool calling.
 
     def __init__(
         self,
@@ -52,8 +52,8 @@ class MistralModel(BaseModelBackend):
                 mistral service. (default: :obj:`None`)
             url (Optional[str]): The url to the mistral service.
             token_counter (Optional[BaseTokenCounter]): Token counter to use
-                for the model. If not provided, `OpenAITokenCounter(ModelType.
-                GPT_3_5_TURBO)` will be used.
+                for the model. If not provided, `MistralTokenCounter` will be
+                used.
         """
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
