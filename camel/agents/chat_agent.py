@@ -15,7 +15,16 @@ from __future__ import annotations
 
 import json
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
 
 from pydantic import BaseModel
 
@@ -312,7 +321,7 @@ class ChatAgent(BaseAgent):
         tool_calls: List[FunctionCallingRecord] = []
         while True:
             # Format messages and get the token number
-            openai_messages: list[OpenAIMessage] | None
+            openai_messages: Optional[List[OpenAIMessage]]
 
             try:
                 openai_messages, num_tokens = self.memory.get_context()
@@ -390,7 +399,7 @@ class ChatAgent(BaseAgent):
         tool_calls: List[FunctionCallingRecord] = []
         while True:
             # Format messages and get the token number
-            openai_messages: list[OpenAIMessage] | None
+            openai_messages: Optional[List[OpenAIMessage]]
 
             try:
                 openai_messages, num_tokens = self.memory.get_context()
@@ -447,13 +456,13 @@ class ChatAgent(BaseAgent):
 
     def _step_model_response(
         self,
-        openai_messages: list[OpenAIMessage],
+        openai_messages: List[OpenAIMessage],
         num_tokens: int,
     ) -> tuple[
-        ChatCompletion | Stream[ChatCompletionChunk],
-        list[BaseMessage],
-        list[str],
-        dict[str, int],
+        Union[ChatCompletion, Stream],
+        List[BaseMessage],
+        List[str],
+        Dict[str, int],
         str,
     ]:
         r"""Internal function for agent step model response."""
