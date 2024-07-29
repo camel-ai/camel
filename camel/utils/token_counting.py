@@ -26,6 +26,8 @@ from PIL import Image
 from camel.types import ModelType, OpenAIImageType, OpenAIVisionDetailType
 
 if TYPE_CHECKING:
+    from mistral_common.protocol.instruct.request import ChatCompletionRequest
+
     from camel.messages import OpenAIMessage
 
 LOW_DETAIL_TOKENS = 85
@@ -37,7 +39,7 @@ EXTRA_TOKENS = 85
 
 
 def messages_to_prompt(messages: List[OpenAIMessage], model: ModelType) -> str:
-    r"""Parse the message list into a single prompt following model-specifc
+    r"""Parse the message list into a single prompt following model-specific
     formats.
 
     Args:
@@ -340,7 +342,7 @@ class OpenAITokenCounter(BaseTokenCounter):
                                 base64.b64decode(encoded_image)
                             )
                             image = Image.open(image_bytes)
-                            num_tokens += count_tokens_from_image(
+                            num_tokens += self._count_tokens_from_image(
                                 image, OpenAIVisionDetailType(detail)
                             )
                 if key == "name":
@@ -349,6 +351,45 @@ class OpenAITokenCounter(BaseTokenCounter):
         # every reply is primed with <|start|>assistant<|message|>
         num_tokens += 3
         return num_tokens
+
+    def _count_tokens_from_image(
+        self, image: Image.Image, detail: OpenAIVisionDetailType
+    ) -> int:
+        r"""Count image tokens for OpenAI vision model. An :obj:`"auto"`
+        resolution model will be treated as :obj:`"high"`. All images with
+        :obj:`"low"` detail cost 85 tokens each. Images with :obj:`"high"` detail
+        are first scaled to fit within a 2048 x 2048 square, maintaining their
+        aspect ratio. Then, they are scaled such that the shortest side of the
+        image is 768px long. Finally, we count how many 512px squares the image
+        consists of. Each of those squares costs 170 tokens. Another 85 tokens are
+        always added to the final total. For more details please refer to `OpenAI
+        vision docs <https://platform.openai.com/docs/guides/vision>`_
+
+        Args:
+            image (PIL.Image.Image): Image to count number of tokens.
+            detail (OpenAIVisionDetailType): Image detail type to count
+                number of tokens.
+
+        Returns:
+            int: Number of tokens for the image given a detail type.
+        """
+        if detail == OpenAIVisionDetailType.LOW:
+            return LOW_DETAIL_TOKENS
+
+        width, height = image.size
+        if width > FIT_SQUARE_PIXELS or height > FIT_SQUARE_PIXELS:
+            scaling_factor = max(width, height) / FIT_SQUARE_PIXELS
+            width = int(width / scaling_factor)
+            height = int(height / scaling_factor)
+
+        scaling_factor = min(width, height) / SHORTEST_SIDE_PIXELS
+        scaled_width = int(width / scaling_factor)
+        scaled_height = int(height / scaling_factor)
+
+        h = ceil(scaled_height / SQUARE_PIXELS)
+        w = ceil(scaled_width / SQUARE_PIXELS)
+        total = EXTRA_TOKENS + SQUARE_TOKENS * h * w
+        return total
 
 
 class AnthropicTokenCounter(BaseTokenCounter):
@@ -468,41 +509,68 @@ class LiteLLMTokenCounter:
         return self.completion_cost(completion_response=response)
 
 
-def count_tokens_from_image(
-    image: Image.Image, detail: OpenAIVisionDetailType
-) -> int:
-    r"""Count image tokens for OpenAI vision model. An :obj:`"auto"`
-    resolution model will be treated as :obj:`"high"`. All images with
-    :obj:`"low"` detail cost 85 tokens each. Images with :obj:`"high"` detail
-    are first scaled to fit within a 2048 x 2048 square, maintaining their
-    aspect ratio. Then, they are scaled such that the shortest side of the
-    image is 768px long. Finally, we count how many 512px squares the image
-    consists of. Each of those squares costs 170 tokens. Another 85 tokens are
-    always added to the final total. For more details please refer to `OpenAI
-    vision docs <https://platform.openai.com/docs/guides/vision>`_
+class MistralTokenCounter(BaseTokenCounter):
+    def __init__(self, model_type: ModelType):
+        r"""Constructor for the token counter for Mistral models.
 
-    Args:
-        image (PIL.Image.Image): Image to count number of tokens.
-        detail (OpenAIVisionDetailType): Image detail type to count
-            number of tokens.
+        Args:
+            model_type (ModelType): Model type for which tokens will be
+                counted.
+        """
+        from mistral_common.tokens.tokenizers.mistral import MistralTokenizer
 
-    Returns:
-        int: Number of tokens for the image given a detail type.
-    """
-    if detail == OpenAIVisionDetailType.LOW:
-        return LOW_DETAIL_TOKENS
+        self.model_type = model_type
 
-    width, height = image.size
-    if width > FIT_SQUARE_PIXELS or height > FIT_SQUARE_PIXELS:
-        scaling_factor = max(width, height) / FIT_SQUARE_PIXELS
-        width = int(width / scaling_factor)
-        height = int(height / scaling_factor)
+        # Determine the model type and set the tokenizer accordingly
+        model_name = (
+            "codestral-22b"
+            if self.model_type
+            in {ModelType.MISTRAL_CODESTRAL, ModelType.MISTRAL_CODESTRAL_MAMBA}
+            else self.model_type.value
+        )
 
-    scaling_factor = min(width, height) / SHORTEST_SIDE_PIXELS
-    scaled_width = int(width / scaling_factor)
-    scaled_height = int(height / scaling_factor)
+        self.tokenizer = MistralTokenizer.from_model(model_name)
 
-    h = ceil(scaled_height / SQUARE_PIXELS)
-    w = ceil(scaled_width / SQUARE_PIXELS)
-    total = EXTRA_TOKENS + SQUARE_TOKENS * h * w
-    return total
+    def count_tokens_from_messages(self, messages: List[OpenAIMessage]) -> int:
+        r"""Count number of tokens in the provided message list using
+        loaded tokenizer specific for this type of model.
+
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
+
+        Returns:
+            int: Total number of tokens in the messages.
+        """
+        total_tokens = 0
+        for msg in messages:
+            tokens = self.tokenizer.encode_chat_completion(
+                self._convert_response_from_openai_to_mistral(msg)
+            ).tokens
+            total_tokens += len(tokens)
+        return total_tokens
+
+    def _convert_response_from_openai_to_mistral(
+        self, openai_msg: OpenAIMessage
+    ) -> ChatCompletionRequest:
+        r"""Convert an OpenAI message to a Mistral ChatCompletionRequest.
+
+        Args:
+            openai_msg (OpenAIMessage): An individual message with OpenAI
+                format.
+
+        Returns:
+            ChatCompletionRequest: The converted message in Mistral's request
+                format.
+        """
+
+        from mistral_common.protocol.instruct.request import (
+            ChatCompletionRequest,
+        )
+
+        mistral_request = ChatCompletionRequest(  # type: ignore[type-var]
+            model=self.model_type.value,
+            messages=[openai_msg],
+        )
+
+        return mistral_request

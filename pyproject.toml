@@ -43,11 +43,13 @@ curl_cffi = "0.6.2"
 jupyter_client = "^8.6.2"
 ipykernel = "^6.0.0"
 
-pillow = "^10.2.0"
+pillow ="^10.2.0"
 
 # model-platforms
 litellm = { version = "^1.38.1", optional = true }
 google-generativeai = { version = "^0.6.0", optional = true }
+mistralai = { version = "^0.4.2", optional = true }
+mistral-common = { version = "^1.3.3", optional = true }
 
 # huggingface-agent
 transformers = { version = "^4", optional = true }
@@ -65,22 +67,21 @@ docx2txt = { version = "^0.8", optional = true }
 PyMuPDF = { version = "^1.22.5", optional = true }
 wikipedia = { version = "^1", optional = true }
 duckduckgo-search = { version = "^6.1.0", optional = true }
-newspaper3k = { version = "^0.2.8", optional = true }
+newspaper3k = {version = "^0.2.8", optional = true}
 wolframalpha = { version = "^5.0.0", optional = true }
 pyowm = { version = "^3.3.0", optional = true }
 googlemaps = { version = "^4.10.0", optional = true }
 requests_oauthlib = { version = "^1.3.1", optional = true }
 prance = { version = "^23.6.21.0", optional = true }
 openapi-spec-validator = { version = "^0.7.1", optional = true }
-unstructured = { extras = ["all-docs"], version = "^0.15.0", optional = true }
+unstructured = { extras = ["all-docs"], version = "^0.10.30", optional = true }
 slack-sdk = { version = "^3.27.2", optional = true }
 pydub = { version = "^0.25.1", optional = true }
 pygithub = { version = "^2.3.0", optional = true }
-imageio = { extras = ["pyav"], version = "^2.34.2" }
+imageio = {extras = ["pyav"], version = "^2.34.2"}
 pyTelegramBotAPI = { version = "^4.18.0", optional = true }
 "discord.py" = { version = "^2.3.2", optional = true }
-docker = { version = "^7.1.0", optional = true }
-boto3 = { version = "^1.34.149", optional = true }
+docker = { version="^7.1.0", optional = true }
 
 # encoders
 sentence-transformers = { version = "^3.0.1", optional = true }
@@ -100,9 +101,9 @@ rank-bm25 = { version = "^0.2.2", optional = true }
 cohere = { version = "^4.56", optional = true }
 
 # test
-pytest = { version = "^7", optional = true }
+pytest = { version = "^7", optional = true}
 pytest-asyncio = { version = "^0.23.0", optional = true }
-mock = { version = "^5", optional = true }
+mock = { version = "^5", optional = true}
 
 [tool.poetry.extras]
 test = ["pytest", "mock", "pytest-asyncio"]
@@ -110,6 +111,8 @@ test = ["pytest", "mock", "pytest-asyncio"]
 model-platforms = [
     "litellm",
     "google-generativeai",
+    "mistralai",
+    "mistral-common",
 ]
 
 huggingface-agent = [
@@ -150,7 +153,6 @@ tools = [
     "discord.py",
     "docker",
     "jupyter_client",
-    "boto3",
 ]
 
 vector-databases = [
@@ -204,7 +206,6 @@ all = [
     "pillow",
     "docker",
     "jupyter_client",
-    "boto3",
     # vector-database
     "qdrant-client",
     "pymilvus",
@@ -218,9 +219,11 @@ all = [
     "rank-bm25",
     # model platforms
     "litellm",
+    "mistralai",
+    "mistral-common",
+    "google-generativeai",
     # kv-storages
     "redis",
-    "google-generativeai",
 ]
 
 [tool.poetry.group.dev]
@@ -264,11 +267,11 @@ quote-style = "preserve"
 
 [tool.ruff.lint]
 extend-select = [
-    "I", # isort
-    "B", # flake8-bugbear
-    "C4", # flake8-comprehensions
-    "PGH", # pygrep-hooks
-    "RUF", # ruff
+    "I",    # isort
+    "B",    # flake8-bugbear
+    "C4",   # flake8-comprehensions
+    "PGH",  # pygrep-hooks
+    "RUF",  # ruff
     "E",
 ]
 
@@ -350,6 +353,7 @@ module = [
     "docker.*",
     "google.*",
     "google-generativeai",
-    "boto3",
+    "mistralai",
+    "mistral_common",
 ]
 ignore_missing_imports = true
