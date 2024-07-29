@@ -42,7 +42,7 @@ pydantic = ">=1.9,<3"
 curl_cffi = "0.6.2"
 jupyter_client = "^8.6.2"
 ipykernel = "^6.0.0"
-setuptools = "<72.0.0"
+setuptools = "71.0.0"
 
 pillow ="^10.2.0"
 
