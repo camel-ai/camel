@@ -22,6 +22,9 @@ from typing import Dict, List, Optional, Tuple
 import gradio as gr
 
 from apps.data_explorer.loader import Datasets, load_datasets
+from camel.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 def parse_arguments():
@@ -70,7 +73,7 @@ def parse_arguments():
     )
     args, unknown = parser.parse_known_args()
     if len(unknown) > 0:
-        print("Unknown args: ", unknown)
+        logger.warn("Unknown args: %s", unknown)
     return args
 
 
@@ -407,11 +410,11 @@ def construct_blocks(data_path: str, default_dataset: Optional[str]):
         gr.Blocks: Blocks instance.
     """
 
-    print("Loading the dataset...")
+    logger.info("Loading the dataset...")
     datasets = load_datasets(data_path)
-    print("Dataset is loaded")
+    logger.info("Dataset is loaded")
 
-    print("Getting Data Explorer web server online...")
+    logger.info("Getting Data Explorer web server online...")
 
     with gr.Blocks() as blocks:
         construct_ui(blocks, datasets, default_dataset)
@@ -433,7 +436,7 @@ def main():
         server_port=args.server_port,
     )
 
-    print("Exiting.")
+    logger.info("Exiting.")
 
 
 if __name__ == "__main__":

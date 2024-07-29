@@ -22,9 +22,12 @@ from camel.agents import (
 )
 from camel.agents.chat_agent import ChatAgentResponse
 from camel.generators import SystemMessageGenerator
+from camel.logger import get_logger
 from camel.messages import BaseMessage
 from camel.prompts import TextPrompt
 from camel.types import RoleType, TaskType
+
+logger = get_logger(__name__)
 
 
 class BabyAGI:
@@ -261,7 +264,7 @@ class BabyAGI:
             )
             self.subtasks = deque(prioritized_subtask_list)
         else:
-            print("no new tasks")
+            logger.info("no new tasks")
         assistant_response.info['task_name'] = task_name
         assistant_response.info['subtasks'] = list(self.subtasks)
         if not self.subtasks:
