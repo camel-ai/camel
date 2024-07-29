@@ -1,5 +1,5 @@
 [build-system]
-requires = ["poetry-core>=1.0.0", "setuptools"]
+requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
@@ -45,6 +45,7 @@ ipykernel = "^6.0.0"
 
 pillow ="^10.2.0"
 setuptools = "^68.0.0"
+ffmpy = "^0.3.2"
 
 # model-platforms
 litellm = { version = "^1.38.1", optional = true }
