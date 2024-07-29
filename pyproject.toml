@@ -105,6 +105,7 @@ pytest = { version = "^7", optional = true}
 pytest-asyncio = { version = "^0.23.0", optional = true }
 mock = { version = "^5", optional = true}
 setuptools = "^72.0.0"
+msg-parser = "1.2.0"
 
 [tool.poetry.extras]
 test = ["pytest", "mock", "pytest-asyncio"]
