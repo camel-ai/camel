@@ -235,8 +235,6 @@ class AutoRetriever:
             else content_input_paths
         )
 
-        vr = VectorRetriever()
-
         all_retrieved_info = []
         for content_input_path in content_input_paths:
             # Generate a valid collection name
