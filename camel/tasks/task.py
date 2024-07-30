@@ -32,6 +32,16 @@ from .task_prompt import (
 def parse_response(
     response: str, task_id: Optional[str] = None
 ) -> List["Task"]:
+    r"""Parse Tasks from a response.
+
+    Args:
+        response (str): The model response.
+        task_id (str, optional): a parent task id,
+            the default value is "0"
+
+    Returns:
+        List[Task]: A list of tasks which is :obj:`Task` instance.
+    """
     pattern = "<task>(.*?)</task>"
     tasks_content = re.findall(pattern, response, re.DOTALL)
 
@@ -118,6 +128,14 @@ class Task(BaseModel):
         self.result = ""
 
     def update_result(self, result: str):
+        r"""Set task result and mark the task as DOND.
+
+        Args:
+            result (str): The task result.
+
+        Returns:
+            None
+        """
         self.result = result
         self.set_state(TaskState.DONE)
 
@@ -125,6 +143,14 @@ class Task(BaseModel):
         self.id = id
 
     def set_state(self, state: TaskState):
+        r"""Recursively set the state of the task and its subtasks.
+
+        Args:
+            state (TaskState): The giving sate.
+
+        Returns:
+            None
+        """
         self.state = state
         if state == TaskState.DONE:
             for subtask in self.subtasks:
@@ -142,6 +168,7 @@ class Task(BaseModel):
         self.subtasks = [task for task in self.subtasks if task.id != id]
 
     def get_running_task(self) -> Optional["Task"]:
+        r"""Get RUNNING task."""
         for sub in self.subtasks:
             if sub.state == TaskState.RUNNING:
                 return sub.get_running_task()
@@ -149,7 +176,16 @@ class Task(BaseModel):
             return self
         return None
 
-    def to_string(self, indent="", state=False) -> str:
+    def to_string(self, indent: str = "", state: bool = False) -> str:
+        r"""Convert task to a sting.
+
+        Args:
+            indent (str): The ident for hierarchical tasks.
+            state (bool): Include or not task state.
+
+        Returns:
+            str: The printable task string.
+        """
         if state:
             _str = f"{indent}[{self.state}] Task {self.id}: {self.content}\n"
         else:
@@ -158,7 +194,15 @@ class Task(BaseModel):
             _str += subtask.to_string(indent + "  ", state)
         return _str
 
-    def get_result(self, indent="") -> str:
+    def get_result(self, indent: str = "") -> str:
+        r"""Get task result to a sting.
+
+        Args:
+            indent (str): The ident for hierarchical tasks.
+
+        Returns:
+            str: The printable task string.
+        """
         _str = f"{indent}Task {self.id} result: {self.result}\n"
         for subtask in self.subtasks:
             _str += subtask.get_result(indent + "  ")
@@ -238,6 +282,7 @@ class Task(BaseModel):
         return None
 
     def get_depth(self) -> int:
+        r"""Get current task depth."""
         if self.parent is None:
             return 1
         return 1 + self.parent.get_depth()
@@ -275,6 +320,14 @@ class TaskManager:
 
     @staticmethod
     def topological_sort(tasks: List[Task]) -> List[Task]:
+        r"""Sort a list of tasks by topological way.
+
+        Args:
+            tasks (List[Task]): The giving list of tasks.
+
+        Returns:
+            The sorted list of tasks.
+        """
         stack = []
         visited = set()
 
