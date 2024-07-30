@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "camel-ai"
-version = "0.1.5.6"
+version = "0.1.5.7"
 authors = ["CAMEL-AI.org"]
 description = "Communicative Agents for AI Society Study"
 readme = "README.md"
@@ -30,20 +30,26 @@ documentation = "https://docs.camel-ai.org"
 python = ">=3.9.0,<3.12"
 numpy = "^1"
 openai = "^1.2.3"
+groq = "^0.5.0"
+anthropic = "^0.29.0"
 tiktoken = "^0.7.0"
 colorama = "^0"
 jsonschema = "^4"
 protobuf = "^4"
 pathlib = "^1.0.1"
-anthropic = "^0.29.0"
 docstring-parser = "^0.15"
 pydantic = ">=1.9,<3"
 curl_cffi = "0.6.2"
+jupyter_client = "^8.6.2"
+ipykernel = "^6.0.0"
+
 pillow ="^10.2.0"
 
 # model-platforms
 litellm = { version = "^1.38.1", optional = true }
 google-generativeai = { version = "^0.6.0", optional = true }
+mistralai = { version = "^0.4.2", optional = true }
+mistral-common = { version = "^1.3.3", optional = true }
 
 # huggingface-agent
 transformers = { version = "^4", optional = true }
@@ -83,7 +89,6 @@ sentence-transformers = { version = "^3.0.1", optional = true }
 # vector-databases
 qdrant-client = { version = "^1.9.0", optional = true }
 pymilvus = { version = "^2.4.0", optional = true }
-milvus-lite = { version = "^2.4.0, <=2.4.7", optional = true }
 
 # graph-storages
 neo4j = { version = "^5.18.0", optional = true }
@@ -106,6 +111,8 @@ test = ["pytest", "mock", "pytest-asyncio"]
 model-platforms = [
     "litellm",
     "google-generativeai",
+    "mistralai",
+    "mistral-common",
 ]
 
 huggingface-agent = [
@@ -145,6 +152,7 @@ tools = [
     "pyTelegramBotAPI",
     "discord.py",
     "docker",
+    "jupyter_client",
 ]
 
 vector-databases = [
@@ -197,6 +205,7 @@ all = [
     "pydub",
     "pillow",
     "docker",
+    "jupyter_client",
     # vector-database
     "qdrant-client",
     "pymilvus",
@@ -210,9 +219,11 @@ all = [
     "rank-bm25",
     # model platforms
     "litellm",
+    "mistralai",
+    "mistral-common",
+    "google-generativeai",
     # kv-storages
     "redis",
-    "google-generativeai",
 ]
 
 [tool.poetry.group.dev]
@@ -298,6 +309,8 @@ module = [
     "tiktoken",
     "openai",
     "openai.error",
+    "groq",
+    "anthropic",
     "pytest",
     "_pytest.config",
     "_pytest.nodes",
@@ -340,5 +353,7 @@ module = [
     "docker.*",
     "google.*",
     "google-generativeai",
+    "mistralai",
+    "mistral_common",
 ]
 ignore_missing_imports = true

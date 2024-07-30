@@ -29,6 +29,7 @@ class OllamaModel:
         model_type: str,
         model_config_dict: Dict[str, Any],
         url: Optional[str] = None,
+        token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
         r"""Constructor for Ollama backend with OpenAI compatibility.
 
@@ -40,6 +41,9 @@ class OllamaModel:
                 be fed into openai.ChatCompletion.create().
             url (Optional[str]): The url to the model service. (default:
                 :obj:`None`)
+            token_counter (Optional[BaseTokenCounter]): Token counter to use
+                for the model. If not provided, `OpenAITokenCounter(ModelType.
+                GPT_3_5_TURBO)` will be used.
         """
         self.model_type = model_type
         self.model_config_dict = model_config_dict
@@ -50,7 +54,7 @@ class OllamaModel:
             base_url=url,
             api_key="ollama",  # required but ignored
         )
-        self._token_counter: Optional[BaseTokenCounter] = None
+        self._token_counter = token_counter
         self.check_model_config()
 
     @property
@@ -61,7 +65,6 @@ class OllamaModel:
             BaseTokenCounter: The token counter following the model's
                 tokenization style.
         """
-        # NOTE: Use OpenAITokenCounter temporarily
         if not self._token_counter:
             self._token_counter = OpenAITokenCounter(ModelType.GPT_3_5_TURBO)
         return self._token_counter
@@ -103,6 +106,22 @@ class OllamaModel:
             **self.model_config_dict,
         )
         return response
+
+    @property
+    def token_limit(self) -> int:
+        """Returns the maximum token limit for the given model.
+
+        Returns:
+            int: The maximum token limit for the given model.
+        """
+        max_tokens = self.model_config_dict.get("max_tokens")
+        if isinstance(max_tokens, int):
+            return max_tokens
+        print(
+            "Must set `max_tokens` as an integer in `model_config_dict` when"
+            " setting up the model. Using 4096 as default value."
+        )
+        return 4096
 
     @property
     def stream(self) -> bool:

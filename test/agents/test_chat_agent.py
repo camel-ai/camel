@@ -25,13 +25,12 @@ from PIL import Image
 from camel.agents import ChatAgent
 from camel.agents.chat_agent import FunctionCallingRecord
 from camel.configs import ChatGPTConfig
-from camel.functions import MATH_FUNCS
-from camel.functions.openai_function import OpenAIFunction
 from camel.generators import SystemMessageGenerator
 from camel.memories import MemoryRecord
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.terminators import ResponseWordsTerminator
+from camel.toolkits import MATH_FUNCS, OpenAIFunction
 from camel.types import (
     ChatCompletion,
     ModelPlatformType,
@@ -47,7 +46,7 @@ parametrize = pytest.mark.parametrize(
     [
         ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_3_5_TURBO,
+            model_type=ModelType.GPT_4O_MINI,
             model_config_dict=ChatGPTConfig().__dict__,
         ),
         pytest.param(None, marks=pytest.mark.model_backend),
@@ -67,7 +66,7 @@ def test_chat_agent(model):
     assistant = ChatAgent(system_msg, model=model)
 
     assert str(assistant) == (
-        "ChatAgent(doctor, " f"RoleType.ASSISTANT, {ModelType.GPT_3_5_TURBO})"
+        "ChatAgent(doctor, " f"RoleType.ASSISTANT, {ModelType.GPT_4O_MINI})"
     )
 
     assistant.reset()
@@ -179,7 +178,7 @@ def test_chat_agent_multiple_return_messages(n):
     model_config = ChatGPTConfig(temperature=1.4, n=n)
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_3_5_TURBO,
+        model_type=ModelType.GPT_4O_MINI,
         model_config_dict=model_config.__dict__,
     )
     system_msg = BaseMessage(
@@ -207,7 +206,7 @@ def test_chat_agent_multiple_return_message_error(n):
     model_config = ChatGPTConfig(temperature=1.4, n=n)
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_3_5_TURBO,
+        model_type=ModelType.GPT_4O_MINI,
         model_config_dict=model_config.__dict__,
     )
     system_msg = BaseMessage(
@@ -255,7 +254,7 @@ def test_chat_agent_stream_output():
     stream_model_config = ChatGPTConfig(temperature=0, n=2, stream=True)
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_3_5_TURBO,
+        model_type=ModelType.GPT_4O_MINI,
         model_config_dict=stream_model_config.__dict__,
     )
     stream_assistant = ChatAgent(system_msg, model=model)
@@ -363,7 +362,7 @@ def test_function_enabled():
     model_config = ChatGPTConfig(tools=[*MATH_FUNCS])
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_3_5_TURBO,
+        model_type=ModelType.GPT_4O_MINI,
         model_config_dict=model_config.__dict__,
     )
     agent_no_func = ChatAgent(system_message=system_message)
@@ -388,7 +387,7 @@ def test_tool_calling_sync():
     model_config = ChatGPTConfig(tools=[*MATH_FUNCS])
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_3_5_TURBO,
+        model_type=ModelType.GPT_4O_MINI,
         model_config_dict=model_config.__dict__,
     )
     agent = ChatAgent(
@@ -434,7 +433,7 @@ async def test_tool_calling_math_async():
     model_config = ChatGPTConfig(tools=[*math_funcs])
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_3_5_TURBO,
+        model_type=ModelType.GPT_4O_MINI,
         model_config_dict=model_config.__dict__,
     )
     agent = ChatAgent(
@@ -484,7 +483,7 @@ async def test_tool_calling_async():
             second (int): Number of seconds to sleep.
 
         Returns:
-            integer: Number of seconds sleeped.
+            integer: Number of seconds to sleep.
         """
         await asyncio.sleep(second)
         return second
@@ -493,7 +492,7 @@ async def test_tool_calling_async():
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_3_5_TURBO,
+        model_type=ModelType.GPT_4O_MINI,
         model_config_dict=model_config.__dict__,
     )
 
@@ -561,7 +560,7 @@ def test_chat_agent_vision():
     model_config = ChatGPTConfig(temperature=0, max_tokens=200, stop="")
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O,
+        model_type=ModelType.GPT_4O_MINI,
         model_config_dict=model_config.__dict__,
     )
     agent = ChatAgent(

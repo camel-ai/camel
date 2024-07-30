@@ -15,10 +15,10 @@ from PIL import Image
 
 from camel.agents.chat_agent import ChatAgent
 from camel.configs import ChatGPTConfig
-from camel.functions import DALLE_FUNCS
 from camel.generators import PromptTemplateGenerator
 from camel.messages.base import BaseMessage
 from camel.models import ModelFactory
+from camel.toolkits import DALLE_FUNCS
 from camel.types import (
     ModelPlatformType,
     ModelType,

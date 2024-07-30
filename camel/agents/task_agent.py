@@ -32,7 +32,7 @@ class TaskSpecifyAgent(ChatAgent):
     Args:
         model (BaseModelBackend, optional): The model backend to use for
             generating responses. (default: :obj:`OpenAIModel` with
-            `GPT_3_5_TURBO`)
+            `GPT_4O_MINI`)
         task_type (TaskType, optional): The type of task for which to generate
             a prompt. (default: :obj:`TaskType.AI_SOCIETY`)
         task_specify_prompt (Union[str, TextPrompt], optional): The prompt for
@@ -126,7 +126,7 @@ class TaskPlannerAgent(ChatAgent):
     Args:
         model (BaseModelBackend, optional): The model backend to use for
             generating responses. (default: :obj:`OpenAIModel` with
-            `GPT_3_5_TURBO`)
+            `GPT_4O_MINI`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
     """
@@ -201,7 +201,7 @@ class TaskCreationAgent(ChatAgent):
             perform the task.
         model (BaseModelBackend, optional): The LLM backend to use for
             generating responses. (default: :obj:`OpenAIModel` with
-            `GPT_3_5_TURBO`)
+            `GPT_4O_MINI`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
         message_window_size (int, optional): The maximum number of previous
@@ -233,7 +233,7 @@ The result must be a numbered list in the format:
     #. Third Task
 
 You can only give me up to {max_task_num} tasks at a time. \
-Each task shoud be concise, concrete and doable for a {role_name}.
+Each task should be concise, concrete and doable for a {role_name}.
 You should make task plan and not ask me questions.
 If you think no new tasks are needed right now, write "No tasks to add."
 Now start to give me new tasks one by one. No more than three tasks.
@@ -312,7 +312,7 @@ class TaskPrioritizationAgent(ChatAgent):
             perform the task.
         model (BaseModelBackend, optional): The LLM backend to use for
             generating responses. (default: :obj:`OpenAIModel` with
-            `GPT_3_5_TURBO`)
+            `GPT_4O_MINI`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
         message_window_size (int, optional): The maximum number of previous

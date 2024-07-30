@@ -19,11 +19,11 @@ from PIL import Image
 
 from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
-from camel.functions import DALLE_FUNCS
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.prompts import PromptTemplateGenerator
 from camel.responses import ChatAgentResponse
+from camel.toolkits import DALLE_FUNCS
 from camel.types import (
     ModelPlatformType,
     ModelType,
@@ -68,7 +68,7 @@ PROMPT: here is the updated prompt!
 
         model = ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_4_TURBO_VISION,
+            model_type=ModelType.GPT_4_TURBO,
             model_config_dict=model_config.__dict__,
         )
 
