@@ -19,7 +19,7 @@ from camel.storages.object_storages import S3Storage
 
 def get_file():
     s3_storage = S3Storage(bucket_name="camel-ai-bucket")
-    print(s3_storage.get_file(Path("folder1/example.txt")))
+    print(s3_storage._get_file(Path("folder1/example.txt")))
 
 
 def upload_file():

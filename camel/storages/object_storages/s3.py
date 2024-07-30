@@ -76,29 +76,27 @@ class S3Storage(BaseObjectStorage):
                 f"Error: Unable to access the S3 bucket: {e}"
             ) from e
 
-    def put_file(self, file_path: PurePath, file: File) -> None:
+    def _put_file(self, file_key: str, file: File) -> None:
         r"""Upload a file to the S3 bucket.
 
         Args:
-            file_path (Path): The path to the object in the S3 bucket.
+            file_key (str): The path to the object in the S3 bucket.
             file (File): The file to be uploaded.
         """
-        file_key = self.canonicalize_path(file_path)
         self._s3_client.put_object(
             Bucket=self._bucket_name, Key=file_key, Body=file.raw_bytes
         )
 
-    def get_file(self, file_path: PurePath) -> File:
+    def _get_file(self, file_key: str, filename: str) -> File:
         r"""Download a file from the S3 bucket.
 
         Args:
-            file_path (PurePath): The path to the object in the S3 bucket.
+            file_key (str): The path to the object in the S3 bucket.
+            filename (str): The name of the file.
 
         Returns:
             File: The object from the S3 bucket.
         """
-        file_key = self.canonicalize_path(file_path)
-        filename = file_path.name
         response = self._s3_client.get_object(
             Bucket=self._bucket_name, Key=file_key
         )
@@ -112,7 +110,7 @@ class S3Storage(BaseObjectStorage):
         r"""Canonicalize the path for the S3 bucket.
 
         Args:
-            file_path (Path): The path to be canonicalized.
+            file_path (PurePath): The path to be canonicalized.
 
         Returns:
             str: The canonicalized S3 object key.

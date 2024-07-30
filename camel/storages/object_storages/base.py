@@ -13,39 +13,63 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from abc import ABC, abstractmethod
-from pathlib import Path
+from pathlib import PurePath
 
 from camel.loaders import File
 
 
 class BaseObjectStorage(ABC):
     @abstractmethod
-    def put_file(self, file_path: Path, file: File) -> None:
+    def _put_file(self, file_key: str, file: File) -> None:
         r"""Put a file to the object storage.
 
         Args:
-            file_path (Path): The path to the object in the storage.
-            file: The file to be put.
+            file_key (str): The path to the object in the storage.
+            file (File): The file to be put.
         """
 
     @abstractmethod
-    def get_file(self, file_path: Path) -> File:
+    def _get_file(self, file_key: str, filename: str) -> File:
         r"""Get a file from the object storage.
 
         Args:
-            file_path (Path): The path to the object in the storage.
+            file_key (str): The path to the object in the storage.
+            filename (str): The name of the file.
 
         Returns:
             File: The file object get from the storage.
         """
 
+    def put_file(self, file_path: PurePath, file: File) -> None:
+        r"""Put a file to the object storage.
+
+        Args:
+            file_path (PurePath): The path to the object in the storage.
+            file (File): The file to be put.
+        """
+        file_key = self.canonicalize_path(file_path)
+        self._put_file(file_key, file)
+
+    def get_file(self, file_path: PurePath) -> File:
+        r"""Get a file from the object storage.
+
+        Args:
+            file_path (PurePath): The path to the object in the storage.
+
+        Returns:
+            File: The file object get from the storage.
+        """
+        file_key = self.canonicalize_path(file_path)
+        filename = file_path.name
+        return self._get_file(file_key, filename)
+
     @staticmethod
     @abstractmethod
-    def canonicalize_path(file_path: Path) -> str:
+    def canonicalize_path(file_path: PurePath) -> str:
         r"""Canonicalize the file path into the file key in the storage.
 
         Args:
-            file_path (Path): The path to the object in the storage.
+            file_path (PurePath): The path to the object in the storage.
 
         Returns:
             str: The canonicalized file key.
