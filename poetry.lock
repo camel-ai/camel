@@ -1259,21 +1259,21 @@ files = [
 
 [[package]]
 name = "duckduckgo-search"
-version = "6.2.4"
+version = "6.2.5"
 description = "Search for words, documents, images, news, maps and text translation using the DuckDuckGo.com search engine."
 optional = true
 python-versions = ">=3.8"
 files = [
-    {file = "duckduckgo_search-6.2.4-py3-none-any.whl", hash = "sha256:19358d892ae7d010492d08f7ed5f7790e2df25a3f6bf1c83e8de9bdcf895fd91"},
-    {file = "duckduckgo_search-6.2.4.tar.gz", hash = "sha256:58c1df49e1c9e671f35d3dba34463dde64a94fb4446c9cc5a9e7bec6664edeaa"},
+    {file = "duckduckgo_search-6.2.5-py3-none-any.whl", hash = "sha256:a2ae433f812899adf1e4922d3aa306489039ffdbd83b82da3e828625757877bd"},
+    {file = "duckduckgo_search-6.2.5.tar.gz", hash = "sha256:177c7993cdd136698884605883984feee39939b2c2d0ac9037fd5bb801f72c3e"},
 ]
 
 [package.dependencies]
 click = ">=8.1.7"
-primp = ">=0.5.4"
+primp = ">=0.5.5"
 
 [package.extras]
-dev = ["mypy (>=1.11.0)", "pytest (>=8.3.1)", "pytest-asyncio (>=0.23.8)", "ruff (>=0.5.4)"]
+dev = ["mypy (>=1.11.0)", "pytest (>=8.3.1)", "pytest-asyncio (>=0.23.8)", "ruff (>=0.5.5)"]
 lxml = ["lxml (>=5.2.2)"]
 
 [[package]]
@@ -1519,12 +1519,12 @@ sgmllib3k = "*"
 
 [[package]]
 name = "ffmpy"
-version = "0.3.2"
+version = "0.3.3"
 description = "A simple Python wrapper for ffmpeg"
 optional = false
 python-versions = "*"
 files = [
-    {file = "ffmpy-0.3.2.tar.gz", hash = "sha256:475ebfff1044661b8d969349dbcd2db9bf56d3ee78c0627e324769b49a27a78f"},
+    {file = "ffmpy-0.3.3.tar.gz", hash = "sha256:924cde7e0bb1b5eb58d21ada3b1622f95069c98769bbdf100ed381c7e750a55e"},
 ]
 
 [[package]]
@@ -4755,19 +4755,19 @@ virtualenv = ">=20.10.0"
 
 [[package]]
 name = "primp"
-version = "0.5.4"
+version = "0.5.5"
 description = "HTTP client that can impersonate web browsers, mimicking their headers and `TLS/JA3/JA4/HTTP2` fingerprints"
 optional = true
 python-versions = ">=3.8"
 files = [
-    {file = "primp-0.5.4-cp38-abi3-macosx_10_12_x86_64.whl", hash = "sha256:aa93fe21f99b846ce9caecf11b26cf84f36ff7ddcfdb23ba18f5e685087557f9"},
-    {file = "primp-0.5.4-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:dfd13fd1c02f83a2dd0b87e6b7dbd893ee1cc13271b2a1eb229d5c47bf0935f6"},
-    {file = "primp-0.5.4-cp38-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:5a9df95f033305f61a1ed906e717eb606c5570447ca9f3f37ae48ba6b59f7982"},
-    {file = "primp-0.5.4-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8019767eafba068178e921aa0374e668cbb432e616b9a092027376bc4ad3223c"},
-    {file = "primp-0.5.4-cp38-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:e15cf0b6a217a5c3a0a75f611440c498eadfad09be3ce3c0b3755647fa7c5063"},
-    {file = "primp-0.5.4-cp38-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:ba0612eae5b55e82269d7804aa417dd452fcd446123483731d52fec8c44342e2"},
-    {file = "primp-0.5.4-cp38-abi3-win_amd64.whl", hash = "sha256:f4e4cd37eabd6958e578e26fa120de53f039dce469b4b5171adc45b87be6a3d9"},
-    {file = "primp-0.5.4.tar.gz", hash = "sha256:3aad76e319c54b0166c12a8dcd5935c47c95189bffdc5a7c73a515a2814a0786"},
+    {file = "primp-0.5.5-cp38-abi3-macosx_10_12_x86_64.whl", hash = "sha256:cff9792e8422424528c23574b5364882d68134ee2743f4a2ae6a765746fb3028"},
+    {file = "primp-0.5.5-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:78e13fc5d4d90d44a005dbd5dda116981828c803c86cf85816b3bb5363b045c8"},
+    {file = "primp-0.5.5-cp38-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:3714abfda79d3f5c90a5363db58994afbdbacc4b94fe14e9e5f8ab97e7b82577"},
+    {file = "primp-0.5.5-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e54765900ee40eceb6bde43676d7e0b2e16ca1f77c0753981fe5e40afc0c2010"},
+    {file = "primp-0.5.5-cp38-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:66c7eecc5a55225c42cfb99af857df04f994f3dd0d327c016d3af5414c1a2242"},
+    {file = "primp-0.5.5-cp38-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:df262271cc1a41f4bf80d68396e967a27d7d3d3de355a3d016f953130e7a20be"},
+    {file = "primp-0.5.5-cp38-abi3-win_amd64.whl", hash = "sha256:8b424118d6bab6f9d4980d0f35d5ccc1213ab9f1042497c6ee11730f2f94a876"},
+    {file = "primp-0.5.5.tar.gz", hash = "sha256:8623e8a25fd686785296b12175f4173250a08db1de9ee4063282e262b94bf3f2"},
 ]
 
 [package.extras]
@@ -6712,13 +6712,13 @@ files = [
 
 [[package]]
 name = "setuptools"
-version = "71.1.0"
+version = "72.1.0"
 description = "Easily download, build, install, upgrade, and uninstall Python packages"
 optional = true
 python-versions = ">=3.8"
 files = [
-    {file = "setuptools-71.1.0-py3-none-any.whl", hash = "sha256:33874fdc59b3188304b2e7c80d9029097ea31627180896fb549c578ceb8a0855"},
-    {file = "setuptools-71.1.0.tar.gz", hash = "sha256:032d42ee9fb536e33087fb66cac5f840eb9391ed05637b3f2a76a7c8fb477936"},
+    {file = "setuptools-72.1.0-py3-none-any.whl", hash = "sha256:5a03e1860cf56bb6ef48ce186b0e557fdba433237481a9a625176c2831be15d1"},
+    {file = "setuptools-72.1.0.tar.gz", hash = "sha256:8d243eff56d095e5817f796ede6ae32941278f542e0f941867cc05ae52b162ec"},
 ]
 
 [package.extras]
