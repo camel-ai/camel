@@ -29,10 +29,21 @@ class ModelType(Enum):
     GPT_4_32K = "gpt-4-32k"
     GPT_4_TURBO = "gpt-4-turbo"
     GPT_4O = "gpt-4o"
+    GPT_4O_MINI = "gpt-4o-mini"
+
     GLM_4 = "glm-4"
     GLM_4_OPEN_SOURCE = "glm-4-open-source"
     GLM_4V = 'glm-4v'
     GLM_3_TURBO = "glm-3-turbo"
+
+    GROQ_LLAMA_3_1_8B = "llama-3.1-8b-instant"
+    GROQ_LLAMA_3_1_70B = "llama-3.1-70b-versatile"
+    GROQ_LLAMA_3_1_405B = "llama-3.1-405b-reasoning"
+    GROQ_LLAMA_3_8B = "llama3-8b-8192"
+    GROQ_LLAMA_3_70B = "llama3-70b-8192"
+    GROQ_MIXTRAL_8_7B = "mixtral-8x7b-32768"
+    GROQ_GEMMA_7B_IT = "gemma-7b-it"
+    GROQ_GEMMA_2_9B_IT = "gemma2-9b-it"
 
     STUB = "stub"
 
@@ -44,7 +55,7 @@ class ModelType(Enum):
     QWEN_2 = "qwen-2"
 
     # Legacy anthropic models
-    # NOTE: anthropic lagecy models only Claude 2.1 has system prompt support
+    # NOTE: anthropic legacy models only Claude 2.1 has system prompt support
     CLAUDE_2_1 = "claude-2.1"
     CLAUDE_2_0 = "claude-2.0"
     CLAUDE_INSTANT_1_2 = "claude-instant-1.2"
@@ -58,6 +69,19 @@ class ModelType(Enum):
     # Nvidia models
     NEMOTRON_4_REWARD = "nvidia/nemotron-4-340b-reward"
 
+    # Gemini models
+    GEMINI_1_5_FLASH = "gemini-1.5-flash"
+    GEMINI_1_5_PRO = "gemini-1.5-pro"
+
+    # Mistral AI Model
+    MISTRAL_LARGE = "mistral-large-latest"
+    MISTRAL_NEMO = "open-mistral-nemo"
+    MISTRAL_CODESTRAL = "codestral-latest"
+    MISTRAL_7B = "open-mistral-7b"
+    MISTRAL_MIXTRAL_8x7B = "open-mixtral-8x7b"
+    MISTRAL_MIXTRAL_8x22B = "open-mixtral-8x22b"
+    MISTRAL_CODESTRAL_MAMBA = "open-codestral-mamba"
+
     @property
     def value_for_tiktoken(self) -> str:
         return (
@@ -69,6 +93,20 @@ class ModelType(Enum):
     @property
     def is_openai(self) -> bool:
         r"""Returns whether this type of models is an OpenAI-released model."""
+        return self in {
+            ModelType.GPT_3_5_TURBO,
+            ModelType.GPT_4,
+            ModelType.GPT_4_32K,
+            ModelType.GPT_4_TURBO,
+            ModelType.GPT_4O,
+            ModelType.GPT_4O_MINI,
+        }
+
+    @property
+    def is_azure_openai(self) -> bool:
+        r"""Returns whether this type of models is an OpenAI-released model
+        from Azure.
+        """
         return self in {
             ModelType.GPT_3_5_TURBO,
             ModelType.GPT_4,
@@ -116,6 +154,33 @@ class ModelType(Enum):
         }
 
     @property
+    def is_groq(self) -> bool:
+        r"""Returns whether this type of models is served by Groq."""
+        return self in {
+            ModelType.GROQ_LLAMA_3_1_8B,
+            ModelType.GROQ_LLAMA_3_1_70B,
+            ModelType.GROQ_LLAMA_3_1_405B,
+            ModelType.GROQ_LLAMA_3_8B,
+            ModelType.GROQ_LLAMA_3_70B,
+            ModelType.GROQ_MIXTRAL_8_7B,
+            ModelType.GROQ_GEMMA_7B_IT,
+            ModelType.GROQ_GEMMA_2_9B_IT,
+        }
+
+    @property
+    def is_mistral(self) -> bool:
+        r"""Returns whether this type of models is served by Mistral."""
+        return self in {
+            ModelType.MISTRAL_LARGE,
+            ModelType.MISTRAL_NEMO,
+            ModelType.MISTRAL_CODESTRAL,
+            ModelType.MISTRAL_7B,
+            ModelType.MISTRAL_MIXTRAL_8x7B,
+            ModelType.MISTRAL_MIXTRAL_8x22B,
+            ModelType.MISTRAL_CODESTRAL_MAMBA,
+        }
+
+    @property
     def is_nvidia(self) -> bool:
         r"""Returns whether this type of models is Nvidia-released model.
 
@@ -127,44 +192,69 @@ class ModelType(Enum):
         }
 
     @property
+    def is_gemini(self) -> bool:
+        return self in {ModelType.GEMINI_1_5_FLASH, ModelType.GEMINI_1_5_PRO}
+
+    @property
     def token_limit(self) -> int:
         r"""Returns the maximum token limit for a given model.
+
         Returns:
             int: The maximum token limit for the given model.
         """
-        if self is ModelType.GPT_3_5_TURBO:
-            return 16385
-        elif self is ModelType.GPT_4:
-            return 8192
-        elif self is ModelType.GPT_4_32K:
-            return 32768
-        elif self is ModelType.GPT_4_TURBO:
-            return 128000
-        elif self is ModelType.GPT_4O:
-            return 128000
-        elif self == ModelType.GLM_4_OPEN_SOURCE:
-            return 8192
-        elif self == ModelType.GLM_3_TURBO:
-            return 8192
-        elif self == ModelType.GLM_4V:
+        if self is ModelType.GLM_4V:
             return 1024
-        elif self is ModelType.STUB:
-            return 4096
-        elif self is ModelType.LLAMA_2:
-            return 4096
-        elif self is ModelType.LLAMA_3:
-            return 8192
-        elif self is ModelType.QWEN_2:
-            return 128000
-        elif self is ModelType.GLM_4:
-            return 8192
         elif self is ModelType.VICUNA:
             # reference: https://lmsys.org/blog/2023-03-30-vicuna/
             return 2048
+        elif self in {
+            ModelType.GPT_3_5_TURBO,
+            ModelType.LLAMA_2,
+            ModelType.NEMOTRON_4_REWARD,
+            ModelType.STUB,
+        }:
+            return 4_096
+        elif self in {
+            ModelType.GPT_4,
+            ModelType.GROQ_LLAMA_3_8B,
+            ModelType.GROQ_LLAMA_3_70B,
+            ModelType.GROQ_GEMMA_7B_IT,
+            ModelType.GROQ_GEMMA_2_9B_IT,
+            ModelType.LLAMA_3,
+            ModelType.GLM_3_TURBO,
+            ModelType.GLM_4,
+            ModelType.GLM_4_OPEN_SOURCE,
+        }:
+            return 8_192
         elif self is ModelType.VICUNA_16K:
-            return 16384
+            return 16_384
+        elif self in {
+            ModelType.GPT_4_32K,
+            ModelType.MISTRAL_CODESTRAL,
+            ModelType.MISTRAL_7B,
+            ModelType.MISTRAL_MIXTRAL_8x7B,
+            ModelType.GROQ_MIXTRAL_8_7B,
+        }:
+            return 32_768
+        elif self in {ModelType.MISTRAL_MIXTRAL_8x22B}:
+            return 64_000
         elif self in {ModelType.CLAUDE_2_0, ModelType.CLAUDE_INSTANT_1_2}:
             return 100_000
+        elif self in {
+            ModelType.GPT_4O,
+            ModelType.GPT_4O_MINI,
+            ModelType.GPT_4_TURBO,
+            ModelType.MISTRAL_LARGE,
+            ModelType.MISTRAL_NEMO,
+            ModelType.QWEN_2,
+        }:
+            return 128_000
+        elif self in {
+            ModelType.GROQ_LLAMA_3_1_8B,
+            ModelType.GROQ_LLAMA_3_1_70B,
+            ModelType.GROQ_LLAMA_3_1_405B,
+        }:
+            return 131_072
         elif self in {
             ModelType.CLAUDE_2_1,
             ModelType.CLAUDE_3_OPUS,
@@ -173,8 +263,12 @@ class ModelType(Enum):
             ModelType.CLAUDE_3_5_SONNET,
         }:
             return 200_000
-        elif self is ModelType.NEMOTRON_4_REWARD:
-            return 4096
+        elif self in {
+            ModelType.MISTRAL_CODESTRAL_MAMBA,
+        }:
+            return 256_000
+        elif self in {ModelType.GEMINI_1_5_FLASH, ModelType.GEMINI_1_5_PRO}:
+            return 1_048_576
         else:
             raise ValueError("Unknown model type")
 
@@ -183,8 +277,9 @@ class ModelType(Enum):
 
         Args:
             model_name (str): The name of the model, e.g. "vicuna-7b-v1.5".
+
         Returns:
-            bool: Whether the model type mathches the model name.
+            bool: Whether the model type matches the model name.
         """
         if self is ModelType.VICUNA:
             pattern = r'^vicuna-\d+b-v\d+\.\d+$'
@@ -220,6 +315,8 @@ class EmbeddingModelType(Enum):
     TEXT_EMBEDDING_3_SMALL = "text-embedding-3-small"
     TEXT_EMBEDDING_3_LARGE = "text-embedding-3-large"
 
+    MISTRAL_EMBED = "mistral-embed"
+
     @property
     def is_openai(self) -> bool:
         r"""Returns whether this type of models is an OpenAI-released model."""
@@ -230,6 +327,15 @@ class EmbeddingModelType(Enum):
         }
 
     @property
+    def is_mistral(self) -> bool:
+        r"""Returns whether this type of models is an Mistral-released
+        model.
+        """
+        return self in {
+            EmbeddingModelType.MISTRAL_EMBED,
+        }
+
+    @property
     def output_dim(self) -> int:
         if self is EmbeddingModelType.TEXT_EMBEDDING_ADA_2:
             return 1536
@@ -237,6 +343,8 @@ class EmbeddingModelType(Enum):
             return 1536
         elif self is EmbeddingModelType.TEXT_EMBEDDING_3_LARGE:
             return 3072
+        elif self is EmbeddingModelType.MISTRAL_EMBED:
+            return 1024
         else:
             raise ValueError(f"Unknown model type {self}.")
 
@@ -273,6 +381,7 @@ class OpenAIBackendRole(Enum):
     SYSTEM = "system"
     USER = "user"
     FUNCTION = "function"
+    TOOL = "tool"
 
 
 class TerminationMode(Enum):
@@ -326,11 +435,15 @@ class ModelPlatformType(Enum):
     OPENAI = "openai"
     AZURE = "azure"
     ANTHROPIC = "anthropic"
+    GROQ = "groq"
     OPENSOURCE = "opensource"
     OLLAMA = "ollama"
     LITELLM = "litellm"
     ZHIPU = "zhipuai"
     DEFAULT = "default"
+    GEMINI = "gemini"
+    VLLM = "vllm"
+    MISTRAL = "mistral"
 
     @property
     def is_openai(self) -> bool:
@@ -348,9 +461,19 @@ class ModelPlatformType(Enum):
         return self is ModelPlatformType.ANTHROPIC
 
     @property
+    def is_groq(self) -> bool:
+        r"""Returns whether this platform is groq."""
+        return self is ModelPlatformType.GROQ
+
+    @property
     def is_ollama(self) -> bool:
         r"""Returns whether this platform is ollama."""
         return self is ModelPlatformType.OLLAMA
+
+    @property
+    def is_vllm(self) -> bool:
+        r"""Returns whether this platform is vllm."""
+        return self is ModelPlatformType.VLLM
 
     @property
     def is_litellm(self) -> bool:
@@ -363,9 +486,19 @@ class ModelPlatformType(Enum):
         return self is ModelPlatformType.ZHIPU
 
     @property
+    def is_mistral(self) -> bool:
+        r"""Returns whether this platform is mistral."""
+        return self is ModelPlatformType.MISTRAL
+
+    @property
     def is_open_source(self) -> bool:
         r"""Returns whether this platform is opensource."""
         return self is ModelPlatformType.OPENSOURCE
+
+    @property
+    def is_gemini(self) -> bool:
+        r"""Returns whether this platform is Gemini."""
+        return self is ModelPlatformType.GEMINI
 
 
 class AudioModelType(Enum):
@@ -401,3 +534,10 @@ class VoiceType(Enum):
             VoiceType.NOVA,
             VoiceType.SHIMMER,
         }
+
+
+class JinaReturnFormat(Enum):
+    DEFAULT = None
+    MARKDOWN = "markdown"
+    HTML = "html"
+    TEXT = "text"

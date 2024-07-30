@@ -25,13 +25,12 @@ from PIL import Image
 from camel.agents import ChatAgent
 from camel.agents.chat_agent import FunctionCallingRecord
 from camel.configs import ChatGPTConfig
-from camel.functions import MATH_FUNCS
-from camel.functions.openai_function import OpenAIFunction
 from camel.generators import SystemMessageGenerator
 from camel.memories import MemoryRecord
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.terminators import ResponseWordsTerminator
+from camel.toolkits import MATH_FUNCS, OpenAIFunction
 from camel.types import (
     ChatCompletion,
     ModelPlatformType,
@@ -40,13 +39,14 @@ from camel.types import (
     RoleType,
     TaskType,
 )
+from camel.utils.async_func import sync_funcs_to_async
 
 parametrize = pytest.mark.parametrize(
     'model',
     [
         ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_3_5_TURBO,
+            model_type=ModelType.GPT_4O_MINI,
             model_config_dict=ChatGPTConfig().__dict__,
         ),
         pytest.param(None, marks=pytest.mark.model_backend),
@@ -66,7 +66,7 @@ def test_chat_agent(model):
     assistant = ChatAgent(system_msg, model=model)
 
     assert str(assistant) == (
-        "ChatAgent(doctor, " f"RoleType.ASSISTANT, {ModelType.GPT_3_5_TURBO})"
+        "ChatAgent(doctor, " f"RoleType.ASSISTANT, {ModelType.GPT_4O_MINI})"
     )
 
     assistant.reset()
@@ -178,7 +178,7 @@ def test_chat_agent_multiple_return_messages(n):
     model_config = ChatGPTConfig(temperature=1.4, n=n)
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_3_5_TURBO,
+        model_type=ModelType.GPT_4O_MINI,
         model_config_dict=model_config.__dict__,
     )
     system_msg = BaseMessage(
@@ -206,7 +206,7 @@ def test_chat_agent_multiple_return_message_error(n):
     model_config = ChatGPTConfig(temperature=1.4, n=n)
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_3_5_TURBO,
+        model_type=ModelType.GPT_4O_MINI,
         model_config_dict=model_config.__dict__,
     )
     system_msg = BaseMessage(
@@ -254,7 +254,7 @@ def test_chat_agent_stream_output():
     stream_model_config = ChatGPTConfig(temperature=0, n=2, stream=True)
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_3_5_TURBO,
+        model_type=ModelType.GPT_4O_MINI,
         model_config_dict=stream_model_config.__dict__,
     )
     stream_assistant = ChatAgent(system_msg, model=model)
@@ -362,7 +362,7 @@ def test_function_enabled():
     model_config = ChatGPTConfig(tools=[*MATH_FUNCS])
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_3_5_TURBO,
+        model_type=ModelType.GPT_4O_MINI,
         model_config_dict=model_config.__dict__,
     )
     agent_no_func = ChatAgent(system_message=system_message)
@@ -387,7 +387,7 @@ def test_tool_calling_sync():
     model_config = ChatGPTConfig(tools=[*MATH_FUNCS])
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_3_5_TURBO,
+        model_type=ModelType.GPT_4O_MINI,
         model_config_dict=model_config.__dict__,
     )
     agent = ChatAgent(
@@ -422,6 +422,52 @@ def test_tool_calling_sync():
 
 @pytest.mark.model_backend
 @pytest.mark.asyncio
+async def test_tool_calling_math_async():
+    system_message = BaseMessage(
+        role_name="assistant",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
+        content="You are a help assistant.",
+    )
+    math_funcs = sync_funcs_to_async(MATH_FUNCS)
+    model_config = ChatGPTConfig(tools=[*math_funcs])
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_4O_MINI,
+        model_config_dict=model_config.__dict__,
+    )
+    agent = ChatAgent(
+        system_message=system_message,
+        model=model,
+        tools=math_funcs,
+    )
+
+    ref_funcs = math_funcs
+
+    assert len(agent.func_dict) == len(ref_funcs)
+
+    user_msg = BaseMessage(
+        role_name="User",
+        role_type=RoleType.USER,
+        meta_dict=dict(),
+        content="Calculate the result of: 2*8-10.",
+    )
+    agent_response = await agent.step_async(user_msg)
+
+    tool_calls: List[FunctionCallingRecord] = agent_response.info['tool_calls']
+    for called_func in tool_calls:
+        print(str(called_func))
+
+    assert len(tool_calls) > 0
+    assert str(tool_calls[0]).startswith("Function Execution")
+
+    assert tool_calls[0].func_name == "mul"
+    assert tool_calls[0].args == {"a": 2, "b": 8}
+    assert tool_calls[0].result == 16
+
+
+@pytest.mark.model_backend
+@pytest.mark.asyncio
 async def test_tool_calling_async():
     system_message = BaseMessage(
         role_name="assistant",
@@ -437,7 +483,7 @@ async def test_tool_calling_async():
             second (int): Number of seconds to sleep.
 
         Returns:
-            integer: Number of seconds sleeped.
+            integer: Number of seconds to sleep.
         """
         await asyncio.sleep(second)
         return second
@@ -446,7 +492,7 @@ async def test_tool_calling_async():
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_3_5_TURBO,
+        model_type=ModelType.GPT_4O_MINI,
         model_config_dict=model_config.__dict__,
     )
 
@@ -514,7 +560,7 @@ def test_chat_agent_vision():
     model_config = ChatGPTConfig(temperature=0, max_tokens=200, stop="")
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O,
+        model_type=ModelType.GPT_4O_MINI,
         model_config_dict=model_config.__dict__,
     )
     agent = ChatAgent(

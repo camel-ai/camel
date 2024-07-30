@@ -17,14 +17,14 @@ from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
 
-from camel.configs import OPENAI_API_PARAMS
+from camel.configs import ZHIPUAI_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
-    model_api_key_required,
+    api_keys_required,
 )
 
 
@@ -37,6 +37,7 @@ class ZhipuAIModel(BaseModelBackend):
         model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
         url: Optional[str] = None,
+        token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
         r"""Constructor for ZhipuAI backend.
 
@@ -47,19 +48,29 @@ class ZhipuAIModel(BaseModelBackend):
                 be fed into openai.ChatCompletion.create().
             api_key (Optional[str]): The API key for authenticating with the
                 ZhipuAI service. (default: :obj:`None`)
+            url (Optional[str]): The url to the ZhipuAI service. (default:
+                :obj:`None`)
+            token_counter (Optional[BaseTokenCounter]): Token counter to use
+                for the model. If not provided, `OpenAITokenCounter(ModelType.
+                GPT_3_5_TURBO)` will be used.
         """
-        super().__init__(model_type, model_config_dict)
+        super().__init__(
+            model_type, model_config_dict, api_key, url, token_counter
+        )
         self._url = url or os.environ.get("ZHIPUAI_API_BASE_URL")
         self._api_key = api_key or os.environ.get("ZHIPUAI_API_KEY")
+        if not self._url or not self._api_key:
+            raise ValueError(
+                "ZHIPUAI_API_BASE_URL and ZHIPUAI_API_KEY should be set."
+            )
         self._client = OpenAI(
             timeout=60,
             max_retries=3,
             api_key=self._api_key,
             base_url=self._url,
         )
-        self._token_counter: Optional[BaseTokenCounter] = None
 
-    @model_api_key_required
+    @api_keys_required("ZHIPUAI_API_KEY")
     def run(
         self,
         messages: List[OpenAIMessage],
@@ -94,7 +105,6 @@ class ZhipuAIModel(BaseModelBackend):
         """
 
         if not self._token_counter:
-            # It's a temporary setting for token counter.
             self._token_counter = OpenAITokenCounter(ModelType.GPT_3_5_TURBO)
         return self._token_counter
 
@@ -104,15 +114,14 @@ class ZhipuAIModel(BaseModelBackend):
 
         Raises:
             ValueError: If the model configuration dictionary contains any
-                unexpected arguments to OpenAI API.
+                unexpected arguments to ZhipuAI API.
         """
         for param in self.model_config_dict:
-            if param not in OPENAI_API_PARAMS:
+            if param not in ZHIPUAI_API_PARAMS:
                 raise ValueError(
                     f"Unexpected argument `{param}` is "
-                    "input into OpenAI model backend."
+                    "input into ZhipuAI model backend."
                 )
-        pass
 
     @property
     def stream(self) -> bool:

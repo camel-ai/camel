@@ -20,7 +20,7 @@ from openai import NOT_GIVEN, NotGiven, OpenAI
 
 from camel.embeddings.base import BaseEmbedding
 from camel.types import EmbeddingModelType
-from camel.utils import model_api_key_required
+from camel.utils import api_keys_required
 
 
 class OpenAIEmbedding(BaseEmbedding[str]):
@@ -58,7 +58,7 @@ class OpenAIEmbedding(BaseEmbedding[str]):
         self._api_key = api_key or os.environ.get("OPENAI_API_KEY")
         self.client = OpenAI(timeout=60, max_retries=3, api_key=self._api_key)
 
-    @model_api_key_required
+    @api_keys_required("OPENAI_API_KEY")
     def embed_list(
         self,
         objs: list[str],

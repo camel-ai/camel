@@ -19,6 +19,8 @@ from hashlib import md5
 from io import BytesIO
 from typing import Any, Dict, List, Optional
 
+from camel.utils import dependencies_required
+
 
 class File(ABC):
     r"""Represents an uploaded file comprised of Documents"""
@@ -94,6 +96,7 @@ def strip_consecutive_newlines(text: str) -> str:
 
 class DocxFile(File):
     @classmethod
+    @dependencies_required('docx2txt')
     def from_bytes(cls, file: BytesIO) -> "DocxFile":
         r"""Creates a DocxFile object from a BytesIO object.
 
@@ -104,15 +107,8 @@ class DocxFile(File):
         Returns:
             DocxFile: A DocxFile object.
         """
-        # Use docx2txt to extract text from docx files
-        try:
-            import docx2txt
-        except ImportError:
-            raise ImportError(
-                "Please install `docx2txt` first. "
-                "You can install it by running "
-                "`pip install docx2txt`."
-            )
+        import docx2txt
+
         text = docx2txt.process(file)
         text = strip_consecutive_newlines(text)
         # Create a dictionary with the extracted text
