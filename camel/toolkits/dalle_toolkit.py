@@ -99,6 +99,7 @@ class DalleToolkit(BaseToolkit):
 
     def get_dalle_img(self, prompt: str, image_dir: str = "img") -> str:
         r"""Generate an image using OpenAI's DALL-E model.
+            The generated image is saved to the specified directory.
 
         Args:
             prompt (str): The text prompt based on which the image is

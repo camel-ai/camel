@@ -34,7 +34,11 @@ from camel.utils import print_text_animated
 
 
 class MMChat:
-    r"""The class of multimodal chat session."""
+    r"""The class of multimodal chat session.
+    Currently this example doesn't work properly,
+    since the generated image is not included in the
+    response message.
+    """
 
     def __init__(
         self,
