@@ -23,7 +23,7 @@ from camel.storages.object_storages import S3Storage
 @pytest.fixture
 def mock_instance():
     with patch(
-        "camel.storages.object_storages.s3.boto3.client"
+        "camel.storages.object_storages.amazon_s3.boto3.client"
     ) as mock_create_client:
         mock_client = MagicMock()
         mock_create_client.return_value = mock_client
@@ -38,13 +38,13 @@ def mock_instance():
 
 def test_canonicalize_path():
     windows_path = PureWindowsPath('relative\\path\\to\\file.pdf')
-    linux_path = PurePosixPath('relative/path/to/file.pdf')
+    posix_path = PurePosixPath('relative/path/to/file.pdf')
 
-    key1 = S3Storage.canonicalize_path(windows_path)
-    key2 = S3Storage.canonicalize_path(linux_path)
+    windows_key = S3Storage.canonicalize_path(windows_path)
+    posix_key = S3Storage.canonicalize_path(posix_path)
 
-    assert key1 == 'relative/path/to/file.pdf'
-    assert key2 == 'relative/path/to/file.pdf'
+    assert windows_key == 'relative/path/to/file.pdf'
+    assert posix_key == 'relative/path/to/file.pdf'
 
 
 def test_get_file(mock_instance: S3Storage):
@@ -56,4 +56,4 @@ def test_get_file(mock_instance: S3Storage):
 
 def test_not_accessible_bucket():
     with pytest.raises(PermissionError):
-        S3Storage(bucket_name='i-hope-you-dont-have-access-to-this-bucket')
+        S3Storage(bucket_name='amazon')

@@ -11,6 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .s3 import S3Storage
+from .amazon_s3 import S3Storage
+from .azure_blob import AzureBlobStorage
+from .base import BaseObjectStorage
+from .google_cloud import GoogleCloudStorage
 
-__all__ = ["S3Storage"]
+__all__ = [
+    "BaseObjectStorage",
+    "S3Storage",
+    "AzureBlobStorage",
+    "GoogleCloudStorage",
+]

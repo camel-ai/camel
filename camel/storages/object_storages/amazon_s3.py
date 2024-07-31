@@ -13,11 +13,11 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 import os
-from io import BytesIO
 from pathlib import PurePath
 from typing import Optional
 
 import boto3
+from botocore.exceptions import ClientError
 from colorama import Fore
 
 from camel.loaders import File
@@ -30,6 +30,8 @@ class S3Storage(BaseObjectStorage):
 
     Args:
         bucket_name (str): The name of the S3 bucket.
+        create_if_not_exists (bool, optional): Whether to create the bucket if
+            it does not exist. Defaults to True.
         access_key_id (Optional[str], optional): The AWS access key ID,
             can be skipped if logged in with AWS CLI. Defaults to None.
         secret_access_key (Optional[str], optional): The AWS secret access key,
@@ -42,10 +44,12 @@ class S3Storage(BaseObjectStorage):
     def __init__(
         self,
         bucket_name: str,
+        create_if_not_exists: bool = True,
         access_key_id: Optional[str] = None,
         secret_access_key: Optional[str] = None,
     ) -> None:
         self._bucket_name = bucket_name
+        self._create_if_not_exists = create_if_not_exists
 
         aws_key_id = access_key_id or os.getenv("AWS_ACCESS_KEY_ID")
         aws_secret_key = secret_access_key or os.getenv(
@@ -56,25 +60,41 @@ class S3Storage(BaseObjectStorage):
                 f"{Fore.YELLOW}Warning: AWS access key not configured. "
                 f"Local credentials will be used.{Fore.RESET}"
             )
+            # make all the empty values None
+            aws_key_id = None
+            aws_secret_key = None
 
-        self._s3_client = boto3.client(
+        self._client = boto3.client(
             "s3",
             aws_access_key_id=aws_key_id,
             aws_secret_access_key=aws_secret_key,
         )
 
-        self._check_bucket_accessibility()
+        self._prepare_and_check()
 
-        print(f"Connected to S3 bucket: {bucket_name}")
-
-    def _check_bucket_accessibility(self) -> None:
-        r"""Check if the bucket is accessible."""
+    def _prepare_and_check(self) -> None:
+        r"""Prepare the bucket for future use, and also check if the bucket is
+        accessible.
+        """
         try:
-            self._s3_client.head_bucket(Bucket=self._bucket_name)
-        except Exception as e:
-            raise PermissionError(
-                f"Error: Unable to access the S3 bucket: {e}"
-            ) from e
+            self._client.head_bucket(Bucket=self._bucket_name)
+        except ClientError as e:
+            error_code = e.response['Error']['Code']
+            if error_code == '403':
+                raise PermissionError(
+                    f"Failed to access bucket {self._bucket_name}: "
+                    f"No permission."
+                )
+            elif error_code == '404':
+                if self._create_if_not_exists:
+                    self._client.create_bucket(Bucket=self._bucket_name)
+                else:
+                    raise FileNotFoundError(
+                        f"Failed to access bucket {self._bucket_name}: Not "
+                        f"found."
+                    )
+            else:
+                raise e
 
     def _put_file(self, file_key: str, file: File) -> None:
         r"""Upload a file to the S3 bucket.
@@ -83,7 +103,7 @@ class S3Storage(BaseObjectStorage):
             file_key (str): The path to the object in the S3 bucket.
             file (File): The file to be uploaded.
         """
-        self._s3_client.put_object(
+        self._client.put_object(
             Bucket=self._bucket_name, Key=file_key, Body=file.raw_bytes
         )
 
@@ -97,13 +117,11 @@ class S3Storage(BaseObjectStorage):
         Returns:
             File: The object from the S3 bucket.
         """
-        response = self._s3_client.get_object(
+        response = self._client.get_object(
             Bucket=self._bucket_name, Key=file_key
         )
         raw_bytes = response["Body"].read()
-        file = BytesIO(raw_bytes)
-        file.name = filename
-        return File.create_file(file, filename)
+        return File.create_file_from_raw_bytes(raw_bytes, filename)
 
     @staticmethod
     def canonicalize_path(file_path: PurePath) -> str:
@@ -128,7 +146,7 @@ class S3Storage(BaseObjectStorage):
             s3_file_path (PurePath): The path to the object in the S3 bucket.
         """
         file_key = self.canonicalize_path(s3_file_path)
-        self._s3_client.upload_file(
+        self._client.upload_file(
             Filename=local_file_path, Bucket=self._bucket_name, Key=file_key
         )
 
@@ -142,6 +160,6 @@ class S3Storage(BaseObjectStorage):
             s3_file_path (PurePath): The path to the object in the S3 bucket.
         """
         file_key = self.canonicalize_path(s3_file_path)
-        self._s3_client.download_file(
+        self._client.download_file(
             Bucket=self._bucket_name, Key=file_key, Filename=local_file_path
         )

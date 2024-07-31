@@ -64,6 +64,20 @@ class File(ABC):
             File: A File object.
         """
 
+    @classmethod
+    def from_raw_bytes(cls, raw_bytes: bytes, filename: str) -> "File":
+        r"""Creates a File object from raw bytes.
+
+        Args:
+            raw_bytes (bytes): The raw bytes content of the file.
+            filename (str): The name of the file.
+
+        Returns:
+            File: A File object.
+        """
+        file = BytesIO(raw_bytes)
+        return cls.from_bytes(file, filename)
+
     @staticmethod
     def create_file(file: BytesIO, filename: str) -> "File":
         r"""Reads an uploaded file and returns a File object.
@@ -90,6 +104,20 @@ class File(ABC):
 
         out_file = ext_to_cls[ext].from_bytes(file, filename)
         return out_file
+
+    @staticmethod
+    def create_file_from_raw_bytes(raw_bytes: bytes, filename: str) -> "File":
+        r"""Reads raw bytes and returns a File object.
+
+        Args:
+            raw_bytes (bytes): The raw bytes content of the file.
+            filename (str): The name of the file.
+
+        Returns:
+            File: A File object.
+        """
+        file = BytesIO(raw_bytes)
+        return File.create_file(file, filename)
 
     def __repr__(self) -> str:
         return (
