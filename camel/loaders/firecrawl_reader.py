@@ -42,7 +42,7 @@ class Firecrawl:
 
         self.app = FirecrawlApp(api_key=self._api_key, api_url=self._api_url)
 
-    def base_crawl(
+    def crawl(
         self,
         url: str,
         params: Optional[Dict[str, Any]] = None,
@@ -130,7 +130,7 @@ class Firecrawl:
         except Exception as e:
             raise RuntimeError(f"Failed to check the crawl job status: {e}")
 
-    def base_scrape(
+    def scrape(
         self,
         url: str,
         params: Optional[Dict[str, Any]] = None,

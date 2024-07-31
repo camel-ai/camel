@@ -20,7 +20,7 @@ from camel.loaders import Firecrawl
 
 firecrawl = Firecrawl()
 
-job_id = firecrawl.base_crawl(
+job_id = firecrawl.crawl(
     url="https://www.camel-ai.org/about", wait_until_done=False
 )
 

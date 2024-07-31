@@ -32,7 +32,7 @@ def test_init():
         assert firecrawl.app == mock_app
 
 
-def test_base_crawl_success():
+def test_crawl_success():
     with patch('firecrawl.FirecrawlApp') as MockFirecrawlApp:
         mock_app = MockFirecrawlApp.return_value
         firecrawl = Firecrawl(
@@ -42,11 +42,11 @@ def test_base_crawl_success():
         response = 'Crawl content'
         mock_app.crawl_url.return_value = response
 
-        result = firecrawl.base_crawl(url)
+        result = firecrawl.crawl(url)
         assert result == response
 
 
-def test_base_crawl_failure():
+def test_crawl_failure():
     with patch('firecrawl.FirecrawlApp') as MockFirecrawlApp:
         mock_app = MockFirecrawlApp.return_value
         firecrawl = Firecrawl(
@@ -56,7 +56,7 @@ def test_base_crawl_failure():
         mock_app.crawl_url.side_effect = Exception('Error')
 
         try:
-            firecrawl.base_crawl(url)
+            firecrawl.crawl(url)
         except RuntimeError as e:
             assert 'Failed to crawl the URL' in str(e)
 
@@ -119,7 +119,7 @@ def test_check_crawl_job_failure():
             assert 'Failed to check the crawl job status' in str(e)
 
 
-def test_base_scrape_success():
+def test_scrape_success():
     with patch('firecrawl.FirecrawlApp') as MockFirecrawlApp:
         mock_app = MockFirecrawlApp.return_value
         firecrawl = Firecrawl(
@@ -129,11 +129,11 @@ def test_base_scrape_success():
         response = 'Scraped content'
         mock_app.scrape_url.return_value = response
 
-        result = firecrawl.base_scrape(url)
+        result = firecrawl.scrape(url)
         assert result == response
 
 
-def test_base_scrape_failure():
+def test_scrape_failure():
     with patch('firecrawl.FirecrawlApp') as MockFirecrawlApp:
         mock_app = MockFirecrawlApp.return_value
         firecrawl = Firecrawl(
@@ -143,7 +143,7 @@ def test_base_scrape_failure():
         mock_app.scrape_url.side_effect = Exception('Error')
 
         try:
-            firecrawl.base_scrape(url)
+            firecrawl.scrape(url)
         except RuntimeError as e:
             assert 'Failed to scrape the URL' in str(e)
 
