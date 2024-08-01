@@ -358,8 +358,11 @@ class ChatAgent(BaseAgent):
                     num_tokens,
                 )
                 break
-
-        return ChatAgentResponse(output_messages, self.terminated, info)
+        
+        chat_agent_response = ChatAgentResponse(output_messages, 
+                                                self.terminated, info)
+        self.update_memory(chat_agent_response, OpenAIBackendRole.ASSISTANT)
+        return chat_agent_response
 
     async def step_async(
         self,
