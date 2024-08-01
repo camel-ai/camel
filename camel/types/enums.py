@@ -541,3 +541,27 @@ class JinaReturnFormat(Enum):
     MARKDOWN = "markdown"
     HTML = "html"
     TEXT = "text"
+
+
+class FireCrawlSearchOption(Enum):
+    CRAWL = 0
+    SCRAPE = 1
+
+
+class FireCrawlReturnFormat(Enum):
+    CLEAN = "content"
+    HTML = "html"
+    RAW_HTML = "rawHtml"
+    MARKDOWN = "markdown"
+    METADATA = "metadata"
+
+
+class FireCrawlExtractionMode(Enum):
+    DEFAULT = "llm_extraction"
+    RAW_HTML = 'llm-extraction-from-raw-html'
+    MARKDOWN = 'llm-extraction-from-markdown'
+
+
+class FireCrawlSpeed(Enum):
+    FAST = "fast"
+    DEFAULT = "default"

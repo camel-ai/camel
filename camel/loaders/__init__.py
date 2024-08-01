@@ -14,6 +14,7 @@
 
 from .base_io import File, read_file
 from .jina_url_reader import JinaURLReader
+from .firecrawl_url_reader import FireCrawlURLReader
 from .unstructured_io import UnstructuredIO
 
 __all__ = [
@@ -21,4 +22,5 @@ __all__ = [
     'read_file',
     'UnstructuredIO',
     'JinaURLReader',
+    'FireCrawlURLReader'
 ]
