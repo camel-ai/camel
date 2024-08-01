@@ -120,10 +120,7 @@ class EmbodiedAgent(ChatAgent):
         else:
             return []
 
-    def step( # type: ignore[override]
-        self,
-        input_message: BaseMessage,
-    ) -> ChatAgentResponse:
+    def step(self, input_message: BaseMessage) -> ChatAgentResponse:  # type: ignore[override]
         r"""Performs a step in the conversation.
 
         Args:
