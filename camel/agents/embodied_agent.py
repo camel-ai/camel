@@ -120,7 +120,7 @@ class EmbodiedAgent(ChatAgent):
         else:
             return []
 
-    def step(
+    def step( # type: ignore[override]
         self,
         input_message: BaseMessage,
     ) -> ChatAgentResponse:
