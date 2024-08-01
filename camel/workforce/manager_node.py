@@ -20,18 +20,18 @@ from typing import Deque, List, Optional
 from camel.agents import ChatAgent
 from camel.messages.base import BaseMessage
 from camel.tasks.task import Task, TaskState
-from camel.workforce.base import BaseWorkforce
-from camel.workforce.leaf_workforce import LeafWorkforce
-from camel.workforce.single_agent_workforce import SingleAgentWorforce
+from camel.workforce.base import BaseNode
+from camel.workforce.single_agent_node import SingleAgentNode
 from camel.workforce.task_channel import TaskChannel
 from camel.workforce.utils import parse_assign_task_resp, parse_create_wf_resp
+from camel.workforce.worker_node import WorkerNode
 from camel.workforce.workforce_prompt import (
     ASSIGN_TASK_PROMPT,
     CREATE_WF_PROMPT,
 )
 
 
-class InternalWorkforce(BaseWorkforce):
+class ManagerNode(BaseNode):
     r"""A workforce that manages multiple workforces and agents. It will
     split the task it receives into subtasks and assign them to the
     workforces/agents under it, and also handles the situation when the task
@@ -40,7 +40,7 @@ class InternalWorkforce(BaseWorkforce):
     Args:
         workforce_id (str): ID for the workforce.
         description (str): Description of the workforce.
-        child_workforces (List[BaseWorkforce]): List of workforces under this
+        child_workforces (List[BaseNode]): List of workforces under this
             workforce.
         main_task (Optional[Task]): The initial task that the workforce
             receives.
@@ -51,7 +51,7 @@ class InternalWorkforce(BaseWorkforce):
         self,
         workforce_id: str,
         description: str,
-        child_workforces: List[BaseWorkforce],
+        child_workforces: List[BaseNode],
         main_task: Optional[Task],
         channel: TaskChannel,
     ) -> None:
@@ -129,7 +129,7 @@ class InternalWorkforce(BaseWorkforce):
     async def _post_dependency(self, dependency: Task) -> None:
         await self.channel.post_dependency(dependency, self.workforce_id)
 
-    def _create_workforce_for_task(self, task: Task) -> LeafWorkforce:
+    def _create_workforce_for_task(self, task: Task) -> WorkerNode:
         r"""Creates a new workforce for a given task and add it to the
         workforce list of this workforce. This is one of the actions that
         the manager can take when a task has failed.
@@ -138,7 +138,7 @@ class InternalWorkforce(BaseWorkforce):
             task (Task): The task for which the workforce is created.
 
         Returns:
-            LeafWorkforce: The created workforce.
+            WorkerNode: The created workforce.
         """
         prompt = CREATE_WF_PROMPT.format(
             content=task.content,
@@ -158,7 +158,7 @@ class InternalWorkforce(BaseWorkforce):
 
         worker = ChatAgent(worker_msg)
 
-        new_workforce = SingleAgentWorforce(
+        new_workforce = SingleAgentNode(
             workforce_id=str(len(self.child_workforces) + 1),
             description=new_wf_conf.description,
             worker=worker,

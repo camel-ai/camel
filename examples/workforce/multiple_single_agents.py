@@ -20,8 +20,8 @@ from camel.models import ModelFactory
 from camel.tasks.task import Task
 from camel.toolkits import MAP_FUNCS, SEARCH_FUNCS, WEATHER_FUNCS
 from camel.types import ModelPlatformType, ModelType
-from camel.workforce.internal_workforce import InternalWorkforce
-from camel.workforce.single_agent_workforce import SingleAgentWorforce
+from camel.workforce.manager_node import ManagerNode
+from camel.workforce.single_agent_node import SingleAgentNode
 from camel.workforce.task_channel import TaskChannel
 
 
@@ -73,19 +73,19 @@ async def main():
     )
 
     # Wrap the single agent into the SingleAgentWorkforce
-    tour_guide_workforce = SingleAgentWorforce(
+    tour_guide_workforce = SingleAgentNode(
         workforce_id='1',
         description='tour guide',
         worker=tour_guide_agent,
         channel=public_channel,
     )
-    traveler_workforce = SingleAgentWorforce(
+    traveler_workforce = SingleAgentNode(
         workforce_id='2',
         description='Traveler',
         worker=traveler_agent,
         channel=public_channel,
     )
-    tool_workforce = SingleAgentWorforce(
+    tool_workforce = SingleAgentNode(
         workforce_id='3',
         description='Tools(eg.weather tools) calling opertor',
         worker=tool_agent,
@@ -100,7 +100,7 @@ async def main():
         id='0',
     )
     # create a InternalWorkforce to combine all SignleAgentWorkforces
-    workforces = InternalWorkforce(
+    workforces = ManagerNode(
         workforce_id='0',
         description='A travel group',
         child_workforces=[

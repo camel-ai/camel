@@ -17,11 +17,11 @@ from abc import ABC, abstractmethod
 from typing import List
 
 from camel.tasks.task import Task, TaskState
-from camel.workforce.base import BaseWorkforce
+from camel.workforce.base import BaseNode
 from camel.workforce.task_channel import TaskChannel
 
 
-class LeafWorkforce(BaseWorkforce, ABC):
+class WorkerNode(BaseNode, ABC):
     r"""A unit workforce that consists of a single worker. It is the basic unit
     of task processing in the workforce system.
 

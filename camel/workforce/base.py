@@ -17,7 +17,7 @@ from typing import Any
 from camel.workforce.task_channel import TaskChannel
 
 
-class BaseWorkforce(ABC):
+class BaseNode(ABC):
     def __init__(
         self, workforce_id: str, description: str, channel: TaskChannel
     ) -> None:

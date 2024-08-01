@@ -12,12 +12,12 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from .base import BaseWorkforce
-from .internal_workforce import InternalWorkforce
-from .leaf_workforce import LeafWorkforce
+from .base import BaseNode
+from .manager_node import ManagerNode
+from .worker_node import WorkerNode
 
 __all__ = [
-    "BaseWorkforce",
-    "LeafWorkforce",
-    "InternalWorkforce",
+    "BaseNode",
+    "WorkerNode",
+    "ManagerNode",
 ]

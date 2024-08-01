@@ -22,16 +22,16 @@ from camel.messages.base import BaseMessage
 from camel.societies import RolePlaying
 from camel.tasks.task import Task, TaskState
 from camel.utils import print_text_animated
-from camel.workforce.leaf_workforce import LeafWorkforce
 from camel.workforce.task_channel import TaskChannel
 from camel.workforce.utils import parse_task_result_resp
+from camel.workforce.worker_node import WorkerNode
 from camel.workforce.workforce_prompt import (
     ROLEPLAY_PROCESS_TASK_PROMPT,
     ROLEPLAY_SUMMERIZE_PROMPT,
 )
 
 
-class RolePlayingWorforce(LeafWorkforce):
+class RolePlayingNode(WorkerNode):
     r"""A unit workforce that consists of a role playing. It is the basic unit
     of task processing in the workforce system.
 
@@ -113,14 +113,14 @@ class RolePlayingWorforce(LeafWorkforce):
                 if assistant_response.terminated:
                     reason = assistant_response.info['termination_reasons']
                     print(
-                        Fore.GREEN
-                        + (f"AI Assistant terminated. Reason: " f"{reason}. ")
+                        Fore.GREEN + f"AI Assistant terminated. Reason: "
+                        f"{reason}. "
                     )
                     break
                 if user_response.terminated:
                     reason = user_response.info['termination_reasons']
                     print(
-                        Fore.GREEN + (f"AI User terminated. Reason: {reason}.")
+                        Fore.GREEN + f"AI User terminated. Reason: {reason}."
                     )
                     break
                 print_text_animated(

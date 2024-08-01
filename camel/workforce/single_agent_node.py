@@ -18,13 +18,13 @@ from typing import List
 from camel.agents.base import BaseAgent
 from camel.messages.base import BaseMessage
 from camel.tasks.task import Task, TaskState
-from camel.workforce.leaf_workforce import LeafWorkforce
 from camel.workforce.task_channel import TaskChannel
 from camel.workforce.utils import parse_task_result_resp
+from camel.workforce.worker_node import WorkerNode
 from camel.workforce.workforce_prompt import PROCESS_TASK_PROMPT
 
 
-class SingleAgentWorforce(LeafWorkforce):
+class SingleAgentNode(WorkerNode):
     r"""A unit workforce that consists of a single agent. It is the basic unit
     of task processing in the workforce system.
 

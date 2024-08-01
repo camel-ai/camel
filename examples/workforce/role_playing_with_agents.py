@@ -20,9 +20,9 @@ from camel.models import ModelFactory
 from camel.tasks.task import Task
 from camel.toolkits import MAP_FUNCS, SEARCH_FUNCS, WEATHER_FUNCS
 from camel.types import ModelPlatformType, ModelType
-from camel.workforce.internal_workforce import InternalWorkforce
-from camel.workforce.role_plying_workforce import RolePlayingWorforce
-from camel.workforce.single_agent_workforce import SingleAgentWorforce
+from camel.workforce.manager_node import ManagerNode
+from camel.workforce.role_playing_node import RolePlayingNode
+from camel.workforce.single_agent_node import SingleAgentNode
 from camel.workforce.task_channel import TaskChannel
 
 
@@ -42,12 +42,10 @@ async def main():
     agent_1 = ChatAgent(sys_msg_1)
     agent_2 = ChatAgent(sys_msg_2)
 
-    unit_workforce_1 = SingleAgentWorforce(
+    unit_workforce_1 = SingleAgentNode(
         '1', 'tour guide', agent_1, public_channel
     )
-    unit_workforce_2 = SingleAgentWorforce(
-        '2', 'planner', agent_2, public_channel
-    )
+    unit_workforce_2 = SingleAgentNode('2', 'planner', agent_2, public_channel)
 
     function_list = [
         *SEARCH_FUNCS,
@@ -78,7 +76,7 @@ async def main():
             model_config_dict=user_model_config.__dict__,
         ),
     )
-    unit_workforce_3 = RolePlayingWorforce(
+    unit_workforce_3 = RolePlayingNode(
         '3',
         'research Group',
         public_channel,
@@ -93,7 +91,7 @@ async def main():
         content=("research history of Paris and plan a tour."),
         id='0',
     )
-    workforces = InternalWorkforce(
+    workforces = ManagerNode(
         workforce_id='0',
         description='a travel group',
         child_workforces=[
