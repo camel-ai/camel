@@ -13,6 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from pathlib import PurePath
 
+from colorama import Fore
 from google.auth.exceptions import InvalidOperation
 from google.cloud import storage
 
@@ -62,6 +63,10 @@ class GoogleCloudStorage(BaseObjectStorage):
             exists = self._client.exists()
             if not exists and self.create_if_not_exists:
                 self._client.create()
+                print(
+                    f"{Fore.GREEN}Bucket {self._client.name} not found. "
+                    f"Automatically created.{Fore.RESET}"
+                )
             elif not exists:
                 raise FileNotFoundError(
                     f"Failed to access bucket {self._client.name}: Not found."
@@ -72,7 +77,7 @@ class GoogleCloudStorage(BaseObjectStorage):
             )
 
     def _put_file(self, file_key: str, file: File) -> None:
-        self._client.blob(file_key).upload_from_bytes(file.raw_bytes)
+        self._client.blob(file_key).upload_from_string(file.raw_bytes)
 
     def _get_file(self, file_key: str, filename: str) -> File:
         raw_bytes = self._client.get_blob(file_key).download_as_bytes()

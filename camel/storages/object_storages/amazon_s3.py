@@ -88,6 +88,10 @@ class S3Storage(BaseObjectStorage):
             elif error_code == '404':
                 if self._create_if_not_exists:
                     self._client.create_bucket(Bucket=self._bucket_name)
+                    print(
+                        f"{Fore.GREEN}Bucket {self._bucket_name} not found. "
+                        f"Automatically created.{Fore.RESET}"
+                    )
                 else:
                     raise FileNotFoundError(
                         f"Failed to access bucket {self._bucket_name}: Not "

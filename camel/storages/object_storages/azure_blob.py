@@ -66,6 +66,10 @@ class AzureBlobStorage(BaseObjectStorage):
             exists = self._client.exists()
             if not exists and self._create_if_not_exists:
                 self._client.create_container()
+                print(
+                    f"{Fore.GREEN}Container {self._client.container_name} "
+                    f"not found. Automatically created.{Fore.RESET}"
+                )
             elif not exists:
                 raise FileNotFoundError(
                     f"Failed to access container {self._client.container_name}"
