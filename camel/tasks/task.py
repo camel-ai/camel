@@ -66,8 +66,7 @@ class TaskState(str, Enum):
 
 
 class Task(BaseModel):
-    """
-    Task is specific assignment that can be passed to a agent.
+    r"""Task is specific assignment that can be passed to a agent.
 
     Attributes:
         content: string content for task.
@@ -87,20 +86,16 @@ class Task(BaseModel):
     provided by the provider/model which created the task."""
 
     state: TaskState = TaskState.OPEN
-    """The task state.
-    """
+    """The task state."""
 
     type: Optional[str] = None
-    """The type of a task.
-    """
+    """The type of a task."""
 
     parent: Optional["Task"] = None
-    """The parent task.
-    """
+    """The parent task."""
 
     subtasks: List["Task"] = []
-    """A list of sub tasks.
-    """
+    """A list of sub tasks."""
 
     result: Optional[str] = ""
 
@@ -128,13 +123,10 @@ class Task(BaseModel):
         self.result = ""
 
     def update_result(self, result: str):
-        r"""Set task result and mark the task as DOND.
+        r"""Set task result and mark the task as DONE.
 
         Args:
             result (str): The task result.
-
-        Returns:
-            None
         """
         self.result = result
         self.set_state(TaskState.DONE)
@@ -146,19 +138,15 @@ class Task(BaseModel):
         r"""Recursively set the state of the task and its subtasks.
 
         Args:
-            state (TaskState): The giving sate.
-
-        Returns:
-            None
+            state (TaskState): The giving state.
         """
         self.state = state
         if state == TaskState.DONE:
             for subtask in self.subtasks:
                 if subtask.state != TaskState.DELETED:
                     subtask.set_state(state)
-        elif state == TaskState.RUNNING:
-            if self.parent is not None:
-                self.parent.set_state(state)
+        elif state == TaskState.RUNNING and self.parent:
+            self.parent.set_state(state)
 
     def add_subtask(self, task: "Task"):
         task.parent = self
@@ -216,8 +204,8 @@ class Task(BaseModel):
     ) -> List["Task"]:
         r"""Decompose a task to a list of sub-tasks.
             It can be used for data generation and planner of agent.
+
         Args:
-            task (Task): A given task.
             agent (ChatAgent): An agent that used to decompose the task.
             template (TextPrompt): The prompt template to decompose
                 task. If not provided, the default template will be used.
@@ -226,7 +214,7 @@ class Task(BaseModel):
                 the default parse_response will be used.
 
         Returns:
-            List[Task]: A list of tasks which is :obj:`Task` instance.
+            List[Task]: A list of tasks which are :obj:`Task` instance.
         """
 
         role_name = agent.role_name
@@ -248,15 +236,13 @@ class Task(BaseModel):
         result_parser: Optional[Callable[[str], str]] = None,
     ):
         r"""compose task result by the sub-tasks.
+
         Args:
             agent (ChatAgent): An agent that used to compose the task result.
             template (TextPrompt, optional): The prompt template to compose
                 task. If not provided, the default template will be used.
             result_parser (Callable[[str, str], List[Task]], optional): A
                 function to extract Task from response.
-
-        Returns:
-            None
         """
 
         if not self.subtasks:
@@ -279,8 +265,6 @@ class Task(BaseModel):
             result = result_parser(result)
         self.update_result(result)
 
-        return None
-
     def get_depth(self) -> int:
         r"""Get current task depth."""
         if self.parent is None:
@@ -289,8 +273,7 @@ class Task(BaseModel):
 
 
 class TaskManager:
-    """
-    TaskManager is used to manage tasks.
+    r"""TaskManager is used to manage tasks.
 
     Attributes:
         root_task: The root task.
@@ -309,13 +292,16 @@ class TaskManager:
         self.task_map: Dict[str, Task] = {task.id: task}
 
     def gen_task_id(self) -> str:
+        r"""Generate a new task id."""
         return f"{len(self.tasks)}"
 
     def exist(self, task_id: str) -> bool:
+        r"""Check if a task with the given id exists."""
         return task_id in self.task_map
 
     @property
     def current_task(self) -> Optional[Task]:
+        r"""Get the current task."""
         return self.task_map.get(self.current_task_id, None)
 
     @staticmethod
@@ -360,14 +346,12 @@ class TaskManager:
         `serial` :  root -> other1 -> other2
         `parallel`: root -> other1
                          -> other2
+
         Args:
             root (Task): A root task.
             others (List[Task]): A list of tasks.
-
-        Returns:
-            None
         """
-        # filter the root task in the others to void self-loop dependence.
+        # filter the root task in the others to avoid self-loop dependence.
         others = [other for other in others if other != root]
 
         if len(others) == 0:
@@ -382,9 +366,7 @@ class TaskManager:
                 parent = child
 
     def add_tasks(self, tasks: Union[Task, List[Task]]) -> None:
-        r"""
-        self.tasks and self.task_map will be updated by the input tasks.
-        """
+        r"""self.tasks and self.task_map will be updated by the input tasks."""
         if not tasks:
             return
         if not isinstance(tasks, List):
@@ -403,6 +385,7 @@ class TaskManager:
     ) -> Optional[Task]:
         r"""Evolve a task to a new task.
             Evolve is only used for data generation.
+
         Args:
             task (Task): A given task.
             agent (ChatAgent): An agent that used to evolve the task.
