@@ -11,13 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-
-from .base_io import File
-from .jina_url_reader import JinaURLReader
-from .unstructured_io import UnstructuredIO
+from .amazon_s3 import S3Storage
+from .azure_blob import AzureBlobStorage
+from .base import BaseObjectStorage
+from .google_cloud import GoogleCloudStorage
 
 __all__ = [
-    'File',
-    'UnstructuredIO',
-    'JinaURLReader',
+    "BaseObjectStorage",
+    "S3Storage",
+    "AzureBlobStorage",
+    "GoogleCloudStorage",
 ]
