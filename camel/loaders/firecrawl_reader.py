@@ -35,7 +35,7 @@ class Firecrawl:
         api_key: Optional[str] = None,
         api_url: Optional[str] = None,
     ) -> None:
-        from firecrawl import FirecrawlApp  # type: ignore[import-untyped]
+        from firecrawl import FirecrawlApp
 
         self._api_key = api_key or os.environ.get("FIRECRAWL_API_KEY")
         self._api_url = api_url or os.environ.get("FIRECRAWL_API_URL")
@@ -87,13 +87,13 @@ class Firecrawl:
 
     def markdown_crawl(self, url: str) -> str:
         r"""Crawl a URL and all accessible subpages and return the content in
-        markdown format.
+        Markdown format.
 
         Args:
             url (str): The URL to crawl.
 
         Returns:
-            str: The content of the URL in markdown format.
+            str: The content of the URL in Markdown format.
 
         Raises:
             RuntimeError: If the crawling process fails.
@@ -192,7 +192,7 @@ class Firecrawl:
 
     def tidy_scrape(self, url: str) -> str:
         r"""Only return the main content of the page, excluding headers,
-        navigation bars, footers, etc in markdown format.
+        navigation bars, footers, etc. in Markdown format.
 
         Args:
             url (str): The URL to read.
