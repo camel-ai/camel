@@ -60,6 +60,7 @@ class BaseMessage:
     role_type: RoleType
     meta_dict: Optional[Dict[str, str]]
     content: str
+
     video_bytes: Optional[bytes] = None
     image_list: Optional[List[Image.Image]] = None
     image_detail: Literal["auto", "low", "high"] = "auto"
