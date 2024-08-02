@@ -35,9 +35,10 @@ from camel.utils import print_text_animated
 
 class MMChat:
     r"""The class of multimodal chat session.
-    Currently this example doesn't work properly,
-    since the generated image is not included in the
-    response message.
+
+    NOTE: Currently this example doesn't work properly, since the generated
+    image is not included in the response message. Need to add support to
+    include Image in response message.
     """
 
     def __init__(
@@ -72,7 +73,7 @@ PROMPT: here is the updated prompt!
 
         model = ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
-            model_type=ModelType.GPT_4_TURBO,
+            model_type=ModelType.GPT_4O_MINI,
             model_config_dict=model_config.__dict__,
         )
 
