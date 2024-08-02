@@ -14,12 +14,9 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import TYPE_CHECKING, Any, List, Optional
+from typing import Any, List, Optional
 
 from pydantic import BaseModel, ConfigDict, field_validator
-
-if TYPE_CHECKING:
-    from camel.toolkits import OpenAIFunction
 
 
 class BaseConfig(ABC, BaseModel):
@@ -42,6 +39,8 @@ class BaseConfig(ABC, BaseModel):
     @classmethod
     def fields_type_checking(cls, tools):
         if tools is not None:
+            from camel.toolkits import OpenAIFunction
+
             for tool in tools:
                 assert isinstance(
                     tool, OpenAIFunction
@@ -51,8 +50,11 @@ class BaseConfig(ABC, BaseModel):
     def as_dict(self) -> dict[str, Any]:
         config_dict = self.model_dump()
 
-        tools_schema = []
+        tools_schema = None
         if self.tools:
+            from camel.toolkits import OpenAIFunction
+
+            tools_schema = []
             for tool in self.tools:
                 if not isinstance(tool, OpenAIFunction):
                     raise ValueError(

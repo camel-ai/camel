@@ -14,18 +14,9 @@
 
 
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any, Optional
+from typing import Any, Optional
 
 from pydantic import model_validator
-
-if TYPE_CHECKING:
-    from google.generativeai.protos import Schema
-    from google.generativeai.types.content_types import (
-        FunctionLibraryType,
-        ToolConfigType,
-    )
-    from google.generativeai.types.helper_types import RequestOptionsType
-    from google.generativeai.types.safety_types import SafetySettingOptions
 
 from camel.configs.base_config import BaseConfig
 
@@ -103,6 +94,19 @@ class GeminiConfig(BaseConfig):
             tools = data.get("tools")
             tool_config = data.get("tool_config")
             request_options = data.get("request_options")
+
+            if response_schema:
+                from google.generativeai.protos import Schema
+                from google.generativeai.types.content_types import (
+                    FunctionLibraryType,
+                    ToolConfigType,
+                )
+                from google.generativeai.types.helper_types import (
+                    RequestOptionsType,
+                )
+                from google.generativeai.types.safety_types import (
+                    SafetySettingOptions,
+                )
         else:
             return data
 

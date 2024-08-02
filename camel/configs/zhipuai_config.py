@@ -13,14 +13,11 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Sequence, Union
+from typing import Optional, Sequence, Union
 
 from openai._types import NOT_GIVEN, NotGiven
 
 from camel.configs.base_config import BaseConfig
-
-if TYPE_CHECKING:
-    pass
 
 
 class ZhipuAIConfig(BaseConfig):
