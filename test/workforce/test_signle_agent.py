@@ -17,17 +17,15 @@ from camel.agents.chat_agent import ChatAgent
 from camel.messages.base import BaseMessage
 from camel.tasks.task import Task
 from camel.workforce.single_agent_node import SingleAgentNode
-from camel.workforce.task_channel import TaskChannel
 
 
 async def test_get_dep_tasks_info():
-    public_channel = TaskChannel()
     sys_msg = BaseMessage.make_assistant_message(
         role_name="programmer",
         content="You are a python programmer.",
     )
     agent = ChatAgent(sys_msg)
-    test_workforce = SingleAgentNode('1', 'agent1', agent, public_channel)
+    test_workforce = SingleAgentNode('1', 'agent1', agent)
     human_task = Task(
         content='develop a python program of investing stock.',
         id='0',
