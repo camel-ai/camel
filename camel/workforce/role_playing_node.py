@@ -22,7 +22,6 @@ from camel.messages.base import BaseMessage
 from camel.societies import RolePlaying
 from camel.tasks.task import Task, TaskState
 from camel.utils import print_text_animated
-from camel.workforce.task_channel import TaskChannel
 from camel.workforce.utils import parse_task_result_resp
 from camel.workforce.worker_node import WorkerNode
 from camel.workforce.workforce_prompt import (
@@ -36,7 +35,7 @@ class RolePlayingNode(WorkerNode):
     of task processing in the workforce system.
 
     Args:
-        workforce_id (str): ID for the workforce.
+        node_id (str): ID for the workforce.
         description (str): Description of the workforce.
         worker (RolePlaying): Worker of the workforce. A role playing system.
         channel (TaskChannel): Communication channel for the workforce.
@@ -44,16 +43,15 @@ class RolePlayingNode(WorkerNode):
 
     def __init__(
         self,
-        workforce_id: str,
+        node_id: str,
         description: str,
-        channel: TaskChannel,
         assistant_role_name: str,
         user_role_name: str,
         assistant_agent_kwargs: dict,
         user_agent_kwargs: dict,
         chat_turn_limit: int = 3,
     ) -> None:
-        super().__init__(workforce_id, description, channel)
+        super().__init__(node_id, description)
         sys_message = BaseMessage.make_assistant_message(
             role_name="Summarizer",
             content="Good at summarizing the results of the chat logs",

@@ -11,29 +11,41 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import asyncio
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Optional
 
 from camel.workforce.task_channel import TaskChannel
 
 
 class BaseNode(ABC):
-    def __init__(
-        self, workforce_id: str, description: str, channel: TaskChannel
-    ) -> None:
-        self.workforce_id = workforce_id
+    def __init__(self, workforce_id: str, description: str) -> None:
+        self.node_id = workforce_id
         self.description = description
-        self.channel = channel
-        self.running = True
+        self._channel: Optional[TaskChannel] = None
+        self._listening_task: Optional[asyncio.Task] = None
+        self._running = False
 
     def reset(self, *args: Any, **kwargs: Any) -> Any:
         """Resets the workforce to its initial state."""
         raise NotImplementedError()
 
     @abstractmethod
+    async def set_channel(self, channel: TaskChannel):
+        r"""Sets the channel for the workforce."""
+
+    @abstractmethod
+    async def _listen_to_channel(self):
+        r"""Listens to the channel and handle tasks. This method should be
+        the main loop for the workforce.
+        """
+
+    @abstractmethod
     async def start(self):
-        pass
+        r"""Start the workforce."""
 
     @abstractmethod
     async def stop(self):
-        pass
+        r"""
+        Stop the workforce.
+        """

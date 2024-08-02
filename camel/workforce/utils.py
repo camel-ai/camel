@@ -14,14 +14,14 @@
 import re
 
 
-class NewWorkforceConf:
+class NodeConf:
     def __init__(self, role: str, system: str, description: str):
         self.role = role
         self.system = system
         self.description = description
 
 
-def parse_create_wf_resp(response: str) -> NewWorkforceConf:
+def parse_create_wf_resp(response: str) -> NodeConf:
     r"""Parses the response of the new workforce creation from the manager
     agent."""
     config = re.search(r"(<workforce>.*</workforce>)", response, re.DOTALL)
@@ -44,7 +44,7 @@ def parse_create_wf_resp(response: str) -> NewWorkforceConf:
     ):
         raise ValueError("Missing required fields in workforce configuration.")
 
-    return NewWorkforceConf(
+    return NodeConf(
         role=workforce_info["role"] or "",
         system=workforce_info["system"] or "",
         description=workforce_info["description"] or "",
@@ -68,3 +68,5 @@ def parse_task_result_resp(response: str) -> str:
     if task_result is None:
         raise ValueError("No result found in the response.")
     return task_result.group(1)
+
+

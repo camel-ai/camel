@@ -16,6 +16,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import List
 
+from colorama import Fore
+
 from camel.tasks.task import Task, TaskState
 from camel.workforce.base import BaseNode
 from camel.workforce.task_channel import TaskChannel
@@ -26,29 +28,21 @@ class WorkerNode(BaseNode, ABC):
     of task processing in the workforce system.
 
     Args:
-        workforce_id (str): ID for the workforce.
+        node_id (str): ID for the workforce.
         description (str): Description of the workforce.
-        worker (Union[BaseAgent, RolePlaying]): Worker of the workforce.
-            Could be a single agent or a role playing system.
-        channel (TaskChannel): Communication channel for the workforce.
 
     """
 
     def __init__(
-        self,
-        workforce_id: str,
-        description: str,
-        # TODO: here we should have a superclass for BaseAgent and
-        #  RolePlaying
-        # worker: Union[BaseAgent, RolePlaying],
-        channel: TaskChannel,
+            self,
+            node_id: str,
+            description: str,
     ) -> None:
-        super().__init__(workforce_id, description, channel)
-        # self.worker = worker
+        super().__init__(node_id, description)
 
     @abstractmethod
     async def _process_task(
-        self, task: Task, dependencies: List[Task]
+            self, task: Task, dependencies: List[Task]
     ) -> TaskState:
         r"""Processes a task based on its dependencies.
 
@@ -60,11 +54,12 @@ class WorkerNode(BaseNode, ABC):
 
     async def _get_assigned_task(self) -> Task:
         r"""Get the task assigned to this workforce from the channel."""
-        return await self.channel.get_assigned_task_by_assignee(
-            self.workforce_id
+        return await self._channel.get_assigned_task_by_assignee(
+            self.node_id
         )
 
-    def _get_dep_tasks_info(self, dependencies: List[Task]) -> str:
+    @staticmethod
+    def _get_dep_tasks_info(dependencies: List[Task]) -> str:
         result_lines = [
             f"id: {dep_task.id}, content: {dep_task.content}. "
             f"result: {dep_task.result}."
@@ -72,6 +67,14 @@ class WorkerNode(BaseNode, ABC):
         ]
         result_str = "\n".join(result_lines)
         return result_str
+
+    def set_channel(self, channel: TaskChannel):
+        if self._running:
+            print(f"{Fore.YELLOW} Warning: Node {self.node_id} is already "
+                  f"running. Channel is not set. {Fore.RESET}")
+            return
+
+        self._channel = channel
 
     async def _listen_to_channel(self):
         """Continuously listen to the channel, process the task that are
@@ -81,18 +84,18 @@ class WorkerNode(BaseNode, ABC):
         This method should be run in an event loop, as it will run
             indefinitely.
         """
-        while self.running:
+        while True:
             # get the earliest task assigned to this workforce
             task = await self._get_assigned_task()
             print(
-                f'workforce-{self.workforce_id} get task:',
+                f'workforce-{self.node_id} get task:',
                 task.id,
                 task.content,
             )
             # get the Task instance of dependencies
-            dependency_ids = await self.channel.get_dependency_ids()
+            dependency_ids = await self._channel.get_dependency_ids()
             task_dependencies = [
-                await self.channel.get_task_by_id(dep_id)
+                await self._channel.get_task_by_id(dep_id)
                 for dep_id in dependency_ids
             ]
 
@@ -102,10 +105,12 @@ class WorkerNode(BaseNode, ABC):
             # update the result and status of the task
             task.set_state(task_state)
 
-            await self.channel.return_task(task.id)
+            await self._channel.return_task(task.id)
 
     async def start(self):
+        self._running = True
         await self._listen_to_channel()
 
     async def stop(self):
+        self._running = False
         return

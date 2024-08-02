@@ -18,7 +18,6 @@ from typing import List
 from camel.agents.base import BaseAgent
 from camel.messages.base import BaseMessage
 from camel.tasks.task import Task, TaskState
-from camel.workforce.task_channel import TaskChannel
 from camel.workforce.utils import parse_task_result_resp
 from camel.workforce.worker_node import WorkerNode
 from camel.workforce.workforce_prompt import PROCESS_TASK_PROMPT
@@ -29,7 +28,7 @@ class SingleAgentNode(WorkerNode):
     of task processing in the workforce system.
 
     Args:
-        workforce_id (str): ID for the workforce.
+        node_id (str): ID for the workforce.
         description (str): Description of the workforce.
         worker (BaseAgent): Worker of the workforce. A single agent.
         channel (TaskChannel): Communication channel for the workforce.
@@ -38,12 +37,11 @@ class SingleAgentNode(WorkerNode):
 
     def __init__(
         self,
-        workforce_id: str,
+        node_id: str,
         description: str,
         worker: BaseAgent,
-        channel: TaskChannel,
     ) -> None:
-        super().__init__(workforce_id, description, channel)
+        super().__init__(node_id, description)
         self.worker = worker
 
     async def _process_task(

@@ -74,22 +74,17 @@ async def main():
 
     # Wrap the single agent into the SingleAgentWorkforce
     tour_guide_workforce = SingleAgentNode(
-        workforce_id='1',
+        node_id='1',
         description='tour guide',
         worker=tour_guide_agent,
-        channel=public_channel,
     )
     traveler_workforce = SingleAgentNode(
-        workforce_id='2',
-        description='Traveler',
-        worker=traveler_agent,
-        channel=public_channel,
+        node_id='2', description='Traveler', worker=traveler_agent
     )
     tool_workforce = SingleAgentNode(
-        workforce_id='3',
+        node_id='3',
         description='Tools(eg.weather tools) calling opertor',
         worker=tool_agent,
-        channel=public_channel,
     )
     # Specify the task to be solved
     human_task = Task(
@@ -112,8 +107,8 @@ async def main():
         channel=public_channel,
     )
     # start InternalWorkforce and task
-    await workforces.start()
-    print('Final Result of Origin task:\n', human_task.result)
+    workforces.start()
+    # print('Final Result of Origin task:\n', human_task.result)
 
 
 if __name__ == "__main__":
