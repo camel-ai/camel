@@ -18,7 +18,6 @@ from typing import Optional, Sequence, Union
 from openai._types import NOT_GIVEN, NotGiven
 
 from camel.configs.base_config import BaseConfig
-from camel.toolkits import OpenAIFunction
 
 
 class GroqConfig(BaseConfig):
@@ -100,7 +99,6 @@ class GroqConfig(BaseConfig):
     response_format: Union[dict, NotGiven] = NOT_GIVEN
     frequency_penalty: float = 0.0
     user: str = ""
-    tools: Optional[list[OpenAIFunction]] = None
     tool_choice: Optional[Union[dict[str, str], str]] = "none"
 
 

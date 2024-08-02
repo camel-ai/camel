@@ -35,18 +35,6 @@ class Node(BaseModel):
     properties: dict = Field(default_factory=dict)
     """Additional properties and metadata associated with the node."""
 
-    # def __init__(
-    #     self, id: Union[str, int], type: str, properties: dict
-    # ) -> None:
-    #     """Pass in id, type and properties as positional arg.
-    #     Args:
-    #         id (Union[str, int]): A unique identifier for the node.
-    #         type (str):  The type of the relationship.
-    #         properties (dict): Additional properties and metadata associated
-    #         with the node.
-    #     """
-    #     super().__init__(id=id, type=type, properties=properties)
-
 
 class Relationship(BaseModel):
     r"""Represents a directed relationship between two nodes in a graph."""

@@ -16,7 +16,6 @@ from __future__ import annotations
 from typing import List, Optional, Union
 
 from camel.configs.base_config import BaseConfig
-from camel.toolkits import OpenAIFunction
 
 
 class LiteLLMConfig(BaseConfig):
@@ -84,7 +83,6 @@ class LiteLLMConfig(BaseConfig):
     user: Optional[str] = None
     response_format: Optional[dict] = None
     seed: Optional[int] = None
-    tools: Optional[list[OpenAIFunction]] = None
     tool_choice: Optional[Union[str, dict]] = None
     logprobs: Optional[bool] = None
     top_logprobs: Optional[int] = None

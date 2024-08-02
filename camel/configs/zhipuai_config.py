@@ -13,12 +13,14 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from typing import Optional, Sequence, Union
+from typing import TYPE_CHECKING, Optional, Sequence, Union
 
 from openai._types import NOT_GIVEN, NotGiven
 
 from camel.configs.base_config import BaseConfig
-from camel.toolkits import OpenAIFunction
+
+if TYPE_CHECKING:
+    pass
 
 
 class ZhipuAIConfig(BaseConfig):
@@ -67,7 +69,6 @@ class ZhipuAIConfig(BaseConfig):
     stream: bool = False
     stop: Union[str, Sequence[str], NotGiven] = NOT_GIVEN
     max_tokens: Union[int, NotGiven] = NOT_GIVEN
-    tools: Optional[list[OpenAIFunction]] = None
     tool_choice: Optional[Union[dict[str, str], str]] = None
 
 

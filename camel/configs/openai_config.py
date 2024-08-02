@@ -13,13 +13,15 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from typing import Optional, Sequence, Union
+from typing import TYPE_CHECKING, Optional, Sequence, Union
 
 from openai._types import NOT_GIVEN, NotGiven
 from pydantic import Field
 
 from camel.configs.base_config import BaseConfig
-from camel.toolkits import OpenAIFunction
+
+if TYPE_CHECKING:
+    pass
 
 
 class ChatGPTConfig(BaseConfig):
@@ -109,7 +111,6 @@ class ChatGPTConfig(BaseConfig):
     frequency_penalty: float = 0.0
     logit_bias: dict = Field(default_factory=dict)
     user: str = ""
-    tools: Optional[list['OpenAIFunction']] = None
     tool_choice: Optional[Union[dict[str, str], str]] = None
 
 

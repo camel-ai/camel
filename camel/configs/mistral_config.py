@@ -15,12 +15,9 @@ from __future__ import annotations
 
 from typing import Dict, Optional, Union
 
-from mistralai.models.chat_completion import (
-    ResponseFormat,
-)
+from mistralai.models.chat_completion import ResponseFormat
 
 from camel.configs.base_config import BaseConfig
-from camel.toolkits import OpenAIFunction
 
 
 class MistralConfig(BaseConfig):
@@ -62,7 +59,6 @@ class MistralConfig(BaseConfig):
     safe_mode: bool = False
     safe_prompt: bool = False
     response_format: Optional[Union[Dict[str, str], ResponseFormat]] = None
-    tools: Optional[list[OpenAIFunction]] = None
     tool_choice: Optional[str] = "auto"
 
 
