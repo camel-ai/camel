@@ -39,7 +39,6 @@ from camel.memories import (
 from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.responses import ChatAgentResponse
-from camel.toolkits import OpenAIFunction
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -60,6 +59,7 @@ if TYPE_CHECKING:
     from openai import Stream
 
     from camel.terminators import ResponseTerminator
+    from camel.toolkits import OpenAIFunction
 
 
 class FunctionCallingRecord(BaseModel):
@@ -610,6 +610,7 @@ class ChatAgent(BaseAgent):
             output_schema (BaseModel): The schema representing the expected
                 output structure.
         """
+        from camel.toolkits import OpenAIFunction
 
         # step 1 extract the output_schema info as json.
         schema_json = get_pydantic_object_schema(output_schema)
