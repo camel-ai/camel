@@ -11,19 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from .task import Task, TaskManager
+from .task_prompt import TASK_DECOMPOSE_PROMPT, TASK_EVOLVE_PROMPT
 
-
-class Constants:
-    # This value defines the default size (both width and height) for images
-    # extracted from a video.
-    VIDEO_DEFAULT_IMAGE_SIZE = 768
-
-    # This value defines the interval (in number of frames) at which images
-    # are extracted from the video.
-    VIDEO_IMAGE_EXTRACTION_INTERVAL = 50
-
-    # default plug of imageio to read video
-    VIDEO_DEFAULT_PLUG_PYAV = "pyav"
-
-    # return response with json format
-    FUNC_NAME_FOR_STRUCTURE_OUTPUT = "return_json_response"
+__all__ = [
+    "TASK_DECOMPOSE_PROMPT",
+    "TASK_EVOLVE_PROMPT",
+    "Task",
+    "TaskManager",
+]

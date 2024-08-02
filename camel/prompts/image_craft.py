@@ -11,19 +11,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+from typing import Any
+
+from camel.prompts import TextPrompt, TextPromptDict
+from camel.types import RoleType
 
 
-class Constants:
-    # This value defines the default size (both width and height) for images
-    # extracted from a video.
-    VIDEO_DEFAULT_IMAGE_SIZE = 768
+class ImageCraftPromptTemplateDict(TextPromptDict):
+    ASSISTANT_PROMPT = TextPrompt(
+        """You are tasked with creating an original image based on
+        the provided descriptive captions. Use your imagination
+        and artistic skills to visualize and draw the images and
+        explain your thought process."""
+    )
 
-    # This value defines the interval (in number of frames) at which images
-    # are extracted from the video.
-    VIDEO_IMAGE_EXTRACTION_INTERVAL = 50
-
-    # default plug of imageio to read video
-    VIDEO_DEFAULT_PLUG_PYAV = "pyav"
-
-    # return response with json format
-    FUNC_NAME_FOR_STRUCTURE_OUTPUT = "return_json_response"
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.update(
+            {
+                RoleType.ASSISTANT: self.ASSISTANT_PROMPT,
+            }
+        )

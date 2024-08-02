@@ -24,7 +24,11 @@ from camel.prompts.evaluation import (
 from camel.prompts.generate_text_embedding_data import (
     GenerateTextEmbeddingDataPromptTemplateDict,
 )
+from camel.prompts.image_craft import ImageCraftPromptTemplateDict
 from camel.prompts.misalignment import MisalignmentPromptTemplateDict
+from camel.prompts.multi_condition_image_craft import (
+    MultiConditionImageCraftPromptTemplateDict,
+)
 from camel.prompts.object_recognition import (
     ObjectRecognitionPromptTemplateDict,
 )
@@ -64,6 +68,8 @@ class TaskPromptTemplateDict(Dict[Any, TextPromptDict]):
                 TaskType.ROLE_DESCRIPTION: RoleDescriptionPromptTemplateDict(),
                 TaskType.OBJECT_RECOGNITION: ObjectRecognitionPromptTemplateDict(),  # noqa: E501
                 TaskType.GENERATE_TEXT_EMBEDDING_DATA: GenerateTextEmbeddingDataPromptTemplateDict(),  # noqa: E501
+                TaskType.IMAGE_CRAFT: ImageCraftPromptTemplateDict(),
+                TaskType.MULTI_CONDITION_IMAGE_CRAFT: MultiConditionImageCraftPromptTemplateDict(),  # noqa: E501
                 TaskType.VIDEO_DESCRIPTION: VideoDescriptionPromptTemplateDict(),  # noqa: E501
             }
         )
