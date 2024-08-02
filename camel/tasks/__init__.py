@@ -11,16 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-
-from .base_io import File, read_file
-from .firecrawl_reader import Firecrawl
-from .jina_url_reader import JinaURLReader
-from .unstructured_io import UnstructuredIO
+from .task import Task, TaskManager
+from .task_prompt import TASK_DECOMPOSE_PROMPT, TASK_EVOLVE_PROMPT
 
 __all__ = [
-    'File',
-    'read_file',
-    'UnstructuredIO',
-    'JinaURLReader',
-    'Firecrawl',
+    "TASK_DECOMPOSE_PROMPT",
+    "TASK_EVOLVE_PROMPT",
+    "Task",
+    "TaskManager",
 ]
