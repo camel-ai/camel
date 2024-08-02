@@ -398,10 +398,8 @@ def json_to_function_code(json_obj: Dict) -> str:
     function_code = f'''
 def {Constants.FUNC_NAME_FOR_STRUCTURE_OUTPUT}({args_str}):
     r"""Return response with a specified json format.
-
     Args:
 {docstring_args_str}
-
     Returns:
         Dict: A dictionary containing {return_keys_str}.
     """

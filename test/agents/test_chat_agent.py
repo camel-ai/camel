@@ -49,7 +49,7 @@ parametrize = pytest.mark.parametrize(
         ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
             model_type=ModelType.GPT_4O_MINI,
-            model_config_dict=ChatGPTConfig().__dict__,
+            model_config_dict=ChatGPTConfig().as_dict(),
         ),
         pytest.param(None, marks=pytest.mark.model_backend),
     ],
@@ -178,8 +178,8 @@ def test_chat_agent_messages_window():
     assistant.memory.write_records(
         [
             MemoryRecord(
-                user_msg,
-                OpenAIBackendRole.USER,
+                message=user_msg,
+                role_at_backend=OpenAIBackendRole.USER,
             )
             for _ in range(5)
         ]
@@ -220,7 +220,7 @@ def test_chat_agent_multiple_return_messages(n):
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=model_config.__dict__,
+        model_config_dict=model_config.as_dict(),
     )
     system_msg = BaseMessage(
         "Assistant",
@@ -248,7 +248,7 @@ def test_chat_agent_multiple_return_message_error(n):
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=model_config.__dict__,
+        model_config_dict=model_config.as_dict(),
     )
     system_msg = BaseMessage(
         "Assistant",
@@ -296,7 +296,7 @@ def test_chat_agent_stream_output():
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=stream_model_config.__dict__,
+        model_config_dict=stream_model_config.as_dict(),
     )
     stream_assistant = ChatAgent(system_msg, model=model)
     stream_assistant.reset()
@@ -404,7 +404,7 @@ def test_function_enabled():
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=model_config.__dict__,
+        model_config_dict=model_config.as_dict(),
     )
     agent_no_func = ChatAgent(system_message=system_message)
     agent_with_funcs = ChatAgent(
@@ -429,7 +429,7 @@ def test_tool_calling_sync():
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=model_config.__dict__,
+        model_config_dict=model_config.as_dict(),
     )
     agent = ChatAgent(
         system_message=system_message,
@@ -449,7 +449,9 @@ def test_tool_calling_sync():
     )
     agent_response = agent.step(user_msg)
 
-    tool_calls: List[FunctionCallingRecord] = agent_response.info['tool_calls']
+    tool_calls: List[FunctionCallingRecord] = [
+        call for call in agent_response.info['tool_calls']
+    ]
     for called_func in tool_calls:
         print(str(called_func))
 
@@ -475,7 +477,7 @@ async def test_tool_calling_math_async():
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=model_config.__dict__,
+        model_config_dict=model_config.as_dict(),
     )
     agent = ChatAgent(
         system_message=system_message,
@@ -495,7 +497,9 @@ async def test_tool_calling_math_async():
     )
     agent_response = await agent.step_async(user_msg)
 
-    tool_calls: List[FunctionCallingRecord] = agent_response.info['tool_calls']
+    tool_calls: List[FunctionCallingRecord] = [
+        call for call in agent_response.info['tool_calls']
+    ]
     for called_func in tool_calls:
         print(str(called_func))
 
@@ -534,7 +538,7 @@ async def test_tool_calling_async():
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=model_config.__dict__,
+        model_config_dict=model_config.as_dict(),
     )
 
     agent = ChatAgent(
@@ -554,7 +558,9 @@ async def test_tool_calling_async():
     )
     agent_response = await agent.step_async(user_msg)
 
-    tool_calls: List[FunctionCallingRecord] = agent_response.info['tool_calls']
+    tool_calls: List[FunctionCallingRecord] = [
+        call for call in agent_response.info['tool_calls']
+    ]
     for called_func in tool_calls:
         print(str(called_func))
 
@@ -602,7 +608,7 @@ def test_chat_agent_vision():
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=model_config.__dict__,
+        model_config_dict=model_config.as_dict(),
     )
     agent = ChatAgent(
         system_message=system_message,

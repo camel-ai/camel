@@ -65,7 +65,7 @@ def main() -> None:
             model_type=ModelType.GPT_3_5_TURBO,
             model_config_dict=ChatGPTConfig(
                 temperature=0.0, response_format={"type": "json_object"}
-            ).__dict__,
+            ).as_dict(),
         )
 
         assistant_agent = ChatAgent(

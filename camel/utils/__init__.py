@@ -53,8 +53,6 @@ __all__ = [
     'AnthropicTokenCounter',
     'get_system_information',
     'to_pascal',
-    'get_pydantic_object_schema',
-    'get_pydantic_major_version',
     'get_model_encoding',
     'BaseTokenCounter',
     'OpenAITokenCounter',
@@ -72,4 +70,8 @@ __all__ = [
     'is_docker_running',
     'GeminiTokenCounter',
     'MistralTokenCounter',
+    'get_pydantic_major_version',
+    'get_pydantic_object_schema',
+    'func_string_to_callable',
+    'json_to_function_code',
 ]
