@@ -13,20 +13,13 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, Dict, Optional, Union
+from typing import Any, Dict, Optional, Union
+
+from pydantic import field_validator
 
 from camel.configs.base_config import BaseConfig
 
-if TYPE_CHECKING:
-    from mistralai.models.chat_completion import (
-        ResponseFormat,
-    )
 
-    from camel.toolkits import OpenAIFunction
-
-
-@dataclass(frozen=True)
 class MistralConfig(BaseConfig):
     r"""Defines the parameters for generating chat completions using the
     Mistral API.
@@ -65,17 +58,21 @@ class MistralConfig(BaseConfig):
     random_seed: Optional[int] = None
     safe_mode: bool = False
     safe_prompt: bool = False
-    response_format: Optional[Union[Dict[str, str], ResponseFormat]] = None
-    tools: Optional[list[OpenAIFunction]] = None
+    response_format: Optional[Union[Dict[str, str], Any]] = None
     tool_choice: Optional[str] = "auto"
 
-    def __post_init__(self):
-        if self.tools is not None:
-            object.__setattr__(
-                self,
-                'tools',
-                [tool.get_openai_tool_schema() for tool in self.tools],
-            )
+    @field_validator("response_format", mode="before")
+    @classmethod
+    def fields_type_checking(cls, response_format):
+        if response_format and not isinstance(response_format, dict):
+            from mistralai.models.chat_completion import ResponseFormat
+
+            if not isinstance(response_format, ResponseFormat):
+                raise ValueError(
+                    f"The tool {response_format} should be an instance "
+                    "of `mistralai.models.chat_completion.ResponseFormat`."
+                )
+        return response_format
 
 
-MISTRAL_API_PARAMS = {param for param in asdict(MistralConfig()).keys()}
+MISTRAL_API_PARAMS = {param for param in MistralConfig().model_fields.keys()}

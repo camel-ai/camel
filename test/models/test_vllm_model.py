@@ -33,7 +33,7 @@ from camel.utils import OpenAITokenCounter
     ],
 )
 def test_vllm_model(model_type: ModelType):
-    model_config_dict = VLLMConfig().__dict__
+    model_config_dict = VLLMConfig().as_dict()
     model = VLLMModel(model_type.value, model_config_dict, api_key="vllm")
     assert model.model_type == model_type.value
     assert model.model_config_dict == model_config_dict
