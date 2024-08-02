@@ -25,13 +25,13 @@ from camel.workforce.workforce import Workforce
 
 
 def main():
-    # Set the tools for the tool_agent
+    # set the tools for the tool_agent
     function_list = [
         *SEARCH_FUNCS,
         *WEATHER_FUNCS,
         *MAP_FUNCS,
     ]
-    # Configure the model of tool_agent
+    # configure the model of tool_agent
     model_config_dict = ChatGPTConfig(
         tools=function_list,
         temperature=0.0,
@@ -43,7 +43,7 @@ def main():
         model_config_dict=model_config_dict,
     )
 
-    # Set tool_agent
+    # set tool_agent
     tool_agent = ChatAgent(
         system_message=BaseMessage.make_assistant_message(
             role_name="Tools calling opertor",
@@ -52,7 +52,7 @@ def main():
         model=model,
         tools=function_list,
     )
-    # Set tour_guide_agent
+    # set tour_guide_agent
     tour_guide_agent = ChatAgent(
         BaseMessage.make_assistant_message(
             role_name="tour guide",
@@ -67,7 +67,7 @@ def main():
         )
     )
 
-    # Wrap the single agent into the SingleAgentWorkforce
+    # wrap the single agent into the worker nodes
     tour_guide_worker_node = SingleAgentNode(
         description='tour guide',
         worker=tour_guide_agent,
@@ -79,7 +79,7 @@ def main():
         description='Tools(eg.weather tools) calling opertor',
         worker=tool_agent,
     )
-    # Specify the task to be solved
+    # specify the task to be solved
     human_task = Task(
         content=(
             "Plan a Paris tour itinerary for today"
@@ -87,7 +87,7 @@ def main():
         ),
         id='0',
     )
-    # create a InternalWorkforce to combine all SignleAgentWorkforces
+    # create a manager node to combine all worker nodes
     root_node = ManagerNode(
         description='A travel group',
         children=[
