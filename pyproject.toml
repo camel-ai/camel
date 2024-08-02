@@ -356,7 +356,7 @@ module = [
     "discord.py",
     "docker.*",
     "google.*",
-    "google-generativeai",
+    "google_generativeai",
     "mistralai",
     "mistral_common",
 ]
