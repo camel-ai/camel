@@ -182,4 +182,8 @@ class EmbodiedAgent(ChatAgent):
             input_message.meta_dict,
             content,
         )
-        return ChatAgentResponse([message], response.terminated, response.info)
+        return ChatAgentResponse(
+            msgs=[message],
+            terminated=response.terminated,
+            info=response.info,
+        )

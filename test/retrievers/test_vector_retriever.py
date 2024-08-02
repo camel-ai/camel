@@ -26,7 +26,9 @@ MockUnstructuredIO = Mock()
 
 @pytest.fixture
 def mock_embedding_model():
-    return MockBaseEmbedding()
+    mock_instance = MockBaseEmbedding()
+    mock_instance.embed.return_value = [0.0, 0.0]
+    return mock_instance
 
 
 @pytest.fixture

@@ -30,7 +30,7 @@ from camel.utils import OpenAITokenCounter
     ],
 )
 def test_groq_llama3_model(model_type):
-    model_config_dict = GroqConfig().__dict__
+    model_config_dict = GroqConfig().as_dict()
     model = GroqModel(model_type, model_config_dict)
     assert model.model_type == model_type
     assert model.model_config_dict == model_config_dict
@@ -48,7 +48,7 @@ def test_groq_llama3_model_unexpected_argument():
         model_path="vicuna-7b-v1.5",
         server_url="http://localhost:8000/v1",
     )
-    model_config_dict = model_config.__dict__
+    model_config_dict = model_config.as_dict()
 
     with pytest.raises(
         ValueError,

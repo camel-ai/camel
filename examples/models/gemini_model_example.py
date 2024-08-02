@@ -20,7 +20,7 @@ from camel.types import ModelPlatformType, ModelType
 model = ModelFactory.create(
     model_platform=ModelPlatformType.GEMINI,
     model_type=ModelType.GEMINI_1_5_PRO,
-    model_config_dict=GeminiConfig(temperature=0.2).__dict__,
+    model_config_dict=GeminiConfig(temperature=0.2).as_dict(),
 )
 
 # Define system message

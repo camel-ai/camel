@@ -92,13 +92,13 @@ class TestChatHistoryBlock:
         chat_history = ChatHistoryBlock(storage=mock_storage)
         records_to_write = [
             MemoryRecord(
-                BaseMessage(
+                message=BaseMessage(
                     "user",
                     RoleType.USER,
                     None,
                     "test message {}".format(i),
                 ),
-                OpenAIBackendRole.USER,
+                role_at_backend=OpenAIBackendRole.USER,
             )
             for i in range(5)
         ]
@@ -142,7 +142,7 @@ class TestVectorDBBlock:
 
         # Create VectorDBQueryResult list using mock_records
         mock_query_results = [
-            VectorDBQueryResult.construct(
+            VectorDBQueryResult.create(
                 similarity=0.9,
                 vector=[0.1] * 128,  # Example vector
                 id=record["uuid"],
@@ -167,13 +167,13 @@ class TestVectorDBBlock:
         )
         records_to_write = [
             MemoryRecord(
-                BaseMessage(
+                message=BaseMessage(
                     "user",
                     RoleType.USER,
                     None,
                     "test message {}".format(i),
                 ),
-                OpenAIBackendRole.USER,
+                role_at_backend=OpenAIBackendRole.USER,
             )
             for i in range(5)
         ]
