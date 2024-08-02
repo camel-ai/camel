@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import logging
+import os
 from hashlib import md5
 from typing import Any, Dict, List, Optional
 
@@ -94,6 +95,10 @@ class Neo4jGraph(BaseGraphStorage):
     ) -> None:
         r"""Create a new Neo4j graph instance."""
         import neo4j
+
+        url = os.environ.get("NEO4J_URI") or url
+        username = os.environ.get("NEO4J_USERNAME") or username
+        password = os.environ.get("NEO4J_PASSWORD") or password
 
         self.driver = neo4j.GraphDatabase.driver(
             url, auth=(username, password)
