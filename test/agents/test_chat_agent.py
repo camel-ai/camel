@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import ast
 import asyncio
 from io import BytesIO
 from typing import List
@@ -21,6 +22,7 @@ from openai.types.chat.chat_completion import Choice
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
 from openai.types.completion_usage import CompletionUsage
 from PIL import Image
+from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
 from camel.agents.chat_agent import FunctionCallingRecord
@@ -112,6 +114,45 @@ def test_chat_agent_stored_messages():
     ]
     context, _ = assistant.memory.get_context()
     assert context == expected_context
+
+
+@pytest.mark.model_backend
+def test_chat_agent_step_with_structure_response():
+    system_msg = BaseMessage(
+        role_name="assistant",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
+        content="You are a help assistant.",
+    )
+    assistant = ChatAgent(
+        system_message=system_msg,
+    )
+
+    class JokeResponse(BaseModel):
+        joke: str = Field(description="a joke")
+        funny_level: str = Field(description="Funny level, from 1 to 10")
+
+    user_msg = BaseMessage.make_user_message(
+        role_name="User",
+        content="Tell a jokes.",
+    )
+
+    response = assistant.step(user_msg, output_schema=JokeResponse)
+    response_content_json = ast.literal_eval(response.msgs[0].content)
+    joke_response_keys = set(
+        JokeResponse.model_json_schema()["properties"].keys()
+    )
+
+    response_content_keys = set(response_content_json.keys())
+
+    assert joke_response_keys.issubset(
+        response_content_keys
+    ), f"Missing keys: {joke_response_keys - response_content_keys}"
+
+    for key in joke_response_keys:
+        assert (
+            key in response_content_json
+        ), f"Key {key} not found in response content"
 
 
 @pytest.mark.model_backend
