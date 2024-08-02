@@ -66,28 +66,30 @@ class TaskState(str, Enum):
 
 
 class Task(BaseModel):
-    """
-    Task is specific assignment that can be passed to a agent.
+    r"""Task is specific assignment that can be passed to a agent.
+
+    Attributes:
+        content: string content for task.
+        id: An unique string identifier for the task. This should
+        ideally be provided by the provider/model which created the task.
+        state: The state which should be OPEN, RUNNING, DONE or DELETED.
+        type: task type
+        parent: The parent task, None for root task.
+        subtasks: The childrent sub-tasks for the task.
+        result: The answer for the task.
     """
 
     content: str
-    """The content of the task."""
 
     id: str = ""
-    """An unique string identifier for the task. This should ideally be
-    provided by the provider/model which created the task."""
 
     state: TaskState = TaskState.OPEN
-    """The task state."""
 
     type: Optional[str] = None
-    """The type of a task."""
 
     parent: Optional["Task"] = None
-    """The parent task."""
 
     subtasks: List["Task"] = []
-    """A list of sub tasks."""
 
     result: Optional[str] = ""
 
