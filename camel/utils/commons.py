@@ -318,6 +318,7 @@ def to_pascal(snake: str) -> str:
 
 def get_pydantic_major_version() -> int:
     r"""Get the major version of Pydantic.
+
     Returns:
         int: The major version number of Pydantic if installed, otherwise 0.
     """
@@ -329,9 +330,11 @@ def get_pydantic_major_version() -> int:
 
 def get_pydantic_object_schema(pydantic_params: BaseModel) -> Dict:
     r"""Get the JSON schema of a Pydantic model.
+
     Args:
         pydantic_params (BaseModel): The Pydantic model to retrieve the schema
             for.
+
     Returns:
         dict: The JSON schema of the Pydantic model.
     """
@@ -340,8 +343,10 @@ def get_pydantic_object_schema(pydantic_params: BaseModel) -> Dict:
 
 def func_string_to_callable(code: str):
     r"""Convert a function code string to a callable function object.
+
     Args:
         code (str): The function code as a string.
+
     Returns:
         Callable[..., Any]: The callable function object extracted from the
             code string.
@@ -354,9 +359,11 @@ def func_string_to_callable(code: str):
 
 def json_to_function_code(json_obj: Dict) -> str:
     r"""Generate a Python function code from a JSON schema.
+
     Args:
         json_obj (dict): The JSON schema object containing properties and
             required fields, and json format is follow openai tools schema
+
     Returns:
         str: The generated Python function code as a string.
     """

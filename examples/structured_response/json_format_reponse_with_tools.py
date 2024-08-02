@@ -41,7 +41,7 @@ assistant_sys_msg = BaseMessage.make_assistant_message(
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
-    model_type=ModelType.GPT_3_5_TURBO,
+    model_type=ModelType.GPT_4O_MINI,
     model_config_dict=assistant_model_config.__dict__,
 )
 
@@ -54,7 +54,7 @@ camel_agent = ChatAgent(
 
 
 # pydantic basemodel as input params format
-class Response(BaseModel):
+class Schema(BaseModel):
     current_age: str = Field(
         description=" the current age of University of Oxford"
     )
@@ -69,7 +69,7 @@ user_msg = BaseMessage.make_user_message(
 )
 
 # Get response information
-response = camel_agent.step(user_msg, output_schema=Response)
+response = camel_agent.step(user_msg, output_schema=Schema)
 print(response.msgs[0].content)
 """
 {'current_age': '928', 'calculated_age': '938'}
