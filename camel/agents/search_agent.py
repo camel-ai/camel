@@ -26,10 +26,9 @@ class SearchAgent(ChatAgent):
     relevance of an answer.
 
     Args:
-        model_type (ModelType, optional): The type of model to use for the
-            agent. (default: :obj:`ModelType.GPT_3_5_TURBO`)
-        model_config (Any, optional): The configuration for the model.
-            (default: :obj:`None`)
+        model (BaseModelBackend, optional): The model backend to use for
+            generating responses. (default: :obj:`OpenAIModel` with
+            `GPT_4O_MINI`)
     """
 
     def __init__(

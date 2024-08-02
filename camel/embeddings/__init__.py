@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .base import BaseEmbedding
+from .mistral_embedding import MistralEmbedding
 from .openai_embedding import OpenAIEmbedding
 from .sentence_transformers_embeddings import SentenceTransformerEncoder
 from .vlm_embedding import VisionLanguageEmbedding
@@ -21,4 +22,5 @@ __all__ = [
     "OpenAIEmbedding",
     "SentenceTransformerEncoder",
     "VisionLanguageEmbedding",
+    "MistralEmbedding",
 ]

@@ -91,7 +91,7 @@ class ChatAgent(BaseAgent):
         system_message (BaseMessage): The system message for the chat agent.
         model (BaseModelBackend, optional): The model backend to use for
             generating responses. (default: :obj:`OpenAIModel` with
-            `GPT_3_5_TURBO`)
+            `GPT_4O_MINI`)
         api_key (str, optional): The API key for authenticating with the
             LLM service. Only OpenAI and Anthropic model supported (default:
             :obj:`None`)
@@ -136,7 +136,7 @@ class ChatAgent(BaseAgent):
             if model is not None
             else ModelFactory.create(
                 model_platform=ModelPlatformType.OPENAI,
-                model_type=ModelType.GPT_3_5_TURBO,
+                model_type=ModelType.GPT_4O_MINI,
                 model_config_dict=ChatGPTConfig().__dict__,
                 api_key=self._api_key,
             )

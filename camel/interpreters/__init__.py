@@ -16,6 +16,7 @@ from .base import BaseInterpreter
 from .docker_interpreter import DockerInterpreter
 from .internal_python_interpreter import InternalPythonInterpreter
 from .interpreter_error import InterpreterError
+from .ipython_interpreter import JupyterKernelInterpreter
 from .subprocess_interpreter import SubprocessInterpreter
 
 __all__ = [
@@ -24,4 +25,5 @@ __all__ = [
     'InternalPythonInterpreter',
     'SubprocessInterpreter',
     'DockerInterpreter',
+    'JupyterKernelInterpreter',
 ]

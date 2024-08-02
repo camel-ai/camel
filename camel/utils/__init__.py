@@ -37,6 +37,7 @@ from .token_counting import (
     BaseTokenCounter,
     GeminiTokenCounter,
     LiteLLMTokenCounter,
+    MistralTokenCounter,
     OpenAITokenCounter,
     OpenSourceTokenCounter,
     get_model_encoding,
@@ -70,4 +71,5 @@ __all__ = [
     'json_to_function_code',
     'is_docker_running',
     'GeminiTokenCounter',
+    'MistralTokenCounter',
 ]
