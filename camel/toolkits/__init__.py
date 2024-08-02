@@ -27,6 +27,7 @@ from .search_toolkit import SEARCH_FUNCS, SearchToolkit
 from .twitter_toolkit import TWITTER_FUNCS, TwitterToolkit
 from .weather_toolkit import WEATHER_FUNCS, WeatherToolkit
 from .slack_toolkit import SLACK_FUNCS, SlackToolkit
+from .dalle_toolkit import DALLE_FUNCS, DalleToolkit
 
 from .base import BaseToolkit
 from .code_execution import CodeExecutionToolkit
@@ -45,12 +46,14 @@ __all__ = [
     'TWITTER_FUNCS',
     'WEATHER_FUNCS',
     'SLACK_FUNCS',
+    'DALLE_FUNCS',
     'BaseToolkit',
     'GithubToolkit',
     'MathToolkit',
     'GoogleMapsToolkit',
     'SearchToolkit',
     'SlackToolkit',
+    'DalleToolkit',
     'TwitterToolkit',
     'WeatherToolkit',
     'RetrievalToolkit',
