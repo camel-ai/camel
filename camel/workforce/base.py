@@ -18,33 +18,33 @@ from camel.workforce.task_channel import TaskChannel
 
 
 class BaseNode(ABC):
-    def __init__(self, workforce_id: str, description: str) -> None:
-        self.node_id = workforce_id
+    def __init__(self, description: str) -> None:
+        self.node_id = str(id(self))
         self.description = description
         # every node is initialized to use its own channel
         self._channel: TaskChannel = TaskChannel()
         self._running = False
 
     def reset(self, *args: Any, **kwargs: Any) -> Any:
-        """Resets the workforce to its initial state."""
+        """Resets the node to its initial state."""
         raise NotImplementedError()
 
     @abstractmethod
     def set_channel(self, channel: TaskChannel):
-        r"""Sets the channel for the workforce."""
+        r"""Sets the channel for the node."""
 
     @abstractmethod
     async def _listen_to_channel(self):
         r"""Listens to the channel and handle tasks. This method should be
-        the main loop for the workforce.
+        the main loop for the node.
         """
 
     @abstractmethod
     async def start(self):
-        r"""Start the workforce."""
+        r"""Start the node."""
 
     @abstractmethod
     def stop(self):
         r"""
-        Stop the workforce.
+        Stop the node.
         """

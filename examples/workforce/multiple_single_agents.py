@@ -69,15 +69,13 @@ def main():
 
     # Wrap the single agent into the SingleAgentWorkforce
     tour_guide_worker_node = SingleAgentNode(
-        node_id='1',
         description='tour guide',
         worker=tour_guide_agent,
     )
     traveler_worker_node = SingleAgentNode(
-        node_id='2', description='Traveler', worker=traveler_agent
+        description='Traveler', worker=traveler_agent
     )
     tool_worker_node = SingleAgentNode(
-        node_id='3',
         description='Tools(eg.weather tools) calling opertor',
         worker=tool_agent,
     )
@@ -91,7 +89,6 @@ def main():
     )
     # create a InternalWorkforce to combine all SignleAgentWorkforces
     root_node = ManagerNode(
-        node_id='0',
         description='A travel group',
         children=[
             tour_guide_worker_node,

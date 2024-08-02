@@ -14,7 +14,7 @@
 import asyncio
 
 from camel.tasks import Task
-from camel.workforce import ManagerNode
+from camel.workforce.manager_node import ManagerNode
 from camel.workforce.task_channel import TaskChannel
 
 
@@ -26,8 +26,6 @@ class Workforce:
             `"CAMEL Workforce"`.
         description (str, optional): A description of the workforce system.
             Defaults to `"A workforce system for managing tasks."`.
-        workforce_id (str, optional): The ID of the workforce system.
-            Defaults to `"workforce"`.
     """
 
     def __init__(
@@ -35,19 +33,17 @@ class Workforce:
         root_node: ManagerNode,
         name: str = "CAMEL Workforce",
         description: str = "A workforce system for managing tasks.",
-        workforce_id: str = "workforce",
     ) -> None:
         self.name = name
         self.description = description
-        self.workforce_id = workforce_id
-        self.root_node = root_node
+        self._root_node = root_node
 
     def process_task(self, task: Task) -> Task:
-        self.root_node.set_main_task(task)
+        self._root_node.set_main_task(task)
         shared_channel = TaskChannel()
-        self.root_node.set_channel(shared_channel)
+        self._root_node.set_channel(shared_channel)
 
         # start the root workforce
-        asyncio.run(self.root_node.start())
+        asyncio.run(self._root_node.start())
 
         return task

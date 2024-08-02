@@ -26,21 +26,21 @@ from camel.workforce.workforce import Workforce
 
 
 def main():
-    sys_msg_1 = BaseMessage.make_assistant_message(
+    guide_sysmsg = BaseMessage.make_assistant_message(
         role_name="tour guide",
         content="You have to lead everyone to have fun",
     )
 
-    sys_msg_2 = BaseMessage.make_assistant_message(
+    planner_sysmsg = BaseMessage.make_assistant_message(
         role_name="planner",
         content="good at tour plan.",
     )
 
-    agent_1 = ChatAgent(sys_msg_1)
-    agent_2 = ChatAgent(sys_msg_2)
+    guide_agent = ChatAgent(guide_sysmsg)
+    planner_agent = ChatAgent(planner_sysmsg)
 
-    guide_worker_node = SingleAgentNode('1', 'tour guide', agent_1)
-    planner_worker_node = SingleAgentNode('2', 'planner', agent_2)
+    guide_worker_node = SingleAgentNode('tour guide', guide_agent)
+    planner_worker_node = SingleAgentNode('planner', planner_agent)
 
     function_list = [
         *SEARCH_FUNCS,
@@ -72,7 +72,6 @@ def main():
         ),
     )
     research_rp_worker_node = RolePlayingNode(
-        '3',
         'research Group',
         assistant_role_name,
         user_role_name,
@@ -87,7 +86,6 @@ def main():
     )
 
     root_node = ManagerNode(
-        node_id='0',
         description='a travel group',
         children=[
             guide_worker_node,

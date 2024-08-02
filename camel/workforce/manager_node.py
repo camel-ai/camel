@@ -43,9 +43,7 @@ class ManagerNode(BaseNode):
     it, and also handles the situation when the task fails.
 
     Args:
-        node_id (str): ID for the node.
         description (str): Description of the node.
-        children (List[BaseNode]): A list of child nodes under this node.
         coordinator_agent_kwargs (Optional[Dict]): Keyword arguments for the
             coordinator agent, e.g. `model`, `api_key`, `tools`, etc.
         task_agent_kwargs (Optional[Dict]): Keyword arguments for the task
@@ -54,22 +52,24 @@ class ManagerNode(BaseNode):
 
     def __init__(
         self,
-        node_id: str,
         description: str,
         children: List[BaseNode],
         coordinator_agent_kwargs: Optional[Dict] = None,
         task_agent_kwargs: Optional[Dict] = None,
     ) -> None:
-        super().__init__(node_id, description)
+        super().__init__(description)
         self._child_listening_tasks: Deque[asyncio.Task] = deque()
         self._children = children
 
         coord_agent_sysmsg = BaseMessage.make_assistant_message(
             role_name="Workforce Manager",
             content="You are coordinating a group of workers. A worker can "
-            "be a group of agents or a single agent. Each worker is created to"
-            " solve a specific kind of task. Your job includes assigning "
-            "tasks to a existing worker, creating a new worker for a task, "
+            "be a group of agents or a single agent. Each worker is "
+            "created to"
+            " solve a specific kind of task. Your job includes "
+            "assigning "
+            "tasks to a existing worker, creating a new worker for a "
+            "task, "
             "etc.",
         )
         self.coordinator_agent = ChatAgent(
@@ -165,7 +165,6 @@ class ManagerNode(BaseNode):
         worker = ChatAgent(worker_sysmsg)
 
         new_node = SingleAgentNode(
-            node_id=str(len(self._children) + 1),
             description=new_node_conf.description,
             worker=worker,
         )

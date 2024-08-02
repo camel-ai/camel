@@ -27,18 +27,16 @@ class SingleAgentNode(WorkerNode):
     r"""A worker node that consists of a single agent.
 
     Args:
-        node_id (str): ID for the node.
         description (str): Description of the node.
         worker (BaseAgent): Worker of the node. A single agent.
     """
 
     def __init__(
         self,
-        node_id: str,
         description: str,
         worker: BaseAgent,
     ) -> None:
-        super().__init__(node_id, description)
+        super().__init__(description)
         self.worker = worker
 
     async def _process_task(

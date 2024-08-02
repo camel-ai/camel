@@ -29,7 +29,6 @@ class WorkerNode(BaseNode, ABC):
     processing in the workforce system.
 
     Args:
-        node_id (str): ID for the node.
         description (str): Description of the node.
 
     """
@@ -39,10 +38,9 @@ class WorkerNode(BaseNode, ABC):
 
     def __init__(
         self,
-        node_id: str,
         description: str,
     ) -> None:
-        super().__init__(node_id, description)
+        super().__init__(description)
 
     @abstractmethod
     async def _process_task(

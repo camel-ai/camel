@@ -34,7 +34,6 @@ class RolePlayingNode(WorkerNode):
     r"""A worker node that contains a role playing.
 
     Args:
-        node_id (str): ID for the node.
         description (str): Description of the node.
         assistant_role_name (str): The role name of the assistant agent.
         user_role_name (str): The role name of the user agent.
@@ -50,7 +49,6 @@ class RolePlayingNode(WorkerNode):
 
     def __init__(
         self,
-        node_id: str,
         description: str,
         assistant_role_name: str,
         user_role_name: str,
@@ -58,7 +56,7 @@ class RolePlayingNode(WorkerNode):
         user_agent_kwargs: Optional[Dict] = None,
         chat_turn_limit: int = 3,
     ) -> None:
-        super().__init__(node_id, description)
+        super().__init__(description)
         sys_message = BaseMessage.make_assistant_message(
             role_name="Summarizer",
             content="Good at summarizing the results of the chat logs",
