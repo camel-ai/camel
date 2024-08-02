@@ -39,7 +39,6 @@ from camel.memories import (
 from camel.messages import BaseMessage, FunctionCallingMessage, OpenAIMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.responses import ChatAgentResponse
-from camel.toolkits import OpenAIFunction
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -637,85 +636,6 @@ class ChatAgent(BaseAgent):
                 tools=tools
             ).as_dict()
 
-    def _add_tools_for_func_call(
-        self,
-        response: ChatCompletion,
-        tool_calls: List[FunctionCallingRecord],
-    ) -> tuple[
-        List[FunctionCallingRecord],
-        FunctionCallingMessage,
-        FunctionCallingMessage,
-    ]:
-        r"""
-        Handles adding tools for function calls based on the response.
-
-        This method processes a function call within the chat completion
-        response, and records the function call in the provided
-        list of tool calls.
-
-        Args:
-            response (ChatCompletion): The response object from the chat
-                completion.
-            tool_calls (List[FunctionCallingRecord]): The list to record
-                function calls.
-
-        Returns:
-            tuple: A tuple containing:
-                - List[FunctionCallingRecord]: The updated list of function
-                  call records.
-                - FunctionCallingMessage: The assistant's message regarding the
-                  function call.
-                - FunctionCallingMessage: The result message of the function
-                  call.
-        """
-
-        # Perform function calling
-        func_assistant_msg, func_result_msg, func_record = self.step_tool_call(
-            response
-        )
-
-        # Record the function call in the list of tool calls
-        tool_calls.append(func_record)
-
-        # Return updated tool calls list, assistant's message, and function
-        # result message
-        return tool_calls, func_assistant_msg, func_result_msg
-
-    def _add_output_schema_to_tool_list(self, output_schema: BaseModel):
-        r"""Handles the structured output response for OpenAI.
-
-        This method processes the given output schema and integrates the
-        resulting function into the tools for the OpenAI model configuration.
-
-        Args:
-            output_schema (BaseModel): The schema representing the expected
-                output structure.
-        """
-
-        # step 1 extract the output_schema info as json.
-        schema_json = get_pydantic_object_schema(output_schema)
-
-        # step 2 convert output schema json as callable string
-        func_str = json_to_function_code(schema_json)
-
-        # step 3 get callable function from string
-        func_callable = func_string_to_callable(func_str)
-
-        # step 4 add return_json_func into tools
-        func = OpenAIFunction(func_callable)
-        tools = [func]
-        self.func_dict[func.get_function_name()] = func.func
-        if self.model_type.is_openai:
-            self.model_backend.model_config_dict = ChatGPTConfig(
-                tools=tools
-            ).__dict__
-        elif self.model_type.is_gemini:
-            from camel.configs.gemini_config import GeminiConfig
-
-            self.model_backend.model_config_dict = GeminiConfig(
-                tools=tools
-            ).__dict__
-
     def _step_model_response(
         self,
         openai_messages: List[OpenAIMessage],
@@ -926,10 +846,9 @@ class ChatAgent(BaseAgent):
         args_str: str = choice.message.tool_calls[0].function.arguments
         args = json.loads(args_str)
 
+        # Pass the extracted arguments to the indicated function
         try:
-            # the result is openai tools function args
             result = func(**args)
-
         except Exception:
             raise ValueError(
                 f"Execution of function {func.__name__} failed with "
