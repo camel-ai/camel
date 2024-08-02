@@ -21,7 +21,7 @@ from jsonschema.exceptions import SchemaError
 
 from camel.toolkits import OpenAIFunction, get_openai_tool_schema
 from camel.types import RoleType
-from camel.utils import PYDANTIC_V2
+from camel.utils import get_pydantic_major_version
 
 
 def test_get_openai_tool_schema():
@@ -180,8 +180,9 @@ def test_get_openai_tool_schema():
     }
 
     openai_tool_schema = get_openai_tool_schema(test_all_parameters)
+    pydantic_version = get_pydantic_major_version()
 
-    if PYDANTIC_V2:
+    if pydantic_version == 2:
         assert openai_tool_schema == expect_res_v2
     else:
         assert openai_tool_schema == expect_res_v1

@@ -18,7 +18,11 @@ from .evaluation import EvaluationPromptTemplateDict
 from .generate_text_embedding_data import (
     GenerateTextEmbeddingDataPromptTemplateDict,
 )
+from .image_craft import ImageCraftPromptTemplateDict
 from .misalignment import MisalignmentPromptTemplateDict
+from .multi_condition_image_craft import (
+    MultiConditionImageCraftPromptTemplateDict,
+)
 from .object_recognition import ObjectRecognitionPromptTemplateDict
 from .persona import PersonaGeneratorPrompt
 from .prompt_templates import PromptTemplateGenerator
@@ -44,5 +48,8 @@ __all__ = [
     'SolutionExtractionPromptTemplateDict',
     'GenerateTextEmbeddingDataPromptTemplateDict',
     'ObjectRecognitionPromptTemplateDict',
+    'ImageCraftPromptTemplateDict',
+    'MultiConditionImageCraftPromptTemplateDict',
+    'DescriptionVideoPromptTemplateDict',
     'VideoDescriptionPromptTemplateDict',
 ]
