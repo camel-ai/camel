@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import asyncio
 
 from camel.agents.chat_agent import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
@@ -22,14 +21,10 @@ from camel.toolkits import MAP_FUNCS, SEARCH_FUNCS, WEATHER_FUNCS
 from camel.types import ModelPlatformType, ModelType
 from camel.workforce.manager_node import ManagerNode
 from camel.workforce.single_agent_node import SingleAgentNode
-from camel.workforce.task_channel import TaskChannel
+from camel.workforce.workforce import Workforce
 
 
-async def main():
-    # Note that it is essential to instantiate the channel and pass it to each
-    # workforce.
-    public_channel = TaskChannel()
-
+def main():
     # Set the tools for the tool_agent
     function_list = [
         *SEARCH_FUNCS,
@@ -73,15 +68,15 @@ async def main():
     )
 
     # Wrap the single agent into the SingleAgentWorkforce
-    tour_guide_workforce = SingleAgentNode(
+    tour_guide_worker_node = SingleAgentNode(
         node_id='1',
         description='tour guide',
         worker=tour_guide_agent,
     )
-    traveler_workforce = SingleAgentNode(
+    traveler_worker_node = SingleAgentNode(
         node_id='2', description='Traveler', worker=traveler_agent
     )
-    tool_workforce = SingleAgentNode(
+    tool_worker_node = SingleAgentNode(
         node_id='3',
         description='Tools(eg.weather tools) calling opertor',
         worker=tool_agent,
@@ -95,21 +90,21 @@ async def main():
         id='0',
     )
     # create a InternalWorkforce to combine all SignleAgentWorkforces
-    workforces = ManagerNode(
-        workforce_id='0',
+    root_node = ManagerNode(
+        node_id='0',
         description='A travel group',
-        child_workforces=[
-            tour_guide_workforce,
-            traveler_workforce,
-            tool_workforce,
+        children=[
+            tour_guide_worker_node,
+            traveler_worker_node,
+            tool_worker_node,
         ],
-        main_task=human_task,
-        channel=public_channel,
     )
-    # start InternalWorkforce and task
-    workforces.start()
-    # print('Final Result of Origin task:\n', human_task.result)
+
+    workforce = Workforce(root_node)
+    task = workforce.process_task(human_task)
+
+    print('Final Result of Origin task:\n', task.result)
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

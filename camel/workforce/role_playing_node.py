@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from typing import List
+from typing import Dict, List, Optional
 
 from colorama import Fore, Style
 
@@ -31,14 +31,21 @@ from camel.workforce.workforce_prompt import (
 
 
 class RolePlayingNode(WorkerNode):
-    r"""A unit workforce that consists of a role playing. It is the basic unit
-    of task processing in the workforce system.
+    r"""A worker node that contains a role playing.
 
     Args:
-        node_id (str): ID for the workforce.
-        description (str): Description of the workforce.
-        worker (RolePlaying): Worker of the workforce. A role playing system.
-        channel (TaskChannel): Communication channel for the workforce.
+        node_id (str): ID for the node.
+        description (str): Description of the node.
+        assistant_role_name (str): The role name of the assistant agent.
+        user_role_name (str): The role name of the user agent.
+        assistant_agent_kwargs (Optional[Dict], optional): The keyword
+            arguments to initialize the assistant agent in the role playing,
+            like the model name, etc. Defaults to None.
+        user_agent_kwargs (Optional[Dict], optional): The keyword arguments to
+            initialize the user agent in the role playing, like the model name,
+            etc. Defaults to None.
+        chat_turn_limit (int, optional): The maximum number of chat turns in
+            the role playing. Defaults to 3.
     """
 
     def __init__(
@@ -47,8 +54,8 @@ class RolePlayingNode(WorkerNode):
         description: str,
         assistant_role_name: str,
         user_role_name: str,
-        assistant_agent_kwargs: dict,
-        user_agent_kwargs: dict,
+        assistant_agent_kwargs: Optional[Dict] = None,
+        user_agent_kwargs: Optional[Dict] = None,
         chat_turn_limit: int = 3,
     ) -> None:
         super().__init__(node_id, description)

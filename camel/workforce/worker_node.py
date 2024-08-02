@@ -21,28 +21,32 @@ from colorama import Fore
 from camel.tasks.task import Task, TaskState
 from camel.workforce.base import BaseNode
 from camel.workforce.task_channel import TaskChannel
+from camel.workforce.utils import check_if_running
 
 
 class WorkerNode(BaseNode, ABC):
-    r"""A unit workforce that consists of a single worker. It is the basic unit
-    of task processing in the workforce system.
+    r"""A worker node that works on tasks. It is the basic unit of task
+    processing in the workforce system.
 
     Args:
-        node_id (str): ID for the workforce.
-        description (str): Description of the workforce.
+        node_id (str): ID for the node.
+        description (str): Description of the node.
 
     """
 
+    # TODO: Make RolePlaying and Agent scceed from one parent class, so that
+    #   we don't need two different classes for the worker node.
+
     def __init__(
-            self,
-            node_id: str,
-            description: str,
+        self,
+        node_id: str,
+        description: str,
     ) -> None:
         super().__init__(node_id, description)
 
     @abstractmethod
     async def _process_task(
-            self, task: Task, dependencies: List[Task]
+        self, task: Task, dependencies: List[Task]
     ) -> TaskState:
         r"""Processes a task based on its dependencies.
 
@@ -50,13 +54,10 @@ class WorkerNode(BaseNode, ABC):
             'DONE' if the task is successfully processed,
             'FAILED' if the processing fails.
         """
-        pass
 
     async def _get_assigned_task(self) -> Task:
-        r"""Get the task assigned to this workforce from the channel."""
-        return await self._channel.get_assigned_task_by_assignee(
-            self.node_id
-        )
+        r"""Get the task assigned to this node from the channel."""
+        return await self._channel.get_assigned_task_by_assignee(self.node_id)
 
     @staticmethod
     def _get_dep_tasks_info(dependencies: List[Task]) -> str:
@@ -68,27 +69,26 @@ class WorkerNode(BaseNode, ABC):
         result_str = "\n".join(result_lines)
         return result_str
 
+    @check_if_running(False)
     def set_channel(self, channel: TaskChannel):
-        if self._running:
-            print(f"{Fore.YELLOW} Warning: Node {self.node_id} is already "
-                  f"running. Channel is not set. {Fore.RESET}")
-            return
-
         self._channel = channel
 
+    @check_if_running(False)
     async def _listen_to_channel(self):
         """Continuously listen to the channel, process the task that are
-        assigned to this workforce, and update the result and status of the
-        task.
+        assigned to this node, and update the result and status of the task.
 
         This method should be run in an event loop, as it will run
             indefinitely.
         """
+        self._running = True
+        print(f"{Fore.GREEN}Worker node {self.node_id} started.{Fore.RESET}")
+
         while True:
-            # get the earliest task assigned to this workforce
+            # get the earliest task assigned to this node
             task = await self._get_assigned_task()
             print(
-                f'workforce-{self.node_id} get task:',
+                f'worker node {self.node_id} get task:',
                 task.id,
                 task.content,
             )
@@ -107,10 +107,11 @@ class WorkerNode(BaseNode, ABC):
 
             await self._channel.return_task(task.id)
 
+    @check_if_running(False)
     async def start(self):
-        self._running = True
         await self._listen_to_channel()
 
-    async def stop(self):
+    @check_if_running(True)
+    def stop(self):
         self._running = False
         return

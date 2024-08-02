@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import asyncio
 
 from camel.agents.chat_agent import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
@@ -23,12 +22,10 @@ from camel.types import ModelPlatformType, ModelType
 from camel.workforce.manager_node import ManagerNode
 from camel.workforce.role_playing_node import RolePlayingNode
 from camel.workforce.single_agent_node import SingleAgentNode
-from camel.workforce.task_channel import TaskChannel
+from camel.workforce.workforce import Workforce
 
 
-async def main():
-    public_channel = TaskChannel()
-
+def main():
     sys_msg_1 = BaseMessage.make_assistant_message(
         role_name="tour guide",
         content="You have to lead everyone to have fun",
@@ -42,10 +39,8 @@ async def main():
     agent_1 = ChatAgent(sys_msg_1)
     agent_2 = ChatAgent(sys_msg_2)
 
-    unit_workforce_1 = SingleAgentNode(
-        '1', 'tour guide', agent_1, public_channel
-    )
-    unit_workforce_2 = SingleAgentNode('2', 'planner', agent_2, public_channel)
+    guide_worker_node = SingleAgentNode('1', 'tour guide', agent_1)
+    planner_worker_node = SingleAgentNode('2', 'planner', agent_2)
 
     function_list = [
         *SEARCH_FUNCS,
@@ -59,8 +54,8 @@ async def main():
     )
     model_platform = ModelPlatformType.OPENAI
     model_type = ModelType.GPT_3_5_TURBO
-    assistant_role_name = ("Searcher",)
-    user_role_name = ("Professor",)
+    assistant_role_name = "Searcher"
+    user_role_name = "Professor"
     assistant_agent_kwargs = dict(
         model=ModelFactory.create(
             model_platform=model_platform,
@@ -76,10 +71,9 @@ async def main():
             model_config_dict=user_model_config.__dict__,
         ),
     )
-    unit_workforce_3 = RolePlayingNode(
+    research_rp_worker_node = RolePlayingNode(
         '3',
         'research Group',
-        public_channel,
         assistant_role_name,
         user_role_name,
         assistant_agent_kwargs,
@@ -88,23 +82,25 @@ async def main():
     )
 
     human_task = Task(
-        content=("research history of Paris and plan a tour."),
+        content="research history of Paris and plan a tour.",
         id='0',
     )
-    workforces = ManagerNode(
-        workforce_id='0',
+
+    root_node = ManagerNode(
+        node_id='0',
         description='a travel group',
-        child_workforces=[
-            unit_workforce_1,
-            unit_workforce_2,
-            unit_workforce_3,
+        children=[
+            guide_worker_node,
+            planner_worker_node,
+            research_rp_worker_node,
         ],
-        main_task=human_task,
-        channel=public_channel,
     )
-    await workforces.start()
-    print('Final Result of Origin task:\n', human_task.result)
+
+    workforce = Workforce(root_node)
+    task = workforce.process_task(human_task)
+
+    print('Final Result of Origin task:\n', task.result)
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

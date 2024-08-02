@@ -42,15 +42,16 @@ class Packet:
     Args:
         task (Task): The task that is wrapped inside the packet.
         publisher_id (str): The ID of the workforce that published the task.
-        assignee_id (Optional[str]): The ID of the workforce that is assigned
+        assignee_id (str): The ID of the workforce that is assigned
             to the task. Defaults to None, meaning that the task is posted as
             a dependency in the channel.
 
     Attributes:
         task (Task): The task that is wrapped inside the packet.
         publisher_id (str): The ID of the workforce that published the task.
-        assignee_id (Optional[str]): The ID of the workforce that is assigned
-            to the task.
+        assignee_id (Optional[str], optional): The ID of the workforce that is
+            assigned to the task. Would be None if the task is a dependency.
+            Defaults to None.
         status (PacketStatus): The status of the task.
     """
 
@@ -65,6 +66,12 @@ class Packet:
         self.publisher_id = publisher_id
         self.assignee_id = assignee_id
         self.status = status
+
+    def __repr__(self):
+        return (
+            f"Packet(publisher_id={self.publisher_id}, assignee_id="
+            f"{self.assignee_id}, status={self.status})"
+        )
 
 
 class TaskChannel:
@@ -163,4 +170,3 @@ class TaskChannel:
         async with self._condition:
             print(self._task_dict)
             print(self._task_id_list)
-            self._condition.notify_all()

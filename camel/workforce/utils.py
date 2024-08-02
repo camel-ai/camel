@@ -12,6 +12,8 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import re
+from functools import wraps
+from typing import Callable
 
 
 class NodeConf:
@@ -21,7 +23,8 @@ class NodeConf:
         self.description = description
 
 
-def parse_create_wf_resp(response: str) -> NodeConf:
+# TODO: integrate structured response directly instead of parsing
+def parse_create_node_resp(response: str) -> NodeConf:
     r"""Parses the response of the new workforce creation from the manager
     agent."""
     config = re.search(r"(<workforce>.*</workforce>)", response, re.DOTALL)
@@ -70,3 +73,25 @@ def parse_task_result_resp(response: str) -> str:
     return task_result.group(1)
 
 
+def check_if_running(running: bool) -> Callable:
+    r"""Check if the workforce is (not) running, specified the boolean value.
+    If the workforce is not in the expected status, raise an exception.
+
+    Raises:
+        RuntimeError: If the workforce is not in the expected status.
+    """
+
+    def decorator(func):
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            if self._running != running:
+                status = "not running" if running else "running"
+                raise RuntimeError(
+                    f"The workforce is {status}. Cannot perform the "
+                    f"operation {func.__name__}."
+                )
+            return func(self, *args, **kwargs)
+
+        return wrapper
+
+    return decorator

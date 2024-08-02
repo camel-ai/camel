@@ -14,7 +14,7 @@
 from camel.prompts import TextPrompt
 
 # ruff: noqa: E501
-CREATE_WF_PROMPT = TextPrompt(
+CREATE_NODE_PROMPT = TextPrompt(
     """You need to use the given information to create a new workforce for solving the category of tasks of the given one.
 The content of the given task is:
 
@@ -101,6 +101,7 @@ You must return the result of the given task.
 """
 )
 
+# TODO: improve prompt quality
 ROLEPLAY_SUMMERIZE_PROMPT = TextPrompt(
     """You need to process the task.
 The content of the task is:

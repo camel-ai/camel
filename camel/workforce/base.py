@@ -11,9 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import asyncio
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any
 
 from camel.workforce.task_channel import TaskChannel
 
@@ -22,8 +21,8 @@ class BaseNode(ABC):
     def __init__(self, workforce_id: str, description: str) -> None:
         self.node_id = workforce_id
         self.description = description
-        self._channel: Optional[TaskChannel] = None
-        self._listening_task: Optional[asyncio.Task] = None
+        # every node is initialized to use its own channel
+        self._channel: TaskChannel = TaskChannel()
         self._running = False
 
     def reset(self, *args: Any, **kwargs: Any) -> Any:
@@ -31,7 +30,7 @@ class BaseNode(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    async def set_channel(self, channel: TaskChannel):
+    def set_channel(self, channel: TaskChannel):
         r"""Sets the channel for the workforce."""
 
     @abstractmethod
@@ -45,7 +44,7 @@ class BaseNode(ABC):
         r"""Start the workforce."""
 
     @abstractmethod
-    async def stop(self):
+    def stop(self):
         r"""
         Stop the workforce.
         """

@@ -43,7 +43,7 @@ class Workforce:
         self.root_node = root_node
 
     def process_task(self, task: Task) -> Task:
-        self.root_node.set_task(task)
+        self.root_node.set_main_task(task)
         shared_channel = TaskChannel()
         self.root_node.set_channel(shared_channel)
 

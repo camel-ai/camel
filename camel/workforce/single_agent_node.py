@@ -24,15 +24,12 @@ from camel.workforce.workforce_prompt import PROCESS_TASK_PROMPT
 
 
 class SingleAgentNode(WorkerNode):
-    r"""A unit workforce that consists of a single agent. It is the basic unit
-    of task processing in the workforce system.
+    r"""A worker node that consists of a single agent.
 
     Args:
-        node_id (str): ID for the workforce.
-        description (str): Description of the workforce.
-        worker (BaseAgent): Worker of the workforce. A single agent.
-        channel (TaskChannel): Communication channel for the workforce.
-
+        node_id (str): ID for the node.
+        description (str): Description of the node.
+        worker (BaseAgent): Worker of the node. A single agent.
     """
 
     def __init__(
