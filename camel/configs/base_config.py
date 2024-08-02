@@ -42,9 +42,11 @@ class BaseConfig(ABC, BaseModel):
             from camel.toolkits import OpenAIFunction
 
             for tool in tools:
-                assert isinstance(
-                    tool, OpenAIFunction
-                ), "The tool should be an instance of `OpenAIFunction`."
+                if not isinstance(tool, OpenAIFunction):
+                    raise ValueError(
+                        f"The tool {tool} should "
+                        "be an instance of `OpenAIFunction`."
+                    )
         return tools
 
     def as_dict(self) -> dict[str, Any]:

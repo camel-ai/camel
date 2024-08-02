@@ -13,9 +13,9 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from typing import Dict, Optional, Union
+from typing import Any, Dict, Optional, Union
 
-from mistralai.models.chat_completion import ResponseFormat
+from pydantic import field_validator
 
 from camel.configs.base_config import BaseConfig
 
@@ -58,8 +58,21 @@ class MistralConfig(BaseConfig):
     random_seed: Optional[int] = None
     safe_mode: bool = False
     safe_prompt: bool = False
-    response_format: Optional[Union[Dict[str, str], ResponseFormat]] = None
+    response_format: Optional[Union[Dict[str, str], Any]] = None
     tool_choice: Optional[str] = "auto"
+
+    @field_validator("response_format", mode="before")
+    @classmethod
+    def fields_type_checking(cls, response_format):
+        if response_format and not isinstance(response_format, dict):
+            from mistralai.models.chat_completion import ResponseFormat
+
+            if not isinstance(response_format, ResponseFormat):
+                raise ValueError(
+                    f"The tool {response_format} should be an instance "
+                    "of `mistralai.models.chat_completion.ResponseFormat`."
+                )
+        return response_format
 
 
 MISTRAL_API_PARAMS = {param for param in MistralConfig().model_fields.keys()}
