@@ -24,7 +24,6 @@ from typing import (
 )
 
 from openai import Stream
-from outlines import generate, models
 from pydantic import BaseModel
 
 from camel.messages import OpenAIMessage
@@ -67,6 +66,8 @@ class SchemaModel(BaseModelBackend):
                 be fed into openai.ChatCompletion.create().
             url (Optional[str]): The url to the OpenAI service.
         """
+        from outlines import models
+
         self.model_platform = model_platform
         self.model_name = model_type
         self.model_config_dict = model_config_dict
@@ -173,6 +174,8 @@ class SchemaModel(BaseModelBackend):
             raise NotImplementedError(
                 "run without output_schema is not implemented"
             )
+
+        from outlines import generate
 
         generator = generate.json(self._client, output_schema)
 
