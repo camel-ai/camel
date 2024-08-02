@@ -11,8 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from dataclasses import dataclass
 from typing import List, Tuple
+
+from pydantic import BaseModel
 
 from camel.memories.base import BaseContextCreator
 from camel.memories.records import ContextRecord
@@ -20,8 +21,7 @@ from camel.messages import OpenAIMessage
 from camel.utils import BaseTokenCounter
 
 
-@dataclass(frozen=True)
-class _ContextUnit:
+class _ContextUnit(BaseModel):
     idx: int
     record: ContextRecord
     num_tokens: int
@@ -88,9 +88,9 @@ class ScoreBasedContextCreator(BaseContextCreator):
                 uuid_set.add(record.memory_record.uuid)
                 context_units.append(
                     _ContextUnit(
-                        idx,
-                        record,
-                        self.token_counter.count_tokens_from_messages(
+                        idx=idx,
+                        record=record,
+                        num_tokens=self.token_counter.count_tokens_from_messages(
                             [record.memory_record.to_openai_message()]
                         ),
                     )
