@@ -361,7 +361,11 @@ class ChatAgent(BaseAgent):
         
         chat_agent_response = ChatAgentResponse(output_messages, 
                                                 self.terminated, info)
-        self.update_memory(chat_agent_response, OpenAIBackendRole.ASSISTANT)
+        
+        # add output response add memory
+        for output_message in output_messages:
+            self.update_memory(output_message, OpenAIBackendRole.ASSISTANT)
+
         return chat_agent_response
 
     async def step_async(
