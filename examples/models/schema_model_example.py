@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
+import os
 from typing import List
 
 from huggingface_hub import login
@@ -56,7 +57,10 @@ class FitnessPlan(BaseModel):
     hydration_tip: str
 
 
-login(token="your_token")  # Hugging Face token
+# Login Hugging Face Hub token
+hugging_face_hub_token = os.environ("HUGGING_FACE_HUB_TOKEN")
+login(token=hugging_face_hub_token)
+
 
 # Create SchemaModel instance
 # If the class of pydantic is very complex, we recommend using a more powerful
