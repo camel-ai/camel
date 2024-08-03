@@ -66,7 +66,7 @@ class SchemaModel(BaseModelBackend):
                 be fed into openai.ChatCompletion.create().
             url (Optional[str]): The url to the OpenAI service.
         """
-        from outlines import models
+        from outlines import models  # type: ignore[import]
 
         self.model_platform = model_platform
         self.model_name = model_type
@@ -175,7 +175,7 @@ class SchemaModel(BaseModelBackend):
                 "run without output_schema is not implemented"
             )
 
-        from outlines import generate
+        from outlines import generate  # type: ignore[import]
 
         generator = generate.json(self._client, output_schema)
 
