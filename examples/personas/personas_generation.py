@@ -12,9 +12,9 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from camel.personas.persona_generator import PersonaGenerator
+from camel.personas.persona_generator import PersonaHub
 
-persona_group = PersonaGenerator()
+persona_group = PersonaHub()
 
 # Use the text_to_persona method
 example_text = """Clinical Guideline: Administration of Injections in 
