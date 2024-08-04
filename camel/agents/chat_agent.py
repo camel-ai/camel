@@ -358,10 +358,11 @@ class ChatAgent(BaseAgent):
                     num_tokens,
                 )
                 break
-        
-        chat_agent_response = ChatAgentResponse(output_messages, 
-                                                self.terminated, info)
-        
+
+        chat_agent_response = ChatAgentResponse(
+            output_messages, self.terminated, info
+        )
+
         # add output response add memory
         for output_message in output_messages:
             self.update_memory(output_message, OpenAIBackendRole.ASSISTANT)
