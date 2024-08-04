@@ -74,10 +74,7 @@ class SchemaModel(BaseModelBackend):
         self._client = Union[models.Transformers, models.LlamaCpp, models.VLLM]
         self._url = url
 
-        # If model_path is not provided, the system will download the model
-        # from the platform and store it in the default directory.
-        model_path: str = model_config_dict.get("model_path", None)
-        model_kwargs: Dict = self.model_config_dict.get("model_kwargs", None)
+        model_kwargs: Dict = self.model_config_dict.get("model_kwargs", {})
 
         # Since Outlines suports multiple model types, it is necessary to
         # read the documentation to learn about the model kwargs:
@@ -85,7 +82,7 @@ class SchemaModel(BaseModelBackend):
         if self.model_platform == ModelPlatformType.OUTLINES_TRANSFORMERS:
             device = model_kwargs.get("device", None)
             tokenizer_kwargs = self.model_config_dict.get(
-                "tokenizer_kwargs", None
+                "tokenizer_kwargs", {}
             )
 
             # Remove the unused keys from dict
@@ -103,6 +100,7 @@ class SchemaModel(BaseModelBackend):
 
             repo_id = model_kwargs.get("repo_id", "TheBloke/phi-2-GGUF")
             filename = model_kwargs.get("filename", "phi-2.Q4_K_M.gguf")
+            download_dir = model_kwargs.get("download_dir", None)
 
             # Remove the unused keys from dict
             model_kwargs.pop("repo_id", None)
@@ -115,12 +113,11 @@ class SchemaModel(BaseModelBackend):
             self._client = models.llamacpp(  # type: ignore[attr-defined]
                 repo_id=repo_id,
                 filename=filename,
-                download_dir=model_path,
+                download_dir=download_dir,
                 tokenizer=tokenizer,
                 **model_kwargs,
             )
         elif self.model_platform == ModelPlatformType.OUTLINES_VLLM:
-            model_kwargs["download_dir"] = model_path
             # When loading the model, the system will trust and execute
             # custom code in the model repository.
             model_kwargs["trust_remote_code"] = model_kwargs.get(
