@@ -9,7 +9,7 @@ ______________________________________________________________________
 
 # CAMEL: Communicative  Agents for “Mind” Exploration of Large Language Model Society
 
-[![Python Version][python-image]][python-url]
+[![Python V ersion][python-image]][python-url]
 [![PyTest Status][pytest-image]][pytest-url]
 [![Documentation][docs-image]][docs-url]
 [![Star][star-image]][star-url]
