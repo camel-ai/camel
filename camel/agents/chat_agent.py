@@ -145,7 +145,7 @@ class ChatAgent(BaseAgent):
             else ModelFactory.create(
                 model_platform=ModelPlatformType.OPENAI,
                 model_type=ModelType.GPT_4O_MINI,
-                model_config_dict=ChatGPTConfig().model_dump(),
+                model_config_dict=ChatGPTConfig().as_dict(),
                 api_key=self._api_key,
             )
         )

@@ -74,7 +74,7 @@ PROMPT: here is the updated prompt!
         model = ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
             model_type=ModelType.GPT_4O_MINI,
-            model_config_dict=model_config.__dict__,
+            model_config_dict=model_config.as_dict(),
         )
 
         self.artist = ChatAgent(
