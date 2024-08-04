@@ -424,7 +424,13 @@ class ChatAgent(BaseAgent):
                     num_tokens,
                 )
                 break
-
+        
+        # if use structure response, set structure result as content of
+        # BaseMessage
+        if output_schema and self.model_type.is_openai:
+            for base_message_item in output_messages:
+                base_message_item.content = str(info['tool_calls'][-1].result)
+                
         chat_agent_response = ChatAgentResponse(
             msgs=output_messages, terminated=self.terminated, info=info
         )
