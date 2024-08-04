@@ -42,7 +42,7 @@ assistant_sys_msg = BaseMessage.make_assistant_message(
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
     model_type=ModelType.GPT_4O_MINI,
-    model_config_dict=assistant_model_config.__dict__,
+    model_config_dict=assistant_model_config.as_dict(),
 )
 
 # Set agent
