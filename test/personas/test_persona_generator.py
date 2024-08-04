@@ -50,12 +50,12 @@ def test_init(persona_generator: PersonaGenerator):
     assert len(persona_generator.personas) == 0
 
 
-def test_add_persona(persona_generator: PersonaGenerator):
+def test___setitem__(persona_generator: PersonaGenerator):
     persona = Persona(
         name="Test Persona",
         description="Test Description",
     )
-    persona_generator.add_persona(persona)
+    persona_generator.__setitem__(persona)
     assert persona_generator.__len__() == 1
     assert persona_generator.personas[persona.id] == persona
 
@@ -69,8 +69,8 @@ def test_remove_persona(persona_generator: PersonaGenerator):
         name="Test Persona 2",
         description="Test Description 2",
     )
-    persona_generator.add_persona(persona1)
-    persona_generator.add_persona(persona2)
+    persona_generator.__setitem__(persona1)
+    persona_generator.__setitem__(persona2)
 
     persona_generator.__delitem__(persona1.id)
     assert persona_generator.__len__() == 1
@@ -85,7 +85,7 @@ def test_get_persona(persona_generator: PersonaGenerator):
         name="Test Persona",
         description="Test Description",
     )
-    persona_generator.add_persona(persona)
+    persona_generator.__setitem__(persona)
 
     assert persona_generator.__getitem__(persona.id) == persona
 
@@ -155,8 +155,8 @@ def test_deduplicate(persona_generator: PersonaGenerator):
         name="Test Persona 2",
         description="Test Description 2",
     )
-    persona_generator.add_persona(persona1)
-    persona_generator.add_persona(persona2)
+    persona_generator.__setitem__(persona1)
+    persona_generator.__setitem__(persona2)
 
     persona_generator.deduplicate()
 
@@ -174,8 +174,8 @@ def test_len(persona_generator: PersonaGenerator):
         name="Test Persona 2",
         description="Test Description 2",
     )
-    persona_generator.add_persona(persona1)
-    persona_generator.add_persona(persona2)
+    persona_generator.__setitem__(persona1)
+    persona_generator.__setitem__(persona2)
 
     assert persona_generator.__len__() == 2
 
@@ -189,8 +189,8 @@ def test_iter(persona_generator: PersonaGenerator):
         name="Test Persona 2",
         description="Test Description 2",
     )
-    persona_generator.add_persona(persona1)
-    persona_generator.add_persona(persona2)
+    persona_generator.__setitem__(persona1)
+    persona_generator.__setitem__(persona2)
 
     personas = list(persona_generator)
     assert len(personas) == 2
@@ -207,8 +207,8 @@ def test_get_all_personas(persona_generator: PersonaGenerator):
         name="Test Persona 2",
         description="Test Description 2",
     )
-    persona_generator.add_persona(persona1)
-    persona_generator.add_persona(persona2)
+    persona_generator.__setitem__(persona1)
+    persona_generator.__setitem__(persona2)
 
     all_personas = persona_generator.get_all_personas()
     assert isinstance(all_personas, list)
