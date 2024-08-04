@@ -13,7 +13,6 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Dict, List, Optional, Union
 
-import torch
 from openai import Stream
 from transformers import (
     AutoModel,
@@ -93,6 +92,13 @@ class MultimodalModel(BaseModelBackend):
             )
         self.server_url: str = server_url
 
+        import torch
+
+        # Load the device to run the model on
+        self.device: str = self.model_config_dict.get("device") or (
+            "cuda" if torch.cuda.is_available() else "cpu"
+        )
+
         self._client = (
             AutoModel.from_pretrained(
                 self.model_name,
@@ -108,9 +114,7 @@ class MultimodalModel(BaseModelBackend):
 
         # Replace `model_config_dict` with only the params to be
         # passed to OpenAI API
-        self.model_config_dict = self.model_config_dict[
-            "api_params"
-        ]  # TODO: modify the config dict
+        self.model_config_dict = self.model_config_dict["api_params"]
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -157,6 +161,8 @@ class MultimodalModel(BaseModelBackend):
         image = [
             './examples/liuxiang.mp4',
         ]
+
+        import torch
 
         with torch.autocast(device_type='cuda', dtype=torch.float16):
             response_str, _ = (
