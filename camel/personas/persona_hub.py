@@ -12,7 +12,6 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-import re
 import uuid
 from typing import Dict, List, Optional, Union
 
@@ -126,23 +125,27 @@ persona_description: <BLANK>
         t2p_agent = ChatAgent(system_message=sys_msg, model=self.model)
         t2p_agent.reset()
 
-        response = t2p_agent.step(t2p_prompt_instruction_msg)
+        from pydantic import BaseModel, Field
+
+        class PersonaResponse(BaseModel):
+            persona_name: str = Field(description="The name of the persona")
+            persona_description: str = Field(
+                description="The description of the persona"
+            )
+
+        response = t2p_agent.step(
+            t2p_prompt_instruction_msg, output_schema=PersonaResponse
+        )
 
         if response.terminated:
             raise RuntimeError("Text to persona step failed.")
         msg: BaseMessage = response.msg
 
-        # Structured output (TODO: Use a more robust parser)
-        pattern = (
-            r"\s*persona_name:\s*(.*?)\s*persona_description:\s*(.*?)\s*$"
-        )
-        match = re.match(pattern, msg.content, re.DOTALL)
-        if match:
-            persona_name = match.group(1).strip()
-            persona_description = match.group(2).strip()
+        import ast
 
-        persona.name = persona_name
-        persona.description = persona_description
+        parsed_content = ast.literal_eval(msg.content)
+        persona.name = parsed_content["persona_name"]
+        persona.description = parsed_content["persona_description"]
 
         return persona
 
@@ -188,22 +191,40 @@ persona_description: <BLANK>
         t2p_agent = ChatAgent(system_message=sys_msg, model=self.model)
         t2p_agent.reset()
 
-        response = t2p_agent.step(p2p_prompt_instruction_msg)
+        from pydantic import BaseModel, Field
+
+        class PersonaResponse(BaseModel):
+            name: str = Field(description="The name of the persona")
+            description: str = Field(
+                description="The description of the persona",
+            )
+
+        class PersonaListResponse(BaseModel):
+            personas: list[PersonaResponse] = Field(
+                description="A list of related personas"
+            )
+
+        response = t2p_agent.step(
+            p2p_prompt_instruction_msg, output_schema=PersonaListResponse
+        )
 
         if response.terminated:
             raise RuntimeError("Persona to persona step failed.")
         msg: BaseMessage = response.msg
 
-        # Structured output (TODO: Use a more robust parser)
-        pattern = r"(\d+)\.\s*persona_name:\s*(.*?)\s*persona_description:\s*(.*?)\s*(?=\d+\.|$)"  # noqa: E501
-        matches = re.findall(pattern, msg.content, re.DOTALL)
+        import json
+
+        parsed_content = PersonaListResponse(**(json.loads(msg.content)))
 
         personas: Dict[uuid.UUID, Persona] = {}
-        for match in matches:
-            name = match[1].strip()
-            description = match[2].strip()
-            new_persona = Persona(name=name, description=description)
-            personas[new_persona.id] = new_persona
+        for parsed_persona in parsed_content.personas:
+            persona = Persona(
+                name=parsed_persona.name,
+                description=parsed_persona.description,
+            )  # generate an uuid
+            personas[persona.id] = Persona(
+                name=persona.name, description=persona.description
+            )
 
         return personas
 
