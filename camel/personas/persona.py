@@ -16,7 +16,7 @@ from typing import ClassVar, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
-from camel.prompts import PersonaGeneratorPrompt, TextPrompt
+from camel.prompts import PersonaHubPrompt, TextPrompt
 
 
 class Persona(BaseModel):
@@ -36,13 +36,13 @@ class Persona(BaseModel):
     # Field with default_factory to avoid circular import issues
     # Union type allows either TextPrompt or str
     t2p_prompt: Union[TextPrompt, str] = Field(
-        default_factory=lambda: PersonaGeneratorPrompt.TEXT_TO_PERSONA,
+        default_factory=lambda: PersonaHubPrompt.TEXT_TO_PERSONA,
         description="Text to Persona Prompt",
     )
 
     # Similar to t2p_prompt, using default_factory for lazy evaluation
     p2p_prompt: Union[TextPrompt, str] = Field(
-        default_factory=lambda: PersonaGeneratorPrompt.PERSONA_TO_PERSONA,
+        default_factory=lambda: PersonaHubPrompt.PERSONA_TO_PERSONA,
         description="Persona to Persona Prompt",
     )
 

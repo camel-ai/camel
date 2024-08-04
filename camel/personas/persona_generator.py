@@ -22,30 +22,30 @@ from camel.messages import BaseMessage
 from camel.models import BaseModelBackend, ModelFactory
 from camel.personas import Persona
 from camel.prompts import TextPrompt
-from camel.types import ModelPlatformType, ModelType, RoleType
+from camel.types import ModelPlatformType, ModelType
 
 
-class PersonaGenerator(ChatAgent):
-    r"""A generator of personas. This class manages a collection of Persona
-    instances and provides methods for adding, removing, and manipulating
-    personas within the group.
+class PersonaHub:
+    r"""PersonaHub proposes a novel persona-driven data synthesis methodology
+    that leverages various perspectives within a large language model (LLM) to
+    create diverse synthetic data. By showcasing PersonaHub's use cases in
+    synthesizing high-quality mathematical and logical reasoning problems,
+    instructions (i.e., user prompts), knowledge-rich texts, game NPCs and
+    tools (functions) at scale, the authors demonstrate persona-driven data
+    synthesis is versatile, scalable, flexible, and easy to use, potentially
+    driving a paradigm shift in synthetic data creation and applications in
+    practice, which may have a profound impact on LLM research and development.
+    Please refer to the paper for more details: https://arxiv.org/pdf/2406.20094
 
     Args:
         model (BaseModelBackend, optional): The model to use for persona
-        group_name (str, optional): The name of the group.
-        group_description (str, optional): A description of the group.
+        generation and manipulation.
     """
 
     def __init__(
         self,
         model: Optional[BaseModelBackend] = None,
     ):
-        system_message = BaseMessage(
-            role_name="",
-            role_type=RoleType.ASSISTANT,
-            meta_dict=None,
-            content="",
-        )
         self.model = (
             model
             if model
@@ -56,11 +56,14 @@ class PersonaGenerator(ChatAgent):
                 api_key=os.getenv("OPENAI_API_KEY"),
             )
         )
-        super().__init__(system_message, model=model)
         self.personas: Dict[uuid.UUID, Persona] = {}
 
-    def add_persona(self, persona: Persona):
-        r"""Add a persona to the group."""
+    def __setitem__(self, persona: Persona):
+        r"""Add a persona to the group.
+
+        Args:
+            persona (Persona): The persona to add.
+        """
         self.personas[persona.id] = persona
 
     def __delitem__(self, persona_id: uuid.UUID):
@@ -97,8 +100,6 @@ class PersonaGenerator(ChatAgent):
         Returns:
             Persona: The inferred persona.
         """
-        super().reset()
-
         persona = Persona()
 
         t2p_prompt: Union[TextPrompt, str] = persona.t2p_prompt
@@ -117,7 +118,15 @@ persona_description: <BLANK>
             content=t2p_prompt_instruction,
         )
 
-        response = self.step(input_message=t2p_prompt_instruction_msg)
+        sys_msg = BaseMessage.make_assistant_message(
+            role_name="System",
+            content="I am a helpful assistant",
+        )
+
+        t2p_agent = ChatAgent(system_message=sys_msg, model=self.model)
+        t2p_agent.reset()
+
+        response = t2p_agent.step(t2p_prompt_instruction_msg)
 
         if response.terminated:
             raise RuntimeError("Text to persona step failed.")
@@ -148,8 +157,6 @@ persona_description: <BLANK>
         Returns:
             Dict[uuid.UUID, Persona]: A dictionary of related personas.
         """
-        super().reset()
-
         p2p_prompt: Union[TextPrompt, str] = persona.p2p_prompt
         answer_template = """
 You MUST answer the question according to the format of the ANSWER TEMPLATE, and you can only modify the content within <BLANK>.
@@ -173,7 +180,15 @@ persona_description: <BLANK>
             content=p2p_prompt_instruction,
         )
 
-        response = self.step(input_message=p2p_prompt_instruction_msg)
+        sys_msg = BaseMessage.make_assistant_message(
+            role_name="System",
+            content="I am a helpful assistant",
+        )
+
+        t2p_agent = ChatAgent(system_message=sys_msg, model=self.model)
+        t2p_agent.reset()
+
+        response = t2p_agent.step(p2p_prompt_instruction_msg)
 
         if response.terminated:
             raise RuntimeError("Persona to persona step failed.")

@@ -17,7 +17,7 @@ from typing import Any
 from camel.prompts.base import TextPrompt, TextPromptDict
 
 
-class PersonaGeneratorPrompt(TextPromptDict):
+class PersonaHubPrompt(TextPromptDict):
     r"""A dictionary containing :obj:`TextPrompt` used for generating and
     relating personas based on given text or existing personas.
 
