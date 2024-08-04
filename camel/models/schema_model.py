@@ -74,20 +74,15 @@ class SchemaModel(BaseModelBackend):
         self._client = Union[models.Transformers, models.LlamaCpp, models.VLLM]
         self._url = url
 
-        model_kwargs: Dict = self.model_config_dict.get("model_kwargs", {})
-
         # Since Outlines suports multiple model types, it is necessary to
         # read the documentation to learn about the model kwargs:
         # https://outlines-dev.github.io/outlines/reference/models/transformers
         if self.model_platform == ModelPlatformType.OUTLINES_TRANSFORMERS:
-            device = model_kwargs.get("device", None)
+            model_kwargs = self.model_config_dict.get("model_kwargs", {})
+            device = self.model_config_dict.get("device", None)
             tokenizer_kwargs = self.model_config_dict.get(
                 "tokenizer_kwargs", {}
             )
-
-            # Remove the unused keys from dict
-            model_kwargs.pop("device", None)
-            model_kwargs.pop("tokenizer_kwargs", None)
 
             self._client = models.transformers(
                 model_name=self.model_name,
@@ -96,20 +91,22 @@ class SchemaModel(BaseModelBackend):
                 tokenizer_kwargs=tokenizer_kwargs,
             )
         elif self.model_platform == ModelPlatformType.OUTLINES_LLAMACPP:
+            repo_id = self.model_config_dict.get(
+                "repo_id", "TheBloke/phi-2-GGUF"
+            )
+            filename = self.model_config_dict.get(
+                "filename", "phi-2.Q4_K_M.gguf"
+            )
+            download_dir = self.model_config_dict.get("download_dir", None)
+            model_kwargs = self.model_config_dict.get("model_kwargs", {})
+
             from llama_cpp import llama_tokenizer  # type: ignore[import]
-
-            repo_id = model_kwargs.get("repo_id", "TheBloke/phi-2-GGUF")
-            filename = model_kwargs.get("filename", "phi-2.Q4_K_M.gguf")
-            download_dir = model_kwargs.get("download_dir", None)
-
-            # Remove the unused keys from dict
-            model_kwargs.pop("repo_id", None)
-            model_kwargs.pop("filename", None)
 
             # Initialize the tokenizer
             tokenizer = llama_tokenizer.LlamaHFTokenizer.from_pretrained(
                 repo_id
             )  # type: ignore[attr-defined]
+
             self._client = models.llamacpp(  # type: ignore[attr-defined]
                 repo_id=repo_id,
                 filename=filename,
@@ -118,11 +115,7 @@ class SchemaModel(BaseModelBackend):
                 **model_kwargs,
             )
         elif self.model_platform == ModelPlatformType.OUTLINES_VLLM:
-            # When loading the model, the system will trust and execute
-            # custom code in the model repository.
-            model_kwargs["trust_remote_code"] = model_kwargs.get(
-                "trust_remote_code", True
-            )
+            model_kwargs = self.model_config_dict.get("model_kwargs", {})
 
             self._client = models.vllm(
                 model_name=self.model_name,
