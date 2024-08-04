@@ -18,7 +18,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from camel.messages import BaseMessage
-from camel.personas import Persona, PersonaGenerator
+from camel.personas import Persona, PersonaHub
 from camel.types import RoleType
 
 # Mock responses
@@ -41,16 +41,16 @@ persona_description: A professional responsible for designing, building, and mai
 
 @pytest.fixture
 def persona_generator():
-    return PersonaGenerator(model=MagicMock())
+    return PersonaHub(model=MagicMock())
 
 
-def test_init(persona_generator: PersonaGenerator):
-    assert isinstance(persona_generator, PersonaGenerator)
+def test_init(persona_generator: PersonaHub):
+    assert isinstance(persona_generator, PersonaHub)
     assert isinstance(persona_generator.personas, Dict)
     assert len(persona_generator.personas) == 0
 
 
-def test___setitem__(persona_generator: PersonaGenerator):
+def test___setitem__(persona_generator: PersonaHub):
     persona = Persona(
         name="Test Persona",
         description="Test Description",
@@ -60,7 +60,7 @@ def test___setitem__(persona_generator: PersonaGenerator):
     assert persona_generator.personas[persona.id] == persona
 
 
-def test_remove_persona(persona_generator: PersonaGenerator):
+def test_remove_persona(persona_generator: PersonaHub):
     persona1 = Persona(
         name="Test Persona 1",
         description="Test Description 1",
@@ -80,7 +80,7 @@ def test_remove_persona(persona_generator: PersonaGenerator):
         persona_generator.__delitem__(uuid.uuid4())
 
 
-def test_get_persona(persona_generator: PersonaGenerator):
+def test_get_persona(persona_generator: PersonaHub):
     persona = Persona(
         name="Test Persona",
         description="Test Description",
@@ -93,10 +93,7 @@ def test_get_persona(persona_generator: PersonaGenerator):
         persona_generator.__getitem__(uuid.uuid4())
 
 
-@patch.object(PersonaGenerator, 'step')
-def test_text_to_persona(
-    mock_step: MagicMock, persona_generator: PersonaGenerator
-):
+def test_text_to_persona(persona_generator: PersonaHub):
     mock_response = MagicMock()
     mock_response.terminated = False
     mock_response.msg = BaseMessage(
@@ -105,9 +102,9 @@ def test_text_to_persona(
         content=MOCK_TEXT_TO_PERSONA_RESPONSE,
         meta_dict={},
     )
-    mock_step.return_value = mock_response
 
-    persona = persona_generator.text_to_persona("Test text")
+    with patch('camel.agents.ChatAgent.step', return_value=mock_response):
+        persona = persona_generator.text_to_persona(text="Test text")
 
     assert isinstance(persona, Persona)
     assert persona.name == "Data Scientist"
@@ -117,10 +114,7 @@ def test_text_to_persona(
     )
 
 
-@patch.object(PersonaGenerator, 'step')
-def test_persona_to_persona(
-    mock_step: MagicMock, persona_generator: PersonaGenerator
-):
+def test_persona_to_persona(persona_generator: PersonaHub):
     mock_response = MagicMock()
     mock_response.terminated = False
     mock_response.msg = BaseMessage(
@@ -129,10 +123,12 @@ def test_persona_to_persona(
         content=MOCK_PERSONA_TO_PERSONA_RESPONSE,
         meta_dict={},
     )
-    mock_step.return_value = mock_response
 
-    base_persona = Persona(name="Data Scientist", description="A data expert")
-    related_personas = persona_generator.persona_to_persona(base_persona)
+    with patch('camel.agents.ChatAgent.step', return_value=mock_response):
+        base_persona = Persona(
+            name="Data Scientist", description="A data expert"
+        )
+        related_personas = persona_generator.persona_to_persona(base_persona)
 
     assert isinstance(related_personas, dict)
     assert len(related_personas) == 3
@@ -144,7 +140,7 @@ def test_persona_to_persona(
     assert any(p.name == "Data Engineer" for p in related_personas.values())
 
 
-def test_deduplicate(persona_generator: PersonaGenerator):
+def test_deduplicate(persona_generator: PersonaHub):
     # This test is a placeholder and should be expanded when the actual
     # deduplication logic is implemented
     persona1 = Persona(
@@ -165,7 +161,7 @@ def test_deduplicate(persona_generator: PersonaGenerator):
     assert len(persona_generator.personas) == 2
 
 
-def test_len(persona_generator: PersonaGenerator):
+def test_len(persona_generator: PersonaHub):
     persona1 = Persona(
         name="Test Persona 1",
         description="Test Description 1",
@@ -180,7 +176,7 @@ def test_len(persona_generator: PersonaGenerator):
     assert persona_generator.__len__() == 2
 
 
-def test_iter(persona_generator: PersonaGenerator):
+def test_iter(persona_generator: PersonaHub):
     persona1 = Persona(
         name="Test Persona 1",
         description="Test Description 1",
@@ -198,7 +194,7 @@ def test_iter(persona_generator: PersonaGenerator):
     assert persona2 in personas
 
 
-def test_get_all_personas(persona_generator: PersonaGenerator):
+def test_get_all_personas(persona_generator: PersonaHub):
     persona1 = Persona(
         name="Test Persona 1",
         description="Test Description 1",
