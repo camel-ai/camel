@@ -81,7 +81,7 @@ model=ModelFactory.create(
     model_config_dict=ChatGPTConfig(
         tools=tool_list,
         temperature=0.0,
-    ).__dict__,
+    ).as_dict(),
 )
 
 # Set message for the assistant
@@ -159,7 +159,7 @@ role_play_session = RolePlaying(
         model=ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
             model_type=ModelType.GPT_3_5_TURBO,
-            model_config_dict=assistant_model_config.__dict__,
+            model_config_dict=assistant_model_config.as_dict(),
         ),
         tools=tool_list,
     ),
@@ -167,7 +167,7 @@ role_play_session = RolePlaying(
         model=ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
             model_type=ModelType.GPT_3_5_TURBO,
-            model_config_dict=ChatGPTConfig(temperature=0.0).__dict__,
+            model_config_dict=ChatGPTConfig(temperature=0.0).as_dict(),
         ),
     ),
     task_prompt=task_prompt,
