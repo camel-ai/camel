@@ -63,13 +63,13 @@ model = ModelFactory.create(
     model_platform=ModelPlatformType.OUTLINES_TRANSFORMERS,
     model_type=model_name,
     model_config_dict={
-        "model_kwargs": {  # Define the transformer model configuration
+        "model_kwargs": {  # transformer model configuration
             "device": "auto",  # example parameter
             "local_files_only": True,  # example parameter
             "trust_remote_code": True,  # example parameter
             "cache_dir": cache_dir,  # example parameter
         },
-        "tokenizer_kwargs": {  # Define the tokenizer configuration
+        "tokenizer_kwargs": {  # tokenizer configuration
             "use_fast": True,  # example parameter
             "padding_side": "left",  # example parameter
             "truncation_side": "right",  # example parameter
