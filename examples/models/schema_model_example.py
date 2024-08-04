@@ -58,13 +58,21 @@ class FitnessPlan(BaseModel):
 # If the class of pydantic is very complex, we recommend using a more powerful
 # LLM.
 model_name = "mistralai/Mistral-7B-v0.3"
+cache_dir = None  # define the dir where the model is stored
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OUTLINES_TRANSFORMERS,
     model_type=model_name,
     model_config_dict={
         "model_kwargs": {  # Define the transformer model configuration
-            "device": "auto",
-            "cache_dir": None,
+            "device": "auto",  # example parameter
+            "local_files_only": True,  # example parameter
+            "trust_remote_code": True,  # example parameter
+            "cache_dir": cache_dir,  # example parameter
+        },
+        "tokenizer_kwargs": {  # Define the tokenizer configuration
+            "use_fast": True,  # example parameter
+            "padding_side": "left",  # example parameter
+            "truncation_side": "right",  # example parameter
         },
     },
 )
