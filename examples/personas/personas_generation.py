@@ -12,7 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from camel.personas.persona_generator import PersonaHub
+from camel.personas.persona_hub import PersonaHub
 
 persona_group = PersonaHub()
 

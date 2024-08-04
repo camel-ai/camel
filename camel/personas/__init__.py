@@ -12,6 +12,6 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from .persona import Persona
-from .persona_generator import PersonaHub
+from .persona_hub import PersonaHub
 
 __all__ = ['Persona', 'PersonaHub']
