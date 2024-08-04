@@ -57,7 +57,7 @@ class FitnessPlan(BaseModel):
 # Create SchemaModel instance
 # If the class of pydantic is very complex, we recommend using a more powerful
 # LLM.
-model_name = "microsoft/Phi-3-mini-4k-instruct"
+model_name = "mistralai/Mistral-7B-v0.3"
 cache_dir = None  # define the dir where the model is stored
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OUTLINES_TRANSFORMERS,
@@ -65,7 +65,6 @@ model = ModelFactory.create(
     model_config_dict={
         "device": "auto",  # example parameter
         "model_kwargs": {  # transformer model configuration
-            # "local_files_only": True,  # example parameter
             "trust_remote_code": True,  # example parameter
             "cache_dir": cache_dir,  # example parameter
         },
