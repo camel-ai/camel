@@ -134,7 +134,8 @@ persona_description: <BLANK>
             )
 
         response = t2p_agent.step(
-            t2p_prompt_instruction_msg, output_schema=PersonaResponse
+            t2p_prompt_instruction_msg,
+            output_schema=PersonaResponse,  # type: ignore[arg-type]
         )
 
         if response.terminated:
@@ -205,7 +206,8 @@ persona_description: <BLANK>
             )
 
         response = t2p_agent.step(
-            p2p_prompt_instruction_msg, output_schema=PersonaListResponse
+            p2p_prompt_instruction_msg,
+            output_schema=PersonaListResponse,  # type: ignore[arg-type]
         )
 
         if response.terminated:
