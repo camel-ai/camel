@@ -426,7 +426,7 @@ class ChatAgent(BaseAgent):
                 break
 
         chat_agent_response = ChatAgentResponse(
-            output_messages, self.terminated, info
+            msgs=output_messages, terminated=self.terminated, info=info
         )
 
         # add output response add memory
