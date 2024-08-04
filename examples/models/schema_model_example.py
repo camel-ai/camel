@@ -12,14 +12,11 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-import os
 from typing import List
 
-from huggingface_hub import login
 from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
-from camel.configs import OpenSourceConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType
@@ -57,11 +54,6 @@ class FitnessPlan(BaseModel):
     hydration_tip: str
 
 
-# Login Hugging Face Hub token
-hugging_face_hub_token = os.environ("HUGGING_FACE_HUB_TOKEN")
-login(token=hugging_face_hub_token)
-
-
 # Create SchemaModel instance
 # If the class of pydantic is very complex, we recommend using a more powerful
 # LLM.
@@ -70,10 +62,10 @@ model_name = "mistralai/Mistral-7B-v0.3"
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OUTLINES_TRANSFORMERS,
     model_type=model_name,
-    model_config_dict=OpenSourceConfig(
-        model_path=model_path,
-        model_kwargs={"device": "cuda:0"},
-    ).__dict__,
+    model_config_dict={
+        "model_path": model_path,
+        "model_kwargs": {"device": "cuda:0"},
+    },
 )
 
 # Define system message
