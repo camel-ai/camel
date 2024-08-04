@@ -14,9 +14,55 @@
 from __future__ import annotations
 
 from abc import ABC
-from dataclasses import dataclass
+from typing import Any, List, Optional
+
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
-@dataclass(frozen=True)
-class BaseConfig(ABC):  # noqa: B024
-    pass
+class BaseConfig(ABC, BaseModel):
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+        frozen=True,
+        # UserWarning: conflict with protected namespace "model_"
+        protected_namespaces=(),
+    )
+
+    tools: Optional[List[Any]] = None
+    """A list of tools the model may
+    call. Currently, only functions are supported as a tool. Use this
+    to provide a list of functions the model may generate JSON inputs
+    for. A max of 128 functions are supported.
+    """
+
+    @field_validator("tools", mode="before")
+    @classmethod
+    def fields_type_checking(cls, tools):
+        if tools is not None:
+            from camel.toolkits import OpenAIFunction
+
+            for tool in tools:
+                if not isinstance(tool, OpenAIFunction):
+                    raise ValueError(
+                        f"The tool {tool} should "
+                        "be an instance of `OpenAIFunction`."
+                    )
+        return tools
+
+    def as_dict(self) -> dict[str, Any]:
+        config_dict = self.model_dump()
+
+        tools_schema = None
+        if self.tools:
+            from camel.toolkits import OpenAIFunction
+
+            tools_schema = []
+            for tool in self.tools:
+                if not isinstance(tool, OpenAIFunction):
+                    raise ValueError(
+                        f"The tool {tool} should "
+                        "be an instance of `OpenAIFunction`."
+                    )
+                tools_schema.append(tool.get_openai_tool_schema())
+        config_dict["tools"] = tools_schema
+        return config_dict

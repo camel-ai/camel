@@ -183,4 +183,8 @@ class CriticAgent(ChatAgent):
         output_msg = meta_chat_message.create_new_instance(option)
 
         # TODO: The return `info` can be improved.
-        return ChatAgentResponse([output_msg], terminated=False, info={})
+        return ChatAgentResponse(
+            msgs=[output_msg],
+            terminated=False,
+            info={},
+        )

@@ -361,6 +361,8 @@ class TaskType(Enum):
     ROLE_DESCRIPTION = "role_description"
     GENERATE_TEXT_EMBEDDING_DATA = "generate_text_embedding_data"
     OBJECT_RECOGNITION = "object_recognition"
+    IMAGE_CRAFT = "image_craft"
+    MULTI_CONDITION_IMAGE_CRAFT = "multi_condition_image_craft"
     DEFAULT = "default"
     VIDEO_DESCRIPTION = "video_description"
 

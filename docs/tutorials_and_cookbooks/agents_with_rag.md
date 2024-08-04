@@ -1,4 +1,4 @@
-# Agents with RAG
+# 🐫 Agents with RAG
 
 ## Philosophical Bits
 [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1sTJ0x_MYRGA76KCg_3I00wj4RL3D2Twp?usp=sharing)

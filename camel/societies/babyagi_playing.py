@@ -267,10 +267,12 @@ class BabyAGI:
                 "All tasks are solved"
             )
             return ChatAgentResponse(
-                [assistant_msg], terminated, assistant_response.info
+                msgs=[assistant_msg],
+                terminated=terminated,
+                info=assistant_response.info,
             )
         return ChatAgentResponse(
-            [assistant_msg],
-            assistant_response.terminated,
-            assistant_response.info,
+            msgs=[assistant_msg],
+            terminated=assistant_response.terminated,
+            info=assistant_response.info,
         )

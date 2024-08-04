@@ -13,14 +13,13 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from typing import List, Union
 
 from anthropic import NOT_GIVEN, NotGiven
 
 from camel.configs.base_config import BaseConfig
 
 
-@dataclass(frozen=True)
 class AnthropicConfig(BaseConfig):
     r"""Defines the parameters for generating chat completions using the
     Anthropic API.
@@ -62,12 +61,12 @@ class AnthropicConfig(BaseConfig):
     """
 
     max_tokens: int = 256
-    stop_sequences: list[str] | NotGiven = NOT_GIVEN
+    stop_sequences: Union[List[str], NotGiven] = NOT_GIVEN
     temperature: float = 1
-    top_p: float | NotGiven = NOT_GIVEN
-    top_k: int | NotGiven = NOT_GIVEN
+    top_p: Union[float, NotGiven] = NOT_GIVEN
+    top_k: Union[int, NotGiven] = NOT_GIVEN
     metadata: NotGiven = NOT_GIVEN
     stream: bool = False
 
 
-ANTHROPIC_API_PARAMS = {param for param in asdict(AnthropicConfig()).keys()}
+ANTHROPIC_API_PARAMS = {param for param in AnthropicConfig.model_fields.keys()}

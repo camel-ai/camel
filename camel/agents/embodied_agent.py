@@ -120,10 +120,8 @@ class EmbodiedAgent(ChatAgent):
         else:
             return []
 
-    def step(
-        self,
-        input_message: BaseMessage,
-    ) -> ChatAgentResponse:
+    # ruff: noqa: E501
+    def step(self, input_message: BaseMessage) -> ChatAgentResponse:  # type: ignore[override]
         r"""Performs a step in the conversation.
 
         Args:
@@ -184,4 +182,8 @@ class EmbodiedAgent(ChatAgent):
             input_message.meta_dict,
             content,
         )
-        return ChatAgentResponse([message], response.terminated, response.info)
+        return ChatAgentResponse(
+            msgs=[message],
+            terminated=response.terminated,
+            info=response.info,
+        )

@@ -478,9 +478,11 @@ class RolePlaying:
         user_response = self.user_agent.step(assistant_msg)
         if user_response.terminated or user_response.msgs is None:
             return (
-                ChatAgentResponse([], False, {}),
+                ChatAgentResponse(msgs=[], terminated=False, info={}),
                 ChatAgentResponse(
-                    [], user_response.terminated, user_response.info
+                    msgs=[],
+                    terminated=user_response.terminated,
+                    info=user_response.info,
                 ),
             )
         user_msg = self._reduce_message_options(user_response.msgs)
@@ -489,19 +491,25 @@ class RolePlaying:
         if assistant_response.terminated or assistant_response.msgs is None:
             return (
                 ChatAgentResponse(
-                    [], assistant_response.terminated, assistant_response.info
+                    msgs=[],
+                    terminated=assistant_response.terminated,
+                    info=assistant_response.info,
                 ),
-                ChatAgentResponse([user_msg], False, user_response.info),
+                ChatAgentResponse(
+                    msgs=[user_msg], terminated=False, info=user_response.info
+                ),
             )
         assistant_msg = self._reduce_message_options(assistant_response.msgs)
 
         return (
             ChatAgentResponse(
-                [assistant_msg],
-                assistant_response.terminated,
-                assistant_response.info,
+                msgs=[assistant_msg],
+                terminated=assistant_response.terminated,
+                info=assistant_response.info,
             ),
             ChatAgentResponse(
-                [user_msg], user_response.terminated, user_response.info
+                msgs=[user_msg],
+                terminated=user_response.terminated,
+                info=user_response.info,
             ),
         )

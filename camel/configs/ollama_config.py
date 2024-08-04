@@ -13,18 +13,16 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
-from typing import Sequence
+from typing import Sequence, Union
 
 from openai._types import NOT_GIVEN, NotGiven
 
 from camel.configs.base_config import BaseConfig
 
 
-@dataclass(frozen=True)
 class OllamaConfig(BaseConfig):
     r"""Defines the parameters for generating chat completions using OpenAI
-    compatibility.
+    compatibility
 
     Reference: https://github.com/ollama/ollama/blob/main/docs/openai.md
 
@@ -75,11 +73,11 @@ class OllamaConfig(BaseConfig):
     temperature: float = 0.2
     top_p: float = 1.0
     stream: bool = False
-    stop: str | Sequence[str] | NotGiven = NOT_GIVEN
-    max_tokens: int | NotGiven = NOT_GIVEN
+    stop: Union[str, Sequence[str], NotGiven] = NOT_GIVEN
+    max_tokens: Union[int, NotGiven] = NOT_GIVEN
     presence_penalty: float = 0.0
-    response_format: dict | NotGiven = NOT_GIVEN
+    response_format: Union[dict, NotGiven] = NOT_GIVEN
     frequency_penalty: float = 0.0
 
 
-OLLAMA_API_PARAMS = {param for param in asdict(OllamaConfig()).keys()}
+OLLAMA_API_PARAMS = {param for param in OllamaConfig.model_fields.keys()}

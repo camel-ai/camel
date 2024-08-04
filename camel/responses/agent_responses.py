@@ -11,14 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from dataclasses import dataclass
 from typing import Any, Dict, List
+
+from pydantic import BaseModel, ConfigDict
 
 from camel.messages import BaseMessage
 
 
-@dataclass(frozen=True)
-class ChatAgentResponse:
+class ChatAgentResponse(BaseModel):
     r"""Response of a ChatAgent.
 
     Attributes:
@@ -31,6 +31,7 @@ class ChatAgentResponse:
         info (Dict[str, Any]): Extra information about the chat message.
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     msgs: List[BaseMessage]
     terminated: bool
     info: Dict[str, Any]

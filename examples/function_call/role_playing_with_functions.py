@@ -65,7 +65,7 @@ def main(
             model=ModelFactory.create(
                 model_platform=model_platform,
                 model_type=model_type,
-                model_config_dict=assistant_model_config.__dict__,
+                model_config_dict=assistant_model_config.as_dict(),
             ),
             tools=function_list,
         ),
@@ -73,7 +73,7 @@ def main(
             model=ModelFactory.create(
                 model_platform=model_platform,
                 model_type=model_type,
-                model_config_dict=user_model_config.__dict__,
+                model_config_dict=user_model_config.as_dict(),
             ),
         ),
         task_prompt=task_prompt,
@@ -129,8 +129,9 @@ def main(
         # Print output from the assistant, including any function
         # execution information
         print_text_animated(Fore.GREEN + "AI Assistant:")
-        tool_calls: List[FunctionCallingRecord] = assistant_response.info[
-            'tool_calls'
+        tool_calls: List[FunctionCallingRecord] = [
+            FunctionCallingRecord(**call.as_dict())
+            for call in assistant_response.info['tool_calls']
         ]
         for func_record in tool_calls:
             print_text_animated(f"{func_record}")
