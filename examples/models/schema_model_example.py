@@ -57,14 +57,15 @@ class FitnessPlan(BaseModel):
 # Create SchemaModel instance
 # If the class of pydantic is very complex, we recommend using a more powerful
 # LLM.
-model_path = None  # Local path to the model directory
 model_name = "mistralai/Mistral-7B-v0.3"
 model = ModelFactory.create(
     model_platform=ModelPlatformType.OUTLINES_TRANSFORMERS,
     model_type=model_name,
     model_config_dict={
-        "model_path": model_path,
-        "model_kwargs": {"device": "cuda:0"},
+        "model_kwargs": {  # Define the transformer model configuration
+            "device": "auto",
+            "cache_dir": None,
+        },
     },
 )
 
