@@ -69,13 +69,13 @@ Set models for user agent and assistant agent, give tool to the assistant
 assistant_agent_model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
     model_type=ModelType.GPT_3_5_TURBO,
-    model_config_dict=ChatGPTConfig(tools=tools).__dict__,
+    model_config_dict=ChatGPTConfig(tools=tools).as_dict(),
 )
 
 user_agent_model = ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
     model_type=ModelType.GPT_3_5_TURBO,
-    model_config_dict=ChatGPTConfig().__dict__,
+    model_config_dict=ChatGPTConfig().as_dict(),
 )
 ```
 
