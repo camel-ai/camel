@@ -25,7 +25,7 @@ from camel.storages.object_storages.base import BaseObjectStorage
 
 
 class S3Storage(BaseObjectStorage):
-    """A class to connect with AWS S3 object storage to put and get objects
+    r"""A class to connect with AWS S3 object storage to put and get objects
     from one S3 bucket.
 
     Args:
