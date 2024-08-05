@@ -63,13 +63,10 @@ class ManagerNode(BaseNode):
 
         coord_agent_sysmsg = BaseMessage.make_assistant_message(
             role_name="Workforce Manager",
-            content="You are coordinating a group of workers. A worker can "
-            "be a group of agents or a single agent. Each worker is "
-            "created to"
-            " solve a specific kind of task. Your job includes "
-            "assigning "
-            "tasks to a existing worker, creating a new worker for a "
-            "task, "
+            content="You are coordinating a group of workers. A worker can be "
+            "a group of agents or a single agent. Each worker is created to"
+            " solve a specific kind of task. Your job includes assigning "
+            "tasks to a existing worker, creating a new worker for a task, "
             "etc.",
         )
         self.coordinator_agent = ChatAgent(
@@ -123,6 +120,7 @@ class ManagerNode(BaseNode):
         )
         response = self.coordinator_agent.step(req)
         try:
+            print(f"{Fore.YELLOW}{response.msg.content}{Fore.RESET}")
             assignee_id = parse_assign_task_resp(response.msg.content)
         except ValueError:
             assignee_id = self._create_worker_node_for_task(task).node_id
@@ -170,6 +168,11 @@ class ManagerNode(BaseNode):
         )
         new_node.set_channel(self._channel)
 
+        print(
+            f"{Fore.GREEN}New worker node {new_node.node_id} created."
+            f"{Fore.RESET}"
+        )
+
         self._children.append(new_node)
         self._child_listening_tasks.append(
             asyncio.create_task(new_node.start())
@@ -196,6 +199,7 @@ class ManagerNode(BaseNode):
         # if the task has failed previously, just compose and send the task
         # to the channel as a dependency
         if ready_task.state == TaskState.FAILED:
+            # TODO: the composing of tasks seems not work very well
             ready_task.compose(self.task_agent)
             # remove the subtasks from the channel
             for subtask in ready_task.subtasks:

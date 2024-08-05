@@ -22,7 +22,7 @@ The content of the given task is:
 
 Following is the information of the existing workforces. The format is <ID>: <description>.
 
-{workforces_info}
+{child_nodes_info}
 
 You must return the following information:
 1. The role of the agent working in the workforce, e.g. "programmer", "researcher", "product owner". This should be enclosed within the <role></role> tags.
@@ -51,7 +51,7 @@ The content of the task is:
 
 Following is the information of the existing workforces. The format is <ID>: <description>.
 
-{workforces_info}
+{child_nodes_info}
 
 You must return the ID of the workforce that you think is most capable of doing the task. The ID should be enclosed within the <id></id> tags, for example:
 
