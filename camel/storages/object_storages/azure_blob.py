@@ -24,7 +24,7 @@ from camel.storages.object_storages.base import BaseObjectStorage
 
 
 class AzureBlobStorage(BaseObjectStorage):
-    """A class to connect to Azure Blob Storage. It will connect to one
+    r"""A class to connect to Azure Blob Storage. It will connect to one
     container in the storage account.
 
     Args:
