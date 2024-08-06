@@ -16,21 +16,30 @@ import argparse
 from PIL import Image
 
 from camel.agents import ChatAgent
+from camel.configs.openai_config import ChatGPTConfig
 from camel.generators import PromptTemplateGenerator
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType, RoleType, TaskType
+from camel.types import (
+    ModelPlatformType,
+    ModelType,
+    RoleType,
+    TaskType,
+)
 
 parser = argparse.ArgumentParser(description="Arguments for object detection.")
 parser.add_argument(
-    "--image_path",
+    "--image_paths",
+    metavar='N',
     type=str,
-    help="Path to the image for object detection.",
+    nargs='+',
+    help="Path to the images for object detection.",
+    default=None,
     required=True,
 )
 
 
-def detect_image_obj(image_path: str) -> None:
+def detect_image_obj(image_paths: str) -> None:
     sys_msg = PromptTemplateGenerator().get_prompt_from_key(
         TaskType.OBJECT_RECOGNITION, RoleType.ASSISTANT
     )
@@ -44,13 +53,15 @@ def detect_image_obj(image_path: str) -> None:
     )
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O,
+        model_type=ModelType.GPT_4O_MINI,
+        model_config_dict=ChatGPTConfig().as_dict(),
     )
     agent = ChatAgent(
         assistant_sys_msg,
         model=model,
     )
-    image_list = [Image.open(image_path)]
+    image_list = [Image.open(image_path) for image_path in image_paths]
+
     user_msg = BaseMessage.make_user_message(
         role_name="User",
         content="Please start the object detection for following image!",
@@ -64,7 +75,7 @@ def detect_image_obj(image_path: str) -> None:
 
 
 def main(args: argparse.Namespace) -> None:
-    detect_image_obj(args.image_path)
+    detect_image_obj(args.image_paths)
 
 
 if __name__ == "__main__":

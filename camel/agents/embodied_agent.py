@@ -35,7 +35,7 @@ class EmbodiedAgent(ChatAgent):
         system_message (BaseMessage): The system message for the chat agent.
         model (BaseModelBackend, optional): The model backend to use for
             generating responses. (default: :obj:`OpenAIModel` with
-            `GPT_3_5_TURBO`)
+            `GPT_4O_MINI`)
         message_window_size (int, optional): The maximum number of previous
             messages to include in the context window. If `None`, no windowing
             is performed. (default: :obj:`None`)
@@ -120,10 +120,8 @@ class EmbodiedAgent(ChatAgent):
         else:
             return []
 
-    def step(
-        self,
-        input_message: BaseMessage,
-    ) -> ChatAgentResponse:
+    # ruff: noqa: E501
+    def step(self, input_message: BaseMessage) -> ChatAgentResponse:  # type: ignore[override]
         r"""Performs a step in the conversation.
 
         Args:
@@ -184,4 +182,8 @@ class EmbodiedAgent(ChatAgent):
             input_message.meta_dict,
             content,
         )
-        return ChatAgentResponse([message], response.terminated, response.info)
+        return ChatAgentResponse(
+            msgs=[message],
+            terminated=response.terminated,
+            info=response.info,
+        )

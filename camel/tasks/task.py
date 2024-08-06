@@ -32,6 +32,16 @@ from .task_prompt import (
 def parse_response(
     response: str, task_id: Optional[str] = None
 ) -> List["Task"]:
+    r"""Parse Tasks from a response.
+
+    Args:
+        response (str): The model response.
+        task_id (str, optional): a parent task id,
+            the default value is "0"
+
+    Returns:
+        List[Task]: A list of tasks which is :obj:`Task` instance.
+    """
     pattern = "<task>(.*?)</task>"
     tasks_content = re.findall(pattern, response, re.DOTALL)
 
@@ -56,12 +66,12 @@ class TaskState(str, Enum):
 
 
 class Task(BaseModel):
-    """
-    Task is specific assignment that can be passed to a agent.
+    r"""Task is specific assignment that can be passed to a agent.
 
     Attributes:
         content: string content for task.
-        id: A unique id.
+        id: An unique string identifier for the task. This should
+        ideally be provided by the provider/model which created the task.
         state: The state which should be OPEN, RUNNING, DONE or DELETED.
         type: task type
         parent: The parent task, None for root task.
@@ -70,27 +80,16 @@ class Task(BaseModel):
     """
 
     content: str
-    """The content of the task."""
 
     id: str = ""
-    """An unique string identifier for the task. This should ideally be
-    provided by the provider/model which created the task."""
 
     state: TaskState = TaskState.OPEN
-    """The task state.
-    """
 
     type: Optional[str] = None
-    """The type of a task.
-    """
 
     parent: Optional["Task"] = None
-    """The parent task.
-    """
 
     subtasks: List["Task"] = []
-    """A list of sub tasks.
-    """
 
     result: Optional[str] = ""
 
@@ -118,6 +117,11 @@ class Task(BaseModel):
         self.result = ""
 
     def update_result(self, result: str):
+        r"""Set task result and mark the task as DONE.
+
+        Args:
+            result (str): The task result.
+        """
         self.result = result
         self.set_state(TaskState.DONE)
 
@@ -125,14 +129,18 @@ class Task(BaseModel):
         self.id = id
 
     def set_state(self, state: TaskState):
+        r"""Recursively set the state of the task and its subtasks.
+
+        Args:
+            state (TaskState): The giving state.
+        """
         self.state = state
         if state == TaskState.DONE:
             for subtask in self.subtasks:
                 if subtask.state != TaskState.DELETED:
                     subtask.set_state(state)
-        elif state == TaskState.RUNNING:
-            if self.parent is not None:
-                self.parent.set_state(state)
+        elif state == TaskState.RUNNING and self.parent:
+            self.parent.set_state(state)
 
     def add_subtask(self, task: "Task"):
         task.parent = self
@@ -142,6 +150,7 @@ class Task(BaseModel):
         self.subtasks = [task for task in self.subtasks if task.id != id]
 
     def get_running_task(self) -> Optional["Task"]:
+        r"""Get RUNNING task."""
         for sub in self.subtasks:
             if sub.state == TaskState.RUNNING:
                 return sub.get_running_task()
@@ -149,7 +158,16 @@ class Task(BaseModel):
             return self
         return None
 
-    def to_string(self, indent="", state=False) -> str:
+    def to_string(self, indent: str = "", state: bool = False) -> str:
+        r"""Convert task to a sting.
+
+        Args:
+            indent (str): The ident for hierarchical tasks.
+            state (bool): Include or not task state.
+
+        Returns:
+            str: The printable task string.
+        """
         if state:
             _str = f"{indent}[{self.state}] Task {self.id}: {self.content}\n"
         else:
@@ -158,7 +176,15 @@ class Task(BaseModel):
             _str += subtask.to_string(indent + "  ", state)
         return _str
 
-    def get_result(self, indent="") -> str:
+    def get_result(self, indent: str = "") -> str:
+        r"""Get task result to a sting.
+
+        Args:
+            indent (str): The ident for hierarchical tasks.
+
+        Returns:
+            str: The printable task string.
+        """
         _str = f"{indent}Task {self.id} result: {self.result}\n"
         for subtask in self.subtasks:
             _str += subtask.get_result(indent + "  ")
@@ -170,8 +196,9 @@ class Task(BaseModel):
         template: TextPrompt = TASK_DECOMPOSE_PROMPT,
         task_parser: Callable[[str, str], List["Task"]] = parse_response,
     ) -> List["Task"]:
-        r"""Decompose a task to a list of sub-tasks.
-            It can be used for data generation and planner of agent.
+        r"""Decompose a task to a list of sub-tasks. It can be used for data
+        generation and planner of agent.
+
         Args:
             agent (ChatAgent): An agent that used to decompose the task.
             template (TextPrompt): The prompt template to decompose
@@ -181,7 +208,7 @@ class Task(BaseModel):
                 the default parse_response will be used.
 
         Returns:
-            List[Task]: A list of tasks which is :obj:`Task` instance.
+            List[Task]: A list of tasks which are :obj:`Task` instances.
         """
 
         role_name = agent.role_name
@@ -193,11 +220,8 @@ class Task(BaseModel):
             role_name=role_name, content=content
         )
         response = agent.step(msg)
-        subtasks = task_parser(response.msg.content, self.id)
-        self.subtasks = subtasks
-        for subtask in subtasks:
-            subtask.parent = self
-        return subtasks
+        tasks = task_parser(response.msg.content, self.id)
+        return tasks
 
     def compose(
         self,
@@ -206,15 +230,13 @@ class Task(BaseModel):
         result_parser: Optional[Callable[[str], str]] = None,
     ):
         r"""compose task result by the sub-tasks.
+
         Args:
             agent (ChatAgent): An agent that used to compose the task result.
             template (TextPrompt, optional): The prompt template to compose
                 task. If not provided, the default template will be used.
             result_parser (Callable[[str, str], List[Task]], optional): A
                 function to extract Task from response.
-
-        Returns:
-            None
         """
 
         if not self.subtasks:
@@ -237,17 +259,15 @@ class Task(BaseModel):
             result = result_parser(result)
         self.update_result(result)
 
-        return None
-
     def get_depth(self) -> int:
+        r"""Get current task depth."""
         if self.parent is None:
             return 1
         return 1 + self.parent.get_depth()
 
 
 class TaskManager:
-    """
-    TaskManager is used to manage tasks.
+    r"""TaskManager is used to manage tasks.
 
     Attributes:
         root_task: The root task.
@@ -266,17 +286,28 @@ class TaskManager:
         self.task_map: Dict[str, Task] = {task.id: task}
 
     def gen_task_id(self) -> str:
+        r"""Generate a new task id."""
         return f"{len(self.tasks)}"
 
     def exist(self, task_id: str) -> bool:
+        r"""Check if a task with the given id exists."""
         return task_id in self.task_map
 
     @property
     def current_task(self) -> Optional[Task]:
+        r"""Get the current task."""
         return self.task_map.get(self.current_task_id, None)
 
     @staticmethod
     def topological_sort(tasks: List[Task]) -> List[Task]:
+        r"""Sort a list of tasks by topological way.
+
+        Args:
+            tasks (List[Task]): The giving list of tasks.
+
+        Returns:
+            The sorted list of tasks.
+        """
         stack = []
         visited = set()
 
@@ -309,14 +340,12 @@ class TaskManager:
         `serial` :  root -> other1 -> other2
         `parallel`: root -> other1
                          -> other2
+
         Args:
             root (Task): A root task.
             others (List[Task]): A list of tasks.
-
-        Returns:
-            None
         """
-        # filter the root task in the others to void self-loop dependence.
+        # filter the root task in the others to avoid self-loop dependence.
         others = [other for other in others if other != root]
 
         if len(others) == 0:
@@ -331,9 +360,7 @@ class TaskManager:
                 parent = child
 
     def add_tasks(self, tasks: Union[Task, List[Task]]) -> None:
-        r"""
-        self.tasks and self.task_map will be updated by the input tasks.
-        """
+        r"""self.tasks and self.task_map will be updated by the input tasks."""
         if not tasks:
             return
         if not isinstance(tasks, List):

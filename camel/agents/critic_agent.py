@@ -33,7 +33,7 @@ class CriticAgent(ChatAgent):
             agent.
         model (BaseModelBackend, optional): The model backend to use for
             generating responses. (default: :obj:`OpenAIModel` with
-            `GPT_3_5_TURBO`)
+            `GPT_4O_MINI`)
         message_window_size (int, optional): The maximum number of previous
             messages to include in the context window. If `None`, no windowing
             is performed. (default: :obj:`6`)
@@ -184,4 +184,8 @@ class CriticAgent(ChatAgent):
         output_msg = meta_chat_message.create_new_instance(option)
 
         # TODO: The return `info` can be improved.
-        return ChatAgentResponse([output_msg], terminated=False, info={})
+        return ChatAgentResponse(
+            msgs=[output_msg],
+            terminated=False,
+            info={},
+        )

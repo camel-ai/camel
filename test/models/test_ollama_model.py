@@ -32,14 +32,14 @@ from camel.utils import OpenAITokenCounter
         ModelType.GPT_4O,
     ],
 )
-def test_ollama_model(model_type):
-    model_config_dict = OllamaConfig().__dict__
-    model = OllamaModel(model_type, model_config_dict)
-    assert model.model_type == model_type
+def test_ollama_model(model_type: ModelType):
+    model_config_dict = OllamaConfig().as_dict()
+    model = OllamaModel(model_type.value, model_config_dict)
+    assert model.model_type == model_type.value
     assert model.model_config_dict == model_config_dict
     assert isinstance(model.token_counter, OpenAITokenCounter)
-    assert isinstance(model.model_type.value_for_tiktoken, str)
-    assert isinstance(model.model_type.token_limit, int)
+    assert isinstance(model.model_type, str)
+    assert isinstance(model.token_limit, int)
 
 
 @pytest.mark.model_backend

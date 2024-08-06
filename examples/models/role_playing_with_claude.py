@@ -23,13 +23,17 @@ from camel.utils import print_text_animated
 def main(model_type=None) -> None:
     task_prompt = "Develop a trading bot for the stock market"
 
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.ANTHROPIC,
+        model_type=model_type,
+        model_config_dict=AnthropicConfig().as_dict(),
+    )
+
+    # Update agent_kwargs to use the created models
     agent_kwargs = {
-        role: ModelFactory.create(
-            model_platform=ModelPlatformType.ANTHROPIC,
-            model_type=model_type,
-            model_config_dict=AnthropicConfig().__dict__,
-        )
-        for role in ["assistant", "user", "task-specify"]
+        "assistant": {"model": model},
+        "user": {"model": model},
+        "task-specify": {"model": model},
     }
 
     role_play_session = RolePlaying(

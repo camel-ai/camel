@@ -110,7 +110,7 @@ conda create --name camel python=3.9
 conda activate camel
 
 # Clone github repo
-git clone -b v0.1.5.7 https://github.com/camel-ai/camel.git
+git clone -b v0.1.6.0 https://github.com/camel-ai/camel.git
 
 # Change directory into project directory
 cd camel
@@ -231,6 +231,41 @@ Please note that the environment variable is session-specific. If you open a new
 
     user_msg = BaseMessage.make_user_message(
         role_name="User", content="Say hi to CAMEL"
+    )
+    assistant_response = agent.step(user_msg)
+    print(assistant_response.msg.content)
+    ```
+
+## Use Open-Source Models as Backends (ex. using vLLM to set Phi-3 locally)
+- [Install vLLM](https://docs.vllm.ai/en/latest/getting_started/installation.html)
+- After setting up vLLM, start an OpenAI compatible server for example by
+    ```bash
+    python -m vllm.entrypoints.openai.api_server --model microsoft/Phi-3-mini-4k-instruct --api-key vllm --dtype bfloat16
+    ```
+- Create and run following script (more details please refer to this [example](https://github.com/camel-ai/camel/blob/master/examples/models/vllm_model_example.py))
+    ```python
+    from camel.agents import ChatAgent
+    from camel.messages import BaseMessage
+    from camel.models import ModelFactory
+    from camel.types import ModelPlatformType
+
+    vllm_model = ModelFactory.create(
+        model_platform=ModelPlatformType.VLLM,
+        model_type="microsoft/Phi-3-mini-4k-instruct",
+        url="http://localhost:8000/v1",
+        model_config_dict={"temperature": 0.0},
+        api_key="vllm",
+    )
+
+    assistant_sys_msg = BaseMessage.make_assistant_message(
+        role_name="Assistant",
+        content="You are a helpful assistant.",
+    )
+    agent = ChatAgent(assistant_sys_msg, model=vllm_model, token_limit=4096)
+
+    user_msg = BaseMessage.make_user_message(
+        role_name="User",
+        content="Say hi to CAMEL AI",
     )
     assistant_response = agent.step(user_msg)
     print(assistant_response.msg.content)
