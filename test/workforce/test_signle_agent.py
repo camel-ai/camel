@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import asyncio
+import pytest
 
 from camel.agents.chat_agent import ChatAgent
 from camel.messages.base import BaseMessage
@@ -19,20 +19,21 @@ from camel.tasks.task import Task
 from camel.workforce.single_agent_node import SingleAgentNode
 
 
+@pytest.mark.asyncio
 async def test_get_dep_tasks_info():
     sys_msg = BaseMessage.make_assistant_message(
         role_name="programmer",
         content="You are a python programmer.",
     )
     agent = ChatAgent(sys_msg)
-    test_workforce = SingleAgentNode('1', 'agent1', agent)
+    test_workforce = SingleAgentNode('agent1', agent)
     human_task = Task(
         content='develop a python program of investing stock.',
         id='0',
         type='human',
     )
-    subtasks = human_task.decompose(agent)
-    await test_workforce._process_task(human_task, subtasks)
 
-
-asyncio.run((test_get_dep_tasks_info()))
+    subtasks = human_task.decompose(agent)  # TODO: use MagicMock
+    await test_workforce._process_task(
+        human_task, subtasks
+    )  # TODO: use MagicMock
