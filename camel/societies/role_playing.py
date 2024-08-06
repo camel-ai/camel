@@ -486,7 +486,9 @@ class RolePlaying:
                 ),
             )
         user_msg = self._reduce_message_options(user_response.msgs)
-        self.user_agent.record_message(user_msg)
+        # prevent duplicate records memory if response number equal 1
+        if self.user_agent.model_config_dict['n'] > 1:
+            self.user_agent.record_message(user_msg)
 
         assistant_response = self.assistant_agent.step(user_msg)
         if assistant_response.terminated or assistant_response.msgs is None:
@@ -501,7 +503,9 @@ class RolePlaying:
                 ),
             )
         assistant_msg = self._reduce_message_options(assistant_response.msgs)
-        self.assistant_agent.record_message(assistant_msg)
+        # prevent duplicate records memory if response number equal 1
+        if self.assistant_agent.model_config_dict['n'] > 1:
+            self.assistant_agent.record_message(assistant_msg)
 
         return (
             ChatAgentResponse(
