@@ -14,6 +14,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
@@ -60,6 +61,8 @@ if TYPE_CHECKING:
 
     from camel.terminators import ResponseTerminator
     from camel.toolkits import OpenAIFunction
+
+logger = logging.getLogger(__name__)
 
 
 class FunctionCallingRecord(BaseModel):
@@ -435,9 +438,18 @@ class ChatAgent(BaseAgent):
             msgs=output_messages, terminated=self.terminated, info=info
         )
 
-        # add output response add memory
-        for output_message in output_messages:
-            self.update_memory(output_message, OpenAIBackendRole.ASSISTANT)
+        # If the output result is a single piece of information, it will be
+        # automatically added to the memory. If it is multiple pieces of
+        # information, the critic agent will need to filter out the results
+        # and then the user will manually add them to the memory to prevent
+        # multiple pieces of information from interfering with LLM.
+        if len(output_messages) == 1:
+            self.update_memory(output_messages[0], OpenAIBackendRole.ASSISTANT)
+        else:
+            logger.warning(
+                "Please add the record message function after the "
+                + "critic agent reduce step function."
+            )
 
         return chat_agent_response
 
@@ -563,9 +575,20 @@ class ChatAgent(BaseAgent):
             for base_message_item in output_messages:
                 base_message_item.content = str(info['tool_calls'][0].result)
 
-        return ChatAgentResponse(
+        chat_agent_response = ChatAgentResponse(
             msgs=output_messages, terminated=self.terminated, info=info
         )
+
+        # add output response add memory
+        if len(output_messages) == 1:
+            self.update_memory(output_messages[0], OpenAIBackendRole.ASSISTANT)
+        else:
+            logger.warning(
+                "Please add the record message function after the \
+                           critic agent reduce step"
+            )
+
+        return chat_agent_response
 
     def _add_tools_for_func_call(
         self,

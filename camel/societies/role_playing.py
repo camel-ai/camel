@@ -486,6 +486,7 @@ class RolePlaying:
                 ),
             )
         user_msg = self._reduce_message_options(user_response.msgs)
+        self.user_agent.record_message(user_msg)
 
         assistant_response = self.assistant_agent.step(user_msg)
         if assistant_response.terminated or assistant_response.msgs is None:
@@ -500,6 +501,7 @@ class RolePlaying:
                 ),
             )
         assistant_msg = self._reduce_message_options(assistant_response.msgs)
+        self.assistant_agent.record_message(assistant_msg)
 
         return (
             ChatAgentResponse(
