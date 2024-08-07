@@ -543,10 +543,6 @@ class JinaReturnFormat(Enum):
     TEXT = "text"
 
 
-class FireCrawlSearchOption(Enum):
-    CRAWL = 0
-    SCRAPE = 1
-
 
 class FireCrawlReturnFormat(Enum):
     CLEAN = "content"
@@ -557,7 +553,7 @@ class FireCrawlReturnFormat(Enum):
 
 
 class FireCrawlExtractionMode(Enum):
-    DEFAULT = "llm_extraction"
+    DEFAULT = "llm-extraction"
     RAW_HTML = 'llm-extraction-from-raw-html'
     MARKDOWN = 'llm-extraction-from-markdown'
 
