@@ -208,6 +208,7 @@ class ModelType(Enum):
             # reference: https://lmsys.org/blog/2023-03-30-vicuna/
             return 2048
         elif self in {
+            ModelType.GPT_3_5_TURBO,
             ModelType.LLAMA_2,
             ModelType.NEMOTRON_4_REWARD,
             ModelType.STUB,
@@ -225,10 +226,7 @@ class ModelType(Enum):
             ModelType.GLM_4_OPEN_SOURCE,
         }:
             return 8_192
-        elif self in {
-            ModelType.GPT_3_5_TURBO,
-            ModelType.VICUNA_16K,
-        }:
+        elif self is ModelType.VICUNA_16K:
             return 16_384
         elif self in {
             ModelType.GPT_4_32K,
@@ -545,3 +543,22 @@ class JinaReturnFormat(Enum):
     MARKDOWN = "markdown"
     HTML = "html"
     TEXT = "text"
+
+
+class FireCrawlReturnFormat(Enum):
+    CLEAN = "content"
+    HTML = "html"
+    RAW_HTML = "rawHtml"
+    MARKDOWN = "markdown"
+    METADATA = "metadata"
+
+
+class FireCrawlExtractionMode(Enum):
+    DEFAULT = "llm-extraction"
+    RAW_HTML = 'llm-extraction-from-raw-html'
+    MARKDOWN = 'llm-extraction-from-markdown'
+
+
+class FireCrawlSpeed(Enum):
+    FAST = "fast"
+    DEFAULT = "default"

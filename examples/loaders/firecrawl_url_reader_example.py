@@ -11,57 +11,63 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-
+import json
+import time
 from typing import List
 
 from pydantic import BaseModel, Field
 
-from camel.loaders import Firecrawl
+from camel.loaders import FireCrawlURLReader
 
-firecrawl = Firecrawl()
+firecrawl = FireCrawlURLReader()
 
 job_id = firecrawl.crawl(
-    url="https://www.camel-ai.org/about", wait_until_done=False
+    url="https://www.camel-ai.org/about",
+    wait_until_done=False,
+    max_depth=0,
+    only_main_content=True,
 )
 
 print(job_id)
 
 '''
 ===============================================================================
-d2123e54-63c9-4feb-98f9-03b7ddeb0f1f
+99d5d324-410a-4232-904d-be0310ea5f21
 ===============================================================================
 '''
 
-response = firecrawl.check_crawl_job("d2123e54-63c9-4feb-98f9-03b7ddeb0f1f")
+response = firecrawl.check_crawl_job_status(job_id)
 
 print(response["status"])
 '''
 ===============================================================================
-completed
+active
 ===============================================================================
 '''
 
-print(response["data"][0]["markdown"])
+while response["status"] == "active":
+    time.sleep(5)
+    response = firecrawl.check_crawl_job_status(job_id)
+
+if response["status"] == "completed":
+    print(response["data"][0]["markdown"])
 '''
 ===============================================================================
 ...
-
 Camel-AI Team
-
 We are finding the  
 scaling law of agent
 =========================================
-
 🐫 CAMEL is an open-source library designed for the study of autonomous and 
 communicative agents. We believe that studying these agents on a large scale 
 offers valuable insights into their behaviors, capabilities, and potential 
 risks. To facilitate research in this field, we implement and support various 
 types of agents, tasks, prompts, models, and simulated environments.
-
 **We are** always looking for more **contributors** and **collaborators**.  
 Contact us to join forces via [Slack](https://join.slack.com/t/camel-kwr1314/
 shared_invite/zt-1vy8u9lbo-ZQmhIAyWSEfSwLCl2r2eKA)
- or [Discord](https://discord.gg/CNcNpquyDc)...
+ or [Discord](https://discord.gg/CNcNpquyDc)
+ ...
 ===============================================================================
 '''
 
@@ -79,21 +85,48 @@ class TopArticlesSchema(BaseModel):
     )
 
 
-response = firecrawl.structured_scrape(
-    url='https://news.ycombinator.com', output_schema=TopArticlesSchema
+response = firecrawl.scrape_with_llm(
+    url='https://news.ycombinator.com',
+    extraction_schema=TopArticlesSchema,
 )
 
-print(response)
+print(json.dumps(response, indent=2))
 '''
 ===============================================================================
-{'top': [{'title': 'Foobar2000', 'points': 69, 'by': 'citruscomputing', 
-'commentsURL': 'item?id=41122920'}, {'title': 'How great was the Great 
-Oxidation Event?', 'points': 145, 'by': 'Brajeshwar', 'commentsURL': 'item?
-id=41119080'}, {'title': 'Launch HN: Martin (YC S23) - Using LLMs to Make a 
-Better Siri', 'points': 73, 'by': 'darweenist', 'commentsURL': 'item?
-id=41119443'}, {'title': 'macOS in QEMU in Docker', 'points': 488, 'by': 
-'lijunhao', 'commentsURL': 'item?id=41116473'}, {'title': 'Crafting 
-Interpreters with Rust: On Garbage Collection', 'points': 148, 'by': 
-'amalinovic', 'commentsURL': 'item?id=41108662'}]}
+{
+  "top": [
+    {
+      "title": "Structured Outputs in the API",
+      "points": 401,
+      "by": "davidbarker",
+      "commentsURL": "item?id=41173223"
+    },
+    {
+      "title": "Why is 'Left Stick to Sprint' so unpleasant in games?",
+      "points": 15,
+      "by": "todsacerdoti",
+      "commentsURL": "item?id=41176466"
+    },
+    {
+      "title": "Tracking supermarket prices with Playwright",
+      "points": 157,
+      "by": "sakisv",
+      "commentsURL": "item?id=41173335"
+    },
+    {
+      "title": "Show HN: 1-FPS encrypted screen sharing for introverts",
+      "points": 203,
+      "by": "RomanPushkin",
+      "commentsURL": "item?id=41173161"
+    },
+    {
+      "title": 
+      "Full text search over Postgres: Elasticsearch vs. alternatives",
+      "points": 134,
+      "by": "philippemnoel",
+      "commentsURL": "item?id=41173288"
+    }
+  ]
+}
 ===============================================================================
 '''

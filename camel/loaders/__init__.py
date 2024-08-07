@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from .base_io import File, read_file
-from .firecrawl_reader import Firecrawl
+from .firecrawl_url_reader import FireCrawlURLReader
 from .jina_url_reader import JinaURLReader
 from .unstructured_io import UnstructuredIO
 
@@ -22,5 +22,5 @@ __all__ = [
     'read_file',
     'UnstructuredIO',
     'JinaURLReader',
-    'Firecrawl',
+    'FireCrawlURLReader',
 ]
