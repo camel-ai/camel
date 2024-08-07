@@ -361,7 +361,7 @@ class MilvusStorage(BaseVectorStorage):
         query_results = []
         for point in search_result:
             query_results.append(
-                VectorDBQueryResult.construct(
+                VectorDBQueryResult.create(
                     similarity=(point[0]['distance']),
                     id=str(point[0]['id']),
                     payload=(point[0]['entity'].get('payload')),

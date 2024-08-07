@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import ast
 import asyncio
 from io import BytesIO
 from typing import List
@@ -21,6 +22,7 @@ from openai.types.chat.chat_completion import Choice
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
 from openai.types.completion_usage import CompletionUsage
 from PIL import Image
+from pydantic import BaseModel, Field
 
 from camel.agents import ChatAgent
 from camel.agents.chat_agent import FunctionCallingRecord
@@ -47,7 +49,7 @@ parametrize = pytest.mark.parametrize(
         ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,
             model_type=ModelType.GPT_4O_MINI,
-            model_config_dict=ChatGPTConfig().__dict__,
+            model_config_dict=ChatGPTConfig().as_dict(),
         ),
         pytest.param(None, marks=pytest.mark.model_backend),
     ],
@@ -115,6 +117,45 @@ def test_chat_agent_stored_messages():
 
 
 @pytest.mark.model_backend
+def test_chat_agent_step_with_structure_response():
+    system_msg = BaseMessage(
+        role_name="assistant",
+        role_type=RoleType.ASSISTANT,
+        meta_dict=None,
+        content="You are a help assistant.",
+    )
+    assistant = ChatAgent(
+        system_message=system_msg,
+    )
+
+    class JokeResponse(BaseModel):
+        joke: str = Field(description="a joke")
+        funny_level: str = Field(description="Funny level, from 1 to 10")
+
+    user_msg = BaseMessage.make_user_message(
+        role_name="User",
+        content="Tell a jokes.",
+    )
+
+    response = assistant.step(user_msg, output_schema=JokeResponse)
+    response_content_json = ast.literal_eval(response.msgs[0].content)
+    joke_response_keys = set(
+        JokeResponse.model_json_schema()["properties"].keys()
+    )
+
+    response_content_keys = set(response_content_json.keys())
+
+    assert joke_response_keys.issubset(
+        response_content_keys
+    ), f"Missing keys: {joke_response_keys - response_content_keys}"
+
+    for key in joke_response_keys:
+        assert (
+            key in response_content_json
+        ), f"Key {key} not found in response content"
+
+
+@pytest.mark.model_backend
 def test_chat_agent_messages_window():
     system_msg = BaseMessage(
         role_name="assistant",
@@ -137,8 +178,8 @@ def test_chat_agent_messages_window():
     assistant.memory.write_records(
         [
             MemoryRecord(
-                user_msg,
-                OpenAIBackendRole.USER,
+                message=user_msg,
+                role_at_backend=OpenAIBackendRole.USER,
             )
             for _ in range(5)
         ]
@@ -179,7 +220,7 @@ def test_chat_agent_multiple_return_messages(n):
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=model_config.__dict__,
+        model_config_dict=model_config.as_dict(),
     )
     system_msg = BaseMessage(
         "Assistant",
@@ -207,7 +248,7 @@ def test_chat_agent_multiple_return_message_error(n):
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=model_config.__dict__,
+        model_config_dict=model_config.as_dict(),
     )
     system_msg = BaseMessage(
         "Assistant",
@@ -255,7 +296,7 @@ def test_chat_agent_stream_output():
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=stream_model_config.__dict__,
+        model_config_dict=stream_model_config.as_dict(),
     )
     stream_assistant = ChatAgent(system_msg, model=model)
     stream_assistant.reset()
@@ -363,7 +404,7 @@ def test_function_enabled():
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=model_config.__dict__,
+        model_config_dict=model_config.as_dict(),
     )
     agent_no_func = ChatAgent(system_message=system_message)
     agent_with_funcs = ChatAgent(
@@ -388,7 +429,7 @@ def test_tool_calling_sync():
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=model_config.__dict__,
+        model_config_dict=model_config.as_dict(),
     )
     agent = ChatAgent(
         system_message=system_message,
@@ -408,7 +449,9 @@ def test_tool_calling_sync():
     )
     agent_response = agent.step(user_msg)
 
-    tool_calls: List[FunctionCallingRecord] = agent_response.info['tool_calls']
+    tool_calls: List[FunctionCallingRecord] = [
+        call for call in agent_response.info['tool_calls']
+    ]
     for called_func in tool_calls:
         print(str(called_func))
 
@@ -434,7 +477,7 @@ async def test_tool_calling_math_async():
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=model_config.__dict__,
+        model_config_dict=model_config.as_dict(),
     )
     agent = ChatAgent(
         system_message=system_message,
@@ -454,7 +497,9 @@ async def test_tool_calling_math_async():
     )
     agent_response = await agent.step_async(user_msg)
 
-    tool_calls: List[FunctionCallingRecord] = agent_response.info['tool_calls']
+    tool_calls: List[FunctionCallingRecord] = [
+        call for call in agent_response.info['tool_calls']
+    ]
     for called_func in tool_calls:
         print(str(called_func))
 
@@ -493,7 +538,7 @@ async def test_tool_calling_async():
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=model_config.__dict__,
+        model_config_dict=model_config.as_dict(),
     )
 
     agent = ChatAgent(
@@ -513,7 +558,9 @@ async def test_tool_calling_async():
     )
     agent_response = await agent.step_async(user_msg)
 
-    tool_calls: List[FunctionCallingRecord] = agent_response.info['tool_calls']
+    tool_calls: List[FunctionCallingRecord] = [
+        call for call in agent_response.info['tool_calls']
+    ]
     for called_func in tool_calls:
         print(str(called_func))
 
@@ -561,7 +608,7 @@ def test_chat_agent_vision():
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
-        model_config_dict=model_config.__dict__,
+        model_config_dict=model_config.as_dict(),
     )
     agent = ChatAgent(
         system_message=system_message,
