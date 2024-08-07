@@ -9,24 +9,36 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
+      - name: Clean up before build
+        run: |
+          sudo apt-get clean
+          sudo rm -rf /var/lib/apt/lists/*
+          sudo rm -rf /tmp/*
+
       - name: set up python environment and install dependencies
         uses: ./.github/actions/camel_install
         with:
           python-version: "3.9"
+
       - name: Build
         shell: bash
         run: poetry build
+
       - name: Set up test environment
         run: |
           python -m venv venv
           source venv/bin/activate
+
       - name: Install the package
         run: |
           WHEEL_FILE=$(ls dist/*.whl)
           pip install "${WHEEL_FILE}[all,test]"
+
       - name: Test import
         shell: bash
         run: python -c "import camel"
+
       - name: Run tests with Pytest
         env:
           OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
@@ -46,3 +58,11 @@ jobs:
           NEO4J_USERNAME: "${{ secrets.NEO4J_USERNAME }}"
           NEO4J_PASSWORD: "${{ secrets.NEO4J_PASSWORD }}"
         run: pytest --fast-test-mode ./test
+
+      - name: Clean up after build
+        if: always()
+        run: |
+          sudo apt-get clean
+          sudo rm -rf /var/lib/apt/lists/*
+          sudo rm -rf /tmp/*
+          sudo rm -rf $HOME/.cache/pip
