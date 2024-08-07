@@ -29,6 +29,18 @@ from camel.storages.graph_storages.graph_element import (
 )
 from camel.types import RoleType
 
+# AgentOps decorator setting
+try:
+    from agentops import track_agent
+except ImportError:
+
+    def track_agent():
+        def noop(f):
+            return f
+
+        return noop
+
+
 text_prompt = """
 You are tasked with extracting nodes and relationships from given content and 
 structures them into Node and Relationship objects. Here's the outline of what 
@@ -97,6 +109,7 @@ into Node and Relationship objects.
 """
 
 
+@track_agent(name="KnowledgeGraphAgent")
 class KnowledgeGraphAgent(ChatAgent):
     r"""An agent that can extract node and relationship information for
     different entities from given `Element` content.

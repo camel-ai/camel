@@ -13,6 +13,8 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from .commons import (
+    AgentOpsMeta,
+    agentops_decorator,
     api_keys_required,
     check_server_running,
     create_chunks,
@@ -70,4 +72,6 @@ __all__ = [
     'get_pydantic_object_schema',
     'func_string_to_callable',
     'json_to_function_code',
+    'agentops_decorator',
+    'AgentOpsMeta',
 ]

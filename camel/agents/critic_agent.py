@@ -24,7 +24,19 @@ from camel.models import BaseModelBackend
 from camel.responses import ChatAgentResponse
 from camel.utils import get_first_int, print_text_animated
 
+# AgentOps decorator setting
+try:
+    from agentops import track_agent
+except ImportError:
 
+    def track_agent():
+        def noop(f):
+            return f
+
+        return noop
+
+
+@track_agent(name="CriticAgent")
 class CriticAgent(ChatAgent):
     r"""A class for the critic agent that assists in selecting an option.
 
