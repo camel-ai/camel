@@ -63,6 +63,7 @@ class File(ABC):
         Returns:
             File: A File object.
         """
+        pass
 
     @classmethod
     def from_raw_bytes(cls, raw_bytes: bytes, filename: str) -> "File":
