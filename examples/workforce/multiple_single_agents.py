@@ -35,7 +35,7 @@ def main():
     model_config_dict = ChatGPTConfig(
         tools=function_list,
         temperature=0.0,
-    ).__dict__
+    ).as_dict()
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
