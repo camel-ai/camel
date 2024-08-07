@@ -47,7 +47,7 @@ embodied_agent = EmbodiedAgent(system_message=sys_msg,
 Be aware that the default argument values for `tool_agents` and `code_interpreter` are `None`, and the underlying code interpreter is using the `SubProcessInterpreter()`, which handles the execution of code in Python and Bash within a subprocess.
 
 
-### 🕹 Step 3: Interact with the Agent with `.step()`
+### 🕹 Step 3: Interact with the Agent with `.run()`
 Use the base message wrapper to generate the user message.
 ```python
 usr_msg = bm.make_user_message(
@@ -61,7 +61,7 @@ usr_msg = bm.make_user_message(
 ```
 And feed that into your agents:
 ```python
-response = embodied_agent.step(usr_msg)
+response = embodied_agent.run(usr_msg)
 ```
 Under the hood, the agent will perform multiple actions within its action space in the OS to fulfill the user request. It will compose code to implement the action – no worries, it will ask for your permission before execution.
 

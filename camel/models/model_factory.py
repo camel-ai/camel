@@ -23,6 +23,7 @@ from camel.models.mistral_model import MistralModel
 from camel.models.ollama_model import OllamaModel
 from camel.models.open_source_model import OpenSourceModel
 from camel.models.openai_model import OpenAIModel
+from camel.models.schema_model import SchemaModel
 from camel.models.stub_model import StubModel
 from camel.models.vllm_model import VLLMModel
 from camel.models.zhipuai_model import ZhipuAIModel
@@ -110,6 +111,11 @@ class ModelFactory:
                 )
             elif model_platform.is_litellm:
                 model_class = LiteLLMModel
+            elif model_platform.is_outlines:
+                model_class = SchemaModel
+                return model_class(
+                    model_platform, model_type, model_config_dict, url
+                )
             else:
                 raise ValueError(
                     f"Unknown pair of model platform `{model_platform}` "

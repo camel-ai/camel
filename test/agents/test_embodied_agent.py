@@ -54,7 +54,7 @@ def test_step():
         content="Draw all the Camelidae species.",
     )
     try:
-        response = embodied_agent.step(user_msg)
+        response = embodied_agent.run(user_msg)
     except (binascii.Error, requests.exceptions.ConnectionError) as ex:
         print(
             "Warning: caught an exception, ignoring it since "

@@ -24,6 +24,7 @@ from .ollama_model import OllamaModel
 from .open_source_model import OpenSourceModel
 from .openai_audio_models import OpenAIAudioModels
 from .openai_model import OpenAIModel
+from .schema_model import SchemaModel
 from .stub_model import StubModel
 from .vllm_model import VLLMModel
 from .zhipuai_model import ZhipuAIModel
@@ -45,4 +46,5 @@ __all__ = [
     'OllamaModel',
     'VLLMModel',
     'GeminiModel',
+    'SchemaModel',
 ]
