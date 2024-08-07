@@ -87,7 +87,7 @@ agent = ChatAgent(assistant_sys_msg, model=ollama_model, token_limit=4096)
 
 user_msg = BaseMessage.make_user_message(
     role_name="User",
-    content="What did you see in the image?",
+    content="What did you see in the images?",
     video_bytes=video_bytes,
     image_list=images,
 )
@@ -96,11 +96,12 @@ print(assistant_response.msg.content)
 
 """
 ===============================================================================
-Hi there! *waves* Hi to the amazing team at CAMEL AI - Autonomous and 
-Communicative Agents Laboratory! It's great to connect with you all. I'm 
-excited to learn more about your work in developing autonomous and 
-communicative agents, exploring the intersection of artificial intelligence, 
-robotics, and human-computer interaction. Keep pushing the boundaries of 
-what's possible!
+The image shows a serene natural landscape featuring a wooden boardwalk
+stretching straight through a lush, vibrant green meadow. The scene is set
+against a beautifully dynamic sky with patches of fluffy white clouds. The view
+is tranquil and inviting, reminiscent of a peaceful, rural setting. There is a
+rich abundance of greenery surrounding the path, which suggests a well-
+preserved natural environment, possibly a nature reserve or park. This setting
+is great for a leisurely walk or a moment of reflection amidst nature.
 ===============================================================================
 """

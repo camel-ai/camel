@@ -176,17 +176,17 @@ class InternLMXComposerModel(BaseModelBackend):
             n_image = 0  # number of images
             image = []  # list of images local path
 
+            # Check and clean the images folder
+            if image_directory.exists():
+                shutil.rmtree(image_directory)
+            image_directory.mkdir(parents=True, exist_ok=True)
+
             # Get `message_content`
             for item in last_message["content"]:
                 if item["type"] == "text":
                     message_content = item["text"]
                 elif item["type"] == "image_url":
                     # Get `image` list
-
-                    # Check and clean the images folder
-                    if image_directory.exists():
-                        shutil.rmtree(image_directory)
-                    image_directory.mkdir(parents=True, exist_ok=True)
 
                     n_image += 1
                     base64_string = item['image_url']['url'].split(',')[1]
