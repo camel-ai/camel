@@ -12,11 +12,9 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from pathlib import PurePath
-from typing import Optional
+from pathlib import Path, PurePath
+from typing import Optional, Tuple
 
-from azure.core.exceptions import ClientAuthenticationError
-from azure.storage.blob import ContainerClient
 from colorama import Fore
 
 from camel.loaders import File
@@ -52,6 +50,8 @@ class AzureBlobStorage(BaseObjectStorage):
             # make all the empty values None
             access_key = None
 
+        from azure.storage.blob import ContainerClient
+
         self._client = ContainerClient(
             account_url="https://"
             f"{storage_account_name}.blob.core.windows.net",
@@ -62,6 +62,8 @@ class AzureBlobStorage(BaseObjectStorage):
         self._prepare_and_check()
 
     def _prepare_and_check(self) -> None:
+        from azure.core.exceptions import ClientAuthenticationError
+
         try:
             exists = self._client.exists()
             if not exists and self._create_if_not_exists:
@@ -81,6 +83,16 @@ class AzureBlobStorage(BaseObjectStorage):
                 f"No permission."
             )
 
+    @staticmethod
+    def canonicalize_path(file_path: PurePath) -> Tuple[str, str]:
+        # for Azure, both slash and backslash will be treated as separator
+        filename = file_path.name
+        if "\\" in filename:
+            raise ValueError(
+                "Azure Blob Storage does not support backslash in filename."
+            )
+        return file_path.as_posix(), filename
+
     def _put_file(self, file_key: str, file: File) -> None:
         self._client.upload_blob(
             name=file_key, data=file.raw_bytes, overwrite=True
@@ -91,7 +103,19 @@ class AzureBlobStorage(BaseObjectStorage):
         file = File.create_file_from_raw_bytes(raw_bytes, filename)
         return file
 
-    @staticmethod
-    def canonicalize_path(file_path: PurePath) -> str:
-        # for Azure, both slash and backslash will be treated as separator
-        return str(file_path)
+    def _upload_file(
+        self, local_file_path: Path, remote_file_key: str
+    ) -> None:
+        with open(local_file_path, "rb") as f:
+            self._client.upload_blob(
+                name=remote_file_key, data=f, overwrite=True
+            )
+
+    def _download_file(
+        self, local_file_path: Path, remote_file_key: str
+    ) -> None:
+        with open(local_file_path, "wb") as f:
+            f.write(self._client.download_blob(remote_file_key).readall())
+
+    def _object_exists(self, file_key: str) -> bool:
+        return self._client.get_blob_client(file_key).exists()

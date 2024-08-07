@@ -14,16 +14,16 @@
 
 from pathlib import Path
 
-from camel.storages.object_storages import S3Storage
+from camel.storages.object_storages import AmazonS3Storage
 
 
 def get_file():
-    s3_storage = S3Storage(bucket_name="camel-ai-bucket")
+    s3_storage = AmazonS3Storage(bucket_name="camel-ai-bucket")
     print(s3_storage._get_file(Path("folder1/example.txt")))
 
 
 def upload_file():
-    s3_storage = S3Storage(bucket_name="camel-ai-bucket")
+    s3_storage = AmazonS3Storage(bucket_name="camel-ai-bucket")
     s3_storage.upload_file(
         local_file_path=Path("./redis_storage.py"),
         s3_file_path=Path("folder1/redis_storage.py"),

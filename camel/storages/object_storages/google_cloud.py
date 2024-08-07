@@ -11,11 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from pathlib import PurePath
+from pathlib import Path, PurePath
+from typing import Tuple
 
 from colorama import Fore
-from google.auth.exceptions import InvalidOperation
-from google.cloud import storage
 
 from camel.loaders import File
 from camel.storages.object_storages.base import BaseObjectStorage
@@ -48,6 +47,8 @@ class GoogleCloudStorage(BaseObjectStorage):
         create_if_not_exists: bool = True,
         anonymous: bool = False,
     ) -> None:
+        from google.cloud import storage
+
         self.create_if_not_exists = create_if_not_exists
 
         if anonymous:
@@ -58,7 +59,13 @@ class GoogleCloudStorage(BaseObjectStorage):
 
         self._prepare_and_check()
 
+    @staticmethod
+    def canonicalize_path(file_path: PurePath) -> Tuple[str, str]:
+        return file_path.as_posix(), file_path.name
+
     def _prepare_and_check(self) -> None:
+        from google.auth.exceptions import InvalidOperation
+
         try:
             exists = self._client.exists()
             if not exists and self.create_if_not_exists:
@@ -83,34 +90,19 @@ class GoogleCloudStorage(BaseObjectStorage):
         raw_bytes = self._client.get_blob(file_key).download_as_bytes()
         return File.create_file_from_raw_bytes(raw_bytes, filename)
 
-    def upload_file(
-        self, local_file_path: PurePath, gcloud_file_path: PurePath
+    def _upload_file(
+        self, local_file_path: Path, remote_file_key: str
     ) -> None:
-        r"""Upload a local file to the Google Cloud Storage bucket.
+        self._client.blob(remote_file_key).upload_from_filename(
+            local_file_path
+        )
 
-        Args:
-            local_file_path (PurePath): The path to the local file to be
-                uploaded.
-            gcloud_file_path (PurePath): The path to the object in the Google
-                Cloud Storage bucket.
-        """
-        file_key = self.canonicalize_path(gcloud_file_path)
-        self._client.blob(file_key).upload_from_filename(local_file_path)
-
-    def download_file(
-        self, local_file_path: PurePath, gcloud_file_path: PurePath
+    def _download_file(
+        self, local_file_path: Path, remote_file_key: str
     ) -> None:
-        r"""Download a file from the Google Cloud Storage bucket to the local
-        system.
+        self._client.get_blob(remote_file_key).download_to_filename(
+            local_file_path
+        )
 
-        Args:
-            local_file_path (PurePath): The path to the local file to be saved.
-            gcloud_file_path (PurePath): The path to the object in the S3
-            bucket.
-        """
-        file_key = self.canonicalize_path(gcloud_file_path)
-        self._client.get_blob(file_key).download_to_filename(local_file_path)
-
-    @staticmethod
-    def canonicalize_path(file_path: PurePath) -> str:
-        return file_path.as_posix()
+    def _object_exists(self, file_key: str) -> bool:
+        return self._client.blob(file_key).exists()

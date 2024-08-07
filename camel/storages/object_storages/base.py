@@ -13,32 +13,38 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from abc import ABC, abstractmethod
-from pathlib import PurePath
+from pathlib import Path, PurePath
+from typing import Tuple
 
 from camel.loaders import File
 
 
 class BaseObjectStorage(ABC):
-    @abstractmethod
-    def _put_file(self, file_key: str, file: File) -> None:
-        r"""Put a file to the object storage.
+    def object_exists(self, file_path: PurePath) -> bool:
+        r"""Check if the object exists in the storage.
 
         Args:
-            file_key (str): The path to the object in the storage.
-            file (File): The file to be put.
-        """
-
-    @abstractmethod
-    def _get_file(self, file_key: str, filename: str) -> File:
-        r"""Get a file from the object storage.
-
-        Args:
-            file_key (str): The path to the object in the storage.
-            filename (str): The name of the file.
+            file_path (PurePath): The path to the object in the storage.
 
         Returns:
-            File: The file object get from the storage.
+            bool: True if the object exists, False otherwise.
         """
+        file_key, _ = self.canonicalize_path(file_path)
+        return self._object_exists(file_key)
+
+    @staticmethod
+    @abstractmethod
+    def canonicalize_path(file_path: PurePath) -> Tuple[str, str]:
+        r"""Canonicalize the file path into the file key in the storage, and
+        also return the file name.
+
+        Args:
+            file_path (PurePath): The path to the object in the storage.
+
+        Returns:
+            Tuple[str, str]: The canonicalized file key and file name.
+        """
+        pass
 
     def put_file(self, file_path: PurePath, file: File) -> None:
         r"""Put a file to the object storage.
@@ -47,7 +53,7 @@ class BaseObjectStorage(ABC):
             file_path (PurePath): The path to the object in the storage.
             file (File): The file to be put.
         """
-        file_key = self.canonicalize_path(file_path)
+        file_key, _ = self.canonicalize_path(file_path)
         self._put_file(file_key, file)
 
     def get_file(self, file_path: PurePath) -> File:
@@ -59,18 +65,60 @@ class BaseObjectStorage(ABC):
         Returns:
             File: The file object get from the storage.
         """
-        file_key = self.canonicalize_path(file_path)
-        filename = file_path.name
+        file_key, filename = self.canonicalize_path(file_path)
         return self._get_file(file_key, filename)
 
-    @staticmethod
-    @abstractmethod
-    def canonicalize_path(file_path: PurePath) -> str:
-        r"""Canonicalize the file path into the file key in the storage.
+    def upload_file(
+        self, local_file_path: Path, remote_file_path: PurePath
+    ) -> None:
+        r"""Upload a local file to the object storage.
 
         Args:
-            file_path (PurePath): The path to the object in the storage.
-
-        Returns:
-            str: The canonicalized file key.
+            local_file_path (Path): The path to the local file to be uploaded.
+            remote_file_path (PurePath): The path to the object in storage.
         """
+        file_key, _ = self.canonicalize_path(remote_file_path)
+        # check if the local file exists
+        if not local_file_path.exists():
+            raise FileNotFoundError(
+                f"Local file {local_file_path} does not exist."
+            )
+        self._upload_file(local_file_path, file_key)
+
+    def download_file(
+        self, local_file_path: Path, remote_file_path: PurePath
+    ) -> None:
+        r"""Download a file from the object storage to the local system.
+
+        Args:
+            local_file_path (Path): The path to the local file to be saved.
+            remote_file_path (PurePath): The path to the object in storage.
+        """
+        file_key, _ = self.canonicalize_path(remote_file_path)
+        self._download_file(local_file_path, file_key)
+
+    @abstractmethod
+    def _put_file(self, file_key: str, file: File) -> None:
+        pass
+
+    @abstractmethod
+    def _get_file(self, file_key: str, filename: str) -> File:
+        pass
+
+    @abstractmethod
+    def _object_exists(self, file_key: str) -> bool:
+        pass
+
+    @abstractmethod
+    def _upload_file(
+        self, local_file_path: Path, remote_file_key: str
+    ) -> None:
+        pass
+
+    @abstractmethod
+    def _download_file(
+        self,
+        local_file_path: Path,
+        remote_file_key: str,
+    ) -> None:
+        pass

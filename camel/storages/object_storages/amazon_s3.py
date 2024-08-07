@@ -13,18 +13,16 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 import os
-from pathlib import PurePath
-from typing import Optional
+from pathlib import Path, PurePath
+from typing import Optional, Tuple
 
-import boto3
-from botocore.exceptions import ClientError
 from colorama import Fore
 
 from camel.loaders import File
 from camel.storages.object_storages.base import BaseObjectStorage
 
 
-class S3Storage(BaseObjectStorage):
+class AmazonS3Storage(BaseObjectStorage):
     r"""A class to connect with AWS S3 object storage to put and get objects
     from one S3 bucket.
 
@@ -64,6 +62,8 @@ class S3Storage(BaseObjectStorage):
             aws_key_id = None
             aws_secret_key = None
 
+        import boto3
+
         self._client = boto3.client(
             "s3",
             aws_access_key_id=aws_key_id,
@@ -72,10 +72,24 @@ class S3Storage(BaseObjectStorage):
 
         self._prepare_and_check()
 
+    @staticmethod
+    def canonicalize_path(file_path: PurePath) -> Tuple[str, str]:
+        r"""Canonicalize the path for the S3 bucket.
+
+        Args:
+            file_path (PurePath): The path to be canonicalized.
+
+        Returns:
+            Tuple[str, str]: The canonicalized file key and file name.
+        """
+        return file_path.as_posix(), file_path.name
+
     def _prepare_and_check(self) -> None:
         r"""Prepare the bucket for future use, and also check if the bucket is
         accessible.
         """
+        from botocore.exceptions import ClientError
+
         try:
             self._client.head_bucket(Bucket=self._bucket_name)
         except ClientError as e:
@@ -127,43 +141,43 @@ class S3Storage(BaseObjectStorage):
         raw_bytes = response["Body"].read()
         return File.create_file_from_raw_bytes(raw_bytes, filename)
 
-    @staticmethod
-    def canonicalize_path(file_path: PurePath) -> str:
-        r"""Canonicalize the path for the S3 bucket.
-
-        Args:
-            file_path (PurePath): The path to be canonicalized.
-
-        Returns:
-            str: The canonicalized S3 object key.
-        """
-        return file_path.as_posix()
-
-    def upload_file(
-        self, local_file_path: PurePath, s3_file_path: PurePath
+    def _upload_file(
+        self, local_file_path: Path, remote_file_key: str
     ) -> None:
         r"""Upload a local file to the S3 bucket.
 
         Args:
-            local_file_path (PurePath): The path to the local file to be
+            local_file_path (Path): The path to the local file to be
                 uploaded.
-            s3_file_path (PurePath): The path to the object in the S3 bucket.
+            remote_file_key (str): The path to the object in the S3 bucket.
         """
-        file_key = self.canonicalize_path(s3_file_path)
         self._client.upload_file(
-            Filename=local_file_path, Bucket=self._bucket_name, Key=file_key
+            Bucket=self._bucket_name,
+            Key=remote_file_key,
+            Filename=local_file_path,
         )
 
-    def download_file(
-        self, local_file_path: PurePath, s3_file_path: PurePath
+    def _download_file(
+        self,
+        local_file_path: Path,
+        remote_file_key: str,
     ) -> None:
+        pass
         r"""Download a file from the S3 bucket to the local system.
 
         Args:
-            local_file_path (PurePath): The path to the local file to be saved.
-            s3_file_path (PurePath): The path to the object in the S3 bucket.
+            local_file_path (Path): The path to the local file to be saved.
+            remote_file_key (str): The key of the object in the S3 bucket.
         """
-        file_key = self.canonicalize_path(s3_file_path)
         self._client.download_file(
-            Bucket=self._bucket_name, Key=file_key, Filename=local_file_path
+            Bucket=self._bucket_name,
+            Key=remote_file_key,
+            Filename=local_file_path,
         )
+
+    def _object_exists(self, file_key: str) -> bool:
+        try:
+            self._client.head_object(Bucket=self._bucket_name, Key=file_key)
+            return True
+        except self._client.exceptions.ClientError:
+            return False

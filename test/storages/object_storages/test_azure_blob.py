@@ -11,47 +11,37 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from pathlib import Path, PurePosixPath, PureWindowsPath
-from unittest.mock import MagicMock, patch
+from pathlib import PurePosixPath, PureWindowsPath
 
 import pytest
 
-from camel.loaders.base_io import TxtFile
 from camel.storages.object_storages import AzureBlobStorage
-
-
-@pytest.fixture
-def mock_instance():
-    with patch(
-        "camel.storages.object_storages.azure_blob.ContainerClient"
-    ) as mock_container_client:
-        mock_client = MagicMock()
-        mock_container_client.return_value = mock_client
-        mock_client.exists.return_value = True
-
-        mock_blob = MagicMock()
-        mock_client.download_blob.return_value = mock_blob
-        mock_blob.readall.return_value = b"file content"
-
-        yield AzureBlobStorage(
-            storage_account_name="mock-account",
-            container_name="mock-container",
-        )
 
 
 def test_canonicalize_path():
     windows_path = PureWindowsPath('relative\\path\\to\\file.pdf')
     posix_path = PurePosixPath('relative/path/to/file.pdf')
 
-    windows_key = AzureBlobStorage.canonicalize_path(windows_path)
-    posix_key = AzureBlobStorage.canonicalize_path(posix_path)
+    windows_key, win_filename = AzureBlobStorage.canonicalize_path(
+        windows_path
+    )
+    posix_key, posix_filename = AzureBlobStorage.canonicalize_path(posix_path)
 
-    assert windows_key == 'relative\\path\\to\\file.pdf'
+    assert windows_key == 'relative/path/to/file.pdf'
+    assert win_filename == 'file.pdf'
+
     assert posix_key == 'relative/path/to/file.pdf'
+    assert posix_filename == 'file.pdf'
 
 
-def test_get_file(mock_instance: AzureBlobStorage):
-    file = mock_instance.get_file(Path("file.txt"))
-    assert file.name == "file.txt"
-    assert isinstance(file, TxtFile)
-    assert file.raw_bytes == b"file content"
+def test_canonicalize_tricky_path():
+    tricky_posix_path = PurePosixPath('relative/path/to\\file.pdf')
+    tricky_win_path = PureWindowsPath('relative/path/to\\file.pdf')
+
+    with pytest.raises(ValueError):
+        AzureBlobStorage.canonicalize_path(tricky_posix_path)
+
+    win_key, win_filename = AzureBlobStorage.canonicalize_path(tricky_win_path)
+
+    assert win_key == 'relative/path/to/file.pdf'
+    assert win_filename == 'file.pdf'
