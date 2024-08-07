@@ -86,7 +86,7 @@ def test_scrape_with_llm_with_json():
 def test_crawl():
     test_url = "https://www.camel-ai.org/"
     resp = FireCrawlURLReader().crawl(test_url, max_depth=1)
-    assert isinstance(resp, dict)
+    assert isinstance(resp, list)
     print(json.dumps(resp, indent=2))
 
 
