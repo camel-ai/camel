@@ -438,19 +438,18 @@ class ChatAgent(BaseAgent):
             msgs=output_messages, terminated=self.terminated, info=info
         )
 
-        # If the output result is a single piece of information, it will be
-        # automatically added to the memory. If it is multiple pieces of
-        # information, the critic agent will need to filter out the results
-        # and then the user will manually add them to the memory to prevent
-        # multiple pieces of information from interfering with LLM.
-        if len(output_messages) == 1:
-            self.update_memory(output_messages[0], OpenAIBackendRole.ASSISTANT)
+        # If the output result is a single message, it will be
+        # automatically added to the memory. If the output result
+        # consists of multiple messages, please call `record_message `
+        # manually to record to your chosen message.
+        if len(chat_agent_response.msgs) == 1:
+            self.record_message(chat_agent_response.msg)
         else:
             logger.warning(
-                "Please add the record message function after the "
-                + "critic agent reduce step function."
+                "Multiple messages are presented in `chat_agent_response`. "
+                "Please manually call the `record_message` function to "
+                "record the chosen message."
             )
-
         return chat_agent_response
 
     async def step_async(
@@ -579,13 +578,17 @@ class ChatAgent(BaseAgent):
             msgs=output_messages, terminated=self.terminated, info=info
         )
 
-        # add output response add memory
-        if len(output_messages) == 1:
-            self.update_memory(output_messages[0], OpenAIBackendRole.ASSISTANT)
+        # If the output result is a single message, it will be
+        # automatically added to the memory. If the output result
+        # consists of multiple messages, please call `record_message `
+        # manually to record to your chosen message.
+        if len(chat_agent_response.msgs) == 1:
+            self.record_message(chat_agent_response.msg)
         else:
             logger.warning(
-                "Please add the record message function after the \
-                           critic agent reduce step"
+                "Multiple messages are presented in `chat_agent_response`. "
+                "Please manually call the `record_message` function to "
+                "record the chosen message."
             )
 
         return chat_agent_response
