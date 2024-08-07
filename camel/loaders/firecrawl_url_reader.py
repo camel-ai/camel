@@ -25,9 +25,25 @@ from camel.types.enums import (
 
 
 class FireCrawlURLReader:
+    """
+    URL Reader provided by FireCrawl.\n
+    This class provides methods to crawl and scrape URLs.\n
+    The FireCrawl URL Reader is a powerful tool to scrape and extract
+    content from websites. It can be used to scrape a single URL
+    or crawl a website to scrape multiple pages.\n
+
+    Args:
+        api_key: The API key to use for the requests.
+        api_url: The URL of the FireCrawl API. (Optional)
+
+    See Also:
+        https://docs.firecrawl.dev/api-reference/introduction
+    """
+
     def __init__(
         self,
         api_key: Optional[str] = None,
+        api_url: Optional[str] = None,
     ) -> None:
         api_key = api_key or os.getenv('FIRECRAWL_API_KEY')
         if isinstance(api_key, type(None)):
@@ -38,7 +54,10 @@ class FireCrawlURLReader:
                 "Get API key here: "
                 "https://www.firecrawl.dev/app/api-keys."
             )
-        self._app = firecrawl.FirecrawlApp(api_key)
+        api_url = api_url or os.getenv('FIRECRAWL_API_URL')
+        if isinstance(api_url, type(None)):
+            api_url = "https://api.firecrawl.dev"
+        self._app = firecrawl.FirecrawlApp(api_key=api_key, api_url=api_url)
 
     def crawl(
         self,
