@@ -14,6 +14,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
@@ -61,6 +62,9 @@ if TYPE_CHECKING:
     from camel.terminators import ResponseTerminator
     from camel.toolkits import OpenAIFunction
 
+
+logger = logging.getLogger(__name__)
+
 # AgentOps decorator setting
 try:
     from agentops import track_agent
@@ -72,7 +76,7 @@ except ImportError:
 
         return noop
 
-
+      
 class FunctionCallingRecord(BaseModel):
     r"""Historical records of functions called in the conversation.
 
@@ -443,9 +447,23 @@ class ChatAgent(BaseAgent):
             for base_message_item in output_messages:
                 base_message_item.content = str(info['tool_calls'][-1].result)
 
-        return ChatAgentResponse(
+        chat_agent_response = ChatAgentResponse(
             msgs=output_messages, terminated=self.terminated, info=info
         )
+
+        # If the output result is a single message, it will be
+        # automatically added to the memory. If the output result
+        # consists of multiple messages, please call `record_message `
+        # manually to record to your chosen message.
+        if len(chat_agent_response.msgs) == 1:
+            self.record_message(chat_agent_response.msg)
+        else:
+            logger.warning(
+                "Multiple messages are presented in `chat_agent_response`. "
+                "Please manually call the `record_message` function to "
+                "record the chosen message."
+            )
+        return chat_agent_response
 
     async def step_async(
         self,
@@ -569,9 +587,24 @@ class ChatAgent(BaseAgent):
             for base_message_item in output_messages:
                 base_message_item.content = str(info['tool_calls'][0].result)
 
-        return ChatAgentResponse(
+        chat_agent_response = ChatAgentResponse(
             msgs=output_messages, terminated=self.terminated, info=info
         )
+
+        # If the output result is a single message, it will be
+        # automatically added to the memory. If the output result
+        # consists of multiple messages, please call `record_message `
+        # manually to record to your chosen message.
+        if len(chat_agent_response.msgs) == 1:
+            self.record_message(chat_agent_response.msg)
+        else:
+            logger.warning(
+                "Multiple messages are presented in `chat_agent_response`. "
+                "Please manually call the `record_message` function to "
+                "record the chosen message."
+            )
+
+        return chat_agent_response
 
     def _add_tools_for_func_call(
         self,
