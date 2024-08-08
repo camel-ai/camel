@@ -252,7 +252,7 @@ class InternLMXComposerModel(BaseModelBackend):
             choices=[
                 Choice(
                     finish_reason="stop",
-                    idnex=0,
+                    index=0,
                     logprobs=None,
                     message=ChatCompletionMessage(
                         content=response_str,
