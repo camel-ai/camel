@@ -22,7 +22,9 @@ from camel.utils import create_chunks
 
 # AgentOps decorator setting
 try:
-    from agentops import track_agent  # type: ignore[import-untyped]
+    from agentops import (
+        track_agent,  # type: ignore[import-not-found]
+    )
 except ImportError:
     from camel.utils import track_agent
 
