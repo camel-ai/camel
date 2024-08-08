@@ -63,10 +63,13 @@ if TYPE_CHECKING:
 
 # AgentOps decorator setting
 try:
-    from agentops import (
-        track_agent,  # type: ignore[import-not-found]
-    )
-except ImportError:
+    import os
+
+    if os.getenv("AGENTOPS_API_KEY") is not None:
+        from agentops import track_agent
+    else:
+        raise ImportError
+except (ImportError, AttributeError):
     from camel.utils import track_agent
 
 

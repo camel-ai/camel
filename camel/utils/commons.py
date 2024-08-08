@@ -488,11 +488,14 @@ def is_docker_running() -> bool:
 
 
 try:
-    from agentops import (  # type: ignore[import-not-found]
-        ToolEvent,
-        record,
-    )
-except ImportError:
+    if os.getenv("AGENTOPS_API_KEY") is not None:
+        from agentops import (
+            ToolEvent,
+            record,
+        )
+    else:
+        raise ImportError
+except (ImportError, AttributeError):
     ToolEvent = None
 
 
