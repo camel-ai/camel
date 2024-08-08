@@ -20,7 +20,19 @@ from camel.prompts import TextPrompt
 from camel.types import RoleType
 from camel.utils import create_chunks
 
+# AgentOps decorator setting
+try:
+    from agentops import track_agent
+except ImportError:
 
+    def track_agent():
+        def noop(f):
+            return f
+
+        return noop
+
+
+@track_agent(name="SearchAgent")
 class SearchAgent(ChatAgent):
     r"""An agent that summarizes text based on a query and evaluates the
     relevance of an answer.

@@ -12,13 +12,12 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from typing import List
+from .base import BaseNode
+from .manager_node import ManagerNode
+from .worker_node import WorkerNode
 
-from camel.utils import AgentOpsMeta
-
-from .openai_function import OpenAIFunction
-
-
-class BaseToolkit(metaclass=AgentOpsMeta):
-    def get_tools(self) -> List[OpenAIFunction]:
-        raise NotImplementedError("Subclasses must implement this method.")
+__all__ = [
+    "BaseNode",
+    "WorkerNode",
+    "ManagerNode",
+]

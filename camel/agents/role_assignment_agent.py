@@ -20,7 +20,19 @@ from camel.models import BaseModelBackend
 from camel.prompts import TextPrompt
 from camel.types import RoleType
 
+# AgentOps decorator setting
+try:
+    from agentops import track_agent
+except ImportError:
 
+    def track_agent():
+        def noop(f):
+            return f
+
+        return noop
+
+
+@track_agent(name="RoleAssignmentAgent")
 class RoleAssignmentAgent(ChatAgent):
     r"""An agent that generates role names based on the task prompt.
 
