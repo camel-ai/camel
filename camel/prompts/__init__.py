@@ -24,6 +24,7 @@ from .multi_condition_image_craft import (
     MultiConditionImageCraftPromptTemplateDict,
 )
 from .object_recognition import ObjectRecognitionPromptTemplateDict
+from .persona_hub import PersonaHubPrompt
 from .prompt_templates import PromptTemplateGenerator
 from .role_description_prompt_template import RoleDescriptionPromptTemplateDict
 from .solution_extraction import SolutionExtractionPromptTemplateDict
@@ -43,6 +44,7 @@ __all__ = [
     'RoleDescriptionPromptTemplateDict',
     'TaskPromptTemplateDict',
     'PromptTemplateGenerator',
+    'PersonaHubPrompt',
     'SolutionExtractionPromptTemplateDict',
     'GenerateTextEmbeddingDataPromptTemplateDict',
     'ObjectRecognitionPromptTemplateDict',
