@@ -29,14 +29,14 @@ from camel.utils import print_text_animated
 
 # AgentOps decorator setting
 try:
-    from agentops import track_agent
-except ImportError:
+    import os
 
-    def track_agent():
-        def noop(f):
-            return f
-
-        return noop
+    if os.getenv("AGENTOPS_API_KEY") is not None:
+        from agentops import track_agent
+    else:
+        raise ImportError
+except (ImportError, AttributeError):
+    from camel.utils import track_agent
 
 
 @track_agent(name="EmbodiedAgent")
