@@ -23,6 +23,7 @@ from typing import (
     List,
     Optional,
     Tuple,
+    Type,
     Union,
 )
 
@@ -319,7 +320,7 @@ class ChatAgent(BaseAgent):
     def step(
         self,
         input_message: BaseMessage,
-        output_schema: Optional[BaseModel] = None,
+        output_schema: Optional[Type[BaseModel]] = None,
     ) -> ChatAgentResponse:
         r"""Performs a single step in the chat session by generating a response
         to the input message.
@@ -330,8 +331,8 @@ class ChatAgent(BaseAgent):
                 either `user` or `assistant` but it will be set to `user`
                 anyway since for the self agent any incoming message is
                 external.
-            output_schema (Optional[BaseModel]): An optional pydantic model
-                that includes value types and field descriptions used to
+            output_schema (Optional[type[BaseModel]]): An optional pydantic
+                model that includes value types and field descriptions used to
                 generate a structured response by LLM. This schema helps
                 in defining the expected output format.
 
@@ -450,7 +451,7 @@ class ChatAgent(BaseAgent):
     async def step_async(
         self,
         input_message: BaseMessage,
-        output_schema: Optional[BaseModel] = None,
+        output_schema: Optional[Type[BaseModel]] = None,
     ) -> ChatAgentResponse:
         r"""Performs a single step in the chat session by generating a response
         to the input message. This agent step can call async function calls.
@@ -461,8 +462,8 @@ class ChatAgent(BaseAgent):
                 either `user` or `assistant` but it will be set to `user`
                 anyway since for the self agent any incoming message is
                 external.
-            output_schema (Optional[BaseModel]): An optional pydantic model
-                that includes value types and field descriptions used to
+            output_schema (Optional[Type[BaseModel】]): An optional pydantic
+                model that includes value types and field descriptions used to
                 generate a structured response by LLM. This schema helps
                 in defining the expected output format.
 
