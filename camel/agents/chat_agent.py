@@ -63,7 +63,7 @@ if TYPE_CHECKING:
 
 # AgentOps decorator setting
 try:
-    from agentops import track_agent  # type:ignore [import-untyped]
+    from agentops import track_agent  # type: ignore[import-untyped]
 except ImportError:
     from camel.utils import track_agent
 

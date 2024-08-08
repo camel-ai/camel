@@ -488,7 +488,7 @@ def is_docker_running() -> bool:
 
 
 try:
-    from agentops import ToolEvent, record  # type:ignore [import-untyped]
+    from agentops import ToolEvent, record  # type: ignore[import-untyped]
 except ImportError:
     ToolEvent = None
 
