@@ -61,6 +61,17 @@ if TYPE_CHECKING:
     from camel.terminators import ResponseTerminator
     from camel.toolkits import OpenAIFunction
 
+# AgentOps decorator setting
+try:
+    from agentops import track_agent
+except ImportError:
+
+    def track_agent():
+        def noop(f):
+            return f
+
+        return noop
+
 
 class FunctionCallingRecord(BaseModel):
     r"""Historical records of functions called in the conversation.
@@ -92,6 +103,7 @@ class FunctionCallingRecord(BaseModel):
         return self.model_dump()
 
 
+@track_agent(name="ChatAgent")
 class ChatAgent(BaseAgent):
     r"""Class for managing conversations of CAMEL Chat Agents.
 
@@ -145,7 +157,7 @@ class ChatAgent(BaseAgent):
             else ModelFactory.create(
                 model_platform=ModelPlatformType.OPENAI,
                 model_type=ModelType.GPT_4O_MINI,
-                model_config_dict=ChatGPTConfig().model_dump(),
+                model_config_dict=ChatGPTConfig().as_dict(),
                 api_key=self._api_key,
             )
         )
