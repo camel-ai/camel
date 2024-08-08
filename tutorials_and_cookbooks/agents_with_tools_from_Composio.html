@@ -1,0 +1,643 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>🐫 Agents with Tools from Composio &#8212; CAMEL 0.1.6.2 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials_and_cookbooks/agents_with_tools_from_Composio';</script>
+    <link rel="icon" href="https://raw.githubusercontent.com/camel-ai/camel/master/misc/favicon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/primary_logo.png" class="logo__image only-light" alt=""/>
+    <script>document.write(`<img src="https://raw.githubusercontent.com/camel-ai/camel/master/misc/primary_logo.png" class="logo__image only-dark" alt=""/>`);</script>
+  
+  
+    <p class="title logo__title">CAMEL 0.1.6.2</p>
+  
+</a></div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Get Started</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../get_started/setup.html">Installation and Setup</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Agents</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../agents/single_agent.html">Creating Your First Agent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../agents/role_playing.html">Creating Your First Agent Society</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../agents/embodied_agents.html">Embodied Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../agents/critic_agents_and_tree_search.html">Critic Agents and Tree Search</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Key Modules</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../key_modules/loaders.html">Loaders</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../key_modules/storages.html">Storages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../key_modules/embeddings.html">Embeddings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../key_modules/retrievers.html">Retrievers</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Tutorial and Cookbooks</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="agents_with_rag.html">🐫 Agents with RAG</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API References</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../modules.html">camel</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../camel.html">Camel Package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../camel.agents.html">camel.agents package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../camel.prompts.html">camel.prompts package</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../_sources/tutorials_and_cookbooks/agents_with_tools_from_Composio.md" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.md</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>🐫 Agents with Tools from Composio</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#in-this-notebook-we-demonstrate-the-usage-of-camel-chatagent-and-roleplaying-with-tools-from-composio-allowing-agents-to-seamlessly-interact-with-external-applications">In this notebook, we demonstrate the usage of CAMEL <code class="docutils literal notranslate"><span class="pre">ChatAgent</span></code> and <code class="docutils literal notranslate"><span class="pre">RolePlaying</span></code> with Tools from Composio, allowing agents to seamlessly interact with external applications.</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#install-packages-connect-a-tool">Install Packages &amp; Connect a Tool</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#prepare-your-environment-by-initializing-necessary-imports-from-camel-composio">Prepare your environment by initializing necessary imports from CAMEL &amp; Composio.</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#let-s-run-camel-agents-with-tools-from-composio">Let’s run CAMEL agents with tools from Composio!</a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="agents-with-tools-from-composio">
+<h1>🐫 Agents with Tools from Composio<a class="headerlink" href="#agents-with-tools-from-composio" title="Permalink to this heading">#</a></h1>
+<p><a class="reference external" href="https://colab.research.google.com/drive/1x2FYThMPtQXLzKZAhf_Ry-oeU6oPygdm?authuser=1#scrollTo=6c1kqMDxDodN"><img alt="Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p>
+<section id="in-this-notebook-we-demonstrate-the-usage-of-camel-chatagent-and-roleplaying-with-tools-from-composio-allowing-agents-to-seamlessly-interact-with-external-applications">
+<h2>In this notebook, we demonstrate the usage of CAMEL <code class="docutils literal notranslate"><span class="pre">ChatAgent</span></code> and <code class="docutils literal notranslate"><span class="pre">RolePlaying</span></code> with Tools from Composio, allowing agents to seamlessly interact with external applications.<a class="headerlink" href="#in-this-notebook-we-demonstrate-the-usage-of-camel-chatagent-and-roleplaying-with-tools-from-composio-allowing-agents-to-seamlessly-interact-with-external-applications" title="Permalink to this heading">#</a></h2>
+<p><em>Goal: Star a repository on GitHub with natural language &amp; CAMEL Agent</em></p>
+</section>
+<section id="install-packages-connect-a-tool">
+<h2>Install Packages &amp; Connect a Tool<a class="headerlink" href="#install-packages-connect-a-tool" title="Permalink to this heading">#</a></h2>
+<p>Ensure you have the necessary packages installed and connect your GitHub account to allow your CAMEL agents to utilize GitHub functionalities.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">composio</span>
+</pre></div>
+</div>
+<p>Login to Composio</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>composio<span class="w"> </span>login
+</pre></div>
+</div>
+<p>Connect your Github account (this is a shell command, so it should be run in your terminal or with ‘!’ prefix in a Jupyter Notebook)</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>composio<span class="w"> </span>add<span class="w"> </span>github
+</pre></div>
+</div>
+<p>Check all different apps which you can connect with</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>composio<span class="w"> </span>apps
+</pre></div>
+</div>
+</section>
+<section id="prepare-your-environment-by-initializing-necessary-imports-from-camel-composio">
+<h2>Prepare your environment by initializing necessary imports from CAMEL &amp; Composio.<a class="headerlink" href="#prepare-your-environment-by-initializing-necessary-imports-from-camel-composio" title="Permalink to this heading">#</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+
+<span class="kn">from</span> <span class="nn">colorama</span> <span class="kn">import</span> <span class="n">Fore</span>
+<span class="kn">from</span> <span class="nn">composio_camel</span> <span class="kn">import</span> <span class="n">Action</span><span class="p">,</span> <span class="n">ComposioToolSet</span>
+
+<span class="kn">from</span> <span class="nn">camel.agents.chat_agent</span> <span class="kn">import</span> <span class="n">FunctionCallingRecord</span>
+<span class="kn">from</span> <span class="nn">camel.configs</span> <span class="kn">import</span> <span class="n">ChatGPTConfig</span>
+<span class="kn">from</span> <span class="nn">camel.models</span> <span class="kn">import</span> <span class="n">ModelFactory</span>
+<span class="kn">from</span> <span class="nn">camel.societies</span> <span class="kn">import</span> <span class="n">RolePlaying</span>
+<span class="kn">from</span> <span class="nn">camel.types</span> <span class="kn">import</span> <span class="n">ModelPlatformType</span><span class="p">,</span> <span class="n">ModelType</span>
+<span class="kn">from</span> <span class="nn">camel.utils</span> <span class="kn">import</span> <span class="n">print_text_animated</span>
+</pre></div>
+</div>
+</section>
+<section id="let-s-run-camel-agents-with-tools-from-composio">
+<h2>Let’s run CAMEL agents with tools from Composio!<a class="headerlink" href="#let-s-run-camel-agents-with-tools-from-composio" title="Permalink to this heading">#</a></h2>
+<p>Set your task</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">task_prompt</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;I have created a new Github Repo,&quot;</span>
+    <span class="s2">&quot;Please star my github repository: camel-ai/camel&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Set Toolset</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">composio_toolset</span> <span class="o">=</span> <span class="n">ComposioToolSet</span><span class="p">()</span>
+
+<span class="n">tools</span> <span class="o">=</span> <span class="n">composio_toolset</span><span class="o">.</span><span class="n">get_actions</span><span class="p">(</span>
+    <span class="n">actions</span><span class="o">=</span><span class="p">[</span><span class="n">Action</span><span class="o">.</span><span class="n">GITHUB_ACTIVITY_STAR_REPO_FOR_AUTHENTICATED_USER</span><span class="p">]</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Set models for user agent and assistant agent, give tool to the assistant</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">assistant_agent_model</span> <span class="o">=</span> <span class="n">ModelFactory</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+    <span class="n">model_platform</span><span class="o">=</span><span class="n">ModelPlatformType</span><span class="o">.</span><span class="n">OPENAI</span><span class="p">,</span>
+    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">GPT_3_5_TURBO</span><span class="p">,</span>
+    <span class="n">model_config_dict</span><span class="o">=</span><span class="n">ChatGPTConfig</span><span class="p">(</span><span class="n">tools</span><span class="o">=</span><span class="n">tools</span><span class="p">)</span><span class="o">.</span><span class="n">as_dict</span><span class="p">(),</span>
+<span class="p">)</span>
+
+<span class="n">user_agent_model</span> <span class="o">=</span> <span class="n">ModelFactory</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+    <span class="n">model_platform</span><span class="o">=</span><span class="n">ModelPlatformType</span><span class="o">.</span><span class="n">OPENAI</span><span class="p">,</span>
+    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">GPT_3_5_TURBO</span><span class="p">,</span>
+    <span class="n">model_config_dict</span><span class="o">=</span><span class="n">ChatGPTConfig</span><span class="p">()</span><span class="o">.</span><span class="n">as_dict</span><span class="p">(),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Set RolePlaying session</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">role_play_session</span> <span class="o">=</span> <span class="n">RolePlaying</span><span class="p">(</span>
+    <span class="n">assistant_role_name</span><span class="o">=</span><span class="s2">&quot;Developer&quot;</span><span class="p">,</span>
+    <span class="n">user_role_name</span><span class="o">=</span><span class="s2">&quot;CAMEL User&quot;</span><span class="p">,</span>
+    <span class="n">assistant_agent_kwargs</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+        <span class="n">model</span><span class="o">=</span><span class="n">assistant_agent_model</span><span class="p">,</span>
+        <span class="n">tools</span><span class="o">=</span><span class="n">tools</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="n">user_agent_kwargs</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+        <span class="n">model</span><span class="o">=</span><span class="n">user_agent_model</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="n">task_prompt</span><span class="o">=</span><span class="n">task_prompt</span><span class="p">,</span>
+    <span class="n">with_task_specify</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Print the system message and task prompt</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">Fore</span><span class="o">.</span><span class="n">YELLOW</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;Original task prompt:</span><span class="se">\n</span><span class="si">{</span><span class="n">task_prompt</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">Fore</span><span class="o">.</span><span class="n">CYAN</span>
+    <span class="o">+</span> <span class="s2">&quot;Specified task prompt:&quot;</span>
+    <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="n">role_play_session</span><span class="o">.</span><span class="n">specified_task_prompt</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Fore</span><span class="o">.</span><span class="n">RED</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;Final task prompt:</span><span class="se">\n</span><span class="si">{</span><span class="n">role_play_session</span><span class="o">.</span><span class="n">task_prompt</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-markdown notranslate"><div class="highlight"><pre><span></span>&gt;&gt;&gt; 
+AI Assistant sys message:
+Original task prompt:
+I have created a new Github Repo,Please star my github repository: camel-ai/camel
+
+Specified task prompt:
+None
+
+Final task prompt:
+I have created a new Github Repo,Please star my github repository: camel-ai/camel
+</pre></div>
+</div>
+<p>Set terminate rule and print the chat message</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">input_msg</span> <span class="o">=</span> <span class="n">role_play_session</span><span class="o">.</span><span class="n">init_chat</span><span class="p">()</span>
+<span class="k">while</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">50</span><span class="p">:</span>
+    <span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">assistant_response</span><span class="p">,</span> <span class="n">user_response</span> <span class="o">=</span> <span class="n">role_play_session</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">input_msg</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">assistant_response</span><span class="o">.</span><span class="n">terminated</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="n">Fore</span><span class="o">.</span><span class="n">GREEN</span>
+            <span class="o">+</span> <span class="p">(</span>
+                <span class="s2">&quot;AI Assistant terminated. Reason: &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">assistant_response</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;termination_reasons&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">break</span>
+    <span class="k">if</span> <span class="n">user_response</span><span class="o">.</span><span class="n">terminated</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="n">Fore</span><span class="o">.</span><span class="n">GREEN</span>
+            <span class="o">+</span> <span class="p">(</span>
+                <span class="s2">&quot;AI User terminated. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Reason: </span><span class="si">{</span><span class="n">user_response</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;termination_reasons&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">break</span>
+
+    <span class="c1"># Print output from the user</span>
+    <span class="n">print_text_animated</span><span class="p">(</span>
+        <span class="n">Fore</span><span class="o">.</span><span class="n">BLUE</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;AI User:</span><span class="se">\n\n</span><span class="si">{</span><span class="n">user_response</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">content</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Print output from the assistant, including any function</span>
+    <span class="c1"># execution information</span>
+    <span class="n">print_text_animated</span><span class="p">(</span><span class="n">Fore</span><span class="o">.</span><span class="n">GREEN</span> <span class="o">+</span> <span class="s2">&quot;AI Assistant:&quot;</span><span class="p">)</span>
+    <span class="n">tool_calls</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">FunctionCallingRecord</span><span class="p">]</span> <span class="o">=</span> <span class="n">assistant_response</span><span class="o">.</span><span class="n">info</span><span class="p">[</span>
+        <span class="s1">&#39;tool_calls&#39;</span>
+    <span class="p">]</span>
+    <span class="k">for</span> <span class="n">func_record</span> <span class="ow">in</span> <span class="n">tool_calls</span><span class="p">:</span>
+        <span class="n">print_text_animated</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">func_record</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">print_text_animated</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">assistant_response</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">content</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="s2">&quot;CAMEL_TASK_DONE&quot;</span> <span class="ow">in</span> <span class="n">user_response</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">content</span><span class="p">:</span>
+        <span class="k">break</span>
+
+    <span class="n">input_msg</span> <span class="o">=</span> <span class="n">assistant_response</span><span class="o">.</span><span class="n">msg</span>
+</pre></div>
+</div>
+<div class="highlight-markdown notranslate"><div class="highlight"><pre><span></span>&gt;&gt;&gt; 
+AI User:
+
+Instruction: Visit the Github repository I created.
+Input: None
+
+
+AI Assistant:
+
+Solution: To visit the Github repository you created, you can simply open a web browser and go to the following URL: https://github.com/camel-ai/camel
+
+Next request.
+
+
+AI User:
+
+Instruction: Click on the &quot;Star&quot; button on the Github repository page.
+Input: None
+
+
+AI Assistant:
+
+Function Execution: github_activity_star_repo_for_authenticated_user
+	Args: {&#39;owner&#39;: &#39;camel-ai&#39;, &#39;repo&#39;: &#39;camel&#39;}
+	Result: {&#39;execution_details&#39;: {&#39;executed&#39;: True}, &#39;response_data&#39;: &#39;&#39;}
+
+Solution: I have successfully starred your Github repository &quot;camel-ai/camel&quot;.
+
+Next request.
+
+
+AI User:
+
+&lt;CAMEL_TASK_DONE&gt;
+
+
+AI Assistant:
+
+Great! The task is completed. If you have any more tasks or need further assistance in the future, feel free to ask. Have a wonderful day!
+</pre></div>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#in-this-notebook-we-demonstrate-the-usage-of-camel-chatagent-and-roleplaying-with-tools-from-composio-allowing-agents-to-seamlessly-interact-with-external-applications">In this notebook, we demonstrate the usage of CAMEL <code class="docutils literal notranslate"><span class="pre">ChatAgent</span></code> and <code class="docutils literal notranslate"><span class="pre">RolePlaying</span></code> with Tools from Composio, allowing agents to seamlessly interact with external applications.</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#install-packages-connect-a-tool">Install Packages &amp; Connect a Tool</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#prepare-your-environment-by-initializing-necessary-imports-from-camel-composio">Prepare your environment by initializing necessary imports from CAMEL &amp; Composio.</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#let-s-run-camel-agents-with-tools-from-composio">Let’s run CAMEL agents with tools from Composio!</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By CAMEL-AI.org
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2023, CAMEL-AI.org.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
