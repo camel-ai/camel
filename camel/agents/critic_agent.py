@@ -26,14 +26,9 @@ from camel.utils import get_first_int, print_text_animated
 
 # AgentOps decorator setting
 try:
-    from agentops import track_agent
+    from agentops import track_agent  # type:ignore [import-untyped]
 except ImportError:
-
-    def track_agent(*args, **kwargs):
-        def noop(f):
-            return f
-
-        return noop
+    from camel.utils import track_agent
 
 
 @track_agent(name="CriticAgent")

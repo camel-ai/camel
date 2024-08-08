@@ -488,7 +488,7 @@ def is_docker_running() -> bool:
 
 
 try:
-    from agentops import ToolEvent, record
+    from agentops import ToolEvent, record  # type:ignore [import-untyped]
 except ImportError:
     ToolEvent = None
 
@@ -533,3 +533,11 @@ class AgentOpsMeta(type):
                 if callable(value) and attr != 'get_tools':
                     dct[attr] = agentops_decorator(value)
         return super().__new__(cls, name, bases, dct)
+
+
+# Mock trak agent decorator for AgentOps
+def track_agent(*args, **kwargs):
+    def noop(f):
+        return f
+
+    return noop
