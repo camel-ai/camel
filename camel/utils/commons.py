@@ -528,7 +528,8 @@ class AgentOpsMeta(type):
     """
 
     def __new__(cls, name, bases, dct):
-        for attr, value in dct.items():
-            if callable(value) and attr != 'get_tools':
-                dct[attr] = agentops_decorator(value)
-        return super(AgentOpsMeta, cls).__new__(cls, name, bases, dct)
+        if ToolEvent:
+            for attr, value in dct.items():
+                if callable(value) and attr != 'get_tools':
+                    dct[attr] = agentops_decorator(value)
+        return super().__new__(cls, name, bases, dct)

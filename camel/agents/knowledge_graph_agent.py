@@ -34,7 +34,7 @@ try:
     from agentops import track_agent
 except ImportError:
 
-    def track_agent():
+    def track_agent(*args, **kwargs):
         def noop(f):
             return f
 
