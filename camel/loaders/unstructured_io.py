@@ -38,21 +38,21 @@ class UnstructuredIO:
     @staticmethod
     def create_element_from_text(
         text: str,
-        element_id: str = str(uuid.uuid4()),
+        element_id: Optional[Union[str, uuid.UUID]] = None,
         embeddings: Optional[List[float]] = None,
         filename: Optional[str] = None,
         file_directory: Optional[str] = None,
         last_modified: Optional[str] = None,
         filetype: Optional[str] = None,
-        parent_id: Optional[str] = None,
+        parent_id: Optional[Union[str, uuid.UUID]] = None,
     ) -> Element:
         r"""Creates a Text element from a given text input, with optional
         metadata and embeddings.
 
         Args:
             text (str): The text content for the element.
-            element_id (str, optional): Unique identifier forthe element.
-                Defaults to a random uuid.
+            element_id (Optional[Union[str, uuid.UUID]], optional): Unique
+                identifier for the element. Defaults to `None`.
             embeddings (Optional[List[float]], optional): A list of float
                 numbers representing the text embeddings. Defaults to `None`.
             filename (Optional[str], optional): The name of the file the
@@ -63,8 +63,8 @@ class UnstructuredIO:
                 the file. Defaults to `None`.
             filetype (Optional[str], optional): The type of the file. Defaults
                 to `None`.
-            parent_id (Optional[str], optional): Theidentifier of the parent
-                element. Defaults to `None`.
+            parent_id (Optional[Union[str, uuid.UUID]], optional): The
+                identifier of the parent element. Defaults to `None`.
 
         Returns:
             Element: An instance of Text with the provided content and
@@ -82,7 +82,7 @@ class UnstructuredIO:
 
         return Text(
             text=text,
-            element_id=element_id,
+            element_id=element_id or uuid.uuid4(),
             metadata=metadata,
             embeddings=embeddings,
         )

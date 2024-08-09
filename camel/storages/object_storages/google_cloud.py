@@ -13,8 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from pathlib import Path, PurePath
 from typing import Tuple
-
-from colorama import Fore
+from warnings import warn
 
 from camel.loaders import File
 from camel.storages.object_storages.base import BaseObjectStorage
@@ -61,18 +60,27 @@ class GoogleCloudStorage(BaseObjectStorage):
 
     @staticmethod
     def canonicalize_path(file_path: PurePath) -> Tuple[str, str]:
+        r"""Canonicalize the path for Google Cloud Storage.
+
+        Args:
+            file_path (PurePath): The path to be canonicalized.
+
+        Returns:
+            Tuple[str, str]: The canonicalized file key and file name.
+        """
         return file_path.as_posix(), file_path.name
 
     def _prepare_and_check(self) -> None:
+        r"""Check privileges and existence of the bucket."""
         from google.auth.exceptions import InvalidOperation
 
         try:
             exists = self._client.exists()
             if not exists and self.create_if_not_exists:
                 self._client.create()
-                print(
-                    f"{Fore.GREEN}Bucket {self._client.name} not found. "
-                    f"Automatically created.{Fore.RESET}"
+                warn(
+                    f"Bucket {self._client.name} not found. Automatically "
+                    f"created."
                 )
             elif not exists:
                 raise FileNotFoundError(
@@ -84,15 +92,36 @@ class GoogleCloudStorage(BaseObjectStorage):
             )
 
     def _put_file(self, file_key: str, file: File) -> None:
+        r"""Put a file to the GCloud bucket.
+
+        Args:
+            file_key (str): The path to the object in the bucket.
+            file (File): The file to be uploaded.
+        """
         self._client.blob(file_key).upload_from_string(file.raw_bytes)
 
     def _get_file(self, file_key: str, filename: str) -> File:
+        r"""Get a file from the GCloud bucket.
+
+        Args:
+            file_key (str): The path to the object in the bucket.
+            filename (str): The name of the file.
+
+        Returns:
+            File: The object from the S3 bucket.
+        """
         raw_bytes = self._client.get_blob(file_key).download_as_bytes()
         return File.create_file_from_raw_bytes(raw_bytes, filename)
 
     def _upload_file(
         self, local_file_path: Path, remote_file_key: str
     ) -> None:
+        r"""Upload a local file to the GCloud bucket.
+
+        Args:
+            local_file_path (Path): The path to the local file to be uploaded.
+            remote_file_key (str): The path to the object in the bucket.
+        """
         self._client.blob(remote_file_key).upload_from_filename(
             local_file_path
         )
@@ -100,9 +129,24 @@ class GoogleCloudStorage(BaseObjectStorage):
     def _download_file(
         self, local_file_path: Path, remote_file_key: str
     ) -> None:
+        r"""Download a file from the GCloud bucket to the local system.
+
+        Args:
+            local_file_path (Path): The path to the local file to be saved.
+            remote_file_key (str): The key of the object in the bucket.
+        """
         self._client.get_blob(remote_file_key).download_to_filename(
             local_file_path
         )
 
     def _object_exists(self, file_key: str) -> bool:
+        r"""
+        Check if the object exists in the GCloud bucket.
+
+        Args:
+            file_key: The key of the object in the bucket.
+
+        Returns:
+            bool: Whether the object exists in the bucket.
+        """
         return self._client.blob(file_key).exists()

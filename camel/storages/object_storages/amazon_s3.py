@@ -15,8 +15,7 @@
 import os
 from pathlib import Path, PurePath
 from typing import Optional, Tuple
-
-from colorama import Fore
+from warnings import warn
 
 from camel.loaders import File
 from camel.storages.object_storages.base import BaseObjectStorage
@@ -54,11 +53,11 @@ class AmazonS3Storage(BaseObjectStorage):
             "AWS_SECRET_ACCESS_KEY"
         )
         if not all([aws_key_id, aws_secret_key]):
-            print(
-                f"{Fore.YELLOW}Warning: AWS access key not configured. "
-                f"Local credentials will be used.{Fore.RESET}"
+            warn(
+                "AWS access key not configured. Local credentials will be "
+                "used."
             )
-            # make all the empty values None
+            # Make all the empty values None
             aws_key_id = None
             aws_secret_key = None
 
@@ -72,22 +71,8 @@ class AmazonS3Storage(BaseObjectStorage):
 
         self._prepare_and_check()
 
-    @staticmethod
-    def canonicalize_path(file_path: PurePath) -> Tuple[str, str]:
-        r"""Canonicalize the path for the S3 bucket.
-
-        Args:
-            file_path (PurePath): The path to be canonicalized.
-
-        Returns:
-            Tuple[str, str]: The canonicalized file key and file name.
-        """
-        return file_path.as_posix(), file_path.name
-
     def _prepare_and_check(self) -> None:
-        r"""Prepare the bucket for future use, and also check if the bucket is
-        accessible.
-        """
+        r"""Check privileges and existence of the bucket."""
         from botocore.exceptions import ClientError
 
         try:
@@ -102,9 +87,9 @@ class AmazonS3Storage(BaseObjectStorage):
             elif error_code == '404':
                 if self._create_if_not_exists:
                     self._client.create_bucket(Bucket=self._bucket_name)
-                    print(
-                        f"{Fore.GREEN}Bucket {self._bucket_name} not found. "
-                        f"Automatically created.{Fore.RESET}"
+                    warn(
+                        f"Bucket {self._bucket_name} not found. Automatically "
+                        f"created."
                     )
                 else:
                     raise FileNotFoundError(
@@ -114,11 +99,23 @@ class AmazonS3Storage(BaseObjectStorage):
             else:
                 raise e
 
-    def _put_file(self, file_key: str, file: File) -> None:
-        r"""Upload a file to the S3 bucket.
+    @staticmethod
+    def canonicalize_path(file_path: PurePath) -> Tuple[str, str]:
+        r"""Canonicalize file path for Amazon S3.
 
         Args:
-            file_key (str): The path to the object in the S3 bucket.
+            file_path (PurePath): The path to be canonicalized.
+
+        Returns:
+            Tuple[str, str]: The canonicalized file key and file name.
+        """
+        return file_path.as_posix(), file_path.name
+
+    def _put_file(self, file_key: str, file: File) -> None:
+        r"""Put a file to the Amazon S3 bucket.
+
+        Args:
+            file_key (str): The path to the object in the bucket.
             file (File): The file to be uploaded.
         """
         self._client.put_object(
@@ -126,10 +123,10 @@ class AmazonS3Storage(BaseObjectStorage):
         )
 
     def _get_file(self, file_key: str, filename: str) -> File:
-        r"""Download a file from the S3 bucket.
+        r"""Get a file from the Amazon S3 bucket.
 
         Args:
-            file_key (str): The path to the object in the S3 bucket.
+            file_key (str): The path to the object in the bucket.
             filename (str): The name of the file.
 
         Returns:
@@ -144,12 +141,11 @@ class AmazonS3Storage(BaseObjectStorage):
     def _upload_file(
         self, local_file_path: Path, remote_file_key: str
     ) -> None:
-        r"""Upload a local file to the S3 bucket.
+        r"""Upload a local file to the Amazon S3 bucket.
 
         Args:
-            local_file_path (Path): The path to the local file to be
-                uploaded.
-            remote_file_key (str): The path to the object in the S3 bucket.
+            local_file_path (Path): The path to the local file to be uploaded.
+            remote_file_key (str): The path to the object in the bucket.
         """
         self._client.upload_file(
             Bucket=self._bucket_name,
@@ -162,12 +158,11 @@ class AmazonS3Storage(BaseObjectStorage):
         local_file_path: Path,
         remote_file_key: str,
     ) -> None:
-        pass
-        r"""Download a file from the S3 bucket to the local system.
+        r"""Download a file from the Amazon S3 bucket to the local system.
 
         Args:
             local_file_path (Path): The path to the local file to be saved.
-            remote_file_key (str): The key of the object in the S3 bucket.
+            remote_file_key (str): The key of the object in the bucket.
         """
         self._client.download_file(
             Bucket=self._bucket_name,
@@ -176,6 +171,15 @@ class AmazonS3Storage(BaseObjectStorage):
         )
 
     def _object_exists(self, file_key: str) -> bool:
+        r"""
+        Check if the object exists in the Amazon S3 bucket.
+
+        Args:
+            file_key: The key of the object in the bucket.
+
+        Returns:
+            bool: Whether the object exists in the bucket.
+        """
         try:
             self._client.head_object(Bucket=self._bucket_name, Key=file_key)
             return True

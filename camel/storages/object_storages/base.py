@@ -35,15 +35,6 @@ class BaseObjectStorage(ABC):
     @staticmethod
     @abstractmethod
     def canonicalize_path(file_path: PurePath) -> Tuple[str, str]:
-        r"""Canonicalize the file path into the file key in the storage, and
-        also return the file name.
-
-        Args:
-            file_path (PurePath): The path to the object in the storage.
-
-        Returns:
-            Tuple[str, str]: The canonicalized file key and file name.
-        """
         pass
 
     def put_file(self, file_path: PurePath, file: File) -> None:
