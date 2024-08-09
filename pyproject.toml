@@ -371,6 +371,7 @@ module = [
     "litellm",
     "pyTelegramBotAPI",
     "discord.py",
+    "docker.*",
     "google.*",
     "google_generativeai",
     "mistralai",
