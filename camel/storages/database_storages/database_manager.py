@@ -14,9 +14,13 @@
 
 from abc import ABC, abstractmethod
 
-# Generic database interface
-class DatabaseInterface(ABC):
+# Generic database manager
+class DatabaseManager(ABC):
     
     @abstractmethod
-    def save_agent_message(self):
+    def save_agent_infos(self):
+        pass
+
+    @abstractmethod
+    def save_message_infos(self):
         pass

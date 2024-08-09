@@ -12,18 +12,12 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from sqlalchemy import create_engine, text
-from sqlalchemy.engine import Engine
-from camel.storages.database_storages import DatabaseInterface
+from .database_factory import DatabaseFactory
+from .database_manager import DatabaseManager
+from .postgresql_manager import PostgreSQLManager
 
-# PostgreSQL adapter
-class PostgreSQLAdapter(DatabaseInterface):
-    
-    def __init__(self, conn_str: str):
-        self.engine: Engine = create_engine(conn_str)
-
-    def save_agent_message(self):
-        try:
-            pass
-        except:
-            pass
+__all__ = [
+    'DatabaseFactory',
+    'DatabaseManager',
+    'PostgreSQLManager',
+]

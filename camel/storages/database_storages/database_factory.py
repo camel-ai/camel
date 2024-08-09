@@ -12,14 +12,30 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from camel.storages.database_storages import (DatabaseInterface, 
-PostgreSQLAdapter)
+from camel.storages.database_storages.database_manager import DatabaseManager
+from camel.storages.database_storages.postgresql_manager import (PostgreSQLManager)
+from sqlalchemy import create_engine
+from sqlalchemy.engine.url import make_url
+from sqlalchemy.exc import OperationalError
+
 # Database factory
 class DatabaseFactory:
     
     @staticmethod
-    def get_database_adapter(db_type: str, **kwargs) -> DatabaseInterface:
-        if db_type == 'postgresql':
-            return PostgreSQLAdapter(**kwargs)
-        else:
-            raise ValueError(f"Unsupported database type: {db_type}")
+    def get_database_manager(conn_string: str) -> DatabaseManager:
+        try:
+            url = make_url(conn_string)
+            db_type = url.get_backend_name() 
+
+            if db_type != 'postgresql':
+                raise ValueError(f"Unsupported database type: {db_type}")
+
+            engine = create_engine(conn_string)
+            connection = engine.connect()
+            connection.close()
+            db_manager = PostgreSQLManager(conn_string)
+            return db_manager
+        
+        except OperationalError as e:
+            return str(e)
+        

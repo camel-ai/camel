@@ -19,6 +19,7 @@ from camel.memories.blocks import ChatHistoryBlock, VectorDBBlock
 from camel.memories.records import ContextRecord, MemoryRecord
 from camel.storages import BaseKeyValueStorage, BaseVectorStorage
 from camel.types import OpenAIBackendRole
+from camel.storages.database_storages import DatabaseFactory
 
 
 class ChatHistoryMemory(AgentMemory):
@@ -39,6 +40,8 @@ class ChatHistoryMemory(AgentMemory):
         context_creator: BaseContextCreator,
         storage: Optional[BaseKeyValueStorage] = None,
         window_size: Optional[int] = None,
+        db_connect_str: Optional[str] = None,
+        db_autosave: Optional[bool] = True,
     ) -> None:
         if window_size is not None and not isinstance(window_size, int):
             raise TypeError("`window_size` must be an integer or None.")
@@ -47,7 +50,10 @@ class ChatHistoryMemory(AgentMemory):
         self._context_creator = context_creator
         self._window_size = window_size
         self._chat_history_block = ChatHistoryBlock(storage=storage)
-
+        if db_connect_str and len(db_connect_str) > 0:
+            self.db_manager = DatabaseFactory.get_database_manager(db_connect_str)
+        self.db_autosave = db_autosave
+        
     def retrieve(self) -> List[ContextRecord]:
         return self._chat_history_block.retrieve(self._window_size)
 
