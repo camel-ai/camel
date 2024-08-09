@@ -426,13 +426,13 @@ files = [
 
 [[package]]
 name = "babel"
-version = "2.15.0"
+version = "2.16.0"
 description = "Internationalization utilities"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "Babel-2.15.0-py3-none-any.whl", hash = "sha256:08706bdad8d0a3413266ab61bd6c34d0c28d6e1e7badf40a2cebe67644e2e1fb"},
-    {file = "babel-2.15.0.tar.gz", hash = "sha256:8daf0e265d05768bc6c7a314cf1321e9a123afc328cc635c18622a2f30a04413"},
+    {file = "babel-2.16.0-py3-none-any.whl", hash = "sha256:368b5b98b37c06b7daf6696391c3240c938b37767d4584413e8438c5c435fa8b"},
+    {file = "babel-2.16.0.tar.gz", hash = "sha256:d1f3554ca26605fe173f3de0c65f750f5a42f924499bf134de6423582298e316"},
 ]
 
 [package.extras]
@@ -4472,13 +4472,13 @@ image = ["Pillow"]
 
 [[package]]
 name = "pdfplumber"
-version = "0.11.2"
+version = "0.11.3"
 description = "Plumb a PDF for detailed information about each char, rectangle, and line."
 optional = true
 python-versions = ">=3.8"
 files = [
-    {file = "pdfplumber-0.11.2-py3-none-any.whl", hash = "sha256:024a7e0f8f4e7bbec8e1f6f694faeaa7b9fe33a0c1f9edd9d3f77298d9146b87"},
-    {file = "pdfplumber-0.11.2.tar.gz", hash = "sha256:f237ce88e9918358f3848f4bae469358ca121ca412098e370908878ec9da699a"},
+    {file = "pdfplumber-0.11.3-py3-none-any.whl", hash = "sha256:4f3e13795d18b2e53dfc4cd667a3bc2478cd6975fc9a188881376265d599c5a6"},
+    {file = "pdfplumber-0.11.3.tar.gz", hash = "sha256:43a3cac33d2135ce00ac59ad5bc3813a33afe0f513d9284c0e8cb6e447ed6e53"},
 ]
 
 [package.dependencies]
