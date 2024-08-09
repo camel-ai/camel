@@ -16,9 +16,13 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 from camel.storages.database_storages.database_manager import DatabaseManager
 
-# PostgreSQL Manager(
+
 class PostgreSQLManager(DatabaseManager):
-    
+    r"""A class for the manages interactions with a PostgreSQL database.
+
+    Args:
+        conn_str (str): The connection string used to connect to the PostgreSQL database.
+    """
     def __init__(self, conn_str: str):
         self.engine: Engine = create_engine(conn_str)
 

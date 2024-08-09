@@ -20,9 +20,25 @@ from sqlalchemy.exc import OperationalError
 
 # Database factory
 class DatabaseFactory:
+    r"""A factory class for creating instances of database managers."""
     
     @staticmethod
     def get_database_manager(conn_string: str) -> DatabaseManager:
+        r"""Creates and returns a database manager based on the connection string.
+
+        This method parses the connection string to determine the
+        type of database being used. If the database type is not
+        PostgreSQL, a ValueError is raised. If the connection cannot
+        be established, the exception is caught and returned as a string.
+
+        Args:
+            conn_string (str): The connection string used to connect to the database.
+
+        Returns:
+            DatabaseManager: An instance of the appropriate database manager.
+            If an OperationalError occurs, the error message is returned
+            as a string.
+        """
         try:
             url = make_url(conn_string)
             db_type = url.get_backend_name() 
