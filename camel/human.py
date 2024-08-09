@@ -135,4 +135,4 @@ class Human:
         human_input = self.get_input()
         content = self.parse_input(human_input)
         message = meta_chat_message.create_new_instance(content)
-        return ChatAgentResponse([message], terminated=False, info={})
+        return ChatAgentResponse(msgs=[message], terminated=False, info={})

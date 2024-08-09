@@ -29,6 +29,18 @@ from camel.storages.graph_storages.graph_element import (
 )
 from camel.types import RoleType
 
+# AgentOps decorator setting
+try:
+    import os
+
+    if os.getenv("AGENTOPS_API_KEY") is not None:
+        from agentops import track_agent
+    else:
+        raise ImportError
+except (ImportError, AttributeError):
+    from camel.utils import track_agent
+
+
 text_prompt = """
 You are tasked with extracting nodes and relationships from given content and 
 structures them into Node and Relationship objects. Here's the outline of what 
@@ -97,6 +109,7 @@ into Node and Relationship objects.
 """
 
 
+@track_agent(name="KnowledgeGraphAgent")
 class KnowledgeGraphAgent(ChatAgent):
     r"""An agent that can extract node and relationship information for
     different entities from given `Element` content.
@@ -224,7 +237,7 @@ class KnowledgeGraphAgent(ChatAgent):
             id, type = match.groups()
             properties = {'source': 'agent_created'}
             if id not in nodes:
-                node = Node(id, type, properties)
+                node = Node(id=id, type=type, properties=properties)
                 if self._validate_node(node):
                     nodes[id] = node
 
@@ -235,8 +248,14 @@ class KnowledgeGraphAgent(ChatAgent):
             if subj_id in nodes and obj_id in nodes:
                 subj = nodes[subj_id]
                 obj = nodes[obj_id]
-                relationship = Relationship(subj, obj, rel_type, properties)
+                relationship = Relationship(
+                    subj=subj, obj=obj, type=rel_type, properties=properties
+                )
                 if self._validate_relationship(relationship):
                     relationships.append(relationship)
 
-        return GraphElement(list(nodes.values()), relationships, self.element)
+        return GraphElement(
+            nodes=list(nodes.values()),
+            relationships=relationships,
+            source=self.element,
+        )

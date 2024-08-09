@@ -27,7 +27,19 @@ from camel.models import BaseModelBackend
 from camel.responses import ChatAgentResponse
 from camel.utils import print_text_animated
 
+# AgentOps decorator setting
+try:
+    import os
 
+    if os.getenv("AGENTOPS_API_KEY") is not None:
+        from agentops import track_agent
+    else:
+        raise ImportError
+except (ImportError, AttributeError):
+    from camel.utils import track_agent
+
+
+@track_agent(name="EmbodiedAgent")
 class EmbodiedAgent(ChatAgent):
     r"""Class for managing conversations of CAMEL Embodied Agents.
 
@@ -120,10 +132,8 @@ class EmbodiedAgent(ChatAgent):
         else:
             return []
 
-    def step(
-        self,
-        input_message: BaseMessage,
-    ) -> ChatAgentResponse:
+    # ruff: noqa: E501
+    def step(self, input_message: BaseMessage) -> ChatAgentResponse:  # type: ignore[override]
         r"""Performs a step in the conversation.
 
         Args:
@@ -184,4 +194,8 @@ class EmbodiedAgent(ChatAgent):
             input_message.meta_dict,
             content,
         )
-        return ChatAgentResponse([message], response.terminated, response.info)
+        return ChatAgentResponse(
+            msgs=[message],
+            terminated=response.terminated,
+            info=response.info,
+        )

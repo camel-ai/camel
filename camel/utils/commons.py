@@ -20,13 +20,26 @@ import subprocess
 import time
 import zipfile
 from functools import wraps
-from typing import Any, Callable, List, Optional, Set, TypeVar, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Set,
+    TypeVar,
+    cast,
+)
 from urllib.parse import urlparse
 
 import pydantic
 import requests
+from pydantic import BaseModel
 
 from camel.types import TaskType
+
+from .constants import Constants
 
 F = TypeVar('F', bound=Callable[..., Any])
 
@@ -303,7 +316,97 @@ def to_pascal(snake: str) -> str:
     )
 
 
-PYDANTIC_V2 = pydantic.VERSION.startswith("2.")
+def get_pydantic_major_version() -> int:
+    r"""Get the major version of Pydantic.
+
+    Returns:
+        int: The major version number of Pydantic if installed, otherwise 0.
+    """
+    try:
+        return int(pydantic.__version__.split(".")[0])
+    except ImportError:
+        return 0
+
+
+def get_pydantic_object_schema(pydantic_params: BaseModel) -> Dict:
+    r"""Get the JSON schema of a Pydantic model.
+
+    Args:
+        pydantic_params (BaseModel): The Pydantic model to retrieve the schema
+            for.
+
+    Returns:
+        dict: The JSON schema of the Pydantic model.
+    """
+    return pydantic_params.model_json_schema()
+
+
+def func_string_to_callable(code: str):
+    r"""Convert a function code string to a callable function object.
+
+    Args:
+        code (str): The function code as a string.
+
+    Returns:
+        Callable[..., Any]: The callable function object extracted from the
+            code string.
+    """
+    local_vars: Mapping[str, object] = {}
+    exec(code, globals(), local_vars)
+    func = local_vars.get(Constants.FUNC_NAME_FOR_STRUCTURE_OUTPUT)
+    return func
+
+
+def json_to_function_code(json_obj: Dict) -> str:
+    r"""Generate a Python function code from a JSON schema.
+
+    Args:
+        json_obj (dict): The JSON schema object containing properties and
+            required fields, and json format is follow openai tools schema
+
+    Returns:
+        str: The generated Python function code as a string.
+    """
+    properties = json_obj.get('properties', {})
+    required = json_obj.get('required', [])
+
+    if not properties or not required:
+        raise ValueError(
+            "JSON schema must contain 'properties' and 'required' fields"
+        )
+
+    args = []
+    docstring_args = []
+    return_keys = []
+
+    for prop in required:
+        description = properties[prop]['description']
+        prop_type = properties[prop]['type']
+        python_type = 'str' if prop_type == 'string' else prop_type
+        args.append(f"{prop}: {python_type}")
+        docstring_args.append(
+            f"        {prop} ({python_type}): {description}."
+        )
+        return_keys.append(prop)
+
+    # extract entity of schema
+    args_str = ", ".join(args)
+    docstring_args_str = "\n".join(docstring_args)
+    return_keys_str = ", ".join(return_keys)
+
+    # function template
+    function_code = f'''
+def {Constants.FUNC_NAME_FOR_STRUCTURE_OUTPUT}({args_str}):
+    r"""Return response with a specified json format.
+    Args:
+{docstring_args_str}
+    Returns:
+        Dict: A dictionary containing {return_keys_str}.
+    """
+    return {{{", ".join([f'"{prop}": {prop}' for prop in required])}}}
+    '''
+
+    return function_code
 
 
 def text_extract_from_web(url: str) -> str:
@@ -382,3 +485,65 @@ def is_docker_running() -> bool:
         return result.returncode == 0
     except (subprocess.CalledProcessError, FileNotFoundError):
         return False
+
+
+try:
+    if os.getenv("AGENTOPS_API_KEY") is not None:
+        from agentops import (
+            ToolEvent,
+            record,
+        )
+    else:
+        raise ImportError
+except (ImportError, AttributeError):
+    ToolEvent = None
+
+
+def agentops_decorator(func):
+    r"""Decorator that records the execution of a function if ToolEvent is
+    available.
+
+    Parameters:
+        func (callable): The function to be decorated.
+
+    Returns:
+        callable: The wrapped function which records its execution details.
+    """
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if ToolEvent:
+            tool_event = ToolEvent(name=func.__name__, params=kwargs)
+            result = func(*args, **kwargs)
+            tool_event.returns = result
+            record(tool_event)
+            return result
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
+class AgentOpsMeta(type):
+    r"""Metaclass that automatically decorates all callable attributes with
+    the agentops_decorator,
+    except for the 'get_tools' method.
+
+    Methods:
+    __new__(cls, name, bases, dct):
+        Creates a new class with decorated methods.
+    """
+
+    def __new__(cls, name, bases, dct):
+        if ToolEvent:
+            for attr, value in dct.items():
+                if callable(value) and attr != 'get_tools':
+                    dct[attr] = agentops_decorator(value)
+        return super().__new__(cls, name, bases, dct)
+
+
+# Mock trak agent decorator for AgentOps
+def track_agent(*args, **kwargs):
+    def noop(f):
+        return f
+
+    return noop
