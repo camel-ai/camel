@@ -33,6 +33,8 @@ class AmazonS3Storage(BaseObjectStorage):
             can be skipped if logged in with AWS CLI. Defaults to None.
         secret_access_key (Optional[str], optional): The AWS secret access key,
             can be skipped if logged in with AWS CLI. Defaults to None.
+        anonymous (bool, optional): Whether to use anonymous access. Defaults
+            to False.
 
     References:
         https://aws.amazon.com/pm/serv-s3
@@ -44,6 +46,7 @@ class AmazonS3Storage(BaseObjectStorage):
         create_if_not_exists: bool = True,
         access_key_id: Optional[str] = None,
         secret_access_key: Optional[str] = None,
+        anonymous: bool = False,
     ) -> None:
         self._bucket_name = bucket_name
         self._create_if_not_exists = create_if_not_exists
@@ -52,7 +55,7 @@ class AmazonS3Storage(BaseObjectStorage):
         aws_secret_key = secret_access_key or os.getenv(
             "AWS_SECRET_ACCESS_KEY"
         )
-        if not all([aws_key_id, aws_secret_key]):
+        if not all([aws_key_id, aws_secret_key]) and not anonymous:
             warn(
                 "AWS access key not configured. Local credentials will be "
                 "used."
@@ -62,18 +65,25 @@ class AmazonS3Storage(BaseObjectStorage):
             aws_secret_key = None
 
         import boto3
+        from botocore import UNSIGNED
+        from botocore.config import Config
 
-        self._client = boto3.client(
-            "s3",
-            aws_access_key_id=aws_key_id,
-            aws_secret_access_key=aws_secret_key,
-        )
+        if not anonymous:
+            self._client = boto3.client(
+                "s3",
+                aws_access_key_id=aws_key_id,
+                aws_secret_access_key=aws_secret_key,
+            )
+        else:
+            self._client = boto3.client(
+                "s3", config=Config(signature_version=UNSIGNED)
+            )
 
         self._prepare_and_check()
 
     def _prepare_and_check(self) -> None:
         r"""Check privileges and existence of the bucket."""
-        from botocore.exceptions import ClientError
+        from botocore.exceptions import ClientError, NoCredentialsError
 
         try:
             self._client.head_bucket(Bucket=self._bucket_name)
@@ -98,6 +108,8 @@ class AmazonS3Storage(BaseObjectStorage):
                     )
             else:
                 raise e
+        except NoCredentialsError as e:
+            raise PermissionError("No AWS credentials found.") from e
 
     @staticmethod
     def canonicalize_path(file_path: PurePath) -> Tuple[str, str]:
