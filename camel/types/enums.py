@@ -448,6 +448,7 @@ class ModelPlatformType(Enum):
     GEMINI = "gemini"
     VLLM = "vllm"
     MISTRAL = "mistral"
+    INTERNLM = "internlm"
 
     @property
     def is_openai(self) -> bool:
@@ -503,6 +504,11 @@ class ModelPlatformType(Enum):
     def is_gemini(self) -> bool:
         r"""Returns whether this platform is Gemini."""
         return self is ModelPlatformType.GEMINI
+
+    @property
+    def is_internlm(self) -> bool:
+        r"""Returns whether this platform is InternLM."""
+        return self in [ModelPlatformType.INTERNLM]
 
 
 class AudioModelType(Enum):
