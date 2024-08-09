@@ -32,7 +32,7 @@ class UnstructuredIO:
     services like S3 and Azure for data connection.
 
     References:
-        https://unstructured-io.github.io/unstructured/
+        https://docs.unstructured.io/
     """
 
     @staticmethod

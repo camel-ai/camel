@@ -29,13 +29,13 @@ def unstructured_instance() -> UnstructuredIO:
 def test_create_element_from_text(unstructured_instance: UnstructuredIO):
     # Input parameters
     test_text = "Hello, World!"
-    test_id = str(uuid.uuid4())
+    test_id = uuid.uuid4()
     test_embeddings = [0.1, 0.2, 0.3]
     test_filename = "testfile.txt"
     test_directory = "/test/directory"
     test_modified = "2024-04-01"
     test_filetype = "txt"
-    test_parent_id = str(uuid.uuid4())
+    test_parent_id = uuid.uuid4()
 
     # Expected Metadata construction
     expected_metadata = {
@@ -135,12 +135,22 @@ def test_stage_elements_for_csv(unstructured_instance: UnstructuredIO):
     staged_element: Any = unstructured_instance.stage_elements(
         elements=test_elements, stage_type="stage_for_baseplate"
     )
-    assert staged_element['rows'][0]['metadata'] == {
-        'filetype': 'text/html',
-        'languages': ['eng'],
-        'url': 'https://www.cnn.com/2023/01/30/sport/'
-        'empire-state-building-green-philadelphia-eagles-spt-'
-        'intl/index.html',
+    assert staged_element['rows'][0] == {
+        'data': {
+            'type': 'UncategorizedText',
+            'element_id': 'e78902d05b0cb1e4c38fc7a79db450d5',
+            'text': 'CNN\n        \xa0—',
+        },
+        'metadata': {
+            'filetype': 'text/html',
+            'languages': ['eng'],
+            'page_number': 1,
+            'url': 'https://www.cnn.com/2023/01/30/sport/'
+            'empire-state-building-green-philadelphia-eagles-spt-'
+            'intl/index.html',
+            'emphasized_text_contents': ['CNN'],
+            'emphasized_text_tags': ['span'],
+        },
     }
 
     # Test with an invalid stage option (should raise ValueError)
