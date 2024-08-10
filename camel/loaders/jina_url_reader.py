@@ -14,6 +14,7 @@
 
 import os
 from typing import Any, Optional
+from warnings import warn
 
 from camel.types.enums import JinaReturnFormat
 
@@ -54,11 +55,10 @@ class JinaURLReader:
         **kwargs: Any,
     ) -> None:
         api_key = api_key or os.getenv('JINA_API_KEY')
-        if api_key is None:
-            print(
-                "[JinaURLReader] JINA_API_KEY not set. This will result in a "
-                "low rate limit of Jina URL Reader. Get API key here: "
-                "https://jina.ai/reader."
+        if not api_key:
+            warn(
+                "JINA_API_KEY not set. This will result in a low rate limit "
+                "of Jina URL Reader. Get API key here: https://jina.ai/reader."
             )
 
         # if the following field not provided, it will be None
@@ -94,6 +94,6 @@ class JinaURLReader:
             resp = requests.get(full_url, headers=self._headers)
             resp.raise_for_status()
         except Exception as e:
-            raise Exception(f"Failed to read content from {url}: {e}") from e
+            raise ValueError(f"Failed to read content from {url}: {e}") from e
 
         return resp.text
