@@ -19,7 +19,7 @@ from camel.types import ModelPlatformType
 
 ollama_model = ModelFactory.create(
     model_platform=ModelPlatformType.OLLAMA,
-    model_type="camelai-llama3",
+    model_type="llama3",
     url="http://localhost:11434/v1",
     model_config_dict={"temperature": 0.4},
 )
