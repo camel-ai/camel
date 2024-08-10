@@ -23,21 +23,27 @@ from camel.storages.object_storages.base import BaseObjectStorage
 
 class AmazonS3Storage(BaseObjectStorage):
     r"""A class to connect with AWS S3 object storage to put and get objects
-    from one S3 bucket.
+    from one S3 bucket. The class will first try to use the credentials passed
+    as arguments, if not provided, it will look for the environment variables
+    `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`. If none of these are
+    provided, it will try to use the local credentials (will be created if
+    logged in with AWS CLI).
 
     Args:
         bucket_name (str): The name of the S3 bucket.
         create_if_not_exists (bool, optional): Whether to create the bucket if
             it does not exist. Defaults to True.
-        access_key_id (Optional[str], optional): The AWS access key ID,
-            can be skipped if logged in with AWS CLI. Defaults to None.
-        secret_access_key (Optional[str], optional): The AWS secret access key,
-            can be skipped if logged in with AWS CLI. Defaults to None.
+        access_key_id (Optional[str], optional): The AWS access key ID.
+            Defaults to None.
+        secret_access_key (Optional[str], optional): The AWS secret access key.
+            Defaults to None.
         anonymous (bool, optional): Whether to use anonymous access. Defaults
             to False.
 
     References:
-        https://aws.amazon.com/pm/serv-s3
+        https://aws.amazon.com/pm/serv-s3/
+
+        https://aws.amazon.com/cli/
     """
 
     def __init__(
