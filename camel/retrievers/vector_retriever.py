@@ -11,7 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import os
 from typing import Any, Dict, List, Optional
+from urllib.parse import urlparse
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
 from camel.loaders import UnstructuredIO
@@ -62,11 +64,11 @@ class VectorRetriever(BaseRetriever):
                 vector_dim=self.embedding_model.get_output_dim()
             )
         )
-        self.unstructured_modules: UnstructuredIO = UnstructuredIO()
+        self.uio: UnstructuredIO = UnstructuredIO()
 
     def process(
         self,
-        content_input_path: str,
+        content: str,
         chunk_type: str = "chunk_by_title",
         **kwargs: Any,
     ) -> None:
@@ -75,16 +77,19 @@ class VectorRetriever(BaseRetriever):
         vector storage.
 
         Args:
-            content_input_path (str): File path or URL of the content to be
-                processed.
+            contents (str): Local file path, remote URL or string content.
             chunk_type (str): Type of chunking going to apply. Defaults to
                 "chunk_by_title".
             **kwargs (Any): Additional keyword arguments for content parsing.
         """
-        elements = self.unstructured_modules.parse_file_or_url(
-            content_input_path, **kwargs
-        )
-        chunks = self.unstructured_modules.chunk_elements(
+        # Check if the content is URL
+        parsed_url = urlparse(content)
+        is_url = all([parsed_url.scheme, parsed_url.netloc])
+        if is_url or os.path.exists(content):
+            elements = self.uio.parse_file_or_url(content, **kwargs)
+        else:
+            elements = [self.uio.create_element_from_text(text=content)]
+        chunks = self.uio.chunk_elements(
             chunk_type=chunk_type, elements=elements
         )
         # Iterate to process and store embeddings, set batch of 50
@@ -98,7 +103,7 @@ class VectorRetriever(BaseRetriever):
             # Prepare the payload for each vector record, includes the content
             # path, chunk metadata, and chunk text
             for vector, chunk in zip(batch_vectors, batch_chunks):
-                content_path_info = {"content path": content_input_path}
+                content_path_info = {"content path": content}
                 chunk_metadata = {"metadata": chunk.metadata.to_dict()}
                 chunk_text = {"text": str(chunk)}
                 combined_dict = {
