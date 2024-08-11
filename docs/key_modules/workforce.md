@@ -1,6 +1,8 @@
 # Workforce
 
-> *Workforce is a system where multiple agents/role-playing systems work together to solve tasks. By using Workforce, users can quickly set up a multi-agent task solving system with customized configurations. In this section, we will give a brief view on the architecture of workforce, and how you can configure and utilize it to solve problems.*
+> Workforce is a system where multiple agents/role-playing systems work together to solve tasks. By using Workforce, users can quickly set up a multi-agent task solving system with customized configurations. In this section, we will give a brief view on the architecture of workforce, and how you can configure and utilize it to solve problems.
+
+> *The current Workforce in CAMEL is still in beta version. We are working on the stable version of Workforce, which will have a simpler user interface and better performance. If you have any suggestions or questions, please feel free to contact us or [create an issue](https://github.com/camel-ai/camel/issues/new?assignees=lightaime&labels=bug&projects=&template=bug_report.yml&title=%5BBUG%5D+).*
 
 ## Architecture
 
@@ -31,104 +33,16 @@ For now, if the task has already been decomposed a lot of times, the manager wil
 
 When all the subtasks are finished, their results will be composed into a single, comprehensive result and then get updated into the main task instance and returned to the user.
 
-## A Full Demo of Workforce
+### A Diagram with Simple Example
 
-Below is a comprehensive example of the using of workforce.
+Here is a diagram illustrating the workflow with a simple example:
 
-```python
-from camel.agents.chat_agent import ChatAgent
-from camel.configs.openai_config import ChatGPTConfig
-from camel.messages.base import BaseMessage
-from camel.models import ModelFactory
-from camel.tasks.task import Task
-from camel.toolkits import MAP_FUNCS, SEARCH_FUNCS, WEATHER_FUNCS
-from camel.types import ModelPlatformType, ModelType
-from camel.workforce.manager_node import ManagerNode
-from camel.workforce.role_playing_node import RolePlayingNode
-from camel.workforce.single_agent_node import SingleAgentNode
-from camel.workforce.workforce import Workforce
+![](./workforce.jpg)
 
-def main():
-    guide_sysmsg = BaseMessage.make_assistant_message(
-        role_name="tour guide",
-        content="You have to lead everyone to have fun",
-    )
 
-    planner_sysmsg = BaseMessage.make_assistant_message(
-        role_name="planner",
-        content="good at tour plan.",
-    )
+## How to use Workforce: A Step-by-Step Guide
 
-    guide_agent = ChatAgent(guide_sysmsg)
-    planner_agent = ChatAgent(planner_sysmsg)
-
-    guide_worker_node = SingleAgentNode('tour guide', guide_agent)
-    planner_worker_node = SingleAgentNode('planner', planner_agent)
-
-    function_list = [
-        *SEARCH_FUNCS,
-        *WEATHER_FUNCS,
-        *MAP_FUNCS,
-    ]
-    user_model_config = ChatGPTConfig(temperature=0.0)
-    assistant_model_config = ChatGPTConfig(
-        tools=function_list,
-        temperature=0.0,
-    )
-    model_platform = ModelPlatformType.OPENAI
-    model_type = ModelType.GPT_3_5_TURBO
-    assistant_role_name = "Searcher"
-    user_role_name = "Professor"
-    assistant_agent_kwargs = dict(
-        model=ModelFactory.create(
-            model_platform=model_platform,
-            model_type=model_type,
-            model_config_dict=assistant_model_config.__dict__,
-        ),
-        tools=function_list,
-    )
-    user_agent_kwargs = dict(
-        model=ModelFactory.create(
-            model_platform=model_platform,
-            model_type=model_type,
-            model_config_dict=user_model_config.__dict__,
-        ),
-    )
-    research_rp_worker_node = RolePlayingNode(
-        'research Group',
-        assistant_role_name,
-        user_role_name,
-        assistant_agent_kwargs,
-        user_agent_kwargs,
-        1,
-    )
-
-    human_task = Task(
-        content="research history of Paris and plan a tour.",
-        id='0',
-    )
-
-    root_node = ManagerNode(
-        description='a travel group',
-        children=[
-            guide_worker_node,
-            planner_worker_node,
-            research_rp_worker_node,
-        ],
-    )
-
-    workforce = Workforce(root_node)
-    task = workforce.process_task(human_task)
-
-    print('Final Result of Origin task:\n', task.result)
-
-if __name__ == "__main__":
-    main()
-```
-
-Yes, it’s a long example. No worries though! We will take the whole process apart and explain these one by one. It’s not that complicated as it looks.
-
-## Demo Explanation: Step by Step
+On this part, we will give you a step-by-step guide on how to use workforce to solve a task. You can see the full example used [here]().
 
 ### Configuration of Worker Nodes
 
@@ -252,4 +166,54 @@ Finally, we can get the result of the task by checking `task.result`.
 
 ```python
 print('Final Result of Origin task:\n', task.result)
+```
+
+Here is one example of the output:
+
+```
+Here is the finalized tour plan for your visit to historical sites in Paris, ensuring all logistics are accounted for:
+
+**Tour Itinerary:**
+
+**8:30 AM - 9:30 AM: Eiffel Tower**
+- Start your day early at the Eiffel Tower. Allocate about 1 hour to explore the area and take photos. Consider pre-booking tickets to avoid long queues.
+
+**10:00 AM - 10:30 AM: Arc de Triomphe**
+- Travel to the Arc de Triomphe (approximately 30 minutes by walking or metro). Spend about 30 minutes here to admire the architecture and take in the views from the top if you choose to climb.
+
+**11:00 AM - 12:30 PM: Montmartre (Basilica of the Sacré-Cœur)**
+- Head to Montmartre (about 30 minutes travel time). Spend around 1.5 hours exploring the Basilica and the charming streets of this historic district.
+
+**1:00 PM - 2:00 PM: Lunch**
+- Enjoy lunch at a nearby café in Montmartre or head towards the Panthéon area.
+
+**2:30 PM - 3:30 PM: Panthéon**
+- After lunch, visit the Panthéon (approximately 30 minutes travel time). Allocate about 1 hour to explore this mausoleum and its impressive architecture.
+
+**4:00 PM - 5:00 PM: Sainte-Chapelle**
+- Travel to Sainte-Chapelle (about 15 minutes). Spend around 1 hour admiring the stunning stained glass windows.
+
+**5:15 PM - 6:15 PM: Notre-Dame Cathedral**
+- Walk to Notre-Dame Cathedral (approximately 5 minutes). Spend about 1 hour here. Note that access may be limited due to restoration work.
+
+**6:30 PM - 7:00 PM: Place de la Bastille**
+- Head to Place de la Bastille (about 15 minutes). Spend around 30 minutes exploring the square and its significance.
+
+**7:15 PM - 8:00 PM: Les Invalides**
+- Travel to Les Invalides (approximately 20 minutes). Allocate about 45 minutes to explore the complex and visit Napoleon's tomb.
+
+**8:30 PM - 10:00 PM: The Louvre Museum**
+- Head to The Louvre Museum (about 20 minutes). Spend around 1.5 hours exploring the museum. If possible, book a timed entry ticket to avoid long waits.
+
+**10:30 PM - 11:45 PM: Palace of Versailles**
+- End your day with a visit to the Palace of Versailles. Note that this may require a separate trip, as it is located outside of central Paris. Allocate sufficient time for travel (approximately 1 hour) and plan to arrive before closing.
+
+**Transportation:**
+- Use a combination of walking and public transport (metro and buses) for efficient travel between sites. Consider purchasing a day pass for unlimited travel on public transport.
+
+**Additional Notes:**
+- Check the opening hours and any potential closures in advance to ensure a smooth experience.
+- Pre-book tickets for popular sites to avoid long queues.
+
+This itinerary allows you to efficiently visit each site while enjoying the rich history and culture of Paris. 
 ```
