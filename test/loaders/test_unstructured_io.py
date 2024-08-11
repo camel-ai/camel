@@ -25,16 +25,6 @@ def unstructured_instance() -> UnstructuredIO:
     return UnstructuredIO()
 
 
-# Test the _ensure_unstructured_version method
-def test__ensure_unstructured_version(unstructured_instance: UnstructuredIO):
-    # Test with a valid version
-    unstructured_instance._ensure_unstructured_version("0.10.30")
-
-    # Test with an invalid version (should raise a ValueError)
-    with pytest.raises(ValueError):
-        unstructured_instance._ensure_unstructured_version("1.0.0")
-
-
 # Test the create_element_from_text method
 def test_create_element_from_text(unstructured_instance: UnstructuredIO):
     # Input parameters

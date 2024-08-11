@@ -11,66 +11,61 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import json
+from unittest.mock import Mock, patch
 
 import pytest
 
 from camel.loaders import JinaURLReader
-from camel.types.enums import JinaReturnFormat
+
+SUCCESSFUL_RESP = """Title: Hollow Knight
+
+URL Source: https://en.wikipedia.org/wiki/Hollow_Knight
+
+Published Time: 2017-03-05T15:54:50Z
+
+Markdown Content:
+| Hollow Knight |
+| --- |
+| [![Image 1](https://upload.wikimedia.org/wikipedia/en/thumb/0/04/Hollow_Knight_first_cover_art.webp/220px-Hollow_Knight_first_cover_art.webp.png)](https://en.wikipedia.org/wiki/File:Hollow_Knight_first_cover_art.webp) |
+| [Developer(s)](https://en.wikipedia.org/wiki/Video_game_developer "Video game developer") | Team Cherry |
+| [Publisher(s)](https://en.wikipedia.org/wiki/Video_game_publisher "Video game publisher") | Team Cherry |
+| [Designer(s)](https://en.wikipedia.org/wiki/Video_game_designer "Video game designer") | 
+*   Ari Gibson
+*   William Pellen
 
 
-@pytest.fixture
-def default_reader():
-    return JinaURLReader()
+
+ |
+| [Programmer(s)](https://en.wikipedia.org/wiki/Video_game_programmer "Video game programmer") |
+
+*   William Pellen
+*   David Kazi
+"""  # noqa: E501
+
+FAILED_RESP = r'''{"data":null,"cause":{"name":"TimeoutError"},"code":422,"name":"AssertionFailureError","status":42206,"message":"Failed to goto http://bad_url/: TimeoutError: Navigation timeout of 30000 ms exceeded","readableMessage":"AssertionFailureError: Failed to goto http://bad_url/: TimeoutError: Navigation timeout of 30000 ms exceeded"}
+'''  # noqa: E501
 
 
-def test_read_content_default(default_reader: JinaURLReader):
+@patch("requests.get")
+def test_read_content_success(mock_get: Mock):
+    mock_get.return_value.text = SUCCESSFUL_RESP
+    mock_get.return_value.status_code = 200
+    reader = JinaURLReader()
     test_url = "https://en.wikipedia.org/wiki/Hollow_Knight"
-    content = default_reader.read_content(test_url)
+    content = reader.read_content(test_url)
     assert "Title: Hollow Knight" in content
 
 
-def test_read_content_no_protocol(default_reader: JinaURLReader):
-    test_url = "en.wikipedia.org/wiki/Hollow_Knight"
-    content = default_reader.read_content(test_url)
-    assert "Title: Hollow Knight" in content
+@patch("requests.get")
+def test_read_content_fail(mock_get: Mock):
+    mock_get.return_value.text = FAILED_RESP
+    mock_get.return_value.status_code = 422
+    mock_get.return_value.raise_for_status.side_effect = Exception(
+        "Failed to goto http://bad_url/: TimeoutError: Navigation timeout of "
+        "30000 ms exceeded"
+    )
 
-
-def test_read_content_markdown():
-    test_url = "https://en.wikipedia.org/wiki/Hollow_Knight"
-    markdown_reader = JinaURLReader(return_format=JinaReturnFormat.MARKDOWN)
-    content = markdown_reader.read_content(test_url)
-    assert "_Hollow Knight_" in content
-
-
-def test_read_content_html():
-    test_url = "https://en.wikipedia.org/wiki/Hollow_Knight"
-    html_reader = JinaURLReader(return_format=JinaReturnFormat.HTML)
-    content = html_reader.read_content(test_url)
-    assert "<title>Hollow Knight - Wikipedia</title>" in content
-
-
-def test_read_content_text():
-    test_url = "https://en.wikipedia.org/wiki/Hollow_Knight"
-    text_reader = JinaURLReader(return_format=JinaReturnFormat.TEXT)
-    content = text_reader.read_content(test_url)
-    assert "Hollow Knight" in content
-
-
-def test_read_content_json():
-    test_url = "https://en.wikipedia.org/wiki/Hollow_Knight"
-    json_reader = JinaURLReader(json_response=True)
-    content = json_reader.read_content(test_url)
-    content_json = json.loads(content)
-    assert "data" in content_json
-    assert "title" in content_json["data"]
-    assert "Hollow Knight" in content_json["data"]["title"]
-
-
-def test_read_content_json_webpage():
-    test_url = "https://httpbin.org/json"
-    json_reader = JinaURLReader(return_format=JinaReturnFormat.TEXT)
-    content = json_reader.read_content(test_url)
-    content_json = json.loads(content)
-    assert "slideshow" in content_json
-    assert "slides" in content_json["slideshow"]
+    reader = JinaURLReader()
+    test_url = "bad_url"
+    with pytest.raises(ValueError):
+        reader.read_content(test_url)

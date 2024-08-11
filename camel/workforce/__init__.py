@@ -12,14 +12,12 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from .base_io import File
-from .firecrawl_reader import Firecrawl
-from .jina_url_reader import JinaURLReader
-from .unstructured_io import UnstructuredIO
+from .base import BaseNode
+from .manager_node import ManagerNode
+from .worker_node import WorkerNode
 
 __all__ = [
-    'File',
-    'UnstructuredIO',
-    'JinaURLReader',
-    'Firecrawl',
+    "BaseNode",
+    "WorkerNode",
+    "ManagerNode",
 ]

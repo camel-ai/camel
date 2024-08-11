@@ -196,8 +196,8 @@ class Task(BaseModel):
         template: TextPrompt = TASK_DECOMPOSE_PROMPT,
         task_parser: Callable[[str, str], List["Task"]] = parse_response,
     ) -> List["Task"]:
-        r"""Decompose a task to a list of sub-tasks.
-            It can be used for data generation and planner of agent.
+        r"""Decompose a task to a list of sub-tasks. It can be used for data
+        generation and planner of agent.
 
         Args:
             agent (ChatAgent): An agent that used to decompose the task.
@@ -208,7 +208,7 @@ class Task(BaseModel):
                 the default parse_response will be used.
 
         Returns:
-            List[Task]: A list of tasks which are :obj:`Task` instance.
+            List[Task]: A list of tasks which are :obj:`Task` instances.
         """
 
         role_name = agent.role_name
@@ -379,7 +379,6 @@ class TaskManager:
     ) -> Optional[Task]:
         r"""Evolve a task to a new task.
             Evolve is only used for data generation.
-
         Args:
             task (Task): A given task.
             agent (ChatAgent): An agent that used to evolve the task.
