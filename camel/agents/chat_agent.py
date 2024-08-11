@@ -180,7 +180,8 @@ class ChatAgent(BaseAgent):
             self.model_token_limit,
         )
         self.memory: AgentMemory = memory or ChatHistoryMemory(
-            context_creator, window_size=message_window_size
+            context_creator, window_size=message_window_size, 
+            db_connect_str='postgresql://username:password@localhost:5432/test'
         )
 
         self.terminated: bool = False
@@ -442,7 +443,6 @@ class ChatAgent(BaseAgent):
         if output_schema and self.model_type.is_openai:
             for base_message_item in output_messages:
                 base_message_item.content = str(info['tool_calls'][-1].result)
-
         return ChatAgentResponse(
             msgs=output_messages, terminated=self.terminated, info=info
         )
