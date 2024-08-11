@@ -280,18 +280,16 @@ class AutoRetriever:
                     # Process and store the content to the vector storage
                     vr = VectorRetriever(
                         storage=vector_storage_instance,
-                        similarity_threshold=similarity_threshold,
                         embedding_model=self.embedding_model,
                     )
                     vr.process(content_input_path)
                 else:
                     vr = VectorRetriever(
                         storage=vector_storage_instance,
-                        similarity_threshold=similarity_threshold,
                         embedding_model=self.embedding_model,
                     )
                 # Retrieve info by given query from the vector storage
-                retrieved_info = vr.query(query, top_k)
+                retrieved_info = vr.query(query, top_k, similarity_threshold)
                 all_retrieved_info.extend(retrieved_info)
             except Exception as e:
                 raise RuntimeError(

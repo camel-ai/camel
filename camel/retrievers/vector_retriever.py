@@ -38,24 +38,18 @@ class VectorRetriever(BaseRetriever):
         embedding_model (BaseEmbedding): Embedding model used to generate
             vector embeddings.
         storage (BaseVectorStorage): Vector storage to query.
-        similarity_threshold (float, optional): The similarity threshold
-            for filtering results. Defaults to `DEFAULT_SIMILARITY_THRESHOLD`.
         unstructured_modules (UnstructuredIO): A module for parsing files and
             URLs and chunking content based on specified parameters.
     """
 
     def __init__(
         self,
-        similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
         embedding_model: Optional[BaseEmbedding] = None,
         storage: Optional[BaseVectorStorage] = None,
     ) -> None:
         r"""Initializes the retriever class with an optional embedding model.
 
         Args:
-            similarity_threshold (float, optional): The similarity threshold
-                for filtering results. Defaults to
-                `DEFAULT_SIMILARITY_THRESHOLD`.
             embedding_model (Optional[BaseEmbedding]): The embedding model
                 instance. Defaults to `OpenAIEmbedding` if not provided.
             storage (BaseVectorStorage): Vector storage to query.
@@ -68,7 +62,6 @@ class VectorRetriever(BaseRetriever):
                 vector_dim=self.embedding_model.get_output_dim()
             )
         )
-        self.similarity_threshold = similarity_threshold
         self.unstructured_modules: UnstructuredIO = UnstructuredIO()
 
     def process(
@@ -124,12 +117,16 @@ class VectorRetriever(BaseRetriever):
         self,
         query: str,
         top_k: int = DEFAULT_TOP_K_RESULTS,
+        similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
     ) -> List[Dict[str, Any]]:
         r"""Executes a query in vector storage and compiles the retrieved
         results into a dictionary.
 
         Args:
             query (str): Query string for information retriever.
+            similarity_threshold (float, optional): The similarity threshold
+                for filtering results. Defaults to 
+                `DEFAULT_SIMILARITY_THRESHOLD`.
             top_k (int, optional): The number of top results to return during
                 retriever. Must be a positive integer. Defaults to 1.
 
@@ -161,7 +158,7 @@ class VectorRetriever(BaseRetriever):
         formatted_results = []
         for result in query_results:
             if (
-                result.similarity >= self.similarity_threshold
+                result.similarity >= similarity_threshold
                 and result.record.payload is not None
             ):
                 result_dict = {
@@ -182,7 +179,7 @@ class VectorRetriever(BaseRetriever):
                     'text': (
                         f"No suitable information retrieved "
                         f"from {content_path} with similarity_threshold"
-                        f" = {self.similarity_threshold}."
+                        f" = {similarity_threshold}."
                     )
                 }
             ]
