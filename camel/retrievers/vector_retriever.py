@@ -125,7 +125,7 @@ class VectorRetriever(BaseRetriever):
         Args:
             query (str): Query string for information retriever.
             similarity_threshold (float, optional): The similarity threshold
-                for filtering results. Defaults to 
+                for filtering results. Defaults to
                 `DEFAULT_SIMILARITY_THRESHOLD`.
             top_k (int, optional): The number of top results to return during
                 retriever. Must be a positive integer. Defaults to 1.
