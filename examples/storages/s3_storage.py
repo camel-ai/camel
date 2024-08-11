@@ -12,14 +12,23 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from .base_io import File
-from .firecrawl_reader import Firecrawl
-from .jina_url_reader import JinaURLReader
-from .unstructured_io import UnstructuredIO
+from pathlib import Path
 
-__all__ = [
-    'File',
-    'UnstructuredIO',
-    'JinaURLReader',
-    'Firecrawl',
-]
+from camel.storages.object_storages import AmazonS3Storage
+
+
+def get_file():
+    s3_storage = AmazonS3Storage(bucket_name="camel-ai-bucket")
+    print(s3_storage._get_file(Path("folder1/example.txt")))
+
+
+def upload_file():
+    s3_storage = AmazonS3Storage(bucket_name="camel-ai-bucket")
+    s3_storage.upload_file(
+        local_file_path=Path("./redis_storage.py"),
+        s3_file_path=Path("folder1/redis_storage.py"),
+    )
+
+
+if __name__ == "__main__":
+    upload_file()
