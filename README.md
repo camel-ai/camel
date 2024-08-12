@@ -110,7 +110,7 @@ conda create --name camel python=3.9
 conda activate camel
 
 # Clone github repo
-git clone -b v0.1.6.0 https://github.com/camel-ai/camel.git
+git clone -b v0.1.6.3 https://github.com/camel-ai/camel.git
 
 # Change directory into project directory
 cd camel

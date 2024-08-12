@@ -20,7 +20,19 @@ from camel.prompts import PromptTemplateGenerator, TextPrompt
 from camel.types import RoleType, TaskType
 from camel.utils import get_task_list
 
+# AgentOps decorator setting
+try:
+    import os
 
+    if os.getenv("AGENTOPS_API_KEY") is not None:
+        from agentops import track_agent
+    else:
+        raise ImportError
+except (ImportError, AttributeError):
+    from camel.utils import track_agent
+
+
+@track_agent(name="TaskSpecifyAgent")
 class TaskSpecifyAgent(ChatAgent):
     r"""An agent that specifies a given task prompt by prompting the user to
     provide more details.
@@ -115,6 +127,7 @@ class TaskSpecifyAgent(ChatAgent):
         return TextPrompt(specified_task_msg.content)
 
 
+@track_agent(name="TaskPlannerAgent")
 class TaskPlannerAgent(ChatAgent):
     r"""An agent that helps divide a task into subtasks based on the input
     task prompt.
@@ -184,6 +197,7 @@ class TaskPlannerAgent(ChatAgent):
         return TextPrompt(sub_tasks_msg.content)
 
 
+@track_agent(name="TaskCreationAgent")
 class TaskCreationAgent(ChatAgent):
     r"""An agent that helps create new tasks based on the objective
     and last completed task. Compared to :obj:`TaskPlannerAgent`,
@@ -298,6 +312,7 @@ Be concrete.
         return get_task_list(sub_tasks_msg.content)
 
 
+@track_agent(name="TaskPrioritizationAgent")
 class TaskPrioritizationAgent(ChatAgent):
     r"""An agent that helps re-prioritize the task list and
     returns numbered prioritized list. Modified from
