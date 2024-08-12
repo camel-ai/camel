@@ -76,10 +76,12 @@ def test_process(mock_unstructured_modules):
 
     vector_retriever = VectorRetriever()
 
-    vector_retriever.process(content_input_path="mock_path")
+    vector_retriever.process(content="https://www.camel-ai.org/")
 
     # Assert that methods are called as expected
-    mock_instance.parse_file_or_url.assert_called_once_with("mock_path")
+    mock_instance.parse_file_or_url.assert_called_once_with(
+        "https://www.camel-ai.org/"
+    )
     mock_instance.chunk_elements.assert_called_once()
 
 
