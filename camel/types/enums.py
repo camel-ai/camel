@@ -448,7 +448,7 @@ class ModelPlatformType(Enum):
     GEMINI = "gemini"
     VLLM = "vllm"
     MISTRAL = "mistral"
-    OPENAICOMPATIBILITYMODEL = "openaicompatibilitymodel"
+    OPENAICOMPATIBILITYMODEL = "openai-compatibility-model"
 
     @property
     def is_openai(self) -> bool:
