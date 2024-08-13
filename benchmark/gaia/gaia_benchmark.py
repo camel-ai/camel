@@ -41,8 +41,7 @@ class GAIABenchmark:
     def download(self) -> None:
         from huggingface_hub import snapshot_download
 
-        r"""download GAIA dataset
-        """
+        # Download GAIA dataset
         snapshot_download(
             repo_id="gaia-benchmark/GAIA",
             repo_type="dataset",
@@ -99,6 +98,7 @@ class GAIABenchmark:
             vector_storage_api_key (Union[Tuple[str, str], None]): Input the
                 remote vector database API key to enable RAG. If not provided,
                 a local vector database will be created and used by default.
+
         Returns:
             float: The evaluation score of the agent.
         """
@@ -164,8 +164,6 @@ class GAIABenchmark:
 
         Args:
             results (List): A list of results to be saved.
-        Returns:
-            None
         """
         results_file = os.path.join(self.script_dir, "results.jsonl")
         with open(results_file, 'w') as f:
@@ -184,8 +182,8 @@ class GAIABenchmark:
         organisation: str = "",
         val_or_test: Literal['validation', 'test'] = "validation",
     ) -> str:
-        """submit the result to GAIA learnboard.
-        This function is unavailable now.
+        """Submit the result to GAIA leaderboard. This function is
+        unavailable now.
         """
         from gradio_client import Client, handle_file
 
@@ -208,8 +206,10 @@ class GAIABenchmark:
 
         Args:
             task (dict): A dictionary containing the task details.
+
         Returns:
             BaseMessage: camel Message object containing the generated content.
+
         Note:
             Currently, not all file formats are supported. Support for
                 additional formats will be added in future updates.
