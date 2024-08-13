@@ -14,10 +14,11 @@
 
 from abc import ABC, abstractmethod
 
+
 # Generic database manager
 class DatabaseManager(ABC):
     r"""Abstract base class for a database manager."""
-    
+
     @abstractmethod
     def save_agent_infos(self):
         r"""Abstract method to save agent information to the database."""

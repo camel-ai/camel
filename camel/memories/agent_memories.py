@@ -18,8 +18,8 @@ from camel.memories.base import AgentMemory, BaseContextCreator
 from camel.memories.blocks import ChatHistoryBlock, VectorDBBlock
 from camel.memories.records import ContextRecord, MemoryRecord
 from camel.storages import BaseKeyValueStorage, BaseVectorStorage
-from camel.types import OpenAIBackendRole
 from camel.storages.database_storages import DatabaseFactory
+from camel.types import OpenAIBackendRole
 
 
 class ChatHistoryMemory(AgentMemory):
@@ -50,21 +50,32 @@ class ChatHistoryMemory(AgentMemory):
         self._context_creator = context_creator
         self._window_size = window_size
         self._chat_history_block = ChatHistoryBlock(storage=storage)
-        self.db_manager  = None
+        self.db_manager = None
         if db_connect_str and len(db_connect_str) > 0:
-            self.db_manager = DatabaseFactory.get_database_manager(db_connect_str)
+            self.db_manager = DatabaseFactory.get_database_manager(
+                db_connect_str
+            )
         self.db_autosave = db_autosave
-        
+
     def retrieve(self) -> List[ContextRecord]:
         return self._chat_history_block.retrieve(self._window_size)
 
     def write_records(self, records: List[MemoryRecord]) -> None:
         self._chat_history_block.write_records(records)
-        if self.db_manager is not None and self.db_autosave and len(records) \
-        > 0:
+        if (
+            self.db_manager is not None
+            and self.db_autosave
+            and len(records) > 0
+        ):
             for record in records:
+                is_system_flag = False
+                if record.role_at_backend == OpenAIBackendRole.SYSTEM:
+                    is_system_flag = True
+
                 base_message = record.message
-                self.db_manager.save_message_infos(base_message)
+                self.db_manager.save_message_infos(
+                    base_message, is_system_flag
+                )
 
     def get_context_creator(self) -> BaseContextCreator:
         return self._context_creator

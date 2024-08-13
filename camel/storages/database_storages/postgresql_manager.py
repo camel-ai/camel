@@ -12,23 +12,25 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from sqlalchemy import create_engine, text, inspect
-from sqlalchemy.engine import Engine
-from camel.storages.database_storages.database_manager import DatabaseManager
-from camel.messages.base import BaseMessage
-from camel.interpreters.interpreter_error import InterpreterError
 import json
 import logging
+
+from sqlalchemy import create_engine, inspect, text
+from sqlalchemy.engine import Engine
+
+from camel.interpreters.interpreter_error import InterpreterError
+from camel.messages.base import BaseMessage
+from camel.storages.database_storages.database_manager import DatabaseManager
 
 logger = logging.getLogger(__name__)
 
 INSERT_MESSAGE = '''
 INSERT INTO message
 (role_name, role_type, meta_dict, content, agent_id, message_id, 
-video_path,image_path)
+video_path, image_path, is_system_message)
 VALUES 
 (:role_name, :role_type, :meta_dict, :content, :agent_id, 
-:message_id, :video_path, :image_path);
+:message_id, :video_path, :image_path, :is_system_message);
 '''
 
 CREATE_MESSAGE_TABLE = '''
@@ -43,6 +45,7 @@ CREATE TABLE message (
 	video_path varchar(255) NULL,
 	image_path varchar(255) NULL,
 	created_at timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	is_system_message bool DEFAULT false NULL,
 	CONSTRAINT message_pkey PRIMARY KEY (id)
 );
 '''
@@ -58,47 +61,75 @@ CREATE TABLE agent (
 );
 '''
 
-class PostgreSQLManager(DatabaseManager):
-    r"""A class for the manages interactions with a PostgreSQL database.
 
-    Args:
-        conn_str (str): The connection string used to connect to the PostgreSQL database.
-    """
+class PostgreSQLManager(DatabaseManager):
+    r"""A class for the manages interactions with a PostgreSQL database."""
+
     def __init__(self, conn_str: str):
+        '''
+        Args:
+            conn_str (str): The connection string used to connect to the
+            PostgreSQL database, the format follow this: postgresql://
+            user:password@localhost/dbname
+        '''
         self.engine: Engine = create_engine(conn_str)
+        # Check if required tables exist in the database
         self.__tabels_exit()
-    
+
     def save_agent_infos(self):
         pass
 
     def __tabels_exit(self):
+        '''
+        Checks if the necessary tables ("message" and "agent") exist in the
+        database. If not, raises an InterpreterError suggesting the creation
+        of the missing tables.
+        '''
         inspector = inspect(self.engine)
         if not inspector.has_table("message"):
-            raise InterpreterError(f"please use {CREATE_MESSAGE_TABLE} to"
-                                   "create message table.")
+            raise InterpreterError(
+                f"please use {CREATE_MESSAGE_TABLE} to" "create message table."
+            )
         elif not inspector.has_table("agent"):
-            raise InterpreterError(f"please use {CREATE_AGENT_TABLE} to"
-                                   "create agent table.")
+            raise InterpreterError(
+                f"please use {CREATE_AGENT_TABLE} to" "create agent table."
+            )
 
-    def save_message_infos(self, base_message:BaseMessage):
+    def save_message_infos(
+        self, base_message: BaseMessage, is_system_message: bool
+    ):
+        '''
+        Saves message information to the database.
+
+        Args:
+            base_message (BaseMessage): An object containing the message details.
+            is_system_message (bool): Indicates if the message is a system
+            message.
+        '''
         try:
             # Convert meta_dict to a JSON string
-            meta_dict_json = json.dumps(base_message.meta_dict) \
-            if base_message.meta_dict else None
+            meta_dict_json = (
+                json.dumps(base_message.meta_dict)
+                if base_message.meta_dict
+                else None
+            )
 
             # Prepare the SQL insert statement or use ORM
             insert_stmt = text(INSERT_MESSAGE)
             # Prepare the parameters for the SQL statement
-            params = [{
-                'role_name': base_message.role_name,
-                'role_type': str(base_message.role_type.value),
-                'meta_dict': meta_dict_json,
-                'content': base_message.content,
-                'agent_id': '',
-                'message_id': '',
-                'video_path': '',
-                'image_path': '',
-            }]
+            params = [
+                {
+                    'role_name': base_message.role_name,
+                    'role_type': str(base_message.role_type.value),
+                    'meta_dict': meta_dict_json,
+                    'content': base_message.content,
+                    'agent_id': '',
+                    'message_id': '',
+                    'video_path': '',
+                    'image_path': '',
+                    'is_system_message': is_system_message,
+                }
+            ]
             # Conditionally add agent_id if it exists
             if hasattr(base_message, 'agent_id'):
                 params[0]['agent_id'] = base_message.agent_id

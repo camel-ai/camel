@@ -12,16 +12,20 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from camel.storages.database_storages.database_manager import DatabaseManager
-from camel.storages.database_storages.postgresql_manager import (PostgreSQLManager)
 from sqlalchemy import create_engine
 from sqlalchemy.engine.url import make_url
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import ArgumentError, DBAPIError, OperationalError
+
+from camel.storages.database_storages.database_manager import DatabaseManager
+from camel.storages.database_storages.postgresql_manager import (
+    PostgreSQLManager,
+)
+
 
 # Database factory
 class DatabaseFactory:
     r"""A factory class for creating instances of database managers."""
-    
+
     @staticmethod
     def get_database_manager(conn_string: str) -> DatabaseManager:
         r"""Creates and returns a database manager based on the connection string.
@@ -32,16 +36,18 @@ class DatabaseFactory:
         be established, the exception is caught and returned as a string.
 
         Args:
-            conn_string (str): The connection string used to connect to the database.
+            conn_string (str): The connection string used to connect to the
+            database.(for now, only support postgresql database.)
 
         Returns:
             DatabaseManager: An instance of the appropriate database manager.
-            If an OperationalError occurs, the error message is returned
-            as a string.
+            If an Error occurs, the error message is returned as a string.
         """
         try:
+            # conn_string format follow this: postgresql://
+            # user:password@localhost/dbname
             url = make_url(conn_string)
-            db_type = url.get_backend_name() 
+            db_type = url.get_backend_name()
 
             if db_type != 'postgresql':
                 raise ValueError(f"Unsupported database type: {db_type}")
@@ -51,7 +57,17 @@ class DatabaseFactory:
             connection.close()
             db_manager = PostgreSQLManager(conn_string)
             return db_manager
-        
-        except OperationalError as e:
-            return str(e)
-        
+
+        except ArgumentError as e:
+            raise ValueError(
+                f"Invalid connection string: {conn_string}. Please ensure it ",
+                "is in the correct format. ",
+                "Example: 'postgresql://user:password@localhost/dbname'",
+            ) from e
+        except (OperationalError, DBAPIError) as e:
+            raise ConnectionError(
+                "Failed to connect to the database using the provided ",
+                f"connection string: {conn_string}. ",
+                "Please check your network connection, database server ",
+                "status, and credentials.",
+            ) from e
