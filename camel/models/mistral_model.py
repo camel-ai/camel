@@ -30,6 +30,16 @@ from camel.utils import (
     api_keys_required,
 )
 
+try:
+    import os
+
+    if os.getenv("AGENTOPS_API_KEY") is not None:
+        from agentops import LLMEvent, record
+    else:
+        raise ImportError
+except (ImportError, AttributeError):
+    LLMEvent = None
+
 
 class MistralModel(BaseModelBackend):
     r"""Mistral API in a unified BaseModelBackend interface."""
@@ -210,6 +220,20 @@ class MistralModel(BaseModelBackend):
         )
 
         openai_response = self._to_openai_response(response)  # type: ignore[arg-type]
+
+        # Add AgentOps LLM Event tracking
+        if LLMEvent:
+            llm_event = LLMEvent(
+                thread_id=openai_response.id,
+                prompt=" ".join(
+                    [message.get("content") for message in messages]  # type: ignore[misc]
+                ),
+                prompt_tokens=openai_response.usage.prompt_tokens,  # type: ignore[union-attr]
+                completion=openai_response.choices[0].message.content,
+                completion_tokens=openai_response.usage.completion_tokens,  # type: ignore[union-attr]
+                model=self.model_type.value,
+            )
+            record(llm_event)
 
         return openai_response
 
