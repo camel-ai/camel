@@ -14,13 +14,16 @@
 
 import json
 import logging
+from typing import Dict, List
 
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.engine import Engine
 
 from camel.interpreters.interpreter_error import InterpreterError
+from camel.messages import OpenAIMessage
 from camel.messages.base import BaseMessage
 from camel.storages.database_storages.database_manager import DatabaseManager
+from camel.types.enums import OpenAIBackendRole
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +34,12 @@ video_path, image_path, is_system_message)
 VALUES 
 (:role_name, :role_type, :meta_dict, :content, :agent_id, 
 :message_id, :video_path, :image_path, :is_system_message);
+'''
+
+INSERT_AGENT = '''
+INSERT INTO agent
+(model_type, model_config_dict, agent_id)
+VALUES(:model_type_value, :model_config_dict, :agent_id);
 '''
 
 CREATE_MESSAGE_TABLE = '''
@@ -75,11 +84,72 @@ class PostgreSQLManager(DatabaseManager):
         self.engine: Engine = create_engine(conn_str)
         # Check if required tables exist in the database
         self.__tabels_exit()
+    
+    def save_memory_infos(self, openai_messages: List[OpenAIMessage], 
+                                  role_type: str, role_name: str):
+        try:
+            if openai_messages and len(openai_messages) > 0:
+                for openai_message in openai_messages:
+                    with self.engine.begin() as conn:
+                        is_system_message = False
+                        if openai_message['role'] == \
+                        OpenAIBackendRole.SYSTEM.value:
+                            is_system_message = True
 
-    def save_agent_infos(self):
-        pass
+                        params = [{
+                        'role_name': role_name,
+                        'role_type': role_type,
+                        'meta_dict': None,
+                        'content': openai_message['content'],
+                        'agent_id': '',
+                        'message_id': '',
+                        'video_path': '',
+                        'image_path': '',
+                        'is_system_message': is_system_message}]
 
-    def __tabels_exit(self):
+                        # Prepare the SQL insert statement of message table
+                        insert_stmt = text(INSERT_MESSAGE)
+                        conn.execute(insert_stmt, params)
+                    
+        except Exception as e:
+            logger.error(f"Error loading records: {e}")
+
+    def save_agent_infos(self, model_config_dict: Dict, 
+                         model_type_value: str) -> None:
+        '''
+        Saves agent information to the database.
+
+        Args:
+            model_config_dict (Dict): A dictionary containing the agent's 
+            configuration settings.
+            model_type_value (str): The type of model associated with the agent.
+        '''
+        try:
+            # Convert the dictionary values to strings to ensure compatibility 
+            # with the database
+            model_config_str_dict = {}
+            for key, value in model_config_dict.items(): 
+                model_config_str_dict[key] = str(value)   
+            
+            # Convert the Python dictionary to a JSON string
+            model_config_json = json.dumps(model_config_str_dict)
+
+            # Prepare the SQL insert statement of message table
+            insert_stmt = text(INSERT_AGENT)
+
+            # Prepare the parameters for the SQL statement
+            params = [{
+                "model_config_dict": model_config_json,
+                "model_type_value": model_type_value,
+                "agent_id": ""
+            }]
+
+            with self.engine.begin() as conn:
+                conn.execute(insert_stmt, params)
+        except Exception as e:
+            logger.error(f"Error loading records: {e}")
+
+    def __tabels_exit(self) -> None:
         '''
         Checks if the necessary tables ("message" and "agent") exist in the
         database. If not, raises an InterpreterError suggesting the creation
@@ -97,7 +167,7 @@ class PostgreSQLManager(DatabaseManager):
 
     def save_message_infos(
         self, base_message: BaseMessage, is_system_message: bool
-    ):
+    ) -> None:
         '''
         Saves message information to the database.
 
@@ -114,7 +184,7 @@ class PostgreSQLManager(DatabaseManager):
                 else None
             )
 
-            # Prepare the SQL insert statement or use ORM
+            # Prepare the SQL insert statement of message table
             insert_stmt = text(INSERT_MESSAGE)
             # Prepare the parameters for the SQL statement
             params = [

@@ -13,6 +13,9 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from abc import ABC, abstractmethod
+from typing import List
+
+from camel.messages import OpenAIMessage
 
 
 # Generic database manager
@@ -27,4 +30,9 @@ class DatabaseManager(ABC):
     @abstractmethod
     def save_message_infos(self):
         r"""Abstract method to save message information to the database."""
+        pass
+    
+    @abstractmethod
+    def save_memory_infos(self, openai_messages: List[OpenAIMessage], 
+                                  role_type: str, role_name: str):
         pass
