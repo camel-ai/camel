@@ -218,14 +218,15 @@ class ChatAgent(BaseAgent):
                 new system message of this agent.
         """
         self._system_message = message
-    
+
     def save_memory_into_db(self):
         if self.memory.is_save_db():
             openai_messages: List[OpenAIMessage] = self.memory.get_context()[0]
             role_type = self.role_type.value
             role_name = self.role_name
-            self.memory.save_memory_infos_into_db(openai_messages, role_type, 
-                                                  role_name)
+            self.memory.save_memory_infos_into_db(
+                openai_messages, role_type, role_name
+            )
 
     def is_tools_added(self) -> bool:
         r"""Whether OpenAI function calling is enabled for this agent.
@@ -313,8 +314,8 @@ class ChatAgent(BaseAgent):
         )
         self.memory.clear()
         self.memory.save_agent_infos_into_db(
-            self.model_backend.model_config_dict, 
-            self.model_backend.model_type)
+            self.model_backend.model_config_dict, self.model_backend.model_type
+        )
         self.memory.write_record(system_record)
 
     def record_message(self, message: BaseMessage) -> None:

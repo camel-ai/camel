@@ -44,7 +44,7 @@ INSERT INTO agent
 VALUES(:model_type_value, :model_config_dict, :agent_id);
 '''
 
-# SQL statement to create the `message` table with the specified columns and 
+# SQL statement to create the `message` table with the specified columns and
 # constraints
 CREATE_MESSAGE_TABLE = '''
 CREATE TABLE message (
@@ -63,7 +63,7 @@ CREATE TABLE message (
 );
 '''
 
-# SQL statement to create the `agent` table with the specified columns and 
+# SQL statement to create the `agent` table with the specified columns and
 # constraints
 CREATE_AGENT_TABLE = '''
 CREATE TABLE agent (
@@ -75,6 +75,7 @@ CREATE TABLE agent (
 	CONSTRAINT agent_pkey PRIMARY KEY (id)
 );
 '''
+
 
 class PostgreSQLManager(DatabaseManager):
     r"""A class for the manages interactions with a PostgreSQL database."""
@@ -89,14 +90,18 @@ class PostgreSQLManager(DatabaseManager):
         self.engine: Engine = create_engine(conn_str)
         # Check if required tables exist in the database
         self.__tabels_exit()
-    
-    def save_memory_infos(self, openai_messages: List[OpenAIMessage], 
-                                  role_type: str, role_name: str) -> None:
+
+    def save_memory_infos(
+        self,
+        openai_messages: List[OpenAIMessage],
+        role_type: str,
+        role_name: str,
+    ) -> None:
         '''
         Saves memory information related to OpenAI messages into the database.
 
         Args:
-            openai_messages (List[OpenAIMessage]): A list of OpenAI messages 
+            openai_messages (List[OpenAIMessage]): A list of OpenAI messages
             to be saved.
             role_type (str): The type of role associated with the messages.
             role_name (str): The name of the role associated with the messages.
@@ -106,45 +111,52 @@ class PostgreSQLManager(DatabaseManager):
                 for openai_message in openai_messages:
                     with self.engine.begin() as conn:
                         is_system_message = False
-                        if openai_message['role'] == \
-                        OpenAIBackendRole.SYSTEM.value:
+                        if (
+                            openai_message['role']
+                            == OpenAIBackendRole.SYSTEM.value
+                        ):
                             is_system_message = True
 
-                        params = [{
-                        'role_name': role_name,
-                        'role_type': role_type,
-                        'meta_dict': None,
-                        'content': openai_message['content'],
-                        'agent_id': '',
-                        'message_id': '',
-                        'video_path': '',
-                        'image_path': '',
-                        'is_system_message': is_system_message}]
+                        params = [
+                            {
+                                'role_name': role_name,
+                                'role_type': role_type,
+                                'meta_dict': None,
+                                'content': openai_message['content'],
+                                'agent_id': '',
+                                'message_id': '',
+                                'video_path': '',
+                                'image_path': '',
+                                'is_system_message': is_system_message,
+                            }
+                        ]
 
                         # Prepare the SQL insert statement of message table
                         insert_stmt = text(INSERT_MESSAGE)
                         conn.execute(insert_stmt, params)
-                    
+
         except Exception as e:
             logger.error(f"Error loading records: {e}")
 
-    def save_agent_infos(self, model_config_dict: Dict, 
-                         model_type_value: str) -> None:
+    def save_agent_infos(
+        self, model_config_dict: Dict, model_type_value: str
+    ) -> None:
         '''
         Saves agent information to the database.
 
         Args:
-            model_config_dict (Dict): A dictionary containing the agent's 
+            model_config_dict (Dict): A dictionary containing the agent's
             configuration settings.
-            model_type_value (str): The type of model associated with the agent.
+            model_type_value (str): The type of model associated with the 
+            agent.
         '''
         try:
-            # Convert the dictionary values to strings to ensure compatibility 
+            # Convert the dictionary values to strings to ensure compatibility
             # with the database
             model_config_str_dict = {}
-            for key, value in model_config_dict.items(): 
-                model_config_str_dict[key] = str(value)   
-            
+            for key, value in model_config_dict.items():
+                model_config_str_dict[key] = str(value)
+
             # Convert the Python dictionary to a JSON string
             model_config_json = json.dumps(model_config_str_dict)
 
@@ -152,11 +164,13 @@ class PostgreSQLManager(DatabaseManager):
             insert_stmt = text(INSERT_AGENT)
 
             # Prepare the parameters for the SQL statement
-            params = [{
-                "model_config_dict": model_config_json,
-                "model_type_value": model_type_value,
-                "agent_id": ""
-            }]
+            params = [
+                {
+                    "model_config_dict": model_config_json,
+                    "model_type_value": model_type_value,
+                    "agent_id": "",
+                }
+            ]
 
             with self.engine.begin() as conn:
                 conn.execute(insert_stmt, params)

@@ -24,13 +24,14 @@ class DatabaseManager(ABC):
     r"""Abstract base class for a database manager."""
 
     @abstractmethod
-    def save_agent_infos(self, model_config_dict: Dict, 
-                         model_type_value: str) -> None:
+    def save_agent_infos(
+        self, model_config_dict: Dict, model_type_value: str
+    ) -> None:
         r"""Abstract method to save agent information to the database.
         Args:
-            model_config_dict (Dict): A dictionary containing the agent's 
+            model_config_dict (Dict): A dictionary containing the agent's
             configuration settings.
-            model_type_value (str): The type of model associated with the 
+            model_type_value (str): The type of model associated with the
             agent.
         """
         pass
@@ -46,13 +47,17 @@ class DatabaseManager(ABC):
             message.
         """
         pass
-    
+
     @abstractmethod
-    def save_memory_infos(self, openai_messages: List[OpenAIMessage], 
-                                  role_type: str, role_name: str) -> None:
+    def save_memory_infos(
+        self,
+        openai_messages: List[OpenAIMessage],
+        role_type: str,
+        role_name: str,
+    ) -> None:
         r"""Abstract method to save memory information to the database.
         Args:
-            openai_messages (List[OpenAIMessage]): A list of OpenAI messages 
+            openai_messages (List[OpenAIMessage]): A list of OpenAI messages
             to be saved.
             role_type (str): The type of role associated with the messages.
             role_name (str): The name of the role associated with the messages.

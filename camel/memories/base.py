@@ -121,17 +121,22 @@ class AgentMemory(MemoryBlock, ABC):
             List[ContextRecord]: A record list for creating model context.
         """
         pass
-    
+
     @abstractmethod
-    def save_agent_infos_into_db(self, model_config_dict: Dict, 
-                                model_type: ModelType) -> None:
+    def save_agent_infos_into_db(
+        self, model_config_dict: Dict, model_type: ModelType
+    ) -> None:
         pass
 
     @abstractmethod
-    def save_memory_infos_into_db(self, openai_messages: List[OpenAIMessage], 
-                                  role_type: str, role_name: str) -> None:
+    def save_memory_infos_into_db(
+        self,
+        openai_messages: List[OpenAIMessage],
+        role_type: str,
+        role_name: str,
+    ) -> None:
         pass
-    
+
     @abstractmethod
     def is_save_db(self):
         pass

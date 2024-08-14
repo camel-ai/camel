@@ -20,7 +20,7 @@ from camel.memories.records import ContextRecord, MemoryRecord
 from camel.messages import OpenAIMessage
 from camel.storages import BaseKeyValueStorage, BaseVectorStorage
 from camel.storages.database_storages import DatabaseFactory
-from camel.types import OpenAIBackendRole, ModelType
+from camel.types import ModelType, OpenAIBackendRole
 
 
 class ChatHistoryMemory(AgentMemory):
@@ -83,24 +83,32 @@ class ChatHistoryMemory(AgentMemory):
 
     def clear(self) -> None:
         self._chat_history_block.clear()
-    
+
     def is_save_db(self):
         if self.db_manager is not None:
             return True
         else:
             return False
-    
-    def save_memory_infos_into_db(self, openai_messages: List[OpenAIMessage], 
-                                  role_type: str, role_name: str) -> None:
-        self.db_manager.save_memory_infos(openai_messages, role_type, 
-                                          role_name)
 
-    def save_agent_infos_into_db(self, model_config_dict: Dict, 
-                                model_type: ModelType) -> None:
+    def save_memory_infos_into_db(
+        self,
+        openai_messages: List[OpenAIMessage],
+        role_type: str,
+        role_name: str,
+    ) -> None:
+        if self.db_manager is not None:
+            self.db_manager.save_memory_infos(
+                openai_messages, role_type, role_name
+            )
+
+    def save_agent_infos_into_db(
+        self, model_config_dict: Dict, model_type: ModelType
+    ) -> None:
         if self.db_manager is not None:
             model_type_value = model_type.value
-            self.db_manager.save_agent_infos(model_config_dict, 
-                                             model_type_value)
+            self.db_manager.save_agent_infos(
+                model_config_dict, model_type_value
+            )
 
 
 class VectorDBMemory(AgentMemory):
