@@ -308,21 +308,20 @@ class AutoRetriever:
         # Select the 'top_k' results
         all_retrieved_info = all_retrieved_info_sorted[:top_k]
 
-        retrieved_infos = "\n".join(str(info) for info in all_retrieved_info)
         retrieved_infos_text = "\n".join(
             info['text'] for info in all_retrieved_info if 'text' in info
         )
 
-        detailed_info = (
-            f"Original Query:\n{{ {query} }}\n"
-            f"Retrieved Context:\n{retrieved_infos}"
-        )
+        detailed_info = {
+            "Original Query": query,
+            "Retrieved Context": all_retrieved_info
+        }
 
-        text_info = (
-            f"Original Query:\n{{ {query} }}\n"
-            f"Retrieved Context:\n{retrieved_infos_text}"
-        )
-
+        text_info = {
+            "Original Query":query,
+            "Retrieved Context": retrieved_infos_text
+        }
+        
         if return_detailed_info:
             return detailed_info
         else:
