@@ -27,6 +27,7 @@ from camel.types.enums import OpenAIBackendRole
 
 logger = logging.getLogger(__name__)
 
+# SQL insert statement for adding a new message record to the `message` table
 INSERT_MESSAGE = '''
 INSERT INTO message
 (role_name, role_type, meta_dict, content, agent_id, message_id, 
@@ -36,12 +37,15 @@ VALUES
 :message_id, :video_path, :image_path, :is_system_message);
 '''
 
+# SQL insert statement for adding a new agent record to the `agent` table
 INSERT_AGENT = '''
 INSERT INTO agent
 (model_type, model_config_dict, agent_id)
 VALUES(:model_type_value, :model_config_dict, :agent_id);
 '''
 
+# SQL statement to create the `message` table with the specified columns and 
+# constraints
 CREATE_MESSAGE_TABLE = '''
 CREATE TABLE message (
 	id serial4 NOT NULL,
@@ -59,6 +63,8 @@ CREATE TABLE message (
 );
 '''
 
+# SQL statement to create the `agent` table with the specified columns and 
+# constraints
 CREATE_AGENT_TABLE = '''
 CREATE TABLE agent (
 	id serial4 NOT NULL,
@@ -69,7 +75,6 @@ CREATE TABLE agent (
 	CONSTRAINT agent_pkey PRIMARY KEY (id)
 );
 '''
-
 
 class PostgreSQLManager(DatabaseManager):
     r"""A class for the manages interactions with a PostgreSQL database."""
@@ -86,7 +91,16 @@ class PostgreSQLManager(DatabaseManager):
         self.__tabels_exit()
     
     def save_memory_infos(self, openai_messages: List[OpenAIMessage], 
-                                  role_type: str, role_name: str):
+                                  role_type: str, role_name: str) -> None:
+        '''
+        Saves memory information related to OpenAI messages into the database.
+
+        Args:
+            openai_messages (List[OpenAIMessage]): A list of OpenAI messages 
+            to be saved.
+            role_type (str): The type of role associated with the messages.
+            role_name (str): The name of the role associated with the messages.
+        '''
         try:
             if openai_messages and len(openai_messages) > 0:
                 for openai_message in openai_messages:
@@ -172,7 +186,7 @@ class PostgreSQLManager(DatabaseManager):
         Saves message information to the database.
 
         Args:
-            base_message (BaseMessage): An object containing the message details.
+            base_message (BaseMessage): The system message of chat agent.
             is_system_message (bool): Indicates if the message is a system
             message.
         '''

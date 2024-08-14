@@ -182,7 +182,6 @@ class ChatAgent(BaseAgent):
         self.memory: AgentMemory = memory or ChatHistoryMemory(
             context_creator,
             window_size=message_window_size,
-            db_connect_str='postgresql://username:password@localhost:5432/test',
         )
 
         self.terminated: bool = False
