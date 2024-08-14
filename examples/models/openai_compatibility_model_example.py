@@ -17,10 +17,13 @@ from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType
 
-ollama_model = ModelFactory.create(
-    model_platform=ModelPlatformType.OLLAMA,
-    model_type="llama3",
-    url="http://localhost:11434/v1",
+# Take calling model from DashScope as an example
+# Refer: https://dashscope.console.aliyun.com/overview
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.OPENAICOMPATIBILITYMODEL,
+    model_type="qwen-plus",
+    api_key="sk-xxxx",
+    url="https://dashscope.aliyuncs.com/compatible-mode/v1",
     model_config_dict={"temperature": 0.4},
 )
 
@@ -28,7 +31,8 @@ assistant_sys_msg = BaseMessage.make_assistant_message(
     role_name="Assistant",
     content="You are a helpful assistant.",
 )
-agent = ChatAgent(assistant_sys_msg, model=ollama_model, token_limit=4096)
+
+agent = ChatAgent(assistant_sys_msg, model=model, token_limit=4096)
 
 user_msg = BaseMessage.make_user_message(
     role_name="User",
@@ -40,11 +44,8 @@ print(assistant_response.msg.content)
 
 """
 ===============================================================================
-Hi there! *waves* Hi to the amazing team at CAMEL AI - Autonomous and 
-Communicative Agents Laboratory! It's great to connect with you all. I'm 
-excited to learn more about your work in developing autonomous and 
-communicative agents, exploring the intersection of artificial intelligence, 
-robotics, and human-computer interaction. Keep pushing the boundaries of 
-what's possible!
+Hi to the CAMEL AI community! It's great to connect with an open-source 
+community focused on the study of autonomous and communicative agents. How can 
+I assist you or your projects today?
 ===============================================================================
 """
