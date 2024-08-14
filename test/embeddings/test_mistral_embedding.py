@@ -35,8 +35,7 @@ def test_embed_list(mock_mistral):
     result = embedding.embed_list(["text1", "text2"])
 
     mock_client_instance.embeddings.create.assert_called_once_with(
-        inputs=["text1", "text2"],
-        model="mistral-embed"
+        inputs=["text1", "text2"], model="mistral-embed"
     )
 
     assert result == [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]
