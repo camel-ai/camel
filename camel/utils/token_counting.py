@@ -517,7 +517,12 @@ class MistralTokenCounter(BaseTokenCounter):
             model_type (ModelType): Model type for which tokens will be
                 counted.
         """
-        from mistral_common.tokens.tokenizers.mistral import MistralTokenizer
+        try:
+            from mistral_common.tokens.tokenizers.mistral import (
+                MistralTokenizer,
+            )
+        except ImportError:
+            pass
 
         self.model_type = model_type
 
