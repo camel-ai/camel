@@ -15,7 +15,7 @@ import datetime
 import os
 import re
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import Collection, List, Optional, Sequence, Tuple, Union
 from urllib.parse import urlparse
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
@@ -197,7 +197,7 @@ class AutoRetriever:
         top_k: int = DEFAULT_TOP_K_RESULTS,
         similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
         return_detailed_info: bool = False,
-    ) -> str:
+    ) -> dict[str, Sequence[Collection[str]]]:
         r"""Executes the automatic vector retriever process using vector
         storage.
 
@@ -319,7 +319,7 @@ class AutoRetriever:
 
         text_info = {
             "Original Query": query,
-            "Retrieved Context": retrieved_infos_text,
+            "Retrieved Context": [{"text": retrieved_infos_text}],
         }
 
         if return_detailed_info:
