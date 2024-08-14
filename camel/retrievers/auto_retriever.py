@@ -314,14 +314,14 @@ class AutoRetriever:
 
         detailed_info = {
             "Original Query": query,
-            "Retrieved Context": all_retrieved_info
+            "Retrieved Context": all_retrieved_info,
         }
 
         text_info = {
-            "Original Query":query,
-            "Retrieved Context": retrieved_infos_text
+            "Original Query": query,
+            "Retrieved Context": retrieved_infos_text,
         }
-        
+
         if return_detailed_info:
             return detailed_info
         else:
