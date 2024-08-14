@@ -26,7 +26,9 @@ from PIL import Image
 from camel.types import ModelType, OpenAIImageType, OpenAIVisionDetailType
 
 if TYPE_CHECKING:
-    from mistral_common.protocol.instruct.request import ChatCompletionRequest
+    from mistral_common.protocol.instruct.request import (
+        ChatCompletionRequest,  # type:ignore[import-not-found]
+    )
 
     from camel.messages import OpenAIMessage
 
@@ -567,7 +569,7 @@ class MistralTokenCounter(BaseTokenCounter):
         """
 
         from mistral_common.protocol.instruct.request import (
-            ChatCompletionRequest,
+            ChatCompletionRequest,  # type:ignore[import-not-found]
         )
 
         mistral_request = ChatCompletionRequest(  # type: ignore[type-var]
