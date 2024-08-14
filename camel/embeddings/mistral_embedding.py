@@ -43,7 +43,7 @@ class MistralEmbedding(BaseEmbedding[str]):
         api_key: str | None = None,
         dimensions: int | None = None,
     ) -> None:
-        from mistralai.client import MistralClient
+        from mistralai import Mistral
 
         if not model_type.is_mistral:
             raise ValueError("Invalid Mistral embedding model type.")
@@ -54,7 +54,7 @@ class MistralEmbedding(BaseEmbedding[str]):
             assert isinstance(dimensions, int)
             self.output_dim = dimensions
         self._api_key = api_key or os.environ.get("MISTRAL_API_KEY")
-        self._client = MistralClient(api_key=self._api_key)
+        self._client = Mistral(api_key=self._api_key)
 
     @api_keys_required("MISTRAL_API_KEY")
     def embed_list(
@@ -73,12 +73,12 @@ class MistralEmbedding(BaseEmbedding[str]):
                 as a list of floating-point numbers.
         """
         # TODO: count tokens
-        response = self._client.embeddings(
-            input=objs,
+        response = self._client.embeddings.create(
+            inputs=objs,
             model=self.model_type.value,
             **kwargs,
         )
-        return [data.embedding for data in response.data]
+        return [data.embedding for data in response.data]  # type: ignore[misc,union-attr]
 
     def get_output_dim(self) -> int:
         r"""Returns the output dimension of the embeddings.
