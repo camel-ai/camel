@@ -4076,13 +4076,13 @@ tldextract = ">=2.0.1"
 
 [[package]]
 name = "nltk"
-version = "3.8.2"
+version = "3.8.1"
 description = "Natural Language Toolkit"
 optional = true
-python-versions = ">=3.8"
+python-versions = ">=3.7"
 files = [
-    {file = "nltk-3.8.2-py3-none-any.whl", hash = "sha256:bae044ae22ebe0b694a87c0012233373209f27d5c76d3572599c842740a62fe0"},
-    {file = "nltk-3.8.2.tar.gz", hash = "sha256:9c051aa981c6745894906d5c3aad27417f3d1c10d91eefca50382fc922966f31"},
+    {file = "nltk-3.8.1-py3-none-any.whl", hash = "sha256:fd5c9109f976fa86bcadba8f91e47f5e9293bd034474752e92a520f81c93dda5"},
+    {file = "nltk-3.8.1.zip", hash = "sha256:1834da3d0682cba4f2cede2f9aad6b0fafb6461ba451db0efb6f9c39798d64d3"},
 ]
 
 [package.dependencies]
@@ -8764,4 +8764,4 @@ vector-databases = ["pymilvus", "qdrant-client"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9.0,<3.12"
-content-hash = "4f623d4dc8859c22a856f8c25a1e75f3e233bdd646398b0491d555d4581b7370"
+content-hash = "7efa6acd24a635797e41c660d0d408e5156c9b70c20005e214bb16a76e8b9f72"
