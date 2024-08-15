@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import uuid
+import warnings
 from typing import (
     Any,
     Dict,
@@ -91,7 +92,7 @@ class UnstructuredIO:
     def parse_file_or_url(
         input_path: str,
         **kwargs: Any,
-    ) -> List[Element]:
+    ) -> Union[List[Element], None]:
         r"""Loads a file or a URL and parses its contents into elements.
 
         Args:
@@ -99,12 +100,12 @@ class UnstructuredIO:
             **kwargs: Extra kwargs passed to the partition function.
 
         Returns:
-            List[Element]: List of elements after parsing the file or URL.
+            Union[List[Element],None]: List of elements after parsing the file
+                or URL if success.
 
         Raises:
             FileNotFoundError: If the file does not exist at the path
                 specified.
-            Exception: For any other issues during file or URL parsing.
 
         Notes:
             Available document types:
@@ -128,8 +129,9 @@ class UnstructuredIO:
             try:
                 elements = partition_html(url=input_path, **kwargs)
                 return elements
-            except Exception as e:
-                raise Exception("Failed to parse the URL.") from e
+            except Exception:
+                warnings.warn(f"Failed to parse the URL: {input_path}")
+                return None
 
         else:
             # Handling file
@@ -146,10 +148,9 @@ class UnstructuredIO:
                 with open(input_path, "rb") as f:
                     elements = partition(file=f, **kwargs)
                     return elements
-            except Exception as e:
-                raise Exception(
-                    "Failed to parse the unstructured file."
-                ) from e
+            except Exception:
+                warnings.warn(f"Failed to partition the file: {input_path}")
+                return None
 
     @staticmethod
     def clean_text_data(

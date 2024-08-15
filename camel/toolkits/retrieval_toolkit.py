@@ -57,7 +57,7 @@ class RetrievalToolkit(BaseToolkit):
         retrieved_info = auto_retriever.run_vector_retriever(
             query=query, contents=contents, top_k=3
         )
-        return retrieved_info
+        return str(retrieved_info)
 
     def get_tools(self) -> List[OpenAIFunction]:
         r"""Returns a list of OpenAIFunction objects representing the
