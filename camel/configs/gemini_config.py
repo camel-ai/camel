@@ -81,7 +81,6 @@ class GeminiConfig(BaseConfig):
     response_mime_type: Optional[str] = None
     response_schema: Optional[Any] = None
     safety_settings: Optional[Any] = None
-    tools: Optional[Any] = None
     tool_config: Optional[Any] = None
     request_options: Optional[Any] = None
 
