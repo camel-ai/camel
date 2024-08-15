@@ -74,7 +74,7 @@ class MistralConfig(BaseConfig):
             if not isinstance(response_format, ResponseFormat):
                 raise ValueError(
                     f"The tool {response_format} should be an instance "
-                    "of `mistralai.models.chat_completion.ResponseFormat`."
+                    "of `mistralai.models.ResponseFormat`."
                 )
         return response_format
 
