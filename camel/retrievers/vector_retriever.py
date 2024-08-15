@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
+import warnings
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 
@@ -89,9 +90,15 @@ class VectorRetriever(BaseRetriever):
             elements = self.uio.parse_file_or_url(content, **kwargs)
         else:
             elements = [self.uio.create_element_from_text(text=content)]
-        chunks = self.uio.chunk_elements(
-            chunk_type=chunk_type, elements=elements
-        )
+        if elements:
+            chunks = self.uio.chunk_elements(
+                chunk_type=chunk_type, elements=elements
+            )
+        if not elements:
+            warnings.warn(
+                f"No elements were extracted from the content: {content}"
+            )
+            return
         # Iterate to process and store embeddings, set batch of 50
         for i in range(0, len(chunks), 50):
             batch_chunks = chunks[i : i + 50]
