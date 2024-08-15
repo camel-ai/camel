@@ -216,9 +216,10 @@ class AutoRetriever:
                 metadata. Defaults to `False`.
 
         Returns:
-            string: By default, returns only the text information. If
-                `return_detailed_info` is `True`, return detailed information
-                including similarity score, content path and metadata.
+            dict[str, Sequence[Collection[str]]]: By default, returns
+                only the text information. If `return_detailed_info` is
+                `True`, return detailed information including similarity
+                score, content path and metadata.
 
         Raises:
             ValueError: If there's an vector storage existing with content
@@ -308,9 +309,7 @@ class AutoRetriever:
         # Select the 'top_k' results
         all_retrieved_info = all_retrieved_info_sorted[:top_k]
 
-        retrieved_infos_text = "\n".join(
-            info['text'] for info in all_retrieved_info if 'text' in info
-        )
+        text_retrieved_info = [item['text'] for item in all_retrieved_info]
 
         detailed_info = {
             "Original Query": query,
@@ -319,7 +318,7 @@ class AutoRetriever:
 
         text_info = {
             "Original Query": query,
-            "Retrieved Context": [{"text": retrieved_infos_text}],
+            "Retrieved Context": text_retrieved_info,
         }
 
         if return_detailed_info:
