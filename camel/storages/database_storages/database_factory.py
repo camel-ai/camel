@@ -28,7 +28,8 @@ class DatabaseFactory:
 
     @staticmethod
     def get_database_manager(conn_string: str) -> DatabaseManager:
-        r"""Creates and returns a database manager based on the connection string.
+        r"""Creates and returns a database manager based on the 
+        connection string.
 
         This method parses the connection string to determine the
         type of database being used. If the database type is not

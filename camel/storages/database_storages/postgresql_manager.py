@@ -147,7 +147,7 @@ class PostgreSQLManager(DatabaseManager):
         Args:
             model_config_dict (Dict): A dictionary containing the agent's
             configuration settings.
-            model_type_value (str): The type of model associated with the 
+            model_type_value (str): The type of model associated with the
             agent.
         '''
         try:
