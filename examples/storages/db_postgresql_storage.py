@@ -13,12 +13,12 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 
-from pydantic import BaseModel, Field
-
 from camel.agents import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
 from camel.memories.agent_memories import ChatHistoryMemory
-from camel.memories.context_creators.score_based import ScoreBasedContextCreator
+from camel.memories.context_creators.score_based import (
+    ScoreBasedContextCreator,
+)
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType, ModelType
@@ -35,13 +35,15 @@ model = ModelFactory.create(
     model_config_dict=ChatGPTConfig().as_dict(),
 )
 
-context_creator = ScoreBasedContextCreator(model.token_counter, 
-                                           model.token_limit)
-# save data in database, Currently, only the SQLAlchemy format for PostgreSQL 
+context_creator = ScoreBasedContextCreator(
+    model.token_counter, model.token_limit
+)
+# save data in database, Currently, only the SQLAlchemy format for PostgreSQL
 # is supported.
 memory = ChatHistoryMemory(
-            context_creator, 
-            db_connect_str="postgresql://username:password@localhost/test")
+    context_creator,
+    db_connect_str="postgresql://username:password@localhost/test",
+)
 
 # Set agent
 camel_agent = ChatAgent(assistant_sys_msg, model=model, memory=memory)
@@ -54,4 +56,3 @@ user_msg = BaseMessage.make_user_message(
 # Get response information
 response = camel_agent.step(user_msg)
 print(response.msgs[0].content)
-
