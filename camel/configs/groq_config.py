@@ -99,7 +99,7 @@ class GroqConfig(BaseConfig):
     response_format: Union[dict, NotGiven] = NOT_GIVEN
     frequency_penalty: float = 0.0
     user: str = ""
-    tool_choice: Optional[Union[dict[str, str], str]] = "none"
+    tool_choice: Optional[Union[dict[str, str], str]] = "auto"
 
 
 GROQ_API_PARAMS = {param for param in GroqConfig.model_fields.keys()}
