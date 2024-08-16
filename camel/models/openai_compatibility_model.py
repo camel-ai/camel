@@ -103,3 +103,15 @@ class OpenAICompatibilityModel:
             bool: Whether the model is in stream mode.
         """
         return self.model_config_dict.get('stream', False)
+
+    @property
+    def token_limit(self) -> int:
+        r"""Returns the maximum token limit for a given model.
+
+        Returns:
+            int: The maximum token limit for the given model.
+        """
+        return (
+            self.model_config_dict.get("max_tokens")
+            or 256  # The default value of OpenAI is 256.
+        )
