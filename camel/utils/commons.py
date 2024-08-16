@@ -485,3 +485,65 @@ def is_docker_running() -> bool:
         return result.returncode == 0
     except (subprocess.CalledProcessError, FileNotFoundError):
         return False
+
+
+try:
+    if os.getenv("AGENTOPS_API_KEY") is not None:
+        from agentops import (
+            ToolEvent,
+            record,
+        )
+    else:
+        raise ImportError
+except (ImportError, AttributeError):
+    ToolEvent = None
+
+
+def agentops_decorator(func):
+    r"""Decorator that records the execution of a function if ToolEvent is
+    available.
+
+    Parameters:
+        func (callable): The function to be decorated.
+
+    Returns:
+        callable: The wrapped function which records its execution details.
+    """
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if ToolEvent:
+            tool_event = ToolEvent(name=func.__name__, params=kwargs)
+            result = func(*args, **kwargs)
+            tool_event.returns = result
+            record(tool_event)
+            return result
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
+class AgentOpsMeta(type):
+    r"""Metaclass that automatically decorates all callable attributes with
+    the agentops_decorator,
+    except for the 'get_tools' method.
+
+    Methods:
+    __new__(cls, name, bases, dct):
+        Creates a new class with decorated methods.
+    """
+
+    def __new__(cls, name, bases, dct):
+        if ToolEvent:
+            for attr, value in dct.items():
+                if callable(value) and attr != 'get_tools':
+                    dct[attr] = agentops_decorator(value)
+        return super().__new__(cls, name, bases, dct)
+
+
+# Mock trak agent decorator for AgentOps
+def track_agent(*args, **kwargs):
+    def noop(f):
+        return f
+
+    return noop

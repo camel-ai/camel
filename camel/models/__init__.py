@@ -23,6 +23,7 @@ from .nemotron_model import NemotronModel
 from .ollama_model import OllamaModel
 from .open_source_model import OpenSourceModel
 from .openai_audio_models import OpenAIAudioModels
+from .openai_compatibility_model import OpenAICompatibilityModel
 from .openai_model import OpenAIModel
 from .schema_model import SchemaModel
 from .stub_model import StubModel
@@ -47,4 +48,5 @@ __all__ = [
     'VLLMModel',
     'GeminiModel',
     'SchemaModel',
+    'OpenAICompatibilityModel',
 ]

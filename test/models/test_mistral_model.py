@@ -18,7 +18,7 @@ import pytest
 from camel.configs import MistralConfig, OpenSourceConfig
 from camel.models import MistralModel
 from camel.types import ModelType
-from camel.utils import MistralTokenCounter
+from camel.utils import OpenAITokenCounter
 
 
 @pytest.mark.model_backend
@@ -39,7 +39,7 @@ def test_mistral_model(model_type):
     model = MistralModel(model_type, model_config_dict)
     assert model.model_type == model_type
     assert model.model_config_dict == model_config_dict
-    assert isinstance(model.token_counter, MistralTokenCounter)
+    assert isinstance(model.token_counter, OpenAITokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
 

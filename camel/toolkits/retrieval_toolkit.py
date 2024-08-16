@@ -27,7 +27,7 @@ class RetrievalToolkit(BaseToolkit):
     """
 
     def information_retrieval(
-        self, query: str, content_input_paths: Union[str, List[str]]
+        self, query: str, contents: Union[str, List[str]]
     ) -> str:
         r"""Retrieves information from a local vector storage based on the
         specified query. This function connects to a local vector storage
@@ -37,8 +37,8 @@ class RetrievalToolkit(BaseToolkit):
 
         Args:
             query (str): The question or query for which an answer is required.
-            content_input_paths (Union[str, List[str]]): Paths to local
-                files or remote URLs.
+            contents (Union[str, List[str]]): Local file paths, remote URLs or
+                string contents.
 
         Returns:
             str: The information retrieved in response to the query, aggregated
@@ -47,7 +47,7 @@ class RetrievalToolkit(BaseToolkit):
         Example:
             # Retrieve information about CAMEL AI.
             information_retrieval(query = "what is CAMEL AI?",
-                                content_input_paths="https://www.camel-ai.org/")
+                                contents="https://www.camel-ai.org/")
         """
         auto_retriever = AutoRetriever(
             vector_storage_local_path="camel/temp_storage",
@@ -55,9 +55,9 @@ class RetrievalToolkit(BaseToolkit):
         )
 
         retrieved_info = auto_retriever.run_vector_retriever(
-            query=query, content_input_paths=content_input_paths, top_k=3
+            query=query, contents=contents, top_k=3
         )
-        return retrieved_info
+        return str(retrieved_info)
 
     def get_tools(self) -> List[OpenAIFunction]:
         r"""Returns a list of OpenAIFunction objects representing the

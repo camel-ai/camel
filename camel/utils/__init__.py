@@ -13,6 +13,8 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from .commons import (
+    AgentOpsMeta,
+    agentops_decorator,
     api_keys_required,
     check_server_running,
     create_chunks,
@@ -30,6 +32,7 @@ from .commons import (
     print_text_animated,
     text_extract_from_web,
     to_pascal,
+    track_agent,
 )
 from .constants import Constants
 from .token_counting import (
@@ -70,4 +73,7 @@ __all__ = [
     'get_pydantic_object_schema',
     'func_string_to_callable',
     'json_to_function_code',
+    'agentops_decorator',
+    'AgentOpsMeta',
+    'track_agent',
 ]

@@ -74,13 +74,16 @@ class BM25Retriever(BaseRetriever):
         elements = self.unstructured_modules.parse_file_or_url(
             content_input_path, **kwargs
         )
-        self.chunks = self.unstructured_modules.chunk_elements(
-            chunk_type=chunk_type, elements=elements
-        )
+        if elements:
+            self.chunks = self.unstructured_modules.chunk_elements(
+                chunk_type=chunk_type, elements=elements
+            )
 
-        # Convert chunks to a list of strings for tokenization
-        tokenized_corpus = [str(chunk).split(" ") for chunk in self.chunks]
-        self.bm25 = BM25Okapi(tokenized_corpus)
+            # Convert chunks to a list of strings for tokenization
+            tokenized_corpus = [str(chunk).split(" ") for chunk in self.chunks]
+            self.bm25 = BM25Okapi(tokenized_corpus)
+        else:
+            self.bm25 = None
 
     def query(
         self,
