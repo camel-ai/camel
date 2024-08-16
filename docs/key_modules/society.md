@@ -2,7 +2,7 @@
 ## 1. Concept
 The society module is one of the core modules of CAMEL. By simulating the information exchange process, this module studies the social behaviors among agents. 
 
-Currently, the society module aims to enable agents to collaborate autonomously toward completing tasks while keeping consistent with human intentions and requiring minimal human intervention. It includes two frameworks: Babyagi-Playing and Role-Playing, which are used to plan the interaction behaviors of agents to achieve research objectives.
+Currently, the society module aims to enable agents to collaborate autonomously toward completing tasks while keeping consistent with human intentions and requiring minimal human intervention. It includes two frameworks: `Role-Playing` and `BabyAGI-Playing`, which are used to run the interaction behaviors of agents to achieve  objectives.
 
 Taking Role-Playing as an example, this framework was designed in an instruction-following manner. These roles independently undertake the responsibilities of executing and planning tasks, respectively. The dialogue is continuously advanced through a turn-taking mechanism, thereby collaborating to complete tasks. The main concepts include:
 
@@ -14,20 +14,30 @@ AI Assistant: the agent who is expected to respond with solutions that fulfill t
 
 ### 2. Types
 
-## 2.1 Babyagi-Playing
-Babyagi is framework from "Task-driven Autonomous Agent"
-
-## 2.2 Role-Playing
+## 2.1 Role-Playing
 
 Role-Playing is a unique cooperative agent framework of CAMEL. Through this framework, agents in CAMEL overcome numerous challenges, such as *role flipping*, *assistant repeats instructions*, *flake replies*, *infinite loop of messages*, and *conversation termination conditions.*
 
-When using Role-Playing framework in Camel, predefined prompts are used to create unique initial settings for different agents. For example, if the user wants to initialize a assistant agent, the agent will be initialized with the following prompt.
+When using Role-Playing framework in CAMEL, predefined prompts are used to create unique initial settings for different agents. For example, if the user wants to initialize an assistant agent, the agent will be initialized with the following prompt.
 
-- Never forget you are a <ASSISTANT_ROLE> and I am a <USER_ROLE>. This assigns the chosen role to the assistant agent and provides it with information about the user’s role.
-- Never flip roles! Never instruct me! This prevents agents from flipping roles. In some cases, we have observed the assistant and the user switching roles, where the assistant suddenly takes control and instructs the user, and the user follows those instructions.
-- You must decline my instruction honestly if you cannot perform the instruction due to physical, moral, legal reasons or your capability and explain the reasons. This prohibits the agent from producing harmful, false, illegal, and misleading information.
-- Unless I say the task is completed, you should always start with: Solution: <YOUR_SOLUTION>. <YOUR_SOLUTION> should be specific, and provide preferable implementations and examples for task-solving. This encourages the assistant to always responds in a consistent format, avoiding any deviation from the structure of the conversation, and preventing vague or incomplete responses, which we refer to as flake responses, such as "I will do something".
-- Always end your solution with: Next request. This ensures that the assistant keeps the conversation going by requesting a new instruction to solve.
+- Never forget you are a <ASSISTANT_ROLE> and I am a <USER_ROLE>.
+
+    *This assigns the chosen role to the assistant agent and provides it with information about the user’s role.*
+- Never flip roles! Never instruct me!
+
+    *This prevents agents from flipping roles. In some cases, we have observed the assistant and the user switching roles, where the assistant suddenly takes control and instructs the user, and the user follows those instructions.*
+- You must decline my instruction honestly if you cannot perform the instruction due to physical, moral, legal reasons or your capability and explain the reasons.
+
+    *This prohibits the agent from producing harmful, false, illegal, and misleading information.*
+- Unless I say the task is completed, you should always start with: Solution: <YOUR_SOLUTION>. <YOUR_SOLUTION> should be specific, and provide preferable implementations and examples for task-solving.
+
+    *This encourages the assistant to always responds in a consistent format, avoiding any deviation from the structure of the conversation, and preventing vague or incomplete responses, which we refer to as flake responses, such as "I will do something".*
+- Always end your solution with: Next request.
+
+    *This ensures that the assistant keeps the conversation going by requesting a new instruction to solve.*
+
+## 2.2 BabyAGI-Playing
+Babyagi is framework from "Task-driven Autonomous Agent"
 
 ### Role-Playing Attributes
 
@@ -203,6 +213,6 @@ if __name__ == "__main__":
     main()
 ```
 
-### Summary
+### Future Goals
 
 In the future, we hope to expand this module to realize complex social behaviors among multi-agents, such as interaction, trust building, competition and cooperation, and conflict resolution.
