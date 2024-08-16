@@ -41,7 +41,7 @@ Here is a diagram illustrating the workflow with a simple example:
 
 ## How to use Workforce: A Step-by-Step Guide
 
-On this part, we will give you a step-by-step guide on how to use workforce to solve a task. You can see the full example used [here]().
+On this part, we will give you a step-by-step guide on how to use workforce to solve a task. You can see the full example used [here](https://github.com/camel-ai/camel/blob/master/examples/workforce/role_playing_with_agents.py).
 
 ### Configuration of Worker Nodes
 
@@ -85,14 +85,14 @@ assistant_model_config = ChatGPTConfig(
     temperature=0.0,
 )
 model_platform = ModelPlatformType.OPENAI
-model_type = ModelType.GPT_3_5_TURBO
+model_type = ModelType.GPT_4O_MINI
 assistant_role_name = "Searcher"
 user_role_name = "Professor"
 assistant_agent_kwargs = dict(
     model=ModelFactory.create(
         model_platform=model_platform,
         model_type=model_type,
-        model_config_dict=assistant_model_config.__dict__,
+        model_config_dict=assistant_model_config.as_dict(),
     ),
     tools=function_list,
 )
@@ -100,7 +100,7 @@ user_agent_kwargs = dict(
     model=ModelFactory.create(
         model_platform=model_platform,
         model_type=model_type,
-        model_config_dict=user_model_config.__dict__,
+        model_config_dict=user_model_config.as_dict(),
     ),
 )
 ```
@@ -169,7 +169,8 @@ print('Final Result of Origin task:\n', task.result)
 
 Here is one example of the output:
 
-```
+```markdown
+>>>
 Here is the finalized tour plan for your visit to historical sites in Paris, ensuring all logistics are accounted for:
 
 **Tour Itinerary:**
