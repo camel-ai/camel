@@ -18,7 +18,7 @@ import pytest
 from camel.configs import MistralConfig, OpenSourceConfig
 from camel.models import MistralModel
 from camel.types import ModelType
-from camel.utils import MistralTokenCounter
+from camel.utils import OpenAITokenCounter
 
 
 @pytest.mark.model_backend
@@ -35,11 +35,11 @@ from camel.utils import MistralTokenCounter
     ],
 )
 def test_mistral_model(model_type):
-    model_config_dict = MistralConfig().__dict__
+    model_config_dict = MistralConfig().as_dict()
     model = MistralModel(model_type, model_config_dict)
     assert model.model_type == model_type
     assert model.model_config_dict == model_config_dict
-    assert isinstance(model.token_counter, MistralTokenCounter)
+    assert isinstance(model.token_counter, OpenAITokenCounter)
     assert isinstance(model.model_type.value_for_tiktoken, str)
     assert isinstance(model.model_type.token_limit, int)
 
@@ -51,7 +51,7 @@ def test_mistral_model_unexpected_argument():
         model_path="vicuna-7b-v1.5",
         server_url="http://localhost:8000/v1",
     )
-    model_config_dict = model_config.__dict__
+    model_config_dict = model_config.as_dict()
 
     with pytest.raises(
         ValueError,

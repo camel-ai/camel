@@ -66,9 +66,15 @@ def test_chat_history_memory(memory: ChatHistoryMemory):
         meta_dict=None,
         content="OK",
     )
-    system_record = MemoryRecord(system_msg, OpenAIBackendRole.SYSTEM)
-    user_record = MemoryRecord(user_msg, OpenAIBackendRole.USER)
-    assistant_record = MemoryRecord(assistant_msg, OpenAIBackendRole.ASSISTANT)
+    system_record = MemoryRecord(
+        message=system_msg, role_at_backend=OpenAIBackendRole.SYSTEM
+    )
+    user_record = MemoryRecord(
+        message=user_msg, role_at_backend=OpenAIBackendRole.USER
+    )
+    assistant_record = MemoryRecord(
+        message=assistant_msg, role_at_backend=OpenAIBackendRole.ASSISTANT
+    )
     memory.write_records([system_record, user_record, assistant_record])
     output_messages, _ = memory.get_context()
     assert output_messages[0] == system_msg.to_openai_system_message()

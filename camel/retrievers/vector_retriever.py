@@ -11,7 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import os
+import warnings
 from typing import Any, Dict, List, Optional
+from urllib.parse import urlparse
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
 from camel.loaders import UnstructuredIO
@@ -38,24 +41,18 @@ class VectorRetriever(BaseRetriever):
         embedding_model (BaseEmbedding): Embedding model used to generate
             vector embeddings.
         storage (BaseVectorStorage): Vector storage to query.
-        similarity_threshold (float, optional): The similarity threshold
-            for filtering results. Defaults to `DEFAULT_SIMILARITY_THRESHOLD`.
         unstructured_modules (UnstructuredIO): A module for parsing files and
             URLs and chunking content based on specified parameters.
     """
 
     def __init__(
         self,
-        similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
         embedding_model: Optional[BaseEmbedding] = None,
         storage: Optional[BaseVectorStorage] = None,
     ) -> None:
         r"""Initializes the retriever class with an optional embedding model.
 
         Args:
-            similarity_threshold (float, optional): The similarity threshold
-                for filtering results. Defaults to
-                `DEFAULT_SIMILARITY_THRESHOLD`.
             embedding_model (Optional[BaseEmbedding]): The embedding model
                 instance. Defaults to `OpenAIEmbedding` if not provided.
             storage (BaseVectorStorage): Vector storage to query.
@@ -68,12 +65,11 @@ class VectorRetriever(BaseRetriever):
                 vector_dim=self.embedding_model.get_output_dim()
             )
         )
-        self.similarity_threshold = similarity_threshold
-        self.unstructured_modules: UnstructuredIO = UnstructuredIO()
+        self.uio: UnstructuredIO = UnstructuredIO()
 
     def process(
         self,
-        content_input_path: str,
+        content: str,
         chunk_type: str = "chunk_by_title",
         **kwargs: Any,
     ) -> None:
@@ -82,18 +78,27 @@ class VectorRetriever(BaseRetriever):
         vector storage.
 
         Args:
-            content_input_path (str): File path or URL of the content to be
-                processed.
+            contents (str): Local file path, remote URL or string content.
             chunk_type (str): Type of chunking going to apply. Defaults to
                 "chunk_by_title".
             **kwargs (Any): Additional keyword arguments for content parsing.
         """
-        elements = self.unstructured_modules.parse_file_or_url(
-            content_input_path, **kwargs
-        )
-        chunks = self.unstructured_modules.chunk_elements(
-            chunk_type=chunk_type, elements=elements
-        )
+        # Check if the content is URL
+        parsed_url = urlparse(content)
+        is_url = all([parsed_url.scheme, parsed_url.netloc])
+        if is_url or os.path.exists(content):
+            elements = self.uio.parse_file_or_url(content, **kwargs)
+        else:
+            elements = [self.uio.create_element_from_text(text=content)]
+        if elements:
+            chunks = self.uio.chunk_elements(
+                chunk_type=chunk_type, elements=elements
+            )
+        if not elements:
+            warnings.warn(
+                f"No elements were extracted from the content: {content}"
+            )
+            return
         # Iterate to process and store embeddings, set batch of 50
         for i in range(0, len(chunks), 50):
             batch_chunks = chunks[i : i + 50]
@@ -105,7 +110,7 @@ class VectorRetriever(BaseRetriever):
             # Prepare the payload for each vector record, includes the content
             # path, chunk metadata, and chunk text
             for vector, chunk in zip(batch_vectors, batch_chunks):
-                content_path_info = {"content path": content_input_path}
+                content_path_info = {"content path": content}
                 chunk_metadata = {"metadata": chunk.metadata.to_dict()}
                 chunk_text = {"text": str(chunk)}
                 combined_dict = {
@@ -124,12 +129,16 @@ class VectorRetriever(BaseRetriever):
         self,
         query: str,
         top_k: int = DEFAULT_TOP_K_RESULTS,
+        similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
     ) -> List[Dict[str, Any]]:
         r"""Executes a query in vector storage and compiles the retrieved
         results into a dictionary.
 
         Args:
             query (str): Query string for information retriever.
+            similarity_threshold (float, optional): The similarity threshold
+                for filtering results. Defaults to
+                `DEFAULT_SIMILARITY_THRESHOLD`.
             top_k (int, optional): The number of top results to return during
                 retriever. Must be a positive integer. Defaults to 1.
 
@@ -161,7 +170,7 @@ class VectorRetriever(BaseRetriever):
         formatted_results = []
         for result in query_results:
             if (
-                result.similarity >= self.similarity_threshold
+                result.similarity >= similarity_threshold
                 and result.record.payload is not None
             ):
                 result_dict = {
@@ -182,7 +191,7 @@ class VectorRetriever(BaseRetriever):
                     'text': (
                         f"No suitable information retrieved "
                         f"from {content_path} with similarity_threshold"
-                        f" = {self.similarity_threshold}."
+                        f" = {similarity_threshold}."
                     )
                 }
             ]

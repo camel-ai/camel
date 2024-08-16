@@ -208,7 +208,6 @@ class ModelType(Enum):
             # reference: https://lmsys.org/blog/2023-03-30-vicuna/
             return 2048
         elif self in {
-            ModelType.GPT_3_5_TURBO,
             ModelType.LLAMA_2,
             ModelType.NEMOTRON_4_REWARD,
             ModelType.STUB,
@@ -226,7 +225,10 @@ class ModelType(Enum):
             ModelType.GLM_4_OPEN_SOURCE,
         }:
             return 8_192
-        elif self is ModelType.VICUNA_16K:
+        elif self in {
+            ModelType.GPT_3_5_TURBO,
+            ModelType.VICUNA_16K,
+        }:
             return 16_384
         elif self in {
             ModelType.GPT_4_32K,
@@ -359,6 +361,8 @@ class TaskType(Enum):
     ROLE_DESCRIPTION = "role_description"
     GENERATE_TEXT_EMBEDDING_DATA = "generate_text_embedding_data"
     OBJECT_RECOGNITION = "object_recognition"
+    IMAGE_CRAFT = "image_craft"
+    MULTI_CONDITION_IMAGE_CRAFT = "multi_condition_image_craft"
     DEFAULT = "default"
     VIDEO_DESCRIPTION = "video_description"
 
@@ -444,6 +448,7 @@ class ModelPlatformType(Enum):
     GEMINI = "gemini"
     VLLM = "vllm"
     MISTRAL = "mistral"
+    OPENAICOMPATIBILITYMODEL = "openai-compatibility-model"
 
     @property
     def is_openai(self) -> bool:
@@ -494,6 +499,12 @@ class ModelPlatformType(Enum):
     def is_open_source(self) -> bool:
         r"""Returns whether this platform is opensource."""
         return self is ModelPlatformType.OPENSOURCE
+
+    @property
+    def is_openai_compatibility_model(self) -> bool:
+        r"""Returns whether this is a platform supporting openai
+        compatibility"""
+        return self is ModelPlatformType.OPENAICOMPATIBILITYMODEL
 
     @property
     def is_gemini(self) -> bool:
