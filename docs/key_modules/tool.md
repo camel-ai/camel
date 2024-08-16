@@ -17,7 +17,7 @@ To enhance your agents' capabilities with CAMEL tools, start by installing our a
 pip install 'camel-ai[tools]'
 ```
 
-In CAMEL, a tool is an `OpenAIFunction` that OpenAI chat models can call.
+In CAMEL, a tool is an `OpenAIFunction` that LLMs can call.
 
 
 ### How to Define Your Own Tool?
@@ -40,15 +40,30 @@ def add(a: int, b: int) -> int:
     return a + b
     
 add_tool = OpenAIFunction(add)
+```
 
-In [2]: add_tool.get_function_name()
-Out[2]: 'add'
+```python
+print(add_tool.get_function_name())
+```
 
-In [3]: add_tool.get_function_description() 
-Out[3]: 'Adds two numbers.'
+```markdown
+>>> add
+```
 
-In [4]: add_tool.get_openai_function_schema()
-Out[4]: 
+```python
+print(add_tool.get_function_description())
+```
+
+```markdown
+>>> Adds two numbers.
+```
+
+```python
+print(add_tool.get_openai_function_schema())
+```
+
+```markdown
+>>> 
 {'name': 'add',
  'description': 'Adds two numbers.',
  'parameters': {'properties': {'a': {'type': 'integer',
@@ -56,9 +71,14 @@ Out[4]:
    'b': {'type': 'integer', 'description': 'The second number to be added.'}},
   'required': ['a', 'b'],
   'type': 'object'}}
-  
-In [5]: add_tool.get_openai_tool_schema()
-Out[5]: 
+```
+
+```python
+print(add_tool.get_openai_tool_schema())
+```
+
+```markdown
+>>> 
 {'type': 'function',
  'function': {'name': 'add',
   'description': 'Adds two numbers.',
@@ -74,13 +94,22 @@ Out[5]:
 Toolkits are collections of tools that are designed to be used together for specific tasks. All Toolkits expose a `get_tools` method which returns a list of tools. You can therefore do:
 
 ```python
-from camel.toolkits import SlackToolkit
+from camel.toolkits import SearchToolkit
 
 # Initialize a toolkit
-toolkit = SlackToolkit()
+toolkit = SearchToolkit()
 
 # Get list of tools
 tools = toolkit.get_tools()
+```
+
+To utilize specific tools from the toolkits, you can implement code like the following:
+
+```python
+from camel.toolkits import SearchToolkit
+
+google_tool = OpenAIFunction(SearchToolkit().search_google)
+wiki_tool = OpenAIFunction(SearchToolkit().search_wiki)
 ```
 
 Here is a list of the available CAMEL tools and their descriptions:
