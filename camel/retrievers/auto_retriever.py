@@ -15,7 +15,7 @@ import datetime
 import os
 import re
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import Collection, List, Optional, Sequence, Tuple, Union
 from urllib.parse import urlparse
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
@@ -197,7 +197,7 @@ class AutoRetriever:
         top_k: int = DEFAULT_TOP_K_RESULTS,
         similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
         return_detailed_info: bool = False,
-    ) -> str:
+    ) -> dict[str, Sequence[Collection[str]]]:
         r"""Executes the automatic vector retriever process using vector
         storage.
 
@@ -216,9 +216,10 @@ class AutoRetriever:
                 metadata. Defaults to `False`.
 
         Returns:
-            string: By default, returns only the text information. If
-                `return_detailed_info` is `True`, return detailed information
-                including similarity score, content path and metadata.
+            dict[str, Sequence[Collection[str]]]: By default, returns
+                only the text information. If `return_detailed_info` is
+                `True`, return detailed information including similarity
+                score, content path and metadata.
 
         Raises:
             ValueError: If there's an vector storage existing with content
@@ -308,20 +309,17 @@ class AutoRetriever:
         # Select the 'top_k' results
         all_retrieved_info = all_retrieved_info_sorted[:top_k]
 
-        retrieved_infos = "\n".join(str(info) for info in all_retrieved_info)
-        retrieved_infos_text = "\n".join(
-            info['text'] for info in all_retrieved_info if 'text' in info
-        )
+        text_retrieved_info = [item['text'] for item in all_retrieved_info]
 
-        detailed_info = (
-            f"Original Query:\n{{ {query} }}\n"
-            f"Retrieved Context:\n{retrieved_infos}"
-        )
+        detailed_info = {
+            "Original Query": query,
+            "Retrieved Context": all_retrieved_info,
+        }
 
-        text_info = (
-            f"Original Query:\n{{ {query} }}\n"
-            f"Retrieved Context:\n{retrieved_infos_text}"
-        )
+        text_info = {
+            "Original Query": query,
+            "Retrieved Context": text_retrieved_info,
+        }
 
         if return_detailed_info:
             return detailed_info
