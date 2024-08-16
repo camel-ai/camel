@@ -83,18 +83,20 @@ def test_run_vector_retriever(auto_retriever):
         return_detailed_info=True,
     )
 
-    assert (
-        "similarity score" in result_related
+    assert "similarity score" in str(
+        result_related
     ), "result_related missing 'similarity score'"
-    assert (
-        "content path" in result_related
+    assert "content path" in str(
+        result_related
     ), "result_related missing 'content path'"
-    assert "metadata" in result_related, "result_related missing 'metadata'"
-    assert "text" in result_related, "result_related missing 'text'"
+    assert "metadata" in str(
+        result_related
+    ), "result_related missing 'metadata'"
+    assert "text" in str(result_related), "result_related missing 'text'"
 
     # Test with query unrelated to the content in mock data
     result_unrelated = auto_retriever.run_vector_retriever(
         query_unrealted, contents, top_k, similarity_threshold
     )
 
-    assert "No suitable information retrieved from" in result_unrelated
+    assert "No suitable information retrieved from" in str(result_unrelated)
