@@ -1,6 +1,8 @@
 # Task
 
-> In the CAMEL framework, a task is a specific assignment that can be delegated to an agent and resolved by that agent. Tasks represent a higher-level concept than prompts and should be managed by other modules such as the Planner and Workforce. There are two key characteristics of a task: 1. A task can be collaborative, requiring multiple agents to work together. 2. A task can be decomposed and evolved.
+> In the CAMEL framework, a task is a specific assignment that can be delegated to an agent and resolved by that agent. Tasks represent a higher-level concept than prompts and should be managed by other modules such as the Planner and Workforce. There are two key characteristics of a task: 
+> 1. A task can be collaborative, requiring multiple agents to work together. 
+> 2. A task can be decomposed and evolved.
 
 ## Task Attributes
 
@@ -51,31 +53,43 @@ task = Task(
 ### Example of multiple Tasks with a hierarchical structure.
 
 ```python
-root_task = Task(content="a start task", id="0")
-sub_task_1 = Task(content="a sub task 1", id="1")
-sub_task_2 = Task(content="a sub task 2", id="2")
-sub_task_3 = Task(content="a sub task 3", id="3")
-sub_task_2_1 = Task(content="a sub task of task 2", id="2.1")
-sub_task_2_2 = Task(content="a sub task of task 2", id="2.2")
+# Creating the root task
+root_task = Task(content="Prepare a meal", id="0")
+
+# Creating subtasks for the root task
+sub_task_1 = Task(content="Shop for ingredients", id="1")
+sub_task_2 = Task(content="Cook the meal", id="2")
+sub_task_3 = Task(content="Set the table", id="3")
+
+# Creating subtasks under "Cook the meal"
+sub_task_2_1 = Task(content="Chop vegetables", id="2.1")
+sub_task_2_2 = Task(content="Cook rice", id="2.2")
+
+# Adding subtasks to their respective parent tasks
 root_task.add_subtask(sub_task_1)
 root_task.add_subtask(sub_task_2)
 root_task.add_subtask(sub_task_3)
+
 sub_task_2.add_subtask(sub_task_2_1)
 sub_task_2.add_subtask(sub_task_2_2)
+
+# Printing the hierarchical task structure
 print(root_task.to_string())
-"""
-Task 0: a start task
-  Task 1: a sub task 1
-  Task 2: a sub task 2
-      Task 2.1: a sub task of task 2
-      Task 2.2: a sub task of task 2
-  Task 3: a sub task 3
-"""
+```
+
+```markdown
+>>>
+    Task 0: Prepare a meal
+    Task 1: Shop for ingredients
+    Task 2: Cook the meal
+        Task 2.1: Chop vegetables
+        Task 2.2: Cook rice
+    Task 3: Set the table
 ```
 
 ## Decomposing and composing a Task
 
-Decomposing or composing a task involves defining its responsible agent, prompt template and agent response parser. Here is a example:
+Decomposing or composing a task involves defining its responsible agent, prompt template and agent response parser. Here is an example:
 
 ```python
 from camel.agents import ChatAgent
@@ -84,9 +98,13 @@ from camel.tasks.task_prompt import (
     TASK_COMPOSE_PROMPT,
     TASK_DECOMPOSE_PROMPT,
 )
+from camel.messages import BaseMessage
 
-# set up LLM model
-agent = ...
+sys_msg = BaseMessage.make_assistant_message(
+    role_name="Assistant", content="You're a helpful assistant"
+)
+# Set up an agent
+agent = ChatAgent(system_message=sys_msg)
 
 task = Task(
     content="Weng earns $12 an hour for babysitting. Yesterday, she just did 51 minutes of babysitting. How much did she earn?",
@@ -97,13 +115,18 @@ task = Task(
 new_tasks = task.decompose(agent=agent, template=TASK_DECOMPOSE_PROMPT)
 for t in new_tasks:
     print(t.to_string())
-"""
-Task 0.1: Calculate the proportion of 51 minutes to an hour.
+```
 
-Task 0.2: Multiply the proportion by Weng's hourly rate to find out how much she earned for 51 minutes of babysitting.
+```markdown
+>>>
+Task 0.0: Convert 51 minutes into hours.
 
-"""
+Task 0.1: Calculate Weng's earnings for the converted hours at the rate of $12 per hour.
 
+Task 0.2: Provide the final earnings amount based on the calculation.
+```
+
+```python
 # compose task result by the sub-tasks.
 task.compose(agent=agent, template=TASK_COMPOSE_PROMPT)
 print(task.result)
@@ -127,9 +150,13 @@ from camel.tasks import (
     Task,
     TaskManager,
 )
+from camel.messages import BaseMessage
 
-# set up LLM model
-agent = ...
+sys_msg = BaseMessage.make_assistant_message(
+    role_name="Assistant", content="You're a helpful assistant"
+)
+# Set up an agent
+agent = ChatAgent(system_message=sys_msg)
 
 
 task = Task(
@@ -137,15 +164,21 @@ task = Task(
     id="0",
 )
 print(task.to_string())
+```
 
+```markdown
+>>>Task 0: Weng earns $12 an hour for babysitting. Yesterday, she just did 51 minutes of babysitting. How much did she earn?
+```
+
+```python
 task_manager = TaskManager(task)
 evolved_task = task_manager.evolve(task, agent=agent)
 print(evolved_task.to_string())
-
-"""
-Task 0.0: Weng earns $12 an hour for babysitting. However, her hourly rate 
-increases by $2 for every additional hour worked beyond the first hour. 
-Yesterday, she babysat for a total of 3 hours and 45 minutes. How much did she 
-earn in total for her babysitting services?
-"""
 ```
+
+```markdown
+>>>Task 0.0: Weng earns $12 an hour for babysitting. Yesterday, she babysat for 1 hour and 45 minutes. If she also received a $5 bonus for exceptional service, how much did she earn in total for that day?
+```
+
+## Conclusion
+We offers a structured approach to task management, enabling efficient delegation and resolution of tasks by agents. With features such as task decomposition, composition, and hierarchical task structures, CAMEL provides the tools necessary to manage complex workflows. Whether handling simple tasks or intricate, multi-level assignments, CAMEL's task management capabilities ensure that tasks are executed effectively and collaboratively, enhancing overall productivity.
