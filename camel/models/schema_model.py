@@ -66,13 +66,6 @@ class SchemaModel(BaseModelBackend):
                 be fed into openai.ChatCompletion.create().
             url (Optional[str]): The url to the OpenAI service.
         """
-        super().__init__(
-            model_type,
-            model_config_dict,
-            api_key=None,
-            url=None,
-            token_counter=None,
-        )
         from outlines import models  # type: ignore[import]
 
         self.model_platform = model_platform
