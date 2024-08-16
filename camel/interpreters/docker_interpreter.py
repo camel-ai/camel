@@ -130,7 +130,7 @@ class DockerInterpreter(BaseInterpreter):
         code_type = self._check_code_type(code_type)
         commands = shlex.split(
             self._CODE_EXECUTE_CMD_MAPPING[code_type].format(
-                file_name=str(file)
+                file_name=file.as_posix()
             )
         )
         if self._container is None:

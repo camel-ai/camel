@@ -25,7 +25,7 @@ from camel.types import ModelPlatformType, ModelType
 from camel.utils import print_text_animated
 
 # Initialize agentops
-agentops.init(tags=["CAMEL X AgentOps1"])
+agentops.init(tags=["CAMEL X AgentOps"])
 
 # Import toolkits after init of agentops so that the tool useage would be
 # tracked

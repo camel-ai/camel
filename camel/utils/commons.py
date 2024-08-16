@@ -488,8 +488,14 @@ def is_docker_running() -> bool:
 
 
 try:
-    from agentops import ToolEvent, record
-except ImportError:
+    if os.getenv("AGENTOPS_API_KEY") is not None:
+        from agentops import (
+            ToolEvent,
+            record,
+        )
+    else:
+        raise ImportError
+except (ImportError, AttributeError):
     ToolEvent = None
 
 
@@ -528,7 +534,16 @@ class AgentOpsMeta(type):
     """
 
     def __new__(cls, name, bases, dct):
-        for attr, value in dct.items():
-            if callable(value) and attr != 'get_tools':
-                dct[attr] = agentops_decorator(value)
-        return super(AgentOpsMeta, cls).__new__(cls, name, bases, dct)
+        if ToolEvent:
+            for attr, value in dct.items():
+                if callable(value) and attr != 'get_tools':
+                    dct[attr] = agentops_decorator(value)
+        return super().__new__(cls, name, bases, dct)
+
+
+# Mock trak agent decorator for AgentOps
+def track_agent(*args, **kwargs):
+    def noop(f):
+        return f
+
+    return noop

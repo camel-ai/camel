@@ -32,6 +32,7 @@ from .commons import (
     print_text_animated,
     text_extract_from_web,
     to_pascal,
+    track_agent,
 )
 from .constants import Constants
 from .token_counting import (
@@ -74,4 +75,5 @@ __all__ = [
     'json_to_function_code',
     'agentops_decorator',
     'AgentOpsMeta',
+    'track_agent',
 ]

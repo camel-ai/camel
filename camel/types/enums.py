@@ -449,6 +449,7 @@ class ModelPlatformType(Enum):
     VLLM = "vllm"
     MISTRAL = "mistral"
     INTERNLM = "internlm"
+    OPENAICOMPATIBILITYMODEL = "openai-compatibility-model"
 
     @property
     def is_openai(self) -> bool:
@@ -499,6 +500,12 @@ class ModelPlatformType(Enum):
     def is_open_source(self) -> bool:
         r"""Returns whether this platform is opensource."""
         return self is ModelPlatformType.OPENSOURCE
+
+    @property
+    def is_openai_compatibility_model(self) -> bool:
+        r"""Returns whether this is a platform supporting openai
+        compatibility"""
+        return self is ModelPlatformType.OPENAICOMPATIBILITYMODEL
 
     @property
     def is_gemini(self) -> bool:
