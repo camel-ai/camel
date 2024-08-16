@@ -11,17 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import os
 import uuid
 from typing import Dict, List, Optional, Union
 
 from camel.agents import ChatAgent
-from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
-from camel.models import BaseModelBackend, ModelFactory
+from camel.models import BaseModelBackend
 from camel.personas import Persona
 from camel.prompts import TextPrompt
-from camel.types import ModelPlatformType, ModelType
 
 
 class PersonaHub:
@@ -45,16 +42,7 @@ class PersonaHub:
         self,
         model: Optional[BaseModelBackend] = None,
     ):
-        self.model = (
-            model
-            if model
-            else ModelFactory.create(
-                model_platform=ModelPlatformType.OPENAI,
-                model_type=ModelType.GPT_4O_MINI,
-                model_config_dict=ChatGPTConfig().__dict__,
-                api_key=os.getenv("OPENAI_API_KEY"),
-            )
-        )
+        self.model = model
         self.personas: Dict[uuid.UUID, Persona] = {}
 
     def __setitem__(self, persona: Persona):
@@ -102,15 +90,7 @@ class PersonaHub:
         persona = Persona()
 
         t2p_prompt: Union[TextPrompt, str] = persona.t2p_prompt
-        answer_template = """
-You MUST answer the question according to the format of the ANSWER TEMPLATE, and you can only modify the content within <BLANK>.
-===== ANSWER TEMPLATE =====
-persona_name: <BLANK>
-persona_description: <BLANK>
-"""  # noqa: E501
-        t2p_prompt_instruction = (
-            t2p_prompt.format(action=action, text=text) + answer_template
-        )
+        t2p_prompt_instruction = t2p_prompt.format(action=action, text=text)
 
         t2p_prompt_instruction_msg = BaseMessage.make_user_message(
             role_name="User",
@@ -189,10 +169,10 @@ persona_description: <BLANK>
             content="I am a helpful assistant",
         )
 
-        t2p_agent = ChatAgent(system_message=sys_msg, model=self.model)
-        t2p_agent.reset()
+        p2p_agent = ChatAgent(system_message=sys_msg, model=self.model)
+        p2p_agent.reset()
 
-        response = t2p_agent.step(p2p_prompt_instruction_msg)
+        response = p2p_agent.step(p2p_prompt_instruction_msg)
 
         if response.terminated:
             raise RuntimeError("Persona to persona step failed.")
