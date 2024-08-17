@@ -27,6 +27,7 @@ from camel.messages import (
 )
 from camel.prompts import CodePrompt, TextPrompt
 from camel.types import (
+    MultiModalModelType,
     OpenAIBackendRole,
     OpenAIImageType,
     OpenAIVisionDetailType,
@@ -46,14 +47,16 @@ class BaseMessage:
         meta_dict (Optional[Dict[str, str]]): Additional metadata dictionary
             for the message.
         content (str): The content of the message.
-        video_bytes (Optional[bytes]): Optional bytes of a video associated
-            with the message. Default is None.
+        video_bytes (Optional[Union[bytes, List[bytes]]): Optional bytes
+            object or list of bytes objects associated with the message.
         image_list (Optional[List[Image.Image]]): Optional list of PIL Image
             objects associated with the message. Default is None.
         image_detail (Literal["auto", "low", "high"]): Detail level of the
             images associated with the message. Default is "auto".
         video_detail (Literal["auto", "low", "high"]): Detail level of the
             videos associated with the message. Default is "low".
+        video_type (Optional[str]): Optional type of the video associated
+            with the message. Default is None.
     """
 
     role_name: str
@@ -61,10 +64,11 @@ class BaseMessage:
     meta_dict: Optional[Dict[str, str]]
     content: str
 
-    video_bytes: Optional[bytes] = None
+    video_bytes: Optional[Union[bytes, List[bytes]]] = None
     image_list: Optional[List[Image.Image]] = None
     image_detail: Literal["auto", "low", "high"] = "auto"
     video_detail: Literal["auto", "low", "high"] = "low"
+    video_type: Optional[str] = None
 
     @classmethod
     def make_user_message(
@@ -72,7 +76,7 @@ class BaseMessage:
         role_name: str,
         content: str,
         meta_dict: Optional[Dict[str, str]] = None,
-        video_bytes: Optional[bytes] = None,
+        video_bytes: Optional[Union[bytes, List[bytes]]] = None,
         image_list: Optional[List[Image.Image]] = None,
         image_detail: Union[
             OpenAIVisionDetailType, str
@@ -80,6 +84,7 @@ class BaseMessage:
         video_detail: Union[
             OpenAIVisionDetailType, str
         ] = OpenAIVisionDetailType.LOW,
+        video_type: Optional[str] = None,
     ) -> "BaseMessage":
         return cls(
             role_name,
@@ -90,6 +95,7 @@ class BaseMessage:
             image_list,
             OpenAIVisionDetailType(image_detail).value,
             OpenAIVisionDetailType(video_detail).value,
+            video_type,
         )
 
     @classmethod
@@ -98,7 +104,7 @@ class BaseMessage:
         role_name: str,
         content: str,
         meta_dict: Optional[Dict[str, str]] = None,
-        video_bytes: Optional[bytes] = None,
+        video_bytes: Optional[Union[bytes, List[bytes]]] = None,
         image_list: Optional[List[Image.Image]] = None,
         image_detail: Union[
             OpenAIVisionDetailType, str
@@ -106,16 +112,18 @@ class BaseMessage:
         video_detail: Union[
             OpenAIVisionDetailType, str
         ] = OpenAIVisionDetailType.LOW,
+        video_type: Optional[str] = None,
     ) -> "BaseMessage":
         return cls(
             role_name,
-            RoleType.ASSISTANT,
+            RoleType.USER,
             meta_dict,
             content,
             video_bytes,
             image_list,
             OpenAIVisionDetailType(image_detail).value,
             OpenAIVisionDetailType(video_detail).value,
+            video_type,
         )
 
     def create_new_instance(self, content: str) -> "BaseMessage":
@@ -249,7 +257,11 @@ class BaseMessage:
         if role_at_backend == OpenAIBackendRole.SYSTEM:
             return self.to_openai_system_message()
         elif role_at_backend == OpenAIBackendRole.USER:
-            return self.to_openai_user_message()
+            is_multimodal_message_type = isinstance(self.video_bytes, List)
+            if is_multimodal_message_type:
+                return self.to_multimodal_model_user_message()
+            else:
+                return self.to_openai_user_message()
         elif role_at_backend == OpenAIBackendRole.ASSISTANT:
             return self.to_openai_assistant_message()
         else:
@@ -311,6 +323,12 @@ class BaseMessage:
                 )
 
         if self.video_bytes:
+            if not isinstance(self.video_bytes, bytes):
+                raise ValueError(
+                    "Video bytes should be a bytes object for the OpenAI "
+                    "model"
+                )
+
             import imageio.v3 as iio
 
             base64Frames: List[str] = []
@@ -360,6 +378,108 @@ class BaseMessage:
                 }
 
                 hybird_content.append(item)
+
+        if len(hybird_content) > 1:
+            return {
+                "role": "user",
+                "content": hybird_content,
+            }
+        # This return just for str message
+        else:
+            return {
+                "role": "user",
+                "content": self.content,
+            }
+
+    def to_multimodal_model_user_message(self) -> OpenAIUserMessage:
+        r"""Converts the message to an :obj:`OpenAIUserMessage` object.
+
+        Returns:
+            OpenAIUserMessage: The converted :obj:`OpenAIUserMessage` object.
+        """
+        hybird_content: List[Any] = []
+        hybird_content.append(
+            {
+                "type": "text",
+                "text": self.content,
+            }
+        )
+
+        if self.image_list and len(self.image_list) > 0:
+            for image in self.image_list:
+                if image.format is None:
+                    raise ValueError(
+                        f"Image's `format` is `None`, please "
+                        f"transform the `PIL.Image.Image` to  one of "
+                        f"following supported formats, such as "
+                        f"{list(MultiModalModelType)}"
+                    )
+
+                if not isinstance(image, Image.Image):
+                    raise ValueError(
+                        "Image should be a PIL Image object for the multimodal "
+                        "model"
+                    )
+
+                image_type: str = image.format.lower()
+                if image_type not in MultiModalModelType:
+                    raise ValueError(
+                        f"Image type {image.format} "
+                        f"is not supported by OpenAI vision model"
+                    )
+                with io.BytesIO() as buffer:
+                    image.save(fp=buffer, format=image.format)
+                    encoded_image = base64.b64encode(buffer.getvalue()).decode(
+                        "utf-8"
+                    )
+                image_prefix = f"data:image/{image_type};base64,"
+                hybird_content.append(
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"{image_prefix}{encoded_image}",
+                            "detail": self.image_detail,
+                        },
+                    }
+                )
+
+        if self.video_bytes:
+            if not isinstance(self.video_bytes, List):
+                raise ValueError(
+                    "Video bytes should be a list of bytes for the multimodal "
+                    "model"
+                )
+
+            if self.video_type is None:
+                raise ValueError(
+                    f"Video's `format` is `None`, please "
+                    f"transform the `PIL.Image.Image` to  one of "
+                    f"following supported formats, such as "
+                    f"{list(MultiModalModelType)}"
+                )
+            if self.video_type.lower() not in MultiModalModelType:
+                raise ValueError(
+                    f"Video type {self.video_type} "
+                    f"is not supported by multimodal model"
+                )
+
+            for video in self.video_bytes:
+                with io.BytesIO() as buffer:
+                    buffer.write(video)
+                    encoded_video = base64.b64encode(buffer.getvalue()).decode(
+                        "utf-8"
+                    )
+                video_prefix = f"data:video/{self.video_type.lower()};bytes,"
+
+                hybird_content.append(
+                    {
+                        "type": "video_url",
+                        "video_url": {
+                            "url": f"{video_prefix}{encoded_video}",
+                            "detail": self.video_detail,
+                        },
+                    }
+                )
 
         if len(hybird_content) > 1:
             return {
