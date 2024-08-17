@@ -66,6 +66,12 @@ class InternLMXComposerModel(BaseModelBackend):
             token_counter=None,
         )
 
+        from pathlib import Path
+
+        self.multimodal_src_directory: Path = Path(
+            model_config_dict.get("multimodal_src_path", "./examples/src")
+        )
+
         # `model_path` is the path to the open-source model
         model_path: Optional[str] = self.model_config_dict.get(
             "model_path", None
@@ -95,37 +101,28 @@ class InternLMXComposerModel(BaseModelBackend):
         model_kwargs["torch_dtype"] = torch.bfloat16
         model_kwargs["trust_remote_code"] = True
 
-        from transformers import BertConfig, BertModel
+        from transformers import AutoModel, AutoTokenizer
 
-        self.model_name = "bert-base-uncased"
-        self._client = BertModel(BertConfig())
-
-        # self._client = (
-        #     AutoModel.from_pretrained(
-        #         self.model_name,
-        #         **model_kwargs,
-        #     )
-        #     # .to(
-        #     #     model_kwargs.get("device") or "cuda"
-        #     #     if torch.cuda.is_available()
-        #     #     else "cpu"
-        #     # )  # this moves the model to the specified device (GPU or CPU)
-        #     # .eval()  # this sets the model to evaluation mode
-        #     # .half()  # this converts the model parameters to half-precision floating point (FP16).  # noqa: E501
-        # )
+        self._client = (
+            AutoModel.from_pretrained(
+                self.model_name,
+                **model_kwargs,
+            )
+            .to(
+                model_kwargs.get("device") or "cuda"
+                if torch.cuda.is_available()
+                else "cpu"
+            )  # move the model to the specified device (GPU or CPU)
+            .eval()  # set the model to evaluation mode
+            .half()  # convert the model parameters to half-precision floating point (FP16).  # noqa: E501
+        )
 
         tokenizer_kwargs = self.model_config_dict.get("tokenizer_kwargs", {})
         tokenizer_kwargs["trust_remote_code"] = True
 
-        from transformers import BertTokenizer
-
-        self._tokenizer = BertTokenizer.from_pretrained(
-            "bert-base-uncased", use_fast=True
+        self._tokenizer = AutoTokenizer.from_pretrained(
+            self.model_name, **tokenizer_kwargs
         )
-
-        # self._tokenizer = AutoTokenizer.from_pretrained(
-        #     self.model_name, **tokenizer_kwargs
-        # )
         self._client.tokenizer = self._tokenizer  # mypy: ignore[attr-defined]
 
         # Replace `model_config_dict` with only the `model_kwargs`
@@ -170,16 +167,15 @@ class InternLMXComposerModel(BaseModelBackend):
 
             import base64
             import shutil
-            from pathlib import Path
 
-            image_directory = Path("./examples/images")
             n_image = 0  # number of images
+            n_video = 0  # number of videos
             image = []  # list of images local path
 
             # Check and clean the images folder
-            if image_directory.exists():
-                shutil.rmtree(image_directory)
-            image_directory.mkdir(parents=True, exist_ok=True)
+            if self.multimodal_src_directory.exists():
+                shutil.rmtree(self.multimodal_src_directory)
+            self.multimodal_src_directory.mkdir(parents=True, exist_ok=True)
 
             # Get `message_content`
             for item in last_message["content"]:
@@ -194,11 +190,30 @@ class InternLMXComposerModel(BaseModelBackend):
                     # Convert the base64 string into images
                     # and save them as the local files.
                     image_data = base64.b64decode(base64_string)
-                    image_file_path = image_directory / f"image_{n_image}.jpg"
+                    image_file_path = (
+                        self.multimodal_src_directory / f"image_{n_image}.jpg"
+                    )
 
                     with open(image_file_path, 'wb') as file:
                         file.write(image_data)
                     image.append(str(image_file_path))
+                elif item["type"] == "video_url":
+                    # Get `video` list
+
+                    n_video += 1
+                    base64_string = item['video_url']['url'].split(',')[1]
+
+                    # Convert the base64 string into video
+                    # and save them as the local files.
+                    video_data = base64.b64decode(base64_string)
+                    video_file_path = (
+                        self.multimodal_src_directory / f"video_{n_video}.mp4"
+                    )
+
+                    with open(video_file_path, 'wb') as file:
+                        file.write(video_data)
+                    image.append(str(video_file_path))
+
         else:
             message_content = ""
             image = []
@@ -259,7 +274,6 @@ class InternLMXComposerModel(BaseModelBackend):
                         role="assistant",
                         function_call=None,
                         tool_calls=None,
-                        refusal=None,
                     ),
                 ),
             ],
