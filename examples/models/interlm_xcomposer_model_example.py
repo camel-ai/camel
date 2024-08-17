@@ -57,6 +57,7 @@ def load_video_from_url(url: str) -> bytes:
 # Get the resources from the urls.
 video_url = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'
 video_bytes = load_video_from_url(video_url)
+video_bytes_list = [video_bytes]
 image_url = 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg'
 image = load_image_from_url(image_url)
 images = [image, image]
@@ -88,7 +89,8 @@ agent = ChatAgent(assistant_sys_msg, model=ollama_model, token_limit=4096)
 user_msg = BaseMessage.make_user_message(
     role_name="User",
     content="What did you see in the images?",
-    video_bytes=video_bytes,
+    video_bytes=video_bytes_list,
+    video_type="mp4",
     image_list=images,
 )
 assistant_response = agent.step(user_msg)
