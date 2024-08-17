@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import List, Optional
+from typing import List, Optional, Set
 
 from pydantic import BaseModel
 
@@ -90,10 +90,10 @@ class ExternalToolAgent(ChatAgent):
             tools,
             response_terminators,
         )
-        self.external_tool_names = [
+        self.external_tool_names: Set[str] = {
             tool.openai_tool_schema["function"]["name"]
             for tool in self.external_tools
-        ]
+        }
 
     def step(
         self,
@@ -142,15 +142,20 @@ class ExternalToolAgent(ChatAgent):
             ) = self._step_model_response(openai_messages, num_tokens)
 
             # if the model response is not a function call, break the loop
-            if (
-                not isinstance(response, ChatCompletion)
-                or response.choices[0].message.tool_calls is None
+            if not (
+                self.is_tools_added()
+                and isinstance(response, ChatCompletion)
+                and response.choices[0].message.tool_calls is not None
             ):
                 break
 
             # if the model calls an external tool, directly return the request
-            tool_call_request = response.choices[0].message.tool_calls[0]
-            if tool_call_request.function.name in self.external_tool_names:
+            tool_call_requests = response.choices[0].message.tool_calls
+            called_tool_names = {
+                tool_call.function.name for tool_call in tool_call_requests
+            }
+            if set(called_tool_names) & self.external_tool_names:
+                # if model calls an external tool, directly return the request
                 info = self._step_get_info(
                     output_messages,
                     finish_reasons,
@@ -159,7 +164,7 @@ class ExternalToolAgent(ChatAgent):
                     tool_calls,
                     num_tokens,
                 )
-                info["tool_call_request"] = tool_call_request
+                info["tool_call_requests"] = tool_call_requests
                 return ChatAgentResponse(
                     msgs=output_messages, terminated=self.terminated, info=info
                 )
@@ -265,15 +270,19 @@ class ExternalToolAgent(ChatAgent):
                 response_id,
             ) = self._step_model_response(openai_messages, num_tokens)
 
-            if (
-                not isinstance(response, ChatCompletion)
-                or response.choices[0].message.tool_calls is None
+            if not (
+                self.is_tools_added()
+                and isinstance(response, ChatCompletion)
+                and response.choices[0].message.tool_calls is not None
             ):
                 break
 
-            # if the model calls an external tool, directly return the request
-            tool_call_request = response.choices[0].message.tool_calls[0]
-            if tool_call_request.function.name in self.external_tool_names:
+            tool_call_requests = response.choices[0].message.tool_calls
+            called_tool_names = {
+                tool_call.function.name for tool_call in tool_call_requests
+            }
+            if set(called_tool_names) & self.external_tool_names:
+                # if model calls an external tool, directly return the request
                 info = self._step_get_info(
                     output_messages,
                     finish_reasons,
@@ -282,7 +291,7 @@ class ExternalToolAgent(ChatAgent):
                     tool_calls,
                     num_tokens,
                 )
-                info["tool_call_request"] = tool_call_request
+                info["tool_call_requests"] = tool_call_requests
                 return ChatAgentResponse(
                     msgs=output_messages, terminated=self.terminated, info=info
                 )
