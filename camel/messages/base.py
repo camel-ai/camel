@@ -417,8 +417,8 @@ class BaseMessage:
 
                 if not isinstance(image, Image.Image):
                     raise ValueError(
-                        "Image should be a PIL Image object for the multimodal "
-                        "model"
+                        "Image should be a PIL Image object for the "
+                        "multimodal model"
                     )
 
                 image_type: str = image.format.lower()
