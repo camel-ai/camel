@@ -23,6 +23,7 @@ from typing import (
     List,
     Optional,
     Tuple,
+    Type,
     Union,
 )
 
@@ -319,7 +320,7 @@ class ChatAgent(BaseAgent):
     def step(
         self,
         input_message: BaseMessage,
-        output_schema: Optional[BaseModel] = None,
+        output_schema: Optional[Type[BaseModel]] = None,
     ) -> ChatAgentResponse:
         r"""Performs a single step in the chat session by generating a response
         to the input message.
