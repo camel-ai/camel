@@ -451,7 +451,7 @@ class ChatAgent(BaseAgent):
     async def step_async(
         self,
         input_message: BaseMessage,
-        output_schema: Optional[BaseModel] = None,
+        output_schema: Optional[Type[BaseModel]] = None,
     ) -> ChatAgentResponse:
         r"""Performs a single step in the chat session by generating a response
         to the input message. This agent step can call async function calls.
@@ -462,10 +462,10 @@ class ChatAgent(BaseAgent):
                 either `user` or `assistant` but it will be set to `user`
                 anyway since for the self agent any incoming message is
                 external.
-            output_schema (Optional[BaseModel]): An optional pydantic model
-                that includes value types and field descriptions used to
-                generate a structured response by LLM. This schema helps
-                in defining the expected output format.
+            output_schema (Optional[Type[BaseModel]]): An optional pydantic
+                model that includes value types and field descriptions used to
+                generate a structured response by LLM. This schema helps in
+                defining the expected output format.
 
         Returns:
             ChatAgentResponse: A struct containing the output messages,
@@ -615,13 +615,13 @@ class ChatAgent(BaseAgent):
         # result message
         return tool_calls, func_assistant_msg, func_result_msg
 
-    def _add_output_schema_to_tool_list(self, output_schema: BaseModel):
+    def _add_output_schema_to_tool_list(self, output_schema: Type[BaseModel]):
         r"""Handles the structured output response for OpenAI.
         This method processes the given output schema and integrates the
         resulting function into the tools for the OpenAI model configuration.
         Args:
-            output_schema (BaseModel): The schema representing the expected
-                output structure.
+            output_schema (Type[BaseModel]): The schema representing the
+                expected output structure.
         """
         from camel.toolkits import OpenAIFunction
 
