@@ -95,7 +95,6 @@ class ModelType(Enum):
         return self in {
             ModelType.GPT_3_5_TURBO,
             ModelType.GPT_4,
-            ModelType.GPT_4_32K,
             ModelType.GPT_4_TURBO,
             ModelType.GPT_4O,
             ModelType.GPT_4O_MINI,
@@ -109,7 +108,6 @@ class ModelType(Enum):
         return self in {
             ModelType.GPT_3_5_TURBO,
             ModelType.GPT_4,
-            ModelType.GPT_4_32K,
             ModelType.GPT_4_TURBO,
             ModelType.GPT_4O,
         }
@@ -230,7 +228,6 @@ class ModelType(Enum):
         }:
             return 16_384
         elif self in {
-            ModelType.GPT_4_32K,
             ModelType.MISTRAL_CODESTRAL,
             ModelType.MISTRAL_7B,
             ModelType.MISTRAL_MIXTRAL_8x7B,
