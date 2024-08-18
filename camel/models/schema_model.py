@@ -71,7 +71,7 @@ class SchemaModel(BaseModelBackend):
         self.model_platform = model_platform
         self.model_name = model_type
         self.model_config_dict = model_config_dict
-        self._client = Union[models.Transformers, models.LlamaCpp, models.VLLM]
+        self._client: Union[models.Transformers, models.LlamaCpp, models.VLLM]
         self._url = url
 
         # Since Outlines suports multiple model types, it is necessary to
