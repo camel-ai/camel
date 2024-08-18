@@ -13,13 +13,19 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from .base import BaseGraphStorage
-from .graph_element import GraphElement
+from .graph_element import GraphElement, LabelledNode, ChunkNode, EntityNode, Relation, Triplet
+#todo: merge into graphelement
 from .neo4j_graph import Neo4jGraph
 from .nebula_graph import NebulaGraph
 
 __all__ = [
     'BaseGraphStorage',
     'GraphElement',
+    'LabelledNode',
+    'ChunkNode',
+    'EntityNode',
+    'Relation',
+    'Triplet',
     'Neo4jGraph',
     'NebulaGraph',
 ]

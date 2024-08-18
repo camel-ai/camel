@@ -12,19 +12,17 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import logging
-import os
-from hashlib import md5
 from typing import Any, Dict, List, Optional
-
-from camel.storages.graph_storages import BaseGraphStorage, GraphElement
+#TODO: SORT IMPORTS
+from camel.storages.graph_storages import BaseGraphStorage, LabelledNode, ChunkNode, EntityNode, Triplet, Relation
+from camel.storages.graph_storages.utils import url_scheme_parse, build_param_map, remove_empty_values
 from camel.utils import dependencies_required
 from string import Template
 
 from nebula3.common import ttypes
-from nebula3.Config import SessionPoolConfig
-from nebula3.Exception import IOErrorException
-from nebula3.fbthrift.transport.TTransport import TTransportException
 from nebula3.gclient.net.SessionPool import SessionPool
+from nebula3.gclient.net.base import BaseExecutor
+from nebula3.data.ResultSet import ResultSet
 
 BASE_ENTITY_LABEL: str = "entity"
 QUOTE = '"'
@@ -126,29 +124,37 @@ class NebulaGraph(BaseGraphStorage):
     @dependencies_required('nebula3')
     def __init__(
             self,
-            session_pool: Optional[Any] = None,
-            space_name: Optional[str] = None,
+            space: str,
+            client: Optional[BaseExecutor] = None,
+            username: str = "root",
+            password: str = "nebula",
+            url: str = "nebula://localhost:9669",
+            overwrite: bool = False,
             edge_types=None,
             rel_prop_names=None,
             tags=None,
             tag_prop_names=None,
             include_vid: bool = True,
-            session_pool_kwargs=None,
     ) -> None:
         """Initialize NebulaGraph graph store.
 
         Args:
-            session_pool: NebulaGraph session pool.
-            space_name: NebulaGraph space name.
-            edge_types: Edge types.
-            rel_prop_names: Relation property names corresponding to edge types.
-            tags: Tags.
-            tag_prop_names: Tag property names corresponding to tags.
-            session_pool_kwargs: Keyword arguments for NebulaGraph session pool.
+            #TODO: UPDATE
         """
-
-        if session_pool_kwargs is None:
-            session_pool_kwargs = {}
+        self._space = space
+        if client:
+            self._client = client
+        else:
+            session_pool = SessionPool(
+                username,
+                password,
+                self._space,
+                [url_scheme_parse(url)],
+            )
+            session_pool.init()
+            self._client = session_pool
+        if overwrite:
+            self._client.execute(f"CLEAR SPACE {self._space};")
         if tag_prop_names is None:
             tag_prop_names = ["name,"]
         if tags is None:
@@ -157,14 +163,6 @@ class NebulaGraph(BaseGraphStorage):
             rel_prop_names = ["relationship,"]
         if edge_types is None:
             edge_types = ["relationship"]
-        assert space_name is not None, "space_name should be provided."
-        self._space_name = space_name
-        self._session_pool_kwargs = session_pool_kwargs
-
-        self._session_pool: Any = session_pool
-        if self._session_pool is None:
-            self.init_session_pool()
-
         self._vid_type = self._get_vid_type
 
         self._tags = tags or ["entity"]
@@ -237,33 +235,6 @@ class NebulaGraph(BaseGraphStorage):
             )
 
     @property
-    def init_session_pool(self) -> Any:
-        """Return NebulaGraph session pool."""
-        # ensure "NEBULA_USER", "NEBULA_PASSWORD", "NEBULA_ADDRESS" are set
-        # in environment variables
-        if not all(
-                key in os.environ
-                for key in ["NEBULA_USER", "NEBULA_PASSWORD", "NEBULA_ADDRESS"]
-        ):
-            raise ValueError(
-                "NEBULA_USER, NEBULA_PASSWORD, NEBULA_ADDRESS should be set in "
-                "environment variables when NebulaGraph Session Pool is not "
-                "directly passed."
-            )
-        graphd_host, graphd_port = os.environ["NEBULA_ADDRESS"].split(":")
-        session_pool = SessionPool(
-            os.environ["NEBULA_USER"],
-            os.environ["NEBULA_PASSWORD"],
-            self._space_name,
-            [(graphd_host, int(graphd_port))],
-        )
-
-        seesion_pool_config = SessionPoolConfig()
-        session_pool.init(seesion_pool_config)
-        self._session_pool = session_pool
-        return self._session_pool
-
-    @property
     def _get_vid_type(self):
         """Get vid type."""
         return (
@@ -272,14 +243,10 @@ class NebulaGraph(BaseGraphStorage):
             .cast()
         )
 
-    def __del__(self) -> None:
-        """Close NebulaGraph session pool."""
-        self._session_pool.close()
-
     @property
     def get_client(self) -> Any:
-        """Return NebulaGraph session pool."""
-        return self._session_pool
+        """Return NebulaGraph client object."""
+        return self._client
 
     @property
     def get_schema(self, refresh: bool = False) -> str:
@@ -299,259 +266,324 @@ class NebulaGraph(BaseGraphStorage):
         """
         return self.structured_schema
 
-    def get(self, subj: str) -> List[List[str]]:
-        """Get triplets.
-
-        Args:
-            subj: Subject.
-
-        Returns:
-            Triplets.
-        """
-        rel_map = self.get_flat_rel_map([subj], depth=1)
-        rels = list(rel_map.values())
-        if len(rels) == 0:
+    def get(
+            self,
+            properties: Optional[dict] = None,
+            ids: Optional[List[str]] = None,
+    ) -> List[LabelledNode]:
+        """Get nodes."""
+        if not (properties or ids):
             return []
-        return rels[0]
+        else:
+            return self._get(properties, ids)
 
-    def get_flat_rel_map(
-            self, subjs: Optional[List[str]] = None, depth: int = 2, limit: int = 30
-    ) -> Dict[str, List[List[str]]]:
-        """Get flat rel map."""
-        # The flat means for multi-hop relation path, we could get
-        # knowledge like: subj -rel-> obj -rel-> obj <-rel- obj.
-        # This type of knowledge is useful for some tasks.
-        # +---------------------+---------------------------------------------...-----+
-        # | subj                | flattened_rels                              ...     |
-        # +---------------------+---------------------------------------------...-----+
-        # | "{name:Tony Parker}"| "{name: Tony Parker}-[follow:{degree:95}]-> ...ili}"|
-        # | "{name:Tony Parker}"| "{name: Tony Parker}-[follow:{degree:95}]-> ...r}"  |
-        # ...
-        rel_map: Dict[Any, List[Any]] = {}
-        if subjs is None or len(subjs) == 0:
-            # unlike simple graph_store, we don't do get_all here
-            return rel_map
+    def _get(
+            self,
+            properties: Optional[dict] = None,
+            ids: Optional[List[str]] = None,
+    ) -> List[LabelledNode]:
+        """Get nodes."""
+        cypher_statement = "MATCH (e:Node__) "
+        if properties or ids:
+            cypher_statement += "WHERE "
+        params = {}
 
-        # WITH map{`true`: "-[", `false`: "<-["} AS arrow_l,
-        #      map{`true`: "]->", `false`: "]-"} AS arrow_r,
-        #      map{`follow`: "degree", `serve`: "start_year,end_year"} AS edge_type_map
-        # MATCH p=(start)-[e:follow|serve*..2]-()
-        #     WHERE id(start) IN ["player100", "player101"]
-        #   WITH start, id(start) AS vid, nodes(p) AS nodes, e AS rels,
-        #     length(p) AS rel_count, arrow_l, arrow_r, edge_type_map
-        #   WITH
-        #     REDUCE(s = vid + '{', key IN [key_ in ["name"]
-        #       WHERE properties(start)[key_] IS NOT NULL]  | s + key + ': ' +
-        #         COALESCE(TOSTRING(properties(start)[key]), 'null') + ', ')
-        #         + '}'
-        #       AS subj,
-        #     [item in [i IN RANGE(0, rel_count - 1) | [nodes[i], nodes[i + 1],
-        #         rels[i], typeid(rels[i]) > 0, type(rels[i]) ]] | [
-        #      arrow_l[tostring(item[3])] +
-        #          item[4] + ':' +
-        #          REDUCE(s = '{', key IN SPLIT(edge_type_map[item[4]], ',') |
-        #            s + key + ': ' + COALESCE(TOSTRING(properties(item[2])[key]),
-        #            'null') + ', ') + '}'
-        #           +
-        #      arrow_r[tostring(item[3])],
-        #      REDUCE(s = id(item[1]) + '{', key IN [key_ in ["name"]
-        #           WHERE properties(item[1])[key_] IS NOT NULL]  | s + key + ': ' +
-        #           COALESCE(TOSTRING(properties(item[1])[key]), 'null') + ', ') + '}'
-        #      ]
-        #   ] AS rels
-        #   WITH
-        #       REPLACE(subj, ', }', '}') AS subj,
-        #       REDUCE(acc = collect(NULL), l in rels | acc + l) AS flattened_rels
-        #   RETURN
-        #     subj,
-        #     REPLACE(REDUCE(acc = subj,l in flattened_rels|acc + ' ' + l),
-        #       ', }', '}')
-        #       AS flattened_rels
-        #   LIMIT 30
+        if ids:
+            cypher_statement += f"id(e) in $all_id "
+            params[f"all_id"] = ids
+        if properties:
+            for i, prop in enumerate(properties):
+                cypher_statement += f"e.Prop__.`{prop}` == $property_{i} AND "
+                params[f"property_{i}"] = properties[prop]
+            cypher_statement = cypher_statement[:-5]  # Remove trailing AND
 
-        # Based on self._include_vid
-        # {name: Tim Duncan} or player100{name: Tim Duncan} for entity
-        s_prefix = "vid + '{'" if self._include_vid else "'{'"
-        s1 = "id(item[1]) + '{'" if self._include_vid else "'{'"
+        return_statement = """
+        RETURN id(e) AS name,
+               e.Node__.label AS type,
+               properties(e.Props__) AS properties,
+               properties(e) AS all_props
+        """
+        cypher_statement += return_statement
+        cypher_statement = cypher_statement.replace("\n", " ")
 
-        query = (
-            f"WITH map{{`true`: '-[', `false`: '<-['}} AS arrow_l,"
-            f"     map{{`true`: ']->', `false`: ']-'}} AS arrow_r,"
-            f"     {self._edge_prop_map_cypher_string} AS edge_type_map "
-            f"MATCH p=(start)-[e:`{'`|`'.join(self._edge_types)}`*..{depth}]-() "
-            f"  WHERE id(start) IN $subjs "
-            f"WITH start, id(start) AS vid, nodes(p) AS nodes, e AS rels,"
-            f"  length(p) AS rel_count, arrow_l, arrow_r, edge_type_map "
-            f"WITH "
-            f"  REDUCE(s = {s_prefix}, key IN [key_ in {self._tag_prop_names!s} "
-            f"    WHERE properties(start)[key_] IS NOT NULL]  | s + key + ': ' + "
-            f"      COALESCE(TOSTRING(properties(start)[key]), 'null') + ', ')"
-            f"      + '}}'"
-            f"    AS subj,"
-            f"  [item in [i IN RANGE(0, rel_count - 1)|[nodes[i], nodes[i + 1],"
-            f"      rels[i], typeid(rels[i]) > 0, type(rels[i]) ]] | ["
-            f"    arrow_l[tostring(item[3])] +"
-            f"      item[4] + ':' +"
-            f"      REDUCE(s = '{{', key IN SPLIT(edge_type_map[item[4]], ',') | "
-            f"        s + key + ': ' + COALESCE(TOSTRING(properties(item[2])[key]),"
-            f"        'null') + ', ') + '}}'"
-            f"      +"
-            f"    arrow_r[tostring(item[3])],"
-            f"    REDUCE(s = {s1}, key IN [key_ in "
-            f"        {self._tag_prop_names!s} WHERE properties(item[1])[key_] "
-            f"        IS NOT NULL]  | s + key + ': ' + "
-            f"        COALESCE(TOSTRING(properties(item[1])[key]), 'null') + ', ')"
-            f"        + '}}'"
-            f"    ]"
-            f"  ] AS rels "
-            f"WITH "
-            f"  REPLACE(subj, ', }}', '}}') AS subj,"
-            f"  REDUCE(acc = collect(NULL), l in rels | acc + l) AS flattened_rels "
-            f"RETURN "
-            f"  subj,"
-            f"  REPLACE(REDUCE(acc = subj, l in flattened_rels | acc + ' ' + l), "
-            f"    ', }}', '}}') "
-            f"    AS flattened_rels"
-            f"  LIMIT {limit}"
-        )
-        subjs_param = _prepare_subjs_param(subjs, self._vid_type)
-        logger.debug(f"get_flat_rel_map()\nsubjs_param: {subjs},\nquery: {query}")
-        if subjs_param == {}:
-            # This happens when subjs is None after prepare_subjs_param()
-            # Probably because vid type is INT64, but no digit string is provided.
-            return rel_map
-        result = self._execute(query, subjs_param)
-        if result is None:
-            return rel_map
+        response = self.structured_query(cypher_statement, param_map=params)
 
-        # get raw data
-        subjs_ = result.column_values("subj") or []
-        rels_ = result.column_values("flattened_rels") or []
+        nodes = []
+        for record in response:
+            if "text" in record["all_props"]:
+                node = ChunkNode(
+                    id_=record["name"],
+                    label=record["type"],
+                    text=record["all_props"]["text"],
+                    properties=remove_empty_values(record["properties"]),
+                )
+            elif "name" in record["all_props"]:
+                node = EntityNode(
+                    id_=record["name"],
+                    label=record["type"],
+                    name=record["all_props"]["name"],
+                    properties=remove_empty_values(record["properties"]),
+                )
+            else:
+                node = EntityNode(
+                    name=record["name"],
+                    type=record["type"],
+                    properties=remove_empty_values(record["properties"]),
+                )
+            nodes.append(node)
+        return nodes
 
-        for subj, rel in zip(subjs_, rels_):
-            subj_ = subj.cast()
-            rel_ = rel.cast()
-            if subj_ not in rel_map:
-                rel_map[subj_] = []
-            rel_map[subj_].append(rel_)
-        return rel_map
+    def get_all_nodes(self) -> List[LabelledNode]:
+        return self._get()
+
+    def get_triplets(
+            self,
+            entity_names: Optional[List[str]] = None,
+            relation_names: Optional[List[str]] = None,
+            properties: Optional[dict] = None,
+            ids: Optional[List[str]] = None,
+    ) -> List[Triplet]:
+        cypher_statement = "MATCH (e:`Entity__`)-[r:`Relation__`]->(t:`Entity__`) "
+        if not (entity_names or relation_names or properties or ids):
+            return []
+        else:
+            cypher_statement += "WHERE "
+        params = {}
+
+        if entity_names:
+            cypher_statement += (
+                f"e.Entity__.name in $entities OR t.Entity__.name in $entities"
+            )
+            params[f"entities"] = entity_names
+        if relation_names:
+            cypher_statement += f"r.label in $relations "
+            params[f"relations"] = relation_names
+        if properties:
+            pass
+        if ids:
+            cypher_statement += f"id(e) in $all_id OR id(t) in $all_id"
+            params[f"all_id"] = ids
+        if properties:
+            v0_matching = ""
+            v1_matching = ""
+            edge_matching = ""
+            for i, prop in enumerate(properties):
+                v0_matching += f"e.Props__.`{prop}` == $property_{i} AND "
+                v1_matching += f"t.Props__.`{prop}` == $property_{i} AND "
+                edge_matching += f"r.`{prop}` == $property_{i} AND "
+                params[f"property_{i}"] = properties[prop]
+            v0_matching = v0_matching[:-5]  # Remove trailing AND
+            v1_matching = v1_matching[:-5]  # Remove trailing AND
+            edge_matching = edge_matching[:-5]  # Remove trailing AND
+            cypher_statement += (
+                f"({v0_matching}) OR ({edge_matching}) OR ({v1_matching})"
+            )
+
+        return_statement = f"""
+        RETURN id(e) AS source_id, e.Node__.label AS source_type,
+                properties(e.Props__) AS source_properties,
+                r.label AS type,
+                properties(r) AS rel_properties,
+                id(t) AS target_id, t.Node__.label AS target_type,
+                properties(t.Props__) AS target_properties
+        """
+        cypher_statement += return_statement
+        cypher_statement = cypher_statement.replace("\n", " ")
+
+        data = self.structured_query(cypher_statement, param_map=params)
+
+        triples = []
+        for record in data:
+            source = EntityNode(
+                name=record["source_id"],
+                label=record["source_type"],
+                properties=remove_empty_values(record["source_properties"]),
+            )
+            target = EntityNode(
+                name=record["target_id"],
+                label=record["target_type"],
+                properties=remove_empty_values(record["target_properties"]),
+            )
+            rel_properties = remove_empty_values(record["rel_properties"])
+            rel_properties.pop("label")
+            rel = Relation(
+                source_id=record["source_id"],
+                target_id=record["target_id"],
+                label=record["type"],
+                properties=rel_properties,
+            )
+            triples.append((source, rel, target))
+        return triples
 
     def get_rel_map(
-            self, subjs: Optional[List[str]] = None, depth: int = 2, limit: int = 30
-    ) -> Dict[str, List[List[str]]]:
-        """Get rel map."""
-        # We put rels in a long list for depth>= 1, this is different from
-        # But this makes more sense for multi-hop relation path.
-
-        if subjs is not None:
-            subjs = [
-                _escape_str(subj) for subj in subjs if isinstance(subj, str) and subj
-            ]
-            if len(subjs) == 0:
-                return {}
-
-        return self.get_flat_rel_map(subjs, depth, limit)
-
-    def add_graph_elements(
             self,
-            graph_elements: List[GraphElement],
-            include_source: bool = False,
-            base_entity_label: bool = False,
-    ) -> None:
-        """Adds nodes and relationships from a list of GraphElement objects
-        to the NebulaGraph storage.
-        """
-        if base_entity_label:
-            # Create a tag for base entity if it doesn't exist
-            self._create_base_entity_tag()
+            graph_nodes: List[LabelledNode],
+            depth: int = 2,
+            limit: int = 30,
+            ignore_rels: Optional[List[str]] = None,
+    ) -> List[Triplet]:
+        """Get depth-aware rel map."""
+        triples = []
 
-        for element in graph_elements:
-            if not element.source.to_dict().get('element_id'):
-                element.source.to_dict()['element_id'] = md5(
-                    str(element).encode("utf-8")
-                ).hexdigest()
+        ids = [node.id for node in graph_nodes]
+        # Needs some optimization
+        response = self.structured_query(
+            f"""
+            MATCH (e:`Entity__`)
+            WHERE id(e) in $ids
+            MATCH p=(e)-[r*1..{depth}]-(other)
+            WHERE ALL(rel in relationships(p) WHERE rel.`label` <> 'MENTIONS')
+            UNWIND relationships(p) AS rel
+            WITH distinct rel
+            WITH startNode(rel) AS source,
+                rel.`label` AS type,
+                endNode(rel) AS endNode
+            MATCH (v) WHERE id(v)==id(source) WITH v AS source, type, endNode
+            MATCH (v) WHERE id(v)==id(endNode) WITH source, type, v AS endNode
+            RETURN id(source) AS source_id, source.`Node__`.`label` AS source_type,
+                    properties(source.`Props__`) AS source_properties,
+                    type,
+                    id(endNode) AS target_id, endNode.`Node__`.`label` AS target_type,
+                    properties(endNode.`Props__`) AS target_properties
+            LIMIT {limit}
+            """,
+            param_map={"ids": ids},
+        )
 
-            # Import nodes
-            self._import_nodes(element.nodes, include_source, base_entity_label, element.source)
+        ignore_rels = ignore_rels or []
+        for record in response:
+            if record["type"] in ignore_rels:
+                continue
 
-            # Import relationships
-            self._import_relationships(element.relationships)
-
-    def _create_base_entity_tag(self):
-        """Creates a base entity tag if it doesn't exist."""
-        query = f"CREATE TAG IF NOT EXISTS {BASE_ENTITY_LABEL} (id string)"
-        self.query(query)
-
-    def _import_nodes(self, nodes, include_source: bool, base_entity_label: bool, source):
-        for node in nodes:
-            properties = ", ".join([f"{k}: '{v}'" for k, v in node.__dict__.items() if k != 'id'])
-            query = f"INSERT VERTEX `{node.type}` ({properties}) VALUES '{node.id}':({properties})"
-            if base_entity_label:
-                query += f"; INSERT VERTEX {BASE_ENTITY_LABEL} (id) VALUES '{node.id}':({node.id})"
-            if include_source:
-                source_id = source.to_dict().get('element_id')
-                query += f"; INSERT EDGE MENTIONS () VALUES '{source_id}' -> '{node.id}':({{}});"
-            self.query(query)
-
-    def _import_relationships(self, relationships):
-        for rel in relationships:
-            properties = ", ".join([f"{k}: '{v}'" for k, v in rel.properties.items()])
-            query = (f"INSERT EDGE `{rel.type}` ({properties}) VALUES "
-                     f"'{rel.subj.id}' -> '{rel.obj.id}':({properties})")
-            self.query(query)
-
-    def _execute(self, query: str, param_map=None) -> Any:
-        """Execute query.
-
-        Args:
-            query: Query.
-            param_map: Parameter map.
-
-        Returns:
-            Query result.
-        """
-        if param_map is None:
-            param_map = {}
-        # Clean the query string by removing triple backticks
-        query = query.replace("```", "").strip()
-
-        try:
-            result = self._session_pool.execute_parameter(query, param_map)
-            if result is None:
-                raise ValueError(f"Query failed. Query: {query}, Param: {param_map}")
-            if not result.is_succeeded():
-                raise ValueError(
-                    f"Query failed. Query: {query}, Param: {param_map}"
-                    f"Error message: {result.error_msg()}"
-                )
-            return result
-        except (TTransportException, IOErrorException, RuntimeError) as e:
-            logger.error(
-                f"Connection issue, try to recreate session pool. Query: {query}, "
-                f"Param: {param_map}"
-                f"Error: {e}"
+            source = EntityNode(
+                name=record["source_id"],
+                label=record["source_type"],
+                properties=remove_empty_values(record["source_properties"]),
             )
-            self.init_session_pool()
-            logger.info(
-                f"Session pool recreated. Query: {query}, Param: {param_map}"
-                f"This was due to error: {e}, and now retrying."
+            target = EntityNode(
+                name=record["target_id"],
+                label=record["target_type"],
+                properties=remove_empty_values(record["target_properties"]),
             )
-            raise
+            rel = Relation(
+                source_id=record["source_id"],
+                target_id=record["target_id"],
+                label=record["type"],
+            )
+            triples.append([source, rel, target])
 
-        except ValueError as e:
-            # query failed on db side
-            logger.error(
-                f"Query failed. Query: {query}, Param: {param_map}"
-                f"Error message: {e}"
+        return triples
+
+    def _construct_property_query(self, properties: Dict[str, Any]):
+        keys = ",".join([f"`{k}`" for k in properties])
+        values_k = ""
+        values_params: Dict[Any] = {}
+        for idx, v in enumerate(properties.values()):
+            values_k += f"$kv_{idx},"
+            values_params[f"kv_{idx}"] = v
+        values_k = values_k[:-1]
+        return keys, values_k, values_params
+
+    def structured_query(
+            self, query: str, param_map: Optional[Dict[str, Any]] = None
+    ) -> Any:
+        if not param_map:
+            result = self._client.execute(query)
+        else:
+            result = self._client.execute_parameter(query, build_param_map(param_map))
+        if not result.is_succeeded():
+            raise Exception(
+                "NebulaGraph query failed:",
+                result.error_msg(),
+                "Statement:",
+                query,
+                "Params:",
+                param_map,
             )
-            raise
-        except Exception as e:
-            # other exceptions
-            logger.error(
-                f"Query failed. Query: {query}, Param: {param_map}"
-                f"Error message: {e}"
+        full_result = [
+            {
+                key: result.row_values(row_index)[i].cast_primitive()
+                for i, key in enumerate(result.keys())
+            }
+            for row_index in range(result.row_size())
+        ]
+
+        return full_result
+
+    def add_graph_elements(self, nodes: List[LabelledNode]) -> None:
+        # meta tag Entity__ is used to store the entity name
+        # meta tag Chunk__ is used to store the chunk text
+        # other labels are used to store the entity properties
+        # which must be created before upserting the nodes
+
+        # Lists to hold separated types
+        entity_list: List[EntityNode] = []
+        chunk_list: List[ChunkNode] = []
+        other_list: List[LabelledNode] = []
+
+        # Sort by type
+        for item in nodes:
+            if isinstance(item, EntityNode):
+                entity_list.append(item)
+            elif isinstance(item, ChunkNode):
+                chunk_list.append(item)
+            else:
+                other_list.append(item)
+
+        if chunk_list:
+            # TODO: need to double check other properties if any(it seems for now only text is there)
+            # model chunk as tag and perform upsert
+            # i.e. INSERT VERTEX `Chunk__` (`text`) VALUES "foo":("hello world"), "baz":("lorem ipsum");
+            insert_query = "INSERT VERTEX `Chunk__` (`text`) VALUES "
+            for i, chunk in enumerate(chunk_list):
+                insert_query += f'"{chunk.id}":($chunk_{i}),'
+            insert_query = insert_query[:-1]  # Remove trailing comma
+            self.structured_query(
+                insert_query,
+                param_map={
+                    f"chunk_{i}": chunk.text for i, chunk in enumerate(chunk_list)
+                },
             )
-            raise
+
+        if entity_list:
+            # model with tag Entity__ and other tags(label) if applicable
+            # need to add properties as well, for extractors like SchemaLLMPathExtractor there is no properties
+            # NebulaGraph is Schema-Full, so we need to be strong schema mindset to abstract this.
+            # i.e.
+            # INSERT VERTEX Entity__ (name) VALUES "foo":("bar"), "baz":("qux");
+            # INSERT VERTEX Person (name) VALUES "foo":("bar"), "baz":("qux");
+
+            # The meta tag Entity__ is used to store the entity name
+            insert_query = "INSERT VERTEX `Entity__` (`name`) VALUES "
+            for i, entity in enumerate(entity_list):
+                insert_query += f'"{entity.id}":($entity_{i}),'
+            insert_query = insert_query[:-1]  # Remove trailing comma
+            self.structured_query(
+                insert_query,
+                param_map={
+                    f"entity_{i}": entity.name for i, entity in enumerate(entity_list)
+                },
+            )
+
+        # Create tags for each LabelledNode
+        # This could be revisited, if we don't have any properties for labels, mapping labels to
+        # Properties of tag: Entity__ is also feasible.
+        for i, entity in enumerate(nodes):
+            keys, values_k, values_params = self._construct_property_query(
+                entity.properties
+            )
+            stmt = f'INSERT VERTEX Props__ ({keys}) VALUES "{entity.id}":({values_k});'
+            self.structured_query(
+                stmt,
+                param_map=values_params,
+            )
+            stmt = (
+                f'INSERT VERTEX Node__ (label) VALUES "{entity.id}":("{entity.label}");'
+            )
+            self.structured_query(stmt)
+
+    def _execute(self, query: str) -> ResultSet:
+        return self._client.execute(query)
 
     def query(self, query: str, param_map=None) -> Any:
         if param_map is None:
