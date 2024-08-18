@@ -177,16 +177,15 @@ class SchemaModel(BaseModelBackend):
         )
 
         parsed_response = generator(message_str)
+        json_response = json.dumps(str(parsed_response))
 
         # Verify the structured format
         try:
-            _ = output_schema(**parsed_response.model_dump())
+            _ = output_schema(**json.loads(json_response))
         except ValidationError as e:
             raise ValueError(
                 f"Generated response does not match the output schema: {e}"
             )
-
-        json_response = json.dumps(str(parsed_response))
 
         import time
 
