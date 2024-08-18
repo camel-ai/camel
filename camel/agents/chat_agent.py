@@ -331,10 +331,10 @@ class ChatAgent(BaseAgent):
                 either `user` or `assistant` but it will be set to `user`
                 anyway since for the self agent any incoming message is
                 external.
-            output_schema (Optional[BaseModel]): An optional pydantic model
-                that includes value types and field descriptions used to
-                generate a structured response by LLM. This schema helps
-                in defining the expected output format.
+            output_schema (Optional[Type[BaseModel]]): An optional pydantic
+                model that includes value types and field descriptions used to
+                generate a structured response by LLM. This schema helps in
+                defining the expected output format.
 
         Returns:
             ChatAgentResponse: A struct containing the output messages,
