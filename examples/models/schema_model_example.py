@@ -87,7 +87,7 @@ schema_agent = ChatAgent(system_message=sys_msg, model=model)
 
 # Define user message
 user_msg = BaseMessage.make_user_message(
-    role_name="user",
+    role_name="User",
     content=(
         "I want to practice my legs today. Help me make a fitness and "
         "diet plan."
