@@ -26,7 +26,7 @@ from nebula3.Exception import IOErrorException
 from nebula3.fbthrift.transport.TTransport import TTransportException
 from nebula3.gclient.net.SessionPool import SessionPool
 
-BASE_ENTITY_LABEL: str = "__Entity__"
+BASE_ENTITY_LABEL: str = "entity"
 QUOTE = '"'
 RETRY_TIMES = 3
 WAIT_MIN_SECONDS = 0.5
@@ -120,7 +120,7 @@ def _escape_str(value: str) -> str:
     return value
 
 
-class NebulaGraphStore(BaseGraphStorage):
+class NebulaGraph(BaseGraphStorage):
     """NebulaGraph graph store."""
 
     @dependencies_required('nebula3')
@@ -201,14 +201,12 @@ class NebulaGraphStore(BaseGraphStorage):
 
         # cypher string like: map{`follow`: "degree", `serve`: "start_year,end_year"}
         self._edge_prop_map_cypher_string = (
-                "map{"
-                + ", ".join(
-            [
-                f"`{edge_type}`: \"{','.join(rel_prop_names)}\""
-                for edge_type, rel_prop_names in self._edge_prop_map.items()
-            ]
-        )
-                + "}"
+            "map{{0}}".format(", ".join(
+                [
+                    f"`{edge_type}`: \"{','.join(rel_prop_names)}\""
+                    for edge_type, rel_prop_names in self._edge_prop_map.items()
+                ]
+            ))
         )
 
         # build tag_prop_names map
@@ -241,9 +239,6 @@ class NebulaGraphStore(BaseGraphStorage):
     @property
     def init_session_pool(self) -> Any:
         """Return NebulaGraph session pool."""
-        from nebula3.Config import SessionPoolConfig
-        from nebula3.gclient.net.SessionPool import SessionPool
-
         # ensure "NEBULA_USER", "NEBULA_PASSWORD", "NEBULA_ADDRESS" are set
         # in environment variables
         if not all(
@@ -517,9 +512,6 @@ class NebulaGraphStore(BaseGraphStorage):
         """
         if param_map is None:
             param_map = {}
-        from nebula3.Exception import IOErrorException
-        from nebula3.fbthrift.transport.TTransport import TTransportException
-
         # Clean the query string by removing triple backticks
         query = query.replace("```", "").strip()
 
@@ -674,16 +666,11 @@ class NebulaGraphStore(BaseGraphStorage):
         rel_prop_name = self._rel_prop_names[0]
         entity_type = self._tags[0]
         rel_hash = _hash_string_to_rank(rel)
-        dml_query = (
-            f"INSERT VERTEX `{entity_type}`(name) "
-            f"  VALUES {subj_field}:({QUOTE}{subj}{QUOTE});"
-            f"INSERT VERTEX `{entity_type}`(name) "
-            f"  VALUES {obj_field}:({QUOTE}{obj}{QUOTE});"
-            f"INSERT EDGE `{edge_type}`(`{rel_prop_name}`) "
-            f"  VALUES "
-            f"{edge_field}"
-            f"@{rel_hash}:({QUOTE}{rel}{QUOTE});"
-        )
+        dml_query = f"""
+           INSERT VERTEX `{entity_type}`(name) VALUES {subj_field}:("{subj}");
+           INSERT VERTEX `{entity_type}`(name) VALUES {obj_field}:("{obj}");
+           INSERT EDGE `{edge_type}`(`{rel_prop_name}`) VALUES {edge_field}@{rel_hash}:("{rel}");
+           """
         logger.debug(f"upsert_triplet()\nDML query: {dml_query}")
         result = self._execute(dml_query)
         assert (
