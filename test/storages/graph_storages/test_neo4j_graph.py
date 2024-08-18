@@ -11,9 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import pytest
 import os
 
+import pytest
 from unstructured.documents.elements import Element
 
 from camel.storages import Neo4jGraph
@@ -29,9 +29,11 @@ from camel.storages.graph_storages.neo4j_graph import (
     REL_QUERY,
 )
 
-url = os.environ.get("NEO4J_URI", "default_url")
-username = os.environ.get("NEO4J_USERNAME", "default_username")
-password = os.environ.get("NEO4J_PASSWORD", "default_password")
+url = os.environ.get("NEO4J_URI", "neo4j+s://866eb797.databases.neo4j.io")
+username = os.environ.get("NEO4J_USERNAME", "neo4j")
+password = os.environ.get(
+    "NEO4J_PASSWORD", "qWPP2DuicLBhzLz4o5C1qGVfdI32vaqECVpqpM9ZrAQ"
+)
 
 
 test_data = [
