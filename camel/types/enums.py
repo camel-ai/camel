@@ -26,7 +26,6 @@ class RoleType(Enum):
 class ModelType(Enum):
     GPT_3_5_TURBO = "gpt-3.5-turbo"
     GPT_4 = "gpt-4"
-    GPT_4_32K = "gpt-4-32k"
     GPT_4_TURBO = "gpt-4-turbo"
     GPT_4O = "gpt-4o"
     GPT_4O_MINI = "gpt-4o-mini"
@@ -96,7 +95,6 @@ class ModelType(Enum):
         return self in {
             ModelType.GPT_3_5_TURBO,
             ModelType.GPT_4,
-            ModelType.GPT_4_32K,
             ModelType.GPT_4_TURBO,
             ModelType.GPT_4O,
             ModelType.GPT_4O_MINI,
@@ -110,7 +108,6 @@ class ModelType(Enum):
         return self in {
             ModelType.GPT_3_5_TURBO,
             ModelType.GPT_4,
-            ModelType.GPT_4_32K,
             ModelType.GPT_4_TURBO,
             ModelType.GPT_4O,
         }
@@ -231,7 +228,6 @@ class ModelType(Enum):
         }:
             return 16_384
         elif self in {
-            ModelType.GPT_4_32K,
             ModelType.MISTRAL_CODESTRAL,
             ModelType.MISTRAL_7B,
             ModelType.MISTRAL_MIXTRAL_8x7B,
