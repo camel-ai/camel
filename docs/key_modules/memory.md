@@ -20,8 +20,8 @@ pip install camel-ai
 Here's a quick example of how to use the LongtermAgentMemory:
 
 ```python
-from camel.memory import LongtermAgentMemory, ChatHistoryBlock, VectorDBBlock
-from camel.memory import MemoryRecord, BaseContextCreator
+from camel.memories import LongtermAgentMemory, ChatHistoryBlock, VectorDBBlock
+from camel.memories import MemoryRecord, BaseContextCreator
 from camel.messages import BaseMessage
 from camel.types import OpenAIBackendRole
 
