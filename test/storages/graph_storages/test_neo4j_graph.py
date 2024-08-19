@@ -29,11 +29,9 @@ from camel.storages.graph_storages.neo4j_graph import (
     REL_QUERY,
 )
 
-url = os.environ.get("NEO4J_URI", "neo4j+s://866eb797.databases.neo4j.io")
-username = os.environ.get("NEO4J_USERNAME", "neo4j")
-password = os.environ.get(
-    "NEO4J_PASSWORD", "qWPP2DuicLBhzLz4o5C1qGVfdI32vaqECVpqpM9ZrAQ"
-)
+url = os.environ.get("NEO4J_URI", "Your_URI")
+username = os.environ.get("NEO4J_USERNAME", "Your_Username")
+password = os.environ.get("NEO4J_PASSWORD", "Your_Password")
 
 
 test_data = [
