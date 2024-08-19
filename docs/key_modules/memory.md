@@ -21,27 +21,15 @@ Here's a quick example of how to use the LongtermAgentMemory:
 
 ```python
 from camel.memories import LongtermAgentMemory, ChatHistoryBlock, VectorDBBlock
-from camel.memories import MemoryRecord, BaseContextCreator
+from camel.memories import MemoryRecord, ScoreBasedContextCreator
 from camel.messages import BaseMessage
 from camel.types import OpenAIBackendRole
+from camel.utils import OpenAITokenCounter
 
-# Create a dummy context creator
-class DummyContextCreator(BaseContextCreator):
-    @property
-    def token_counter(self):
-        return lambda x: len(x.split())
-
-    @property
-    def token_limit(self):
-        return 100
-
-    def create_context(self, records):
-        context = [record.memory_record.to_openai_message() for record in records]
-        return context, sum(self.token_counter(msg.content) for msg in context)
 
 # Initialize memory
 memory = LongtermAgentMemory(
-    context_creator=DummyContextCreator(),
+    context_creator=ScoreBasedContextCreator(OpenAITokenCounter, 1024),
     chat_history_block=ChatHistoryBlock(),
     vector_db_block=VectorDBBlock()
 )
@@ -49,11 +37,11 @@ memory = LongtermAgentMemory(
 # Write records to memory
 records = [
     MemoryRecord(
-        message=BaseMessage(role="human", content="What is AI?"),
+        message=BaseMessage(role_name="user", role_type="human", meta_dict=None, content="What is AI?"),
         role_at_backend=OpenAIBackendRole.USER
     ),
     MemoryRecord(
-        message=BaseMessage(role="ai", content="AI refers to systems that mimic human intelligence."),
+        message=BaseMessage( role_name="agent", role_type="ai", meta_dict=None, content="AI refers to systems that mimic human intelligence."),
         role_at_backend=OpenAIBackendRole.ASSISTANT
     )
 ]
@@ -63,7 +51,7 @@ memory.write_records(records)
 context, token_count = memory.get_context()
 print(f"Retrieved context (token count: {token_count}):")
 for message in context:
-    print(f"{message.role}: {message.content}")
+    print(f"{message}")
 
 ```
 
@@ -242,17 +230,15 @@ To use the Memory module in your agent:
 Example using LongtermAgentMemory:
 
 ```python
-from camel.memory import LongtermAgentMemory, ChatHistoryBlock, VectorDBBlock
-from camel.memory import MemoryRecord
+from camel.memories import LongtermAgentMemory, ChatHistoryBlock, VectorDBBlock, ScoreBasedContextCreator
+from camel.memories import MemoryRecord
 from camel.messages import BaseMessage
 from camel.types import OpenAIBackendRole
-
-# Assume we have a custom context creator
-context_creator = MyCustomContextCreator()
+from camel.utils import OpenAITokenCounter
 
 # Initialize the memory
 memory = LongtermAgentMemory(
-    context_creator=context_creator,
+    context_creator=ScoreBasedContextCreator(OpenAITokenCounter, 1024),
     chat_history_block=ChatHistoryBlock(),
     vector_db_block=VectorDBBlock()
 )
@@ -260,11 +246,11 @@ memory = LongtermAgentMemory(
 # Create and write new records
 records = [
     MemoryRecord(
-        message=BaseMessage(role="human", content="What is machine learning?"),
+        message=BaseMessage(role_name="user", role_type="human", meta_dict=None, content="What is machine learning?"),
         role_at_backend=OpenAIBackendRole.USER
     ),
     MemoryRecord(
-        message=BaseMessage(role="ai", content="Machine learning is a subset of AI..."),
+        message=BaseMessage(role_name="agent", role_type="ai", meta_dict=None, content="Machine learning is a subset of AI..."),
         role_at_backend=OpenAIBackendRole.ASSISTANT
     )
 ]
@@ -284,13 +270,13 @@ context, token_count = memory.get_context()
 You can create custom context creators by subclassing `BaseContextCreator`:
 
 ```python
-from camel.memory import BaseContextCreator
+from camel.memories import BaseContextCreator
 
 class MyCustomContextCreator(BaseContextCreator):
     @property
     def token_counter(self):
         # Implement your token counting logic
-        pass
+        return 
 
     @property
     def token_limit(self):
@@ -307,14 +293,19 @@ class MyCustomContextCreator(BaseContextCreator):
 For VectorDBBlock and VectorDBMemory, you can fine-tune the vector database by adjusting the embedding model or storage parameters:
 
 ```python
-from camel.embeddings import CustomEmbedding
-from camel.storages import CustomVectorStorage
+from camel.embeddings import mistral_embedding, openai_embedding
+from camel.storages.vectordb_storages import qdrant, milvus
+from camel.memories import VectorDBBlock
 
-vector_db = VectorDBBlock(
-    embedding=CustomEmbedding(),
-    storage=CustomVectorStorage(...)
+vector_db1 = VectorDBBlock(
+    embedding = mistral_embedding,
+    storage = qdrant
 )
 
+vector_db2 = VectorDBBlock(
+    embedding=openai_embedding,
+    storage=milvus
+)
 ```
 
 ### Performance Considerations
