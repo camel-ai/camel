@@ -70,18 +70,20 @@ class AmazonS3Storage(BaseObjectStorage):
             aws_key_id = None
             aws_secret_key = None
 
-        import boto3
         from botocore import UNSIGNED
         from botocore.config import Config
 
+        import botocore.session
+        session = botocore.session.get_session()
+
         if not anonymous:
-            self._client = boto3.client(
+            self._client = session.create_client(
                 "s3",
                 aws_access_key_id=aws_key_id,
                 aws_secret_access_key=aws_secret_key,
             )
         else:
-            self._client = boto3.client(
+            self._client = session.create_client(
                 "s3", config=Config(signature_version=UNSIGNED)
             )
 
