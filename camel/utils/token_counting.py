@@ -26,9 +26,10 @@ from PIL import Image
 from camel.types import ModelType, OpenAIImageType, OpenAIVisionDetailType
 
 if TYPE_CHECKING:
-    from mistral_common.protocol.instruct.request import (  # type:ignore[import-not-found]
+    from mistral_common.protocol.instruct.request import (
         ChatCompletionRequest,
     )
+    from mistralai.models import Messages
 
     from camel.messages import OpenAIMessage
 
@@ -519,7 +520,7 @@ class MistralTokenCounter(BaseTokenCounter):
             model_type (ModelType): Model type for which tokens will be
                 counted.
         """
-        from mistral_common.tokens.tokenizers.mistral import (  # type:ignore[import-not-found]
+        from mistral_common.tokens.tokenizers.mistral import (
             MistralTokenizer,
         )
 
@@ -549,12 +550,12 @@ class MistralTokenCounter(BaseTokenCounter):
         total_tokens = 0
         for msg in messages:
             tokens = self.tokenizer.encode_chat_completion(
-                self._convert_response_from_openai_to_mistral(msg)
+                self._to_mistral_chatcompletion_request(msg)
             ).tokens
             total_tokens += len(tokens)
         return total_tokens
 
-    def _convert_response_from_openai_to_mistral(
+    def _to_mistral_chatcompletion_request(
         self, openai_msg: OpenAIMessage
     ) -> ChatCompletionRequest:
         r"""Convert an OpenAI message to a Mistral ChatCompletionRequest.
@@ -569,12 +570,69 @@ class MistralTokenCounter(BaseTokenCounter):
         """
 
         from mistral_common.protocol.instruct.request import (
-            ChatCompletionRequest,  # type:ignore[import-not-found]
+            ChatCompletionRequest,
         )
 
         mistral_request = ChatCompletionRequest(  # type: ignore[type-var]
             model=self.model_type.value,
-            messages=[openai_msg],
+            messages=self._to_mistral_chatmessage([openai_msg]),
         )
 
         return mistral_request
+
+    def _to_mistral_chatmessage(
+        self,
+        messages: List[OpenAIMessage],
+    ) -> List["Messages"]:
+        import uuid
+
+        from mistralai.models import (
+            AssistantMessage,
+            FunctionCall,
+            SystemMessage,
+            ToolCall,
+            ToolMessage,
+            UserMessage,
+        )
+
+        new_messages = []
+        for msg in messages:
+            tool_id = uuid.uuid4().hex[:9]
+            tool_call_id = uuid.uuid4().hex[:9]
+            role = msg.get("role")
+            function_call = msg.get("function_call")
+            content = msg.get("content")
+
+            mistral_function_call = None
+            if function_call:
+                mistral_function_call = FunctionCall(
+                    name=function_call.get("name"),  # type: ignore[attr-defined]
+                    arguments=function_call.get("arguments"),  # type: ignore[attr-defined]
+                )
+
+            tool_calls = None
+            if mistral_function_call:
+                tool_calls = [
+                    ToolCall(function=mistral_function_call, id=tool_id)
+                ]
+
+            if role == "user":
+                new_messages.append(UserMessage(content=content))  # type: ignore[arg-type]
+            elif role == "assistant":
+                new_messages.append(
+                    AssistantMessage(content=content, tool_calls=tool_calls)  # type: ignore[arg-type]
+                )
+            elif role == "system":
+                new_messages.append(SystemMessage(content=content))  # type: ignore[arg-type]
+            elif role in {"tool", "function"}:
+                new_messages.append(
+                    ToolMessage(
+                        content=content,  # type: ignore[arg-type]
+                        tool_call_id=tool_call_id,
+                        name=msg.get("name"),  # type: ignore[arg-type]
+                    )
+                )
+            else:
+                raise ValueError(f"Unsupported message role: {role}")
+
+        return new_messages  # type: ignore[return-value]
