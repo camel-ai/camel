@@ -19,7 +19,7 @@ from camel.types import ModelPlatformType, ModelType
 
 model = ModelFactory.create(
     model_platform=ModelPlatformType.REKA,
-    model_type=ModelType.REKA_CORE,
+    model_type=ModelType.REKA_FLASH,
     model_config_dict=RekaConfig(temperature=0.0).as_dict(),
 )
 
@@ -43,7 +43,12 @@ response = camel_agent.step(user_msg)
 print(response.msgs[0].content)
 '''
 ===============================================================================
-Hello CAMEL AI! It's great to connect with a community dedicated to the study 
-of autonomous and communicative agents. How can I assist you today?
+ Hello CAMEL AI community! 🐫 I'm thrilled to connect with a group so 
+ dedicated to the study of autonomous and communicative agents. Your work is 
+ at the forefront of advancing AI technologies that can interact and operate 
+ independently in complex environments. I look forward to learning from your 
+ insights and contributing to the community in any way I can. Together, let's 
+ continue to push the boundaries of what's possible in AI research and 
+ development! 🚀
 ===============================================================================
 '''

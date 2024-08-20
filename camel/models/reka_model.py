@@ -113,16 +113,25 @@ class RekaModel(BaseModelBackend):
             content = msg.get("content")
 
             if role == "user":
-                new_messages.append(ChatMessage(content=content,
-                                                role="user"))  # type: ignore[arg-type]
+                new_messages.append(ChatMessage(role="user",
+                                                content=content
+                                                ))  # type: ignore[arg-type]
             elif role == "assistant":
                 new_messages.append(
-                    ChatMessage(content=content,
-                                role="assistant")  # type: ignore[arg-type]
+                    ChatMessage(role="assistant",
+                                content=content)  # type: ignore[arg-type]
                 )
             elif role == "system":
-                new_messages.append(ChatMessage(content=content,
-                                                role="user"))  # type: ignore[arg-type]
+                new_messages.append(ChatMessage(role="user",
+                                                content=content
+                                                ))  # type: ignore[arg-type]
+
+                # Add one more assistant msg since Reka requires conversation 
+                # history must alternate between 'user' and 'assistant', 
+                # starting and ending with 'user'.
+                new_messages.append(ChatMessage(role="assistant",
+                                                content="",
+                                                ))  # type: ignore[arg-type]
             else:
                 raise ValueError(f"Unsupported message role: {role}")
 
@@ -159,9 +168,7 @@ class RekaModel(BaseModelBackend):
             ChatCompletion.
         """
         reka_messages = self._to_reka_chatmessage(messages)
-        print("@@@@@@@@@@@@@")
-        print(reka_messages)
-        print("@@@@@@@@@@@@@")
+
         response = self._client.chat.create(
             messages=reka_messages,
             model=self.model_type.value,

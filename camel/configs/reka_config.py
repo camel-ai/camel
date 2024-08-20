@@ -62,7 +62,7 @@ class RekaConfig(BaseConfig):
     seed: Optional[int] = None
     frequency_penalty: float = 0.0
     presence_penalty: float = 0.0
-    use_search_engine: Optional[bool] = None
+    use_search_engine: Optional[bool] = False
 
     def as_dict(self) -> dict[str, Any]:
         config_dict = super().as_dict()
