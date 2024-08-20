@@ -72,7 +72,7 @@ class ModelType(Enum):
     GEMINI_1_5_FLASH = "gemini-1.5-flash"
     GEMINI_1_5_PRO = "gemini-1.5-pro"
 
-    # Mistral AI Model
+    # Mistral AI models
     MISTRAL_LARGE = "mistral-large-latest"
     MISTRAL_NEMO = "open-mistral-nemo"
     MISTRAL_CODESTRAL = "codestral-latest"
@@ -80,6 +80,11 @@ class ModelType(Enum):
     MISTRAL_MIXTRAL_8x7B = "open-mixtral-8x7b"
     MISTRAL_MIXTRAL_8x22B = "open-mixtral-8x22b"
     MISTRAL_CODESTRAL_MAMBA = "open-codestral-mamba"
+
+    # Reka models
+    REKA_CORE = "reka-core"
+    REKA_FLASH = "reka-flash"
+    REKA_EDGE = "reka-edge"
 
     @property
     def value_for_tiktoken(self) -> str:
@@ -190,7 +195,25 @@ class ModelType(Enum):
 
     @property
     def is_gemini(self) -> bool:
+        r"""Returns whether this type of models is Gemini model.
+
+        Returns:
+            bool: Whether this type of models is gemini.
+        """
         return self in {ModelType.GEMINI_1_5_FLASH, ModelType.GEMINI_1_5_PRO}
+
+    @property
+    def is_reka(self) -> bool:
+        r"""Returns whether this type of models is Reka model.
+
+        Returns:
+            bool: Whether this type of models is Reka.
+        """
+        return self in {
+            ModelType.REKA_CORE,
+            ModelType.REKA_EDGE,
+            ModelType.REKA_FLASH,
+        }
 
     @property
     def token_limit(self) -> int:
@@ -445,6 +468,7 @@ class ModelPlatformType(Enum):
     VLLM = "vllm"
     MISTRAL = "mistral"
     OPENAICOMPATIBILITYMODEL = "openai-compatibility-model"
+    REKA = "reka"
 
     @property
     def is_openai(self) -> bool:
@@ -506,6 +530,11 @@ class ModelPlatformType(Enum):
     def is_gemini(self) -> bool:
         r"""Returns whether this platform is Gemini."""
         return self is ModelPlatformType.GEMINI
+
+    @property
+    def is_reka(self) -> bool:
+        r"""Returns whether this platform is Reka."""
+        return self is ModelPlatformType.REKA
 
 
 class AudioModelType(Enum):
