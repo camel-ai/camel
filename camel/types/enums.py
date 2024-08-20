@@ -436,7 +436,7 @@ class ModelPlatformType(Enum):
     AZURE = "azure"
     ANTHROPIC = "anthropic"
     GROQ = "groq"
-    OPENSOURCE = "open-source"
+    OPEN_SOURCE = "open-source"
     OLLAMA = "ollama"
     LITELLM = "litellm"
     ZHIPU = "zhipuai"
@@ -444,7 +444,7 @@ class ModelPlatformType(Enum):
     GEMINI = "gemini"
     VLLM = "vllm"
     MISTRAL = "mistral"
-    OPENAICOMPATIBILITYMODEL = "openai-compatibility-model"
+    OPENAI_COMPATIBILITY_MODEL = "openai-compatibility-model"
 
     @property
     def is_openai(self) -> bool:
@@ -494,13 +494,13 @@ class ModelPlatformType(Enum):
     @property
     def is_open_source(self) -> bool:
         r"""Returns whether this platform is opensource."""
-        return self is ModelPlatformType.OPENSOURCE
+        return self is ModelPlatformType.OPEN_SOURCE
 
     @property
     def is_openai_compatibility_model(self) -> bool:
         r"""Returns whether this is a platform supporting openai
         compatibility"""
-        return self is ModelPlatformType.OPENAICOMPATIBILITYMODEL
+        return self is ModelPlatformType.OPENAI_COMPATIBILITY_MODEL
 
     @property
     def is_gemini(self) -> bool:
