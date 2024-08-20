@@ -226,6 +226,7 @@ class ManagerNode(BaseNode):
             await self._post_task(task, assignee.node_id)
         else:
             subtasks = task.decompose(self.task_agent)
+            task.subtasks = subtasks
             # Insert packets at the head of the queue
             self._pending_tasks.extendleft(reversed(subtasks))
             await self._post_ready_tasks()
@@ -256,6 +257,7 @@ class ManagerNode(BaseNode):
         # the initial task must be decomposed into subtasks first
         if self._task is not None:
             subtasks = self._task.decompose(self.task_agent)
+            self._task.subtasks = subtasks
             self._pending_tasks.extend(subtasks)
             self._task.state = TaskState.FAILED
             self._pending_tasks.append(self._task)

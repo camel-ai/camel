@@ -97,7 +97,7 @@ def main():
     workforce = Workforce(root_node)
     task = workforce.process_task(human_task)
 
-    print('Final Result of Origin task:\n', task.result)
+    print('Final result of original task:\n', task.result)
 
 
 if __name__ == "__main__":

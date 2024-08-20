@@ -44,6 +44,7 @@ class Workforce:
         self._root_node.set_channel(shared_channel)
 
         # start the root workforce
-        asyncio.run(self._root_node.start())
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(self._root_node.start())
 
         return task
