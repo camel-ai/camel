@@ -742,7 +742,9 @@ class ChatAgent(BaseAgent):
             str(choice.finish_reason) for choice in response.choices
         ]
         usage = (
-            self._safe_model_dump(response.usage) if response.usage is not None else {}
+            self._safe_model_dump(response.usage)
+            if response.usage is not None
+            else {}
         )
         return (
             output_messages,

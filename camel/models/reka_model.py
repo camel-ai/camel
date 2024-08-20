@@ -12,8 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
-
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from camel.configs import REKA_API_PARAMS
 from camel.messages import OpenAIMessage
@@ -26,7 +25,7 @@ from camel.utils import (
 )
 
 if TYPE_CHECKING:
-    from reka.types import ChatResponse, ChatMessage
+    from reka.types import ChatMessage, ChatResponse
 
 try:
     import os
@@ -75,10 +74,7 @@ class RekaModel(BaseModelBackend):
         self._client = Reka(api_key=self._api_key, base_url=self._url)
         self._token_counter: Optional[BaseTokenCounter] = None
 
-    def _to_openai_response(
-        self, response: 'ChatResponse'
-    ) -> ChatCompletion:
-
+    def _to_openai_response(self, response: 'ChatResponse') -> ChatCompletion:
         obj = ChatCompletion.construct(
             id=response.id,
             choices=[
@@ -108,30 +104,27 @@ class RekaModel(BaseModelBackend):
 
         new_messages = []
         for msg in messages:
-
             role = msg.get("role")
             content = msg.get("content")
 
             if role == "user":
-                new_messages.append(ChatMessage(role="user",
-                                                content=content
-                                                ))  # type: ignore[arg-type]
+                new_messages.append(ChatMessage(role="user", content=content))  # type: ignore[arg-type]
             elif role == "assistant":
                 new_messages.append(
-                    ChatMessage(role="assistant",
-                                content=content)  # type: ignore[arg-type]
+                    ChatMessage(role="assistant", content=content)  # type: ignore[arg-type]
                 )
             elif role == "system":
-                new_messages.append(ChatMessage(role="user",
-                                                content=content
-                                                ))  # type: ignore[arg-type]
+                new_messages.append(ChatMessage(role="user", content=content))  # type: ignore[arg-type]
 
-                # Add one more assistant msg since Reka requires conversation 
-                # history must alternate between 'user' and 'assistant', 
+                # Add one more assistant msg since Reka requires conversation
+                # history must alternate between 'user' and 'assistant',
                 # starting and ending with 'user'.
-                new_messages.append(ChatMessage(role="assistant",
-                                                content="",
-                                                ))  # type: ignore[arg-type]
+                new_messages.append(
+                    ChatMessage(
+                        role="assistant",
+                        content="",
+                    )
+                )  # type: ignore[arg-type]
             else:
                 raise ValueError(f"Unsupported message role: {role}")
 

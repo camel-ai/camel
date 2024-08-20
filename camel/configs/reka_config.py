@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from typing import Optional, Union, Any
+from typing import Any, Optional, Union
 
 from camel.configs.base_config import BaseConfig
 
@@ -29,8 +29,8 @@ class RekaConfig(BaseConfig):
             to use for sampling, e.g. 0.5.
         top_p (Optional[float], optional): the cumulative probability of
             tokens to generate, e.g. 0.9. Defaults to None.
-        top_k (Optional[int], optional): Parameter which forces the model to 
-            only consider the tokens with the `top_k` highest probabilities at 
+        top_k (Optional[int], optional): Parameter which forces the model to
+            only consider the tokens with the `top_k` highest probabilities at
             the next step. Defaults to 1024.
         max_tokens (Optional[int], optional): the maximum number of tokens to
             generate, e.g. 100. Defaults to None.
@@ -49,8 +49,8 @@ class RekaConfig(BaseConfig):
             existing frequency in the text so far, decreasing the model's
             likelihood to repeat the same line verbatim. See more information
             about frequency and presence penalties. (default: :obj:`0.0`)
-        use_search_engine (Optional[bool]): Whether to consider using search 
-            engine to complete the request. Note that even if this is set to 
+        use_search_engine (Optional[bool]): Whether to consider using search
+            engine to complete the request. Note that even if this is set to
             `True`, the model might decide to not use search.
     """
 
@@ -68,5 +68,6 @@ class RekaConfig(BaseConfig):
         config_dict = super().as_dict()
         config_dict.pop("tools", None)  # Remove the tools key if it's there
         return config_dict
+
 
 REKA_API_PARAMS = {param for param in RekaConfig().model_fields.keys()}
