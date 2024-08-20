@@ -436,7 +436,7 @@ class ModelPlatformType(Enum):
     AZURE = "azure"
     ANTHROPIC = "anthropic"
     GROQ = "groq"
-    OPENSOURCE = "opensource"
+    OPENSOURCE = "open-source"
     OLLAMA = "ollama"
     LITELLM = "litellm"
     ZHIPU = "zhipuai"
