@@ -444,6 +444,7 @@ class ModelPlatformType(Enum):
     GEMINI = "gemini"
     VLLM = "vllm"
     MISTRAL = "mistral"
+    TOGETHER = "together"
     OPENAICOMPATIBILITYMODEL = "openai-compatibility-model"
 
     @property
@@ -475,6 +476,11 @@ class ModelPlatformType(Enum):
     def is_vllm(self) -> bool:
         r"""Returns whether this platform is vllm."""
         return self is ModelPlatformType.VLLM
+
+    @property
+    def is_together(self) -> bool:
+        r"""Returns whether this platform is together."""
+        return self is ModelPlatformType.TOGETHER
 
     @property
     def is_litellm(self) -> bool:
