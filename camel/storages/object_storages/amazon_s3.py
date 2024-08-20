@@ -70,10 +70,10 @@ class AmazonS3Storage(BaseObjectStorage):
             aws_key_id = None
             aws_secret_key = None
 
+        import botocore.session
         from botocore import UNSIGNED
         from botocore.config import Config
 
-        import botocore.session
         session = botocore.session.get_session()
 
         if not anonymous:
