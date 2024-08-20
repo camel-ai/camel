@@ -104,6 +104,7 @@ class RekaModel(BaseModelBackend):
         self,
         messages: List[OpenAIMessage],
     ) -> List["ChatMessage"]:
+        from reka.types import ChatMessage
 
         new_messages = []
         for msg in messages:
@@ -112,16 +113,16 @@ class RekaModel(BaseModelBackend):
             content = msg.get("content")
 
             if role == "user":
-                new_messages.append(ChatMessage(Content=content,
-                                                ChatRole="user"))  # type: ignore[arg-type]
+                new_messages.append(ChatMessage(content=content,
+                                                role="user"))  # type: ignore[arg-type]
             elif role == "assistant":
                 new_messages.append(
-                    ChatMessage(Content=content,
-                                ChatRole="assistant")  # type: ignore[arg-type]
+                    ChatMessage(content=content,
+                                role="assistant")  # type: ignore[arg-type]
                 )
             elif role == "system":
-                new_messages.append(ChatMessage(Content=content,
-                                                ChatRole="assistant"))  # type: ignore[arg-type]
+                new_messages.append(ChatMessage(content=content,
+                                                role="user"))  # type: ignore[arg-type]
             else:
                 raise ValueError(f"Unsupported message role: {role}")
 
@@ -158,7 +159,9 @@ class RekaModel(BaseModelBackend):
             ChatCompletion.
         """
         reka_messages = self._to_reka_chatmessage(messages)
-
+        print("@@@@@@@@@@@@@")
+        print(reka_messages)
+        print("@@@@@@@@@@@@@")
         response = self._client.chat.create(
             messages=reka_messages,
             model=self.model_type.value,

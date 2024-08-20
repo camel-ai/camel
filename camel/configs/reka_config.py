@@ -13,10 +13,9 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from typing import Optional, Union
+from typing import Optional, Union, Any
 
 from camel.configs.base_config import BaseConfig
-
 
 
 class RekaConfig(BaseConfig):
@@ -61,9 +60,13 @@ class RekaConfig(BaseConfig):
     max_tokens: Optional[int] = None
     stop: Optional[Union[str, list[str]]] = None
     seed: Optional[int] = None
-    safe_prompt: bool = False
     frequency_penalty: float = 0.0
     presence_penalty: float = 0.0
     use_search_engine: Optional[bool] = None
+
+    def as_dict(self) -> dict[str, Any]:
+        config_dict = super().as_dict()
+        config_dict.pop("tools", None)  # Remove the tools key if it's there
+        return config_dict
 
 REKA_API_PARAMS = {param for param in RekaConfig().model_fields.keys()}

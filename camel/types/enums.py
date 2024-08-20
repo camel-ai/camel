@@ -231,6 +231,9 @@ class ModelType(Enum):
             ModelType.LLAMA_2,
             ModelType.NEMOTRON_4_REWARD,
             ModelType.STUB,
+            ModelType.REKA_CORE,
+            ModelType.REKA_EDGE,
+            ModelType.REKA_FLASH,
         }:
             return 4_096
         elif self in {
