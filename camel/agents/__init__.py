@@ -15,6 +15,7 @@ from .base import BaseAgent
 from .chat_agent import ChatAgent
 from .critic_agent import CriticAgent
 from .embodied_agent import EmbodiedAgent
+from .external_tool_agent import ExternalToolAgent
 from .knowledge_graph_agent import KnowledgeGraphAgent
 from .role_assignment_agent import RoleAssignmentAgent
 from .search_agent import SearchAgent
@@ -41,4 +42,5 @@ __all__ = [
     'RoleAssignmentAgent',
     'SearchAgent',
     'KnowledgeGraphAgent',
+    'ExternalToolAgent',
 ]
