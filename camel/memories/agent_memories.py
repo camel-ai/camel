@@ -15,9 +15,13 @@
 from typing import List, Optional
 
 from camel.memories.base import AgentMemory, BaseContextCreator
-from camel.memories.blocks import ChatHistoryBlock, VectorDBBlock
+from camel.memories.blocks import ChatHistoryBlock, GraphDBBlock, VectorDBBlock
 from camel.memories.records import ContextRecord, MemoryRecord
-from camel.storages import BaseKeyValueStorage, BaseVectorStorage
+from camel.storages import (
+    BaseGraphStorage,
+    BaseKeyValueStorage,
+    BaseVectorStorage,
+)
 from camel.types import OpenAIBackendRole
 
 
@@ -104,6 +108,49 @@ class VectorDBMemory(AgentMemory):
         return self._context_creator
 
 
+class GraphDBMemory(AgentMemory):
+    r"""An agent memory wrapper of `GraphDBBlock`. This memory interacts with
+    a graph database to store and retrieve knowledge graphs.
+
+    Args:
+        context_creator (BaseContextCreator): A model context creator.
+        storage (BaseGraphStorage, optional): A graph storage backend. If
+            `None`, a default implementation will be used. (default: `None`)
+        query (str, optional):
+            The query to retrieve data from the graph database.
+    """
+
+    def __init__(
+        self,
+        context_creator: BaseContextCreator,
+        storage: Optional[BaseGraphStorage] = None,
+        query: str = "",
+    ) -> None:
+        self._context_creator = context_creator
+        self._graphdb_block = GraphDBBlock(storage=storage)
+        self._query = query
+
+    def retrieve(self) -> List[ContextRecord]:
+        return self._graphdb_block.retrieve(self._query)
+
+    def write_triplet(self, subj: str, obj: str, rel: str) -> None:
+        r"""Writes a triplet to the graph database.
+
+        Args:
+            subj (str): The subject of the triplet.
+            obj (str): The object of the triplet.
+            rel (str): The relationship between subject and object.
+        """
+        self._graphdb_block.write_triplet(subj, obj, rel)
+
+    def get_context_creator(self) -> BaseContextCreator:
+        return self._context_creator
+
+    def clear(self) -> None:
+        r"""Clears all data from the graph database."""
+        self._graphdb_block.clear()
+
+
 class LongtermAgentMemory(AgentMemory):
     r"""An implementation of the :obj:`AgentMemory` abstract base class for
     augumenting ChatHistoryMemory with VectorDBMemory.
@@ -114,11 +161,15 @@ class LongtermAgentMemory(AgentMemory):
         context_creator: BaseContextCreator,
         chat_history_block: Optional[ChatHistoryBlock] = None,
         vector_db_block: Optional[VectorDBBlock] = None,
+        graph_db_block: Optional[GraphDBBlock] = None,
         retrieve_limit: int = 3,
+        graph_query: str = "",
     ) -> None:
         self.chat_history_block = chat_history_block or ChatHistoryBlock()
         self.vector_db_block = vector_db_block or VectorDBBlock()
+        self.graph_db_block = graph_db_block or GraphDBBlock()
         self.retrieve_limit = retrieve_limit
+        self.graph_query = graph_query
         self._context_creator = context_creator
         self._current_topic: str = ""
 
@@ -130,7 +181,13 @@ class LongtermAgentMemory(AgentMemory):
         vector_db_retrieve = self.vector_db_block.retrieve(
             self._current_topic, self.retrieve_limit
         )
-        return chat_history[:1] + vector_db_retrieve + chat_history[1:]
+        graph_db_retrieve = self.graph_db_block.retrieve(self.graph_query)
+        return (
+            chat_history[:1]
+            + vector_db_retrieve
+            + graph_db_retrieve
+            + chat_history[1:]
+        )
 
     def write_records(self, records: List[MemoryRecord]) -> None:
         r"""Converts the provided chat messages into vector representations and
@@ -151,3 +208,4 @@ class LongtermAgentMemory(AgentMemory):
         r"""Removes all records from the memory."""
         self.chat_history_block.clear()
         self.vector_db_block.clear()
+        self.graph_db_block.clear()

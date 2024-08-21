@@ -20,11 +20,13 @@ from camel.embeddings import BaseEmbedding
 from camel.memories import (
     ChatHistoryBlock,
     ContextRecord,
+    GraphDBBlock,
     MemoryRecord,
     VectorDBBlock,
 )
 from camel.messages import BaseMessage
 from camel.storages import (
+    BaseGraphStorage,
     BaseKeyValueStorage,
     BaseVectorStorage,
     VectorDBQueryResult,
@@ -184,4 +186,44 @@ class TestVectorDBBlock:
     def test_clear_history(self, mock_storage):
         vector_db = VectorDBBlock(storage=mock_storage)
         vector_db.clear()
+        mock_storage.clear.assert_called_once()
+
+
+class TestGraphDBBlock:
+    @pytest.fixture
+    def mock_storage(self):
+        return create_autospec(BaseGraphStorage)
+
+    def test_init_with_default_storage(self):
+        with pytest.raises(NotImplementedError):
+            graph_db = GraphDBBlock()
+            assert graph_db.storage is not None
+
+    def test_init_with_custom_storage(self, mock_storage):
+        graph_db = GraphDBBlock(storage=mock_storage)
+        assert graph_db.storage == mock_storage
+
+    def test_retrieve(self, mock_storage):
+        mock_results = [{'subject': 's1', 'object': 'o1', 'relation': 'r1'}]
+        mock_storage.query.return_value = mock_results
+        graph_db = GraphDBBlock(storage=mock_storage)
+
+        query = "MATCH (s)-[r]->(o) RETURN s, o, r"
+        records = graph_db.retrieve(query)
+        assert len(records) == len(mock_results)
+        assert all(isinstance(record, ContextRecord) for record in records)
+
+    def test_write_triplet(self, mock_storage):
+        graph_db = GraphDBBlock(storage=mock_storage)
+        graph_db.write_triplet('s1', 'o1', 'r1')
+        mock_storage.add_triplet.assert_called_once_with('s1', 'o1', 'r1')
+
+    def test_delete_triplet(self, mock_storage):
+        graph_db = GraphDBBlock(storage=mock_storage)
+        graph_db.delete_triplet('s1', 'o1', 'r1')
+        mock_storage.delete_triplet.assert_called_once_with('s1', 'o1', 'r1')
+
+    def test_clear(self, mock_storage):
+        graph_db = GraphDBBlock(storage=mock_storage)
+        graph_db.clear()
         mock_storage.clear.assert_called_once()
