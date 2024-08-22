@@ -13,8 +13,9 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
 import warnings
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 from urllib.parse import urlparse
+from unstructured.documents.elements import Element
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
 from camel.loaders import UnstructuredIO
@@ -69,7 +70,7 @@ class VectorRetriever(BaseRetriever):
 
     def process(
         self,
-        content: str,
+        content: Union[str, Element],
         chunk_type: str = "chunk_by_title",
         **kwargs: Any,
     ) -> None:
@@ -84,12 +85,15 @@ class VectorRetriever(BaseRetriever):
             **kwargs (Any): Additional keyword arguments for content parsing.
         """
         # Check if the content is URL
-        parsed_url = urlparse(content)
-        is_url = all([parsed_url.scheme, parsed_url.netloc])
-        if is_url or os.path.exists(content):
-            elements = self.uio.parse_file_or_url(content, **kwargs)
+        if isinstance(content, Element):
+            elements = [content]
         else:
-            elements = [self.uio.create_element_from_text(text=content)]
+            parsed_url = urlparse(content)
+            is_url = all([parsed_url.scheme, parsed_url.netloc])
+            if is_url or os.path.exists(content):
+                elements = self.uio.parse_file_or_url(content, **kwargs)
+            else:
+                elements = [self.uio.create_element_from_text(text=content)]
         if elements:
             chunks = self.uio.chunk_elements(
                 chunk_type=chunk_type, elements=elements

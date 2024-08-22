@@ -17,6 +17,7 @@ import re
 from pathlib import Path
 from typing import Collection, List, Optional, Sequence, Tuple, Union
 from urllib.parse import urlparse
+from unstructured.documents.elements import Element
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
 from camel.retrievers.vector_retriever import VectorRetriever
@@ -97,7 +98,7 @@ class AutoRetriever:
             f"Unsupported vector storage type: {self.storage_type}"
         )
 
-    def _collection_name_generator(self, content: str) -> str:
+    def _collection_name_generator(self, content: Union[str,Element]) -> str:
         r"""Generates a valid collection name from a given file path or URL.
 
         Args:
@@ -106,6 +107,9 @@ class AutoRetriever:
         Returns:
             str: A sanitized, valid collection name suitable for use.
         """
+        if isinstance(content, Element):
+            collection_name = content.metadata.file_directory
+            return collection_name
         # Check if the content is URL
         parsed_url = urlparse(content)
         is_url = all([parsed_url.scheme, parsed_url.netloc])
@@ -193,7 +197,7 @@ class AutoRetriever:
     def run_vector_retriever(
         self,
         query: str,
-        contents: Union[str, List[str]],
+        contents: Union[str, List[str], Element, List[Element]],
         top_k: int = DEFAULT_TOP_K_RESULTS,
         similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
         return_detailed_info: bool = False,
