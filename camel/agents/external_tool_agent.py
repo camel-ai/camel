@@ -132,6 +132,9 @@ class ExternalToolAgent(ChatAgent):
                     e.args[1], tool_calls, "max_tokens_exceeded"
                 )
 
+            if output_schema is not None and len(self.func_dict) == 0:
+                self._add_output_schema_to_tool_list(output_schema)
+
             # get response from model
             (
                 response,
@@ -259,7 +262,7 @@ class ExternalToolAgent(ChatAgent):
                     e.args[1], tool_calls, "max_tokens_exceeded"
                 )
 
-            if output_schema is not None:
+            if output_schema is not None and len(self.func_dict) == 0:
                 self._add_output_schema_to_tool_list(output_schema)
 
             (
