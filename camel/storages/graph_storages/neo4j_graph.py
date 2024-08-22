@@ -583,3 +583,6 @@ class Neo4jGraph(BaseGraphStorage):
                     ]
                 },
             )
+
+    def clear(self) -> None:
+        pass

@@ -81,3 +81,8 @@ class BaseGraphStorage(ABC):
                 dictionary represents a row of results from the query.
         """
         pass
+
+    @abstractmethod
+    def clear(self) -> None:
+        r"""Clears all data from the graph storage."""
+        pass

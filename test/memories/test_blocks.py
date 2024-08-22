@@ -204,14 +204,30 @@ class TestGraphDBBlock:
         assert graph_db.storage == mock_storage
 
     def test_retrieve(self, mock_storage):
-        mock_results = [{'subject': 's1', 'object': 'o1', 'relation': 'r1'}]
+        mock_results = [
+            {
+                "uuid": str(uuid4()),
+                "message": {
+                    "__class__": "BaseMessage",
+                    "content": "test message",
+                    "role_name": "user",
+                    "role_type": RoleType.USER,
+                    "meta_dict": None,
+                },
+                "role_at_backend": "user",
+                "extra_info": {},
+            }
+        ]
         mock_storage.query.return_value = mock_results
         graph_db = GraphDBBlock(storage=mock_storage)
 
         query = "MATCH (s)-[r]->(o) RETURN s, o, r"
         records = graph_db.retrieve(query)
+
         assert len(records) == len(mock_results)
         assert all(isinstance(record, ContextRecord) for record in records)
+        # Verify the content of the retrieved data
+        assert records[0].memory_record.message.content == "test message"
 
     def test_write_triplet(self, mock_storage):
         graph_db = GraphDBBlock(storage=mock_storage)

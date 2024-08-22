@@ -101,4 +101,7 @@ class GraphDBBlock(MemoryBlock):
 
     def clear(self) -> None:
         """Clears all data from the graph database."""
-        pass
+        if self.storage:
+            self.storage.clear()
+        else:
+            print("Warning: No storage to clear.")
