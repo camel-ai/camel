@@ -81,6 +81,9 @@ class ModelType(Enum):
     MISTRAL_MIXTRAL_8x22B = "open-mixtral-8x22b"
     MISTRAL_CODESTRAL_MAMBA = "open-codestral-mamba"
 
+    # SambaNova Model
+    SAMBA_LLAMA_3_1_405B = "llama3-405b"
+
     @property
     def value_for_tiktoken(self) -> str:
         return (
@@ -193,6 +196,10 @@ class ModelType(Enum):
         return self in {ModelType.GEMINI_1_5_FLASH, ModelType.GEMINI_1_5_PRO}
 
     @property
+    def is_samba(self) -> bool:
+        return self in {ModelType.SAMBA_LLAMA_3_1_405B}
+
+    @property
     def token_limit(self) -> int:
         r"""Returns the maximum token limit for a given model.
 
@@ -251,6 +258,7 @@ class ModelType(Enum):
             ModelType.GROQ_LLAMA_3_1_8B,
             ModelType.GROQ_LLAMA_3_1_70B,
             ModelType.GROQ_LLAMA_3_1_405B,
+            ModelType.SAMBA_LLAMA_3_1_405B,
         }:
             return 131_072
         elif self in {
@@ -445,6 +453,7 @@ class ModelPlatformType(Enum):
     VLLM = "vllm"
     MISTRAL = "mistral"
     OPENAI_COMPATIBILITY_MODEL = "openai-compatibility-model"
+    SAMBA = "samba nova"
 
     @property
     def is_openai(self) -> bool:
@@ -506,6 +515,11 @@ class ModelPlatformType(Enum):
     def is_gemini(self) -> bool:
         r"""Returns whether this platform is Gemini."""
         return self is ModelPlatformType.GEMINI
+
+    @property
+    def is_samba(self) -> bool:
+        r"""Returns whether this platform is Samba Nova."""
+        return self is ModelPlatformType.SAMBA
 
 
 class AudioModelType(Enum):
