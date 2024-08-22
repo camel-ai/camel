@@ -49,6 +49,7 @@ class SambaModel:
         self._api_key = api_key or os.environ.get("SAMBA_API_KEY")
         self._token_counter = token_counter
         self.model_config_dict = model_config_dict
+        self.check_model_config()
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -152,10 +153,9 @@ class SambaModel:
 
         choices = [
             {
-                'index': 0,  # Assuming a single choice; adjust if multiple
-                # choices are involved
+                'index': 0,  # Assuming a single choice
                 'message': {
-                    'role': 'assistant',  # Adjust if role is different
+                    'role': 'assistant',
                     'content': full_content.strip(),
                 },
                 'finish_reason': response[-1]['0']['choices'][0][
@@ -171,8 +171,7 @@ class SambaModel:
             created=first_chunk['created'],
             model=first_chunk['model'],
             object="chat.completion",
-            usage=None,  # You might need to adjust this if there's usage data
-            # in the response
+            usage=None,
         )
 
         return obj
