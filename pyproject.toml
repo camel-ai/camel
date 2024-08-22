@@ -27,7 +27,7 @@ repository = "https://github.com/camel-ai/camel"
 documentation = "https://docs.camel-ai.org"
 
 [tool.poetry.dependencies]
-python = ">=3.9.0,<3.12"
+python = ">=3.10.0,<3.12"
 numpy = "^1"
 openai = "^1.2.3"
 groq = "^0.5.0"
@@ -87,6 +87,7 @@ docker = { version = "^7.1.0", optional = true }
 agentops = { version = "^0.3.6", optional = true }
 azure-storage-blob = { version = "^12.21.0", optional = true }
 google-cloud-storage = { version = "^2.18.0", optional = true }
+botocore = { version = "^1.35.3", optional = true }
 nltk = { version = "3.8.1", optional = true }
 
 # encoders
@@ -180,6 +181,7 @@ kv-stroages = [
 object-storages = [
     "azure-storage-blob",
     "google-cloud-storage",
+    "botocore",
 ]
 
 retrievers = [
@@ -244,6 +246,7 @@ all = [
     # object-storages
     "azure-storage-blob",
     "google-cloud-storage",
+    "botocore",
 ]
 
 [tool.poetry.group.dev]
