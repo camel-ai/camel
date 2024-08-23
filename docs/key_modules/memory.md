@@ -17,7 +17,7 @@ pip install camel-ai
 
 ### Basic Usage
 
-Here's a quick example of how to use the LongtermAgentMemory:
+Here's a quick example of how to use the `LongtermAgentMemory`:
 
 ```python
 from camel.memories import (
