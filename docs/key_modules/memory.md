@@ -307,4 +307,4 @@ vector_db2 = VectorDBBlock(
 
 - For large-scale applications, consider using persistent storage backends instead of in-memory storage.
 - Optimize your context creator to balance between context relevance and token limits.
-- When using VectorDBMemory, be mindful of the trade-off between retrieval accuracy and speed as the database grows.
+- When using `VectorDBMemory`, be mindful of the trade-off between retrieval accuracy and speed as the database grows.
