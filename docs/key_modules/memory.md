@@ -63,8 +63,8 @@ The basic unit of storage in the CAMEL memory system.
 
 Attributes:
 
-- `message`: The main content of the record (BaseMessage)
-- `role_at_backend`: The role this message played at the OpenAI backend (OpenAIBackendRole)
+- `message`: The main content of the record (`BaseMessage`)
+- `role_at_backend`: The role this message played at the OpenAI backend (`OpenAIBackendRole`)
 - `uuid`: A unique identifier for the record
 - `extra_info`: Additional key-value pairs for extra information
 
