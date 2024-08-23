@@ -100,13 +100,8 @@ Serves as the fundamental component within the agent memory system. `MemoryBlock
 
 Defines the context creation strategies when retrieval messages exceed the model's context length.
 
-Abstract Properties:
-
 - `token_counter`: For counting tokens in a message
 - `token_limit`: The maximum number of tokens allowed in the generated context
-
-Abstract Methods:
-
 - `create_context()`: Create conversational context from chat history
 
 ### AgentMemory (Abstract Base Class)
