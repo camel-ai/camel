@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
 from camel.agents.base import BaseAgent
 from camel.configs import ChatGPTConfig
+from pydantic import UUID4
 from camel.memories import (
     AgentMemory,
     ChatHistoryMemory,
@@ -88,6 +89,8 @@ class ChatAgent(BaseAgent):
         model (BaseModelBackend, optional): The model backend to use for
             generating responses. (default: :obj:`OpenAIModel` with
             `GPT_4O_MINI`)
+        conversation_id (UUID4, optional): Unique identifier for the 
+            conversation, need set by user
         api_key (str, optional): The API key for authenticating with the
             LLM service. Only OpenAI and Anthropic model supported (default:
             :obj:`None`)
@@ -114,6 +117,7 @@ class ChatAgent(BaseAgent):
         self,
         system_message: BaseMessage,
         agent_id: Optional[str] = None,
+        conversation_id: Optional[UUID4] = None,
         model: Optional[BaseModelBackend] = None,
         api_key: Optional[str] = None,
         memory: Optional[AgentMemory] = None,
@@ -144,6 +148,14 @@ class ChatAgent(BaseAgent):
             self.set_output_language(self.output_language)
 
         self.model_type: ModelType = self.model_backend.model_type
+
+        # init conversation id
+        self.conversation_id: Optional[UUID4] = conversation_id
+        if self.conversation_id is None:
+            self.conversation_id = UUID4
+        
+        # init conversation id of system message 
+        self.system_message.conversation_id = self.conversation_id
 
         self.func_dict: Dict[str, Callable] = {}
         if tools is not None:
@@ -195,6 +207,7 @@ class ChatAgent(BaseAgent):
                 new system message of this agent.
         """
         self._system_message = message
+        self._system_message.conversation_id = self.conversation_id
 
     def is_tools_added(self) -> bool:
         r"""Whether OpenAI function calling is enabled for this agent.
@@ -313,6 +326,8 @@ class ChatAgent(BaseAgent):
                 a boolean indicating whether the chat session has terminated,
                 and information about the chat session.
         """
+        # init input message conversation
+        input_message.conversation_id = self.conversation_id
         self.update_memory(input_message, OpenAIBackendRole.USER)
 
         output_messages: List[BaseMessage]
@@ -389,6 +404,9 @@ class ChatAgent(BaseAgent):
                 a boolean indicating whether the chat session has terminated,
                 and information about the chat session.
         """
+        # init input message conversation
+        input_message.conversation_id = self.conversation_id
+
         self.update_memory(input_message, OpenAIBackendRole.USER)
 
         output_messages: List[BaseMessage]
@@ -541,6 +559,7 @@ class ChatAgent(BaseAgent):
                     if choice.message.content is not None
                     else [""]
                 ),
+                conversation_id=self.conversation_id,
             )
             output_messages.append(chat_message)
         finish_reasons = [
@@ -592,6 +611,7 @@ class ChatAgent(BaseAgent):
                         role_type=self.role_type,
                         meta_dict=dict(),
                         content=Content(text=[content_dict[index]]),
+                        conversation_id=self.conversation_id,
                     )
                     output_messages.append(chat_message)
         finish_reasons = [
@@ -679,6 +699,7 @@ class ChatAgent(BaseAgent):
             content=Content(text=[""]),
             func_name=func_name,
             args=args,
+            conversation_id=self.conversation_id,
         )
         func_msg = FunctionCallingMessage(
             role_name=self.role_name,
@@ -687,6 +708,7 @@ class ChatAgent(BaseAgent):
             content=Content(text=[""]),
             func_name=func_name,
             result=result,
+            conversation_id=self.conversation_id,
         )
 
         # Record information about this function call

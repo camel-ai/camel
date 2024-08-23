@@ -39,7 +39,7 @@ class Receiver(BaseModel):
 
 
 class Content(BaseModel):
-    text: Optional[List[str]] = Field(default_factory=list)
+    text: Optional[str] = Field(default_factory="")
     image_url: Optional[List[str]] = Field(default_factory=list)
     image_detail: str = Field(default="auto")
     video_url: Optional[List[str]] = Field(default_factory=list)
@@ -49,31 +49,32 @@ class Content(BaseModel):
 
 class Envelope(BaseModel):
     time_sent: str
-    time_received: str
+
+class ACLParameter(BaseModel):
+    sender: Optional[Sender] = None
+    receiver: Optional[Union[Receiver, Tuple[Receiver, ...]]] = None
+    subject: Optional[str] = None
+    reply_with: Optional[Content] = None
+    in_reply_to: Optional[UUID4] = None
+    envelope: Optional[Envelope] = None
+    language: str = Field(default="en")
+    ontology: Optional[str] = None
+    protocol: Optional[Dict[str, str]] = None
 
 
 class BaseMessage(BaseModel):
     role_name: str
     role_type: RoleType
     content: Content
-    sender: Optional[Sender] = None
-    receiver: Optional[Union[Receiver, Tuple[Receiver, ...]]] = None
     meta_dict: Optional[Dict[str, str]] = None
-    message_type: MessageType = MessageType.DEFAULT
-    subject: Optional[str] = None
-    reply_with: Optional["BaseMessage"] = None
-    in_reply_to: Optional["BaseMessage"] = None
-    envelope: Optional[Envelope] = None
-    language: str = Field(default="en")
-    ontology: Optional[str] = None
-    protocol: Optional[Dict[str, str]] = None
+    acl_params: Optional[ACLParameter] = None
     message_id: UUID4 = Field(
         default_factory=uuid.uuid4,
         description="Unique identifier for the message, not set by user.",
     )
-    conversation_id: UUID4 = Field(
-        default_factory=uuid.uuid4,
-        description="Unique identifier for the conversation, not set by user.",
+    conversation_id: Optional[UUID4] = Field(
+        description="Unique identifier for the conversation, \
+        need set by user.",
     )
 
     @classmethod
@@ -81,33 +82,17 @@ class BaseMessage(BaseModel):
         cls,
         role_name: str,
         content: Content,
-        sender: Optional[Sender] = None,
-        receiver: Optional[Union[Receiver, Tuple[Receiver, ...]]] = None,
-        message_type: MessageType = MessageType.DEFAULT,
+        conversation_id: Optional[UUID4] = None,
         meta_dict: Optional[Dict[str, str]] = None,
-        subject: Optional[str] = None,
-        reply_with: Optional["BaseMessage"] = None,
-        in_reply_to: Optional["BaseMessage"] = None,
-        envelope: Optional[Envelope] = None,
-        language: str = "en",
-        ontology: Optional[str] = None,
-        protocol: Optional[Dict[str, str]] = None,
+        acl_params: Optional[ACLParameter] = None,
     ) -> "BaseMessage":
         return cls(
             role_name=role_name,
             role_type=RoleType.USER,
+            conversation_id=conversation_id,
             content=content,
             meta_dict=meta_dict,
-            message_type=message_type,
-            sender=sender,
-            receiver=receiver,
-            subject=subject,
-            reply_with=reply_with,
-            in_reply_to=in_reply_to,
-            envelope=envelope,
-            language=language,
-            ontology=ontology,
-            protocol=protocol,
+            acl_params=acl_params,
         )
 
     @classmethod
@@ -115,33 +100,17 @@ class BaseMessage(BaseModel):
         cls,
         role_name: str,
         content: Content,
-        sender: Optional[Sender] = None,
-        receiver: Optional[Union[Receiver, Tuple[Receiver, ...]]] = None,
-        message_type: MessageType = MessageType.DEFAULT,
+        conversation_id: Optional[UUID4] = None,
         meta_dict: Optional[Dict[str, str]] = None,
-        subject: Optional[str] = None,
-        reply_with: Optional["BaseMessage"] = None,
-        in_reply_to: Optional["BaseMessage"] = None,
-        envelope: Optional[Envelope] = None,
-        language: str = "en",
-        ontology: Optional[str] = None,
-        protocol: Optional[Dict[str, str]] = None,
+        acl_params: Optional[ACLParameter] = None,        
     ) -> "BaseMessage":
         return cls(
             role_name=role_name,
             role_type=RoleType.USER,
+            conversation_id=conversation_id,
             content=content,
             meta_dict=meta_dict,
-            message_type=message_type,
-            sender=sender,
-            receiver=receiver,
-            subject=subject,
-            reply_with=reply_with,
-            in_reply_to=in_reply_to,
-            envelope=envelope,
-            language=language,
-            ontology=ontology,
-            protocol=protocol,
+            acl_params=acl_params,
         )
 
     def create_new_instance(self, content: Content) -> "BaseMessage":
@@ -150,7 +119,7 @@ class BaseMessage(BaseModel):
     def __add__(self, other: Any) -> Union["BaseMessage", Any]:
         if isinstance(other, BaseMessage):
             new_content = Content(
-                text=(self.content.text or []) + (other.content.text or []),
+                text=(self.content.text or "") + (other.content.text or ""),
                 image_url=(self.content.image_url or [])
                 + (other.content.image_url or []),
                 video_url=(self.content.video_url or [])
@@ -167,7 +136,7 @@ class BaseMessage(BaseModel):
     def __mul__(self, other: Any) -> Union["BaseMessage", Any]:
         if isinstance(other, int):
             new_content = Content(
-                text=(self.content.text or []) * other,
+                text=(self.content.text or "") * other,
                 image_url=(self.content.image_url or []) * other,
                 video_url=(self.content.video_url or []) * other,
                 audio_url=(self.content.audio_url or []) * other,
@@ -195,32 +164,32 @@ class BaseMessage(BaseModel):
     ) -> Tuple[List[TextPrompt], List[CodePrompt]]:
         text_prompts: List[TextPrompt] = []
         code_prompts: List[CodePrompt] = []
-        for text in self.content.text or []:
-            lines = text.split("\n")
-            idx = 0
-            start_idx = 0
-            while idx < len(lines):
-                while idx < len(lines) and not lines[idx].lstrip().startswith(
-                    "```"
-                ):
-                    idx += 1
-                txt = "\n".join(lines[start_idx:idx]).strip()
-                if txt:
-                    text_prompts.append(TextPrompt(txt))
-                if idx >= len(lines):
-                    break
-                code_type = lines[idx].strip()[3:].strip()
+        text=(self.content.text or "") 
+        lines = text.split("\n")
+        idx = 0
+        start_idx = 0
+        while idx < len(lines):
+            while idx < len(lines) and not lines[idx].lstrip().startswith(
+                "```"
+            ):
                 idx += 1
-                start_idx = idx
-                while idx < len(lines) and not lines[idx].lstrip().startswith(
-                    "```"
-                ):
-                    idx += 1
-                code = "\n".join(lines[start_idx:idx]).strip()
-                if code:
-                    code_prompts.append(CodePrompt(code, code_type=code_type))
+            txt = "\n".join(lines[start_idx:idx]).strip()
+            if txt:
+                text_prompts.append(TextPrompt(txt))
+            if idx >= len(lines):
+                break
+            code_type = lines[idx].strip()[3:].strip()
+            idx += 1
+            start_idx = idx
+            while idx < len(lines) and not lines[idx].lstrip().startswith(
+                "```"
+            ):
                 idx += 1
-                start_idx = idx
+            code = "\n".join(lines[start_idx:idx]).strip()
+            if code:
+                code_prompts.append(CodePrompt(code, code_type=code_type))
+            idx += 1
+            start_idx = idx
         return text_prompts, code_prompts
 
     def to_openai_message(
@@ -237,20 +206,19 @@ class BaseMessage(BaseModel):
     def to_openai_system_message(self) -> OpenAISystemMessage:
         return OpenAISystemMessage(
             role="system",
-            content="\n".join(self.content.text or []),
+            content="\n".join(self.content.text or ""),
         )
 
     def to_openai_user_message(self) -> OpenAIUserMessage:
         hybrid_content: List[Any] = []
 
         if self.content.text:
-            for text in self.content.text:
-                hybrid_content.append(
-                    {
-                        "type": "text",
-                        "text": text,
-                    }
-                )
+            hybrid_content.append(
+                {
+                    "type": "text",
+                    "text": self.content.text,
+                }
+            )
 
         if self.content.image_url:
             for url in self.content.image_url:
