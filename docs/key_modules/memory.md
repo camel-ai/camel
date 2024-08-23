@@ -98,7 +98,7 @@ Concrete Methods:
 
 ### BaseContextCreator (Abstract Base Class)
 
-Defines the interface for context creation strategies.
+Defines the context creation strategies when retrieval messages exceed the model's context length.
 
 Abstract Properties:
 
