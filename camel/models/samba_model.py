@@ -84,7 +84,7 @@ class SambaModel:
 
         import requests
 
-        url = "https://mzulfm3ekjd5j3hv.snova.ai/v1/chat/completions"
+        url = "https://fast-api.snova.ai/v1/chat/completions"
 
         headers = {
             "Authorization": f"Basic {self._api_key}",
