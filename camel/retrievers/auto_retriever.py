@@ -28,6 +28,11 @@ from camel.storages import (
 )
 from camel.types import StorageType
 
+try:
+    from unstructured.documents.elements import Element
+except ImportError:
+    Element = None
+
 DEFAULT_TOP_K_RESULTS = 1
 DEFAULT_SIMILARITY_THRESHOLD = 0.75
 
@@ -97,15 +102,19 @@ class AutoRetriever:
             f"Unsupported vector storage type: {self.storage_type}"
         )
 
-    def _collection_name_generator(self, content: str) -> str:
+    def _collection_name_generator(self, content: Union[str, Element]) -> str:
         r"""Generates a valid collection name from a given file path or URL.
 
         Args:
-            contents (str): Local file path, remote URL or string content.
+            content (Union[str, Element]): Local file path, remote URL,
+                string content or Element object.
 
         Returns:
             str: A sanitized, valid collection name suitable for use.
         """
+        if isinstance(content, Element):
+            content = content.metadata.file_directory
+
         # Check if the content is URL
         parsed_url = urlparse(content)
         is_url = all([parsed_url.scheme, parsed_url.netloc])
@@ -193,7 +202,7 @@ class AutoRetriever:
     def run_vector_retriever(
         self,
         query: str,
-        contents: Union[str, List[str]],
+        contents: Union[str, List[str], Element, List[Element]],
         top_k: int = DEFAULT_TOP_K_RESULTS,
         similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
         return_detailed_info: bool = False,
@@ -203,8 +212,8 @@ class AutoRetriever:
 
         Args:
             query (str): Query string for information retriever.
-            contents (Union[str, List[str]]): Local file paths, remote URLs or
-                string contents.
+            contents (Union[str, List[str], Element, List[Element]]): Local
+                file paths, remote URLs, string contents or Element objects.
             top_k (int, optional): The number of top results to return during
                 retrieve. Must be a positive integer. Defaults to
                 `DEFAULT_TOP_K_RESULTS`.
@@ -230,7 +239,9 @@ class AutoRetriever:
         if not contents:
             raise ValueError("content cannot be empty.")
 
-        contents = [contents] if isinstance(contents, str) else contents
+        contents = (
+            [contents] if isinstance(contents, (str, Element)) else contents
+        )
 
         all_retrieved_info = []
         for content in contents:
@@ -246,6 +257,7 @@ class AutoRetriever:
                 file_is_modified = False  # initialize with a default value
                 if (
                     vector_storage_instance.status().vector_count != 0
+                    and isinstance(content, str)
                     and os.path.exists(content)
                 ):
                     # Get original modified date from file
