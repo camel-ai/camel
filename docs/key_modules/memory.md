@@ -81,7 +81,7 @@ Methods:
 
 ### ContextRecord
 
-Represents the result of memory retrieval.
+The result of memory retrieval from `AgentMemory`, which is used by `ContextCreator` to select records for creating the context for the agent.
 
 Attributes:
 
