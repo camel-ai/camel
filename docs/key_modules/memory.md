@@ -283,9 +283,9 @@ class MyCustomContextCreator(BaseContextCreator):
 
 ```
 
-### Fine-tuning Vector Database
+### Customizing Vector Database Block
 
-For VectorDBBlock and VectorDBMemory, you can fine-tune the vector database by adjusting the embedding model or storage parameters:
+For `VectorDBBlock`, you can customize it by adjusting the embedding models or vector storages:
 
 ```python
 from camel.embeddings import mistral_embedding, openai_embedding
