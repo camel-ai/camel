@@ -26,7 +26,7 @@ from camel.utils import print_text_animated
 # model_path = "lmsys/vicuna-7b-v1.5"
 def main(
     chat_turn_limit=50,
-    model_platform=ModelPlatformType.OPENSOURCE,
+    model_platform=ModelPlatformType.OPEN_SOURCE,
     model_type=ModelType.STUB,
     model_path="meta-llama/Llama-2-7b-chat-hf",
     server_url="http://localhost:8000/v1",
