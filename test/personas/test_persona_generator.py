@@ -30,22 +30,12 @@ MOCK_TEXT_TO_PERSONA_RESPONSE = """
 """  # noqa: E501
 
 MOCK_PERSONA_TO_PERSONA_RESPONSE = """
-{
-  "personas": [
-    {
-      "name": "Machine Learning Engineer",
-      "description": "A professional who specializes in developing and implementing machine learning models. They work closely with Data Scientists to turn data insights into practical applications."
-    },
-    {
-      "name": "Business Analyst",
-      "description": "A professional who bridges the gap between data insights and business strategy. They collaborate with Data Scientists to translate complex analytical findings into actionable business recommendations."
-    },
-    {
-      "name": "Data Engineer",
-      "description": "A professional responsible for designing, building, and maintaining the data infrastructure that Data Scientists rely on. They ensure data quality, accessibility, and scalability."
-    }
-  ]
-}
+1. persona_name: Machine Learning Engineer
+persona_description: A professional who specializes in developing and implementing machine learning models. They work closely with Data Scientists to turn data insights into practical applications.
+2. persona_name: Business Analyst
+persona_description: A professional who bridges the gap between data insights and business strategy. They collaborate with Data Scientists to translate complex analytical findings into actionable business recommendations.
+3. persona_name: Data Engineer
+persona_description: A professional who designs and maintains the data infrastructure that supports the work of Data Scientists. They ensure that data is collected, stored, and processed efficiently to enable data-driven decision-making.
 """  # noqa: E501
 
 
