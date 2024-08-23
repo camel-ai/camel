@@ -85,7 +85,7 @@ Attributes:
 
 ### MemoryBlock (Abstract Base Class)
 
-Serves as the fundamental component within the agent memory system.
+Serves as the fundamental component within the agent memory system. `MemoryBlock` class follows the "Composite Design pattern" so that you can compose objects into tree structures and then work with these structures as if they were individual objects.
 
 Abstract Methods:
 
