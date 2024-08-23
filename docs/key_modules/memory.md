@@ -75,7 +75,7 @@ Attributes:
 
 Methods:
 
-- `from_dict()`: Reconstruct a MemoryRecord from a dictionary
+- `from_dict()`: Static method to construct a MemoryRecord from a dictionary
 - `to_dict()`: Convert the MemoryRecord to a dictionary for serialization
 - `to_openai_message()`: Convert the record to an OpenAIMessage object
 
