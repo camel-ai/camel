@@ -222,7 +222,7 @@ To use the Memory module in your agent:
 4. Use `retrieve()` to get relevant context for the agent's next action.
 5. Use `get_context()` to obtain the formatted context for the agent.
 
-Example using LongtermAgentMemory:
+Example using `LongtermAgentMemory`:
 
 ```python
 from camel.memories import LongtermAgentMemory, ChatHistoryBlock, VectorDBBlock, ScoreBasedContextCreator
