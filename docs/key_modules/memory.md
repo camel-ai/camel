@@ -20,30 +20,36 @@ pip install camel-ai
 Here's a quick example of how to use the LongtermAgentMemory:
 
 ```python
-from camel.memories import LongtermAgentMemory, ChatHistoryBlock, VectorDBBlock
-from camel.memories import MemoryRecord, ScoreBasedContextCreator
+from camel.memories import (
+    LongtermAgentMemory,
+    ChatHistoryBlock,
+    VectorDBBlock,
+    MemoryRecord,
+    ScoreBasedContextCreator,
+)
 from camel.messages import BaseMessage
-from camel.types import OpenAIBackendRole
+from camel.types import OpenAIBackendRole, RoleType
 from camel.utils import OpenAITokenCounter
-
 
 # Initialize memory
 memory = LongtermAgentMemory(
     context_creator=ScoreBasedContextCreator(OpenAITokenCounter, 1024),
-    chat_history_block=ChatHistoryBlock(),
-    vector_db_block=VectorDBBlock()
-)
+    chat_history_block=ChatHistoryBlock(), vector_db_block=VectorDBBlock())
 
 # Write records to memory
 records = [
     MemoryRecord(
-        message=BaseMessage(role_name="user", role_type="human", meta_dict=None, content="What is AI?"),
-        role_at_backend=OpenAIBackendRole.USER
+        message=BaseMessage(role_name="User", role_type=RoleType.USER,
+                            meta_dict=None, content="What is AI?"),
+        role_at_backend=OpenAIBackendRole.USER,
     ),
     MemoryRecord(
-        message=BaseMessage( role_name="agent", role_type="ai", meta_dict=None, content="AI refers to systems that mimic human intelligence."),
-        role_at_backend=OpenAIBackendRole.ASSISTANT
-    )
+        message=BaseMessage(
+            role_name="Assistant", role_type=RoleType.ASSISTANT,
+            meta_dict=None,
+            content="AI refers to systems that mimic human intelligence."),
+        role_at_backend=OpenAIBackendRole.ASSISTANT,
+    ),
 ]
 memory.write_records(records)
 
