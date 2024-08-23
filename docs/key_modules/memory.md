@@ -64,7 +64,7 @@ for message in context:
 
 ### MemoryRecord
 
-The basic unit of storage in the CAMEL memory system.
+The basic data unit in the CAMEL memory system.
 
 Attributes:
 
