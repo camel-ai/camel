@@ -113,13 +113,8 @@ Abstract Methods:
 
 A specialized form of MemoryBlock designed for direct integration with an agent.
 
-Abstract Methods:
-
 - `retrieve()`: Get a list of ContextRecords from memory
 - `get_context_creator()`: Get a context creator
-
-Concrete Methods:
-
 - `get_context()`: Get chat context with a proper size for the agent
 
 ## Memory Block Implementations
