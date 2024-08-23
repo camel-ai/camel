@@ -12,7 +12,6 @@ Ensure you have CAMEL AI installed in your Python environment:
 
 ```bash
 pip install camel-ai
-
 ```
 
 ### Basic Usage
