@@ -39,7 +39,7 @@ def main():
             "then write a script to open a browser and search today's weather."
         ),
     )
-    response = embodied_agent.step(user_msg)
+    response = embodied_agent.run(user_msg)
     print(response.msg.content)
 
 

@@ -442,6 +442,9 @@ class ModelPlatformType(Enum):
     ZHIPU = "zhipuai"
     DEFAULT = "default"
     GEMINI = "gemini"
+    OUTLINES_TRANSFORMERS = "outlines-transformers"
+    OUTLINES_LLAMACPP = "outlines-llamacpp"
+    OUTLINES_VLLM = "outlines-vllm"
     VLLM = "vllm"
     MISTRAL = "mistral"
     OPENAI_COMPATIBILITY_MODEL = "openai-compatibility-model"
@@ -506,6 +509,15 @@ class ModelPlatformType(Enum):
     def is_gemini(self) -> bool:
         r"""Returns whether this platform is Gemini."""
         return self is ModelPlatformType.GEMINI
+
+    @property
+    def is_outlines(self) -> bool:
+        r"""Returns whether this platform is Outlines."""
+        return self in {
+            ModelPlatformType.OUTLINES_TRANSFORMERS,
+            ModelPlatformType.OUTLINES_LLAMACPP,
+            ModelPlatformType.OUTLINES_VLLM,
+        }
 
 
 class AudioModelType(Enum):
