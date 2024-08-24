@@ -282,8 +282,8 @@ class BaseMessage:
         Returns:
             OpenAIUserMessage: The converted :obj:`OpenAIUserMessage` object.
         """
-        hybird_content: List[Any] = []
-        hybird_content.append(
+        hybrid_content: List[Any] = []
+        hybrid_content.append(
             {
                 "type": "text",
                 "text": self.content,
@@ -312,7 +312,7 @@ class BaseMessage:
                         "utf-8"
                     )
                 image_prefix = f"data:image/{image_type};base64,"
-                hybird_content.append(
+                hybrid_content.append(
                     {
                         "type": "image_url",
                         "image_url": {
@@ -377,12 +377,12 @@ class BaseMessage:
                     },
                 }
 
-                hybird_content.append(item)
+                hybrid_content.append(item)
 
-        if len(hybird_content) > 1:
+        if len(hybrid_content) > 1:
             return {
                 "role": "user",
-                "content": hybird_content,
+                "content": hybrid_content,
             }
         # This return just for str message
         else:
@@ -397,10 +397,12 @@ class BaseMessage:
         Returns:
             OpenAIUserMessage: The converted :obj:`OpenAIUserMessage` object.
         """
-        hybird_content: List[Any] = [{
+        hybrid_content: List[Any] = [
+            {
                 "type": "text",
                 "text": self.content,
-            }]
+            }
+        ]
 
         if self.image_list and len(self.image_list) > 0:
             for image in self.image_list:
@@ -430,7 +432,7 @@ class BaseMessage:
                         "utf-8"
                     )
                 image_prefix = f"data:image/{image_type};base64,"
-                hybird_content.append(
+                hybrid_content.append(
                     {
                         "type": "image_url",
                         "image_url": {
@@ -468,7 +470,7 @@ class BaseMessage:
                     )
                 video_prefix = f"data:video/{self.video_type.lower()};bytes,"
 
-                hybird_content.append(
+                hybrid_content.append(
                     {
                         "type": "video_url",
                         "video_url": {
@@ -478,10 +480,10 @@ class BaseMessage:
                     }
                 )
 
-        if len(hybird_content) > 1:
+        if len(hybrid_content) > 1:
             return {
                 "role": "user",
-                "content": hybird_content,
+                "content": hybrid_content,
             }
         # This return just for str message
         else:
