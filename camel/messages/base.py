@@ -397,13 +397,10 @@ class BaseMessage:
         Returns:
             OpenAIUserMessage: The converted :obj:`OpenAIUserMessage` object.
         """
-        hybird_content: List[Any] = []
-        hybird_content.append(
-            {
+        hybird_content: List[Any] = [{
                 "type": "text",
                 "text": self.content,
-            }
-        )
+            }]
 
         if self.image_list and len(self.image_list) > 0:
             for image in self.image_list:
