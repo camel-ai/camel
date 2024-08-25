@@ -21,7 +21,7 @@ from camel.types import ModelPlatformType, ModelType
 # Define system message
 sys_msg = BaseMessage.make_assistant_message(
     role_name='Tools calling opertor',
-    content=Content(text=['You are a helpful assistant']),
+    content=Content(text='You are a helpful assistant'),
 )
 
 # Set model config
@@ -48,7 +48,7 @@ camel_agent.reset()
 # Define a user message
 usr_msg = BaseMessage.make_user_message(
     role_name='CAMEL User',
-    content=Content(text=['help me to select a basketball in klarna.']),
+    content=Content(text='help me to select a basketball in klarna.'),
 )
 
 # Get response information

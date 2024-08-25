@@ -58,7 +58,7 @@ def main() -> None:
             role_tuple=("Text retrieval example writer:", RoleType.ASSISTANT),
         )
         user_msg = BaseMessage.make_user_message(
-            role_name="User", content=Content(text=["Start to generate!"])
+            role_name="User", content=Content(text="Start to generate!")
         )
         model = ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,

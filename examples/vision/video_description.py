@@ -25,7 +25,7 @@ sys_msg_prompt = PromptTemplateGenerator().get_prompt_from_key(
 )
 sys_msg = BaseMessage.make_assistant_message(
     role_name="Assistant",
-    content=Content(text=[sys_msg_prompt]),
+    content=Content(text=sys_msg_prompt),
 )
 
 model = ModelFactory.create(
@@ -45,10 +45,8 @@ camel_agent = ChatAgent(sys_msg, model=model)
 user_msg = BaseMessage.make_user_message(
     role_name="User",
     content=Content(
-        text=[
-            "These are frames from a video that I want to upload. Generate "
-            "a compelling description that I can upload along with the video."
-        ],
+        text="These are frames from a video that I want to upload. Generate "
+        "a compelling description that I can upload along with the video.",
         video_url=[
             "https://commondatastorage.googleapis.com/gtv-videos-bucket/"
             "sample/WeAreGoingOnBullrun.mp4"

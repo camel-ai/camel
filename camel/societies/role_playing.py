@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import uuid
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 from camel.agents import (
@@ -72,6 +73,8 @@ class RolePlaying:
             task specify meta dict with. (default: :obj:`None`)
         output_language (str, optional): The language to be output by the
             agents. (default: :obj:`None`)
+        conversation_id (UUID4, optional): Unique identifier for the
+            conversation
     """
 
     def __init__(
@@ -103,6 +106,7 @@ class RolePlaying:
         self.model = model
         self.task_type = task_type
         self.task_prompt = task_prompt
+        self.conversation_id = uuid.uuid4()
 
         self.specified_task_prompt: Optional[TextPrompt] = None
         self._init_specified_task_prompt(
@@ -197,6 +201,7 @@ class RolePlaying:
             task_specify_agent = TaskSpecifyAgent(
                 task_type=self.task_type,
                 output_language=output_language,
+                conversation_id=self.conversation_id,
                 **(task_specify_agent_kwargs or {}),
             )
             self.specified_task_prompt = task_specify_agent.run(
@@ -229,6 +234,7 @@ class RolePlaying:
                 task_planner_agent_kwargs.update(dict(model=self.model))
             task_planner_agent = TaskPlannerAgent(
                 output_language=output_language,
+                conversation_id=self.conversation_id,
                 **(task_planner_agent_kwargs or {}),
             )
             self.planned_task_prompt = task_planner_agent.run(self.task_prompt)
@@ -329,6 +335,7 @@ class RolePlaying:
         self.assistant_agent = ChatAgent(
             init_assistant_sys_msg,
             output_language=output_language,
+            conversation_id=self.conversation_id,
             **(assistant_agent_kwargs or {}),
         )
         self.assistant_sys_msg = self.assistant_agent.system_message
@@ -336,6 +343,7 @@ class RolePlaying:
         self.user_agent = ChatAgent(
             init_user_sys_msg,
             output_language=output_language,
+            conversation_id=self.conversation_id,
             **(user_agent_kwargs or {}),
         )
         self.user_sys_msg = self.user_agent.system_message
@@ -386,6 +394,7 @@ class RolePlaying:
                     critic_kwargs.update(dict(model=self.model))
                 self.critic = CriticAgent(
                     self.critic_sys_msg,
+                    conversation_id=self.conversation_id,
                     **(critic_kwargs or {}),
                 )
 
@@ -445,7 +454,7 @@ class RolePlaying:
         # Initialize a message sent by the assistant
         init_msg = BaseMessage.make_assistant_message(
             role_name=self.assistant_sys_msg.role_name,
-            content=Content(text=[init_msg_content]),
+            content=Content(text=init_msg_content),
         )
 
         return init_msg

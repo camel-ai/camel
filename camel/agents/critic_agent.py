@@ -16,6 +16,7 @@ import warnings
 from typing import Any, Dict, Optional, Sequence
 
 from colorama import Fore
+from pydantic import UUID4
 
 from camel.agents.chat_agent import ChatAgent
 from camel.memories import AgentMemory
@@ -37,6 +38,8 @@ class CriticAgent(ChatAgent):
         message_window_size (int, optional): The maximum number of previous
             messages to include in the context window. If `None`, no windowing
             is performed. (default: :obj:`6`)
+        conversation_id (UUID4, optional): Unique identifier for the
+            conversation
         retry_attempts (int, optional): The number of retry attempts if the
             critic fails to return a valid option. (default: :obj:`2`)
         verbose (bool, optional): Whether to print the critic's messages.
@@ -49,6 +52,7 @@ class CriticAgent(ChatAgent):
         system_message: BaseMessage,
         model: Optional[BaseModelBackend] = None,
         memory: Optional[AgentMemory] = None,
+        conversation_id: Optional[UUID4] = None,
         message_window_size: int = 6,
         retry_attempts: int = 2,
         verbose: bool = False,
@@ -59,6 +63,7 @@ class CriticAgent(ChatAgent):
             model=model,
             memory=memory,
             message_window_size=message_window_size,
+            conversation_id=conversation_id,
         )
         self.options_dict: Dict[str, str] = dict()
         self.retry_attempts = retry_attempts
@@ -74,11 +79,7 @@ class CriticAgent(ChatAgent):
         Returns:
             str: A string containing the flattened options to the critic.
         """
-        options = [
-            ' '.join(message.content.text)
-            for message in messages
-            if message.content.text is not None
-        ]
+        options = [message.content.text or "" for message in messages]
 
         flatten_options = (
             f"> Proposals from "
@@ -87,7 +88,7 @@ class CriticAgent(ChatAgent):
         )
         for index, option in enumerate(options):
             flatten_options += f"Option {index + 1}:\n{option}\n\n"
-            self.options_dict[str(index + 1)] = option
+            self.options_dict[str(index + 1)] = option or ""
         format = (
             f"Please first enter your choice ([1-{len(self.options_dict)}]) "
             "and then your explanation and comparison: "
@@ -132,10 +133,8 @@ class CriticAgent(ChatAgent):
                     role_type=input_message.role_type,
                     meta_dict=input_message.meta_dict,
                     content=Content(
-                        text=[
-                            "> Invalid choice. Please choose again.\n"
-                            + ' '.join(text for text in msg_content.text)  # type: ignore[union-attr]
-                        ]
+                        text="> Invalid choice. Please choose again.\n"
+                        + (msg_content.text or "")
                     ),
                 )
                 i += 1
@@ -157,9 +156,12 @@ class CriticAgent(ChatAgent):
             Optional[str]: The critic's choice as a string, or None if the
                 message could not be parsed.
         """
-        choice = str(
-            get_first_int(' '.join(text for text in critic_msg.content.text))  # type: ignore[union-attr]
+        text_content = (
+            critic_msg.content.text
+            if critic_msg.content.text is not None
+            else ""
         )
+        choice = str(get_first_int(text_content))
         return choice
 
     def reduce_step(
@@ -181,7 +183,8 @@ class CriticAgent(ChatAgent):
             role_name=input_messages[0].role_name,
             role_type=input_messages[0].role_type,
             meta_dict=input_messages[0].meta_dict,
-            content=Content(text=[""]),
+            content=Content(text=""),
+            conversation_id=self.conversation_id,
         )
 
         flatten_options = self.flatten_options(input_messages)
@@ -190,12 +193,12 @@ class CriticAgent(ChatAgent):
                 self.logger_color + f"\x1b[3m{flatten_options}\x1b[0m\n"
             )
         input_msg = meta_chat_message.create_new_instance(
-            Content(text=[flatten_options])
+            Content(text=flatten_options)
         )
 
         option = self.get_option(input_msg)
         output_msg = meta_chat_message.create_new_instance(
-            Content(text=[option])
+            Content(text=option)
         )
 
         # TODO: The return `info` can be improved.

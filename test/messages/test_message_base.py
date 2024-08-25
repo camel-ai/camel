@@ -24,7 +24,7 @@ def base_message() -> BaseMessage:
         role_name="test_user",
         role_type=RoleType.USER,
         meta_dict={"key": "value"},
-        content=Content(text=["test content"]),
+        content=Content(text="test content"),
     )
 
 
@@ -32,7 +32,7 @@ def test_base_message_addition_operator(base_message: BaseMessage):
     other_message = BaseMessage(
         role_name="test_user",
         role_type=RoleType.USER,
-        content=Content(text=["!"]),
+        content=Content(text="!"),
     )
     new_message = base_message + other_message
     assert new_message.content.text == ["test content", "!"]
@@ -62,12 +62,10 @@ def test_extract_text_and_code_prompts():
         role_type=RoleType.USER,
         meta_dict=dict(),
         content=Content(
-            text=[
-                "This is a text prompt.\n\n"
-                "```python\nprint('This is a code prompt')\n```\n"
-                "This is another text prompt.\n\n"
-                "```c\nprintf(\"This is another code prompt\");\n```"
-            ]
+            text="This is a text prompt.\n\n"
+            "```python\nprint('This is a code prompt')\n```\n"
+            "This is another text prompt.\n\n"
+            "```c\nprintf(\"This is another code prompt\");\n```"
         ),
     )
     text_prompts, code_prompts = base_message.extract_text_and_code_prompts()
@@ -109,7 +107,7 @@ def test_base_message():
         role_name=role_name,
         role_type=role_type,
         meta_dict=meta_dict,
-        content=Content(text=[content]),
+        content=Content(text=content),
     )
 
     assert message.role_name == role_name

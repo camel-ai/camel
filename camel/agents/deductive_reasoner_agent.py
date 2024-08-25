@@ -46,7 +46,7 @@ class DeductiveReasonerAgent(ChatAgent):
             role_name="Insight Agent",
             role_type=RoleType.ASSISTANT,
             meta_dict=None,
-            content=Content(text=["You assign roles based on tasks."]),
+            content=Content(text="You assign roles based on tasks."),
         )
         super().__init__(system_message, model=model)
 
@@ -229,7 +229,7 @@ square brackets)
         )
 
         conditions_and_quality_generation_msg = BaseMessage.make_user_message(
-            role_name="Deductive Reasoner", content=Content(text=[deduce])
+            role_name="Deductive Reasoner", content=Content(text=deduce)
         )
 
         response = self.step(

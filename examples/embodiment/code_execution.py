@@ -33,15 +33,13 @@ def main():
     user_msg = BaseMessage.make_user_message(
         role_name=role_name,
         content=Content(
-            text=[
-                (
-                    "Write a bash script to install numpy, "
-                    "then write a python script to compute "
-                    "the dot product of [6.75,3] and [4,5] and print"
-                    " the result, then write a script to open a browser"
-                    " and search today's weather."
-                )
-            ]
+            text=(
+                "Write a bash script to install numpy, "
+                "then write a python script to compute "
+                "the dot product of [6.75,3] and [4,5] and print"
+                " the result, then write a script to open a browser"
+                " and search today's weather."
+            )
         ),
     )
     response = embodied_agent.step(user_msg)

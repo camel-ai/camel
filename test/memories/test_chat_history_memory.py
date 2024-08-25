@@ -52,19 +52,19 @@ def test_chat_history_memory(memory: ChatHistoryMemory):
         role_name="system",
         role_type=RoleType.DEFAULT,
         meta_dict=None,
-        content=Content(text=["You are a helpful assistant"]),
+        content=Content(text="You are a helpful assistant"),
     )
     user_msg = BaseMessage(
         role_name="AI user",
         role_type=RoleType.USER,
         meta_dict=None,
-        content=Content(text=["Do a task"]),
+        content=Content(text="Do a task"),
     )
     assistant_msg = BaseMessage(
         role_name="AI assistant",
         role_type=RoleType.ASSISTANT,
         meta_dict=None,
-        content=Content(text=["OK"]),
+        content=Content(text="OK"),
     )
     system_record = MemoryRecord(system_msg, OpenAIBackendRole.SYSTEM)
     user_record = MemoryRecord(user_msg, OpenAIBackendRole.USER)

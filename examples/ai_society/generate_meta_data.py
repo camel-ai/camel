@@ -25,14 +25,14 @@ def main(key: str = "generate_users", num_roles: int = 50):
     print(prompt)
     assistant_sys_msg = BaseMessage.make_assistant_message(
         role_name="Assistant",
-        content=Content(text=["You are a helpful assistant."]),
+        content=Content(text="You are a helpful assistant."),
     )
     agent = ChatAgent(assistant_sys_msg)
     agent.reset()
 
     user_msg = BaseMessage.make_user_message(
         role_name="User",
-        content=Content(text=[prompt]),
+        content=Content(text=prompt),
     )
     assistant_response = agent.step(user_msg)
     if assistant_response.msgs is not None:

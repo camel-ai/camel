@@ -13,6 +13,8 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, Dict, List, Optional, Union
 
+from pydantic import UUID4
+
 from camel.agents.chat_agent import ChatAgent
 from camel.messages import BaseMessage, Content
 from camel.models import BaseModelBackend
@@ -41,6 +43,8 @@ class TaskSpecifyAgent(ChatAgent):
             (default: :obj:`50`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
+        conversation_id (UUID4, optional): Unique identifier for the
+            conversation
     """
 
     DEFAULT_WORD_LIMIT = 50
@@ -52,6 +56,7 @@ class TaskSpecifyAgent(ChatAgent):
         task_specify_prompt: Optional[Union[str, TextPrompt]] = None,
         word_limit: int = DEFAULT_WORD_LIMIT,
         output_language: Optional[str] = None,
+        conversation_id: Optional[UUID4] = None,
     ) -> None:
         self.task_specify_prompt: Union[str, TextPrompt]
         if task_specify_prompt is None:
@@ -69,12 +74,14 @@ class TaskSpecifyAgent(ChatAgent):
             role_name="Task Specifier",
             role_type=RoleType.ASSISTANT,
             meta_dict=None,
-            content=Content(text=["You can make a task more specific."]),
+            conversation_id=conversation_id,
+            content=Content(text="You can make a task more specific."),
         )
 
         super().__init__(
             system_message,
             model=model,
+            conversation_id=conversation_id,
             output_language=output_language,
         )
 
@@ -102,7 +109,7 @@ class TaskSpecifyAgent(ChatAgent):
             task_specify_prompt = task_specify_prompt.format(**meta_dict)
         task_msg = BaseMessage.make_user_message(
             role_name="Task Specifier",
-            content=Content(text=[task_specify_prompt]),
+            content=Content(text=task_specify_prompt),
         )
         specifier_response = self.step(task_msg)
 
@@ -130,12 +137,15 @@ class TaskPlannerAgent(ChatAgent):
             `GPT_4O_MINI`)
         output_language (str, optional): The language to be output by the
             agent. (default: :obj:`None`)
+        conversation_id (UUID4, optional): Unique identifier for the
+            conversation
     """
 
     def __init__(
         self,
         model: Optional[BaseModelBackend] = None,
         output_language: Optional[str] = None,
+        conversation_id: Optional[UUID4] = None,
     ) -> None:
         self.task_planner_prompt = TextPrompt(
             "Divide this task into subtasks: {task}. Be concise."
@@ -143,13 +153,15 @@ class TaskPlannerAgent(ChatAgent):
         system_message = BaseMessage(
             role_name="Task Planner",
             role_type=RoleType.ASSISTANT,
+            conversation_id=conversation_id,
             meta_dict=None,
-            content=Content(text=["You are a helpful task planner."]),
+            content=Content(text="You are a helpful task planner."),
         )
 
         super().__init__(
             system_message,
             model=model,
+            conversation_id=conversation_id,
             output_language=output_language,
         )
 
@@ -172,7 +184,7 @@ class TaskPlannerAgent(ChatAgent):
 
         task_msg = BaseMessage.make_user_message(
             role_name="Task Planner",
-            content=Content(text=[task_planner_prompt]),
+            content=Content(text=task_planner_prompt),
         )
 
         task_response = self.step(task_msg)
@@ -211,6 +223,8 @@ class TaskCreationAgent(ChatAgent):
             is performed. (default: :obj:`None`)
         max_task_num (int, optional): The maximum number of planned
             tasks in one round. (default: :obj:3)
+        conversation_id (UUID4, optional): Unique identifier for the
+            conversation
     """
 
     def __init__(
@@ -221,6 +235,7 @@ class TaskCreationAgent(ChatAgent):
         output_language: Optional[str] = None,
         message_window_size: Optional[int] = None,
         max_task_num: Optional[int] = 3,
+        conversation_id: Optional[UUID4] = None,
     ) -> None:
         task_creation_prompt = TextPrompt(
             """Create new a task with the following objective: {objective}.
@@ -252,13 +267,15 @@ Be concrete.
             role_name="Task Creator",
             role_type=RoleType.ASSISTANT,
             meta_dict=None,
-            content=Content(text=["You are a helpful task creator."]),
+            conversation_id=conversation_id,
+            content=Content(text="You are a helpful task creator."),
         )
 
         super().__init__(
             system_message,
             model=model,
             output_language=output_language,
+            conversation_id=conversation_id,
             message_window_size=message_window_size,
         )
 
@@ -288,7 +305,7 @@ Be concrete.
 
         task_msg = BaseMessage.make_user_message(
             role_name="Task Creator",
-            content=Content(text=[task_creation_prompt]),
+            content=Content(text=task_creation_prompt),
         )
         task_response = self.step(task_msg)
 
@@ -326,6 +343,8 @@ class TaskPrioritizationAgent(ChatAgent):
         message_window_size (int, optional): The maximum number of previous
             messages to include in the context window. If `None`, no windowing
             is performed. (default: :obj:`None`)
+        conversation_id (UUID4, optional): Unique identifier for the
+            conversation
     """
 
     def __init__(
@@ -334,6 +353,7 @@ class TaskPrioritizationAgent(ChatAgent):
         model: Optional[BaseModelBackend] = None,
         output_language: Optional[str] = None,
         message_window_size: Optional[int] = None,
+        conversation_id: Optional[UUID4] = None,
     ) -> None:
         task_prioritization_prompt = TextPrompt(
             """Prioritize the following tasks : {task_list}.
@@ -362,12 +382,14 @@ with any other output."""
             role_name="Task Prioritizer",
             role_type=RoleType.ASSISTANT,
             meta_dict=None,
-            content=Content(text=["You are a helpful task prioritizer."]),
+            conversation_id=conversation_id,
+            content=Content(text="You are a helpful task prioritizer."),
         )
 
         super().__init__(
             system_message,
             model=model,
+            conversation_id=conversation_id,
             output_language=output_language,
             message_window_size=message_window_size,
         )
@@ -390,7 +412,7 @@ with any other output."""
 
         task_msg = BaseMessage.make_user_message(
             role_name="Task Prioritizer",
-            content=Content(text=[task_prioritization_prompt]),
+            content=Content(text=task_prioritization_prompt),
         )
 
         task_response = self.step(task_msg)

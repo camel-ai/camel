@@ -27,7 +27,7 @@ def test_deductive_reasoner_agent(mock_step):
         role_name="Deductive Reasoner",
         role_type=RoleType.ASSISTANT,
         meta_dict=None,
-        content=Content(text=[mock_content]),
+        content=Content(text=mock_content),
     )
 
     # Mock the step function

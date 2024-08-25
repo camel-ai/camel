@@ -41,7 +41,7 @@ def detect_image_obj(image_path: str) -> None:
 
     assistant_sys_msg = BaseMessage.make_assistant_message(
         role_name="Assistant",
-        content=Content(text=[sys_msg]),
+        content=Content(text=sys_msg),
     )
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
@@ -56,7 +56,7 @@ def detect_image_obj(image_path: str) -> None:
     user_msg = BaseMessage.make_user_message(
         role_name="User",
         content=Content(
-            text=["Please start the object detection for following" " image!"]
+            text="Please start the object detection for following" " image!"
         ),
         image_list=image_list,
         image_detail="high",

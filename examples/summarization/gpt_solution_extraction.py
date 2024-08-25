@@ -132,7 +132,7 @@ def solution_extraction(
 
     assistant_sys_msg = BaseMessage.make_assistant_message(
         role_name="Solution Extractor",
-        content=Content(text=[assistant_sys_msg_prompt]),
+        content=Content(text=assistant_sys_msg_prompt),
     )
 
     # We use GPT4 because it has a longer context length
@@ -142,7 +142,7 @@ def solution_extraction(
     prompt = "Here is the conversation:" + flattened_conversation
 
     user_msg = BaseMessage.make_user_message(
-        role_name="User", content=Content(text=[prompt])
+        role_name="User", content=Content(text=prompt)
     )
     assistant_response = agent.step(user_msg)
     print(assistant_response.msg.content.text)

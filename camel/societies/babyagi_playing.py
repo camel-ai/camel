@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import uuid
 from collections import deque
 from typing import Dict, List, Optional
 
@@ -121,6 +122,7 @@ class BabyAGI:
         self.subtasks: deque = deque([])
         self.solved_subtasks: List[str] = []
         self.MAX_TASK_HISTORY = max_task_history
+        self.conversation_id = uuid.uuid4()
 
     def init_specified_task_prompt(
         self,
@@ -195,6 +197,7 @@ class BabyAGI:
             init_assistant_sys_msg,
             output_language=output_language,
             message_window_size=message_window_size,
+            conversation_id=self.conversation_id,
             **(assistant_agent_kwargs or {}),
         )
         self.assistant_sys_msg = self.assistant_agent.system_message
@@ -205,6 +208,7 @@ class BabyAGI:
             role_name=self.assistant_sys_msg.role_name,
             output_language=output_language,
             message_window_size=message_window_size,
+            conversation_id=self.conversation_id,
             **(task_creation_agent_kwargs or {}),
         )
         self.task_creation_agent.reset()
@@ -213,6 +217,7 @@ class BabyAGI:
             objective=self.specified_task_prompt,
             output_language=output_language,
             message_window_size=message_window_size,
+            conversation_id=self.conversation_id,
             **(task_prioritization_agent_kwargs or {}),
         )
         self.task_prioritization_agent.reset()
@@ -239,7 +244,7 @@ class BabyAGI:
         task_name = self.subtasks.popleft()
         assistant_msg_msg = BaseMessage.make_user_message(
             role_name=self.assistant_sys_msg.role_name,
-            content=Content(text=[f"{task_name}"]),
+            content=Content(text=f"{task_name}"),
         )
 
         assistant_response = self.assistant_agent.step(assistant_msg_msg)

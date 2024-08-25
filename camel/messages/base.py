@@ -39,7 +39,7 @@ class Receiver(BaseModel):
 
 
 class Content(BaseModel):
-    text: Optional[str] = Field(default_factory="")
+    text: Optional[str] = Field(default="")
     image_url: Optional[List[str]] = Field(default_factory=list)
     image_detail: str = Field(default="auto")
     video_url: Optional[List[str]] = Field(default_factory=list)
@@ -49,6 +49,7 @@ class Content(BaseModel):
 
 class Envelope(BaseModel):
     time_sent: str
+
 
 class ACLParameter(BaseModel):
     sender: Optional[Sender] = None
@@ -60,6 +61,7 @@ class ACLParameter(BaseModel):
     language: str = Field(default="en")
     ontology: Optional[str] = None
     protocol: Optional[Dict[str, str]] = None
+    message_type: MessageType = MessageType.DEFAULT
 
 
 class BaseMessage(BaseModel):
@@ -73,6 +75,7 @@ class BaseMessage(BaseModel):
         description="Unique identifier for the message, not set by user.",
     )
     conversation_id: Optional[UUID4] = Field(
+        default=None,
         description="Unique identifier for the conversation, \
         need set by user.",
     )
@@ -102,7 +105,7 @@ class BaseMessage(BaseModel):
         content: Content,
         conversation_id: Optional[UUID4] = None,
         meta_dict: Optional[Dict[str, str]] = None,
-        acl_params: Optional[ACLParameter] = None,        
+        acl_params: Optional[ACLParameter] = None,
     ) -> "BaseMessage":
         return cls(
             role_name=role_name,
@@ -164,7 +167,7 @@ class BaseMessage(BaseModel):
     ) -> Tuple[List[TextPrompt], List[CodePrompt]]:
         text_prompts: List[TextPrompt] = []
         code_prompts: List[CodePrompt] = []
-        text=(self.content.text or "") 
+        text = self.content.text or ""
         lines = text.split("\n")
         idx = 0
         start_idx = 0

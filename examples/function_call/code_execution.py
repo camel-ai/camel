@@ -43,11 +43,9 @@ model = ModelFactory.create(
 assistant_sys_msg = BaseMessage.make_assistant_message(
     role_name="Teacher",
     content=Content(
-        text=[
-            "You are a personal math tutor and programmer. "
-            "When asked a math question, "
-            "write and run Python code to answer the question."
-        ]
+        text="You are a personal math tutor and programmer. "
+        "When asked a math question, "
+        "write and run Python code to answer the question."
     ),
 )
 
@@ -66,7 +64,7 @@ prompt = (
     "Yesterday, she just did 51 minutes of babysitting. How much did she earn?"
 )
 user_msg = BaseMessage.make_user_message(
-    role_name="User", content=Content(text=[prompt])
+    role_name="User", content=Content(text=prompt)
 )
 print(Fore.YELLOW + f"user prompt:\n{prompt}\n")
 

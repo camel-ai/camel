@@ -36,19 +36,17 @@ def init_chat(
     assistant_msg = BaseMessage.make_assistant_message(
         role_name=assistant_agent.role_name,
         content=Content(
-            text=[
-                (
-                    f"{user_sys_msg.content}. "
-                    "Now start to give me instructions one by one. "
-                    "Only reply with Instruction and Input."
-                )
-            ]
+            text=(
+                f"{user_sys_msg.content}. "
+                "Now start to give me instructions one by one. "
+                "Only reply with Instruction and Input."
+            )
         ),
     )
 
     user_msg = BaseMessage.make_user_message(
         role_name=user_agent.role_name,
-        content=Content(text=[f"{assistant_sys_msg.content}"]),
+        content=Content(text=f"{assistant_sys_msg.content}"),
     )
     assistant_agent.step(user_msg)
 

@@ -33,7 +33,7 @@ def main() -> None:
     assistant_sys_msg = BaseMessage.make_assistant_message(
         role_name="Assistant",
         content=Content(
-            text=["You are a helpful text retrieval task generator."]
+            text="You are a helpful text retrieval task generator."
         ),
     )
 
@@ -47,7 +47,7 @@ def main() -> None:
         model=model,
     )
     user_msg = BaseMessage.make_user_message(
-        role_name="User", content=Content(text=[prompt])
+        role_name="User", content=Content(text=prompt)
     )
 
     total_tasks = []

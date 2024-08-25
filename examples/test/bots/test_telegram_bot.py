@@ -42,7 +42,7 @@ class TestTelegramBot(unittest.TestCase):
         message_mock.text = "Hello, world!"
 
         response_msg_mock = MagicMock(
-            msg=MagicMock(content=Content(text=["Hello back!"]))
+            msg=MagicMock(content=Content(text="Hello back!"))
         )
 
         self.chat_agent_mock.reset = MagicMock()

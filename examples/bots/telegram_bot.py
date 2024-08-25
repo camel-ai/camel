@@ -73,7 +73,7 @@ class TelegramBot:
             return
 
         user_msg = BaseMessage.make_user_message(
-            role_name="User", content=Content(text=[message.text])
+            role_name="User", content=Content(text=message.text)
         )
         assistant_response = self.chat_agent.step(user_msg)
 

@@ -19,10 +19,10 @@ def test_display_options():
     human = Human()
     msgs = [
         BaseMessage.make_assistant_message(
-            role_name="assistant", content=Content(text=["Hello"])
+            role_name="assistant", content=Content(text="Hello")
         ),
         BaseMessage.make_assistant_message(
-            role_name="assistant", content=Content(text=["World"])
+            role_name="assistant", content=Content(text="World")
         ),
     ]
     human.display_options(msgs)
@@ -32,10 +32,10 @@ def test_get_input(monkeypatch):
     human = Human()
     msgs = [
         BaseMessage.make_assistant_message(
-            role_name="assistant", content=Content(text=["Hello"])
+            role_name="assistant", content=Content(text="Hello")
         ),
         BaseMessage.make_assistant_message(
-            role_name="assistant", content=Content(text=["World"])
+            role_name="assistant", content=Content(text="World")
         ),
     ]
     human.display_options(msgs)
@@ -47,10 +47,10 @@ def test_reduce_step(monkeypatch):
     human = Human()
     msgs = [
         BaseMessage.make_assistant_message(
-            role_name="assistant", content=Content(text=["Hello"])
+            role_name="assistant", content=Content(text="Hello")
         ),
         BaseMessage.make_assistant_message(
-            role_name="assistant", content=Content(text=["World"])
+            role_name="assistant", content=Content(text="World")
         ),
     ]
 

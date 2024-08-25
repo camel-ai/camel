@@ -40,9 +40,9 @@ message = BaseMessage(
     role_name="test_user",
     role_type=RoleType.USER,
     content=Content(
-        text=["test content"],
-        image_url=["test_image_url"],
-        video_url=["test_video_url"],
+        text="test content",
+        image_url="test_image_url",
+        video_url="test_video_url",
     ),
 )
 ```
@@ -57,9 +57,9 @@ Additionally, the `BaseMessage` class provides class methods to easily create us
     user_message = BaseMessage.make_user_message(
         role_name="user_name", 
         content=Content(
-            text=["test content"],
-            image_url=["test_image_url"],
-            video_url=["test_video_url"],
+            text="test content",
+            image_url="test_image_url",
+            video_url="test_video_url",
         ),
     )
     ```
@@ -72,9 +72,9 @@ Additionally, the `BaseMessage` class provides class methods to easily create us
     assistant_message = BaseMessage.make_assistant_message(
         role_name="assistant_name",
     content=Content(
-        text=["test content"],
-        image_url=["test_image_url"],
-        video_url=["test_video_url"],
+        text="test content",
+        image_url="test_image_url",
+        video_url="test_video_url",
     ),
     )
     ```
@@ -86,7 +86,7 @@ The `BaseMessage` class offers several methods:
 1. Creating a new instance with updated content:
 
     ```python
-    new_content = Content(text=["new test content"])
+    new_content = Content(text="new test content")
     new_message = message.create_new_instance(new_content)
     print(isinstance(new_message, BaseMessage))
     >>> True
@@ -98,7 +98,7 @@ The `BaseMessage` class offers several methods:
     other_message = BaseMessage(
         role_name="another_user",
         role_type=RoleType.USER,
-        content=Content(text=["additional content"])
+        content=Content(text="additional content")
     )
     combined_message = message + other_message
     print(combined_message.content.text)

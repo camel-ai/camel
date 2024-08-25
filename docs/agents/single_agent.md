@@ -35,7 +35,7 @@ Create a system message to define agent's default role and behaviors.
 ```python
 sys_msg = BaseMessage.make_assistant_message(
     role_name='stone',
-    content=Content(text=['you are a curious stone wondering about the universe.']))
+    content=Content(text='you are a curious stone wondering about the universe.'))
 ```
 
 ### Step 2: Initialize the Agent
@@ -50,7 +50,7 @@ agent = ChatAgent(
 # Define a user message
 usr_msg = BaseMessage.make_user_message(
     role_name='prof. claude shannon',
-    content=Content(text=['what is information in your mind?']))
+    content=Content(text='what is information in your mind?'))
 
 # Sending the message to the agent
 response = agent.step(usr_msg)

@@ -29,7 +29,7 @@ def _create_messages() -> List[BaseMessage]:
             role_name="user",
             role_type=RoleType.USER,
             meta_dict={},
-            content=Content(text=["GoodBye"]),
+            content=Content(text="GoodBye"),
         )
         messages.append(message)
     return messages

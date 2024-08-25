@@ -131,7 +131,7 @@ def translate_content(
 
         user_msg = BaseMessage.make_user_message(
             role_name="Language Translator",
-            content=Content(text=[msg_i_content]),
+            content=Content(text=msg_i_content),
         )
 
         assistant_response = assistant_agent.step(user_msg)

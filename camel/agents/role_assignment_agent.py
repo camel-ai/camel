@@ -42,7 +42,7 @@ class RoleAssignmentAgent(ChatAgent):
             role_name="Role Assigner",
             role_type=RoleType.ASSISTANT,
             meta_dict=None,
-            content=Content(text=["You assign roles based on tasks."]),
+            content=Content(text="You assign roles based on tasks."),
         )
         super().__init__(system_message, model=model)
 
@@ -88,7 +88,7 @@ class RoleAssignmentAgent(ChatAgent):
 
         role_assignment_generation_msg = BaseMessage.make_user_message(
             role_name="Role Assigner",
-            content=Content(text=[role_assignment_generation]),
+            content=Content(text=role_assignment_generation),
         )
 
         response = self.step(input_message=role_assignment_generation_msg)

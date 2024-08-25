@@ -51,7 +51,7 @@ def test_step():
     embodied_agent = EmbodiedAgent(sys_msg, verbose=True)
     user_msg = BaseMessage.make_user_message(
         role_name=role_name,
-        content=Content(text=["Draw all the Camelidae species."]),
+        content=Content(text="Draw all the Camelidae species."),
     )
     try:
         response = embodied_agent.step(user_msg)

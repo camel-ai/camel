@@ -33,7 +33,7 @@ def test_score_based_context_creator():
                     role_name="test",
                     role_type=RoleType.ASSISTANT,
                     meta_dict=None,
-                    content=Content(text=["Hello world!"]),  # 10
+                    content=Content(text="Hello world!"),  # 10
                 ),
                 role_at_backend=OpenAIBackendRole.ASSISTANT,
             ),
@@ -45,7 +45,7 @@ def test_score_based_context_creator():
                     role_name="test",
                     role_type=RoleType.ASSISTANT,
                     meta_dict=None,
-                    content=Content(text=["Nice to meet you."]),  # 12
+                    content=Content(text="Nice to meet you."),  # 12
                 ),
                 role_at_backend=OpenAIBackendRole.ASSISTANT,
             ),
@@ -57,7 +57,7 @@ def test_score_based_context_creator():
                     role_name="test",
                     role_type=RoleType.ASSISTANT,
                     meta_dict=None,
-                    content=Content(text=["How are you?"]),  # 11
+                    content=Content(text="How are you?"),  # 11
                 ),
                 role_at_backend=OpenAIBackendRole.ASSISTANT,
             ),

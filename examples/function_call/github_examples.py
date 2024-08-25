@@ -54,13 +54,11 @@ def write_weekly_pr_summary(repo_name, model=None):
     assistant_sys_msg = BaseMessage.make_assistant_message(
         role_name="Marketing Manager",
         content=Content(
-            text=[
-                f"""
+            text=f"""
         You are an experienced marketing manager responsible for posting
         weekly updates about the status 
         of an open source project {repo_name} on the project's blog.
         """
-            ]
         ),
     )
     assistant_model_config_dict = ChatGPTConfig(
@@ -116,11 +114,9 @@ def solve_issue(
     assistant_sys_msg = BaseMessage.make_assistant_message(
         role_name="Software Engineer",
         content=Content(
-            text=[
-                """You are an experienced software engineer who
+            text="""You are an experienced software engineer who
                                specializes on data structures and algorithms
                                tasks."""
-            ]
         ),
     )
     assistant_model_config_dict = ChatGPTConfig(

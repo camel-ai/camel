@@ -92,7 +92,7 @@ class TestLongtermAgentMemory:
                     role_name="user",
                     role_type=RoleType.USER,
                     meta_dict=None,
-                    content=Content(text=["test message {}".format(i)]),
+                    content=Content(text="test message {}".format(i)),
                 ),
                 OpenAIBackendRole.USER,
             )

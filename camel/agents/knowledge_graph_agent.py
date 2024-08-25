@@ -122,13 +122,11 @@ class KnowledgeGraphAgent(ChatAgent):
             role_type=RoleType.ASSISTANT,
             meta_dict=None,
             content=Content(
-                text=[
-                    "Your mission is to transform unstructured content"
-                    " intostructured graph data. Extract nodes and"
-                    " relationships with precision, and let the "
-                    "connections unfold. Your graphs will illuminate "
-                    "the hidden connections within the chaos of information."
-                ]
+                text="Your mission is to transform unstructured content"
+                " intostructured graph data. Extract nodes and"
+                " relationships with precision, and let the "
+                "connections unfold. Your graphs will illuminate "
+                "the hidden connections within the chaos of information."
             ),
         )
         super().__init__(system_message, model=model)
@@ -160,7 +158,7 @@ class KnowledgeGraphAgent(ChatAgent):
 
         knowledge_graph_generation_msg = BaseMessage.make_user_message(
             role_name="Graphify",
-            content=Content(text=[knowledge_graph_generation]),
+            content=Content(text=knowledge_graph_generation),
         )
 
         response = self.step(input_message=knowledge_graph_generation_msg)

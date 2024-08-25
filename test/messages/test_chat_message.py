@@ -25,7 +25,7 @@ def chat_message() -> BaseMessage:
         role_name="test_role",
         role_type=RoleType.ASSISTANT,
         meta_dict=None,
-        content=Content(text=["test chat message"]),
+        content=Content(text="test chat message"),
     )
 
 
@@ -35,7 +35,7 @@ def assistant_chat_message() -> BaseMessage:
         role_name="test_assistant",
         role_type=RoleType.ASSISTANT,
         meta_dict=None,
-        content=Content(text=["test assistant chat message"]),
+        content=Content(text="test assistant chat message"),
     )
 
 
@@ -45,7 +45,7 @@ def user_chat_message() -> BaseMessage:
         role_name="test_user",
         role_type=RoleType.USER,
         meta_dict=None,
-        content=Content(text=["test user chat message"]),
+        content=Content(text="test user chat message"),
     )
 
 

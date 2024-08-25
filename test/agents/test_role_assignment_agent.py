@@ -28,7 +28,7 @@ def test_role_assignment_agent(mock_step, num_roles):
         role_name="Role Assigner",
         role_type=RoleType.ASSISTANT,
         meta_dict=None,
-        content=Content(text=[mock_content]),
+        content=Content(text=mock_content),
     )
 
     # Mock the step function

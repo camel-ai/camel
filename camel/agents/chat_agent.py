@@ -14,13 +14,15 @@
 from __future__ import annotations
 
 import json
+import uuid
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
+from pydantic import UUID4
+
 from camel.agents.base import BaseAgent
 from camel.configs import ChatGPTConfig
-from pydantic import UUID4
 from camel.memories import (
     AgentMemory,
     ChatHistoryMemory,
@@ -89,8 +91,8 @@ class ChatAgent(BaseAgent):
         model (BaseModelBackend, optional): The model backend to use for
             generating responses. (default: :obj:`OpenAIModel` with
             `GPT_4O_MINI`)
-        conversation_id (UUID4, optional): Unique identifier for the 
-            conversation, need set by user
+        conversation_id (UUID4, optional): Unique identifier for the
+            conversation
         api_key (str, optional): The API key for authenticating with the
             LLM service. Only OpenAI and Anthropic model supported (default:
             :obj:`None`)
@@ -152,10 +154,7 @@ class ChatAgent(BaseAgent):
         # init conversation id
         self.conversation_id: Optional[UUID4] = conversation_id
         if self.conversation_id is None:
-            self.conversation_id = UUID4
-        
-        # init conversation id of system message 
-        self.system_message.conversation_id = self.conversation_id
+            self.conversation_id = uuid.uuid4()
 
         self.func_dict: Dict[str, Callable] = {}
         if tools is not None:
@@ -207,7 +206,6 @@ class ChatAgent(BaseAgent):
                 new system message of this agent.
         """
         self._system_message = message
-        self._system_message.conversation_id = self.conversation_id
 
     def is_tools_added(self) -> bool:
         r"""Whether OpenAI function calling is enabled for this agent.
@@ -246,11 +244,11 @@ class ChatAgent(BaseAgent):
         self.output_language = output_language
         if self.orig_sys_message.content.text:
             updated_text = (
-                " ".join(self.orig_sys_message.content.text)
+                self.orig_sys_message.content.text
                 + "\nRegardless of the input language, "
                 f"you must output text in {output_language}."
             )
-        content = Content(text=[updated_text])
+        content = Content(text=updated_text)
         self.system_message = self.system_message.create_new_instance(content)
         return self.system_message
 
@@ -290,6 +288,9 @@ class ChatAgent(BaseAgent):
         r"""Initializes the stored messages list with the initial system
         message.
         """
+        # init conversation id of system message
+        self.system_message.conversation_id = self.conversation_id
+
         system_record = MemoryRecord(
             self.system_message, OpenAIBackendRole.SYSTEM
         )
@@ -328,6 +329,8 @@ class ChatAgent(BaseAgent):
         """
         # init input message conversation
         input_message.conversation_id = self.conversation_id
+        print(self.role_name)
+        print(input_message.conversation_id)
         self.update_memory(input_message, OpenAIBackendRole.USER)
 
         output_messages: List[BaseMessage]
@@ -555,9 +558,9 @@ class ChatAgent(BaseAgent):
                 role_type=self.role_type,
                 meta_dict=dict(),
                 content=Content(
-                    text=[choice.message.content]
-                    if choice.message.content is not None
-                    else [""]
+                    text=choice.message.content
+                    if choice.message.content
+                    else ""
                 ),
                 conversation_id=self.conversation_id,
             )
@@ -610,7 +613,7 @@ class ChatAgent(BaseAgent):
                         role_name=self.role_name,
                         role_type=self.role_type,
                         meta_dict=dict(),
-                        content=Content(text=[content_dict[index]]),
+                        content=Content(text=content_dict[index]),
                         conversation_id=self.conversation_id,
                     )
                     output_messages.append(chat_message)
@@ -696,7 +699,7 @@ class ChatAgent(BaseAgent):
             role_name=self.role_name,
             role_type=self.role_type,
             meta_dict=None,
-            content=Content(text=[""]),
+            content=Content(text=""),
             func_name=func_name,
             args=args,
             conversation_id=self.conversation_id,
@@ -705,7 +708,7 @@ class ChatAgent(BaseAgent):
             role_name=self.role_name,
             role_type=self.role_type,
             meta_dict=None,
-            content=Content(text=[""]),
+            content=Content(text=""),
             func_name=func_name,
             result=result,
             conversation_id=self.conversation_id,
@@ -757,7 +760,7 @@ class ChatAgent(BaseAgent):
             role_name=self.role_name,
             role_type=self.role_type,
             meta_dict=None,
-            content=Content(text=[""]),
+            content=Content(text=""),
             func_name=func_name,
             args=args,
         )
@@ -765,7 +768,7 @@ class ChatAgent(BaseAgent):
             role_name=self.role_name,
             role_type=self.role_type,
             meta_dict=None,
-            content=Content(text=[""]),
+            content=Content(text=""),
             func_name=func_name,
             result=result,
         )
@@ -790,8 +793,7 @@ class ChatAgent(BaseAgent):
         completion_tokens = 0
         for message in output_messages:
             if message.content.text:  # Ensure text is not None
-                for text in message.content.text:
-                    completion_tokens += len(encoding.encode(text))
+                completion_tokens += len(encoding.encode(message.content.text))
         usage_dict = dict(
             completion_tokens=completion_tokens,
             prompt_tokens=prompt_tokens,

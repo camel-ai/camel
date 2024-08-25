@@ -39,7 +39,7 @@ class SearchAgent(ChatAgent):
             role_name="Assistant",
             role_type=RoleType.ASSISTANT,
             meta_dict=None,
-            content=Content(text=["You are a helpful assistant."]),
+            content=Content(text="You are a helpful assistant."),
         )
         super().__init__(system_message, model=model)
 
@@ -70,7 +70,7 @@ class SearchAgent(ChatAgent):
             prompt = summary_prompt + str(i) + ": " + chunk
             user_msg = BaseMessage.make_user_message(
                 role_name="User",
-                content=Content(text=[prompt]),
+                content=Content(text=prompt),
             )
             result = self.step(user_msg).msg.content
             results += result + "\n"
@@ -87,7 +87,7 @@ class SearchAgent(ChatAgent):
 
         user_msg = BaseMessage.make_user_message(
             role_name="User",
-            content=Content(text=[prompt]),
+            content=Content(text=prompt),
         )
         response = self.step(user_msg).msg.content
 
@@ -113,7 +113,7 @@ class SearchAgent(ChatAgent):
         prompt = prompt.format(query=query, answer=answer)
         user_msg = BaseMessage.make_user_message(
             role_name="User",
-            content=Content(text=[prompt]),
+            content=Content(text=prompt),
         )
         response = self.step(user_msg).msg.content
         if "yes" in str(response).lower():

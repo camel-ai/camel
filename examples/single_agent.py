@@ -25,13 +25,13 @@ def main(key: str = 'generate_users', num_roles: int = 50, model=None):
     print(prompt)
     assistant_sys_msg = BaseMessage.make_assistant_message(
         role_name="Assistant",
-        content=Content(text=["You are a helpful assistant."]),
+        content=Content(text="You are a helpful assistant."),
     )
     agent = ChatAgent(assistant_sys_msg, model=model)
     agent.reset()
 
     user_msg = BaseMessage.make_user_message(
-        role_name="User", content=Content(text=[prompt])
+        role_name="User", content=Content(text=prompt)
     )
     assistant_response = agent.step(user_msg)
     print(assistant_response.msg.content.text)

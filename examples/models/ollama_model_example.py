@@ -26,18 +26,16 @@ ollama_model = ModelFactory.create(
 
 assistant_sys_msg = BaseMessage.make_assistant_message(
     role_name="Assistant",
-    content=Content(text=["You are a helpful assistant."]),
+    content=Content(text="You are a helpful assistant."),
 )
 agent = ChatAgent(assistant_sys_msg, model=ollama_model, token_limit=4096)
 
 user_msg = BaseMessage.make_user_message(
     role_name="User",
     content=Content(
-        text=[
-            """Say hi to CAMEL AI, one open-source community 
+        text="""Say hi to CAMEL AI, one open-source community 
                           dedicated to the study of autonomous and 
                           communicative agents."""
-        ]
     ),
 )
 assistant_response = agent.step(user_msg)

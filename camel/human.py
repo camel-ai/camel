@@ -60,8 +60,8 @@ class Human:
             None
         """
         options = [message.content.text for message in messages]
-        options.append([self.input_button])
-        options.append([self.kill_button])
+        options.append(self.input_button)
+        options.append(self.kill_button)
         print_text_animated(
             self.logger_color + "\n> Proposals from "
             f"{messages[0].role_name} ({messages[0].role_type}). "
@@ -132,10 +132,10 @@ class Human:
             role_name=messages[0].role_name,
             role_type=messages[0].role_type,
             meta_dict=messages[0].meta_dict,
-            content=Content(text=[""]),
+            content=Content(text=""),
         )
         self.display_options(messages)
         human_input = self.get_input()
-        content = Content(text=[self.parse_input(human_input)])
+        content = Content(text=self.parse_input(human_input))
         message = meta_chat_message.create_new_instance(content)
         return ChatAgentResponse([message], terminated=False, info={})

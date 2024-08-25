@@ -32,14 +32,14 @@ def process_file(data: Dict[str, str]) -> None:
     print(data["id"])
     assistant_sys_msg = BaseMessage.make_assistant_message(
         role_name="Assistant",
-        content=Content(text=["You are a helpful assistant."]),
+        content=Content(text="You are a helpful assistant."),
     )
     agent = ChatAgent(assistant_sys_msg)
     agent.reset()
 
     prompt = "Solve the following task:\n" + data["specified_task"]
     user_msg = BaseMessage.make_user_message(
-        role_name="User", content=Content(text=[prompt])
+        role_name="User", content=Content(text=prompt)
     )
     assistant_response = agent.step(user_msg)
     print(assistant_response.msg.content.text)

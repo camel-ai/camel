@@ -141,6 +141,6 @@ class VisionLanguageEmbedding(BaseEmbedding[Union[str, Image.Image]]):
         """
         if self.dim is None:
             text = 'dimension'
-            inputs = self.processor(text=[text], return_tensors="pt")
+            inputs = self.processor(text=text, return_tensors="pt")
             self.dim = self.model.get_text_features(**inputs).shape[1]
         return self.dim

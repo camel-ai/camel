@@ -119,7 +119,7 @@ class SystemMessageGenerator:
             role_name=role_name,
             role_type=role_type,
             meta_dict=meta_dict,
-            content=Content(text=[sys_prompt]),
+            content=Content(text=sys_prompt),
         )
 
     def from_dicts(

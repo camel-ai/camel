@@ -36,7 +36,7 @@ def generate_tasks(
 
     user_msg = BaseMessage.make_user_message(
         role_name="Task Generator",
-        content=Content(text=[task_generator_prompt]),
+        content=Content(text=task_generator_prompt),
     )
 
     assistant_response = assistant_agent.step(user_msg)

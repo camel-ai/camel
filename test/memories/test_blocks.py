@@ -41,7 +41,7 @@ def generate_mock_records(num_records: int):
                 "role_name": "user",
                 "role_type": RoleType.USER,
                 "meta_dict": None,
-                "content": Content(text=[f"test message {i}"]),
+                "content": Content(text=f"test message {i}"),
             },
             "role_at_backend": "user",
             "extra_info": {},
@@ -96,7 +96,7 @@ class TestChatHistoryBlock:
                     role_name="user",
                     role_type=RoleType.USER,
                     meta_dict=None,
-                    content=Content(text=["test message {}".format(i)]),
+                    content=Content(text="test message {}".format(i)),
                 ),
                 OpenAIBackendRole.USER,
             )
@@ -175,7 +175,7 @@ class TestVectorDBBlock:
                     role_name="user",
                     role_type=RoleType.USER,
                     meta_dict=None,
-                    content=Content(text=["test message {}".format(i)]),
+                    content=Content(text="test message {}".format(i)),
                 ),
                 OpenAIBackendRole.USER,
             )

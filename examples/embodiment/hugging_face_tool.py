@@ -43,13 +43,11 @@ def main():
     user_msg = BaseMessage.make_user_message(
         role_name=role_name,
         content=Content(
-            text=[
-                (
-                    "Draw all the Camelidae species, "
-                    "caption the image content, "
-                    "save the images by species name."
-                )
-            ]
+            text=(
+                "Draw all the Camelidae species, "
+                "caption the image content, "
+                "save the images by species name."
+            )
         ),
     )
     response = embodied_agent.step(user_msg)

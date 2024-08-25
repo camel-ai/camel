@@ -24,7 +24,7 @@ def assistant_func_message() -> FunctionCallingMessage:
     role_name = "test_assistant"
     role_type = RoleType.ASSISTANT
     meta_dict = None
-    content = Content(text=["test function message"])
+    content = Content(text="test function message")
 
     return FunctionCallingMessage(
         role_name=role_name,
@@ -41,7 +41,7 @@ def function_func_message() -> FunctionCallingMessage:
     role_name = "test_function"
     role_type = RoleType.ASSISTANT
     meta_dict = None
-    content = Content(text=["test function message"])
+    content = Content(text="test function message")
 
     return FunctionCallingMessage(
         role_name=role_name,

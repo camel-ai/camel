@@ -58,13 +58,13 @@ def generate_questions(
     print(prompt)
     assistant_sys_msg = BaseMessage.make_assistant_message(
         role_name="Assistant",
-        content=Content(text=["You are a helpful assistant."]),
+        content=Content(text="You are a helpful assistant."),
     )
     agent = ChatAgent(assistant_sys_msg, model=model)
     agent.reset()
 
     user_msg = BaseMessage.make_user_message(
-        role_name="User", content=Content(text=[prompt])
+        role_name="User", content=Content(text=prompt)
     )
     assistant_response = agent.step(user_msg)
 

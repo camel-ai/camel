@@ -84,12 +84,13 @@ class EmbodiedAgent(ChatAgent):
         action_space_prompt = self._get_tool_agents_prompt()
         result_message = system_message.create_new_instance(
             content=Content(
-                text=[
-                    ' '.join(
-                        text
-                        for text in system_message.content.text  # type: ignore[union-attr]
-                    ).format(action_space=action_space_prompt)
-                ]
+                text=(
+                    system_message.content.text.format(
+                        action_space=action_space_prompt
+                    )
+                    if system_message.content.text is not None
+                    else ""
+                )
             )
         )
         if self.tool_agents is not None:
@@ -181,12 +182,9 @@ class EmbodiedAgent(ChatAgent):
                     "Please regenerate the code."
                 )
 
-        # TODO: Handle errors
         content = Content(
-            text=[
-                ' '.join(text for text in input_message.content.text)  # type: ignore[union-attr]
-                + f"\n> Embodied Actions:\n{' '.join(content.text)}"
-            ]
+            text=(input_message.content.text or "")
+            + f"\n> Embodied Actions:\n{' '.join(content.text)}"
         )
         message = BaseMessage(
             role_name=input_message.role_name,

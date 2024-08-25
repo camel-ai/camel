@@ -127,7 +127,7 @@ class DiscordBot:
             )
 
         user_msg = BaseMessage.make_user_message(
-            role_name="User", content=Content(text=[user_raw_msg])
+            role_name="User", content=Content(text=user_raw_msg)
         )
         assistant_response = self.chat_agent.step(user_msg)
         await message.channel.send(assistant_response.msg.content)
@@ -137,8 +137,7 @@ if __name__ == "__main__":
     assistant_sys_msg = BaseMessage.make_assistant_message(
         role_name="Assistant",
         content=Content(
-            text=[
-                '''
+            text='''
             Objective: 
                 You are a customer service bot designed to assist users
                 with inquiries related to our open-source project. 
@@ -177,7 +176,6 @@ if __name__ == "__main__":
                 Helpful: Always aim to be as helpful as possible,
                         guiding users to solutions.        
         '''
-            ]
         ),
     )
 
