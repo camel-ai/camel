@@ -83,14 +83,13 @@ class ModelType(Enum):
 
     # SambaNova Model
     SAMBA_LLAMA_3_1_405B = "llama3-405b"
+    SAMBA_LLAMA_3_1_8B = "llama3-8b"
 
     @property
     def value_for_tiktoken(self) -> str:
-        return (
-            self.value
-            if self is not ModelType.STUB and not isinstance(self, str)
-            else "gpt-3.5-turbo"
-        )
+        if self.is_openai:
+            return self.value
+        return "gpt-3.5-turbo"
 
     @property
     def is_openai(self) -> bool:
@@ -197,7 +196,10 @@ class ModelType(Enum):
 
     @property
     def is_samba(self) -> bool:
-        return self in {ModelType.SAMBA_LLAMA_3_1_405B}
+        return self in {
+            ModelType.SAMBA_LLAMA_3_1_405B,
+            ModelType.SAMBA_LLAMA_3_1_8B,
+        }
 
     @property
     def token_limit(self) -> int:
@@ -259,6 +261,7 @@ class ModelType(Enum):
             ModelType.GROQ_LLAMA_3_1_70B,
             ModelType.GROQ_LLAMA_3_1_405B,
             ModelType.SAMBA_LLAMA_3_1_405B,
+            ModelType.SAMBA_LLAMA_3_1_8B,
         }:
             return 131_072
         elif self in {

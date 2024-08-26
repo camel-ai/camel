@@ -14,9 +14,11 @@
 import os
 from typing import Any, Dict, List, Optional
 
+from openai import OpenAI, Stream
+
 from camel.configs import SAMBA_API_PARAMS
 from camel.messages import OpenAIMessage
-from camel.types import ChatCompletion, ModelType
+from camel.types import ChatCompletionChunk, ModelType
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
@@ -32,6 +34,7 @@ class SambaModel:
         model_type: ModelType,
         model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
+        url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
         r"""Constructor for SambaNova backend.
@@ -41,12 +44,18 @@ class SambaModel:
                 Currently only support `"llama3-405b"`
             api_key (Optional[str]): The API key for authenticating with the
                 SambaNova service. (default: :obj:`None`)
+            url (Optional[str]): The url to the SambaNova service. (default:
+                :obj:`"https://fast-api.snova.ai/v1/chat/completions"`)
             token_counter (Optional[BaseTokenCounter]): Token counter to use
                 for the model. If not provided, `OpenAITokenCounter(ModelType.
                 GPT_3_5_TURBO)` will be used.
         """
         self.model_type = model_type
         self._api_key = api_key or os.environ.get("SAMBA_API_KEY")
+        self._url = url or os.environ.get(
+            "SAMBA_API_BASE_URL",
+            "https://fast-api.snova.ai/v1/chat/completions",
+        )
         self._token_counter = token_counter
         self.model_config_dict = model_config_dict
         self.check_model_config()
@@ -79,102 +88,52 @@ class SambaModel:
                 )
 
     @api_keys_required("SAMBA_API_KEY")
-    def run(self, messages: List[OpenAIMessage]):
-        import json
+    def run(  # type: ignore[misc]
+        self, messages: List[OpenAIMessage]
+    ) -> Stream[ChatCompletionChunk]:
+        r"""Runs SambaNova's FastAPI service.
 
-        import requests
+        Args:
+            messages (List[OpenAIMessage]): Message list with the chat history
+                in OpenAI API format.
 
-        url = "https://fast-api.snova.ai/v1/chat/completions"
+        Returns:
+            Stream[ChatCompletionChunk]: A stream of chat completion chunks
+                from the model.
+
+        Raises:
+            ValueError: If the model is not configured to run in streaming
+                mode.
+        """
+        if self.model_config_dict.get("stream") is not True:
+            raise ValueError("SambaNova only supports streaming mode")
+
+        import httpx
 
         headers = {
             "Authorization": f"Basic {self._api_key}",
             "Content-Type": "application/json",
         }
 
-        data = [
-            {
-                "messages": messages,
-                "max_tokens": self.token_limit,
-                "stop": ["<|eot_id|>"],
-                "model": self.model_type.value,
-                "stream": True,
-            }
-        ]
+        data = {
+            "messages": messages,
+            "max_tokens": self.token_limit,
+            "stop": self.model_config_dict.get("stop"),
+            "model": self.model_type.value,
+            "stream": self.model_config_dict.get("stream"),
+        }
 
-        response = requests.post(
-            url, headers=headers, data=json.dumps(data), stream=True
-        )
-
-        # Check for successful response
-        if response.status_code != 200:
-            return {
-                "error": "Request failed",
-                "status_code": response.status_code,
-                "response_text": response.text,
-            }
-
-        result = []
-        for line in response.iter_lines():
-            if line:
-                line_str = line.decode('utf-8').strip()
-                # Remove "data: " prefix if it exists
-                if line_str.startswith('data: '):
-                    line_str = line_str[6:]
-                # Handle special end-of-stream marker
-                if line_str == '[DONE]':
-                    break
-                try:
-                    # Decode each line as JSON
-                    json_data = json.loads(line_str)
-                    result.append(json_data)
-                except json.JSONDecodeError:
-                    # Handle lines that are not valid JSON
-                    result.append(
-                        {"error": "Failed to decode line", "line": line_str}
-                    )
-
-        return self._to_openai_response(result)
-
-    def _to_openai_response(
-        self, response: List[Dict[str, Any]]
-    ) -> ChatCompletion:
-        # Step 1: Combine the content from each chunk
-        full_content = ""
-        for chunk in response:
-            for value in chunk.values():
-                for choice in value['choices']:
-                    delta_content = choice['delta'].get('content', '')
-                    full_content += delta_content
-
-        # Step 2: Create the ChatCompletion object
-        # Extract relevant information from the first chunk (assuming uniform
-        # chunks)
-        first_chunk = response[0]['0']
-
-        choices = [
-            {
-                'index': 0,  # Assuming a single choice
-                'message': {
-                    'role': 'assistant',
-                    'content': full_content.strip(),
-                },
-                'finish_reason': response[-1]['0']['choices'][0][
-                    'finish_reason'
-                ]
-                or None,
-            }
-        ]
-
-        obj = ChatCompletion.construct(
-            id=first_chunk['id'],
-            choices=choices,
-            created=first_chunk['created'],
-            model=first_chunk['model'],
-            object="chat.completion",
-            usage=None,
-        )
-
-        return obj
+        with httpx.stream(
+            "POST",
+            self._url or "https://fast-api.snova.ai/v1/chat/completions",
+            headers=headers,
+            json=data,
+        ) as response:
+            stream = Stream[ChatCompletionChunk](
+                cast_to=ChatCompletionChunk, response=response, client=OpenAI()
+            )
+            for chunk in stream:
+                yield chunk
 
     @property
     def token_limit(self) -> int:
@@ -196,4 +155,4 @@ class SambaModel:
         Returns:
             bool: Whether the model is in stream mode.
         """
-        return True
+        return self.model_config_dict.get('stream', False)

@@ -94,9 +94,6 @@ class ModelFactory:
                 model_class = MistralModel
             elif model_platform.is_samba and model_type.is_samba:
                 model_class = SambaModel
-                return model_class(
-                    model_type, model_config_dict, api_key, token_counter
-                )
             elif model_type == ModelType.STUB:
                 model_class = StubModel
             else:
