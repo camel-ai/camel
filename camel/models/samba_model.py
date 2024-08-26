@@ -121,6 +121,7 @@ class SambaModel:
             "stop": self.model_config_dict.get("stop"),
             "model": self.model_type.value,
             "stream": self.model_config_dict.get("stream"),
+            "stream_options": self.model_config_dict.get("stream_options"),
         }
 
         with httpx.stream(

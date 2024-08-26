@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from typing import Any, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 from camel.configs.base_config import BaseConfig
 
@@ -31,11 +31,14 @@ class SambaConfig(BaseConfig):
         stream (Optional[bool]): If True, partial message deltas will be sent
             as data-only server-sent events as they become available.
             Currently SambaNova only support stream mode. Defaults to `True`.
+        stream_options (Optional[Dict]): Additional options for streaming.
+            Defaults to `{"include_usage": True}`.
     """
 
     max_tokens: Optional[int] = None
     stop: Optional[Union[str, list[str]]] = None
     stream: Optional[bool] = True
+    stream_options: Optional[Dict] = {"include_usage": True}  # noqa: RUF012
 
     def as_dict(self) -> dict[str, Any]:
         config_dict = super().as_dict()
