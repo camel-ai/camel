@@ -13,10 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import datetime
 import os
-import re
-from pathlib import Path
 from typing import Collection, List, Optional, Sequence, Tuple, Union
-from urllib.parse import urlparse
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
 from camel.retrievers.vector_retriever import VectorRetriever
@@ -66,14 +63,9 @@ class AutoRetriever:
 
     def _initialize_vector_storage(
         self,
-        collection_name: Optional[str] = None,
     ) -> BaseVectorStorage:
         r"""Sets up and returns a vector storage instance with specified
         parameters.
-
-        Args:
-            collection_name (Optional[str]): Name of the collection in the
-                vector storage.
 
         Returns:
             BaseVectorStorage: Configured vector storage instance.
@@ -86,14 +78,12 @@ class AutoRetriever:
                 )
             return MilvusStorage(
                 vector_dim=self.embedding_model.get_output_dim(),
-                collection_name=collection_name,
                 url_and_api_key=self.url_and_api_key,
             )
 
         if self.storage_type == StorageType.QDRANT:
             return QdrantStorage(
                 vector_dim=self.embedding_model.get_output_dim(),
-                collection_name=collection_name,
                 path=self.vector_storage_local_path,
                 url_and_api_key=self.url_and_api_key,
             )
@@ -101,47 +91,6 @@ class AutoRetriever:
         raise ValueError(
             f"Unsupported vector storage type: {self.storage_type}"
         )
-
-    def _collection_name_generator(self, content: Union[str, Element]) -> str:
-        r"""Generates a valid collection name from a given file path or URL.
-
-        Args:
-            content (Union[str, Element]): Local file path, remote URL,
-                string content or Element object.
-
-        Returns:
-            str: A sanitized, valid collection name suitable for use.
-        """
-        if isinstance(content, Element):
-            content = content.metadata.file_directory
-
-        # Check if the content is URL
-        parsed_url = urlparse(content)
-        is_url = all([parsed_url.scheme, parsed_url.netloc])
-
-        # Convert given path into a collection name, ensuring it only
-        # contains numbers, letters, and underscores
-        if is_url:
-            # For URLs, remove https://, replace /, and any characters not
-            # allowed by Milvus with _
-            collection_name = re.sub(
-                r'[^0-9a-zA-Z]+',
-                '_',
-                content.replace("https://", ""),
-            )
-        elif os.path.exists(content):
-            # For file paths, get the stem and replace spaces with _, also
-            # ensuring only allowed characters are present
-            collection_name = re.sub(r'[^0-9a-zA-Z]+', '_', Path(content).stem)
-        else:
-            # the content is string input
-            collection_name = content[:10]
-
-        # Ensure the collection name does not start or end with underscore
-        collection_name = collection_name.strip("_")
-        # Limit the maximum length of the collection name to 30 characters
-        collection_name = collection_name[:30]
-        return collection_name
 
     def _get_file_modified_date_from_file(
         self, content_input_path: str
@@ -245,12 +194,8 @@ class AutoRetriever:
 
         all_retrieved_info = []
         for content in contents:
-            # Generate a valid collection name
-            collection_name = self._collection_name_generator(content)
             try:
-                vector_storage_instance = self._initialize_vector_storage(
-                    collection_name
-                )
+                vector_storage_instance = self._initialize_vector_storage()
 
                 # Check the modified time of the input file path, only works
                 # for local path since no standard way for remote url

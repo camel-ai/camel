@@ -210,7 +210,7 @@ class MilvusStorage(BaseVectorStorage):
         """
         timestamp = datetime.now().isoformat()
         transformed_name = re.sub(r'[^a-zA-Z0-9_]', '_', timestamp)
-        valid_name = "Time" + transformed_name
+        valid_name = "TIME" + transformed_name
         return valid_name
 
     def _get_collection_info(self, collection_name: str) -> Dict[str, Any]:

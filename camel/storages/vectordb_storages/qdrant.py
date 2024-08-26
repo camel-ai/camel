@@ -214,8 +214,14 @@ class QdrantStorage(BaseVectorStorage):
         return False
 
     def _generate_collection_name(self) -> str:
-        r"""Generates a collection name if user doesn't provide"""
-        return datetime.now().isoformat()
+        r"""Generates a collection name if user doesn't provide.
+
+        Returns:
+            str: A unique, valid collection name.
+        """
+        timestamp = datetime.now().isoformat()
+        valid_name = "TIME" + timestamp
+        return valid_name
 
     def _get_collection_info(self, collection_name: str) -> Dict[str, Any]:
         r"""Retrieves details of an existing collection.

@@ -46,7 +46,7 @@ def auto_retriever(temp_storage_path):
 
 def test__initialize_vector_storage(auto_retriever):
     # with tempfile.TemporaryDirectory() as tmpdir:
-    storage_custom = auto_retriever._initialize_vector_storage("collection")
+    storage_custom = auto_retriever._initialize_vector_storage()
     assert isinstance(storage_custom, QdrantStorage)
 
 
