@@ -76,7 +76,7 @@ except ImportError:
 
         return noop
 
-      
+gaa
 class FunctionCallingRecord(BaseModel):
     r"""Historical records of functions called in the conversation.
 
