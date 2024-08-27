@@ -46,6 +46,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
     'recommonmark',
+    'sphinxawesome_theme',
 ]
 
 templates_path = ['_templates']
@@ -53,13 +54,17 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
+html_permalinks_icon = "<span>^</span>"
+html_theme = "sphinxawesome_theme"
 
-html_theme = 'sphinx_book_theme'
-
+# Update theme options for sphinx_awesome_theme
 html_theme_options = {
-    "logo": {
-        "text": f"CAMEL {release}",
-        "image_light": "https://raw.githubusercontent.com/camel-ai/camel/master/misc/primary_logo.png",
-        "image_dark": "https://raw.githubusercontent.com/camel-ai/camel/master/misc/primary_logo.png",
+    "navbar_start": ["navbar-logo"],
+    "navbar_center": ["navbar-nav"],
+    "navbar_end": ["navbar-icon-links"],
+    "navbar_persistent": ["search-button"],
+    "logo_light": "https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_light.png",
+    "logo_dark": "https://raw.githubusercontent.com/camel-ai/camel/master/misc/logo_dark.png",
+    "text": f"CAMEL {release}",
     }
-}
+

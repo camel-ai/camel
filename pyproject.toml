@@ -273,7 +273,8 @@ types-requests = "^2"
 optional = true
 [tool.poetry.group.docs.dependencies]
 sphinx = "^6"
-sphinx_book_theme = "*"
+# sphinx_book_theme = "*"  # Old theme
+sphinxawesome-theme = "*"  # Added for new theme
 recommonmark = "*"
 docutils = "<0.20.0"
 
