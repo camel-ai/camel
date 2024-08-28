@@ -28,7 +28,9 @@ from camel.utils import (
 
 
 class TogetherAIModel:
-    r"""Constructor for Together AI backend with OpenAI compatibility."""
+    r"""Constructor for Together AI backend with OpenAI compatibility.
+    TODO: Add function calling support
+    """
 
     def __init__(
         self,

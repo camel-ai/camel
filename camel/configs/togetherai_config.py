@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from typing import Optional, Sequence, Union
+from typing import Any, Sequence, Union
 
 from openai._types import NOT_GIVEN, NotGiven
 from pydantic import Field
@@ -81,20 +81,6 @@ class TogetherAIConfig(BaseConfig):
         user (str, optional): A unique identifier representing your end-user,
             which can help OpenAI to monitor and detect abuse.
             (default: :obj:`""`)
-        tools (list[OpenAIFunction], optional): A list of tools the model may
-            call. Currently, only functions are supported as a tool. Use this
-            to provide a list of functions the model may generate JSON inputs
-            for. A max of 128 functions are supported.
-        tool_choice (Union[dict[str, str], str], optional): Controls which (if
-            any) tool is called by the model. :obj:`"none"` means the model
-            will not call any tool and instead generates a message.
-            :obj:`"auto"` means the model can pick between generating a
-            message or calling one or more tools.  :obj:`"required"` means the
-            model must call one or more tools. Specifying a particular tool
-            via {"type": "function", "function": {"name": "my_function"}}
-            forces the model to call that tool. :obj:`"none"` is the default
-            when no tools are present. :obj:`"auto"` is the default if tools
-            are present.
     """
 
     temperature: float = 0.2  # openai default: 1.0
@@ -108,7 +94,11 @@ class TogetherAIConfig(BaseConfig):
     frequency_penalty: float = 0.0
     logit_bias: dict = Field(default_factory=dict)
     user: str = ""
-    tool_choice: Optional[Union[dict[str, str], str]] = None
+
+    def as_dict(self) -> dict[str, Any]:
+        config_dict = super().as_dict()
+        config_dict.pop("tools", None)  # Tool calling is not support
+        return config_dict
 
 
 TOGETHERAI_API_PARAMS = {
