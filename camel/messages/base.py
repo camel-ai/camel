@@ -116,7 +116,7 @@ class BaseMessage:
     ) -> "BaseMessage":
         return cls(
             role_name,
-            RoleType.USER,
+            RoleType.ASSISTANT,
             meta_dict,
             content,
             video_bytes,

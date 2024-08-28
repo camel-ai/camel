@@ -14,6 +14,7 @@
 from io import BytesIO
 
 import requests
+import torch
 from PIL import Image
 
 from camel.agents import ChatAgent
@@ -63,7 +64,7 @@ image = load_image_from_url(image_url)
 images = [image, image]
 
 
-ollama_model = ModelFactory.create(
+internlm_model = ModelFactory.create(
     model_platform=ModelPlatformType.INTERNLM,
     model_type="internlm-xcomposer2d5-7b",
     model_config_dict={
@@ -71,8 +72,11 @@ ollama_model = ModelFactory.create(
         # InterLM XComposer provides different operation modes.
         "operation_mode": OperationMode.CHAT,
         "model_kwargs": {  # use `AutoModel` config in `transformers` library
+            "torch_dtype": torch.bfloat16,
+            "trust_remote_code": True,
             "cache_dir": None,
         },
+        "multimodal_src_path": "./examples/src",  # path to store pictures and videos  # noqa: E501
     },
 )
 
@@ -83,7 +87,7 @@ assistant_sys_msg = BaseMessage.make_assistant_message(
 )
 
 
-agent = ChatAgent(assistant_sys_msg, model=ollama_model, token_limit=4096)
+agent = ChatAgent(assistant_sys_msg, model=internlm_model, token_limit=4096)
 
 
 user_msg = BaseMessage.make_user_message(

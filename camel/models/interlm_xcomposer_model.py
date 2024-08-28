@@ -95,12 +95,9 @@ class InternLMXComposerModel(BaseModelBackend):
                 f"backend. Choose from {valid_modes}"
             )
 
-        import torch
-
         model_kwargs = self.model_config_dict.get("model_kwargs", {})
-        model_kwargs["torch_dtype"] = torch.bfloat16
-        model_kwargs["trust_remote_code"] = True
 
+        import torch
         from transformers import AutoModel, AutoTokenizer
 
         self._client = (
