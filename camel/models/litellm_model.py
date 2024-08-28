@@ -147,7 +147,7 @@ class LiteLLMModel:
 
     @property
     def token_limit(self) -> int:
-        """Returns the maximum token limit for the given model.
+        r"""Returns the maximum token limit for the given model.
 
         Returns:
             int: The maximum token limit for the given model.
