@@ -27,6 +27,7 @@ from camel.models.openai_compatibility_model import OpenAICompatibilityModel
 from camel.models.openai_model import OpenAIModel
 from camel.models.samba_model import SambaModel
 from camel.models.stub_model import StubModel
+from camel.models.togetherai_model import TogetherAIModel
 from camel.models.vllm_model import VLLMModel
 from camel.models.zhipuai_model import ZhipuAIModel
 from camel.types import ModelPlatformType, ModelType
@@ -117,6 +118,11 @@ class ModelFactory:
                 return model_class(model_type, model_config_dict)
             elif model_platform.is_openai_compatibility_model:
                 model_class = OpenAICompatibilityModel
+            elif model_platform.is_together:
+                model_class = TogetherAIModel
+                return model_class(
+                    model_type, model_config_dict, api_key, token_counter
+                )
             else:
                 raise ValueError(
                     f"Unknown pair of model platform `{model_platform}` "

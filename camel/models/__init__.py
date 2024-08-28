@@ -28,6 +28,7 @@ from .openai_compatibility_model import OpenAICompatibilityModel
 from .openai_model import OpenAIModel
 from .samba_model import SambaModel
 from .stub_model import StubModel
+from .togetherai_model import TogetherAIModel
 from .vllm_model import VLLMModel
 from .zhipuai_model import ZhipuAIModel
 
@@ -51,4 +52,5 @@ __all__ = [
     'InternLMXComposerModel',
     'OpenAICompatibilityModel',
     'SambaModel',
+    'TogetherAIModel',
 ]

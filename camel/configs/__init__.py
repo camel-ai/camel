@@ -20,6 +20,7 @@ from .mistral_config import MISTRAL_API_PARAMS, MistralConfig
 from .ollama_config import OLLAMA_API_PARAMS, OllamaConfig
 from .openai_config import OPENAI_API_PARAMS, ChatGPTConfig, OpenSourceConfig
 from .samba_config import SAMBA_API_PARAMS, SambaConfig
+from .togetherai_config import TOGETHERAI_API_PARAMS, TogetherAIConfig
 from .vllm_config import VLLM_API_PARAMS, VLLMConfig
 from .zhipuai_config import ZHIPUAI_API_PARAMS, ZhipuAIConfig
 
@@ -46,4 +47,6 @@ __all__ = [
     'MISTRAL_API_PARAMS',
     'SambaConfig',
     'SAMBA_API_PARAMS',
+    'TogetherAIConfig',
+    'TOGETHERAI_API_PARAMS'
 ]

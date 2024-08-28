@@ -469,6 +469,7 @@ class ModelPlatformType(Enum):
     GEMINI = "gemini"
     VLLM = "vllm"
     MISTRAL = "mistral"
+    TOGETHER = "together"
     OPENAI_COMPATIBILITY_MODEL = "openai-compatibility-model"
     SAMBA = "samba nova"
     INTERNLM = "internlm"
@@ -502,6 +503,11 @@ class ModelPlatformType(Enum):
     def is_vllm(self) -> bool:
         r"""Returns whether this platform is vllm."""
         return self is ModelPlatformType.VLLM
+
+    @property
+    def is_together(self) -> bool:
+        r"""Returns whether this platform is together."""
+        return self is ModelPlatformType.TOGETHER
 
     @property
     def is_litellm(self) -> bool:

@@ -47,7 +47,7 @@ class VLLMModel:
                 model service.
             token_counter (Optional[BaseTokenCounter]): Token counter to use
                 for the model. If not provided, `OpenAITokenCounter(ModelType.
-                GPT_3_5_TURBO)` will be used.
+                GPT_4O_MINI)` will be used.
         """
         self.model_type = model_type
         self.model_config_dict = model_config_dict
@@ -70,7 +70,7 @@ class VLLMModel:
                 tokenization style.
         """
         if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(ModelType.GPT_3_5_TURBO)
+            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
 
     def check_model_config(self):
