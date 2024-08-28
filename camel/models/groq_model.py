@@ -54,7 +54,7 @@ class GroqModel(BaseModelBackend):
                 :obj:`None`)
             token_counter (Optional[BaseTokenCounter]): Token counter to use
                 for the model. If not provided, `OpenAITokenCounter(ModelType.
-                GPT_3_5_TURBO)` will be used.
+                GPT_4O_MINI)` will be used.
         """
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
@@ -80,7 +80,7 @@ class GroqModel(BaseModelBackend):
         # Make sure you have the access to these open-source model in
         # HuggingFace
         if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(ModelType.GPT_3_5_TURBO)
+            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
 
     @api_keys_required("GROQ_API_KEY")
