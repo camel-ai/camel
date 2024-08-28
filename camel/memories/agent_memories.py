@@ -153,7 +153,7 @@ class GraphDBMemory(AgentMemory):
 
 class LongtermAgentMemory(AgentMemory):
     r"""An implementation of the :obj:`AgentMemory` abstract base class for
-    augumenting ChatHistoryMemory with VectorDBMemory.
+    augumenting ChatHistoryMemory with VectorDBMemory and GraphDBMemory.
     """
 
     def __init__(
@@ -198,6 +198,7 @@ class LongtermAgentMemory(AgentMemory):
                 database.
         """
         self.vector_db_block.write_records(records)
+        self.graph_db_block.write_records(records)
         self.chat_history_block.write_records(records)
 
         for record in records:
