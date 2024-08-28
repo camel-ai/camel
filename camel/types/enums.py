@@ -415,6 +415,20 @@ class OpenAIVisionDetailType(Enum):
     HIGH = "high"
 
 
+class MultiModalModelType(Enum, metaclass=OpenAIImageTypeMeta):
+    r"""Image types supported by the multimodal model."""
+
+    # Align with OpenAI's specifications
+    # https://platform.openai.com/docs/guides/vision
+    PNG = "png"
+    JPEG = "jpeg"
+    JPG = "jpg"
+    WEBP = "webp"
+    GIF = "gif"
+
+    MP4 = "mp4"
+
+
 class StorageType(Enum):
     MILVUS = "milvus"
     QDRANT = "qdrant"
@@ -445,6 +459,7 @@ class ModelPlatformType(Enum):
     VLLM = "vllm"
     MISTRAL = "mistral"
     OPENAI_COMPATIBILITY_MODEL = "openai-compatibility-model"
+    INTERNLM = "internlm"
 
     @property
     def is_openai(self) -> bool:
@@ -506,6 +521,11 @@ class ModelPlatformType(Enum):
     def is_gemini(self) -> bool:
         r"""Returns whether this platform is Gemini."""
         return self is ModelPlatformType.GEMINI
+
+    @property
+    def is_internlm(self) -> bool:
+        r"""Returns whether this platform is InternLM."""
+        return self in [ModelPlatformType.INTERNLM]
 
 
 class AudioModelType(Enum):
