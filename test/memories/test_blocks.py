@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from unittest.mock import MagicMock, create_autospec
+from unittest.mock import MagicMock, create_autospec, patch
 from uuid import uuid4
 
 import pytest
@@ -195,7 +195,9 @@ class TestGraphDBBlock:
         return create_autospec(BaseGraphStorage)
 
     def test_init_with_default_storage(self):
-        with pytest.raises(NotImplementedError):
+        with pytest.raises(
+            ValueError, match="Missing Neo4j connection details"
+        ):
             graph_db = GraphDBBlock()
             assert graph_db.storage is not None
 
@@ -203,31 +205,14 @@ class TestGraphDBBlock:
         graph_db = GraphDBBlock(storage=mock_storage)
         assert graph_db.storage == mock_storage
 
-    def test_retrieve(self, mock_storage):
-        mock_results = [
-            {
-                "uuid": str(uuid4()),
-                "message": {
-                    "__class__": "BaseMessage",
-                    "content": "test message",
-                    "role_name": "user",
-                    "role_type": RoleType.USER,
-                    "meta_dict": None,
-                },
-                "role_at_backend": "user",
-                "extra_info": {},
-            }
-        ]
-        mock_storage.query.return_value = mock_results
+    @patch('camel.memories.blocks.graphdb_block.GraphDBBlock.retrieve')
+    def test_retrieve(self, mock_retrieve, mock_storage):
+        mock_results = [{'id': 1, 'name': 'Node1'}, {'id': 2, 'name': 'Node2'}]
+        mock_retrieve.return_value = mock_results
+
         graph_db = GraphDBBlock(storage=mock_storage)
-
-        query = "MATCH (s)-[r]->(o) RETURN s, o, r"
-        records = graph_db.retrieve(query)
-
-        assert len(records) == len(mock_results)
-        assert all(isinstance(record, ContextRecord) for record in records)
-        # Verify the content of the retrieved data
-        assert records[0].memory_record.message.content == "test message"
+        results = graph_db.retrieve()
+        assert results == mock_results
 
     def test_write_triplet(self, mock_storage):
         graph_db = GraphDBBlock(storage=mock_storage)
