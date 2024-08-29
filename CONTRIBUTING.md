@@ -122,7 +122,7 @@ poetry shell
 poetry install --with dev,docs
 
 # Or if you want to use all other extra packages
-poetry install --with dev,docs -E all  # (Suggested for developers)
+poetry install --with dev,docs -E all  # (Suggested for developers, needed to pass all tests)
 
 # The following command installs a pre-commit hook into the local git repo,
 # so every commit gets auto-formatted and linted.
