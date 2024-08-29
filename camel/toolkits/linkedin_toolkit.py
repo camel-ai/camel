@@ -21,6 +21,7 @@ import requests
 
 from camel.toolkits import OpenAIFunction
 from camel.toolkits.base import BaseToolkit
+from camel.utils import handle_http_error
 
 LINKEDIN_POST_LIMIT = 1300
 
@@ -43,7 +44,7 @@ class LinkedInToolkit(BaseToolkit):
 
         Returns:
             dict: A dictionary containing the post ID and the content of
-            the post. If the post creation fails, the values will be None.
+                the post. If the post creation fails, the values will be None.
 
         Raises:
             Exception: If the post creation fails due to
@@ -127,7 +128,7 @@ class LinkedInToolkit(BaseToolkit):
         )
 
         if response.status_code != HTTPStatus.NO_CONTENT:
-            error_type = self._handle_http_error(response)
+            error_type = handle_http_error(response)
             return (
                 f"Request returned a(n) {error_type!s}: "
                 f"{response.status_code!s} {response.text}"
@@ -143,18 +144,17 @@ class LinkedInToolkit(BaseToolkit):
         the user's LinkedIn ID.
 
         Args:
-            include_id (bool): Whether to include
-                               the LinkedIn profile ID in the response.
+            include_id (bool): Whether to include the LinkedIn profile ID in
+                the response.
 
         Returns:
-            dict: A dictionary containing
-                  the user's LinkedIn profile information.
-                  If `include_id` is True,
-                  the dictionary will also include the profile ID.
+            dict: A dictionary containing the user's LinkedIn profile
+                information. If `include_id` is True, the dictionary will also
+                include the profile ID.
 
         Raises:
-            Exception: If the profile retrieval fails
-                       due to an error response from LinkedIn API.
+            Exception: If the profile retrieval fails due to an error response
+                from LinkedIn API.
         """
         headers = {
             "Authorization": f"Bearer {self._access_token}",
@@ -212,11 +212,10 @@ class LinkedInToolkit(BaseToolkit):
         r"""Fetches the access token required for making LinkedIn API requests.
 
         Returns:
-            str: The OAuth 2.0 access token.
+            str: The OAuth 2.0 access token or warming message if the
+                environment variable `LINKEDIN_ACCESS_TOKEN` is not set or is
+                empty.
 
-        Raises:
-            EnvironmentError: If the environment variable
-                              `LINKEDIN_ACCESS_TOKEN` is not set or is empty.
         Reference:
             You can apply for your personal LinkedIn API access token through
             the link below:
@@ -226,28 +225,6 @@ class LinkedInToolkit(BaseToolkit):
         if not token:
             return "Access token not found. Please set LINKEDIN_ACCESS_TOKEN."
         return token
-
-    def _handle_http_error(self, response: requests.Response) -> str:
-        r"""Handles the HTTP errors based on the status code of the response.
-
-        Args:
-            response (requests.Response): The HTTP response from the API call.
-
-        Returns:
-            str: The error type, based on the status code.
-        """
-        if response.status_code == HTTPStatus.UNAUTHORIZED:
-            return "Unauthorized. Check your access token."
-        elif response.status_code == HTTPStatus.FORBIDDEN:
-            return (
-                "Forbidden. You do not have permission to perform this action."
-            )
-        elif response.status_code == HTTPStatus.NOT_FOUND:
-            return "Not Found. The resource could not be located."
-        elif response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
-            return "Too Many Requests. You have hit the rate limit."
-        else:
-            return "HTTP Error"
 
 
 LINKEDIN_FUNCS: List[OpenAIFunction] = LinkedInToolkit().get_tools()
