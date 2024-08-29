@@ -14,6 +14,8 @@
 import base64
 import io
 import uuid
+import requests
+import logging
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
@@ -28,6 +30,8 @@ from camel.messages import (
 from camel.prompts import CodePrompt, TextPrompt
 from camel.types import MessageType, OpenAIBackendRole, RoleType
 from camel.utils import Constants
+
+logger = logging.getLogger(__name__)
 
 
 class Sender(BaseModel):
@@ -214,7 +218,17 @@ class BaseMessage(BaseModel):
 
     def to_openai_user_message(self) -> OpenAIUserMessage:
         hybrid_content: List[Any] = []
+        if self.content.audio_url:
+            from camel.models.openai_audio_models import OpenAIAudioModels
 
+            audio_models = OpenAIAudioModels()
+            # step 1 download audio file to local path
+            audio_file_path = self._download_file_to_local(
+                url=self.content.audio_url)
+            
+            self.content.text = audio_models.speech_to_text(
+                audio_file_path)
+            
         if self.content.text:
             hybrid_content.append(
                 {
@@ -262,10 +276,40 @@ class BaseMessage(BaseModel):
             role="assistant",
             content=self.content.text or "",
         )
+    
+    def _download_file_to_local(self, url, save_path="./"):
+        try:
+            from urllib.parse import urlparse
+            # Parse the URL to get the file name
+            parsed_url = urlparse(url)
+            file_name = parsed_url.path.split('/')[-1]  # Extract the file name from the URL
+            
+            # Construct the complete save path
+            full_save_path = f"{save_path.rstrip('/')}/{file_name}"
+            
+            # Send a GET request to the URL
+            response = requests.get(url, stream=True)
+            
+            # Check if the request was successful
+            if response.status_code == 200:
+                # Open a file to write the data
+                with open(full_save_path, 'wb') as f:
+                    # Write the file in chunks to avoid high memory usage
+                    for chunk in response.iter_content(chunk_size=1024):
+                        if chunk:
+                            f.write(chunk)
+                logger.info(f"File successfully downloaded to {full_save_path}")
+                return full_save_path  
+            else:
+                logger.warning("Failed to download, status code: "
+                            f"{response.status_code}")
+        except Exception as e:
+            logger.error(f"An error occurred: {e}")
+        
+        return None 
 
     def _extract_frames_from_video(self, video_url: str) -> List[str]:
         import imageio.v3 as iio
-        import requests
         from PIL import Image
 
         response = requests.get(video_url, stream=True)
