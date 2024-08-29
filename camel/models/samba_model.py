@@ -256,7 +256,7 @@ class SambaModel:
                 or None,
             )
         ]
-        print(samba_response)
+
         obj = ChatCompletion.construct(
             id=first_chunk['id'],
             choices=choices,
