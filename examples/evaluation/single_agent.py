@@ -71,7 +71,7 @@ def generate_questions(
     if len(assistant_response.msgs) > 0:
         print(assistant_response.msg.content.text)
         parsed_assistant_msg = parse_question_string(
-            ' '.join([text for text in assistant_response.msg.content.text]),
+            assistant_response.msg.content.text,
             category,
         )
 

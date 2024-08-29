@@ -101,7 +101,7 @@ class RoleAssignmentAgent(ChatAgent):
             desc.replace("<|", "").replace("|>", "")
             for desc in re.findall(
                 r"Domain expert \d: (.+?)\nAssociated competencies,",
-                ' '.join([text for text in msg.content.text]),  # type: ignore[union-attr]
+                msg.content.text,  # type: ignore[union-attr]
                 re.DOTALL,
             )
         ]
@@ -110,7 +110,7 @@ class RoleAssignmentAgent(ChatAgent):
             for desc in re.findall(
                 r"Associated competencies, characteristics, "
                 r"duties and workflows: (.+?) End.",
-                ' '.join([text for text in msg.content.text]),  # type: ignore[union-attr]
+                msg.content.text,  # type: ignore[union-attr]
                 re.DOTALL,
             )
         ]

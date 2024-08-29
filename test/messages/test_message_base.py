@@ -35,16 +35,12 @@ def test_base_message_addition_operator(base_message: BaseMessage):
         content=Content(text="!"),
     )
     new_message = base_message + other_message
-    assert new_message.content.text == ["test content", "!"]
+    assert new_message.content.text == "test content!"
 
 
 def test_base_message_multiplication_operator(base_message: BaseMessage):
     new_message = base_message * 3
-    assert new_message.content.text == [
-        "test content",
-        "test content",
-        "test content",
-    ]
+    assert new_message.content.text == "test content" *3
 
 
 def test_base_message_length_operator(base_message: BaseMessage):
@@ -52,8 +48,8 @@ def test_base_message_length_operator(base_message: BaseMessage):
 
 
 def test_base_message_contains_operator(base_message: BaseMessage):
-    assert any("test" in text for text in base_message.content.text)  # type: ignore[union-attr]
-    assert any("foo" not in text for text in base_message.content.text)  # type: ignore[union-attr]
+    assert any("test" in base_message.content.text)  # type: ignore[union-attr]
+    assert any("foo" not in base_message.content.text)  # type: ignore[union-attr]
 
 
 def test_extract_text_and_code_prompts():
@@ -113,7 +109,7 @@ def test_base_message():
     assert message.role_name == role_name
     assert message.role_type == role_type
     assert message.meta_dict == meta_dict
-    assert message.content.text == [content]
+    assert message.content.text == content
 
     openai_message = message.to_openai_message(backend_role)
     assert openai_message == {

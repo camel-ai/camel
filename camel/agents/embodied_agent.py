@@ -184,7 +184,7 @@ class EmbodiedAgent(ChatAgent):
 
         content = Content(
             text=(input_message.content.text or "")
-            + f"\n> Embodied Actions:\n{' '.join(content.text)}"
+            + f"\n> Embodied Actions:\n{content.text}"
         )
         message = BaseMessage(
             role_name=input_message.role_name,

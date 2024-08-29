@@ -316,9 +316,7 @@ Be concrete.
 
         sub_tasks_msg = task_response.msgs[0]
         if sub_tasks_msg.content.text:
-            return get_task_list(
-                ' '.join([text for text in sub_tasks_msg.content.text])
-            )
+            return get_task_list(sub_tasks_msg.content.text)
         else:
             raise ValueError("Text content of sub task message is None")
 
@@ -424,8 +422,6 @@ with any other output."""
 
         sub_tasks_msg = task_response.msgs[0]
         if sub_tasks_msg.content.text:
-            return get_task_list(
-                ' '.join([text for text in sub_tasks_msg.content.text])
-            )
+            return get_task_list(sub_tasks_msg.content.text)
         else:
             raise ValueError("Text content of sub task message is None")

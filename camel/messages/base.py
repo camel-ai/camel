@@ -209,7 +209,7 @@ class BaseMessage(BaseModel):
     def to_openai_system_message(self) -> OpenAISystemMessage:
         return OpenAISystemMessage(
             role="system",
-            content="\n".join(self.content.text or ""),
+            content=self.content.text or "",
         )
 
     def to_openai_user_message(self) -> OpenAIUserMessage:
@@ -260,7 +260,7 @@ class BaseMessage(BaseModel):
     def to_openai_assistant_message(self) -> OpenAIAssistantMessage:
         return OpenAIAssistantMessage(
             role="assistant",
-            content="\n".join(self.content.text or []),
+            content=self.content.text or "",
         )
 
     def _extract_frames_from_video(self, video_url: str) -> List[str]:
