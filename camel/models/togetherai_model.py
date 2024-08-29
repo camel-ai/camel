@@ -37,6 +37,7 @@ class TogetherAIModel:
         model_type: str,
         model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
+        url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
         r"""Constructor for TogetherAI backend.
@@ -48,6 +49,8 @@ class TogetherAIModel:
                 be fed into openai.ChatCompletion.create().
             api_key (Optional[str]): The API key for authenticating with the
                 Together service. (default: :obj:`None`)
+            url (Optional[str]): The url to the Together AI service. (default:
+                :obj:`"https://api.together.xyz/v1"`)
             token_counter (Optional[BaseTokenCounter]): Token counter to use
                 for the model. If not provided, `OpenAITokenCounter(ModelType.
                 GPT_4O_MINI)` will be used.
@@ -56,12 +59,13 @@ class TogetherAIModel:
         self.model_config_dict = model_config_dict
         self._token_counter = token_counter
         self._api_key = api_key or os.environ.get("TOGETHER_API_KEY")
+        self._url = url or os.environ.get("TOGETHER_API_BASE_URL")
 
         self._client = OpenAI(
             timeout=60,
             max_retries=3,
             api_key=self._api_key,
-            base_url="https://api.together.xyz/v1",
+            base_url=self._url or "https://api.together.xyz/v1",
         )
 
     @api_keys_required("TOGETHER_API_KEY")
