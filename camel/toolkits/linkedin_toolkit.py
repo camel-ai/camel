@@ -221,7 +221,7 @@ class LinkedInToolkit(BaseToolkit):
             the link below:
             https://www.linkedin.com/developers/apps
         """
-        token = os.getenv("LINKEDIN_ACCESS_TOKEN", "")
+        token = os.getenv("LINKEDIN_ACCESS_TOKEN")
         if not token:
             return "Access token not found. Please set LINKEDIN_ACCESS_TOKEN."
         return token
