@@ -329,8 +329,6 @@ class ChatAgent(BaseAgent):
         """
         # init input message conversation
         input_message.conversation_id = self.conversation_id
-        print(self.role_name)
-        print(input_message.conversation_id)
         self.update_memory(input_message, OpenAIBackendRole.USER)
 
         output_messages: List[BaseMessage]
