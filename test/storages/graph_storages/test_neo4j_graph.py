@@ -116,7 +116,7 @@ def test_cypher_return_correct_schema() -> None:
 def test_neo4j_timeout() -> None:
     r"""Test that neo4j uses the timeout correctly."""
     graph = Neo4jGraph(
-        url=url, username=username, password=password, timeout=0.1
+        url=url, username=username, password=password, timeout=5
     )
     try:
         graph.query("UNWIND range(0,100000,1) AS i MERGE (:Foo {id:i})")

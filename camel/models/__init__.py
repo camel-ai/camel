@@ -16,6 +16,7 @@ from .azure_openai_model import AzureOpenAIModel
 from .base_model import BaseModelBackend
 from .gemini_model import GeminiModel
 from .groq_model import GroqModel
+from .interlm_xcomposer_model import InternLMXComposerModel
 from .litellm_model import LiteLLMModel
 from .mistral_model import MistralModel
 from .model_factory import ModelFactory
@@ -26,7 +27,9 @@ from .openai_audio_models import OpenAIAudioModels
 from .openai_compatibility_model import OpenAICompatibilityModel
 from .openai_model import OpenAIModel
 from .reka_model import RekaModel
+from .samba_model import SambaModel
 from .stub_model import StubModel
+from .togetherai_model import TogetherAIModel
 from .vllm_model import VLLMModel
 from .zhipuai_model import ZhipuAIModel
 
@@ -47,6 +50,9 @@ __all__ = [
     'OllamaModel',
     'VLLMModel',
     'GeminiModel',
+    'InternLMXComposerModel',
     'OpenAICompatibilityModel',
     'RekaModel',
+    'SambaModel',
+    'TogetherAIModel',
 ]

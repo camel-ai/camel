@@ -86,13 +86,16 @@ class ModelType(Enum):
     REKA_FLASH = "reka-flash"
     REKA_EDGE = "reka-edge"
 
+    # SambaNova Model
+    SAMBA_LLAMA_3_1_405B = "llama3-405b"
+    SAMBA_LLAMA_3_1_70B = "llama3-70b"
+    SAMBA_LLAMA_3_1_8B = "llama3-8b"
+
     @property
     def value_for_tiktoken(self) -> str:
-        return (
-            self.value
-            if self is not ModelType.STUB and not isinstance(self, str)
-            else "gpt-3.5-turbo"
-        )
+        if self.is_openai:
+            return self.value
+        return "gpt-3.5-turbo"
 
     @property
     def is_openai(self) -> bool:
@@ -216,6 +219,14 @@ class ModelType(Enum):
         }
 
     @property
+    def is_samba(self) -> bool:
+        return self in {
+            ModelType.SAMBA_LLAMA_3_1_405B,
+            ModelType.SAMBA_LLAMA_3_1_70B,
+            ModelType.SAMBA_LLAMA_3_1_8B,
+        }
+
+    @property
     def token_limit(self) -> int:
         r"""Returns the maximum token limit for a given model.
 
@@ -277,6 +288,9 @@ class ModelType(Enum):
             ModelType.GROQ_LLAMA_3_1_8B,
             ModelType.GROQ_LLAMA_3_1_70B,
             ModelType.GROQ_LLAMA_3_1_405B,
+            ModelType.SAMBA_LLAMA_3_1_405B,
+            ModelType.SAMBA_LLAMA_3_1_70B,
+            ModelType.SAMBA_LLAMA_3_1_8B,
         }:
             return 131_072
         elif self in {
@@ -441,6 +455,20 @@ class OpenAIVisionDetailType(Enum):
     HIGH = "high"
 
 
+class MultiModalModelType(Enum, metaclass=OpenAIImageTypeMeta):
+    r"""Image types supported by the multimodal model."""
+
+    # Align with OpenAI's specifications
+    # https://platform.openai.com/docs/guides/vision
+    PNG = "png"
+    JPEG = "jpeg"
+    JPG = "jpg"
+    WEBP = "webp"
+    GIF = "gif"
+
+    MP4 = "mp4"
+
+
 class StorageType(Enum):
     MILVUS = "milvus"
     QDRANT = "qdrant"
@@ -471,7 +499,10 @@ class ModelPlatformType(Enum):
     VLLM = "vllm"
     MISTRAL = "mistral"
     REKA = "reka"
+    TOGETHER = "together"
     OPENAI_COMPATIBILITY_MODEL = "openai-compatibility-model"
+    SAMBA = "samba-nova"
+    INTERNLM = "internlm"
 
     @property
     def is_openai(self) -> bool:
@@ -502,6 +533,11 @@ class ModelPlatformType(Enum):
     def is_vllm(self) -> bool:
         r"""Returns whether this platform is vllm."""
         return self is ModelPlatformType.VLLM
+
+    @property
+    def is_together(self) -> bool:
+        r"""Returns whether this platform is together."""
+        return self is ModelPlatformType.TOGETHER
 
     @property
     def is_litellm(self) -> bool:
@@ -538,6 +574,16 @@ class ModelPlatformType(Enum):
     def is_reka(self) -> bool:
         r"""Returns whether this platform is Reka."""
         return self is ModelPlatformType.REKA
+
+    @property
+    def is_samba(self) -> bool:
+        r"""Returns whether this platform is Samba Nova."""
+        return self is ModelPlatformType.SAMBA
+
+    @property
+    def is_internlm(self) -> bool:
+        r"""Returns whether this platform is InternLM."""
+        return self in [ModelPlatformType.INTERNLM]
 
 
 class AudioModelType(Enum):
