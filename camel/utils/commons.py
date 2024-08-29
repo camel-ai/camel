@@ -20,6 +20,7 @@ import subprocess
 import time
 import zipfile
 from functools import wraps
+from http import HTTPStatus
 from typing import (
     Any,
     Callable,
@@ -547,3 +548,24 @@ def track_agent(*args, **kwargs):
         return f
 
     return noop
+
+
+def handle_http_error(response: requests.Response) -> str:
+    r"""Handles the HTTP errors based on the status code of the response.
+
+    Args:
+        response (requests.Response): The HTTP response from the API call.
+
+    Returns:
+        str: The error type, based on the status code.
+    """
+    if response.status_code == HTTPStatus.UNAUTHORIZED:
+        return "Unauthorized. Check your access token."
+    elif response.status_code == HTTPStatus.FORBIDDEN:
+        return "Forbidden. You do not have permission to perform this action."
+    elif response.status_code == HTTPStatus.NOT_FOUND:
+        return "Not Found. The resource could not be located."
+    elif response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
+        return "Too Many Requests. You have hit the rate limit."
+    else:
+        return "HTTP Error"
