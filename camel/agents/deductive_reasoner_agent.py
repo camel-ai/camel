@@ -251,7 +251,7 @@ square brackets)
             .strip('\n')
             for i, cdt in re.findall(
                 r"condition (\d+):\s*(.+?)(?=condition \d+|- Entity)",
-                msg.content.text,  # type: ignore[union-attr]
+                msg.content.text or "",
                 re.DOTALL,
             )
         }
@@ -261,7 +261,7 @@ square brackets)
             label.strip().strip('\n').strip("\"'")
             for label in re.findall(
                 r"Entity/Label Recognition of Conditions:\n\[(.+?)\]",
-                msg.content.text,  # type: ignore[union-attr]
+                msg.content.text or "",
                 re.DOTALL,
             )[0].split(",")
         ]
@@ -272,7 +272,7 @@ square brackets)
             for q in re.findall(
                 r"Quality Assessment \(\$Q\$\) \(do not use symbols\):"
                 r"\n(.+?)- Iterative",
-                msg.content.text,  # type: ignore[union-attr]
+                msg.content.text or "",
                 re.DOTALL,
             )
         )

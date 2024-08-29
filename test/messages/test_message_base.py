@@ -40,7 +40,7 @@ def test_base_message_addition_operator(base_message: BaseMessage):
 
 def test_base_message_multiplication_operator(base_message: BaseMessage):
     new_message = base_message * 3
-    assert new_message.content.text == "test content" *3
+    assert new_message.content.text == "test content" * 3
 
 
 def test_base_message_length_operator(base_message: BaseMessage):
@@ -48,8 +48,8 @@ def test_base_message_length_operator(base_message: BaseMessage):
 
 
 def test_base_message_contains_operator(base_message: BaseMessage):
-    assert any("test" in base_message.content.text)  # type: ignore[union-attr]
-    assert any("foo" not in base_message.content.text)  # type: ignore[union-attr]
+    assert "test" in (base_message.content.text or "")
+    assert "foo" not in (base_message.content.text or "")
 
 
 def test_extract_text_and_code_prompts():

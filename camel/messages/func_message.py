@@ -73,7 +73,7 @@ class FunctionCallingMessage(BaseMessage):
             )
 
         # Convert Content object to a string representation
-        content_str = (self.content.text or "")
+        content_str = self.content.text or ""
 
         msg_dict: OpenAIAssistantMessage = {
             "role": "assistant",

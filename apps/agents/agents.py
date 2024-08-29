@@ -348,8 +348,10 @@ def role_playing_chat_cont(state) -> Tuple[State, ChatBotHistory, Dict, Dict]:
     if len(state.chat) >= state.max_messages:
         state.session = None
 
-    if "CAMEL_TASK_DONE" in a_msg.content.text or "CAMEL_TASK_DONE" in \
-    u_msg.content.text:
+    if (
+        "CAMEL_TASK_DONE" in a_msg.content.text
+        or "CAMEL_TASK_DONE" in u_msg.content.text
+    ):
         state.session = None
 
     progress_update = gr.update(
