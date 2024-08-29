@@ -66,7 +66,8 @@ class RekaConfig(BaseConfig):
 
     def as_dict(self) -> dict[str, Any]:
         config_dict = super().as_dict()
-        config_dict.pop("tools", None)  # Remove the tools key if it's there
+        if "tools" in config_dict:
+            del config_dict["tools"]  # Reka does not support tool calling
         return config_dict
 
 

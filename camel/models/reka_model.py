@@ -75,7 +75,7 @@ class RekaModel(BaseModelBackend):
         self._token_counter: Optional[BaseTokenCounter] = None
 
     def _to_openai_response(self, response: 'ChatResponse') -> ChatCompletion:
-        obj = ChatCompletion.construct(
+        openai_response = ChatCompletion.construct(
             id=response.id,
             choices=[
                 dict(
@@ -94,9 +94,9 @@ class RekaModel(BaseModelBackend):
             usage=response.usage,
         )
 
-        return obj
+        return openai_response
 
-    def _to_reka_chatmessage(
+    def _convert_openai_to_reka_messages(
         self,
         messages: List[OpenAIMessage],
     ) -> List["ChatMessage"]:
@@ -160,7 +160,7 @@ class RekaModel(BaseModelBackend):
         Returns:
             ChatCompletion.
         """
-        reka_messages = self._to_reka_chatmessage(messages)
+        reka_messages = self._convert_openai_to_reka_messages(messages)
 
         response = self._client.chat.create(
             messages=reka_messages,
