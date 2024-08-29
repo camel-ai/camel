@@ -51,7 +51,7 @@ class GroqModel(BaseModelBackend):
             api_key (Optional[str]): The API key for authenticating with the
                 Groq service. (default: :obj:`None`).
             url (Optional[str]): The url to the Groq service. (default:
-                :obj:`None`)
+                :obj:`"https://api.groq.com/openai/v1"`)
             token_counter (Optional[BaseTokenCounter]): Token counter to use
                 for the model. If not provided, `OpenAITokenCounter(ModelType.
                 GPT_4O_MINI)` will be used.
@@ -59,13 +59,13 @@ class GroqModel(BaseModelBackend):
         super().__init__(
             model_type, model_config_dict, api_key, url, token_counter
         )
-        self._url = url or "https://api.groq.com/openai/v1"
+        self._url = url or os.environ.get("GROQ_API_BASE_URL")
         self._api_key = api_key or os.environ.get("GROQ_API_KEY")
         self._client = OpenAI(
             timeout=60,
             max_retries=3,
             api_key=self._api_key,
-            base_url=self._url,
+            base_url=self._url or "https://api.groq.com/openai/v1",
         )
         self._token_counter = token_counter
 
