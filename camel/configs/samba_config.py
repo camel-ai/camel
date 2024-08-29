@@ -42,7 +42,8 @@ class SambaConfig(BaseConfig):
 
     def as_dict(self) -> dict[str, Any]:
         config_dict = super().as_dict()
-        config_dict.pop("tools", None)  # Tool calling is not support
+        if "tools" in config_dict:
+            del config_dict["tools"]  # SambaNova does not support tool calling
         return config_dict
 
 

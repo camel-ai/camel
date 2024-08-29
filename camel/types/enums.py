@@ -83,6 +83,7 @@ class ModelType(Enum):
 
     # SambaNova Model
     SAMBA_LLAMA_3_1_405B = "llama3-405b"
+    SAMBA_LLAMA_3_1_70B = "llama3-70b"
     SAMBA_LLAMA_3_1_8B = "llama3-8b"
 
     @property
@@ -198,6 +199,7 @@ class ModelType(Enum):
     def is_samba(self) -> bool:
         return self in {
             ModelType.SAMBA_LLAMA_3_1_405B,
+            ModelType.SAMBA_LLAMA_3_1_70B,
             ModelType.SAMBA_LLAMA_3_1_8B,
         }
 
@@ -261,6 +263,7 @@ class ModelType(Enum):
             ModelType.GROQ_LLAMA_3_1_70B,
             ModelType.GROQ_LLAMA_3_1_405B,
             ModelType.SAMBA_LLAMA_3_1_405B,
+            ModelType.SAMBA_LLAMA_3_1_70B,
             ModelType.SAMBA_LLAMA_3_1_8B,
         }:
             return 131_072
@@ -471,7 +474,7 @@ class ModelPlatformType(Enum):
     MISTRAL = "mistral"
     TOGETHER = "together"
     OPENAI_COMPATIBILITY_MODEL = "openai-compatibility-model"
-    SAMBA = "samba nova"
+    SAMBA = "samba-nova"
     INTERNLM = "internlm"
 
     @property

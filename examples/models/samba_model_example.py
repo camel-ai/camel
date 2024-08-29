@@ -20,7 +20,7 @@ from camel.types import ModelPlatformType, ModelType
 model = ModelFactory.create(
     model_platform=ModelPlatformType.SAMBA,
     model_type=ModelType.SAMBA_LLAMA_3_1_405B,
-    model_config_dict=SambaConfig(max_tokens=800).as_dict(),
+    model_config_dict=SambaConfig(max_tokens=800, stream=True).as_dict(),
 )
 
 # Define system message

@@ -12,13 +12,13 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
 
 from camel.configs import SAMBA_API_PARAMS
 from camel.messages import OpenAIMessage
-from camel.types import ChatCompletionChunk, ModelType
+from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
 from camel.utils import (
     BaseTokenCounter,
     OpenAITokenCounter,
@@ -90,7 +90,7 @@ class SambaModel:
     @api_keys_required("SAMBA_API_KEY")
     def run(  # type: ignore[misc]
         self, messages: List[OpenAIMessage]
-    ) -> Stream[ChatCompletionChunk]:
+    ) -> Union[ChatCompletion, Stream[ChatCompletionChunk]]:
         r"""Runs SambaNova's FastAPI service.
 
         Args:
@@ -98,15 +98,59 @@ class SambaModel:
                 in OpenAI API format.
 
         Returns:
-            Stream[ChatCompletionChunk]: A stream of chat completion chunks
-                from the model.
+            Union[ChatCompletion, Stream[ChatCompletionChunk]]:
+                `ChatCompletion` in the non-stream mode, or
+                `Stream[ChatCompletionChunk]` in the stream mode.
 
         Raises:
             ValueError: If the model is not configured to run in streaming
                 mode.
         """
-        if self.model_config_dict.get("stream") is not True:
-            raise ValueError("SambaNova only supports streaming mode")
+
+        if self.model_config_dict.get("stream") is True:
+            return self._run_streaming(messages)
+        else:
+            return self._run_non_streaming(messages)
+
+    def _run_streaming(  # type: ignore[misc]
+        self, messages: List[OpenAIMessage]
+    ) -> Stream[ChatCompletionChunk]:
+        """Handles the streaming mode."""
+        import httpx
+
+        headers = {
+            "Authorization": f"Basic {self._api_key}",
+            "Content-Type": "application/json",
+        }
+
+        data = {
+            "messages": messages,
+            "max_tokens": self.token_limit,
+            "stop": self.model_config_dict.get("stop"),
+            "model": self.model_type.value,
+            "stream": True,
+            "stream_options": self.model_config_dict.get("stream_options"),
+        }
+
+        with httpx.stream(
+            "POST",
+            self._url or "https://fast-api.snova.ai/v1/chat/completions",
+            headers=headers,
+            json=data,
+        ) as api_response:
+            stream = Stream[ChatCompletionChunk](
+                cast_to=ChatCompletionChunk,
+                response=api_response,
+                client=OpenAI(),
+            )
+            for chunk in stream:
+                yield chunk
+
+    def _run_non_streaming(
+        self, messages: List[OpenAIMessage]
+    ) -> ChatCompletion:
+        r"""Handles the non-streaming mode."""
+        import json
 
         import httpx
 
@@ -120,7 +164,7 @@ class SambaModel:
             "max_tokens": self.token_limit,
             "stop": self.model_config_dict.get("stop"),
             "model": self.model_type.value,
-            "stream": self.model_config_dict.get("stream"),
+            "stream": True,
             "stream_options": self.model_config_dict.get("stream_options"),
         }
 
@@ -129,12 +173,54 @@ class SambaModel:
             self._url or "https://fast-api.snova.ai/v1/chat/completions",
             headers=headers,
             json=data,
-        ) as response:
-            stream = Stream[ChatCompletionChunk](
-                cast_to=ChatCompletionChunk, response=response, client=OpenAI()
+        ) as api_response:
+            samba_response = []
+            for chunk in api_response.iter_text():
+                if chunk.startswith('data: '):
+                    chunk = chunk[6:]
+                if '[DONE]' in chunk:
+                    break
+                json_data = json.loads(chunk)
+                samba_response.append(json_data)
+            return self._to_openai_response(samba_response)
+
+    def _to_openai_response(
+        self, samba_response: List[Dict[str, Any]]
+    ) -> ChatCompletion:
+        # Step 1: Combine the content from each chunk
+        full_content = ""
+        for chunk in samba_response:
+            if chunk['choices']:
+                for choice in chunk['choices']:
+                    delta_content = choice['delta'].get('content', '')
+                    full_content += delta_content
+
+        # Step 2: Create the ChatCompletion object
+        # Extract relevant information from the first chunk
+        first_chunk = samba_response[0]
+
+        choices = [
+            dict(
+                index=0,  # type: ignore[index]
+                message={
+                    "role": 'assistant',
+                    "content": full_content.strip(),
+                },
+                finish_reason=samba_response[-2]['choices'][0]['finish_reason']
+                or None,
             )
-            for chunk in stream:
-                yield chunk
+        ]
+
+        obj = ChatCompletion.construct(
+            id=first_chunk['id'],
+            choices=choices,
+            created=first_chunk['created'],
+            model=first_chunk['model'],
+            object="chat.completion",
+            usage=None,
+        )
+
+        return obj
 
     @property
     def token_limit(self) -> int:
