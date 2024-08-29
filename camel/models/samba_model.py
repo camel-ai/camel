@@ -40,22 +40,21 @@ class SambaModel:
         r"""Constructor for SambaNova backend.
 
         Args:
-            model_type (ModelType): Model for which a backend is created.
-                Currently only support `"llama3-405b"`
+            model_type (ModelType): Model for which a SambaNova backend is
+                created.
+            model_config_dict (Dict[str, Any]): A dictionary that will
+                be fed into API request.
             api_key (Optional[str]): The API key for authenticating with the
                 SambaNova service. (default: :obj:`None`)
             url (Optional[str]): The url to the SambaNova service. (default:
                 :obj:`"https://fast-api.snova.ai/v1/chat/completions"`)
             token_counter (Optional[BaseTokenCounter]): Token counter to use
                 for the model. If not provided, `OpenAITokenCounter(ModelType.
-                GPT_3_5_TURBO)` will be used.
+                GPT_4O_MINI)` will be used.
         """
         self.model_type = model_type
         self._api_key = api_key or os.environ.get("SAMBA_API_KEY")
-        self._url = url or os.environ.get(
-            "SAMBA_API_BASE_URL",
-            "https://fast-api.snova.ai/v1/chat/completions",
-        )
+        self._url = url or os.environ.get("SAMBA_API_BASE_URL")
         self._token_counter = token_counter
         self.model_config_dict = model_config_dict
         self.check_model_config()
@@ -69,7 +68,7 @@ class SambaModel:
                 tokenization style.
         """
         if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(ModelType.GPT_3_5_TURBO)
+            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
 
     def check_model_config(self):
@@ -101,10 +100,6 @@ class SambaModel:
             Union[ChatCompletion, Stream[ChatCompletionChunk]]:
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
-
-        Raises:
-            ValueError: If the model is not configured to run in streaming
-                mode.
         """
 
         if self.model_config_dict.get("stream") is True:
@@ -115,7 +110,21 @@ class SambaModel:
     def _run_streaming(  # type: ignore[misc]
         self, messages: List[OpenAIMessage]
     ) -> Stream[ChatCompletionChunk]:
-        """Handles the streaming mode."""
+        r"""Handles streaming inference with SambaNova FastAPI.
+
+        Args:
+            messages (List[OpenAIMessage]): A list of messages representing the
+                chat history in OpenAI API format.
+
+        Returns:
+            Stream[ChatCompletionChunk]: A generator yielding
+                `ChatCompletionChunk` objects as they are received from the
+                API.
+
+        Raises:
+            RuntimeError: If the HTTP request fails.
+        """
+
         import httpx
 
         headers = {
@@ -132,24 +141,42 @@ class SambaModel:
             "stream_options": self.model_config_dict.get("stream_options"),
         }
 
-        with httpx.stream(
-            "POST",
-            self._url or "https://fast-api.snova.ai/v1/chat/completions",
-            headers=headers,
-            json=data,
-        ) as api_response:
-            stream = Stream[ChatCompletionChunk](
-                cast_to=ChatCompletionChunk,
-                response=api_response,
-                client=OpenAI(),
-            )
-            for chunk in stream:
-                yield chunk
+        try:
+            with httpx.stream(
+                "POST",
+                self._url or "https://fast-api.snova.ai/v1/chat/completions",
+                headers=headers,
+                json=data,
+            ) as api_response:
+                stream = Stream[ChatCompletionChunk](
+                    cast_to=ChatCompletionChunk,
+                    response=api_response,
+                    client=OpenAI(),
+                )
+                for chunk in stream:
+                    yield chunk
+        except httpx.HTTPError as e:
+            raise RuntimeError(f"HTTP request failed: {e!s}")
 
     def _run_non_streaming(
         self, messages: List[OpenAIMessage]
     ) -> ChatCompletion:
-        r"""Handles the non-streaming mode."""
+        r"""Handles non-streaming inference with SambaNova FastAPI.
+
+        Args:
+            messages (List[OpenAIMessage]): A list of messages representing the
+                message in OpenAI API format.
+
+        Returns:
+            ChatCompletion: A `ChatCompletion` object containing the complete
+                response from the API.
+
+        Raises:
+            RuntimeError: If the HTTP request fails.
+            ValueError: If the JSON response cannot be decoded or is missing
+                expected data.
+        """
+
         import json
 
         import httpx
@@ -168,25 +195,44 @@ class SambaModel:
             "stream_options": self.model_config_dict.get("stream_options"),
         }
 
-        with httpx.stream(
-            "POST",
-            self._url or "https://fast-api.snova.ai/v1/chat/completions",
-            headers=headers,
-            json=data,
-        ) as api_response:
-            samba_response = []
-            for chunk in api_response.iter_text():
-                if chunk.startswith('data: '):
-                    chunk = chunk[6:]
-                if '[DONE]' in chunk:
-                    break
-                json_data = json.loads(chunk)
-                samba_response.append(json_data)
-            return self._to_openai_response(samba_response)
+        try:
+            with httpx.stream(
+                "POST",
+                self._url or "https://fast-api.snova.ai/v1/chat/completions",
+                headers=headers,
+                json=data,
+            ) as api_response:
+                samba_response = []
+                for chunk in api_response.iter_text():
+                    if chunk.startswith('data: '):
+                        chunk = chunk[6:]
+                    if '[DONE]' in chunk:
+                        break
+                    json_data = json.loads(chunk)
+                    samba_response.append(json_data)
+                return self._to_openai_response(samba_response)
+        except httpx.HTTPError as e:
+            raise RuntimeError(f"HTTP request failed: {e!s}")
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Failed to decode JSON response: {e!s}")
 
     def _to_openai_response(
         self, samba_response: List[Dict[str, Any]]
     ) -> ChatCompletion:
+        r"""Converts SambaNova response chunks into an OpenAI-compatible
+        response.
+
+        Args:
+            samba_response (List[Dict[str, Any]]): A list of dictionaries
+                representing partial responses from the SambaNova API.
+
+        Returns:
+            ChatCompletion: A `ChatCompletion` object constructed from the
+                aggregated response data.
+
+        Raises:
+            ValueError: If the response data is invalid or incomplete.
+        """
         # Step 1: Combine the content from each chunk
         full_content = ""
         for chunk in samba_response:
@@ -206,11 +252,11 @@ class SambaModel:
                     "role": 'assistant',
                     "content": full_content.strip(),
                 },
-                finish_reason=samba_response[-2]['choices'][0]['finish_reason']
+                finish_reason=samba_response[-1]['choices'][0]['finish_reason']
                 or None,
             )
         ]
-
+        print(samba_response)
         obj = ChatCompletion.construct(
             id=first_chunk['id'],
             choices=choices,
