@@ -451,17 +451,15 @@ class ChatAgent(BaseAgent):
             msgs=output_messages, terminated=self.terminated, info=info
         )
 
-        # If the output result is a single message, it will be
-        # automatically added to the memory. If the output result
-        # consists of multiple messages, please call `record_message `
-        # manually to record to your chosen message.
+        # If the output result is single message, it will be
+        # automatically added to the memory.
         if len(chat_agent_response.msgs) == 1:
             self.record_message(chat_agent_response.msg)
         else:
             logger.warning(
-                "Multiple messages are presented in `chat_agent_response`. "
-                "Please manually call the `record_message` function to "
-                "record the chosen message."
+                "Multiple messages are available in `ChatAgentResponse`. "
+                "Please manually run the `record_message` function to "
+                "record the selected message."
             )
         return chat_agent_response
 
@@ -591,10 +589,8 @@ class ChatAgent(BaseAgent):
             msgs=output_messages, terminated=self.terminated, info=info
         )
 
-        # If the output result is a single message, it will be
-        # automatically added to the memory. If the output result
-        # consists of multiple messages, please call `record_message `
-        # manually to record to your chosen message.
+        # If the output result is single message, it will be
+        # automatically added to the memory.
         if len(chat_agent_response.msgs) == 1:
             self.record_message(chat_agent_response.msg)
         else:
