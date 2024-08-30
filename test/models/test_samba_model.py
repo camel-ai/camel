@@ -15,8 +15,8 @@ import re
 
 import pytest
 
-from camel.configs import ChatGPTConfig, OpenSourceConfig
-from camel.models import OpenAIModel
+from camel.configs import OpenSourceConfig, SambaConfig
+from camel.models import SambaModel
 from camel.types import ModelType
 from camel.utils import OpenAITokenCounter
 
@@ -25,16 +25,12 @@ from camel.utils import OpenAITokenCounter
 @pytest.mark.parametrize(
     "model_type",
     [
-        ModelType.GPT_3_5_TURBO,
-        ModelType.GPT_4,
-        ModelType.GPT_4_TURBO,
-        ModelType.GPT_4O,
-        ModelType.GPT_4O_MINI,
+        ModelType.SAMBA_LLAMA_3_1_405B,
     ],
 )
-def test_openai_model(model_type):
-    model_config_dict = ChatGPTConfig().as_dict()
-    model = OpenAIModel(model_type, model_config_dict)
+def test_samba_model(model_type):
+    model_config_dict = SambaConfig().as_dict()
+    model = SambaModel(model_type, model_config_dict)
     assert model.model_type == model_type
     assert model.model_config_dict == model_config_dict
     assert isinstance(model.token_counter, OpenAITokenCounter)
@@ -43,8 +39,8 @@ def test_openai_model(model_type):
 
 
 @pytest.mark.model_backend
-def test_openai_model_unexpected_argument():
-    model_type = ModelType.GPT_4
+def test_samba_model_unexpected_argument():
+    model_type = ModelType.SAMBA_LLAMA_3_1_405B
     model_config = OpenSourceConfig(
         model_path="vicuna-7b-v1.5",
         server_url="http://localhost:8000/v1",
@@ -56,8 +52,8 @@ def test_openai_model_unexpected_argument():
         match=re.escape(
             (
                 "Unexpected argument `model_path` is "
-                "input into OpenAI model backend."
+                "input into SambaNova model backend."
             )
         ),
     ):
-        _ = OpenAIModel(model_type, model_config_dict)
+        _ = SambaModel(model_type, model_config_dict)

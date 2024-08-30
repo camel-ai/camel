@@ -26,7 +26,6 @@ class RoleType(Enum):
 class ModelType(Enum):
     GPT_3_5_TURBO = "gpt-3.5-turbo"
     GPT_4 = "gpt-4"
-    GPT_4_32K = "gpt-4-32k"
     GPT_4_TURBO = "gpt-4-turbo"
     GPT_4O = "gpt-4o"
     GPT_4O_MINI = "gpt-4o-mini"
@@ -82,13 +81,16 @@ class ModelType(Enum):
     MISTRAL_MIXTRAL_8x22B = "open-mixtral-8x22b"
     MISTRAL_CODESTRAL_MAMBA = "open-codestral-mamba"
 
+    # SambaNova Model
+    SAMBA_LLAMA_3_1_405B = "llama3-405b"
+    SAMBA_LLAMA_3_1_70B = "llama3-70b"
+    SAMBA_LLAMA_3_1_8B = "llama3-8b"
+
     @property
     def value_for_tiktoken(self) -> str:
-        return (
-            self.value
-            if self is not ModelType.STUB and not isinstance(self, str)
-            else "gpt-3.5-turbo"
-        )
+        if self.is_openai:
+            return self.value
+        return "gpt-3.5-turbo"
 
     @property
     def is_openai(self) -> bool:
@@ -96,7 +98,6 @@ class ModelType(Enum):
         return self in {
             ModelType.GPT_3_5_TURBO,
             ModelType.GPT_4,
-            ModelType.GPT_4_32K,
             ModelType.GPT_4_TURBO,
             ModelType.GPT_4O,
             ModelType.GPT_4O_MINI,
@@ -110,7 +111,6 @@ class ModelType(Enum):
         return self in {
             ModelType.GPT_3_5_TURBO,
             ModelType.GPT_4,
-            ModelType.GPT_4_32K,
             ModelType.GPT_4_TURBO,
             ModelType.GPT_4O,
         }
@@ -196,6 +196,14 @@ class ModelType(Enum):
         return self in {ModelType.GEMINI_1_5_FLASH, ModelType.GEMINI_1_5_PRO}
 
     @property
+    def is_samba(self) -> bool:
+        return self in {
+            ModelType.SAMBA_LLAMA_3_1_405B,
+            ModelType.SAMBA_LLAMA_3_1_70B,
+            ModelType.SAMBA_LLAMA_3_1_8B,
+        }
+
+    @property
     def token_limit(self) -> int:
         r"""Returns the maximum token limit for a given model.
 
@@ -231,7 +239,6 @@ class ModelType(Enum):
         }:
             return 16_384
         elif self in {
-            ModelType.GPT_4_32K,
             ModelType.MISTRAL_CODESTRAL,
             ModelType.MISTRAL_7B,
             ModelType.MISTRAL_MIXTRAL_8x7B,
@@ -255,6 +262,9 @@ class ModelType(Enum):
             ModelType.GROQ_LLAMA_3_1_8B,
             ModelType.GROQ_LLAMA_3_1_70B,
             ModelType.GROQ_LLAMA_3_1_405B,
+            ModelType.SAMBA_LLAMA_3_1_405B,
+            ModelType.SAMBA_LLAMA_3_1_70B,
+            ModelType.SAMBA_LLAMA_3_1_8B,
         }:
             return 131_072
         elif self in {
@@ -440,7 +450,7 @@ class ModelPlatformType(Enum):
     AZURE = "azure"
     ANTHROPIC = "anthropic"
     GROQ = "groq"
-    OPENSOURCE = "opensource"
+    OPEN_SOURCE = "open-source"
     OLLAMA = "ollama"
     LITELLM = "litellm"
     ZHIPU = "zhipuai"
@@ -448,7 +458,9 @@ class ModelPlatformType(Enum):
     GEMINI = "gemini"
     VLLM = "vllm"
     MISTRAL = "mistral"
-    OPENAICOMPATIBILITYMODEL = "openai-compatibility-model"
+    TOGETHER = "together"
+    OPENAI_COMPATIBILITY_MODEL = "openai-compatibility-model"
+    SAMBA = "samba-nova"
 
     @property
     def is_openai(self) -> bool:
@@ -481,6 +493,11 @@ class ModelPlatformType(Enum):
         return self is ModelPlatformType.VLLM
 
     @property
+    def is_together(self) -> bool:
+        r"""Returns whether this platform is together."""
+        return self is ModelPlatformType.TOGETHER
+
+    @property
     def is_litellm(self) -> bool:
         r"""Returns whether this platform is litellm."""
         return self is ModelPlatformType.LITELLM
@@ -498,18 +515,23 @@ class ModelPlatformType(Enum):
     @property
     def is_open_source(self) -> bool:
         r"""Returns whether this platform is opensource."""
-        return self is ModelPlatformType.OPENSOURCE
+        return self is ModelPlatformType.OPEN_SOURCE
 
     @property
     def is_openai_compatibility_model(self) -> bool:
         r"""Returns whether this is a platform supporting openai
         compatibility"""
-        return self is ModelPlatformType.OPENAICOMPATIBILITYMODEL
+        return self is ModelPlatformType.OPENAI_COMPATIBILITY_MODEL
 
     @property
     def is_gemini(self) -> bool:
         r"""Returns whether this platform is Gemini."""
         return self is ModelPlatformType.GEMINI
+
+    @property
+    def is_samba(self) -> bool:
+        r"""Returns whether this platform is Samba Nova."""
+        return self is ModelPlatformType.SAMBA
 
 
 class AudioModelType(Enum):

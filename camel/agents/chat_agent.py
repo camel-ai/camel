@@ -112,9 +112,6 @@ class ChatAgent(BaseAgent):
         model (BaseModelBackend, optional): The model backend to use for
             generating responses. (default: :obj:`OpenAIModel` with
             `GPT_4O_MINI`)
-        api_key (str, optional): The API key for authenticating with the
-            LLM service. Only OpenAI and Anthropic model supported (default:
-            :obj:`None`)
         memory (AgentMemory, optional): The agent memory for managing chat
             messages. If `None`, a :obj:`ChatHistoryMemory` will be used.
             (default: :obj:`None`)
@@ -138,7 +135,6 @@ class ChatAgent(BaseAgent):
         self,
         system_message: BaseMessage,
         model: Optional[BaseModelBackend] = None,
-        api_key: Optional[str] = None,
         memory: Optional[AgentMemory] = None,
         message_window_size: Optional[int] = None,
         token_limit: Optional[int] = None,
@@ -150,7 +146,6 @@ class ChatAgent(BaseAgent):
         self.system_message = system_message
         self.role_name: str = system_message.role_name
         self.role_type: RoleType = system_message.role_type
-        self._api_key = api_key
         self.model_backend: BaseModelBackend = (
             model
             if model is not None
@@ -158,7 +153,6 @@ class ChatAgent(BaseAgent):
                 model_platform=ModelPlatformType.OPENAI,
                 model_type=ModelType.GPT_4O_MINI,
                 model_config_dict=ChatGPTConfig().as_dict(),
-                api_key=self._api_key,
             )
         )
         self.output_language: Optional[str] = output_language

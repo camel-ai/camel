@@ -17,9 +17,8 @@ from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
 
-from camel.configs import ZHIPUAI_API_PARAMS
+from camel.configs import TOGETHERAI_API_PARAMS
 from camel.messages import OpenAIMessage
-from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ChatCompletionChunk, ModelType
 from camel.utils import (
     BaseTokenCounter,
@@ -28,49 +27,48 @@ from camel.utils import (
 )
 
 
-class ZhipuAIModel(BaseModelBackend):
-    r"""ZhipuAI API in a unified BaseModelBackend interface."""
+class TogetherAIModel:
+    r"""Constructor for Together AI backend with OpenAI compatibility.
+    TODO: Add function calling support
+    """
 
     def __init__(
         self,
-        model_type: ModelType,
+        model_type: str,
         model_config_dict: Dict[str, Any],
         api_key: Optional[str] = None,
         url: Optional[str] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        r"""Constructor for ZhipuAI backend.
+        r"""Constructor for TogetherAI backend.
 
         Args:
-            model_type (ModelType): Model for which a backend is created,
-                such as GLM_* series.
+            model_type (str): Model for which a backend is created, supported
+                model can be found here: https://docs.together.ai/docs/chat-models
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into openai.ChatCompletion.create().
             api_key (Optional[str]): The API key for authenticating with the
-                ZhipuAI service. (default: :obj:`None`)
-            url (Optional[str]): The url to the ZhipuAI service. (default:
-                :obj:`None`)
+                Together service. (default: :obj:`None`)
+            url (Optional[str]): The url to the Together AI service. (default:
+                :obj:`"https://api.together.xyz/v1"`)
             token_counter (Optional[BaseTokenCounter]): Token counter to use
                 for the model. If not provided, `OpenAITokenCounter(ModelType.
                 GPT_4O_MINI)` will be used.
         """
-        super().__init__(
-            model_type, model_config_dict, api_key, url, token_counter
-        )
-        self._url = url or os.environ.get("ZHIPUAI_API_BASE_URL")
-        self._api_key = api_key or os.environ.get("ZHIPUAI_API_KEY")
-        if not self._url or not self._api_key:
-            raise ValueError(
-                "ZHIPUAI_API_BASE_URL and ZHIPUAI_API_KEY should be set."
-            )
+        self.model_type = model_type
+        self.model_config_dict = model_config_dict
+        self._token_counter = token_counter
+        self._api_key = api_key or os.environ.get("TOGETHER_API_KEY")
+        self._url = url or os.environ.get("TOGETHER_API_BASE_URL")
+
         self._client = OpenAI(
             timeout=60,
             max_retries=3,
             api_key=self._api_key,
-            base_url=self._url,
+            base_url=self._url or "https://api.together.xyz/v1",
         )
 
-    @api_keys_required("ZHIPUAI_API_KEY")
+    @api_keys_required("TOGETHER_API_KEY")
     def run(
         self,
         messages: List[OpenAIMessage],
@@ -86,11 +84,11 @@ class ZhipuAIModel(BaseModelBackend):
                 `ChatCompletion` in the non-stream mode, or
                 `Stream[ChatCompletionChunk]` in the stream mode.
         """
-        # Use OpenAI cilent as interface call ZhipuAI
-        # Reference: https://open.bigmodel.cn/dev/api#openai_sdk
+        # Use OpenAI cilent as interface call Together AI
+        # Reference: https://docs.together.ai/docs/openai-api-compatibility
         response = self._client.chat.completions.create(
             messages=messages,
-            model=self.model_type.value,
+            model=self.model_type,
             **self.model_config_dict,
         )
         return response
@@ -110,17 +108,17 @@ class ZhipuAIModel(BaseModelBackend):
 
     def check_model_config(self):
         r"""Check whether the model configuration contains any
-        unexpected arguments to OpenAI API.
+        unexpected arguments to TogetherAI API.
 
         Raises:
             ValueError: If the model configuration dictionary contains any
-                unexpected arguments to ZhipuAI API.
+                unexpected arguments to TogetherAI API.
         """
         for param in self.model_config_dict:
-            if param not in ZHIPUAI_API_PARAMS:
+            if param not in TOGETHERAI_API_PARAMS:
                 raise ValueError(
                     f"Unexpected argument `{param}` is "
-                    "input into ZhipuAI model backend."
+                    "input into TogetherAI model backend."
                 )
 
     @property
@@ -132,3 +130,19 @@ class ZhipuAIModel(BaseModelBackend):
             bool: Whether the model is in stream mode.
         """
         return self.model_config_dict.get('stream', False)
+
+    @property
+    def token_limit(self) -> int:
+        r"""Returns the maximum token limit for the given model.
+
+        Returns:
+            int: The maximum token limit for the given model.
+        """
+        max_tokens = self.model_config_dict.get("max_tokens")
+        if isinstance(max_tokens, int):
+            return max_tokens
+        print(
+            "Must set `max_tokens` as an integer in `model_config_dict` when"
+            " setting up the model. Using 4096 as default value."
+        )
+        return 4096

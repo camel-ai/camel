@@ -11,41 +11,46 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-
 from camel.agents import ChatAgent
+from camel.configs import SambaConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
-from camel.types import ModelPlatformType
+from camel.types import ModelPlatformType, ModelType
 
-# Take calling model from DashScope as an example
-# Refer: https://dashscope.console.aliyun.com/overview
 model = ModelFactory.create(
-    model_platform=ModelPlatformType.OPENAI_COMPATIBILITY_MODEL,
-    model_type="qwen-plus",
-    api_key="sk-xxxx",
-    url="https://dashscope.aliyuncs.com/compatible-mode/v1",
-    model_config_dict={"temperature": 0.4},
+    model_platform=ModelPlatformType.SAMBA,
+    model_type=ModelType.SAMBA_LLAMA_3_1_405B,
+    model_config_dict=SambaConfig(max_tokens=800).as_dict(),
 )
 
-assistant_sys_msg = BaseMessage.make_assistant_message(
+# Define system message
+sys_msg = BaseMessage.make_assistant_message(
     role_name="Assistant",
     content="You are a helpful assistant.",
 )
 
-agent = ChatAgent(assistant_sys_msg, model=model, token_limit=4096)
+# Set agent
+camel_agent = ChatAgent(system_message=sys_msg, model=model)
 
 user_msg = BaseMessage.make_user_message(
     role_name="User",
-    content="""Say hi to CAMEL AI, one open-source community 
-    dedicated to the study of autonomous and communicative agents.""",
+    content="""Say hi to CAMEL AI, one open-source community dedicated to the 
+    study of autonomous and communicative agents.""",
 )
-assistant_response = agent.step(user_msg)
-print(assistant_response.msg.content)
 
-"""
+# Get response information
+response = camel_agent.step(user_msg)
+print(response.msgs[0].content)
+'''
 ===============================================================================
-Hi to the CAMEL AI community! It's great to connect with an open-source 
-community focused on the study of autonomous and communicative agents. How can 
-I assist you or your projects today?
+Hello CAMEL AI community!
+
+It's great to connect with a group of innovators and researchers passionate 
+about autonomous and communicative agents. Your work in this field has the 
+potential to revolutionize numerous industries and improve human lives.
+
+What exciting projects are you currently working on? Are there any specific 
+challenges or areas where I can offer assistance or provide information? I'm 
+here to help and support your endeavors!
 ===============================================================================
-"""
+'''

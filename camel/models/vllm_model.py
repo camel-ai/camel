@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import os
 from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
@@ -42,20 +43,21 @@ class VLLMModel:
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into openai.ChatCompletion.create().
             url (Optional[str]): The url to the model service. (default:
-                :obj:`None`)
+                :obj:`"http://localhost:8000/v1"`)
             api_key (Optional[str]): The API key for authenticating with the
                 model service.
             token_counter (Optional[BaseTokenCounter]): Token counter to use
                 for the model. If not provided, `OpenAITokenCounter(ModelType.
-                GPT_3_5_TURBO)` will be used.
+                GPT_4O_MINI)` will be used.
         """
         self.model_type = model_type
         self.model_config_dict = model_config_dict
+        self._url = url or os.environ.get("VLLM_BASE_URL")
         # Use OpenAI cilent as interface call vLLM
         self._client = OpenAI(
             timeout=60,
             max_retries=3,
-            base_url=url,
+            base_url=self._url or "http://localhost:8000/v1",
             api_key=api_key,
         )
         self._token_counter = token_counter
@@ -70,7 +72,7 @@ class VLLMModel:
                 tokenization style.
         """
         if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(ModelType.GPT_3_5_TURBO)
+            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
         return self._token_counter
 
     def check_model_config(self):
@@ -113,7 +115,7 @@ class VLLMModel:
 
     @property
     def token_limit(self) -> int:
-        """Returns the maximum token limit for the given model.
+        r"""Returns the maximum token limit for the given model.
 
         Returns:
             int: The maximum token limit for the given model.

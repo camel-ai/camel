@@ -11,13 +11,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import re
-
 import pytest
 
-from camel.configs import OllamaConfig
-from camel.models import OllamaModel
-from camel.types import ModelType
+from camel.configs import TogetherAIConfig
+from camel.models import TogetherAIModel
 from camel.utils import OpenAITokenCounter
 
 
@@ -25,34 +22,11 @@ from camel.utils import OpenAITokenCounter
 @pytest.mark.parametrize(
     "model_type",
     [
-        ModelType.GPT_3_5_TURBO,
-        ModelType.GPT_4,
-        ModelType.GPT_4_TURBO,
-        ModelType.GPT_4O,
+        "meta-llama/Llama-3-8b-chat-hf",
     ],
 )
-def test_ollama_model(model_type: ModelType):
-    model_config_dict = OllamaConfig().as_dict()
-    model = OllamaModel(model_type.value, model_config_dict)
-    assert model.model_type == model_type.value
+def test_litellm_model(model_type: str):
+    model_config_dict = TogetherAIConfig().as_dict()
+    model = TogetherAIModel(model_type, model_config_dict)
     assert model.model_config_dict == model_config_dict
     assert isinstance(model.token_counter, OpenAITokenCounter)
-    assert isinstance(model.model_type, str)
-    assert isinstance(model.token_limit, int)
-
-
-@pytest.mark.model_backend
-def test_ollama_model_unexpected_argument():
-    model_type = ModelType.GPT_4
-    model_config_dict = {"model_path": "vicuna-7b-v1.5"}
-
-    with pytest.raises(
-        ValueError,
-        match=re.escape(
-            (
-                "Unexpected argument `model_path` is "
-                "input into Ollama model backend."
-            )
-        ),
-    ):
-        _ = OllamaModel(model_type, model_config_dict)
