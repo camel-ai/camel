@@ -17,9 +17,9 @@ from typing import Callable
 
 
 class NodeConf:
-    def __init__(self, role: str, system: str, description: str):
+    def __init__(self, role: str, sysmsg: str, description: str):
         self.role = role
-        self.system = system
+        self.sysmsg = sysmsg
         self.description = description
 
 
@@ -42,14 +42,14 @@ def parse_create_node_resp(response: str) -> NodeConf:
 
     if (
         "role" not in workforce_info
-        or "system" not in workforce_info
+        or "sysmsg" not in workforce_info
         or "description" not in workforce_info
     ):
         raise ValueError("Missing required fields in workforce configuration.")
 
     return NodeConf(
         role=workforce_info["role"] or "",
-        system=workforce_info["system"] or "",
+        sysmsg=workforce_info["sysmsg"] or "",
         description=workforce_info["description"] or "",
     )
 

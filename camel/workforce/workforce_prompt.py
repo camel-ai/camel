@@ -26,14 +26,14 @@ Following is the information of the existing workforces. The format is <ID>: <de
 
 You must return the following information:
 1. The role of the agent working in the workforce, e.g. "programmer", "researcher", "product owner". This should be enclosed within the <role></role> tags.
-2. The system message that will be sent to the agent, enclosed within the <system></system> tags.
+2. The system message that will be sent to the agent, enclosed within the <sysmsg></sysmsg> tags.
 3. The description of the workforce, enclosed within the <description></description> tags.
 
 Also, all of the info should be enclosed within a <workforce> tag. For example:
 
 <workforce>
 <role>programmer</role>
-<system>You are a python programmer.</system>
+<sysmsg>You are a python programmer.</sysmsg>
 <description>a python programmer.</description>
 </workforce>
 

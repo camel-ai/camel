@@ -20,8 +20,12 @@ from typing import Deque, Dict, List, Optional
 from colorama import Fore
 
 from camel.agents import ChatAgent
+from camel.configs import ChatGPTConfig
 from camel.messages.base import BaseMessage
+from camel.models import ModelFactory
 from camel.tasks.task import Task, TaskState
+from camel.toolkits import SEARCH_FUNCS, WEATHER_FUNCS, MAP_FUNCS
+from camel.types import ModelPlatformType, ModelType
 from camel.workforce.base import BaseNode
 from camel.workforce.single_agent_node import SingleAgentNode
 from camel.workforce.task_channel import TaskChannel
@@ -56,10 +60,12 @@ class ManagerNode(BaseNode):
         children: List[BaseNode],
         coordinator_agent_kwargs: Optional[Dict] = None,
         task_agent_kwargs: Optional[Dict] = None,
+        new_worker_agent_kwargs: Optional[Dict] = None,
     ) -> None:
         super().__init__(description)
         self._child_listening_tasks: Deque[asyncio.Task] = deque()
         self._children = children
+        self.new_worker_agent_kwargs = new_worker_agent_kwargs
 
         coord_agent_sysmsg = BaseMessage.make_assistant_message(
             role_name="Workforce Manager",
@@ -154,17 +160,14 @@ class ManagerNode(BaseNode):
         response = self.coordinator_agent.step(req)
         new_node_conf = parse_create_node_resp(response.msg.content)
 
-        worker_sysmsg = BaseMessage.make_assistant_message(
-            role_name=new_node_conf.role,
-            content=new_node_conf.system,
+        new_agent = self._create_new_agent(
+            new_node_conf.role,
+            new_node_conf.sysmsg,
         )
-
-        # TODO: add a default selection of tools for the worker
-        worker = ChatAgent(worker_sysmsg)
 
         new_node = SingleAgentNode(
             description=new_node_conf.description,
-            worker=worker,
+            worker=new_agent,
         )
         new_node.set_channel(self._channel)
 
@@ -178,6 +181,35 @@ class ManagerNode(BaseNode):
             asyncio.create_task(new_node.start())
         )
         return new_node
+
+    def _create_new_agent(self, role: str, sysmsg: str) -> ChatAgent:
+        worker_sysmsg = BaseMessage.make_assistant_message(
+            role_name=role,
+            content=sysmsg,
+        )
+
+        if self.new_worker_agent_kwargs is not None:
+            return ChatAgent(worker_sysmsg, **self.new_worker_agent_kwargs)
+
+        # default tools for a new agent
+        function_list = [
+            *SEARCH_FUNCS,
+            *WEATHER_FUNCS,
+            *MAP_FUNCS,
+        ]
+
+        model_config_dict = ChatGPTConfig(
+            tools=function_list,
+            temperature=0.0,
+        ).as_dict()
+
+        model = ModelFactory.create(
+            model_platform=ModelPlatformType.OPENAI,
+            model_type=ModelType.GPT_3_5_TURBO,
+            model_config_dict=model_config_dict,
+        )
+
+        return ChatAgent(worker_sysmsg, model=model, tools=function_list)
 
     async def _get_returned_task(self) -> Task:
         r"""Get the task that's published by this node and just get returned
