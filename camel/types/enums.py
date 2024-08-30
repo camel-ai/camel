@@ -415,20 +415,6 @@ class OpenAIVisionDetailType(Enum):
     HIGH = "high"
 
 
-class MultiModalModelType(Enum, metaclass=OpenAIImageTypeMeta):
-    r"""Image types supported by the multimodal model."""
-
-    # Align with OpenAI's specifications
-    # https://platform.openai.com/docs/guides/vision
-    PNG = "png"
-    JPEG = "jpeg"
-    JPG = "jpg"
-    WEBP = "webp"
-    GIF = "gif"
-
-    MP4 = "mp4"
-
-
 class StorageType(Enum):
     MILVUS = "milvus"
     QDRANT = "qdrant"
