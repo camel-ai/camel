@@ -26,7 +26,7 @@ from camel.models import BaseModelBackend
 from camel.types import ChatCompletion, ModelType
 from camel.utils import (
     BaseTokenCounter,
-    OpenAITokenCounter,
+    MistralTokenCounter,
     api_keys_required,
 )
 
@@ -183,17 +183,13 @@ class MistralModel(BaseModelBackend):
     def token_counter(self) -> BaseTokenCounter:
         r"""Initialize the token counter for the model backend.
 
-        # NOTE: Temporarily using `OpenAITokenCounter` due to a current issue
-        # with installing `mistral-common` alongside `mistralai`.
-        # Refer to: https://github.com/mistralai/mistral-common/issues/37
-
         Returns:
             BaseTokenCounter: The token counter following the model's
                 tokenization style.
         """
         if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(
-                model=ModelType.GPT_4O_MINI
+            self._token_counter = MistralTokenCounter(
+                model_type=self.model_type
             )
         return self._token_counter
 
