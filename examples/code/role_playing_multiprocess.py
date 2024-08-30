@@ -147,7 +147,6 @@ def generate_data(
             )
             break
 
-        user_agent.record_message(user_response.msg)
         print(f"User:\n{user_response.msg.content}\n")
 
         assistant_response = assistant_agent.step(user_response.msg)
@@ -160,7 +159,6 @@ def generate_data(
             )
             break
 
-        assistant_agent.record_message(assistant_response.msg)
         print(f"Assistant:\n{assistant_response.msg.content}\n")
 
         # Condition 3: Break if user does not give instruction
