@@ -36,8 +36,6 @@ When using Role-Playing framework in CAMEL, predefined prompts are used to creat
 
     *This ensures that the assistant keeps the conversation going by requesting a new instruction to solve.*
 
-## 2.2 BabyAGI-Playing
-Babyagi is framework from "Task-driven Autonomous Agent"
 
 ### Role-Playing Attributes
 
@@ -63,74 +61,12 @@ Babyagi is framework from "Task-driven Autonomous Agent"
 | extend_task_specify_meta_dict | Dict | A dict to extend the task specify meta dict with. |
 | output_language | str | The language to be output by the agents. |
 
-### Init_chat Function
-Initializes the chat by resetting both of the assistant and user agents. Returns an initial message for the role-playing session.  
-```python
-def init_chat(self, init_msg_content: Optional[str] = None) -> BaseMessage:
-        self.assistant_agent.reset()
-        self.user_agent.reset()
-        default_init_msg_content = (
-            "Now start to give me instructions one by one. "
-            "Only reply with Instruction and Input."
-        )
-        if init_msg_content is None:
-            init_msg_content = default_init_msg_content
-        # Initialize a message sent by the assistant
-        init_msg = BaseMessage.make_assistant_message(
-            role_name=self.assistant_sys_msg.role_name,
-            content=init_msg_content,
-        )
-
-        return init_msg
-```
-
-### Step Function
-Advances the conversation by taking a message from the assistant, processing it using the user agent, and then processing the resulting message using the assistant agent. 
-
-Returns a tuple containing the resulting assistant message, whether the assistant agent terminated the conversation, and any additional assistant information, as well as
-a tuple containing the resulting user message, whether the user agent terminated the conversation, and any additional user information.
-```python
-def step(
-        self,
-        assistant_msg: BaseMessage,
-    ) -> Tuple[ChatAgentResponse, ChatAgentResponse]:
-        user_response = self.user_agent.step(assistant_msg)
-        if user_response.terminated or user_response.msgs is None:
-            return (
-                ChatAgentResponse([], False, {}),
-                ChatAgentResponse(
-                    [], user_response.terminated, user_response.info
-                ),
-            )
-        user_msg = self._reduce_message_options(user_response.msgs)
-        self.user_agent.record_message(user_msg)
-
-        assistant_response = self.assistant_agent.step(user_msg)
-        if assistant_response.terminated or assistant_response.msgs is None:
-            return (
-                ChatAgentResponse(
-                    [], assistant_response.terminated, assistant_response.info
-                ),
-                ChatAgentResponse([user_msg], False, user_response.info),
-            )
-        assistant_msg = self._reduce_message_options(assistant_response.msgs)
-        self.assistant_agent.record_message(assistant_msg)
-
-        return (
-            ChatAgentResponse(
-                [assistant_msg],
-                assistant_response.terminated,
-                assistant_response.info,
-            ),
-            ChatAgentResponse(
-                [user_msg], user_response.terminated, user_response.info
-            ),
-        )
-```
+## 2.2 BabyAGI-Playing
+Babyagi is framework from "Task-driven Autonomous Agent" <https://github.com/yoheinakajima/babyagi>`
 
 ## 3. Get Started
 
-### 3.1. Using Role-playing
+### 3.1. Using Role-Playing
 
 ```python
 from colorama import Fore
@@ -212,7 +148,3 @@ def main(model=None, chat_turn_limit=50) -> None:
 if __name__ == "__main__":
     main()
 ```
-
-### Future Goals
-
-In the future, we hope to expand this module to realize complex social behaviors among multi-agents, such as interaction, trust building, competition and cooperation, and conflict resolution.
