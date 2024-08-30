@@ -26,14 +26,8 @@ from camel.types import ModelPlatformType, ModelType
 
 @pytest.fixture
 def external_tool_agent():
-    internal_tools = [
-        *WEATHER_FUNCS,
-    ]
-
-    external_tools = [
-        *MATH_FUNCS,
-    ]
-
+    internal_tools = [*WEATHER_FUNCS]
+    external_tools = [*MATH_FUNCS]
     tool_list = internal_tools + external_tools
 
     model_config_dict = ChatGPTConfig(
@@ -93,6 +87,7 @@ def test_internal_tool_with_structured_output(external_tool_agent):
         ), f"Key {key} not found in response content"
 
 
+@pytest.mark.model_backend
 def test_external_tool(external_tool_agent):
     usr_msg = BaseMessage.make_user_message(
         role_name="User",
@@ -106,6 +101,7 @@ def test_external_tool(external_tool_agent):
     assert tool_call_request.function.name == "add"
 
 
+@pytest.mark.model_backend
 def test_mixed_tool(external_tool_agent):
     usr_msg = BaseMessage.make_user_message(
         role_name="User",

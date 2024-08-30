@@ -16,33 +16,14 @@ from camel.agents import ExternalToolAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
-from camel.toolkits import WEATHER_FUNCS, OpenAIFunction
+from camel.toolkits import MATH_FUNCS, WEATHER_FUNCS
 from camel.types import ModelPlatformType, ModelType
-
-
-def add(a: int, b: int) -> int:
-    r"""Add two numbers.
-
-    Args:
-        a: the first number.
-        b: the second number.
-
-    Returns:
-        The sum of two numbers.
-    """
-    return a + b
 
 
 def main():
     # Set the tools for the external_tool_agent
-    external_tools = [
-        OpenAIFunction(add),
-    ]
-
-    internal_tools = [
-        *WEATHER_FUNCS,
-    ]
-
+    internal_tools = [*WEATHER_FUNCS]
+    external_tools = [*MATH_FUNCS]
     tool_list = internal_tools + external_tools
 
     model_config_dict = ChatGPTConfig(
