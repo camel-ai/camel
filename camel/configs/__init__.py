@@ -22,6 +22,7 @@ from .openai_config import OPENAI_API_PARAMS, ChatGPTConfig, OpenSourceConfig
 from .togetherai_config import TOGETHERAI_API_PARAMS, TogetherAIConfig
 from .vllm_config import VLLM_API_PARAMS, VLLMConfig
 from .zhipuai_config import ZHIPUAI_API_PARAMS, ZhipuAIConfig
+from .internlm_config import INTERNLM_API_PARAMS, InternLMConfig
 
 __all__ = [
     'BaseConfig',
@@ -46,4 +47,6 @@ __all__ = [
     'MISTRAL_API_PARAMS',
     'TogetherAIConfig',
     'TOGETHERAI_API_PARAMS',
+    'InternLMConfig',
+    'INTERNLM_API_PARAMS',
 ]

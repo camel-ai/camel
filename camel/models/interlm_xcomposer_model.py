@@ -16,8 +16,9 @@ from typing import Any, Dict, List, Optional, Union
 
 from openai import Stream
 
+from camel.configs import INTERNLM_API_PARAMS
+
 from camel.messages import OpenAIMessage
-from camel.models import BaseModelBackend
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -32,23 +33,14 @@ from camel.utils import (
 )
 
 
-# The model provides different operation modes/functionalities.
-# Refer to https://github.com/InternLM/InternLM-XComposer
-class OperationMode(Enum):
-    CHAT = "chat"  # the normal mode for the model
-    WRITE_WEBPAGE = "write_webpage"
-    RESUME_TO_WEBPAGE = "resume_2_webpage"
-    WRITE_ARTICLE = "write_article"
-
-
-class InternLMXComposerModel(BaseModelBackend):
+class InternLMXComposerModel:
     r"""Class for interace with OpenAI-API-compatible servers running
     open-source InternLM-XComposer models.
     """
 
     def __init__(
         self,
-        model_type: ModelType,
+        model_type: str,
         model_config_dict: Dict[str, Any],
     ) -> None:
         r"""Constructor for model backends of Open-source models.
@@ -58,48 +50,31 @@ class InternLMXComposerModel(BaseModelBackend):
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into :obj:`openai.ChatCompletion.create()`.
         """
-        super().__init__(
-            model_type,
-            model_config_dict,
-            api_key=None,
-            url=None,
-            token_counter=None,
-        )
+        self.model_config_dict = model_config_dict
 
-        from pathlib import Path
+        if self.model_config_dict["operation_mode"] not in {"chat", "write_webpage", "resume_2_webpage", "write_article"}:
+            raise ValueError("Please check the operation_mode value in model_config_dict!")
+            
+        self.model_type = model_type
 
-        self.multimodal_src_directory: Path = Path(
-            model_config_dict.get("multimodal_src_path", "./examples/src")
-        )
-
-        # `model_path` is the path to the open-source model
-        model_path: Optional[str] = self.model_config_dict.get(
-            "model_path", None
-        )
-        if not model_path:
-            raise ValueError("Path to open-source model is not provided.")
-        self.model_path: str = model_path
-
-        self.model_name: str = self.model_path.split('/')[-1]
-
-        try:
-            # `operation_mode` is the operation mode of the open-source model
-            # Refer to https://github.com/InternLM/InternLM-XComposer
-            self.operation_mode = model_config_dict.get(
-                "operation_mode", OperationMode.CHAT
-            )
-        except ValueError:
-            valid_modes = [mode.value for mode in OperationMode]
-            raise ValueError(
-                "Invalid operation mode for open-source model "
-                f"backend. Choose from {valid_modes}"
-            )
+        # try:
+        #     # `operation_mode` is the operation mode of the open-source model
+        #     # Refer to https://github.com/InternLM/InternLM-XComposer
+        #     self.operation_mode = model_config_dict.get(
+        #         "operation_mode", OperationMode.CHAT
+        #     )
+        # except ValueError:
+        #     valid_modes = [mode.value for mode in OperationMode]
+        #     raise ValueError(
+        #         "Invalid operation mode for open-source model "
+        #         f"backend. Choose from {valid_modes}"
+        #     )
 
         import torch
 
         model_kwargs = self.model_config_dict.get("model_kwargs", {})
-        model_kwargs["torch_dtype"] = torch.bfloat16
-        model_kwargs["trust_remote_code"] = True
+        # model_kwargs["torch_dtype"] = torch.bfloat16
+        # model_kwargs["trust_remote_code"] = True
 
         from transformers import AutoModel, AutoTokenizer
 
@@ -109,16 +84,17 @@ class InternLMXComposerModel(BaseModelBackend):
                 **model_kwargs,
             )
             .to(
-                model_kwargs.get("device") or "cuda"
-                if torch.cuda.is_available()
-                else "cpu"
+                # model_kwargs.get("device") or 
+                "cuda"
+                # if torch.cuda.is_available()
+                # else "cpu"
             )  # move the model to the specified device (GPU or CPU)
             .eval()  # set the model to evaluation mode
             .half()  # convert the model parameters to half-precision floating point (FP16).  # noqa: E501
         )
 
         tokenizer_kwargs = self.model_config_dict.get("tokenizer_kwargs", {})
-        tokenizer_kwargs["trust_remote_code"] = True
+        # tokenizer_kwargs["trust_remote_code"] = True
 
         self._tokenizer = AutoTokenizer.from_pretrained(
             self.model_name, **tokenizer_kwargs
@@ -172,10 +148,10 @@ class InternLMXComposerModel(BaseModelBackend):
             n_video = 0  # number of videos
             image = []  # list of images local path
 
-            # Check and clean the images folder
-            if self.multimodal_src_directory.exists():
-                shutil.rmtree(self.multimodal_src_directory)
-            self.multimodal_src_directory.mkdir(parents=True, exist_ok=True)
+            # # Check and clean the images folder
+            # if self.multimodal_src_directory.exists():
+            #     shutil.rmtree(self.multimodal_src_directory)
+            # self.multimodal_src_directory.mkdir(parents=True, exist_ok=True)
 
             # Get `message_content`
             for item in last_message["content"]:
@@ -190,12 +166,12 @@ class InternLMXComposerModel(BaseModelBackend):
                     # Convert the base64 string into images
                     # and save them as the local files.
                     image_data = base64.b64decode(base64_string)
-                    image_file_path = (
-                        self.multimodal_src_directory / f"image_{n_image}.jpg"
-                    )
+                    # image_file_path = (
+                    #     self.multimodal_src_directory / f"image_{n_image}.jpg"
+                    # )
 
-                    with open(image_file_path, 'wb') as file:
-                        file.write(image_data)
+                    # with open(image_file_path, 'wb') as file:
+                    #     file.write(image_data)
                     image.append(str(image_file_path))
                 elif item["type"] == "video_url":
                     # Get `video` list
@@ -206,12 +182,12 @@ class InternLMXComposerModel(BaseModelBackend):
                     # Convert the base64 string into video
                     # and save them as the local files.
                     video_data = base64.b64decode(base64_string)
-                    video_file_path = (
-                        self.multimodal_src_directory / f"video_{n_video}.mp4"
-                    )
+                    # video_file_path = (
+                    #     self.multimodal_src_directory / f"video_{n_video}.mp4"
+                    # )
 
-                    with open(video_file_path, 'wb') as file:
-                        file.write(video_data)
+                    # with open(video_file_path, 'wb') as file:
+                    #     file.write(video_data)
                     image.append(str(video_file_path))
 
         else:
@@ -262,7 +238,7 @@ class InternLMXComposerModel(BaseModelBackend):
                 )
 
         # Adapt to OpenAI's response format.
-        response = ChatCompletion(
+        response = ChatCompletion.construct(
             id="interlm-xcomposer-output-id",
             choices=[
                 Choice(
@@ -291,28 +267,22 @@ class InternLMXComposerModel(BaseModelBackend):
 
         return response
 
-    def check_model_config(self):
-        r"""Check whether the model configuration is valid for open-source
-        model backends.
+    # def check_model_config(self):
+    #     r"""Check whether the model configuration is valid for open-source
+    #     model backends.
 
-        Raises:
-            ValueError: If the model configuration dictionary contains any
-                unexpected arguments to OpenAI API, or it does not contain
-                :obj:`model_path`.
-        """
-        if "model_path" not in self.model_config_dict:
-            raise ValueError(
-                "Invalid configuration for open-source model backend with "
-                ":obj:`model_path` missing."
-            )
-
-        if "operation_mode" in self.model_config_dict:
-            orperation_mode = self.model_config_dict["operation_mode"]
-            if orperation_mode not in OperationMode:
-                raise ValueError(
-                    "Invalid configuration for open-source model backend with "
-                    ":obj:`operation_mode` not in OperationMode."
-                )
+    #     Raises:
+    #         ValueError: If the model configuration dictionary contains any
+    #             unexpected arguments to OpenAI API, or it does not contain
+    #             :obj:`model_path`.
+    #     """
+    #     if self.model_type == "internlm-xcomposer2d5-7b":
+    #         for param in self.model_config_dict:
+    #             if param not in INTERNLM_API_PARAMS:
+    #                 raise ValueError(
+    #                     f"Unexpected argument `{param}` is "
+    #                     "input into ImtermLM model backend."
+    #                 )
 
     @property
     def stream(self) -> bool:
@@ -323,3 +293,19 @@ class InternLMXComposerModel(BaseModelBackend):
             bool: Whether the model is in stream mode.
         """
         return self.model_config_dict.get('stream', False)
+
+    @property
+    def token_limit(self) -> int:
+        """Returns the maximum token limit for the given model.
+
+        Returns:
+            int: The maximum token limit for the given model.
+        """
+        max_tokens = self.model_config_dict.get("max_tokens")
+        if isinstance(max_tokens, int):
+            return max_tokens
+        print(
+            "Must set `max_tokens` as an integer in `model_config_dict` when"
+            " setting up the model. Using 4096 as default value."
+        )
+        return 4096
