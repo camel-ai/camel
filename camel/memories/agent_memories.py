@@ -12,13 +12,15 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from camel.memories.base import AgentMemory, BaseContextCreator
 from camel.memories.blocks import ChatHistoryBlock, VectorDBBlock
 from camel.memories.records import ContextRecord, MemoryRecord
+from camel.messages import OpenAIMessage
 from camel.storages import BaseKeyValueStorage, BaseVectorStorage
-from camel.types import OpenAIBackendRole
+from camel.storages.database_storages import DatabaseFactory
+from camel.types import ModelType, OpenAIBackendRole
 
 
 class ChatHistoryMemory(AgentMemory):
@@ -39,6 +41,8 @@ class ChatHistoryMemory(AgentMemory):
         context_creator: BaseContextCreator,
         storage: Optional[BaseKeyValueStorage] = None,
         window_size: Optional[int] = None,
+        db_connect_str: Optional[str] = None,
+        db_autosave: Optional[bool] = True,
     ) -> None:
         if window_size is not None and not isinstance(window_size, int):
             raise TypeError("`window_size` must be an integer or None.")
@@ -47,18 +51,64 @@ class ChatHistoryMemory(AgentMemory):
         self._context_creator = context_creator
         self._window_size = window_size
         self._chat_history_block = ChatHistoryBlock(storage=storage)
+        self.db_manager = None
+        if db_connect_str and len(db_connect_str) > 0:
+            self.db_manager = DatabaseFactory.get_database_manager(
+                db_connect_str
+            )
+        self.db_autosave = db_autosave
 
     def retrieve(self) -> List[ContextRecord]:
         return self._chat_history_block.retrieve(self._window_size)
 
     def write_records(self, records: List[MemoryRecord]) -> None:
         self._chat_history_block.write_records(records)
+        if (
+            self.db_manager is not None
+            and self.db_autosave
+            and len(records) > 0
+        ):
+            for record in records:
+                is_system_flag = False
+                if record.role_at_backend == OpenAIBackendRole.SYSTEM:
+                    is_system_flag = True
+
+                base_message = record.message
+                self.db_manager.save_message_infos(
+                    base_message, is_system_flag
+                )
 
     def get_context_creator(self) -> BaseContextCreator:
         return self._context_creator
 
     def clear(self) -> None:
         self._chat_history_block.clear()
+
+    def is_save_db(self):
+        if self.db_manager is not None:
+            return True
+        else:
+            return False
+
+    def save_memory_infos_into_db(
+        self,
+        openai_messages: List[OpenAIMessage],
+        role_type: str,
+        role_name: str,
+    ) -> None:
+        if self.db_manager is not None:
+            self.db_manager.save_memory_infos(
+                openai_messages, role_type, role_name
+            )
+
+    def save_agent_infos_into_db(
+        self, model_config_dict: Dict, model_type: ModelType
+    ) -> None:
+        if self.db_manager is not None:
+            model_type_value = model_type.value
+            self.db_manager.save_agent_infos(
+                model_config_dict, model_type_value
+            )
 
 
 class VectorDBMemory(AgentMemory):

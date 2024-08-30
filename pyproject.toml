@@ -102,6 +102,10 @@ neo4j = { version = "^5.18.0", optional = true }
 # key-value-storages
 redis = { version = "^5.0.6", optional = true }
 
+# database-storages
+sqlalchemy = { version = "^2.0.32", optional = true }
+psycopg2-binary = { version = "^2.9.9", optional = true }
+
 # retrievers
 rank-bm25 = { version = "^0.2.2", optional = true }
 cohere = { version = "^4.56", optional = true }
@@ -176,6 +180,11 @@ kv-stroages = [
     "redis",
 ]
 
+db-stroages = [
+    "sqlalchemy",
+    "psycopg2",
+]
+
 object-storages = [
     "boto3",
     "azure-storage-blob",
@@ -240,6 +249,9 @@ all = [
     "google-generativeai",
     # kv-storages
     "redis",
+    # db-storages
+    "sqlalchemy",
+    "psycopg2",
     # object-storages
     "boto3",
     "azure-storage-blob",

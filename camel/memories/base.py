@@ -13,10 +13,11 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
 from abc import ABC, abstractmethod
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 from camel.memories.records import ContextRecord, MemoryRecord
 from camel.messages import OpenAIMessage
+from camel.types.enums import ModelType
 from camel.utils import BaseTokenCounter
 
 
@@ -119,6 +120,25 @@ class AgentMemory(MemoryBlock, ABC):
         Returns:
             List[ContextRecord]: A record list for creating model context.
         """
+        pass
+
+    @abstractmethod
+    def save_agent_infos_into_db(
+        self, model_config_dict: Dict, model_type: ModelType
+    ) -> None:
+        pass
+
+    @abstractmethod
+    def save_memory_infos_into_db(
+        self,
+        openai_messages: List[OpenAIMessage],
+        role_type: str,
+        role_name: str,
+    ) -> None:
+        pass
+
+    @abstractmethod
+    def is_save_db(self):
         pass
 
     @abstractmethod
