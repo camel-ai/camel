@@ -97,3 +97,19 @@ Interpreters with Rust: On Garbage Collection', 'points': 148, 'by':
 'amalinovic', 'commentsURL': 'item?id=41108662'}]}
 ===============================================================================
 '''
+
+map_result = firecrawl.map_site(url="https://www.camel-ai.org")
+
+print(map_result)
+"""
+===============================================================================
+['https://www.camel-ai.org', 'https://www.camel-ai.org/blog', 'https://www.
+camel-ai.org/checkout', 'https://www.camel-ai.org/contact', 'https://www.camel-
+ai.org/features', 'https://www.camel-ai.org/order-confirmation', 'https://www.
+camel-ai.org/paypal-checkout', 'https://www.camel-ai.org/about', 'https://www.
+camel-ai.org/integration', 'https://www.camel-ai.org/search', 'https://www.
+camel-ai.org/post/crab', 'https://www.camel-ai.org/post/tool-usage', 'https://
+www.camel-ai.org/post/releasenotes-sprint4', 'https://www.camel-ai.org/post/
+releasenotes-sprint56']
+===============================================================================
+"""
