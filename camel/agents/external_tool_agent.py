@@ -69,7 +69,6 @@ class ExternalToolAgent(ChatAgent):
         external_tools: Optional[List[OpenAIFunction]] = None,
         internal_tools: Optional[List[OpenAIFunction]] = None,
         model: Optional[BaseModelBackend] = None,
-        api_key: Optional[str] = None,
         memory: Optional[AgentMemory] = None,
         message_window_size: Optional[int] = None,
         token_limit: Optional[int] = None,
@@ -82,7 +81,6 @@ class ExternalToolAgent(ChatAgent):
         super().__init__(
             system_message,
             model,
-            api_key,
             memory,
             message_window_size,
             token_limit,
@@ -153,11 +151,8 @@ class ExternalToolAgent(ChatAgent):
                 break
 
             # if the model calls an external tool, directly return the request
-            tool_call_requests = response.choices[0].message.tool_calls
-            called_tool_names = {
-                tool_call.function.name for tool_call in tool_call_requests
-            }
-            if set(called_tool_names) & self.external_tool_names:
+            tool_call_request = response.choices[0].message.tool_calls[0]
+            if tool_call_request.function.name in self.external_tool_names:
                 # if model calls an external tool, directly return the request
                 info = self._step_get_info(
                     output_messages,
@@ -167,7 +162,7 @@ class ExternalToolAgent(ChatAgent):
                     tool_calls,
                     num_tokens,
                 )
-                info["tool_call_requests"] = tool_call_requests
+                info["tool_call_request"] = tool_call_request
                 return ChatAgentResponse(
                     msgs=output_messages, terminated=self.terminated, info=info
                 )
