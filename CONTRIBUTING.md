@@ -73,6 +73,7 @@ This part outlines the guidelines and best practices for conducting code reviews
   - Readability: Is the code easy to read and understand? Is it well-commented where necessary?
   - Maintainability: Is the code structured in a way that makes future changes easy?
   - Style: Does the code follow the project’s style guidelines?
+  Currently we use Ruff for format check and take [Google Python Style Guide]("https://google.github.io/styleguide/pyguide.html") as reference.
   - Documentation: Are public methods, classes, and any complex logic well-documented?
 - Design
   - Consistency: Does the code follow established design patterns and project architecture?
