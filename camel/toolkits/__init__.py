@@ -29,6 +29,7 @@ from .weather_toolkit import WEATHER_FUNCS, WeatherToolkit
 from .slack_toolkit import SLACK_FUNCS, SlackToolkit
 from .dalle_toolkit import DALLE_FUNCS, DalleToolkit
 from .linkedin_toolkit import LINKEDIN_FUNCS, LinkedInToolkit
+from .video_toolkit import VIDEO_DOWNLOAD_FUNCS, VideoDownloaderToolkit
 
 from .base import BaseToolkit
 from .code_execution import CodeExecutionToolkit
@@ -49,6 +50,7 @@ __all__ = [
     'SLACK_FUNCS',
     'DALLE_FUNCS',
     'LINKEDIN_FUNCS',
+    'VIDEO_DOWNLOAD_FUNCS',
     'BaseToolkit',
     'GithubToolkit',
     'MathToolkit',
@@ -62,4 +64,5 @@ __all__ = [
     'OpenAPIToolkit',
     'LinkedInToolkit',
     'CodeExecutionToolkit',
+    'VideoDownloaderToolkit',
 ]

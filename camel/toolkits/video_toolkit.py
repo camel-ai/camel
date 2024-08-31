@@ -12,8 +12,6 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-import shutil
-import tempfile
 import time
 from typing import List, Optional
 
@@ -78,28 +76,18 @@ class VideoDownloaderToolkit:
 
     def get_cookies_path(self) -> str:
         """
-        Copy cookies.txt to a temporary location for use during the download.
+        Get the path to the cookies.txt file.
 
         Returns:
-            str: The path to the temporary cookies file.
+            str: The path to the cookies file.
         """
         project_root = os.getcwd()
-        original_cookies_path = os.path.join(project_root, "cookies.txt")
-        if not os.path.exists(original_cookies_path):
+        cookies_path = os.path.join(project_root, "cookies.txt")
+        if not os.path.exists(cookies_path):
             raise FileNotFoundError(
-                f"cookies.txt file not found at path {original_cookies_path}."
+                f"cookies.txt file not found at path {cookies_path}."
             )
-
-        temp_cookies_file = tempfile.NamedTemporaryFile(delete=False)
-        shutil.copy2(original_cookies_path, temp_cookies_file.name)
-        return temp_cookies_file.name
-
-    def cleanup(self) -> None:
-        """
-        Clean up temporary files after the download is complete.
-        """
-        if os.path.exists(self.cookies_path):
-            os.remove(self.cookies_path)
+        return cookies_path
 
     def download_video(
         self, video_url: Optional[str] = None, split_into_chunks: bool = False
@@ -127,7 +115,11 @@ class VideoDownloaderToolkit:
         try:
             if split_into_chunks and self.chunk_duration is not None:
                 video_length = self.get_video_length()
-
+                if video_length == 0:
+                    raise ValueError(
+                        """Unable to determine video duration. Please download 
+                            the full video."""
+                    )
                 chunk_index = 0
                 start_time = 0
 
@@ -147,17 +139,16 @@ class VideoDownloaderToolkit:
                     self.current_directory, 'full_video.%(ext)s'
                 )
                 ydl_opts = {
-                    'format': 'bestvideo+bestaudio',
+                    'format': 'bestvideo+bestaudio/best',
                     'outtmpl': video_template,
                     'cookiefile': self.cookies_path,
+                    'force_generic_extractor': True,
                 }
 
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     ydl.download([self.video_url])
         except yt_dlp.utils.DownloadError as e:
             print(f"Error downloading video: {e}")
-        finally:
-            self.cleanup()
 
     def _download_chunk(
         self, start_time: int, end_time: int, chunk_index: int
@@ -177,7 +168,7 @@ class VideoDownloaderToolkit:
             self.current_directory, f'video_chunk_{chunk_index}.%(ext)s'
         )
         ydl_opts = {
-            'format': 'bestvideo+bestaudio',
+            'format': 'bestvideo+bestaudio/best',
             'outtmpl': video_template,
             'postprocessor_args': [
                 '-ss',
@@ -186,6 +177,7 @@ class VideoDownloaderToolkit:
                 str(end_time),
             ],
             'cookiefile': self.cookies_path,
+            'force_generic_extractor': True,
         }
 
         try:
@@ -242,10 +234,10 @@ VIDEO_DOWNLOAD_FUNCS: List[OpenAIFunction] = (
 
 
 if __name__ == "__main__":
-    video_url = 'https://www.youtube.com/watch?v=MvBm0DKMuy8'
+    video_url = 'https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4'
     downloader = VideoDownloaderToolkit(video_url=video_url)
     downloader.download_video(split_into_chunks=False)
 
-    # 或者
+    # or
     # downloader = VideoDownloaderToolkit(video_url=video_url)
     # downloader.download_video()
