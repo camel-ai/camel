@@ -17,6 +17,7 @@ from typing import Any, Dict, Optional
 
 from pydantic import BaseModel
 
+from camel.utils import api_keys_required
 
 class Firecrawl:
     r"""Firecrawl allows you to turn entire websites into LLM-ready markdown.
@@ -30,6 +31,7 @@ class Firecrawl:
         https://docs.firecrawl.dev/introduction
     """
 
+    @api_keys_required("FIRECRAWL_API_KEY")
     def __init__(
         self,
         api_key: Optional[str] = None,
