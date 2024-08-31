@@ -92,10 +92,10 @@ poetry shell
 
 # Install the base CAMEL library
 # It takes about 90 seconds
-poetry install
+poetry install --no-cache
 
 # Install CAMEL with all dependencies
-poetry install -E all  # (Optional)
+poetry install -E all --no-cache # (Optional)
 
 # Exit the virtual environment
 exit
