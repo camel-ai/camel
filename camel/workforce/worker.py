@@ -24,7 +24,7 @@ from camel.workforce.task_channel import TaskChannel
 from camel.workforce.utils import check_if_running
 
 
-class WorkerNode(BaseNode, ABC):
+class Worker(BaseNode, ABC):
     r"""A worker node that works on tasks. It is the basic unit of task
     processing in the workforce system.
 

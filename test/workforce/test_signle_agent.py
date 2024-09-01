@@ -16,7 +16,7 @@ import pytest
 from camel.agents.chat_agent import ChatAgent
 from camel.messages.base import BaseMessage
 from camel.tasks.task import Task
-from camel.workforce.single_agent_node import SingleAgentNode
+from camel.workforce.single_agent_worker import SingleAgentWorker
 
 
 @pytest.mark.asyncio
@@ -26,7 +26,7 @@ async def test_get_dep_tasks_info():
         content="You are a python programmer.",
     )
     agent = ChatAgent(sys_msg)
-    test_workforce = SingleAgentNode('agent1', agent)
+    test_workforce = SingleAgentWorker('agent1', agent)
     human_task = Task(
         content='develop a python program of investing stock.',
         id='0',

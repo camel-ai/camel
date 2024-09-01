@@ -23,14 +23,14 @@ from camel.societies import RolePlaying
 from camel.tasks.task import Task, TaskState
 from camel.utils import print_text_animated
 from camel.workforce.utils import parse_task_result_resp
-from camel.workforce.worker_node import WorkerNode
+from camel.workforce.worker import Worker
 from camel.workforce.workforce_prompt import (
     ROLEPLAY_PROCESS_TASK_PROMPT,
     ROLEPLAY_SUMMERIZE_PROMPT,
 )
 
 
-class RolePlayingNode(WorkerNode):
+class RolePlayingWorker(Worker):
     r"""A worker node that contains a role playing.
 
     Args:

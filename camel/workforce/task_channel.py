@@ -83,7 +83,7 @@ class TaskChannel:
         self._task_dict: Dict[str, Packet] = {}
 
     async def get_returned_task_by_publisher(self, publisher_id: str) -> Task:
-        await self.print_channel()
+        await self.get_channel_debug_info()
         async with self._condition:
             while True:
                 for task_id in self._task_id_list:
@@ -167,7 +167,6 @@ class TaskChannel:
                 raise ValueError(f"Task {task_id} not found.")
             return self._task_dict[task_id].task
 
-    async def print_channel(self):
+    async def get_channel_debug_info(self):
         async with self._condition:
-            print(self._task_dict)
-            print(self._task_id_list)
+            return str(self._task_dict) + '\n' + str(self._task_id_list)

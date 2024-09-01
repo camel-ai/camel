@@ -13,17 +13,17 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from __future__ import annotations
 
-from typing import List
+from typing import Any, List
 
 from camel.agents.base import BaseAgent
 from camel.messages.base import BaseMessage
 from camel.tasks.task import Task, TaskState
 from camel.workforce.utils import parse_task_result_resp
-from camel.workforce.worker_node import WorkerNode
+from camel.workforce.worker import Worker
 from camel.workforce.workforce_prompt import PROCESS_TASK_PROMPT
 
 
-class SingleAgentNode(WorkerNode):
+class SingleAgentWorker(Worker):
     r"""A worker node that consists of a single agent.
 
     Args:
@@ -38,6 +38,11 @@ class SingleAgentNode(WorkerNode):
     ) -> None:
         super().__init__(description)
         self.worker = worker
+
+    def reset(self) -> Any:
+        r"""Resets the worker to its initial state."""
+        super().reset()
+        self.worker.reset()
 
     async def _process_task(
         self, task: Task, dependencies: List[Task]

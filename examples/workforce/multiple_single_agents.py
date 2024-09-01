@@ -19,9 +19,7 @@ from camel.models import ModelFactory
 from camel.tasks.task import Task
 from camel.toolkits import MAP_FUNCS, SEARCH_FUNCS, WEATHER_FUNCS
 from camel.types import ModelPlatformType, ModelType
-from camel.workforce.manager_node import ManagerNode
-from camel.workforce.single_agent_node import SingleAgentNode
-from camel.workforce.workforce import Workforce
+from camel.workforce import Workforce
 
 
 def main():
@@ -67,18 +65,16 @@ def main():
         )
     )
 
-    # wrap the single agent into the worker nodes
-    tour_guide_worker_node = SingleAgentNode(
-        description='tour guide',
-        worker=tour_guide_agent,
+    workforce = Workforce('A travel group')
+
+    workforce.add_single_agent_worker(
+        'tour guide', worker=tour_guide_agent
+    ).add_single_agent_worker(
+        'Traveler', worker=traveler_agent
+    ).add_single_agent_worker(
+        'Tools (e.g. weather tools) calling opertor', worker=tool_agent
     )
-    traveler_worker_node = SingleAgentNode(
-        description='Traveler', worker=traveler_agent
-    )
-    tool_worker_node = SingleAgentNode(
-        description='Tools(eg.weather tools) calling opertor',
-        worker=tool_agent,
-    )
+
     # specify the task to be solved
     human_task = Task(
         content=(
@@ -87,17 +83,7 @@ def main():
         ),
         id='0',
     )
-    # create a manager node to combine all worker nodes
-    root_node = ManagerNode(
-        description='A travel group',
-        children=[
-            tour_guide_worker_node,
-            traveler_worker_node,
-            tool_worker_node,
-        ],
-    )
 
-    workforce = Workforce(root_node)
     task = workforce.process_task(human_task)
 
     print('Final Result of Origin task:\n', task.result)

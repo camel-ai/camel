@@ -15,36 +15,40 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 from camel.workforce.task_channel import TaskChannel
+from camel.workforce.utils import check_if_running
 
 
 class BaseNode(ABC):
     def __init__(self, description: str) -> None:
         self.node_id = str(id(self))
         self.description = description
-        # every node is initialized to use its own channel
         self._channel: TaskChannel = TaskChannel()
         self._running = False
 
+    @check_if_running(False)
     def reset(self, *args: Any, **kwargs: Any) -> Any:
         """Resets the node to its initial state."""
-        raise NotImplementedError()
+        self._channel = TaskChannel()
+        self._running = False
 
     @abstractmethod
     def set_channel(self, channel: TaskChannel):
         r"""Sets the channel for the node."""
+        pass
 
     @abstractmethod
     async def _listen_to_channel(self):
         r"""Listens to the channel and handle tasks. This method should be
         the main loop for the node.
         """
+        pass
 
     @abstractmethod
     async def start(self):
         r"""Start the node."""
+        pass
 
     @abstractmethod
     def stop(self):
-        r"""
-        Stop the node.
-        """
+        r"""Stop the node."""
+        pass

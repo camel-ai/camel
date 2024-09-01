@@ -19,10 +19,7 @@ from camel.models import ModelFactory
 from camel.tasks.task import Task
 from camel.toolkits import MAP_FUNCS, SEARCH_FUNCS, WEATHER_FUNCS
 from camel.types import ModelPlatformType, ModelType
-from camel.workforce.manager_node import ManagerNode
-from camel.workforce.role_playing_node import RolePlayingNode
-from camel.workforce.single_agent_node import SingleAgentNode
-from camel.workforce.workforce import Workforce
+from camel.workforce import Workforce
 
 
 def main():
@@ -38,9 +35,6 @@ def main():
 
     guide_agent = ChatAgent(guide_sysmsg)
     planner_agent = ChatAgent(planner_sysmsg)
-
-    guide_worker_node = SingleAgentNode('tour guide', guide_agent)
-    planner_worker_node = SingleAgentNode('planner', planner_agent)
 
     function_list = [
         *SEARCH_FUNCS,
@@ -71,30 +65,23 @@ def main():
             model_config_dict=user_model_config.as_dict(),
         ),
     )
-    research_rp_worker_node = RolePlayingNode(
+
+    workforce = Workforce('a travel group')
+    workforce.add_role_playing_worker(
         'research Group',
         assistant_role_name,
         user_role_name,
         assistant_agent_kwargs,
         user_agent_kwargs,
         1,
-    )
+    ).add_single_agent_worker(
+        'tour guide', guide_agent
+    ).add_single_agent_worker('planner', planner_agent)
 
     human_task = Task(
         content="research history of Paris and plan a tour.",
         id='0',
     )
-
-    root_node = ManagerNode(
-        description='a travel group',
-        children=[
-            guide_worker_node,
-            planner_worker_node,
-            research_rp_worker_node,
-        ],
-    )
-
-    workforce = Workforce(root_node)
     task = workforce.process_task(human_task)
 
     print('Final result of original task:\n', task.result)
