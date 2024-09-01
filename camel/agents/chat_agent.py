@@ -399,6 +399,8 @@ class ChatAgent(BaseAgent):
             # Normal function calling
             self._step_tool_call_and_record(response, tool_calls)
 
+        # TODO: to be discussed, maybe we can directly put the structured
+        #  output processing outside the loop
         output_structured = Constants.FUNC_NAME_FOR_STRUCTURED_OUTPUT in [
             record.func_name for record in tool_calls
         ]
@@ -425,6 +427,8 @@ class ChatAgent(BaseAgent):
             num_tokens,
         )
 
+        # TODO: to be discussed, should we save also the structured output
+        #  function record in the tool_calls list?
         # if structured output is enabled, set structured result as content of
         # messages
         if output_schema is not None and self.model_type.is_openai:
@@ -436,7 +440,7 @@ class ChatAgent(BaseAgent):
         )
 
         # If the output result is single message, it will be
-        # automatically added to the memory.
+        # automatically added to the memory
         if len(chat_agent_response.msgs) == 1:
             self.record_message(chat_agent_response.msg)
         else:
@@ -484,9 +488,7 @@ class ChatAgent(BaseAgent):
                     e.args[1], tool_calls, "max_tokens_exceeded"
                 )
 
-            # TODO: to be discussed, given that the structured output function
-            #  is not async, can we add it directly in `step_async` function?
-            if output_schema is not None and len(self.func_dict) == 0:
+            if output_schema is not None and not self.func_dict:
                 self._replace_tools_for_structured_output(output_schema)
 
             (
@@ -617,8 +619,6 @@ class ChatAgent(BaseAgent):
         # Record the function call in the list of tool calls
         tool_calls.append(func_record)
 
-        # TODO: to be discussed, why don't we update the memory in the
-        #  `step_tool_call` function?
         # Update the messages
         self.update_memory(func_assistant_msg, OpenAIBackendRole.ASSISTANT)
         self.update_memory(func_result_msg, OpenAIBackendRole.FUNCTION)
