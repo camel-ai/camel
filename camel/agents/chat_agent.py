@@ -568,7 +568,7 @@ class ChatAgent(BaseAgent):
         )
 
         # If the output result is single message, it will be
-        # automatically added to the memory.
+        # automatically added to the memory
         if len(chat_agent_response.msgs) == 1:
             self.record_message(chat_agent_response.msg)
         else:
@@ -584,7 +584,7 @@ class ChatAgent(BaseAgent):
         self,
         response: ChatCompletion,
         tool_calls: List[FunctionCallingRecord],
-    ) -> tuple[
+    ) -> Tuple[
         List[FunctionCallingRecord],
         FunctionCallingMessage,
         FunctionCallingMessage,
@@ -600,7 +600,7 @@ class ChatAgent(BaseAgent):
                 function calls.
 
         Returns:
-            tuple: A tuple containing:
+            Tuple: A tuple containing:
                 - List[FunctionCallingRecord]: The updated list of function
                   call records.
                 - FunctionCallingMessage: The assistant's message regarding the
