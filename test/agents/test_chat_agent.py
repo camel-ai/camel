@@ -32,7 +32,7 @@ from camel.memories import MemoryRecord
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.terminators import ResponseWordsTerminator
-from camel.toolkits import MATH_FUNCS, OpenAIFunction
+from camel.toolkits import MATH_FUNCS, WEATHER_FUNCS, OpenAIFunction
 from camel.types import (
     ChatCompletion,
     ModelPlatformType,
@@ -153,6 +153,45 @@ def test_chat_agent_step_with_structure_response():
         assert (
             key in response_content_json
         ), f"Key {key} not found in response content"
+
+
+@pytest.mark.model_backend
+def test_chat_agent_step_with_external_tools():
+    internal_tools = [*WEATHER_FUNCS]
+    external_tools = [*MATH_FUNCS]
+    tool_list = internal_tools + external_tools
+
+    model_config_dict = ChatGPTConfig(
+        tools=tool_list,
+        temperature=0.0,
+    ).as_dict()
+
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_3_5_TURBO,
+        model_config_dict=model_config_dict,
+    )
+
+    external_tool_agent = ChatAgent(
+        system_message=BaseMessage.make_assistant_message(
+            role_name="Tools calling opertor",
+            content="You are a helpful assistant",
+        ),
+        model=model,
+        tools=internal_tools,
+        external_tools=external_tools,
+    )
+
+    usr_msg = BaseMessage.make_user_message(
+        role_name="User",
+        content="What's the sum of the temperature in Chicago and Paris?",
+    )
+
+    response = external_tool_agent.step(usr_msg)
+    assert not response.msg.content
+
+    tool_call_request = response.info["tool_call_request"]
+    assert tool_call_request.function.name == "add"
 
 
 @pytest.mark.model_backend

@@ -11,12 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-import ast
 
-import pytest
-from pydantic import BaseModel, Field
-
-from camel.agents import ExternalToolAgent
+from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
@@ -24,8 +20,8 @@ from camel.toolkits import MATH_FUNCS, WEATHER_FUNCS
 from camel.types import ModelPlatformType, ModelType
 
 
-@pytest.fixture
-def external_tool_agent():
+def main():
+    # Set the tools for the external_tools
     internal_tools = [*WEATHER_FUNCS]
     external_tools = [*MATH_FUNCS]
     tool_list = internal_tools + external_tools
@@ -41,75 +37,56 @@ def external_tool_agent():
         model_config_dict=model_config_dict,
     )
 
-    external_tool_agent = ExternalToolAgent(
+    # Set external_tools
+    external_tool_agent = ChatAgent(
         system_message=BaseMessage.make_assistant_message(
             role_name="Tools calling opertor",
             content="You are a helpful assistant",
         ),
         model=model,
+        tools=internal_tools,
         external_tools=external_tools,
-        internal_tools=internal_tools,
     )
 
-    return external_tool_agent
-
-
-@pytest.mark.model_backend
-def test_internal_tool_with_structured_output(external_tool_agent):
-    class TemperatureResponse(BaseModel):
-        f_temp: str = Field(description="temperature in Fahrenheit")
-        c_temp: str = Field(description="temperature in Celsius")
-
-    user_msg = BaseMessage.make_user_message(
-        role_name="User",
-        content="Tell me the temperature in Chicago in both Celsius and "
-        "Fehrenheit.",
-    )
-
-    response = external_tool_agent.step(
-        user_msg, output_schema=TemperatureResponse
-    )
-
-    response_content_dict = ast.literal_eval(response.msg.content)
-    joke_response_keys = set(
-        TemperatureResponse.model_json_schema()["properties"].keys()
-    )
-
-    response_content_keys = set(response_content_dict.keys())
-
-    assert joke_response_keys.issubset(
-        response_content_keys
-    ), f"Missing keys: {joke_response_keys - response_content_keys}"
-
-    for key in joke_response_keys:
-        assert (
-            key in response_content_dict
-        ), f"Key {key} not found in response content"
-
-
-@pytest.mark.model_backend
-def test_external_tool(external_tool_agent):
     usr_msg = BaseMessage.make_user_message(
         role_name="User",
-        content="What's the sum of 8 and 9?",
+        content="What's the weather today in Chicago?",
     )
 
+    # This will directly call the internal tool
     response = external_tool_agent.step(usr_msg)
-    assert not response.msg.content
+    # We will get the weather information here
+    print(response.msg.content)
 
-    tool_call_request = response.info["tool_call_request"]
-    assert tool_call_request.function.name == "add"
-
-
-@pytest.mark.model_backend
-def test_mixed_tool(external_tool_agent):
     usr_msg = BaseMessage.make_user_message(
         role_name="User",
-        content="What's the sum of the temperature in Chicago and Paris?",
+        content="What is the sum of the temperature in Chicago and Paris?",
     )
-
+    # This will first automatically execute the internal tool to check the
+    # weather in Paris
+    # Then it will request the external tool to calculate the sum
     response = external_tool_agent.step(usr_msg)
-    assert not response.msg.content
-
+    # This should be empty
+    print(response.msg.content)
     tool_call_request = response.info["tool_call_request"]
-    assert tool_call_request.function.name == "add"
+    # This will print the info of the external tool request
+    print(tool_call_request)
+
+
+if __name__ == "__main__":
+    main()
+
+
+# flake8: noqa :E501
+"""
+Output:
+The weather in Chicago, US today is as follows:
+- Temperature: 25.66°Celsius (feels like 26.34°Celsius)
+- Max Temperature: 26.72°Celsius, Min Temperature: 23.93°Celsius
+- Wind: 8.01 miles per hour at 71 degrees
+- Visibility: 6.21 miles
+- Sunrise: 2024-08-30 11:15:00+00:00
+- Sunset: 2024-08-31 00:27:34+00:00
+
+ChatCompletionMessageToolCall(id='call_hki911mimz9ro3UIWHekJmBq', function=Function(arguments='{"a":25.66,"b":18.36}', name='add'), type='function')
+"""
