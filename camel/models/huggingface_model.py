@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Tuple, Union
 
 from openai import Stream
 
@@ -21,13 +21,8 @@ from camel.types import (
     ChatCompletionChunk,
     ChatCompletionMessage,
     Choice,
-    CompletionUsage,
-    ModelType,
 )
-from camel.utils import (
-    BaseTokenCounter,
-    OpenAITokenCounter,
-)
+from camel.utils import BaseTokenCounter, HuggingFaceMultimodalTokenCounter
 
 
 class HuggingFaceModel:
@@ -46,39 +41,43 @@ class HuggingFaceModel:
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into :obj:`openai.ChatCompletion.create()`.
         """
+        from transformers import AutoModel, AutoTokenizer
+
         self.model_type = model_type
         self.model_config_dict = model_config_dict
 
-        # `operation_mode` is the operation mode of the open-source model
-        # Refer to https://github.com/InternLM/InternLM-XComposer
-        if self.model_config_dict["operation_mode"] not in {
-            "chat",
-            "write_webpage",
-            "resume_2_webpage",
-            "write_article",
-        }:
-            raise ValueError(
-                "Invalid operation mode of InternLM-XComposer, please check "
-                "the operation_mode value in model_config_dict."
-            )
+        # Check the model type and operation mode for InternLM-XComposer
+        if not model_type.lower().startswith("internlm-xcomposer"):
+            # `operation_mode` is the operation mode of the open-source model
+            # Refer to https://github.com/InternLM/InternLM-XComposer
+            if self.model_config_dict["operation_mode"] not in {
+                "chat",
+                "write_webpage",
+                "resume_2_webpage",
+                "write_article",
+            }:
+                raise ValueError(
+                    "Invalid operation mode of InternLM-XComposer, please "
+                    "check the operation_mode value in model_config_dict."
+                )
 
-        model_kwargs = self.model_config_dict.get("model_kwargs", {})
-
-        from transformers import AutoModel, AutoTokenizer
-
+        self.model_kwargs = self.model_config_dict.get("model_kwargs", {})
         self._client = AutoModel.from_pretrained(
             self.model_type,
-            **model_kwargs,
+            **self.model_kwargs,
         )
 
-        tokenizer_kwargs = self.model_config_dict.get("tokenizer_kwargs", {})
+        self.tokenizer_kwargs = self.model_config_dict.get(
+            "tokenizer_kwargs", {}
+        )
         self._tokenizer = AutoTokenizer.from_pretrained(
-            self.model_type, **tokenizer_kwargs
+            self.model_type, **self.tokenizer_kwargs
         )
-        self._client.tokenizer = self._tokenizer  # mypy: ignore[attr-defined]
 
-        # Replace `model_config_dict` with only the `model_kwargs`
-        self.model_config_dict = self.model_config_dict["model_kwargs"]
+        self._client.tokenizer = self._tokenizer  # mypy: ignore[attr-defined]
+        self._token_counter = HuggingFaceMultimodalTokenCounter(
+            model_type=model_type
+        )
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -88,8 +87,6 @@ class HuggingFaceModel:
             BaseTokenCounter: The token counter following the model's
                 tokenization style.
         """
-        if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(ModelType.GPT_3_5_TURBO)
         return self._token_counter
 
     def run(
@@ -109,7 +106,18 @@ class HuggingFaceModel:
         """
 
         # Extract the text content from List[OpenAIMessage].
+        historical_message = ""
+        for message in messages[:-1]:
+            if message["role"] == "system":
+                historical_message += f"System: {message['content']}\n"
+            elif message["role"] == "user":
+                historical_message += f"Human: {message['content']}\n"
+            elif message["role"] == "assistant":
+                historical_message += f"Assistant: {message['content']}\n"
+        historical_message += "Assistant: "
+
         last_message = messages[-1]
+        image = []
 
         if isinstance(last_message["content"], str):
             # If the message does not contain image nor video:
@@ -117,128 +125,67 @@ class HuggingFaceModel:
         elif isinstance(last_message["content"], list):
             # If the message contains image or video:
 
-            import base64
+            # Convert OpenAI message to InternLM-XComposer message.
+            message_content, image_paths, video_paths = (
+                self._to_multi_modal_message(messages)
+            )
+            for image_path in image_paths:
+                image.append(image_path)
+            for video_path in video_paths:
+                image.append(video_path)
 
-            n_image = 0  # number of images
-            n_video = 0  # number of videos
-            image = []  # list of images local path
+        if self.model_type.lower().startswith("internlm-xcomposer"):
+            import torch
 
-            # # Check and clean the images folder
-            # if self.multimodal_src_directory.exists():
-            #     shutil.rmtree(self.multimodal_src_directory)
-            # self.multimodal_src_directory.mkdir(parents=True, exist_ok=True)
+            torch.set_grad_enabled(False)
 
-            # Get `message_content`
-            for item in last_message["content"]:
-                if item["type"] == "text":
-                    message_content = item["text"]
-                elif item["type"] == "image_url":
-                    # Get `image` list
-
-                    n_image += 1
-                    base64_string = item['image_url']['url'].split(',')[1]
-
-                    # Convert the base64 string into images
-                    # and save them as the local files.
-                    image_data = base64.b64decode(base64_string)
-                    # image_file_path = (
-                    #     self.multimodal_src_directory / f"image_{n_image}.jpg"
-                    # )
-
-                    # with open(image_file_path, 'wb') as file:
-                    #     file.write(image_data)
-                    image.append(str(image_file_path))
-                elif item["type"] == "video_url":
-                    # Get `video` list
-
-                    n_video += 1
-                    base64_string = item['video_url']['url'].split(',')[1]
-
-                    # Convert the base64 string into video
-                    # and save them as the local files.
-                    video_data = base64.b64decode(base64_string)
-                    # video_file_path = (
-                    #     self.multimodal_src_directory / f"video_{n_video}.mp4"
-                    # )
-
-                    # with open(video_file_path, 'wb') as file:
-                    #     file.write(video_data)
-                    image.append(str(video_file_path))
-
+            operation_mode = self.model_config_dict.get(
+                "operation_mode", "chat"
+            )
+            with torch.autocast(device_type='cuda', dtype=torch.float16):
+                if operation_mode == "chat":
+                    response_str, _ = (  # output param `his` is ignored
+                        self._client.chat(
+                            self._tokenizer,
+                            historical_message + message_content,
+                            image,
+                            **self.model_kwargs,
+                        )
+                    )
+                elif operation_mode == "write_webpage":
+                    response_str, _ = (  # output param `his` is ignored
+                        self._client.write_webpage(
+                            historical_message + message_content,
+                            image,
+                            task="Instruction-aware webpage generation",
+                            **self.model_kwargs,
+                        )
+                    )
+                elif operation_mode == "resume_2_webpage":
+                    response_str, _ = (  # output param `his` is ignored
+                        self._client.resume_to_webpage(
+                            historical_message + message_content,
+                            image,
+                            **self.model_kwargs,
+                        )
+                    )
+                elif operation_mode == "write_article":
+                    response_str, _ = (  # output param `his` is ignored
+                        self._client.write_article(
+                            message_content,
+                            image,
+                            **self.model_kwargs,
+                        )
+                    )
         else:
-            message_content = ""
-            image = []
-
-        import torch
-
-        torch.set_grad_enabled(False)
-
-        with torch.autocast(device_type='cuda', dtype=torch.float16):
-            if self.operation_mode == OperationMode.CHAT:
-                response_str, _ = (  # output param `his` is ignored
-                    self._client.chat(
-                        self._tokenizer,
-                        message_content,
-                        image,
-                        do_sample=False,
-                        num_beams=3,
-                        use_meta=True,
-                    )
-                )
-            elif self.operation_mode == OperationMode.WRITE_WEBPAGE:
-                response_str, _ = (  # output param `his` is ignored
-                    self._client.write_webpage(
-                        message_content,
-                        image,
-                        seed=202,
-                        task="Instruction-aware webpage generation",
-                        repetition_penalty=3.0,
-                    )
-                )
-            elif self.operation_mode == OperationMode.RESUME_TO_WEBPAGE:
-                response_str, _ = (  # output param `his` is ignored
-                    self._client.resume_to_webpage(
-                        message_content,
-                        image,
-                        seed=202,
-                        repetition_penalty=3.0,
-                    )
-                )
-            elif self.operation_mode == OperationMode.WRITE_ARTICLE:
-                response_str, _ = (  # output param `his` is ignored
-                    self._client.write_article(
-                        message_content,
-                        seed=8192,
-                    )
-                )
+            # Other huggingface models
+            response_str = self._client.generate(
+                historical_message + message_content,
+                **self.model_kwargs,
+            )
 
         # Adapt to OpenAI's response format.
-        response = ChatCompletion.construct(
-            id="interlm-xcomposer-output-id",
-            choices=[
-                Choice(
-                    finish_reason="stop",
-                    index=0,
-                    logprobs=None,
-                    message=ChatCompletionMessage(
-                        content=response_str,
-                        role="assistant",
-                        function_call=None,
-                        tool_calls=None,
-                    ),
-                ),
-            ],
-            created=0,
-            model=self.model_name,
-            object="chat.completion",
-            service_tier=None,
-            system_fingerprint="fp_interlm_xcomposer_system_fingerprint",
-            usage=CompletionUsage(
-                completion_tokens=0,
-                prompt_tokens=0,
-                total_tokens=0,
-            ),
-        )
+        response = self._to_openai_message(response_str)
 
         return response
 
@@ -267,3 +214,97 @@ class HuggingFaceModel:
             " setting up the model. Using 4096 as default value."
         )
         return 4096
+
+    def _to_openai_message(self, message_str: str) -> ChatCompletion:
+        r"""Converts InternLM-XComposer message to OpenAI message.
+
+        Args:
+            message_str (str): The content of the message.
+
+        Returns:
+            ChatCompletion: The message in OpenAI format.
+        """
+        obj = ChatCompletion.construct(
+            id="interlm-xcomposer-output-id",
+            choices=[
+                Choice(
+                    finish_reason="stop",
+                    index=0,
+                    logprobs=None,
+                    message=ChatCompletionMessage(
+                        content=message_str,
+                        role="assistant",
+                        function_call=None,
+                        tool_calls=None,
+                    ),
+                ),
+            ],
+            created=0,
+            model=self.model_type,
+            object="chat.completion",
+            service_tier=None,
+            system_fingerprint="fp_interlm_xcomposer_system_fingerprint",
+            usage=None,
+        )
+
+        return obj
+
+    def _to_multi_modal_message(
+        self,
+        messages: List[OpenAIMessage],
+    ) -> Tuple[str, List[str], List[str]]:
+        r"""Converts OpenAI message to InternLM-XComposer message.
+
+        Args:
+            messages (List[OpenAIMessage]): List of OpenAI messages.
+
+        Returns:
+            Tuple[str, List[str], List[str]]:
+                - message_content (str): The content of the message.
+                - image_paths (List[str]): The paths of the images.
+                - video_paths (List[str]): The paths of the videos.
+        """
+        import base64
+        import tempfile
+
+        historical_message = ""
+
+        # Extract the text content from the last message with image or video.
+        last_message = messages[-1]
+        message_content = ""
+        image_paths = []
+        video_paths = []
+
+        if isinstance(last_message["content"], str):
+            message_content = last_message["content"]
+        elif isinstance(last_message["content"], list):
+            n_image = 0  # number of images
+            n_video = 0  # number of videos
+
+            for item in last_message["content"]:
+                if item["type"] == "text":
+                    message_content = item["text"]
+                elif item["type"] == "image_url":
+                    n_image += 1
+                    base64_string = item['image_url']['url'].split(',')[1]
+
+                    # Create a temporary file for the image
+                    with tempfile.NamedTemporaryFile(
+                        delete=False, suffix=".jpg", mode='wb'
+                    ) as tmpfile:
+                        image_data = base64.b64decode(base64_string)
+                        tmpfile.write(image_data)
+                        image_paths.append(tmpfile.name)
+                elif item["type"] == "video_url":
+                    n_video += 1
+                    base64_string = item['video_url']['url'].split(',')[1]
+
+                    # Create a temporary file for the video
+                    with tempfile.NamedTemporaryFile(
+                        delete=False, suffix=".mp4", mode='wb'
+                    ) as tmpfile:
+                        video_data = base64.b64decode(base64_string)
+                        tmpfile.write(video_data)
+                        video_paths.append(tmpfile.name)
+
+        return message_content, image_paths, video_paths

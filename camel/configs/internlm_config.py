@@ -46,6 +46,9 @@ class InternLMConfig(BaseConfig):
         default={
             "torch_dtype": torch.bfloat16,
             "trust_remote_code": True,
+            "do_sample": False,
+            "num_beams": 3,
+            "use_meta": True,
         }
     )
     tokenizer_config: Dict[str, Any] = Field(
