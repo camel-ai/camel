@@ -14,30 +14,46 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Dict
+
+from pydantic import Field
 
 from camel.configs.base_config import BaseConfig
 
 
 class InternLMConfig(BaseConfig):
-    r"""Defines the parameters for generating chat completions using the
-    OpenAI API.
+    """Defines the parameters for generating chat completions using InternLM.
 
     Args:
-        operation_mode (str, optional): Operation mode for InternLM, currently 
-            support `"chat"`, `"write_webpage"`, `"resume_2_webpage"`, `"write_article"`. (default: :obj:`chat`)
-        device (str, optional): Device for the model running, currently 
-            support `"cuda"`,`"cpu"` . (default: :obj:`cuda`)
+        operation_mode (str, optional): Operation mode for InternLM, currently
+            support `"chat"`, `"write_webpage"`, `"resume_2_webpage"`,
+            `"write_article"`. (default: :obj:`"chat"`)
+        device_map (str, optional): Device for the model running,and it allows
+            Hugging Face to automatically select the best device, whether it's
+            a GPU or CPU.
+        model_kwargs (dict, optional): Model configuration for InternLM model.
+        tokenizer_kwargs (dict, optional): Tokenizer configuration for InternLM
+            model.
     """
+
+    import torch
+
     operation_mode: str = "chat"
-    device: str = "cuda"
+    device_map: str = "auto"
+    max_tokens: int = 4096
 
-    def as_dict(self) -> dict[str, Any]:
+    model_config: Dict[str, Any] = Field(
+        default={
+            "torch_dtype": torch.bfloat16,
+            "trust_remote_code": True,
+        }
+    )
+    tokenizer_config: Dict[str, Any] = Field(
+        default={
+            "trust_remote_code": True,
+        }
+    )
+
+    def as_dict(self) -> Dict[str, Any]:
         config_dict = super().as_dict()
-        config_dict.pop("tools", None)  # Tool calling is not support
         return config_dict
-
-
-INTERNLM_API_PARAMS = {
-    param for param in InternLMConfig.model_fields.keys()
-}

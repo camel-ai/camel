@@ -19,7 +19,6 @@ from PIL import Image
 from camel.agents import ChatAgent
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
-from camel.models.interlm_xcomposer_model import OperationMode
 from camel.types import ModelPlatformType
 
 
@@ -69,7 +68,7 @@ ollama_model = ModelFactory.create(
     model_config_dict={
         "model_path": "internlm/internlm-xcomposer2d5-7b",
         # InterLM XComposer provides different operation modes.
-        "operation_mode": OperationMode.CHAT,
+        "operation_mode": "chat",
         "model_kwargs": {  # use `AutoModel` config in `transformers` library
             "cache_dir": None,
         },

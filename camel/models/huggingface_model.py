@@ -11,12 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Union
 
 from openai import Stream
-
-from camel.configs import INTERNLM_API_PARAMS
 
 from camel.messages import OpenAIMessage
 from camel.types import (
@@ -33,10 +30,9 @@ from camel.utils import (
 )
 
 
-class InternLMXComposerModel:
-    r"""Class for interace with OpenAI-API-compatible servers running
-    open-source InternLM-XComposer models.
-    """
+class HuggingFaceModel:
+    r"""Class for interfacing with Hugging Face servers running open-source
+    models."""
 
     def __init__(
         self,
@@ -50,54 +46,34 @@ class InternLMXComposerModel:
             model_config_dict (Dict[str, Any]): A dictionary that will
                 be fed into :obj:`openai.ChatCompletion.create()`.
         """
+        self.model_type = model_type
         self.model_config_dict = model_config_dict
 
-        if self.model_config_dict["operation_mode"] not in {"chat", "write_webpage", "resume_2_webpage", "write_article"}:
-            raise ValueError("Please check the operation_mode value in model_config_dict!")
-            
-        self.model_type = model_type
-
-        # try:
-        #     # `operation_mode` is the operation mode of the open-source model
-        #     # Refer to https://github.com/InternLM/InternLM-XComposer
-        #     self.operation_mode = model_config_dict.get(
-        #         "operation_mode", OperationMode.CHAT
-        #     )
-        # except ValueError:
-        #     valid_modes = [mode.value for mode in OperationMode]
-        #     raise ValueError(
-        #         "Invalid operation mode for open-source model "
-        #         f"backend. Choose from {valid_modes}"
-        #     )
-
-        import torch
+        # `operation_mode` is the operation mode of the open-source model
+        # Refer to https://github.com/InternLM/InternLM-XComposer
+        if self.model_config_dict["operation_mode"] not in {
+            "chat",
+            "write_webpage",
+            "resume_2_webpage",
+            "write_article",
+        }:
+            raise ValueError(
+                "Invalid operation mode of InternLM-XComposer, please check "
+                "the operation_mode value in model_config_dict."
+            )
 
         model_kwargs = self.model_config_dict.get("model_kwargs", {})
-        # model_kwargs["torch_dtype"] = torch.bfloat16
-        # model_kwargs["trust_remote_code"] = True
 
         from transformers import AutoModel, AutoTokenizer
 
-        self._client = (
-            AutoModel.from_pretrained(
-                self.model_name,
-                **model_kwargs,
-            )
-            .to(
-                # model_kwargs.get("device") or 
-                "cuda"
-                # if torch.cuda.is_available()
-                # else "cpu"
-            )  # move the model to the specified device (GPU or CPU)
-            .eval()  # set the model to evaluation mode
-            .half()  # convert the model parameters to half-precision floating point (FP16).  # noqa: E501
+        self._client = AutoModel.from_pretrained(
+            self.model_type,
+            **model_kwargs,
         )
 
         tokenizer_kwargs = self.model_config_dict.get("tokenizer_kwargs", {})
-        # tokenizer_kwargs["trust_remote_code"] = True
-
         self._tokenizer = AutoTokenizer.from_pretrained(
-            self.model_name, **tokenizer_kwargs
+            self.model_type, **tokenizer_kwargs
         )
         self._client.tokenizer = self._tokenizer  # mypy: ignore[attr-defined]
 
@@ -142,7 +118,6 @@ class InternLMXComposerModel:
             # If the message contains image or video:
 
             import base64
-            import shutil
 
             n_image = 0  # number of images
             n_video = 0  # number of videos
@@ -266,23 +241,6 @@ class InternLMXComposerModel:
         )
 
         return response
-
-    # def check_model_config(self):
-    #     r"""Check whether the model configuration is valid for open-source
-    #     model backends.
-
-    #     Raises:
-    #         ValueError: If the model configuration dictionary contains any
-    #             unexpected arguments to OpenAI API, or it does not contain
-    #             :obj:`model_path`.
-    #     """
-    #     if self.model_type == "internlm-xcomposer2d5-7b":
-    #         for param in self.model_config_dict:
-    #             if param not in INTERNLM_API_PARAMS:
-    #                 raise ValueError(
-    #                     f"Unexpected argument `{param}` is "
-    #                     "input into ImtermLM model backend."
-    #                 )
 
     @property
     def stream(self) -> bool:
