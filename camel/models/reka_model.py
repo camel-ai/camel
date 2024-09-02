@@ -74,17 +74,28 @@ class RekaModel(BaseModelBackend):
         self._client = Reka(api_key=self._api_key, base_url=self._url)
         self._token_counter: Optional[BaseTokenCounter] = None
 
-    def _to_openai_response(self, response: 'ChatResponse') -> ChatCompletion:
+    def _convert_reka_to_openai_response(
+        self, response: 'ChatResponse'
+    ) -> ChatCompletion:
+        r"""Converts a Reka `ChatResponse` to an OpenAI-style `ChatCompletion`
+        response.
+
+        Args:
+            response (ChatResponse): The response object from the Reka API.
+
+        Returns:
+            ChatCompletion: An OpenAI-compatible chat completion response.
+        """
         openai_response = ChatCompletion.construct(
             id=response.id,
             choices=[
                 dict(
                     message={
-                        "role": response.responses[0].message.role,  # type: ignore[index,union-attr]
-                        "content": response.responses[0].message.content,  # type: ignore[index,union-attr]
+                        "role": response.responses[0].message.role,
+                        "content": response.responses[0].message.content,
                     },
-                    finish_reason=response.responses[0].finish_reason  # type: ignore[index]
-                    if response.responses[0].finish_reason  # type: ignore[index]
+                    finish_reason=response.responses[0].finish_reason
+                    if response.responses[0].finish_reason
                     else None,
                 )
             ],
@@ -100,26 +111,35 @@ class RekaModel(BaseModelBackend):
         self,
         messages: List[OpenAIMessage],
     ) -> List["ChatMessage"]:
+        r"""Converts OpenAI API messages to Reka API messages.
+
+        Args:
+            messages (List[OpenAIMessage]): A list of messages in OpenAI
+                format.
+
+        Returns:
+            List[ChatMessage]: A list of messages converted to Reka's format.
+        """
         from reka.types import ChatMessage
 
-        new_messages = []
+        reka_messages = []
         for msg in messages:
             role = msg.get("role")
-            content = msg.get("content")
+            content = str(msg.get("content"))
 
             if role == "user":
-                new_messages.append(ChatMessage(role="user", content=content))  # type: ignore[arg-type]
+                reka_messages.append(ChatMessage(role="user", content=content))
             elif role == "assistant":
-                new_messages.append(
-                    ChatMessage(role="assistant", content=content)  # type: ignore[arg-type]
+                reka_messages.append(
+                    ChatMessage(role="assistant", content=content)
                 )
             elif role == "system":
-                new_messages.append(ChatMessage(role="user", content=content))  # type: ignore[arg-type]
+                reka_messages.append(ChatMessage(role="user", content=content))
 
                 # Add one more assistant msg since Reka requires conversation
                 # history must alternate between 'user' and 'assistant',
                 # starting and ending with 'user'.
-                new_messages.append(
+                reka_messages.append(
                     ChatMessage(
                         role="assistant",
                         content="",
@@ -128,7 +148,7 @@ class RekaModel(BaseModelBackend):
             else:
                 raise ValueError(f"Unsupported message role: {role}")
 
-        return new_messages  # type: ignore[return-value]
+        return reka_messages  # type: ignore[return-value]
 
     @property
     def token_counter(self) -> BaseTokenCounter:
@@ -168,7 +188,7 @@ class RekaModel(BaseModelBackend):
             **self.model_config_dict,
         )
 
-        openai_response = self._to_openai_response(response)  # type: ignore[arg-type]
+        openai_response = self._convert_reka_to_openai_response(response)  # type: ignore[arg-type]
 
         # Add AgentOps LLM Event tracking
         if LLMEvent:
@@ -204,9 +224,9 @@ class RekaModel(BaseModelBackend):
     @property
     def stream(self) -> bool:
         r"""Returns whether the model is in stream mode, which sends partial
-        results each time. Current it's not supported.
+        results each time.
 
         Returns:
             bool: Whether the model is in stream mode.
         """
-        return False
+        return self.model_config_dict.get('stream', False)
