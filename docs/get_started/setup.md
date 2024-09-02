@@ -23,7 +23,7 @@ Some features require extra dependencies:
 ### [Option 2] Install from Source
 #### Install from Source with Poetry
 ```bash
-# Make sure your python version is later than 3.9
+# Make sure your python version is later than 3.10
 # You can use pyenv to manage multiple python verisons in your sytstem
 
 # Clone github repo
