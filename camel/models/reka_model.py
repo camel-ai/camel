@@ -188,7 +188,7 @@ class RekaModel(BaseModelBackend):
             **self.model_config_dict,
         )
 
-        openai_response = self._convert_reka_to_openai_response(response)  # type: ignore[arg-type]
+        openai_response = self._convert_reka_to_openai_response(response)
 
         # Add AgentOps LLM Event tracking
         if LLMEvent:
