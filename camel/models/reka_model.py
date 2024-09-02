@@ -144,11 +144,11 @@ class RekaModel(BaseModelBackend):
                         role="assistant",
                         content="",
                     )
-                )  # type: ignore[arg-type]
+                )
             else:
                 raise ValueError(f"Unsupported message role: {role}")
 
-        return reka_messages  # type: ignore[return-value]
+        return reka_messages
 
     @property
     def token_counter(self) -> BaseTokenCounter:
