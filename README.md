@@ -102,7 +102,7 @@ exit
 ```
 
 > [!TIP]
-> If you encounter errors when running `poetry install`, it may be due to a cache-related problem. You could try running:
+> If you encounter errors when running `poetry install`, it may be due to a cache-related problem. You can try running:
 > ```sh
 > poetry install --no-cache
 > ```
