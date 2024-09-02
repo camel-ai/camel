@@ -26,6 +26,7 @@ from .open_source_model import OpenSourceModel
 from .openai_audio_models import OpenAIAudioModels
 from .openai_compatibility_model import OpenAICompatibilityModel
 from .openai_model import OpenAIModel
+from .samba_model import SambaModel
 from .stub_model import StubModel
 from .togetherai_model import TogetherAIModel
 from .vllm_model import VLLMModel
@@ -50,5 +51,6 @@ __all__ = [
     'GeminiModel',
     'HuggingFaceModel',
     'OpenAICompatibilityModel',
+    'SambaModel',
     'TogetherAIModel',
 ]
