@@ -19,6 +19,7 @@ from pydantic import BaseModel
 
 from camel.utils import api_keys_required
 
+
 class Firecrawl:
     r"""Firecrawl allows you to turn entire websites into LLM-ready markdown.
 
