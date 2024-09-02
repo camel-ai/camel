@@ -17,6 +17,7 @@ import requests
 from PIL import Image
 
 from camel.agents import ChatAgent
+from camel.configs import InternLMConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.types import ModelPlatformType
@@ -59,20 +60,17 @@ video_bytes = load_video_from_url(video_url)
 video_bytes_list = [video_bytes]
 image_url = 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg'
 image = load_image_from_url(image_url)
-images = [image, image]
+# The model can handle multiple images, and we use the same image twice for demonstration  # noqa: E501
+images = [
+    image,
+    image,
+]
 
 
 ollama_model = ModelFactory.create(
     model_platform=ModelPlatformType.INTERNLM,
     model_type="internlm-xcomposer2d5-7b",
-    model_config_dict={
-        "model_path": "internlm/internlm-xcomposer2d5-7b",
-        # InterLM XComposer provides different operation modes.
-        "operation_mode": "chat",
-        "model_kwargs": {  # use `AutoModel` config in `transformers` library
-            "cache_dir": None,
-        },
-    },
+    model_config_dict=InternLMConfig().as_dict(),
 )
 
 
