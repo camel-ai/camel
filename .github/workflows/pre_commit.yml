@@ -14,6 +14,6 @@ jobs:
     - name: Set up Python environment and install dependencies
       uses: ./.github/actions/camel_install
       with:
-        python-version: "3.9"
+        python-version: "3.10"
     - name: Run pre-commit
       run: poetry run pre-commit run --all-files
