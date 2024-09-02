@@ -72,7 +72,7 @@ Some features require extra dependencies:
 
 Install `CAMEL` from source with poetry (Recommended):
 ```sh
-# Make sure your python version is later than 3.9
+# Make sure your python version is later than 3.10
 # You can use pyenv to manage multiple python verisons in your sytstem
 
 # Clone github repo
@@ -104,13 +104,13 @@ exit
 Install `CAMEL` from source with conda and pip:
 ```sh
 # Create a conda virtual environment
-conda create --name camel python=3.9
+conda create --name camel python=3.10
 
 # Activate CAMEL conda environment
 conda activate camel
 
 # Clone github repo
-git clone -b v0.1.6.6 https://github.com/camel-ai/camel.git
+git clone -b v0.1.6.7 https://github.com/camel-ai/camel.git
 
 # Change directory into project directory
 cd camel
@@ -323,8 +323,8 @@ We appreciate your interest in contributing to our open-source initiative. We pr
 ## Contact
 For more information please contact camel.ai.team@gmail.com.
 
-[python-image]: https://img.shields.io/badge/Python-3.9%2B-brightgreen.svg
-[python-url]: https://docs.python.org/3.9/
+[python-image]: https://img.shields.io/badge/Python-3.10%2B-brightgreen.svg
+[python-url]: https://docs.python.org/3.10/
 [pytest-image]: https://github.com/camel-ai/camel/actions/workflows/pytest_package.yml/badge.svg
 [pytest-url]: https://github.com/camel-ai/camel/actions/workflows/pytest_package.yml
 [docs-image]: https://img.shields.io/badge/Documentation-grey.svg?logo=github

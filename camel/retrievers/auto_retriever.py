@@ -14,9 +14,7 @@
 import datetime
 import os
 import re
-from pathlib import Path
 from typing import Collection, List, Optional, Sequence, Tuple, Union
-from urllib.parse import urlparse
 
 from camel.embeddings import BaseEmbedding, OpenAIEmbedding
 from camel.retrievers.vector_retriever import VectorRetriever
@@ -112,35 +110,12 @@ class AutoRetriever:
         Returns:
             str: A sanitized, valid collection name suitable for use.
         """
+
         if isinstance(content, Element):
             content = content.metadata.file_directory
 
-        # Check if the content is URL
-        parsed_url = urlparse(content)
-        is_url = all([parsed_url.scheme, parsed_url.netloc])
+        collection_name = re.sub(r'[^a-zA-Z0-9]', '', content)[:20]
 
-        # Convert given path into a collection name, ensuring it only
-        # contains numbers, letters, and underscores
-        if is_url:
-            # For URLs, remove https://, replace /, and any characters not
-            # allowed by Milvus with _
-            collection_name = re.sub(
-                r'[^0-9a-zA-Z]+',
-                '_',
-                content.replace("https://", ""),
-            )
-        elif os.path.exists(content):
-            # For file paths, get the stem and replace spaces with _, also
-            # ensuring only allowed characters are present
-            collection_name = re.sub(r'[^0-9a-zA-Z]+', '_', Path(content).stem)
-        else:
-            # the content is string input
-            collection_name = content[:10]
-
-        # Ensure the collection name does not start or end with underscore
-        collection_name = collection_name.strip("_")
-        # Limit the maximum length of the collection name to 30 characters
-        collection_name = collection_name[:30]
         return collection_name
 
     def _get_file_modified_date_from_file(
