@@ -12,14 +12,13 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from typing import List, Literal
+from typing import List, Literal, Tuple, Union
 
-from asknews_sdk import AskNewsSDK
-
+from camel.toolkits.base import BaseToolkit
 from camel.toolkits.openai_function import OpenAIFunction
 
 
-class AskNewsToolkit:
+class AskNewsToolkit(BaseToolkit):
     r"""A class representing a toolkit for interacting with the AskNews API.
 
     This class provides methods for fetching news, stories, and other content
@@ -31,6 +30,8 @@ class AskNewsToolkit:
 
         The API keys and credentials are retrieved from environment variables.
         """
+        from asknews_sdk import AskNewsSDK
+
         # Initialize the AskNews client using API keys and credentials from
         # environment variables.
         self.asknews_client = AskNewsSDK(
@@ -43,9 +44,9 @@ class AskNewsToolkit:
         self,
         query: str,
         n_articles: int = 10,
-        return_type: Literal["string", "dict"] = "string",
+        return_type: Literal["string", "dicts", "both"] = "string",
         method: Literal["nl", "kw"] = "nl",
-    ) -> str:
+    ) -> Union[str, dict, Tuple[str, dict]]:
         r"""Fetch news or stories based on a user query.
 
         Args:
@@ -53,14 +54,15 @@ class AskNewsToolkit:
                 stories.
             n_articles (int): Number of articles to include in the response.
                 Default is 10.
-            return_type (Literal["string", "dict"]): The format of the return
-                value. Default is "string".
+            return_type (Literal["string", "dicts", "both"]): The format of the
+             return value. Default is "string".
             method (Literal["nl", "kw"]): The search method, either "nl" for
                 natural language or "kw" for keyword search. Default is "nl".
 
         Returns:
-            str: A string containing the news or story content, or an error
-                message if the process fails.
+            Union[str, dict, Tuple[str, dict]]: A string, dictionary, or both
+            containing the news or story content, or an error message if the
+            process fails.
         """
         try:
             response = self.asknews_client.news.search_news(
@@ -72,16 +74,234 @@ class AskNewsToolkit:
 
             if return_type == "string":
                 news_content = response.as_string
-            else:
+            elif return_type == "dicts":
                 news_content = response.as_dict
+            elif return_type == "both":
+                news_content = (response.as_string, response.as_dict)
 
             return news_content
 
         except Exception as e:
-            error_message = (
+            raise Exception(
                 f"An error occurred while fetching news for '{query}': {e!s}."
             )
-            return error_message
+
+    def get_stories(
+        self,
+        categories: list,
+        continent: str,
+        sort_by: str = "coverage",
+        sort_type: str = "desc",
+        reddit: int = 3,
+        expand_updates: bool = True,
+        max_updates: int = 2,
+        max_articles: int = 10,
+    ) -> dict:
+        r"""Fetch stories based on the provided parameters.
+
+        Args:
+            categories (list): The categories to filter stories by.
+            continent (str): The continent to filter stories by.
+            sort_by (str): The field to sort the stories by. Default is
+             "coverage".
+            sort_type (str): The sort order. Default is "desc" (descending).
+            reddit (int): Number of Reddit threads to include. Default is 3.
+            expand_updates (bool): Whether to include detailed updates. Default
+             is True.
+            max_updates (int): Maximum number of recent updates per story.
+             Default is 2.
+            max_articles (int): Maximum number of articles associated with each
+                update. Default is 10.
+
+        Returns:
+            dict: A dictionary containing the stories and their associated
+             data.
+
+        Raises:
+            Exception: If there is an error while fetching the stories.
+        """
+        try:
+            response = self.asknews_client.stories.search_stories(
+                categories=categories,
+                continent=continent,
+                sort_by=sort_by,
+                sort_type=sort_type,
+                reddit=reddit,
+                expand_updates=expand_updates,
+                max_updates=max_updates,
+                max_articles=max_articles,
+            )
+
+            # Collect only the headline and story content from the updates
+            stories_data = {
+                "stories": [
+                    {
+                        "headline": story.updates[0].headline,
+                        "updates": [
+                            {
+                                "headline": update.headline,
+                                "story": update.story,
+                            }
+                            for update in story.updates[:max_updates]
+                        ],
+                    }
+                    for story in response.stories
+                ]
+            }
+
+            return stories_data
+
+        except Exception as e:
+            raise Exception(
+                f"An error occurred while fetching stories: {e!s}."
+            )
+
+    def chat_query(self, query: str) -> str:
+        r"""Send a chat query to the API and retrieve the response.
+
+        Args:
+            query (str): The content of the user's message.
+
+        Returns:
+            str: The content of the response message.
+
+        Raises:
+            Exception: If there is an error while processing the chat query.
+        """
+        try:
+            response = self.asknews_client.chat.get_chat_completions(
+                messages=[{"role": "user", "content": query}], stream=False
+            )
+
+            # Return the content of the first choice's message
+            return response.choices[0].message.content
+
+        except Exception as e:
+            raise Exception(
+                f"An error occurred while processing the chat query: {e!s}."
+            )
+
+    def get_forecast(self, query: str) -> str:
+        r"""Get a forecast for a given query.
+
+        Args:
+            query (str): The query for which to get the forecast.
+
+        Returns:
+            str: The forecast response.
+
+        Raises:
+            Exception: If there is an error while fetching the forecast.
+        """
+        try:
+            forecast = self.asknews_client.forecast.get_forecast(query=query)
+
+            return forecast
+
+        except Exception as e:
+            raise Exception(
+                f"An error occurred while fetching the forecast: {e!s}."
+            )
+
+    def search_reddit(
+        self,
+        keywords: list,
+        return_type: Literal["string", "dicts", "both"] = "string",
+    ) -> Union[str, dict, Tuple[str, dict]]:
+        r"""Search Reddit based on the provided keywords.
+
+        Args:
+            keywords (list): The keywords to search for on Reddit.
+            return_type (Literal["string", "dicts", "both"]): The format of the
+                return value. Default is "string".
+
+        Returns:
+            Union[str, dict, Tuple[str, dict]]: The Reddit search results as a
+            string, dictionary, or both.
+
+        Raises:
+            Exception: If there is an error while searching Reddit.
+        """
+        try:
+            response = self.asknews_client.news.search_reddit(
+                keywords=keywords
+            )
+
+            if return_type == "string":
+                reddit_content = response.as_string
+            elif return_type == "dicts":
+                reddit_content = response.as_dict
+            elif return_type == "both":
+                reddit_content = (response.as_string, response.as_dict)
+
+            return reddit_content
+
+        except Exception as e:
+            raise Exception(
+                f"An error occurred while searching Reddit: {e!s}."
+            )
+
+    def finance_query(
+        self,
+        asset: str,
+        metric: str,
+        date_from: str,
+        date_to: str,
+        return_type: Literal["list", "string"] = "list",
+    ) -> Union[list, str]:
+        r"""Fetch asset sentiment data for a given asset, metric, and date
+        range.
+
+        Args:
+            asset (str): The asset for which to fetch sentiment data.
+            metric (str): The sentiment metric to analyze.
+            date_from (str): The start date and time for the data in ISO 8601
+            format.
+            date_to (str): The end date and time for the data in ISO 8601
+            format.
+            return_type (Literal["list", "string"]): The format of the return
+            value. Default is "list".
+
+        Returns:
+            Union[list, str]: A list of dictionaries containing the datetime
+            and value or a string describing all datetime and value pairs.
+
+        Raises:
+            Exception: If there is an error while fetching the sentiment data.
+        """
+        try:
+            response = self.asknews_client.analytics.get_asset_sentiment(
+                asset=asset,
+                metric=metric,
+                date_from=date_from,
+                date_to=date_to,
+            )
+
+            time_series_data = response.data["timeseries"]
+
+            if return_type == "list":
+                return time_series_data
+            elif return_type == "string":
+                header = (
+                    f"Sentiment analysis for '{asset}' on the '{metric}' "
+                    "metric from {date_from} to {date_to}. The values "
+                    "represent the aggregated sentiment from news sources "
+                    "during each specified time period.\n"
+                )
+                descriptive_text = "\n".join(
+                    [
+                        f"On {entry['datetime']}, the sentiment value was "
+                        f"{entry['value']}."
+                        for entry in time_series_data
+                    ]
+                )
+                return header + descriptive_text
+
+        except Exception as e:
+            raise Exception(
+                f"An error occurred while fetching asset sentiment "
+                f"data: {e!s}."
+            )
 
     def get_tools(self) -> List[OpenAIFunction]:
         r"""Returns a list of OpenAIFunction objects representing the functions
@@ -93,13 +313,12 @@ class AskNewsToolkit:
         """
         return [
             OpenAIFunction(self.get_news),
+            OpenAIFunction(self.get_stories),
+            OpenAIFunction(self.chat_query),
+            OpenAIFunction(self.get_forecast),
+            OpenAIFunction(self.search_reddit),
+            OpenAIFunction(self.finance_query),
         ]
 
 
 ASKNEWS_FUNCS: List[OpenAIFunction] = AskNewsToolkit().get_tools()
-
-if __name__ == '__main__':
-    # Example usage:
-    ask = AskNewsToolkit()
-    news = ask.get_news("tell me a story")
-    print(news)
