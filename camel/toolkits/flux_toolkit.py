@@ -32,6 +32,17 @@ class FluxToolkit(BaseToolkit):
     model.
     """
 
+    def __init__(self):
+        self.token = os.getenv("HUGGINGFACE_TOKEN")
+        if not self.token:
+            raise ValueError(
+                "Hugging Face token not found in environment variables. "
+                "Please set 'HUGGINGFACE_TOKEN'."
+            )
+        from diffusers import FluxPipeline
+
+        self.FluxPipeline = FluxPipeline
+
     def image_to_base64(self, image: Image.Image) -> str:
         r"""Converts an image into a base64-encoded string.
 
@@ -100,3 +111,23 @@ class FluxToolkit(BaseToolkit):
 
 
 FLUX_FUNCS: List[OpenAIFunction] = FluxToolkit().get_tools()
+
+if __name__ == "__main__":
+    # Initialize the FluxToolkit
+    flux_toolkit = FluxToolkit()
+
+    # Define the prompt for image generation
+    prompt = "A futuristic cityscape at sunset"
+
+    # Generate the image using the provided prompt
+    image_path = flux_toolkit.generate_flux_img(prompt)
+
+    # Print the path to the saved image
+    print(f"Generated image saved at: {image_path}")
+
+    # Optionally, convert the image to a base64 string
+    image = Image.open(image_path)
+    base64_str = flux_toolkit.image_to_base64(image)
+
+    # Print the base64 string
+    print(f"Base64 string of the generated image: {base64_str}")
