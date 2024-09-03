@@ -11,11 +11,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+import hashlib
+import io
 import os
-import time
-from typing import List, Optional
+import subprocess
+from typing import List, Optional, Tuple, Union
 
+import ffmpeg  # type: ignore
 import yt_dlp  # type: ignore
+from PIL import Image
 
 from camel.toolkits.openai_function import OpenAIFunction
 
@@ -56,23 +60,10 @@ class VideoDownloaderToolkit:
         if not self.video_url:
             raise ValueError("video_url is not set.")
 
-        ydl_opts = {
-            'quiet': True,
-            'no_warnings': True,
-            'cookiefile': self.cookies_path,
-        }
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info_dict = ydl.extract_info(self.video_url, download=False)
-            video_title = info_dict.get('title', 'unknown_video').replace(
-                ' ', '_'
-            )
-
-        timestamp = time.strftime("%Y%m%d-%H%M%S")
+        video_hash = hashlib.md5(self.video_url.encode('utf-8')).hexdigest()
 
         project_root = os.getcwd()
-        video_directory = os.path.join(
-            project_root, "temp_video", f"{video_title}_{timestamp}"
-        )
+        video_directory = os.path.join(project_root, "temp_video", video_hash)
 
         if not os.path.exists(video_directory):
             os.makedirs(video_directory)
@@ -194,21 +185,69 @@ class VideoDownloaderToolkit:
             print(f"Error downloading chunk: {e}")
 
     def get_video_length(self) -> int:
-        """
-        Get the length of the video in seconds.
-
-        Returns:
-            int: The duration of the video in seconds.
-        """
         ydl_opts = {
             'quiet': True,
             'no_warnings': True,
             'cookiefile': self.cookies_path,
         }
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info_dict = ydl.extract_info(self.video_url, download=False)
-            video_length = info_dict.get('duration', 0)
+
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info_dict = ydl.extract_info(self.video_url, download=False)
+                video_length = info_dict.get('duration', 0)
+        except Exception as e:
+            print(f"Error retrieving video length from network: {e}")
+            video_length = 0
+
+        if video_length == 0:
+            if self.is_video_downloaded():
+                if self.split_into_chunks:
+                    video_length = 0
+                    chunk_index = 0
+                    while True:
+                        chunk_filename = os.path.join(
+                            self.current_directory,
+                            f'video_chunk_{chunk_index}.mp4',
+                        )
+                        if not os.path.exists(chunk_filename):
+                            break
+
+                        video_length += self._get_video_length_from_file(
+                            chunk_filename
+                        )
+                        chunk_index += 1
+                else:
+                    video_path = os.path.join(
+                        self.current_directory, 'full_video.mp4'
+                    )
+                    if os.path.exists(video_path):
+                        video_length = self._get_video_length_from_file(
+                            video_path
+                        )
+
         return video_length
+
+    def _get_video_length_from_file(self, file_path: str) -> int:
+        try:
+            result = subprocess.run(
+                [
+                    "ffprobe",
+                    "-v",
+                    "error",
+                    "-show_entries",
+                    "format=duration",
+                    "-of",
+                    "default=noprint_wrappers=1:nokey=1",
+                    file_path,
+                ],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+            duration = float(result.stdout)
+            return int(duration)
+        except Exception as e:
+            print(f"Error calculating video length from file: {e}")
+            return 0
 
     def get_video_bytes(self) -> bytes:
         """
@@ -251,6 +290,105 @@ class VideoDownloaderToolkit:
 
         return video_bytes
 
+    def get_video_screenshots(
+        self, timestamps: Union[List[int], int]
+    ) -> List[Image.Image]:
+        """
+        Capture screenshots from the video at specified timestamps or by
+        dividing the video into equal parts if an integer is provided.
+
+        Args:
+            timestamps (Union[List[int], int]): A list of timestamps (in seconds)
+              from which to capture the screenshots, or an integer specifying
+              the number of evenly spaced screenshots to capture.
+
+        Returns:
+            List[Image.Image]: A list of screenshots as PIL Image objects.
+        """
+        if not self.is_video_downloaded():
+            self.download_video()
+
+        if isinstance(timestamps, int):
+            video_length = self.get_video_length()
+            intervals = video_length // (timestamps + 1)
+            timestamps = [(i + 1) * intervals for i in range(timestamps)]
+
+        images = []
+        if self.split_into_chunks:
+            for timestamp in timestamps:
+                chunk_index, local_timestamp = (
+                    self._get_chunk_index_and_local_timestamp(timestamp)
+                )
+                chunk_filename = os.path.join(
+                    self.current_directory, f'video_chunk_{chunk_index}.mp4'
+                )
+                images.append(
+                    self._capture_screenshot(chunk_filename, local_timestamp)
+                )
+        else:
+            video_path = os.path.join(self.current_directory, 'full_video.mp4')
+            images = [
+                self._capture_screenshot(video_path, ts) for ts in timestamps
+            ]
+
+        return images
+
+    def _get_chunk_index_and_local_timestamp(
+        self, timestamp: int
+    ) -> Tuple[int, int]:
+        """
+        Determine the chunk index and the local timestamp within that chunk for
+          a global timestamp.
+
+        Args:
+            timestamp (int): The global timestamp in the video.
+
+        Returns:
+            (int, int): The chunk index and the local timestamp within that
+              chunk.
+        """
+        chunk_index = timestamp // self.chunk_duration
+        local_timestamp = timestamp % self.chunk_duration
+        return chunk_index, local_timestamp
+
+    def _capture_screenshot(
+        self, video_path: str, timestamp: int
+    ) -> Image.Image:
+        """
+        Capture a screenshot from a video file at a specific timestamp.
+
+        Args:
+            video_path (str): The path to the video file.
+            timestamp (int): The time in seconds from which to capture the
+              screenshot.
+
+        Returns:
+            Image.Image: The captured screenshot as a PIL Image object.
+        """
+        out, _ = (
+            ffmpeg.input(video_path, ss=timestamp)
+            .filter('scale', 320, -1)
+            .output('pipe:', vframes=1, format='image2', vcodec='png')
+            .run(capture_stdout=True, capture_stderr=True)
+        )
+        return Image.open(io.BytesIO(out))
+
+    def is_video_downloaded(self) -> bool:
+        """
+        Check if the video has already been downloaded.
+
+        Returns:
+            bool: True if the video file(s) exist(s), False otherwise.
+        """
+        if self.split_into_chunks:
+            first_chunk_path = os.path.join(
+                self.current_directory, 'video_chunk_0.mp4'
+            )
+            return os.path.exists(first_chunk_path)
+        else:
+            video_path = os.path.join(self.current_directory, 'full_video.mp4')
+            return os.path.exists(video_path)
+
     def get_tools(self) -> List[OpenAIFunction]:
         """
         Returns a list of OpenAIFunction objects representing the functions in
@@ -280,6 +418,15 @@ if __name__ == "__main__":
     video_bytes = downloader.get_video_bytes()
     print(f"Video bytes length: {len(video_bytes)}")
 
-    # or
-    # downloader = VideoDownloaderToolkit(video_url=video_url)
-    # downloader.download_video()
+    if downloader.is_video_downloaded():
+        print("Video has already been downloaded.")
+
+    print(downloader.get_video_length())
+
+    print(downloader.get_video_directory())
+
+    timestamps = 3
+    image_list = downloader.get_video_screenshots(timestamps)
+
+    for _, img in enumerate(image_list):
+        img.show()
