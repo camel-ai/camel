@@ -40,7 +40,7 @@ def main(image_paths: list[str]) -> list[str]:
         content=sys_msg,
     )
 
-    model_config = ChatGPTConfig(tools=[*DALLE_FUNCS])
+    model_config = ChatGPTConfig()
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,

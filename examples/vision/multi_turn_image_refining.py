@@ -69,7 +69,7 @@ PROMPT: here is the updated prompt!
     def init_agents(self):
         r"""Initialize artist and critic agents with their system messages."""
 
-        model_config = ChatGPTConfig(tools=[*DALLE_FUNCS])
+        model_config = ChatGPTConfig()
 
         model = ModelFactory.create(
             model_platform=ModelPlatformType.OPENAI,

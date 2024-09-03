@@ -54,7 +54,6 @@ def main(
         *TWITTER_FUNCS,
     ]
     assistant_model_config = ChatGPTConfig(
-        tools=function_list,
         temperature=0.0,
     )
 

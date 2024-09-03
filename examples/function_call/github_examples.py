@@ -59,9 +59,7 @@ def write_weekly_pr_summary(repo_name, model=None):
         of an open source project {repo_name} on the project's blog.
         """,
     )
-    assistant_model_config_dict = ChatGPTConfig(
-        tools=[OpenAIFunction(toolkit.retrieve_pull_requests)], temperature=0.0
-    ).as_dict()
+    assistant_model_config_dict = ChatGPTConfig(temperature=0.0).as_dict()
 
     assistant_model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
@@ -114,7 +112,6 @@ def solve_issue(
         specializes on data structures and algorithms tasks.""",
     )
     assistant_model_config_dict = ChatGPTConfig(
-        tools=toolkit.get_tools(),
         temperature=0.0,
     ).as_dict()
 

@@ -79,7 +79,6 @@ model=ModelFactory.create(
     model_platform=ModelPlatformType.OPENAI,
     model_type=ModelType.GPT_3_5_TURBO,
     model_config_dict=ChatGPTConfig(
-        tools=tool_list,
         temperature=0.0,
     ).as_dict(),
 )
@@ -92,7 +91,6 @@ assistant_sys_msg = BaseMessage.make_assistant_message(
 
 # Set the config parameter for the model
 assistant_model_config = ChatGPTConfig(
-    tools=tool_list,
     temperature=0.0,
 )
 

@@ -43,7 +43,7 @@ def main():
         content="Draw a picture of a camel.",
     )
 
-    model_config = ChatGPTConfig(tools=[*DALLE_FUNCS])
+    model_config = ChatGPTConfig()
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,

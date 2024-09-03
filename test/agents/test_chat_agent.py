@@ -400,7 +400,7 @@ def test_function_enabled():
         meta_dict=None,
         content="You are a help assistant.",
     )
-    model_config = ChatGPTConfig(tools=[*MATH_FUNCS])
+    model_config = ChatGPTConfig()
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
@@ -425,7 +425,7 @@ def test_tool_calling_sync():
         meta_dict=None,
         content="You are a help assistant.",
     )
-    model_config = ChatGPTConfig(tools=[*MATH_FUNCS])
+    model_config = ChatGPTConfig()
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
@@ -473,7 +473,7 @@ async def test_tool_calling_math_async():
         content="You are a help assistant.",
     )
     math_funcs = sync_funcs_to_async(MATH_FUNCS)
-    model_config = ChatGPTConfig(tools=[*math_funcs])
+    model_config = ChatGPTConfig()
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_4O_MINI,
@@ -533,7 +533,7 @@ async def test_tool_calling_async():
         await asyncio.sleep(second)
         return second
 
-    model_config = ChatGPTConfig(tools=[OpenAIFunction(async_sleep)])
+    model_config = ChatGPTConfig()
 
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,

@@ -29,7 +29,6 @@ tools = toolkit.get_tools()
 # set up LLM model
 assistant_model_config = ChatGPTConfig(
     temperature=0.0,
-    tools=tools,
 )
 
 model = ModelFactory.create(

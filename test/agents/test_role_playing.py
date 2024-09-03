@@ -138,7 +138,7 @@ def test_role_playing_step(
 @pytest.mark.model_backend
 def test_role_playing_with_function():
     tools = [*MATH_FUNCS]
-    assistant_model_config = ChatGPTConfig(tools=tools)
+    assistant_model_config = ChatGPTConfig()
     model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_3_5_TURBO,

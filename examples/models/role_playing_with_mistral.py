@@ -46,7 +46,6 @@ def main(
         *SEARCH_FUNCS,
     ]
     assistant_model_config = MistralConfig(
-        tools=function_list,
         temperature=0.2,
     )
 
