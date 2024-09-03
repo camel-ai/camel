@@ -423,6 +423,7 @@ def test_token_exceed_return():
         "termination_reasons": ["max_tokens_exceeded"],
         "num_tokens": 1000,
         "tool_calls": [],
+        "tool_call_request": None,
     }
     agent.terminated = True
     response = agent.step_token_exceed(1000, [], "max_tokens_exceeded")

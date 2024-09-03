@@ -26,6 +26,7 @@ from typing import (
     Union,
 )
 
+from openai.types.chat import ChatCompletionMessageToolCall
 from pydantic import BaseModel
 
 from camel.agents.base import BaseAgent
@@ -48,7 +49,6 @@ from camel.types import (
     RoleType,
 )
 from camel.utils import (
-    Constants,
     func_string_to_callable,
     get_model_encoding,
     get_pydantic_object_schema,
@@ -273,6 +273,7 @@ class ChatAgent(BaseAgent):
         termination_reasons: List[str],
         num_tokens: int,
         tool_calls: List[FunctionCallingRecord],
+        tool_call_request: Optional[ChatCompletionMessageToolCall],
     ) -> Dict[str, Any]:
         r"""Returns a dictionary containing information about the chat session.
 
@@ -284,8 +285,9 @@ class ChatAgent(BaseAgent):
                 of the chat session.
             num_tokens (int): The number of tokens used in the chat session.
             tool_calls (List[FunctionCallingRecord]): The list of function
-                calling records, containing the information of called
-                tools.
+                calling records, containing the information of called tools.
+            tool_call_request (Optional[ChatCompletionMessageToolCall]): The
+                direct tool call request from the model.
 
         Returns:
             Dict[str, Any]: The chat session information.
@@ -296,6 +298,7 @@ class ChatAgent(BaseAgent):
             "termination_reasons": termination_reasons,
             "num_tokens": num_tokens,
             "tool_calls": tool_calls,
+            "tool_call_request": tool_call_request,
         }
 
     def init_messages(self) -> None:
@@ -357,10 +360,6 @@ class ChatAgent(BaseAgent):
                     e.args[1], tool_calls, "max_tokens_exceeded"
                 )
 
-            if output_schema is not None and not self.func_dict:
-                # No tool added, directly add the output schema to the tools
-                self._replace_tools_for_structured_output(output_schema)
-
             (
                 response,
                 output_messages,
@@ -388,23 +387,16 @@ class ChatAgent(BaseAgent):
                     response_id,
                     tool_calls,
                     num_tokens,
+                    tool_call_request,
                 )
-                # TODO: to be discussed, should we directly change the
-                #  `_step_get_info` function instead?
-                info["tool_call_request"] = tool_call_request
                 return ChatAgentResponse(
                     msgs=output_messages, terminated=self.terminated, info=info
                 )
 
             # Normal function calling
-            self._step_tool_call_and_record(response, tool_calls)
+            tool_calls.append(self._step_tool_call_and_update(response))
 
-        # TODO: to be discussed, maybe we can directly put the structured
-        #  output processing outside the loop
-        output_structured = Constants.FUNC_NAME_FOR_STRUCTURED_OUTPUT in [
-            record.func_name for record in tool_calls
-        ]
-        if output_schema is not None and not output_structured:
+        if output_schema is not None:
             self._replace_tools_for_structured_output(output_schema)
 
             (
@@ -416,7 +408,7 @@ class ChatAgent(BaseAgent):
             ) = self._step_model_response(openai_messages, num_tokens)
 
             if isinstance(response, ChatCompletion):
-                self._step_tool_call_and_record(response, tool_calls)
+                tool_calls.append(self._step_tool_call_and_update(response))
 
         info = self._step_get_info(
             output_messages,
@@ -427,8 +419,6 @@ class ChatAgent(BaseAgent):
             num_tokens,
         )
 
-        # TODO: to be discussed, should we save also the structured output
-        #  function record in the tool_calls list?
         # if structured output is enabled, set structured result as content of
         # messages
         if output_schema is not None and self.model_type.is_openai:
@@ -488,9 +478,6 @@ class ChatAgent(BaseAgent):
                     e.args[1], tool_calls, "max_tokens_exceeded"
                 )
 
-            if output_schema is not None and not self.func_dict:
-                self._replace_tools_for_structured_output(output_schema)
-
             (
                 response,
                 output_messages,
@@ -516,27 +503,18 @@ class ChatAgent(BaseAgent):
                     response_id,
                     tool_calls,
                     num_tokens,
+                    tool_call_request,
                 )
-                info["tool_call_request"] = tool_call_request
                 return ChatAgentResponse(
                     msgs=output_messages, terminated=self.terminated, info=info
                 )
 
             # Normal function calling
-            (
-                func_assistant_msg,
-                func_result_msg,
-                func_record,
-            ) = await self.step_tool_call_async(response)
-            tool_calls.append(func_record)
-            # Update the messages
-            self.update_memory(func_assistant_msg, OpenAIBackendRole.ASSISTANT)
-            self.update_memory(func_result_msg, OpenAIBackendRole.FUNCTION)
+            tool_calls.append(
+                await self._step_tool_call_and_update_async(response)
+            )
 
-        output_structured = Constants.FUNC_NAME_FOR_STRUCTURED_OUTPUT in [
-            record.func_name for record in tool_calls
-        ]
-        if output_schema is not None and not output_structured:
+        if output_schema is not None:
             self._replace_tools_for_structured_output(output_schema)
 
             (
@@ -548,7 +526,7 @@ class ChatAgent(BaseAgent):
             ) = self._step_model_response(openai_messages, num_tokens)
 
             if isinstance(response, ChatCompletion):
-                self._step_tool_call_and_record(response, tool_calls)
+                tool_calls.append(self._step_tool_call_and_update(response))
 
         info = self._step_get_info(
             output_messages,
@@ -569,8 +547,8 @@ class ChatAgent(BaseAgent):
             msgs=output_messages, terminated=self.terminated, info=info
         )
 
-        # If the output result is single message, it will be
-        # automatically added to the memory
+        # If the output result is single message, it will be automatically
+        # added to the memory
         if len(chat_agent_response.msgs) == 1:
             self.record_message(chat_agent_response.msg)
         else:
@@ -582,15 +560,9 @@ class ChatAgent(BaseAgent):
 
         return chat_agent_response
 
-    def _step_tool_call_and_record(
-        self,
-        response: ChatCompletion,
-        tool_calls: List[FunctionCallingRecord],
-    ) -> Tuple[
-        List[FunctionCallingRecord],
-        FunctionCallingMessage,
-        FunctionCallingMessage,
-    ]:
+    def _step_tool_call_and_update(
+        self, response: ChatCompletion
+    ) -> FunctionCallingRecord:
         r"""Processes a function call within the chat completion response,
         records the function call in the provided list of tool calls and
         updates the memory of the current agent.
@@ -598,17 +570,9 @@ class ChatAgent(BaseAgent):
         Args:
             response (ChatCompletion): The response object from the chat
                 completion.
-            tool_calls (List[FunctionCallingRecord]): The list to record
-                function calls.
 
         Returns:
-            Tuple: A tuple containing:
-                - List[FunctionCallingRecord]: The updated list of function
-                  call records.
-                - FunctionCallingMessage: The assistant's message regarding the
-                  function call.
-                - FunctionCallingMessage: The result message of the function
-                  call.
+            FunctionCallingRecord: The record of calling the function.
         """
 
         # Perform function calling
@@ -616,16 +580,25 @@ class ChatAgent(BaseAgent):
             response
         )
 
-        # Record the function call in the list of tool calls
-        tool_calls.append(func_record)
-
         # Update the messages
         self.update_memory(func_assistant_msg, OpenAIBackendRole.ASSISTANT)
         self.update_memory(func_result_msg, OpenAIBackendRole.FUNCTION)
 
-        # Return updated tool calls list, assistant's message, and function
-        # result message
-        return tool_calls, func_assistant_msg, func_result_msg
+        return func_record
+
+    async def _step_tool_call_and_update_async(
+        self, response: ChatCompletion
+    ) -> FunctionCallingRecord:
+        (
+            func_assistant_msg,
+            func_result_msg,
+            func_record,
+        ) = await self.step_tool_call_async(response)
+
+        self.update_memory(func_assistant_msg, OpenAIBackendRole.ASSISTANT)
+        self.update_memory(func_result_msg, OpenAIBackendRole.FUNCTION)
+
+        return func_record
 
     def _replace_tools_for_structured_output(self, output_schema: BaseModel):
         r"""Processes the given output schema, converts it to a callable and
@@ -701,6 +674,7 @@ class ChatAgent(BaseAgent):
         response_id: str,
         tool_calls: List[FunctionCallingRecord],
         num_tokens: int,
+        tool_call_request: Optional[ChatCompletionMessageToolCall] = None,
     ) -> Dict[str, Any]:
         # Loop over responses terminators, get list of termination
         # tuples with whether the terminator terminates the agent
@@ -728,6 +702,7 @@ class ChatAgent(BaseAgent):
             finish_reasons,
             num_tokens,
             tool_calls,
+            tool_call_request,
         )
         return info
 
@@ -837,6 +812,7 @@ class ChatAgent(BaseAgent):
             [termination_reason],
             num_tokens,
             tool_calls,
+            None,
         )
 
         return ChatAgentResponse(
