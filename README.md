@@ -95,11 +95,20 @@ poetry shell
 poetry install
 
 # Install CAMEL with all dependencies
-poetry install -E all  # (Optional)
+poetry install -E all # (Optional)
 
 # Exit the virtual environment
 exit
 ```
+
+> [!TIP]
+> If you encounter errors when running `poetry install`, it may be due to a cache-related problem. You can try running:
+> ```sh
+> poetry install --no-cache
+> ```
+
+
+
 
 Install `CAMEL` from source with conda and pip:
 ```sh
