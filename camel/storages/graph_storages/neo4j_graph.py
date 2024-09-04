@@ -585,4 +585,13 @@ class Neo4jGraph(BaseGraphStorage):
             )
 
     def clear(self) -> None:
-        pass
+        """Clears all data from the Neo4j database."""
+        with self.driver.session(database=self.database) as session:
+            try:
+                # Delete all relationships
+                session.run("MATCH ()-[r]-() DELETE r")
+                # Delete all nodes
+                session.run("MATCH (n) DELETE n")
+            except Exception as e:
+                logger.error(f"Error clearing the database: {e}")
+                raise

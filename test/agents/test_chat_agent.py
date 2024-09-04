@@ -58,7 +58,6 @@ parametrize = pytest.mark.parametrize(
 
 @parametrize
 def test_chat_agent(model):
-    model = model
     system_msg = SystemMessageGenerator(
         task_type=TaskType.AI_SOCIETY
     ).from_dict(

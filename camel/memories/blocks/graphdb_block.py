@@ -14,12 +14,9 @@
 
 import json
 import logging
-import os
 from typing import Any, Dict, List, Optional
 
-import nltk
-from networkx import Graph
-
+from camel.embeddings import BaseEmbedding, OpenAIEmbedding
 from camel.memories.base import MemoryBlock
 from camel.memories.records import ContextRecord, MemoryRecord
 from camel.storages.graph_storages import BaseGraphStorage, Neo4jGraph
@@ -35,16 +32,21 @@ class GraphDBBlock(MemoryBlock):
         storage (Optional[BaseGraphStorage], optional): The storage mechanism
             for the graph database. Defaults to a specific implementation
             if not provided. (default: None)
+        embedding (Optional[BaseEmbedding], optional): Embedding mechanism
+            toconvert text into vector representations. Defaults to
+            OpenAIEmbedding if not provided. (default: None)
     """
 
     def __init__(
         self,
         storage: Optional[BaseGraphStorage] = None,
+        embedding: Optional[BaseEmbedding] = None,
         url: Optional[str] = None,
         username: Optional[str] = None,
         password: Optional[str] = None,
         database: Optional[str] = "neo4j",
     ) -> None:
+        self.embedding = embedding or OpenAIEmbedding()
         self.storage = storage or self.default_graph_storage(
             url, username, password, database
         )
@@ -56,23 +58,18 @@ class GraphDBBlock(MemoryBlock):
         password: Optional[str] = None,
         database: Optional[str] = "neo4j",
     ) -> BaseGraphStorage:
-        # Try to get details from environment variables first
-        url = os.getenv('NEO4J_URI', url)
-        username = os.getenv('NEO4J_USERNAME', username)
-        password = os.getenv('NEO4J_PASSWORD', password)
-        database = os.getenv('NEO4J_DATABASE', database)
-
-        # Log an error if any of the necessary values are missing
-        if not url or not username or not password:
-            logger.error(
-                "Neo4j connection detailed are missing."
-                "Ensure environment variables or parameters are set for"
-                "NEO4J_URI, NEO4J_USERNAME, and NEO4J_PASSWORD."
+        if (
+            url is None
+            or username is None
+            or password is None
+            or database is None
+        ):
+            raise ValueError(
+                "url, username, password, and database must all be provided"
+                "and non-None"
             )
-            raise ValueError("Missing Neo4j connection details.")
 
-        # Create and return an instance of Neo4jGraph
-        return Neo4jGraph(url, username, password, database or "neo4j")
+        return Neo4jGraph(url, username, password, database)
 
     def retrieve(
         self, query: str, params: Optional[Dict[str, Any]] = None
@@ -105,68 +102,69 @@ class GraphDBBlock(MemoryBlock):
         for record in records:
             content = record.message.content
 
-            if isinstance(content, str):
-                try:
-                    data = json.loads(content)
-                    subj = data.get('subject')
-                    obj = data.get('object')
-                    rel = data.get('relation')
-                except json.JSONDecodeError:
-                    logger.error(f"Error parsing content as JSON: {content}")
-                    continue
-            else:
-                subj = content.get('subject')
-                obj = content.get('object')
-                rel = content.get('relation')
+            if not isinstance(content, str):
+                logger.error(
+                    "Expected content to be a string,"
+                    f"got {type(content)}: {content}"
+                )
+                continue
+
+            try:
+                data = json.loads(content)
+                subj = data.get("subject")
+                obj = data.get("object")
+                rel = data.get("relation")
+            except json.JSONDecodeError:
+                logger.error(f"Error parsing content as JSON: {content}")
+                continue
 
             if subj and obj and rel:
-                self.write_triplet(subj, obj, rel)
+                self.storage.add_triplet(subj, obj, rel)
 
-    def write_triplet(self, subj: str, obj: str, rel: str) -> None:
-        r"""Writes a triplet to the graph database.
+    def delete_records(self, records: List[MemoryRecord]) -> None:
+        """Deletes records to the graph database."""
+        for record in records:
+            content = record.message.content
 
-        Args:
-            subj (str): The subject of the triplet.
-            obj (str): The object of the triplet.
-            rel (str): The relationship between subject and object.
-        """
-        self.storage.add_triplet(subj, obj, rel)
+            if not isinstance(content, str):
+                logger.error(
+                    "Expected content to be a string,"
+                    f"got {type(content)}: {content}"
+                )
+                continue
 
-    def delete_triplet(self, subj: str, obj: str, rel: str) -> None:
-        r"""Deletes a triplet from the graph database.
+            try:
+                data = json.loads(content)
+                subj = data.get("subject")
+                obj = data.get("object")
+                rel = data.get("relation")
+            except json.JSONDecodeError:
+                logger.error(f"Error parsing content as JSON: {content}")
+                continue
 
-        Args:
-            subj (str): The subject of the triplet.
-            obj (str): The object of the triplet.
-            rel (str): The relationship between subject and object.
-        """
-        self.storage.delete_triplet(subj, obj, rel)
+            if subj and obj and rel:
+                self.storage.delete_triplet(subj, obj, rel)
 
     def _calculate_scores(self, query: str, results: List[Any]) -> List[float]:
-        query_graph = self._build_graph(query)
+        query_vector = self.embedding.embed(query)
         scores = []
         for result in results:
-            result_graph = self._build_graph(result)
-            score = self._graph_similarity(query_graph, result_graph)
+            result_text = result.get("content", "")
+            result_vector = self.embedding.embed(result_text)
+            score = self._cosine_similarity(query_vector, result_vector)
             scores.append(score)
         return scores
 
-    def _build_graph(self, text: str) -> Graph:
-        # Tokenize the text and create a graph
-        tokens = nltk.word_tokenize(text)
-        graph: Graph = Graph()
-        for token in tokens:
-            graph.add_node(token)
-        for i in range(len(tokens) - 1):
-            graph.add_edge(tokens[i], tokens[i + 1])
-        return graph
-
-    def _graph_similarity(self, graph1: Graph, graph2: Graph) -> float:
-        # Calculate the similarity between two graphs
-        #  using the Jaccard similarity
-        intersection = set(graph1.nodes) & set(graph2.nodes)
-        union = set(graph1.nodes) | set(graph2.nodes)
-        return len(intersection) / len(union)
+    def _cosine_similarity(
+        self, vec1: List[float], vec2: List[float]
+    ) -> float:
+        # Calculate cosine similarity between two vectors
+        dot_product = sum(a * b for a, b in zip(vec1, vec2))
+        norm_a = sum(a * a for a in vec1) ** 0.5
+        norm_b = sum(b * b for b in vec2) ** 0.5
+        if norm_a == 0 or norm_b == 0:
+            return 0.0
+        return dot_product / (norm_a * norm_b)
 
     def clear(self) -> None:
         """Clears all data from the graph database."""

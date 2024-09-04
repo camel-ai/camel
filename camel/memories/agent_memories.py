@@ -116,8 +116,8 @@ class GraphDBMemory(AgentMemory):
         context_creator (BaseContextCreator): A model context creator.
         storage (BaseGraphStorage, optional): A graph storage backend. If
             `None`, a default implementation will be used. (default: `None`)
-        query (str, optional):
-            The query to retrieve data from the graph database.
+        query (str, optional): The query to retrieve data from the graph
+        database.
     """
 
     def __init__(
@@ -132,16 +132,6 @@ class GraphDBMemory(AgentMemory):
 
     def retrieve(self) -> List[ContextRecord]:
         return self._graphdb_block.retrieve(self._query)
-
-    def write_triplet(self, subj: str, obj: str, rel: str) -> None:
-        r"""Writes a triplet to the graph database.
-
-        Args:
-            subj (str): The subject of the triplet.
-            obj (str): The object of the triplet.
-            rel (str): The relationship between subject and object.
-        """
-        self._graphdb_block.write_triplet(subj, obj, rel)
 
     def get_context_creator(self) -> BaseContextCreator:
         return self._context_creator
