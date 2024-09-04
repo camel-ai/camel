@@ -31,9 +31,9 @@ class RedditToolkit(BaseToolkit):
         self.retries = retries
         self.delay = delay
 
-        client_id = os.getenv("REDDIT_CLIENT_ID")
-        client_secret = os.getenv("REDDIT_CLIENT_SECRET")
-        user_agent = os.getenv("REDDIT_USER_AGENT")
+        client_id = os.environ.get("REDDIT_CLIENT_ID")
+        client_secret = os.environ.get("REDDIT_CLIENT_SECRET")
+        user_agent = os.environ.get("REDDIT_USER_AGENT")
 
         if not all([client_id, client_secret, user_agent]):
             print(
