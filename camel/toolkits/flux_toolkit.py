@@ -81,7 +81,15 @@ class FluxToolkit(BaseToolkit):
         pipe = FluxPipeline.from_pretrained(
             "black-forest-labs/FLUX.1-dev", torch_dtype=torch.bfloat16
         )
-        pipe.enable_model_cpu_offload()
+        if torch.cuda.is_available():
+            device = torch.device("cuda")
+            pipe.enable_model_cpu_offload()
+        elif torch.backends.mps.is_available():
+            device = torch.device("mps")
+            pipe = pipe.to(device)
+        else:
+            device = torch.device("cpu")
+            pipe = pipe.to(device)
 
         image = pipe(
             prompt,
