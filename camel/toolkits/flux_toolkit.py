@@ -98,7 +98,7 @@ class FluxToolkit(BaseToolkit):
             guidance_scale=3.5,
             num_inference_steps=50,
             max_sequence_length=512,
-            generator=torch.Generator("cpu").manual_seed(0),
+            generator=torch.Generator(device).manual_seed(0),
         ).images[0]
 
         os.makedirs(image_dir, exist_ok=True)
