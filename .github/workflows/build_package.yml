@@ -9,24 +9,43 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: set up python environment and install dependencies
-        uses: ./.github/actions/camel_install
+
+      - name: Clean up before build
+        run: |
+          sudo apt-get clean
+          sudo rm -rf /var/lib/apt/lists/*
+          sudo rm -rf /tmp/*
+          sudo rm -rf $HOME/.cache/pip
+          df -h
+
+      - name: Set up Python environment and install dependencies
+        uses: actions/setup-python@v3
         with:
-          python-version: "3.9"
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          pip install poetry
+          poetry install
+
       - name: Build
-        shell: bash
         run: poetry build
+
       - name: Set up test environment
         run: |
           python -m venv venv
           source venv/bin/activate
+
       - name: Install the package
         run: |
           WHEEL_FILE=$(ls dist/*.whl)
           pip install "${WHEEL_FILE}[all,test]"
+
       - name: Test import
-        shell: bash
-        run: python -c "import camel"
+        run: |
+          source venv/bin/activate
+          python -c "import camel"
+
       - name: Run tests with Pytest
         env:
           OPENAI_API_KEY: "${{ secrets.OPENAI_API_KEY }}"
@@ -37,12 +56,24 @@ jobs:
           GROQ_API_KEY: "${{ secrets.GROQ_API_KEY }}"
           COHERE_API_KEY: "${{ secrets.COHERE_API_KEY }}"
           HF_TOKEN: "${{ secrets.HF_TOKEN }}"
-          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}"
-          AZURE_API_VERSION: ${{ secrets.AZURE_API_VERSION }}"
-          AZURE_DEPLOYMENT_NAME: ${{ secrets.AZURE_DEPLOYMENT_NAME }}"
-          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}"
+          AZURE_OPENAI_API_KEY: "${{ secrets.AZURE_OPENAI_API_KEY }}"
+          AZURE_API_VERSION: "${{ secrets.AZURE_API_VERSION }}"
+          AZURE_DEPLOYMENT_NAME: "${{ secrets.AZURE_DEPLOYMENT_NAME }}"
+          AZURE_OPENAI_ENDPOINT: "${{ secrets.AZURE_OPENAI_ENDPOINT }}"
           MISTRAL_API_KEY: "${{ secrets.MISTRAL_API_KEY }}"
+          REKA_API_KEY: "${{ secrets.REKA_API_KEY }}"
           NEO4J_URI: "${{ secrets.NEO4J_URI }}"
           NEO4J_USERNAME: "${{ secrets.NEO4J_USERNAME }}"
           NEO4J_PASSWORD: "${{ secrets.NEO4J_PASSWORD }}"
-        run: pytest --fast-test-mode ./test
+        run: |
+          source venv/bin/activate
+          pytest --fast-test-mode ./test
+
+      - name: Clean up after build
+        if: always()
+        run: |
+          sudo apt-get clean
+          sudo rm -rf /var/lib/apt/lists/*
+          sudo rm -rf /tmp/*
+          sudo rm -rf $HOME/.cache/pip
+          df -h

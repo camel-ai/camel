@@ -14,6 +14,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
@@ -62,6 +63,20 @@ if TYPE_CHECKING:
     from camel.toolkits import OpenAIFunction
 
 
+logger = logging.getLogger(__name__)
+
+# AgentOps decorator setting
+try:
+    import os
+
+    if os.getenv("AGENTOPS_API_KEY") is not None:
+        from agentops import track_agent
+    else:
+        raise ImportError
+except (ImportError, AttributeError):
+    from camel.utils import track_agent
+
+
 class FunctionCallingRecord(BaseModel):
     r"""Historical records of functions called in the conversation.
 
@@ -92,6 +107,7 @@ class FunctionCallingRecord(BaseModel):
         return self.model_dump()
 
 
+@track_agent(name="ChatAgent")
 class ChatAgent(BaseAgent):
     r"""Class for managing conversations of CAMEL Chat Agents.
 
@@ -100,9 +116,6 @@ class ChatAgent(BaseAgent):
         model (BaseModelBackend, optional): The model backend to use for
             generating responses. (default: :obj:`OpenAIModel` with
             `GPT_4O_MINI`)
-        api_key (str, optional): The API key for authenticating with the
-            LLM service. Only OpenAI and Anthropic model supported (default:
-            :obj:`None`)
         memory (AgentMemory, optional): The agent memory for managing chat
             messages. If `None`, a :obj:`ChatHistoryMemory` will be used.
             (default: :obj:`None`)
@@ -126,7 +139,6 @@ class ChatAgent(BaseAgent):
         self,
         system_message: BaseMessage,
         model: Optional[BaseModelBackend] = None,
-        api_key: Optional[str] = None,
         memory: Optional[AgentMemory] = None,
         message_window_size: Optional[int] = None,
         token_limit: Optional[int] = None,
@@ -138,7 +150,6 @@ class ChatAgent(BaseAgent):
         self.system_message = system_message
         self.role_name: str = system_message.role_name
         self.role_type: RoleType = system_message.role_type
-        self._api_key = api_key
         self.model_backend: BaseModelBackend = (
             model
             if model is not None
@@ -146,7 +157,6 @@ class ChatAgent(BaseAgent):
                 model_platform=ModelPlatformType.OPENAI,
                 model_type=ModelType.GPT_4O_MINI,
                 model_config_dict=ChatGPTConfig().as_dict(),
-                api_key=self._api_key,
             )
         )
         self.output_language: Optional[str] = output_language
@@ -431,9 +441,21 @@ class ChatAgent(BaseAgent):
             for base_message_item in output_messages:
                 base_message_item.content = str(info['tool_calls'][-1].result)
 
-        return ChatAgentResponse(
+        chat_agent_response = ChatAgentResponse(
             msgs=output_messages, terminated=self.terminated, info=info
         )
+
+        # If the output result is single message, it will be
+        # automatically added to the memory.
+        if len(chat_agent_response.msgs) == 1:
+            self.record_message(chat_agent_response.msg)
+        else:
+            logger.warning(
+                "Multiple messages are available in `ChatAgentResponse`. "
+                "Please manually run the `record_message` function to "
+                "record the selected message."
+            )
+        return chat_agent_response
 
     async def step_async(
         self,
@@ -557,9 +579,22 @@ class ChatAgent(BaseAgent):
             for base_message_item in output_messages:
                 base_message_item.content = str(info['tool_calls'][0].result)
 
-        return ChatAgentResponse(
+        chat_agent_response = ChatAgentResponse(
             msgs=output_messages, terminated=self.terminated, info=info
         )
+
+        # If the output result is single message, it will be
+        # automatically added to the memory.
+        if len(chat_agent_response.msgs) == 1:
+            self.record_message(chat_agent_response.msg)
+        else:
+            logger.warning(
+                "Multiple messages are presented in `chat_agent_response`. "
+                "Please manually call the `record_message` function to "
+                "record the chosen message."
+            )
+
+        return chat_agent_response
 
     def _add_tools_for_func_call(
         self,
@@ -730,7 +765,9 @@ class ChatAgent(BaseAgent):
             str(choice.finish_reason) for choice in response.choices
         ]
         usage = (
-            response.usage.model_dump() if response.usage is not None else {}
+            self._safe_model_dump(response.usage)
+            if response.usage is not None
+            else {}
         )
         return (
             output_messages,
@@ -738,6 +775,16 @@ class ChatAgent(BaseAgent):
             usage,
             response.id,
         )
+
+    def _safe_model_dump(self, obj):
+        # Check if the `model_dump` method exists (Pydantic v2)
+        if hasattr(obj, 'model_dump'):
+            return obj.model_dump()
+        # Fallback to `dict()` method (Pydantic v1)
+        elif hasattr(obj, 'dict'):
+            return obj.dict()
+        else:
+            raise TypeError("The object is not a Pydantic model")
 
     def handle_stream_response(
         self,

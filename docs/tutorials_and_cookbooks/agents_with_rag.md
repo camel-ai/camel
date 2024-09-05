@@ -63,7 +63,7 @@ vector_retriever = VectorRetriever(embedding_model=embedding_instance)
 We use integrated `Unstructured Module` to splite the content into small chunks, the content will be splited automacitlly with its `chunk_by_title` function, the max character for each chunk is 500 characters, which is a suitable length for `OpenAIEmbedding`. All the text in the chunks will be embed and stored to the vector storage instance, it will take some time, please wait..
 ```python
 vector_retriever.process(
-    content_input_path="local_data/camel paper.pdf",
+    content="local_data/camel paper.pdf",
     storage=storage_instance,
 )
 ```
@@ -120,7 +120,7 @@ auto_retriever = AutoRetriever(
 
 retrieved_info = auto_retriever.run_vector_retriever(
     query="What is CAMEL-AI",
-    content_input_paths=[
+    contents=[
         "local_data/camel paper.pdf",  # example local path
         "https://www.camel-ai.org/",  # example remote url
     ],
@@ -166,7 +166,7 @@ def single_agent(query: str) ->str :
 
     retrieved_info = auto_retriever.run_vector_retriever(
         query=query,
-        content_input_paths=[
+        contents=[
             "local_data/camel paper.pdf",  # example local path
             "https://www.camel-ai.org/",  # example remote url
         ],
@@ -221,7 +221,7 @@ def local_retriever(query: str) -> str:
 
     retrieved_info = auto_retriever.run_vector_retriever(
         query=query,
-        content_input_paths=[
+        contents=[
             "local_data/camel paper.pdf",  # example local path
         ],
         top_k=1

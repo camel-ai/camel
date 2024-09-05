@@ -121,7 +121,7 @@ You can connect the agent with external database (as long-term memory) in which 
     from camel.models import ModelFactory
 
     # Set the LLM model type and model config
-    model_platform = ModelPlatformType.OPENSOURCE
+    model_platform = ModelPlatformType.OPEN_SOURCE
     model_type = ModelType.LLAMA_2
     model_config=OpenSourceConfig(
         model_path='meta-llama/Llama-2-7b-chat-hf',  # a local folder or HuggingFace repo Name
