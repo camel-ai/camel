@@ -7,7 +7,7 @@ The prompt module guides AI models to produce accurate, contextually relevant an
 
 ### 2.1 Using Prompt Templates
 
-CAMEL provides various and comprehensive prompt templates for users to easily create AI specialists. Here is a demo about how to aggregate them to create a task-specific agent:
+CAMEL provides various and comprehensive prompt templates for users to easily create AI specialists. For example, here we aggregate them to create a task-specific agent:
 
 ```python
 from camel.agents import TaskSpecifyAgent
@@ -33,7 +33,7 @@ specified_task_prompt = task_specify_agent.run(
 print(f"Specified task prompt:\n{specified_task_prompt}\n")
 ```
 
-Set `task_type=TaskType.AI_SOCIETY` when creating task specify agent and it will automatically evoke prompt with template `AISocietyPromptTemplateDict.TASK_SPECIFY_PROMPT` . You can set the role that you want the assistant to play. The output will be like this:
+Set `task_type=TaskType.AI_SOCIETY` when creating a task specify agent and it will automatically evoke prompt with template `AISocietyPromptTemplateDict.TASK_SPECIFY_PROMPT` . You can set the role that you want the assistant to play. The output will be like this:
 
 ```markdown
 >> Response:
@@ -42,7 +42,7 @@ Musician will help Student enhance stage presence by practicing engaging eye con
 
 ### 2.2 Using Your Own Prompt
 
-CAMEL also ensures high flexibility for users to create identical prompts. Still take `TaskSpecifyAgent` as an example, here is a demo for you to pass your own prompt template:
+CAMEL also ensures high flexibility for users to create identical prompts. Still using `TaskSpecifyAgent` as an example, here is a demo for you to pass your own prompt template:
 
 ```python
 from camel.agents import TaskSpecifyAgent
@@ -92,7 +92,7 @@ Certainly! To make the task of getting a promotion more specific, you can break 
 
 ### 3.1 AISocietyPromptTemplateDict
     
-This class defines prompts used in the `AI Society` task with role playing and task handling. For more information about AI Society usage, please refer to corresponding documentations. Template text prompts (defined as attributes) include:
+This class defines prompts used in the `AI Society` task with role playing and task handling. For more information about AI Society usage, please refer to corresponding documentation. Template text prompts (defined as attributes) include:
 
 - **GENERATE_ASSISTANTS**: Prompt to list specified number of roles that the AI assistant can play.
 - **GENERATE_USERS**: Prompt to list common groups of internet users or occupations.
