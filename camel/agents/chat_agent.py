@@ -23,6 +23,7 @@ from typing import (
     List,
     Optional,
     Tuple,
+    Type,
     Union,
 )
 
@@ -326,7 +327,7 @@ class ChatAgent(BaseAgent):
     def step(
         self,
         input_message: BaseMessage,
-        output_schema: Optional[BaseModel] = None,
+        output_schema: Optional[Type[BaseModel]] = None,
     ) -> ChatAgentResponse:
         r"""Performs a single step in the chat session by generating a response
         to the input message.
@@ -337,8 +338,8 @@ class ChatAgent(BaseAgent):
                 either `user` or `assistant` but it will be set to `user`
                 anyway since for the self agent any incoming message is
                 external.
-            output_schema (Optional[BaseModel], optional): An optional
-                pydantic model that includes value types and field descriptions
+            output_schema (Optional[Type[BaseModel]], optional): A pydantic
+                model class that includes value types and field descriptions
                 used to generate a structured response by LLM. This schema
                 helps in defining the expected output format. (default:
                 :obj:`None`)
@@ -436,7 +437,7 @@ class ChatAgent(BaseAgent):
     async def step_async(
         self,
         input_message: BaseMessage,
-        output_schema: Optional[BaseModel] = None,
+        output_schema: Optional[Type[BaseModel]] = None,
     ) -> ChatAgentResponse:
         r"""Performs a single step in the chat session by generating a response
         to the input message. This agent step can call async function calls.
@@ -447,8 +448,8 @@ class ChatAgent(BaseAgent):
                 either `user` or `assistant` but it will be set to `user`
                 anyway since for the self agent any incoming message is
                 external.
-            output_schema (Optional[BaseModel], optional): An optional
-                pydantic model that includes value types and field descriptions
+            output_schema (Optional[Type[BaseModel]], optional): A pydantic
+                model class that includes value types and field descriptions
                 used to generate a structured response by LLM. This schema
                 helps in defining the expected output format. (default:
                 :obj:`None`)
@@ -583,7 +584,7 @@ class ChatAgent(BaseAgent):
         return func_record
 
     def _structure_output_with_function(
-        self, output_schema: BaseModel
+        self, output_schema: Type[BaseModel]
     ) -> Tuple[
         List[BaseMessage],
         List[str],
@@ -607,14 +608,16 @@ class ChatAgent(BaseAgent):
 
         # Replace the original tools with the structuring function
         self.func_dict = {func.get_function_name(): func.func}
-        Config: type[BaseConfig]
+        config_class: Type[BaseConfig]
         if self.model_type.is_openai:
-            Config = ChatGPTConfig
+            config_class = ChatGPTConfig
         elif self.model_type.is_gemini:
-            Config = GeminiConfig
+            config_class = GeminiConfig
         else:
             raise ValueError(f"Unsupported model type: {self.model_type}")
-        self.model_backend.model_config_dict = Config(tools=[func]).as_dict()
+        self.model_backend.model_config_dict = config_class(
+            tools=[func]
+        ).as_dict()
 
         openai_messages, num_tokens = self.memory.get_context()
         (
