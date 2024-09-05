@@ -76,6 +76,7 @@ class VectorRetriever(BaseRetriever):
         self,
         content: Union[str, Element],
         chunk_type: str = "chunk_by_title",
+        max_characters: int = 500,
         **kwargs: Any,
     ) -> None:
         r"""Processes content from a file or URL, divides it into chunks by
@@ -87,6 +88,8 @@ class VectorRetriever(BaseRetriever):
                 string content or Element object.
             chunk_type (str): Type of chunking going to apply. Defaults to
                 "chunk_by_title".
+            max_characters (int): Max number of characters in each chunk.
+                Defaults to `500`.
             **kwargs (Any): Additional keyword arguments for content parsing.
         """
         if isinstance(content, Element):
@@ -101,7 +104,9 @@ class VectorRetriever(BaseRetriever):
                 elements = [self.uio.create_element_from_text(text=content)]
         if elements:
             chunks = self.uio.chunk_elements(
-                chunk_type=chunk_type, elements=elements
+                chunk_type=chunk_type,
+                elements=elements,
+                max_characters=max_characters,
             )
         if not elements:
             warnings.warn(
