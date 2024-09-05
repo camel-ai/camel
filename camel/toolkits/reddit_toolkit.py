@@ -23,8 +23,7 @@ from camel.toolkits.base import BaseToolkit
 
 
 class RedditToolkit(BaseToolkit):
-    r"""
-    A class representing a toolkit for Reddit operations.
+    r"""A class representing a toolkit for Reddit operations.
 
     This toolkit provides methods to interact with the Reddit API, allowing
     users to collect top posts, perform sentiment analysis on comments, and
@@ -37,16 +36,14 @@ class RedditToolkit(BaseToolkit):
     """
 
     def __init__(self, retries: int = 3, delay: int = 0):
-        r"""
-        Initializes the RedditToolkit with the
-        specified number of retries and delay.
+        r"""Initializes the RedditToolkit with the specified number of retries
+        and delay.
 
         Args:
-            retries (int):
-            Number of times to retry the request in
-            case of failure. Defaults to 3.
-            delay (int):
-            Time in seconds to wait between retries. Defaults to 0.
+            retries (int): Number of times to retry the request in case of
+                failure. Defaults to `3`.
+            delay (int): Time in seconds to wait between retries. Defaults to
+            `0`.
         """
         from praw import Reddit  # type: ignore[import-untyped]
 
@@ -71,8 +68,7 @@ class RedditToolkit(BaseToolkit):
         )
 
     def _retry_request(self, func, *args, **kwargs):
-        r"""
-        Retries a function in case of network-related errors.
+        r"""Retries a function in case of network-related errors.
 
         Args:
             func (callable): The function to be retried.
@@ -101,21 +97,20 @@ class RedditToolkit(BaseToolkit):
         post_limit: int = 5,
         comment_limit: int = 5,
     ) -> List[Dict[str, Any]]:
-        r"""
-        Collects the top posts and their comments from a specified subreddit.
+        r"""Collects the top posts and their comments from a specified
+        subreddit.
 
         Args:
-            subreddit_name (str):
-            The name of the subreddit to collect posts from.
-            post_limit (int):
-            The maximum number of top posts to collect. Defaults to 5.
-            comment_limit (int):
-            The maximum number of top comments to collect per post.
-            Defaults to 5.
+            subreddit_name (str): The name of the subreddit to collect posts
+                from.
+            post_limit (int): The maximum number of top posts to collect.
+                Defaults to `5`.
+            comment_limit (int): The maximum number of top comments to collect
+                per post. Defaults to `5`.
 
         Returns:
-            List[Dict[str, Any]]: A list of dictionaries,
-            each containing the post title and its top comments.
+            List[Dict[str, Any]]: A list of dictionaries, each containing the
+                post title and its top comments.
         """
         subreddit = self._retry_request(self.reddit.subreddit, subreddit_name)
         top_posts = self._retry_request(subreddit.top, limit=post_limit)
@@ -139,17 +134,16 @@ class RedditToolkit(BaseToolkit):
     def perform_sentiment_analysis(
         self, data: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
-        r"""
-        Performs sentiment analysis on the comments
-        collected from Reddit posts.
+        r"""Performs sentiment analysis on the comments collected from Reddit
+        posts.
 
         Args:
-            data (List[Dict[str, Any]]):
-            A list of dictionaries containing Reddit post data and comments.
+            data (List[Dict[str, Any]]): A list of dictionaries containing
+                Reddit post data and comments.
 
         Returns:
-            List[Dict[str, Any]]:
-            The original data with an added 'Sentiment Score' for each comment.
+            List[Dict[str, Any]]: The original data with an added 'Sentiment
+                Score' for each comment.
         """
         from textblob import TextBlob
 
@@ -167,31 +161,25 @@ class RedditToolkit(BaseToolkit):
         keywords: List[str],
         post_limit: int = 10,
         comment_limit: int = 10,
-        textblob_available: bool = False,
+        sentiment_analysis: bool = False,
     ) -> List[Dict[str, Any]]:
-        r"""
-        Tracks discussions about specific keywords in specified subreddits.
+        r"""Tracks discussions about specific keywords in specified subreddits.
 
         Args:
-            subreddits (List[str]):
-            A list of subreddit names to search within.
-            keywords (List[str]):
-            A list of keywords to track in the subreddit discussions.
-            post_limit (int):
-            The maximum number of top posts to collect per subreddit.
-            Defaults to 10.
-            comment_limit (int):
-            The maximum number of top comments to collect per post.
-            Defaults to 10.
-            textblob_available (bool):
-            If True, performs sentiment analysis on the comments.
-            Defaults to False.
+            subreddits (List[str]): A list of subreddit names to search within.
+            keywords (List[str]): A list of keywords to track in the subreddit
+                discussions.
+            post_limit (int): The maximum number of top posts to collect per
+                subreddit. Defaults to `10`.
+            comment_limit (int): The maximum number of top comments to collect
+                per post. Defaults to `10`.
+            sentiment_analysis (bool): If True, performs sentiment analysis on
+                the comments. Defaults to `False`.
 
         Returns:
-            List[Dict[str, Any]]:
-            A list of dictionaries containing the subreddit name,
-            post title, comment body,
-            and upvotes for each comment that contains the specified keywords.
+            List[Dict[str, Any]]: A list of dictionaries containing the
+                subreddit name, post title, comment body, and upvotes for each
+                comment that contains the specified keywords.
         """
         data = []
 
@@ -219,18 +207,17 @@ class RedditToolkit(BaseToolkit):
                         data.append(comment_data)
                 # Add a delay to avoid hitting rate limits
                 time.sleep(self.delay)
-        if textblob_available:
+        if sentiment_analysis:
             data = self.perform_sentiment_analysis(data)
         return data
 
     def get_tools(self) -> List[OpenAIFunction]:
-        r"""
-        Returns a list of OpenAIFunction objects
-        representing the functions in the toolkit.
+        r"""Returns a list of OpenAIFunction objects representing the
+        functions in the toolkit.
 
         Returns:
-            List[OpenAIFunction]:
-            A list of OpenAIFunction objects for the toolkit methods.
+            List[OpenAIFunction]: A list of OpenAIFunction objects for the
+                toolkit methods.
         """
         return [
             OpenAIFunction(self.collect_top_posts),
