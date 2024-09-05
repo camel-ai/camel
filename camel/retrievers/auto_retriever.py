@@ -181,6 +181,7 @@ class AutoRetriever:
         top_k: int = DEFAULT_TOP_K_RESULTS,
         similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
         return_detailed_info: bool = False,
+        max_characters: int = 500,
     ) -> dict[str, Sequence[Collection[str]]]:
         r"""Executes the automatic vector retriever process using vector
         storage.
@@ -198,6 +199,8 @@ class AutoRetriever:
             return_detailed_info (bool, optional): Whether to return detailed
                 information including similarity score, content path and
                 metadata. Defaults to `False`.
+            max_characters (int): Max number of characters in each chunk.
+                Defaults to `500`.
 
         Returns:
             dict[str, Sequence[Collection[str]]]: By default, returns
@@ -262,7 +265,7 @@ class AutoRetriever:
                         storage=vector_storage_instance,
                         embedding_model=self.embedding_model,
                     )
-                    vr.process(content)
+                    vr.process(content=content, max_characters=max_characters)
                 else:
                     vr = VectorRetriever(
                         storage=vector_storage_instance,
