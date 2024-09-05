@@ -74,9 +74,8 @@ class SingleAgentWorker(Worker):
                 content=prompt,
             )
             response = self.worker.step(req)
-            # print("info['tool_calls']:", response.info['tool_calls'])
             task.result = parse_task_result_resp(response.msg.content)
-            print('Task result:', task.result, '\n')
+            print(f'Task result: {task.result}\n')
             return TaskState.DONE
         except Exception:
             return TaskState.FAILED

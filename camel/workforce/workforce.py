@@ -101,9 +101,12 @@ class Workforce(BaseNode):
         )
         self.task_agent = ChatAgent(task_sys_msg, **(task_agent_kwargs or {}))
 
-        # if there is one, will set by the workforce class wrapping this
+        # If there is one, will set by the workforce class wrapping this
         self._task: Optional[Task] = None
         self._pending_tasks: Deque[Task] = deque()
+
+    def __repr__(self):
+        return f"Workforce {self.node_id} ({self.description})"
 
     @check_if_running(False)
     def process_task(self, task: Task) -> Task:
@@ -235,7 +238,7 @@ class Workforce(BaseNode):
         )
         response = self.coordinator_agent.step(req)
         try:
-            print(f"{Fore.YELLOW}{response.msg.content}{Fore.RESET}")
+            logger.info(f"Selected node: {response.msg.content}")
             assignee_id = parse_assign_task_resp(response.msg.content)
         except ValueError:
             assignee_id = self._create_worker_node_for_task(task).node_id
@@ -280,10 +283,7 @@ class Workforce(BaseNode):
         )
         new_node.set_channel(self._channel)
 
-        print(
-            f"{Fore.GREEN}New worker node {new_node.node_id} created."
-            f"{Fore.RESET}"
-        )
+        print(f"{Fore.CYAN}{new_node} created." f"{Fore.RESET}")
 
         self._children.append(new_node)
         self._child_listening_tasks.append(
@@ -300,7 +300,7 @@ class Workforce(BaseNode):
         if self.new_worker_agent_kwargs is not None:
             return ChatAgent(worker_sys_msg, **self.new_worker_agent_kwargs)
 
-        # default tools for a new agent
+        # Default tools for a new agent
         function_list = [
             *SEARCH_FUNCS,
             *WEATHER_FUNCS,
@@ -337,22 +337,22 @@ class Workforce(BaseNode):
 
         ready_task = self._pending_tasks[0]
 
-        # if the task has failed previously, just compose and send the task
+        # If the task has failed previously, just compose and send the task
         # to the channel as a dependency
         if ready_task.state == TaskState.FAILED:
             # TODO: the composing of tasks seems not work very well
             ready_task.compose(self.task_agent)
-            # remove the subtasks from the channel
+            # Remove the subtasks from the channel
             for subtask in ready_task.subtasks:
                 await self._channel.remove_task(subtask.id)
-            # send the task to the channel as a dependency
+            # Send the task to the channel as a dependency
             await self._post_dependency(ready_task)
             self._pending_tasks.popleft()
-            # try to send the next task in the pending list
+            # Try to send the next task in the pending list
             await self._post_ready_tasks()
         else:
-            # directly post the task to the channel if it's a new one
-            # find a node to assign the task
+            # Directly post the task to the channel if it's a new one
+            # Find a node to assign the task
             assignee_id = self._find_assignee(task=ready_task)
             await self._post_task(ready_task, assignee_id)
 
@@ -360,13 +360,11 @@ class Workforce(BaseNode):
         if task.failure_count >= 3:
             return True
         task.failure_count += 1
-        # remove the failed task from the channel
+        # Remove the failed task from the channel
         await self._channel.remove_task(task.id)
         if task.get_depth() >= 3:
-            # create a new WF and reassign
-            # TODO: add a state for reassign?
+            # Create a new worker node and reassign
             assignee = self._create_worker_node_for_task(task)
-            # print('create_new_assignee:', assignee)
             await self._post_task(task, assignee.node_id)
         else:
             subtasks = task.decompose(self.task_agent)
@@ -391,12 +389,9 @@ class Workforce(BaseNode):
         """
 
         self._running = True
-        print(f"{Fore.GREEN}Manager node {self.node_id} started.{Fore.RESET}")
+        logger.info(f"Workforce {self.node_id} started.")
 
         await self._post_ready_tasks()
-
-        # DEBUG OUTPUT
-        print(await self._channel.get_channel_debug_info())
 
         while self._task is None or self._pending_tasks:
             returned_task = await self._get_returned_task()
