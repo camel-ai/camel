@@ -26,14 +26,14 @@ Following is the information of the existing workforces. The format is <ID>: <de
 
 You must return the following information:
 1. The role of the agent working in the workforce, e.g. "programmer", "researcher", "product owner". This should be enclosed within the <role></role> tags.
-2. The system message that will be sent to the agent, enclosed within the <sysmsg></sysmsg> tags.
+2. The system message that will be sent to the agent, enclosed within the <sys_msg></sys_msg> tags.
 3. The description of the workforce, enclosed within the <description></description> tags.
 
 Also, all of the info should be enclosed within a <workforce> tag. For example:
 
 <workforce>
 <role>programmer</role>
-<sysmsg>You are a python programmer.</sysmsg>
+<sys_msg>You are a python programmer.</sys_msg>
 <description>a python programmer.</description>
 </workforce>
 
@@ -101,25 +101,24 @@ You must return the result of the given task.
 """
 )
 
-# TODO: improve prompt quality
-ROLEPLAY_SUMMERIZE_PROMPT = TextPrompt(
-    """You need to process the task.
-The content of the task is:
+ROLEPLAY_SUMMARIZE_PROMPT = TextPrompt(
+    """For this scenario, the roles of the user is {user_role} and role of the assistant is {assistant_role}.
+Here is the content of the task they are trying to solve:
 
-{content}
+{task_content}
 
-The type of the task is:
+Here is their chat history on the task:
 
-{type}
-
-To process this task, here are the chat history of AI user and AI assistant:
-
+```
 {chat_history}
+```
 
-You must summerize the chat history of the return the result of the given task. The result should be enclosed within the <result></result> tags, for example:
+Now you should summarize the scenario and return the result of the task.
+The result should be enclosed within the <result></result> tags, for example:
 
-<result>Today, you requested information about the current weather conditions. The weather today in New York City is partly cloudy with a high of 75°F (24°C) and a low of 59°F (15°C). There is a 10 percent chance of rain with winds coming from the northeast at 5 mph. Humidity levels are at 60%. It's a perfect day to spend some time outdoors, perhaps in one of the city's beautiful parks.</result>
+<result>The weather today in New York City is partly cloudy with a high of 75°F (24°C) and a low of 59°F (15°C).</result>
 
+You should keep important details and remove unnecessary information.
 if you are not able to process the task, you need to return <failed></failed> tags.
 """
 )

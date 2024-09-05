@@ -83,19 +83,16 @@ class Workforce(BaseNode):
         self._children = children or []
         self.new_worker_agent_kwargs = new_worker_agent_kwargs
 
-        coord_agent_sysmsg = BaseMessage.make_assistant_message(
+        coord_agent_sys_msg = BaseMessage.make_assistant_message(
             role_name="Workforce Manager",
             content="You are coordinating a group of workers. A worker can be "
             "a group of agents or a single agent. Each worker is "
-            "created to"
-            " solve a specific kind of task. Your job includes "
-            "assigning "
-            "tasks to a existing worker, creating a new worker for a "
-            "task, "
-            "etc.",
+            "created to solve a specific kind of task. Your job "
+            "includes assigning tasks to a existing worker, creating "
+            "a new worker for a task, etc.",
         )
         self.coordinator_agent = ChatAgent(
-            coord_agent_sysmsg, **(coordinator_agent_kwargs or {})
+            coord_agent_sys_msg, **(coordinator_agent_kwargs or {})
         )
 
         task_sys_msg = BaseMessage.make_assistant_message(
@@ -274,7 +271,7 @@ class Workforce(BaseNode):
 
         new_agent = self._create_new_agent(
             new_node_conf.role,
-            new_node_conf.sysmsg,
+            new_node_conf.sys_msg,
         )
 
         new_node = SingleAgentWorker(
@@ -294,14 +291,14 @@ class Workforce(BaseNode):
         )
         return new_node
 
-    def _create_new_agent(self, role: str, sysmsg: str) -> ChatAgent:
-        worker_sysmsg = BaseMessage.make_assistant_message(
+    def _create_new_agent(self, role: str, sys_msg: str) -> ChatAgent:
+        worker_sys_msg = BaseMessage.make_assistant_message(
             role_name=role,
-            content=sysmsg,
+            content=sys_msg,
         )
 
         if self.new_worker_agent_kwargs is not None:
-            return ChatAgent(worker_sysmsg, **self.new_worker_agent_kwargs)
+            return ChatAgent(worker_sys_msg, **self.new_worker_agent_kwargs)
 
         # default tools for a new agent
         function_list = [
@@ -321,7 +318,7 @@ class Workforce(BaseNode):
             model_config_dict=model_config_dict,
         )
 
-        return ChatAgent(worker_sysmsg, model=model, tools=function_list)
+        return ChatAgent(worker_sys_msg, model=model, tools=function_list)
 
     async def _get_returned_task(self) -> Task:
         r"""Get the task that's published by this node and just get returned
@@ -359,7 +356,10 @@ class Workforce(BaseNode):
             assignee_id = self._find_assignee(task=ready_task)
             await self._post_task(ready_task, assignee_id)
 
-    async def _handle_failed_task(self, task: Task) -> None:
+    async def _handle_failed_task(self, task: Task) -> bool:
+        if task.failure_count >= 3:
+            return True
+        task.failure_count += 1
         # remove the failed task from the channel
         await self._channel.remove_task(task.id)
         if task.get_depth() >= 3:
@@ -376,6 +376,7 @@ class Workforce(BaseNode):
             # Insert packets at the head of the queue
             self._pending_tasks.extendleft(reversed(subtasks))
             await self._post_ready_tasks()
+        return False
 
     async def _handle_completed_task(self, task: Task) -> None:
         # archive the packet, making it into a dependency
@@ -402,7 +403,14 @@ class Workforce(BaseNode):
             if returned_task.state == TaskState.DONE:
                 await self._handle_completed_task(returned_task)
             elif returned_task.state == TaskState.FAILED:
-                await self._handle_failed_task(returned_task)
+                halt = await self._handle_failed_task(returned_task)
+                if not halt:
+                    continue
+                print(
+                    f"{Fore.RED}Task {returned_task.id} has failed "
+                    f"for 3 times, halting the workforce.{Fore.RESET}"
+                )
+                break
             elif returned_task.state == TaskState.OPEN:
                 # TODO: multi-layer workforce
                 pass

@@ -93,6 +93,8 @@ class Task(BaseModel):
 
     result: Optional[str] = ""
 
+    failure_count: int = 0
+
     @classmethod
     def from_message(cls, message: BaseMessage) -> "Task":
         r"""Create a task from a message.

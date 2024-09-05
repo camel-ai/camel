@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional
 
-from colorama import Fore, Style
+from colorama import Fore
 
 from camel.agents.chat_agent import ChatAgent, FunctionCallingRecord
 from camel.messages.base import BaseMessage
@@ -26,7 +26,7 @@ from camel.workforce.utils import parse_task_result_resp
 from camel.workforce.worker import Worker
 from camel.workforce.workforce_prompt import (
     ROLEPLAY_PROCESS_TASK_PROMPT,
-    ROLEPLAY_SUMMERIZE_PROMPT,
+    ROLEPLAY_SUMMARIZE_PROMPT,
 )
 
 
@@ -57,11 +57,14 @@ class RolePlayingWorker(Worker):
         chat_turn_limit: int = 3,
     ) -> None:
         super().__init__(description)
-        sys_message = BaseMessage.make_assistant_message(
+        summ_sys_msg = BaseMessage.make_assistant_message(
             role_name="Summarizer",
-            content="Good at summarizing the results of the chat logs",
+            content="You are a good summarizer. You will be presented with "
+            "scenarios where an assistant and a user with specific roles "
+            "are trying to solve a task. Your job is summarizing the result "
+            "of the task based on the chat history.",
         )
-        self.summerize_agent = ChatAgent(sys_message)
+        self.summarize_agent = ChatAgent(summ_sys_msg)
         self.chat_turn_limit = chat_turn_limit
         self.assistant_role_name = assistant_role_name
         self.user_role_name = user_role_name
@@ -116,30 +119,40 @@ class RolePlayingWorker(Worker):
                 if assistant_response.terminated:
                     reason = assistant_response.info['termination_reasons']
                     print(
-                        Fore.GREEN + f"AI Assistant terminated. Reason: "
-                        f"{reason}. "
+                        f"{Fore.GREEN}AI Assistant terminated. Reason: "
+                        f"{reason}.{Fore.RESET}"
                     )
                     break
+
                 if user_response.terminated:
                     reason = user_response.info['termination_reasons']
                     print(
-                        Fore.GREEN + f"AI User terminated. Reason: {reason}."
+                        f"{Fore.GREEN}AI User terminated. Reason: {reason}."
+                        f"{Fore.RESET}"
                     )
                     break
+
                 print_text_animated(
-                    Fore.BLUE + f"AI User:\n\n{user_response.msg.content}\n",
+                    f"{Fore.BLUE}AI User:\n\n{user_response.msg.content}"
+                    f"{Fore.RESET}\n",
                     delay=0.005,
                 )
                 chat_history.append(f"AI User: {user_response.msg.content}")
 
-                print_text_animated(Fore.GREEN + "AI Assistant:", delay=0.005)
+                print_text_animated(
+                    f"{Fore.GREEN}AI Assistant:{Fore.RESET}", delay=0.005
+                )
                 tool_calls: List[FunctionCallingRecord] = (
                     assistant_response.info['tool_calls']
                 )
+
                 for func_record in tool_calls:
-                    print_text_animated(f"{func_record}", delay=0.005)
+                    print(func_record)
+
                 print_text_animated(
-                    f"{assistant_response.msg.content}\n", delay=0.005
+                    f"\n{Fore.GREEN}{assistant_response.msg.content}"
+                    f"{Fore.RESET}\n",
+                    delay=0.005,
                 )
                 chat_history.append(
                     f"AI Assistant: {assistant_response.msg.content}"
@@ -151,18 +164,17 @@ class RolePlayingWorker(Worker):
                 input_msg = assistant_response.msg
 
             chat_history_str = "\n".join(chat_history)
-            prompt = ROLEPLAY_SUMMERIZE_PROMPT.format(
+            prompt = ROLEPLAY_SUMMARIZE_PROMPT.format(
                 content=task.content,
-                type=task.type,
                 chat_history=chat_history_str,
             )
             req = BaseMessage.make_user_message(
                 role_name="User",
                 content=prompt,
             )
-            response = self.summerize_agent.step(req)
+            response = self.summarize_agent.step(req)
             task.result = parse_task_result_resp(response.msg.content)
-            print(Style.RESET_ALL + 'Task result:', task.result, '\n')
+            print(f"Task result: {task.result}\n")
             return TaskState.DONE
         except Exception:
             return TaskState.FAILED
