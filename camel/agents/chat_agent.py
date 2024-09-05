@@ -744,7 +744,9 @@ class ChatAgent(BaseAgent):
             str(choice.finish_reason) for choice in response.choices
         ]
         usage = (
-            response.usage.model_dump() if response.usage is not None else {}
+            self._safe_model_dump(response.usage)
+            if response.usage is not None
+            else {}
         )
         return (
             output_messages,
@@ -752,6 +754,16 @@ class ChatAgent(BaseAgent):
             usage,
             response.id,
         )
+
+    def _safe_model_dump(self, obj):
+        # Check if the `model_dump` method exists (Pydantic v2)
+        if hasattr(obj, 'model_dump'):
+            return obj.model_dump()
+        # Fallback to `dict()` method (Pydantic v1)
+        elif hasattr(obj, 'dict'):
+            return obj.dict()
+        else:
+            raise TypeError("The object is not a Pydantic model")
 
     def handle_stream_response(
         self,
