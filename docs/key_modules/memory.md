@@ -20,33 +20,43 @@ Here's a quick example of how to use the `LongtermAgentMemory`:
 
 ```python
 from camel.memories import (
-    LongtermAgentMemory,
     ChatHistoryBlock,
-    VectorDBBlock,
+    LongtermAgentMemory,
     MemoryRecord,
     ScoreBasedContextCreator,
+    VectorDBBlock,
 )
 from camel.messages import BaseMessage
-from camel.types import OpenAIBackendRole, RoleType
+from camel.types import ModelType, OpenAIBackendRole, RoleType
 from camel.utils import OpenAITokenCounter
 
 # Initialize memory
 memory = LongtermAgentMemory(
-    context_creator=ScoreBasedContextCreator(OpenAITokenCounter, 1024),
-    chat_history_block=ChatHistoryBlock(), vector_db_block=VectorDBBlock())
+    context_creator=ScoreBasedContextCreator(
+        OpenAITokenCounter(ModelType.GPT_4O_MINI), 1024
+    ),
+    chat_history_block=ChatHistoryBlock(),
+    vector_db_block=VectorDBBlock(),
+)
 
 # Write records to memory
 records = [
     MemoryRecord(
-        message=BaseMessage(role_name="User", role_type=RoleType.USER,
-                            meta_dict=None, content="What is AI?"),
+        message=BaseMessage(
+            role_name="User",
+            role_type=RoleType.USER,
+            meta_dict=None,
+            content="What is AI?",
+        ),
         role_at_backend=OpenAIBackendRole.USER,
     ),
     MemoryRecord(
         message=BaseMessage(
-            role_name="Assistant", role_type=RoleType.ASSISTANT,
+            role_name="Assistant",
+            role_type=RoleType.ASSISTANT,
             meta_dict=None,
-            content="AI refers to systems that mimic human intelligence."),
+            content="AI refers to systems that mimic human intelligence.",
+        ),
         role_at_backend=OpenAIBackendRole.ASSISTANT,
     ),
 ]
@@ -60,11 +70,17 @@ for message in context:
 
 ```
 
+```markdown
+>>> Retrieved context (token count: 27):
+{'role': 'user', 'content': 'What is AI?'}
+{'role': 'assistant', 'content': 'AI refers to systems that mimic human intelligence.'}
+```
+
 ## Core Components
 
 ### MemoryRecord
 
-The basic data unit in the CAMEL memory system.
+The basic data unit in the `CAMEL` memory system.
 
 Attributes:
 
@@ -75,9 +91,9 @@ Attributes:
 
 Methods:
 
-- `from_dict()`: Static method to construct a MemoryRecord from a dictionary
-- `to_dict()`: Convert the MemoryRecord to a dictionary for serialization
-- `to_openai_message()`: Convert the record to an OpenAIMessage object
+- `from_dict()`: Static method to construct a `MemoryRecord` from a dictionary
+- `to_dict()`: Convert the `MemoryRecord` to a dictionary for serialization
+- `to_openai_message()`: Convert the record to an `OpenAIMessage` object
 
 ### ContextRecord
 
@@ -85,7 +101,7 @@ The result of memory retrieval from `AgentMemory`, which is used by `ContextCrea
 
 Attributes:
 
-- `memory_record`: A MemoryRecord
+- `memory_record`: A `MemoryRecord`
 - `score`: A float value representing the relevance or importance of the record
 
 ### MemoryBlock (Abstract Base Class)
@@ -108,7 +124,7 @@ Defines the context creation strategies when retrieval messages exceed the model
 
 A specialized form of MemoryBlock designed for direct integration with an agent.
 
-- `retrieve()`: Get a list of ContextRecords from memory
+- `retrieve()`: Get a list of `ContextRecords` from memory
 - `get_context_creator()`: Get a context creator
 - `get_context()`: Get chat context with a proper size for the agent
 
@@ -120,8 +136,8 @@ Maintains a record of chat histories.
 
 Initialization:
 
-- `storage`: Optional BaseKeyValueStorage (default: InMemoryKeyValueStorage)
-- `keep_rate`: Float value for scoring historical messages (default: 0.9)
+- `storage`: Optional `BaseKeyValueStorage` (default: `InMemoryKeyValueStorage`)
+- `keep_rate`: Float value for scoring historical messages (default: `0.9`)
 
 Methods:
 
@@ -137,8 +153,8 @@ Uses vector embeddings for maintaining and retrieving information.
 
 Initialization:
 
-- `storage`: Optional BaseVectorStorage (default: QdrantStorage)
-- `embedding`: Optional BaseEmbedding (default: OpenAIEmbedding)
+- `storage`: Optional BaseVectorStorage (default: `QdrantStorage`)
+- `embedding`: Optional BaseEmbedding (default: `OpenAIEmbedding`)
 
 Methods:
 
@@ -150,9 +166,9 @@ Use Case: Better for retrieving semantically relevant information across a large
 
 Key Differences:
 
-1. Storage Mechanism: ChatHistoryBlock uses key-value storage, VectorDBBlock uses vector database storage.
-2. Retrieval Method: ChatHistoryBlock retrieves based on recency, VectorDBBlock retrieves based on semantic similarity.
-3. Data Representation: ChatHistoryBlock stores messages in original form, VectorDBBlock converts to vector embeddings.
+1. Storage Mechanism: `ChatHistoryBlock` uses key-value storage, `VectorDBBlock` uses vector database storage.
+2. Retrieval Method: `ChatHistoryBlock` retrieves based on recency, `VectorDBBlock` retrieves based on semantic similarity.
+3. Data Representation: `ChatHistoryBlock` stores messages in original form, `VectorDBBlock` converts to vector embeddings.
 
 ## Agent Memory Implementations
 
@@ -162,8 +178,8 @@ An AgentMemory implementation that wraps ChatHistoryBlock.
 
 Initialization:
 
-- `context_creator`: BaseContextCreator
-- `storage`: Optional BaseKeyValueStorage
+- `context_creator`: `BaseContextCreator`
+- `storage`: Optional `BaseKeyValueStorage`
 - `window_size`: Optional int for retrieval window
 
 Methods:
@@ -175,13 +191,13 @@ Methods:
 
 ### VectorDBMemory
 
-An AgentMemory implementation that wraps VectorDBBlock.
+An `AgentMemory` implementation that wraps `VectorDBBlock`.
 
 Initialization:
 
-- `context_creator`: BaseContextCreator
-- `storage`: Optional BaseVectorStorage
-- `retrieve_limit`: int for maximum number of retrieved messages (default: 3)
+- `context_creator`: `BaseContextCreator`
+- `storage`: Optional `BaseVectorStorage`
+- `retrieve_limit`: int for maximum number of retrieved messages (default:`3`)
 
 Methods:
 
@@ -195,10 +211,10 @@ Combines ChatHistoryMemory and VectorDBMemory for comprehensive memory managemen
 
 Initialization:
 
-- `context_creator`: BaseContextCreator
-- `chat_history_block`: Optional ChatHistoryBlock
-- `vector_db_block`: Optional VectorDBBlock
-- `retrieve_limit`: int for maximum number of retrieved messages (default: 3)
+- `context_creator`: `BaseContextCreator`
+- `chat_history_block`: Optional `ChatHistoryBlock`
+- `vector_db_block`: Optional `VectorDBBlock`
+- `retrieve_limit`: int for maximum number of retrieved messages (default: `3`)
 
 Methods:
 
@@ -211,7 +227,7 @@ Methods:
 
 To use the Memory module in your agent:
 
-1. Choose an appropriate AgentMemory implementation (ChatHistoryMemory, VectorDBMemory, or LongtermAgentMemory).
+1. Choose an appropriate AgentMemory implementation (`ChatHistoryMemory`, `VectorDBMemory`, or `LongtermAgentMemory`).
 2. Initialize the memory with a context creator and any necessary parameters.
 3. Use `write_records()` to add new information to the memory.
 4. Use `retrieve()` to get relevant context for the agent's next action.
@@ -220,37 +236,65 @@ To use the Memory module in your agent:
 Example using `LongtermAgentMemory`:
 
 ```python
-from camel.memories import LongtermAgentMemory, ChatHistoryBlock, VectorDBBlock, ScoreBasedContextCreator
-from camel.memories import MemoryRecord
+from camel.memories import (
+    ChatHistoryBlock,
+    LongtermAgentMemory,
+    MemoryRecord,
+    ScoreBasedContextCreator,
+    VectorDBBlock,
+)
 from camel.messages import BaseMessage
-from camel.types import OpenAIBackendRole
+from camel.types import ModelType, OpenAIBackendRole
 from camel.utils import OpenAITokenCounter
 
 # Initialize the memory
 memory = LongtermAgentMemory(
-    context_creator=ScoreBasedContextCreator(OpenAITokenCounter, 1024),
+    context_creator=ScoreBasedContextCreator(
+        OpenAITokenCounter(ModelType.GPT_4O_MINI), 1024
+    ),
     chat_history_block=ChatHistoryBlock(),
-    vector_db_block=VectorDBBlock()
+    vector_db_block=VectorDBBlock(),
 )
 
 # Create and write new records
 records = [
     MemoryRecord(
-        message=BaseMessage(role_name="user", role_type="human", meta_dict=None, content="What is machine learning?"),
-        role_at_backend=OpenAIBackendRole.USER
+        message=BaseMessage(
+            role_name="user",
+            role_type="human",
+            meta_dict=None,
+            content="What is machine learning?",
+        ),
+        role_at_backend=OpenAIBackendRole.USER,
     ),
     MemoryRecord(
-        message=BaseMessage(role_name="agent", role_type="ai", meta_dict=None, content="Machine learning is a subset of AI..."),
-        role_at_backend=OpenAIBackendRole.ASSISTANT
-    )
+        message=BaseMessage(
+            role_name="agent",
+            role_type="ai",
+            meta_dict=None,
+            content="Machine learning is a subset of AI...",
+        ),
+        role_at_backend=OpenAIBackendRole.ASSISTANT,
+    ),
 ]
 memory.write_records(records)
 
 # Get context for the agent
 context, token_count = memory.get_context()
 
-# Use the context in your agent's next action
+print(context)
+```
 
+```markdown
+>>> [{'role': 'user', 'content': 'What is machine learning?'}, {'role': 'assistant', 'content': 'Machine learning is a subset of AI...'}]
+```
+
+```python
+print(token_count)
+```
+
+```markdown
+>>> 27
 ```
 
 ## Advanced Topics
@@ -283,18 +327,13 @@ class MyCustomContextCreator(BaseContextCreator):
 For `VectorDBBlock`, you can customize it by adjusting the embedding models or vector storages:
 
 ```python
-from camel.embeddings import mistral_embedding, openai_embedding
-from camel.storages.vectordb_storages import qdrant, milvus
+from camel.embeddings import OpenAIEmbedding
 from camel.memories import VectorDBBlock
+from camel.storages import QdrantStorage
 
-vector_db1 = VectorDBBlock(
-    embedding = mistral_embedding,
-    storage = qdrant
-)
-
-vector_db2 = VectorDBBlock(
-    embedding=openai_embedding,
-    storage=milvus
+vector_db = VectorDBBlock(
+    embedding=OpenAIEmbedding(),
+    storage=QdrantStorage(vector_dim=OpenAIEmbedding().get_output_dim()),
 )
 ```
 
