@@ -69,7 +69,7 @@ class SingleAgentWorker(Worker):
             dependency_tasks_info = self._get_dep_tasks_info(dependencies)
             prompt = PROCESS_TASK_PROMPT.format(
                 content=task.content,
-                dependency_task_info=dependency_tasks_info,
+                dependency_tasks_info=dependency_tasks_info,
             )
             req = BaseMessage.make_user_message(
                 role_name="User",

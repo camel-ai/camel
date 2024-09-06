@@ -60,20 +60,26 @@ You must return the ID of the workforce that you think is most capable of doing 
 )
 
 PROCESS_TASK_PROMPT = TextPrompt(
-    """You need to process the task. It is recommended that tools be actively called when needed.
+    """You need to process one given task.
 Here are results of some prerequisite tasks that you can refer to:
 
-{dependency_task_info}
+==============================
+{dependency_tasks_info}
+==============================
 
 The content of the task that you need to do is:
 
+==============================
 {content}
+==============================
 
 You must return the result of the given task. The result should be enclosed within the <result></result> tags, for example:
 
-<result>Today, you requested information about the current weather conditions. The weather today in New York City is partly cloudy with a high of 75°F (24°C) and a low of 59°F (15°C). There is a 10 percent chance of rain with winds coming from the northeast at 5 mph. Humidity levels are at 60%. It's a perfect day to spend some time outdoors, perhaps in one of the city's beautiful parks.</result>
+==============================
+<result>The weather today in New York City is partly cloudy with a high of 75°F (24°C) and a low of 59°F (15°C).</result>
+==============================
 
-if you are not able to process the task, you need to return <failed></failed> tags.
+If you think you are not capable of COMPLETELY finish the task, you need to return <failed></failed> tags.
 """
 )
 
@@ -100,9 +106,9 @@ Here is the content of the task they are trying to solve:
 
 Here is their chat history on the task:
 
-```
+==============================
 {chat_history}
-```
+==============================
 
 Now you should summarize the scenario and return the result of the task.
 The result should be enclosed within the <result></result> tags, for example:
@@ -110,7 +116,7 @@ The result should be enclosed within the <result></result> tags, for example:
 <result>The weather today in New York City is partly cloudy with a high of 75°F (24°C) and a low of 59°F (15°C).</result>
 
 You should keep important details and remove unnecessary information.
-if you are not able to process the task, you need to return <failed></failed> tags.
+If you think you are not capable of COMPLETELY finish the task, you need to return <failed></failed> tags.
 """
 )
 
@@ -118,11 +124,15 @@ WF_TASK_DECOMPOSE_PROMPT = r"""You need to split the given task into
 subtasks according to the workers available in the group.
 The content of the task is:
 
+==============================
 {content}
+==============================
 
 Following are the available workers, given in the format <ID>: <description>.
 
+==============================
 {child_nodes_info}
+==============================
 
 You must return the subtasks in the format of a numbered list within <tasks> tags, as shown below:
 

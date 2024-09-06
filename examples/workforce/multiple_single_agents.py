@@ -84,8 +84,8 @@ def main():
     # specify the task to be solved
     human_task = Task(
         content=(
-            "Plan a one-week trip to Paris, considering some historical places"
-            " to visit and weather conditions."
+            "Make a detailed 3-day trip plan to Paris, considering some"
+            " historical places to visit and weather conditions."
         ),
         id='0',
     )
