@@ -181,11 +181,15 @@ class ChatAgent(BaseAgent):
             context_creator, window_size=message_window_size
         )
 
-        self.input_memory_records = (
-            [record.memory_record for record in memory.retrieve()]
-            if memory
-            else None
-        )
+        if memory:
+            self._input_memory_records = [
+                record.memory_record
+                for record in memory.retrieve()
+                if record.memory_record.role_at_backend
+                != OpenAIBackendRole.SYSTEM
+            ]
+        else:
+            self._input_memory_records = None
 
         self.terminated: bool = False
         self.response_terminators = response_terminators or []
@@ -310,8 +314,8 @@ class ChatAgent(BaseAgent):
         self.memory.write_record(system_record)
 
         # Write input memory records back if they exist
-        if self.input_memory_records:
-            self.memory.write_records(self.input_memory_records)
+        if self._input_memory_records:
+            self.memory.write_records(self._input_memory_records)
 
     def record_message(self, message: BaseMessage) -> None:
         r"""Records the externally provided message into the agent memory as if
@@ -359,9 +363,6 @@ class ChatAgent(BaseAgent):
 
             try:
                 openai_messages, num_tokens = self.memory.get_context()
-                print("$$$$")
-                print(openai_messages)
-                print("$$$$")
             except RuntimeError as e:
                 return self.step_token_exceed(
                     e.args[1], tool_calls, "max_tokens_exceeded"
