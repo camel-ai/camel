@@ -181,11 +181,11 @@ class ChatAgent(BaseAgent):
             context_creator, window_size=message_window_size
         )
 
-        if memory:
-            self.input_memory_records = [
-                context_record.memory_record
-                for context_record in memory.retrieve()
-            ]
+        self.input_memory_records = (
+            [record.memory_record for record in memory.retrieve()]
+            if memory
+            else []
+        )
 
         self.terminated: bool = False
         self.response_terminators = response_terminators or []
