@@ -103,7 +103,7 @@ def test_track_keyword_discussions(reddit_toolkit):
         mock_textblob.return_value.sentiment.polarity = -0.1
 
         result = reddit_toolkit.track_keyword_discussions(
-            ["test_subreddit"], ["mental health"], textblob_available=True
+            ["test_subreddit"], ["mental health"], sentiment_analysis=True
         )
 
         expected_result = [
