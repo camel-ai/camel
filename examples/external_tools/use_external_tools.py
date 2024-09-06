@@ -16,13 +16,13 @@ from camel.agents import ChatAgent
 from camel.configs import ChatGPTConfig
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
-from camel.toolkits import MATH_FUNCS, WEATHER_FUNCS
+from camel.toolkits import MATH_FUNCS, SEARCH_FUNCS
 from camel.types import ModelPlatformType, ModelType
 
 
 def main():
     # Set the tools for the external_tools
-    internal_tools = [*WEATHER_FUNCS]
+    internal_tools = [*SEARCH_FUNCS]
     external_tools = [*MATH_FUNCS]
     tool_list = internal_tools + external_tools
 
@@ -40,7 +40,7 @@ def main():
     # Set external_tools
     external_tool_agent = ChatAgent(
         system_message=BaseMessage.make_assistant_message(
-            role_name="Tools calling opertor",
+            role_name="Tools calling operator",
             content="You are a helpful assistant",
         ),
         model=model,
@@ -50,20 +50,19 @@ def main():
 
     usr_msg = BaseMessage.make_user_message(
         role_name="User",
-        content="What's the weather today in Chicago?",
+        content="When is the release date of the video game Portal?",
     )
 
-    # This will directly call the internal tool
+    # This will directly run the internal tool
     response = external_tool_agent.step(usr_msg)
-    # We will get the weather information here
     print(response.msg.content)
 
     usr_msg = BaseMessage.make_user_message(
         role_name="User",
-        content="What is the sum of the temperature in Chicago and Paris?",
+        content="What's the result of the release year of Portal subtracted "
+        "from the year that United States was founded?",
     )
-    # This will first automatically execute the internal tool to check the
-    # weather in Paris
+    # This will first automatically run the internal tool to check the years
     # Then it will request the external tool to calculate the sum
     response = external_tool_agent.step(usr_msg)
     # This should be empty
@@ -80,13 +79,7 @@ if __name__ == "__main__":
 # flake8: noqa :E501
 """
 Output:
-The weather in Chicago, US today is as follows:
-- Temperature: 25.66°Celsius (feels like 26.34°Celsius)
-- Max Temperature: 26.72°Celsius, Min Temperature: 23.93°Celsius
-- Wind: 8.01 miles per hour at 71 degrees
-- Visibility: 6.21 miles
-- Sunrise: 2024-08-30 11:15:00+00:00
-- Sunset: 2024-08-31 00:27:34+00:00
+The video game "Portal" was released in 2007 as part of a bundle called The Orange Box for Windows, Xbox 360, and PlayStation 3.
 
-ChatCompletionMessageToolCall(id='call_hki911mimz9ro3UIWHekJmBq', function=Function(arguments='{"a":25.66,"b":18.36}', name='add'), type='function')
+ChatCompletionMessageToolCall(id='call_U5Xju7vYtAQAEW4D1M8R1kgs', function=Function(arguments='{"a": 2007, "b": 1776}', name='sub'), type='function')
 """
