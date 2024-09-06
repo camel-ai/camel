@@ -181,9 +181,15 @@ class ChatAgent(BaseAgent):
             context_creator, window_size=message_window_size
         )
 
+        input_memory_records = [
+            context_record.memory_record
+            for context_record in self.memory.retrieve()
+        ]
+
         self.terminated: bool = False
         self.response_terminators = response_terminators or []
         self.init_messages()
+        self.memory.write_records(input_memory_records)
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state and returns the
@@ -349,6 +355,9 @@ class ChatAgent(BaseAgent):
 
             try:
                 openai_messages, num_tokens = self.memory.get_context()
+                print("$$$$")
+                print(openai_messages)
+                print("$$$$")
             except RuntimeError as e:
                 return self.step_token_exceed(
                     e.args[1], tool_calls, "max_tokens_exceeded"
