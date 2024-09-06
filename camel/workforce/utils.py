@@ -67,7 +67,7 @@ def parse_task_result_resp(response: str) -> str:
     task_result = re.search(r"<result>(.*)</result>", response, re.DOTALL)
     failed_tag = re.search(r"<failed></failed>", response)
     if failed_tag:
-        task_result = None
+        raise ValueError("The task processing failed.")
     if task_result is None:
         raise ValueError("No result found in the response.")
     return task_result.group(1)

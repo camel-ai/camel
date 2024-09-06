@@ -15,7 +15,10 @@ from __future__ import annotations
 
 from typing import Any, List
 
+from colorama import Fore
+
 from camel.agents.base import BaseAgent
+from camel.agents.chat_agent import FunctionCallingRecord
 from camel.messages.base import BaseMessage
 from camel.tasks.task import Task, TaskState
 from camel.workforce.utils import parse_task_result_resp
@@ -66,7 +69,6 @@ class SingleAgentWorker(Worker):
             dependency_tasks_info = self._get_dep_tasks_info(dependencies)
             prompt = PROCESS_TASK_PROMPT.format(
                 content=task.content,
-                type=task.type,
                 dependency_task_info=dependency_tasks_info,
             )
             req = BaseMessage.make_user_message(
@@ -74,8 +76,21 @@ class SingleAgentWorker(Worker):
                 content=prompt,
             )
             response = self.worker.step(req)
+
+            print(f"\n{Fore.GREEN}Reply from {self}:{Fore.RESET}")
+
+            tool_calls: List[FunctionCallingRecord] = response.info[
+                'tool_calls'
+            ]
+            for func_record in tool_calls:
+                print(func_record)
+
             task.result = parse_task_result_resp(response.msg.content)
-            print(f'Task result: {task.result}\n')
+            print(f'\n{Fore.GREEN}{task.result}{Fore.RESET}\n')
             return TaskState.DONE
-        except Exception:
+        except Exception as e:
+            print(
+                f"{Fore.RED}{self} failed to process task {task.id}. "
+                f"Error: {e}{Fore.RESET}\n"
+            )
             return TaskState.FAILED

@@ -23,41 +23,46 @@ from camel.workforce import Workforce
 
 
 def main():
-    # set the tools for the tool_agent
-    function_list = [
-        *SEARCH_FUNCS,
-        *WEATHER_FUNCS,
-        *MAP_FUNCS,
-    ]
-    # configure the model of tool_agent
-    model_config_dict = ChatGPTConfig(
-        tools=function_list,
+    # Set up web searching agent
+    search_agent_model_conf_dict = ChatGPTConfig(
+        tools=[*SEARCH_FUNCS, *WEATHER_FUNCS],
         temperature=0.0,
     ).as_dict()
-
-    model = ModelFactory.create(
+    search_agent_model = ModelFactory.create(
         model_platform=ModelPlatformType.OPENAI,
         model_type=ModelType.GPT_3_5_TURBO,
-        model_config_dict=model_config_dict,
+        model_config_dict=search_agent_model_conf_dict,
+    )
+    search_agent = ChatAgent(
+        system_message=BaseMessage.make_assistant_message(
+            role_name="Web searching agent",
+            content="You can search online for information",
+        ),
+        model=search_agent_model,
+        tools=[*SEARCH_FUNCS, *WEATHER_FUNCS],
     )
 
-    # set tool_agent
-    tool_agent = ChatAgent(
-        system_message=BaseMessage.make_assistant_message(
-            role_name="Tools calling opertor",
-            content="You are a helpful assistant",
-        ),
-        model=model,
-        tools=function_list,
+    # Set up tour guide agent
+    tour_guide_agent_model_conf_dict = ChatGPTConfig(
+        tools=[*MAP_FUNCS],
+        temperature=0.0,
+    ).as_dict()
+    tour_guide_agent_model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_3_5_TURBO,
+        model_config_dict=tour_guide_agent_model_conf_dict,
     )
-    # set tour_guide_agent
+
     tour_guide_agent = ChatAgent(
         BaseMessage.make_assistant_message(
-            role_name="tour guide",
-            content="You have to lead everyone to have fun",
-        )
+            role_name="Tour guide",
+            content="You are a tour guide",
+        ),
+        model=tour_guide_agent_model,
+        tools=[*MAP_FUNCS],
     )
-    # traveler_agent
+
+    # Set up traveler agent
     traveler_agent = ChatAgent(
         BaseMessage.make_assistant_message(
             role_name="Traveler",
@@ -68,18 +73,19 @@ def main():
     workforce = Workforce('A travel group')
 
     workforce.add_single_agent_worker(
-        'tour guide', worker=tour_guide_agent
+        "A tour guide",
+        worker=tour_guide_agent,
     ).add_single_agent_worker(
-        'Traveler', worker=traveler_agent
+        "A traveler", worker=traveler_agent
     ).add_single_agent_worker(
-        'Tools (e.g. weather tools) calling opertor', worker=tool_agent
+        "An agent who can do online searches", worker=search_agent
     )
 
     # specify the task to be solved
     human_task = Task(
         content=(
-            "Plan a Paris tour itinerary for today"
-            "taking into account the weather now."
+            "Plan a one-week trip to Paris, considering some historical places"
+            " to visit and weather conditions."
         ),
         id='0',
     )

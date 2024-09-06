@@ -283,7 +283,7 @@ class Workforce(BaseNode):
         )
         new_node.set_channel(self._channel)
 
-        print(f"{Fore.CYAN}{new_node} created." f"{Fore.RESET}")
+        print(f"{Fore.CYAN}{new_node} created.{Fore.RESET}")
 
         self._children.append(new_node)
         self._child_listening_tasks.append(

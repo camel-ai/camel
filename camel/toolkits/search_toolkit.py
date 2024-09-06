@@ -316,7 +316,7 @@ class SearchToolkit(BaseToolkit):
                 representing the functions in the toolkit.
         """
         return [
-            OpenAIFunction(self.search_wiki),
+            # OpenAIFunction(self.search_wiki),
             OpenAIFunction(self.search_google),
             OpenAIFunction(self.search_duckduckgo),
             OpenAIFunction(self.query_wolfram_alpha),

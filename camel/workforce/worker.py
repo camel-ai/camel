@@ -17,6 +17,8 @@ import logging
 from abc import ABC, abstractmethod
 from typing import List
 
+from colorama import Fore
+
 from camel.tasks.task import Task, TaskState
 from camel.workforce.base import BaseNode
 from camel.workforce.task_channel import TaskChannel
@@ -87,7 +89,10 @@ class Worker(BaseNode, ABC):
         while True:
             # Get the earliest task assigned to this node
             task = await self._get_assigned_task()
-            print(f"{self} get task {task.id}: {task.content}")
+            print(
+                f"{Fore.YELLOW}{self} get task {task.id}: {task.content}"
+                f"{Fore.RESET}"
+            )
             # Get the Task instance of dependencies
             dependency_ids = await self._channel.get_dependency_ids()
             task_dependencies = [

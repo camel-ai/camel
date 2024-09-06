@@ -96,7 +96,6 @@ class RolePlayingWorker(Worker):
             dependency_tasks_info = self._get_dep_tasks_info(dependencies)
             prompt = ROLEPLAY_PROCESS_TASK_PROMPT.format(
                 content=task.content,
-                type=task.type,
                 dependency_task_info=dependency_tasks_info,
             )
             role_play_session = RolePlaying(
@@ -165,6 +164,8 @@ class RolePlayingWorker(Worker):
 
             chat_history_str = "\n".join(chat_history)
             prompt = ROLEPLAY_SUMMARIZE_PROMPT.format(
+                user_role=self.user_role_name,
+                assistant_role=self.assistant_role_name,
                 content=task.content,
                 chat_history=chat_history_str,
             )
@@ -176,5 +177,6 @@ class RolePlayingWorker(Worker):
             task.result = parse_task_result_resp(response.msg.content)
             print(f"Task result: {task.result}\n")
             return TaskState.DONE
-        except Exception:
+        except Exception as e:
+            print(f"{self} failed to process task {task.id}. error: {e}")
             return TaskState.FAILED
