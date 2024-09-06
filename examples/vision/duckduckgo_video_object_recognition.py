@@ -87,3 +87,26 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+"""
+===============================================================================
+Successfully downloaded video and captured screenshots from: https://www.youtube.com/embed/RRMVF0PPqZI?autoplay=1
+==================== SYS MSG ====================
+You have been assigned an object recognition task.
+Your mission is to list all detected objects in following image.
+Your output should always be a list of strings starting with `1.`, `2.` etc.
+Do not explain yourself or output anything else.
+=================================================
+==================== RESULT ====================
+1. Drone
+2. Hangar
+3. Person
+4. Plants
+5. Brick wall
+6. Electrical panels
+7. Lights
+8. Floor
+================================================
+Stopping further downloads as we found valid images.
+Exited the video download loop.
+===============================================================================
+"""
