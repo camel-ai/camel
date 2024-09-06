@@ -181,15 +181,15 @@ class ChatAgent(BaseAgent):
             context_creator, window_size=message_window_size
         )
 
-        input_memory_records = [
-            context_record.memory_record
-            for context_record in self.memory.retrieve()
-        ]
+        if memory:
+            self.input_memory_records = [
+                context_record.memory_record
+                for context_record in memory.retrieve()
+            ]
 
         self.terminated: bool = False
         self.response_terminators = response_terminators or []
         self.init_messages()
-        self.memory.write_records(input_memory_records)
 
     def reset(self):
         r"""Resets the :obj:`ChatAgent` to its initial state and returns the
@@ -308,6 +308,8 @@ class ChatAgent(BaseAgent):
         )
         self.memory.clear()
         self.memory.write_record(system_record)
+        if self.input_memory_records:
+            self.memory.write_records(self.input_memory_records)
 
     def record_message(self, message: BaseMessage) -> None:
         r"""Records the externally provided message into the agent memory as if
