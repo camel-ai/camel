@@ -27,53 +27,91 @@ from camel.memories import (
     VectorDBBlock,
 )
 from camel.messages import BaseMessage
-from camel.types import ModelType, OpenAIBackendRole, RoleType
+from camel.types import ModelType, OpenAIBackendRole
 from camel.utils import OpenAITokenCounter
 
-# Initialize memory
+# Initialize the memory
 memory = LongtermAgentMemory(
     context_creator=ScoreBasedContextCreator(
-        OpenAITokenCounter(ModelType.GPT_4O_MINI), 1024
+        token_counter=OpenAITokenCounter(ModelType.GPT_4O_MINI),
+        token_limit=1024,
     ),
     chat_history_block=ChatHistoryBlock(),
     vector_db_block=VectorDBBlock(),
 )
 
-# Write records to memory
+# Create and write new records
 records = [
     MemoryRecord(
-        message=BaseMessage(
+        message=BaseMessage.make_user_message(
             role_name="User",
-            role_type=RoleType.USER,
             meta_dict=None,
-            content="What is AI?",
+            content="What is CAMEL AI?",
         ),
         role_at_backend=OpenAIBackendRole.USER,
     ),
     MemoryRecord(
-        message=BaseMessage(
-            role_name="Assistant",
-            role_type=RoleType.ASSISTANT,
+        message=BaseMessage.make_assistant_message(
+            role_name="Agent",
             meta_dict=None,
-            content="AI refers to systems that mimic human intelligence.",
+            content="CAMEL-AI.org is the 1st LLM multi-agent framework and "
+            "an open-source community dedicated to finding the scaling law "
+            "of agents.",
         ),
         role_at_backend=OpenAIBackendRole.ASSISTANT,
     ),
 ]
 memory.write_records(records)
 
-# Retrieve context
+# Get context for the agent
 context, token_count = memory.get_context()
+
+print(context)
 print(f"Retrieved context (token count: {token_count}):")
 for message in context:
     print(f"{message}")
-
 ```
 
 ```markdown
->>> Retrieved context (token count: 27):
+>>> Retrieved context (token count: 49):
 {'role': 'user', 'content': 'What is AI?'}
 {'role': 'assistant', 'content': 'AI refers to systems that mimic human intelligence.'}
+```
+
+Adding `LongtermAgentMemory` to your `ChatAgent`:
+
+```python
+from camel.agents import ChatAgent
+
+# Define system message for the agent
+sys_msg = BaseMessage.make_assistant_message(
+    role_name='Agent',
+    content='You are a curious agent wondering about the universe.',
+)
+
+# Initialize agent
+agent = ChatAgent(system_message=sys_msg)
+
+# Set memory to the agent
+agent.memory = memory
+
+
+# Define a user message
+usr_msg = BaseMessage.make_user_message(
+    role_name='User',
+    content="Tell me which is the 1st LLM multi-agent framework based on what we have discussed",
+)
+
+# Sending the message to the agent
+response = agent.step(usr_msg)
+
+# Check the response (just for illustrative purpose)
+print(response.msgs[0].content)
+```
+
+```markdown
+>>> CAMEL AI is recognized as the first LLM (Large Language Model) multi-agent framework. It is an open-source community initiative focused on exploring the scaling laws of agents, enabling the development and interaction of multiple AI agents in a collaborative environment. This framework allows researchers and developers to experiment with various configurations and interactions among agents, facilitating advancements in AI capabilities and understanding.
+
 ```
 
 ## Core Components
@@ -222,80 +260,6 @@ Methods:
 - `write_records()`: Write new records to both chat history and vector database
 - `get_context_creator()`: Get the context creator
 - `clear()`: Remove all records from both memory blocks
-
-## Usage
-
-To use the Memory module in your agent:
-
-1. Choose an appropriate AgentMemory implementation (`ChatHistoryMemory`, `VectorDBMemory`, or `LongtermAgentMemory`).
-2. Initialize the memory with a context creator and any necessary parameters.
-3. Use `write_records()` to add new information to the memory.
-4. Use `retrieve()` to get relevant context for the agent's next action.
-5. Use `get_context()` to obtain the formatted context for the agent.
-
-Example using `LongtermAgentMemory`:
-
-```python
-from camel.memories import (
-    ChatHistoryBlock,
-    LongtermAgentMemory,
-    MemoryRecord,
-    ScoreBasedContextCreator,
-    VectorDBBlock,
-)
-from camel.messages import BaseMessage
-from camel.types import ModelType, OpenAIBackendRole
-from camel.utils import OpenAITokenCounter
-
-# Initialize the memory
-memory = LongtermAgentMemory(
-    context_creator=ScoreBasedContextCreator(
-        OpenAITokenCounter(ModelType.GPT_4O_MINI), 1024
-    ),
-    chat_history_block=ChatHistoryBlock(),
-    vector_db_block=VectorDBBlock(),
-)
-
-# Create and write new records
-records = [
-    MemoryRecord(
-        message=BaseMessage(
-            role_name="user",
-            role_type="human",
-            meta_dict=None,
-            content="What is machine learning?",
-        ),
-        role_at_backend=OpenAIBackendRole.USER,
-    ),
-    MemoryRecord(
-        message=BaseMessage(
-            role_name="agent",
-            role_type="ai",
-            meta_dict=None,
-            content="Machine learning is a subset of AI...",
-        ),
-        role_at_backend=OpenAIBackendRole.ASSISTANT,
-    ),
-]
-memory.write_records(records)
-
-# Get context for the agent
-context, token_count = memory.get_context()
-
-print(context)
-```
-
-```markdown
->>> [{'role': 'user', 'content': 'What is machine learning?'}, {'role': 'assistant', 'content': 'Machine learning is a subset of AI...'}]
-```
-
-```python
-print(token_count)
-```
-
-```markdown
->>> 27
-```
 
 ## Advanced Topics
 
