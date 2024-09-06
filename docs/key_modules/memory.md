@@ -170,7 +170,7 @@ A specialized form of MemoryBlock designed for direct integration with an agent.
 
 ### ChatHistoryBlock
 
-Maintains a record of chat histories.
+Stores all the chat histories and retrieves with optional window size.
 
 Initialization:
 
