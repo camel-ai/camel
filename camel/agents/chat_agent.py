@@ -31,9 +31,7 @@ from openai.types.chat import ChatCompletionMessageToolCall
 from pydantic import BaseModel
 
 from camel.agents.base import BaseAgent
-from camel.configs import (
-    ChatGPTConfig,
-)
+from camel.configs import ChatGPTConfig
 from camel.memories import (
     AgentMemory,
     ChatHistoryMemory,
