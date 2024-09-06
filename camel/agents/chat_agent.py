@@ -308,6 +308,8 @@ class ChatAgent(BaseAgent):
         )
         self.memory.clear()
         self.memory.write_record(system_record)
+
+        # Write input memory records back if they exist
         if self.input_memory_records:
             self.memory.write_records(self.input_memory_records)
 
