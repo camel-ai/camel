@@ -195,7 +195,7 @@ class Task(BaseModel):
     def decompose(
         self,
         agent: ChatAgent,
-        template: TextPrompt = TASK_DECOMPOSE_PROMPT,
+        prompt: Optional[str] = None,
         task_parser: Callable[[str, str], List["Task"]] = parse_response,
     ) -> List["Task"]:
         r"""Decompose a task to a list of sub-tasks. It can be used for data
@@ -203,8 +203,8 @@ class Task(BaseModel):
 
         Args:
             agent (ChatAgent): An agent that used to decompose the task.
-            template (TextPrompt): The prompt template to decompose
-                task. If not provided, the default template will be used.
+            prompt (str, optional): A prompt to decompose the task. If not
+                provided, the default prompt will be used.
             task_parser (Callable[[str, str], List[Task]], optional): A
                 function to extract Task from response. If not provided,
                 the default parse_response will be used.
@@ -214,7 +214,7 @@ class Task(BaseModel):
         """
 
         role_name = agent.role_name
-        content = template.format(
+        content = prompt or TASK_DECOMPOSE_PROMPT.format(
             role_name=role_name,
             content=self.content,
         )

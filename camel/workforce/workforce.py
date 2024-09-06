@@ -40,6 +40,7 @@ from camel.workforce.worker import Worker
 from camel.workforce.workforce_prompt import (
     ASSIGN_TASK_PROMPT,
     CREATE_NODE_PROMPT,
+    WF_TASK_DECOMPOSE_PROMPT,
 )
 
 logger = logging.getLogger(__name__)
@@ -367,7 +368,11 @@ class Workforce(BaseNode):
             assignee = self._create_worker_node_for_task(task)
             await self._post_task(task, assignee.node_id)
         else:
-            subtasks = task.decompose(self.task_agent)
+            decompose_prompt = WF_TASK_DECOMPOSE_PROMPT.format(
+                content=task.content,
+                child_nodes_info=self._get_child_nodes_info(),
+            )
+            subtasks = task.decompose(self.task_agent, decompose_prompt)
             task.subtasks = subtasks
             for subtask in subtasks:
                 subtask.parent = task

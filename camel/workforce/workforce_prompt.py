@@ -113,3 +113,24 @@ You should keep important details and remove unnecessary information.
 if you are not able to process the task, you need to return <failed></failed> tags.
 """
 )
+
+WF_TASK_DECOMPOSE_PROMPT = r"""You need to split the given task into 
+subtasks according to the workers available in the group.
+The content of the task is:
+
+{content}
+
+Following are the available workers, given in the format <ID>: <description>.
+
+{child_nodes_info}
+
+You must return the subtasks in the format of a numbered list within <tasks> tags, as shown below:
+
+<tasks>
+<task>Subtask 1</task>
+<task>Subtask 2</task>
+</tasks>
+
+Though it's not a must, you should try your best effort to make each subtask 
+achievable for a worker. The tasks should be clear and concise.
+"""

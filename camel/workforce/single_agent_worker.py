@@ -77,7 +77,7 @@ class SingleAgentWorker(Worker):
             )
             response = self.worker.step(req)
 
-            print(f"\n{Fore.GREEN}Reply from {self}:{Fore.RESET}")
+            print(f"======\n{Fore.GREEN}Reply from {self}:{Fore.RESET}")
 
             tool_calls: List[FunctionCallingRecord] = response.info[
                 'tool_calls'
@@ -86,11 +86,11 @@ class SingleAgentWorker(Worker):
                 print(func_record)
 
             task.result = parse_task_result_resp(response.msg.content)
-            print(f'\n{Fore.GREEN}{task.result}{Fore.RESET}\n')
+            print(f'\n{Fore.GREEN}{task.result}{Fore.RESET}\n======')
             return TaskState.DONE
         except Exception as e:
             print(
                 f"{Fore.RED}{self} failed to process task {task.id}. "
-                f"Error: {e}{Fore.RESET}\n"
+                f"Error: {e}{Fore.RESET}\n======"
             )
             return TaskState.FAILED
