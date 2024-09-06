@@ -31,7 +31,9 @@ from openai.types.chat import ChatCompletionMessageToolCall
 from pydantic import BaseModel
 
 from camel.agents.base import BaseAgent
-from camel.configs import BaseConfig, ChatGPTConfig, GeminiConfig
+from camel.configs import (
+    ChatGPTConfig,
+)
 from camel.memories import (
     AgentMemory,
     ChatHistoryMemory,
@@ -130,6 +132,10 @@ class ChatAgent(BaseAgent):
             agent. (default: :obj:`None`)
         tools (List[OpenAIFunction], optional): List of available
             :obj:`OpenAIFunction`. (default: :obj:`None`)
+        external_tools (List[OpenAIFunction], optional): List of external tools
+            (:obj:`OpenAIFunction`) bind to one chat agent. When these tools
+            are called, the agent will directly return the request instead of
+            processing it. (default: :obj:`None`)
         response_terminators (List[ResponseTerminator], optional): List of
             :obj:`ResponseTerminator` bind to one chat agent.
             (default: :obj:`None`)
@@ -398,9 +404,7 @@ class ChatAgent(BaseAgent):
             # Normal function calling
             tool_call_records.append(self._step_tool_call_and_update(response))
 
-        if output_schema is not None and (
-            self.model_type.is_openai or self.model_type.is_gemini
-        ):
+        if output_schema is not None and self.model_type.supports_tool_calling:
             (
                 output_messages,
                 finish_reasons,
@@ -608,16 +612,9 @@ class ChatAgent(BaseAgent):
 
         # Replace the original tools with the structuring function
         self.func_dict = {func.get_function_name(): func.func}
-        config_class: Type[BaseConfig]
-        if self.model_type.is_openai:
-            config_class = ChatGPTConfig
-        elif self.model_type.is_gemini:
-            config_class = GeminiConfig
-        else:
-            raise ValueError(f"Unsupported model type: {self.model_type}")
-        self.model_backend.model_config_dict = config_class(
-            tools=[func]
-        ).as_dict()
+        self.model_backend.model_config_dict["tools"] = [
+            func.get_openai_tool_schema()
+        ]
 
         openai_messages, num_tokens = self.memory.get_context()
         (

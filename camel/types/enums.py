@@ -98,6 +98,10 @@ class ModelType(Enum):
         return "gpt-3.5-turbo"
 
     @property
+    def supports_tool_calling(self) -> bool:
+        return any([self.is_openai, self.is_gemini, self.is_mistral])
+
+    @property
     def is_openai(self) -> bool:
         r"""Returns whether this type of models is an OpenAI-released model."""
         return self in {
