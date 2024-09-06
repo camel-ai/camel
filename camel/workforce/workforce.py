@@ -229,6 +229,7 @@ class Workforce(BaseNode):
         Returns:
             str: ID of the assigned node.
         """
+        self.coordinator_agent.reset()
         prompt = ASSIGN_TASK_PROMPT.format(
             content=task.content,
             child_nodes_info=self._get_child_nodes_info(),
@@ -342,6 +343,7 @@ class Workforce(BaseNode):
         # to the channel as a dependency
         if ready_task.state == TaskState.FAILED:
             # TODO: the composing of tasks seems not work very well
+            self.task_agent.reset()
             ready_task.compose(self.task_agent)
             # Remove the subtasks from the channel
             for subtask in ready_task.subtasks:
@@ -372,6 +374,7 @@ class Workforce(BaseNode):
                 content=task.content,
                 child_nodes_info=self._get_child_nodes_info(),
             )
+            self.task_agent.reset()
             subtasks = task.decompose(self.task_agent, decompose_prompt)
             task.subtasks = subtasks
             for subtask in subtasks:
