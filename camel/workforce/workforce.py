@@ -120,7 +120,17 @@ class Workforce(BaseNode):
         """
         self.reset()
         self._task = task
-        self._pending_tasks.append(task)
+        task.state = TaskState.FAILED
+        decompose_prompt = WF_TASK_DECOMPOSE_PROMPT.format(
+            content=task.content,
+            child_nodes_info=self._get_child_nodes_info(),
+        )
+        self.task_agent.reset()
+        subtasks = task.decompose(self.task_agent, decompose_prompt)
+        task.subtasks = subtasks
+        for subtask in subtasks:
+            subtask.parent = task
+        self._pending_tasks.extendleft(reversed(subtasks))
         self.set_channel(TaskChannel())
 
         asyncio.run(self.start())
