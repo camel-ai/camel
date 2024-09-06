@@ -25,14 +25,12 @@ from camel.storages import (
     VectorDBQuery,
 )
 from camel.types import StorageType
+from camel.utils import Constants
 
 try:
     from unstructured.documents.elements import Element
 except ImportError:
     Element = None
-
-DEFAULT_TOP_K_RESULTS = 1
-DEFAULT_SIMILARITY_THRESHOLD = 0.75
 
 
 class AutoRetriever:
@@ -178,8 +176,8 @@ class AutoRetriever:
         self,
         query: str,
         contents: Union[str, List[str], Element, List[Element]],
-        top_k: int = DEFAULT_TOP_K_RESULTS,
-        similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
+        top_k: int = Constants.DEFAULT_TOP_K_RESULTS,
+        similarity_threshold: float = Constants.DEFAULT_SIMILARITY_THRESHOLD,
         return_detailed_info: bool = False,
         max_characters: int = 500,
     ) -> dict[str, Sequence[Collection[str]]]:
