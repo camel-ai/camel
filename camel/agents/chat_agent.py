@@ -184,7 +184,7 @@ class ChatAgent(BaseAgent):
         self.input_memory_records = (
             [record.memory_record for record in memory.retrieve()]
             if memory
-            else []
+            else None
         )
 
         self.terminated: bool = False
