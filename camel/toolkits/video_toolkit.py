@@ -14,6 +14,7 @@
 import hashlib
 import io
 import os
+import re
 import subprocess
 from typing import List, Optional, Tuple, Union
 
@@ -47,44 +48,112 @@ class VideoDownloaderToolkit:
         self.video_url = video_url
         self.chunk_duration = chunk_duration
         self.split_into_chunks = split_into_chunks
-        self.cookies_path: Optional[str] = None
-        self.current_directory = ""
+        self._cookies_path: Optional[str] = None
+        self._current_directory: Optional[str] = None
+        self._video_extension: Optional[str] = None
 
-    def get_video_directory(self) -> str:
+    @property
+    def cookies_path(self) -> Optional[str]:
         """
-        Create a directory for storing the downloaded video.
+        Get the path to the cookies.txt file. Cached after first access.
+
+        Returns:
+            Optional[str]: The path to the cookies file if it exists, otherwise None.
+        """
+        if self._cookies_path is None:
+            project_root = os.getcwd()
+            cookies_path = os.path.join(project_root, "cookies.txt")
+            if not os.path.exists(cookies_path):
+                print(
+                    f"Warning: cookies.txt file not found at path {cookies_path}."
+                )
+                self._cookies_path = None
+            else:
+                self._cookies_path = cookies_path
+        return self._cookies_path
+
+    @property
+    def current_directory(self) -> str:
+        """
+        Create or retrieve the directory for storing the downloaded video.
+        Cached after first access.
 
         Returns:
             str: The path to the directory where the video will be stored.
         """
-        if not self.video_url:
-            raise ValueError("video_url is not set.")
+        if self._current_directory is None:
+            if not self.video_url:
+                raise ValueError("video_url is not set.")
 
-        video_hash = hashlib.md5(self.video_url.encode('utf-8')).hexdigest()
+            video_hash = hashlib.md5(
+                self.video_url.encode('utf-8')
+            ).hexdigest()
+            project_root = os.getcwd()
+            video_directory = os.path.join(
+                project_root, "temp_video", video_hash
+            )
 
-        project_root = os.getcwd()
-        video_directory = os.path.join(project_root, "temp_video", video_hash)
+            if not os.path.exists(video_directory):
+                os.makedirs(video_directory)
 
-        if not os.path.exists(video_directory):
-            os.makedirs(video_directory)
+            self._current_directory = video_directory
 
-        return video_directory
+        return self._current_directory
 
-    def get_cookies_path(self) -> Optional[str]:
+    @property
+    def video_extension(self) -> str:
         """
-        Get the path to the cookies.txt file.
+        Retrieve the video file extension. If the extension does not exist,
+        the video download method will be called to fetch the full video.
 
         Returns:
-            str: The path to the cookies file if it exists, otherwise None.
+            str: The video file extension (e.g., '.mp4', '.webm').
         """
-        project_root = os.getcwd()
-        cookies_path = os.path.join(project_root, "cookies.txt")
-        if not os.path.exists(cookies_path):
-            print(
-                f"Warning: cookies.txt file not found at path {cookies_path}."
-            )
-            return None
-        return cookies_path
+        if self._video_extension is None:
+            video_files = [
+                f
+                for f in os.listdir(self.current_directory)
+                if re.match(r'full_video\..+', f)
+            ]
+
+            if video_files:
+                self._video_extension = os.path.splitext(video_files[0])[1]
+            else:
+                # If no video file is found, proceed to download the video
+                self.download_video()
+                video_files = [
+                    f
+                    for f in os.listdir(self.current_directory)
+                    if re.match(r'full_video\..+', f)
+                ]
+                if video_files:
+                    self._video_extension = os.path.splitext(video_files[0])[1]
+                else:
+                    raise FileNotFoundError(
+                        "Video download failed, and no video file was found."
+                    )
+
+        return self._video_extension
+
+    def extract_youtube_video_url(self, url: str) -> Optional[str]:
+        """
+        Convert an embedded YouTube URL to a standard YouTube video URL.
+        Only applies to YouTube links, otherwise returns None.
+
+        Args:
+            url (str): The input URL, which could be an embedded YouTube URL.
+
+        Returns:
+            Optional[str]: The standard YouTube URL, or None if it's not a YouTube link.
+        """
+        if "youtube.com/embed/" in url:
+            match = re.search(r"embed/([a-zA-Z0-9_-]+)", url)
+            if match:
+                video_id = match.group(1)
+                return f"https://www.youtube.com/watch?v={video_id}"
+        elif "youtube.com/watch" in url or "youtu.be" in url:
+            return url
+        return None
 
     def download_video(self, video_url: Optional[str] = None) -> None:
         """
@@ -101,8 +170,9 @@ class VideoDownloaderToolkit:
                 "No video URL provided. Please provide a valid video URL."
             )
 
-        self.cookies_path = self.get_cookies_path()
-        self.current_directory = self.get_video_directory()
+        converted_url = self.extract_youtube_video_url(self.video_url)
+        if converted_url:
+            self.video_url = converted_url
 
         try:
             if self.split_into_chunks and self.chunk_duration is not None:
@@ -184,6 +254,24 @@ class VideoDownloaderToolkit:
         except yt_dlp.utils.DownloadError as e:
             print(f"Error downloading chunk: {e}")
 
+    def is_video_downloaded(self) -> bool:
+        """
+        Check if the video has already been downloaded.
+
+        Returns:
+            bool: True if the video file(s) exist(s), False otherwise.
+        """
+        if self.split_into_chunks:
+            first_chunk_path = os.path.join(
+                self.current_directory, f'video_chunk_0{self.video_extension}'
+            )
+            return os.path.exists(first_chunk_path)
+        else:
+            video_path = os.path.join(
+                self.current_directory, f'full_video{self.video_extension}'
+            )
+            return os.path.exists(video_path)
+
     def get_video_length(self) -> int:
         ydl_opts = {
             'quiet': True,
@@ -207,7 +295,7 @@ class VideoDownloaderToolkit:
                     while True:
                         chunk_filename = os.path.join(
                             self.current_directory,
-                            f'video_chunk_{chunk_index}.mp4',
+                            f'video_chunk_{chunk_index}{self.video_extension}',
                         )
                         if not os.path.exists(chunk_filename):
                             break
@@ -218,7 +306,8 @@ class VideoDownloaderToolkit:
                         chunk_index += 1
                 else:
                     video_path = os.path.join(
-                        self.current_directory, 'full_video.mp4'
+                        self.current_directory,
+                        f'full_video{self.video_extension}',
                     )
                     if os.path.exists(video_path):
                         video_length = self._get_video_length_from_file(
@@ -263,7 +352,8 @@ class VideoDownloaderToolkit:
 
             while True:
                 chunk_filename = os.path.join(
-                    self.current_directory, f'video_chunk_{chunk_index}.mp4'
+                    self.current_directory,
+                    f'video_chunk_{chunk_index}{self.video_extension}',
                 )
                 if not os.path.exists(chunk_filename):
                     break
@@ -279,7 +369,9 @@ class VideoDownloaderToolkit:
 
             return video_bytes
 
-        video_path = os.path.join(self.current_directory, 'full_video.mp4')
+        video_path = os.path.join(
+            self.current_directory, f'full_video{self.video_extension}'
+        )
 
         if not os.path.exists(video_path):
             self.download_video()
@@ -320,13 +412,16 @@ class VideoDownloaderToolkit:
                     self._get_chunk_index_and_local_timestamp(timestamp)
                 )
                 chunk_filename = os.path.join(
-                    self.current_directory, f'video_chunk_{chunk_index}.mp4'
+                    self.current_directory,
+                    f'video_chunk_{chunk_index}{self.video_extension}',
                 )
                 images.append(
                     self._capture_screenshot(chunk_filename, local_timestamp)
                 )
         else:
-            video_path = os.path.join(self.current_directory, 'full_video.mp4')
+            video_path = os.path.join(
+                self.current_directory, f'full_video{self.video_extension}'
+            )
             images = [
                 self._capture_screenshot(video_path, ts) for ts in timestamps
             ]
@@ -373,22 +468,6 @@ class VideoDownloaderToolkit:
         )
         return Image.open(io.BytesIO(out))
 
-    def is_video_downloaded(self) -> bool:
-        """
-        Check if the video has already been downloaded.
-
-        Returns:
-            bool: True if the video file(s) exist(s), False otherwise.
-        """
-        if self.split_into_chunks:
-            first_chunk_path = os.path.join(
-                self.current_directory, 'video_chunk_0.mp4'
-            )
-            return os.path.exists(first_chunk_path)
-        else:
-            video_path = os.path.join(self.current_directory, 'full_video.mp4')
-            return os.path.exists(video_path)
-
     def get_tools(self) -> List[OpenAIFunction]:
         """
         Returns a list of OpenAIFunction objects representing the functions in
@@ -422,8 +501,6 @@ if __name__ == "__main__":
         print("Video has already been downloaded.")
 
     print(downloader.get_video_length())
-
-    print(downloader.get_video_directory())
 
     timestamps = 3
     image_list = downloader.get_video_screenshots(timestamps)
