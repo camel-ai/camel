@@ -44,6 +44,7 @@ jobs:
         NEO4J_URI: "${{ secrets.NEO4J_URI }}"
         NEO4J_USERNAME: "${{ secrets.NEO4J_USERNAME }}"
         NEO4J_PASSWORD: "${{ secrets.NEO4J_PASSWORD }}"
+        FIRECRAWL_API_KEY: "${{ secrets.FIRECRAWL_API_KEY }}"
       run: poetry run pytest --fast-test-mode test/
 
   pytest_package_llm_test:
@@ -77,6 +78,7 @@ jobs:
         NEO4J_URI: "${{ secrets.NEO4J_URI }}"
         NEO4J_USERNAME: "${{ secrets.NEO4J_USERNAME }}"
         NEO4J_PASSWORD: "${{ secrets.NEO4J_PASSWORD }}"
+        FIRECRAWL_API_KEY: "${{ secrets.FIRECRAWL_API_KEY }}"
       run: poetry run pytest --llm-test-only test/
 
   pytest_package_very_slow_test:
@@ -110,4 +112,5 @@ jobs:
         NEO4J_URI: "${{ secrets.NEO4J_URI }}"
         NEO4J_USERNAME: "${{ secrets.NEO4J_USERNAME }}"
         NEO4J_PASSWORD: "${{ secrets.NEO4J_PASSWORD }}"
+        FIRECRAWL_API_KEY: "${{ secrets.FIRECRAWL_API_KEY }}"
       run: poetry run pytest --very-slow-test-only test/
