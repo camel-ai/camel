@@ -2,23 +2,23 @@
 ## 1. Concept
 The society module is one of the core modules of CAMEL. By simulating the information exchange process, this module studies the social behaviors among agents. 
 
-Currently, the society module aims to enable agents to collaborate autonomously toward completing tasks while keeping consistent with human intentions and requiring minimal human intervention. It includes two frameworks: `Role-Playing` and `BabyAGI-Playing`, which are used to run the interaction behaviors of agents to achieve  objectives.
+Currently, the society module aims to enable agents to collaborate autonomously toward completing tasks while keeping consistent with human intentions and requiring minimal human intervention. It includes two frameworks: `RolePlaying` and `BabyAGI`, which are used to run the interaction behaviors of agents to achieve  objectives.
 
-Taking Role-Playing as an example, this framework was designed in an instruction-following manner. These roles independently undertake the responsibilities of executing and planning tasks, respectively. The dialogue is continuously advanced through a turn-taking mechanism, thereby collaborating to complete tasks. The main concepts include:
+Taking `RolePlaying` as an example, this framework was designed in an instruction-following manner. These roles independently undertake the responsibilities of executing and planning tasks, respectively. The dialogue is continuously advanced through a turn-taking mechanism, thereby collaborating to complete tasks. The main concepts include:
 
-Task: a task can be as simple as an idea, initialized by an inception prompt.
+- Task: a task can be as simple as an idea, initialized by an inception prompt.
 
-AI User: the agent who is expected to provide instructions.
+- AI User: the agent who is expected to provide instructions.
 
-AI Assistant: the agent who is expected to respond with solutions that fulfill the instructions.
+- AI Assistant: the agent who is expected to respond with solutions that fulfill the instructions.
 
 ### 2. Types
 
-## 2.1 Role-Playing
+## 2.1 `RolePlaying`
 
-Role-Playing is a unique cooperative agent framework of CAMEL. Through this framework, agents in CAMEL overcome numerous challenges, such as *role flipping*, *assistant repeats instructions*, *flake replies*, *infinite loop of messages*, and *conversation termination conditions.*
+`RolePlaying` is a unique cooperative agent framework of CAMEL. Through this framework, agents in CAMEL overcome numerous challenges, such as *role flipping*, *assistant repeats instructions*, *flake replies*, *infinite loop of messages*, and *conversation termination conditions.*
 
-When using Role-Playing framework in CAMEL, predefined prompts are used to create unique initial settings for different agents. For example, if the user wants to initialize an assistant agent, the agent will be initialized with the following prompt.
+When using `RolePlaying` framework in CAMEL, predefined prompts are used to create unique initial settings for different agents. For example, if the user wants to initialize an assistant agent, the agent will be initialized with the following prompt.
 
 - Never forget you are a <ASSISTANT_ROLE> and I am a <USER_ROLE>.
 
@@ -37,7 +37,7 @@ When using Role-Playing framework in CAMEL, predefined prompts are used to creat
     *This ensures that the assistant keeps the conversation going by requesting a new instruction to solve.*
 
 
-### Role-Playing Attributes
+### `RolePlaying` Attributes
 
 | Attribute | Type | Description |
 | --- | --- | --- |
@@ -61,12 +61,12 @@ When using Role-Playing framework in CAMEL, predefined prompts are used to creat
 | extend_task_specify_meta_dict | Dict | A dict to extend the task specify meta dict with. |
 | output_language | str | The language to be output by the agents. |
 
-## 2.2 BabyAGI-Playing
+## 2.2 `BabyAGI`
 Babyagi is framework from "Task-driven Autonomous Agent" <https://github.com/yoheinakajima/babyagi>`
 
 ## 3. Get Started
 
-### 3.1. Using Role-Playing
+### 3.1. Using `RolePlaying`
 
 ```python
 from colorama import Fore
@@ -75,7 +75,7 @@ from camel.societies import RolePlaying
 from camel.utils import print_text_animated
 
 def main(model=None, chat_turn_limit=50) -> None:
-# initial the role-playing session on developing a trading bot task with default model (`GPT_4O_MINI`)
+# Initial the role-playing session on developing a trading bot task with default model (`GPT_4O_MINI`)
     task_prompt = "Develop a trading bot for the stock market"
     role_play_session = RolePlaying(
         assistant_role_name="Python Programmer",
