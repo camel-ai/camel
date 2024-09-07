@@ -12,8 +12,8 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
-from typing import Any, Dict, List, Optional, Union
 import subprocess
+from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
 
@@ -53,7 +53,11 @@ class VLLMModel:
         """
         self.model_type = model_type
         self.model_config_dict = model_config_dict
-        self._url = url or os.environ.get("VLLM_BASE_URL") or "http://localhost:8000/v1"
+        self._url = (
+            url
+            or os.environ.get("VLLM_BASE_URL")
+            or "http://localhost:8000/v1"
+        )
         if not url and not os.environ.get("VLLM_BASE_URL"):
             self._start_server()
         # Use OpenAI cilent as interface call vLLM
@@ -69,9 +73,15 @@ class VLLMModel:
     def _start_server(self) -> None:
         r"""Starts the vllm server in a subprocess."""
         try:
-            subprocess.Popen(["vllm", "server", "--port", "8000"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            print(f"vllm server started on http://localhost:8000/v1 "
-                  f"for {self.model_type} model")
+            subprocess.Popen(
+                ["vllm", "server", "--port", "8000"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            print(
+                f"vllm server started on http://localhost:8000/v1 "
+                f"for {self.model_type} model"
+            )
         except Exception as e:
             print(f"Failed to start vllm server: {e}")
 

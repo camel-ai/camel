@@ -39,7 +39,8 @@ print(assistant_response.msg.content)
 
 """
 ===============================================================================
-vllm server started on http://localhost:8000/v1 for microsoft/Phi-3-mini-4k-instruct model
+vllm server started on http://localhost:8000/v1 for microsoft/
+Phi-3-mini-4k-instruct model
 
 Hello! I'm Phi, an AI developed by Microsoft. How can I help you today?
 ===============================================================================
