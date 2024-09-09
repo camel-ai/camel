@@ -22,7 +22,7 @@ from .openai_config import OPENAI_API_PARAMS, ChatGPTConfig, OpenSourceConfig
 from .reka_config import REKA_API_PARAMS, RekaConfig
 from .samba_config import (
     SAMBA_FAST_API_PARAMS,
-    SAMBAVERSE_API_PARAMS,
+    SAMBA_VERSE_API_PARAMS,
     SambaFastAPIConfig,
     SambaVerseAPIConfig,
 )
