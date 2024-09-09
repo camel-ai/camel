@@ -56,7 +56,7 @@ __all__ = [
     'SambaFastAPIConfig',
     'SAMBA_FAST_API_PARAMS',
     'SambaVerseAPIConfig',
-    'SAMBAVERSE_API_PARAMS',
+    'SAMBA_VERSE_API_PARAMS',
     'TogetherAIConfig',
     'TOGETHERAI_API_PARAMS',
 ]
