@@ -20,7 +20,7 @@ from typing import Any, Dict, List, Optional, Union
 import httpx
 from openai import OpenAI, Stream
 
-from camel.configs import SAMBA_FAST_API_PARAMS, SAMBAVERSE_API_PARAMS
+from camel.configs import SAMBA_FAST_API_PARAMS, SAMBA_VERSE_API_PARAMS
 from camel.messages import OpenAIMessage
 from camel.types import (
     ChatCompletion,
@@ -105,7 +105,7 @@ class SambaModel:
                     )
         elif self._url == "https://sambaverse.sambanova.ai/api/predict":
             for param in self.model_config_dict:
-                if param not in SAMBAVERSE_API_PARAMS:
+                if param not in SAMBA_VERSE_API_PARAMS:
                     raise ValueError(
                         f"Unexpected argument `{param}` is "
                         "input into SambaVerse API."
