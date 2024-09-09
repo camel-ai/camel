@@ -998,7 +998,10 @@ class ChatAgent(BaseAgent):
         Returns:
             dict: Usage dictionary.
         """
-        encoding = get_model_encoding(self.model_type.value_for_tiktoken)
+        if isinstance(self.model_type, ModelType):
+            encoding = get_model_encoding(self.model_type.value_for_tiktoken)
+        else:
+            encoding = get_model_encoding("gpt-4o-mini")
         completion_tokens = 0
         for message in output_messages:
             completion_tokens += len(encoding.encode(message.content))
