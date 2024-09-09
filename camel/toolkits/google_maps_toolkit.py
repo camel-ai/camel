@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
 from functools import wraps
-from typing import Any, Callable, List, Optional, Tuple, Union
+from typing import Any, Callable, List, Optional, Union
 
 from camel.toolkits.base import BaseToolkit
 from camel.toolkits.openai_function import OpenAIFunction
@@ -74,6 +74,71 @@ def handle_googlemaps_exceptions(
     return wrapper
 
 
+def _import_googlemaps_or_raise() -> Any:
+    r"""Attempts to import the `googlemaps` library and returns it.
+
+    Returns:
+        module: The `googlemaps` module if successfully imported.
+
+    Raises:
+        ImportError: If the `googlemaps` library is not installed, this
+        error is raised with a message instructing how to install the
+        library using pip.
+    """
+    try:
+        import googlemaps
+
+        return googlemaps
+    except ImportError:
+        raise ImportError(
+            "Please install `googlemaps` first. You can install "
+            "it by running `pip install googlemaps`."
+        )
+
+
+def _get_googlemaps_api_key() -> str:
+    r"""Retrieve the Google Maps API key from environment variables.
+
+    Returns:
+        str: The Google Maps API key.
+
+    Raises:
+        ValueError: If the API key is not found in the environment
+            variables.
+    """
+    # Get `GOOGLE_API_KEY` here:
+    # https://console.cloud.google.com/apis/credentials
+    api_key = os.environ.get('GOOGLE_API_KEY')
+    if not api_key:
+        raise ValueError(
+            "`GOOGLE_API_KEY` not found in environment "
+            "variables. `GOOGLE_API_KEY` API keys are "
+            "generated in the `Credentials` page of the "
+            "`APIs & Services` tab of "
+            "https://console.cloud.google.com/apis/credentials."
+        )
+    return api_key
+
+
+def _format_offset_to_natural_language(offset: int) -> str:
+    r"""Converts a time offset in seconds to a more natural language
+    description using hours as the unit, with decimal places to represent
+    minutes and seconds.
+
+    Args:
+        offset (int): The time offset in seconds. Can be positive,
+            negative, or zero.
+
+    Returns:
+        str: A string representing the offset in hours, such as
+            "+2.50 hours" or "-3.75 hours".
+    """
+    # Convert the offset to hours as a float
+    hours = offset / 3600.0
+    hours_str = f"{hours:+.2f} hour{'s' if abs(hours) != 1 else ''}"
+    return hours_str
+
+
 class GoogleMapsToolkit(BaseToolkit):
     r"""A class representing a toolkit for interacting with GoogleMaps API.
 
@@ -81,50 +146,7 @@ class GoogleMapsToolkit(BaseToolkit):
     and fetching timezone information using the Google Maps API.
     """
 
-    def _import_googlemaps_or_raise(self) -> Any:
-        r"""Attempts to import the `googlemaps` library and returns it.
-
-        Returns:
-            module: The `googlemaps` module if successfully imported.
-
-        Raises:
-            ImportError: If the `googlemaps` library is not installed, this
-            error is raised with a message instructing how to install the
-            library using pip.
-        """
-        try:
-            import googlemaps
-
-            return googlemaps
-        except ImportError:
-            raise ImportError(
-                "Please install `googlemaps` first. You can install "
-                "it by running `pip install googlemaps`."
-            )
-
-    def _get_googlemaps_api_key(self) -> str:
-        r"""Retrieve the Google Maps API key from environment variables.
-
-        Returns:
-            str: The Google Maps API key.
-
-        Raises:
-            ValueError: If the API key is not found in the environment
-                variables.
-        """
-        # Get `GOOGLEMAPS_API_KEY` here:
-        # https://console.cloud.google.com/apis/credentials
-        GOOGLEMAPS_API_KEY = os.environ.get('GOOGLEMAPS_API_KEY')
-        if not GOOGLEMAPS_API_KEY:
-            raise ValueError(
-                "`GOOGLEMAPS_API_KEY` not found in environment "
-                "variables. `GOOGLEMAPS_API_KEY` API keys are "
-                "generated in the `Credentials` page of the "
-                "`APIs & Services` tab of "
-                "https://console.cloud.google.com/apis/credentials."
-            )
-        return GOOGLEMAPS_API_KEY
-
+    @handle_googlemaps_exceptions
     def get_address_description(
         self,
         address: Union[str, List[str]],
@@ -143,7 +165,7 @@ class GoogleMapsToolkit(BaseToolkit):
                 validate. Can be a single string or a list representing
                 different parts.
             region_code (str, optional): Country code for regional restriction,
-                helps narrowing down results. (default: :obj:`None`)
+                helps narrow down results. (default: :obj:`None`)
             locality (str, optional): Restricts validation to a specific
                 locality, e.g., "Mountain View". (default: :obj:`None`)
 
@@ -157,8 +179,8 @@ class GoogleMapsToolkit(BaseToolkit):
             ImportError: If the `googlemaps` library is not installed.
             Exception: For unexpected errors during the address validation.
         """
-        googlemaps = self._import_googlemaps_or_raise()
-        google_maps_api_key = self._get_googlemaps_api_key()
+        googlemaps = _import_googlemaps_or_raise()
+        google_maps_api_key = _get_googlemaps_api_key()
         try:
             gmaps = googlemaps.Client(key=google_maps_api_key)
         except Exception as e:
@@ -224,7 +246,7 @@ class GoogleMapsToolkit(BaseToolkit):
             return f"An unexpected error occurred: {e!s}"
 
     @handle_googlemaps_exceptions
-    def get_elevation(self, lat_lng: Tuple) -> str:
+    def get_elevation(self, lat: float, lng: float) -> str:
         r"""Retrieves elevation data for a given latitude and longitude.
 
         Uses the Google Maps API to fetch elevation data for the specified
@@ -233,8 +255,8 @@ class GoogleMapsToolkit(BaseToolkit):
         data resolution.
 
         Args:
-            lat_lng (Tuple[float, float]): The latitude and longitude for
-                which to retrieve elevation data.
+            lat (float): The latitude of the location to query.
+            lng (float): The longitude of the location to query.
 
         Returns:
             str: A description of the elevation at the specified location(s),
@@ -242,15 +264,15 @@ class GoogleMapsToolkit(BaseToolkit):
                 elevation data is not available, a message indicating this is
                 returned.
         """
-        googlemaps = self._import_googlemaps_or_raise()
-        google_maps_api_key = self._get_googlemaps_api_key()
+        googlemaps = _import_googlemaps_or_raise()
+        google_maps_api_key = _get_googlemaps_api_key()
         try:
             gmaps = googlemaps.Client(key=google_maps_api_key)
         except Exception as e:
             return f"Error: {e!s}"
 
         # Assuming gmaps is a configured Google Maps client instance
-        elevation_result = gmaps.elevation(lat_lng)
+        elevation_result = gmaps.elevation((lat, lng))
 
         # Extract the elevation data from the first
         # (and presumably only) result
@@ -273,26 +295,8 @@ class GoogleMapsToolkit(BaseToolkit):
 
         return description
 
-    def _format_offset_to_natural_language(self, offset: int) -> str:
-        r"""Converts a time offset in seconds to a more natural language
-        description using hours as the unit, with decimal places to represent
-        minutes and seconds.
-
-        Args:
-            offset (int): The time offset in seconds. Can be positive,
-                negative, or zero.
-
-        Returns:
-            str: A string representing the offset in hours, such as
-                "+2.50 hours" or "-3.75 hours".
-        """
-        # Convert the offset to hours as a float
-        hours = offset / 3600.0
-        hours_str = f"{hours:+.2f} hour{'s' if abs(hours) != 1 else ''}"
-        return hours_str
-
     @handle_googlemaps_exceptions
-    def get_timezone(self, lat_lng: Tuple) -> str:
+    def get_timezone(self, lat: float, lng: float) -> str:
         r"""Retrieves timezone information for a given latitude and longitude.
 
         This function uses the Google Maps Timezone API to fetch timezone
@@ -302,23 +306,23 @@ class GoogleMapsToolkit(BaseToolkit):
         offset from Coordinated Universal Time (UTC).
 
         Args:
-            lat_lng (Tuple[float, float]): The latitude and longitude for
-                which to retrieve elevation data.
+            lat (float): The latitude of the location to query.
+            lng (float): The longitude of the location to query.
 
         Returns:
             str: A descriptive string of the timezone information,
             including the timezone ID and name, standard time offset,
             daylight saving time offset, and total offset from UTC.
         """
-        googlemaps = self._import_googlemaps_or_raise()
-        google_maps_api_key = self._get_googlemaps_api_key()
+        googlemaps = _import_googlemaps_or_raise()
+        google_maps_api_key = _get_googlemaps_api_key()
         try:
             gmaps = googlemaps.Client(key=google_maps_api_key)
         except Exception as e:
             return f"Error: {e!s}"
 
         # Get timezone information
-        timezone_dict = gmaps.timezone(lat_lng)
+        timezone_dict = gmaps.timezone((lat, lng))
 
         # Extract necessary information
         dst_offset = timezone_dict[
@@ -330,10 +334,10 @@ class GoogleMapsToolkit(BaseToolkit):
         timezone_id = timezone_dict['timeZoneId']
         timezone_name = timezone_dict['timeZoneName']
 
-        raw_offset_str = self._format_offset_to_natural_language(raw_offset)
-        dst_offset_str = self._format_offset_to_natural_language(dst_offset)
+        raw_offset_str = _format_offset_to_natural_language(raw_offset)
+        dst_offset_str = _format_offset_to_natural_language(dst_offset)
         total_offset_seconds = dst_offset + raw_offset
-        total_offset_str = self._format_offset_to_natural_language(
+        total_offset_str = _format_offset_to_natural_language(
             total_offset_seconds
         )
 

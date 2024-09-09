@@ -96,7 +96,7 @@ def test_get_elevation(mock_get, mock_client, google_maps_toolkit):
     mock_client.return_value = mock_instance
 
     # Call the function with a test latitude and longitude
-    result = google_maps_toolkit.get_elevation((40.71473, -73.99867))
+    result = google_maps_toolkit.get_elevation(40.71473, -73.99867)
 
     # Verify the result
     expected_result = (
@@ -124,9 +124,7 @@ def test_get_timezone(mock_get, mock_client, google_maps_toolkit):
     mock_client.return_value = mock_instance
 
     # Call the function with a test latitude and longitude
-    result = google_maps_toolkit.get_timezone(
-        (39.603481, -119.682251)
-    )  # Coordinates for Los Angeles
+    result = google_maps_toolkit.get_timezone(39.603481, -119.682251)
 
     # Verify the result
     expected_result = (
@@ -140,7 +138,7 @@ def test_get_timezone(mock_get, mock_client, google_maps_toolkit):
 
 
 def test_wrong_api_key(monkeypatch, google_maps_toolkit):
-    monkeypatch.setenv('GOOGLEMAPS_API_KEY', 'invalid_api_key')
+    monkeypatch.setenv('GOOGLE_API_KEY', 'invalid_api_key')
     expected_output = "Error: Invalid API key provided."
     assert (
         google_maps_toolkit.get_address_description(
@@ -149,10 +147,10 @@ def test_wrong_api_key(monkeypatch, google_maps_toolkit):
         == expected_output
     )
     assert (
-        google_maps_toolkit.get_elevation((40.714728, -73.998672))
+        google_maps_toolkit.get_elevation(40.714728, -73.998672)
         == expected_output
     )
     assert (
-        google_maps_toolkit.get_timezone((40.714728, -73.998672))
+        google_maps_toolkit.get_timezone(40.714728, -73.998672)
         == expected_output
     )
