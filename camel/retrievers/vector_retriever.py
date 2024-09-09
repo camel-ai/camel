@@ -25,14 +25,12 @@ from camel.storages import (
     VectorDBQuery,
     VectorRecord,
 )
+from camel.utils import Constants
 
 try:
     from unstructured.documents.elements import Element
 except ImportError:
     Element = None
-
-DEFAULT_TOP_K_RESULTS = 1
-DEFAULT_SIMILARITY_THRESHOLD = 0.75
 
 
 class VectorRetriever(BaseRetriever):
@@ -147,8 +145,8 @@ class VectorRetriever(BaseRetriever):
     def query(
         self,
         query: str,
-        top_k: int = DEFAULT_TOP_K_RESULTS,
-        similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
+        top_k: int = Constants.DEFAULT_TOP_K_RESULTS,
+        similarity_threshold: float = Constants.DEFAULT_SIMILARITY_THRESHOLD,
     ) -> List[Dict[str, Any]]:
         r"""Executes a query in vector storage and compiles the retrieved
         results into a dictionary.
@@ -159,7 +157,8 @@ class VectorRetriever(BaseRetriever):
                 for filtering results. Defaults to
                 `DEFAULT_SIMILARITY_THRESHOLD`.
             top_k (int, optional): The number of top results to return during
-                retriever. Must be a positive integer. Defaults to 1.
+                retriever. Must be a positive integer. Defaults to
+                `DEFAULT_TOP_K_RESULTS`.
 
         Returns:
             List[Dict[str, Any]]: Concatenated list of the query results.

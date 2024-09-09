@@ -204,3 +204,32 @@ def test_tidy_scrape_failure():
             firecrawl.tidy_scrape(url)
         except RuntimeError as e:
             assert 'Failed to perform tidy scrape' in str(e)
+
+
+def test_map_site_success():
+    with patch('firecrawl.FirecrawlApp') as MockFirecrawlApp:
+        mock_app = MockFirecrawlApp.return_value
+        firecrawl = Firecrawl(
+            api_key='test_api_key', api_url='https://api.test.com'
+        )
+        url = 'https://example.com'
+        map_result = ['https://example.com']
+        mock_app.map_url.return_value = map_result
+
+        result = firecrawl.map_site(url)
+        assert result == map_result
+
+
+def test_map_site_failure():
+    with patch('firecrawl.FirecrawlApp') as MockFirecrawlApp:
+        mock_app = MockFirecrawlApp.return_value
+        firecrawl = Firecrawl(
+            api_key='test_api_key', api_url='https://api.test.com'
+        )
+        url = 'https://example.com'
+        mock_app.map_url.side_effect = Exception('Error')
+
+        try:
+            firecrawl.map_site(url)
+        except RuntimeError as e:
+            assert 'Failed to map the site' in str(e)
