@@ -104,6 +104,6 @@ class SambaVerseAPIConfig(BaseConfig):
         return config_dict
 
 
-SAMBAVERSE_API_PARAMS = {
+SAMBA_VERSE_API_PARAMS = {
     param for param in SambaVerseAPIConfig().model_fields.keys()
 }
