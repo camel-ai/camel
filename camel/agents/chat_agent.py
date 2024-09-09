@@ -815,7 +815,7 @@ class ChatAgent(BaseAgent):
                     # When response has not been stopped
                     # Notice that only the first chunk_dict has the "role"
                     content_dict[index] += delta.content
-                elif choice.finish_reason:
+                if choice.finish_reason:
                     finish_reasons_dict[index] = choice.finish_reason
                     chat_message = BaseMessage(
                         role_name=self.role_name,
