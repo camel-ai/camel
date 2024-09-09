@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import os
+import subprocess
 from typing import Any, Dict, List, Optional, Union
 
 from openai import OpenAI, Stream
@@ -48,16 +49,37 @@ class OllamaModel:
         """
         self.model_type = model_type
         self.model_config_dict = model_config_dict
-        self._url = url or os.environ.get("OLLAMA_BASE_URL")
-        # Use OpenAI cilent as interface call Ollama
+        self._url = (
+            url
+            or os.environ.get("OLLAMA_BASE_URL")
+            or "http://localhost:11434/v1"
+        )
+        if not url and not os.environ.get("OLLAMA_BASE_URL"):
+            self._start_server()
+        # Use OpenAI client as interface call Ollama
         self._client = OpenAI(
             timeout=60,
             max_retries=3,
-            base_url=self._url or "http://localhost:11434/v1",
+            base_url=self._url,
             api_key="ollama",  # required but ignored
         )
         self._token_counter = token_counter
         self.check_model_config()
+
+    def _start_server(self) -> None:
+        r"""Starts the Ollama server in a subprocess."""
+        try:
+            subprocess.Popen(
+                ["ollama", "server", "--port", "11434"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            print(
+                f"Ollama server started on http://localhost:11434/v1 "
+                f"for {self.model_type} model"
+            )
+        except Exception as e:
+            print(f"Failed to start Ollama server: {e}")
 
     @property
     def token_counter(self) -> BaseTokenCounter:
