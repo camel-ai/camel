@@ -27,6 +27,7 @@ from .openai_compatibility_model import OpenAICompatibilityModel
 from .openai_model import OpenAIModel
 from .reka_model import RekaModel
 from .samba_model import SambaModel
+from .smollm_model import SmoILMModel
 from .stub_model import StubModel
 from .togetherai_model import TogetherAIModel
 from .vllm_model import VLLMModel
@@ -53,4 +54,5 @@ __all__ = [
     'RekaModel',
     'SambaModel',
     'TogetherAIModel',
+    'SmoILMModel',
 ]
