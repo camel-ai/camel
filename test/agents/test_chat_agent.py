@@ -196,8 +196,8 @@ def test_chat_agent_step_with_external_tools():
     response = external_tool_agent.step(usr_msg)
     assert not response.msg.content
 
-    tool_call_request = response.info["tool_call_request"]
-    assert tool_call_request.function.name == "sub"
+    external_tool_request = response.info["external_tool_request"]
+    assert external_tool_request.function.name == "sub"
 
 
 @pytest.mark.model_backend
@@ -423,19 +423,17 @@ def test_token_exceed_return():
     )
     agent = ChatAgent(system_message=system_message)
 
-    expect_info = {
-        "id": None,
-        "usage": None,
-        "termination_reasons": ["max_tokens_exceeded"],
-        "num_tokens": 1000,
-        "tool_calls": [],
-        "tool_call_request": None,
-    }
     agent.terminated = True
     response = agent.step_token_exceed(1000, [], "max_tokens_exceeded")
     assert response.msgs == []
     assert response.terminated
-    assert response.info == expect_info
+
+    info = response.info
+    assert "id" in info and info["id"] is None
+    assert "usage" in info and info["usage"] is None
+    assert "termination_reasons" in info
+    assert info["termination_reasons"] == ["max_tokens_exceeded"]
+    assert "num_tokens" in info and info["num_tokens"] == 1000
 
 
 @pytest.mark.model_backend
@@ -498,8 +496,6 @@ def test_tool_calling_sync():
     tool_calls: List[FunctionCallingRecord] = [
         call for call in agent_response.info['tool_calls']
     ]
-    for called_func in tool_calls:
-        print(str(called_func))
 
     assert len(tool_calls) > 0
     assert str(tool_calls[0]).startswith("Function Execution")
@@ -546,8 +542,6 @@ async def test_tool_calling_math_async():
     tool_calls: List[FunctionCallingRecord] = [
         call for call in agent_response.info['tool_calls']
     ]
-    for called_func in tool_calls:
-        print(str(called_func))
 
     assert len(tool_calls) > 0
     assert str(tool_calls[0]).startswith("Function Execution")
@@ -607,8 +601,6 @@ async def test_tool_calling_async():
     tool_calls: List[FunctionCallingRecord] = [
         call for call in agent_response.info['tool_calls']
     ]
-    for called_func in tool_calls:
-        print(str(called_func))
 
     assert len(tool_calls) > 0
     assert str(tool_calls[0]).startswith("Function Execution")

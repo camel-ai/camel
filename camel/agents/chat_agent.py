@@ -278,7 +278,7 @@ class ChatAgent(BaseAgent):
         termination_reasons: List[str],
         num_tokens: int,
         tool_calls: List[FunctionCallingRecord],
-        external_tool_request: Optional[ChatCompletionMessageToolCall],
+        external_tool_request: Optional[ChatCompletionMessageToolCall] = None,
     ) -> Dict[str, Any]:
         r"""Returns a dictionary containing information about the chat session.
 
@@ -291,7 +291,8 @@ class ChatAgent(BaseAgent):
             num_tokens (int): The number of tokens used in the chat session.
             tool_calls (List[FunctionCallingRecord]): The list of function
                 calling records, containing the information of called tools.
-            external_tool_request (Optional[ChatCompletionMessageToolCall]):
+            external_tool_request
+                (Optional[ChatCompletionMessageToolCall], optional):
                 The tool calling request of external tools from the model.
                 These requests are directly returned to the user instead of
                 being processed by the agent automatically.
@@ -835,7 +836,6 @@ class ChatAgent(BaseAgent):
             [termination_reason],
             num_tokens,
             tool_calls,
-            None,
         )
 
         return ChatAgentResponse(

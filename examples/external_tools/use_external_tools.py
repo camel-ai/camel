@@ -67,9 +67,9 @@ def main():
     response = external_tool_agent.step(usr_msg)
     # This should be empty
     print(response.msg.content)
-    tool_call_request = response.info["tool_call_request"]
+    external_tool_request = response.info["external_tool_request"]
     # This will print the info of the external tool request
-    print(tool_call_request)
+    print(external_tool_request)
 
 
 if __name__ == "__main__":
