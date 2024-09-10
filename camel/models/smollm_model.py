@@ -22,6 +22,7 @@ from transformers import (
     BitsAndBytesConfig,
 )
 
+from camel.messages import OpenAIMessage
 from camel.types import (
     ChatCompletion,
     ChatCompletionChunk,
@@ -60,24 +61,30 @@ class SmolLMModel:
             load_in_8bit=True
         )
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_type)
+
+        # Device selection based on available hardware
+        self.device = (
+            "mps"
+            if torch.backends.mps.is_available()
+            else "cuda"
+            if torch.cuda.is_available()
+            else "cpu"
+        )
+
+        if self.device != "cuda":
+            self.quantization_config = None
+
+        # Load model and move to selected device
         self.model = AutoModelForCausalLM.from_pretrained(
             self.model_type, quantization_config=self.quantization_config
+        ).to(self.device)
+
+        self._token_counter = token_counter or OpenAITokenCounter(
+            ModelType.GPT_4O_MINI
         )
-        self.model.to("cuda" if torch.cuda.is_available() else "cpu")
-        self._token_counter = token_counter
+
+        # Check if model configuration has valid parameters
         self.check_model_config()
-
-    @property
-    def token_counter(self) -> BaseTokenCounter:
-        r"""Initialize the token counter for the model backend.
-
-        Returns:
-            BaseTokenCounter: The token counter following the model's
-                tokenization style.
-        """
-        if not self._token_counter:
-            self._token_counter = OpenAITokenCounter(ModelType.GPT_4O_MINI)
-        return self._token_counter
 
     def check_model_config(self):
         r"""Check whether the model configuration contains any
@@ -87,7 +94,13 @@ class SmolLMModel:
             ValueError: If the model configuration dictionary contains any
                 unexpected arguments.
         """
-        valid_params = ['max_length', 'temperature', 'top_p', 'top_k']
+        valid_params = [
+            'max_new_tokens',
+            'temperature',
+            'top_p',
+            'top_k',
+            'do_sample',
+        ]
         for param in self.model_config_dict:
             if param not in valid_params:
                 raise ValueError(
@@ -96,25 +109,26 @@ class SmolLMModel:
 
     def run(
         self,
-        messages: List[str],
+        messages: List[OpenAIMessage],
     ) -> Union[ChatCompletion, ChatCompletionChunk]:
-        r"""Runs inference for causal language modeling using SmolLM.
-
-        Args:
-            messages (List[str]): A list of input text strings for model inference.
-
-        Returns:
-            Union[ChatCompletion, ChatCompletionChunk]:
-                The generated text as a `ChatCompletion` or `ChatCompletionChunk`.
-        """
-        inputs = self.tokenizer.encode(messages[0], return_tensors="pt").to(
-            self.model.device
+        """Run inference using SmolLM with given messages."""
+        input_text = self.tokenizer.apply_chat_template(
+            messages, tokenize=False
         )
-        outputs = self.model.generate(inputs, **self.model_config_dict)
+        inputs = self.tokenizer.encode(input_text, return_tensors="pt").to(
+            self.device
+        )
+        attention_mask = torch.ones(inputs.shape, device=self.device)
+
+        outputs = self.model.generate(
+            inputs, attention_mask=attention_mask, **self.model_config_dict
+        )
+
         decoded_output = self.tokenizer.decode(
             outputs[0], skip_special_tokens=True
         )
 
+        # Prepare ChatCompletion response
         chat_message = ChatCompletionMessage(
             role="assistant",
             content=decoded_output,
@@ -134,3 +148,44 @@ class SmolLMModel:
                 )
             ],
         )
+
+    @property
+    def token_counter(self) -> BaseTokenCounter:
+        """Return the token counter for the model."""
+        return self._token_counter
+
+
+def main():
+    from camel.types import ChatCompletionUserMessageParam
+
+    model_type = "HuggingFaceTB/SmolLM-360M-Instruct"  # Example model type
+    model_config = {
+        'max_new_tokens': 50,
+        'temperature': 0.7,
+        'top_p': 0.9,
+        'top_k': 50,
+        'do_sample': True,
+    }
+
+    # Instantiate the SmolLMModel class
+    smol_model = SmolLMModel(
+        model_type=model_type, model_config_dict=model_config
+    )
+
+    # Create a list of OpenAIMessage inputs (example message)
+    messages = [
+        ChatCompletionUserMessageParam(
+            role="user", content="What is the capital of France?"
+        )
+    ]
+
+    # Run the model
+    response = smol_model.run(messages)
+
+    # Output the response
+    print(f"Model ID: {response.model}")
+    print(f"Generated Text: {response.choices[0].message.content}")
+
+
+if __name__ == '__main__':
+    main()
