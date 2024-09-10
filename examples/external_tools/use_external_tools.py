@@ -22,8 +22,8 @@ from camel.types import ModelPlatformType, ModelType
 
 def main():
     # Set the tools for the external_tools
-    internal_tools = [*SEARCH_FUNCS]
-    external_tools = [*MATH_FUNCS]
+    internal_tools = SEARCH_FUNCS
+    external_tools = MATH_FUNCS
     tool_list = internal_tools + external_tools
 
     model_config_dict = ChatGPTConfig(
@@ -59,8 +59,8 @@ def main():
 
     usr_msg = BaseMessage.make_user_message(
         role_name="User",
-        content="What's the result of the release year of Portal subtracted "
-        "from the year that United States was founded?",
+        content="What's the result of the release year of Portal subtracted by"
+        "the year that United States was founded?",
     )
     # This will first automatically run the internal tool to check the years
     # Then it will request the external tool to calculate the sum

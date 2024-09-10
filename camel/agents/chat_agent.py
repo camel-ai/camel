@@ -271,19 +271,19 @@ class ChatAgent(BaseAgent):
         self.system_message = self.system_message.create_new_instance(content)
         return self.system_message
 
+    @staticmethod
     def get_info(
-        self,
-        id: Optional[str],
+        session_id: Optional[str],
         usage: Optional[Dict[str, int]],
         termination_reasons: List[str],
         num_tokens: int,
         tool_calls: List[FunctionCallingRecord],
-        tool_call_request: Optional[ChatCompletionMessageToolCall],
+        external_tool_request: Optional[ChatCompletionMessageToolCall],
     ) -> Dict[str, Any]:
         r"""Returns a dictionary containing information about the chat session.
 
         Args:
-            id (str, optional): The ID of the chat session.
+            session_id (str, optional): The ID of the chat session.
             usage (Dict[str, int], optional): Information about the usage of
                 the LLM model.
             termination_reasons (List[str]): The reasons for the termination
@@ -291,19 +291,21 @@ class ChatAgent(BaseAgent):
             num_tokens (int): The number of tokens used in the chat session.
             tool_calls (List[FunctionCallingRecord]): The list of function
                 calling records, containing the information of called tools.
-            tool_call_request (Optional[ChatCompletionMessageToolCall]): The
-                direct tool call request from the model.
+            external_tool_request (Optional[ChatCompletionMessageToolCall]):
+                The tool calling request of external tools from the model.
+                These requests are directly returned to the user instead of
+                being processed by the agent automatically.
 
         Returns:
             Dict[str, Any]: The chat session information.
         """
         return {
-            "id": id,
+            "id": session_id,
             "usage": usage,
             "termination_reasons": termination_reasons,
             "num_tokens": num_tokens,
             "tool_calls": tool_calls,
-            "tool_call_request": tool_call_request,
+            "external_tool_request": external_tool_request,
         }
 
     def init_messages(self) -> None:
@@ -509,9 +511,7 @@ class ChatAgent(BaseAgent):
                 await self._step_tool_call_and_update_async(response)
             )
 
-        if output_schema is not None and (
-            self.model_type.is_openai or self.model_type.is_gemini
-        ):
+        if output_schema is not None and self.model_type.supports_tool_calling:
             (
                 output_messages,
                 finish_reasons,

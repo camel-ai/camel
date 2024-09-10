@@ -161,8 +161,8 @@ def test_chat_agent_step_with_structure_response():
 
 @pytest.mark.model_backend
 def test_chat_agent_step_with_external_tools():
-    internal_tools = [*SEARCH_FUNCS]
-    external_tools = [*MATH_FUNCS]
+    internal_tools = SEARCH_FUNCS
+    external_tools = MATH_FUNCS
     tool_list = internal_tools + external_tools
 
     model_config_dict = ChatGPTConfig(
