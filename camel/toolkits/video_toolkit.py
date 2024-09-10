@@ -18,20 +18,20 @@ import re
 import subprocess
 from typing import List, Optional, Tuple, Union
 
-import ffmpeg  # type: ignore
-import yt_dlp  # type: ignore
 from PIL import Image
 
+from camel.toolkits.base import BaseToolkit
 from camel.toolkits.openai_function import OpenAIFunction
 
 
-class VideoDownloaderToolkit:
+class VideoDownloaderToolkit(BaseToolkit):
     """A class for downloading videos and optionally splitting them into
     chunks."""
 
     def __init__(
         self,
         video_url: Optional[str] = None,
+        download_directory: Optional[str] = None,
         chunk_duration: int = 30,
         split_into_chunks: bool = False,
     ):
@@ -51,6 +51,10 @@ class VideoDownloaderToolkit:
         self._cookies_path: Optional[str] = None
         self._current_directory: Optional[str] = None
         self._video_extension: Optional[str] = None
+        self.yt_dlp = __import__('yt_dlp')
+
+        if download_directory and self.video_url:
+            self._set_default_directory(download_directory)
 
     @property
     def cookies_path(self) -> Optional[str]:
@@ -58,14 +62,16 @@ class VideoDownloaderToolkit:
         Get the path to the cookies.txt file. Cached after first access.
 
         Returns:
-            Optional[str]: The path to the cookies file if it exists, otherwise None.
+            Optional[str]: The path to the cookies file if it exists, otherwise
+              None.
         """
         if self._cookies_path is None:
             project_root = os.getcwd()
             cookies_path = os.path.join(project_root, "cookies.txt")
             if not os.path.exists(cookies_path):
                 print(
-                    f"Warning: cookies.txt file not found at path {cookies_path}."
+                    f'''Warning: cookies.txt file not found at path
+                      {cookies_path}.'''
                 )
                 self._cookies_path = None
             else:
@@ -99,6 +105,23 @@ class VideoDownloaderToolkit:
             self._current_directory = video_directory
 
         return self._current_directory
+
+    def _set_default_directory(self, directory: str):
+        """
+        Manually set the directory for storing the downloaded video.
+
+        Args:
+            directory (str): The path to the directory.
+        """
+        if not os.path.isabs(directory):
+            raise ValueError(
+                "Please provide an absolute path for the directory."
+            )
+
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+        self._current_directory = directory
 
     @property
     def video_extension(self) -> str:
@@ -144,7 +167,8 @@ class VideoDownloaderToolkit:
             url (str): The input URL, which could be an embedded YouTube URL.
 
         Returns:
-            Optional[str]: The standard YouTube URL, or None if it's not a YouTube link.
+            Optional[str]: The standard YouTube URL, or None if it's not a
+              YouTube link.
         """
         if "youtube.com/embed/" in url:
             match = re.search(r"embed/([a-zA-Z0-9_-]+)", url)
@@ -166,9 +190,11 @@ class VideoDownloaderToolkit:
             self.video_url = video_url
 
         if not self.video_url:
-            raise ValueError(
-                "No video URL provided. Please provide a valid video URL."
+            print(
+                '''No video URL provided. Certain functionalities might be 
+                limited.'''
             )
+            return
 
         converted_url = self.extract_youtube_video_url(self.video_url)
         if converted_url:
@@ -204,10 +230,10 @@ class VideoDownloaderToolkit:
                 if self.cookies_path:
                     ydl_opts['cookiefile'] = self.cookies_path
 
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                with self.yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     ydl.download([self.video_url])
 
-        except yt_dlp.utils.DownloadError as e:
+        except self.yt_dlp.utils.DownloadError as e:
             print(f"Error downloading video: {e}")
 
     def _download_chunk(
@@ -240,7 +266,7 @@ class VideoDownloaderToolkit:
             ydl_opts['cookiefile'] = self.cookies_path
 
         try:
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            with self.yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info_dict = ydl.extract_info(self.video_url, download=False)
                 ydl.download([self.video_url])
                 video_filename = ydl.prepare_filename(info_dict)
@@ -251,7 +277,7 @@ class VideoDownloaderToolkit:
                     or is empty."""
                 )
 
-        except yt_dlp.utils.DownloadError as e:
+        except self.yt_dlp.utils.DownloadError as e:
             print(f"Error downloading chunk: {e}")
 
     def is_video_downloaded(self) -> bool:
@@ -280,7 +306,7 @@ class VideoDownloaderToolkit:
         }
 
         try:
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            with self.yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info_dict = ydl.extract_info(self.video_url, download=False)
                 video_length = info_dict.get('duration', 0)
         except Exception as e:
@@ -390,7 +416,8 @@ class VideoDownloaderToolkit:
         dividing the video into equal parts if an integer is provided.
 
         Args:
-            timestamps (Union[List[int], int]): A list of timestamps (in seconds)
+            timestamps (Union[List[int], int]): A list of timestamps (in
+              seconds)
               from which to capture the screenshots, or an integer specifying
               the number of evenly spaced screenshots to capture.
 
@@ -460,6 +487,8 @@ class VideoDownloaderToolkit:
         Returns:
             Image.Image: The captured screenshot as a PIL Image object.
         """
+        import ffmpeg  # type: ignore
+
         out, _ = (
             ffmpeg.input(video_path, ss=timestamp)
             .filter('scale', 320, -1)
