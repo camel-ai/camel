@@ -271,8 +271,8 @@ class ChatAgent(BaseAgent):
         self.system_message = self.system_message.create_new_instance(content)
         return self.system_message
 
-    @staticmethod
     def get_info(
+        self,
         session_id: Optional[str],
         usage: Optional[Dict[str, int]],
         termination_reasons: List[str],
@@ -296,6 +296,7 @@ class ChatAgent(BaseAgent):
                 The tool calling request of external tools from the model.
                 These requests are directly returned to the user instead of
                 being processed by the agent automatically.
+                (default: :obj:`None`)
 
         Returns:
             Dict[str, Any]: The chat session information.
@@ -364,7 +365,7 @@ class ChatAgent(BaseAgent):
             try:
                 openai_messages, num_tokens = self.memory.get_context()
             except RuntimeError as e:
-                return self.step_token_exceed(
+                return self._step_token_exceed(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
                 )
 
@@ -471,7 +472,7 @@ class ChatAgent(BaseAgent):
             try:
                 openai_messages, num_tokens = self.memory.get_context()
             except RuntimeError as e:
-                return self.step_token_exceed(
+                return self._step_token_exceed(
                     e.args[1], tool_call_records, "max_tokens_exceeded"
                 )
 
@@ -808,7 +809,7 @@ class ChatAgent(BaseAgent):
         usage_dict = self.get_usage_dict(output_messages, prompt_tokens)
         return output_messages, finish_reasons, usage_dict, response_id
 
-    def step_token_exceed(
+    def _step_token_exceed(
         self,
         num_tokens: int,
         tool_calls: List[FunctionCallingRecord],
