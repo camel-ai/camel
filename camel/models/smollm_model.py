@@ -32,8 +32,8 @@ from camel.types import (
 from camel.utils import BaseTokenCounter, OpenAITokenCounter
 
 
-class SmoILMModel:
-    r"""SmoILM service interface."""
+class SmolLMModel:
+    r"""SmolLM service interface."""
 
     def __init__(
         self,
@@ -42,7 +42,7 @@ class SmoILMModel:
         quantization_config: Optional[BitsAndBytesConfig] = None,
         token_counter: Optional[BaseTokenCounter] = None,
     ) -> None:
-        r"""Constructor for SmoILM backend with HuggingFace model support.
+        r"""Constructor for SmolLM backend with HuggingFace model support.
 
         Args:
             model_type (str): Model checkpoint for which a backend is created.
@@ -81,7 +81,7 @@ class SmoILMModel:
 
     def check_model_config(self):
         r"""Check whether the model configuration contains any
-        unexpected arguments to the SmoILM model.
+        unexpected arguments to the SmolLM model.
 
         Raises:
             ValueError: If the model configuration dictionary contains any
@@ -91,14 +91,14 @@ class SmoILMModel:
         for param in self.model_config_dict:
             if param not in valid_params:
                 raise ValueError(
-                    f"Unexpected argument `{param}` in SmoILM model configuration."
+                    f"Unexpected argument `{param}` in SmolLM model configuration."
                 )
 
     def run(
         self,
         messages: List[str],
     ) -> Union[ChatCompletion, ChatCompletionChunk]:
-        r"""Runs inference for causal language modeling using SmoILM.
+        r"""Runs inference for causal language modeling using SmolLM.
 
         Args:
             messages (List[str]): A list of input text strings for model inference.
