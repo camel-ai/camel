@@ -685,7 +685,7 @@ class ChatAgent(BaseAgent):
         response_id: str,
         tool_calls: List[FunctionCallingRecord],
         num_tokens: int,
-        tool_call_request: Optional[ChatCompletionMessageToolCall] = None,
+        external_tool_request: Optional[ChatCompletionMessageToolCall] = None,
     ) -> Dict[str, Any]:
         # Loop over responses terminators, get list of termination
         # tuples with whether the terminator terminates the agent
@@ -713,7 +713,7 @@ class ChatAgent(BaseAgent):
             finish_reasons,
             num_tokens,
             tool_calls,
-            tool_call_request,
+            external_tool_request,
         )
         return info
 
