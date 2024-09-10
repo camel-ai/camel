@@ -14,7 +14,7 @@
 
 import os
 import time
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 from requests.exceptions import RequestException
 
@@ -50,20 +50,14 @@ class RedditToolkit(BaseToolkit):
         self.retries = retries
         self.delay = delay
 
-        client_id = os.environ.get("REDDIT_CLIENT_ID", "")
-        client_secret = os.environ.get("REDDIT_CLIENT_SECRET", "")
-        user_agent = os.environ.get("REDDIT_USER_AGENT", "")
-
-        if not all([client_id, client_secret, user_agent]):
-            print(
-                "Reddit API credentials are not set. "
-                "Please set the environment variables."
-            )
+        self.client_id = os.environ.get("REDDIT_CLIENT_ID", "")
+        self.client_secret = os.environ.get("REDDIT_CLIENT_SECRET", "")
+        self.user_agent = os.environ.get("REDDIT_USER_AGENT", "")
 
         self.reddit = Reddit(
-            client_id=client_id,
-            client_secret=client_secret,
-            user_agent=user_agent,
+            client_id=self.client_id,
+            client_secret=self.client_secret,
+            user_agent=self.user_agent,
             request_timeout=30,  # Set a timeout to handle delays
         )
 
@@ -96,7 +90,7 @@ class RedditToolkit(BaseToolkit):
         subreddit_name: str,
         post_limit: int = 5,
         comment_limit: int = 5,
-    ) -> List[Dict[str, Any]]:
+    ) -> Union[List[Dict[str, Any]], str]:
         r"""Collects the top posts and their comments from a specified
         subreddit.
 
@@ -109,9 +103,16 @@ class RedditToolkit(BaseToolkit):
                 per post. Defaults to `5`.
 
         Returns:
-            List[Dict[str, Any]]: A list of dictionaries, each containing the
-                post title and its top comments.
+            Union[List[Dict[str, Any]], str]: A list of dictionaries, each
+                containing the post title and its top comments if success.
+                String warming if credentials are not set.
         """
+        if not all([self.client_id, self.client_secret, self.user_agent]):
+            return (
+                "Reddit API credentials are not set. "
+                "Please set the environment variables."
+            )
+
         subreddit = self._retry_request(self.reddit.subreddit, subreddit_name)
         top_posts = self._retry_request(subreddit.top, limit=post_limit)
         data = []
@@ -162,7 +163,7 @@ class RedditToolkit(BaseToolkit):
         post_limit: int = 10,
         comment_limit: int = 10,
         sentiment_analysis: bool = False,
-    ) -> List[Dict[str, Any]]:
+    ) -> Union[List[Dict[str, Any]], str]:
         r"""Tracks discussions about specific keywords in specified subreddits.
 
         Args:
@@ -177,10 +178,17 @@ class RedditToolkit(BaseToolkit):
                 the comments. Defaults to `False`.
 
         Returns:
-            List[Dict[str, Any]]: A list of dictionaries containing the
-                subreddit name, post title, comment body, and upvotes for each
-                comment that contains the specified keywords.
+            Union[List[Dict[str, Any]], str]: A list of dictionaries
+                containing the subreddit name, post title, comment body, and
+                upvotes for each comment that contains the specified keywords
+                if success. String warming if credentials are not set.
         """
+        if not all([self.client_id, self.client_secret, self.user_agent]):
+            return (
+                "Reddit API credentials are not set. "
+                "Please set the environment variables."
+            )
+
         data = []
 
         for subreddit_name in subreddits:

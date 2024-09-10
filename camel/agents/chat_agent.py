@@ -793,7 +793,7 @@ class ChatAgent(BaseAgent):
                     # When response has not been stopped
                     # Notice that only the first chunk_dict has the "role"
                     content_dict[index] += delta.content
-                elif choice.finish_reason:
+                if choice.finish_reason:
                     finish_reasons_dict[index] = choice.finish_reason
                     chat_message = BaseMessage(
                         role_name=self.role_name,
@@ -976,7 +976,10 @@ class ChatAgent(BaseAgent):
         Returns:
             dict: Usage dictionary.
         """
-        encoding = get_model_encoding(self.model_type.value_for_tiktoken)
+        if isinstance(self.model_type, ModelType):
+            encoding = get_model_encoding(self.model_type.value_for_tiktoken)
+        else:
+            encoding = get_model_encoding("gpt-4o-mini")
         completion_tokens = 0
         for message in output_messages:
             completion_tokens += len(encoding.encode(message.content))
