@@ -26,7 +26,7 @@ class Constants:
     VIDEO_DEFAULT_PLUG_PYAV = "pyav"
 
     # Return response with json format
-    FUNC_NAME_FOR_STRUCTURE_OUTPUT = "return_json_response"
+    FUNC_NAME_FOR_STRUCTURED_OUTPUT = "return_json_response"
 
     # Default top k vaule for RAG
     DEFAULT_TOP_K_RESULTS = 1
