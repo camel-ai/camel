@@ -72,7 +72,7 @@ class ModelType(Enum):
     GEMINI_1_5_FLASH = "gemini-1.5-flash"
     GEMINI_1_5_PRO = "gemini-1.5-pro"
 
-    # Mistral AI Model
+    # Mistral AI models
     MISTRAL_LARGE = "mistral-large-latest"
     MISTRAL_NEMO = "open-mistral-nemo"
     MISTRAL_CODESTRAL = "codestral-latest"
@@ -81,16 +81,20 @@ class ModelType(Enum):
     MISTRAL_MIXTRAL_8x22B = "open-mixtral-8x22b"
     MISTRAL_CODESTRAL_MAMBA = "open-codestral-mamba"
 
-    # SambaNova Model
-    SAMBA_LLAMA_3_1_405B = "llama3-405b"
-    SAMBA_LLAMA_3_1_70B = "llama3-70b"
-    SAMBA_LLAMA_3_1_8B = "llama3-8b"
+    # Reka models
+    REKA_CORE = "reka-core"
+    REKA_FLASH = "reka-flash"
+    REKA_EDGE = "reka-edge"
 
     @property
     def value_for_tiktoken(self) -> str:
         if self.is_openai:
             return self.value
-        return "gpt-3.5-turbo"
+        return "gpt-4o-mini"
+
+    @property
+    def supports_tool_calling(self) -> bool:
+        return any([self.is_openai, self.is_gemini, self.is_mistral])
 
     @property
     def is_openai(self) -> bool:
@@ -193,14 +197,24 @@ class ModelType(Enum):
 
     @property
     def is_gemini(self) -> bool:
+        r"""Returns whether this type of models is Gemini model.
+
+        Returns:
+            bool: Whether this type of models is gemini.
+        """
         return self in {ModelType.GEMINI_1_5_FLASH, ModelType.GEMINI_1_5_PRO}
 
     @property
-    def is_samba(self) -> bool:
+    def is_reka(self) -> bool:
+        r"""Returns whether this type of models is Reka model.
+
+        Returns:
+            bool: Whether this type of models is Reka.
+        """
         return self in {
-            ModelType.SAMBA_LLAMA_3_1_405B,
-            ModelType.SAMBA_LLAMA_3_1_70B,
-            ModelType.SAMBA_LLAMA_3_1_8B,
+            ModelType.REKA_CORE,
+            ModelType.REKA_EDGE,
+            ModelType.REKA_FLASH,
         }
 
     @property
@@ -219,6 +233,9 @@ class ModelType(Enum):
             ModelType.LLAMA_2,
             ModelType.NEMOTRON_4_REWARD,
             ModelType.STUB,
+            ModelType.REKA_CORE,
+            ModelType.REKA_EDGE,
+            ModelType.REKA_FLASH,
         }:
             return 4_096
         elif self in {
@@ -262,9 +279,6 @@ class ModelType(Enum):
             ModelType.GROQ_LLAMA_3_1_8B,
             ModelType.GROQ_LLAMA_3_1_70B,
             ModelType.GROQ_LLAMA_3_1_405B,
-            ModelType.SAMBA_LLAMA_3_1_405B,
-            ModelType.SAMBA_LLAMA_3_1_70B,
-            ModelType.SAMBA_LLAMA_3_1_8B,
         }:
             return 131_072
         elif self in {
@@ -458,6 +472,7 @@ class ModelPlatformType(Enum):
     GEMINI = "gemini"
     VLLM = "vllm"
     MISTRAL = "mistral"
+    REKA = "reka"
     TOGETHER = "together"
     OPENAI_COMPATIBILITY_MODEL = "openai-compatibility-model"
     SAMBA = "samba-nova"
@@ -527,6 +542,11 @@ class ModelPlatformType(Enum):
     def is_gemini(self) -> bool:
         r"""Returns whether this platform is Gemini."""
         return self is ModelPlatformType.GEMINI
+
+    @property
+    def is_reka(self) -> bool:
+        r"""Returns whether this platform is Reka."""
+        return self is ModelPlatformType.REKA
 
     @property
     def is_samba(self) -> bool:
