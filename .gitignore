@@ -417,8 +417,12 @@ tags
 # Camel
 logs/
 
+# Download Configuration
+cookies.txt
+
 # Data
 datasets_test/
 evaluation_data/
 camel_data/
-cookies.txt
+temp_video/
+

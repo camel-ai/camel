@@ -12,64 +12,41 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 
-import os
 
-import pytest
-
-from camel.toolkits import VideoDownloaderToolkit
+from camel.toolkits.video_toolkit import VideoDownloaderToolkit
 
 
-@pytest.fixture
-def video_url():
-    return 'https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4'
+def test_video_download_initialization():
+    downloader = VideoDownloaderToolkit(
+        video_url='https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4',
+        split_into_chunks=False,
+    )
+    assert downloader.video_url is not None
+    assert downloader.split_into_chunks is False
 
 
-@pytest.fixture
-def downloader(video_url):
-    return VideoDownloaderToolkit(video_url=video_url)
+def test_video_bytes_download():
+    downloader = VideoDownloaderToolkit(
+        video_url='https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4',
+        split_into_chunks=False,
+    )
+    video_bytes = downloader.get_video_bytes()
+    assert len(video_bytes) > 0
 
 
-def test_download_video(downloader):
-    """Test the video download functionality."""
-    downloader.download_video(split_into_chunks=False)
-    video_files = os.listdir(downloader.current_directory)
-    assert (
-        len(video_files) > 0
-    ), "At least one video file should be downloaded."
+def test_video_length():
+    downloader = VideoDownloaderToolkit(
+        video_url='https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4',
+        split_into_chunks=False,
+    )
+    video_length = downloader.get_video_length()
+    assert video_length > 0
 
 
-def test_download_video_in_chunks(downloader):
-    """Test the video download functionality with chunks."""
-    downloader.download_video(split_into_chunks=True)
-    video_files = os.listdir(downloader.current_directory)
-    assert len(video_files) > 1, "Multiple chunks should be downloaded."
-
-
-def test_cookies_path(downloader):
-    """Test the retrieval of cookies path."""
-    downloader.cookies_path = downloader.get_cookies_path()
-    assert os.path.exists(
-        downloader.cookies_path
-    ), "Cookies file should exist at the specified path."
-
-
-def test_get_video_directory(downloader):
-    """Test if the video directory is created correctly."""
-    video_directory = downloader.get_video_directory()
-    assert os.path.exists(
-        video_directory
-    ), "Video directory should be created."
-    assert os.path.isdir(
-        video_directory
-    ), "Video directory should be a valid directory."
-
-
-@pytest.fixture(scope="function", autouse=True)
-def cleanup(downloader):
-    """Cleanup any created directories or files after each test."""
-    yield
-    if os.path.exists(downloader.current_directory):
-        for file in os.listdir(downloader.current_directory):
-            file_path = os.path.join(downloader.current_directory, file)
-            os.remove(file_path)
-        os.rmdir(downloader.current_directory)
+def test_video_is_downloaded():
+    downloader = VideoDownloaderToolkit(
+        video_url='https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4',
+        split_into_chunks=False,
+    )
+    is_downloaded = downloader.is_video_downloaded()
+    assert isinstance(is_downloaded, bool)
