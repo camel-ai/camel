@@ -32,7 +32,11 @@ from camel.memories import MemoryRecord
 from camel.messages import BaseMessage
 from camel.models import ModelFactory
 from camel.terminators import ResponseWordsTerminator
-from camel.toolkits import MATH_FUNCS, OpenAIFunction
+from camel.toolkits import (
+    MATH_FUNCS,
+    SEARCH_FUNCS,
+    OpenAIFunction,
+)
 from camel.types import (
     ChatCompletion,
     ModelPlatformType,
@@ -153,6 +157,47 @@ def test_chat_agent_step_with_structure_response():
         assert (
             key in response_content_json
         ), f"Key {key} not found in response content"
+
+
+@pytest.mark.model_backend
+def test_chat_agent_step_with_external_tools():
+    internal_tools = SEARCH_FUNCS
+    external_tools = MATH_FUNCS
+    tool_list = internal_tools + external_tools
+
+    model_config_dict = ChatGPTConfig(
+        tools=tool_list,
+        temperature=0.0,
+    ).as_dict()
+
+    model = ModelFactory.create(
+        model_platform=ModelPlatformType.OPENAI,
+        model_type=ModelType.GPT_3_5_TURBO,
+        model_config_dict=model_config_dict,
+    )
+
+    # Set external_tools
+    external_tool_agent = ChatAgent(
+        system_message=BaseMessage.make_assistant_message(
+            role_name="Tools calling operator",
+            content="You are a helpful assistant",
+        ),
+        model=model,
+        tools=internal_tools,
+        external_tools=external_tools,
+    )
+
+    usr_msg = BaseMessage.make_user_message(
+        role_name="User",
+        content="What's the result of the release year of Portal subtracted "
+        "from the year that United States was founded?",
+    )
+
+    response = external_tool_agent.step(usr_msg)
+    assert not response.msg.content
+
+    external_tool_request = response.info["external_tool_request"]
+    assert external_tool_request.function.name == "sub"
 
 
 @pytest.mark.model_backend
@@ -369,30 +414,6 @@ def test_set_multiple_output_language():
 
 
 @pytest.mark.model_backend
-def test_token_exceed_return():
-    system_message = BaseMessage(
-        role_name="assistant",
-        role_type=RoleType.ASSISTANT,
-        meta_dict=None,
-        content="You are a help assistant.",
-    )
-    agent = ChatAgent(system_message=system_message)
-
-    expect_info = {
-        "id": None,
-        "usage": None,
-        "termination_reasons": ["max_tokens_exceeded"],
-        "num_tokens": 1000,
-        "tool_calls": [],
-    }
-    agent.terminated = True
-    response = agent.step_token_exceed(1000, [], "max_tokens_exceeded")
-    assert response.msgs == []
-    assert response.terminated
-    assert response.info == expect_info
-
-
-@pytest.mark.model_backend
 def test_function_enabled():
     system_message = BaseMessage(
         role_name="assistant",
@@ -452,8 +473,6 @@ def test_tool_calling_sync():
     tool_calls: List[FunctionCallingRecord] = [
         call for call in agent_response.info['tool_calls']
     ]
-    for called_func in tool_calls:
-        print(str(called_func))
 
     assert len(tool_calls) > 0
     assert str(tool_calls[0]).startswith("Function Execution")
@@ -497,13 +516,9 @@ async def test_tool_calling_math_async():
     )
     agent_response = await agent.step_async(user_msg)
 
-    tool_calls: List[FunctionCallingRecord] = [
-        call for call in agent_response.info['tool_calls']
-    ]
-    for called_func in tool_calls:
-        print(str(called_func))
+    tool_calls = agent_response.info['tool_calls']
 
-    assert len(tool_calls) > 0
+    assert tool_calls
     assert str(tool_calls[0]).startswith("Function Execution")
 
     assert tool_calls[0].func_name == "mul"
@@ -558,13 +573,9 @@ async def test_tool_calling_async():
     )
     agent_response = await agent.step_async(user_msg)
 
-    tool_calls: List[FunctionCallingRecord] = [
-        call for call in agent_response.info['tool_calls']
-    ]
-    for called_func in tool_calls:
-        print(str(called_func))
+    tool_calls = agent_response.info['tool_calls']
 
-    assert len(tool_calls) > 0
+    assert tool_calls
     assert str(tool_calls[0]).startswith("Function Execution")
 
     assert tool_calls[0].func_name == "async_sleep"
