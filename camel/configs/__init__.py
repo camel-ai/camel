@@ -21,8 +21,10 @@ from .ollama_config import OLLAMA_API_PARAMS, OllamaConfig
 from .openai_config import OPENAI_API_PARAMS, ChatGPTConfig, OpenSourceConfig
 from .reka_config import REKA_API_PARAMS, RekaConfig
 from .samba_config import (
+    SAMBA_CLOUD_API_PARAMS,
     SAMBA_FAST_API_PARAMS,
     SAMBA_VERSE_API_PARAMS,
+    SambaCloudAPIConfig,
     SambaFastAPIConfig,
     SambaVerseAPIConfig,
 )
@@ -57,6 +59,8 @@ __all__ = [
     'SAMBA_FAST_API_PARAMS',
     'SambaVerseAPIConfig',
     'SAMBA_VERSE_API_PARAMS',
+    'SambaCloudAPIConfig',
+    'SAMBA_CLOUD_API_PARAMS',
     'TogetherAIConfig',
     'TOGETHERAI_API_PARAMS',
 ]
