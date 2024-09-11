@@ -487,7 +487,7 @@ class VideoDownloaderToolkit(BaseToolkit):
         Returns:
             Image.Image: The captured screenshot as a PIL Image object.
         """
-        import ffmpeg  # type: ignore
+        import ffmpeg  # type: ignore[import]
 
         out, _ = (
             ffmpeg.input(video_path, ss=timestamp)

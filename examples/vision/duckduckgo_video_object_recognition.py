@@ -1,3 +1,16 @@
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# Licensed under the Apache License, Version 2.0 (the “License”);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an “AS IS” BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from camel.agents.chat_agent import ChatAgent
 from camel.configs.openai_config import ChatGPTConfig
 from camel.messages.base import BaseMessage
@@ -63,24 +76,22 @@ def main() -> None:
 
         print(f"Trying to download video from: {video_url}")
         try:
-            # Initialize the downloader with the found video URL
             downloader = VideoDownloaderToolkit(
                 video_url=video_url, split_into_chunks=False
             )
-            # Try to get screenshots (assuming the method raises an exception on failure)
             image_list = downloader.get_video_screenshots(3)
             if image_list and len(image_list) > 0:
                 print(
-                    f"Successfully downloaded video and captured screenshots from: {video_url}"
+                    f'''Successfully downloaded video and captured screenshots 
+                    from: {video_url}'''
                 )
-                # Proceed with object detection if screenshots are successfully captured
                 detect_image_obj(image_list)
                 print("Stopping further downloads as we found valid images.")
                 break
             else:
                 print(f"Failed to capture screenshots from video: {video_url}")
         except Exception as e:
-            print(f"Failed to download video from {video_url}: {str(e)}")
+            print(f"Failed to download video from {video_url}: {e!s}")
 
     print("Exited the video download loop.")
 
