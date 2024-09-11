@@ -17,7 +17,7 @@ from typing import Dict, List, Optional
 
 from colorama import Fore
 
-from camel.agents.chat_agent import ChatAgent, FunctionCallingRecord
+from camel.agents.chat_agent import ChatAgent
 from camel.messages.base import BaseMessage
 from camel.societies import RolePlaying
 from camel.tasks.task import Task, TaskState
@@ -141,11 +141,8 @@ class RolePlayingWorker(Worker):
                 print_text_animated(
                     f"{Fore.GREEN}AI Assistant:{Fore.RESET}", delay=0.005
                 )
-                tool_calls: List[FunctionCallingRecord] = (
-                    assistant_response.info['tool_calls']
-                )
 
-                for func_record in tool_calls:
+                for func_record in assistant_response.info['tool_calls']:
                     print(func_record)
 
                 print_text_animated(

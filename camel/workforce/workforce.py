@@ -109,18 +109,13 @@ class Workforce(BaseNode):
     def __repr__(self):
         return f"Workforce {self.node_id} ({self.description})"
 
-    @check_if_running(False)
-    def process_task(self, task: Task) -> Task:
-        r"""The main entry point for the workforce to process a task. It will
-        start the workforce and all the child nodes under it, process the
-        task provided and return the updated task.
+    def _decompose_task(self, task: Task) -> List[Task]:
+        r"""Decompose the task into subtasks. This method will also set the
+        relationship between the task and its subtasks.
 
-        Args:
-            task (Task): The task to be processed.
+        Returns:
+            List[Task]: The subtasks.
         """
-        self.reset()
-        self._task = task
-        task.state = TaskState.FAILED
         decompose_prompt = WF_TASK_DECOMPOSE_PROMPT.format(
             content=task.content,
             child_nodes_info=self._get_child_nodes_info(),
@@ -130,6 +125,27 @@ class Workforce(BaseNode):
         task.subtasks = subtasks
         for subtask in subtasks:
             subtask.parent = task
+
+        return subtasks
+
+    @check_if_running(False)
+    def process_task(self, task: Task) -> Task:
+        r"""The main entry point for the workforce to process a task. It will
+        start the workforce and all the child nodes under it, process the
+        task provided and return the updated task.
+
+        Args:
+            task (Task): The task to be processed.
+
+        Returns:
+            Task: The updated task.
+        """
+        self.reset()
+        self._task = task
+        task.state = TaskState.FAILED
+        # The agent tend to be overconfident on the whole task, so we
+        # decompose the task into subtasks first
+        subtasks = self._decompose_task(task)
         self._pending_tasks.extendleft(reversed(subtasks))
         self.set_channel(TaskChannel())
 
@@ -146,6 +162,9 @@ class Workforce(BaseNode):
         Args:
             description (str): Description of the worker node.
             worker (BaseAgent): The agent to be added.
+
+        Returns:
+            Workforce: The workforce node itself.
         """
         worker_node = SingleAgentWorker(description, worker)
         self._children.append(worker_node)
@@ -175,6 +194,9 @@ class Workforce(BaseNode):
                 model name, etc. Defaults to `None`.
             chat_turn_limit (int, optional): The maximum number of chat turns
                 in the role playing. Defaults to 3.
+
+        Returns:
+            Workforce: The workforce node itself.
         """
         worker_node = RolePlayingWorker(
             description,
@@ -185,6 +207,19 @@ class Workforce(BaseNode):
             chat_turn_limit,
         )
         self._children.append(worker_node)
+        return self
+
+    @check_if_running(False)
+    def add_workforce(self, workforce: Workforce) -> Workforce:
+        r"""Add a workforce node to the workforce.
+
+        Args:
+            workforce (Workforce): The workforce node to be added.
+
+        Returns:
+            Workforce: The workforce node itself.
+        """
+        self._children.append(workforce)
         return self
 
     @check_if_running(False)
@@ -201,17 +236,7 @@ class Workforce(BaseNode):
             child.reset()
 
     @check_if_running(False)
-    def add_workforce(self, workforce: Workforce) -> Workforce:
-        r"""Add a workforce node to the workforce.
-
-        Args:
-            workforce (Workforce): The workforce node to be added.
-        """
-        self._children.append(workforce)
-        return self
-
-    @check_if_running(False)
-    def set_channel(self, channel: TaskChannel):
+    def set_channel(self, channel: TaskChannel) -> None:
         r"""Set the channel for the node and all the child nodes under it."""
         self._channel = channel
         for child in self._children:
@@ -380,15 +405,7 @@ class Workforce(BaseNode):
             assignee = self._create_worker_node_for_task(task)
             await self._post_task(task, assignee.node_id)
         else:
-            decompose_prompt = WF_TASK_DECOMPOSE_PROMPT.format(
-                content=task.content,
-                child_nodes_info=self._get_child_nodes_info(),
-            )
-            self.task_agent.reset()
-            subtasks = task.decompose(self.task_agent, decompose_prompt)
-            task.subtasks = subtasks
-            for subtask in subtasks:
-                subtask.parent = task
+            subtasks = self._decompose_task(task)
             # Insert packets at the head of the queue
             self._pending_tasks.extendleft(reversed(subtasks))
             await self._post_ready_tasks()

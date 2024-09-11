@@ -18,9 +18,9 @@ from typing import Any, List
 from colorama import Fore
 
 from camel.agents.base import BaseAgent
-from camel.agents.chat_agent import FunctionCallingRecord
 from camel.messages.base import BaseMessage
 from camel.tasks.task import Task, TaskState
+from camel.utils import print_text_animated
 from camel.workforce.utils import parse_task_result_resp
 from camel.workforce.worker import Worker
 from camel.workforce.workforce_prompt import PROCESS_TASK_PROMPT
@@ -79,14 +79,13 @@ class SingleAgentWorker(Worker):
 
             print(f"======\n{Fore.GREEN}Reply from {self}:{Fore.RESET}")
 
-            tool_calls: List[FunctionCallingRecord] = response.info[
-                'tool_calls'
-            ]
-            for func_record in tool_calls:
+            for func_record in response.info['tool_calls']:
                 print(func_record)
 
             task.result = parse_task_result_resp(response.msg.content)
-            print(f'\n{Fore.GREEN}{task.result}{Fore.RESET}\n======')
+            print_text_animated(
+                f'\n{Fore.GREEN}{task.result}{Fore.RESET}\n======'
+            )
             return TaskState.DONE
         except Exception as e:
             print(

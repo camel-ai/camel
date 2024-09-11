@@ -18,11 +18,15 @@ CREATE_NODE_PROMPT = TextPrompt(
     """You need to use the given information to create a new workforce for solving the category of tasks of the given one.
 The content of the given task is:
 
+==============================
 {content}
+==============================
 
 Following is the information of the existing workforces. The format is <ID>: <description>.
 
+==============================
 {child_nodes_info}
+==============================
 
 You must return the following information:
 1. The role of the agent working in the workforce, e.g. "programmer", "researcher", "product owner". This should be enclosed within the <role></role> tags.
@@ -47,11 +51,15 @@ ASSIGN_TASK_PROMPT = TextPrompt(
     """You need to assign the task to a workforce.
 The content of the task is:
 
+==============================
 {content}
+==============================
 
 Following is the information of the existing workforces. The format is <ID>: <description>.
 
+==============================
 {child_nodes_info}
+==============================
 
 You must return the ID of the workforce that you think is most capable of doing the task. The ID should be enclosed within the <id></id> tags, for example:
 
@@ -73,13 +81,12 @@ The content of the task that you need to do is:
 {content}
 ==============================
 
-You must return the result of the given task. The result should be enclosed within the <result></result> tags, for example:
+You are asked to return the result of the given task.
+If you think you can COMPLETELY finish it, you MUST return the result enclosed within the <result></result> tags, for example:
 
-==============================
 <result>The weather today in New York City is partly cloudy with a high of 75°F (24°C) and a low of 59°F (15°C).</result>
-==============================
 
-If you think you are not capable of COMPLETELY finish the task, you need to return <failed></failed> tags.
+Otherwise, if you think you can't COMPLETELY finish the task, you MUST return <failed></failed> tags.
 """
 )
 
@@ -88,11 +95,15 @@ ROLEPLAY_PROCESS_TASK_PROMPT = TextPrompt(
     """You need to process the task. It is recommended that tools be actively called when needed.
 Here are results of some prerequisite tasks that you can refer to:
 
+==============================
 {dependency_task_info}
+==============================
 
 The content of the task that you need to do is:
 
+==============================
 {content}
+==============================
 
 You must return the result of the given task.
 """
@@ -102,7 +113,9 @@ ROLEPLAY_SUMMARIZE_PROMPT = TextPrompt(
     """For this scenario, the roles of the user is {user_role} and role of the assistant is {assistant_role}.
 Here is the content of the task they are trying to solve:
 
+==============================
 {task_content}
+==============================
 
 Here is their chat history on the task:
 
@@ -111,12 +124,11 @@ Here is their chat history on the task:
 ==============================
 
 Now you should summarize the scenario and return the result of the task.
-The result should be enclosed within the <result></result> tags, for example:
+The result MUST be enclosed within the <result></result> tags, for example:
 
 <result>The weather today in New York City is partly cloudy with a high of 75°F (24°C) and a low of 59°F (15°C).</result>
 
-You should keep important details and remove unnecessary information.
-If you think you are not capable of COMPLETELY finish the task, you need to return <failed></failed> tags.
+You should keep important details and remove unrelated information.
 """
 )
 
