@@ -80,10 +80,10 @@ class VLLMModel:
             )
             print(
                 f"vllm server started on http://localhost:8000/v1 "
-                f"for {self.model_type} model"
+                f"for {self.model_type} model."
             )
         except Exception as e:
-            print(f"Failed to start vllm server: {e}")
+            print(f"Failed to start vllm server: {e}.")
 
     @property
     def token_counter(self) -> BaseTokenCounter:
